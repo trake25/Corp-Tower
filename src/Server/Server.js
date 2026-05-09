@@ -19,4 +19,10 @@ wss.on("connection", function connection(ws) {
 
     console.log("Player connected");
 
+    ws.on("message", function incoming(message) {
+
+        console.log("Received:", message.toString());
+
+    });
+
 });

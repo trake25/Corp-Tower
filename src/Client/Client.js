@@ -4,6 +4,9 @@ const connectButton =
 const statusText =
     document.getElementById("status");
 
+const sendButton =
+    document.getElementById("sendButton");
+
 let socket = null;
 
 connectButton.addEventListener("click", () => {
@@ -31,4 +34,18 @@ connectButton.addEventListener("click", () => {
             "Disconnected";
     };
 
+});
+
+sendButton.addEventListener("click", () => {
+
+    if (!socket) {
+
+        console.log("Not connected");
+
+        return;
+    }
+
+    socket.send("Hello from browser");
+
+    console.log("Message sent");
 });
