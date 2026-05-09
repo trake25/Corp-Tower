@@ -21,7 +21,12 @@ wss.on("connection", function connection(ws) {
 
     ws.on("message", function incoming(message) {
 
-        console.log("Received:", message.toString());
+        const data =
+            JSON.parse(message.toString());
+
+        console.log("Received Type:", data.type);
+
+        console.log("Received Text:", data.text);
 
     });
 

@@ -45,7 +45,16 @@ sendButton.addEventListener("click", () => {
         return;
     }
 
-    socket.send("Hello from browser");
+    const message = {
+
+        type: "test_message",
+
+        text: "Hello from browser"
+    };
+
+    socket.send(
+        JSON.stringify(message)
+    );
 
     console.log("Message sent");
 });
