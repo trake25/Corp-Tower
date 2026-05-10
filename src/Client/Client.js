@@ -62,6 +62,43 @@ connectButton.addEventListener("click", () => {
             );
         }
 
+        // Broadcast game state
+        if (data.type === "game_state") {
+
+            console.log(
+                "=== GAME STATE ==="
+            );
+
+            console.log(
+                "Level:",
+                data.level
+            );
+
+            console.log(
+                "Height:",
+                data.currentHeight,
+                "/",
+                data.targetHeight
+            );
+
+            console.log(
+                "Players:"
+            );
+
+            data.players.forEach(player => {
+
+                console.log(
+                    player.id,
+                    "Score:",
+                    player.score,
+                    "Blocks:",
+                    player.blocks
+                );
+
+            });
+
+        }
+
     };
 
     // Disconnected

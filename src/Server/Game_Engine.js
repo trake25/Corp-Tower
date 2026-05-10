@@ -13,6 +13,45 @@ class GameEngine {
     }
 
     // =========================
+    // BROADCAST SYSTEM
+    // =========================
+
+    broadcastGameState() {
+
+        const gameState = {
+
+            type: "game_state",
+
+            level: this.room.level,
+
+            currentHeight:
+                this.room.currentHeight,
+
+            targetHeight:
+                this.room.targetHeight,
+
+            players: this.room.players.map(player => ({
+
+                id: player.id,
+
+                score: player.score,
+
+                blocks: player.blocks
+
+            }))
+        };
+
+        this.room.players.forEach(player => {
+
+            player.ws.send(
+                JSON.stringify(gameState)
+            );
+
+        });
+
+    }
+
+    // =========================
     // ROOM SYSTEM
     // =========================
 
@@ -152,6 +191,8 @@ class GameEngine {
             "Current Height:",
             this.room.currentHeight
         );
+
+        this.broadcastGameState();
 
         this.checkWinCondition();
 
