@@ -7,7 +7,7 @@ const GameConfig = {
     // =========================
 
     maxLevel: 99,
-
+    placementCooldown: 3000,
     targetHeightMultiplier: 3,
 
     // =========================
@@ -38,7 +38,7 @@ const GameConfig = {
         2: 2,
         4: 3,
         12: 4
-    }
+    },
 
 };
 

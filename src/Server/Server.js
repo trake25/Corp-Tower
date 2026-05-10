@@ -26,7 +26,10 @@ wss.on("connection", function connection(ws) {
 
         ws: ws,
 
-        score: 0
+        score: 0,
+
+        lastPlacementTime: 0
+        
     };
 
     playerCounter++;

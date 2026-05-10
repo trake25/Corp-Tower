@@ -169,6 +169,23 @@ class GameEngine {
             return;
         }
 
+        const currentTime = Date.now();
+
+        const timeSinceLastPlacement =
+            currentTime - player.lastPlacementTime;
+
+        if (
+            timeSinceLastPlacement <
+            GameConfig.placementCooldown
+        ) {
+
+            console.log(
+                `${player.id} still on cooldown`
+            );
+
+            return;
+        }
+
         if (!player.blocks || player.blocks.length === 0) {
 
             console.log(`${player.id} has no blocks`);
@@ -178,6 +195,10 @@ class GameEngine {
 
         // Remove first block from inventory
         const block = player.blocks.shift();
+
+        // Record Last placement time
+        player.lastPlacementTime =
+            Date.now();
 
         // Add height
         this.room.currentHeight += block;
