@@ -50,12 +50,13 @@ class LobbyManager {
 
             engine: engine
 
-            roomPlayers.forEach(player => {
-
-                player.room = room;
-
-            });
         };
+
+        roomPlayers.forEach(player => {
+
+            player.room = room;
+
+        });
 
         this.roomIdCounter++;
 
