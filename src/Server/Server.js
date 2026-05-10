@@ -38,6 +38,36 @@ wss.on("connection", function connection(ws) {
     // Add to matchmaking queue
     lobbyManager.addPlayer(player);
 
+    ws.on("message", function incoming(message) {
+
+        const data =
+            JSON.parse(message.toString());
+
+        console.log(
+            `${player.id} sent:`,
+            data.type
+        );
+
+        // PLACE BLOCK
+        if (data.type === "place_block") {
+
+            if (!player.room) {
+
+                console.log(
+                    "Player has no room"
+                );
+
+                return;
+            }
+
+            player.room.engine.placeBlock(
+                player.id
+            );
+
+        }
+
+    });
+
     ws.on("close", function () {
 
         console.log(
