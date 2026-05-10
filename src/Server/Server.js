@@ -2,31 +2,47 @@
 
 const WebSocket = require("ws");
 
-const LobbyManager = require("./Lobby_Manager");
+const LobbyManager =
+    require("./Lobby_Manager");
 
-// Create ONE lobby manager
-const lobbyManager = new LobbyManager();
+const lobbyManager =
+    new LobbyManager();
 
-// Create websocket server
 const wss = new WebSocket.Server({
     port: 3000
 });
 
-console.log("WebSocket server running on port 3000");
+console.log(
+    "WebSocket server running on port 3000"
+);
 
-// When player connects
+let playerCounter = 1;
+
 wss.on("connection", function connection(ws) {
 
-    console.log("Player connected");
+    const player = {
 
-    ws.on("message", function incoming(message) {
+        id: "P" + playerCounter,
 
-        const data =
-            JSON.parse(message.toString());
+        ws: ws,
 
-        console.log("Received Type:", data.type);
+        score: 0
+    };
 
-        console.log("Received Text:", data.text);
+    playerCounter++;
+
+    console.log(
+        `${player.id} connected`
+    );
+
+    // Add to matchmaking queue
+    lobbyManager.addPlayer(player);
+
+    ws.on("close", function () {
+
+        console.log(
+            `${player.id} disconnected`
+        );
 
     });
 
