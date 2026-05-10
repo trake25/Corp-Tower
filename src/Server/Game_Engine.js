@@ -342,11 +342,15 @@ class GameEngine {
     }
 }
 
+module.exports = GameEngine;
+
 // =========================
 // SIMULATION
 // =========================
 
+/*
 const engine = new GameEngine();
+
 
 const players = [
     { id: "P1", score: 0 },
@@ -359,3 +363,4 @@ engine.createRoom(players);
 engine.startLevel();
 
 engine.simulateGame();
+*/
