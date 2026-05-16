@@ -15,7 +15,7 @@ let socket = null;
 connectButton.addEventListener("click", () => {
 
     socket = new WebSocket(
-        "ws://46.137.224.175:3000"
+        "ws://13.229.227.24:3000"
     );
 
     statusText.textContent =

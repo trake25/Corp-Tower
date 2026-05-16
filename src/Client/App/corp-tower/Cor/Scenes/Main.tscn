@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://c0po62b2x6ltb"]
+
+[ext_resource type="Script" uid="uid://dwvcruandm3c" path="res://Cor/Scripts/Main.gd" id="1_bqclr"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u3xev"]
+bg_color = Color(0.11119685, 0.11119685, 0.11119678, 1)
+
+[node name="Main" type="Control" unique_id=20707474]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_bqclr")
+
+[node name="Control" type="Control" parent="." unique_id=680200289]
+anchors_preset = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+
+[node name="Panel" type="Panel" parent="Control" unique_id=1974050777]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_u3xev")
+
+[node name="MarginContainer" type="MarginContainer" parent="Control/Panel" unique_id=336846017]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/Panel/MarginContainer" unique_id=973425477]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=546576960]
+layout_mode = 2
+text = "Status:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ConnectButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=2055968287]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Connect"
+
+[node name="Button2" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=169731104]
+layout_mode = 2
+text = "Place Block"

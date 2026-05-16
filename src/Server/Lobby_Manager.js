@@ -28,6 +28,24 @@ class LobbyManager {
         this.tryCreateRoom();
     }
 
+    removePlayer(player) {
+
+        this.queue =
+            this.queue.filter(
+                p => p !== player
+            );
+
+        console.log(
+            `${player.id} removed from queue`
+        );
+
+        console.log(
+            "Queue Size:",
+            this.queue.length
+        );
+
+    }
+
     tryCreateRoom() {
 
         if (this.waitingPlayers.length < 3) {

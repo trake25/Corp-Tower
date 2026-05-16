@@ -29,7 +29,7 @@ wss.on("connection", function connection(ws) {
         score: 0,
 
         lastPlacementTime: 0
-        
+
     };
 
     playerCounter++;
@@ -75,6 +75,10 @@ wss.on("connection", function connection(ws) {
 
         console.log(
             `${player.id} disconnected`
+        );
+
+        lobbyManager.removePlayer(
+            player
         );
 
     });
