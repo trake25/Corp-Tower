@@ -2,13 +2,16 @@
 extends Node
 
 var ws = WebSocketPeer.new()
-var is_connected := false
+var is_conn_estab : bool = false
 var is_connecting := false
+
+signal status_changed(text)
+signal room_joined(data)
 
 func connect_server():
 	var url = "ws://13.229.227.24:3000"
 
-	if is_connected or is_connecting:
+	if is_conn_estab or is_connecting:
 		print("Already connecting/connected. Ignoring.")
 		return
 
@@ -32,19 +35,31 @@ func disconnect_server():
 
 ## On_connect_pressed
 func toggle_connection():
-	if is_connected or is_connecting:
+	if is_conn_estab or is_connecting:
 		disconnect_server()
 	else:
 		connect_server()
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	ws.poll()
 	
 	while ws.get_available_packet_count():
 		var data = ws.get_packet()
 		var message = data.get_string_from_utf8()
-		print(message)
+		var json = JSON.new()
+
+		var result = json.parse(message)
+
+		if result == OK:
+			data = json.data
+			print(data)
+			room_joined.emit(data)
+
+			if data.type == "room_created":
+				print("Player ID: ", data.playerId)
+				print("Room: ",data.roomId)
+				print("Blocks: ",data.blocks)
 
 	var state = ws.get_ready_state()
 
@@ -54,16 +69,18 @@ func _process(delta: float) -> void:
 			pass # optional debug
 
 		WebSocketPeer.STATE_OPEN:
-			if not is_connected:
-				is_connected = true
+			if not is_conn_estab:
+				is_conn_estab = true
 				is_connecting = false
-				print("CONNECTED TO SERVER (REAL)")
+				print("CONNECTED TO SERVER")
+				status_changed.emit("Connected")
 
 		WebSocketPeer.STATE_CLOSING:
 			pass
 
 		WebSocketPeer.STATE_CLOSED:
-			if is_connected or is_connecting:
+			if is_conn_estab or is_connecting:
 				print("DISCONNECTED FROM SERVER")
-			is_connected = false
+				status_changed.emit("Disconnected")
+			is_conn_estab = false
 			is_connecting = false

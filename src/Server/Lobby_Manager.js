@@ -11,6 +11,8 @@ class LobbyManager {
         this.rooms = [];
 
         this.roomIdCounter = 1;
+
+        this.queue = [];
     }
 
     addPlayer(player) {
@@ -96,6 +98,8 @@ class LobbyManager {
             player.ws.send(JSON.stringify({
 
                 type: "room_created",
+
+                playerId: player.id,
 
                 roomId: room.id,
 

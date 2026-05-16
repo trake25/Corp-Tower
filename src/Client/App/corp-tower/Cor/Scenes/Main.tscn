@@ -5,6 +5,12 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u3xev"]
 bg_color = Color(0.11119685, 0.11119685, 0.11119678, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bqclr"]
+bg_color = Color(0.9427776, 0.7655752, 0.91989386, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn3re"]
+bg_color = Color(0.15571225, 3.657937e-06, 0.70221287, 1)
+
 [node name="Main" type="Control" unique_id=20707474]
 layout_mode = 3
 anchors_preset = 15
@@ -40,17 +46,51 @@ theme_override_constants/margin_bottom = 50
 [node name="VBoxContainer" type="VBoxContainer" parent="Control/Panel/MarginContainer" unique_id=973425477]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=546576960]
+[node name="StatusLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=546576960]
+unique_name_in_owner = true
 layout_mode = 2
-text = "Status:"
+text = "Status: "
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlayerLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=1124339455]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Player: "
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RoomLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=1767853773]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Room: "
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LevelLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=831203825]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Level: "
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BlockLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=1880050889]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Blocks: "
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ConnectButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=2055968287]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Connect"
+theme_override_colors/font_color = Color(0, 0, 0.8745098, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_bqclr")
+text = "[Connect]"
 
-[node name="Button2" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=169731104]
+[node name="PlaceBlockButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=169731104]
+unique_name_in_owner = true
 layout_mode = 2
-text = "Place Block"
+theme_override_colors/font_color = Color(0.96057194, 0.3236335, 0, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_gn3re")
+text = "[Place Block]"
