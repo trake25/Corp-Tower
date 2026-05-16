@@ -38,8 +38,6 @@ wss.on("connection", function connection(ws) {
 
     };
 
-    playerCounter++;
-
     console.log(
         `${player.id} connected`
     );
