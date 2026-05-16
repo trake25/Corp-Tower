@@ -14,6 +14,8 @@ func _ready():
 	place_block_button.disabled = true
 	place_block_button.text = "[Place Block]"
 	
+	place_block_button.pressed.connect(on_place_button_pressed)
+	
 	connect_button.pressed.connect(
 		on_connect_pressed
 	)
@@ -27,6 +29,9 @@ func _ready():
 
 func on_connect_pressed():
 	NetworkManager.toggle_connection()
+
+func on_place_button_pressed():
+	NetworkManager.place_block()
 
 func update_status(text):
 	

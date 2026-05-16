@@ -45,6 +45,23 @@ func toggle_connection():
 	else:
 		connect_server()
 
+func place_block():
+
+	if not is_connected:
+		print("Not connected")
+		return
+
+	var data = {
+
+		"type":"place_block"
+
+	}
+
+	var json = JSON.stringify(data)
+
+	ws.send_text(json)
+
+	print("place_block sent")
 
 func _process(_delta: float) -> void:
 	ws.poll()
