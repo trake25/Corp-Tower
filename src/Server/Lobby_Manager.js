@@ -38,9 +38,6 @@ class LobbyManager {
 
         }
 
-        const before =
-            this.queue.length;
-
         this.queue =
             this.queue.filter(
                 p => p.id !== player.id
@@ -51,15 +48,8 @@ class LobbyManager {
                 p => p.id !== player.id
             );
 
-        const after =
-            this.queue.length;
-
         console.log(
             `${player.id} removed`
-        );
-
-        console.log(
-            `Queue: ${before} -> ${after}`
         );
 
     }

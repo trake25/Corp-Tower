@@ -7,6 +7,7 @@ var is_connecting := false
 
 signal status_changed(text)
 signal room_joined(data)
+signal client_status(status)
 
 func connect_server():
 	var url = "ws://13.229.227.24:3000"
@@ -78,6 +79,7 @@ func _process(_delta: float) -> void:
 				is_connecting = false
 				print("CONNECTED TO SERVER")
 				status_changed.emit("Connected")
+				client_status.emit("[Disconnect]")
 
 		WebSocketPeer.STATE_CLOSING:
 			pass
@@ -86,5 +88,6 @@ func _process(_delta: float) -> void:
 			if is_conn_estab or is_connecting:
 				print("DISCONNECTED FROM SERVER")
 				status_changed.emit("Disconnected")
+				client_status.emit("[Connect]")
 			is_conn_estab = false
 			is_connecting = false

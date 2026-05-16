@@ -9,7 +9,11 @@ extends Control
 @onready var block_label = %BlockLabel
 
 func _ready():
-
+	
+	connect_button.text = "[Connect]"
+	place_block_button.disabled = true
+	place_block_button.text = "[Place Block]"
+	
 	connect_button.pressed.connect(
 		on_connect_pressed
 	)
@@ -18,6 +22,8 @@ func _ready():
 	NetworkManager.status_changed.connect(update_status)
 
 	NetworkManager.room_joined.connect(update_room)
+	
+	NetworkManager.client_status.connect(update_connect_button)
 
 func on_connect_pressed():
 	NetworkManager.toggle_connection()
@@ -26,9 +32,16 @@ func update_status(text):
 	
 	status_label.text = text
 
-func update_room(data):
+func update_connect_button(status):
+	
+	connect_button.text = status
 
-	player_label.text = "Player: "+data.playerId
+func update_room(data):
+	
+	connect_button.disabled = true
+	place_block_button.disabled = false
+
+	player_label.text = "Player: "+ data.playerId
 
 	room_label.text = "Room: " + str(int(data.roomId))
 

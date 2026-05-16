@@ -81,11 +81,9 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0.8745098, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_bqclr")
-text = "[Connect]"
 
 [node name="PlaceBlockButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=169731104]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96057194, 0.3236335, 0, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_gn3re")
-text = "[Place Block]"
