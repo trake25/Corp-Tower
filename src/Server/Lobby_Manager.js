@@ -32,18 +32,29 @@ class LobbyManager {
 
     removePlayer(player) {
 
+        if (!this.queue) {
+
+            this.queue = [];
+
+        }
+
+        const before =
+            this.queue.length;
+
         this.queue =
             this.queue.filter(
-                p => p !== player
+                p => p.id !== player.id
             );
 
+        const after =
+            this.queue.length;
+
         console.log(
-            `${player.id} removed from queue`
+            `${player.id} removed`
         );
 
         console.log(
-            "Queue Size:",
-            this.queue.length
+            `Queue: ${before} -> ${after}`
         );
 
     }

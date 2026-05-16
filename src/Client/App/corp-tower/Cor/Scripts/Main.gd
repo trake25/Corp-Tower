@@ -14,6 +14,7 @@ func _ready():
 		on_connect_pressed
 	)
 	
+	status_label.text = "Disconnected"
 	NetworkManager.status_changed.connect(update_status)
 
 	NetworkManager.room_joined.connect(update_room)
@@ -22,14 +23,20 @@ func on_connect_pressed():
 	NetworkManager.toggle_connection()
 
 func update_status(text):
-
+	
 	status_label.text = text
-
 
 func update_room(data):
 
 	player_label.text = "Player: "+data.playerId
 
-	room_label.text = "Room: "+str(data.roomId)
+	room_label.text = "Room: " + str(int(data.roomId))
 
-	block_label.text = "Blocks: "+str(data.blocks)
+	level_label.text = "Level: " + str(int(data.level))
+
+	var clean_blocks=[]
+	
+	for block in data.blocks:
+		clean_blocks.append(int(block))
+	
+	block_label.text = "Blocks: "+str(clean_blocks)

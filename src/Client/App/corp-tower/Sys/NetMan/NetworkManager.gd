@@ -10,6 +10,8 @@ signal room_joined(data)
 
 func connect_server():
 	var url = "ws://13.229.227.24:3000"
+	
+	status_changed.emit("Connecting...")
 
 	if is_conn_estab or is_connecting:
 		print("Already connecting/connected. Ignoring.")
@@ -27,6 +29,8 @@ func connect_server():
 
 
 func disconnect_server():
+	
+	status_changed.emit("Disconnecting...")
 	if ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
 		print("Disconnecting from server...")
 		ws.close()

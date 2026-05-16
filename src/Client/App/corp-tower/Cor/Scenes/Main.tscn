@@ -49,35 +49,30 @@ layout_mode = 2
 [node name="StatusLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=546576960]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Status: "
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="PlayerLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=1124339455]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Player: "
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="RoomLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=1767853773]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Room: "
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="LevelLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=831203825]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Level: "
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="BlockLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=1880050889]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Blocks: "
 horizontal_alignment = 1
 vertical_alignment = 1
 
