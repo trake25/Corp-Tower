@@ -7,6 +7,7 @@ var is_connecting := false
 
 signal status_changed(text)
 signal room_joined(data)
+signal game_state_updated(data)
 signal client_status(status)
 
 func connect_server():
@@ -67,21 +68,23 @@ func _process(_delta: float) -> void:
 	ws.poll()
 	
 	while ws.get_available_packet_count():
-		var data = ws.get_packet()
-		var message = data.get_string_from_utf8()
+		var packet = ws.get_packet()
+		var message = packet.get_string_from_utf8()
 		var json = JSON.new()
-
 		var result = json.parse(message)
-
-		if result == OK:
-			data = json.data
-			print(data)
-			room_joined.emit(data)
-
-			if data.type == "room_created":
-				print("Player ID: ", data.playerId)
-				print("Room: ",data.roomId)
-				print("Blocks: ",data.blocks)
+		if result != OK:
+			continue
+		var data = json.data
+		print(data)
+	
+		match data.type:
+			"room_created":
+				room_joined.emit(data)
+				print("Player ID:", data.playerId)
+				print("Room:", data.roomId)
+				print("Blocks:", data.blocks)
+			"game_state":
+				game_state_updated.emit(data)
 
 	var state = ws.get_ready_state()
 

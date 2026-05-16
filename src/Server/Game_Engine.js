@@ -357,6 +357,8 @@ class GameEngine {
         );
 
         this.assignBlocks();
+
+        this.broadcastGameState();
     }
 
     // =========================

@@ -4,6 +4,7 @@ extends Control
 @onready var place_block_button = %PlaceBlockButton
 @onready var status_label = %StatusLabel
 @onready var player_label = %PlayerLabel
+@onready var score_label = %ScoreLabel
 @onready var room_label = %RoomLabel
 @onready var level_label = %LevelLabel
 @onready var block_label = %BlockLabel
@@ -26,6 +27,8 @@ func _ready():
 	NetworkManager.room_joined.connect(update_room)
 	
 	NetworkManager.client_status.connect(update_connect_button)
+	
+	NetworkManager.game_state_updated.connect(update_game_state)
 
 func on_connect_pressed():
 	NetworkManager.toggle_connection()
@@ -58,3 +61,22 @@ func update_room(data):
 		clean_blocks.append(int(block))
 	
 	block_label.text = "Blocks: "+str(clean_blocks)
+
+func update_game_state(data):
+
+	level_label.text = \
+		"Level: " + str(int(data.level))
+
+	var scores_text = ""
+
+	for player in data.players:
+
+		scores_text += \
+			player.id \
+			+ " Score:" \
+			+ str(
+				int(player.score)
+			) \
+			+ "\n"
+
+	score_label.text = scores_text
