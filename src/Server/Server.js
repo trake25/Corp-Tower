@@ -16,13 +16,19 @@ console.log(
     "WebSocket server running on port 3000"
 );
 
-let playerCounter = 1;
+let availableIds = [
+
+    "P1",
+    "P2",
+    "P3",
+
+];
 
 wss.on("connection", function connection(ws) {
 
     const player = {
 
-        id: "P" + playerCounter,
+        id: availableIds.shift(),
 
         ws: ws,
 
@@ -80,6 +86,16 @@ wss.on("connection", function connection(ws) {
         lobbyManager.removePlayer(
             player
         );
+
+        if (player.id) {
+
+            availableIds.push(
+                player.id
+            );
+
+            availableIds.sort();
+
+        }
 
     });
 
