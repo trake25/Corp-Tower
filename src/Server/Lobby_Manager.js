@@ -46,6 +46,11 @@ class LobbyManager {
                 p => p.id !== player.id
             );
 
+        this.waitingPlayers =
+            this.waitingPlayers.filter(
+                p => p.id !== player.id
+            );
+
         const after =
             this.queue.length;
 
