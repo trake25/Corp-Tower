@@ -80,3 +80,18 @@ func update_game_state(data):
 			+ "\n"
 
 	score_label.text = scores_text
+
+	for player in data.players:
+
+		if player.id == NetworkManager.player_id:
+
+			var clean_blocks = []
+
+			for block in player.blocks:
+
+				clean_blocks.append(
+					int(block)
+				)
+
+			block_label.text = \
+				"Blocks: " + str(clean_blocks)

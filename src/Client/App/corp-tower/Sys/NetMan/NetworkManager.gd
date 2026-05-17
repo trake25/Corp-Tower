@@ -5,6 +5,8 @@ var ws = WebSocketPeer.new()
 var is_conn_estab : bool = false
 var is_connecting := false
 
+var player_id := ""
+
 signal status_changed(text)
 signal room_joined(data)
 signal game_state_updated(data)
@@ -79,6 +81,7 @@ func _process(_delta: float) -> void:
 	
 		match data.type:
 			"room_created":
+				player_id = data.playerId
 				room_joined.emit(data)
 				print("Player ID:", data.playerId)
 				print("Room:", data.roomId)
