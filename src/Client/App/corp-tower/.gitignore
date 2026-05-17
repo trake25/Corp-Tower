@@ -1,3 +1,31 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Export settings
+.export_presets.cfg
+
+# Android signing files
+*.keystore
+*.jks
+*.pem
+*.key
+
+# Generated exports
+*.apk
+*.aab
+
+# Godot import/cache files
+.import/
+*.import
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS junk
+Thumbs.db
+.DS_Store

@@ -20,6 +20,11 @@ config/icon="res://icon.svg"
 
 NetworkManager="*uid://8bh26paw2m4o"
 
+[display]
+
+window/stretch/mode="viewport"
+window/handheld/orientation=1
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
@@ -29,3 +34,4 @@ NetworkManager="*uid://8bh26paw2m4o"
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
