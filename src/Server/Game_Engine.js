@@ -194,7 +194,6 @@ class GameEngine {
         }
 
         // Remove block from inventory index
-        const blockIndex = data.blockIndex;
 
         if (blockIndex === undefined || blockIndex < 0 || blockIndex >= player.blocks.length) {
             console.log("Invalid block index");
