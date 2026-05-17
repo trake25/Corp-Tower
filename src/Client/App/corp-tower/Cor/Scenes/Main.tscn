@@ -16,6 +16,8 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_right = 144.0
+offset_bottom = 956.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_bqclr")
@@ -71,6 +73,12 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="LevelLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=831203825]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HeightLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=727880221]
 unique_name_in_owner = true
 layout_mode = 2
 horizontal_alignment = 1

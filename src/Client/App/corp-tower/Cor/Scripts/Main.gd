@@ -7,6 +7,7 @@ extends Control
 @onready var score_label = %ScoreLabel
 @onready var room_label = %RoomLabel
 @onready var level_label = %LevelLabel
+@onready var height_label = %HeightLabel
 @onready var block_label = %BlockLabel
 
 func _ready():
@@ -66,18 +67,22 @@ func update_game_state(data):
 
 	level_label.text = \
 		"Level: " + str(int(data.level))
+		
+	height_label.text = \
+		"Height: " \
+		+ str(int(data.currentHeight)) \
+		+ "/" \
+		+ str(int(data.targetHeight))
 
 	var scores_text = ""
 
-	for player in data.players:
+	for i in range(data.players.size()):
+		var player = data.players[i]
 
-		scores_text += \
-			player.id \
-			+ " Score:" \
-			+ str(
-				int(player.score)
-			) \
-			+ "\n"
+		scores_text += player.id + " Score:" + str(int(player.score))
+
+		if i < data.players.size() - 1:
+			scores_text += "\n"
 
 	score_label.text = scores_text
 

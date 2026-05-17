@@ -91,6 +91,10 @@ class LobbyManager {
 
         engine.startLevel();
 
+        // Broadcast update
+
+        engine.broadcastGameState();
+
         // Save room
         this.rooms.push(room);
 
