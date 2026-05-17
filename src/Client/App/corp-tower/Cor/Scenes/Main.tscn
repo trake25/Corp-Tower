@@ -96,8 +96,30 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0.8745098, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_bqclr")
 
-[node name="PlaceBlockButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=169731104]
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=921404758]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="PlaceBlockButton1" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=169731104]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 7
 theme_override_colors/font_color = Color(0.96057194, 0.3236335, 0, 1)
+theme_override_font_sizes/font_size = 45
+theme_override_styles/normal = SubResource("StyleBoxFlat_gn3re")
+
+[node name="PlaceBlockButton2" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1688257059]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 7
+theme_override_colors/font_color = Color(0.96057194, 0.3236335, 0, 1)
+theme_override_font_sizes/font_size = 45
+theme_override_styles/normal = SubResource("StyleBoxFlat_gn3re")
+
+[node name="PlaceBlockButton3" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1361965894]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 7
+theme_override_colors/font_color = Color(0.96057194, 0.3236335, 0, 1)
+theme_override_font_sizes/font_size = 45
 theme_override_styles/normal = SubResource("StyleBoxFlat_gn3re")
