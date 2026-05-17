@@ -67,9 +67,7 @@ wss.on("connection", function connection(ws) {
                 return;
             }
 
-            player.room.engine.placeBlock(
-                player.id
-            );
+            player.room.engine.placeBlock(player.id, data.blockIndex);
 
         }
 

@@ -150,7 +150,7 @@ class GameEngine {
         });
     }
 
-    placeBlock(playerId) {
+    placeBlock(playerId, blockIndex) {
 
         if (this.room.state !== "playing") {
 
@@ -193,8 +193,15 @@ class GameEngine {
             return;
         }
 
-        // Remove first block from inventory
-        const block = player.blocks.shift();
+        // Remove block from inventory index
+        const blockIndex = data.blockIndex;
+
+        if (blockIndex === undefined || blockIndex < 0 || blockIndex >= player.blocks.length) {
+            console.log("Invalid block index");
+            return;
+        }
+
+        const block = player.blocks.splice(blockIndex, 1)[0];
 
         // Record Last placement time
         player.lastPlacementTime =
@@ -280,6 +287,7 @@ class GameEngine {
     // GAME FLOW
     // =========================
 
+    /* // Deprecated Function
     shufflePlayers(players) {
 
         return players.sort(
@@ -319,6 +327,7 @@ class GameEngine {
 
         console.log("--- SIMULATION END ---\n");
     }
+    */
 
     nextLevel() {
 

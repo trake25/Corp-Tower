@@ -48,16 +48,15 @@ func toggle_connection():
 	else:
 		connect_server()
 
-func place_block():
+func place_block(block_index):
 
 	if not is_connected:
 		print("Not connected")
 		return
 
 	var data = {
-
-		"type":"place_block"
-
+		"type":"place_block",
+		"blockIndex": block_index
 	}
 
 	var json = JSON.stringify(data)
