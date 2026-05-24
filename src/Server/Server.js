@@ -52,11 +52,7 @@ wss.on("connection", function connection(ws) {
         );
 
         // Update GameConfig via Debug Menu
-        if (
-            data.type
-            ===
-            "update_config"
-        ) {
+        if (data.type === "update_config") {
 
             const GameConfig =
                 require(
@@ -75,14 +71,9 @@ wss.on("connection", function connection(ws) {
                 data.value
             );
 
-            if (
-                data.key
-                ===
-                "debugBotsEnabled"
-            ) {
+            if (data.key === "debugBotsEnabled"){
 
-                lobbyManager
-                    .refreshMatchmaking();
+                lobbyManager.refreshMatchmaking();
 
             }
 
