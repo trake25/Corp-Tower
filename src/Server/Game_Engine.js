@@ -43,8 +43,18 @@ class GameEngine {
 
         this.room.players.forEach(player => {
 
+            if (
+                player.isBot
+            ) {
+                return;
+            }
+
             player.ws.send(
-                JSON.stringify(gameState)
+
+                JSON.stringify(
+                    gameState
+                )
+
             );
 
         });

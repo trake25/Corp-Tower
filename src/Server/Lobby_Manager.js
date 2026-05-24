@@ -2,6 +2,8 @@
 
 const GameEngine = require("./Game_Engine");
 
+const GameConfig = require("./Game_Config");
+
 class LobbyManager {
 
     constructor() {
@@ -13,6 +15,8 @@ class LobbyManager {
         this.roomIdCounter = 1;
 
         this.queue = [];
+
+        this.botCounter = 1;
     }
 
     addPlayer(player) {
@@ -54,75 +58,164 @@ class LobbyManager {
 
     }
 
+    createDebugBots() {
+
+        let bots = [];
+
+        for (
+            let i = 0;
+            i <
+            GameConfig
+                .debugBotCount;
+            i++
+        ) {
+
+            bots.push({
+
+                id:
+                    "BOT"
+                    +
+                    this.botCounter++,
+
+                score: 0,
+
+                lastPlacementTime: 0,
+
+                isBot: true
+
+            });
+
+        }
+
+        return bots;
+
+    }
+
     tryCreateRoom() {
 
-        if (this.waitingPlayers.length < 3) {
+        let roomPlayers =
+            this.waitingPlayers.splice(
+                0,
+                3
+            );
+
+        if (
+            GameConfig
+                .debugBotsEnabled
+        ) {
+
+            const needed =
+                3 -
+                roomPlayers.length;
+
+            if (
+                needed > 0
+            ) {
+
+                roomPlayers =
+                    roomPlayers.concat(
+
+                        this
+                            .createDebugBots()
+                            .slice(
+                                0,
+                                needed
+                            )
+
+                    );
+
+            }
+
+        }
+
+        if (
+            roomPlayers.length
+            < 3
+        ) {
             return;
         }
 
-        // Take first 3 players
-        const roomPlayers =
-            this.waitingPlayers.splice(0, 3);
+        const engine =
+            new GameEngine();
 
-        // Create game engine
-        const engine = new GameEngine();
-
-        // Create room
         const room = {
 
-            id: this.roomIdCounter,
+            id:
+                this.roomIdCounter,
 
-            players: roomPlayers,
+            players:
+                roomPlayers,
 
-            engine: engine
+            engine:
+                engine
 
         };
 
-        roomPlayers.forEach(player => {
+        roomPlayers
+            .forEach(player => {
 
-            player.room = room;
+                player.room =
+                    room;
 
-        });
+            });
 
         this.roomIdCounter++;
 
-        // Initialize game
-        engine.createRoom(roomPlayers);
+        engine
+            .createRoom(
+                roomPlayers
+            );
 
         engine.startLevel();
 
-        // Broadcast update
-
-        engine.broadcastGameState();
-
-        // Save room
-        this.rooms.push(room);
+        this.rooms.push(
+            room
+        );
 
         console.log(
             `Room ${room.id} created`
         );
 
-        // Send room info to players
-        roomPlayers.forEach(player => {
+        roomPlayers
+            .forEach(player => {
 
-            player.ws.send(JSON.stringify({
+                if (
+                    player.isBot
+                ) {
+                    return;
+                }
 
-                type: "room_created",
+                player.ws.send(
+                    JSON.stringify({
 
-                playerId: player.id,
+                        type:
+                            "room_created",
 
-                roomId: room.id,
+                        playerId:
+                            player.id,
 
-                level: engine.room.level,
+                        roomId:
+                            room.id,
 
-                targetHeight:
-                    engine.room.targetHeight,
+                        level:
+                            engine
+                                .room
+                                .level,
 
-                blocks: player.blocks
+                        targetHeight:
 
-            }));
+                            engine
+                                .room
+                                .targetHeight,
 
-        });
+                        blocks:
+                            player.blocks
+
+                    }));
+
+            });
+
+        engine.broadcastGameState();
 
     }
 

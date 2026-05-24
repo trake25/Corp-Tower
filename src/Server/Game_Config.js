@@ -40,6 +40,18 @@ const GameConfig = {
         12: 4
     },
 
+    // =========================
+    // DEBUG SETTINGS
+    // =========================
+
+    debugBotsEnabled: true,
+
+    debugBotCount: 2,
+
+    debugBotDelayMin: 1000,
+
+    debugBotDelayMax: 4000,
+
 };
 
 module.exports = GameConfig;

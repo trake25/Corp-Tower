@@ -2,19 +2,15 @@
 
 const WebSocket = require("ws");
 
-const LobbyManager =
-    require("./Lobby_Manager");
+const BotManager = require("./Bot_Manager");
 
-const lobbyManager =
-    new LobbyManager();
+const LobbyManager = require("./Lobby_Manager");
 
-const wss = new WebSocket.Server({
-    port: 3000
-});
+const lobbyManager = new LobbyManager();
 
-console.log(
-    "WebSocket server running on port 3000"
-);
+const wss = new WebSocket.Server({port: 3000});
+
+console.log("WebSocket server running on port 3000");
 
 let availableIds = [
 
