@@ -23,7 +23,6 @@ NetworkManager="*uid://8bh26paw2m4o"
 [display]
 
 window/stretch/mode="viewport"
-window/handheld/orientation=1
 
 [physics]
 

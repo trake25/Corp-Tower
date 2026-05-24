@@ -2,6 +2,8 @@
 
 const GameConfig = require("./Game_Config");
 
+const BotManager = require("./Bot_Manager");
+
 class GameEngine {
 
     // =========================
@@ -375,6 +377,8 @@ class GameEngine {
         );
 
         this.assignBlocks();
+
+        BotManager.startBots(this);
 
         this.broadcastGameState();
     }

@@ -4,6 +4,8 @@ const GameEngine = require("./Game_Engine");
 
 const GameConfig = require("./Game_Config");
 
+const BotManager = require("./Bot_Manager");
+
 class LobbyManager {
 
     constructor() {
@@ -167,6 +169,10 @@ class LobbyManager {
             );
 
         engine.startLevel();
+
+        BotManager.startBots(
+            engine
+        );
 
         this.rooms.push(
             room
