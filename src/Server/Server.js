@@ -1,4 +1,4 @@
-// server.js Test commit
+// server.js
 
 const WebSocket = require("ws");
 
@@ -8,7 +8,7 @@ const LobbyManager = require("./Lobby_Manager");
 
 const lobbyManager = new LobbyManager();
 
-const wss = new WebSocket.Server({port: 3000});
+const wss = new WebSocket.Server({ port: 3000 });
 
 console.log("WebSocket server running on port 3000");
 
@@ -42,6 +42,17 @@ wss.on("connection", function connection(ws) {
     lobbyManager.addPlayer(player);
 
     ws.on("message", function incoming(message) {
+
+        if (data.type === "update_config") {
+
+            const GameConfig = require("./Game_Config");
+
+            GameConfig[data.key] = data.value;
+
+            console.log("CONFIG UPDATED:",data.key,data.value);
+
+            return;
+        }
 
         const data =
             JSON.parse(message.toString());

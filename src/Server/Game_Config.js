@@ -7,7 +7,7 @@ const GameConfig = {
     // =========================
 
     maxLevel: 99,
-    placementCooldown: 3000,
+    placementCooldown: 1500,
     targetHeightMultiplier: 3,
 
     // =========================
@@ -44,11 +44,11 @@ const GameConfig = {
     // DEBUG SETTINGS
     // =========================
 
-    debugBotsEnabled: true,
+    debugBotsEnabled: false,
 
     debugBotCount: 2,
 
-    debugBotDelayMin: 1000,
+    debugBotDelayMin: 1500,
 
     debugBotDelayMax: 4000,
 
