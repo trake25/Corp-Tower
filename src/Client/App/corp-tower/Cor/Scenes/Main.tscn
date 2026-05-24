@@ -123,3 +123,36 @@ size_flags_horizontal = 7
 theme_override_colors/font_color = Color(0.96057194, 0.3236335, 0, 1)
 theme_override_font_sizes/font_size = 45
 theme_override_styles/normal = SubResource("StyleBoxFlat_gn3re")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer" unique_id=495796600]
+layout_mode = 2
+
+[node name="DebugButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer" unique_id=1321903783]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DebugPanel" type="Panel" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer" unique_id=2009792903]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel" unique_id=1846885772]
+layout_mode = 0
+offset_right = 1047.0
+offset_bottom = 314.0
+
+[node name="BotsToggle" type="CheckButton" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=620285696]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BotCountSlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=214244970]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CooldownSlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=157146832]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CloseButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=1581234447]
+unique_name_in_owner = true
+layout_mode = 2

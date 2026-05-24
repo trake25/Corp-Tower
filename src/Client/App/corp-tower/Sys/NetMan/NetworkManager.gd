@@ -13,7 +13,7 @@ signal game_state_updated(data)
 signal client_status(status)
 
 func connect_server():
-	var url = "ws://13.229.227.24:3000"
+	var url = "ws://52.221.225.117:3000"
 	
 	status_changed.emit("Connecting...")
 
@@ -113,3 +113,27 @@ func _process(_delta: float) -> void:
 				client_status.emit("[Connect]")
 			is_conn_estab = false
 			is_connecting = false
+
+func update_config(
+	key,
+	value
+):
+
+	var data={
+
+		"type":"update_config",
+
+		"key":key,
+
+		"value":value
+	}
+
+	ws.send_text(
+		JSON.stringify(data)
+	)
+
+	print(
+		"Config update:",
+		key,
+		value
+	)

@@ -43,6 +43,15 @@ wss.on("connection", function connection(ws) {
 
     ws.on("message", function incoming(message) {
 
+        const data =
+            JSON.parse(message.toString());
+
+        console.log(
+            `${player.id} sent:`,
+            data.type
+        );
+
+        // Update GameConfig via Debug Menu
         if (data.type === "update_config") {
 
             const GameConfig = require("./Game_Config");
@@ -53,14 +62,6 @@ wss.on("connection", function connection(ws) {
 
             return;
         }
-
-        const data =
-            JSON.parse(message.toString());
-
-        console.log(
-            `${player.id} sent:`,
-            data.type
-        );
 
         // PLACE BLOCK
         if (data.type === "place_block") {

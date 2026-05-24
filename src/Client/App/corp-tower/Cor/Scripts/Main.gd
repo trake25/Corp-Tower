@@ -6,6 +6,13 @@ extends Control
 @onready var place_block_button2 = %PlaceBlockButton2
 @onready var place_block_button3 = %PlaceBlockButton3
 
+@onready var debug_button = %DebugButton
+@onready var debug_panel =  %DebugPanel
+
+@onready var bots_toggle = %BotsToggle
+@onready var bot_count_slider = %BotCountSlider
+@onready var cooldown_slider = %CooldownSlider
+
 @onready var status_label = %StatusLabel
 @onready var player_label = %PlayerLabel
 @onready var score_label = %ScoreLabel
@@ -26,6 +33,17 @@ func _ready():
 	]
 
 	connect_button.text = "[Connect]"
+	
+	debug_button.text = "Debug Menu"
+	debug_button.disabled = true
+	debug_button.pressed.connect(on_debug_pressed)
+
+	bots_toggle.text = "Bots"
+	bots_toggle.toggled.connect(on_bots_toggle)
+
+	bot_count_slider.value_changed.connect(on_bot_count_changed)
+
+	cooldown_slider.value_changed.connect(on_cooldown_changed)
 
 	# disable + reset inventory UI
 	for btn in inventory_buttons:
@@ -45,10 +63,37 @@ func _ready():
 	NetworkManager.client_status.connect(update_connect_button)
 	NetworkManager.game_state_updated.connect(update_game_state)
 
+func on_debug_pressed():
+
+	debug_panel.visible=\
+		!debug_panel.visible
+
+
+func on_bots_toggle(enabled):
+
+	NetworkManager.update_config(
+		"debugBotsEnabled",
+		enabled
+	)
+
+
+func on_bot_count_changed(value):
+
+	NetworkManager.update_config(
+		"debugBotCount",
+		int(value)
+	)
+
+
+func on_cooldown_changed(value):
+
+	NetworkManager.update_config(
+		"placementCooldown",
+		int(value)
+	)
 
 func on_connect_pressed():
 	NetworkManager.toggle_connection()
-
 
 func on_block_pressed(index):
 	NetworkManager.place_block(index)
@@ -56,10 +101,15 @@ func on_block_pressed(index):
 
 func update_status(text):
 	status_label.text = text
+	if text == "Connected":
+		debug_button.disabled = false
+	else:
+		debug_button.disabled = true
 
 
 func update_connect_button(status):
 	connect_button.text = status
+	
 
 
 # =========================
