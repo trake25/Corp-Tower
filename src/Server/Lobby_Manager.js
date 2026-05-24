@@ -19,6 +19,8 @@ class LobbyManager {
         this.queue = [];
 
         this.botCounter = 1;
+
+        this.debugBotsEnabled = false;
     }
 
     addPlayer(player) {
@@ -90,6 +92,16 @@ class LobbyManager {
         }
 
         return bots;
+
+    }
+
+    refreshMatchmaking() {
+
+        console.log(
+            "Refreshing matchmaking..."
+        );
+
+        this.tryCreateRoom();
 
     }
 
