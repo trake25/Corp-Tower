@@ -22,9 +22,12 @@ class BotManager {
                     return;
                 }
 
+                player.botLoopLevel = engine.room.level;
+
                 this.runBotLoop(
                     player,
-                    engine
+                    engine,
+                    engine.room.level
                 );
 
             });
@@ -33,7 +36,8 @@ class BotManager {
 
     runBotLoop(
         bot,
-        engine
+        engine,
+        level
     ) {
 
         const delay =
@@ -65,8 +69,21 @@ class BotManager {
         setTimeout(() => {
 
             if (
+                !GameConfig.debugBotsEnabled
+            ) {
+                return;
+            }
+
+            if (
                 engine.room.state
                 !== "playing"
+            ) {
+                return;
+            }
+
+            if (
+                engine.room.level !== level ||
+                bot.botLoopLevel !== level
             ) {
                 return;
             }
@@ -91,7 +108,8 @@ class BotManager {
 
             this.runBotLoop(
                 bot,
-                engine
+                engine,
+                level
             );
 
         }, delay);

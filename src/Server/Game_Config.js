@@ -7,8 +7,14 @@ const GameConfig = {
     // =========================
 
     maxLevel: 99,
-    placementCooldown: 1500,
+    placementCooldown: 2000,
     targetHeightMultiplier: 3,
+    startDelayMs: 2000,
+    levelTimeLimitMs: 30000,
+    nextLevelDelayMs: 2000,
+    failRestartDelayMs: 2000,
+    checkpointInterval: 3,
+    checkpointScoreRequirement: 0,
 
     // =========================
     // BLOCK SETTINGS
@@ -40,17 +46,28 @@ const GameConfig = {
         12: 4
     },
 
+    maxActiveBlocks: 3,
+    maxCarryOverBlocks: 1,
+
+    // =========================
+    // REFRESH TOKEN SETTINGS
+    // =========================
+
+    maxRefreshTokens: 1,
+    maxRefreshUsesPerLevel: 2,
+    refreshLockoutMs: 10000,
+
     // =========================
     // DEBUG SETTINGS
     // =========================
 
-    debugBotsEnabled: false,
+    debugBotsEnabled: true,
 
     debugBotCount: 2,
 
-    debugBotDelayMin: 1500,
+    debugBotDelayMin: 2000,
 
-    debugBotDelayMax: 4000,
+    debugBotDelayMax: 5000,
 
 };
 

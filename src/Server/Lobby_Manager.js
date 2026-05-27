@@ -2,7 +2,6 @@
 
 const GameEngine = require("./Game_Engine");
 const GameConfig = require("./Game_Config");
-const BotManager = require("./Bot_Manager");
 
 class LobbyManager {
     constructor() {
@@ -36,6 +35,95 @@ class LobbyManager {
         console.log(`${player.id} removed from queue`);
     }
 
+    getRealPlayers() {
+        const players = [];
+        const seen = new Set();
+
+        const addPlayer = player => {
+            if (
+                player.isBot ||
+                !player.ws ||
+                player.ws.readyState !== 1 ||
+                seen.has(player.id)
+            ) {
+                return;
+            }
+
+            seen.add(player.id);
+            players.push(player);
+        };
+
+        this.waitingPlayers.forEach(addPlayer);
+
+        this.rooms.forEach(room => {
+            room.players.forEach(addPlayer);
+        });
+
+        return players;
+    }
+
+    broadcastDebugConfig() {
+        const message = JSON.stringify({
+            type: "debug_config",
+            config: this.getDebugConfig()
+        });
+
+        this.getRealPlayers().forEach(player => {
+            player.ws.send(message);
+        });
+    }
+
+    getDebugConfig() {
+        return {
+            debugBotsEnabled: GameConfig.debugBotsEnabled,
+            debugBotCount: GameConfig.debugBotCount,
+            debugBotDelayMin: GameConfig.debugBotDelayMin,
+            debugBotDelayMax: GameConfig.debugBotDelayMax,
+            placementCooldown: GameConfig.placementCooldown,
+            levelTimeLimitMs: GameConfig.levelTimeLimitMs,
+            startDelayMs: GameConfig.startDelayMs,
+            targetHeightMultiplier: GameConfig.targetHeightMultiplier
+        };
+    }
+
+    updateDebugConfig(key, value) {
+        const numberValue = Number(value);
+        const debugConfigSetters = {
+            debugBotsEnabled: () => Boolean(value),
+            debugBotCount: () => Math.max(0, Math.min(2, Math.floor(numberValue))),
+            debugBotDelayMin: () => Math.max(250, Math.floor(numberValue)),
+            debugBotDelayMax: () => Math.max(250, Math.floor(numberValue)),
+            placementCooldown: () => Math.max(0, Math.floor(numberValue)),
+            levelTimeLimitMs: () => Math.max(5000, Math.floor(numberValue)),
+            startDelayMs: () => Math.max(0, Math.floor(numberValue)),
+            targetHeightMultiplier: () => Math.max(1, Math.floor(numberValue))
+        };
+
+        if (!debugConfigSetters[key]) {
+            console.log("Rejected unknown debug config:", key);
+            return false;
+        }
+
+        GameConfig[key] = debugConfigSetters[key]();
+
+        if (GameConfig.debugBotDelayMax < GameConfig.debugBotDelayMin) {
+            GameConfig.debugBotDelayMax = GameConfig.debugBotDelayMin;
+        }
+
+        console.log("CONFIG UPDATED:", key, GameConfig[key]);
+
+        if (
+            key === "debugBotsEnabled" ||
+            key === "debugBotCount"
+        ) {
+            this.refreshMatchmaking();
+        }
+
+        this.broadcastDebugConfig();
+
+        return true;
+    }
+
     // =========================
     // BOT CREATION
     // =========================
@@ -51,11 +139,49 @@ class LobbyManager {
 
     fillQueueWithBotsIfNeeded() {
         if (!GameConfig.debugBotsEnabled) {
+            this.removeWaitingBots();
             return;
         }
 
-        while (this.waitingPlayers.length < 3) {
-            this.waitingPlayers.push(this.createBot());
+        const realWaitingPlayers =
+            this.waitingPlayers.filter(player => !player.isBot);
+
+        if (realWaitingPlayers.length === 0) {
+            this.removeWaitingBots();
+            return;
+        }
+
+        const desiredBotCount = Math.min(
+            GameConfig.debugBotCount,
+            Math.max(0, 3 - realWaitingPlayers.length)
+        );
+
+        this.syncWaitingBots(desiredBotCount);
+    }
+
+    removeWaitingBots() {
+        this.waitingPlayers = this.waitingPlayers.filter(
+            player => !player.isBot
+        );
+    }
+
+    syncWaitingBots(desiredBotCount) {
+        let waitingBots =
+            this.waitingPlayers.filter(player => player.isBot);
+
+        while (waitingBots.length > desiredBotCount) {
+            const bot = waitingBots.pop();
+
+            this.waitingPlayers = this.waitingPlayers.filter(
+                player => player.id !== bot.id
+            );
+        }
+
+        while (waitingBots.length < desiredBotCount) {
+            const bot = this.createBot();
+
+            this.waitingPlayers.push(bot);
+            waitingBots.push(bot);
         }
     }
 
@@ -100,9 +226,6 @@ class LobbyManager {
         // Initialize game engine
         engine.createRoom(roomPlayers);
         engine.startLevel();
-
-        // Start bot AI (if any bots exist in room)
-        BotManager.startBots(engine);
 
         this.rooms.push(room);
 

@@ -1,12 +1,16 @@
 {
   "name": "local-gameengine",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "Server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node Server.js",
+    "test": "node --check Server.js && node --check Lobby_Manager.js && node --check Game_Engine.js && node --check Game_Config.js && node --check Bot_Manager.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
 }

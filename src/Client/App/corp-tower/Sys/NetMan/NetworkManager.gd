@@ -11,6 +11,7 @@ signal status_changed(text)
 signal room_joined(data)
 signal game_state_updated(data)
 signal client_status(status)
+signal debug_config_updated(config)
 
 func connect_server():
 	var url = "ws://52.221.225.117:3000"
@@ -50,7 +51,7 @@ func toggle_connection():
 
 func place_block(block_index):
 
-	if not is_connected:
+	if not is_conn_estab:
 		print("Not connected")
 		return
 
@@ -64,6 +65,22 @@ func place_block(block_index):
 	ws.send_text(json)
 
 	print("place_block sent")
+
+func refresh_blocks():
+
+	if not is_conn_estab:
+		print("Not connected")
+		return
+
+	var data = {
+		"type":"refresh_blocks"
+	}
+
+	ws.send_text(
+		JSON.stringify(data)
+	)
+
+	print("refresh_blocks sent")
 
 func _process(_delta: float) -> void:
 	ws.poll()
@@ -87,6 +104,8 @@ func _process(_delta: float) -> void:
 				print("Blocks:", data.blocks)
 			"game_state":
 				game_state_updated.emit(data)
+			"debug_config":
+				debug_config_updated.emit(data.config)
 
 	var state = ws.get_ready_state()
 
@@ -118,6 +137,10 @@ func update_config(
 	key,
 	value
 ):
+
+	if not is_conn_estab:
+		print("Not connected")
+		return
 
 	var data={
 
