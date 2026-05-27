@@ -531,7 +531,7 @@ class GameEngine {
             block === 0 ? 0 : effectiveHeight / block;
         const points = Math.round(basePoints * efficiency);
 
-        player.score += points;
+        //player.score += points; //Only add to levelScore during gameplay
         player.levelScore += points;
 
         console.log(`${player.id} gained ${points} score`);
@@ -561,10 +561,18 @@ class GameEngine {
     }
 
     addBonusScore(player, points, label) {
-        player.score += points;
+        //player.score += points; // Only add to levelScore during gameplay
         player.levelScore += points;
 
         console.log(`${player.id} gained ${points} ${label} bonus`);
+    }
+
+    addLevelScoreToLeaderboard() {
+        // Add levelScore to main score only when level is completed
+        this.room.players.forEach(player => {
+            player.score += player.levelScore;
+            console.log(`${player.id} level score (${player.levelScore}) added to leaderboard score. New total: ${player.score}`);
+        });
     }
 
     awardRefreshToken(player) {
