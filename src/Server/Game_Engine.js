@@ -416,6 +416,8 @@ class GameEngine {
             this.room.currentHeight === this.room.targetHeight;
 
         this.awardCompletionBonuses(finisher, exactFinish);
+        // ADD LEVEL SCORE TO LEADERBOARD SCORE WHEN LEVEL IS COMPLETED
+        this.addLevelScoreToLeaderboard();
         this.prepareCarryOverBlocks();
 
         const mvp = this.getLevelMVP();
