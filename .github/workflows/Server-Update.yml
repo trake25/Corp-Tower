@@ -11,10 +11,14 @@ concurrency:
   group: server-update-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   test-server:
-    name: Test Server
+    name: Test Server On GitHub VM
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: src/Server
@@ -26,18 +30,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24.14.1"
+
+      - name: Match EC2 npm version
+        run: npm install -g npm@11.11.0
+
+      - name: Show Node.js and npm versions
+        run: |
+          node --version
+          npm --version
 
       - name: Install server dependencies
         run: npm install
 
-      - name: Run server tests
+      - name: Run server tests before EC2 deploy
         run: npm test
 
   deploy-server:
     name: Deploy Server To EC2
     runs-on: ubuntu-latest
     needs: test-server
+    if: ${{ needs.test-server.result == 'success' }}
+    timeout-minutes: 10
     environment: production
 
     steps:

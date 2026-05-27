@@ -107,6 +107,15 @@ jobs:
           set -euo pipefail
           godot --headless --path "$GODOT_PROJECT_PATH" --editor --quit
 
+      - name: Run GUT client tests
+        run: |
+          set -euo pipefail
+          if [ -f "$GODOT_PROJECT_PATH/addons/gut/gut_cmdln.gd" ]; then
+            godot --headless --path "$GODOT_PROJECT_PATH" -s addons/gut/gut_cmdln.gd -gdir=res://Tests
+          else
+            echo "GUT is not installed yet; skipping client unit tests."
+          fi
+
       - name: Export signed Android AAB
         run: |
           set -euo pipefail
