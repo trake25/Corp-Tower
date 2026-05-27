@@ -152,6 +152,30 @@ class GameEngine {
         this.tickTimer = null;
     }
 
+    closeRoom(reason) {
+        if (!this.room) {
+            return;
+        }
+
+        BotManager.stopBots(this);
+        this.clearTimers();
+        this.room.state = "closed";
+        this.room.lastLevelSummary = {
+            result: "closed",
+            reason: reason
+        };
+
+        this.room.players.forEach(player => {
+            player.botLoopLevel = null;
+        });
+
+        console.log(`Room closed: ${reason}`);
+    }
+
+    stopBots() {
+        BotManager.stopBots(this);
+    }
+
     // =========================
     // BLOCK SYSTEM
     // =========================

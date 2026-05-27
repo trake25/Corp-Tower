@@ -124,7 +124,7 @@ theme_override_colors/font_color = Color(0.96057194, 0.3236335, 0, 1)
 theme_override_font_sizes/font_size = 45
 theme_override_styles/normal = SubResource("StyleBoxFlat_gn3re")
 
-[node name="PlaceBlockButton4" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="PlaceBlockButton4" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1461463972]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 7
@@ -157,7 +157,7 @@ offset_bottom = 314.0
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BotCountLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="BotCountLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=71491149]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -165,23 +165,23 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BotDelayMinLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="BotDelayMinLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=1328845051]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BotDelayMinSlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="BotDelayMinSlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=417169737]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BotDelayMaxLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="BotDelayMaxLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=381459388]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BotDelayMaxSlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="BotDelayMaxSlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=598694329]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="CooldownLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="CooldownLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=1981664421]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -189,30 +189,30 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="LevelTimeLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="LevelTimeLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=584522462]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="LevelTimeSlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="LevelTimeSlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=1320511862]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="StartDelayLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="StartDelayLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=1899599594]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="StartDelaySlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="StartDelaySlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=1390400667]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TargetMultiplierLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="TargetMultiplierLabel" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=584845966]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TargetMultiplierSlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="TargetMultiplierSlider" type="HSlider" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=353562730]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="CloseButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer"]
+[node name="CloseButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer/VBoxContainer/DebugPanel/VBoxContainer" unique_id=1283335814]
 unique_name_in_owner = true
 layout_mode = 2

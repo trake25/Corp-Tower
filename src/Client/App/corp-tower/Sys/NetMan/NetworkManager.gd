@@ -9,6 +9,7 @@ var player_id := ""
 
 signal status_changed(text)
 signal room_joined(data)
+signal room_closed(data)
 signal game_state_updated(data)
 signal client_status(status)
 signal debug_config_updated(config)
@@ -106,6 +107,8 @@ func _process(_delta: float) -> void:
 				game_state_updated.emit(data)
 			"debug_config":
 				debug_config_updated.emit(data.config)
+			"room_closed":
+				room_closed.emit(data)
 
 	var state = ws.get_ready_state()
 

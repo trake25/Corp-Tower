@@ -7,6 +7,8 @@ class BotManager {
 
     startBots(engine) {
 
+        this.stopBots(engine);
+
         if (
             !GameConfig.debugBotsEnabled
         ) {
@@ -31,6 +33,43 @@ class BotManager {
                 );
 
             });
+    }
+
+    stopBots(engine) {
+
+        if (
+            !engine.room
+        ) {
+            return;
+        }
+
+        engine.room.players
+            .forEach(player => {
+
+                if (
+                    !player.isBot
+                ) {
+                    return;
+                }
+
+                this.stopBot(player);
+
+            });
+    }
+
+
+    stopBot(bot) {
+
+        if (
+            bot.botTimer
+        ) {
+            clearTimeout(
+                bot.botTimer
+            );
+        }
+
+        bot.botTimer = null;
+        bot.botLoopLevel = null;
     }
 
 
@@ -66,7 +105,13 @@ class BotManager {
                 .debugBotDelayMin;
 
 
-        setTimeout(() => {
+        bot.botTimer = setTimeout(() => {
+
+            bot.botTimer = null;
+
+            if (!engine.room) {
+                return;
+            }
 
             if (
                 !GameConfig.debugBotsEnabled

@@ -114,6 +114,7 @@ func _ready():
 
 	NetworkManager.status_changed.connect(update_status)
 	NetworkManager.room_joined.connect(update_room)
+	NetworkManager.room_closed.connect(update_room_closed)
 	NetworkManager.client_status.connect(update_connect_button)
 	NetworkManager.game_state_updated.connect(update_game_state)
 	NetworkManager.debug_config_updated.connect(update_debug_config)
@@ -306,6 +307,17 @@ func update_room(data):
 
 	update_inventory_ui(data.blocks)
 
+func update_room_closed(data):
+
+	room_label.text = "Room: closed"
+	level_label.text = "Level: -"
+	height_label.text = "Height: -"
+	score_label.text = "Room closed: " + str(data.get("reason", "unknown"))
+	block_label.text = "Blocks: []"
+	refresh_button.text = "Refresh"
+	refresh_button.disabled = true
+	update_inventory_ui([])
+
 
 # =========================
 # LIVE GAME STATE
@@ -329,8 +341,8 @@ func update_game_state(data):
 		var player = data.players[i]
 
 		scores_text += player.id + \
-			" Score:" + str(int(player.score)) + \
-			" Level:" + str(int(player.get("levelScore", 0)))
+			" Leaderboard Score: " + str(int(player.score)) + \
+			" Level Score: " + str(int(player.get("levelScore", 0)))
 
 		if player.id == NetworkManager.player_id:
 			my_refresh_tokens = int(player.get("refreshTokens", 0))

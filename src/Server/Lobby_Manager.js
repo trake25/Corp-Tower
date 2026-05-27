@@ -19,6 +19,7 @@ class LobbyManager {
     // =========================
 
     addPlayer(player) {
+        this.resetParticipantState(player);
         this.waitingPlayers.push(player);
 
         console.log(`${player.id} added to queue`);
@@ -32,7 +33,125 @@ class LobbyManager {
             p => p.id !== player.id
         );
 
+        if (
+            !player.room &&
+            this.waitingPlayers.every(waitingPlayer => waitingPlayer.isBot)
+        ) {
+            this.removeWaitingBots();
+        }
+
+        if (player.room) {
+            this.closeRoom(
+                player.room,
+                `${player.id}_disconnected`,
+                player
+            );
+        }
+
+        player.room = null;
+        this.resetBotCounterIfIdle();
+
         console.log(`${player.id} removed from queue`);
+    }
+
+    resetParticipantState(player) {
+        player.score = 0;
+        player.levelScore = 0;
+        player.contributedHeight = 0;
+        player.refreshTokens = 0;
+        player.refreshUsesThisLevel = 0;
+        player.blocks = [];
+        player.carryOverBlocks = [];
+        player.lastPlacementTime = 0;
+        player.botLoopLevel = null;
+        player.room = null;
+    }
+
+    isConnectedRealPlayer(player) {
+        return (
+            !player.isBot &&
+            player.ws &&
+            player.ws.readyState === 1
+        );
+    }
+
+    closeRoom(room, reason, disconnectedPlayer = null) {
+        if (!room) {
+            return;
+        }
+
+        const existingRoom =
+            this.rooms.find(activeRoom => activeRoom.id === room.id);
+
+        if (!existingRoom) {
+            return;
+        }
+
+        console.log(`Closing room ${room.id}: ${reason}`);
+
+        room.engine.closeRoom(reason);
+
+        this.rooms = this.rooms.filter(
+            activeRoom => activeRoom.id !== room.id
+        );
+
+        const playersToRequeue = [];
+
+        room.players.forEach(roomPlayer => {
+            const shouldRequeue =
+                this.isConnectedRealPlayer(roomPlayer) &&
+                roomPlayer.id !== disconnectedPlayer?.id;
+
+            this.resetParticipantState(roomPlayer);
+
+            if (roomPlayer.isBot) {
+                return;
+            }
+
+            if (shouldRequeue) {
+                roomPlayer.ws.send(JSON.stringify({
+                    type: "room_closed",
+                    reason: reason
+                }));
+
+                playersToRequeue.push(roomPlayer);
+            }
+        });
+
+        this.removeWaitingBots();
+
+        playersToRequeue.forEach(roomPlayer => {
+            this.waitingPlayers.push(roomPlayer);
+        });
+
+        if (
+            this.rooms.length === 0 &&
+            this.waitingPlayers.every(waitingPlayer => !waitingPlayer.isBot)
+        ) {
+            this.resetBotCounterIfIdle();
+        }
+
+        this.tryCreateRoom();
+    }
+
+    resetBotCounterIfIdle() {
+        const hasBots =
+            this.waitingPlayers.some(player => player.isBot) ||
+            this.rooms.some(room => {
+                return room.players.some(player => player.isBot);
+            });
+
+        if (!hasBots) {
+            this.botCounter = 1;
+        }
+
+        if (
+            !hasBots &&
+            this.rooms.length === 0 &&
+            this.waitingPlayers.length === 0
+        ) {
+            this.roomIdCounter = 1;
+        }
     }
 
     getRealPlayers() {
@@ -116,6 +235,12 @@ class LobbyManager {
             key === "debugBotsEnabled" ||
             key === "debugBotCount"
         ) {
+            if (!GameConfig.debugBotsEnabled) {
+                this.rooms.forEach(room => {
+                    room.engine.stopBots();
+                });
+            }
+
             this.refreshMatchmaking();
         }
 
