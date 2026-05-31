@@ -38,6 +38,8 @@ class GameEngine {
             targetHeight: this.room.targetHeight,
             secondsRemaining: Math.ceil(this.getRemainingMs() / 1000),
             lastLevelSummary: this.room.lastLevelSummary,
+            maxRefreshTokens: GameConfig.maxRefreshTokens,
+            maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
             players: this.room.players.map(player => ({
                 id: player.id,
                 score: player.score,
@@ -350,11 +352,15 @@ class GameEngine {
 
         player.refreshTokens -= 1;
         player.refreshUsesThisLevel += 1;
+
+        // Replace only the blocks currently in the player's inventory.
+        // Refresh does not top up to the max — it re-rolls whatever the
+        // player currently holds. If they have 1 block left, they get 1
+        // new block. Using refresh on a full hand replaces all blocks.
+        const countToRefresh = (player.blocks || []).length;
         player.blocks = [];
 
-        const blocksPerPlayer = this.getBlocksPerPlayer();
-
-        for (let i = 0; i < blocksPerPlayer; i++) {
+        for (let i = 0; i < countToRefresh; i++) {
             player.blocks.push(this.getRandomBlock());
         }
 
@@ -402,9 +408,14 @@ class GameEngine {
             return;
         }
 
-        if (remainingPossibleHeight < neededHeight) {
-            this.failLevel("not_enough_height_remaining");
-        }
+        // DISABLED: Auto-fail when remaining block height cannot reach target.
+        // Reason: Players may still use Refresh tokens to replace blocks with
+        // higher-value ones, so "unreachable height" is not always a true failure.
+        // This will be re-enabled after calibration.
+        //
+        // if (remainingPossibleHeight < neededHeight) {
+        //     this.failLevel("not_enough_height_remaining");
+        // }
     }
 
     completeLevel(finisher, finishingBlock) {

@@ -7,6 +7,8 @@ extends Control
 @onready var place_block_button3 = %PlaceBlockButton3
 @onready var place_block_button4 = %PlaceBlockButton4
 @onready var refresh_button = %RefreshButton
+@onready var refresh_token_label = %RefreshTokenLabel
+@onready var refresh_uses_label = %RefreshUsesLabel
 
 @onready var debug_button = %DebugButton
 @onready var debug_panel =  %DebugPanel
@@ -102,6 +104,9 @@ func _ready():
 	refresh_button.text = "Refresh"
 	refresh_button.disabled = true
 	refresh_button.pressed.connect(on_refresh_pressed)
+
+	refresh_token_label.text = "My Refresh Token: 0/1"
+	refresh_uses_label.text = "Level Refreshes Used: 0/2"
 
 	place_block_button1.pressed.connect(func(): on_block_pressed(0))
 	place_block_button2.pressed.connect(func(): on_block_pressed(1))
@@ -316,6 +321,8 @@ func update_room_closed(data):
 	block_label.text = "Blocks: []"
 	refresh_button.text = "Refresh"
 	refresh_button.disabled = true
+	refresh_token_label.text = "My Refresh Token: 0/1"
+	refresh_uses_label.text = "Level Refreshes Used: 0/2"
 	update_inventory_ui([])
 
 
@@ -335,7 +342,10 @@ func update_game_state(data):
 
 	var scores_text = ""
 	var my_refresh_tokens = 0
-	var my_refresh_uses = 0
+	var my_refresh_uses_remaining = 0
+	var level_refreshes_used = 0
+	var max_refresh_tokens = int(data.get("maxRefreshTokens", 1))
+	var max_uses_per_level = int(data.get("maxRefreshUsesPerLevel", 2))
 
 	for i in range(data.players.size()):
 		var player = data.players[i]
@@ -346,15 +356,38 @@ func update_game_state(data):
 
 		if player.id == NetworkManager.player_id:
 			my_refresh_tokens = int(player.get("refreshTokens", 0))
-			my_refresh_uses = int(player.get("refreshUsesRemaining", 0))
+			my_refresh_uses_remaining = int(player.get("refreshUsesRemaining", 0))
 
 		if i < data.players.size() - 1:
 			scores_text += "\n"
 
 	score_label.text = scores_text
 
+	# Per-player refresh token: how many tokens this player holds (e.g. 0/1)
+	refresh_token_label.text = "My Refresh Token: " + str(my_refresh_tokens) + "/" + str(max_refresh_tokens)
 
-	# find local player
+	# Global level refresh counter: uses consumed this level (e.g. 1/2)
+	level_refreshes_used = max_uses_per_level - my_refresh_uses_remaining
+	refresh_uses_label.text = \
+		"Level Refreshes Used: " + str(level_refreshes_used) + "/" + str(max_uses_per_level)
+
+	# Disable refresh if:
+	# - player holds no token (0/1)
+	# - level-wide cap already reached (2/2)
+	# - within the final lockout window (last 10 seconds)
+	# - level is in a terminal state
+	var in_lockout = seconds_remaining <= 10 and state == "playing"
+
+	refresh_button.text = "Refresh"
+	refresh_button.disabled = \
+		my_refresh_tokens <= 0 or \
+		my_refresh_uses_remaining <= 0 or \
+		in_lockout or \
+		state == "failed" or \
+		state == "finished" or \
+		state == "game_completed"
+
+	# Update inventory buttons for local player
 	var my_blocks = []
 
 	for player in data.players:
@@ -363,16 +396,6 @@ func update_game_state(data):
 			break
 
 	update_inventory_ui(my_blocks)
-
-	refresh_button.text = \
-		"Refresh (" + str(my_refresh_tokens) + "/" + str(my_refresh_uses) + ")"
-
-	refresh_button.disabled = \
-		my_refresh_tokens <= 0 or \
-		my_refresh_uses <= 0 or \
-		state == "failed" or \
-		state == "finished" or \
-		state == "game_completed"
 
 
 ## Update Inventory System
