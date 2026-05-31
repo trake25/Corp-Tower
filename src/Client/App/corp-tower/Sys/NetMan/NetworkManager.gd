@@ -15,7 +15,8 @@ signal client_status(status)
 signal debug_config_updated(config)
 
 func connect_server():
-	var url = "ws://52.221.225.117:3000"
+	##var url = "ws://52.221.225.117:3000" old deprecated EC2
+	var url = "ws://52.221.212.189:3000"
 	
 	status_changed.emit("Connecting...")
 

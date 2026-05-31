@@ -44,7 +44,7 @@ resource "aws_instance" "staging" {
   }
 
   root_block_device {
-    volume_size = 20
+    volume_size = 30
     volume_type = "gp3"
   }
 
