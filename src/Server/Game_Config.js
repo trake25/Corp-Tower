@@ -9,10 +9,10 @@ const GameConfig = {
     maxLevel: 99,
     placementCooldown: 2000,
     targetHeightMultiplier: 3,
-    startDelayMs: 2000,
+    startDelayMs: 1500,
     levelTimeLimitMs: 30000,
-    nextLevelDelayMs: 2000,
-    failRestartDelayMs: 2000,
+    nextLevelDelayMs: 1500,
+    failRestartDelayMs: 1500,
     checkpointInterval: 3,
     checkpointScoreRequirement: 0,
 

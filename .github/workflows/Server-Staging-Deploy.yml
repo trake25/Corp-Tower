@@ -1,0 +1,142 @@
+name: Server Staging Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "src/Server/**"
+      - ".github/workflows/Server-Staging-Deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: server-staging-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  IMAGE_NAME: corp-tower-server
+
+jobs:
+  test-server:
+    name: Test Server On GitHub VM
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: src/Server
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.1"
+
+      - name: Install server dependencies
+        run: npm install
+
+      - name: Run server tests
+        run: npm test
+
+  build-and-push:
+    name: Build And Push Docker Image To ECR
+    runs-on: ubuntu-latest
+    needs: test-server
+    if: ${{ needs.test-server.result == 'success' }}
+    timeout-minutes: 15
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          STAGING_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:staging"
+
+          docker build -f src/Server/Dockerfile -t "$IMAGE_URI" -t "$STAGING_URI" src/Server
+          docker push "$IMAGE_URI"
+          docker push "$STAGING_URI"
+
+          echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
+
+      - name: Show pushed image
+        run: echo "Pushed ${{ env.IMAGE_URI }}"
+
+  deploy-staging:
+    name: Deploy Docker Image To Staging EC2
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: ${{ needs.build-and-push.result == 'success' }}
+    timeout-minutes: 15
+    environment: staging
+
+    steps:
+      - name: Deploy over SSH
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+          EC2_HOST: ${{ secrets.EC2_STAGING_HOST }}
+          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
+          EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
+          EC2_SSH_KEY: ${{ secrets.EC2_STAGING_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          ssh-keyscan -p "$EC2_PORT" "$EC2_HOST" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
+            "AWS_REGION='$AWS_REGION' ECR_REPOSITORY='$ECR_REPOSITORY' IMAGE_TAG='$IMAGE_TAG' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+
+          aws ecr get-login-password --region "$AWS_REGION" | sudo docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+          sudo docker pull "$IMAGE_URI"
+
+          sudo docker stop corp-tower-server 2>/dev/null || true
+          sudo docker rm corp-tower-server 2>/dev/null || true
+
+          sudo docker run -d \
+            --name corp-tower-server \
+            --restart unless-stopped \
+            -p 3000:3000 \
+            -e PORT=3000 \
+            "$IMAGE_URI"
+
+          sudo docker image prune -f
+          sudo docker ps --filter name=corp-tower-server
+          REMOTE

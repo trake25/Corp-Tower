@@ -1,4 +1,13 @@
 ﻿src/Client/App/corp-tower/export_presets.cfg
+
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/staging.tfvars
+infra/bootstrap/.terraform/
+infra/bootstrap/*.tfstate
+infra/bootstrap/*.tfstate.*
 # Corp Tower GDD
 *.docx
 *.docx.bak

@@ -1,0 +1,16 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+COPY package.json ./
+RUN npm install --omit=dev
+
+COPY *.js ./
+
+EXPOSE 3000
+ENV PORT=3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('net').connect({port:3000,host:'127.0.0.1'}).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
+
+CMD ["node", "Server.js"]
