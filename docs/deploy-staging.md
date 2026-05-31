@@ -172,7 +172,7 @@ sudo docker run -d --name corp-tower-server --restart unless-stopped -p 3000:300
 
 | Problem | Check |
 |---------|--------|
-| OIDC / AssumeRole failed | `AWS_ROLE_ARN` correct; repo is `trake25/Corp-Tower`; branch is `main`/`master` |
+| OIDC / AssumeRole failed | `AWS_ROLE_ARN` correct; repo is `trake25/Corp-Tower`. If jobs use **environment: staging**, IAM must trust `repo:trake25/Corp-Tower:environment:staging` (run `terraform apply` after `iam.tf` update). Branch-only trust is not enough. |
 | ECR push denied | Role policy attached; repository name matches `ECR_REPOSITORY` |
 | SSH failed | `EC2_STAGING_HOST`; security group `ssh_cidr`; public key in `staging.tfvars` matches private secret |
 | `docker pull` failed on EC2 | Instance profile on EC2; Docker installed (`user_data`); wait 2–3 min after first boot |

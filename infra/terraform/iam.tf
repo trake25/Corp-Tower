@@ -86,10 +86,16 @@ data "aws_iam_policy_document" "github_oidc_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values = [
-        for branch in var.github_deploy_branches :
-        "repo:${var.github_repository}:ref:refs/heads/${branch}"
-      ]
+      values = concat(
+        [
+          for branch in var.github_deploy_branches :
+          "repo:${var.github_repository}:ref:refs/heads/${branch}"
+        ],
+        [
+          # Required when workflow jobs use `environment: staging` (GitHub OIDC sub changes).
+          "repo:${var.github_repository}:environment:${var.environment}"
+        ]
+      )
     }
   }
 }
