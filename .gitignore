@@ -1,4 +1,5 @@
-﻿src/Client/App/corp-tower/export_presets.cfg
+src/Client/App/corp-tower/export_presets.cfg
+.obsidian/
 
 # Terraform
 infra/terraform/.terraform/

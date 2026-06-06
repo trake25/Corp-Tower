@@ -1,8 +1,12 @@
 # Corp-Tower
-Cloud based Multiplayer selfish-cooperation themed puzzle game
 
-## Staging server deploy
+Cloud Infrastructure based multiplayer selfish-cooperation puzzle game.
 
-Docker + ECR + Terraform staging EC2. See [docs/deploy-staging.md](docs/deploy-staging.md).
+This repo is structured as an Obsidian-friendly knowledge vault for fast navigation and AI handoff.
 
-Legacy `Server-Update.yml` workflow is deprecated; use `Server-Staging-Deploy.yml`.
+Start here: [Summary.md](Summary.md)
+
+Supporting notes:
+- [Changelog.md](Changelog.md)
+- [Component index](docs/components/Component-Index.md)
+- [Staging deploy guide](docs/deploy-staging.md)
