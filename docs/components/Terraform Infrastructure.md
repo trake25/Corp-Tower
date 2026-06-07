@@ -27,6 +27,7 @@
   - Staging Terraform workflow creates the S3 state bucket if missing before `terraform init`.
   - Backend uses S3 native lockfile instead of DynamoDB lock table.
   - Staging Terraform workflow uses S3 backend and migrates existing local state on first CI run.
+  - Existing manually/previously-created staging resources are imported into state before planning.
 - Cost-safe CI rollout order:
   - Manually run staging Terraform target `ec2-learning-lab` with `apply=true`.
   - Run server staging deploy; it installs Redis/proxy on EC2-1 and server containers on EC2-2/3.

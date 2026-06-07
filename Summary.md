@@ -75,8 +75,8 @@
 ## Current Focus (Summarized Title only)
 - Active: Free-tier EC2 gateway/workers lab
 - Previous: Terraform backend bootstrap
-- Blocked: EC2 workers not created
-- Next: Manual Terraform apply
+- Blocked: Terraform state import
+- Next: Adopt existing AWS resources
 
 ## Fast Start For AI
 - Read this file first.

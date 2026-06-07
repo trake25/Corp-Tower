@@ -84,6 +84,63 @@ jobs:
       - name: Terraform init
         run: terraform init -input=false -migrate-state -force-copy
 
+      - name: Adopt existing staging resources into Terraform state
+        run: |
+          set -euo pipefail
+
+          import_if_missing() {
+            local address="$1"
+            local id="$2"
+
+            if [ -z "$id" ] || [ "$id" = "None" ]; then
+              echo "Skip import $address: no existing AWS resource found."
+              return
+            fi
+
+            if terraform state show "$address" >/dev/null 2>&1; then
+              echo "Already managed: $address"
+              return
+            fi
+
+            echo "Importing $address -> $id"
+            terraform import -input=false "$address" "$id"
+          }
+
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          OIDC_ARN="arn:aws:iam::${ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
+
+          SECURITY_GROUP_ID="$(
+            aws ec2 describe-security-groups \
+              --filters \
+                "Name=group-name,Values=corp-tower-staging" \
+                "Name=vpc-id,Values=$(aws ec2 describe-vpcs --filters 'Name=is-default,Values=true' --query 'Vpcs[0].VpcId' --output text)" \
+              --query 'SecurityGroups[0].GroupId' \
+              --output text 2>/dev/null || true
+          )"
+
+          GATEWAY_INSTANCE_ID="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Name,Values=corp-tower-staging,corp-tower-staging-gateway" \
+                "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+              --query 'Reservations[0].Instances[0].InstanceId' \
+              --output text 2>/dev/null || true
+          )"
+
+          import_if_missing aws_key_pair.staging corp-tower-staging
+          import_if_missing aws_security_group.staging "$SECURITY_GROUP_ID"
+          import_if_missing aws_iam_role.ec2 corp-tower-staging-ec2
+          import_if_missing aws_iam_instance_profile.ec2 corp-tower-staging-ec2
+          import_if_missing aws_iam_role_policy.ec2_ecr_pull corp-tower-staging-ec2:ecr-pull
+          import_if_missing aws_ecr_repository.server corp-tower-server-staging
+          import_if_missing aws_ecr_lifecycle_policy.server corp-tower-server-staging
+          import_if_missing aws_iam_openid_connect_provider.github "$OIDC_ARN"
+          import_if_missing aws_iam_role.github_actions corp-tower-staging-github-actions
+          import_if_missing aws_iam_role_policy.github_ecr_push corp-tower-staging-github-actions:ecr-push
+          import_if_missing aws_instance.staging "$GATEWAY_INSTANCE_ID"
+
       - name: Terraform fmt check
         run: terraform fmt -check
 
