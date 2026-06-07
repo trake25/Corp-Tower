@@ -1,13 +1,6 @@
 name: Infra Staging Terraform
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - "infra/terraform/**"
-      - ".github/workflows/Infra-Staging-Terraform.yml"
   workflow_dispatch:
     inputs:
       target:
@@ -20,7 +13,7 @@ on:
       apply:
         description: "Apply staging infrastructure changes."
         required: true
-        default: "false"
+        default: "true"
         type: choice
         options:
           - "false"
@@ -100,7 +93,7 @@ jobs:
       - name: Select Terraform target
         run: |
           set -euo pipefail
-          TARGET="${{ github.event_name == 'workflow_dispatch' && inputs.target || 'ec2-learning-lab' }}"
+          TARGET="${{ inputs.target }}"
 
           case "$TARGET" in
             ec2-learning-lab)
@@ -112,7 +105,7 @@ jobs:
               ;;
           esac
 
-          if [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ inputs.apply || 'false' }}" != "true" ]; then
+          if [ "${{ inputs.apply }}" != "true" ]; then
             echo "This run is PLAN ONLY. It will not create EC2 workers."
           else
             echo "This run will APPLY infrastructure changes."
@@ -122,15 +115,15 @@ jobs:
         run: terraform plan -input=false $TF_TARGET_ARGS
 
       - name: Terraform apply
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == 'true' }}
+        if: ${{ inputs.apply == 'true' }}
         run: terraform apply -input=false -auto-approve $TF_TARGET_ARGS
 
       - name: Show Terraform outputs
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == 'true' }}
+        if: ${{ inputs.apply == 'true' }}
         run: terraform output
 
       - name: Verify EC2 learning lab instances
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == 'true' }}
+        if: ${{ inputs.apply == 'true' }}
         run: |
           set -euo pipefail
 

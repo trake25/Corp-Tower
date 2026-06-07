@@ -76,7 +76,7 @@
 - Active: Free-tier EC2 gateway/workers lab
 - Previous: Terraform backend bootstrap
 - Blocked: EC2 workers not created
-- Next: Verify Terraform apply mode
+- Next: Manual Terraform apply
 
 ## Fast Start For AI
 - Read this file first.

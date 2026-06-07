@@ -28,7 +28,7 @@
   - Backend uses S3 native lockfile instead of DynamoDB lock table.
   - Staging Terraform workflow uses S3 backend and migrates existing local state on first CI run.
 - Cost-safe CI rollout order:
-  - Run staging Terraform target `ec2-learning-lab`.
+  - Manually run staging Terraform target `ec2-learning-lab` with `apply=true`.
   - Run server staging deploy; it installs Redis/proxy on EC2-1 and server containers on EC2-2/3.
   - Stop EC2 instances when not testing.
 
@@ -44,5 +44,6 @@
 ## Notes
 - `staging.tfvars` is ignored.
 - User prefers GitHub Actions for Terraform/Docker/Redis/Kubernetes validation and deploy instead of local manual runs.
+- Infra workflow is manual-only because creating EC2 instances is a real AWS side effect; push runs do not provision workers.
 - Cost guardrail: Managed ElastiCache, ALB/NLB, and EKS are intentionally not used.
 - EC2-1 is not a real AWS ALB; it is a self-managed gateway/reverse proxy that simulates ALB behavior for learning.
