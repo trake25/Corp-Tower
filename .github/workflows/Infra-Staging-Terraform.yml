@@ -112,6 +112,12 @@ jobs:
               ;;
           esac
 
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ inputs.apply || 'false' }}" != "true" ]; then
+            echo "This run is PLAN ONLY. It will not create EC2 workers."
+          else
+            echo "This run will APPLY infrastructure changes."
+          fi
+
       - name: Terraform plan
         run: terraform plan -input=false $TF_TARGET_ARGS
 
@@ -122,3 +128,38 @@ jobs:
       - name: Show Terraform outputs
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == 'true' }}
         run: terraform output
+
+      - name: Verify EC2 learning lab instances
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == 'true' }}
+        run: |
+          set -euo pipefail
+
+          GATEWAY_COUNT="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Role,Values=gateway-redis-proxy-k3s-learning" \
+                "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+              --query 'length(Reservations[].Instances[])' \
+              --output text
+          )"
+
+          WORKER_COUNT="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Role,Values=docker-server-worker" \
+                "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+              --query 'length(Reservations[].Instances[])' \
+              --output text
+          )"
+
+          echo "Gateway instances: $GATEWAY_COUNT"
+          echo "Worker instances: $WORKER_COUNT"
+
+          if [ "$GATEWAY_COUNT" -lt 1 ] || [ "$WORKER_COUNT" -lt 2 ]; then
+            echo "Expected at least 1 gateway and 2 workers."
+            exit 1
+          fi

@@ -74,9 +74,9 @@
 
 ## Current Focus (Summarized Title only)
 - Active: Free-tier EC2 gateway/workers lab
-- Previous: Destroy room after reconnect TTL
-- Blocked: Infra workflow failed because S3 Terraform backend bucket did not exist before `terraform init`; server deploy failed because EC2 workers are not created yet.
-- Next: Infra workflow self-bootstraps S3 backend, provisions EC2-1 gateway plus EC2-2/3 workers, then server deploy can install Docker Redis/proxy/k3s on gateway and server containers on workers.
+- Previous: Terraform backend bootstrap
+- Blocked: EC2 workers not created
+- Next: Verify Terraform apply mode
 
 ## Fast Start For AI
 - Read this file first.
