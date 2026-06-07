@@ -7,6 +7,7 @@ on:
       - master
     paths:
       - "src/Server/**"
+      - "infra/k3s/**"
       - ".github/workflows/Server-Staging-Deploy.yml"
   workflow_dispatch:
 
@@ -97,6 +98,9 @@ jobs:
     environment: staging
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -177,7 +181,7 @@ jobs:
           done
 
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-            "bash -s" <<'REMOTE_GATEWAY_REDIS'
+            "GATEWAY_PRIVATE_IP='$GATEWAY_PRIVATE_IP' bash -s" <<'REMOTE_GATEWAY_REDIS'
           set -euo pipefail
 
           sudo docker network create corp-tower-gateway 2>/dev/null || true
@@ -187,7 +191,7 @@ jobs:
           sudo docker rm corp-tower-server 2>/dev/null || true
 
           if ! command -v k3s >/dev/null 2>&1; then
-            curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" sh -
+            curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik --node-ip ${GATEWAY_PRIVATE_IP}" sh -
           fi
 
           sudo docker stop corp-tower-redis 2>/dev/null || true
@@ -211,47 +215,96 @@ jobs:
           exit 1
           REMOTE_GATEWAY_REDIS
 
+          K3S_TOKEN="$(
+            ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
+              "sudo cat /var/lib/rancher/k3s/server/node-token"
+          )"
+
           for WORKER_HOST in $WORKER_PUBLIC_IPS; do
             ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$WORKER_HOST" \
-              "AWS_REGION='$AWS_REGION' ECR_REPOSITORY='$ECR_REPOSITORY' IMAGE_TAG='$IMAGE_TAG' REDIS_URL='$REDIS_URL' bash -s" <<'REMOTE_WORKER'
+              "K3S_URL='https://${GATEWAY_PRIVATE_IP}:6443' K3S_TOKEN='$K3S_TOKEN' bash -s" <<'REMOTE_WORKER'
           set -euo pipefail
-
-          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
-          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
-
-          aws ecr get-login-password --region "$AWS_REGION" | sudo docker login --username AWS --password-stdin "$ECR_REGISTRY"
-
-          sudo docker pull "$IMAGE_URI"
 
           sudo docker stop corp-tower-server 2>/dev/null || true
           sudo docker rm corp-tower-server 2>/dev/null || true
 
-          sudo docker run -d \
-            --name corp-tower-server \
-            --restart unless-stopped \
-            -p 3000:3000 \
-            -e PORT=3000 \
-            -e REDIS_URL="$REDIS_URL" \
-            -e RECONNECT_TTL_SECONDS=10 \
-            "$IMAGE_URI"
-
-          sudo docker image prune -f
-          sudo docker ps --filter name=corp-tower-server
+          if ! command -v k3s >/dev/null 2>&1; then
+            curl -sfL https://get.k3s.io | K3S_URL="$K3S_URL" K3S_TOKEN="$K3S_TOKEN" sh -
+          fi
           REMOTE_WORKER
           done
 
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-            "WORKER_PRIVATE_IPS='$WORKER_PRIVATE_IPS' bash -s" <<'REMOTE_GATEWAY'
+            "WORKER_PRIVATE_IPS='$WORKER_PRIVATE_IPS' bash -s" <<'REMOTE_LABEL_WORKERS'
+          set -euo pipefail
+
+          for attempt in $(seq 1 60); do
+            READY_WORKERS=0
+
+            for WORKER_IP in $WORKER_PRIVATE_IPS; do
+              NODE_NAME="$(
+                sudo k3s kubectl get nodes -o wide --no-headers \
+                  | awk -v ip="$WORKER_IP" '$6 == ip {print $1}'
+              )"
+
+              if [ -n "$NODE_NAME" ]; then
+                sudo k3s kubectl label node "$NODE_NAME" corp-tower-role=worker --overwrite
+                READY_WORKERS=$((READY_WORKERS + 1))
+              fi
+            done
+
+            if [ "$READY_WORKERS" -ge 2 ]; then
+              exit 0
+            fi
+
+            sleep 5
+          done
+
+          sudo k3s kubectl get nodes -o wide
+          echo "Expected 2 labeled k3s worker nodes."
+          exit 1
+          REMOTE_LABEL_WORKERS
+
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          scp -i ~/.ssh/ec2_key -P "$EC2_PORT" \
+            infra/k3s/corp-tower-server.yaml \
+            "$EC2_USER@$EC2_HOST:/tmp/corp-tower-server.yaml"
+
+          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
+            "AWS_REGION='$AWS_REGION' IMAGE_URI='$IMAGE_URI' REDIS_URL='$REDIS_URL' ECR_REGISTRY='$ECR_REGISTRY' bash -s" <<'REMOTE_K3S_APPLY'
+          set -euo pipefail
+
+          sed \
+            -e "s#__IMAGE_URI__#${IMAGE_URI}#g" \
+            -e "s#__REDIS_URL__#${REDIS_URL}#g" \
+            /tmp/corp-tower-server.yaml > /tmp/corp-tower-server.rendered.yaml
+
+          sudo k3s kubectl create namespace corp-tower-staging \
+            --dry-run=client -o yaml | sudo k3s kubectl apply -f -
+
+          ECR_PASSWORD="$(aws ecr get-login-password --region "$AWS_REGION")"
+          sudo k3s kubectl -n corp-tower-staging create secret docker-registry ecr-registry \
+            --docker-server="$ECR_REGISTRY" \
+            --docker-username=AWS \
+            --docker-password="$ECR_PASSWORD" \
+            --dry-run=client -o yaml | sudo k3s kubectl apply -f -
+
+          sudo k3s kubectl apply -f /tmp/corp-tower-server.rendered.yaml
+          sudo k3s kubectl -n corp-tower-staging rollout status deployment/corp-tower-server --timeout=180s
+          sudo k3s kubectl -n corp-tower-staging get pods -o wide
+          REMOTE_K3S_APPLY
+
+          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
+            "bash -s" <<'REMOTE_GATEWAY'
           set -euo pipefail
 
           {
             echo "events {}"
             echo "http {"
             echo "  upstream corp_tower_workers {"
-            for WORKER_IP in $WORKER_PRIVATE_IPS; do
-              echo "    server ${WORKER_IP}:3000;"
-            done
+            echo "    server 127.0.0.1:30080;"
             echo "  }"
             echo "  server {"
             echo "    listen 3000;"

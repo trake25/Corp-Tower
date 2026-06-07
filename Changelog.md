@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-06-07
+- update: Codex plus implemented a simulated LB, Redis, k3s.
+
 ## 2026-06-06
 - update: Claude reformatted `Corp_Tower_GDD.md` and `Corp_Tower_TDD.md` to match `Summary.md` style with Obsidian `[[links]]` and cross-references.
 - update: Claude added `[[Corp_Tower_GDD]]` and `[[Corp_Tower_TDD]]` links to `Summary.md` Architecture Tree and Fast Start For AI sections.

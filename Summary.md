@@ -23,7 +23,7 @@
 - [[Redis State]] stores shared matchmaking/session/room snapshots when `REDIS_URL` is enabled.
 - [[Bot Manager]] schedules QA bot actions and cancels bot timers when rooms close.
 - [[Game Config]] stores balance and debug-tunable variables.
-- [[Server Staging Deploy Workflow]] builds/pushes Docker images to ECR and deploys the EC2 gateway/workers lab.
+- [[Server Staging Deploy Workflow]] builds/pushes Docker images to ECR and deploys the k3s-backed EC2 gateway/workers lab.
 - [[Terraform Infrastructure]] creates/adopts AWS staging resources for the free-tier learning lab.
 - [[Client Android Internal Workflow]] builds signed Android AABs and can upload to Google Play internal testing.
 - [[AI_Agent_Organization]] defines AI assistant roles, prompt handoff behavior, and human review ownership.
@@ -43,6 +43,7 @@
   - [[Main UI Controller]]: UI, inventory, debug menu.
 - `.github/workflows`
   - [[Server Staging Deploy Workflow]]
+  - [[K3s Staging Manifests]]
   - [[Client Android Internal Workflow]]
   - [[Legacy Server Update Workflow]]
 - `infra`
@@ -55,13 +56,14 @@
 
 ## Key Data Flow
 - Client connects: [[NetworkManager]] opens `ws://<gateway>:3000` and sends `reconnect` with stored identity if available.
-- Gateway routing: EC2-1 nginx reverse proxy forwards WebSocket traffic to EC2-2/EC2-3 workers.
+- Gateway routing: EC2-1 nginx reverse proxy forwards WebSocket traffic to the k3s NodePort Service.
+- k3s runtime: EC2-1 is the control plane; EC2-2/EC2-3 are worker nodes running two server pods.
 - Matchmaking: [[Lobby Manager]] queues players through [[Redis State]]; debug bots can fill missing slots.
 - Room start: [[Game Engine]] assigns blocks, starts countdown, then enters `playing`.
 - Player action: client sends `place_block`; server validates cooldown/index/state and broadcasts `game_state`.
 - Debug update: client sends `update_config`; [[Lobby Manager]] validates value and broadcasts `debug_config`.
 - Disconnect: WebSocket `close` starts reconnect TTL; missed TTL destroys rooms with no connected real players.
-- Staging deploy: GitHub VM tests server, builds Docker image, pushes ECR, deploys Redis/nginx/k3s to EC2-1 and server containers to EC2-2/EC2-3.
+- Staging deploy: GitHub VM tests server, builds Docker image, pushes ECR, starts external Redis on EC2-1, joins EC2-2/EC2-3 to k3s, applies server manifests, and routes nginx to k3s.
 
 ## Constraints And Assumptions
 - Shared active room/session state uses Redis in staging; long-term leaderboard persistence is still deferred.
@@ -76,10 +78,10 @@
 - iOS, Windows, HTML5, Linux client builds: deferred, do not target.
 
 ## Current Focus (Summarized Title only)
-- Active: Reconnect debug testing
-- Previous: EC2 gateway/workers deploy
+- Active: k3s live staging path
+- Previous: Docker worker deploy
 - Blocked: _(none)_
-- Next: Gameplay reconnect testing
+- Next: k3s gameplay verification
 
 ## Fast Start For AI
 - Read this file first.

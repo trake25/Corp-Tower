@@ -20,6 +20,7 @@
 - [[Client Android Internal Workflow]]
 - [[Legacy Server Update Workflow]]
 - [[Terraform Infrastructure]]
+- [[K3s Staging Manifests]]
 - [[Staging Deploy Guide]]
 
 ## Global

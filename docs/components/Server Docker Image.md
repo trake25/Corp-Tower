@@ -14,8 +14,8 @@
 - Built in [[Server Staging Deploy Workflow]].
 - Image is tagged with commit SHA and `staging`.
 - Pushed to ECR.
-- EC2-2/EC2-3 workers pull and run the image with Docker.
-- Worker containers receive `REDIS_URL` and `RECONNECT_TTL_SECONDS`.
+- k3s server pods run this image on EC2-2/EC2-3 worker nodes.
+- Kubernetes Deployment provides `REDIS_URL` and `RECONNECT_TTL_SECONDS`.
 
 ## Inputs/Outputs
 - Input: `src/Server` source and `package.json`.
@@ -28,4 +28,4 @@
 
 ## Notes
 - Current staging deploy avoids local Docker requirement.
-- EC2-1 gateway runs Redis/nginx containers, not the game server image.
+- EC2-1 gateway runs Redis/nginx containers and k3s control plane, not the game server image.

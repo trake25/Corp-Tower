@@ -18,9 +18,9 @@
   - Amazon Linux 2023.
   - Docker and AWS CLI installed through user data.
   - Instance profile allows ECR pull.
-  - EC2-1 is the public gateway that simulates ALB/Redis/k3s for learning.
-  - EC2-2 and EC2-3 simulate server pods by running the Docker server image.
-  - Gateway runs Docker Redis and nginx reverse proxy; workers connect to `redis://<EC2-1-private-ip>:6379`.
+  - EC2-1 is the public gateway and k3s control plane.
+  - EC2-2 and EC2-3 are k3s worker nodes for server pods.
+  - Gateway runs Docker Redis and nginx reverse proxy; server pods connect to `redis://<EC2-1-private-ip>:6379`.
 - GitHub Actions:
   - OIDC role runs Terraform, pushes ECR images, discovers workers, and deploys Docker over SSH.
 - Remote state:
@@ -30,7 +30,7 @@
   - Existing manually/previously-created staging resources are imported into state before planning.
 - Cost-safe CI rollout order:
   - Manually run staging Terraform target `ec2-learning-lab` with `apply=true`.
-  - Run server staging deploy; it installs Redis/proxy on EC2-1 and server containers on EC2-2/3.
+  - Run server staging deploy; it installs Redis/proxy/k3s on EC2-1 and server pods on EC2-2/3.
   - Stop EC2 instances when not testing.
   - EC2 workers were created successfully and server deploy is now the active debug path.
 

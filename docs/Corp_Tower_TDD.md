@@ -4,8 +4,8 @@
 ## System Overview
 - 3-player real-time selfish-cooperation puzzle game.
 - Godot `4.6.2.stable` Android client connects by WebSocket to EC2-1 gateway on port `3000`.
-- EC2-1 simulates ALB/Redis/k3s for learning: nginx reverse proxy, Docker Redis, and k3s install.
-- EC2-2/EC2-3 simulate horizontally scaled server pods by running the Docker server image.
+- EC2-1 simulates ALB/Redis/k3s for learning: nginx reverse proxy, Docker Redis, and k3s control plane.
+- EC2-2/EC2-3 are k3s worker nodes that run horizontally scaled server pods.
 - Server remains authoritative for matchmaking, room state, timers, block assignment, scoring, refresh tokens, debug tuning, bots, reconnect, and room cleanup.
 - Managed AWS ALB/NLB, ElastiCache, and EKS are intentionally avoided to reduce learning-lab credit usage.
 
@@ -17,6 +17,7 @@
 - `src/Server/Game_Config.js`: runtime balance and debug-tuning variables. -> [[Game Config]]
 - `src/Server/Bot_Manager.js`: QA bot action loops and placement behavior. -> [[Bot Manager]]
 - `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd`: Godot WebSocket adapter with reconnect identity persistence. -> [[NetworkManager]]
+- `infra/k3s/corp-tower-server.yaml`: live k3s manifests for server Deployment/Service. -> [[K3s Staging Manifests]]
 - `.github/workflows/Infra-Staging-Terraform.yml`: manual Terraform workflow for EC2 learning lab. -> [[Terraform Infrastructure]]
 - `.github/workflows/Server-Staging-Deploy.yml`: Docker/ECR deploy to EC2 gateway/workers. -> [[Server Staging Deploy Workflow]]
 - `.github/workflows/Client-Android-Internal.yml`: Android internal-testing build/upload. -> [[Client Android Internal Workflow]]
@@ -24,12 +25,13 @@
 ## Runtime Architecture
 - EC2-1 gateway:
   - public entrypoint `ws://<EC2-1-public-ip>:3000`
-  - `nginx:1.27-alpine` reverse proxy to workers by private IP
-  - `redis:7-alpine` on port `6379`
-  - k3s installed for learning, not live routing
+  - k3s control plane
+  - `nginx:1.27-alpine` reverse proxy to k3s NodePort `30080`
+  - external Redis simulation with `redis:7-alpine` on port `6379`
 - EC2-2/EC2-3 workers:
-  - run `corp-tower-server` Docker container
-  - expose server port `3000`
+  - join EC2-1 as k3s agents
+  - run two `corp-tower-server` pods through Kubernetes Deployment
+- Server pods:
   - connect to Redis via `REDIS_URL=redis://<EC2-1-private-ip>:6379`
   - use `RECONNECT_TTL_SECONDS=10` for staging/debug reconnect testing
 - Redis stores active session, queue, and room state only; long-term leaderboard/player persistence remains deferred.
@@ -40,7 +42,7 @@
 - Clients send `reconnect` after WebSocket open using stored `playerId` and `reconnectToken`.
 - Valid reconnect resumes the same player slot and room.
 - Missed reconnect TTL closes rooms with reason `reconnect_ttl_expired` when no connected real players remain.
-- Any worker can recover room/player session from Redis.
+- Any server pod can recover room/player session from Redis.
 
 ## Message Contracts
 ### Server To Client
@@ -70,9 +72,12 @@
   - tests server on GitHub VM
   - builds/pushes Docker image to ECR
   - starts gateway Redis and waits for `PONG`
-  - deploys server containers to workers
+  - installs/verifies k3s control plane and worker agents
+  - labels EC2-2/EC2-3 as Kubernetes worker nodes
+  - creates ECR image pull secret
+  - applies [[K3s Staging Manifests]]
   - generates and validates nginx config with `nginx -t`
-  - starts gateway nginx proxy
+  - starts gateway nginx proxy to k3s NodePort `30080`
 
 ## Required GitHub Secrets
 - Server/infra: `AWS_ROLE_ARN`, `ECR_REPOSITORY`, `EC2_STAGING_HOST`, `EC2_STAGING_USER`, `EC2_STAGING_SSH_KEY`, `EC2_STAGING_SSH_PUBLIC_KEY`
@@ -84,7 +89,8 @@
 - Current client pipeline: Godot import/parse and Android export; GUT tests are skipped until installed.
 - Staging debug checks:
   - EC2-1: `corp-tower-gateway`, `corp-tower-redis`
-  - EC2-2/EC2-3: `corp-tower-server`
+  - EC2-1: `sudo k3s kubectl get nodes`
+  - EC2-1: `sudo k3s kubectl get pods -n corp-tower-staging -o wide`
   - Redis: `docker exec corp-tower-redis redis-cli ping`
   - client: connect to `ws://<EC2-1-public-ip>:3000`
 
@@ -92,7 +98,7 @@
 - Production-grade persistence for leaderboards and player stats.
 - Structured logging and integration tests for multi-worker Redis reconnect.
 - Admin authorization for debug config before public release.
-- k3s deployment path after Docker gateway/workers are stable.
+- Improve k3s rollout/rollback observability and add integration tests.
 - DNS or Elastic IP for stable gateway address.
 
 ## TDD Maintenance Policy
