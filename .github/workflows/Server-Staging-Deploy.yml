@@ -180,18 +180,32 @@ jobs:
             "bash -s" <<'REMOTE_GATEWAY_REDIS'
           set -euo pipefail
 
+          cleanup_k3s() {
+            if command -v k3s >/dev/null 2>&1 || sudo systemctl list-unit-files k3s.service k3s-agent.service >/dev/null 2>&1; then
+              sudo systemctl stop k3s k3s-agent 2>/dev/null || true
+              sudo systemctl disable k3s k3s-agent 2>/dev/null || true
+              sudo pkill -9 -f 'k3s|containerd|containerd-shim|flannel' 2>/dev/null || true
+              for mount_point in $(mount | awk '$3 ~ /^\/(run\/k3s|var\/lib\/rancher\/k3s|var\/lib\/kubelet)/ {print $3}' | sort -r); do
+                sudo umount -lf "$mount_point" 2>/dev/null || true
+              done
+              if [ -e /var/lib/rancher/k3s ]; then
+                sudo mv /var/lib/rancher/k3s "/var/lib/rancher/k3s.disabled.$(date +%s)" 2>/dev/null || true
+              fi
+              sudo rm -rf /etc/rancher/k3s /run/k3s /var/lib/cni 2>/dev/null || true
+              sudo rm -f /etc/systemd/system/k3s.service /etc/systemd/system/k3s-agent.service 2>/dev/null || true
+              sudo rm -f /etc/systemd/system/multi-user.target.wants/k3s.service /etc/systemd/system/multi-user.target.wants/k3s-agent.service 2>/dev/null || true
+              sudo rm -f /usr/local/bin/k3s /usr/local/bin/kubectl /usr/local/bin/crictl /usr/local/bin/ctr /usr/local/bin/k3s-uninstall.sh /usr/local/bin/k3s-agent-uninstall.sh 2>/dev/null || true
+              sudo systemctl daemon-reload 2>/dev/null || true
+            fi
+          }
+
+          cleanup_k3s
           sudo docker network create corp-tower-gateway 2>/dev/null || true
 
           # Remove legacy single-EC2 server container so gateway proxy can own port 3000 later.
-          sudo docker stop corp-tower-server 2>/dev/null || true
-          sudo docker rm corp-tower-server 2>/dev/null || true
+          sudo docker rm -f corp-tower-server 2>/dev/null || true
 
-          if ! command -v k3s >/dev/null 2>&1; then
-            curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" sh -
-          fi
-
-          sudo docker stop corp-tower-redis 2>/dev/null || true
-          sudo docker rm corp-tower-redis 2>/dev/null || true
+          sudo docker rm -f corp-tower-redis 2>/dev/null || true
           sudo docker run -d \
             --name corp-tower-redis \
             --restart unless-stopped \
@@ -216,6 +230,26 @@ jobs:
               "AWS_REGION='$AWS_REGION' ECR_REPOSITORY='$ECR_REPOSITORY' IMAGE_TAG='$IMAGE_TAG' REDIS_URL='$REDIS_URL' bash -s" <<'REMOTE_WORKER'
           set -euo pipefail
 
+          cleanup_k3s() {
+            if command -v k3s >/dev/null 2>&1 || sudo systemctl list-unit-files k3s.service k3s-agent.service >/dev/null 2>&1; then
+              sudo systemctl stop k3s k3s-agent 2>/dev/null || true
+              sudo systemctl disable k3s k3s-agent 2>/dev/null || true
+              sudo pkill -9 -f 'k3s|containerd|containerd-shim|flannel' 2>/dev/null || true
+              for mount_point in $(mount | awk '$3 ~ /^\/(run\/k3s|var\/lib\/rancher\/k3s|var\/lib\/kubelet)/ {print $3}' | sort -r); do
+                sudo umount -lf "$mount_point" 2>/dev/null || true
+              done
+              if [ -e /var/lib/rancher/k3s ]; then
+                sudo mv /var/lib/rancher/k3s "/var/lib/rancher/k3s.disabled.$(date +%s)" 2>/dev/null || true
+              fi
+              sudo rm -rf /etc/rancher/k3s /run/k3s /var/lib/cni 2>/dev/null || true
+              sudo rm -f /etc/systemd/system/k3s.service /etc/systemd/system/k3s-agent.service 2>/dev/null || true
+              sudo rm -f /etc/systemd/system/multi-user.target.wants/k3s.service /etc/systemd/system/multi-user.target.wants/k3s-agent.service 2>/dev/null || true
+              sudo rm -f /usr/local/bin/k3s /usr/local/bin/kubectl /usr/local/bin/crictl /usr/local/bin/ctr /usr/local/bin/k3s-uninstall.sh /usr/local/bin/k3s-agent-uninstall.sh 2>/dev/null || true
+              sudo systemctl daemon-reload 2>/dev/null || true
+            fi
+          }
+
+          cleanup_k3s
           ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
@@ -224,8 +258,7 @@ jobs:
 
           sudo docker pull "$IMAGE_URI"
 
-          sudo docker stop corp-tower-server 2>/dev/null || true
-          sudo docker rm corp-tower-server 2>/dev/null || true
+          sudo docker rm -f corp-tower-server 2>/dev/null || true
 
           sudo docker run -d \
             --name corp-tower-server \
@@ -270,8 +303,7 @@ jobs:
             -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
             nginx:1.27-alpine nginx -t
 
-          sudo docker stop corp-tower-gateway 2>/dev/null || true
-          sudo docker rm corp-tower-gateway 2>/dev/null || true
+          sudo docker rm -f corp-tower-gateway 2>/dev/null || true
           sudo docker run -d \
             --name corp-tower-gateway \
             --restart unless-stopped \
