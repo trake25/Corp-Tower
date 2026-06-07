@@ -144,7 +144,18 @@ jobs:
               --output text
           )"
 
-          if [ -z "$WORKER_PRIVATE_IPS" ] || [ -z "$WORKER_PUBLIC_IPS" ] || [ "$GATEWAY_PRIVATE_IP" = "None" ]; then
+          GATEWAY_PUBLIC_IP="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Role,Values=gateway-redis-proxy-k3s-learning" \
+                "Name=instance-state-name,Values=running" \
+              --query 'Reservations[0].Instances[0].PublicIpAddress' \
+              --output text
+          )"
+
+          if [ -z "$WORKER_PRIVATE_IPS" ] || [ -z "$WORKER_PUBLIC_IPS" ] || [ "$GATEWAY_PRIVATE_IP" = "None" ] || [ "$GATEWAY_PUBLIC_IP" = "None" ]; then
             echo "Gateway or worker EC2 instances not found. Run Infra Staging Terraform target ec2-learning-lab first."
             exit 1
           fi
@@ -152,6 +163,7 @@ jobs:
           echo "WORKER_PRIVATE_IPS=$WORKER_PRIVATE_IPS" >> "$GITHUB_ENV"
           echo "WORKER_PUBLIC_IPS=$WORKER_PUBLIC_IPS" >> "$GITHUB_ENV"
           echo "GATEWAY_PRIVATE_IP=$GATEWAY_PRIVATE_IP" >> "$GITHUB_ENV"
+          echo "GATEWAY_PUBLIC_IP=$GATEWAY_PUBLIC_IP" >> "$GITHUB_ENV"
 
       - name: Deploy over SSH
         env:
@@ -161,7 +173,7 @@ jobs:
           WORKER_PRIVATE_IPS: ${{ env.WORKER_PRIVATE_IPS }}
           WORKER_PUBLIC_IPS: ${{ env.WORKER_PUBLIC_IPS }}
           GATEWAY_PRIVATE_IP: ${{ env.GATEWAY_PRIVATE_IP }}
-          EC2_HOST: ${{ secrets.EC2_STAGING_HOST }}
+          EC2_HOST: ${{ env.GATEWAY_PUBLIC_IP }}
           EC2_USER: ${{ secrets.EC2_STAGING_USER }}
           EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
           EC2_SSH_KEY: ${{ secrets.EC2_STAGING_SSH_KEY }}
@@ -228,9 +240,11 @@ jobs:
           sudo docker stop corp-tower-server 2>/dev/null || true
           sudo docker rm corp-tower-server 2>/dev/null || true
 
-          if ! command -v k3s >/dev/null 2>&1; then
-            curl -sfL https://get.k3s.io | K3S_URL="$K3S_URL" K3S_TOKEN="$K3S_TOKEN" sh -
+          if command -v k3s >/dev/null 2>&1; then
+            sudo /usr/local/bin/k3s-agent-uninstall.sh 2>/dev/null || true
           fi
+
+          curl -sfL https://get.k3s.io | K3S_URL="$K3S_URL" K3S_TOKEN="$K3S_TOKEN" sh -
           REMOTE_WORKER
           done
 
@@ -268,12 +282,17 @@ jobs:
           ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          aws ecr get-login-password --region "$AWS_REGION" > /tmp/corp-tower-ecr-password
+
           scp -i ~/.ssh/ec2_key -P "$EC2_PORT" \
             infra/k3s/corp-tower-server.yaml \
             "$EC2_USER@$EC2_HOST:/tmp/corp-tower-server.yaml"
+          scp -i ~/.ssh/ec2_key -P "$EC2_PORT" \
+            /tmp/corp-tower-ecr-password \
+            "$EC2_USER@$EC2_HOST:/tmp/corp-tower-ecr-password"
 
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-            "AWS_REGION='$AWS_REGION' IMAGE_URI='$IMAGE_URI' REDIS_URL='$REDIS_URL' ECR_REGISTRY='$ECR_REGISTRY' bash -s" <<'REMOTE_K3S_APPLY'
+            "IMAGE_URI='$IMAGE_URI' REDIS_URL='$REDIS_URL' ECR_REGISTRY='$ECR_REGISTRY' bash -s" <<'REMOTE_K3S_APPLY'
           set -euo pipefail
 
           sed \
@@ -284,7 +303,9 @@ jobs:
           sudo k3s kubectl create namespace corp-tower-staging \
             --dry-run=client -o yaml | sudo k3s kubectl apply -f -
 
-          ECR_PASSWORD="$(aws ecr get-login-password --region "$AWS_REGION")"
+          ECR_PASSWORD="$(cat /tmp/corp-tower-ecr-password)"
+          rm -f /tmp/corp-tower-ecr-password
+
           sudo k3s kubectl -n corp-tower-staging create secret docker-registry ecr-registry \
             --docker-server="$ECR_REGISTRY" \
             --docker-username=AWS \
