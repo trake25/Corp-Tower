@@ -212,6 +212,10 @@ jobs:
 
           sudo docker network create corp-tower-gateway 2>/dev/null || true
 
+          # Remove legacy single-EC2 server container so gateway proxy can own port 3000.
+          sudo docker stop corp-tower-server 2>/dev/null || true
+          sudo docker rm corp-tower-server 2>/dev/null || true
+
           if ! command -v k3s >/dev/null 2>&1; then
             curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" sh -
           fi

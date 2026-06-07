@@ -13,7 +13,7 @@ on:
       apply:
         description: "Apply staging infrastructure changes."
         required: true
-        default: "true"
+        default: "false"
         type: choice
         options:
           - "false"
