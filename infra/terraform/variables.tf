@@ -50,3 +50,15 @@ variable "instance_type" {
   type        = string
   default     = "t3.micro"
 }
+
+variable "redis_node_type" {
+  description = "ElastiCache Redis node type for shared matchmaking/session state."
+  type        = string
+  default     = "cache.t4g.micro"
+}
+
+variable "redis_engine_version" {
+  description = "ElastiCache Redis engine version."
+  type        = string
+  default     = "7.1"
+}

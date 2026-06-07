@@ -2,67 +2,172 @@
 
 const GameEngine = require("./Game_Engine");
 const GameConfig = require("./Game_Config");
+const { RedisState, stripRuntimePlayer } = require("./Redis_State");
 
 class LobbyManager {
-    constructor() {
+    constructor(stateStore = new RedisState()) {
+        this.stateStore = stateStore;
         this.waitingPlayers = [];
         this.rooms = [];
-
-        this.roomIdCounter = 1;
+        this.connectedPlayers = new Map();
         this.botCounter = 1;
+    }
 
-        this.debugBotsEnabled = false;
+    async start() {
+        await this.stateStore.connect();
+        console.log(
+            `Lobby state: ${this.stateStore.enabled ? "Redis" : "memory"} (${this.stateStore.getPodId()})`
+        );
     }
 
     // =========================
     // PLAYER MANAGEMENT
     // =========================
 
-    addPlayer(player) {
-        this.resetParticipantState(player);
-        this.waitingPlayers.push(player);
-
-        console.log(`${player.id} added to queue`);
-        console.log(`Queue Size: ${this.waitingPlayers.length}`);
-
-        this.tryCreateRoom();
-    }
-
-    removePlayer(player) {
-        this.waitingPlayers = this.waitingPlayers.filter(
-            p => p.id !== player.id
-        );
+    async createPlayer(ws, reconnectRequest = {}) {
+        const existingSession =
+            await this.stateStore.getSession(reconnectRequest.reconnectToken);
 
         if (
-            !player.room &&
-            this.waitingPlayers.every(waitingPlayer => waitingPlayer.isBot)
+            existingSession &&
+            existingSession.playerId === reconnectRequest.playerId
         ) {
-            this.removeWaitingBots();
+            const player = {
+                id: existingSession.playerId,
+                sessionId: existingSession.sessionId,
+                ws: ws,
+                score: 0,
+                lastPlacementTime: 0
+            };
+
+            this.connectedPlayers.set(player.id, player);
+            await this.stateStore.saveSession({
+                ...existingSession,
+                connected: true
+            });
+
+            await this.resumePlayer(player, existingSession.roomId);
+            return player;
         }
 
+        const sessionId = this.stateStore.createReconnectToken();
+        const player = {
+            id: await this.stateStore.nextPlayerId(),
+            sessionId: sessionId,
+            ws: ws,
+            score: 0,
+            lastPlacementTime: 0
+        };
+
+        this.connectedPlayers.set(player.id, player);
+        await this.stateStore.saveSession({
+            sessionId: sessionId,
+            reconnectToken: sessionId,
+            playerId: player.id,
+            roomId: null,
+            connected: true
+        });
+
+        return player;
+    }
+
+    async addPlayer(player) {
+        this.resetParticipantState(player);
+        this.connectedPlayers.set(player.id, player);
+        this.waitingPlayers.push(player);
+        await this.stateStore.enqueuePlayer(player);
+
+        console.log(`${player.id} added to queue`);
+        await this.tryCreateRoom();
+    }
+
+    async resumePlayer(player, roomId) {
+        if (!roomId) {
+            await this.addPlayer(player);
+            return;
+        }
+
+        let room = this.rooms.find(activeRoom => String(activeRoom.id) === String(roomId));
+
+        if (!room) {
+            room = await this.hydrateRoom(roomId);
+        }
+
+        if (!room) {
+            await this.addPlayer(player);
+            return;
+        }
+
+        const roomPlayer =
+            room.players.find(candidate => candidate.id === player.id);
+
+        if (!roomPlayer) {
+            await this.addPlayer(player);
+            return;
+        }
+
+        roomPlayer.ws = player.ws;
+        roomPlayer.sessionId = player.sessionId;
+        player.room = room;
+
+        await this.stateStore.saveSession({
+            sessionId: player.sessionId,
+            reconnectToken: player.sessionId,
+            playerId: player.id,
+            roomId: room.id,
+            connected: true
+        });
+
+        this.sendPlayer(player, {
+            type: "room_resumed",
+            playerId: player.id,
+            reconnectToken: player.sessionId,
+            reconnectTtlSeconds: this.stateStore.getReconnectTtlSeconds(),
+            roomId: room.id,
+            level: room.engine.room.level,
+            targetHeight: room.engine.room.targetHeight,
+            blocks: roomPlayer.blocks || []
+        });
+
+        room.engine.broadcastGameState();
+    }
+
+    async removePlayer(player) {
+        await this.stateStore.removeQueuedPlayer(player.id);
+        this.waitingPlayers = this.waitingPlayers.filter(
+            waitingPlayer => waitingPlayer.id !== player.id
+        );
+        this.connectedPlayers.delete(player.id);
+
+        await this.stateStore.markSessionDisconnected(player);
+
         if (player.room) {
-            this.closeRoom(
+            const roomPlayer =
+                player.room.players.find(candidate => candidate.id === player.id);
+
+            if (roomPlayer) {
+                roomPlayer.ws = null;
+            }
+
+            await this.stateStore.saveRoom(
                 player.room,
-                `${player.id}_disconnected`,
-                player
+                player.room.ownerPodId === this.stateStore.getPodId()
             );
         }
 
-        player.room = null;
         this.resetBotCounterIfIdle();
-
-        console.log(`${player.id} removed from queue`);
+        console.log(`${player.id} disconnected; reconnect TTL active`);
     }
 
     resetParticipantState(player) {
-        player.score = 0;
-        player.levelScore = 0;
-        player.contributedHeight = 0;
-        player.refreshTokens = 0;
-        player.refreshUsesThisLevel = 0;
-        player.blocks = [];
-        player.carryOverBlocks = [];
-        player.lastPlacementTime = 0;
+        player.score = player.score || 0;
+        player.levelScore = player.levelScore || 0;
+        player.contributedHeight = player.contributedHeight || 0;
+        player.refreshTokens = player.refreshTokens || 0;
+        player.refreshUsesThisLevel = player.refreshUsesThisLevel || 0;
+        player.blocks = player.blocks || [];
+        player.carryOverBlocks = player.carryOverBlocks || [];
+        player.lastPlacementTime = player.lastPlacementTime || 0;
         player.botLoopLevel = null;
         player.room = null;
     }
@@ -75,7 +180,13 @@ class LobbyManager {
         );
     }
 
-    closeRoom(room, reason, disconnectedPlayer = null) {
+    sendPlayer(player, message) {
+        if (player?.ws && player.ws.readyState === 1) {
+            player.ws.send(JSON.stringify(message));
+        }
+    }
+
+    async closeRoom(room, reason, disconnectedPlayer = null) {
         if (!room) {
             return;
         }
@@ -88,12 +199,13 @@ class LobbyManager {
         }
 
         console.log(`Closing room ${room.id}: ${reason}`);
-
         room.engine.closeRoom(reason);
 
         this.rooms = this.rooms.filter(
             activeRoom => activeRoom.id !== room.id
         );
+
+        await this.stateStore.deleteRoom(room.id);
 
         const playersToRequeue = [];
 
@@ -109,10 +221,10 @@ class LobbyManager {
             }
 
             if (shouldRequeue) {
-                roomPlayer.ws.send(JSON.stringify({
+                this.sendPlayer(roomPlayer, {
                     type: "room_closed",
                     reason: reason
-                }));
+                });
 
                 playersToRequeue.push(roomPlayer);
             }
@@ -120,18 +232,13 @@ class LobbyManager {
 
         this.removeWaitingBots();
 
-        playersToRequeue.forEach(roomPlayer => {
+        for (const roomPlayer of playersToRequeue) {
             this.waitingPlayers.push(roomPlayer);
-        });
-
-        if (
-            this.rooms.length === 0 &&
-            this.waitingPlayers.every(waitingPlayer => !waitingPlayer.isBot)
-        ) {
-            this.resetBotCounterIfIdle();
+            await this.stateStore.enqueuePlayer(roomPlayer);
         }
 
-        this.tryCreateRoom();
+        this.resetBotCounterIfIdle();
+        await this.tryCreateRoom();
     }
 
     resetBotCounterIfIdle() {
@@ -143,14 +250,6 @@ class LobbyManager {
 
         if (!hasBots) {
             this.botCounter = 1;
-        }
-
-        if (
-            !hasBots &&
-            this.rooms.length === 0 &&
-            this.waitingPlayers.length === 0
-        ) {
-            this.roomIdCounter = 1;
         }
     }
 
@@ -173,7 +272,6 @@ class LobbyManager {
         };
 
         this.waitingPlayers.forEach(addPlayer);
-
         this.rooms.forEach(room => {
             room.players.forEach(addPlayer);
         });
@@ -182,13 +280,13 @@ class LobbyManager {
     }
 
     broadcastDebugConfig() {
-        const message = JSON.stringify({
+        const message = {
             type: "debug_config",
             config: this.getDebugConfig()
-        });
+        };
 
         this.getRealPlayers().forEach(player => {
-            player.ws.send(message);
+            this.sendPlayer(player, message);
         });
     }
 
@@ -205,7 +303,7 @@ class LobbyManager {
         };
     }
 
-    updateDebugConfig(key, value) {
+    async updateDebugConfig(key, value) {
         const numberValue = Number(value);
         const debugConfigSetters = {
             debugBotsEnabled: () => Boolean(value),
@@ -229,23 +327,17 @@ class LobbyManager {
             GameConfig.debugBotDelayMax = GameConfig.debugBotDelayMin;
         }
 
-        console.log("CONFIG UPDATED:", key, GameConfig[key]);
-
-        if (
-            key === "debugBotsEnabled" ||
-            key === "debugBotCount"
-        ) {
+        if (key === "debugBotsEnabled" || key === "debugBotCount") {
             if (!GameConfig.debugBotsEnabled) {
                 this.rooms.forEach(room => {
                     room.engine.stopBots();
                 });
             }
 
-            this.refreshMatchmaking();
+            await this.refreshMatchmaking();
         }
 
         this.broadcastDebugConfig();
-
         return true;
     }
 
@@ -310,68 +402,182 @@ class LobbyManager {
         }
     }
 
-    // =========================
-    // MATCHMAKING ENTRY POINT
-    // =========================
-
-    refreshMatchmaking() {
-        console.log("Refreshing matchmaking...");
-
+    async refreshMatchmaking() {
         this.fillQueueWithBotsIfNeeded();
-        this.tryCreateRoom();
+        await this.tryCreateRoom();
     }
 
     // =========================
     // ROOM CREATION
     // =========================
 
-    tryCreateRoom() {
-        // Ensure we always have enough players BEFORE creating a room
-        this.fillQueueWithBotsIfNeeded();
+    async tryCreateRoom() {
+        await this.stateStore.withMatchmakingLock(async () => {
+            const sharedQueue = await this.stateStore.getQueuedPlayers();
 
-        if (this.waitingPlayers.length < 3) {
-            return;
-        }
+            this.waitingPlayers = sharedQueue.map(player => {
+                const connected = this.connectedPlayers.get(player.id);
+                return {
+                    ...player,
+                    ws: connected?.ws || null
+                };
+            });
 
-        const roomPlayers = this.waitingPlayers.splice(0, 3);
+            this.fillQueueWithBotsIfNeeded();
 
-        const engine = new GameEngine();
+            if (this.waitingPlayers.length < 3) {
+                await this.stateStore.replaceQueue(this.waitingPlayers);
+                return;
+            }
 
+            const roomPlayers = this.waitingPlayers.splice(0, 3);
+            await this.stateStore.replaceQueue(this.waitingPlayers);
+            await this.createRoom(roomPlayers);
+        });
+    }
+
+    async createRoom(roomPlayers) {
+        const engine = this.createEngine();
         const room = {
-            id: this.roomIdCounter++,
+            id: await this.stateStore.nextRoomId(),
+            ownerPodId: this.stateStore.getPodId(),
             players: roomPlayers,
             engine: engine
         };
 
-        // Attach room reference to players
         roomPlayers.forEach(player => {
             player.room = room;
+            if (!player.isBot) {
+                this.connectedPlayers.set(player.id, player);
+            }
         });
 
-        // Initialize game engine
         engine.createRoom(roomPlayers);
+        engine.room.id = room.id;
         engine.startLevel();
 
         this.rooms.push(room);
+        await this.stateStore.saveRoom(room, true);
+        await this.subscribeRoom(room.id);
 
         console.log(`Room ${room.id} created with ${roomPlayers.length} players`);
 
-        // Notify only real players
         roomPlayers.forEach(player => {
-            if (player.isBot) return;
+            if (player.isBot) {
+                return;
+            }
 
-            player.ws.send(JSON.stringify({
+            this.sendPlayer(player, {
                 type: "room_created",
                 playerId: player.id,
+                reconnectToken: player.sessionId,
+                reconnectTtlSeconds: this.stateStore.getReconnectTtlSeconds(),
                 roomId: room.id,
                 level: engine.room.level,
                 targetHeight: engine.room.targetHeight,
                 blocks: player.blocks
-            }));
+            });
         });
 
-        // Sync game state
         engine.broadcastGameState();
+    }
+
+    createEngine() {
+        return new GameEngine({
+            onRoomChanged: async engineRoom => {
+                const room =
+                    this.rooms.find(activeRoom => activeRoom.id === engineRoom.id);
+
+                if (room) {
+                    await this.stateStore.saveRoom(
+                        room,
+                        room.ownerPodId === this.stateStore.getPodId()
+                    );
+                }
+            },
+            onRoomMessage: async (roomId, message) => {
+                await this.stateStore.publishRoom(roomId, message);
+            }
+        });
+    }
+
+    async hydrateRoom(roomId) {
+        const snapshot = await this.stateStore.getRoom(roomId);
+
+        if (!snapshot) {
+            return null;
+        }
+
+        const runtimePlayers = snapshot.players.map(player => {
+            const connected = this.connectedPlayers.get(player.id);
+            return {
+                ...stripRuntimePlayer(player),
+                ws: connected?.ws || null,
+                room: null
+            };
+        });
+
+        const leaseOwner = await this.stateStore.getRoomLeaseOwner(roomId);
+        const canOwnTimers =
+            !leaseOwner ||
+            leaseOwner === this.stateStore.getPodId() ||
+            await this.stateStore.claimRoomLease(roomId);
+
+        const engine = this.createEngine();
+        const room = {
+            id: snapshot.id,
+            ownerPodId: canOwnTimers
+                ? this.stateStore.getPodId()
+                : snapshot.ownerPodId,
+            players: runtimePlayers,
+            engine: engine
+        };
+
+        runtimePlayers.forEach(player => {
+            player.room = room;
+        });
+
+        if (canOwnTimers) {
+            engine.hydrateRoom(snapshot, runtimePlayers);
+        } else {
+            engine.room = {
+                id: snapshot.id,
+                players: runtimePlayers,
+                level: snapshot.state.level,
+                checkpointLevel: snapshot.state.checkpointLevel,
+                targetHeight: snapshot.state.targetHeight,
+                currentHeight: snapshot.state.currentHeight,
+                state: snapshot.state.state,
+                startsAt: snapshot.state.startsAt,
+                endsAt: snapshot.state.endsAt,
+                lastLevelSummary: snapshot.state.lastLevelSummary
+            };
+        }
+
+        this.rooms.push(room);
+        await this.subscribeRoom(room.id);
+        return room;
+    }
+
+    async subscribeRoom(roomId) {
+        await this.stateStore.subscribeToRoom(roomId, message => {
+            if (message.sourcePodId === this.stateStore.getPodId()) {
+                return;
+            }
+
+            const room =
+                this.rooms.find(activeRoom => activeRoom.id === roomId);
+
+            if (!room) {
+                return;
+            }
+
+            room.players.forEach(player => {
+                if (!player.isBot) {
+                    this.sendPlayer(player, message);
+                }
+            });
+        });
     }
 }
 

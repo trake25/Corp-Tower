@@ -6,6 +6,10 @@ var is_conn_estab : bool = false
 var is_connecting := false
 
 var player_id := ""
+var reconnect_token := ""
+
+const PLAYER_ID_FILE := "user://corp_tower_player_id.save"
+const RECONNECT_TOKEN_FILE := "user://corp_tower_reconnect_token.save"
 
 signal status_changed(text)
 signal room_joined(data)
@@ -25,6 +29,7 @@ func connect_server():
 		return
 
 	is_connecting = true
+	load_reconnect_identity()
 
 	var error = ws.connect_to_url(url)
 
@@ -68,6 +73,34 @@ func place_block(block_index):
 
 	print("place_block sent")
 
+func load_reconnect_identity():
+	if FileAccess.file_exists(PLAYER_ID_FILE):
+		player_id = FileAccess.get_file_as_string(PLAYER_ID_FILE).strip_edges()
+
+	if FileAccess.file_exists(RECONNECT_TOKEN_FILE):
+		reconnect_token = FileAccess.get_file_as_string(RECONNECT_TOKEN_FILE).strip_edges()
+
+func save_reconnect_identity(data):
+	player_id = str(data.get("playerId", player_id))
+	reconnect_token = str(data.get("reconnectToken", reconnect_token))
+
+	if player_id != "":
+		var player_file = FileAccess.open(PLAYER_ID_FILE, FileAccess.WRITE)
+		player_file.store_string(player_id)
+
+	if reconnect_token != "":
+		var token_file = FileAccess.open(RECONNECT_TOKEN_FILE, FileAccess.WRITE)
+		token_file.store_string(reconnect_token)
+
+func send_reconnect_request():
+	var data = {
+		"type": "reconnect",
+		"playerId": player_id,
+		"reconnectToken": reconnect_token
+	}
+
+	ws.send_text(JSON.stringify(data))
+
 func refresh_blocks():
 
 	if not is_conn_estab:
@@ -99,7 +132,13 @@ func _process(_delta: float) -> void:
 	
 		match data.type:
 			"room_created":
-				player_id = data.playerId
+				save_reconnect_identity(data)
+				room_joined.emit(data)
+				print("Player ID:", data.playerId)
+				print("Room:", data.roomId)
+				print("Blocks:", data.blocks)
+			"room_resumed":
+				save_reconnect_identity(data)
 				room_joined.emit(data)
 				print("Player ID:", data.playerId)
 				print("Room:", data.roomId)
@@ -125,6 +164,7 @@ func _process(_delta: float) -> void:
 				print("CONNECTED TO SERVER")
 				status_changed.emit("Connected")
 				client_status.emit("[Disconnect]")
+				send_reconnect_request()
 
 		WebSocketPeer.STATE_CLOSING:
 			pass

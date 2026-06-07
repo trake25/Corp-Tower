@@ -4,13 +4,14 @@
   "main": "Server.js",
   "scripts": {
     "start": "node Server.js",
-    "test": "node --check Server.js && node --check Lobby_Manager.js && node --check Game_Engine.js && node --check Game_Config.js && node --check Bot_Manager.js"
+    "test": "node --check Server.js && node --check Lobby_Manager.js && node --check Game_Engine.js && node --check Game_Config.js && node --check Bot_Manager.js && node --check Redis_State.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "redis": "^4.7.0",
     "ws": "^8.18.0"
   }
 }

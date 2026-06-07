@@ -8,9 +8,9 @@
 
 ## Core Game Loop
 - Queue 3 players into a room.
-- Assign blocks and start level with a 3-second delay.
+- Assign blocks and start level with configurable delay (Default: 2s).
 - Players place blocks in real time; order determined by input timing.
-- 3-second anti-spam cooldown per player after placement.
+- Configurable anti-spam cooldown per player after placement (Default: 2s).
 - Level ends when target height is reached or a failure condition triggers.
 - Calculate scores, carry over blocks, then proceed to next level.
 
@@ -18,8 +18,16 @@
 - 3 players per match.
 - Real-time interaction; placement order by who acts first.
 
+## Reconnect and Shared Room Continuity
+- Players receive a persistent server-issued player id and reconnect token.
+- If a player disconnects and reconnects within 60 seconds, the server resumes the same player slot in the same room.
+- The client must be able to display/retain the current room id after room creation or resume.
+- Pod routing is transparent to players: sticky load balancing should usually return a player to the same server pod, but any healthy pod can recover the room/player session from shared Redis state.
+- Redis ElastiCache is the authoritative shared state layer for active matchmaking, room/session lookup, reconnect identity, and room ownership across Kubernetes pods.
+- If reconnect TTL expires, the player session is no longer resumable and the player must enter matchmaking again.
+
 ## Block System
-- Blocks assigned at level start; shapes are random and cannot be rotated.
+- Blocks assigned at level start; shapes are random like tetris and cannot be rotated.
 
 ### Inventory Rules
 - Max 3 active blocks + 1 carry-over block from previous level.
@@ -34,7 +42,7 @@
 - Max 2 uses per level `(2/2)` — global UI and variable.
 - Effect: replaces all current blocks.
 - Cannot be used in the last 10 seconds of a level.
-- Calibration note: currently can refresh after placing a block but only refreshes current inventory.
+- Only refreshes current remaining inventory.
 
 ### Token Rewards
 - MVP of previous level receives 1 token.
@@ -46,14 +54,13 @@
 - Exact height triggers precision bonus rewards.
 
 ## Timer
-- Default level time limit: 30 seconds.
+- Default level time limit (Configurable): 30 seconds.
 - Adjustable via Debug Menu (`levelTimeLimitMs`).
 
 ## Failure Conditions
 - Time runs out before target height is reached.
 - All blocks used and target not reached.
-- Checkpoint failure every 3 levels (minimum score requirement).
-- ~~Early failure if remaining possible height < required target~~ (deprecated).
+- Checkpoint every 3 levels - minimum each player leaderboard score requirement not reached.
 
 ## Scoring System
 | Component | Formula |
@@ -69,8 +76,8 @@
 ## Progression
 - Target height increases each level.
 - Block complexity increases with level.
-- Checkpoints every 3 levels.
-- Failing a level rolls back to last completed checkpoint.
+- Checkpoints after every 3 levels.
+- Failing a level rolls back to last completed checkpoint level.
 
 ## Leaderboard
 - Highest level reached.
@@ -116,7 +123,7 @@
 - `blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `maxRefreshTokens`, `maxRefreshUsesPerLevel`, `refreshLockoutMs`, `checkpointInterval`, scoring bonus multipliers.
 
 ### Shipping Requirement
-- Debug Menu must be hidden behind a build flag, QA account permission, or server-side admin authorization before public release.
+- Debug Menu must be disabled behind a build flag, QA account permission, or server-side admin authorization before public release.
 
 ## MVP Scope
 - 3-player matchmaking, block assignment, tower building logic, scoring system, basic UI.

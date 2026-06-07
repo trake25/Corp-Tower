@@ -37,3 +37,8 @@ output "deprecated_production_note" {
   description = "Your original EC2 (Server-Update.yml) is unchanged by Terraform; do not delete until you migrate clients."
   value       = "Keep legacy EC2_HOST secrets for reference only. Point Godot to staging IP after deploy."
 }
+
+output "redis_primary_endpoint" {
+  description = "ElastiCache Redis primary endpoint for REDIS_URL."
+  value       = aws_elasticache_replication_group.redis.primary_endpoint_address
+}

@@ -4,12 +4,14 @@ const GameConfig = require("./Game_Config");
 const BotManager = require("./Bot_Manager");
 
 class GameEngine {
-    constructor() {
+    constructor(options = {}) {
         this.room = null;
         this.startTimer = null;
         this.levelTimer = null;
         this.nextLevelTimer = null;
         this.tickTimer = null;
+        this.onRoomChanged = options.onRoomChanged || null;
+        this.onRoomMessage = options.onRoomMessage || null;
     }
 
     // =========================
@@ -54,6 +56,10 @@ class GameEngine {
             }))
         };
 
+        if (this.onRoomMessage) {
+            this.onRoomMessage(this.room.id, gameState);
+        }
+
         this.room.players.forEach(player => {
             if (player.isBot || !player.ws) {
                 return;
@@ -69,6 +75,7 @@ class GameEngine {
 
     createRoom(players) {
         this.room = {
+            id: null,
             players: players,
             level: 1,
             checkpointLevel: 1,
@@ -94,6 +101,77 @@ class GameEngine {
         console.log("Room created:", this.room.id);
     }
 
+    hydrateRoom(snapshot, runtimePlayers) {
+        this.clearTimers();
+
+        this.room = {
+            id: snapshot.id,
+            players: runtimePlayers,
+            level: snapshot.state.level,
+            checkpointLevel: snapshot.state.checkpointLevel,
+            targetHeight: snapshot.state.targetHeight,
+            currentHeight: snapshot.state.currentHeight,
+            state: snapshot.state.state,
+            startsAt: snapshot.state.startsAt,
+            endsAt: snapshot.state.endsAt,
+            lastLevelSummary: snapshot.state.lastLevelSummary
+        };
+
+        this.restoreTimersFromState();
+    }
+
+    restoreTimersFromState() {
+        if (!this.room) {
+            return;
+        }
+
+        this.clearTimers();
+
+        if (this.room.state === "starting") {
+            this.startTimer = setTimeout(() => {
+                this.beginPlaying();
+            }, Math.max(0, this.room.startsAt - Date.now()));
+            return;
+        }
+
+        if (this.room.state === "playing") {
+            this.levelTimer = setTimeout(() => {
+                this.failLevel("time_expired");
+            }, Math.max(0, this.room.endsAt - Date.now()));
+
+            this.tickTimer = setInterval(() => {
+                this.broadcastGameState();
+                this.persistRoom();
+            }, 1000);
+
+            BotManager.startBots(this);
+            return;
+        }
+
+        if (this.room.state === "finished") {
+            this.nextLevelTimer = setTimeout(() => {
+                this.nextLevel();
+            }, GameConfig.nextLevelDelayMs);
+            return;
+        }
+
+        if (this.room.state === "failed") {
+            this.nextLevelTimer = setTimeout(() => {
+                this.rollbackToCheckpoint();
+            }, GameConfig.failRestartDelayMs);
+        }
+    }
+
+    persistRoom() {
+        if (!this.onRoomChanged || !this.room) {
+            return;
+        }
+
+        this.onRoomChanged(this.room).catch(error => {
+            console.log("Room persistence failed:", error.message);
+        });
+    }
+
     startLevel() {
         this.clearTimers();
 
@@ -115,6 +193,7 @@ class GameEngine {
         this.assignBlocks();
 
         console.log(`Level ${this.room.level} starting`);
+        this.persistRoom();
         this.broadcastGameState();
 
         this.startTimer = setTimeout(() => {
@@ -139,6 +218,7 @@ class GameEngine {
         }, 1000);
 
         BotManager.startBots(this);
+        this.persistRoom();
         this.broadcastGameState();
     }
 
@@ -172,6 +252,7 @@ class GameEngine {
         });
 
         console.log(`Room closed: ${reason}`);
+        this.persistRoom();
     }
 
     stopBots() {
@@ -315,6 +396,7 @@ class GameEngine {
             this.checkFailCondition();
         }
 
+        this.persistRoom();
         this.broadcastGameState();
     }
 
@@ -366,6 +448,7 @@ class GameEngine {
 
         console.log(`${player.id} refreshed blocks:`, player.blocks);
         this.checkFailCondition();
+        this.persistRoom();
         this.broadcastGameState();
     }
 
@@ -451,6 +534,7 @@ class GameEngine {
 
         this.showScoreboard();
         this.showLevelMVP();
+        this.persistRoom();
         this.broadcastGameState();
 
         this.nextLevelTimer = setTimeout(() => {
@@ -482,6 +566,7 @@ class GameEngine {
         this.showLevelMVP();
 
         console.log(`Level FAILED: ${reason}`);
+        this.persistRoom();
         this.broadcastGameState();
 
         this.nextLevelTimer = setTimeout(() => {
@@ -497,6 +582,7 @@ class GameEngine {
         if (this.room.level >= GameConfig.maxLevel) {
             console.log("\nGAME COMPLETED!");
             this.room.state = "game_completed";
+            this.persistRoom();
             this.broadcastGameState();
             return;
         }

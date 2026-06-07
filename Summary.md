@@ -70,14 +70,10 @@
 - Staging region: `ap-southeast-1`.
 
 ## Out Of Scope (Testing Phase)
-- Reconnect logic: deferred, do not implement.
-- Persistence (DB, save state): deferred, do not implement.
 - iOS, Windows, HTML5, Linux client builds: deferred, do not target.
-- HTML client: legacy local test harness only, do not modify.
-- Production-grade bot AI: bots are QA helpers only.
 
 ## Current Focus
-- Active: _(update per sprint)_
+- Active: Redis shared state + reconnect scaling. Current server uses process-local `waitingPlayers`, `rooms`, counters, player ids, timers, and live WebSocket references. Target is horizontally scaled Kubernetes server pods behind a sticky WebSocket load balancer, with Redis ElastiCache as the shared authoritative state layer for matchmaking, room/session lookup, reconnect identity, room ownership leases, and cross-pod broadcasts. Reconnect policy: resume the same room/player slot within 60 seconds. Routing policy: sticky load balancer first, Redis directory fallback if reconnect lands on another pod. First implementation areas: `docs/Corp_Tower_GDD.md`, `src/Server`, `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd`, and infra deploy docs/config.
 - Previous: _(update after each accepted task)_
 - Blocked: _(update as needed)_
 - Next: _(update per sprint)_
@@ -92,6 +88,7 @@
 - For client behavior, prioritize [[NetworkManager]] and [[Main UI Controller]].
 - For deployment, prioritize [[Server Staging Deploy Workflow]] and [[Staging Deploy Guide]].
 - For AI collaboration rules, read [[AI_Agent_Organization]]. Sub AIs prepare prompts; Main AIs execute; Human Orchestrator owns final review.
+- Human prefer not to run manually & locally terraform, docker, redis, kubernetes. Everything is tested in github action thru deployment.
 - This repository is intentionally structured as an Obsidian vault; use `[[links]]` for navigation.
 
 ## Human Project Workflow

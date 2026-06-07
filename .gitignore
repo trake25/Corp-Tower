@@ -13,3 +13,4 @@ infra/bootstrap/*.tfstate.*
 *.docx
 *.docx.bak
 *.exe
+/.cursor

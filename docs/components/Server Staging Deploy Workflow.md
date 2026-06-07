@@ -36,4 +36,4 @@
 
 ## Notes
 - This is the active path.
-- [[Legacy Server Update Workflow]] is disabled.
+- User does not test in local machine but in Github Action and staging only.

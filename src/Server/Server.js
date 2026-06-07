@@ -8,118 +8,91 @@ const lobbyManager = new LobbyManager();
 
 const port = Number(process.env.PORT) || 3000;
 
-const wss = new WebSocket.Server({ port });
+function safeJson(message) {
+    try {
+        return JSON.parse(message.toString());
+    } catch (error) {
+        console.log("Invalid message JSON:", error.message);
+        return null;
+    }
+}
 
-console.log(`WebSocket server running on port ${port}`);
+async function main() {
+    await lobbyManager.start();
 
-let availableIds = [
+    const wss = new WebSocket.Server({ port });
 
-    "P1",
-    "P2",
-    "P3",
+    console.log(`WebSocket server running on port ${port}`);
 
-];
+    wss.on("connection", async function connection(ws) {
+        let player = null;
 
-wss.on("connection", function connection(ws) {
+        ws.once("message", async function firstMessage(message) {
+            const data = safeJson(message) || {};
+            const reconnectRequest =
+                data.type === "reconnect" ? data : {};
 
-    const player = {
+            player = await lobbyManager.createPlayer(ws, reconnectRequest);
 
-        id: availableIds.shift(),
+            console.log(`${player.id} connected`);
 
-        ws: ws,
+            if (!reconnectRequest.reconnectToken || !player.room) {
+                await lobbyManager.addPlayer(player);
+            }
 
-        score: 0,
+            lobbyManager.broadcastDebugConfig();
 
-        lastPlacementTime: 0
+            ws.on("message", async function incoming(nextMessage) {
+                await handleMessage(player, nextMessage);
+            });
+        });
 
-    };
-
-    console.log(
-        `${player.id} connected`
-    );
-
-    // Add to matchmaking queue
-    lobbyManager.addPlayer(player);
-    lobbyManager.broadcastDebugConfig();
-
-    ws.on("message", function incoming(message) {
-
-        let data;
-
-        try {
-            data = JSON.parse(message.toString());
-        } catch (error) {
-            console.log("Invalid message JSON:", error.message);
-            return;
-        }
-
-        console.log(
-            `${player.id} sent:`,
-            data.type
-        );
-
-        // Update GameConfig via Debug Menu
-        if (data.type === "update_config") {
-
-            lobbyManager.updateDebugConfig(data.key, data.value);
-
-            return;
-        }
-
-        // PLACE BLOCK
-        if (data.type === "place_block") {
-
-            if (!player.room) {
-
-                console.log(
-                    "Player has no room"
-                );
-
+        ws.on("close", async function () {
+            if (!player) {
                 return;
             }
 
-            player.room.engine.placeBlock(player.id, data.blockIndex);
-
-        }
-
-        // REFRESH BLOCKS
-        if (data.type === "refresh_blocks") {
-
-            if (!player.room) {
-
-                console.log(
-                    "Player has no room"
-                );
-
-                return;
-            }
-
-            player.room.engine.refreshBlocks(player.id);
-
-        }
-
+            console.log(`${player.id} disconnected`);
+            await lobbyManager.removePlayer(player);
+        });
     });
+}
 
-    ws.on("close", function () {
+async function handleMessage(player, message) {
+    const data = safeJson(message);
 
-        console.log(
-            `${player.id} disconnected`
-        );
+    if (!data) {
+        return;
+    }
 
-        lobbyManager.removePlayer(
-            player
-        );
+    console.log(`${player.id} sent:`, data.type);
 
-        if (player.id) {
+    if (data.type === "update_config") {
+        await lobbyManager.updateDebugConfig(data.key, data.value);
+        return;
+    }
 
-            availableIds.push(
-                player.id
-            );
-
-            availableIds.sort();
-
+    if (data.type === "place_block") {
+        if (!player.room) {
+            console.log("Player has no room");
+            return;
         }
 
-    });
+        player.room.engine.placeBlock(player.id, data.blockIndex);
+        return;
+    }
 
+    if (data.type === "refresh_blocks") {
+        if (!player.room) {
+            console.log("Player has no room");
+            return;
+        }
+
+        player.room.engine.refreshBlocks(player.id);
+    }
+}
+
+main().catch(error => {
+    console.error("Server failed to start:", error);
+    process.exit(1);
 });

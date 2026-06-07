@@ -3,7 +3,7 @@
 - Final review owner.
 - Approve, deny, modify, or improve AI inputs/outputs.
 - Chooses which AI acts and when work is accepted.
-- Updates changelog manually to save token and the final QA that ensure the completed task is correct. (Agent + Date)
+- Updates Changelog.md manually to save token and the final QA that ensure the completed task is correct. (Agent + Date)
 ## Sub AIs (3/3)
 ### Copilot
 - Role:
