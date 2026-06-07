@@ -88,6 +88,14 @@ class RedisState {
             console.log("Redis client error:", error.message);
         });
 
+        this.publisher.on("error", error => {
+            console.log("Redis publisher error:", error.message);
+        });
+
+        this.subscriber.on("error", error => {
+            console.log("Redis subscriber error:", error.message);
+        });
+
         await Promise.all([
             this.client.connect(),
             this.publisher.connect(),

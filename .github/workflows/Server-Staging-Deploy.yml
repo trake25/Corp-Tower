@@ -176,6 +176,41 @@ jobs:
             ssh-keyscan -p "$EC2_PORT" "$WORKER_HOST" >> ~/.ssh/known_hosts
           done
 
+          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
+            "bash -s" <<'REMOTE_GATEWAY_REDIS'
+          set -euo pipefail
+
+          sudo docker network create corp-tower-gateway 2>/dev/null || true
+
+          # Remove legacy single-EC2 server container so gateway proxy can own port 3000 later.
+          sudo docker stop corp-tower-server 2>/dev/null || true
+          sudo docker rm corp-tower-server 2>/dev/null || true
+
+          if ! command -v k3s >/dev/null 2>&1; then
+            curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" sh -
+          fi
+
+          sudo docker stop corp-tower-redis 2>/dev/null || true
+          sudo docker rm corp-tower-redis 2>/dev/null || true
+          sudo docker run -d \
+            --name corp-tower-redis \
+            --restart unless-stopped \
+            --network corp-tower-gateway \
+            -p 6379:6379 \
+            redis:7-alpine redis-server --bind 0.0.0.0 --protected-mode no
+
+          for attempt in $(seq 1 30); do
+            if sudo docker exec corp-tower-redis redis-cli ping | grep -q PONG; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "Redis did not become ready."
+          sudo docker logs corp-tower-redis
+          exit 1
+          REMOTE_GATEWAY_REDIS
+
           for WORKER_HOST in $WORKER_PUBLIC_IPS; do
             ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$WORKER_HOST" \
               "AWS_REGION='$AWS_REGION' ECR_REPOSITORY='$ECR_REPOSITORY' IMAGE_TAG='$IMAGE_TAG' REDIS_URL='$REDIS_URL' bash -s" <<'REMOTE_WORKER'
@@ -210,31 +245,30 @@ jobs:
             "WORKER_PRIVATE_IPS='$WORKER_PRIVATE_IPS' bash -s" <<'REMOTE_GATEWAY'
           set -euo pipefail
 
-          sudo docker network create corp-tower-gateway 2>/dev/null || true
+          {
+            echo "events {}"
+            echo "http {"
+            echo "  upstream corp_tower_workers {"
+            for WORKER_IP in $WORKER_PRIVATE_IPS; do
+              echo "    server ${WORKER_IP}:3000;"
+            done
+            echo "  }"
+            echo "  server {"
+            echo "    listen 3000;"
+            echo "    location / {"
+            echo "      proxy_pass http://corp_tower_workers;"
+            echo "      proxy_http_version 1.1;"
+            echo "      proxy_set_header Upgrade \$http_upgrade;"
+            echo "      proxy_set_header Connection \"Upgrade\";"
+            echo "      proxy_set_header Host \$host;"
+            echo "    }"
+            echo "  }"
+            echo "}"
+          } > /tmp/corp-tower-nginx.conf
 
-          # Remove legacy single-EC2 server container so gateway proxy can own port 3000.
-          sudo docker stop corp-tower-server 2>/dev/null || true
-          sudo docker rm corp-tower-server 2>/dev/null || true
-
-          if ! command -v k3s >/dev/null 2>&1; then
-            curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" sh -
-          fi
-
-          sudo docker stop corp-tower-redis 2>/dev/null || true
-          sudo docker rm corp-tower-redis 2>/dev/null || true
-          sudo docker run -d \
-            --name corp-tower-redis \
-            --restart unless-stopped \
-            --network corp-tower-gateway \
-            -p 6379:6379 \
-            redis:7-alpine redis-server --bind 0.0.0.0 --protected-mode no
-
-          UPSTREAMS=""
-          for WORKER_IP in $WORKER_PRIVATE_IPS; do
-            UPSTREAMS="${UPSTREAMS}    server ${WORKER_IP}:3000;\n"
-          done
-
-          printf "events {}\nhttp {\n  upstream corp_tower_workers {\n%s  }\n  server {\n    listen 3000;\n    location / {\n      proxy_pass http://corp_tower_workers;\n      proxy_http_version 1.1;\n      proxy_set_header Upgrade \$http_upgrade;\n      proxy_set_header Connection \"Upgrade\";\n      proxy_set_header Host \$host;\n    }\n  }\n}\n" "$UPSTREAMS" > /tmp/corp-tower-nginx.conf
+          sudo docker run --rm \
+            -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
+            nginx:1.27-alpine nginx -t
 
           sudo docker stop corp-tower-gateway 2>/dev/null || true
           sudo docker rm corp-tower-gateway 2>/dev/null || true
