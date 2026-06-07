@@ -72,11 +72,11 @@
 ## Out Of Scope (Testing Phase)
 - iOS, Windows, HTML5, Linux client builds: deferred, do not target.
 
-## Current Focus
-- Active: Redis shared state + reconnect scaling. Current server uses process-local `waitingPlayers`, `rooms`, counters, player ids, timers, and live WebSocket references. Target is horizontally scaled Kubernetes server pods behind a sticky WebSocket load balancer, with Redis ElastiCache as the shared authoritative state layer for matchmaking, room/session lookup, reconnect identity, room ownership leases, and cross-pod broadcasts. Reconnect policy: resume the same room/player slot within 60 seconds. Routing policy: sticky load balancer first, Redis directory fallback if reconnect lands on another pod. First implementation areas: `docs/Corp_Tower_GDD.md`, `src/Server`, `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd`, and infra deploy docs/config.
-- Previous: _(update after each accepted task)_
+## Current Focus (Summarized Title only)
+- Active: Fix fallback EC2 Docker
+- Previous: Prepare Load Balancer, Redis, Kubernetes
 - Blocked: _(update as needed)_
-- Next: _(update per sprint)_
+- Next: Implement Load Balancer, Redis, Kubernetes
 
 ## Fast Start For AI
 - Read this file first.

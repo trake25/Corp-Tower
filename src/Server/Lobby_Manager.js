@@ -417,9 +417,18 @@ class LobbyManager {
 
             this.waitingPlayers = sharedQueue.map(player => {
                 const connected = this.connectedPlayers.get(player.id);
+
+                if (connected) {
+                    Object.assign(connected, {
+                        ...player,
+                        ws: connected.ws
+                    });
+                    return connected;
+                }
+
                 return {
                     ...player,
-                    ws: connected?.ws || null
+                    ws: null
                 };
             });
 
