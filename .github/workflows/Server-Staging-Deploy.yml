@@ -298,7 +298,12 @@ jobs:
 
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
             "bash -s" <<'REMOTE_GATEWAY'
-          set -euo pipefail
+          set -euxo pipefail
+
+          sudo docker stop corp-tower-gateway 2>/dev/null || true
+          sudo docker rm corp-tower-gateway 2>/dev/null || true
+          sudo docker stop corp-tower-server 2>/dev/null || true
+          sudo docker rm corp-tower-server 2>/dev/null || true
 
           {
             echo "events {}"
@@ -320,17 +325,25 @@ jobs:
           } > /tmp/corp-tower-nginx.conf
 
           sudo docker run --rm \
+            --network host \
             -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
             nginx:1.27-alpine nginx -t
 
-          sudo docker stop corp-tower-gateway 2>/dev/null || true
-          sudo docker rm corp-tower-gateway 2>/dev/null || true
+          if sudo ss -ltnp | grep -q ':3000 '; then
+            echo "Port 3000 is already listening before gateway start:"
+            sudo ss -ltnp | grep ':3000 ' || true
+            exit 1
+          fi
+
           sudo docker run -d \
             --name corp-tower-gateway \
             --restart unless-stopped \
-            -p 3000:3000 \
+            --network host \
             -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
             nginx:1.27-alpine
 
+          sudo ss -ltnp | grep ':3000 ' || true
           sudo docker ps --filter name=corp-tower
+          sudo k3s kubectl get nodes -o wide
+          sudo k3s kubectl -n corp-tower-staging get pods -o wide
           REMOTE_GATEWAY
