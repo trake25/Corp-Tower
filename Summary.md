@@ -13,17 +13,18 @@
 - Selfish cooperation: players need team success but compete for level score/MVP.
 - Server authority: Node WebSocket server owns matchmaking, room state, timers, scoring, bots, and debug config.
 - Debug tuning: designers/QA can update selected `Game_Config` values at runtime; server broadcasts authoritative config to all clients.
-- Testing phase rule: reconnect and persistence are deferred; room sessions reset on close/disconnect.
+- Staging reconnect: clients keep a server-issued player id/reconnect token and can resume the same room within the debug TTL.
 
 ## System Design High-Level
 - [[Godot Client App]] connects to the server through [[NetworkManager]].
 - [[Server Entry]] accepts WebSocket clients and routes messages.
-- [[Lobby Manager]] queues real players, fills rooms with debug bots, and tears rooms down on disconnect.
+- [[Lobby Manager]] coordinates Redis-backed matchmaking, reconnect, room lifecycle, debug bots, and room teardown.
 - [[Game Engine]] runs the authoritative level lifecycle and scoring.
+- [[Redis State]] stores shared matchmaking/session/room snapshots when `REDIS_URL` is enabled.
 - [[Bot Manager]] schedules QA bot actions and cancels bot timers when rooms close.
 - [[Game Config]] stores balance and debug-tunable variables.
-- [[Server Staging Deploy Workflow]] builds/pushes Docker images to ECR and deploys staging EC2.
-- [[Terraform Infrastructure]] creates AWS staging resources.
+- [[Server Staging Deploy Workflow]] builds/pushes Docker images to ECR and deploys the EC2 gateway/workers lab.
+- [[Terraform Infrastructure]] creates/adopts AWS staging resources for the free-tier learning lab.
 - [[Client Android Internal Workflow]] builds signed Android AABs and can upload to Google Play internal testing.
 - [[AI_Agent_Organization]] defines AI assistant roles, prompt handoff behavior, and human review ownership.
 
@@ -31,6 +32,7 @@
 - `src/Server`
   - [[Server Entry]]: WebSocket listener and message router.
   - [[Lobby Manager]]: matchmaking, room lifecycle, debug config broadcast.
+  - [[Redis State]]: Redis adapter, session tokens, shared queue/room snapshots.
   - [[Game Engine]]: level rules, timers, scoring, tokens, room close.
   - [[Bot Manager]]: bot action loop and timer cancellation.
   - [[Game Config]]: runtime rules and tuning values.
@@ -52,17 +54,18 @@
   - [[Corp_Tower_TDD]]: Technical architecture, deployment, CI/CD, message contracts, testing.
 
 ## Key Data Flow
-- Client connects: [[NetworkManager]] opens `ws://<server>:3000`; [[Server Entry]] assigns `P1`/`P2`/`P3`.
-- Matchmaking: [[Lobby Manager]] queues players; debug bots can fill missing slots.
+- Client connects: [[NetworkManager]] opens `ws://<gateway>:3000` and sends `reconnect` with stored identity if available.
+- Gateway routing: EC2-1 nginx reverse proxy forwards WebSocket traffic to EC2-2/EC2-3 workers.
+- Matchmaking: [[Lobby Manager]] queues players through [[Redis State]]; debug bots can fill missing slots.
 - Room start: [[Game Engine]] assigns blocks, starts countdown, then enters `playing`.
 - Player action: client sends `place_block`; server validates cooldown/index/state and broadcasts `game_state`.
 - Debug update: client sends `update_config`; [[Lobby Manager]] validates value and broadcasts `debug_config`.
-- Disconnect: WebSocket `close` calls [[Lobby Manager]] room teardown; timers/bots stop, scores reset, remaining real clients get `room_closed`.
-- Staging deploy: GitHub VM tests server, builds Docker image, pushes ECR, then EC2 pulls and runs container.
+- Disconnect: WebSocket `close` starts reconnect TTL; missed TTL destroys rooms with no connected real players.
+- Staging deploy: GitHub VM tests server, builds Docker image, pushes ECR, deploys Redis/nginx/k3s to EC2-1 and server containers to EC2-2/EC2-3.
 
 ## Constraints And Assumptions
-- No persistence yet: scores, rooms, and player progress are in-memory only.
-- No reconnect yet: disconnect closes the active room during test phase.
+- Shared active room/session state uses Redis in staging; long-term leaderboard persistence is still deferred.
+- Debug reconnect TTL is 10 seconds in staging deploy.
 - Bots are QA helpers, not production-grade AI.
 - Android is the only current client release target during staging.
 - Godot version target: `4.6.2.stable`.
@@ -73,10 +76,10 @@
 - iOS, Windows, HTML5, Linux client builds: deferred, do not target.
 
 ## Current Focus (Summarized Title only)
-- Active: Free-tier EC2 gateway/workers lab
-- Previous: Terraform backend bootstrap
-- Blocked: Terraform state import
-- Next: Adopt existing AWS resources
+- Active: Reconnect debug testing
+- Previous: EC2 gateway/workers deploy
+- Blocked: _(none)_
+- Next: Gameplay reconnect testing
 
 ## Fast Start For AI
 - Read this file first.

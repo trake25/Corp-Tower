@@ -5,11 +5,12 @@
 - File: `src/Server/Lobby_Manager.js`.
 
 ## Responsibilities
-- Maintain waiting players and active rooms.
+- Maintain waiting players and active rooms through shared Redis state when `REDIS_URL` is enabled.
 - Create 3-participant rooms.
 - Fill rooms with debug bots when enabled.
 - Validate and broadcast debug config updates.
-- Close rooms when a real player disconnects.
+- Allow real players to resume their room within reconnect TTL.
+- Destroy rooms when reconnect TTL expires and no connected real players remain.
 - Reset room-session state during testing phase.
 
 ## Key Logic
@@ -27,6 +28,10 @@
   - Resets player/bot scores and session state.
   - Sends `room_closed` to remaining connected real players.
   - Requeues remaining real players for a fresh test room.
+- `resumePlayer(player, roomId)`:
+  - Reattaches a reconnecting player to the same room/player slot when session token is valid.
+- `handleRoomReconnectExpired(roomId)`:
+  - Closes rooms with reason `reconnect_ttl_expired` when all real players miss the reconnect window.
 - `updateDebugConfig(key, value)`:
   - Allows only known keys.
   - Clamps numeric values.
@@ -42,5 +47,5 @@
 - [[Bot Manager]] indirectly through game engine.
 
 ## Notes
-- Reconnect and persistence are intentionally deferred.
-- Current disconnect policy closes the full room to prevent bot loops from running without real players.
+- Staging/debug reconnect TTL is currently 10 seconds through `RECONNECT_TTL_SECONDS`.
+- Redis stores session/room lookup for the EC2 gateway/workers learning lab.

@@ -5,7 +5,7 @@
 - Project: `src/Client/App/corp-tower`.
 
 ## Responsibilities
-- Connect to the authoritative server.
+- Connect to the EC2-1 gateway, which routes to authoritative server workers.
 - Render room, level, height, score, inventory, refresh, and debug UI.
 - Send player actions.
 - Reflect server state rather than calculating final gameplay locally.
@@ -18,7 +18,7 @@
 
 ## Inputs/Outputs
 - Input: WebSocket messages from [[Server Entry]].
-- Output: WebSocket messages for block placement, refresh, and debug updates.
+- Output: WebSocket messages for reconnect, block placement, refresh, and debug updates.
 
 ## Dependencies
 - Godot `4.6.2.stable`.
@@ -27,4 +27,5 @@
 
 ## Notes
 - Current release target is Android only.
+- Staging client should point to `ws://<EC2-1-public-ip>:3000`.
 - Web/Windows/iOS are future platform targets.

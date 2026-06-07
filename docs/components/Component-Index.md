@@ -3,6 +3,7 @@
 ## Server
 - [[Server Entry]]
 - [[Lobby Manager]]
+- [[Redis State]]
 - [[Game Engine]]
 - [[Bot Manager]]
 - [[Game Config]]

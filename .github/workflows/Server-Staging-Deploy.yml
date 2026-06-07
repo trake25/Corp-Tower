@@ -233,7 +233,7 @@ jobs:
             -p 3000:3000 \
             -e PORT=3000 \
             -e REDIS_URL="$REDIS_URL" \
-            -e RECONNECT_TTL_SECONDS=60 \
+            -e RECONNECT_TTL_SECONDS=10 \
             "$IMAGE_URI"
 
           sudo docker image prune -f

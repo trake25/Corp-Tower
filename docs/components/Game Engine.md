@@ -13,6 +13,7 @@
 - Detect success/failure.
 - Advance levels or roll back checkpoints.
 - Stop timers and bots on room close.
+- Notify [[Lobby Manager]] when room state changes so shared state can be persisted.
 
 ## Key Logic
 - Level states:
@@ -42,8 +43,9 @@
 ## Dependencies
 - [[Game Config]]
 - [[Bot Manager]]
+- [[Lobby Manager]]
 
 ## Notes
-- All room state is in memory.
+- Engine owns live timers and authoritative rule execution; [[Lobby Manager]]/[[Redis State]] persist shared room snapshots.
 - No persistent leaderboard yet.
 - The engine should remain server authoritative.

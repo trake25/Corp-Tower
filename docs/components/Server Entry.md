@@ -6,15 +6,16 @@
 
 ## Responsibilities
 - Start WebSocket server on `PORT` or `3000`.
-- Assign temporary player ids from `P1`, `P2`, `P3`.
+- Accept initial reconnect handshake and create/resume server-issued player sessions.
 - Add players to [[Lobby Manager]].
 - Route client messages to game/config handlers.
-- Return player ids to the pool on disconnect.
+- Keep disconnect handling delegated to [[Lobby Manager]] so reconnect TTL can run.
 
 ## Key Logic
 - On connection:
-  - Create player object with `id`, `ws`, `score`, `lastPlacementTime`.
-  - Queue player through [[Lobby Manager]].
+  - Wait for first client message.
+  - `reconnect` -> [[Lobby Manager]] creates or resumes a player session.
+  - Queue new players through [[Lobby Manager]].
   - Broadcast current debug config.
 - On message:
   - Parse JSON safely.
@@ -23,11 +24,11 @@
   - `refresh_blocks` -> current room [[Game Engine]].
 - On close:
   - Remove player through [[Lobby Manager]].
-  - Free player id.
+  - Reconnect TTL remains active through [[Lobby Manager]].
 
 ## Inputs/Outputs
 - Input: WebSocket JSON messages from [[NetworkManager]].
-- Output: WebSocket JSON messages such as `room_created`, `game_state`, `debug_config`, `room_closed`.
+- Output: WebSocket JSON messages such as `room_created`, `room_resumed`, `game_state`, `debug_config`, `room_closed`.
 
 ## Dependencies
 - `ws`

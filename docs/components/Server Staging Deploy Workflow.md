@@ -26,7 +26,10 @@
   - Finds running worker instances by Terraform tags.
   - Worker EC2 instances pull ECR image and replace `corp-tower-server`.
   - Workers use `REDIS_URL=redis://<gateway-private-ip>:6379`.
+  - Workers use `RECONNECT_TTL_SECONDS=10` for faster staging/debug reconnect testing.
   - Gateway EC2 installs k3s for learning and runs `redis:7-alpine` plus `nginx:1.27-alpine`.
+  - Deploy starts gateway Redis and waits for `PONG` before starting workers.
+  - Deploy validates generated nginx config with `nginx -t` before starting gateway proxy.
   - k3s is present for manual/learning inspection but not used for live game routing yet.
   - Godot connects to gateway `ws://<gateway-public-ip>:3000`; nginx routes WebSocket traffic to workers.
 
