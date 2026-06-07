@@ -49,6 +49,33 @@ resource "aws_instance" "staging" {
   }
 
   tags = {
-    Name = "corp-tower-${var.environment}"
+    Name = "corp-tower-${var.environment}-gateway"
+    Role = "gateway-redis-proxy-k3s-learning"
+  }
+}
+
+resource "aws_instance" "worker" {
+  count = var.worker_count
+
+  ami                    = data.aws_ami.amazon_linux_2023.id
+  instance_type          = var.instance_type
+  key_name               = aws_key_pair.staging.key_name
+  vpc_security_group_ids = [aws_security_group.staging.id]
+  iam_instance_profile   = aws_iam_instance_profile.ec2.name
+  user_data              = local.user_data
+
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
+
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp3"
+  }
+
+  tags = {
+    Name = "corp-tower-${var.environment}-worker-${count.index + 1}"
+    Role = "docker-server-worker"
   }
 }

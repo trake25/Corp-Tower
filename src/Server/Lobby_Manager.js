@@ -10,6 +10,7 @@ class LobbyManager {
         this.waitingPlayers = [];
         this.rooms = [];
         this.connectedPlayers = new Map();
+        this.roomReconnectTimers = new Map();
         this.botCounter = 1;
     }
 
@@ -109,6 +110,7 @@ class LobbyManager {
         roomPlayer.ws = player.ws;
         roomPlayer.sessionId = player.sessionId;
         player.room = room;
+        this.cancelRoomReconnectExpiry(room.id);
 
         await this.stateStore.saveSession({
             sessionId: player.sessionId,
@@ -153,10 +155,68 @@ class LobbyManager {
                 player.room,
                 player.room.ownerPodId === this.stateStore.getPodId()
             );
+
+            this.scheduleRoomReconnectExpiry(player.room);
         }
 
         this.resetBotCounterIfIdle();
         console.log(`${player.id} disconnected; reconnect TTL active`);
+    }
+
+    scheduleRoomReconnectExpiry(room) {
+        if (!room || this.roomReconnectTimers.has(room.id)) {
+            return;
+        }
+
+        const ttlMs = this.stateStore.getReconnectTtlSeconds() * 1000;
+
+        const timer = setTimeout(() => {
+            this.handleRoomReconnectExpired(room.id).catch(error => {
+                console.log("Reconnect expiry handling failed:", error.message);
+            });
+        }, ttlMs);
+
+        if (timer.unref) {
+            timer.unref();
+        }
+
+        this.roomReconnectTimers.set(room.id, timer);
+    }
+
+    cancelRoomReconnectExpiry(roomId) {
+        const timer = this.roomReconnectTimers.get(roomId);
+
+        if (!timer) {
+            return;
+        }
+
+        clearTimeout(timer);
+        this.roomReconnectTimers.delete(roomId);
+    }
+
+    async handleRoomReconnectExpired(roomId) {
+        this.roomReconnectTimers.delete(roomId);
+
+        const room =
+            this.rooms.find(activeRoom => activeRoom.id === roomId);
+
+        if (!room) {
+            return;
+        }
+
+        const hasConnectedRealPlayer =
+            room.players.some(roomPlayer => {
+                return this.isConnectedRealPlayer(roomPlayer);
+            });
+
+        if (hasConnectedRealPlayer) {
+            return;
+        }
+
+        await this.closeRoom(
+            room,
+            "reconnect_ttl_expired"
+        );
     }
 
     resetParticipantState(player) {
@@ -199,6 +259,7 @@ class LobbyManager {
         }
 
         console.log(`Closing room ${room.id}: ${reason}`);
+        this.cancelRoomReconnectExpiry(room.id);
         room.engine.closeRoom(reason);
 
         this.rooms = this.rooms.filter(

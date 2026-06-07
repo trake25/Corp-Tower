@@ -8,8 +8,9 @@
 - Test server code on GitHub VM.
 - Build Docker image.
 - Push image to ECR.
-- SSH to staging EC2.
-- Pull and run image with Docker.
+- Discover EC2 worker instances.
+- Deploy server Docker image to EC2-2/EC2-3 workers.
+- Deploy Docker Redis and nginx reverse proxy to EC2-1 gateway.
 
 ## Key Logic
 - Trigger:
@@ -22,12 +23,16 @@
 - AWS auth:
   - OIDC role via `AWS_ROLE_ARN`.
 - Deploy:
-  - EC2 pulls ECR image.
-  - Replaces `corp-tower-server` container.
+  - Finds running worker instances by Terraform tags.
+  - Worker EC2 instances pull ECR image and replace `corp-tower-server`.
+  - Workers use `REDIS_URL=redis://<gateway-private-ip>:6379`.
+  - Gateway EC2 installs k3s for learning and runs `redis:7-alpine` plus `nginx:1.27-alpine`.
+  - k3s is present for manual/learning inspection but not used for live game routing yet.
+  - Godot connects to gateway `ws://<gateway-public-ip>:3000`; nginx routes WebSocket traffic to workers.
 
 ## Inputs/Outputs
 - Input: GitHub push/manual run and repository secrets.
-- Output: running staging Docker container on EC2.
+- Output: gateway reverse proxy + Redis on EC2-1, server Docker containers on EC2-2/EC2-3.
 
 ## Dependencies
 - [[Server Docker Image]]

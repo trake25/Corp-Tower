@@ -18,6 +18,14 @@ resource "aws_security_group" "staging" {
     cidr_blocks = [var.game_port_cidr]
   }
 
+  ingress {
+    description = "Redis gateway from staging instances"
+    from_port   = 6379
+    to_port     = 6379
+    protocol    = "tcp"
+    self        = true
+  }
+
   egress {
     description = "All outbound (ECR pull, updates)"
     from_port   = 0

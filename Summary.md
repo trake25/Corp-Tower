@@ -73,10 +73,10 @@
 - iOS, Windows, HTML5, Linux client builds: deferred, do not target.
 
 ## Current Focus (Summarized Title only)
-- Active: Fix fallback EC2 Docker
-- Previous: Prepare Load Balancer, Redis, Kubernetes
-- Blocked: _(update as needed)_
-- Next: Implement Load Balancer, Redis, Kubernetes
+- Active: Free-tier EC2 gateway/workers lab
+- Previous: Destroy room after reconnect TTL
+- Blocked: Managed AWS Redis/ALB/EKS removed for cost safety; use EC2-1 as simulated ALB/Redis/k3s learning gateway.
+- Next: Terraform/GitHub Actions provision EC2-1 gateway plus EC2-2/3 workers; gateway runs Docker Redis + reverse proxy, workers run server Docker image sharing gateway Redis.
 
 ## Fast Start For AI
 - Read this file first.

@@ -97,11 +97,66 @@ jobs:
     environment: staging
 
     steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve EC2 learning lab targets
+        run: |
+          set -euo pipefail
+
+          WORKER_PRIVATE_IPS="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Role,Values=docker-server-worker" \
+                "Name=instance-state-name,Values=running" \
+              --query 'Reservations[].Instances[].PrivateIpAddress' \
+              --output text
+          )"
+
+          WORKER_PUBLIC_IPS="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Role,Values=docker-server-worker" \
+                "Name=instance-state-name,Values=running" \
+              --query 'Reservations[].Instances[].PublicIpAddress' \
+              --output text
+          )"
+
+          GATEWAY_PRIVATE_IP="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Role,Values=gateway-redis-proxy-k3s-learning" \
+                "Name=instance-state-name,Values=running" \
+              --query 'Reservations[0].Instances[0].PrivateIpAddress' \
+              --output text
+          )"
+
+          if [ -z "$WORKER_PRIVATE_IPS" ] || [ -z "$WORKER_PUBLIC_IPS" ] || [ "$GATEWAY_PRIVATE_IP" = "None" ]; then
+            echo "Gateway or worker EC2 instances not found. Run Infra Staging Terraform target ec2-learning-lab first."
+            exit 1
+          fi
+
+          echo "WORKER_PRIVATE_IPS=$WORKER_PRIVATE_IPS" >> "$GITHUB_ENV"
+          echo "WORKER_PUBLIC_IPS=$WORKER_PUBLIC_IPS" >> "$GITHUB_ENV"
+          echo "GATEWAY_PRIVATE_IP=$GATEWAY_PRIVATE_IP" >> "$GITHUB_ENV"
+
       - name: Deploy over SSH
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
+          WORKER_PRIVATE_IPS: ${{ env.WORKER_PRIVATE_IPS }}
+          WORKER_PUBLIC_IPS: ${{ env.WORKER_PUBLIC_IPS }}
+          GATEWAY_PRIVATE_IP: ${{ env.GATEWAY_PRIVATE_IP }}
           EC2_HOST: ${{ secrets.EC2_STAGING_HOST }}
           EC2_USER: ${{ secrets.EC2_STAGING_USER }}
           EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
@@ -115,8 +170,15 @@ jobs:
           chmod 600 ~/.ssh/ec2_key
           ssh-keyscan -p "$EC2_PORT" "$EC2_HOST" >> ~/.ssh/known_hosts
 
-          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-            "AWS_REGION='$AWS_REGION' ECR_REPOSITORY='$ECR_REPOSITORY' IMAGE_TAG='$IMAGE_TAG' bash -s" <<'REMOTE'
+          REDIS_URL="redis://${GATEWAY_PRIVATE_IP}:6379"
+
+          for WORKER_HOST in $WORKER_PUBLIC_IPS; do
+            ssh-keyscan -p "$EC2_PORT" "$WORKER_HOST" >> ~/.ssh/known_hosts
+          done
+
+          for WORKER_HOST in $WORKER_PUBLIC_IPS; do
+            ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$WORKER_HOST" \
+              "AWS_REGION='$AWS_REGION' ECR_REPOSITORY='$ECR_REPOSITORY' IMAGE_TAG='$IMAGE_TAG' REDIS_URL='$REDIS_URL' bash -s" <<'REMOTE_WORKER'
           set -euo pipefail
 
           ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
@@ -135,8 +197,49 @@ jobs:
             --restart unless-stopped \
             -p 3000:3000 \
             -e PORT=3000 \
+            -e REDIS_URL="$REDIS_URL" \
+            -e RECONNECT_TTL_SECONDS=60 \
             "$IMAGE_URI"
 
           sudo docker image prune -f
           sudo docker ps --filter name=corp-tower-server
-          REMOTE
+          REMOTE_WORKER
+          done
+
+          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
+            "WORKER_PRIVATE_IPS='$WORKER_PRIVATE_IPS' bash -s" <<'REMOTE_GATEWAY'
+          set -euo pipefail
+
+          sudo docker network create corp-tower-gateway 2>/dev/null || true
+
+          if ! command -v k3s >/dev/null 2>&1; then
+            curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" sh -
+          fi
+
+          sudo docker stop corp-tower-redis 2>/dev/null || true
+          sudo docker rm corp-tower-redis 2>/dev/null || true
+          sudo docker run -d \
+            --name corp-tower-redis \
+            --restart unless-stopped \
+            --network corp-tower-gateway \
+            -p 6379:6379 \
+            redis:7-alpine redis-server --bind 0.0.0.0 --protected-mode no
+
+          UPSTREAMS=""
+          for WORKER_IP in $WORKER_PRIVATE_IPS; do
+            UPSTREAMS="${UPSTREAMS}    server ${WORKER_IP}:3000;\n"
+          done
+
+          printf "events {}\nhttp {\n  upstream corp_tower_workers {\n%s  }\n  server {\n    listen 3000;\n    location / {\n      proxy_pass http://corp_tower_workers;\n      proxy_http_version 1.1;\n      proxy_set_header Upgrade \$http_upgrade;\n      proxy_set_header Connection \"Upgrade\";\n      proxy_set_header Host \$host;\n    }\n  }\n}\n" "$UPSTREAMS" > /tmp/corp-tower-nginx.conf
+
+          sudo docker stop corp-tower-gateway 2>/dev/null || true
+          sudo docker rm corp-tower-gateway 2>/dev/null || true
+          sudo docker run -d \
+            --name corp-tower-gateway \
+            --restart unless-stopped \
+            -p 3000:3000 \
+            -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
+            nginx:1.27-alpine
+
+          sudo docker ps --filter name=corp-tower
+          REMOTE_GATEWAY

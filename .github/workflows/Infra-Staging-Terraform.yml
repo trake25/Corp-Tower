@@ -1,0 +1,98 @@
+name: Infra Staging Terraform
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/Infra-Staging-Terraform.yml"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Infrastructure slice to plan/apply."
+        required: true
+        default: "ec2-learning-lab"
+        type: choice
+        options:
+          - "ec2-learning-lab"
+      apply:
+        description: "Apply staging infrastructure changes."
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  TF_VAR_aws_region: ap-southeast-1
+  TF_VAR_environment: staging
+  TF_VAR_github_repository: ${{ github.repository }}
+  TF_VAR_ssh_public_key: ${{ secrets.EC2_STAGING_SSH_PUBLIC_KEY }}
+  TF_VAR_ssh_cidr: ${{ secrets.STAGING_SSH_CIDR || '0.0.0.0/0' }}
+  TF_VAR_game_port_cidr: ${{ secrets.STAGING_GAME_PORT_CIDR || '0.0.0.0/0' }}
+
+jobs:
+  terraform:
+    name: Plan Or Apply Staging Infra
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: staging
+    defaults:
+      run:
+        working-directory: infra/terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init
+        run: terraform init -input=false -migrate-state -force-copy
+
+      - name: Terraform fmt check
+        run: terraform fmt -check
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Select Terraform target
+        run: |
+          set -euo pipefail
+          TARGET="${{ github.event_name == 'workflow_dispatch' && inputs.target || 'ec2-learning-lab' }}"
+
+          case "$TARGET" in
+            ec2-learning-lab)
+              echo "TF_TARGET_ARGS=-target=aws_instance.staging -target=aws_instance.worker" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Disabled target '$TARGET'. Only EC2 learning lab is enabled for cost-safe staging."
+              exit 1
+              ;;
+          esac
+
+      - name: Terraform plan
+        run: terraform plan -input=false $TF_TARGET_ARGS
+
+      - name: Terraform apply
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == 'true' }}
+        run: terraform apply -input=false -auto-approve $TF_TARGET_ARGS
+
+      - name: Show Terraform outputs
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == 'true' }}
+        run: terraform output

@@ -22,9 +22,9 @@
 - Players receive a persistent server-issued player id and reconnect token.
 - If a player disconnects and reconnects within 60 seconds, the server resumes the same player slot in the same room.
 - The client must be able to display/retain the current room id after room creation or resume.
-- Pod routing is transparent to players: sticky load balancing should usually return a player to the same server pod, but any healthy pod can recover the room/player session from shared Redis state.
-- Redis ElastiCache is the authoritative shared state layer for active matchmaking, room/session lookup, reconnect identity, and room ownership across Kubernetes pods.
-- If reconnect TTL expires, the player session is no longer resumable and the player must enter matchmaking again.
+- Routing is transparent to players: the learning gateway should usually route a WebSocket to one worker server, but any healthy worker can recover the room/player session from shared Redis state.
+- Redis is the authoritative shared state layer for active matchmaking, room/session lookup, reconnect identity, and room ownership across horizontally scaled server workers.
+- If reconnect TTL expires while the room has no connected real players, the room is destroyed instead of continuing with bots.
 
 ## Block System
 - Blocks assigned at level start; shapes are random like tetris and cannot be rotated.

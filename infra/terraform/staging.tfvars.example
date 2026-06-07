@@ -13,3 +13,9 @@ ssh_public_key = "ssh-ed25519 AAAA... your-public-key ... comment"
 # Restrict SSH to your IP for better security (find at https://ifconfig.me then use x.x.x.x/32).
 ssh_cidr       = "0.0.0.0/0"
 game_port_cidr = "0.0.0.0/0"
+
+# Free-tier learning lab shape:
+# - EC2-1 gateway simulates ALB/Redis/k3s.
+# - EC2-2/EC2-3 simulate Docker server pods.
+# Stop workers when not testing to control credits.
+worker_count = 2
