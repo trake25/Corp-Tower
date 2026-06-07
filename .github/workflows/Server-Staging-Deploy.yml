@@ -216,38 +216,51 @@ jobs:
 
           DEPLOY_PHASE="gateway redis and k3s control plane"
           echo "::group::Gateway Redis and k3s control plane"
-          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
+          timeout 360 ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
             "GATEWAY_PRIVATE_IP='$GATEWAY_PRIVATE_IP' bash -s" <<'REMOTE_GATEWAY_REDIS'
-          set -euo pipefail
+          set -euxo pipefail
 
-          sudo docker network create corp-tower-gateway 2>/dev/null || true
-
-          # Remove legacy single-EC2 server container so gateway proxy can own port 3000 later.
-          sudo docker stop corp-tower-server 2>/dev/null || true
-          sudo docker rm corp-tower-server 2>/dev/null || true
-
-          if ! command -v k3s >/dev/null 2>&1; then
-            curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik --node-ip ${GATEWAY_PRIVATE_IP}" sh -
+          echo "Gateway checkpoint: sudo/docker/k3s preflight"
+          sudo -n true
+          timeout 30 sudo docker version
+          if command -v k3s >/dev/null 2>&1; then
+            timeout 60 sudo systemctl restart k3s
+            timeout 60 sudo k3s kubectl get nodes -o wide || true
+          else
+            curl -sfL --connect-timeout 15 --max-time 120 https://get.k3s.io -o /tmp/install-k3s.sh
+            timeout 240 sudo env INSTALL_K3S_EXEC="--disable traefik --node-ip ${GATEWAY_PRIVATE_IP}" sh /tmp/install-k3s.sh
           fi
 
-          sudo docker stop corp-tower-redis 2>/dev/null || true
-          sudo docker rm corp-tower-redis 2>/dev/null || true
-          sudo docker run -d \
+          echo "Gateway checkpoint: docker cleanup"
+          timeout 30 sudo docker network create corp-tower-gateway 2>/dev/null || true
+
+          # Remove legacy single-EC2 server container so gateway proxy can own port 3000 later.
+          timeout 30 sudo docker stop corp-tower-server 2>/dev/null || true
+          timeout 30 sudo docker rm corp-tower-server 2>/dev/null || true
+          timeout 30 sudo docker stop corp-tower-redis 2>/dev/null || true
+          timeout 30 sudo docker rm corp-tower-redis 2>/dev/null || true
+
+          echo "Gateway checkpoint: redis image pull"
+          timeout 180 sudo docker pull redis:7-alpine
+
+          echo "Gateway checkpoint: redis start"
+          timeout 60 sudo docker run -d \
             --name corp-tower-redis \
             --restart unless-stopped \
             --network corp-tower-gateway \
             -p 6379:6379 \
             redis:7-alpine redis-server --bind 0.0.0.0 --protected-mode no
 
+          echo "Gateway checkpoint: redis readiness"
           for attempt in $(seq 1 30); do
-            if sudo docker exec corp-tower-redis redis-cli ping | grep -q PONG; then
+            if timeout 10 sudo docker exec corp-tower-redis redis-cli ping | grep -q PONG; then
               exit 0
             fi
             sleep 1
           done
 
           echo "Redis did not become ready."
-          sudo docker logs corp-tower-redis
+          timeout 30 sudo docker logs corp-tower-redis
           exit 1
           REMOTE_GATEWAY_REDIS
           echo "::endgroup::"
