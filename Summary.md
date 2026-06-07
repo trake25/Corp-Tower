@@ -48,6 +48,8 @@
 - `docs`
   - [[Staging Deploy Guide]]
   - [[Component-Index]]
+  - [[Corp_Tower_GDD]]: Game rules, scoring, mechanics, debug tuning, progression.
+  - [[Corp_Tower_TDD]]: Technical architecture, deployment, CI/CD, message contracts, testing.
 
 ## Key Data Flow
 - Client connects: [[NetworkManager]] opens `ws://<server>:3000`; [[Server Entry]] assigns `P1`/`P2`/`P3`.
@@ -62,16 +64,35 @@
 - No persistence yet: scores, rooms, and player progress are in-memory only.
 - No reconnect yet: disconnect closes the active room during test phase.
 - Bots are QA helpers, not production-grade AI.
-- Android is the only current client release target.
+- Android is the only current client release target during staging.
 - Godot version target: `4.6.2.stable`.
 - Server runtime target for legacy/VM parity: Node `24.14.1`, npm `11.11.0`.
 - Staging region: `ap-southeast-1`.
 
+## Out Of Scope (Testing Phase)
+- Reconnect logic: deferred, do not implement.
+- Persistence (DB, save state): deferred, do not implement.
+- iOS, Windows, HTML5, Linux client builds: deferred, do not target.
+- HTML client: legacy local test harness only, do not modify.
+- Production-grade bot AI: bots are QA helpers only.
+
+## Current Focus
+- Active: _(update per sprint)_
+- Previous: _(update after each accepted task)_
+- Blocked: _(update as needed)_
+- Next: _(update per sprint)_
+
 ## Fast Start For AI
 - Read this file first.
 - Use [[Component-Index]] for focused component notes.
+- Read .md files first and treat as source of truth
+- For game rules, scoring, and mechanics: read [[Corp_Tower_GDD]].
+- For architecture, deployment, and message contracts: read [[Corp_Tower_TDD]].
 - For server behavior, prioritize [[Game Engine]], [[Lobby Manager]], and [[Server Entry]].
 - For client behavior, prioritize [[NetworkManager]] and [[Main UI Controller]].
 - For deployment, prioritize [[Server Staging Deploy Workflow]] and [[Staging Deploy Guide]].
-- For AI collaboration rules, read [[AI_Agent_Organization]].
+- For AI collaboration rules, read [[AI_Agent_Organization]]. Sub AIs prepare prompts; Main AIs execute; Human Orchestrator owns final review.
 - This repository is intentionally structured as an Obsidian vault; use `[[links]]` for navigation.
+
+## Human Project Workflow
+- [[Project Workflow]].
