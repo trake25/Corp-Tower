@@ -184,14 +184,38 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
           chmod 600 ~/.ssh/ec2_key
-          ssh-keyscan -p "$EC2_PORT" "$EC2_HOST" >> ~/.ssh/known_hosts
+          DEPLOY_PHASE="ssh setup"
+          trap 'echo "::error::Deploy failed during ${DEPLOY_PHASE} near line ${LINENO}."' ERR
+
+          ssh-keyscan -T 10 -p "$EC2_PORT" "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
           REDIS_URL="redis://${GATEWAY_PRIVATE_IP}:6379"
 
           for WORKER_HOST in $WORKER_PUBLIC_IPS; do
-            ssh-keyscan -p "$EC2_PORT" "$WORKER_HOST" >> ~/.ssh/known_hosts
+            ssh-keyscan -T 10 -p "$EC2_PORT" "$WORKER_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
           done
 
+          SSH_PREFLIGHT_OPTS=(
+            -i ~/.ssh/ec2_key
+            -p "$EC2_PORT"
+            -o BatchMode=yes
+            -o ConnectTimeout=20
+            -o StrictHostKeyChecking=accept-new
+          )
+
+          DEPLOY_PHASE="ssh preflight"
+          echo "::group::SSH preflight"
+          for TARGET_HOST in "$EC2_HOST" $WORKER_PUBLIC_IPS; do
+            echo "Checking SSH access to ${TARGET_HOST}"
+            if ! ssh "${SSH_PREFLIGHT_OPTS[@]}" "$EC2_USER@$TARGET_HOST" "hostname && whoami"; then
+              echo "::error::Cannot SSH to ${TARGET_HOST}. Check EC2 instance running state, security group SSH ingress from GitHub Actions, EC2_STAGING_USER, and EC2_STAGING_SSH_KEY."
+              exit 1
+            fi
+          done
+          echo "::endgroup::"
+
+          DEPLOY_PHASE="gateway redis and k3s control plane"
+          echo "::group::Gateway Redis and k3s control plane"
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
             "GATEWAY_PRIVATE_IP='$GATEWAY_PRIVATE_IP' bash -s" <<'REMOTE_GATEWAY_REDIS'
           set -euo pipefail
@@ -226,12 +250,16 @@ jobs:
           sudo docker logs corp-tower-redis
           exit 1
           REMOTE_GATEWAY_REDIS
+          echo "::endgroup::"
 
+          DEPLOY_PHASE="read k3s token"
           K3S_TOKEN="$(
             ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
               "sudo cat /var/lib/rancher/k3s/server/node-token"
           )"
 
+          DEPLOY_PHASE="join k3s workers"
+          echo "::group::Join k3s workers"
           for WORKER_HOST in $WORKER_PUBLIC_IPS; do
             ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$WORKER_HOST" \
               "K3S_URL='https://${GATEWAY_PRIVATE_IP}:6443' K3S_TOKEN='$K3S_TOKEN' bash -s" <<'REMOTE_WORKER'
@@ -247,7 +275,10 @@ jobs:
           curl -sfL https://get.k3s.io | K3S_URL="$K3S_URL" K3S_TOKEN="$K3S_TOKEN" sh -
           REMOTE_WORKER
           done
+          echo "::endgroup::"
 
+          DEPLOY_PHASE="label k3s workers"
+          echo "::group::Label k3s workers"
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
             "WORKER_PRIVATE_IPS='$WORKER_PRIVATE_IPS' bash -s" <<'REMOTE_LABEL_WORKERS'
           set -euo pipefail
@@ -278,7 +309,9 @@ jobs:
           echo "Expected 2 labeled k3s worker nodes."
           exit 1
           REMOTE_LABEL_WORKERS
+          echo "::endgroup::"
 
+          DEPLOY_PHASE="prepare k3s manifests"
           ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
@@ -291,6 +324,8 @@ jobs:
             /tmp/corp-tower-ecr-password \
             "$EC2_USER@$EC2_HOST:/tmp/corp-tower-ecr-password"
 
+          DEPLOY_PHASE="apply k3s deployment"
+          echo "::group::Apply k3s deployment"
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
             "IMAGE_URI='$IMAGE_URI' REDIS_URL='$REDIS_URL' ECR_REGISTRY='$ECR_REGISTRY' bash -s" <<'REMOTE_K3S_APPLY'
           set -euo pipefail
@@ -316,7 +351,10 @@ jobs:
           sudo k3s kubectl -n corp-tower-staging rollout status deployment/corp-tower-server --timeout=180s
           sudo k3s kubectl -n corp-tower-staging get pods -o wide
           REMOTE_K3S_APPLY
+          echo "::endgroup::"
 
+          DEPLOY_PHASE="gateway nginx proxy"
+          echo "::group::Gateway nginx proxy"
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
             "bash -s" <<'REMOTE_GATEWAY'
           set -euxo pipefail
@@ -368,3 +406,4 @@ jobs:
           sudo k3s kubectl get nodes -o wide
           sudo k3s kubectl -n corp-tower-staging get pods -o wide
           REMOTE_GATEWAY
+          echo "::endgroup::"
