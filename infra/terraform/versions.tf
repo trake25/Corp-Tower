@@ -9,11 +9,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "corp-tower-tfstate-ap-southeast-1"
-    key            = "staging/terraform.tfstate"
-    region         = "ap-southeast-1"
-    dynamodb_table = "corp-tower-tfstate-lock"
-    encrypt        = true
+    bucket       = "corp-tower-tfstate-ap-southeast-1"
+    key          = "staging/terraform.tfstate"
+    region       = "ap-southeast-1"
+    encrypt      = true
+    use_lockfile = true
   }
 }
 

@@ -75,8 +75,8 @@
 ## Current Focus (Summarized Title only)
 - Active: Free-tier EC2 gateway/workers lab
 - Previous: Destroy room after reconnect TTL
-- Blocked: Managed AWS Redis/ALB/EKS removed for cost safety; use EC2-1 as simulated ALB/Redis/k3s learning gateway.
-- Next: Terraform/GitHub Actions provision EC2-1 gateway plus EC2-2/3 workers; gateway runs Docker Redis + reverse proxy, workers run server Docker image sharing gateway Redis.
+- Blocked: Infra workflow failed because S3 Terraform backend bucket did not exist before `terraform init`; server deploy failed because EC2 workers are not created yet.
+- Next: Infra workflow self-bootstraps S3 backend, provisions EC2-1 gateway plus EC2-2/3 workers, then server deploy can install Docker Redis/proxy/k3s on gateway and server containers on workers.
 
 ## Fast Start For AI
 - Read this file first.

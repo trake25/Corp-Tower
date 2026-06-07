@@ -24,10 +24,10 @@
 - GitHub Actions:
   - OIDC role runs Terraform, pushes ECR images, discovers workers, and deploys Docker over SSH.
 - Remote state:
-  - Bootstrap workflow creates S3 state bucket and DynamoDB lock table.
+  - Staging Terraform workflow creates the S3 state bucket if missing before `terraform init`.
+  - Backend uses S3 native lockfile instead of DynamoDB lock table.
   - Staging Terraform workflow uses S3 backend and migrates existing local state on first CI run.
 - Cost-safe CI rollout order:
-  - Run bootstrap apply once.
   - Run staging Terraform target `ec2-learning-lab`.
   - Run server staging deploy; it installs Redis/proxy on EC2-1 and server containers on EC2-2/3.
   - Stop EC2 instances when not testing.
