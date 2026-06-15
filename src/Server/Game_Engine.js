@@ -44,6 +44,7 @@ class GameEngine {
             maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
             players: this.room.players.map(player => ({
                 id: player.id,
+                isBot: Boolean(player.isBot),
                 score: player.score,
                 levelScore: player.levelScore,
                 contributedHeight: player.contributedHeight,

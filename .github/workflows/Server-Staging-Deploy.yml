@@ -332,9 +332,129 @@ jobs:
           ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
 
+          configure_gateway_upstream() {
+            local excluded_worker_ip="${1:-}"
+            local active_worker_ips=""
+
+            for WORKER_IP in $WORKER_PRIVATE_IPS; do
+              if [ -n "$excluded_worker_ip" ] && [ "$WORKER_IP" = "$excluded_worker_ip" ]; then
+                continue
+              fi
+
+              active_worker_ips="${active_worker_ips} ${WORKER_IP}"
+            done
+
+            active_worker_ips="$(printf '%s' "$active_worker_ips" | xargs)"
+
+            if [ -z "$active_worker_ips" ]; then
+              echo "::error::No active workers remain for gateway upstream."
+              return 1
+            fi
+
+            ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
+              "ACTIVE_WORKER_PRIVATE_IPS='$active_worker_ips' bash -s" <<'REMOTE_GATEWAY'
+          set -euxo pipefail
+
+          sudo -n true
+
+          if ! command -v docker >/dev/null 2>&1; then
+            sudo dnf install -y docker
+          fi
+
+          sudo systemctl enable docker
+          sudo systemctl start docker
+          timeout 30 sudo docker version
+
+          sudo docker stop corp-tower-server 2>/dev/null || true
+          sudo docker rm corp-tower-server 2>/dev/null || true
+
+          for WORKER_IP in $ACTIVE_WORKER_PRIVATE_IPS; do
+            for attempt in $(seq 1 30); do
+              if timeout 5 bash -c "cat < /dev/null > /dev/tcp/${WORKER_IP}/3000"; then
+                break
+              fi
+
+              if [ "$attempt" -eq 30 ]; then
+                echo "Worker ${WORKER_IP}:3000 did not become reachable from gateway."
+                exit 1
+              fi
+
+              sleep 2
+            done
+          done
+
+          {
+            echo "events {}"
+            echo "http {"
+            echo "  upstream corp_tower_workers {"
+            for WORKER_IP in $ACTIVE_WORKER_PRIVATE_IPS; do
+              echo "    server ${WORKER_IP}:3000;"
+            done
+            echo "  }"
+            echo "  server {"
+            echo "    listen 3000;"
+            echo "    location / {"
+            echo "      proxy_pass http://corp_tower_workers;"
+            echo "      proxy_http_version 1.1;"
+            echo "      proxy_set_header Upgrade \$http_upgrade;"
+            echo "      proxy_set_header Connection \"Upgrade\";"
+            echo "      proxy_set_header Host \$host;"
+            echo "    }"
+            echo "  }"
+            echo "}"
+          } > /tmp/corp-tower-nginx.conf
+
+          sudo docker run --rm \
+            --network host \
+            -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
+            nginx:1.27-alpine nginx -t
+
+          GATEWAY_STATUS="$(sudo docker inspect -f '{{.State.Status}}' corp-tower-gateway 2>/dev/null || true)"
+          if [ "$GATEWAY_STATUS" = "running" ]; then
+            sudo docker exec corp-tower-gateway nginx -t
+            sudo docker exec corp-tower-gateway nginx -s reload
+          else
+            sudo docker rm -f corp-tower-gateway 2>/dev/null || true
+
+            if sudo ss -ltnp | grep -q ':3000 '; then
+              echo "Port 3000 is already listening before gateway start:"
+              sudo ss -ltnp | grep ':3000 ' || true
+              exit 1
+            fi
+
+            sudo docker run -d \
+              --name corp-tower-gateway \
+              --restart unless-stopped \
+              --network host \
+              -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
+              nginx:1.27-alpine
+          fi
+
+          sudo ss -ltnp | grep ':3000 ' || true
+          sudo docker ps --filter name=corp-tower
+          REMOTE_GATEWAY
+          }
+
           DEPLOY_PHASE="deploy docker workers"
           echo "::group::Deploy Docker workers"
-          for WORKER_HOST in $WORKER_PUBLIC_IPS; do
+          read -r -a WORKER_PUBLIC_IP_ARRAY <<< "$WORKER_PUBLIC_IPS"
+          read -r -a WORKER_PRIVATE_IP_ARRAY <<< "$WORKER_PRIVATE_IPS"
+
+          if [ "${#WORKER_PUBLIC_IP_ARRAY[@]}" -ne "${#WORKER_PRIVATE_IP_ARRAY[@]}" ]; then
+            echo "::error::Worker public/private IP discovery count mismatch."
+            echo "Public IPs: $WORKER_PUBLIC_IPS"
+            echo "Private IPs: $WORKER_PRIVATE_IPS"
+            exit 1
+          fi
+
+          for WORKER_INDEX in "${!WORKER_PUBLIC_IP_ARRAY[@]}"; do
+            WORKER_HOST="${WORKER_PUBLIC_IP_ARRAY[$WORKER_INDEX]}"
+            WORKER_PRIVATE_IP="${WORKER_PRIVATE_IP_ARRAY[$WORKER_INDEX]}"
+
+            echo "Draining worker ${WORKER_PRIVATE_IP} from gateway upstream before update."
+            configure_gateway_upstream "$WORKER_PRIVATE_IP"
+            sleep 5
+
             ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$WORKER_HOST" \
               "IMAGE_URI='$IMAGE_URI' REDIS_URL='$REDIS_URL' ECR_REGISTRY='$ECR_REGISTRY' AWS_REGION='$AWS_REGION' bash -s" <<'REMOTE_WORKER'
           set -euxo pipefail
@@ -418,86 +538,5 @@ jobs:
 
           DEPLOY_PHASE="gateway nginx proxy"
           echo "::group::Gateway nginx proxy"
-          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-            "WORKER_PRIVATE_IPS='$WORKER_PRIVATE_IPS' bash -s" <<'REMOTE_GATEWAY'
-          set -euxo pipefail
-
-          sudo -n true
-
-          if ! command -v docker >/dev/null 2>&1; then
-            sudo dnf install -y docker
-          fi
-
-          sudo systemctl enable docker
-          sudo systemctl start docker
-          timeout 30 sudo docker version
-
-          sudo docker stop corp-tower-server 2>/dev/null || true
-          sudo docker rm corp-tower-server 2>/dev/null || true
-
-          for WORKER_IP in $WORKER_PRIVATE_IPS; do
-            for attempt in $(seq 1 30); do
-              if timeout 5 bash -c "cat < /dev/null > /dev/tcp/${WORKER_IP}/3000"; then
-                break
-              fi
-
-              if [ "$attempt" -eq 30 ]; then
-                echo "Worker ${WORKER_IP}:3000 did not become reachable from gateway."
-                exit 1
-              fi
-
-              sleep 2
-            done
-          done
-
-          {
-            echo "events {}"
-            echo "http {"
-            echo "  upstream corp_tower_workers {"
-            for WORKER_IP in $WORKER_PRIVATE_IPS; do
-              echo "    server ${WORKER_IP}:3000;"
-            done
-            echo "  }"
-            echo "  server {"
-            echo "    listen 3000;"
-            echo "    location / {"
-            echo "      proxy_pass http://corp_tower_workers;"
-            echo "      proxy_http_version 1.1;"
-            echo "      proxy_set_header Upgrade \$http_upgrade;"
-            echo "      proxy_set_header Connection \"Upgrade\";"
-            echo "      proxy_set_header Host \$host;"
-            echo "    }"
-            echo "  }"
-            echo "}"
-          } > /tmp/corp-tower-nginx.conf
-
-          sudo docker run --rm \
-            --network host \
-            -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
-            nginx:1.27-alpine nginx -t
-
-          GATEWAY_STATUS="$(sudo docker inspect -f '{{.State.Status}}' corp-tower-gateway 2>/dev/null || true)"
-          if [ "$GATEWAY_STATUS" = "running" ]; then
-            sudo docker exec corp-tower-gateway nginx -t
-            sudo docker exec corp-tower-gateway nginx -s reload
-          else
-            sudo docker rm -f corp-tower-gateway 2>/dev/null || true
-
-            if sudo ss -ltnp | grep -q ':3000 '; then
-              echo "Port 3000 is already listening before gateway start:"
-              sudo ss -ltnp | grep ':3000 ' || true
-              exit 1
-            fi
-
-            sudo docker run -d \
-              --name corp-tower-gateway \
-              --restart unless-stopped \
-              --network host \
-              -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
-              nginx:1.27-alpine
-          fi
-
-          sudo ss -ltnp | grep ':3000 ' || true
-          sudo docker ps --filter name=corp-tower
-          REMOTE_GATEWAY
+          configure_gateway_upstream
           echo "::endgroup::"

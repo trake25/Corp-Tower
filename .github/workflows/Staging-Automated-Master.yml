@@ -1,6 +1,16 @@
 name: Staging Automated Master
 
 on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "src/Server/**"
+      - ".github/workflows/Staging-Automated-Master.yml"
+      - ".github/workflows/Staging-Diagnostics.yml"
+      - ".github/workflows/Staging-Infra-Plan.yml"
+      - ".github/workflows/Server-Staging-Deploy.yml"
   workflow_dispatch:
     inputs:
       extra_public_ips:
@@ -22,7 +32,7 @@ jobs:
     name: Diagnostics
     uses: ./.github/workflows/Staging-Diagnostics.yml
     with:
-      extra_public_ips: ${{ inputs.extra_public_ips }}
+      extra_public_ips: ${{ github.event_name == 'workflow_dispatch' && inputs.extra_public_ips || '' }}
     secrets: inherit
 
   infra-plan:

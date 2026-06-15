@@ -1,7 +1,8 @@
 # Changelog
 
 ## 2026-06-15
-- feature: Added manual `Staging Automated Master` workflow to queue `Diagnostics -> Infra Plan -> Server Update`.
+- update: `Staging Automated Master` now runs automatically on server-side pushes to `main`/`master`, while client-only pushes do not trigger staging deploys.
+- feature: Added `Staging Automated Master` workflow to queue `Diagnostics -> Infra Plan -> Server Update`.
 - update: `Staging Infra Plan` now fails on Terraform create/delete/replace actions so the automated path cannot silently create or destroy infrastructure.
 - update: Removed legacy k3s-uninstall actions from `Staging Server Update`; k3s is out of the active deployment path.
 - checkpoint: Reverted staging to the pre-k3s Docker worker path; Diagnostics, Infra Plan, Infra Apply, Cleanup, and Server Update all succeeded, and the Godot client can play against staging.

@@ -19,7 +19,7 @@
 - `src/Server/Bot_Manager.js`: QA bot action loops and placement behavior. -> [[Bot Manager]]
 - `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd`: Godot WebSocket adapter with reconnect identity persistence. -> [[NetworkManager]]
 - `.github/workflows/Staging-Diagnostics.yml`: manual read-only AWS/network/SSH diagnostics. -> [[Staging Diagnostics Workflow]]
-- `.github/workflows/Staging-Automated-Master.yml`: manual queue for normal non-destructive staging updates. -> [[Staging Automated Master Workflow]]
+- `.github/workflows/Staging-Automated-Master.yml`: automatic/manual queue for normal non-destructive staging server updates. -> [[Staging Automated Master Workflow]]
 - `.github/workflows/Staging-Infra-Plan.yml`: manual Terraform plan for EC2 learning lab. -> [[Terraform Infrastructure]]
 - `.github/workflows/Staging-Infra-Apply.yml`: manual Terraform apply after a reviewed plan. -> [[Terraform Infrastructure]]
 - `.github/workflows/Server-Staging-Deploy.yml`: Docker/ECR deploy to EC2 gateway/workers. -> [[Server Staging Deploy Workflow]]
@@ -66,11 +66,13 @@
 
 ## CI/CD
 - Normal automated staging path is `Diagnostics -> Infra Plan -> Server Update`.
+- Server-side pushes to `main`/`master` trigger the automated master workflow; client-only pushes do not.
 - Cleanup is manual-only and used when an implementation fails or a revert needs to remove stale Docker runtime artifacts.
 - Infra Apply and EC2 Rebuild are manual-only because they can intentionally change infrastructure.
 - Infra plan/apply workflows are manual-only because creating or changing EC2 instances is an AWS side effect.
 - `Staging-Automated-Master.yml`:
   - calls diagnostics, infra plan, then server update in queue order
+  - triggers on server-side pushes and manual dispatch
   - does not call cleanup, infra apply, or EC2 rebuild
 - `Staging-Diagnostics.yml`:
   - verifies tagged EC2 topology, status checks, security group rules, routes, NACLs, and SSH reachability

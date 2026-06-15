@@ -24,7 +24,7 @@
 - [[Bot Manager]] schedules QA bot actions and cancels bot timers when rooms close.
 - [[Game Config]] stores balance and debug-tunable variables.
 - [[Server Staging Deploy Workflow]] builds/pushes Docker images to ECR and deploys the Docker-worker EC2 gateway/workers lab.
-- [[Staging Automated Master Workflow]] queues diagnostics, infra plan, and server update for the normal non-destructive deployment path.
+- [[Staging Automated Master Workflow]] automatically queues diagnostics, infra plan, and server update for server-side pushes.
 - [[Staging Diagnostics Workflow]] manually verifies AWS topology, networking, EC2 status, and SSH reachability without changing staging.
 - [[Staging Runtime Cleanup Workflow]] manually removes only the Docker runtime artifacts managed by server update, while leaving EC2 prerequisites installed.
 - [[Terraform Infrastructure]] creates/adopts AWS staging resources for the free-tier learning lab.
@@ -71,7 +71,7 @@
 - Staging deploy: GitHub VM tests server, builds Docker image, pushes ECR, starts external Redis on EC2-1, starts server containers on EC2-2/EC2-3, and routes nginx to the workers.
 - Staging diagnostics: manual workflow verifies tagged EC2 discovery, status checks, security group rules, route tables, NACLs, and GitHub-runner SSH.
 - Staging cleanup: manual workflow can wipe stale Corp Tower Docker containers, images, temp files, and networks before redeploy; it intentionally leaves Docker/AWS CLI prerequisites installed.
-- Staging automated master: manual workflow queues `Diagnostics -> Infra Plan -> Server Update`; it does not run Cleanup, Infra Apply, or EC2 Rebuild.
+- Staging automated master: server-side pushes and manual runs queue `Diagnostics -> Infra Plan -> Server Update`; it does not run Cleanup, Infra Apply, or EC2 Rebuild.
 
 ## Constraints And Assumptions
 - Shared active room/session state uses Redis in staging; long-term leaderboard persistence is still deferred.
