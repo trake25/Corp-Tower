@@ -42,6 +42,7 @@ function stripRuntimeRoom(room) {
             checkpointLevel: engineRoom.checkpointLevel || 1,
             targetHeight: engineRoom.targetHeight || 0,
             currentHeight: engineRoom.currentHeight || 0,
+            towerBlocks: engineRoom.towerBlocks || [],
             state: engineRoom.state || "waiting",
             startsAt: engineRoom.startsAt || 0,
             endsAt: engineRoom.endsAt || 0,

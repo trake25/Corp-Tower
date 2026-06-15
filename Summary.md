@@ -13,7 +13,7 @@
 - Selfish cooperation: players need team success but compete for level score/MVP.
 - Server authority: Node WebSocket server owns matchmaking, room state, timers, scoring, bots, and debug config.
 - Debug tuning: designers/QA can update selected `Game_Config` values at runtime; server broadcasts authoritative config to all clients.
-- Staging reconnect: clients keep a server-issued player id/reconnect token and can resume the same room within the debug TTL.
+- Staging reconnect: clients keep a server-issued player id/reconnect token and can resume the same room within the debug TTL; real-player-only rooms can auto-reconnect after unintended disconnects.
 
 ## System Design High-Level
 - [[Godot Client App]] connects to the server through [[NetworkManager]].
@@ -68,7 +68,7 @@
 - Player action: client sends `place_block`; server validates cooldown/index/state and broadcasts `game_state`.
 - Debug update: client sends `update_config`; [[Lobby Manager]] validates value and broadcasts `debug_config`.
 - Disconnect: WebSocket `close` starts reconnect TTL; missed TTL destroys rooms with no connected real players.
-- Staging deploy: GitHub VM tests server, builds Docker image, pushes ECR, starts external Redis on EC2-1, starts server containers on EC2-2/EC2-3, and routes nginx to the workers.
+- Staging deploy: GitHub VM tests server, builds Docker image, pushes ECR, starts external Redis on EC2-1, drains one worker from nginx, updates that worker, then restores nginx routing after workers are healthy.
 - Staging diagnostics: manual workflow verifies tagged EC2 discovery, status checks, security group rules, route tables, NACLs, and GitHub-runner SSH.
 - Staging cleanup: manual workflow can wipe stale Corp Tower Docker containers, images, temp files, and networks before redeploy; it intentionally leaves Docker/AWS CLI prerequisites installed.
 - Staging automated master: server-side pushes and manual runs queue `Diagnostics -> Infra Plan -> Server Update`; it does not run Cleanup, Infra Apply, or EC2 Rebuild.
@@ -76,6 +76,7 @@
 ## Constraints And Assumptions
 - Shared active room/session state uses Redis in staging; long-term leaderboard persistence is still deferred.
 - Debug reconnect TTL is 10 seconds in staging deploy.
+- Client auto-reconnect is enabled only for real-player-only rooms; bot-filled debug rooms still require manual reconnect.
 - Bots are QA helpers, not production-grade AI.
 - Android is the only current client release target during staging.
 - Godot version target: `4.6.2.stable`.

@@ -43,6 +43,8 @@
 - Debug bots fill empty slots only when at least 1 real player is waiting.
 - Clients send `reconnect` after WebSocket open using stored `playerId` and `reconnectToken`.
 - Valid reconnect resumes the same player slot and room.
+- Godot auto-reconnects after unintended disconnects only when the last known room had real players only and no bots.
+- Manual disconnect and app close do not trigger auto-reconnect.
 - Missed reconnect TTL closes rooms with reason `reconnect_ttl_expired` when no connected real players remain.
 - Any server pod can recover room/player session from Redis.
 
@@ -52,7 +54,7 @@
 |---|---|
 | `room_created` | New room/session assignment with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, and initial `blocks`. |
 | `room_resumed` | Existing room/session resumed with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, and blocks. |
-| `game_state` | Authoritative live state: level, timer, height, summary, refresh caps, and per-player score/inventory/token fields. |
+| `game_state` | Authoritative live state: level, timer, height, tower block history, summary, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
 | `debug_config` | Authoritative debug menu state. |
 | `room_closed` | Room teardown reason for connected real players. |
 
@@ -90,7 +92,8 @@
   - starts gateway Redis and waits for `PONG`
   - deploys Docker server containers on EC2-2/EC2-3 workers
   - generates and validates nginx config with `nginx -t`
-  - starts gateway nginx proxy to worker private IPs on port `3000`
+  - drains one worker from nginx, updates that worker, and restores all healthy workers in nginx
+  - starts/reloads gateway nginx proxy to worker private IPs on port `3000`
 - `Staging-Runtime-Cleanup.yml`:
   - manually removes stale Corp Tower containers, temp files, Docker network, and optional server/nginx/redis images
   - leaves Docker and AWS CLI installed because server update uses them as EC2 prerequisites
@@ -108,6 +111,7 @@
   - EC2-2/EC2-3: `corp-tower-server`
   - Redis: `docker exec corp-tower-redis redis-cli ping`
   - client: connect to `ws://<EC2-1-public-ip>:3000`
+- Godot client import/parse check: run Godot headless against `src/Client/App/corp-tower`.
 
 ## Future Technical Work
 - Production-grade persistence for leaderboards and player stats.

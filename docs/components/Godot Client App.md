@@ -6,7 +6,7 @@
 
 ## Responsibilities
 - Connect to the EC2-1 gateway, which routes to authoritative server workers.
-- Render room, level, height, score, inventory, refresh, and debug UI.
+- Render room, level, timer, tower height/progress, score, shape inventory, and refresh UI.
 - Send player actions.
 - Reflect server state rather than calculating final gameplay locally.
 
@@ -18,7 +18,7 @@
 
 ## Inputs/Outputs
 - Input: WebSocket messages from [[Server Entry]].
-- Output: WebSocket messages for reconnect, block placement, refresh, and debug updates.
+- Output: WebSocket messages for reconnect, block placement, and refresh.
 
 ## Dependencies
 - Godot `4.6.2.stable`.

@@ -617,6 +617,7 @@ class LobbyManager {
                 checkpointLevel: snapshot.state.checkpointLevel,
                 targetHeight: snapshot.state.targetHeight,
                 currentHeight: snapshot.state.currentHeight,
+                towerBlocks: snapshot.state.towerBlocks || [],
                 state: snapshot.state.state,
                 startsAt: snapshot.state.startsAt,
                 endsAt: snapshot.state.endsAt,

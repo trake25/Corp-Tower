@@ -14,7 +14,7 @@
 - Fail early when the gateway and workers are not all in one subnet.
 
 ## Key Logic
-- Trigger: manual `workflow_dispatch` while staging is being stabilized.
+- Trigger: manual `workflow_dispatch` or reusable workflow call from [[Staging Automated Master Workflow]].
 - Jobs:
   - `test-server`
   - `build-and-push`
@@ -30,6 +30,8 @@
   - Worker containers use `REDIS_URL=redis://<gateway-private-ip>:6379`.
   - Worker containers use `RECONNECT_TTL_SECONDS=10` for faster staging/debug reconnect testing.
   - Deploy validates generated nginx config with `nginx -t`.
+  - Before each worker update, deploy reloads nginx without that worker in the upstream.
+  - After the worker is healthy, deploy continues to the next worker and finally restores all healthy workers in nginx.
   - Deploy reloads an existing gateway nginx container when possible instead of always recreating it.
   - Godot connects to gateway `ws://<gateway-public-ip>:3000`; nginx routes WebSocket traffic to worker private IPs on port `3000`.
 
@@ -45,6 +47,7 @@
 
 ## Notes
 - This is the active path.
+- Rolling worker drain reduces new connections to a worker while it is being replaced; existing WebSocket connections on that worker can still drop and rely on client reconnect.
 - This workflow is the only workflow that should install/update the active Docker runtime; [[Staging Runtime Cleanup Workflow]] is scoped to remove what this workflow creates except EC2 prerequisites.
 - User does not test in local machine but in Github Action and staging only.
 - Useful EC2 checks: `sudo docker ps --filter name=corp-tower`, `sudo docker logs corp-tower-gateway`, `sudo docker logs corp-tower-redis`, and on workers `sudo docker logs corp-tower-server`.

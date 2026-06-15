@@ -5,17 +5,17 @@
 - File: `src/Client/App/corp-tower/Cor/Scripts/Main.gd`.
 
 ## Responsibilities
-- Wire buttons and sliders.
-- Display connection, room, score, height, blocks, and refresh state.
+- Wire connect, block placement, and refresh buttons.
+- Display connection, room, score, timer, tower height/progress, block inventory, and refresh state.
+- Render shape-based block inventory cards from server-provided fixed-orientation cells.
 - Send block and refresh actions.
-- Render debug config and avoid config echo loops.
 - Clear stale UI on `room_closed`.
 
 ## Key Logic
 - Inventory buttons map to block indexes.
+- Inventory cards tolerate legacy numeric blocks and new `{ id, shapeId, cells, height }` block objects.
+- Tower center display visualizes current height against target height.
 - Refresh button sends `refresh_blocks`.
-- Debug controls call `update_config`.
-- `update_debug_config(config)` uses no-signal setters to avoid resending server broadcasts.
 - `update_room_closed(data)` resets stale room UI.
 
 ## Inputs/Outputs
@@ -27,5 +27,5 @@
 - [[Godot Client App]]
 
 ## Notes
-- UI is still functional/prototype style.
-- Debug menu is for QA/design tuning, not public production access.
+- UI is an Android-first gameplay HUD with top status, center tower stage, and bottom touch controls.
+- Debug menu UI is intentionally excluded from this design pass.

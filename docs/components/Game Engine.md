@@ -39,6 +39,7 @@
 ## Inputs/Outputs
 - Input: players from [[Lobby Manager]], `place_block`, `refresh_blocks`.
 - Output: `game_state` broadcasts, score updates, level transitions.
+- `game_state.players[]` includes `isBot` so clients can distinguish real-player rooms from bot-filled debug rooms.
 
 ## Dependencies
 - [[Game Config]]

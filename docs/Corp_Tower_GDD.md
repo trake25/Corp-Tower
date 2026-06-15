@@ -28,6 +28,9 @@
 
 ## Block System
 - Blocks assigned at level start; shapes are random like tetris and cannot be rotated.
+- A block's height contribution is its fixed vertical footprint, not its cell count.
+- Example: a 3-cell vertical block contributes 3 height, a 3-cell horizontal block contributes 1 height, and a 3-cell L block contributes 2 height.
+- The server assigns each block's shape/orientation and sends `{ id, shapeId, cells, height }` to the client.
 
 ### Inventory Rules
 - Max 3 active blocks + 1 carry-over block from previous level.
@@ -55,7 +58,7 @@
 
 ## Timer
 - Default level time limit (Configurable): 30 seconds.
-- Adjustable via Debug Menu (`levelTimeLimitMs`).
+- Adjustable through server-side debug tuning (`levelTimeLimitMs`); public gameplay UI does not expose debug controls in the current design pass.
 
 ## Failure Conditions
 - Time runs out before target height is reached.
@@ -93,7 +96,7 @@
 ## Debug Menu and Live Tuning
 - Purpose: expose selected [[Game Config]] variables to designers/QA without code changes or restarts.
 - Authority: server validates and applies all changes; broadcasts `debug_config` to all real clients.
-- Clients use `set_pressed_no_signal` / `set_value_no_signal` on sync to avoid echo loops.
+- Client debug controls are not part of the current gameplay UI design pass; future debug UI must sync without echo loops.
 
 ### Currently Exposed Variables
 | Variable | Description |

@@ -38,6 +38,7 @@ class GameEngine {
             checkpointLevel: this.room.checkpointLevel,
             currentHeight: this.room.currentHeight,
             targetHeight: this.room.targetHeight,
+            towerBlocks: this.room.towerBlocks || [],
             secondsRemaining: Math.ceil(this.getRemainingMs() / 1000),
             lastLevelSummary: this.room.lastLevelSummary,
             maxRefreshTokens: GameConfig.maxRefreshTokens,
@@ -82,6 +83,7 @@ class GameEngine {
             checkpointLevel: 1,
             targetHeight: GameConfig.targetHeightMultiplier,
             currentHeight: 0,
+            towerBlocks: [],
             state: "waiting",
             startsAt: 0,
             endsAt: 0,
@@ -112,6 +114,7 @@ class GameEngine {
             checkpointLevel: snapshot.state.checkpointLevel,
             targetHeight: snapshot.state.targetHeight,
             currentHeight: snapshot.state.currentHeight,
+            towerBlocks: snapshot.state.towerBlocks || [],
             state: snapshot.state.state,
             startsAt: snapshot.state.startsAt,
             endsAt: snapshot.state.endsAt,
@@ -178,6 +181,7 @@ class GameEngine {
 
         this.room.state = "starting";
         this.room.currentHeight = 0;
+        this.room.towerBlocks = [];
         this.room.targetHeight =
             this.room.level * GameConfig.targetHeightMultiplier;
         this.room.startsAt = Date.now() + GameConfig.startDelayMs;
@@ -264,6 +268,65 @@ class GameEngine {
     // BLOCK SYSTEM
     // =========================
 
+    createBlockId() {
+        return `B${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    cloneCells(cells) {
+        return cells.map(cell => [Number(cell[0]), Number(cell[1])]);
+    }
+
+    getBlockHeight(block) {
+        if (typeof block === "number") {
+            return block;
+        }
+
+        if (!block || typeof block !== "object") {
+            return 0;
+        }
+
+        if (Number.isFinite(Number(block.height))) {
+            return Number(block.height);
+        }
+
+        if (!Array.isArray(block.cells) || block.cells.length === 0) {
+            return 0;
+        }
+
+        const rows = block.cells.map(cell => Number(cell[1]));
+        return Math.max(...rows) - Math.min(...rows) + 1;
+    }
+
+    getBlockCellCount(block) {
+        if (typeof block === "number") {
+            return block;
+        }
+
+        if (Array.isArray(block?.cells)) {
+            return block.cells.length;
+        }
+
+        return this.getBlockHeight(block);
+    }
+
+    createBlock(blockSize) {
+        const variants =
+            GameConfig.blockShapeVariants[blockSize] ||
+            GameConfig.blockShapeVariants[1];
+
+        const variant =
+            variants[Math.floor(Math.random() * variants.length)];
+
+        const cells = this.cloneCells(variant.cells);
+
+        return {
+            id: this.createBlockId(),
+            shapeId: variant.shapeId,
+            cells: cells,
+            height: this.getBlockHeight({ cells: cells })
+        };
+    }
+
     getRandomBlock() {
         const availableBlocks = {
             1: GameConfig.blockWeights[1],
@@ -292,7 +355,7 @@ class GameEngine {
         const randomIndex =
             Math.floor(Math.random() * weightedPool.length);
 
-        return weightedPool[randomIndex];
+        return this.createBlock(weightedPool[randomIndex]);
     }
 
     getBlocksPerPlayer() {
@@ -334,7 +397,16 @@ class GameEngine {
         }
 
         return [...blocks]
-            .sort((a, b) => b - a)
+            .sort((a, b) => {
+                const heightDiff =
+                    this.getBlockHeight(b) - this.getBlockHeight(a);
+
+                if (heightDiff !== 0) {
+                    return heightDiff;
+                }
+
+                return this.getBlockCellCount(b) - this.getBlockCellCount(a);
+            })
             .slice(0, maxBlocks);
     }
 
@@ -376,19 +448,28 @@ class GameEngine {
         }
 
         const block = player.blocks.splice(blockIndex, 1)[0];
+        const blockHeight = this.getBlockHeight(block);
         const previousHeight = this.room.currentHeight;
         const effectiveHeight = Math.max(
             0,
-            Math.min(block, this.room.targetHeight - previousHeight)
+            Math.min(blockHeight, this.room.targetHeight - previousHeight)
         );
 
         player.lastPlacementTime = Date.now();
         player.contributedHeight += effectiveHeight;
-        this.room.currentHeight += block;
+        this.room.currentHeight += blockHeight;
+        this.room.towerBlocks = this.room.towerBlocks || [];
+        this.room.towerBlocks.push({
+            playerId: player.id,
+            block: block,
+            height: blockHeight,
+            effectiveHeight: effectiveHeight,
+            baseHeight: previousHeight
+        });
 
         this.addPlacementScore(player, block, effectiveHeight);
 
-        console.log(`${player.id} placed block (${block})`);
+        console.log(`${player.id} placed block (${blockHeight})`);
         console.log("Current Height:", this.room.currentHeight);
 
         this.checkWinCondition(player, block);
@@ -478,10 +559,9 @@ class GameEngine {
 
         const remainingPossibleHeight =
             this.room.players.reduce((total, player) => {
-                return total + (player.blocks || []).reduce(
-                    (sum, block) => sum + block,
-                    0
-                );
+                return total + (player.blocks || []).reduce((sum, block) => {
+                    return sum + this.getBlockHeight(block);
+                }, 0);
             }, 0);
 
         const neededHeight =
@@ -616,7 +696,16 @@ class GameEngine {
             const unusedBlocks = player.blocks || [];
 
             player.carryOverBlocks = [...unusedBlocks]
-                .sort((a, b) => b - a)
+                .sort((a, b) => {
+                    const heightDiff =
+                        this.getBlockHeight(b) - this.getBlockHeight(a);
+
+                    if (heightDiff !== 0) {
+                        return heightDiff;
+                    }
+
+                    return this.getBlockCellCount(b) - this.getBlockCellCount(a);
+                })
                 .slice(0, GameConfig.maxCarryOverBlocks);
         });
     }
@@ -626,9 +715,10 @@ class GameEngine {
     // =========================
 
     addPlacementScore(player, block, effectiveHeight) {
-        const basePoints = block * this.room.level;
+        const blockHeight = this.getBlockHeight(block);
+        const basePoints = blockHeight * this.room.level;
         const efficiency =
-            block === 0 ? 0 : effectiveHeight / block;
+            blockHeight === 0 ? 0 : effectiveHeight / blockHeight;
         const points = Math.round(basePoints * efficiency);
 
         //player.score += points; //Only add to levelScore during gameplay
