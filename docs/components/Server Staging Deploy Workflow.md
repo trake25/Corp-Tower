@@ -9,9 +9,9 @@
 - Build Docker image.
 - Push image to ECR.
 - Discover EC2 worker instances.
-- Install/verify k3s control plane and worker agents.
-- Deploy server image through Kubernetes manifests.
+- Deploy server image as Docker containers on worker EC2 instances.
 - Deploy Docker Redis and nginx reverse proxy to EC2-1 gateway.
+- Fail early when the gateway and workers are not all in one subnet.
 
 ## Key Logic
 - Trigger:
@@ -25,27 +25,27 @@
   - OIDC role via `AWS_ROLE_ARN`.
 - Deploy:
   - Finds running worker instances by Terraform tags.
-  - EC2-1 runs k3s control plane and EC2-2/EC2-3 join as k3s agents.
-  - Workflow labels EC2-2/EC2-3 nodes with `corp-tower-role=worker`.
+  - Verifies at least two running workers and one shared subnet.
   - Gateway EC2 runs external Redis simulation with `redis:7-alpine`.
-  - Deploy starts gateway Redis and waits for `PONG` before starting workers.
-  - Workflow creates/refreshes Kubernetes `ecr-registry` image pull secret.
-  - Workflow renders and applies [[K3s Staging Manifests]].
-  - Server pods use `REDIS_URL=redis://<gateway-private-ip>:6379`.
-  - Server pods use `RECONNECT_TTL_SECONDS=10` for faster staging/debug reconnect testing.
-  - Deploy validates generated nginx config with `nginx -t` before starting gateway proxy.
-  - Godot connects to gateway `ws://<gateway-public-ip>:3000`; nginx routes WebSocket traffic to k3s NodePort `30080`.
+  - Deploy keeps healthy Redis running; otherwise it recreates Redis and waits for `PONG`.
+  - EC2-2/EC2-3 pull the ECR image and run `corp-tower-server` Docker containers.
+  - Worker containers use `REDIS_URL=redis://<gateway-private-ip>:6379`.
+  - Worker containers use `RECONNECT_TTL_SECONDS=10` for faster staging/debug reconnect testing.
+  - Deploy validates generated nginx config with `nginx -t`.
+  - Deploy reloads an existing gateway nginx container when possible instead of always recreating it.
+  - Godot connects to gateway `ws://<gateway-public-ip>:3000`; nginx routes WebSocket traffic to worker private IPs on port `3000`.
 
 ## Inputs/Outputs
 - Input: GitHub push/manual run and repository secrets.
-- Output: gateway reverse proxy + external Redis on EC2-1, server pods on EC2-2/EC2-3 through k3s.
+- Output: gateway reverse proxy + external Redis on EC2-1, Docker server containers on EC2-2/EC2-3.
 
 ## Dependencies
 - [[Server Docker Image]]
 - [[Terraform Infrastructure]]
 - [[Staging Deploy Guide]]
+- [[Staging Runtime Cleanup Workflow]]
 
 ## Notes
 - This is the active path.
 - User does not test in local machine but in Github Action and staging only.
-- Useful EC2-1 checks: `sudo k3s kubectl get nodes`, `sudo k3s kubectl get pods -n corp-tower-staging -o wide`.
+- Useful EC2 checks: `sudo docker ps --filter name=corp-tower`, `sudo docker logs corp-tower-gateway`, `sudo docker logs corp-tower-redis`, and on workers `sudo docker logs corp-tower-server`.

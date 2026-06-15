@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-06-15
+- update: Staging runtime cleanup now revokes stale k3s inbound security group rules.
+- update: Added manual staging runtime cleanup workflow and same-subnet EC2 guardrails.
+- fix: Reverted staging deployment from k3s back to Docker workers behind the EC2 gateway.
+
 ## 2026-06-07
 - update: Codex plus implemented a simulated LB, Redis, k3s.
 

@@ -28,6 +28,11 @@ output "staging_ec2_instance_id" {
   value       = aws_instance.staging.id
 }
 
+output "staging_subnet_id" {
+  description = "Subnet used by the staging gateway and worker instances."
+  value       = local.staging_subnet_id
+}
+
 output "worker_public_ips" {
   description = "Worker EC2 public IPs for Docker server containers."
   value       = aws_instance.worker[*].public_ip
@@ -50,5 +55,5 @@ output "staging_ssh_user" {
 
 output "learning_topology_note" {
   description = "Cost-safe learning topology note."
-  value       = "EC2-1 simulates ALB/Redis/k3s gateway. EC2-2/3 simulate server pods as Docker workers. Managed AWS ElastiCache/ALB/EKS are intentionally not used."
+  value       = "EC2-1 simulates ALB/Redis gateway with nginx and Docker Redis. EC2-2/3 run Docker server workers. Managed AWS ElastiCache/ALB/EKS are intentionally not used."
 }

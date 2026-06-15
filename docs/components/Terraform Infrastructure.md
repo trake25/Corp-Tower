@@ -18,9 +18,10 @@
   - Amazon Linux 2023.
   - Docker and AWS CLI installed through user data.
   - Instance profile allows ECR pull.
-  - EC2-1 is the public gateway and k3s control plane.
-  - EC2-2 and EC2-3 are k3s worker nodes for server pods.
-  - Gateway runs Docker Redis and nginx reverse proxy; server pods connect to `redis://<EC2-1-private-ip>:6379`.
+  - Gateway and workers are pinned to the same default subnet.
+  - EC2-1 is the public gateway.
+  - EC2-2 and EC2-3 run Docker server workers.
+  - Gateway runs Docker Redis and nginx reverse proxy; worker containers connect to `redis://<EC2-1-private-ip>:6379`.
 - GitHub Actions:
   - OIDC role runs Terraform, pushes ECR images, discovers workers, and deploys Docker over SSH.
 - Remote state:
@@ -30,7 +31,8 @@
   - Existing manually/previously-created staging resources are imported into state before planning.
 - Cost-safe CI rollout order:
   - Manually run staging Terraform target `ec2-learning-lab` with `apply=true`.
-  - Run server staging deploy; it installs Redis/proxy/k3s on EC2-1 and server pods on EC2-2/3.
+  - Run server staging deploy; it installs Redis/proxy on EC2-1 and Docker server containers on EC2-2/3.
+  - Server deploy fails early if the running EC2 topology is split across multiple subnets.
   - Stop EC2 instances when not testing.
   - EC2 workers were created successfully and server deploy is now the active debug path.
 
@@ -45,7 +47,7 @@
 
 ## Notes
 - `staging.tfvars` is ignored.
-- User prefers GitHub Actions for Terraform/Docker/Redis/Kubernetes validation and deploy instead of local manual runs.
+- User prefers GitHub Actions for Terraform/Docker/Redis validation and deploy instead of local manual runs.
 - Infra workflow is manual-only because creating EC2 instances is a real AWS side effect; push runs do not provision workers.
 - Cost guardrail: Managed ElastiCache, ALB/NLB, and EKS are intentionally not used.
 - EC2-1 is not a real AWS ALB; it is a self-managed gateway/reverse proxy that simulates ALB behavior for learning.

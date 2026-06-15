@@ -17,10 +17,10 @@
 
 ## CI/CD And Infrastructure
 - [[Server Staging Deploy Workflow]]
+- [[Staging Runtime Cleanup Workflow]]
 - [[Client Android Internal Workflow]]
 - [[Legacy Server Update Workflow]]
 - [[Terraform Infrastructure]]
-- [[K3s Staging Manifests]]
 - [[Staging Deploy Guide]]
 
 ## Global

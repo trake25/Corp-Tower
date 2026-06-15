@@ -23,7 +23,8 @@
 - [[Redis State]] stores shared matchmaking/session/room snapshots when `REDIS_URL` is enabled.
 - [[Bot Manager]] schedules QA bot actions and cancels bot timers when rooms close.
 - [[Game Config]] stores balance and debug-tunable variables.
-- [[Server Staging Deploy Workflow]] builds/pushes Docker images to ECR and deploys the k3s-backed EC2 gateway/workers lab.
+- [[Server Staging Deploy Workflow]] builds/pushes Docker images to ECR and deploys the Docker-worker EC2 gateway/workers lab.
+- [[Staging Runtime Cleanup Workflow]] manually removes stale staging k3s security group rules and Docker/k3s runtime artifacts before retrying deploys.
 - [[Terraform Infrastructure]] creates/adopts AWS staging resources for the free-tier learning lab.
 - [[Client Android Internal Workflow]] builds signed Android AABs and can upload to Google Play internal testing.
 - [[AI_Agent_Organization]] defines AI assistant roles, prompt handoff behavior, and human review ownership.
@@ -43,7 +44,7 @@
   - [[Main UI Controller]]: UI, inventory, debug menu.
 - `.github/workflows`
   - [[Server Staging Deploy Workflow]]
-  - [[K3s Staging Manifests]]
+  - [[Staging Runtime Cleanup Workflow]]
   - [[Client Android Internal Workflow]]
   - [[Legacy Server Update Workflow]]
 - `infra`
@@ -56,14 +57,16 @@
 
 ## Key Data Flow
 - Client connects: [[NetworkManager]] opens `ws://<gateway>:3000` and sends `reconnect` with stored identity if available.
-- Gateway routing: EC2-1 nginx reverse proxy forwards WebSocket traffic to the k3s NodePort Service.
-- k3s runtime: EC2-1 is the control plane; EC2-2/EC2-3 are worker nodes running two server pods.
+- Gateway routing: EC2-1 nginx reverse proxy forwards WebSocket traffic to Docker workers on EC2-2/EC2-3.
+- Worker runtime: EC2-2/EC2-3 each run a `corp-tower-server` Docker container.
+- Subnet rule: gateway and workers must run in one shared subnet.
 - Matchmaking: [[Lobby Manager]] queues players through [[Redis State]]; debug bots can fill missing slots.
 - Room start: [[Game Engine]] assigns blocks, starts countdown, then enters `playing`.
 - Player action: client sends `place_block`; server validates cooldown/index/state and broadcasts `game_state`.
 - Debug update: client sends `update_config`; [[Lobby Manager]] validates value and broadcasts `debug_config`.
 - Disconnect: WebSocket `close` starts reconnect TTL; missed TTL destroys rooms with no connected real players.
-- Staging deploy: GitHub VM tests server, builds Docker image, pushes ECR, starts external Redis on EC2-1, joins EC2-2/EC2-3 to k3s, applies server manifests, and routes nginx to k3s.
+- Staging deploy: GitHub VM tests server, builds Docker image, pushes ECR, starts external Redis on EC2-1, starts server containers on EC2-2/EC2-3, and routes nginx to the workers.
+- Staging cleanup: manual workflow can wipe stale containers, images, temp files, networks, and k3s leftovers before redeploy.
 
 ## Constraints And Assumptions
 - Shared active room/session state uses Redis in staging; long-term leaderboard persistence is still deferred.
@@ -78,10 +81,10 @@
 - iOS, Windows, HTML5, Linux client builds: deferred, do not target.
 
 ## Current Focus (Summarized Title only)
-- Active: k3s live staging path
-- Previous: Docker worker deploy
+- Active: Docker worker staging path
+- Previous: k3s live staging path
 - Blocked: _(none)_
-- Next: k3s gameplay verification
+- Next: Docker worker gameplay verification
 
 ## Fast Start For AI
 - Read this file first.
@@ -93,7 +96,7 @@
 - For client behavior, prioritize [[NetworkManager]] and [[Main UI Controller]].
 - For deployment, prioritize [[Server Staging Deploy Workflow]] and [[Staging Deploy Guide]].
 - For AI collaboration rules, read [[AI_Agent_Organization]]. Sub AIs prepare prompts; Main AIs execute; Human Orchestrator owns final review.
-- Human prefer not to run manually & locally terraform, docker, redis, kubernetes. Everything is tested in github action thru deployment.
+- Human prefer not to run manually & locally terraform, docker, or redis. Everything is tested in github action thru deployment.
 - This repository is intentionally structured as an Obsidian vault; use `[[links]]` for navigation.
 
 ## Human Project Workflow

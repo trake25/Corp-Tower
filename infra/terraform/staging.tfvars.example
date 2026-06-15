@@ -15,7 +15,7 @@ ssh_cidr       = "0.0.0.0/0"
 game_port_cidr = "0.0.0.0/0"
 
 # Free-tier learning lab shape:
-# - EC2-1 gateway simulates ALB/Redis/k3s.
-# - EC2-2/EC2-3 simulate Docker server pods.
+# - EC2-1 gateway simulates ALB/Redis with nginx and Docker Redis.
+# - EC2-2/EC2-3 run Docker server workers.
 # Stop workers when not testing to control credits.
 worker_count = 2

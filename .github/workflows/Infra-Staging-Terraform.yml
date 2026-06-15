@@ -189,7 +189,7 @@ jobs:
               --filters \
                 "Name=tag:Project,Values=corp-tower" \
                 "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=gateway-redis-proxy-k3s-learning" \
+                "Name=tag:Role,Values=gateway-redis-proxy-learning" \
                 "Name=instance-state-name,Values=pending,running,stopping,stopped" \
               --query 'length(Reservations[].Instances[])' \
               --output text
@@ -211,5 +211,28 @@ jobs:
 
           if [ "$GATEWAY_COUNT" -lt 1 ] || [ "$WORKER_COUNT" -lt 2 ]; then
             echo "Expected at least 1 gateway and 2 workers."
+            exit 1
+          fi
+
+          SUBNET_IDS="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Role,Values=gateway-redis-proxy-learning,docker-server-worker" \
+                "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+              --query 'Reservations[].Instances[].SubnetId' \
+              --output text \
+              | tr '\t' '\n' \
+              | sed '/^$/d' \
+              | sort -u
+          )"
+          SUBNET_COUNT="$(printf '%s\n' "$SUBNET_IDS" | sed '/^$/d' | wc -l | tr -d ' ')"
+
+          echo "Staging subnet IDs:"
+          printf '%s\n' "$SUBNET_IDS"
+
+          if [ "$SUBNET_COUNT" -ne 1 ]; then
+            echo "Expected gateway and workers to be in exactly one shared subnet."
             exit 1
           fi

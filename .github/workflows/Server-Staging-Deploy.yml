@@ -7,7 +7,6 @@ on:
       - master
     paths:
       - "src/Server/**"
-      - "infra/k3s/**"
       - ".github/workflows/Server-Staging-Deploy.yml"
   workflow_dispatch:
 
@@ -138,7 +137,7 @@ jobs:
               --filters \
                 "Name=tag:Project,Values=corp-tower" \
                 "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=gateway-redis-proxy-k3s-learning" \
+                "Name=tag:Role,Values=gateway-redis-proxy-learning,gateway-redis-proxy-k3s-learning" \
                 "Name=instance-state-name,Values=running" \
               --query 'Reservations[0].Instances[0].PrivateIpAddress' \
               --output text
@@ -149,14 +148,43 @@ jobs:
               --filters \
                 "Name=tag:Project,Values=corp-tower" \
                 "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=gateway-redis-proxy-k3s-learning" \
+                "Name=tag:Role,Values=gateway-redis-proxy-learning,gateway-redis-proxy-k3s-learning" \
                 "Name=instance-state-name,Values=running" \
               --query 'Reservations[0].Instances[0].PublicIpAddress' \
               --output text
           )"
 
+          STAGING_SUBNET_IDS="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Role,Values=gateway-redis-proxy-learning,gateway-redis-proxy-k3s-learning,docker-server-worker" \
+                "Name=instance-state-name,Values=running" \
+              --query 'Reservations[].Instances[].SubnetId' \
+              --output text \
+              | tr '\t' '\n' \
+              | sed '/^$/d' \
+              | sort -u
+          )"
+          STAGING_SUBNET_COUNT="$(printf '%s\n' "$STAGING_SUBNET_IDS" | sed '/^$/d' | wc -l | tr -d ' ')"
+          WORKER_COUNT="$(printf '%s\n' "$WORKER_PRIVATE_IPS" | wc -w | tr -d ' ')"
+
           if [ -z "$WORKER_PRIVATE_IPS" ] || [ -z "$WORKER_PUBLIC_IPS" ] || [ "$GATEWAY_PRIVATE_IP" = "None" ] || [ "$GATEWAY_PUBLIC_IP" = "None" ]; then
             echo "Gateway or worker EC2 instances not found. Run Infra Staging Terraform target ec2-learning-lab first."
+            exit 1
+          fi
+
+          if [ "$WORKER_COUNT" -lt 2 ]; then
+            echo "Expected at least 2 running Docker worker EC2 instances. Found: $WORKER_COUNT."
+            exit 1
+          fi
+
+          echo "Running staging subnet IDs:"
+          printf '%s\n' "$STAGING_SUBNET_IDS"
+
+          if [ "$STAGING_SUBNET_COUNT" -ne 1 ]; then
+            echo "Gateway and workers are not all in the same subnet. Run Infra Staging Terraform with apply=true before deploying."
             exit 1
           fi
 
@@ -214,42 +242,57 @@ jobs:
           done
           echo "::endgroup::"
 
-          DEPLOY_PHASE="gateway redis and k3s control plane"
-          echo "::group::Gateway Redis and k3s control plane"
+          DEPLOY_PHASE="gateway redis"
+          echo "::group::Gateway Redis"
           timeout 360 ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
             "GATEWAY_PRIVATE_IP='$GATEWAY_PRIVATE_IP' bash -s" <<'REMOTE_GATEWAY_REDIS'
           set -euxo pipefail
 
-          echo "Gateway checkpoint: sudo/docker/k3s preflight"
+          echo "Gateway checkpoint: sudo/docker preflight"
           sudo -n true
-          timeout 30 sudo docker version
-          if command -v k3s >/dev/null 2>&1; then
-            timeout 60 sudo systemctl restart k3s
-            timeout 60 sudo k3s kubectl get nodes -o wide || true
-          else
-            curl -sfL --connect-timeout 15 --max-time 120 https://get.k3s.io -o /tmp/install-k3s.sh
-            timeout 240 sudo env INSTALL_K3S_EXEC="--disable traefik --node-ip ${GATEWAY_PRIVATE_IP}" sh /tmp/install-k3s.sh
+
+          if ! command -v docker >/dev/null 2>&1 || ! command -v aws >/dev/null 2>&1; then
+            sudo dnf install -y docker aws-cli
           fi
 
-          echo "Gateway checkpoint: docker cleanup"
+          sudo systemctl enable docker
+          sudo systemctl start docker
+          timeout 30 sudo docker version
+
+          if command -v k3s >/dev/null 2>&1; then
+            sudo /usr/local/bin/k3s-uninstall.sh 2>/dev/null || true
+          fi
+
+          echo "Gateway checkpoint: docker network"
           timeout 30 sudo docker network create corp-tower-gateway 2>/dev/null || true
 
           # Remove legacy single-EC2 server container so gateway proxy can own port 3000 later.
           timeout 30 sudo docker stop corp-tower-server 2>/dev/null || true
           timeout 30 sudo docker rm corp-tower-server 2>/dev/null || true
-          timeout 30 sudo docker stop corp-tower-redis 2>/dev/null || true
-          timeout 30 sudo docker rm corp-tower-redis 2>/dev/null || true
 
-          echo "Gateway checkpoint: redis image pull"
-          timeout 180 sudo docker pull redis:7-alpine
+          echo "Gateway checkpoint: redis health"
+          REDIS_READY=false
+          if sudo docker inspect corp-tower-redis >/dev/null 2>&1; then
+            if timeout 10 sudo docker exec corp-tower-redis redis-cli ping | grep -q PONG; then
+              REDIS_READY=true
+            else
+              timeout 30 sudo docker stop corp-tower-redis 2>/dev/null || true
+              timeout 30 sudo docker rm corp-tower-redis 2>/dev/null || true
+            fi
+          fi
 
-          echo "Gateway checkpoint: redis start"
-          timeout 60 sudo docker run -d \
-            --name corp-tower-redis \
-            --restart unless-stopped \
-            --network corp-tower-gateway \
-            -p 6379:6379 \
-            redis:7-alpine redis-server --bind 0.0.0.0 --protected-mode no
+          if [ "$REDIS_READY" != "true" ]; then
+            echo "Gateway checkpoint: redis image pull"
+            timeout 180 sudo docker pull redis:7-alpine
+
+            echo "Gateway checkpoint: redis start"
+            timeout 60 sudo docker run -d \
+              --name corp-tower-redis \
+              --restart unless-stopped \
+              --network corp-tower-gateway \
+              -p 6379:6379 \
+              redis:7-alpine redis-server --bind 0.0.0.0 --protected-mode no
+          fi
 
           echo "Gateway checkpoint: redis readiness"
           for attempt in $(seq 1 30); do
@@ -265,123 +308,140 @@ jobs:
           REMOTE_GATEWAY_REDIS
           echo "::endgroup::"
 
-          DEPLOY_PHASE="read k3s token"
-          K3S_TOKEN="$(
-            ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-              "sudo cat /var/lib/rancher/k3s/server/node-token"
-          )"
+          DEPLOY_PHASE="prepare docker worker image"
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
 
-          DEPLOY_PHASE="join k3s workers"
-          echo "::group::Join k3s workers"
+          DEPLOY_PHASE="deploy docker workers"
+          echo "::group::Deploy Docker workers"
           for WORKER_HOST in $WORKER_PUBLIC_IPS; do
             ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$WORKER_HOST" \
-              "K3S_URL='https://${GATEWAY_PRIVATE_IP}:6443' K3S_TOKEN='$K3S_TOKEN' bash -s" <<'REMOTE_WORKER'
-          set -euo pipefail
+              "IMAGE_URI='$IMAGE_URI' REDIS_URL='$REDIS_URL' ECR_REGISTRY='$ECR_REGISTRY' AWS_REGION='$AWS_REGION' bash -s" <<'REMOTE_WORKER'
+          set -euxo pipefail
 
-          sudo docker stop corp-tower-server 2>/dev/null || true
-          sudo docker rm corp-tower-server 2>/dev/null || true
+          sudo -n true
+
+          if ! command -v docker >/dev/null 2>&1 || ! command -v aws >/dev/null 2>&1; then
+            sudo dnf install -y docker aws-cli
+          fi
+
+          sudo systemctl enable docker
+          sudo systemctl start docker
+          timeout 30 sudo docker version
 
           if command -v k3s >/dev/null 2>&1; then
             sudo /usr/local/bin/k3s-agent-uninstall.sh 2>/dev/null || true
           fi
 
-          curl -sfL https://get.k3s.io | K3S_URL="$K3S_URL" K3S_TOKEN="$K3S_TOKEN" sh -
-          REMOTE_WORKER
-          done
-          echo "::endgroup::"
+          sudo docker rm -f corp-tower-server-next 2>/dev/null || true
 
-          DEPLOY_PHASE="label k3s workers"
-          echo "::group::Label k3s workers"
-          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-            "WORKER_PRIVATE_IPS='$WORKER_PRIVATE_IPS' bash -s" <<'REMOTE_LABEL_WORKERS'
-          set -euo pipefail
+          aws ecr get-login-password --region "$AWS_REGION" \
+            | sudo docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
-          for attempt in $(seq 1 60); do
-            READY_WORKERS=0
+          timeout 180 sudo docker pull "$IMAGE_URI"
 
-            for WORKER_IP in $WORKER_PRIVATE_IPS; do
-              NODE_NAME="$(
-                sudo k3s kubectl get nodes -o wide --no-headers \
-                  | awk -v ip="$WORKER_IP" '$6 == ip {print $1}'
-              )"
+          CURRENT_IMAGE="$(sudo docker inspect -f '{{.Config.Image}}' corp-tower-server 2>/dev/null || true)"
+          CURRENT_STATUS="$(sudo docker inspect -f '{{.State.Status}}' corp-tower-server 2>/dev/null || true)"
+          CURRENT_HEALTH="$(sudo docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' corp-tower-server 2>/dev/null || true)"
 
-              if [ -n "$NODE_NAME" ]; then
-                sudo k3s kubectl label node "$NODE_NAME" corp-tower-role=worker --overwrite
-                READY_WORKERS=$((READY_WORKERS + 1))
-              fi
-            done
+          if [ "$CURRENT_IMAGE" = "$IMAGE_URI" ] && { [ "$CURRENT_HEALTH" = "healthy" ] || [ "$CURRENT_STATUS" = "running" ]; }; then
+            sudo docker ps --filter name=corp-tower-server
+            exit 0
+          fi
 
-            if [ "$READY_WORKERS" -ge 2 ]; then
-              exit 0
+          sudo docker run -d \
+            --name corp-tower-server-next \
+            --restart no \
+            -p 3001:3000 \
+            -e NODE_ENV=staging \
+            -e REDIS_URL="$REDIS_URL" \
+            -e RECONNECT_TTL_SECONDS=10 \
+            "$IMAGE_URI"
+
+          for attempt in $(seq 1 30); do
+            NEXT_HEALTH="$(sudo docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' corp-tower-server-next)"
+            if { [ "$NEXT_HEALTH" = "healthy" ] || [ "$NEXT_HEALTH" = "running" ]; } && timeout 5 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/3001"; then
+              break
             fi
 
-            sleep 5
+            if [ "$attempt" -eq 30 ]; then
+              sudo docker logs corp-tower-server-next
+              exit 1
+            fi
+
+            sleep 2
           done
 
-          sudo k3s kubectl get nodes -o wide
-          echo "Expected 2 labeled k3s worker nodes."
+          sudo docker stop corp-tower-server 2>/dev/null || true
+          sudo docker rm corp-tower-server 2>/dev/null || true
+
+          sudo docker run -d \
+            --name corp-tower-server \
+            --restart unless-stopped \
+            -p 3000:3000 \
+            -e NODE_ENV=staging \
+            -e REDIS_URL="$REDIS_URL" \
+            -e RECONNECT_TTL_SECONDS=10 \
+            "$IMAGE_URI"
+
+          for attempt in $(seq 1 30); do
+            HEALTH_STATUS="$(sudo docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' corp-tower-server)"
+            if { [ "$HEALTH_STATUS" = "healthy" ] || [ "$HEALTH_STATUS" = "running" ]; } && timeout 5 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/3000"; then
+              sudo docker rm -f corp-tower-server-next 2>/dev/null || true
+              sudo docker ps --filter name=corp-tower-server
+              exit 0
+            fi
+            sleep 2
+          done
+
+          sudo docker logs corp-tower-server
           exit 1
-          REMOTE_LABEL_WORKERS
-          echo "::endgroup::"
-
-          DEPLOY_PHASE="prepare k3s manifests"
-          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
-          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
-          aws ecr get-login-password --region "$AWS_REGION" > /tmp/corp-tower-ecr-password
-
-          scp -i ~/.ssh/ec2_key -P "$EC2_PORT" \
-            infra/k3s/corp-tower-server.yaml \
-            "$EC2_USER@$EC2_HOST:/tmp/corp-tower-server.yaml"
-          scp -i ~/.ssh/ec2_key -P "$EC2_PORT" \
-            /tmp/corp-tower-ecr-password \
-            "$EC2_USER@$EC2_HOST:/tmp/corp-tower-ecr-password"
-
-          DEPLOY_PHASE="apply k3s deployment"
-          echo "::group::Apply k3s deployment"
-          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-            "IMAGE_URI='$IMAGE_URI' REDIS_URL='$REDIS_URL' ECR_REGISTRY='$ECR_REGISTRY' bash -s" <<'REMOTE_K3S_APPLY'
-          set -euo pipefail
-
-          sed \
-            -e "s#__IMAGE_URI__#${IMAGE_URI}#g" \
-            -e "s#__REDIS_URL__#${REDIS_URL}#g" \
-            /tmp/corp-tower-server.yaml > /tmp/corp-tower-server.rendered.yaml
-
-          sudo k3s kubectl create namespace corp-tower-staging \
-            --dry-run=client -o yaml | sudo k3s kubectl apply -f -
-
-          ECR_PASSWORD="$(cat /tmp/corp-tower-ecr-password)"
-          rm -f /tmp/corp-tower-ecr-password
-
-          sudo k3s kubectl -n corp-tower-staging create secret docker-registry ecr-registry \
-            --docker-server="$ECR_REGISTRY" \
-            --docker-username=AWS \
-            --docker-password="$ECR_PASSWORD" \
-            --dry-run=client -o yaml | sudo k3s kubectl apply -f -
-
-          sudo k3s kubectl apply -f /tmp/corp-tower-server.rendered.yaml
-          sudo k3s kubectl -n corp-tower-staging rollout status deployment/corp-tower-server --timeout=180s
-          sudo k3s kubectl -n corp-tower-staging get pods -o wide
-          REMOTE_K3S_APPLY
+          REMOTE_WORKER
+          done
           echo "::endgroup::"
 
           DEPLOY_PHASE="gateway nginx proxy"
           echo "::group::Gateway nginx proxy"
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-            "bash -s" <<'REMOTE_GATEWAY'
+            "WORKER_PRIVATE_IPS='$WORKER_PRIVATE_IPS' bash -s" <<'REMOTE_GATEWAY'
           set -euxo pipefail
 
-          sudo docker stop corp-tower-gateway 2>/dev/null || true
-          sudo docker rm corp-tower-gateway 2>/dev/null || true
+          sudo -n true
+
+          if ! command -v docker >/dev/null 2>&1; then
+            sudo dnf install -y docker
+          fi
+
+          sudo systemctl enable docker
+          sudo systemctl start docker
+          timeout 30 sudo docker version
+
           sudo docker stop corp-tower-server 2>/dev/null || true
           sudo docker rm corp-tower-server 2>/dev/null || true
+
+          for WORKER_IP in $WORKER_PRIVATE_IPS; do
+            for attempt in $(seq 1 30); do
+              if timeout 5 bash -c "cat < /dev/null > /dev/tcp/${WORKER_IP}/3000"; then
+                break
+              fi
+
+              if [ "$attempt" -eq 30 ]; then
+                echo "Worker ${WORKER_IP}:3000 did not become reachable from gateway."
+                exit 1
+              fi
+
+              sleep 2
+            done
+          done
 
           {
             echo "events {}"
             echo "http {"
             echo "  upstream corp_tower_workers {"
-            echo "    server 127.0.0.1:30080;"
+            for WORKER_IP in $WORKER_PRIVATE_IPS; do
+              echo "    server ${WORKER_IP}:3000;"
+            done
             echo "  }"
             echo "  server {"
             echo "    listen 3000;"
@@ -401,22 +461,28 @@ jobs:
             -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
             nginx:1.27-alpine nginx -t
 
-          if sudo ss -ltnp | grep -q ':3000 '; then
-            echo "Port 3000 is already listening before gateway start:"
-            sudo ss -ltnp | grep ':3000 ' || true
-            exit 1
-          fi
+          GATEWAY_STATUS="$(sudo docker inspect -f '{{.State.Status}}' corp-tower-gateway 2>/dev/null || true)"
+          if [ "$GATEWAY_STATUS" = "running" ]; then
+            sudo docker exec corp-tower-gateway nginx -t
+            sudo docker exec corp-tower-gateway nginx -s reload
+          else
+            sudo docker rm -f corp-tower-gateway 2>/dev/null || true
 
-          sudo docker run -d \
-            --name corp-tower-gateway \
-            --restart unless-stopped \
-            --network host \
-            -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
-            nginx:1.27-alpine
+            if sudo ss -ltnp | grep -q ':3000 '; then
+              echo "Port 3000 is already listening before gateway start:"
+              sudo ss -ltnp | grep ':3000 ' || true
+              exit 1
+            fi
+
+            sudo docker run -d \
+              --name corp-tower-gateway \
+              --restart unless-stopped \
+              --network host \
+              -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
+              nginx:1.27-alpine
+          fi
 
           sudo ss -ltnp | grep ':3000 ' || true
           sudo docker ps --filter name=corp-tower
-          sudo k3s kubectl get nodes -o wide
-          sudo k3s kubectl -n corp-tower-staging get pods -o wide
           REMOTE_GATEWAY
           echo "::endgroup::"
