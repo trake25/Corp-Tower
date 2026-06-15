@@ -30,7 +30,7 @@ output "staging_ec2_instance_id" {
 
 output "staging_subnet_id" {
   description = "Subnet used by the staging gateway and worker instances."
-  value       = local.staging_subnet_id
+  value       = aws_instance.staging.subnet_id
 }
 
 output "worker_public_ips" {

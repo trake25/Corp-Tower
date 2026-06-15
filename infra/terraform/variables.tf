@@ -52,7 +52,7 @@ variable "instance_type" {
 }
 
 variable "staging_subnet_id" {
-  description = "Optional exact subnet ID for all staging EC2 instances. Leave empty to use the first default VPC subnet."
+  description = "Optional exact subnet ID for all staging EC2 instances. Leave empty to preserve provider/default subnet behavior for existing instances."
   type        = string
   default     = ""
 }

@@ -161,5 +161,24 @@ jobs:
       - name: Terraform plan
         run: terraform plan -input=false -out=tfplan
 
+      - name: Reject destructive infrastructure plan
+        run: |
+          set -euo pipefail
+
+          DESTRUCTIVE_CHANGES="$(
+            terraform show -json tfplan \
+              | jq -r '
+                .resource_changes[]
+                | select(.change.actions | index("delete"))
+                | "\(.address): \(.change.actions | join(","))"
+              '
+          )"
+
+          if [ -n "$DESTRUCTIVE_CHANGES" ]; then
+            echo "::error::Plan includes delete or replace actions. Use Staging Infra Rebuild EC2 for intentional EC2 replacement."
+            printf '%s\n' "$DESTRUCTIVE_CHANGES"
+            exit 1
+          fi
+
       - name: Show Terraform plan summary
         run: terraform show -no-color tfplan
