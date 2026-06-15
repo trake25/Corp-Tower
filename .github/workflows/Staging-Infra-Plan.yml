@@ -91,6 +91,46 @@ jobs:
             terraform import -input=false "$address" "$id"
           }
 
+          import_ec2_instance() {
+            local address="$1"
+            local id="$2"
+
+            if [ -z "$id" ] || [ "$id" = "None" ]; then
+              echo "Skip import $address: no existing EC2 instance found."
+              return
+            fi
+
+            if terraform state show "$address" >/dev/null 2>&1; then
+              current_id="$(
+                terraform state show "$address" \
+                  | awk -F ' = ' '$1 ~ /^id$/ { print $2; exit }'
+              )"
+
+              if [ "$current_id" = "$id" ]; then
+                echo "Already managed: $address -> $id"
+                return
+              fi
+
+              current_state="$(
+                aws ec2 describe-instances \
+                  --instance-ids "$current_id" \
+                  --query 'Reservations[0].Instances[0].State.Name' \
+                  --output text 2>/dev/null || true
+              )"
+
+              if [ -z "$current_state" ] || [ "$current_state" = "None" ] || [ "$current_state" = "terminated" ]; then
+                echo "Removing stale state: $address -> $current_id"
+                terraform state rm "$address"
+              else
+                echo "Already managed: $address -> $current_id ($current_state). Not importing discovered $id."
+                return
+              fi
+            fi
+
+            echo "Importing $address -> $id"
+            terraform import -input=false "$address" "$id"
+          }
+
           ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           OIDC_ARN="arn:aws:iam::${ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
 
@@ -144,11 +184,11 @@ jobs:
           import_if_missing aws_iam_openid_connect_provider.github "$OIDC_ARN"
           import_if_missing aws_iam_role.github_actions corp-tower-staging-github-actions
           import_if_missing aws_iam_role_policy.github_ecr_push corp-tower-staging-github-actions:ecr-push
-          import_if_missing aws_instance.staging "$GATEWAY_INSTANCE_ID"
+          import_ec2_instance aws_instance.staging "$GATEWAY_INSTANCE_ID"
 
           for index in "${!WORKER_INSTANCE_IDS[@]}"; do
             if [ "$index" -lt 2 ]; then
-              import_if_missing "aws_instance.worker[$index]" "${WORKER_INSTANCE_IDS[$index]}"
+              import_ec2_instance "aws_instance.worker[$index]" "${WORKER_INSTANCE_IDS[$index]}"
             fi
           done
 
@@ -160,6 +200,9 @@ jobs:
 
       - name: Terraform plan
         run: terraform plan -input=false -out=tfplan
+
+      - name: Show Terraform plan summary
+        run: terraform show -no-color tfplan
 
       - name: Reject destructive infrastructure plan
         run: |
@@ -179,6 +222,3 @@ jobs:
             printf '%s\n' "$DESTRUCTIVE_CHANGES"
             exit 1
           fi
-
-      - name: Show Terraform plan summary
-        run: terraform show -no-color tfplan

@@ -52,7 +52,10 @@ resource "aws_instance" "staging" {
   }
 
   lifecycle {
-    ignore_changes = [user_data]
+    ignore_changes = [
+      ami,
+      user_data,
+    ]
   }
 
   tags = {
@@ -83,7 +86,10 @@ resource "aws_instance" "worker" {
   }
 
   lifecycle {
-    ignore_changes = [user_data]
+    ignore_changes = [
+      ami,
+      user_data,
+    ]
   }
 
   tags = {
