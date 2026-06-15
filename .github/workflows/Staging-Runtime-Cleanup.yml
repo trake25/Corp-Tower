@@ -263,10 +263,14 @@ jobs:
             fi
           fi
 
-          sudo rm -f /tmp/corp-tower-nginx.conf
-          sudo rm -f /tmp/corp-tower-server.yaml
-          sudo rm -f /tmp/corp-tower-server.rendered.yaml
-          sudo rm -f /tmp/corp-tower-ecr-password
+          for CLEANUP_PATH in \
+            /tmp/corp-tower-nginx.conf \
+            /tmp/corp-tower-server.yaml \
+            /tmp/corp-tower-server.rendered.yaml \
+            /tmp/corp-tower-ecr-password
+          do
+            sudo rm -rf "$CLEANUP_PATH" 2>/dev/null || true
+          done
           sudo rm -rf /etc/rancher/k3s
           sudo rm -rf /var/lib/rancher/k3s
           sudo rm -rf /var/lib/kubelet
