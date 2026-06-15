@@ -91,66 +91,6 @@ jobs:
           echo "Cleanup target public IPs: $TARGET_PUBLIC_IPS"
           echo "TARGET_PUBLIC_IPS=$TARGET_PUBLIC_IPS" >> "$GITHUB_ENV"
 
-      - name: Clean stale k3s security group ingress
-        run: |
-          set -euo pipefail
-
-          INSTANCE_SECURITY_GROUP_IDS="$(
-            aws ec2 describe-instances \
-              --filters \
-                "Name=tag:Project,Values=corp-tower" \
-                "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=gateway-redis-proxy-learning,gateway-redis-proxy-k3s-learning,docker-server-worker" \
-                "Name=instance-state-name,Values=pending,running,stopping,stopped" \
-              --query 'Reservations[].Instances[].SecurityGroups[].GroupId' \
-              --output text
-          )"
-
-          NAMED_SECURITY_GROUP_IDS="$(
-            aws ec2 describe-security-groups \
-              --filters "Name=group-name,Values=corp-tower-staging" \
-              --query 'SecurityGroups[].GroupId' \
-              --output text
-          )"
-
-          SECURITY_GROUP_IDS="$(
-            printf '%s\n%s\n' "$INSTANCE_SECURITY_GROUP_IDS" "$NAMED_SECURITY_GROUP_IDS" \
-              | tr '[:space:]' '\n' \
-              | sed '/^$/d' \
-              | sort -u \
-              | tr '\n' ' '
-          )"
-
-          if [ -z "$SECURITY_GROUP_IDS" ]; then
-            echo "No staging security groups found."
-            exit 0
-          fi
-
-          echo "Security groups to inspect: $SECURITY_GROUP_IDS"
-
-          for SECURITY_GROUP_ID in $SECURITY_GROUP_IDS; do
-            echo "::group::Security group ${SECURITY_GROUP_ID}"
-            STALE_RULE_IDS="$(
-              aws ec2 describe-security-group-rules \
-                --filters "Name=group-id,Values=${SECURITY_GROUP_ID}" \
-                --query 'SecurityGroupRules[?IsEgress==`false` && ((IpProtocol==`tcp` && FromPort==`6443` && ToPort==`6443`) || (IpProtocol==`tcp` && FromPort==`10250` && ToPort==`10250`) || (IpProtocol==`udp` && FromPort==`8472` && ToPort==`8472`) || (IpProtocol==`tcp` && FromPort==`30000` && ToPort==`32767`))].SecurityGroupRuleId' \
-                --output text
-            )"
-
-            if [ -z "$STALE_RULE_IDS" ]; then
-              echo "No stale k3s ingress rules found."
-              echo "::endgroup::"
-              continue
-            fi
-
-            echo "Revoking stale k3s ingress rules: $STALE_RULE_IDS"
-            aws ec2 revoke-security-group-ingress \
-              --group-id "$SECURITY_GROUP_ID" \
-              --security-group-rule-ids $STALE_RULE_IDS
-
-            echo "::endgroup::"
-          done
-
       - name: Clean runtime over SSH
         env:
           EC2_USER: ${{ secrets.EC2_STAGING_USER }}
@@ -212,7 +152,7 @@ jobs:
           for TARGET_HOST in $TARGET_PUBLIC_IPS; do
             echo "::group::Cleanup ${TARGET_HOST}"
             if ! ssh "${SSH_OPTS[@]}" "$EC2_USER@$TARGET_HOST" "hostname && whoami"; then
-              echo "::warning::Cannot SSH to ${TARGET_HOST}; skipping host runtime cleanup. AWS-side security group cleanup already ran."
+              echo "::warning::Cannot SSH to ${TARGET_HOST}; skipping host runtime cleanup."
               UNREACHABLE_HOSTS="${UNREACHABLE_HOSTS} ${TARGET_HOST}"
               echo "::endgroup::"
               continue
@@ -223,19 +163,6 @@ jobs:
           set -euxo pipefail
 
           sudo -n true
-
-          if command -v systemctl >/dev/null 2>&1; then
-            sudo systemctl stop k3s-agent 2>/dev/null || true
-            sudo systemctl stop k3s 2>/dev/null || true
-          fi
-
-          if [ -x /usr/local/bin/k3s-agent-uninstall.sh ]; then
-            sudo /usr/local/bin/k3s-agent-uninstall.sh 2>/dev/null || true
-          fi
-
-          if [ -x /usr/local/bin/k3s-uninstall.sh ]; then
-            sudo /usr/local/bin/k3s-uninstall.sh 2>/dev/null || true
-          fi
 
           if command -v docker >/dev/null 2>&1; then
             sudo systemctl start docker 2>/dev/null || true
@@ -271,15 +198,6 @@ jobs:
           do
             sudo rm -rf "$CLEANUP_PATH" 2>/dev/null || true
           done
-          sudo rm -rf /etc/rancher/k3s
-          sudo rm -rf /var/lib/rancher/k3s
-          sudo rm -rf /var/lib/kubelet
-          sudo rm -rf /var/lib/cni
-          sudo rm -rf /etc/cni
-          sudo rm -rf /opt/cni
-          sudo rm -rf /run/k3s
-          sudo rm -rf /run/flannel
-
           if command -v docker >/dev/null 2>&1; then
             sudo docker ps -a --filter name=corp-tower
           fi

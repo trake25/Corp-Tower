@@ -1,7 +1,12 @@
 # Changelog
 
 ## 2026-06-15
-- update: Staging runtime cleanup now revokes stale k3s inbound security group rules.
+- feature: Added manual `Staging Automated Master` workflow to queue `Diagnostics -> Infra Plan -> Server Update`.
+- update: `Staging Infra Plan` now fails on Terraform create/delete/replace actions so the automated path cannot silently create or destroy infrastructure.
+- update: Removed legacy k3s-uninstall actions from `Staging Server Update`; k3s is out of the active deployment path.
+- checkpoint: Reverted staging to the pre-k3s Docker worker path; Diagnostics, Infra Plan, Infra Apply, Cleanup, and Server Update all succeeded, and the Godot client can play against staging.
+- update: Staging runtime cleanup now matches Server Update output: Corp Tower Docker containers, Docker network, optional server/nginx/redis images, and temporary deployment files only.
+- update: Added/fixed manual staging diagnostics, infrastructure plan/apply, cleanup, and server update workflows with deterministic SSH known_hosts setup.
 - update: Added manual staging runtime cleanup workflow and same-subnet EC2 guardrails.
 - fix: Reverted staging deployment from k3s back to Docker workers behind the EC2 gateway.
 

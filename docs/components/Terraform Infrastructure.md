@@ -6,9 +6,10 @@
 
 ## Responsibilities
 - Create EC2-1 gateway and EC2-2/EC2-3 worker instances for a free-tier learning lab.
+- Adopt existing staging resources into Terraform state before planning.
 - Create ECR repository.
 - Avoid managed AWS ElastiCache, ALB/NLB, and EKS to reduce credit burn.
-- Create security group rules.
+- Create security group rules for SSH and game traffic.
 - Create IAM/OIDC resources for GitHub Actions.
 - Output values needed by GitHub secrets.
 
@@ -18,7 +19,7 @@
   - Amazon Linux 2023.
   - Docker and AWS CLI installed through user data.
   - Instance profile allows ECR pull.
-  - Gateway and workers are pinned to the same default subnet.
+  - Gateway and workers run in the same default VPC/subnet learning topology.
   - EC2-1 is the public gateway.
   - EC2-2 and EC2-3 run Docker server workers.
   - Gateway runs Docker Redis and nginx reverse proxy; worker containers connect to `redis://<EC2-1-private-ip>:6379`.
@@ -29,12 +30,16 @@
   - Backend uses S3 native lockfile instead of DynamoDB lock table.
   - Staging Terraform workflow uses S3 backend and migrates existing local state on first CI run.
   - Existing manually/previously-created staging resources are imported into state before planning.
-- Cost-safe CI rollout order:
-  - Manually run staging Terraform target `ec2-learning-lab` with `apply=true`.
-  - Run server staging deploy; it installs Redis/proxy on EC2-1 and Docker server containers on EC2-2/3.
-  - Server deploy fails early if the running EC2 topology is split across multiple subnets.
+- Manual CI rollout order:
+  - Run `Staging Diagnostics` to inspect AWS topology and GitHub-runner SSH.
+  - Run `Staging Infra Plan` to adopt/refresh state and review planned changes.
+  - Run `Staging Infra Apply` only after a successful plan when infra changes are intended.
+  - Run `Staging Server Update` to deploy Docker Redis/nginx/server runtime.
   - Stop EC2 instances when not testing.
-  - EC2 workers were created successfully and server deploy is now the active debug path.
+- Automated normal update path:
+  - `Staging Automated Master` queues `Diagnostics -> Infra Plan -> Server Update`.
+  - The master path does not run Cleanup, Infra Apply, or EC2 Rebuild.
+  - `Staging Infra Plan` fails when Terraform plans any create, delete, or replace action.
 
 ## Inputs/Outputs
 - Input: GitHub Actions secrets and Terraform variables.
@@ -48,6 +53,7 @@
 ## Notes
 - `staging.tfvars` is ignored.
 - User prefers GitHub Actions for Terraform/Docker/Redis validation and deploy instead of local manual runs.
-- Infra workflow is manual-only because creating EC2 instances is a real AWS side effect; push runs do not provision workers.
+- Infra plan/apply workflows are manual-only because creating or changing EC2 infrastructure is a real AWS side effect.
+- `Staging Infra Rebuild EC2` is manual-only and reserved for intentional fresh EC2 replacement.
 - Cost guardrail: Managed ElastiCache, ALB/NLB, and EKS are intentionally not used.
 - EC2-1 is not a real AWS ALB; it is a self-managed gateway/reverse proxy that simulates ALB behavior for learning.

@@ -2,6 +2,7 @@ name: Staging Server Update
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: server-staging-deploy-${{ github.ref }}
@@ -281,10 +282,6 @@ jobs:
           sudo systemctl start docker
           timeout 30 sudo docker version
 
-          if command -v k3s >/dev/null 2>&1; then
-            sudo /usr/local/bin/k3s-uninstall.sh 2>/dev/null || true
-          fi
-
           echo "Gateway checkpoint: docker network"
           timeout 30 sudo docker network create corp-tower-gateway 2>/dev/null || true
 
@@ -351,10 +348,6 @@ jobs:
           sudo systemctl enable docker
           sudo systemctl start docker
           timeout 30 sudo docker version
-
-          if command -v k3s >/dev/null 2>&1; then
-            sudo /usr/local/bin/k3s-agent-uninstall.sh 2>/dev/null || true
-          fi
 
           sudo docker rm -f corp-tower-server-next 2>/dev/null || true
 

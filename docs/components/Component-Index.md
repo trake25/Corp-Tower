@@ -16,10 +16,11 @@
 - [[HTML Test Client]]
 
 ## CI/CD And Infrastructure
+- [[Staging Automated Master Workflow]]
 - [[Server Staging Deploy Workflow]]
+- [[Staging Diagnostics Workflow]]
 - [[Staging Runtime Cleanup Workflow]]
 - [[Client Android Internal Workflow]]
-- [[Legacy Server Update Workflow]]
 - [[Terraform Infrastructure]]
 - [[Staging Deploy Guide]]
 

@@ -14,9 +14,7 @@
 - Fail early when the gateway and workers are not all in one subnet.
 
 ## Key Logic
-- Trigger:
-  - Push to `main`/`master` touching `src/Server/**` or workflow file.
-  - Manual `workflow_dispatch`.
+- Trigger: manual `workflow_dispatch` while staging is being stabilized.
 - Jobs:
   - `test-server`
   - `build-and-push`
@@ -47,5 +45,6 @@
 
 ## Notes
 - This is the active path.
+- This workflow is the only workflow that should install/update the active Docker runtime; [[Staging Runtime Cleanup Workflow]] is scoped to remove what this workflow creates except EC2 prerequisites.
 - User does not test in local machine but in Github Action and staging only.
 - Useful EC2 checks: `sudo docker ps --filter name=corp-tower`, `sudo docker logs corp-tower-gateway`, `sudo docker logs corp-tower-redis`, and on workers `sudo docker logs corp-tower-server`.

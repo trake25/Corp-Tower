@@ -1,0 +1,38 @@
+name: Staging Automated Master
+
+on:
+  workflow_dispatch:
+    inputs:
+      extra_public_ips:
+        description: "Optional public IPs for diagnostics, separated by spaces, commas, or new lines."
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: staging-automated-master-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  diagnostics:
+    name: Diagnostics
+    uses: ./.github/workflows/Staging-Diagnostics.yml
+    with:
+      extra_public_ips: ${{ inputs.extra_public_ips }}
+    secrets: inherit
+
+  infra-plan:
+    name: Infra Plan
+    needs: diagnostics
+    uses: ./.github/workflows/Staging-Infra-Plan.yml
+    secrets: inherit
+
+  server-update:
+    name: Server Update
+    needs: infra-plan
+    uses: ./.github/workflows/Server-Staging-Deploy.yml
+    secrets: inherit

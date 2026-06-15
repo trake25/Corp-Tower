@@ -2,7 +2,7 @@
 
 ## Purpose
 - Human deployment guide for staging setup.
-- File: `docs/deploy-staging.md`.
+- File: `docs/components/Staging Deploy Guide.md`.
 
 ## Responsibilities
 - Explain Docker + ECR + Terraform staging deployment for the EC2 gateway/workers lab.
@@ -11,10 +11,11 @@
 - Document rollback/troubleshooting.
 
 ## Key Logic
-- Phase 1: Manually run Terraform `ec2-learning-lab` apply to create/adopt EC2-1 gateway and EC2-2/EC2-3 workers.
-- Phase 2: Server workflow builds/pushes Docker image to ECR.
-- Phase 3: Server workflow starts Redis/nginx on EC2-1 and game server Docker containers on EC2-2/EC2-3.
-- Cleanup: Run [[Staging Runtime Cleanup Workflow]] when stale k3s security group rules, nginx, Redis, or server containers are suspected.
+- Normal path: run [[Staging Automated Master Workflow]] to queue `Diagnostics -> Infra Plan -> Server Update`.
+- Manual infra path: run Terraform plan/apply workflows to create, adopt, or update EC2-1 gateway and EC2-2/EC2-3 workers.
+- Server workflow builds/pushes Docker image to ECR.
+- Server workflow starts Redis/nginx on EC2-1 and game server Docker containers on EC2-2/EC2-3.
+- Cleanup: Run [[Staging Runtime Cleanup Workflow]] when stale nginx, Redis, server containers, Docker network, Docker images, or temp deployment files are suspected.
 - Managed AWS ALB/NLB, ElastiCache, and EKS are intentionally not used in this learning setup.
 
 ## Inputs/Outputs
@@ -29,5 +30,7 @@
 ## Notes
 - Read this when deploying or debugging staging.
 - Godot connects to `ws://<EC2-1-public-ip>:3000`.
-- Gateway and workers must be in the same subnet; run the infra workflow with `apply=true` if server deploy reports split subnets.
+- Cleanup is a repair/revert helper, not part of the normal automated deployment queue.
+- Infra Apply and EC2 Rebuild stay manual-only because they can intentionally change infrastructure.
+- Gateway and workers should stay in the same staging VPC/subnet learning topology.
 - Check gateway logs on EC2-1 with `sudo docker logs corp-tower-gateway`; check worker logs on EC2-2/EC2-3 with `sudo docker logs corp-tower-server`.

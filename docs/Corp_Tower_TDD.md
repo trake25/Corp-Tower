@@ -18,9 +18,12 @@
 - `src/Server/Game_Config.js`: runtime balance and debug-tuning variables. -> [[Game Config]]
 - `src/Server/Bot_Manager.js`: QA bot action loops and placement behavior. -> [[Bot Manager]]
 - `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd`: Godot WebSocket adapter with reconnect identity persistence. -> [[NetworkManager]]
-- `.github/workflows/Infra-Staging-Terraform.yml`: manual Terraform workflow for EC2 learning lab. -> [[Terraform Infrastructure]]
+- `.github/workflows/Staging-Diagnostics.yml`: manual read-only AWS/network/SSH diagnostics. -> [[Staging Diagnostics Workflow]]
+- `.github/workflows/Staging-Automated-Master.yml`: manual queue for normal non-destructive staging updates. -> [[Staging Automated Master Workflow]]
+- `.github/workflows/Staging-Infra-Plan.yml`: manual Terraform plan for EC2 learning lab. -> [[Terraform Infrastructure]]
+- `.github/workflows/Staging-Infra-Apply.yml`: manual Terraform apply after a reviewed plan. -> [[Terraform Infrastructure]]
 - `.github/workflows/Server-Staging-Deploy.yml`: Docker/ECR deploy to EC2 gateway/workers. -> [[Server Staging Deploy Workflow]]
-- `.github/workflows/Staging-Runtime-Cleanup.yml`: manual runtime cleanup for stale Docker/k3s artifacts. -> [[Staging Runtime Cleanup Workflow]]
+- `.github/workflows/Staging-Runtime-Cleanup.yml`: manual runtime cleanup for Docker artifacts created by server update. -> [[Staging Runtime Cleanup Workflow]]
 - `.github/workflows/Client-Android-Internal.yml`: Android internal-testing build/upload. -> [[Client Android Internal Workflow]]
 
 ## Runtime Architecture
@@ -62,11 +65,22 @@
 | `update_config` | Key allowlist, value ranges, bot delay min/max, debug bot count clamp. |
 
 ## CI/CD
-- Infra workflow is manual-only because creating EC2 instances is an AWS side effect.
-- `Infra-Staging-Terraform.yml`:
+- Normal automated staging path is `Diagnostics -> Infra Plan -> Server Update`.
+- Cleanup is manual-only and used when an implementation fails or a revert needs to remove stale Docker runtime artifacts.
+- Infra Apply and EC2 Rebuild are manual-only because they can intentionally change infrastructure.
+- Infra plan/apply workflows are manual-only because creating or changing EC2 instances is an AWS side effect.
+- `Staging-Automated-Master.yml`:
+  - calls diagnostics, infra plan, then server update in queue order
+  - does not call cleanup, infra apply, or EC2 rebuild
+- `Staging-Diagnostics.yml`:
+  - verifies tagged EC2 topology, status checks, security group rules, routes, NACLs, and SSH reachability
+- `Staging-Infra-Plan.yml`:
   - creates S3 backend bucket if missing
   - imports existing staging resources into Terraform state
-  - provisions EC2-1 gateway and EC2-2/EC2-3 workers
+  - plans EC2-1 gateway and EC2-2/EC2-3 worker changes without applying them
+  - fails when Terraform plans create, delete, or replace actions
+- `Staging-Infra-Apply.yml`:
+  - applies the reviewed Terraform plan path only after manual `APPLY` confirmation
 - `Server-Staging-Deploy.yml`:
   - tests server on GitHub VM
   - builds/pushes Docker image to ECR
@@ -76,7 +90,8 @@
   - generates and validates nginx config with `nginx -t`
   - starts gateway nginx proxy to worker private IPs on port `3000`
 - `Staging-Runtime-Cleanup.yml`:
-  - manually removes stale Corp Tower containers, temp files, Docker network, images, and k3s leftovers
+  - manually removes stale Corp Tower containers, temp files, Docker network, and optional server/nginx/redis images
+  - leaves Docker and AWS CLI installed because server update uses them as EC2 prerequisites
 
 ## Required GitHub Secrets
 - Server/infra: `AWS_ROLE_ARN`, `ECR_REPOSITORY`, `EC2_STAGING_HOST`, `EC2_STAGING_USER`, `EC2_STAGING_SSH_KEY`, `EC2_STAGING_SSH_PUBLIC_KEY`
