@@ -1,13 +1,6 @@
-name: Server Staging Deploy
+name: Staging Server Update
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - "src/Server/**"
-      - ".github/workflows/Server-Staging-Deploy.yml"
   workflow_dispatch:
 
 concurrency:
@@ -171,7 +164,7 @@ jobs:
           WORKER_COUNT="$(printf '%s\n' "$WORKER_PRIVATE_IPS" | wc -w | tr -d ' ')"
 
           if [ -z "$WORKER_PRIVATE_IPS" ] || [ -z "$WORKER_PUBLIC_IPS" ] || [ "$GATEWAY_PRIVATE_IP" = "None" ] || [ "$GATEWAY_PUBLIC_IP" = "None" ]; then
-            echo "Gateway or worker EC2 instances not found. Run Infra Staging Terraform target ec2-learning-lab first."
+            echo "Gateway or worker EC2 instances not found. Run Staging Infra Plan, then Staging Infra Apply if the plan is correct."
             exit 1
           fi
 
@@ -184,7 +177,7 @@ jobs:
           printf '%s\n' "$STAGING_SUBNET_IDS"
 
           if [ "$STAGING_SUBNET_COUNT" -ne 1 ]; then
-            echo "Gateway and workers are not all in the same subnet. Run Infra Staging Terraform with apply=true before deploying."
+            echo "Gateway and workers are not all in the same subnet. Run Staging Infra Plan, then Staging Infra Apply if the plan is correct."
             exit 1
           fi
 
@@ -212,15 +205,39 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
           chmod 600 ~/.ssh/ec2_key
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
           DEPLOY_PHASE="ssh setup"
           trap 'echo "::error::Deploy failed during ${DEPLOY_PHASE} near line ${LINENO}."' ERR
 
-          ssh-keyscan -T 10 -p "$EC2_PORT" "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          prepare_known_host() {
+            local host="$1"
+            local scan_output=""
+
+            ssh-keygen -R "[$host]:$EC2_PORT" -f ~/.ssh/known_hosts >/dev/null 2>&1 || true
+            ssh-keygen -R "$host" -f ~/.ssh/known_hosts >/dev/null 2>&1 || true
+
+            for attempt in $(seq 1 6); do
+              scan_output="$(ssh-keyscan -T 10 -p "$EC2_PORT" -H "$host" 2>/dev/null || true)"
+              if [ -n "$scan_output" ]; then
+                printf '%s\n' "$scan_output" >> ~/.ssh/known_hosts
+                return 0
+              fi
+
+              echo "Waiting for SSH host key from ${host}:${EC2_PORT} (attempt ${attempt}/6)."
+              sleep 5
+            done
+
+            echo "::error::Could not fetch SSH host key from ${host}:${EC2_PORT}. Check SSH security group, route table, NACL, public IP, and instance status."
+            return 1
+          }
+
+          prepare_known_host "$EC2_HOST"
 
           REDIS_URL="redis://${GATEWAY_PRIVATE_IP}:6379"
 
           for WORKER_HOST in $WORKER_PUBLIC_IPS; do
-            ssh-keyscan -T 10 -p "$EC2_PORT" "$WORKER_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+            prepare_known_host "$WORKER_HOST"
           done
 
           SSH_PREFLIGHT_OPTS=(
@@ -228,7 +245,12 @@ jobs:
             -p "$EC2_PORT"
             -o BatchMode=yes
             -o ConnectTimeout=20
-            -o StrictHostKeyChecking=accept-new
+            -o ConnectionAttempts=3
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=2
+            -o UserKnownHostsFile=~/.ssh/known_hosts
+            -o GlobalKnownHostsFile=/dev/null
+            -o StrictHostKeyChecking=yes
           )
 
           DEPLOY_PHASE="ssh preflight"
@@ -236,7 +258,7 @@ jobs:
           for TARGET_HOST in "$EC2_HOST" $WORKER_PUBLIC_IPS; do
             echo "Checking SSH access to ${TARGET_HOST}"
             if ! ssh "${SSH_PREFLIGHT_OPTS[@]}" "$EC2_USER@$TARGET_HOST" "hostname && whoami"; then
-              echo "::error::Cannot SSH to ${TARGET_HOST}. Check EC2 instance running state, security group SSH ingress from GitHub Actions, EC2_STAGING_USER, and EC2_STAGING_SSH_KEY."
+              echo "::error::Cannot SSH to ${TARGET_HOST}. Run Staging Diagnostics for AWS-side details before deploying."
               exit 1
             fi
           done

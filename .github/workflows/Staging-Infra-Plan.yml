@@ -1,23 +1,7 @@
-name: Infra Staging Terraform
+name: Staging Infra Plan
 
 on:
   workflow_dispatch:
-    inputs:
-      target:
-        description: "Infrastructure slice to plan/apply."
-        required: true
-        default: "ec2-learning-lab"
-        type: choice
-        options:
-          - "ec2-learning-lab"
-      apply:
-        description: "Apply staging infrastructure changes."
-        required: true
-        default: "false"
-        type: choice
-        options:
-          - "false"
-          - "true"
 
 permissions:
   id-token: write
@@ -31,10 +15,11 @@ env:
   TF_VAR_ssh_public_key: ${{ secrets.EC2_STAGING_SSH_PUBLIC_KEY }}
   TF_VAR_ssh_cidr: ${{ secrets.STAGING_SSH_CIDR || '0.0.0.0/0' }}
   TF_VAR_game_port_cidr: ${{ secrets.STAGING_GAME_PORT_CIDR || '0.0.0.0/0' }}
+  TF_VAR_staging_subnet_id: ${{ secrets.STAGING_SUBNET_ID || '' }}
 
 jobs:
-  terraform:
-    name: Plan Or Apply Staging Infra
+  plan:
+    name: Plan Staging Infrastructure
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: staging
@@ -109,11 +94,18 @@ jobs:
           ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           OIDC_ARN="arn:aws:iam::${ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
 
+          DEFAULT_VPC_ID="$(
+            aws ec2 describe-vpcs \
+              --filters "Name=is-default,Values=true" \
+              --query 'Vpcs[0].VpcId' \
+              --output text
+          )"
+
           SECURITY_GROUP_ID="$(
             aws ec2 describe-security-groups \
               --filters \
                 "Name=group-name,Values=corp-tower-staging" \
-                "Name=vpc-id,Values=$(aws ec2 describe-vpcs --filters 'Name=is-default,Values=true' --query 'Vpcs[0].VpcId' --output text)" \
+                "Name=vpc-id,Values=${DEFAULT_VPC_ID}" \
               --query 'SecurityGroups[0].GroupId' \
               --output text 2>/dev/null || true
           )"
@@ -123,11 +115,24 @@ jobs:
               --filters \
                 "Name=tag:Project,Values=corp-tower" \
                 "Name=tag:Environment,Values=staging" \
-                "Name=tag:Name,Values=corp-tower-staging,corp-tower-staging-gateway" \
+                "Name=tag:Role,Values=gateway-redis-proxy-learning,gateway-redis-proxy-k3s-learning" \
                 "Name=instance-state-name,Values=pending,running,stopping,stopped" \
               --query 'Reservations[0].Instances[0].InstanceId' \
               --output text 2>/dev/null || true
           )"
+
+          mapfile -t WORKER_INSTANCE_IDS < <(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Role,Values=docker-server-worker" \
+                "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+              --query 'Reservations[].Instances[].InstanceId' \
+              --output text \
+              | tr '\t' '\n' \
+              | sed '/^$/d'
+          )
 
           import_if_missing aws_key_pair.staging corp-tower-staging
           import_if_missing aws_security_group.staging "$SECURITY_GROUP_ID"
@@ -141,98 +146,20 @@ jobs:
           import_if_missing aws_iam_role_policy.github_ecr_push corp-tower-staging-github-actions:ecr-push
           import_if_missing aws_instance.staging "$GATEWAY_INSTANCE_ID"
 
+          for index in "${!WORKER_INSTANCE_IDS[@]}"; do
+            if [ "$index" -lt 2 ]; then
+              import_if_missing "aws_instance.worker[$index]" "${WORKER_INSTANCE_IDS[$index]}"
+            fi
+          done
+
       - name: Terraform fmt check
         run: terraform fmt -check
 
       - name: Terraform validate
         run: terraform validate
 
-      - name: Select Terraform target
-        run: |
-          set -euo pipefail
-          TARGET="${{ inputs.target }}"
-
-          case "$TARGET" in
-            ec2-learning-lab)
-              echo "TF_TARGET_ARGS=-target=aws_instance.staging -target=aws_instance.worker" >> "$GITHUB_ENV"
-              ;;
-            *)
-              echo "Disabled target '$TARGET'. Only EC2 learning lab is enabled for cost-safe staging."
-              exit 1
-              ;;
-          esac
-
-          if [ "${{ inputs.apply }}" != "true" ]; then
-            echo "This run is PLAN ONLY. It will not create EC2 workers."
-          else
-            echo "This run will APPLY infrastructure changes."
-          fi
-
       - name: Terraform plan
-        run: terraform plan -input=false $TF_TARGET_ARGS
+        run: terraform plan -input=false -out=tfplan
 
-      - name: Terraform apply
-        if: ${{ inputs.apply == 'true' }}
-        run: terraform apply -input=false -auto-approve $TF_TARGET_ARGS
-
-      - name: Show Terraform outputs
-        if: ${{ inputs.apply == 'true' }}
-        run: terraform output
-
-      - name: Verify EC2 learning lab instances
-        if: ${{ inputs.apply == 'true' }}
-        run: |
-          set -euo pipefail
-
-          GATEWAY_COUNT="$(
-            aws ec2 describe-instances \
-              --filters \
-                "Name=tag:Project,Values=corp-tower" \
-                "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=gateway-redis-proxy-learning" \
-                "Name=instance-state-name,Values=pending,running,stopping,stopped" \
-              --query 'length(Reservations[].Instances[])' \
-              --output text
-          )"
-
-          WORKER_COUNT="$(
-            aws ec2 describe-instances \
-              --filters \
-                "Name=tag:Project,Values=corp-tower" \
-                "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=docker-server-worker" \
-                "Name=instance-state-name,Values=pending,running,stopping,stopped" \
-              --query 'length(Reservations[].Instances[])' \
-              --output text
-          )"
-
-          echo "Gateway instances: $GATEWAY_COUNT"
-          echo "Worker instances: $WORKER_COUNT"
-
-          if [ "$GATEWAY_COUNT" -lt 1 ] || [ "$WORKER_COUNT" -lt 2 ]; then
-            echo "Expected at least 1 gateway and 2 workers."
-            exit 1
-          fi
-
-          SUBNET_IDS="$(
-            aws ec2 describe-instances \
-              --filters \
-                "Name=tag:Project,Values=corp-tower" \
-                "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=gateway-redis-proxy-learning,docker-server-worker" \
-                "Name=instance-state-name,Values=pending,running,stopping,stopped" \
-              --query 'Reservations[].Instances[].SubnetId' \
-              --output text \
-              | tr '\t' '\n' \
-              | sed '/^$/d' \
-              | sort -u
-          )"
-          SUBNET_COUNT="$(printf '%s\n' "$SUBNET_IDS" | sed '/^$/d' | wc -l | tr -d ' ')"
-
-          echo "Staging subnet IDs:"
-          printf '%s\n' "$SUBNET_IDS"
-
-          if [ "$SUBNET_COUNT" -ne 1 ]; then
-            echo "Expected gateway and workers to be in exactly one shared subnet."
-            exit 1
-          fi
+      - name: Show Terraform plan summary
+        run: terraform show -no-color tfplan

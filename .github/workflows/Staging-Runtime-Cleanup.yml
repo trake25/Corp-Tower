@@ -16,6 +16,14 @@ on:
         options:
           - "true"
           - "false"
+      fail_on_ssh_error:
+        description: "Fail the workflow when a target cannot be reached by SSH."
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 permissions:
   id-token: write
@@ -150,8 +158,8 @@ jobs:
           EC2_USER: ${{ secrets.EC2_STAGING_USER }}
           EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
           EC2_SSH_KEY: ${{ secrets.EC2_STAGING_SSH_KEY }}
+          FAIL_ON_SSH_ERROR: ${{ inputs.fail_on_ssh_error }}
           REMOVE_IMAGES: ${{ inputs.remove_images }}
-          TARGET_PUBLIC_IPS: ${{ env.TARGET_PUBLIC_IPS }}
         run: |
           set -euo pipefail
 
@@ -159,21 +167,59 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
           chmod 600 ~/.ssh/ec2_key
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
           SSH_OPTS=(
             -i ~/.ssh/ec2_key
             -p "$EC2_PORT"
             -o BatchMode=yes
             -o ConnectTimeout=20
-            -o StrictHostKeyChecking=accept-new
+            -o ConnectionAttempts=3
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=2
+            -o UserKnownHostsFile=~/.ssh/known_hosts
+            -o GlobalKnownHostsFile=/dev/null
+            -o StrictHostKeyChecking=yes
           )
 
+          prepare_known_host() {
+            local host="$1"
+            local scan_output=""
+
+            ssh-keygen -R "[$host]:$EC2_PORT" -f ~/.ssh/known_hosts >/dev/null 2>&1 || true
+            ssh-keygen -R "$host" -f ~/.ssh/known_hosts >/dev/null 2>&1 || true
+
+            for attempt in $(seq 1 6); do
+              scan_output="$(ssh-keyscan -T 10 -p "$EC2_PORT" -H "$host" 2>/dev/null || true)"
+              if [ -n "$scan_output" ]; then
+                printf '%s\n' "$scan_output" >> ~/.ssh/known_hosts
+                return 0
+              fi
+
+              echo "Waiting for SSH host key from ${host}:${EC2_PORT} (attempt ${attempt}/6)."
+              sleep 5
+            done
+
+            echo "::warning::Could not fetch SSH host key from ${host}:${EC2_PORT}."
+            return 1
+          }
+
           for TARGET_HOST in $TARGET_PUBLIC_IPS; do
-            ssh-keyscan -T 10 -p "$EC2_PORT" "$TARGET_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+            prepare_known_host "$TARGET_HOST" || true
           done
+
+          UNREACHABLE_HOSTS=""
 
           for TARGET_HOST in $TARGET_PUBLIC_IPS; do
             echo "::group::Cleanup ${TARGET_HOST}"
+            if ! ssh "${SSH_OPTS[@]}" "$EC2_USER@$TARGET_HOST" "hostname && whoami"; then
+              echo "::warning::Cannot SSH to ${TARGET_HOST}; skipping host runtime cleanup. AWS-side security group cleanup already ran."
+              UNREACHABLE_HOSTS="${UNREACHABLE_HOSTS} ${TARGET_HOST}"
+              echo "::endgroup::"
+              continue
+            fi
+
             ssh "${SSH_OPTS[@]}" "$EC2_USER@$TARGET_HOST" \
               "REMOVE_IMAGES='$REMOVE_IMAGES' bash -s" <<'REMOTE_CLEANUP'
           set -euxo pipefail
@@ -238,3 +284,10 @@ jobs:
           REMOTE_CLEANUP
             echo "::endgroup::"
           done
+
+          if [ -n "$UNREACHABLE_HOSTS" ]; then
+            echo "::warning::Unreachable SSH targets:${UNREACHABLE_HOSTS}"
+            if [ "$FAIL_ON_SSH_ERROR" = "true" ]; then
+              exit 1
+            fi
+          fi

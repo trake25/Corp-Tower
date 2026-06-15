@@ -14,6 +14,9 @@ ssh_public_key = "ssh-ed25519 AAAA... your-public-key ... comment"
 ssh_cidr       = "0.0.0.0/0"
 game_port_cidr = "0.0.0.0/0"
 
+# Optional: pin all staging EC2 instances to one known-good subnet.
+# staging_subnet_id = "subnet-..."
+
 # Free-tier learning lab shape:
 # - EC2-1 gateway simulates ALB/Redis with nginx and Docker Redis.
 # - EC2-2/EC2-3 run Docker server workers.

@@ -51,6 +51,12 @@ variable "instance_type" {
   default     = "t3.micro"
 }
 
+variable "staging_subnet_id" {
+  description = "Optional exact subnet ID for all staging EC2 instances. Leave empty to use the first default VPC subnet."
+  type        = string
+  default     = ""
+}
+
 variable "worker_count" {
   description = "Number of EC2 Docker worker servers behind the gateway simulation."
   type        = number

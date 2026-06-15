@@ -30,7 +30,7 @@ resource "aws_key_pair" "staging" {
 }
 
 locals {
-  staging_subnet_id = sort(data.aws_subnets.default.ids)[0]
+  staging_subnet_id = var.staging_subnet_id != "" ? var.staging_subnet_id : sort(data.aws_subnets.default.ids)[0]
 
   user_data = <<-EOF
     #!/bin/bash
