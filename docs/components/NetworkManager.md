@@ -19,6 +19,7 @@
 - Sends `reconnect` with stored `playerId`/`reconnectToken` after connection opens.
 - Stores `playerId` and `reconnectToken` from `room_created` or `room_resumed`.
 - Tracks `game_state.players[].isBot` to enable auto-reconnect only when the last known room had no bots.
+- Passes authoritative `game_state`, including shape inventory and `towerBlocks`, through to [[Main UI Controller]].
 - Retries unintended disconnects with a short delay and finite attempt count.
 - Suppresses auto-reconnect after manual disconnect, app close, or server `room_closed`.
 - Emits:
@@ -47,3 +48,4 @@
 - The server remains authoritative.
 - Client only updates UI after server messages.
 - Auto-reconnect improves deploy/network recovery but still depends on server reconnect TTL and Redis room/session state.
+- It does not interpret block geometry; UI rendering owns shape previews and tower drawing.

@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-06-15
+- checkpoint: Added shape-based fixed-orientation blocks, tower stack rendering in the Godot gameplay HUD, and `towerBlocks` history in `game_state`; balance now needs recalibration because non-vertical shapes can reduce available height.
 - checkpoint: Added bot-aware Godot auto-reconnect for unintended disconnects in real-player-only rooms, exposed `isBot` in `game_state.players`, and changed staging server update to drain/update workers one at a time through nginx.
 - update: `Staging Automated Master` now runs automatically on server-side pushes to `main`/`master`, while client-only pushes do not trigger staging deploys.
 - feature: Added `Staging Automated Master` workflow to queue `Diagnostics -> Infra Plan -> Server Update`.

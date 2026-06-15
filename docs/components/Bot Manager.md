@@ -7,7 +7,7 @@
 ## Responsibilities
 - Start bot loops for bot participants.
 - Pick randomized action delay from [[Game Config]].
-- Place bot blocks through [[Game Engine]].
+- Place bot shape blocks through [[Game Engine]] by inventory index.
 - Stop bot timers when rooms close or bots are disabled.
 
 ## Key Logic
@@ -33,3 +33,4 @@
 ## Notes
 - Bots are not production AI.
 - Timer tracking exists to prevent disconnected rooms from continuing in the background.
+- Bot placements use the same authoritative shape-height and tower-history path as real players.

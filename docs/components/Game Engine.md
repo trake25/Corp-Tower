@@ -6,7 +6,8 @@
 
 ## Responsibilities
 - Create room state.
-- Assign blocks.
+- Assign fixed-orientation shape blocks.
+- Maintain authoritative placed-block tower history.
 - Run start delay, level timer, and tick broadcasts.
 - Validate block placement and refresh token use.
 - Calculate scores and bonuses.
@@ -25,9 +26,16 @@
   - `game_completed`
   - `closed`
 - Scoring:
-  - Placement points use block height, level, and effective height.
+  - Placement points use shape vertical footprint height, level, and effective height.
   - Bonuses: finisher, precision, team, assist.
   - MVP is highest level score.
+- Blocks:
+  - New blocks are objects `{ id, shapeId, cells, height }`.
+  - `height` is derived from the vertical span of `cells`.
+  - Legacy numeric blocks are still interpreted as vertical height values by helper logic.
+- Tower history:
+  - `towerBlocks[]` records each placement with player id, block, height, effective height, and base height.
+  - History resets at level start and is broadcast in `game_state`.
 - Refresh tokens:
   - Max token count and per-level uses are from [[Game Config]].
   - Locked out near level end.
@@ -38,7 +46,7 @@
 
 ## Inputs/Outputs
 - Input: players from [[Lobby Manager]], `place_block`, `refresh_blocks`.
-- Output: `game_state` broadcasts, score updates, level transitions.
+- Output: `game_state` broadcasts, `towerBlocks`, score updates, level transitions.
 - `game_state.players[]` includes `isBot` so clients can distinguish real-player rooms from bot-filled debug rooms.
 
 ## Dependencies
@@ -50,3 +58,4 @@
 - Engine owns live timers and authoritative rule execution; [[Lobby Manager]]/[[Redis State]] persist shared room snapshots.
 - No persistent leaderboard yet.
 - The engine should remain server authoritative.
+- Shape-block migration changes balance assumptions; progression/target tuning needs a future recalibration pass.

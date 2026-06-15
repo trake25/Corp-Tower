@@ -3,15 +3,15 @@
 ## Project Purpose
 - Cloud Infrastructure based 3-player multiplayer puzzle game.
 - Players cooperate to build a shared tower while competing for MVP score.
-- Current phase: game logic, bot, debug menu, server deploy, and Android pipeline testing.
+- Current phase: shape-block gameplay UI, game-balance recalibration, server deploy, and Android pipeline testing.
 - Staging Client: Godot Android app
 - Production Client target:  Multiple Platforms (Android, iOS, Windows, HTML5, Linux, etc.)
 - HTML client is a legacy local logic test harness only.
 
 ## Core Concepts
-- Shared tower: all players contribute blocks toward one target height.
+- Shared tower: all players contribute fixed-orientation shape blocks toward one target height.
 - Selfish cooperation: players need team success but compete for level score/MVP.
-- Server authority: Node WebSocket server owns matchmaking, room state, timers, scoring, bots, and debug config.
+- Server authority: Node WebSocket server owns matchmaking, room state, timers, shape block assignment, scoring, tower history, bots, and debug config.
 - Debug tuning: designers/QA can update selected `Game_Config` values at runtime; server broadcasts authoritative config to all clients.
 - Staging reconnect: clients keep a server-issued player id/reconnect token and can resume the same room within the debug TTL; real-player-only rooms can auto-reconnect after unintended disconnects.
 
@@ -35,15 +35,15 @@
 - `src/Server`
   - [[Server Entry]]: WebSocket listener and message router.
   - [[Lobby Manager]]: matchmaking, room lifecycle, debug config broadcast.
-  - [[Redis State]]: Redis adapter, session tokens, shared queue/room snapshots.
-  - [[Game Engine]]: level rules, timers, scoring, tokens, room close.
+  - [[Redis State]]: Redis adapter, session tokens, shared queue/room snapshots, and tower history snapshots.
+  - [[Game Engine]]: level rules, shape blocks, tower history, timers, scoring, tokens, room close.
   - [[Bot Manager]]: bot action loop and timer cancellation.
-  - [[Game Config]]: runtime rules and tuning values.
+  - [[Game Config]]: runtime rules, shape variants, and tuning values.
   - [[Server Docker Image]]: container packaging for staging.
 - `src/Client/App/corp-tower`
   - [[Godot Client App]]: Android-first game client.
   - [[NetworkManager]]: Godot WebSocket adapter.
-  - [[Main UI Controller]]: UI, inventory, debug menu.
+  - [[Main UI Controller]]: gameplay HUD, shape inventory, tower stack, refresh controls.
 - `.github/workflows`
   - [[Server Staging Deploy Workflow]]
   - [[Staging Automated Master Workflow]]
@@ -64,9 +64,9 @@
 - Worker runtime: EC2-2/EC2-3 each run a `corp-tower-server` Docker container.
 - Subnet rule: gateway and workers must run in one shared subnet.
 - Matchmaking: [[Lobby Manager]] queues players through [[Redis State]]; debug bots can fill missing slots.
-- Room start: [[Game Engine]] assigns blocks, starts countdown, then enters `playing`.
-- Player action: client sends `place_block`; server validates cooldown/index/state and broadcasts `game_state`.
-- Debug update: client sends `update_config`; [[Lobby Manager]] validates value and broadcasts `debug_config`.
+- Room start: [[Game Engine]] assigns fixed-orientation shape blocks, starts countdown, then enters `playing`.
+- Player action: client sends `place_block`; server validates cooldown/index/state, appends tower history, and broadcasts `game_state`.
+- Debug update: an authorized/debug client may send `update_config`; [[Lobby Manager]] validates value and broadcasts `debug_config`.
 - Disconnect: WebSocket `close` starts reconnect TTL; missed TTL destroys rooms with no connected real players.
 - Staging deploy: GitHub VM tests server, builds Docker image, pushes ECR, starts external Redis on EC2-1, drains one worker from nginx, updates that worker, then restores nginx routing after workers are healthy.
 - Staging diagnostics: manual workflow verifies tagged EC2 discovery, status checks, security group rules, route tables, NACLs, and GitHub-runner SSH.
@@ -78,6 +78,7 @@
 - Debug reconnect TTL is 10 seconds in staging deploy.
 - Client auto-reconnect is enabled only for real-player-only rooms; bot-filled debug rooms still require manual reconnect.
 - Bots are QA helpers, not production-grade AI.
+- Shape-block balance is not final; future tuning must recalibrate level targets, block weights, unlock levels, inventory scaling, and failure pressure.
 - Android is the only current client release target during staging.
 - Godot version target: `4.6.2.stable`.
 - Server runtime target for legacy/VM parity: Node `24.14.1`, npm `11.11.0`.
@@ -87,10 +88,10 @@
 - iOS, Windows, HTML5, Linux client builds: deferred, do not target.
 
 ## Current Focus (Summarized Title only)
-- Active: Docker worker staging path verified from Godot client
-- Previous: k3s live staging path reverted
+- Active: Shape-block gameplay UI checkpoint; balance recalibration needed
+- Previous: Docker worker staging path verified from Godot client
 - Blocked: _(none)_
-- Next: Use automated master for normal updates; plan manual k3s learning before any future implementation
+- Next: Recalibrate shape-block progression and failure pressure
 
 ## Fast Start For AI
 - Read this file first.

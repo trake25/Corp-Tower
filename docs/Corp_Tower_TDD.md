@@ -7,7 +7,7 @@
 - EC2-1 simulates ALB/Redis for learning: nginx reverse proxy and Docker Redis.
 - EC2-2/EC2-3 run horizontally scaled Docker server workers.
 - EC2 gateway/workers are pinned to one subnet so private gateway-to-worker routing is predictable.
-- Server remains authoritative for matchmaking, room state, timers, block assignment, scoring, refresh tokens, debug tuning, bots, reconnect, and room cleanup.
+- Server remains authoritative for matchmaking, room state, timers, shape block assignment, tower history, scoring, refresh tokens, debug tuning, bots, reconnect, and room cleanup.
 - Managed AWS ALB/NLB, ElastiCache, and EKS are intentionally avoided to reduce learning-lab credit usage.
 
 ## Repository Layout
@@ -54,7 +54,7 @@
 |---|---|
 | `room_created` | New room/session assignment with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, and initial `blocks`. |
 | `room_resumed` | Existing room/session resumed with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, and blocks. |
-| `game_state` | Authoritative live state: level, timer, height, tower block history, summary, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
+| `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, summary, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
 | `debug_config` | Authoritative debug menu state. |
 | `room_closed` | Room teardown reason for connected real players. |
 
@@ -65,6 +65,13 @@
 | `place_block` | Valid room, player, state, cooldown, inventory, and block index. |
 | `refresh_blocks` | Token count, per-level usage cap, active state, final lockout. |
 | `update_config` | Key allowlist, value ranges, bot delay min/max, debug bot count clamp. |
+
+### Block And Tower Payloads
+- Inventory `blocks[]`: server-assigned fixed-orientation block objects `{ id, shapeId, cells, height }`.
+- `cells`: array of `[x, y]` unit coordinates used by the Godot client for shape previews and tower rendering.
+- `height`: vertical footprint derived from `cells`; it is not necessarily equal to cell count.
+- `towerBlocks[]`: ordered placement history with `{ playerId, block, height, effectiveHeight, baseHeight }` so clients can redraw the current tower after broadcasts or reconnect.
+- Legacy numeric block values are still tolerated by the Godot client as vertical fallback blocks.
 
 ## CI/CD
 - Normal automated staging path is `Diagnostics -> Infra Plan -> Server Update`.

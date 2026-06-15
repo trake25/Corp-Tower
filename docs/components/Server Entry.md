@@ -29,6 +29,7 @@
 ## Inputs/Outputs
 - Input: WebSocket JSON messages from [[NetworkManager]].
 - Output: WebSocket JSON messages such as `room_created`, `room_resumed`, `game_state`, `debug_config`, `room_closed`.
+- `game_state` payloads are produced by [[Game Engine]] and may include shape inventory and `towerBlocks`.
 
 ## Dependencies
 - `ws`

@@ -31,6 +31,7 @@
 - A block's height contribution is its fixed vertical footprint, not its cell count.
 - Example: a 3-cell vertical block contributes 3 height, a 3-cell horizontal block contributes 1 height, and a 3-cell L block contributes 2 height.
 - The server assigns each block's shape/orientation and sends `{ id, shapeId, cells, height }` to the client.
+- Shape IDs use compact orientation names such as `I4H` for a 4-cell horizontal line and `I4V` for a 4-cell vertical line.
 
 ### Inventory Rules
 - Max 3 active blocks + 1 carry-over block from previous level.
@@ -55,6 +56,7 @@
 - `target_height = 3 × level` (multiplier tunable via `targetHeightMultiplier`).
 - Overbuilding allowed; excess height is wasted.
 - Exact height triggers precision bonus rewards.
+- The client renders placed blocks as a stacked tower from authoritative server history when `towerBlocks` is available.
 
 ## Timer
 - Default level time limit (Configurable): 30 seconds.
@@ -81,6 +83,7 @@
 - Block complexity increases with level.
 - Checkpoints after every 3 levels.
 - Failing a level rolls back to last completed checkpoint level.
+- Needs recalibration after shape-block migration because horizontal and low-footprint shapes reduce guaranteed available height.
 
 ## Leaderboard
 - Highest level reached.
@@ -124,12 +127,13 @@
 
 ### Future Debug Variables (Planned)
 - `blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `maxRefreshTokens`, `maxRefreshUsesPerLevel`, `refreshLockoutMs`, `checkpointInterval`, scoring bonus multipliers.
+- Shape-block recalibration candidates: per-level shape pools, guaranteed minimum available height, target multiplier by level band, refresh rewards, and fail-condition pressure.
 
 ### Shipping Requirement
 - Debug Menu must be disabled behind a build flag, QA account permission, or server-side admin authorization before public release.
 
 ## MVP Scope
-- 3-player matchmaking, block assignment, tower building logic, scoring system, basic UI.
+- 3-player matchmaking, shape block assignment, tower building logic, scoring system, basic UI.
 
 ## GDD Maintenance Policy
 - GDD is the source of truth for game design decisions.
