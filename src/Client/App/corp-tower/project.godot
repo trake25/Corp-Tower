@@ -20,6 +20,10 @@ config/icon="res://icon.svg"
 
 NetworkManager="*uid://8bh26paw2m4o"
 
+[corp_tower]
+
+ui_skin="DefaultSkin"
+
 [display]
 
 window/stretch/mode="viewport"

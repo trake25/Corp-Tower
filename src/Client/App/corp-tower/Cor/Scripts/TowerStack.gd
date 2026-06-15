@@ -93,7 +93,7 @@ func _unit_size() -> float:
 	return clamp((size.y - 28.0) / float(tower_units), 12.0, 34.0)
 
 func _normalize_block_entry(entry: Dictionary) -> Dictionary:
-	var block = entry.get("block", {})
+	var block: Variant = entry.get("block", {})
 
 	if typeof(block) == TYPE_DICTIONARY:
 		return block

@@ -1,85 +1,298 @@
 extends Control
 
 const MAX_INVENTORY_SLOTS := 4
+const DEFAULT_UI_SKIN := "DefaultSkin"
+const SHOW_DEBUG_UI := true
 const BLOCK_PREVIEW_COLOR := Color(0.25, 0.56, 0.95, 1.0)
 const LOCAL_PLAYER_MARKER := "You"
+const SKIN_SCENES := {
+	"DefaultSkin": "res://Cor/Scenes/Skins/DefaultSkin.tscn",
+	"Figma_SkinV1": "res://Cor/Scenes/Skins/Figma_SkinV1.tscn"
+}
 
-@onready var status_label = %StatusLabel
-@onready var player_label = %PlayerLabel
-@onready var room_label = %RoomLabel
-@onready var level_label = %LevelLabel
-@onready var timer_label = %TimerLabel
-@onready var score_label = %ScoreLabel
-@onready var height_label = %HeightLabel
-@onready var tower_value_label = %TowerValueLabel
-@onready var tower_status_label = %TowerStatusLabel
-@onready var tower_fill = %TowerFill
-@onready var tower_stack = %TowerStack
-@onready var block_label = %BlockLabel
-@onready var connect_button = %ConnectButton
-@onready var refresh_button = %RefreshButton
-@onready var refresh_token_label = %RefreshTokenLabel
-@onready var refresh_uses_label = %RefreshUsesLabel
+@onready var skin_root: Control = $SkinRoot
 
-@onready var place_block_button1 = %PlaceBlockButton1
-@onready var place_block_button2 = %PlaceBlockButton2
-@onready var place_block_button3 = %PlaceBlockButton3
-@onready var place_block_button4 = %PlaceBlockButton4
-@onready var block_preview1 = %BlockPreview1
-@onready var block_preview2 = %BlockPreview2
-@onready var block_preview3 = %BlockPreview3
-@onready var block_preview4 = %BlockPreview4
-@onready var block_height_label1 = %BlockHeightLabel1
-@onready var block_height_label2 = %BlockHeightLabel2
-@onready var block_height_label3 = %BlockHeightLabel3
-@onready var block_height_label4 = %BlockHeightLabel4
-@onready var block_name_label1 = %BlockNameLabel1
-@onready var block_name_label2 = %BlockNameLabel2
-@onready var block_name_label3 = %BlockNameLabel3
-@onready var block_name_label4 = %BlockNameLabel4
-
+var active_skin: Control
 var inventory_buttons: Array = []
 var block_previews: Array = []
 var block_height_labels: Array = []
 var block_name_labels: Array = []
+var is_syncing_debug_config: bool = false
+var active_skin_name: String = DEFAULT_UI_SKIN
+var missing_required_nodes: Array[String] = []
+var last_room_data: Variant = null
+var last_game_state_data: Variant = null
+var last_status_text: String = "Disconnected"
+var is_switching_skin: bool = false
+
+var status_label: Label
+var player_label: Label
+var room_label: Label
+var level_label: Label
+var timer_label: Label
+var score_label: Label
+var height_label: Label
+var tower_value_label: Label
+var tower_status_label: Label
+var tower_fill: Panel
+var tower_stack: Control
+var block_label: Label
+var connect_button: Button
+var refresh_button: Button
+var refresh_token_label: Label
+var refresh_uses_label: Label
+var debug_button: Button
+var debug_overlay: Control
+var debug_dim_layer: Control
+var close_debug_button: Button
+var skin_button: Button
+var skin_overlay: Control
+var skin_dim_layer: Control
+var close_skin_button: Button
+var default_skin_button: Button
+var figma_skin_button: Button
+var bots_toggle: CheckButton
+var bot_count_label: Label
+var bot_count_slider: HSlider
+var bot_delay_min_label: Label
+var bot_delay_min_slider: HSlider
+var bot_delay_max_label: Label
+var bot_delay_max_slider: HSlider
+var cooldown_label: Label
+var cooldown_slider: HSlider
+var level_time_label: Label
+var level_time_slider: HSlider
+var start_delay_label: Label
+var start_delay_slider: HSlider
+var target_multiplier_label: Label
+var target_multiplier_slider: HSlider
 
 func _ready() -> void:
+	load_selected_skin()
+	if active_skin == null:
+		return
+
+	if !prepare_active_skin():
+		return
+
+	setup_inventory_controls()
+	setup_debug_controls()
+	setup_skin_controls()
+	reset_ui()
+	connect_network_signals()
+
+func load_selected_skin() -> void:
+	var skin_name: String = DEFAULT_UI_SKIN
+
+	if ProjectSettings.has_setting("corp_tower/ui_skin"):
+		skin_name = str(ProjectSettings.get_setting("corp_tower/ui_skin"))
+
+	load_skin(skin_name)
+
+func load_skin(skin_name: String) -> void:
+	var skin_path: String = str(SKIN_SCENES.get(skin_name, ""))
+
+	if skin_path == "":
+		push_error("Unknown UI skin: " + skin_name + ". Falling back to " + DEFAULT_UI_SKIN)
+		skin_path = str(SKIN_SCENES[DEFAULT_UI_SKIN])
+		skin_name = DEFAULT_UI_SKIN
+
+	var scene: PackedScene = load(skin_path) as PackedScene
+
+	if scene == null and skin_name != DEFAULT_UI_SKIN:
+		push_error("Failed to load UI skin: " + skin_name + ". Falling back to " + DEFAULT_UI_SKIN)
+		scene = load(str(SKIN_SCENES[DEFAULT_UI_SKIN])) as PackedScene
+		skin_name = DEFAULT_UI_SKIN
+
+	if scene == null:
+		push_error("Failed to load default UI skin.")
+		return
+
+	for child in skin_root.get_children():
+		skin_root.remove_child(child)
+		child.queue_free()
+
+	active_skin = scene.instantiate() as Control
+	active_skin_name = skin_name
+	active_skin.name = skin_name
+	active_skin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	skin_root.add_child(active_skin)
+
+func prepare_active_skin() -> bool:
+	bind_skin_nodes()
+	if !missing_required_nodes.is_empty() and active_skin_name != DEFAULT_UI_SKIN:
+		push_error(
+			"UI skin " + active_skin_name +
+			" is missing required nodes: " + ", ".join(missing_required_nodes) +
+			". Falling back to " + DEFAULT_UI_SKIN
+		)
+		load_skin(DEFAULT_UI_SKIN)
+		bind_skin_nodes()
+
+	if !missing_required_nodes.is_empty():
+		push_error("Default UI skin is missing required nodes: " + ", ".join(missing_required_nodes))
+		return false
+
+	return true
+
+func bind_skin_nodes() -> void:
+	missing_required_nodes.clear()
+	status_label = require_node("StatusLabel") as Label
+	player_label = require_node("PlayerLabel") as Label
+	room_label = require_node("RoomLabel") as Label
+	level_label = require_node("LevelLabel") as Label
+	timer_label = require_node("TimerLabel") as Label
+	score_label = require_node("ScoreLabel") as Label
+	height_label = require_node("HeightLabel") as Label
+	tower_value_label = require_node("TowerValueLabel") as Label
+	tower_status_label = require_node("TowerStatusLabel") as Label
+	tower_fill = require_node("TowerFill") as Panel
+	tower_stack = require_node("TowerStack") as Control
+	block_label = require_node("BlockLabel") as Label
+	connect_button = require_node("ConnectButton") as Button
+	refresh_button = require_node("RefreshButton") as Button
+	refresh_token_label = require_node("RefreshTokenLabel") as Label
+	refresh_uses_label = require_node("RefreshUsesLabel") as Label
+
 	inventory_buttons = [
-		place_block_button1,
-		place_block_button2,
-		place_block_button3,
-		place_block_button4
+		require_node("PlaceBlockButton1") as Button,
+		require_node("PlaceBlockButton2") as Button,
+		require_node("PlaceBlockButton3") as Button,
+		require_node("PlaceBlockButton4") as Button
 	]
 	block_previews = [
-		block_preview1,
-		block_preview2,
-		block_preview3,
-		block_preview4
+		require_node("BlockPreview1") as Control,
+		require_node("BlockPreview2") as Control,
+		require_node("BlockPreview3") as Control,
+		require_node("BlockPreview4") as Control
 	]
 	block_height_labels = [
-		block_height_label1,
-		block_height_label2,
-		block_height_label3,
-		block_height_label4
+		require_node("BlockHeightLabel1") as Label,
+		require_node("BlockHeightLabel2") as Label,
+		require_node("BlockHeightLabel3") as Label,
+		require_node("BlockHeightLabel4") as Label
 	]
 	block_name_labels = [
-		block_name_label1,
-		block_name_label2,
-		block_name_label3,
-		block_name_label4
+		require_node("BlockNameLabel1") as Label,
+		require_node("BlockNameLabel2") as Label,
+		require_node("BlockNameLabel3") as Label,
+		require_node("BlockNameLabel4") as Label
 	]
 
+	debug_button = optional_node("DebugButton") as Button
+	debug_overlay = optional_node("DebugOverlay") as Control
+	debug_dim_layer = optional_node("DebugDimLayer") as Control
+	close_debug_button = optional_node("CloseDebugButton") as Button
+	skin_button = optional_node("SkinButton") as Button
+	skin_overlay = optional_node("SkinOverlay") as Control
+	skin_dim_layer = optional_node("SkinDimLayer") as Control
+	close_skin_button = optional_node("CloseSkinButton") as Button
+	default_skin_button = optional_node("DefaultSkinButton") as Button
+	figma_skin_button = optional_node("FigmaSkinButton") as Button
+	bots_toggle = optional_node("BotsToggle") as CheckButton
+	bot_count_label = optional_node("BotCountLabel") as Label
+	bot_count_slider = optional_node("BotCountSlider") as HSlider
+	bot_delay_min_label = optional_node("BotDelayMinLabel") as Label
+	bot_delay_min_slider = optional_node("BotDelayMinSlider") as HSlider
+	bot_delay_max_label = optional_node("BotDelayMaxLabel") as Label
+	bot_delay_max_slider = optional_node("BotDelayMaxSlider") as HSlider
+	cooldown_label = optional_node("CooldownLabel") as Label
+	cooldown_slider = optional_node("CooldownSlider") as HSlider
+	level_time_label = optional_node("LevelTimeLabel") as Label
+	level_time_slider = optional_node("LevelTimeSlider") as HSlider
+	start_delay_label = optional_node("StartDelayLabel") as Label
+	start_delay_slider = optional_node("StartDelaySlider") as HSlider
+	target_multiplier_label = optional_node("TargetMultiplierLabel") as Label
+	target_multiplier_slider = optional_node("TargetMultiplierSlider") as HSlider
+
+func require_node(node_name: String) -> Node:
+	var node: Node = optional_node(node_name)
+
+	if node == null:
+		missing_required_nodes.append(node_name)
+
+	return node
+
+func optional_node(node_name: String) -> Node:
+	if active_skin == null:
+		return null
+
+	return active_skin.find_child(node_name, true, false)
+
+func setup_inventory_controls() -> void:
 	for preview in block_previews:
 		preview.cell_color = BLOCK_PREVIEW_COLOR
 
-	place_block_button1.pressed.connect(func(): on_block_pressed(0))
-	place_block_button2.pressed.connect(func(): on_block_pressed(1))
-	place_block_button3.pressed.connect(func(): on_block_pressed(2))
-	place_block_button4.pressed.connect(func(): on_block_pressed(3))
+	inventory_buttons[0].pressed.connect(func(): on_block_pressed(0))
+	inventory_buttons[1].pressed.connect(func(): on_block_pressed(1))
+	inventory_buttons[2].pressed.connect(func(): on_block_pressed(2))
+	inventory_buttons[3].pressed.connect(func(): on_block_pressed(3))
 
 	connect_button.pressed.connect(on_connect_pressed)
 	refresh_button.pressed.connect(on_refresh_pressed)
 
+func setup_debug_controls() -> void:
+	if debug_button == null:
+		return
+
+	debug_button.visible = SHOW_DEBUG_UI
+	debug_button.disabled = true
+	debug_button.pressed.connect(toggle_debug_overlay)
+
+	if debug_overlay != null:
+		set_debug_overlay_open(false)
+
+	if close_debug_button != null:
+		close_debug_button.pressed.connect(func(): set_debug_overlay_open(false))
+
+	if debug_dim_layer != null:
+		debug_dim_layer.mouse_filter = Control.MOUSE_FILTER_STOP
+		debug_dim_layer.gui_input.connect(on_debug_dim_layer_input)
+
+	if bots_toggle != null:
+		bots_toggle.toggled.connect(on_bots_toggle)
+
+	configure_slider(bot_count_slider, 0, 2, 1, on_bot_count_changed)
+	configure_slider(bot_delay_min_slider, 250, 10000, 250, on_bot_delay_min_changed)
+	configure_slider(bot_delay_max_slider, 250, 10000, 250, on_bot_delay_max_changed)
+	configure_slider(cooldown_slider, 0, 5000, 250, on_cooldown_changed)
+	configure_slider(level_time_slider, 5000, 120000, 1000, on_level_time_changed)
+	configure_slider(start_delay_slider, 0, 10000, 500, on_start_delay_changed)
+	configure_slider(target_multiplier_slider, 1, 20, 1, on_target_multiplier_changed)
+	update_debug_labels()
+
+func setup_skin_controls() -> void:
+	if skin_button != null:
+		skin_button.pressed.connect(toggle_skin_overlay, CONNECT_DEFERRED)
+
+	if skin_overlay != null:
+		set_skin_overlay_open(false)
+
+	if close_skin_button != null:
+		close_skin_button.pressed.connect(func(): set_skin_overlay_open(false), CONNECT_DEFERRED)
+
+	if skin_dim_layer != null:
+		skin_dim_layer.mouse_filter = Control.MOUSE_FILTER_STOP
+		skin_dim_layer.gui_input.connect(on_skin_dim_layer_input)
+
+	if default_skin_button != null:
+		default_skin_button.pressed.connect(func(): switch_skin(DEFAULT_UI_SKIN), CONNECT_DEFERRED)
+
+	if figma_skin_button != null:
+		figma_skin_button.pressed.connect(func(): switch_skin("Figma_SkinV1"), CONNECT_DEFERRED)
+
+	update_skin_button_states()
+
+func configure_slider(slider: HSlider, min_value: float, max_value: float, step: float, callback: Callable) -> void:
+	if slider == null:
+		return
+
+	slider.min_value = min_value
+	slider.max_value = max_value
+	slider.step = step
+	slider.value_changed.connect(callback)
+
+func reset_ui() -> void:
 	connect_button.text = "Connect"
 	refresh_button.text = "Refresh"
 	status_label.text = "Disconnected"
@@ -95,14 +308,23 @@ func _ready() -> void:
 	refresh_token_label.text = "Token 0/1"
 	refresh_uses_label.text = "Level refreshes 0/2"
 	set_tower_progress(0, 0)
+	tower_stack.clear_tower()
 	update_inventory_ui([])
 	refresh_button.disabled = true
 
+func connect_network_signals() -> void:
 	NetworkManager.status_changed.connect(update_status)
 	NetworkManager.room_joined.connect(update_room)
 	NetworkManager.room_closed.connect(update_room_closed)
 	NetworkManager.client_status.connect(update_connect_button)
 	NetworkManager.game_state_updated.connect(update_game_state)
+	NetworkManager.debug_config_updated.connect(update_debug_config)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and debug_overlay != null and debug_overlay.visible:
+		set_debug_overlay_open(false)
+	elif event.is_action_pressed("ui_cancel") and skin_overlay != null and skin_overlay.visible:
+		set_skin_overlay_open(false)
 
 func on_connect_pressed() -> void:
 	NetworkManager.toggle_connection()
@@ -113,8 +335,88 @@ func on_block_pressed(index: int) -> void:
 func on_refresh_pressed() -> void:
 	NetworkManager.refresh_blocks()
 
+func toggle_debug_overlay() -> void:
+	if debug_overlay == null:
+		return
+
+	if debug_overlay.has_method("toggle"):
+		debug_overlay.call("toggle")
+	else:
+		debug_overlay.visible = !debug_overlay.visible
+
+func set_debug_overlay_open(open: bool) -> void:
+	if debug_overlay == null:
+		return
+
+	if debug_overlay.has_method("set_open"):
+		debug_overlay.call("set_open", open)
+	else:
+		debug_overlay.visible = open
+
+func on_debug_dim_layer_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		set_debug_overlay_open(false)
+
+func toggle_skin_overlay() -> void:
+	if skin_overlay == null:
+		return
+
+	set_skin_overlay_open(!skin_overlay.visible)
+
+func set_skin_overlay_open(open: bool) -> void:
+	if skin_overlay == null:
+		return
+
+	skin_overlay.visible = open
+	if skin_dim_layer != null:
+		skin_dim_layer.visible = open
+
+func on_skin_dim_layer_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		set_skin_overlay_open(false)
+
+func switch_skin(skin_name: String) -> void:
+	if is_switching_skin or skin_name == active_skin_name:
+		set_skin_overlay_open(false)
+		return
+
+	is_switching_skin = true
+	load_skin(skin_name)
+	if active_skin == null or !prepare_active_skin():
+		is_switching_skin = false
+		return
+
+	setup_inventory_controls()
+	setup_debug_controls()
+	setup_skin_controls()
+	reset_ui()
+	update_status(last_status_text)
+
+	if typeof(last_room_data) == TYPE_DICTIONARY:
+		update_room(last_room_data)
+
+	if typeof(last_game_state_data) == TYPE_DICTIONARY:
+		update_game_state(last_game_state_data)
+
+	ProjectSettings.set_setting("corp_tower/ui_skin", active_skin_name)
+	set_skin_overlay_open(false)
+	is_switching_skin = false
+
+func update_skin_button_states() -> void:
+	if default_skin_button != null:
+		default_skin_button.disabled = active_skin_name == DEFAULT_UI_SKIN
+
+	if figma_skin_button != null:
+		figma_skin_button.disabled = active_skin_name == "Figma_SkinV1"
+
 func update_status(text: String) -> void:
+	last_status_text = text
 	status_label.text = text
+
+	if debug_button == null:
+		return
+
+	debug_button.disabled = text != "Connected"
 
 func update_connect_button(status: String) -> void:
 	if status == "[Connect]":
@@ -125,6 +427,9 @@ func update_connect_button(status: String) -> void:
 		connect_button.text = status.replace("[", "").replace("]", "").strip_edges()
 
 func update_room(data) -> void:
+	if !is_switching_skin:
+		last_room_data = data
+
 	connect_button.disabled = true
 	player_label.text = LOCAL_PLAYER_MARKER + " " + str(data.playerId)
 	room_label.text = "Room " + str(int(data.roomId))
@@ -136,6 +441,8 @@ func update_room(data) -> void:
 	update_inventory_ui(data.get("blocks", []))
 
 func update_room_closed(data) -> void:
+	last_room_data = null
+	last_game_state_data = null
 	room_label.text = "Room closed"
 	level_label.text = "Level -"
 	timer_label.text = "Time -"
@@ -150,12 +457,16 @@ func update_room_closed(data) -> void:
 	set_tower_progress(0, 0)
 	tower_stack.clear_tower()
 	update_inventory_ui([])
+	set_debug_overlay_open(false)
 
 func update_game_state(data) -> void:
-	var state := str(data.get("state", "playing"))
-	var seconds_remaining := int(data.get("secondsRemaining", 0))
-	var current_height := int(data.get("currentHeight", 0))
-	var target_height := int(data.get("targetHeight", 0))
+	if !is_switching_skin:
+		last_game_state_data = data
+
+	var state: String = str(data.get("state", "playing"))
+	var seconds_remaining: int = int(data.get("secondsRemaining", 0))
+	var current_height: int = int(data.get("currentHeight", 0))
+	var target_height: int = int(data.get("targetHeight", 0))
 
 	level_label.text = "Level " + str(int(data.get("level", 0))) + " - " + state.capitalize()
 	timer_label.text = "Time " + str(seconds_remaining) + "s"
@@ -165,18 +476,18 @@ func update_game_state(data) -> void:
 	set_tower_progress(current_height, target_height)
 	tower_stack.set_tower(data.get("towerBlocks", []), current_height, target_height)
 
-	var scores_text := ""
-	var my_refresh_tokens := 0
-	var my_refresh_uses_remaining := 0
-	var max_refresh_tokens := int(data.get("maxRefreshTokens", 1))
-	var max_uses_per_level := int(data.get("maxRefreshUsesPerLevel", 2))
+	var scores_text: String = ""
+	var my_refresh_tokens: int = 0
+	var my_refresh_uses_remaining: int = 0
+	var max_refresh_tokens: int = int(data.get("maxRefreshTokens", 1))
+	var max_uses_per_level: int = int(data.get("maxRefreshUsesPerLevel", 2))
 	var my_blocks: Array = []
 	var players: Array = data.get("players", [])
 
 	for i in range(players.size()):
-		var player = players[i]
-		var player_id := str(player.get("id", "P?"))
-		var prefix := LOCAL_PLAYER_MARKER if player_id == NetworkManager.player_id else player_id
+		var player: Dictionary = players[i]
+		var player_id: String = str(player.get("id", "P?"))
+		var prefix: String = LOCAL_PLAYER_MARKER if player_id == NetworkManager.player_id else player_id
 		scores_text += prefix + ": " + str(int(player.get("score", 0)))
 		scores_text += " total / " + str(int(player.get("levelScore", 0))) + " level"
 
@@ -191,10 +502,10 @@ func update_game_state(data) -> void:
 	score_label.text = scores_text if scores_text != "" else "Waiting for players"
 	refresh_token_label.text = "Token " + str(my_refresh_tokens) + "/" + str(max_refresh_tokens)
 
-	var level_refreshes_used := max_uses_per_level - my_refresh_uses_remaining
+	var level_refreshes_used: int = max_uses_per_level - my_refresh_uses_remaining
 	refresh_uses_label.text = "Level refreshes " + str(level_refreshes_used) + "/" + str(max_uses_per_level)
 
-	var in_lockout := seconds_remaining <= 10 and state == "playing"
+	var in_lockout: bool = seconds_remaining <= 10 and state == "playing"
 	refresh_button.text = "Refresh"
 	refresh_button.disabled = (
 		my_refresh_tokens <= 0 or
@@ -217,8 +528,8 @@ func update_inventory_ui(blocks: Array) -> void:
 
 	for i in range(inventory_buttons.size()):
 		var button: Button = inventory_buttons[i]
-		var preview = block_previews[i]
-		var height_label: Label = block_height_labels[i]
+		var preview: Control = block_previews[i]
+		var slot_height_label: Label = block_height_labels[i]
 		var name_label: Label = block_name_labels[i]
 
 		if i < clean_blocks.size():
@@ -226,36 +537,36 @@ func update_inventory_ui(blocks: Array) -> void:
 			button.disabled = false
 			button.text = ""
 			preview.set_block(block)
-			height_label.text = "Height " + str(int(block.get("height", 0)))
+			slot_height_label.text = "Height " + str(int(block.get("height", 0)))
 			name_label.text = str(block.get("shapeId", "BLOCK"))
 		else:
 			button.disabled = true
 			button.text = ""
 			preview.clear_block()
-			height_label.text = "Empty"
+			slot_height_label.text = "Empty"
 			name_label.text = "Slot " + str(i + 1)
 
 func normalize_block(raw_block, index: int) -> Dictionary:
 	if typeof(raw_block) == TYPE_DICTIONARY:
-		var cells: Array = raw_block.get("cells", [])
-		var height := int(raw_block.get("height", calculate_block_height(cells)))
+		var dictionary_cells: Array = raw_block.get("cells", [])
+		var block_height: int = int(raw_block.get("height", calculate_block_height(dictionary_cells)))
 		return {
 			"id": str(raw_block.get("id", "slot-" + str(index))),
 			"shapeId": str(raw_block.get("shapeId", "BLOCK")),
-			"cells": cells,
-			"height": height
+			"cells": dictionary_cells,
+			"height": block_height
 		}
 
 	var legacy_height: int = max(0, int(raw_block))
-	var cells: Array = []
+	var legacy_cells: Array = []
 
 	for y in range(legacy_height):
-		cells.append([0, y])
+		legacy_cells.append([0, y])
 
 	return {
 		"id": "legacy-" + str(index),
 		"shapeId": "LEGACY",
-		"cells": cells,
+		"cells": legacy_cells,
 		"height": legacy_height
 	}
 
@@ -263,11 +574,11 @@ func calculate_block_height(cells: Array) -> int:
 	if cells.is_empty():
 		return 0
 
-	var min_y := 999999
-	var max_y := -999999
+	var min_y: int = 999999
+	var max_y: int = -999999
 
 	for cell in cells:
-		var y := 0
+		var y: int = 0
 
 		if typeof(cell) == TYPE_DICTIONARY:
 			y = int(cell.get("y", 0))
@@ -280,7 +591,7 @@ func calculate_block_height(cells: Array) -> int:
 	return max_y - min_y + 1
 
 func set_tower_progress(current_height: int, target_height: int) -> void:
-	var ratio := 0.0
+	var ratio: float = 0.0
 
 	if target_height > 0:
 		ratio = clamp(float(current_height) / float(target_height), 0.0, 1.0)
@@ -310,3 +621,78 @@ func get_tower_status(state: String, current_height: int, target_height: int) ->
 
 	var remaining: int = max(0, target_height - current_height)
 	return str(remaining) + " height to target"
+
+func on_bots_toggle(enabled: bool) -> void:
+	if is_syncing_debug_config:
+		return
+	NetworkManager.update_config("debugBotsEnabled", enabled)
+
+func on_bot_count_changed(value: float) -> void:
+	if is_syncing_debug_config:
+		return
+	update_debug_labels()
+	NetworkManager.update_config("debugBotCount", int(value))
+
+func on_bot_delay_min_changed(value: float) -> void:
+	if is_syncing_debug_config:
+		return
+	update_debug_labels()
+	NetworkManager.update_config("debugBotDelayMin", int(value))
+
+func on_bot_delay_max_changed(value: float) -> void:
+	if is_syncing_debug_config:
+		return
+	update_debug_labels()
+	NetworkManager.update_config("debugBotDelayMax", int(value))
+
+func on_cooldown_changed(value: float) -> void:
+	if is_syncing_debug_config:
+		return
+	update_debug_labels()
+	NetworkManager.update_config("placementCooldown", int(value))
+
+func on_level_time_changed(value: float) -> void:
+	if is_syncing_debug_config:
+		return
+	update_debug_labels()
+	NetworkManager.update_config("levelTimeLimitMs", int(value))
+
+func on_start_delay_changed(value: float) -> void:
+	if is_syncing_debug_config:
+		return
+	update_debug_labels()
+	NetworkManager.update_config("startDelayMs", int(value))
+
+func on_target_multiplier_changed(value: float) -> void:
+	if is_syncing_debug_config:
+		return
+	update_debug_labels()
+	NetworkManager.update_config("targetHeightMultiplier", int(value))
+
+func update_debug_config(config) -> void:
+	if bots_toggle == null:
+		return
+
+	is_syncing_debug_config = true
+	bots_toggle.set_pressed_no_signal(bool(config.get("debugBotsEnabled", false)))
+	bot_count_slider.set_value_no_signal(float(config.get("debugBotCount", 0)))
+	bot_delay_min_slider.set_value_no_signal(float(config.get("debugBotDelayMin", 2000)))
+	bot_delay_max_slider.set_value_no_signal(float(config.get("debugBotDelayMax", 5000)))
+	cooldown_slider.set_value_no_signal(float(config.get("placementCooldown", 3000)))
+	level_time_slider.set_value_no_signal(float(config.get("levelTimeLimitMs", 30000)))
+	start_delay_slider.set_value_no_signal(float(config.get("startDelayMs", 3000)))
+	target_multiplier_slider.set_value_no_signal(float(config.get("targetHeightMultiplier", 3)))
+	update_debug_labels()
+	is_syncing_debug_config = false
+
+func update_debug_labels() -> void:
+	if bot_count_label == null:
+		return
+
+	bot_count_label.text = "Bot Count: " + str(int(bot_count_slider.value))
+	bot_delay_min_label.text = "Bot Delay Min: " + str(int(bot_delay_min_slider.value)) + " ms"
+	bot_delay_max_label.text = "Bot Delay Max: " + str(int(bot_delay_max_slider.value)) + " ms"
+	cooldown_label.text = "Placement Cooldown: " + str(int(cooldown_slider.value)) + " ms"
+	level_time_label.text = "Level Time: " + str(int(level_time_slider.value / 1000.0)) + " sec"
+	start_delay_label.text = "Start Delay: " + str(int(start_delay_slider.value)) + " ms"
+	target_multiplier_label.text = "Target Multiplier: " + str(int(target_multiplier_slider.value))
