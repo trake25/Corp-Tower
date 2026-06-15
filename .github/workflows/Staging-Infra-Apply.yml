@@ -33,15 +33,15 @@ jobs:
         working-directory: infra/terraform
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Check apply confirmation
         run: |
           if [ "${{ inputs.confirm_apply }}" != "APPLY" ]; then
             echo "confirm_apply must be exactly APPLY."
             exit 1
           fi
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4

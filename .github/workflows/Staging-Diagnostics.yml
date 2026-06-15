@@ -124,10 +124,8 @@ jobs:
           for SECURITY_GROUP_ID in $TARGET_SECURITY_GROUP_IDS; do
             echo "Security group: ${SECURITY_GROUP_ID}"
             aws ec2 describe-security-group-rules \
-              --filters \
-                "Name=group-id,Values=${SECURITY_GROUP_ID}" \
-                "Name=is-egress,Values=false" \
-              --query 'SecurityGroupRules[].{RuleId:SecurityGroupRuleId,Protocol:IpProtocol,From:FromPort,To:ToPort,Cidr:CidrIpv4,ReferencedGroup:ReferencedGroupInfo.GroupId,Description:Description}' \
+              --filters "Name=group-id,Values=${SECURITY_GROUP_ID}" \
+              --query 'SecurityGroupRules[?IsEgress==`false`].{RuleId:SecurityGroupRuleId,Protocol:IpProtocol,From:FromPort,To:ToPort,Cidr:CidrIpv4,ReferencedGroup:ReferencedGroupInfo.GroupId,Description:Description}' \
               --output table
           done
           echo "::endgroup::"

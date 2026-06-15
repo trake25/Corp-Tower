@@ -33,15 +33,15 @@ jobs:
         working-directory: infra/terraform
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Check rebuild confirmation
         run: |
           if [ "${{ inputs.confirm_rebuild }}" != "REBUILD_EC2" ]; then
             echo "confirm_rebuild must be exactly REBUILD_EC2."
             exit 1
           fi
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4

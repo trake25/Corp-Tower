@@ -132,10 +132,8 @@ jobs:
             echo "::group::Security group ${SECURITY_GROUP_ID}"
             STALE_RULE_IDS="$(
               aws ec2 describe-security-group-rules \
-                --filters \
-                  "Name=group-id,Values=${SECURITY_GROUP_ID}" \
-                  "Name=is-egress,Values=false" \
-                --query 'SecurityGroupRules[?((IpProtocol==`tcp` && FromPort==`6443` && ToPort==`6443`) || (IpProtocol==`tcp` && FromPort==`10250` && ToPort==`10250`) || (IpProtocol==`udp` && FromPort==`8472` && ToPort==`8472`) || (IpProtocol==`tcp` && FromPort==`30000` && ToPort==`32767`))].SecurityGroupRuleId' \
+                --filters "Name=group-id,Values=${SECURITY_GROUP_ID}" \
+                --query 'SecurityGroupRules[?IsEgress==`false` && ((IpProtocol==`tcp` && FromPort==`6443` && ToPort==`6443`) || (IpProtocol==`tcp` && FromPort==`10250` && ToPort==`10250`) || (IpProtocol==`udp` && FromPort==`8472` && ToPort==`8472`) || (IpProtocol==`tcp` && FromPort==`30000` && ToPort==`32767`))].SecurityGroupRuleId' \
                 --output text
             )"
 
