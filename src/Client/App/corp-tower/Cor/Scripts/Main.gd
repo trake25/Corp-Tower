@@ -3,7 +3,7 @@ extends Control
 const MAX_INVENTORY_SLOTS := 4
 const DEFAULT_UI_SKIN := "DefaultSkin"
 const SHOW_DEBUG_UI := true
-const BLOCK_PREVIEW_COLOR := Color(0.25, 0.56, 0.95, 1.0)
+const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const LOCAL_PLAYER_MARKER := "You"
 const SKIN_SCENES := {
 	"DefaultSkin": "res://Cor/Scenes/Skins/DefaultSkin.tscn",
@@ -24,6 +24,7 @@ var last_room_data: Variant = null
 var last_game_state_data: Variant = null
 var last_status_text: String = "Disconnected"
 var is_switching_skin: bool = false
+var player_color_map: Dictionary = {}
 
 var status_label: Label
 var player_label: Label
@@ -221,7 +222,7 @@ func optional_node(node_name: String) -> Node:
 
 func setup_inventory_controls() -> void:
 	for preview in block_previews:
-		preview.cell_color = BLOCK_PREVIEW_COLOR
+		preview.cell_color = get_local_player_color()
 
 	inventory_buttons[0].pressed.connect(func(): on_block_pressed(0))
 	inventory_buttons[1].pressed.connect(func(): on_block_pressed(1))
@@ -467,6 +468,11 @@ func update_game_state(data) -> void:
 	var seconds_remaining: int = int(data.get("secondsRemaining", 0))
 	var current_height: int = int(data.get("currentHeight", 0))
 	var target_height: int = int(data.get("targetHeight", 0))
+	var players: Array = data.get("players", [])
+
+	update_player_color_map(players)
+	if tower_stack.has_method("set_player_color_map"):
+		tower_stack.call("set_player_color_map", player_color_map)
 
 	level_label.text = "Level " + str(int(data.get("level", 0))) + " - " + state.capitalize()
 	timer_label.text = "Time " + str(seconds_remaining) + "s"
@@ -482,7 +488,6 @@ func update_game_state(data) -> void:
 	var max_refresh_tokens: int = int(data.get("maxRefreshTokens", 1))
 	var max_uses_per_level: int = int(data.get("maxRefreshUsesPerLevel", 2))
 	var my_blocks: Array = []
-	var players: Array = data.get("players", [])
 
 	for i in range(players.size()):
 		var player: Dictionary = players[i]
@@ -520,6 +525,7 @@ func update_game_state(data) -> void:
 
 func update_inventory_ui(blocks: Array) -> void:
 	var clean_blocks: Array = []
+	var local_player_color: Color = get_local_player_color()
 
 	for i in range(blocks.size()):
 		clean_blocks.append(normalize_block(blocks[i], i))
@@ -531,6 +537,7 @@ func update_inventory_ui(blocks: Array) -> void:
 		var preview: Control = block_previews[i]
 		var slot_height_label: Label = block_height_labels[i]
 		var name_label: Label = block_name_labels[i]
+		preview.cell_color = local_player_color
 
 		if i < clean_blocks.size():
 			var block: Dictionary = clean_blocks[i]
@@ -545,6 +552,24 @@ func update_inventory_ui(blocks: Array) -> void:
 			preview.clear_block()
 			slot_height_label.text = "Empty"
 			name_label.text = "Slot " + str(i + 1)
+
+func get_local_player_color() -> Color:
+	var player_id: String = str(NetworkManager.player_id)
+	if player_color_map.has(player_id):
+		return player_color_map[player_id]
+
+	return PlayerColors.color_for_player_id(player_id)
+
+func update_player_color_map(players: Array) -> void:
+	var updated_map: Dictionary = {}
+
+	for i in range(players.size()):
+		var player: Dictionary = players[i]
+		var player_id: String = str(player.get("id", ""))
+		if player_id != "":
+			updated_map[player_id] = PlayerColors.color_for_player_index(i)
+
+	player_color_map = updated_map
 
 func normalize_block(raw_block, index: int) -> Dictionary:
 	if typeof(raw_block) == TYPE_DICTIONARY:

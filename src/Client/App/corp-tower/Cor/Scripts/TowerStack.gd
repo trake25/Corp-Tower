@@ -1,24 +1,24 @@
 extends Control
 
-const BLOCK_COLORS := [
-	Color(0.23, 0.5, 0.88, 1.0),
-	Color(0.24, 0.68, 0.52, 1.0),
-	Color(0.86, 0.58, 0.22, 1.0),
-	Color(0.69, 0.42, 0.86, 1.0),
-	Color(0.86, 0.34, 0.38, 1.0)
-]
+const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
+
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
-const FALLBACK_COLOR := Color(0.23, 0.5, 0.88, 0.82)
+const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 const TARGET_MARKER_COLOR := Color(1.0, 0.82, 0.25, 1.0)
 
 var tower_blocks: Array = []
 var current_height: int = 0
 var target_height: int = 0
+var player_color_map: Dictionary = {}
 
 func set_tower(blocks: Array, new_current_height: int, new_target_height: int) -> void:
 	tower_blocks = blocks
 	current_height = max(0, new_current_height)
 	target_height = max(0, new_target_height)
+	queue_redraw()
+
+func set_player_color_map(new_player_color_map: Dictionary) -> void:
+	player_color_map = new_player_color_map
 	queue_redraw()
 
 func clear_tower() -> void:
@@ -45,7 +45,7 @@ func _draw() -> void:
 		var block: Dictionary = _normalize_block_entry(entry)
 		var cells: Array = block.get("cells", [])
 		var base_height: int = int(entry.get("baseHeight", 0))
-		var color: Color = BLOCK_COLORS[i % BLOCK_COLORS.size()]
+		var color: Color = _player_color(entry)
 
 		for cell in cells:
 			var cell_x: int = _cell_x(cell)
@@ -55,6 +55,7 @@ func _draw() -> void:
 			var y: float = baseline - float(y_units + 1) * unit
 			var rect: Rect2 = Rect2(Vector2(x, y), Vector2(unit - 2.0, unit - 2.0))
 			draw_rect(rect, color, true)
+			draw_rect(rect.grow(-3.0), Color(color.r, color.g, color.b, 0.36), true)
 			draw_rect(rect, GRID_COLOR, false, 1.5)
 
 	if current_height > tower_units:
@@ -109,6 +110,14 @@ func _normalize_block_entry(entry: Dictionary) -> Dictionary:
 		"cells": cells,
 		"height": height
 	}
+
+func _player_color(entry: Dictionary) -> Color:
+	var player_id: String = str(entry.get("playerId", entry.get("player_id", "")))
+
+	if player_color_map.has(player_id):
+		return player_color_map[player_id]
+
+	return PlayerColors.color_for_player_id(player_id)
 
 func _cell_x(cell) -> int:
 	if typeof(cell) == TYPE_DICTIONARY:
