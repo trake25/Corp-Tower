@@ -54,9 +54,9 @@
 ### Server To Client
 | Message | Description |
 |---|---|
-| `room_created` | New room/session assignment with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, initial `blocks`, `drawPileCount`, and `nextDrawBlock`. |
-| `room_resumed` | Existing room/session resumed with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, blocks, `drawPileCount`, and `nextDrawBlock`. |
-| `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, `drawPileCount`, `nextDrawBlock`, summary, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
+| `room_created` | New room/session assignment with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, initial `blocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
+| `room_resumed` | Existing room/session resumed with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, blocks, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
+| `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock`, summary, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
 | `debug_config` | Authoritative debug menu state. |
 | `room_closed` | Room teardown reason for connected real players. |
 
@@ -70,6 +70,8 @@
 
 ### Block And Tower Payloads
 - Inventory `blocks[]`: server-assigned fixed-orientation block objects `{ id, shapeId, cells, height }`.
+- `activeInventorySlots`: number of currently unlocked active hand slots.
+- `maxActiveBlocks`: maximum active hand slots supported by the UI/rules.
 - `nextDrawBlock`: the first block in the shared draw pile, or `null` when empty.
 - `drawPileCount`: remaining shared pile size including `nextDrawBlock`.
 - `cells`: array of `[x, y]` unit coordinates used by the Godot client for shape previews and tower rendering.

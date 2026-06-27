@@ -128,6 +128,8 @@ class LobbyManager {
             roomId: room.id,
             level: room.engine.room.level,
             targetHeight: room.engine.room.targetHeight,
+            activeInventorySlots: room.engine.getBlocksPerPlayer(),
+            maxActiveBlocks: GameConfig.maxActiveBlocks,
             blocks: roomPlayer.blocks || [],
             drawPileCount: (room.engine.room.drawPile || []).length,
             nextDrawBlock: room.engine.getNextDrawBlock()
@@ -546,6 +548,8 @@ class LobbyManager {
                 roomId: room.id,
                 level: engine.room.level,
                 targetHeight: engine.room.targetHeight,
+                activeInventorySlots: engine.getBlocksPerPlayer(),
+                maxActiveBlocks: GameConfig.maxActiveBlocks,
                 blocks: player.blocks,
                 drawPileCount: (engine.room.drawPile || []).length,
                 nextDrawBlock: engine.getNextDrawBlock()

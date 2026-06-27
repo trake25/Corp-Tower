@@ -23,9 +23,13 @@
   - `blockUnlockLevels`
   - `blockWeights`
   - `blockShapeVariants`
+- Inventory settings:
+  - `inventoryScaling`
+  - `maxActiveBlocks`
 - Draw pile settings:
   - `maxTeamCarryOverBlocks`
   - `minDrawPileBlocksAfterDeal`
+  - `drawPileReserveScaling`
   - `levelSupplyMinSurplus`
   - `levelSupplyMaxSurplus`
   - `minPrecisionBlocksPerLevel`

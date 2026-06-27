@@ -38,6 +38,8 @@ class GameEngine {
             checkpointLevel: this.room.checkpointLevel,
             currentHeight: this.room.currentHeight,
             targetHeight: this.room.targetHeight,
+            activeInventorySlots: this.getBlocksPerPlayer(),
+            maxActiveBlocks: GameConfig.maxActiveBlocks,
             drawPileCount: (this.room.drawPile || []).length,
             nextDrawBlock: this.getNextDrawBlock(),
             towerBlocks: this.room.towerBlocks || [],
@@ -374,14 +376,11 @@ class GameEngine {
     }
 
     getRandomBlock() {
-        const availableBlocks = {
-            1: GameConfig.blockWeights[1],
-            2: GameConfig.blockWeights[2],
-            3: GameConfig.blockWeights[3]
-        };
+        const availableBlocks = {};
 
-        for (const block in GameConfig.blockUnlockLevels) {
-            const unlockLevel = GameConfig.blockUnlockLevels[block];
+        for (const block in GameConfig.blockWeights) {
+            const unlockLevel =
+                GameConfig.blockUnlockLevels[block] || 1;
 
             if (this.room.level >= unlockLevel) {
                 availableBlocks[block] = GameConfig.blockWeights[block];
@@ -396,6 +395,10 @@ class GameEngine {
             for (let i = 0; i < weight; i++) {
                 weightedPool.push(Number(block));
             }
+        }
+
+        if (weightedPool.length === 0) {
+            return this.createBlock(1);
         }
 
         const randomIndex =
@@ -414,6 +417,22 @@ class GameEngine {
         }
 
         return Math.min(blocksPerPlayer, GameConfig.maxActiveBlocks);
+    }
+
+    getMinDrawPileBlocksAfterDeal() {
+        let reserveBlocks = GameConfig.minDrawPileBlocksAfterDeal;
+
+        if (GameConfig.drawPileReserveScaling) {
+            reserveBlocks = 0;
+
+            for (const level in GameConfig.drawPileReserveScaling) {
+                if (this.room.level >= Number(level)) {
+                    reserveBlocks = GameConfig.drawPileReserveScaling[level];
+                }
+            }
+        }
+
+        return Math.max(0, reserveBlocks);
     }
 
     buildDrawPile() {
@@ -457,7 +476,7 @@ class GameEngine {
         const minimumOpeningBlocks =
             this.room.players.length * this.getBlocksPerPlayer();
         const minimumTotalBlocks =
-            minimumOpeningBlocks + GameConfig.minDrawPileBlocksAfterDeal;
+            minimumOpeningBlocks + this.getMinDrawPileBlocksAfterDeal();
         const maxTotalHeight = Math.max(
             targetHeight + GameConfig.levelSupplyMaxSurplus,
             minimumTotalBlocks + GameConfig.levelSupplyMaxSurplus
@@ -506,7 +525,7 @@ class GameEngine {
         const minimumOpeningBlocks =
             this.room.players.length * this.getBlocksPerPlayer();
         const minimumTotalBlocks =
-            minimumOpeningBlocks + GameConfig.minDrawPileBlocksAfterDeal;
+            minimumOpeningBlocks + this.getMinDrawPileBlocksAfterDeal();
         const maxTotalHeight = Math.max(
             targetHeight + GameConfig.levelSupplyMaxSurplus,
             minimumTotalBlocks + GameConfig.levelSupplyMaxSurplus

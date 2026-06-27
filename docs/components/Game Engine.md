@@ -37,9 +37,13 @@
   - New blocks are objects `{ id, shapeId, cells, height }`.
   - `height` is derived from the vertical span of `cells`.
   - Legacy numeric blocks are still interpreted as vertical height values by helper logic.
+  - Block sizes unlock through [[Game Config]] so level 1 starts with height-1 `I1` blocks only.
+- Inventory:
+  - Active slots scale through [[Game Config]].
+  - Default unlocks are 1 slot at level 1, 2 slots at level 2, and 3 slots at level 4.
 - Draw pile:
   - Level supply is generated with minimum surplus, precision-block, and exact-combination constraints.
-  - Generation also reserves at least 6 shared draw-pile blocks after opening hands are dealt.
+  - Generation also reserves level-scaled shared draw-pile blocks after opening hands are dealt.
   - Opening hands are dealt from the shuffled shared pile.
   - A placement refills the acting player's hand from the pile when possible.
   - `game_state` includes `drawPileCount` and `nextDrawBlock`.

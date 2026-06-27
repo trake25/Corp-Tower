@@ -26,6 +26,7 @@ var last_game_state_data: Variant = null
 var last_status_text: String = "Disconnected"
 var is_switching_skin: bool = false
 var player_color_map: Dictionary = {}
+var active_inventory_slots: int = MAX_INVENTORY_SLOTS
 
 var status_label: Label
 var player_label: Label
@@ -312,7 +313,7 @@ func reset_ui() -> void:
 	refresh_uses_label.text = "Level refreshes 0/2"
 	set_tower_progress(0, 0)
 	tower_stack.clear_tower()
-	update_inventory_ui([])
+	update_inventory_ui([], MAX_INVENTORY_SLOTS)
 	update_draw_pile_ui(0, null)
 	refresh_button.disabled = true
 
@@ -442,7 +443,10 @@ func update_room(data) -> void:
 	tower_status_label.text = "Match starting"
 	set_tower_progress(0, int(data.get("targetHeight", 0)))
 	tower_stack.clear_tower()
-	update_inventory_ui(data.get("blocks", []))
+	update_inventory_ui(
+		data.get("blocks", []),
+		int(data.get("activeInventorySlots", MAX_INVENTORY_SLOTS))
+	)
 	update_draw_pile_ui(
 		int(data.get("drawPileCount", 0)),
 		data.get("nextDrawBlock", null)
@@ -464,7 +468,7 @@ func update_room_closed(data) -> void:
 	refresh_uses_label.text = "Level refreshes 0/2"
 	set_tower_progress(0, 0)
 	tower_stack.clear_tower()
-	update_inventory_ui([])
+	update_inventory_ui([], MAX_INVENTORY_SLOTS)
 	update_draw_pile_ui(0, null)
 	set_debug_overlay_open(false)
 
@@ -533,16 +537,20 @@ func update_game_state(data) -> void:
 		state == "game_completed"
 	)
 
-	update_inventory_ui(my_blocks)
+	update_inventory_ui(
+		my_blocks,
+		int(data.get("activeInventorySlots", MAX_INVENTORY_SLOTS))
+	)
 
-func update_inventory_ui(blocks: Array) -> void:
+func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS) -> void:
 	var clean_blocks: Array = []
 	var local_player_color: Color = get_local_player_color()
+	active_inventory_slots = clampi(active_slots, 1, MAX_INVENTORY_SLOTS)
 
 	for i in range(blocks.size()):
 		clean_blocks.append(normalize_block(blocks[i], i))
 
-	block_label.text = "Inventory " + str(clean_blocks.size()) + "/" + str(MAX_INVENTORY_SLOTS)
+	block_label.text = "Inventory " + str(clean_blocks.size()) + "/" + str(active_inventory_slots)
 
 	for i in range(inventory_buttons.size()):
 		var button: Button = inventory_buttons[i]
@@ -551,7 +559,13 @@ func update_inventory_ui(blocks: Array) -> void:
 		var name_label: Label = block_name_labels[i]
 		preview.cell_color = local_player_color
 
-		if i < clean_blocks.size():
+		if i >= active_inventory_slots:
+			button.disabled = true
+			button.text = ""
+			preview.clear_block()
+			slot_height_label.text = "Locked"
+			name_label.text = "Level " + str(get_slot_unlock_level(i))
+		elif i < clean_blocks.size():
 			var block: Dictionary = clean_blocks[i]
 			button.disabled = false
 			button.text = ""
@@ -564,6 +578,14 @@ func update_inventory_ui(blocks: Array) -> void:
 			preview.clear_block()
 			slot_height_label.text = "Empty"
 			name_label.text = "Slot " + str(i + 1)
+
+func get_slot_unlock_level(slot_index: int) -> int:
+	if slot_index <= 0:
+		return 1
+	if slot_index == 1:
+		return 2
+
+	return 4
 
 func update_draw_pile_ui(draw_pile_count: int, raw_next_block: Variant) -> void:
 	if draw_pile_preview == null:

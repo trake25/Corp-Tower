@@ -36,6 +36,7 @@
 
 ### Inventory Rules
 - Max 3 active blocks per player.
+- Active inventory slots unlock by progression: 1 slot at level 1, 2 slots at level 2, and 3 slots at level 4.
 - The previous 4th carry-over inventory slot is removed.
 - Empty hand slots are refilled from the shared draw pile after placement while the pile has blocks.
 - The next shared draw block is visible to all players; whichever player places next receives it.
@@ -44,7 +45,7 @@
 - Each level creates a server-owned shared draw pile.
 - The pile is built from team carry-over blocks plus newly generated level blocks.
 - The pile is shuffled before opening hands are dealt.
-- The generator keeps at least 6 shared draw-pile blocks available after opening hands are dealt.
+- The generator keeps a level-scaled reserve after opening hands are dealt: 3 draw blocks at level 1, 4 at level 2, and 6 from level 4 onward.
 - On level completion, unused active hand blocks from all players become the team carry-over pool.
 - Only up to 3 team carry-over blocks are kept.
 - Carry-over prioritizes smaller precision blocks first.
@@ -91,7 +92,8 @@
 
 ## Progression
 - Target height increases each level.
-- Block complexity increases with level.
+- Block complexity increases with level: height-1 blocks at level 1, size-2 shapes at level 2, size-3 shapes at level 3, size-4 shapes at level 5, size-5 shapes at level 10, and size-6 shapes at level 15.
+- Inventory capacity increases with level: 1 active slot at level 1, 2 at level 2, and 3 at level 4.
 - Checkpoints after every 3 levels.
 - Failing a level rolls back to last completed checkpoint level.
 - Level draw piles are generated with solvability constraints so random supply should not make a level impossible before player decisions.

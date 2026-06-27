@@ -9,6 +9,7 @@
 - Display connection, room, score, timer, tower height/progress, 3-slot block inventory, draw pile preview, and refresh state.
 - Render shape-based block inventory cards from server-provided fixed-orientation cells.
 - Render the visible `nextDrawBlock` and remaining `drawPileCount` in the former 4th inventory-card position.
+- Render locked inactive inventory slots from `activeInventorySlots` so low levels start with fewer usable slots.
 - Render placed blocks in the center tower area from server `towerBlocks` history.
 - Send block and refresh actions.
 - Load the selected UI skin and bind the shared skin node contract.
@@ -19,6 +20,7 @@
 ## Key Logic
 - Inventory buttons map to block indexes.
 - Only the 3 active inventory slots are actionable.
+- Locked slots remain visible but disabled until their unlock level.
 - The draw-pile preview is not clickable; it shows the shared next refill block that whichever player places next will receive.
 - Inventory cards tolerate legacy numeric blocks and new `{ id, shapeId, cells, height }` block objects.
 - `BlockPreview.gd` draws inventory shape cells.
@@ -40,7 +42,7 @@
 
 ## Notes
 - UI is an Android-first gameplay HUD with top status, center tower stage, and bottom touch controls.
-- Bottom controls are laid out as 3 active block cards, 1 shared next-draw preview card, and the refresh button.
+- Bottom controls are laid out as 3 inventory card positions, 1 shared next-draw preview card, and the refresh button.
 - Current working UI is preserved as `DefaultSkin`; Figma-inspired UI is `Figma_SkinV1`.
 - Debug and skin menu UI are available as bottom-right floating buttons with overlay panels.
 - The center tower is visual only; placement is still server-authoritative and index-based.

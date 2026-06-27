@@ -29,6 +29,9 @@ const GameConfig = {
     // =========================
 
     blockUnlockLevels: {
+        1: 1,
+        2: 2,
+        3: 3,
         4: 5,
         5: 10,
         6: 15
@@ -82,7 +85,9 @@ const GameConfig = {
     // =========================
 
     inventoryScaling: {
-        1: 3
+        1: 1,
+        2: 2,
+        4: 3
     },
 
     maxActiveBlocks: 3,
@@ -93,6 +98,11 @@ const GameConfig = {
 
     maxTeamCarryOverBlocks: 3,
     minDrawPileBlocksAfterDeal: 6,
+    drawPileReserveScaling: {
+        1: 3,
+        2: 4,
+        4: 6
+    },
     levelSupplyMinSurplus: 3,
     levelSupplyMaxSurplus: 12,
     minPrecisionBlocksPerLevel: 2,
