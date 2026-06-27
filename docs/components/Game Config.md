@@ -20,7 +20,8 @@
   - `targetHeightMultiplier`
   - `startDelayMs`
   - `levelTimeLimitMs`
-  - `scorePopupDurationMs`
+  - `placementScorePopupDurationMs`
+  - `finishScorePopupDurationMs`
   - `levelSummaryDelayMs`
 - Block settings:
   - `blockUnlockLevels`

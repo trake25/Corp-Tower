@@ -33,6 +33,7 @@
   - MVP is highest level score.
   - Checkpoint score snapshots are restored on rollback.
   - Checkpoint score gates fail the checkpoint when any player total score is below `checkpointScoreRequirement`.
+  - `checkpointScoreStatus` broadcasts the active gate, next checkpoint level, and per-player shortfall for the right-side UI.
   - `scoreEvents[]` is transient and broadcast-only; clients should not infer scoring UI from aggregate score diffs.
   - `lastLevelSummary` includes team level score, MVP, finisher, exact/overbuild result, per-player level/final totals, contributed height, and bonus breakdowns.
 - Target height:

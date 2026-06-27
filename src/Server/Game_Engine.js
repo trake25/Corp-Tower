@@ -39,6 +39,7 @@ class GameEngine {
             checkpointLevel: this.room.checkpointLevel,
             currentHeight: this.room.currentHeight,
             targetHeight: this.room.targetHeight,
+            checkpointScoreStatus: this.getCheckpointScoreStatus(),
             activeInventorySlots: this.getBlocksPerPlayer(),
             maxActiveBlocks: GameConfig.maxActiveBlocks,
             drawPileCount: (this.room.drawPile || []).length,
@@ -47,7 +48,9 @@ class GameEngine {
             secondsRemaining: Math.ceil(this.getRemainingMs() / 1000),
             lastLevelSummary: this.room.lastLevelSummary,
             scoreEvents: scoreEvents,
-            scorePopupDurationMs: GameConfig.scorePopupDurationMs,
+            placementScorePopupDurationMs: this.getPlacementScorePopupDurationMs(),
+            finishScorePopupDurationMs: this.getFinishScorePopupDurationMs(),
+            scorePopupDurationMs: this.getMaxScorePopupDurationMs(),
             levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
             maxRefreshTokens: GameConfig.maxRefreshTokens,
             maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
@@ -241,12 +244,31 @@ class GameEngine {
     }
 
     getPostLevelTransitionDelayMs() {
-        const scorePopupDurationMs =
-            Math.max(0, Number(GameConfig.scorePopupDurationMs) || 0);
         const levelSummaryDelayMs =
             Math.max(0, Number(GameConfig.levelSummaryDelayMs) || 0);
 
-        return scorePopupDurationMs + levelSummaryDelayMs;
+        return this.getMaxScorePopupDurationMs() + levelSummaryDelayMs;
+    }
+
+    getPlacementScorePopupDurationMs() {
+        return Math.max(
+            0,
+            Number(GameConfig.placementScorePopupDurationMs) || 0
+        );
+    }
+
+    getFinishScorePopupDurationMs() {
+        return Math.max(
+            0,
+            Number(GameConfig.finishScorePopupDurationMs) || 0
+        );
+    }
+
+    getMaxScorePopupDurationMs() {
+        return Math.max(
+            this.getPlacementScorePopupDurationMs(),
+            this.getFinishScorePopupDurationMs()
+        );
     }
 
     startLevel() {
@@ -1272,6 +1294,37 @@ class GameEngine {
                 score: Number(player.score || 0),
                 requiredScore: requirement
             }));
+    }
+
+    getNextCheckpointLevel() {
+        const interval = Math.max(1, Number(GameConfig.checkpointInterval) || 1);
+        const currentLevel = this.room?.level || 1;
+        const offset = (currentLevel - 1) % interval;
+
+        return Math.min(
+            GameConfig.maxLevel,
+            currentLevel + interval - offset
+        );
+    }
+
+    getCheckpointScoreStatus() {
+        const requirement = this.getCheckpointScoreRequirement();
+
+        return {
+            requiredScore: requirement,
+            nextCheckpointLevel: this.getNextCheckpointLevel(),
+            players: (this.room?.players || []).map(player => {
+                const score = Number(player.score || 0);
+
+                return {
+                    id: player.id,
+                    score: score,
+                    requiredScore: requirement,
+                    remainingScore: Math.max(0, requirement - score),
+                    met: requirement <= 0 || score >= requirement
+                };
+            })
+        };
     }
 
     hasMetCheckpointScoreRequirement() {

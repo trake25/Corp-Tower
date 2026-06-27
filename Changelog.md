@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-06-27
+- update: Split score popup duration tuning into placement and MVP/Perfect/team popup controls under a new debug UI tab.
 - update: Extended score popups to 3 seconds and delayed level summaries until the end-of-level popup batch fades.
 - feature: Added transient score UI events, exact/overbuild finish feedback, MVP/team callouts, level summary overlay support, and tabbed debug menu organization.
 - update: Recalibrated placement scoring with a configurable per-height score scale, expanded live balance/scoring debug tuning, and added score distribution metrics to the balance simulator.

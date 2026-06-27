@@ -128,6 +128,7 @@ class LobbyManager {
             roomId: room.id,
             level: room.engine.room.level,
             targetHeight: room.engine.room.targetHeight,
+            checkpointScoreStatus: room.engine.getCheckpointScoreStatus(),
             activeInventorySlots: room.engine.getBlocksPerPlayer(),
             maxActiveBlocks: GameConfig.maxActiveBlocks,
             blocks: roomPlayer.blocks || [],
@@ -366,6 +367,8 @@ class LobbyManager {
             placementCooldown: GameConfig.placementCooldown,
             levelTimeLimitMs: GameConfig.levelTimeLimitMs,
             startDelayMs: GameConfig.startDelayMs,
+            placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
+            finishScorePopupDurationMs: GameConfig.finishScorePopupDurationMs,
             levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
             checkpointScoreRequirement: GameConfig.checkpointScoreRequirement,
             targetHeightMultiplier: GameConfig.targetHeightMultiplier,
@@ -446,6 +449,10 @@ class LobbyManager {
             placementCooldown: setGameInt("placementCooldown", 0, 5000),
             levelTimeLimitMs: setGameInt("levelTimeLimitMs", 5000, 120000),
             startDelayMs: setGameInt("startDelayMs", 0, 10000),
+            placementScorePopupDurationMs:
+                setGameInt("placementScorePopupDurationMs", 500, 10000),
+            finishScorePopupDurationMs:
+                setGameInt("finishScorePopupDurationMs", 500, 10000),
             levelSummaryDelayMs: setGameInt("levelSummaryDelayMs", 1000, 10000),
             checkpointScoreRequirement:
                 setGameInt("checkpointScoreRequirement", 0, 1000000),
@@ -657,6 +664,7 @@ class LobbyManager {
                 roomId: room.id,
                 level: engine.room.level,
                 targetHeight: engine.room.targetHeight,
+                checkpointScoreStatus: engine.getCheckpointScoreStatus(),
                 activeInventorySlots: engine.getBlocksPerPlayer(),
                 maxActiveBlocks: GameConfig.maxActiveBlocks,
                 blocks: player.blocks,

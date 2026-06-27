@@ -7,7 +7,8 @@ const LobbyManager = require("./Lobby_Manager");
 
 const originalGameConfig = {
     placementCooldown: GameConfig.placementCooldown,
-    scorePopupDurationMs: GameConfig.scorePopupDurationMs,
+    placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
+    finishScorePopupDurationMs: GameConfig.finishScorePopupDurationMs,
     levelSummaryDelayMs: GameConfig.levelSummaryDelayMs
 };
 const originalScoringConfig = { ...GameConfig.scoring };
@@ -19,7 +20,10 @@ afterEach(() => {
     });
     activeEngines.clear();
     GameConfig.placementCooldown = originalGameConfig.placementCooldown;
-    GameConfig.scorePopupDurationMs = originalGameConfig.scorePopupDurationMs;
+    GameConfig.placementScorePopupDurationMs =
+        originalGameConfig.placementScorePopupDurationMs;
+    GameConfig.finishScorePopupDurationMs =
+        originalGameConfig.finishScorePopupDurationMs;
     GameConfig.levelSummaryDelayMs = originalGameConfig.levelSummaryDelayMs;
     GameConfig.scoring = { ...originalScoringConfig };
 });
@@ -50,7 +54,8 @@ function createPlayingEngine(level = 1, targetHeight = 5) {
     });
 
     GameConfig.placementCooldown = 0;
-    GameConfig.scorePopupDurationMs = 3000;
+    GameConfig.placementScorePopupDurationMs = 2500;
+    GameConfig.finishScorePopupDurationMs = 3500;
     GameConfig.levelSummaryDelayMs = 1000;
 
     engine.createRoom(createPlayers());
@@ -102,7 +107,9 @@ test("placement emits one placement score event", () => {
 
     const message = messageWithScoreEvents(messages);
     assert.deepEqual(eventTypes(message), ["placement"]);
-    assert.equal(message.scorePopupDurationMs, 3000);
+    assert.equal(message.placementScorePopupDurationMs, 2500);
+    assert.equal(message.finishScorePopupDurationMs, 3500);
+    assert.equal(message.scorePopupDurationMs, 3500);
     assert.equal(message.scoreEvents[0].playerId, "P1");
     assert.equal(message.scoreEvents[0].points, 20);
     assert.equal(message.players[0].levelScore, 20);
@@ -178,13 +185,27 @@ test("failed level summary does not bank level score into final totals", () => {
 
 });
 
-test("levelSummaryDelayMs is exposed and clamped in debug config", async () => {
+test("UI durations are exposed and clamped in debug config", async () => {
     const lobbyManager = new LobbyManager();
+
+    await lobbyManager.updateDebugConfig("placementScorePopupDurationMs", 250);
+    assert.equal(GameConfig.placementScorePopupDurationMs, 500);
+
+    await lobbyManager.updateDebugConfig("placementScorePopupDurationMs", 12000);
+    assert.equal(GameConfig.placementScorePopupDurationMs, 10000);
+
+    await lobbyManager.updateDebugConfig("finishScorePopupDurationMs", 250);
+    assert.equal(GameConfig.finishScorePopupDurationMs, 500);
+
+    await lobbyManager.updateDebugConfig("finishScorePopupDurationMs", 12000);
+    assert.equal(GameConfig.finishScorePopupDurationMs, 10000);
 
     await lobbyManager.updateDebugConfig("levelSummaryDelayMs", 500);
     assert.equal(GameConfig.levelSummaryDelayMs, 1000);
 
     await lobbyManager.updateDebugConfig("levelSummaryDelayMs", 12000);
     assert.equal(GameConfig.levelSummaryDelayMs, 10000);
+    assert.equal(lobbyManager.getDebugConfig().placementScorePopupDurationMs, 10000);
+    assert.equal(lobbyManager.getDebugConfig().finishScorePopupDurationMs, 10000);
     assert.equal(lobbyManager.getDebugConfig().levelSummaryDelayMs, 10000);
 });

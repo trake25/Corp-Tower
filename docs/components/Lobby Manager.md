@@ -37,6 +37,7 @@
 - `updateDebugConfig(key, value)`:
   - Allows only known keys.
   - Clamps numeric values.
+  - Clamps `placementScorePopupDurationMs` and `finishScorePopupDurationMs` to 500-10000 ms.
   - Clamps `levelSummaryDelayMs` to 1000-10000 ms.
   - Allows `debugBotStrategy` only as `cooperative` or `mvp_greedy`.
   - Applies `debugStartLevel` immediately by restarting active debug rooms at the configured level.

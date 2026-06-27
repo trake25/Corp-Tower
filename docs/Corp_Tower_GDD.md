@@ -95,7 +95,7 @@
 - `checkpointScoreRequirement` is disabled at `0`; positive values enforce the selfish-cooperation rule that every player must contribute enough before the team climbs into the next checkpoint band.
 
 ### Scoring Feedback UX
-- Placement score shows as a 3-second `+points` popup in the placing player's color.
+- Placement score shows as a `+points` popup in the placing player's color, using `placementScorePopupDurationMs`.
 - Exact finish shows a distinct `PERFECT FIT` callout, followed by precision/team exact bonus feedback.
 - Overbuild finish shows target reached with the wasted height amount and does not trigger exact-finish celebration.
 - MVP and team total are display-only callouts; MVP does not award extra score.
@@ -125,7 +125,7 @@
 - Purpose: expose selected [[Game Config]] variables to designers/QA without code changes or restarts.
 - Authority: server validates and applies all changes; broadcasts `debug_config` to all real clients.
 - Client debug controls live in a tabbed overlay and sync server state without echo loops.
-- Tabs: Bots, Round, Supply, Refresh, and Scoring.
+- Tabs: Bots, Round, UI, Supply, Refresh, and Scoring.
 
 ### Currently Exposed Variables
 | Variable | Description |
@@ -139,7 +139,9 @@
 | `placementCooldown` | Anti-spam delay between placements (ms). |
 | `levelTimeLimitMs` | Level timer duration (ms). |
 | `startDelayMs` | Countdown before level becomes playable (ms). |
-| `levelSummaryDelayMs` | Completed/failed level summary duration before next level or rollback (1000-10000 ms, default 3000). |
+| `placementScorePopupDurationMs` | Placement score popup duration (500-10000 ms, default 3000). |
+| `finishScorePopupDurationMs` | MVP, Perfect Fit, team total, and bonus popup duration (500-10000 ms, default 3000). |
+| `levelSummaryDelayMs` | Completed/failed level score summary visible duration before next level or rollback (1000-10000 ms, default 3000). |
 | `checkpointScoreRequirement` | Minimum total score each player must have when crossing a checkpoint boundary; `0` disables the gate. |
 | `targetHeightMultiplier` | Debug scale applied to the target-height curve; default 3 keeps the authored curve unchanged. |
 | `levelSupplyMinSurplus` | Minimum generated total-height surplus above target. |
