@@ -17,6 +17,7 @@
 - Server workflow starts Redis/nginx on EC2-1 and game server Docker containers on EC2-2/EC2-3.
 - Cleanup: Run [[Staging Runtime Cleanup Workflow]] when stale nginx, Redis, server containers, Docker network, Docker images, or temp deployment files are suspected.
 - Managed AWS ALB/NLB, ElastiCache, and EKS are intentionally not used in this learning setup.
+- K3s exploration belongs in [[K3s Manual Learning Plan]] until it has been manually installed, verified, and reverted phase by phase.
 
 ## Inputs/Outputs
 - Input: local Terraform/AWS setup and GitHub secrets.
@@ -34,3 +35,4 @@
 - Infra Apply and EC2 Rebuild stay manual-only because they can intentionally change infrastructure.
 - Gateway and workers should stay in the same staging VPC/subnet learning topology.
 - Check gateway logs on EC2-1 with `sudo docker logs corp-tower-gateway`; check worker logs on EC2-2/EC2-3 with `sudo docker logs corp-tower-server`.
+- Keep this Docker staging path as the fallback while learning K3s manually.

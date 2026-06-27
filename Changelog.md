@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-06-20
+- docs: Added a manual, phase-gated K3s learning plan with proof checks and rollback paths for each implementation step.
+
 ## 2026-06-15
 - checkpoint: Added shape-based fixed-orientation blocks, tower stack rendering in the Godot gameplay HUD, and `towerBlocks` history in `game_state`; balance now needs recalibration because non-vertical shapes can reduce available height.
 - checkpoint: Added bot-aware Godot auto-reconnect for unintended disconnects in real-player-only rooms, exposed `isBot` in `game_state.players`, and changed staging server update to drain/update workers one at a time through nginx.

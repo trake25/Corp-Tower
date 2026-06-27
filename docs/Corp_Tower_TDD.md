@@ -9,6 +9,7 @@
 - EC2 gateway/workers are pinned to one subnet so private gateway-to-worker routing is predictable.
 - Server remains authoritative for matchmaking, room state, timers, shape block assignment, tower history, scoring, refresh tokens, debug tuning, bots, reconnect, and room cleanup.
 - Managed AWS ALB/NLB, ElastiCache, and EKS are intentionally avoided to reduce learning-lab credit usage.
+- K3s is tracked as a manual learning path in [[K3s Manual Learning Plan]], not as the active staging deployment path.
 
 ## Repository Layout
 - `src/Server/Server.js`: WebSocket entry point and message router. -> [[Server Entry]]
@@ -25,6 +26,7 @@
 - `.github/workflows/Server-Staging-Deploy.yml`: Docker/ECR deploy to EC2 gateway/workers. -> [[Server Staging Deploy Workflow]]
 - `.github/workflows/Staging-Runtime-Cleanup.yml`: manual runtime cleanup for Docker artifacts created by server update. -> [[Staging Runtime Cleanup Workflow]]
 - `.github/workflows/Client-Android-Internal.yml`: Android internal-testing build/upload. -> [[Client Android Internal Workflow]]
+- `docs/components/K3s Manual Learning Plan.md`: phase-gated manual K3s lab plan with rollback checks. -> [[K3s Manual Learning Plan]]
 
 ## Runtime Architecture
 - EC2-1 gateway:
@@ -77,6 +79,7 @@
 - Normal automated staging path is `Diagnostics -> Infra Plan -> Server Update`.
 - Server-side pushes to `main`/`master` trigger the automated master workflow; client-only pushes do not.
 - Cleanup is manual-only and used when an implementation fails or a revert needs to remove stale Docker runtime artifacts.
+- K3s work is manual-only until the install, agent join, test workload, Corp Tower workload, exposure, and rollback phases have been verified.
 - Infra Apply and EC2 Rebuild are manual-only because they can intentionally change infrastructure.
 - Infra plan/apply workflows are manual-only because creating or changing EC2 instances is an AWS side effect.
 - `Staging-Automated-Master.yml`:

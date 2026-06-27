@@ -23,6 +23,7 @@
 - [[Client Android Internal Workflow]]
 - [[Terraform Infrastructure]]
 - [[Staging Deploy Guide]]
+- [[K3s Manual Learning Plan]]
 
 ## Global
 - [[Summary]]

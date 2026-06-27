@@ -28,6 +28,7 @@
 - [[Staging Diagnostics Workflow]] manually verifies AWS topology, networking, EC2 status, and SSH reachability without changing staging.
 - [[Staging Runtime Cleanup Workflow]] manually removes only the Docker runtime artifacts managed by server update, while leaving EC2 prerequisites installed.
 - [[Terraform Infrastructure]] creates/adopts AWS staging resources for the free-tier learning lab.
+- [[K3s Manual Learning Plan]] defines a manual, reversible learning path for K3s without replacing the active Docker staging path.
 - [[Client Android Internal Workflow]] builds signed Android AABs and can upload to Google Play internal testing.
 - [[AI_Agent_Organization]] defines AI assistant roles, prompt handoff behavior, and human review ownership.
 
@@ -102,6 +103,7 @@
 - For server behavior, prioritize [[Game Engine]], [[Lobby Manager]], and [[Server Entry]].
 - For client behavior, prioritize [[NetworkManager]] and [[Main UI Controller]].
 - For deployment, prioritize [[Server Staging Deploy Workflow]] and [[Staging Deploy Guide]].
+- For manual K3s learning, use [[K3s Manual Learning Plan]] and keep Docker staging as the known-good fallback until a productization decision is made.
 - For AI collaboration rules, read [[AI_Agent_Organization]]. Sub AIs prepare prompts; Main AIs execute; Human Orchestrator owns final review.
 - Human prefer not to run manually & locally terraform, docker, or redis. Everything is tested in github action thru deployment.
 - This repository is intentionally structured as an Obsidian vault; use `[[links]]` for navigation.
