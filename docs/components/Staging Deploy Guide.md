@@ -11,7 +11,8 @@
 - Document rollback/troubleshooting.
 
 ## Key Logic
-- Normal path: run [[Staging Automated Master Workflow]] to queue `Diagnostics -> Infra Plan -> Server Update`.
+- Normal server-only path: push through [[Staging Automated Master Workflow]] to run the fast guarded `Server Update` path.
+- Full preflight path: run [[Staging Automated Master Workflow]] manually with `full_preflight`, or change staging workflow files, to queue `Diagnostics -> Infra Plan -> Server Update`.
 - Manual infra path: run Terraform plan/apply workflows to create, adopt, or update EC2-1 gateway and EC2-2/EC2-3 workers.
 - Server workflow builds/pushes Docker image to ECR.
 - Server workflow starts Redis/nginx on EC2-1 and game server Docker containers on EC2-2/EC2-3.

@@ -19,6 +19,9 @@
   - `test-server`
   - `build-and-push`
   - `deploy-staging`
+- CI dependency install uses `npm ci` with GitHub npm cache and the committed server lockfile.
+- Docker image builds use BuildKit GitHub Actions cache and push the immutable commit SHA image tag.
+- Step summaries include timing visibility for server tests, image push, EC2 target discovery, SSH setup/preflight, Redis, each worker update, and final nginx restore.
 - AWS auth:
   - OIDC role via `AWS_ROLE_ARN`.
 - Deploy:

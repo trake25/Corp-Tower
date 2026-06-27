@@ -37,7 +37,9 @@
   - Run `Staging Server Update` to deploy Docker Redis/nginx/server runtime.
   - Stop EC2 instances when not testing.
 - Automated normal update path:
-  - `Staging Automated Master` queues `Diagnostics -> Infra Plan -> Server Update`.
+  - Server-only pushes through `Staging Automated Master` run `Server Update` directly after server CI.
+  - Workflow changes use `Diagnostics -> Infra Plan -> Server Update` when deployment is needed.
+  - Terraform-only changes run `Staging Infra Plan` without deploying server code.
   - The master path does not run Cleanup, Infra Apply, or EC2 Rebuild.
   - `Staging Infra Plan` fails when Terraform plans any create, delete, or replace action.
 

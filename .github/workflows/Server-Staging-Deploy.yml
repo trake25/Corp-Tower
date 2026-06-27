@@ -34,12 +34,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "24.14.1"
+          cache: npm
+          cache-dependency-path: src/Server/package-lock.json
 
       - name: Install server dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run server tests
-        run: npm test
+        run: |
+          set -euo pipefail
+          start_time="$(date +%s)"
+          npm test
+          end_time="$(date +%s)"
+          echo "Server tests completed in $((end_time - start_time)) seconds." >> "$GITHUB_STEP_SUMMARY"
 
   build-and-push:
     name: Build And Push Docker Image To ECR
@@ -63,7 +70,20 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: src/Server
+          file: src/Server/Dockerfile
+          push: true
+          tags: ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Record pushed image
         env:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
@@ -71,16 +91,11 @@ jobs:
         run: |
           set -euo pipefail
           IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
-          STAGING_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:staging"
-
-          docker build -f src/Server/Dockerfile -t "$IMAGE_URI" -t "$STAGING_URI" src/Server
-          docker push "$IMAGE_URI"
-          docker push "$STAGING_URI"
-
           echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
+          echo "Docker image pushed: $IMAGE_URI" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Show pushed image
-        run: echo "Pushed ${{ env.IMAGE_URI }}"
+        run: echo "Pushed $IMAGE_URI"
 
   deploy-staging:
     name: Deploy Docker Image To Staging EC2
@@ -103,6 +118,7 @@ jobs:
       - name: Resolve EC2 learning lab targets
         run: |
           set -euo pipefail
+          resolve_start_time="$(date +%s)"
 
           WORKER_PRIVATE_IPS="$(
             aws ec2 describe-instances \
@@ -186,6 +202,14 @@ jobs:
           echo "WORKER_PUBLIC_IPS=$WORKER_PUBLIC_IPS" >> "$GITHUB_ENV"
           echo "GATEWAY_PRIVATE_IP=$GATEWAY_PRIVATE_IP" >> "$GITHUB_ENV"
           echo "GATEWAY_PUBLIC_IP=$GATEWAY_PUBLIC_IP" >> "$GITHUB_ENV"
+          resolve_end_time="$(date +%s)"
+          {
+            echo "## EC2 target discovery"
+            echo
+            echo "- Workers found: \`$WORKER_COUNT\`"
+            echo "- Shared subnet count: \`$STAGING_SUBNET_COUNT\`"
+            echo "- Duration: \`$((resolve_end_time - resolve_start_time)) seconds\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy over SSH
         env:
@@ -201,7 +225,22 @@ jobs:
           EC2_SSH_KEY: ${{ secrets.EC2_STAGING_SSH_KEY }}
         run: |
           set -euo pipefail
+          deploy_start_time="$(date +%s)"
 
+          finish_phase() {
+            local phase_name="$1"
+            local phase_start="$2"
+            local phase_end
+            phase_end="$(date +%s)"
+            echo "- ${phase_name}: $((phase_end - phase_start)) seconds" >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          {
+            echo "## Staging deploy timings"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          phase_start="$(date +%s)"
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
@@ -240,6 +279,7 @@ jobs:
           for WORKER_HOST in $WORKER_PUBLIC_IPS; do
             prepare_known_host "$WORKER_HOST"
           done
+          finish_phase "SSH known_hosts setup" "$phase_start"
 
           SSH_PREFLIGHT_OPTS=(
             -i ~/.ssh/ec2_key
@@ -255,6 +295,7 @@ jobs:
           )
 
           DEPLOY_PHASE="ssh preflight"
+          phase_start="$(date +%s)"
           echo "::group::SSH preflight"
           for TARGET_HOST in "$EC2_HOST" $WORKER_PUBLIC_IPS; do
             echo "Checking SSH access to ${TARGET_HOST}"
@@ -264,8 +305,10 @@ jobs:
             fi
           done
           echo "::endgroup::"
+          finish_phase "SSH preflight" "$phase_start"
 
           DEPLOY_PHASE="gateway redis"
+          phase_start="$(date +%s)"
           echo "::group::Gateway Redis"
           timeout 360 ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
             "GATEWAY_PRIVATE_IP='$GATEWAY_PRIVATE_IP' bash -s" <<'REMOTE_GATEWAY_REDIS'
@@ -326,6 +369,7 @@ jobs:
           exit 1
           REMOTE_GATEWAY_REDIS
           echo "::endgroup::"
+          finish_phase "Gateway Redis" "$phase_start"
 
           DEPLOY_PHASE="prepare docker worker image"
           ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
@@ -450,6 +494,7 @@ jobs:
           for WORKER_INDEX in "${!WORKER_PUBLIC_IP_ARRAY[@]}"; do
             WORKER_HOST="${WORKER_PUBLIC_IP_ARRAY[$WORKER_INDEX]}"
             WORKER_PRIVATE_IP="${WORKER_PRIVATE_IP_ARRAY[$WORKER_INDEX]}"
+            phase_start="$(date +%s)"
 
             echo "Draining worker ${WORKER_PRIVATE_IP} from gateway upstream before update."
             configure_gateway_upstream "$WORKER_PRIVATE_IP"
@@ -533,10 +578,14 @@ jobs:
           sudo docker logs corp-tower-server
           exit 1
           REMOTE_WORKER
+            finish_phase "Worker ${WORKER_PRIVATE_IP} update" "$phase_start"
           done
           echo "::endgroup::"
 
           DEPLOY_PHASE="gateway nginx proxy"
+          phase_start="$(date +%s)"
           echo "::group::Gateway nginx proxy"
           configure_gateway_upstream
           echo "::endgroup::"
+          finish_phase "Final gateway nginx restore" "$phase_start"
+          finish_phase "Total deploy over SSH" "$deploy_start_time"

@@ -94,15 +94,18 @@
 - `drawPile` and `nextDrawBlock` are persisted so reconnecting clients see the same shared refill queue.
 
 ## CI/CD
-- Normal automated staging path is `Diagnostics -> Infra Plan -> Server Update`.
+- Normal server-only staging pushes run the fast guarded `Server Update` path.
+- Workflow changes run `Diagnostics -> Infra Plan` before server update when server files also changed; infra-only changes run `Infra Plan` without deploying.
+- Manual automated master runs default to `Diagnostics -> Infra Plan -> Server Update`, with explicit fast server deploy and infra-plan-only options.
 - Server-side pushes to `main`/`master` trigger the automated master workflow; client-only pushes do not.
 - Cleanup is manual-only and used when an implementation fails or a revert needs to remove stale Docker runtime artifacts.
 - K3s work is manual-only until the install, agent join, test workload, Corp Tower workload, exposure, and rollback phases have been verified.
 - Infra Apply and EC2 Rebuild are manual-only because they can intentionally change infrastructure.
 - Infra plan/apply workflows are manual-only because creating or changing EC2 instances is an AWS side effect.
 - `Staging-Automated-Master.yml`:
-  - calls diagnostics, infra plan, then server update in queue order
-  - triggers on server-side pushes and manual dispatch
+  - classifies server, workflow, and Terraform path changes before selecting the queue
+  - runs server-only pushes through server update directly
+  - triggers on watched staging paths and manual dispatch
   - does not call cleanup, infra apply, or EC2 rebuild
 - `Staging-Diagnostics.yml`:
   - verifies tagged EC2 topology, status checks, security group rules, routes, NACLs, and SSH reachability
