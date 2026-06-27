@@ -22,6 +22,7 @@
 - CI dependency install uses `npm ci` with GitHub npm cache and the committed server lockfile.
 - Docker image builds use BuildKit GitHub Actions cache and push the immutable commit SHA image tag.
 - Step summaries include timing visibility for server tests, image push, EC2 target discovery, SSH setup/preflight, Redis, each worker update, and final nginx restore.
+- Server container healthchecks run on a short staging cadence so Docker reports recovery quickly during rolling deploys.
 - AWS auth:
   - OIDC role via `AWS_ROLE_ARN`.
 - Deploy:
@@ -34,6 +35,9 @@
   - Worker containers use `RECONNECT_TTL_SECONDS=10` for faster staging/debug reconnect testing.
   - Deploy validates generated nginx config with `nginx -t`.
   - Before each worker update, deploy reloads nginx without that worker in the upstream.
+  - If a candidate container fails, the current worker container is left in place.
+  - If the replacement container fails after the current worker was removed, deploy attempts to restore the previous worker image before failing.
+  - If any worker update fails, deploy restores the full gateway upstream before exiting.
   - After the worker is healthy, deploy continues to the next worker and finally restores all healthy workers in nginx.
   - Deploy reloads an existing gateway nginx container when possible instead of always recreating it.
   - Godot connects to gateway `ws://<gateway-public-ip>:3000`; nginx routes WebSocket traffic to worker private IPs on port `3000`.

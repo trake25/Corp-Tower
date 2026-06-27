@@ -500,7 +500,7 @@ jobs:
             configure_gateway_upstream "$WORKER_PRIVATE_IP"
             sleep 5
 
-            ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$WORKER_HOST" \
+            if ! ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$WORKER_HOST" \
               "IMAGE_URI='$IMAGE_URI' REDIS_URL='$REDIS_URL' ECR_REGISTRY='$ECR_REGISTRY' AWS_REGION='$AWS_REGION' bash -s" <<'REMOTE_WORKER'
           set -euxo pipefail
 
@@ -525,6 +525,50 @@ jobs:
           CURRENT_STATUS="$(sudo docker inspect -f '{{.State.Status}}' corp-tower-server 2>/dev/null || true)"
           CURRENT_HEALTH="$(sudo docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' corp-tower-server 2>/dev/null || true)"
 
+          wait_for_server_port() {
+            local container_name="$1"
+            local port="$2"
+
+            for attempt in $(seq 1 30); do
+              HEALTH_STATUS="$(sudo docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container_name")"
+              if { [ "$HEALTH_STATUS" = "healthy" ] || [ "$HEALTH_STATUS" = "running" ]; } && timeout 5 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/${port}"; then
+                return 0
+              fi
+
+              sleep 2
+            done
+
+            return 1
+          }
+
+          restore_previous_server() {
+            if [ -z "$CURRENT_IMAGE" ]; then
+              echo "::error::No previous corp-tower-server image is available for rollback."
+              return 1
+            fi
+
+            echo "::warning::Rolling worker back to previous image: ${CURRENT_IMAGE}"
+            sudo docker rm -f corp-tower-server 2>/dev/null || true
+            sudo docker run -d \
+              --name corp-tower-server \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              -e NODE_ENV=staging \
+              -e REDIS_URL="$REDIS_URL" \
+              -e RECONNECT_TTL_SECONDS=10 \
+              "$CURRENT_IMAGE"
+
+            if wait_for_server_port corp-tower-server 3000; then
+              echo "::warning::Rollback container is healthy."
+              sudo docker ps --filter name=corp-tower-server
+              return 0
+            fi
+
+            echo "::error::Rollback container did not become healthy."
+            sudo docker logs corp-tower-server 2>/dev/null || true
+            return 1
+          }
+
           if [ "$CURRENT_IMAGE" = "$IMAGE_URI" ] && { [ "$CURRENT_HEALTH" = "healthy" ] || [ "$CURRENT_STATUS" = "running" ]; }; then
             sudo docker ps --filter name=corp-tower-server
             exit 0
@@ -539,19 +583,12 @@ jobs:
             -e RECONNECT_TTL_SECONDS=10 \
             "$IMAGE_URI"
 
-          for attempt in $(seq 1 30); do
-            NEXT_HEALTH="$(sudo docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' corp-tower-server-next)"
-            if { [ "$NEXT_HEALTH" = "healthy" ] || [ "$NEXT_HEALTH" = "running" ]; } && timeout 5 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/3001"; then
-              break
-            fi
-
-            if [ "$attempt" -eq 30 ]; then
-              sudo docker logs corp-tower-server-next
-              exit 1
-            fi
-
-            sleep 2
-          done
+          if ! wait_for_server_port corp-tower-server-next 3001; then
+            sudo docker logs corp-tower-server-next 2>/dev/null || true
+            sudo docker rm -f corp-tower-server-next 2>/dev/null || true
+            echo "::error::Candidate server container did not become healthy; current server was not replaced."
+            exit 1
+          fi
 
           sudo docker stop corp-tower-server 2>/dev/null || true
           sudo docker rm corp-tower-server 2>/dev/null || true
@@ -565,19 +602,24 @@ jobs:
             -e RECONNECT_TTL_SECONDS=10 \
             "$IMAGE_URI"
 
-          for attempt in $(seq 1 30); do
-            HEALTH_STATUS="$(sudo docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' corp-tower-server)"
-            if { [ "$HEALTH_STATUS" = "healthy" ] || [ "$HEALTH_STATUS" = "running" ]; } && timeout 5 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/3000"; then
-              sudo docker rm -f corp-tower-server-next 2>/dev/null || true
-              sudo docker ps --filter name=corp-tower-server
-              exit 0
-            fi
-            sleep 2
-          done
+          if wait_for_server_port corp-tower-server 3000; then
+            sudo docker rm -f corp-tower-server-next 2>/dev/null || true
+            sudo docker ps --filter name=corp-tower-server
+            exit 0
+          fi
 
-          sudo docker logs corp-tower-server
+          sudo docker logs corp-tower-server 2>/dev/null || true
+          sudo docker rm -f corp-tower-server 2>/dev/null || true
+          sudo docker rm -f corp-tower-server-next 2>/dev/null || true
+          restore_previous_server || true
           exit 1
           REMOTE_WORKER
+            then
+              finish_phase "Worker ${WORKER_PRIVATE_IP} failed and gateway upstream restore" "$phase_start"
+              echo "::error::Worker ${WORKER_PRIVATE_IP} update failed. Restoring full gateway upstream before failing deploy."
+              configure_gateway_upstream
+              exit 1
+            fi
             finish_phase "Worker ${WORKER_PRIVATE_IP} update" "$phase_start"
           done
           echo "::endgroup::"

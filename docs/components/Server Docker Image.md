@@ -12,13 +12,14 @@
 
 ## Key Logic
 - Built in [[Server Staging Deploy Workflow]].
-- Image is tagged with commit SHA and `staging`.
+- Image is tagged with the immutable commit SHA.
 - Pushed to ECR.
 - Docker worker containers run this image on EC2-2/EC2-3.
 - Worker deployment provides `REDIS_URL` and `RECONNECT_TTL_SECONDS`.
+- Container healthchecks use a short staging interval so rolling deploy readiness is reported quickly.
 
 ## Inputs/Outputs
-- Input: `src/Server` source and `package.json`.
+- Input: `src/Server` source, `package.json`, and `package-lock.json`.
 - Output: Docker image in ECR.
 
 ## Dependencies
