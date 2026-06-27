@@ -139,8 +139,8 @@
 | `placementCooldown` | Anti-spam delay between placements (ms). |
 | `levelTimeLimitMs` | Level timer duration (ms). |
 | `startDelayMs` | Countdown before level becomes playable (ms). |
-| `placementScorePopupDurationMs` | Placement score popup duration (500-10000 ms, default 3000). |
-| `finishScorePopupDurationMs` | MVP, Perfect Fit, team total, and bonus popup duration (500-10000 ms, default 3000). |
+| `placementScorePopupDurationMs` | Placement score popup total lifetime, including fade-out (500-10000 ms, default 3000). |
+| `finishScorePopupDurationMs` | MVP, Perfect Fit, team total, and bonus popup total lifetime, including fade-out (500-10000 ms, default 3000). |
 | `levelSummaryDelayMs` | Completed/failed level score summary visible duration before next level or rollback (1000-10000 ms, default 3000). |
 | `checkpointScoreRequirement` | Minimum total score each player must have when crossing a checkpoint boundary; `0` disables the gate. |
 | `targetHeightMultiplier` | Debug scale applied to the target-height curve; default 3 keeps the authored curve unchanged. |

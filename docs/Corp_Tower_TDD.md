@@ -84,7 +84,7 @@
 - `scoreEvents[]` is transient and broadcast-only; each event has stable `id`, `type`, `level`, optional `playerId`, optional `points`, `label`, `displayOnly`, and `meta`.
 - Event types: `placement`, `finisher_bonus`, `precision_bonus`, `team_exact_bonus`, `assist_bonus`, `exact_finish`, `overbuild_finish`, `mvp`, and `team_total`.
 - Clients track seen event ids per level and never infer event UI from score diffs.
-- Placement events use `placementScorePopupDurationMs`; MVP, Perfect Fit, team total, checkpoint, and bonus-style events use `finishScorePopupDurationMs`.
+- Placement events use `placementScorePopupDurationMs`; MVP, Perfect Fit, team total, checkpoint, and bonus-style events use `finishScorePopupDurationMs`. Both popup durations represent total popup lifetime, including fade-out.
 - Level score summaries are queued until the current score popup batch has faded, then remain visible for `levelSummaryDelayMs`.
 - `lastLevelSummary` includes `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, and `players[]`.
 - `lastLevelSummary.players[]` includes player id, bot flag, level score, previous total score, final total score, contributed height, MVP flag, and bonus breakdown.

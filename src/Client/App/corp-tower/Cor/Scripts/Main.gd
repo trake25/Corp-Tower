@@ -6,6 +6,11 @@ const SHOW_DEBUG_UI := true
 const DRAW_PILE_COLOR := Color(0.95, 0.72, 0.25, 1.0)
 const SCORE_POPUP_DEFAULT_DURATION_MS := 3000
 const SCORE_POPUP_FLOAT_DISTANCE := 64.0
+const SCORE_POPUP_INTRO_SECONDS := 0.16
+const SCORE_POPUP_FADE_RATIO := 0.28
+const SCORE_POPUP_MIN_FADE_SECONDS := 0.35
+const SCORE_POPUP_MAX_FADE_SECONDS := 2.0
+const SCORE_POPUP_MIN_HOLD_SECONDS := 0.05
 const LEVEL_SUMMARY_DEFAULT_DELAY_MS := 3000
 const BOT_STRATEGY_COOPERATIVE := "cooperative"
 const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
@@ -1042,18 +1047,53 @@ func show_score_event_popup(
 	var start_position: Vector2 = get_score_popup_position(event)
 	popup.position = start_position - popup_size * 0.5
 
+	var total_duration_seconds: float = maxf(0.1, popup_duration_seconds)
+	var intro_duration_seconds: float = minf(SCORE_POPUP_INTRO_SECONDS, total_duration_seconds * 0.3)
+	var fade_duration_seconds: float = get_score_popup_fade_duration_seconds(
+		total_duration_seconds,
+		intro_duration_seconds
+	)
+	var hold_duration_seconds: float = maxf(
+		0.0,
+		total_duration_seconds - intro_duration_seconds - fade_duration_seconds
+	)
+
 	var tween: Tween = create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(popup, "modulate:a", 1.0, 0.12)
-	tween.tween_property(popup, "scale", Vector2(1.08, 1.08) if is_emphasis else Vector2.ONE, 0.16)
+	tween.tween_property(popup, "modulate:a", 1.0, intro_duration_seconds)
+	tween.tween_property(popup, "scale", Vector2(1.08, 1.08) if is_emphasis else Vector2.ONE, intro_duration_seconds)
 	tween.set_parallel(false)
-	tween.tween_interval(max(0.1, popup_duration_seconds - 0.72))
+	tween.tween_interval(hold_duration_seconds)
 	tween.set_parallel(true)
-	tween.tween_property(popup, "modulate:a", 0.0, 0.6)
-	tween.tween_property(popup, "position:y", popup.position.y - SCORE_POPUP_FLOAT_DISTANCE, 0.6)
-	tween.tween_property(popup, "scale", Vector2.ONE, 0.6)
+	tween.tween_property(popup, "modulate:a", 0.0, fade_duration_seconds)
+	tween.tween_property(popup, "position:y", popup.position.y - SCORE_POPUP_FLOAT_DISTANCE, fade_duration_seconds)
+	tween.tween_property(popup, "scale", Vector2.ONE, fade_duration_seconds)
 	tween.set_parallel(false)
 	tween.tween_callback(Callable(popup, "queue_free"))
+
+func get_score_popup_fade_duration_seconds(
+	total_duration_seconds: float,
+	intro_duration_seconds: float
+) -> float:
+	var available_duration_seconds: float = maxf(
+		0.01,
+		total_duration_seconds - intro_duration_seconds
+	)
+	var minimum_hold_seconds: float = minf(
+		SCORE_POPUP_MIN_HOLD_SECONDS,
+		available_duration_seconds * 0.5
+	)
+	var maximum_fade_seconds: float = maxf(
+		0.01,
+		available_duration_seconds - minimum_hold_seconds
+	)
+	var scaled_fade_seconds: float = clampf(
+		total_duration_seconds * SCORE_POPUP_FADE_RATIO,
+		SCORE_POPUP_MIN_FADE_SECONDS,
+		SCORE_POPUP_MAX_FADE_SECONDS
+	)
+
+	return minf(maximum_fade_seconds, scaled_fade_seconds)
 
 func clear_score_popups() -> void:
 	if score_popup_layer == null:
@@ -1544,12 +1584,15 @@ func on_start_delay_changed(value: float) -> void:
 	NetworkManager.update_config("startDelayMs", int(value))
 
 func on_placement_popup_duration_changed(value: float) -> void:
+	placement_score_popup_duration_ms = int(value)
 	send_debug_int("placementScorePopupDurationMs", value)
 
 func on_finish_popup_duration_changed(value: float) -> void:
+	finish_score_popup_duration_ms = int(value)
 	send_debug_int("finishScorePopupDurationMs", value)
 
 func on_level_summary_delay_changed(value: float) -> void:
+	level_summary_delay_ms = int(value)
 	send_debug_int("levelSummaryDelayMs", value)
 
 func on_target_multiplier_changed(value: float) -> void:
