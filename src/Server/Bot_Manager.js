@@ -146,10 +146,16 @@ class BotManager {
                 `${bot.id} BOT PLAY`
             );
 
-            engine.placeBlock(
-                bot.id,
-                0
-            );
+            const action = this.chooseBotAction(bot, engine);
+
+            if (action.type === "refresh") {
+                engine.refreshBlocks(bot.id);
+            } else {
+                engine.placeBlock(
+                    bot.id,
+                    action.blockIndex
+                );
+            }
 
             this.runBotLoop(
                 bot,
@@ -159,6 +165,82 @@ class BotManager {
 
         }, delay);
 
+    }
+
+    chooseBotAction(bot, engine) {
+
+        const remainingHeight = Math.max(
+            0,
+            engine.room.targetHeight - engine.room.currentHeight
+        );
+        const blocks = bot.blocks || [];
+
+        if (
+            remainingHeight > 0 &&
+            this.canBotRefresh(bot, engine) &&
+            !blocks.some(block => {
+                return engine.getBlockHeight(block) <= remainingHeight;
+            })
+        ) {
+            return {
+                type: "refresh"
+            };
+        }
+
+        const exactIndex = blocks.findIndex(block => {
+            return engine.getBlockHeight(block) === remainingHeight;
+        });
+
+        if (exactIndex >= 0) {
+            return {
+                type: "place",
+                blockIndex: exactIndex
+            };
+        }
+
+        const candidates = blocks
+            .map((block, index) => ({
+                index: index,
+                height: engine.getBlockHeight(block)
+            }))
+            .filter(candidate => candidate.height > 0);
+
+        const nonOverkill = candidates.filter(candidate => {
+            return candidate.height <= remainingHeight;
+        });
+
+        if (nonOverkill.length > 0) {
+            const sorted = nonOverkill.sort((a, b) => {
+                if (remainingHeight <= 3) {
+                    return a.height - b.height;
+                }
+
+                return b.height - a.height;
+            });
+
+            return {
+                type: "place",
+                blockIndex: sorted[0].index
+            };
+        }
+
+        const smallestOverkill = candidates.sort((a, b) => {
+            return a.height - b.height;
+        })[0];
+
+        return {
+            type: "place",
+            blockIndex: smallestOverkill ? smallestOverkill.index : 0
+        };
+    }
+
+    canBotRefresh(bot, engine) {
+
+        return (
+            bot.refreshTokens > 0 &&
+            bot.refreshUsesThisLevel < GameConfig.maxRefreshUsesPerLevel &&
+            engine.getRemainingMs() > GameConfig.refreshLockoutMs
+        );
     }
 
 }

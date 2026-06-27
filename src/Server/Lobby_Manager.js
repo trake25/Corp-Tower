@@ -128,7 +128,9 @@ class LobbyManager {
             roomId: room.id,
             level: room.engine.room.level,
             targetHeight: room.engine.room.targetHeight,
-            blocks: roomPlayer.blocks || []
+            blocks: roomPlayer.blocks || [],
+            drawPileCount: (room.engine.room.drawPile || []).length,
+            nextDrawBlock: room.engine.getNextDrawBlock()
         });
 
         room.engine.broadcastGameState();
@@ -226,7 +228,6 @@ class LobbyManager {
         player.refreshTokens = player.refreshTokens || 0;
         player.refreshUsesThisLevel = player.refreshUsesThisLevel || 0;
         player.blocks = player.blocks || [];
-        player.carryOverBlocks = player.carryOverBlocks || [];
         player.lastPlacementTime = player.lastPlacementTime || 0;
         player.botLoopLevel = null;
         player.room = null;
@@ -545,7 +546,9 @@ class LobbyManager {
                 roomId: room.id,
                 level: engine.room.level,
                 targetHeight: engine.room.targetHeight,
-                blocks: player.blocks
+                blocks: player.blocks,
+                drawPileCount: (engine.room.drawPile || []).length,
+                nextDrawBlock: engine.getNextDrawBlock()
             });
         });
 
@@ -617,6 +620,8 @@ class LobbyManager {
                 checkpointLevel: snapshot.state.checkpointLevel,
                 targetHeight: snapshot.state.targetHeight,
                 currentHeight: snapshot.state.currentHeight,
+                drawPile: snapshot.state.drawPile || [],
+                teamCarryOverBlocks: snapshot.state.teamCarryOverBlocks || [],
                 towerBlocks: snapshot.state.towerBlocks || [],
                 state: snapshot.state.state,
                 startsAt: snapshot.state.startsAt,

@@ -24,7 +24,6 @@ function stripRuntimePlayer(player) {
         refreshTokens: player.refreshTokens || 0,
         refreshUsesThisLevel: player.refreshUsesThisLevel || 0,
         blocks: player.blocks || [],
-        carryOverBlocks: player.carryOverBlocks || [],
         lastPlacementTime: player.lastPlacementTime || 0,
         botLoopLevel: player.botLoopLevel || null
     };
@@ -42,6 +41,8 @@ function stripRuntimeRoom(room) {
             checkpointLevel: engineRoom.checkpointLevel || 1,
             targetHeight: engineRoom.targetHeight || 0,
             currentHeight: engineRoom.currentHeight || 0,
+            drawPile: engineRoom.drawPile || [],
+            teamCarryOverBlocks: engineRoom.teamCarryOverBlocks || [],
             towerBlocks: engineRoom.towerBlocks || [],
             state: engineRoom.state || "waiting",
             startsAt: engineRoom.startsAt || 0,

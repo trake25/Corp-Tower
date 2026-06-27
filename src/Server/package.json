@@ -4,7 +4,8 @@
   "main": "Server.js",
   "scripts": {
     "start": "node Server.js",
-    "test": "node --check Server.js && node --check Lobby_Manager.js && node --check Game_Engine.js && node --check Game_Config.js && node --check Bot_Manager.js && node --check Redis_State.js"
+    "test": "node --check Server.js && node --check Lobby_Manager.js && node --check Game_Engine.js && node --check Game_Config.js && node --check Bot_Manager.js && node --check Redis_State.js && node --check Balance_Simulator.js",
+    "balance:simulate": "node Balance_Simulator.js"
   },
   "keywords": [],
   "author": "",

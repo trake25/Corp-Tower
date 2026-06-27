@@ -466,39 +466,38 @@ theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 text = "Empty"
 
-[node name="PlaceBlockButton4" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow" unique_id=1461463972]
+[node name="DrawPilePanel" type="PanelContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(118, 102)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_ActionButton")
+theme_override_styles/panel = SubResource("StyleBoxFlat_ActionButton")
 
-[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton4"]
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/DrawPilePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
 theme_override_constants/margin_left = 6
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
-[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton4/CardMargin"]
+[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/DrawPilePanel/CardMargin"]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="BlockNameLabel4" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton4/CardMargin/CardRows"]
+[node name="DrawPileNameLabel" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/DrawPilePanel/CardMargin/CardRows"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
-text = "Slot 4"
+text = "Next Draw"
 
-[node name="BlockPreview4" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton4/CardMargin/CardRows"]
+[node name="DrawPilePreview" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/DrawPilePanel/CardMargin/CardRows"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(70, 44)
 layout_mode = 2
@@ -506,13 +505,13 @@ size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
-[node name="BlockHeightLabel4" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton4/CardMargin/CardRows"]
+[node name="DrawPileCountLabel" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/DrawPilePanel/CardMargin/CardRows"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
-text = "Empty"
+text = "0 left"
 
 [node name="RefreshButton" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow" unique_id=1581234447]
 unique_name_in_owner = true

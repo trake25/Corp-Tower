@@ -15,6 +15,7 @@
 - Game settings:
   - `maxLevel`
   - `placementCooldown`
+  - `targetHeightCurve`
   - `targetHeightMultiplier`
   - `startDelayMs`
   - `levelTimeLimitMs`
@@ -22,6 +23,20 @@
   - `blockUnlockLevels`
   - `blockWeights`
   - `blockShapeVariants`
+- Draw pile settings:
+  - `maxTeamCarryOverBlocks`
+  - `minDrawPileBlocksAfterDeal`
+  - `levelSupplyMinSurplus`
+  - `levelSupplyMaxSurplus`
+  - `minPrecisionBlocksPerLevel`
+  - `drawPileGenerationAttempts`
+  - `maxGeneratedBlocksPerLevel`
+- Scoring settings:
+  - `finisherBonusPerLevel`
+  - `precisionBonusPerLevel`
+  - `teamExactBonusPerLevel`
+  - `assistBonusPerLevel`
+  - `assistContributionThreshold`
 - Shape variant examples:
   - `I4H`: 4-cell horizontal line, height 1.
   - `I4V`: 4-cell vertical line, height 4.
@@ -42,4 +57,4 @@
 ## Notes
 - Server validates debug changes before mutating this object.
 - Production should restrict debug writes behind admin permissions later.
-- Block weights and unlock levels need recalibration now that shape height can be lower than cell count.
+- Balance can be inspected with `npm run balance:simulate -- <levels> <runs>` from `src/Server`.

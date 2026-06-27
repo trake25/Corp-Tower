@@ -7,7 +7,9 @@
 ## Responsibilities
 - Start bot loops for bot participants.
 - Pick randomized action delay from [[Game Config]].
+- Select a simple height-management action.
 - Place bot shape blocks through [[Game Engine]] by inventory index.
+- Use refresh through [[Game Engine]] when the bot has no useful non-overbuilding block.
 - Stop bot timers when rooms close or bots are disabled.
 
 ## Key Logic
@@ -18,6 +20,11 @@
   - Schedules `setTimeout`.
   - Validates room, debug flag, room state, level, and inventory before acting.
   - Repeats while valid.
+- `chooseBotAction(bot, engine)`:
+  - Plays an exact-finishing block when available.
+  - Near the target, plays the smallest block that does not overbuild.
+  - Otherwise, plays the highest useful block.
+  - Refreshes if possible when every current block would overbuild.
 - `stopBot(bot)`:
   - Clears pending timeout stored in `bot.botTimer`.
   - Clears `botLoopLevel`.

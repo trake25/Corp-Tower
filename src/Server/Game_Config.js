@@ -9,6 +9,14 @@ const GameConfig = {
     maxLevel: 99,
     placementCooldown: 2000,
     targetHeightMultiplier: 3,
+    targetHeightCurve: [
+        { minLevel: 1, maxLevel: 1, baseLevel: 1, baseHeight: 3, heightPerLevel: 0 },
+        { minLevel: 2, maxLevel: 2, baseLevel: 2, baseHeight: 6, heightPerLevel: 0 },
+        { minLevel: 3, maxLevel: 3, baseLevel: 3, baseHeight: 8, heightPerLevel: 0 },
+        { minLevel: 4, maxLevel: 6, baseLevel: 3, baseHeight: 8, heightPerLevel: 3 },
+        { minLevel: 7, maxLevel: 12, baseLevel: 6, baseHeight: 17, heightPerLevel: 4 },
+        { minLevel: 13, maxLevel: 99, baseLevel: 12, baseHeight: 41, heightPerLevel: 5 }
+    ],
     startDelayMs: 1500,
     levelTimeLimitMs: 30000,
     nextLevelDelayMs: 1500,
@@ -74,14 +82,22 @@ const GameConfig = {
     // =========================
 
     inventoryScaling: {
-        1: 1,
-        2: 2,
-        4: 3,
-        12: 4
+        1: 3
     },
 
     maxActiveBlocks: 3,
-    maxCarryOverBlocks: 1,
+
+    // =========================
+    // DRAW PILE SETTINGS
+    // =========================
+
+    maxTeamCarryOverBlocks: 3,
+    minDrawPileBlocksAfterDeal: 6,
+    levelSupplyMinSurplus: 3,
+    levelSupplyMaxSurplus: 12,
+    minPrecisionBlocksPerLevel: 2,
+    drawPileGenerationAttempts: 100,
+    maxGeneratedBlocksPerLevel: 320,
 
     // =========================
     // REFRESH TOKEN SETTINGS
@@ -90,6 +106,18 @@ const GameConfig = {
     maxRefreshTokens: 1,
     maxRefreshUsesPerLevel: 2,
     refreshLockoutMs: 10000,
+
+    // =========================
+    // SCORING SETTINGS
+    // =========================
+
+    scoring: {
+        finisherBonusPerLevel: 4,
+        precisionBonusPerLevel: 6,
+        teamExactBonusPerLevel: 4,
+        assistBonusPerLevel: 6,
+        assistContributionThreshold: 0.25
+    },
 
     // =========================
     // DEBUG SETTINGS

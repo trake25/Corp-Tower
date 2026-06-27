@@ -1,8 +1,9 @@
 extends Control
 
-const MAX_INVENTORY_SLOTS := 4
+const MAX_INVENTORY_SLOTS := 3
 const DEFAULT_UI_SKIN := "DefaultSkin"
 const SHOW_DEBUG_UI := true
+const DRAW_PILE_COLOR := Color(0.95, 0.72, 0.25, 1.0)
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const LOCAL_PLAYER_MARKER := "You"
 const SKIN_SCENES := {
@@ -38,6 +39,9 @@ var tower_status_label: Label
 var tower_fill: Panel
 var tower_stack: Control
 var block_label: Label
+var draw_pile_name_label: Label
+var draw_pile_count_label: Label
+var draw_pile_preview: Control
 var connect_button: Button
 var refresh_button: Button
 var refresh_token_label: Label
@@ -150,6 +154,9 @@ func bind_skin_nodes() -> void:
 	tower_fill = require_node("TowerFill") as Panel
 	tower_stack = require_node("TowerStack") as Control
 	block_label = require_node("BlockLabel") as Label
+	draw_pile_name_label = require_node("DrawPileNameLabel") as Label
+	draw_pile_count_label = require_node("DrawPileCountLabel") as Label
+	draw_pile_preview = require_node("DrawPilePreview") as Control
 	connect_button = require_node("ConnectButton") as Button
 	refresh_button = require_node("RefreshButton") as Button
 	refresh_token_label = require_node("RefreshTokenLabel") as Label
@@ -158,26 +165,22 @@ func bind_skin_nodes() -> void:
 	inventory_buttons = [
 		require_node("PlaceBlockButton1") as Button,
 		require_node("PlaceBlockButton2") as Button,
-		require_node("PlaceBlockButton3") as Button,
-		require_node("PlaceBlockButton4") as Button
+		require_node("PlaceBlockButton3") as Button
 	]
 	block_previews = [
 		require_node("BlockPreview1") as Control,
 		require_node("BlockPreview2") as Control,
-		require_node("BlockPreview3") as Control,
-		require_node("BlockPreview4") as Control
+		require_node("BlockPreview3") as Control
 	]
 	block_height_labels = [
 		require_node("BlockHeightLabel1") as Label,
 		require_node("BlockHeightLabel2") as Label,
-		require_node("BlockHeightLabel3") as Label,
-		require_node("BlockHeightLabel4") as Label
+		require_node("BlockHeightLabel3") as Label
 	]
 	block_name_labels = [
 		require_node("BlockNameLabel1") as Label,
 		require_node("BlockNameLabel2") as Label,
-		require_node("BlockNameLabel3") as Label,
-		require_node("BlockNameLabel4") as Label
+		require_node("BlockNameLabel3") as Label
 	]
 
 	debug_button = optional_node("DebugButton") as Button
@@ -227,7 +230,6 @@ func setup_inventory_controls() -> void:
 	inventory_buttons[0].pressed.connect(func(): on_block_pressed(0))
 	inventory_buttons[1].pressed.connect(func(): on_block_pressed(1))
 	inventory_buttons[2].pressed.connect(func(): on_block_pressed(2))
-	inventory_buttons[3].pressed.connect(func(): on_block_pressed(3))
 
 	connect_button.pressed.connect(on_connect_pressed)
 	refresh_button.pressed.connect(on_refresh_pressed)
@@ -311,6 +313,7 @@ func reset_ui() -> void:
 	set_tower_progress(0, 0)
 	tower_stack.clear_tower()
 	update_inventory_ui([])
+	update_draw_pile_ui(0, null)
 	refresh_button.disabled = true
 
 func connect_network_signals() -> void:
@@ -440,6 +443,10 @@ func update_room(data) -> void:
 	set_tower_progress(0, int(data.get("targetHeight", 0)))
 	tower_stack.clear_tower()
 	update_inventory_ui(data.get("blocks", []))
+	update_draw_pile_ui(
+		int(data.get("drawPileCount", 0)),
+		data.get("nextDrawBlock", null)
+	)
 
 func update_room_closed(data) -> void:
 	last_room_data = null
@@ -458,6 +465,7 @@ func update_room_closed(data) -> void:
 	set_tower_progress(0, 0)
 	tower_stack.clear_tower()
 	update_inventory_ui([])
+	update_draw_pile_ui(0, null)
 	set_debug_overlay_open(false)
 
 func update_game_state(data) -> void:
@@ -481,6 +489,10 @@ func update_game_state(data) -> void:
 	tower_status_label.text = get_tower_status(state, current_height, target_height)
 	set_tower_progress(current_height, target_height)
 	tower_stack.set_tower(data.get("towerBlocks", []), current_height, target_height)
+	update_draw_pile_ui(
+		int(data.get("drawPileCount", 0)),
+		data.get("nextDrawBlock", null)
+	)
 
 	var scores_text: String = ""
 	var my_refresh_tokens: int = 0
@@ -552,6 +564,23 @@ func update_inventory_ui(blocks: Array) -> void:
 			preview.clear_block()
 			slot_height_label.text = "Empty"
 			name_label.text = "Slot " + str(i + 1)
+
+func update_draw_pile_ui(draw_pile_count: int, raw_next_block: Variant) -> void:
+	if draw_pile_preview == null:
+		return
+
+	draw_pile_preview.cell_color = DRAW_PILE_COLOR
+
+	if draw_pile_count <= 0 or raw_next_block == null:
+		draw_pile_name_label.text = "Next Draw"
+		draw_pile_count_label.text = "0 left"
+		draw_pile_preview.clear_block()
+		return
+
+	var next_block: Dictionary = normalize_block(raw_next_block, 0)
+	draw_pile_name_label.text = "Next " + str(next_block.get("shapeId", "BLOCK"))
+	draw_pile_count_label.text = str(draw_pile_count) + " left"
+	draw_pile_preview.set_block(next_block)
 
 func get_local_player_color() -> Color:
 	var player_id: String = str(NetworkManager.player_id)

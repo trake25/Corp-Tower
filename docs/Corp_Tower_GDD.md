@@ -10,6 +10,7 @@
 - Queue 3 players into a room.
 - Assign blocks and start level with configurable delay (Default: 2s).
 - Players place blocks in real time; order determined by input timing.
+- Placing a block refills that player's hand from the shared draw pile when one is available.
 - Configurable anti-spam cooldown per player after placement (Default: 2s).
 - Level ends when target height is reached or a failure condition triggers.
 - Calculate scores, carry over blocks, then proceed to next level.
@@ -34,12 +35,21 @@
 - Shape IDs use compact orientation names such as `I4H` for a 4-cell horizontal line and `I4V` for a 4-cell vertical line.
 
 ### Inventory Rules
-- Max 3 active blocks + 1 carry-over block from previous level.
-- If limit exceeded: least-height or newest block is destroyed.
+- Max 3 active blocks per player.
+- The previous 4th carry-over inventory slot is removed.
+- Empty hand slots are refilled from the shared draw pile after placement while the pile has blocks.
+- The next shared draw block is visible to all players; whichever player places next receives it.
 
-### Carry-Over System
-- Only 1 unused block carries to next level.
-- Best available height block is retained.
+### Draw Pile And Team Carry-Over System
+- Each level creates a server-owned shared draw pile.
+- The pile is built from team carry-over blocks plus newly generated level blocks.
+- The pile is shuffled before opening hands are dealt.
+- The generator keeps at least 6 shared draw-pile blocks available after opening hands are dealt.
+- On level completion, unused active hand blocks from all players become the team carry-over pool.
+- Only up to 3 team carry-over blocks are kept.
+- Carry-over prioritizes smaller precision blocks first.
+- Hidden blocks left in the draw pile do not carry over.
+- On level failure, team carry-over is discarded during checkpoint rollback.
 
 ## Refresh Token System
 - Max 1 token per player `(1/1)` — per-player UI and variable.
@@ -53,7 +63,8 @@
 - Exact target height finish: all players receive 1 token (capped at 1).
 
 ## Tower System
-- `target_height = 3 × level` (multiplier tunable via `targetHeightMultiplier`).
+- Target height uses a level-band curve, scaled by `targetHeightMultiplier` for debug tuning.
+- Default curve: L1=3, L2=6, L3=8, L4-L6 +3 per level, L7-L12 +4 per level, L13+ +5 per level.
 - Overbuilding allowed; excess height is wasted.
 - Exact height triggers precision bonus rewards.
 - The client renders placed blocks as a stacked tower from authoritative server history when `towerBlocks` is available.
@@ -64,17 +75,17 @@
 
 ## Failure Conditions
 - Time runs out before target height is reached.
-- All blocks used and target not reached.
+- All active hand blocks and the shared draw pile are exhausted before target is reached.
+- Remaining possible height cannot reach target and no refresh can still rescue the level.
 - Checkpoint every 3 levels - minimum each player leaderboard score requirement not reached.
 
 ## Scoring System
 | Component | Formula |
 |---|---|
-| Placement Score | `block_height × level_multiplier × efficiency` |
-| Efficiency Bonus | `effective_height / block_height` |
-| Finisher Bonus | `level × 10` |
-| Precision Bonus | `level × 10` (exact finish only) |
-| Team Bonus | `level × 5` (exact finish, all players) |
+| Placement Score | `effective_height × level` |
+| Finisher Bonus | `level × 4` |
+| Precision Bonus | `level × 6` (exact finish only) |
+| Team Bonus | `level × 4` (exact finish, all players) |
 | Assist Bonus | `level × 6` (if player contributes ≥ 25% of total height) |
 - MVP: player with highest level score for the level.
 
@@ -83,7 +94,7 @@
 - Block complexity increases with level.
 - Checkpoints after every 3 levels.
 - Failing a level rolls back to last completed checkpoint level.
-- Needs recalibration after shape-block migration because horizontal and low-footprint shapes reduce guaranteed available height.
+- Level draw piles are generated with solvability constraints so random supply should not make a level impossible before player decisions.
 
 ## Leaderboard
 - Highest level reached.
@@ -111,7 +122,7 @@
 | `placementCooldown` | Anti-spam delay between placements (ms). |
 | `levelTimeLimitMs` | Level timer duration (ms). |
 | `startDelayMs` | Countdown before level becomes playable (ms). |
-| `targetHeightMultiplier` | Multiplier for `target_height = level × multiplier`. |
+| `targetHeightMultiplier` | Debug scale applied to the target-height curve; default 3 keeps the authored curve unchanged. |
 
 ### Validation Rules
 - Unknown keys rejected.
@@ -124,16 +135,17 @@
 - Bot loops are level-scoped; delayed actions from previous levels cannot fire in next level.
 - Bot actions stop when `debugBotsEnabled` is false.
 - Bots only fill rooms when at least one real player is waiting.
+- Bots prefer exact finishing blocks, avoid overbuilding near the target, otherwise play the highest useful block, and may refresh when no useful block is available.
 
 ### Future Debug Variables (Planned)
-- `blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `maxRefreshTokens`, `maxRefreshUsesPerLevel`, `refreshLockoutMs`, `checkpointInterval`, scoring bonus multipliers.
-- Shape-block recalibration candidates: per-level shape pools, guaranteed minimum available height, target multiplier by level band, refresh rewards, and fail-condition pressure.
+- `blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `maxRefreshTokens`, `maxRefreshUsesPerLevel`, `refreshLockoutMs`, `checkpointInterval`, scoring bonus multipliers, target-height curve bands, draw-pile supply constraints, and max team carry-over blocks.
+- Shape-block recalibration candidates: per-level shape pools, guaranteed minimum available height, target curve by level band, refresh rewards, and fail-condition pressure.
 
 ### Shipping Requirement
 - Debug Menu must be disabled behind a build flag, QA account permission, or server-side admin authorization before public release.
 
 ## MVP Scope
-- 3-player matchmaking, shape block assignment, tower building logic, scoring system, basic UI.
+- 3-player matchmaking, shape block assignment, draw pile, tower building logic, scoring system, and basic UI.
 
 ## GDD Maintenance Policy
 - GDD is the source of truth for game design decisions.

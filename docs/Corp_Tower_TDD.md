@@ -54,9 +54,9 @@
 ### Server To Client
 | Message | Description |
 |---|---|
-| `room_created` | New room/session assignment with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, and initial `blocks`. |
-| `room_resumed` | Existing room/session resumed with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, and blocks. |
-| `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, summary, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
+| `room_created` | New room/session assignment with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, initial `blocks`, `drawPileCount`, and `nextDrawBlock`. |
+| `room_resumed` | Existing room/session resumed with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, blocks, `drawPileCount`, and `nextDrawBlock`. |
+| `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, `drawPileCount`, `nextDrawBlock`, summary, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
 | `debug_config` | Authoritative debug menu state. |
 | `room_closed` | Room teardown reason for connected real players. |
 
@@ -70,6 +70,8 @@
 
 ### Block And Tower Payloads
 - Inventory `blocks[]`: server-assigned fixed-orientation block objects `{ id, shapeId, cells, height }`.
+- `nextDrawBlock`: the first block in the shared draw pile, or `null` when empty.
+- `drawPileCount`: remaining shared pile size including `nextDrawBlock`.
 - `cells`: array of `[x, y]` unit coordinates used by the Godot client for shape previews and tower rendering.
 - `height`: vertical footprint derived from `cells`; it is not necessarily equal to cell count.
 - `towerBlocks[]`: ordered placement history with `{ playerId, block, height, effectiveHeight, baseHeight }` so clients can redraw the current tower after broadcasts or reconnect.
@@ -115,6 +117,7 @@
 
 ## Testing Strategy
 - Current server test: Node syntax checks for server modules including `Redis_State.js`.
+- Balance simulator: `npm run balance:simulate -- <levels> <runs>` from `src/Server` estimates generated pile reachability, exact possibility, smart-play completion, overbuild, and placement counts.
 - Current client pipeline: Godot import/parse and Android export; GUT tests are skipped until installed.
 - Staging debug checks:
   - EC2-1: `corp-tower-gateway`, `corp-tower-redis`
