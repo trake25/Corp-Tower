@@ -4,6 +4,8 @@ const MAX_INVENTORY_SLOTS := 3
 const DEFAULT_UI_SKIN := "DefaultSkin"
 const SHOW_DEBUG_UI := true
 const DRAW_PILE_COLOR := Color(0.95, 0.72, 0.25, 1.0)
+const BOT_STRATEGY_COOPERATIVE := "cooperative"
+const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const LOCAL_PLAYER_MARKER := "You"
 const SKIN_SCENES := {
@@ -58,6 +60,7 @@ var close_skin_button: Button
 var default_skin_button: Button
 var figma_skin_button: Button
 var bots_toggle: CheckButton
+var bot_strategy_button: OptionButton
 var bot_count_label: Label
 var bot_count_slider: HSlider
 var bot_delay_min_label: Label
@@ -195,6 +198,7 @@ func bind_skin_nodes() -> void:
 	default_skin_button = optional_node("DefaultSkinButton") as Button
 	figma_skin_button = optional_node("FigmaSkinButton") as Button
 	bots_toggle = optional_node("BotsToggle") as CheckButton
+	bot_strategy_button = optional_node("BotStrategyButton") as OptionButton
 	bot_count_label = optional_node("BotCountLabel") as Label
 	bot_count_slider = optional_node("BotCountSlider") as HSlider
 	bot_delay_min_label = optional_node("BotDelayMinLabel") as Label
@@ -255,6 +259,12 @@ func setup_debug_controls() -> void:
 
 	if bots_toggle != null:
 		bots_toggle.toggled.connect(on_bots_toggle)
+
+	if bot_strategy_button != null:
+		bot_strategy_button.clear()
+		bot_strategy_button.add_item("Cooperative", 0)
+		bot_strategy_button.add_item("MVP Greedy", 1)
+		bot_strategy_button.item_selected.connect(on_bot_strategy_selected)
 
 	configure_slider(bot_count_slider, 0, 2, 1, on_bot_count_changed)
 	configure_slider(bot_delay_min_slider, 250, 10000, 250, on_bot_delay_min_changed)
@@ -703,6 +713,16 @@ func on_bots_toggle(enabled: bool) -> void:
 		return
 	NetworkManager.update_config("debugBotsEnabled", enabled)
 
+func on_bot_strategy_selected(index: int) -> void:
+	if is_syncing_debug_config:
+		return
+
+	var strategy: String = BOT_STRATEGY_COOPERATIVE
+	if index == 1:
+		strategy = BOT_STRATEGY_MVP_GREEDY
+
+	NetworkManager.update_config("debugBotStrategy", strategy)
+
 func on_bot_count_changed(value: float) -> void:
 	if is_syncing_debug_config:
 		return
@@ -751,6 +771,10 @@ func update_debug_config(config) -> void:
 
 	is_syncing_debug_config = true
 	bots_toggle.set_pressed_no_signal(bool(config.get("debugBotsEnabled", false)))
+	if bot_strategy_button != null:
+		var strategy: String = str(config.get("debugBotStrategy", BOT_STRATEGY_COOPERATIVE))
+		var selected_strategy_index: int = 1 if strategy == BOT_STRATEGY_MVP_GREEDY else 0
+		bot_strategy_button.select(selected_strategy_index)
 	bot_count_slider.set_value_no_signal(float(config.get("debugBotCount", 0)))
 	bot_delay_min_slider.set_value_no_signal(float(config.get("debugBotDelayMin", 2000)))
 	bot_delay_max_slider.set_value_no_signal(float(config.get("debugBotDelayMax", 5000)))

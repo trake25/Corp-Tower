@@ -712,6 +712,15 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Bots"
 
+[node name="BotStrategyLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Bot Strategy"
+
+[node name="BotStrategyButton" type="OptionButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="BotCountLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugRows"]
 unique_name_in_owner = true
 layout_mode = 2

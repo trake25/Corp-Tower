@@ -37,6 +37,7 @@
 - `updateDebugConfig(key, value)`:
   - Allows only known keys.
   - Clamps numeric values.
+  - Allows `debugBotStrategy` only as `cooperative` or `mvp_greedy`.
   - Broadcasts `debug_config`.
 
 ## Inputs/Outputs

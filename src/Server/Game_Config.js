@@ -15,7 +15,8 @@ const GameConfig = {
         { minLevel: 3, maxLevel: 3, baseLevel: 3, baseHeight: 8, heightPerLevel: 0 },
         { minLevel: 4, maxLevel: 6, baseLevel: 3, baseHeight: 8, heightPerLevel: 2 },
         { minLevel: 7, maxLevel: 12, baseLevel: 6, baseHeight: 14, heightPerLevel: 2 },
-        { minLevel: 13, maxLevel: 99, baseLevel: 12, baseHeight: 26, heightPerLevel: 1 }
+        { minLevel: 13, maxLevel: 31, baseLevel: 12, baseHeight: 26, heightPerLevel: 0.75 },
+        { minLevel: 32, maxLevel: 99, baseLevel: 31, baseHeight: 40, heightPerLevel: 0.5 }
     ],
     startDelayMs: 1500,
     levelTimeLimitMs: 30000,
@@ -71,10 +72,14 @@ const GameConfig = {
             { shapeId: "Z", cells: [[0, 0], [1, 0], [1, 1], [2, 1]] }
         ],
         5: [
+            { shapeId: "I5V", cells: [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]] },
+            { shapeId: "I5H", cells: [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]] },
             { shapeId: "P", cells: [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2]] },
             { shapeId: "U", cells: [[0, 0], [2, 0], [0, 1], [1, 1], [2, 1]] }
         ],
         6: [
+            { shapeId: "I6V", cells: [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5]] },
+            { shapeId: "I6H", cells: [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0]] },
             { shapeId: "RECT6V", cells: [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]] },
             { shapeId: "RECT6H", cells: [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]] }
         ]
@@ -104,9 +109,35 @@ const GameConfig = {
         10: 3,
         13: 4,
         16: 5,
-        19: 6
+        19: 6,
+        22: 7,
+        25: 8,
+        28: 9,
+        31: 10,
+        34: 11,
+        37: 12,
+        40: 13,
+        43: 14,
+        46: 15,
+        49: 16,
+        52: 17,
+        55: 18,
+        58: 19,
+        61: 20,
+        64: 21,
+        67: 22,
+        70: 23,
+        73: 24,
+        76: 25,
+        79: 26,
+        82: 27,
+        85: 28,
+        88: 29,
+        91: 30,
+        94: 31,
+        97: 32
     },
-    maxGeneratedDrawPileBlocks: 6,
+    maxGeneratedDrawPileBlocks: 32,
     levelSupplyMinSurplus: 0,
     levelSupplyMaxSurplus: 6,
     minPrecisionBlocksPerLevel: 2,

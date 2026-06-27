@@ -7,9 +7,9 @@
 ## Responsibilities
 - Start bot loops for bot participants.
 - Pick randomized action delay from [[Game Config]].
-- Select a simple height-management action.
+- Select a debug-configurable bot strategy.
 - Place bot shape blocks through [[Game Engine]] by inventory index.
-- Use refresh through [[Game Engine]] when the bot has no useful non-overbuilding block.
+- Use refresh through [[Game Engine]] when the selected strategy decides the hand is too low-value.
 - Stop bot timers when rooms close or bots are disabled.
 
 ## Key Logic
@@ -21,10 +21,16 @@
   - Validates room, debug flag, room state, level, and inventory before acting.
   - Repeats while valid.
 - `chooseBotAction(bot, engine)`:
+- Dispatches to the strategy selected by `debugBotStrategy`.
+- Cooperative strategy:
   - Plays an exact-finishing block when available.
   - Near the target, plays the smallest block that does not overbuild.
   - Otherwise, plays the highest useful block.
-  - Refreshes if possible when every current block would overbuild.
+  - Refreshes only when inventory total height is below `botRefreshLowInventoryHeight` and the level still needs more than that threshold.
+- MVP-greedy strategy:
+  - Plays an exact-finishing block when available.
+  - Otherwise plays the block with the highest effective height contribution.
+  - Keeps placing even if that overbuilds, unless low inventory height makes refresh the better debug behavior.
 - `stopBot(bot)`:
   - Clears pending timeout stored in `bot.botTimer`.
   - Clears `botLoopLevel`.

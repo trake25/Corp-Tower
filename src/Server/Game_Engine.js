@@ -761,7 +761,7 @@ class GameEngine {
         player.refreshUsesThisLevel += 1;
 
         // Replace only the blocks currently in the player's inventory.
-        // Refresh does not top up to the max — it re-rolls whatever the
+        // Refresh does not top up to the max - it re-rolls whatever the
         // player currently holds. If they have 1 block left, they get 1
         // new block. Using refresh on a full hand replaces all blocks.
         const countToRefresh = (player.blocks || []).length;

@@ -57,7 +57,7 @@
 | `room_created` | New room/session assignment with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, initial `blocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
 | `room_resumed` | Existing room/session resumed with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, blocks, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
 | `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock`, summary, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
-| `debug_config` | Authoritative debug menu state. |
+| `debug_config` | Authoritative debug menu state, including bot enable/count/strategy and timing/target tuning. |
 | `room_closed` | Room teardown reason for connected real players. |
 
 ### Client To Server
@@ -66,7 +66,7 @@
 | `reconnect` | Token/player id may resume room; otherwise server creates a new session and queues player. |
 | `place_block` | Valid room, player, state, cooldown, inventory, and block index. |
 | `refresh_blocks` | Token count, per-level usage cap, active state, final lockout. |
-| `update_config` | Key allowlist, value ranges, bot delay min/max, debug bot count clamp. |
+| `update_config` | Key allowlist, value ranges, bot delay min/max, debug bot count clamp, and bot strategy allowlist. |
 
 ### Block And Tower Payloads
 - Inventory `blocks[]`: server-assigned fixed-orientation block objects `{ id, shapeId, cells, height }`.
@@ -78,6 +78,11 @@
 - `height`: vertical footprint derived from `cells`; it is not necessarily equal to cell count.
 - `towerBlocks[]`: ordered placement history with `{ playerId, block, height, effectiveHeight, baseHeight }` so clients can redraw the current tower after broadcasts or reconnect.
 - Legacy numeric block values are still tolerated by the Godot client as vertical fallback blocks.
+
+### Persisted Room Gameplay State
+- Redis room snapshots include `checkpointScores`, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`, timers, level state, and serializable player inventory/score/token fields.
+- `checkpointScores` restores leaderboard totals during rollback so reconnect and multi-worker recovery do not reintroduce score farming.
+- `drawPile` and `nextDrawBlock` are persisted so reconnecting clients see the same shared refill queue.
 
 ## CI/CD
 - Normal automated staging path is `Diagnostics -> Infra Plan -> Server Update`.

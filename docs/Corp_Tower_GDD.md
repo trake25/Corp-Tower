@@ -13,7 +13,7 @@
 - Placing a block refills that player's hand from the shared draw pile when one is available.
 - Configurable anti-spam cooldown per player after placement (Default: 2s).
 - Level ends when target height is reached or a failure condition triggers.
-- Calculate scores, carry over blocks, then proceed to next level.
+- Calculate scores, save unused blocks into the next draw pile, then proceed to the next level.
 
 ## Players
 - 3 players per match.
@@ -43,9 +43,10 @@
 
 ### Draw Pile And Team Carry-Over System
 - Each level creates a server-owned shared draw pile.
-- The pile is built only from unused team carry-over blocks saved from previous completed levels.
-- Level 1 starts with an empty draw pile.
-- Newly generated level blocks fill active hand slots directly; they do not pre-fill the draw pile.
+- The pile is built from unused team carry-over blocks saved from completed levels plus generated high-level reserve blocks.
+- Level 1 starts with an empty draw pile; levels 1-3 do not receive generated reserve blocks.
+- Generated reserve blocks scale gradually by checkpoint band: level 4 starts with 1, level 7 with 2, level 10 with 3, and the pattern continues up to 32 generated draw blocks by level 97.
+- Newly generated opening blocks fill active hand slots directly; they do not use the draw pile.
 - The draw pile is shuffled before the level starts.
 - On level completion, unused active hand blocks and any remaining draw pile blocks become the next team carry-over pool.
 - Only up to 3 team carry-over blocks are kept.
@@ -58,6 +59,7 @@
 - Effect: replaces all current blocks.
 - Cannot be used in the last 10 seconds of a level.
 - Only refreshes current remaining inventory.
+- Refresh generation is target-aware and tries to include at least one useful block for the current remaining height.
 
 ### Token Rewards
 - MVP of previous level receives 1 token.
@@ -65,7 +67,7 @@
 
 ## Tower System
 - Target height uses a level-band curve, scaled by `targetHeightMultiplier` for debug tuning.
-- Default curve: L1=3, L2=6, L3=8, L4-L6 +2 per level, L7-L12 +1 per level, L13+ plateau at 20.
+- Default curve: L1=3, L2=6, L3=8, L4-L12 ramps quickly, L13-L31 grows about 3 height every 4 levels, and L32+ grows about 1 height every 2 levels.
 - Overbuilding allowed; excess height is wasted.
 - Exact height triggers precision bonus rewards.
 - The client renders placed blocks as a stacked tower from authoritative server history when `towerBlocks` is available.
@@ -89,10 +91,11 @@
 | Team Bonus | `level × 4` (exact finish, all players) |
 | Assist Bonus | `level × 6` (if player contributes ≥ 25% of total height) |
 - MVP: player with highest level score for the level.
+- Leaderboard score is snapshotted at each checkpoint and restored on rollback, preventing repeated failed checkpoint attempts from farming score.
 
 ## Progression
 - Target height increases each level.
-- Block complexity increases with level: height-1 blocks at level 1, size-2 shapes at level 2, size-3 shapes at level 3, size-4 shapes at level 5, size-5 shapes at level 10, and size-6 shapes at level 15.
+- Block complexity increases with level: height-1 blocks at level 1, size-2 shapes at level 2, size-3 shapes at level 3, size-4 shapes at level 5, size-5 shapes at level 10, and size-6 shapes at level 15. Late unlocks include true vertical height-5 and height-6 line blocks.
 - Inventory capacity increases with level: 1 active slot at level 1, 2 at level 2, and 3 at level 4.
 - Checkpoints after every 3 levels.
 - Failing a level rolls back to last completed checkpoint level.
@@ -119,6 +122,7 @@
 |---|---|
 | `debugBotsEnabled` | Enables/disables debug bots globally. |
 | `debugBotCount` | Bot slots allowed per room (0–2). |
+| `debugBotStrategy` | Switches QA bots between cooperative height-management and MVP-greedy play. |
 | `debugBotDelayMin` | Min bot action delay (ms). |
 | `debugBotDelayMax` | Max bot action delay (ms); never less than min. |
 | `placementCooldown` | Anti-spam delay between placements (ms). |
@@ -137,7 +141,8 @@
 - Bot loops are level-scoped; delayed actions from previous levels cannot fire in next level.
 - Bot actions stop when `debugBotsEnabled` is false.
 - Bots only fill rooms when at least one real player is waiting.
-- Bots prefer exact finishing blocks, avoid overbuilding near the target, otherwise play the highest useful block, and may refresh when no useful block is available.
+- Cooperative bots prefer exact finishing blocks, avoid overbuilding near the target, otherwise play the highest useful block, and refresh only when total inventory height is below the low-inventory threshold.
+- MVP-greedy bots prefer the highest effective score contribution, still taking exact finishes when available.
 
 ### Future Debug Variables (Planned)
 - `blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `maxRefreshTokens`, `maxRefreshUsesPerLevel`, `refreshLockoutMs`, `checkpointInterval`, scoring bonus multipliers, target-height curve bands, opening-hand supply constraints, and max team carry-over blocks.

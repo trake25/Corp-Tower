@@ -30,6 +30,7 @@
   - Placement points use effective height and level.
   - Bonuses: finisher, precision, team, assist, with multipliers from [[Game Config]].
   - MVP is highest level score.
+  - Checkpoint score snapshots are restored on rollback.
 - Target height:
   - Uses the authored target-height curve from [[Game Config]].
   - `targetHeightMultiplier` scales the curve for debug tuning.
@@ -45,20 +46,21 @@
   - Active hand slots are filled by newly generated level blocks.
   - Opening hands are generated with minimum surplus, precision-block, and exact-combination constraints.
 - Draw pile:
-  - The shared pile is built only from unused team carry-over blocks saved from previous completed levels.
-  - Level 1 starts with an empty draw pile.
+  - The shared pile is built from unused team carry-over blocks and generated reserve blocks unlocked by level.
+  - Level 1 starts with an empty draw pile and levels 1-3 have no generated reserve.
   - A placement refills the acting player's hand from the pile when possible.
   - `game_state` includes `drawPileCount` and `nextDrawBlock`.
 - Team carry-over:
   - On level completion, unused active hand blocks and remaining draw pile blocks are collected.
   - Up to 3 small precision-friendly blocks are kept and shuffled into the next level draw pile.
+  - Team carry-over is discarded on level failure before checkpoint restart.
 - Tower history:
   - `towerBlocks[]` records each placement with player id, block, height, effective height, and base height.
   - History resets at level start and is broadcast in `game_state`.
 - Refresh tokens:
   - Max token count and per-level uses are from [[Game Config]].
   - Locked out near level end.
-  - Refresh rerolls the player's current hand and does not consume or reorder the draw pile.
+  - Refresh rerolls the player's current hand, tries to produce a useful remaining-height option, and does not consume or reorder the draw pile.
 - Room close:
   - Calls [[Bot Manager]] stop.
   - Clears all timers.
