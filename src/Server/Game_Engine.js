@@ -85,6 +85,7 @@ class GameEngine {
             players: players,
             level: 1,
             checkpointLevel: 1,
+            checkpointScores: {},
             targetHeight: this.getTargetHeightForLevel(1),
             currentHeight: 0,
             drawPile: [],
@@ -105,6 +106,7 @@ class GameEngine {
             player.blocks = [];
             player.lastPlacementTime = 0;
         });
+        this.saveCheckpointScores();
 
         console.log("Room created:", this.room.id);
     }
@@ -117,6 +119,7 @@ class GameEngine {
             players: runtimePlayers,
             level: snapshot.state.level,
             checkpointLevel: snapshot.state.checkpointLevel,
+            checkpointScores: snapshot.state.checkpointScores || {},
             targetHeight: snapshot.state.targetHeight,
             currentHeight: snapshot.state.currentHeight,
             drawPile: snapshot.state.drawPile || [],
@@ -127,6 +130,7 @@ class GameEngine {
             endsAt: snapshot.state.endsAt,
             lastLevelSummary: snapshot.state.lastLevelSummary
         };
+        this.ensureCheckpointScores();
 
         this.restoreTimersFromState();
     }
@@ -312,6 +316,35 @@ class GameEngine {
         return drawPile[0];
     }
 
+    saveCheckpointScores() {
+        if (!this.room) {
+            return;
+        }
+
+        this.room.checkpointScores = {};
+
+        this.room.players.forEach(player => {
+            this.room.checkpointScores[player.id] = player.score || 0;
+        });
+    }
+
+    ensureCheckpointScores() {
+        if (
+            !this.room.checkpointScores ||
+            Object.keys(this.room.checkpointScores).length === 0
+        ) {
+            this.saveCheckpointScores();
+        }
+    }
+
+    restoreCheckpointScores() {
+        const checkpointScores = this.room.checkpointScores || {};
+
+        this.room.players.forEach(player => {
+            player.score = Number(checkpointScores[player.id] || 0);
+        });
+    }
+
     // =========================
     // BLOCK SYSTEM
     // =========================
@@ -421,12 +454,44 @@ class GameEngine {
 
     buildDrawPile() {
         const teamCarryOverBlocks = this.room.teamCarryOverBlocks || [];
-        this.room.drawPile = this.shuffleBlocks(teamCarryOverBlocks);
+        const generatedDrawPileBlocks =
+            this.generateDrawPileBlocks(this.getGeneratedDrawPileBlockCount());
+
+        this.room.drawPile = this.shuffleBlocks([
+            ...teamCarryOverBlocks,
+            ...generatedDrawPileBlocks
+        ]);
         this.room.teamCarryOverBlocks = [];
 
         console.log(
             `Level ${this.room.level} draw pile: ${this.room.drawPile.length} blocks`
         );
+    }
+
+    getGeneratedDrawPileBlockCount() {
+        let generatedBlockCount = 0;
+
+        for (const level in GameConfig.generatedDrawPileScaling || {}) {
+            if (this.room.level >= Number(level)) {
+                generatedBlockCount =
+                    GameConfig.generatedDrawPileScaling[level];
+            }
+        }
+
+        return Math.min(
+            generatedBlockCount,
+            GameConfig.maxGeneratedDrawPileBlocks
+        );
+    }
+
+    generateDrawPileBlocks(blockCount) {
+        const blocks = [];
+
+        for (let i = 0; i < blockCount; i++) {
+            blocks.push(this.getRandomBlock());
+        }
+
+        return blocks;
     }
 
     generateSolvableOpeningHandBlocks() {
@@ -700,16 +765,74 @@ class GameEngine {
         // player currently holds. If they have 1 block left, they get 1
         // new block. Using refresh on a full hand replaces all blocks.
         const countToRefresh = (player.blocks || []).length;
-        player.blocks = [];
-
-        for (let i = 0; i < countToRefresh; i++) {
-            player.blocks.push(this.getRandomBlock());
-        }
+        player.blocks = this.generateRefreshBlocks(countToRefresh);
 
         console.log(`${player.id} refreshed blocks:`, player.blocks);
         this.checkFailCondition();
         this.persistRoom();
         this.broadcastGameState();
+    }
+
+    generateRefreshBlocks(blockCount) {
+        if (blockCount <= 0) {
+            return [];
+        }
+
+        const attempts = Math.max(1, GameConfig.refreshGenerationAttempts);
+        let bestBlocks = [];
+        let bestScore = -1;
+
+        for (let attempt = 0; attempt < attempts; attempt++) {
+            const blocks = [];
+
+            for (let i = 0; i < blockCount; i++) {
+                blocks.push(this.getRandomBlock());
+            }
+
+            if (this.isRefreshBlockSetUseful(blocks)) {
+                return blocks;
+            }
+
+            const score = this.scoreRefreshBlockSet(blocks);
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestBlocks = blocks;
+            }
+        }
+
+        return bestBlocks;
+    }
+
+    isRefreshBlockSetUseful(blocks) {
+        const remainingHeight =
+            Math.max(1, this.room.targetHeight - this.room.currentHeight);
+        const usefulHeight =
+            Math.min(remainingHeight, GameConfig.refreshMinUsefulBlockHeight);
+
+        return (blocks || []).some(block => {
+            const blockHeight = this.getBlockHeight(block);
+
+            return (
+                blockHeight <= remainingHeight &&
+                blockHeight >= usefulHeight
+            );
+        });
+    }
+
+    scoreRefreshBlockSet(blocks) {
+        const remainingHeight =
+            Math.max(1, this.room.targetHeight - this.room.currentHeight);
+
+        return (blocks || []).reduce((score, block) => {
+            const blockHeight = this.getBlockHeight(block);
+
+            if (blockHeight > remainingHeight) {
+                return score;
+            }
+
+            return score + blockHeight;
+        }, 0);
     }
 
     // =========================
@@ -871,6 +994,7 @@ class GameEngine {
 
         if ((this.room.level - 1) % GameConfig.checkpointInterval === 0) {
             this.room.checkpointLevel = this.room.level;
+            this.saveCheckpointScores();
         }
 
         console.log(`\n=== LEVEL ${this.room.level} QUEUED ===`);
@@ -881,6 +1005,7 @@ class GameEngine {
         this.room.level = this.room.checkpointLevel;
         this.room.drawPile = [];
         this.room.teamCarryOverBlocks = [];
+        this.restoreCheckpointScores();
 
         this.room.players.forEach(player => {
             player.blocks = [];

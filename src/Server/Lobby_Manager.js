@@ -358,6 +358,7 @@ class LobbyManager {
         return {
             debugBotsEnabled: GameConfig.debugBotsEnabled,
             debugBotCount: GameConfig.debugBotCount,
+            debugBotStrategy: GameConfig.debugBotStrategy,
             debugBotDelayMin: GameConfig.debugBotDelayMin,
             debugBotDelayMax: GameConfig.debugBotDelayMax,
             placementCooldown: GameConfig.placementCooldown,
@@ -372,6 +373,13 @@ class LobbyManager {
         const debugConfigSetters = {
             debugBotsEnabled: () => Boolean(value),
             debugBotCount: () => Math.max(0, Math.min(2, Math.floor(numberValue))),
+            debugBotStrategy: () => {
+                const strategy = String(value);
+
+                return ["cooperative", "mvp_greedy"].includes(strategy)
+                    ? strategy
+                    : GameConfig.debugBotStrategy;
+            },
             debugBotDelayMin: () => Math.max(250, Math.floor(numberValue)),
             debugBotDelayMax: () => Math.max(250, Math.floor(numberValue)),
             placementCooldown: () => Math.max(0, Math.floor(numberValue)),
@@ -622,6 +630,7 @@ class LobbyManager {
                 players: runtimePlayers,
                 level: snapshot.state.level,
                 checkpointLevel: snapshot.state.checkpointLevel,
+                checkpointScores: snapshot.state.checkpointScores || {},
                 targetHeight: snapshot.state.targetHeight,
                 currentHeight: snapshot.state.currentHeight,
                 drawPile: snapshot.state.drawPile || [],

@@ -168,19 +168,27 @@ class BotManager {
     }
 
     chooseBotAction(bot, engine) {
+        if (GameConfig.debugBotStrategy === "mvp_greedy") {
+            return this.chooseMvpGreedyAction(bot, engine);
+        }
+
+        return this.chooseCooperativeAction(bot, engine);
+    }
+
+    chooseCooperativeAction(bot, engine) {
 
         const remainingHeight = Math.max(
             0,
             engine.room.targetHeight - engine.room.currentHeight
         );
         const blocks = bot.blocks || [];
+        const inventoryHeight = this.getInventoryHeight(bot, engine);
 
         if (
             remainingHeight > 0 &&
             this.canBotRefresh(bot, engine) &&
-            !blocks.some(block => {
-                return engine.getBlockHeight(block) <= remainingHeight;
-            })
+            remainingHeight > GameConfig.botRefreshLowInventoryHeight &&
+            inventoryHeight < GameConfig.botRefreshLowInventoryHeight
         ) {
             return {
                 type: "refresh"
@@ -232,6 +240,97 @@ class BotManager {
             type: "place",
             blockIndex: smallestOverkill ? smallestOverkill.index : 0
         };
+    }
+
+    chooseMvpGreedyAction(bot, engine) {
+
+        const remainingHeight = Math.max(
+            0,
+            engine.room.targetHeight - engine.room.currentHeight
+        );
+        const blocks = bot.blocks || [];
+        const candidates = this.getBlockCandidates(blocks, engine);
+
+        const exactIndex = candidates.find(candidate => {
+            return candidate.height === remainingHeight;
+        })?.index;
+
+        if (exactIndex !== undefined) {
+            return {
+                type: "place",
+                blockIndex: exactIndex
+            };
+        }
+
+        const usefulCandidates = candidates.filter(candidate => {
+            return candidate.effectiveHeight > 0;
+        });
+
+        if (usefulCandidates.length > 0) {
+            const bestCandidate = usefulCandidates.sort((a, b) => {
+                const scoreDiff = b.effectiveHeight - a.effectiveHeight;
+
+                if (scoreDiff !== 0) {
+                    return scoreDiff;
+                }
+
+                return b.height - a.height;
+            })[0];
+
+            return {
+                type: "place",
+                blockIndex: bestCandidate.index
+            };
+        }
+
+        if (
+            this.canBotRefresh(bot, engine) &&
+            this.getInventoryHeight(bot, engine) <
+                GameConfig.botRefreshLowInventoryHeight
+        ) {
+            return {
+                type: "refresh"
+            };
+        }
+
+        const largestBlock = candidates.sort((a, b) => {
+            return b.height - a.height;
+        })[0];
+
+        return {
+            type: "place",
+            blockIndex: largestBlock ? largestBlock.index : 0
+        };
+    }
+
+    getBlockCandidates(blocks, engine) {
+
+        const remainingHeight = Math.max(
+            0,
+            engine.room.targetHeight - engine.room.currentHeight
+        );
+
+        return (blocks || [])
+            .map((block, index) => {
+                const height = engine.getBlockHeight(block);
+
+                return {
+                    index: index,
+                    height: height,
+                    effectiveHeight: Math.max(
+                        0,
+                        Math.min(height, remainingHeight)
+                    )
+                };
+            })
+            .filter(candidate => candidate.height > 0);
+    }
+
+    getInventoryHeight(bot, engine) {
+
+        return (bot.blocks || []).reduce((total, block) => {
+            return total + engine.getBlockHeight(block);
+        }, 0);
     }
 
     canBotRefresh(bot, engine) {

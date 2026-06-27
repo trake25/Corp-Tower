@@ -14,8 +14,8 @@ const GameConfig = {
         { minLevel: 2, maxLevel: 2, baseLevel: 2, baseHeight: 6, heightPerLevel: 0 },
         { minLevel: 3, maxLevel: 3, baseLevel: 3, baseHeight: 8, heightPerLevel: 0 },
         { minLevel: 4, maxLevel: 6, baseLevel: 3, baseHeight: 8, heightPerLevel: 2 },
-        { minLevel: 7, maxLevel: 12, baseLevel: 6, baseHeight: 14, heightPerLevel: 1 },
-        { minLevel: 13, maxLevel: 99, baseLevel: 13, baseHeight: 20, heightPerLevel: 0 }
+        { minLevel: 7, maxLevel: 12, baseLevel: 6, baseHeight: 14, heightPerLevel: 2 },
+        { minLevel: 13, maxLevel: 99, baseLevel: 12, baseHeight: 26, heightPerLevel: 1 }
     ],
     startDelayMs: 1500,
     levelTimeLimitMs: 30000,
@@ -97,6 +97,16 @@ const GameConfig = {
     // =========================
 
     maxTeamCarryOverBlocks: 3,
+    generatedDrawPileScaling: {
+        1: 0,
+        4: 1,
+        7: 2,
+        10: 3,
+        13: 4,
+        16: 5,
+        19: 6
+    },
+    maxGeneratedDrawPileBlocks: 6,
     levelSupplyMinSurplus: 0,
     levelSupplyMaxSurplus: 6,
     minPrecisionBlocksPerLevel: 2,
@@ -109,6 +119,8 @@ const GameConfig = {
     maxRefreshTokens: 1,
     maxRefreshUsesPerLevel: 2,
     refreshLockoutMs: 10000,
+    refreshGenerationAttempts: 100,
+    refreshMinUsefulBlockHeight: 2,
 
     // =========================
     // SCORING SETTINGS
@@ -133,6 +145,9 @@ const GameConfig = {
     debugBotDelayMin: 2000,
 
     debugBotDelayMax: 5000,
+
+    debugBotStrategy: "cooperative",
+    botRefreshLowInventoryHeight: 4,
 
 };
 
