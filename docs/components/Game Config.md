@@ -9,7 +9,7 @@
 - Store block unlock/weight rules.
 - Store fixed-orientation shape variants by block cell count.
 - Store inventory, draw-pile, and refresh-token limits.
-- Store debug bot configuration.
+- Store debug bot and live-tuning configuration.
 
 ## Key Logic
 - Game settings:
@@ -19,6 +19,7 @@
   - `targetHeightMultiplier`
   - `startDelayMs`
   - `levelTimeLimitMs`
+  - `levelSummaryDelayMs`
 - Block settings:
   - `blockUnlockLevels`
   - `blockWeights`
@@ -41,6 +42,7 @@
   - `refreshGenerationAttempts`
   - `refreshMinUsefulBlockHeight`
 - Scoring settings:
+  - `placementScorePerHeight`
   - `finisherBonusPerLevel`
   - `precisionBonusPerLevel`
   - `teamExactBonusPerLevel`
@@ -58,6 +60,7 @@
   - `debugBotDelayMin`
   - `debugBotDelayMax`
   - `botRefreshLowInventoryHeight`
+  - timing, balance, refresh, and scoring fields exposed through validated debug tuning
 
 ## Inputs/Outputs
 - Input: server-side/debug tuning updates via [[Lobby Manager]].
@@ -69,4 +72,4 @@
 ## Notes
 - Server validates debug changes before mutating this object.
 - Production should restrict debug writes behind admin permissions later.
-- Balance can be inspected with `npm run balance:simulate -- <levels> <runs>` from `src/Server`.
+- Balance and score distribution can be inspected with `npm run balance:simulate -- <levels> <runs>` from `src/Server`.

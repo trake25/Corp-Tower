@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-06-27
+- feature: Added transient score UI events, exact/overbuild finish feedback, MVP/team callouts, level summary overlay support, and tabbed debug menu organization.
+- update: Recalibrated placement scoring with a configurable per-height score scale, expanded live balance/scoring debug tuning, and added score distribution metrics to the balance simulator.
+- update: Converted the Godot debug overlay into organized tuning categories across both UI skins.
+
 ## 2026-06-20
 - docs: Added a manual, phase-gated K3s learning plan with proof checks and rollback paths for each implementation step.
 

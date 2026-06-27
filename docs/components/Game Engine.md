@@ -12,6 +12,7 @@
 - Run start delay, level timer, and tick broadcasts.
 - Validate block placement and refresh token use.
 - Calculate scores and bonuses.
+- Emit transient score UI events for placement, finish, bonus, MVP, and team-total feedback.
 - Detect success/failure.
 - Advance levels, preserve team carry-over blocks, or roll back checkpoints.
 - Stop timers and bots on room close.
@@ -27,10 +28,12 @@
   - `game_completed`
   - `closed`
 - Scoring:
-  - Placement points use effective height and level.
+  - Placement points use effective height, level, and `placementScorePerHeight`.
   - Bonuses: finisher, precision, team, assist, with multipliers from [[Game Config]].
   - MVP is highest level score.
   - Checkpoint score snapshots are restored on rollback.
+  - `scoreEvents[]` is transient and broadcast-only; clients should not infer scoring UI from aggregate score diffs.
+  - `lastLevelSummary` includes team level score, MVP, finisher, exact/overbuild result, per-player level/final totals, contributed height, and bonus breakdowns.
 - Target height:
   - Uses the authored target-height curve from [[Game Config]].
   - `targetHeightMultiplier` scales the curve for debug tuning.
@@ -68,7 +71,7 @@
 
 ## Inputs/Outputs
 - Input: players from [[Lobby Manager]], `place_block`, `refresh_blocks`.
-- Output: `game_state` broadcasts, `towerBlocks`, score updates, level transitions.
+- Output: `game_state` broadcasts, `towerBlocks`, `scoreEvents`, score updates, level summaries, level transitions.
 - `game_state.players[]` includes `isBot` so clients can distinguish real-player rooms from bot-filled debug rooms.
 
 ## Dependencies

@@ -11,6 +11,7 @@
 - Render the visible `nextDrawBlock` and remaining `drawPileCount` in the former 4th inventory-card position.
 - Render locked inactive inventory slots from `activeInventorySlots` so low levels start with fewer usable slots.
 - Render placed blocks in the center tower area from server `towerBlocks` history.
+- Render score popups from server `scoreEvents` and level-end summaries from `lastLevelSummary`.
 - Send block and refresh actions.
 - Load the selected UI skin and bind the shared skin node contract.
 - Switch skins at runtime through a bottom-right overlay without changing gameplay/network logic.
@@ -26,12 +27,17 @@
 - Inventory cards tolerate legacy numeric blocks and new `{ id, shapeId, cells, height }` block objects.
 - `BlockPreview.gd` draws inventory shape cells.
 - `TowerStack.gd` draws placed-block tower history; when connected to an old numeric-block server it falls back to a simple stack from `currentHeight`.
+- `TowerStack.gd` keeps readable cell size and scrolls the visible tower window upward when high-level towers exceed the track height.
 - Tower center display visualizes both current height against target height and the placed-block stack.
+- Score events are tracked by stable event id per level so reconnects, skin switches, and repeat broadcasts do not duplicate animations.
+- Placement and bonus popups use player color, float upward, and fade after 2 seconds.
+- Exact finish shows `PERFECT FIT`; overbuild shows target reached with wasted height; MVP/team total use larger callouts.
+- Level summaries show complete/failed state, exact/overbuild result, team score, MVP, finisher, and per-player level/final totals, then auto-hide from `levelSummaryDelayMs`.
 - Refresh button sends `refresh_blocks`.
 - Skin selection reads `corp_tower/ui_skin`; default is `DefaultSkin`, with `Figma_SkinV1` available as a reskin.
 - The skin picker button swaps the active skin scene under `SkinRoot`, rebinds required nodes, reconnects skin-local buttons, and replays the last room/game state.
 - Debug overlay controls route changes through `NetworkManager.update_config` and use no-signal setters during server sync.
-- Debug overlay includes a bot strategy dropdown for `cooperative` versus `mvp_greedy`.
+- Debug overlay is tabbed into Bots, Round, Supply, Refresh, and Scoring controls.
 - `update_room_closed(data)` resets stale room UI.
 
 ## Inputs/Outputs

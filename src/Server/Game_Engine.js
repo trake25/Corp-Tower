@@ -31,6 +31,7 @@ class GameEngine {
             return;
         }
 
+        const scoreEvents = this.consumeScoreEvents();
         const gameState = {
             type: "game_state",
             state: this.room.state,
@@ -45,6 +46,8 @@ class GameEngine {
             towerBlocks: this.room.towerBlocks || [],
             secondsRemaining: Math.ceil(this.getRemainingMs() / 1000),
             lastLevelSummary: this.room.lastLevelSummary,
+            scoreEvents: scoreEvents,
+            levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
             maxRefreshTokens: GameConfig.maxRefreshTokens,
             maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
             players: this.room.players.map(player => ({
@@ -94,12 +97,15 @@ class GameEngine {
             state: "waiting",
             startsAt: 0,
             endsAt: 0,
-            lastLevelSummary: null
+            lastLevelSummary: null,
+            pendingScoreEvents: [],
+            scoreEventSeq: 0
         };
 
         this.room.players.forEach(player => {
             player.score = player.score || 0;
             player.levelScore = 0;
+            player.scoreBreakdown = {};
             player.contributedHeight = 0;
             player.refreshTokens = 0;
             player.refreshUsesThisLevel = 0;
@@ -128,7 +134,9 @@ class GameEngine {
             state: snapshot.state.state,
             startsAt: snapshot.state.startsAt,
             endsAt: snapshot.state.endsAt,
-            lastLevelSummary: snapshot.state.lastLevelSummary
+            lastLevelSummary: snapshot.state.lastLevelSummary,
+            pendingScoreEvents: [],
+            scoreEventSeq: 0
         };
         this.ensureCheckpointScores();
 
@@ -166,14 +174,14 @@ class GameEngine {
         if (this.room.state === "finished") {
             this.nextLevelTimer = setTimeout(() => {
                 this.nextLevel();
-            }, GameConfig.nextLevelDelayMs);
+            }, GameConfig.levelSummaryDelayMs);
             return;
         }
 
         if (this.room.state === "failed") {
             this.nextLevelTimer = setTimeout(() => {
                 this.rollbackToCheckpoint();
-            }, GameConfig.failRestartDelayMs);
+            }, GameConfig.levelSummaryDelayMs);
         }
     }
 
@@ -187,6 +195,48 @@ class GameEngine {
         });
     }
 
+    createScoreEvent(type, options = {}) {
+        this.room.scoreEventSeq = (this.room.scoreEventSeq || 0) + 1;
+
+        return {
+            id: [
+                this.room.level,
+                this.room.scoreEventSeq,
+                type
+            ].join(":"),
+            type: type,
+            level: this.room.level,
+            playerId: options.playerId || null,
+            points: Number(options.points || 0),
+            label: options.label || type,
+            displayOnly: Boolean(options.displayOnly),
+            meta: options.meta || {}
+        };
+    }
+
+    queueScoreEvent(type, options = {}) {
+        if (!this.room) {
+            return null;
+        }
+
+        this.room.pendingScoreEvents = this.room.pendingScoreEvents || [];
+        const event = this.createScoreEvent(type, options);
+
+        this.room.pendingScoreEvents.push(event);
+        return event;
+    }
+
+    consumeScoreEvents() {
+        if (!this.room) {
+            return [];
+        }
+
+        const events = this.room.pendingScoreEvents || [];
+        this.room.pendingScoreEvents = [];
+
+        return events;
+    }
+
     startLevel() {
         this.clearTimers();
 
@@ -198,9 +248,11 @@ class GameEngine {
         this.room.startsAt = Date.now() + GameConfig.startDelayMs;
         this.room.endsAt = this.room.startsAt + GameConfig.levelTimeLimitMs;
         this.room.lastLevelSummary = null;
+        this.room.pendingScoreEvents = [];
 
         this.room.players.forEach(player => {
             player.levelScore = 0;
+            player.scoreBreakdown = {};
             player.contributedHeight = 0;
             player.refreshUsesThisLevel = 0;
             player.blocks = [];
@@ -903,6 +955,69 @@ class GameEngine {
         });
     }
 
+    getPlayerScoreMap() {
+        const scores = {};
+
+        this.room.players.forEach(player => {
+            scores[player.id] = Number(player.score || 0);
+        });
+
+        return scores;
+    }
+
+    getTeamLevelScore() {
+        return this.room.players.reduce((total, player) => {
+            return total + Number(player.levelScore || 0);
+        }, 0);
+    }
+
+    getPlayerBonusBreakdown(player) {
+        const breakdown = player.scoreBreakdown || {};
+
+        return {
+            placement: Number(breakdown.placement || 0),
+            finisher: Number(breakdown.finisher || 0),
+            precision: Number(breakdown.precision || 0),
+            teamExact: Number(breakdown.team || 0),
+            assist: Number(breakdown.assist || 0)
+        };
+    }
+
+    buildLevelSummary(options) {
+        const mvp = options.mvp || this.getLevelMVP();
+        const previousTotalScores = options.previousTotalScores || {};
+        const teamLevelScore = this.getTeamLevelScore();
+
+        return {
+            result: options.result,
+            reason: options.reason || null,
+            level: this.room.level,
+            teamLevelScore: teamLevelScore,
+            mvpId: mvp?.id || null,
+            mvpScore: Number(mvp?.levelScore || 0),
+            exactFinish: Boolean(options.exactFinish),
+            overbuildHeight: Number(options.overbuildHeight || 0),
+            finisherId: options.finisher?.id || null,
+            finishingBlock: options.finishingBlock || null,
+            carriedBlockCount: Number(options.carriedBlockCount || 0),
+            players: this.room.players.map(player => {
+                const previousTotalScore =
+                    Number(previousTotalScores[player.id] || 0);
+
+                return {
+                    id: player.id,
+                    isBot: Boolean(player.isBot),
+                    levelScore: Number(player.levelScore || 0),
+                    previousTotalScore: previousTotalScore,
+                    finalTotalScore: Number(player.score || 0),
+                    contributedHeight: Number(player.contributedHeight || 0),
+                    isMvp: player.id === mvp?.id,
+                    bonusBreakdown: this.getPlayerBonusBreakdown(player)
+                };
+            })
+        };
+    }
+
     completeLevel(finisher, finishingBlock) {
         this.room.state = "finished";
         clearTimeout(this.levelTimer);
@@ -910,6 +1025,31 @@ class GameEngine {
 
         const exactFinish =
             this.room.currentHeight === this.room.targetHeight;
+        const overbuildHeight =
+            Math.max(0, this.room.currentHeight - this.room.targetHeight);
+        const previousTotalScores = this.getPlayerScoreMap();
+
+        if (exactFinish) {
+            this.queueScoreEvent("exact_finish", {
+                label: "Perfect Fit",
+                displayOnly: true,
+                meta: {
+                    currentHeight: this.room.currentHeight,
+                    targetHeight: this.room.targetHeight
+                }
+            });
+        } else {
+            this.queueScoreEvent("overbuild_finish", {
+                points: overbuildHeight,
+                label: "Target Reached",
+                displayOnly: true,
+                meta: {
+                    currentHeight: this.room.currentHeight,
+                    targetHeight: this.room.targetHeight,
+                    overbuildHeight: overbuildHeight
+                }
+            });
+        }
 
         this.awardCompletionBonuses(finisher, exactFinish);
         // ADD LEVEL SCORE TO LEADERBOARD SCORE WHEN LEVEL IS COMPLETED
@@ -925,15 +1065,28 @@ class GameEngine {
             });
         }
 
-        this.room.lastLevelSummary = {
+        this.queueScoreEvent("mvp", {
+            playerId: mvp.id,
+            points: mvp.levelScore,
+            label: "MVP",
+            displayOnly: true
+        });
+        this.queueScoreEvent("team_total", {
+            points: this.getTeamLevelScore(),
+            label: "Team",
+            displayOnly: true
+        });
+
+        this.room.lastLevelSummary = this.buildLevelSummary({
             result: "completed",
-            level: this.room.level,
             exactFinish: exactFinish,
-            finisherId: finisher.id,
+            overbuildHeight: overbuildHeight,
+            finisher: finisher,
             finishingBlock: finishingBlock,
             carriedBlockCount: carriedBlockCount,
-            mvpId: mvp.id
-        };
+            mvp: mvp,
+            previousTotalScores: previousTotalScores
+        });
 
         this.showScoreboard();
         this.showLevelMVP();
@@ -942,7 +1095,7 @@ class GameEngine {
 
         this.nextLevelTimer = setTimeout(() => {
             this.nextLevel();
-        }, GameConfig.nextLevelDelayMs);
+        }, GameConfig.levelSummaryDelayMs);
     }
 
     failLevel(reason) {
@@ -957,13 +1110,26 @@ class GameEngine {
         this.clearTimers();
 
         const mvp = this.getLevelMVP();
+        const previousTotalScores = this.getPlayerScoreMap();
 
-        this.room.lastLevelSummary = {
+        this.queueScoreEvent("mvp", {
+            playerId: mvp.id,
+            points: mvp.levelScore,
+            label: "MVP",
+            displayOnly: true
+        });
+
+        this.room.lastLevelSummary = this.buildLevelSummary({
             result: "failed",
-            level: this.room.level,
             reason: reason,
-            mvpId: mvp.id
-        };
+            exactFinish: false,
+            overbuildHeight: 0,
+            finisher: null,
+            finishingBlock: null,
+            carriedBlockCount: 0,
+            mvp: mvp,
+            previousTotalScores: previousTotalScores
+        });
 
         this.showScoreboard();
         this.showLevelMVP();
@@ -974,7 +1140,7 @@ class GameEngine {
 
         this.nextLevelTimer = setTimeout(() => {
             this.rollbackToCheckpoint();
-        }, GameConfig.failRestartDelayMs);
+        }, GameConfig.levelSummaryDelayMs);
     }
 
     // =========================
@@ -1010,6 +1176,7 @@ class GameEngine {
         this.room.players.forEach(player => {
             player.blocks = [];
             player.levelScore = 0;
+            player.scoreBreakdown = {};
             player.contributedHeight = 0;
         });
 
@@ -1048,13 +1215,37 @@ class GameEngine {
     // SCORE SYSTEM
     // =========================
 
+    recordScoreBreakdown(player, key, points) {
+        player.scoreBreakdown = player.scoreBreakdown || {};
+        player.scoreBreakdown[key] =
+            Number(player.scoreBreakdown[key] || 0) + Number(points || 0);
+    }
+
     addPlacementScore(player, block, effectiveHeight) {
-        const points = Math.round(effectiveHeight * this.room.level);
+        const scorePerHeight =
+            Number(GameConfig.scoring.placementScorePerHeight) || 1;
+        const points = Math.round(
+            effectiveHeight *
+                this.room.level *
+                scorePerHeight
+        );
 
         //player.score += points; //Only add to levelScore during gameplay
         player.levelScore += points;
+        this.recordScoreBreakdown(player, "placement", points);
+        this.queueScoreEvent("placement", {
+            playerId: player.id,
+            points: points,
+            label: "Placement",
+            meta: {
+                effectiveHeight: effectiveHeight,
+                blockHeight: this.getBlockHeight(block),
+                block: block
+            }
+        });
 
         console.log(`${player.id} gained ${points} score`);
+        return points;
     }
 
     awardCompletionBonuses(finisher, exactFinish) {
@@ -1099,8 +1290,37 @@ class GameEngine {
     addBonusScore(player, points, label) {
         //player.score += points; // Only add to levelScore during gameplay
         player.levelScore += points;
+        this.recordScoreBreakdown(player, label, points);
+        this.queueScoreEvent(this.getBonusScoreEventType(label), {
+            playerId: player.id,
+            points: points,
+            label: this.getBonusScoreEventLabel(label)
+        });
 
         console.log(`${player.id} gained ${points} ${label} bonus`);
+        return points;
+    }
+
+    getBonusScoreEventType(label) {
+        const eventTypes = {
+            finisher: "finisher_bonus",
+            precision: "precision_bonus",
+            team: "team_exact_bonus",
+            assist: "assist_bonus"
+        };
+
+        return eventTypes[label] || "bonus";
+    }
+
+    getBonusScoreEventLabel(label) {
+        const labels = {
+            finisher: "Finisher",
+            precision: "Precision",
+            team: "Team Exact",
+            assist: "Assist"
+        };
+
+        return labels[label] || "Bonus";
     }
 
     addLevelScoreToLeaderboard() {

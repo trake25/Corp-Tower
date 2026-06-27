@@ -84,30 +84,67 @@ function chooseSmartPlacement(engine) {
 
 function simulateSmartPlay(engine) {
     let placements = 0;
+    let finisher = null;
+    let finishingBlock = null;
 
     while (engine.room.currentHeight < engine.room.targetHeight) {
         const placement = chooseSmartPlacement(engine);
 
         if (!placement) {
+            const scoreSummary = getScoreSummary(engine);
+
             return {
                 completed: false,
                 exact: false,
                 overbuild: 0,
-                placements: placements
+                placements: placements,
+                ...scoreSummary
             };
         }
 
         const block = placement.player.blocks.splice(placement.blockIndex, 1)[0];
-        engine.room.currentHeight += engine.getBlockHeight(block);
+        const blockHeight = engine.getBlockHeight(block);
+        const previousHeight = engine.room.currentHeight;
+        const effectiveHeight = Math.max(
+            0,
+            Math.min(blockHeight, engine.room.targetHeight - previousHeight)
+        );
+
+        placement.player.contributedHeight += effectiveHeight;
+        engine.room.currentHeight += blockHeight;
+        engine.addPlacementScore(placement.player, block, effectiveHeight);
         placements += 1;
+        finisher = placement.player;
+        finishingBlock = block;
         engine.refillPlayerBlock(placement.player);
     }
 
+    const exact = engine.room.currentHeight === engine.room.targetHeight;
+
+    engine.awardCompletionBonuses(finisher, exact);
+    engine.addLevelScoreToLeaderboard();
+
+    const scoreSummary = getScoreSummary(engine);
+
     return {
         completed: true,
-        exact: engine.room.currentHeight === engine.room.targetHeight,
+        exact: exact,
         overbuild: Math.max(0, engine.room.currentHeight - engine.room.targetHeight),
-        placements: placements
+        placements: placements,
+        ...scoreSummary
+    };
+}
+
+function getScoreSummary(engine) {
+    const scores = engine.room.players.map(player => player.levelScore || 0);
+    const totalScore = scores.reduce((total, score) => total + score, 0);
+    const mvpScore = Math.max(...scores);
+    const minScore = Math.min(...scores);
+
+    return {
+        teamLevelScore: totalScore,
+        mvpLevelScore: mvpScore,
+        scoreSpread: mvpScore - minScore
     };
 }
 
@@ -121,7 +158,10 @@ function runLevel(level, runs) {
         smartCompleted: 0,
         smartExact: 0,
         averageOverbuild: 0,
-        averagePlacements: 0
+        averagePlacements: 0,
+        averageTeamLevelScore: 0,
+        averageMvpLevelScore: 0,
+        averageScoreSpread: 0
     };
 
     for (let i = 0; i < runs; i++) {
@@ -132,7 +172,7 @@ function runLevel(level, runs) {
         ];
         const drawPileAfterDeal = engine.room.drawPile.length;
         const totalHeight = engine.getTotalBlockHeight(allBlocks);
-        const result = simulateSmartPlay(engine);
+        const result = withMutedConsole(() => simulateSmartPlay(engine));
 
         stats.targetHeight = engine.room.targetHeight;
         stats.averagePileBlocks += allBlocks.length;
@@ -146,6 +186,9 @@ function runLevel(level, runs) {
         stats.smartExact += result.exact ? 1 : 0;
         stats.averageOverbuild += result.overbuild;
         stats.averagePlacements += result.placements;
+        stats.averageTeamLevelScore += result.teamLevelScore;
+        stats.averageMvpLevelScore += result.mvpLevelScore;
+        stats.averageScoreSpread += result.scoreSpread;
     }
 
     return {
@@ -158,7 +201,10 @@ function runLevel(level, runs) {
         smartCompletionRate: stats.smartCompleted / runs,
         smartExactRate: stats.smartExact / runs,
         averageOverbuild: stats.averageOverbuild / runs,
-        averagePlacements: stats.averagePlacements / runs
+        averagePlacements: stats.averagePlacements / runs,
+        averageTeamLevelScore: stats.averageTeamLevelScore / runs,
+        averageMvpLevelScore: stats.averageMvpLevelScore / runs,
+        averageScoreSpread: stats.averageScoreSpread / runs
     };
 }
 
@@ -178,7 +224,10 @@ function printResults(results) {
             "smartComplete",
             "smartExact",
             "avgOverbuild",
-            "avgPlacements"
+            "avgPlacements",
+            "avgTeamScore",
+            "avgMvpScore",
+            "avgScoreSpread"
         ].join(",")
     );
 
@@ -194,7 +243,10 @@ function printResults(results) {
                 percent(result.smartCompletionRate),
                 percent(result.smartExactRate),
                 result.averageOverbuild.toFixed(2),
-                result.averagePlacements.toFixed(1)
+                result.averagePlacements.toFixed(1),
+                result.averageTeamLevelScore.toFixed(1),
+                result.averageMvpLevelScore.toFixed(1),
+                result.averageScoreSpread.toFixed(1)
             ].join(",")
         );
     });

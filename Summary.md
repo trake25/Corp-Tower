@@ -3,7 +3,7 @@
 ## Project Purpose
 - Cloud Infrastructure based 3-player multiplayer puzzle game.
 - Players cooperate to build a shared tower while competing for MVP score.
-- Current phase: shape-block gameplay UI, game-balance recalibration, server deploy, and Android pipeline testing.
+- Current phase: shape-block gameplay UI, live balance tuning, server deploy, and Android pipeline testing.
 - Staging Client: Godot Android app
 - Production Client target:  Multiple Platforms (Android, iOS, Windows, HTML5, Linux, etc.)
 - HTML client is a legacy local logic test harness only.
@@ -79,7 +79,7 @@
 - Debug reconnect TTL is 10 seconds in staging deploy.
 - Client auto-reconnect is enabled only for real-player-only rooms; bot-filled debug rooms still require manual reconnect.
 - Bots are QA helpers, not production-grade AI.
-- Shape-block balance is not final; future tuning must recalibrate level targets, block weights, unlock levels, inventory scaling, and failure pressure.
+- Shape-block scoring has a first recalibrated score scale, explicit score UI events, level summaries, and live tuning UI; deeper target, block-weight, unlock, inventory, and failure-pressure tuning remains iterative.
 - Android is the only current client release target during staging.
 - Godot version target: `4.6.2.stable`.
 - Server runtime target for legacy/VM parity: Node `24.14.1`, npm `11.11.0`.
@@ -89,10 +89,10 @@
 - iOS, Windows, HTML5, Linux client builds: deferred, do not target.
 
 ## Current Focus (Summarized Title only)
-- Active: Shape-block gameplay UI checkpoint; balance recalibration needed
+- Active: Interactive score UI, level summaries, and tabbed debug tuning implemented
 - Previous: Docker worker staging path verified from Godot client
 - Blocked: _(none)_
-- Next: Recalibrate shape-block progression and failure pressure
+- Next: Playtest shape-block progression and failure pressure with simulator/live tuning data
 
 ## Fast Start For AI
 - Read this file first.

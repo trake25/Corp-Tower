@@ -5,11 +5,23 @@ const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 const TARGET_MARKER_COLOR := Color(1.0, 0.82, 0.25, 1.0)
+const MIN_UNIT_SIZE := 12.0
+const MAX_UNIT_SIZE := 34.0
+const TOP_PADDING := 14.0
+const BOTTOM_PADDING := 12.0
+const SCROLL_HEADROOM_UNITS := 2
 
 var tower_blocks: Array = []
 var current_height: int = 0
 var target_height: int = 0
 var player_color_map: Dictionary = {}
+
+func _ready() -> void:
+	clip_contents = true
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		queue_redraw()
 
 func set_tower(blocks: Array, new_current_height: int, new_target_height: int) -> void:
 	tower_blocks = blocks
@@ -37,7 +49,8 @@ func _draw() -> void:
 
 	var unit: float = _unit_size()
 	var base_x: float = size.x * 0.5
-	var baseline: float = size.y - 12.0
+	var baseline: float = size.y - BOTTOM_PADDING
+	var scroll_offset_units: int = _scroll_offset_units(unit)
 	var tower_units: int = max(target_height, current_height, 1)
 
 	for i in range(tower_blocks.size()):
@@ -52,8 +65,12 @@ func _draw() -> void:
 			var cell_y: int = _cell_y(cell)
 			var x: float = base_x + float(cell_x) * unit - unit * 0.5
 			var y_units: int = base_height + int(block.get("height", 0)) - cell_y - 1
-			var y: float = baseline - float(y_units + 1) * unit
+			var y: float = baseline - float(y_units + 1 - scroll_offset_units) * unit
 			var rect: Rect2 = Rect2(Vector2(x, y), Vector2(unit - 2.0, unit - 2.0))
+
+			if !_is_rect_visible(rect):
+				continue
+
 			draw_rect(rect, color, true)
 			draw_rect(rect.grow(-3.0), Color(color.r, color.g, color.b, 0.36), true)
 			draw_rect(rect, GRID_COLOR, false, 1.5)
@@ -68,20 +85,30 @@ func _draw_fallback_stack() -> void:
 	var unit: float = _unit_size()
 	var width: float = clamp(size.x * 0.24, unit * 1.5, unit * 3.5)
 	var x: float = (size.x - width) * 0.5
-	var baseline: float = size.y - 12.0
+	var baseline: float = size.y - BOTTOM_PADDING
+	var scroll_offset_units: int = _scroll_offset_units(unit)
 
 	for y in range(current_height):
 		var rect: Rect2 = Rect2(
-			Vector2(x, baseline - float(y + 1) * unit),
+			Vector2(x, baseline - float(y + 1 - scroll_offset_units) * unit),
 			Vector2(width, unit - 2.0)
 		)
+
+		if !_is_rect_visible(rect):
+			continue
+
 		draw_rect(rect, FALLBACK_COLOR, true)
 		draw_rect(rect, GRID_COLOR, false, 1.0)
 
 func _draw_target_marker() -> void:
 	var unit: float = _unit_size()
-	var baseline: float = size.y - 12.0
-	var marker_y: float = baseline - float(target_height) * unit
+	var baseline: float = size.y - BOTTOM_PADDING
+	var scroll_offset_units: int = _scroll_offset_units(unit)
+	var marker_y: float = baseline - float(target_height - scroll_offset_units) * unit
+
+	if marker_y < 0.0 or marker_y > size.y:
+		return
+
 	draw_line(
 		Vector2(size.x * 0.12, marker_y),
 		Vector2(size.x * 0.88, marker_y),
@@ -91,7 +118,34 @@ func _draw_target_marker() -> void:
 
 func _unit_size() -> float:
 	var tower_units: int = max(target_height, current_height, 1)
-	return clamp((size.y - 28.0) / float(tower_units), 12.0, 34.0)
+	var available_height: float = max(1.0, size.y - TOP_PADDING - BOTTOM_PADDING)
+	var fit_unit: float = available_height / float(tower_units)
+
+	if fit_unit >= MIN_UNIT_SIZE:
+		return min(fit_unit, MAX_UNIT_SIZE)
+
+	return MIN_UNIT_SIZE
+
+func _scroll_offset_units(unit: float) -> int:
+	var visible_units: int = _visible_unit_capacity(unit)
+	var focus_height: int = max(current_height, 1)
+
+	if focus_height <= visible_units:
+		return 0
+
+	return focus_height - visible_units + SCROLL_HEADROOM_UNITS
+
+func _visible_unit_capacity(unit: float) -> int:
+	var available_height: float = max(1.0, size.y - TOP_PADDING - BOTTOM_PADDING)
+	return max(1, int(floor(available_height / unit)))
+
+func _is_rect_visible(rect: Rect2) -> bool:
+	return (
+		rect.position.y + rect.size.y >= 0.0 &&
+		rect.position.y <= size.y &&
+		rect.position.x + rect.size.x >= 0.0 &&
+		rect.position.x <= size.x
+	)
 
 func _normalize_block_entry(entry: Dictionary) -> Dictionary:
 	var block: Variant = entry.get("block", {})

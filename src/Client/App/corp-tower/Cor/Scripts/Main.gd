@@ -4,6 +4,9 @@ const MAX_INVENTORY_SLOTS := 3
 const DEFAULT_UI_SKIN := "DefaultSkin"
 const SHOW_DEBUG_UI := true
 const DRAW_PILE_COLOR := Color(0.95, 0.72, 0.25, 1.0)
+const SCORE_POPUP_DURATION := 2.0
+const SCORE_POPUP_FLOAT_DISTANCE := 64.0
+const LEVEL_SUMMARY_DEFAULT_DELAY_MS := 3000
 const BOT_STRATEGY_COOPERATIVE := "cooperative"
 const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
@@ -28,6 +31,12 @@ var last_game_state_data: Variant = null
 var last_status_text: String = "Disconnected"
 var is_switching_skin: bool = false
 var player_color_map: Dictionary = {}
+var player_order: Array[String] = []
+var seen_score_event_ids: Dictionary = {}
+var current_level: int = 0
+var level_summary_delay_ms: int = LEVEL_SUMMARY_DEFAULT_DELAY_MS
+var last_level_summary_key: String = ""
+var summary_hide_timer: Timer
 var active_inventory_slots: int = MAX_INVENTORY_SLOTS
 
 var status_label: Label
@@ -49,6 +58,13 @@ var connect_button: Button
 var refresh_button: Button
 var refresh_token_label: Label
 var refresh_uses_label: Label
+var level_summary_overlay: Control
+var level_summary_title_label: Label
+var level_summary_result_label: Label
+var level_summary_team_label: Label
+var level_summary_mvp_label: Label
+var level_summary_players_box: VBoxContainer
+var score_popup_layer: Control
 var debug_button: Button
 var debug_overlay: Control
 var debug_dim_layer: Control
@@ -73,10 +89,45 @@ var level_time_label: Label
 var level_time_slider: HSlider
 var start_delay_label: Label
 var start_delay_slider: HSlider
+var level_summary_delay_label: Label
+var level_summary_delay_slider: HSlider
 var target_multiplier_label: Label
 var target_multiplier_slider: HSlider
+var level_supply_min_label: Label
+var level_supply_min_slider: HSlider
+var level_supply_max_label: Label
+var level_supply_max_slider: HSlider
+var min_precision_blocks_label: Label
+var min_precision_blocks_slider: HSlider
+var max_team_carry_over_label: Label
+var max_team_carry_over_slider: HSlider
+var max_refresh_tokens_label: Label
+var max_refresh_tokens_slider: HSlider
+var max_refresh_uses_label: Label
+var max_refresh_uses_slider: HSlider
+var refresh_lockout_label: Label
+var refresh_lockout_slider: HSlider
+var refresh_min_useful_height_label: Label
+var refresh_min_useful_height_slider: HSlider
+var placement_score_label: Label
+var placement_score_slider: HSlider
+var finisher_bonus_label: Label
+var finisher_bonus_slider: HSlider
+var precision_bonus_label: Label
+var precision_bonus_slider: HSlider
+var team_exact_bonus_label: Label
+var team_exact_bonus_slider: HSlider
+var assist_bonus_label: Label
+var assist_bonus_slider: HSlider
+var assist_threshold_label: Label
+var assist_threshold_slider: HSlider
 
 func _ready() -> void:
+	summary_hide_timer = Timer.new()
+	summary_hide_timer.one_shot = true
+	summary_hide_timer.timeout.connect(hide_level_summary)
+	add_child(summary_hide_timer)
+
 	load_selected_skin()
 	if active_skin == null:
 		return
@@ -165,6 +216,13 @@ func bind_skin_nodes() -> void:
 	refresh_button = require_node("RefreshButton") as Button
 	refresh_token_label = require_node("RefreshTokenLabel") as Label
 	refresh_uses_label = require_node("RefreshUsesLabel") as Label
+	level_summary_overlay = require_node("LevelSummaryOverlay") as Control
+	level_summary_title_label = require_node("LevelSummaryTitleLabel") as Label
+	level_summary_result_label = require_node("LevelSummaryResultLabel") as Label
+	level_summary_team_label = require_node("LevelSummaryTeamLabel") as Label
+	level_summary_mvp_label = require_node("LevelSummaryMvpLabel") as Label
+	level_summary_players_box = require_node("LevelSummaryPlayersBox") as VBoxContainer
+	score_popup_layer = require_node("ScorePopupLayer") as Control
 
 	inventory_buttons = [
 		require_node("PlaceBlockButton1") as Button,
@@ -211,8 +269,38 @@ func bind_skin_nodes() -> void:
 	level_time_slider = optional_node("LevelTimeSlider") as HSlider
 	start_delay_label = optional_node("StartDelayLabel") as Label
 	start_delay_slider = optional_node("StartDelaySlider") as HSlider
+	level_summary_delay_label = optional_node("LevelSummaryDelayLabel") as Label
+	level_summary_delay_slider = optional_node("LevelSummaryDelaySlider") as HSlider
 	target_multiplier_label = optional_node("TargetMultiplierLabel") as Label
 	target_multiplier_slider = optional_node("TargetMultiplierSlider") as HSlider
+	level_supply_min_label = optional_node("LevelSupplyMinLabel") as Label
+	level_supply_min_slider = optional_node("LevelSupplyMinSlider") as HSlider
+	level_supply_max_label = optional_node("LevelSupplyMaxLabel") as Label
+	level_supply_max_slider = optional_node("LevelSupplyMaxSlider") as HSlider
+	min_precision_blocks_label = optional_node("MinPrecisionBlocksLabel") as Label
+	min_precision_blocks_slider = optional_node("MinPrecisionBlocksSlider") as HSlider
+	max_team_carry_over_label = optional_node("MaxTeamCarryOverLabel") as Label
+	max_team_carry_over_slider = optional_node("MaxTeamCarryOverSlider") as HSlider
+	max_refresh_tokens_label = optional_node("MaxRefreshTokensLabel") as Label
+	max_refresh_tokens_slider = optional_node("MaxRefreshTokensSlider") as HSlider
+	max_refresh_uses_label = optional_node("MaxRefreshUsesLabel") as Label
+	max_refresh_uses_slider = optional_node("MaxRefreshUsesSlider") as HSlider
+	refresh_lockout_label = optional_node("RefreshLockoutLabel") as Label
+	refresh_lockout_slider = optional_node("RefreshLockoutSlider") as HSlider
+	refresh_min_useful_height_label = optional_node("RefreshMinUsefulHeightLabel") as Label
+	refresh_min_useful_height_slider = optional_node("RefreshMinUsefulHeightSlider") as HSlider
+	placement_score_label = optional_node("PlacementScoreLabel") as Label
+	placement_score_slider = optional_node("PlacementScoreSlider") as HSlider
+	finisher_bonus_label = optional_node("FinisherBonusLabel") as Label
+	finisher_bonus_slider = optional_node("FinisherBonusSlider") as HSlider
+	precision_bonus_label = optional_node("PrecisionBonusLabel") as Label
+	precision_bonus_slider = optional_node("PrecisionBonusSlider") as HSlider
+	team_exact_bonus_label = optional_node("TeamExactBonusLabel") as Label
+	team_exact_bonus_slider = optional_node("TeamExactBonusSlider") as HSlider
+	assist_bonus_label = optional_node("AssistBonusLabel") as Label
+	assist_bonus_slider = optional_node("AssistBonusSlider") as HSlider
+	assist_threshold_label = optional_node("AssistThresholdLabel") as Label
+	assist_threshold_slider = optional_node("AssistThresholdSlider") as HSlider
 
 func require_node(node_name: String) -> Node:
 	var node: Node = optional_node(node_name)
@@ -272,7 +360,22 @@ func setup_debug_controls() -> void:
 	configure_slider(cooldown_slider, 0, 5000, 250, on_cooldown_changed)
 	configure_slider(level_time_slider, 5000, 120000, 1000, on_level_time_changed)
 	configure_slider(start_delay_slider, 0, 10000, 500, on_start_delay_changed)
+	configure_slider(level_summary_delay_slider, 1000, 10000, 500, on_level_summary_delay_changed)
 	configure_slider(target_multiplier_slider, 1, 20, 1, on_target_multiplier_changed)
+	configure_slider(level_supply_min_slider, 0, 20, 1, on_level_supply_min_changed)
+	configure_slider(level_supply_max_slider, 0, 30, 1, on_level_supply_max_changed)
+	configure_slider(min_precision_blocks_slider, 0, 9, 1, on_min_precision_blocks_changed)
+	configure_slider(max_team_carry_over_slider, 0, 12, 1, on_max_team_carry_over_changed)
+	configure_slider(max_refresh_tokens_slider, 0, 5, 1, on_max_refresh_tokens_changed)
+	configure_slider(max_refresh_uses_slider, 0, 5, 1, on_max_refresh_uses_changed)
+	configure_slider(refresh_lockout_slider, 0, 60000, 1000, on_refresh_lockout_changed)
+	configure_slider(refresh_min_useful_height_slider, 1, 6, 1, on_refresh_min_useful_height_changed)
+	configure_slider(placement_score_slider, 1, 25, 1, on_placement_score_changed)
+	configure_slider(finisher_bonus_slider, 0, 25, 1, on_finisher_bonus_changed)
+	configure_slider(precision_bonus_slider, 0, 25, 1, on_precision_bonus_changed)
+	configure_slider(team_exact_bonus_slider, 0, 25, 1, on_team_exact_bonus_changed)
+	configure_slider(assist_bonus_slider, 0, 25, 1, on_assist_bonus_changed)
+	configure_slider(assist_threshold_slider, 0, 100, 5, on_assist_threshold_changed)
 	update_debug_labels()
 
 func setup_skin_controls() -> void:
@@ -306,6 +409,20 @@ func configure_slider(slider: HSlider, min_value: float, max_value: float, step:
 	slider.step = step
 	slider.value_changed.connect(callback)
 
+func set_slider_no_signal(slider: HSlider, value: float) -> void:
+	if slider != null:
+		slider.set_value_no_signal(value)
+
+func get_slider_value(slider: HSlider, fallback: float = 0.0) -> float:
+	if slider == null:
+		return fallback
+
+	return slider.value
+
+func set_debug_label_text(label: Label, text: String) -> void:
+	if label != null:
+		label.text = text
+
 func reset_ui() -> void:
 	connect_button.text = "Connect"
 	refresh_button.text = "Refresh"
@@ -326,6 +443,13 @@ func reset_ui() -> void:
 	update_inventory_ui([], MAX_INVENTORY_SLOTS)
 	update_draw_pile_ui(0, null)
 	refresh_button.disabled = true
+	clear_score_popups()
+	hide_level_summary()
+
+	if !is_switching_skin:
+		seen_score_event_ids.clear()
+		last_level_summary_key = ""
+		current_level = 0
 
 func connect_network_signals() -> void:
 	NetworkManager.status_changed.connect(update_status)
@@ -449,6 +573,11 @@ func update_room(data) -> void:
 	player_label.text = LOCAL_PLAYER_MARKER + " " + str(data.playerId)
 	room_label.text = "Room " + str(int(data.roomId))
 	level_label.text = "Level " + str(int(data.level))
+	current_level = int(data.get("level", 0))
+	seen_score_event_ids.clear()
+	last_level_summary_key = ""
+	clear_score_popups()
+	hide_level_summary()
 	timer_label.text = "Time -"
 	tower_status_label.text = "Match starting"
 	set_tower_progress(0, int(data.get("targetHeight", 0)))
@@ -481,6 +610,11 @@ func update_room_closed(data) -> void:
 	update_inventory_ui([], MAX_INVENTORY_SLOTS)
 	update_draw_pile_ui(0, null)
 	set_debug_overlay_open(false)
+	clear_score_popups()
+	hide_level_summary()
+	seen_score_event_ids.clear()
+	last_level_summary_key = ""
+	current_level = 0
 
 func update_game_state(data) -> void:
 	if !is_switching_skin:
@@ -490,13 +624,23 @@ func update_game_state(data) -> void:
 	var seconds_remaining: int = int(data.get("secondsRemaining", 0))
 	var current_height: int = int(data.get("currentHeight", 0))
 	var target_height: int = int(data.get("targetHeight", 0))
+	var incoming_level: int = int(data.get("level", 0))
 	var players: Array = data.get("players", [])
+	level_summary_delay_ms = int(data.get("levelSummaryDelayMs", level_summary_delay_ms))
+
+	if incoming_level != current_level:
+		current_level = incoming_level
+		seen_score_event_ids.clear()
+		last_level_summary_key = ""
+		clear_score_popups()
+		if state != "finished" and state != "failed":
+			hide_level_summary()
 
 	update_player_color_map(players)
 	if tower_stack.has_method("set_player_color_map"):
 		tower_stack.call("set_player_color_map", player_color_map)
 
-	level_label.text = "Level " + str(int(data.get("level", 0))) + " - " + state.capitalize()
+	level_label.text = "Level " + str(incoming_level) + " - " + state.capitalize()
 	timer_label.text = "Time " + str(seconds_remaining) + "s"
 	height_label.text = "Height " + str(current_height) + "/" + str(target_height)
 	tower_value_label.text = str(current_height) + " / " + str(target_height)
@@ -551,6 +695,13 @@ func update_game_state(data) -> void:
 		my_blocks,
 		int(data.get("activeInventorySlots", MAX_INVENTORY_SLOTS))
 	)
+
+	process_score_events(data.get("scoreEvents", []), players)
+
+	if state == "finished" or state == "failed":
+		show_level_summary(data.get("lastLevelSummary", {}), state)
+	else:
+		hide_level_summary()
 
 func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS) -> void:
 	var clean_blocks: Array = []
@@ -623,14 +774,17 @@ func get_local_player_color() -> Color:
 
 func update_player_color_map(players: Array) -> void:
 	var updated_map: Dictionary = {}
+	var updated_order: Array[String] = []
 
 	for i in range(players.size()):
 		var player: Dictionary = players[i]
 		var player_id: String = str(player.get("id", ""))
 		if player_id != "":
 			updated_map[player_id] = PlayerColors.color_for_player_index(i)
+			updated_order.append(player_id)
 
 	player_color_map = updated_map
+	player_order = updated_order
 
 func normalize_block(raw_block, index: int) -> Dictionary:
 	if typeof(raw_block) == TYPE_DICTIONARY:
@@ -708,6 +862,407 @@ func get_tower_status(state: String, current_height: int, target_height: int) ->
 	var remaining: int = max(0, target_height - current_height)
 	return str(remaining) + " height to target"
 
+func process_score_events(raw_events: Variant, players: Array) -> void:
+	if score_popup_layer == null or typeof(raw_events) != TYPE_ARRAY:
+		return
+
+	for event_value in raw_events:
+		if typeof(event_value) != TYPE_DICTIONARY:
+			continue
+
+		var event: Dictionary = event_value
+		var event_id: String = str(event.get("id", ""))
+
+		if event_id == "":
+			event_id = str(event.get("level", current_level)) + ":" + str(event.get("type", "")) + ":" + str(seen_score_event_ids.size())
+
+		if seen_score_event_ids.has(event_id):
+			continue
+
+		seen_score_event_ids[event_id] = true
+		show_score_event_popup(event, players)
+
+func show_score_event_popup(event: Dictionary, players: Array) -> void:
+	if score_popup_layer == null:
+		return
+
+	var event_type: String = str(event.get("type", ""))
+	var text: String = get_score_event_text(event, players)
+
+	if text == "":
+		return
+
+	var text_color: Color = get_score_event_color(event)
+	var is_emphasis: bool = is_emphasis_score_event(event_type)
+	var popup_size: Vector2 = get_score_popup_size(event_type)
+	var popup: PanelContainer = PanelContainer.new()
+
+	popup.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	popup.z_index = 20
+	popup.custom_minimum_size = popup_size
+	popup.size = popup_size
+	popup.pivot_offset = popup_size * 0.5
+	popup.modulate.a = 0.0
+	popup.scale = Vector2(0.82, 0.82) if is_emphasis else Vector2(0.92, 0.92)
+	popup.add_theme_stylebox_override("panel", make_score_popup_style(text_color, is_emphasis))
+
+	var margin: MarginContainer = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_top", 6)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_bottom", 6)
+
+	var label: Label = Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	label.add_theme_color_override("font_color", text_color)
+	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.72))
+	label.add_theme_constant_override("outline_size", 4)
+	label.add_theme_font_size_override("font_size", get_score_popup_font_size(event_type))
+
+	margin.add_child(label)
+	popup.add_child(margin)
+	score_popup_layer.add_child(popup)
+
+	var start_position: Vector2 = get_score_popup_position(event)
+	popup.position = start_position - popup_size * 0.5
+
+	var tween: Tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(popup, "modulate:a", 1.0, 0.12)
+	tween.tween_property(popup, "scale", Vector2(1.08, 1.08) if is_emphasis else Vector2.ONE, 0.16)
+	tween.set_parallel(false)
+	tween.tween_interval(max(0.1, SCORE_POPUP_DURATION - 0.72))
+	tween.set_parallel(true)
+	tween.tween_property(popup, "modulate:a", 0.0, 0.6)
+	tween.tween_property(popup, "position:y", popup.position.y - SCORE_POPUP_FLOAT_DISTANCE, 0.6)
+	tween.tween_property(popup, "scale", Vector2.ONE, 0.6)
+	tween.set_parallel(false)
+	tween.tween_callback(Callable(popup, "queue_free"))
+
+func clear_score_popups() -> void:
+	if score_popup_layer == null:
+		return
+
+	for child in score_popup_layer.get_children():
+		child.queue_free()
+
+func get_score_event_text(event: Dictionary, players: Array) -> String:
+	var event_type: String = str(event.get("type", ""))
+	var points: int = int(event.get("points", 0))
+	var player_id: String = str(event.get("playerId", ""))
+
+	match event_type:
+		"placement":
+			return "+" + str(points)
+		"finisher_bonus":
+			return "FINISH +" + str(points)
+		"precision_bonus":
+			return "PRECISION +" + str(points)
+		"team_exact_bonus":
+			return "TEAM +" + str(points)
+		"assist_bonus":
+			return "ASSIST +" + str(points)
+		"exact_finish":
+			return "PERFECT FIT"
+		"overbuild_finish":
+			return "TARGET REACHED +" + str(get_event_overbuild_height(event))
+		"mvp":
+			return "MVP " + get_player_display_name(player_id, players) + " +" + str(points)
+		"team_total":
+			return "TEAM +" + str(points)
+
+	return str(event.get("label", "")).strip_edges()
+
+func get_event_overbuild_height(event: Dictionary) -> int:
+	var meta: Variant = event.get("meta", {})
+
+	if typeof(meta) == TYPE_DICTIONARY:
+		return int(meta.get("overbuildHeight", event.get("points", 0)))
+
+	return int(event.get("points", 0))
+
+func get_score_event_color(event: Dictionary) -> Color:
+	var event_type: String = str(event.get("type", ""))
+	var player_id: String = str(event.get("playerId", ""))
+
+	if player_id != "" and player_color_map.has(player_id):
+		return player_color_map[player_id]
+
+	if event_type == "exact_finish":
+		return Color(1.0, 0.84, 0.26, 1.0)
+
+	if event_type == "team_total" or event_type == "team_exact_bonus":
+		return Color(0.42, 0.84, 1.0, 1.0)
+
+	return Color(1.0, 1.0, 1.0, 1.0)
+
+func is_emphasis_score_event(event_type: String) -> bool:
+	return event_type == "exact_finish" or event_type == "mvp" or event_type == "team_total"
+
+func get_score_popup_size(event_type: String) -> Vector2:
+	if event_type == "exact_finish":
+		return Vector2(240, 54)
+
+	if event_type == "mvp" or event_type == "team_total" or event_type == "overbuild_finish":
+		return Vector2(220, 48)
+
+	return Vector2(128, 38)
+
+func get_score_popup_font_size(event_type: String) -> int:
+	if event_type == "exact_finish":
+		return 24
+
+	if event_type == "mvp" or event_type == "team_total" or event_type == "overbuild_finish":
+		return 20
+
+	return 16
+
+func make_score_popup_style(accent_color: Color, is_emphasis: bool) -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(0.03, 0.035, 0.045, 0.88 if is_emphasis else 0.78)
+	style.border_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.95)
+	style.border_width_left = 2 if is_emphasis else 1
+	style.border_width_top = 2 if is_emphasis else 1
+	style.border_width_right = 2 if is_emphasis else 1
+	style.border_width_bottom = 2 if is_emphasis else 1
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	return style
+
+func get_score_popup_position(event: Dictionary) -> Vector2:
+	var layer_size: Vector2 = score_popup_layer.size if score_popup_layer != null else get_viewport_rect().size
+
+	if layer_size.x <= 0.0 or layer_size.y <= 0.0:
+		layer_size = get_viewport_rect().size
+
+	var event_type: String = str(event.get("type", ""))
+
+	if event_type == "mvp":
+		return Vector2(layer_size.x * 0.5, layer_size.y * 0.25)
+
+	if event_type == "team_total":
+		return Vector2(layer_size.x * 0.5, layer_size.y * 0.32)
+
+	if event_type == "exact_finish" or event_type == "overbuild_finish":
+		return Vector2(layer_size.x * 0.5, layer_size.y * 0.4)
+
+	var player_id: String = str(event.get("playerId", ""))
+	var lane_count: int = max(1, player_order.size())
+	var lane_index: int = player_order.find(player_id)
+
+	if lane_index < 0:
+		lane_index = 0
+
+	var x: float = layer_size.x * 0.5
+
+	if lane_count > 1:
+		x = lerpf(layer_size.x * 0.22, layer_size.x * 0.78, float(lane_index) / float(lane_count - 1))
+
+	var y_offsets: Dictionary = {
+		"placement": 0.58,
+		"finisher_bonus": 0.5,
+		"precision_bonus": 0.44,
+		"team_exact_bonus": 0.38,
+		"assist_bonus": 0.52
+	}
+	var y_ratio: float = float(y_offsets.get(event_type, 0.52))
+
+	return Vector2(x, layer_size.y * y_ratio)
+
+func show_level_summary(summary_value: Variant, state: String) -> void:
+	if level_summary_overlay == null or typeof(summary_value) != TYPE_DICTIONARY:
+		return
+
+	var summary: Dictionary = summary_value
+
+	if summary.is_empty():
+		return
+
+	var summary_key: String = get_level_summary_key(summary)
+
+	if summary_key == last_level_summary_key and level_summary_overlay.visible:
+		return
+
+	last_level_summary_key = summary_key
+	level_summary_overlay.visible = true
+	level_summary_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	level_summary_overlay.modulate.a = 0.0
+
+	var result: String = str(summary.get("result", state))
+	var level_number: int = int(summary.get("level", current_level))
+	level_summary_title_label.text = "Level " + str(level_number) + (" Complete" if result == "completed" else " Failed")
+	level_summary_result_label.text = get_level_summary_result_text(summary, result)
+	level_summary_team_label.text = get_level_summary_team_text(summary, result)
+	level_summary_mvp_label.text = get_level_summary_mvp_text(summary)
+
+	clear_children(level_summary_players_box)
+
+	var players: Array = []
+	for player_value in summary.get("players", []):
+		if typeof(player_value) == TYPE_DICTIONARY:
+			players.append(player_value)
+
+	players.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a.get("levelScore", 0)) > int(b.get("levelScore", 0))
+	)
+
+	for player_summary in players:
+		level_summary_players_box.add_child(create_level_summary_player_row(player_summary, result))
+
+	var tween: Tween = create_tween()
+	tween.tween_property(level_summary_overlay, "modulate:a", 1.0, 0.16)
+
+	if summary_hide_timer != null:
+		summary_hide_timer.stop()
+		summary_hide_timer.wait_time = clamp(float(level_summary_delay_ms) / 1000.0, 1.0, 10.0)
+		summary_hide_timer.start()
+
+func hide_level_summary() -> void:
+	if summary_hide_timer != null:
+		summary_hide_timer.stop()
+
+	if level_summary_overlay != null:
+		level_summary_overlay.visible = false
+		level_summary_overlay.modulate.a = 1.0
+
+func get_level_summary_key(summary: Dictionary) -> String:
+	return (
+		str(summary.get("level", current_level)) + ":" +
+		str(summary.get("result", "")) + ":" +
+		str(summary.get("teamLevelScore", 0)) + ":" +
+		str(summary.get("mvpId", "")) + ":" +
+		str(summary.get("exactFinish", false)) + ":" +
+		str(summary.get("overbuildHeight", 0))
+	)
+
+func get_level_summary_result_text(summary: Dictionary, result: String) -> String:
+	if result == "completed":
+		var result_text: String = "Perfect Fit" if bool(summary.get("exactFinish", false)) else "Overbuilt +" + str(int(summary.get("overbuildHeight", 0)))
+		var finisher_id: String = str(summary.get("finisherId", ""))
+
+		if finisher_id != "":
+			result_text += " | Finisher " + get_player_display_name(finisher_id, [])
+
+		return result_text
+
+	return "Reason: " + format_summary_reason(str(summary.get("reason", "failed")))
+
+func get_level_summary_team_text(summary: Dictionary, result: String) -> String:
+	var team_score: int = int(summary.get("teamLevelScore", 0))
+
+	if result == "completed":
+		return "Team +" + str(team_score)
+
+	return "Team level " + str(team_score) + " (not banked)"
+
+func get_level_summary_mvp_text(summary: Dictionary) -> String:
+	var mvp_id: String = str(summary.get("mvpId", ""))
+
+	if mvp_id == "":
+		return "MVP -"
+
+	return "MVP " + get_player_display_name(mvp_id, []) + " +" + str(int(summary.get("mvpScore", 0)))
+
+func create_level_summary_player_row(player_summary: Dictionary, result: String) -> Control:
+	var player_id: String = str(player_summary.get("id", ""))
+	var is_mvp: bool = bool(player_summary.get("isMvp", false))
+	var player_color: Color = get_player_color(player_id)
+	var row_panel: PanelContainer = PanelContainer.new()
+
+	row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row_panel.add_theme_stylebox_override("panel", make_summary_row_style(player_color, is_mvp))
+
+	var margin: MarginContainer = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 8)
+	margin.add_theme_constant_override("margin_top", 4)
+	margin.add_theme_constant_override("margin_right", 8)
+	margin.add_theme_constant_override("margin_bottom", 4)
+
+	var row: HBoxContainer = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+
+	var name_label: Label = Label.new()
+	name_label.text = ("MVP " if is_mvp else "") + get_player_display_name(player_id, [])
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.add_theme_color_override("font_color", player_color if is_mvp else Color(0.92, 0.94, 0.98, 1.0))
+	name_label.add_theme_font_size_override("font_size", 13)
+
+	var score_label_node: Label = Label.new()
+	score_label_node.text = ("Level +" if result == "completed" else "Level ") + str(int(player_summary.get("levelScore", 0)))
+	score_label_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	score_label_node.custom_minimum_size.x = 86
+	score_label_node.add_theme_color_override("font_color", Color(0.92, 0.94, 0.98, 1.0))
+	score_label_node.add_theme_font_size_override("font_size", 13)
+
+	var total_label_node: Label = Label.new()
+	total_label_node.text = "Total " + str(int(player_summary.get("finalTotalScore", 0)))
+	total_label_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	total_label_node.custom_minimum_size.x = 76
+	total_label_node.add_theme_color_override("font_color", Color(0.72, 0.77, 0.86, 1.0))
+	total_label_node.add_theme_font_size_override("font_size", 13)
+
+	row.add_child(name_label)
+	row.add_child(score_label_node)
+	row.add_child(total_label_node)
+	margin.add_child(row)
+	row_panel.add_child(margin)
+
+	return row_panel
+
+func make_summary_row_style(player_color: Color, is_mvp: bool) -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = (
+		Color(player_color.r, player_color.g, player_color.b, 0.18)
+		if is_mvp
+		else Color(0.08, 0.1, 0.13, 0.72)
+	)
+	style.border_color = (
+		Color(player_color.r, player_color.g, player_color.b, 0.72)
+		if is_mvp
+		else Color(0.22, 0.25, 0.31, 0.72)
+	)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	return style
+
+func clear_children(container: Node) -> void:
+	if container == null:
+		return
+
+	for child in container.get_children():
+		child.queue_free()
+
+func get_player_display_name(player_id: String, _players: Array) -> String:
+	if player_id == "":
+		return "-"
+
+	if player_id == str(NetworkManager.player_id):
+		return LOCAL_PLAYER_MARKER
+
+	return player_id
+
+func get_player_color(player_id: String) -> Color:
+	if player_color_map.has(player_id):
+		return player_color_map[player_id]
+
+	return PlayerColors.color_for_player_id(player_id)
+
+func format_summary_reason(reason: String) -> String:
+	return reason.replace("_", " ").capitalize()
+
 func on_bots_toggle(enabled: bool) -> void:
 	if is_syncing_debug_config:
 		return
@@ -759,11 +1314,68 @@ func on_start_delay_changed(value: float) -> void:
 	update_debug_labels()
 	NetworkManager.update_config("startDelayMs", int(value))
 
+func on_level_summary_delay_changed(value: float) -> void:
+	send_debug_int("levelSummaryDelayMs", value)
+
 func on_target_multiplier_changed(value: float) -> void:
 	if is_syncing_debug_config:
 		return
 	update_debug_labels()
 	NetworkManager.update_config("targetHeightMultiplier", int(value))
+
+func send_debug_int(key: String, value: float) -> void:
+	if is_syncing_debug_config:
+		return
+	update_debug_labels()
+	NetworkManager.update_config(key, int(value))
+
+func send_debug_float(key: String, value: float) -> void:
+	if is_syncing_debug_config:
+		return
+	update_debug_labels()
+	NetworkManager.update_config(key, value)
+
+func on_level_supply_min_changed(value: float) -> void:
+	send_debug_int("levelSupplyMinSurplus", value)
+
+func on_level_supply_max_changed(value: float) -> void:
+	send_debug_int("levelSupplyMaxSurplus", value)
+
+func on_min_precision_blocks_changed(value: float) -> void:
+	send_debug_int("minPrecisionBlocksPerLevel", value)
+
+func on_max_team_carry_over_changed(value: float) -> void:
+	send_debug_int("maxTeamCarryOverBlocks", value)
+
+func on_max_refresh_tokens_changed(value: float) -> void:
+	send_debug_int("maxRefreshTokens", value)
+
+func on_max_refresh_uses_changed(value: float) -> void:
+	send_debug_int("maxRefreshUsesPerLevel", value)
+
+func on_refresh_lockout_changed(value: float) -> void:
+	send_debug_int("refreshLockoutMs", value)
+
+func on_refresh_min_useful_height_changed(value: float) -> void:
+	send_debug_int("refreshMinUsefulBlockHeight", value)
+
+func on_placement_score_changed(value: float) -> void:
+	send_debug_int("placementScorePerHeight", value)
+
+func on_finisher_bonus_changed(value: float) -> void:
+	send_debug_int("finisherBonusPerLevel", value)
+
+func on_precision_bonus_changed(value: float) -> void:
+	send_debug_int("precisionBonusPerLevel", value)
+
+func on_team_exact_bonus_changed(value: float) -> void:
+	send_debug_int("teamExactBonusPerLevel", value)
+
+func on_assist_bonus_changed(value: float) -> void:
+	send_debug_int("assistBonusPerLevel", value)
+
+func on_assist_threshold_changed(value: float) -> void:
+	send_debug_float("assistContributionThreshold", value / 100.0)
 
 func update_debug_config(config) -> void:
 	if bots_toggle == null:
@@ -775,24 +1387,118 @@ func update_debug_config(config) -> void:
 		var strategy: String = str(config.get("debugBotStrategy", BOT_STRATEGY_COOPERATIVE))
 		var selected_strategy_index: int = 1 if strategy == BOT_STRATEGY_MVP_GREEDY else 0
 		bot_strategy_button.select(selected_strategy_index)
-	bot_count_slider.set_value_no_signal(float(config.get("debugBotCount", 0)))
-	bot_delay_min_slider.set_value_no_signal(float(config.get("debugBotDelayMin", 2000)))
-	bot_delay_max_slider.set_value_no_signal(float(config.get("debugBotDelayMax", 5000)))
-	cooldown_slider.set_value_no_signal(float(config.get("placementCooldown", 3000)))
-	level_time_slider.set_value_no_signal(float(config.get("levelTimeLimitMs", 30000)))
-	start_delay_slider.set_value_no_signal(float(config.get("startDelayMs", 3000)))
-	target_multiplier_slider.set_value_no_signal(float(config.get("targetHeightMultiplier", 3)))
+	set_slider_no_signal(bot_count_slider, float(config.get("debugBotCount", 0)))
+	set_slider_no_signal(bot_delay_min_slider, float(config.get("debugBotDelayMin", 2000)))
+	set_slider_no_signal(bot_delay_max_slider, float(config.get("debugBotDelayMax", 5000)))
+	set_slider_no_signal(cooldown_slider, float(config.get("placementCooldown", 2000)))
+	set_slider_no_signal(level_time_slider, float(config.get("levelTimeLimitMs", 30000)))
+	set_slider_no_signal(start_delay_slider, float(config.get("startDelayMs", 1500)))
+	level_summary_delay_ms = int(config.get("levelSummaryDelayMs", LEVEL_SUMMARY_DEFAULT_DELAY_MS))
+	set_slider_no_signal(level_summary_delay_slider, float(config.get("levelSummaryDelayMs", LEVEL_SUMMARY_DEFAULT_DELAY_MS)))
+	set_slider_no_signal(target_multiplier_slider, float(config.get("targetHeightMultiplier", 3)))
+	set_slider_no_signal(level_supply_min_slider, float(config.get("levelSupplyMinSurplus", 0)))
+	set_slider_no_signal(level_supply_max_slider, float(config.get("levelSupplyMaxSurplus", 6)))
+	set_slider_no_signal(min_precision_blocks_slider, float(config.get("minPrecisionBlocksPerLevel", 2)))
+	set_slider_no_signal(max_team_carry_over_slider, float(config.get("maxTeamCarryOverBlocks", 3)))
+	set_slider_no_signal(max_refresh_tokens_slider, float(config.get("maxRefreshTokens", 1)))
+	set_slider_no_signal(max_refresh_uses_slider, float(config.get("maxRefreshUsesPerLevel", 2)))
+	set_slider_no_signal(refresh_lockout_slider, float(config.get("refreshLockoutMs", 10000)))
+	set_slider_no_signal(refresh_min_useful_height_slider, float(config.get("refreshMinUsefulBlockHeight", 2)))
+	set_slider_no_signal(placement_score_slider, float(config.get("placementScorePerHeight", 10)))
+	set_slider_no_signal(finisher_bonus_slider, float(config.get("finisherBonusPerLevel", 4)))
+	set_slider_no_signal(precision_bonus_slider, float(config.get("precisionBonusPerLevel", 6)))
+	set_slider_no_signal(team_exact_bonus_slider, float(config.get("teamExactBonusPerLevel", 4)))
+	set_slider_no_signal(assist_bonus_slider, float(config.get("assistBonusPerLevel", 6)))
+	set_slider_no_signal(
+		assist_threshold_slider,
+		float(config.get("assistContributionThreshold", 0.25)) * 100.0
+	)
 	update_debug_labels()
 	is_syncing_debug_config = false
 
 func update_debug_labels() -> void:
-	if bot_count_label == null:
-		return
-
-	bot_count_label.text = "Bot Count: " + str(int(bot_count_slider.value))
-	bot_delay_min_label.text = "Bot Delay Min: " + str(int(bot_delay_min_slider.value)) + " ms"
-	bot_delay_max_label.text = "Bot Delay Max: " + str(int(bot_delay_max_slider.value)) + " ms"
-	cooldown_label.text = "Placement Cooldown: " + str(int(cooldown_slider.value)) + " ms"
-	level_time_label.text = "Level Time: " + str(int(level_time_slider.value / 1000.0)) + " sec"
-	start_delay_label.text = "Start Delay: " + str(int(start_delay_slider.value)) + " ms"
-	target_multiplier_label.text = "Target Multiplier: " + str(int(target_multiplier_slider.value))
+	set_debug_label_text(bot_count_label, "Bot Count: " + str(int(get_slider_value(bot_count_slider))))
+	set_debug_label_text(
+		bot_delay_min_label,
+		"Bot Delay Min: " + str(int(get_slider_value(bot_delay_min_slider, 2000))) + " ms"
+	)
+	set_debug_label_text(
+		bot_delay_max_label,
+		"Bot Delay Max: " + str(int(get_slider_value(bot_delay_max_slider, 5000))) + " ms"
+	)
+	set_debug_label_text(
+		cooldown_label,
+		"Placement Cooldown: " + str(int(get_slider_value(cooldown_slider, 2000))) + " ms"
+	)
+	set_debug_label_text(
+		level_time_label,
+		"Level Time: " + str(int(get_slider_value(level_time_slider, 30000) / 1000.0)) + " sec"
+	)
+	set_debug_label_text(
+		start_delay_label,
+		"Start Delay: " + str(int(get_slider_value(start_delay_slider, 1500))) + " ms"
+	)
+	set_debug_label_text(
+		level_summary_delay_label,
+		"Level Summary: " + str(int(get_slider_value(level_summary_delay_slider, LEVEL_SUMMARY_DEFAULT_DELAY_MS))) + " ms"
+	)
+	set_debug_label_text(
+		target_multiplier_label,
+		"Target Multiplier: " + str(int(get_slider_value(target_multiplier_slider, 3)))
+	)
+	set_debug_label_text(
+		level_supply_min_label,
+		"Supply Min Surplus: " + str(int(get_slider_value(level_supply_min_slider)))
+	)
+	set_debug_label_text(
+		level_supply_max_label,
+		"Supply Max Surplus: " + str(int(get_slider_value(level_supply_max_slider, 6)))
+	)
+	set_debug_label_text(
+		min_precision_blocks_label,
+		"Precision Blocks: " + str(int(get_slider_value(min_precision_blocks_slider, 2)))
+	)
+	set_debug_label_text(
+		max_team_carry_over_label,
+		"Carry-Over Blocks: " + str(int(get_slider_value(max_team_carry_over_slider, 3)))
+	)
+	set_debug_label_text(
+		max_refresh_tokens_label,
+		"Refresh Tokens: " + str(int(get_slider_value(max_refresh_tokens_slider, 1)))
+	)
+	set_debug_label_text(
+		max_refresh_uses_label,
+		"Refresh Uses: " + str(int(get_slider_value(max_refresh_uses_slider, 2)))
+	)
+	set_debug_label_text(
+		refresh_lockout_label,
+		"Refresh Lockout: " + str(int(get_slider_value(refresh_lockout_slider, 10000) / 1000.0)) + " sec"
+	)
+	set_debug_label_text(
+		refresh_min_useful_height_label,
+		"Refresh Useful Height: " + str(int(get_slider_value(refresh_min_useful_height_slider, 2)))
+	)
+	set_debug_label_text(
+		placement_score_label,
+		"Placement Score/Height: " + str(int(get_slider_value(placement_score_slider, 10)))
+	)
+	set_debug_label_text(
+		finisher_bonus_label,
+		"Finisher Bonus/Level: " + str(int(get_slider_value(finisher_bonus_slider, 4)))
+	)
+	set_debug_label_text(
+		precision_bonus_label,
+		"Precision Bonus/Level: " + str(int(get_slider_value(precision_bonus_slider, 6)))
+	)
+	set_debug_label_text(
+		team_exact_bonus_label,
+		"Team Exact Bonus/Level: " + str(int(get_slider_value(team_exact_bonus_slider, 4)))
+	)
+	set_debug_label_text(
+		assist_bonus_label,
+		"Assist Bonus/Level: " + str(int(get_slider_value(assist_bonus_slider, 6)))
+	)
+	set_debug_label_text(
+		assist_threshold_label,
+		"Assist Threshold: " + str(int(get_slider_value(assist_threshold_slider, 25))) + "%"
+	)

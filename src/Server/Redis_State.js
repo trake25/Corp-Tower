@@ -20,6 +20,7 @@ function stripRuntimePlayer(player) {
         isBot: Boolean(player.isBot),
         score: player.score || 0,
         levelScore: player.levelScore || 0,
+        scoreBreakdown: player.scoreBreakdown || {},
         contributedHeight: player.contributedHeight || 0,
         refreshTokens: player.refreshTokens || 0,
         refreshUsesThisLevel: player.refreshUsesThisLevel || 0,

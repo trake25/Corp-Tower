@@ -226,6 +226,7 @@ class LobbyManager {
     resetParticipantState(player) {
         player.score = player.score || 0;
         player.levelScore = player.levelScore || 0;
+        player.scoreBreakdown = player.scoreBreakdown || {};
         player.contributedHeight = player.contributedHeight || 0;
         player.refreshTokens = player.refreshTokens || 0;
         player.refreshUsesThisLevel = player.refreshUsesThisLevel || 0;
@@ -364,28 +365,101 @@ class LobbyManager {
             placementCooldown: GameConfig.placementCooldown,
             levelTimeLimitMs: GameConfig.levelTimeLimitMs,
             startDelayMs: GameConfig.startDelayMs,
-            targetHeightMultiplier: GameConfig.targetHeightMultiplier
+            levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
+            targetHeightMultiplier: GameConfig.targetHeightMultiplier,
+            levelSupplyMinSurplus: GameConfig.levelSupplyMinSurplus,
+            levelSupplyMaxSurplus: GameConfig.levelSupplyMaxSurplus,
+            minPrecisionBlocksPerLevel: GameConfig.minPrecisionBlocksPerLevel,
+            maxTeamCarryOverBlocks: GameConfig.maxTeamCarryOverBlocks,
+            maxRefreshTokens: GameConfig.maxRefreshTokens,
+            maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
+            refreshLockoutMs: GameConfig.refreshLockoutMs,
+            refreshMinUsefulBlockHeight: GameConfig.refreshMinUsefulBlockHeight,
+            placementScorePerHeight: GameConfig.scoring.placementScorePerHeight,
+            finisherBonusPerLevel: GameConfig.scoring.finisherBonusPerLevel,
+            precisionBonusPerLevel: GameConfig.scoring.precisionBonusPerLevel,
+            teamExactBonusPerLevel: GameConfig.scoring.teamExactBonusPerLevel,
+            assistBonusPerLevel: GameConfig.scoring.assistBonusPerLevel,
+            assistContributionThreshold:
+                GameConfig.scoring.assistContributionThreshold
         };
     }
 
     async updateDebugConfig(key, value) {
         const numberValue = Number(value);
+        const clampInt = (currentValue, minValue, maxValue) => {
+            const sourceValue =
+                Number.isFinite(numberValue) ? numberValue : Number(currentValue);
+
+            return Math.max(
+                minValue,
+                Math.min(maxValue, Math.floor(sourceValue))
+            );
+        };
+        const clampNumber = (currentValue, minValue, maxValue) => {
+            const sourceValue =
+                Number.isFinite(numberValue) ? numberValue : Number(currentValue);
+
+            return Math.max(
+                minValue,
+                Math.min(maxValue, sourceValue)
+            );
+        };
+        const setGameInt = (configKey, minValue, maxValue) => () => {
+            GameConfig[configKey] = clampInt(
+                GameConfig[configKey],
+                minValue,
+                maxValue
+            );
+        };
+        const setScoringInt = (configKey, minValue, maxValue) => () => {
+            GameConfig.scoring[configKey] = clampInt(
+                GameConfig.scoring[configKey],
+                minValue,
+                maxValue
+            );
+        };
+        const setScoringNumber = (configKey, minValue, maxValue) => () => {
+            GameConfig.scoring[configKey] = clampNumber(
+                GameConfig.scoring[configKey],
+                minValue,
+                maxValue
+            );
+        };
         const debugConfigSetters = {
-            debugBotsEnabled: () => Boolean(value),
-            debugBotCount: () => Math.max(0, Math.min(2, Math.floor(numberValue))),
+            debugBotsEnabled: () => {
+                GameConfig.debugBotsEnabled = Boolean(value);
+            },
+            debugBotCount: setGameInt("debugBotCount", 0, 2),
             debugBotStrategy: () => {
                 const strategy = String(value);
 
-                return ["cooperative", "mvp_greedy"].includes(strategy)
+                GameConfig.debugBotStrategy = ["cooperative", "mvp_greedy"].includes(strategy)
                     ? strategy
                     : GameConfig.debugBotStrategy;
             },
-            debugBotDelayMin: () => Math.max(250, Math.floor(numberValue)),
-            debugBotDelayMax: () => Math.max(250, Math.floor(numberValue)),
-            placementCooldown: () => Math.max(0, Math.floor(numberValue)),
-            levelTimeLimitMs: () => Math.max(5000, Math.floor(numberValue)),
-            startDelayMs: () => Math.max(0, Math.floor(numberValue)),
-            targetHeightMultiplier: () => Math.max(1, Math.floor(numberValue))
+            debugBotDelayMin: setGameInt("debugBotDelayMin", 250, 10000),
+            debugBotDelayMax: setGameInt("debugBotDelayMax", 250, 10000),
+            placementCooldown: setGameInt("placementCooldown", 0, 5000),
+            levelTimeLimitMs: setGameInt("levelTimeLimitMs", 5000, 120000),
+            startDelayMs: setGameInt("startDelayMs", 0, 10000),
+            levelSummaryDelayMs: setGameInt("levelSummaryDelayMs", 1000, 10000),
+            targetHeightMultiplier: setGameInt("targetHeightMultiplier", 1, 20),
+            levelSupplyMinSurplus: setGameInt("levelSupplyMinSurplus", 0, 20),
+            levelSupplyMaxSurplus: setGameInt("levelSupplyMaxSurplus", 0, 30),
+            minPrecisionBlocksPerLevel: setGameInt("minPrecisionBlocksPerLevel", 0, 9),
+            maxTeamCarryOverBlocks: setGameInt("maxTeamCarryOverBlocks", 0, 12),
+            maxRefreshTokens: setGameInt("maxRefreshTokens", 0, 5),
+            maxRefreshUsesPerLevel: setGameInt("maxRefreshUsesPerLevel", 0, 5),
+            refreshLockoutMs: setGameInt("refreshLockoutMs", 0, 60000),
+            refreshMinUsefulBlockHeight: setGameInt("refreshMinUsefulBlockHeight", 1, 6),
+            placementScorePerHeight: setScoringInt("placementScorePerHeight", 1, 25),
+            finisherBonusPerLevel: setScoringInt("finisherBonusPerLevel", 0, 25),
+            precisionBonusPerLevel: setScoringInt("precisionBonusPerLevel", 0, 25),
+            teamExactBonusPerLevel: setScoringInt("teamExactBonusPerLevel", 0, 25),
+            assistBonusPerLevel: setScoringInt("assistBonusPerLevel", 0, 25),
+            assistContributionThreshold:
+                setScoringNumber("assistContributionThreshold", 0, 1)
         };
 
         if (!debugConfigSetters[key]) {
@@ -393,10 +467,14 @@ class LobbyManager {
             return false;
         }
 
-        GameConfig[key] = debugConfigSetters[key]();
+        debugConfigSetters[key]();
 
         if (GameConfig.debugBotDelayMax < GameConfig.debugBotDelayMin) {
             GameConfig.debugBotDelayMax = GameConfig.debugBotDelayMin;
+        }
+
+        if (GameConfig.levelSupplyMaxSurplus < GameConfig.levelSupplyMinSurplus) {
+            GameConfig.levelSupplyMaxSurplus = GameConfig.levelSupplyMinSurplus;
         }
 
         if (key === "debugBotsEnabled" || key === "debugBotCount") {
@@ -639,7 +717,9 @@ class LobbyManager {
                 state: snapshot.state.state,
                 startsAt: snapshot.state.startsAt,
                 endsAt: snapshot.state.endsAt,
-                lastLevelSummary: snapshot.state.lastLevelSummary
+                lastLevelSummary: snapshot.state.lastLevelSummary,
+                pendingScoreEvents: [],
+                scoreEventSeq: 0
             };
         }
 

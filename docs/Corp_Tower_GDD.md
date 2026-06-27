@@ -85,13 +85,21 @@
 ## Scoring System
 | Component | Formula |
 |---|---|
-| Placement Score | `effective_height × level` |
+| Placement Score | `effective_height × level × placementScorePerHeight` (default `10`) |
 | Finisher Bonus | `level × 4` |
 | Precision Bonus | `level × 6` (exact finish only) |
 | Team Bonus | `level × 4` (exact finish, all players) |
 | Assist Bonus | `level × 6` (if player contributes ≥ 25% of total height) |
 - MVP: player with highest level score for the level.
 - Leaderboard score is snapshotted at each checkpoint and restored on rollback, preventing repeated failed checkpoint attempts from farming score.
+
+### Scoring Feedback UX
+- Placement score shows as a short-lived `+points` popup in the placing player's color.
+- Exact finish shows a distinct `PERFECT FIT` callout, followed by precision/team exact bonus feedback.
+- Overbuild finish shows target reached with the wasted height amount and does not trigger exact-finish celebration.
+- MVP and team total are display-only callouts; MVP does not award extra score.
+- Level summary appears for completed and failed levels, showing result, team level score, MVP, finisher when present, per-player level score, final total score, contributed height, and bonus breakdown source data.
+- Failed level summaries show level score but do not bank leaderboard score.
 
 ## Progression
 - Target height increases each level.
@@ -115,7 +123,8 @@
 ## Debug Menu and Live Tuning
 - Purpose: expose selected [[Game Config]] variables to designers/QA without code changes or restarts.
 - Authority: server validates and applies all changes; broadcasts `debug_config` to all real clients.
-- Client debug controls are not part of the current gameplay UI design pass; future debug UI must sync without echo loops.
+- Client debug controls live in a tabbed overlay and sync server state without echo loops.
+- Tabs: Bots, Round, Supply, Refresh, and Scoring.
 
 ### Currently Exposed Variables
 | Variable | Description |
@@ -128,7 +137,22 @@
 | `placementCooldown` | Anti-spam delay between placements (ms). |
 | `levelTimeLimitMs` | Level timer duration (ms). |
 | `startDelayMs` | Countdown before level becomes playable (ms). |
+| `levelSummaryDelayMs` | Completed/failed level summary duration before next level or rollback (1000-10000 ms, default 3000). |
 | `targetHeightMultiplier` | Debug scale applied to the target-height curve; default 3 keeps the authored curve unchanged. |
+| `levelSupplyMinSurplus` | Minimum generated total-height surplus above target. |
+| `levelSupplyMaxSurplus` | Maximum generated total-height surplus above target. |
+| `minPrecisionBlocksPerLevel` | Minimum count of height-1/2 precision blocks required in solvable supply. |
+| `maxTeamCarryOverBlocks` | Max unused team blocks carried into the next completed level. |
+| `maxRefreshTokens` | Per-player refresh token cap. |
+| `maxRefreshUsesPerLevel` | Per-player refresh uses allowed each level. |
+| `refreshLockoutMs` | End-of-level refresh lockout window. |
+| `refreshMinUsefulBlockHeight` | Minimum useful generated refresh height when remaining height allows it. |
+| `placementScorePerHeight` | Placement score scale applied to effective height and level. |
+| `finisherBonusPerLevel` | Finisher score multiplier per level. |
+| `precisionBonusPerLevel` | Exact-finish finisher score multiplier per level. |
+| `teamExactBonusPerLevel` | Exact-finish team score multiplier per level. |
+| `assistBonusPerLevel` | Assist score multiplier per level. |
+| `assistContributionThreshold` | Minimum contribution share required for assist bonus. |
 
 ### Validation Rules
 - Unknown keys rejected.
@@ -145,7 +169,7 @@
 - MVP-greedy bots prefer the highest effective score contribution, still taking exact finishes when available.
 
 ### Future Debug Variables (Planned)
-- `blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `maxRefreshTokens`, `maxRefreshUsesPerLevel`, `refreshLockoutMs`, `checkpointInterval`, scoring bonus multipliers, target-height curve bands, opening-hand supply constraints, and max team carry-over blocks.
+- `blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `checkpointInterval`, target-height curve bands, and per-shape generation pools.
 - Shape-block recalibration candidates: per-level shape pools, guaranteed minimum available height, target curve by level band, refresh rewards, and fail-condition pressure.
 
 ### Shipping Requirement

@@ -22,6 +22,7 @@ const GameConfig = {
     levelTimeLimitMs: 30000,
     nextLevelDelayMs: 1500,
     failRestartDelayMs: 1500,
+    levelSummaryDelayMs: 3000,
     checkpointInterval: 3,
     checkpointScoreRequirement: 0,
 
@@ -158,6 +159,7 @@ const GameConfig = {
     // =========================
 
     scoring: {
+        placementScorePerHeight: 10,
         finisherBonusPerLevel: 4,
         precisionBonusPerLevel: 6,
         teamExactBonusPerLevel: 4,

@@ -6,7 +6,7 @@
 
 ## Responsibilities
 - Connect to the EC2-1 gateway, which routes to authoritative server workers.
-- Render room, level, timer, tower height/progress, placed-block tower stack, score, shape inventory, and refresh UI.
+- Render room, level, timer, tower height/progress, placed-block tower stack, score, shape inventory, refresh UI, score popups, and level summaries.
 - Send player actions.
 - Reflect server state rather than calculating final gameplay locally.
 
@@ -18,7 +18,8 @@
 - A bottom-right Skin overlay can switch between `DefaultSkin` and `Figma_SkinV1` at runtime while preserving the latest displayed room/game state.
 - Shape inventory previews use fixed cells from server block payloads.
 - Tower stack rendering uses `towerBlocks` when available and falls back to aggregate `currentHeight` for legacy server payloads.
-- Debug tuning is exposed through a floating overlay when enabled for staging/debug builds.
+- Score feedback uses server `scoreEvents`; level-end results use server `lastLevelSummary`.
+- Debug tuning is exposed through a floating tabbed overlay when enabled for staging/debug builds.
 - Android export is configured locally through ignored `export_presets.cfg`.
 - CI uses [[Client Android Internal Workflow]] and a non-secret preset.
 

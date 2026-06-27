@@ -56,8 +56,8 @@
 |---|---|
 | `room_created` | New room/session assignment with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, initial `blocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
 | `room_resumed` | Existing room/session resumed with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, blocks, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
-| `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock`, summary, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
-| `debug_config` | Authoritative debug menu state, including bot enable/count/strategy and timing/target tuning. |
+| `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, `scoreEvents`, `levelSummaryDelayMs`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock`, `lastLevelSummary`, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
+| `debug_config` | Authoritative debug menu state, including bot enable/count/strategy, timing/target tuning, `levelSummaryDelayMs`, supply/refresh pressure, and scoring multipliers. |
 | `room_closed` | Room teardown reason for connected real players. |
 
 ### Client To Server
@@ -78,6 +78,14 @@
 - `height`: vertical footprint derived from `cells`; it is not necessarily equal to cell count.
 - `towerBlocks[]`: ordered placement history with `{ playerId, block, height, effectiveHeight, baseHeight }` so clients can redraw the current tower after broadcasts or reconnect.
 - Legacy numeric block values are still tolerated by the Godot client as vertical fallback blocks.
+
+### Score UI Payloads
+- `scoreEvents[]` is transient and broadcast-only; each event has stable `id`, `type`, `level`, optional `playerId`, optional `points`, `label`, `displayOnly`, and `meta`.
+- Event types: `placement`, `finisher_bonus`, `precision_bonus`, `team_exact_bonus`, `assist_bonus`, `exact_finish`, `overbuild_finish`, `mvp`, and `team_total`.
+- Clients track seen event ids per level and never infer event UI from score diffs.
+- `lastLevelSummary` includes `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, and `players[]`.
+- `lastLevelSummary.players[]` includes player id, bot flag, level score, previous total score, final total score, contributed height, MVP flag, and bonus breakdown.
+- Completed summaries bank level score into final totals; failed summaries keep previous and final totals equal.
 
 ### Persisted Room Gameplay State
 - Redis room snapshots include `checkpointScores`, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`, timers, level state, and serializable player inventory/score/token fields.
@@ -123,8 +131,8 @@
 - Android: `ANDROID_RELEASE_KEYSTORE_BASE64`, `ANDROID_RELEASE_KEYSTORE_ALIAS`, `ANDROID_RELEASE_KEYSTORE_PASSWORD`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`
 
 ## Testing Strategy
-- Current server test: Node syntax checks for server modules including `Redis_State.js`.
-- Balance simulator: `npm run balance:simulate -- <levels> <runs>` from `src/Server` estimates generated pile reachability, exact possibility, smart-play completion, overbuild, and placement counts.
+- Current server test: Node syntax checks for server modules including `Redis_State.js`, plus `node --test Score_Events.test.js` for score event and summary contracts.
+- Balance simulator: `npm run balance:simulate -- <levels> <runs>` from `src/Server` estimates generated pile reachability, exact possibility, smart-play completion, overbuild, placement counts, and level score distribution.
 - Current client pipeline: Godot import/parse and Android export; GUT tests are skipped until installed.
 - Staging debug checks:
   - EC2-1: `corp-tower-gateway`, `corp-tower-redis`

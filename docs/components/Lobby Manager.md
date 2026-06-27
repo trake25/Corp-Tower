@@ -37,6 +37,7 @@
 - `updateDebugConfig(key, value)`:
   - Allows only known keys.
   - Clamps numeric values.
+  - Clamps `levelSummaryDelayMs` to 1000-10000 ms.
   - Allows `debugBotStrategy` only as `cooperative` or `mvp_greedy`.
   - Broadcasts `debug_config`.
 
