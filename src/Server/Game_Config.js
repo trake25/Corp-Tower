@@ -13,9 +13,9 @@ const GameConfig = {
         { minLevel: 1, maxLevel: 1, baseLevel: 1, baseHeight: 3, heightPerLevel: 0 },
         { minLevel: 2, maxLevel: 2, baseLevel: 2, baseHeight: 6, heightPerLevel: 0 },
         { minLevel: 3, maxLevel: 3, baseLevel: 3, baseHeight: 8, heightPerLevel: 0 },
-        { minLevel: 4, maxLevel: 6, baseLevel: 3, baseHeight: 8, heightPerLevel: 3 },
-        { minLevel: 7, maxLevel: 12, baseLevel: 6, baseHeight: 17, heightPerLevel: 4 },
-        { minLevel: 13, maxLevel: 99, baseLevel: 12, baseHeight: 41, heightPerLevel: 5 }
+        { minLevel: 4, maxLevel: 6, baseLevel: 3, baseHeight: 8, heightPerLevel: 2 },
+        { minLevel: 7, maxLevel: 12, baseLevel: 6, baseHeight: 14, heightPerLevel: 1 },
+        { minLevel: 13, maxLevel: 99, baseLevel: 13, baseHeight: 20, heightPerLevel: 0 }
     ],
     startDelayMs: 1500,
     levelTimeLimitMs: 30000,
@@ -97,17 +97,10 @@ const GameConfig = {
     // =========================
 
     maxTeamCarryOverBlocks: 3,
-    minDrawPileBlocksAfterDeal: 6,
-    drawPileReserveScaling: {
-        1: 3,
-        2: 4,
-        4: 6
-    },
-    levelSupplyMinSurplus: 3,
-    levelSupplyMaxSurplus: 12,
+    levelSupplyMinSurplus: 0,
+    levelSupplyMaxSurplus: 6,
     minPrecisionBlocksPerLevel: 2,
-    drawPileGenerationAttempts: 100,
-    maxGeneratedBlocksPerLevel: 320,
+    openingHandGenerationAttempts: 1000,
 
     // =========================
     // REFRESH TOKEN SETTINGS

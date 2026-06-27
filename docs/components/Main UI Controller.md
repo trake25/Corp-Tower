@@ -22,6 +22,7 @@
 - Only the 3 active inventory slots are actionable.
 - Locked slots remain visible but disabled until their unlock level.
 - The draw-pile preview is not clickable; it shows the shared next refill block that whichever player places next will receive.
+- The draw-pile preview can legitimately show `0 left`, especially on level 1 before any unused blocks have been saved.
 - Inventory cards tolerate legacy numeric blocks and new `{ id, shapeId, cells, height }` block objects.
 - `BlockPreview.gd` draws inventory shape cells.
 - `TowerStack.gd` draws placed-block tower history; when connected to an old numeric-block server it falls back to a simple stack from `currentHeight`.

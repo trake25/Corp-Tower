@@ -419,30 +419,9 @@ class GameEngine {
         return Math.min(blocksPerPlayer, GameConfig.maxActiveBlocks);
     }
 
-    getMinDrawPileBlocksAfterDeal() {
-        let reserveBlocks = GameConfig.minDrawPileBlocksAfterDeal;
-
-        if (GameConfig.drawPileReserveScaling) {
-            reserveBlocks = 0;
-
-            for (const level in GameConfig.drawPileReserveScaling) {
-                if (this.room.level >= Number(level)) {
-                    reserveBlocks = GameConfig.drawPileReserveScaling[level];
-                }
-            }
-        }
-
-        return Math.max(0, reserveBlocks);
-    }
-
     buildDrawPile() {
         const teamCarryOverBlocks = this.room.teamCarryOverBlocks || [];
-        const newBlocks = this.generateSolvableLevelBlocks(teamCarryOverBlocks);
-
-        this.room.drawPile = this.shuffleBlocks([
-            ...teamCarryOverBlocks,
-            ...newBlocks
-        ]);
+        this.room.drawPile = this.shuffleBlocks(teamCarryOverBlocks);
         this.room.teamCarryOverBlocks = [];
 
         console.log(
@@ -450,18 +429,32 @@ class GameEngine {
         );
     }
 
-    generateSolvableLevelBlocks(teamCarryOverBlocks = []) {
-        const attempts = Math.max(1, GameConfig.drawPileGenerationAttempts);
+    generateSolvableOpeningHandBlocks() {
+        const attempts = Math.max(1, GameConfig.openingHandGenerationAttempts);
         let fallbackBlocks = [];
+        const openingHandBlockCount =
+            this.room.players.length * this.getBlocksPerPlayer();
 
         for (let attempt = 0; attempt < attempts; attempt++) {
-            const newBlocks =
-                this.generateCandidateLevelBlocks(teamCarryOverBlocks);
-            const combinedBlocks = [...teamCarryOverBlocks, ...newBlocks];
+            const newBlocks = [];
+
+            while (newBlocks.length < openingHandBlockCount) {
+                newBlocks.push(this.getRandomBlock());
+            }
+
+            const combinedBlocks = [
+                ...(this.room.drawPile || []),
+                ...newBlocks
+            ];
 
             fallbackBlocks = newBlocks;
 
-            if (this.isLevelBlockSupplyValid(combinedBlocks)) {
+            if (
+                this.isLevelBlockSupplyValid(
+                    combinedBlocks,
+                    openingHandBlockCount
+                )
+            ) {
                 return newBlocks;
             }
         }
@@ -469,75 +462,23 @@ class GameEngine {
         return fallbackBlocks;
     }
 
-    generateCandidateLevelBlocks(teamCarryOverBlocks = []) {
+    isLevelBlockSupplyValid(blocks, minimumOpeningBlocks) {
         const targetHeight = this.room.targetHeight;
         const minTotalHeight =
             targetHeight + GameConfig.levelSupplyMinSurplus;
-        const minimumOpeningBlocks =
-            this.room.players.length * this.getBlocksPerPlayer();
-        const minimumTotalBlocks =
-            minimumOpeningBlocks + this.getMinDrawPileBlocksAfterDeal();
-        const maxTotalHeight = Math.max(
-            targetHeight + GameConfig.levelSupplyMaxSurplus,
-            minimumTotalBlocks + GameConfig.levelSupplyMaxSurplus
-        );
-        const maxGeneratedBlocks =
-            Math.max(minimumTotalBlocks, GameConfig.maxGeneratedBlocksPerLevel);
-        const newBlocks = [];
-
-        while (newBlocks.length < maxGeneratedBlocks) {
-            const combinedBlocks = [...teamCarryOverBlocks, ...newBlocks];
-            const totalHeight = this.getTotalBlockHeight(combinedBlocks);
-            const precisionBlocks =
-                this.countPrecisionBlocks(combinedBlocks);
-            const hasEnoughBlocks =
-                combinedBlocks.length >= minimumTotalBlocks;
-            const hasEnoughHeight = totalHeight >= minTotalHeight;
-            const hasEnoughPrecision =
-                precisionBlocks >= GameConfig.minPrecisionBlocksPerLevel;
-
-            if (hasEnoughBlocks && hasEnoughHeight && hasEnoughPrecision) {
-                break;
-            }
-
-            const nextBlock = this.getRandomBlock();
-            const nextHeight = this.getBlockHeight(nextBlock);
-
-            if (
-                totalHeight + nextHeight > maxTotalHeight &&
-                hasEnoughBlocks &&
-                hasEnoughHeight &&
-                hasEnoughPrecision
-            ) {
-                break;
-            }
-
-            newBlocks.push(nextBlock);
-        }
-
-        return newBlocks;
-    }
-
-    isLevelBlockSupplyValid(blocks) {
-        const targetHeight = this.room.targetHeight;
-        const minTotalHeight =
-            targetHeight + GameConfig.levelSupplyMinSurplus;
-        const minimumOpeningBlocks =
-            this.room.players.length * this.getBlocksPerPlayer();
-        const minimumTotalBlocks =
-            minimumOpeningBlocks + this.getMinDrawPileBlocksAfterDeal();
-        const maxTotalHeight = Math.max(
-            targetHeight + GameConfig.levelSupplyMaxSurplus,
-            minimumTotalBlocks + GameConfig.levelSupplyMaxSurplus
-        );
+        const maxTotalHeight =
+            targetHeight + GameConfig.levelSupplyMaxSurplus;
         const totalHeight = this.getTotalBlockHeight(blocks);
 
         return (
-            blocks.length >= minimumTotalBlocks &&
+            blocks.length >= minimumOpeningBlocks &&
             totalHeight >= minTotalHeight &&
             totalHeight <= maxTotalHeight &&
             this.countPrecisionBlocks(blocks) >=
-                GameConfig.minPrecisionBlocksPerLevel &&
+                Math.min(
+                    GameConfig.minPrecisionBlocksPerLevel,
+                    blocks.length
+                ) &&
             this.hasExactHeightCombination(blocks, targetHeight)
         );
     }
@@ -589,15 +530,15 @@ class GameEngine {
 
     dealOpeningHands() {
         const blocksPerPlayer = this.getBlocksPerPlayer();
+        const openingHandBlocks = this.generateSolvableOpeningHandBlocks();
+        let nextBlockIndex = 0;
 
         this.room.players.forEach(player => {
             player.blocks = [];
 
-            while (
-                player.blocks.length < blocksPerPlayer &&
-                (this.room.drawPile || []).length > 0
-            ) {
-                player.blocks.push(this.drawBlockFromPile());
+            while (player.blocks.length < blocksPerPlayer) {
+                player.blocks.push(openingHandBlocks[nextBlockIndex]);
+                nextBlockIndex += 1;
             }
 
             player.blocks = this.trimInventory(player.blocks);
@@ -955,8 +896,12 @@ class GameEngine {
         const unusedHandBlocks = this.room.players.flatMap(player => {
             return player.blocks || [];
         });
+        const unusedDrawPileBlocks = this.room.drawPile || [];
 
-        this.room.teamCarryOverBlocks = [...unusedHandBlocks]
+        this.room.teamCarryOverBlocks = [
+            ...unusedHandBlocks,
+            ...unusedDrawPileBlocks
+        ]
             .sort((a, b) => {
                 const heightDiff =
                     this.getBlockHeight(a) - this.getBlockHeight(b);

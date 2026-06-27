@@ -41,16 +41,17 @@
 - Inventory:
   - Active slots scale through [[Game Config]].
   - Default unlocks are 1 slot at level 1, 2 slots at level 2, and 3 slots at level 4.
+- Opening hands:
+  - Active hand slots are filled by newly generated level blocks.
+  - Opening hands are generated with minimum surplus, precision-block, and exact-combination constraints.
 - Draw pile:
-  - Level supply is generated with minimum surplus, precision-block, and exact-combination constraints.
-  - Generation also reserves level-scaled shared draw-pile blocks after opening hands are dealt.
-  - Opening hands are dealt from the shuffled shared pile.
+  - The shared pile is built only from unused team carry-over blocks saved from previous completed levels.
+  - Level 1 starts with an empty draw pile.
   - A placement refills the acting player's hand from the pile when possible.
   - `game_state` includes `drawPileCount` and `nextDrawBlock`.
 - Team carry-over:
-  - On level completion, unused active hand blocks from all players are collected.
-  - Up to 3 small precision-friendly blocks are kept and shuffled into the next level pile.
-  - Hidden blocks left in the draw pile do not carry over.
+  - On level completion, unused active hand blocks and remaining draw pile blocks are collected.
+  - Up to 3 small precision-friendly blocks are kept and shuffled into the next level draw pile.
 - Tower history:
   - `towerBlocks[]` records each placement with player id, block, height, effective height, and base height.
   - History resets at level start and is broadcast in `game_state`.

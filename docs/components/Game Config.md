@@ -26,15 +26,12 @@
 - Inventory settings:
   - `inventoryScaling`
   - `maxActiveBlocks`
-- Draw pile settings:
+- Opening hand and carry-over settings:
   - `maxTeamCarryOverBlocks`
-  - `minDrawPileBlocksAfterDeal`
-  - `drawPileReserveScaling`
   - `levelSupplyMinSurplus`
   - `levelSupplyMaxSurplus`
   - `minPrecisionBlocksPerLevel`
-  - `drawPileGenerationAttempts`
-  - `maxGeneratedBlocksPerLevel`
+  - `openingHandGenerationAttempts`
 - Scoring settings:
   - `finisherBonusPerLevel`
   - `precisionBonusPerLevel`

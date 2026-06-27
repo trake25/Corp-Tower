@@ -43,13 +43,13 @@
 
 ### Draw Pile And Team Carry-Over System
 - Each level creates a server-owned shared draw pile.
-- The pile is built from team carry-over blocks plus newly generated level blocks.
-- The pile is shuffled before opening hands are dealt.
-- The generator keeps a level-scaled reserve after opening hands are dealt: 3 draw blocks at level 1, 4 at level 2, and 6 from level 4 onward.
-- On level completion, unused active hand blocks from all players become the team carry-over pool.
+- The pile is built only from unused team carry-over blocks saved from previous completed levels.
+- Level 1 starts with an empty draw pile.
+- Newly generated level blocks fill active hand slots directly; they do not pre-fill the draw pile.
+- The draw pile is shuffled before the level starts.
+- On level completion, unused active hand blocks and any remaining draw pile blocks become the next team carry-over pool.
 - Only up to 3 team carry-over blocks are kept.
 - Carry-over prioritizes smaller precision blocks first.
-- Hidden blocks left in the draw pile do not carry over.
 - On level failure, team carry-over is discarded during checkpoint rollback.
 
 ## Refresh Token System
@@ -65,7 +65,7 @@
 
 ## Tower System
 - Target height uses a level-band curve, scaled by `targetHeightMultiplier` for debug tuning.
-- Default curve: L1=3, L2=6, L3=8, L4-L6 +3 per level, L7-L12 +4 per level, L13+ +5 per level.
+- Default curve: L1=3, L2=6, L3=8, L4-L6 +2 per level, L7-L12 +1 per level, L13+ plateau at 20.
 - Overbuilding allowed; excess height is wasted.
 - Exact height triggers precision bonus rewards.
 - The client renders placed blocks as a stacked tower from authoritative server history when `towerBlocks` is available.
@@ -96,7 +96,7 @@
 - Inventory capacity increases with level: 1 active slot at level 1, 2 at level 2, and 3 at level 4.
 - Checkpoints after every 3 levels.
 - Failing a level rolls back to last completed checkpoint level.
-- Level draw piles are generated with solvability constraints so random supply should not make a level impossible before player decisions.
+- Opening hands are generated with solvability constraints so random supply should not make a level impossible before player decisions.
 
 ## Leaderboard
 - Highest level reached.
@@ -140,7 +140,7 @@
 - Bots prefer exact finishing blocks, avoid overbuilding near the target, otherwise play the highest useful block, and may refresh when no useful block is available.
 
 ### Future Debug Variables (Planned)
-- `blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `maxRefreshTokens`, `maxRefreshUsesPerLevel`, `refreshLockoutMs`, `checkpointInterval`, scoring bonus multipliers, target-height curve bands, draw-pile supply constraints, and max team carry-over blocks.
+- `blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `maxRefreshTokens`, `maxRefreshUsesPerLevel`, `refreshLockoutMs`, `checkpointInterval`, scoring bonus multipliers, target-height curve bands, opening-hand supply constraints, and max team carry-over blocks.
 - Shape-block recalibration candidates: per-level shape pools, guaranteed minimum available height, target curve by level band, refresh rewards, and fail-condition pressure.
 
 ### Shipping Requirement
