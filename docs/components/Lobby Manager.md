@@ -39,6 +39,8 @@
   - Clamps numeric values.
   - Clamps `levelSummaryDelayMs` to 1000-10000 ms.
   - Allows `debugBotStrategy` only as `cooperative` or `mvp_greedy`.
+  - Applies `debugStartLevel` immediately by restarting active debug rooms at the configured level.
+  - Exposes `checkpointScoreRequirement` for checkpoint score-gate tuning.
   - Broadcasts `debug_config`.
 
 ## Inputs/Outputs

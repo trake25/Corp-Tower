@@ -80,7 +80,7 @@
 - Time runs out before target height is reached.
 - All active hand blocks and the shared draw pile are exhausted before target is reached.
 - Remaining possible height cannot reach target and no refresh can still rescue the level.
-- Checkpoint every 3 levels - minimum each player leaderboard score requirement not reached.
+- At checkpoint boundaries, any player total score below `checkpointScoreRequirement` fails the checkpoint and rolls back the team.
 
 ## Scoring System
 | Component | Formula |
@@ -92,13 +92,14 @@
 | Assist Bonus | `level × 6` (if player contributes ≥ 25% of total height) |
 - MVP: player with highest level score for the level.
 - Leaderboard score is snapshotted at each checkpoint and restored on rollback, preventing repeated failed checkpoint attempts from farming score.
+- `checkpointScoreRequirement` is disabled at `0`; positive values enforce the selfish-cooperation rule that every player must contribute enough before the team climbs into the next checkpoint band.
 
 ### Scoring Feedback UX
-- Placement score shows as a short-lived `+points` popup in the placing player's color.
+- Placement score shows as a 3-second `+points` popup in the placing player's color.
 - Exact finish shows a distinct `PERFECT FIT` callout, followed by precision/team exact bonus feedback.
 - Overbuild finish shows target reached with the wasted height amount and does not trigger exact-finish celebration.
 - MVP and team total are display-only callouts; MVP does not award extra score.
-- Level summary appears for completed and failed levels, showing result, team level score, MVP, finisher when present, per-player level score, final total score, contributed height, and bonus breakdown source data.
+- Level summary appears after the end-of-level score popup batch has faded, showing result, team level score, MVP, finisher when present, per-player level score, final total score, contributed height, and bonus breakdown source data.
 - Failed level summaries show level score but do not bank leaderboard score.
 
 ## Progression
@@ -132,12 +133,14 @@
 | `debugBotsEnabled` | Enables/disables debug bots globally. |
 | `debugBotCount` | Bot slots allowed per room (0–2). |
 | `debugBotStrategy` | Switches QA bots between cooperative height-management and MVP-greedy play. |
+| `debugStartLevel` | Starts new rooms at a selected level and restarts active debug rooms at that level for tuning. |
 | `debugBotDelayMin` | Min bot action delay (ms). |
 | `debugBotDelayMax` | Max bot action delay (ms); never less than min. |
 | `placementCooldown` | Anti-spam delay between placements (ms). |
 | `levelTimeLimitMs` | Level timer duration (ms). |
 | `startDelayMs` | Countdown before level becomes playable (ms). |
 | `levelSummaryDelayMs` | Completed/failed level summary duration before next level or rollback (1000-10000 ms, default 3000). |
+| `checkpointScoreRequirement` | Minimum total score each player must have when crossing a checkpoint boundary; `0` disables the gate. |
 | `targetHeightMultiplier` | Debug scale applied to the target-height curve; default 3 keeps the authored curve unchanged. |
 | `levelSupplyMinSurplus` | Minimum generated total-height surplus above target. |
 | `levelSupplyMaxSurplus` | Maximum generated total-height surplus above target. |

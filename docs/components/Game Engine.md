@@ -32,6 +32,7 @@
   - Bonuses: finisher, precision, team, assist, with multipliers from [[Game Config]].
   - MVP is highest level score.
   - Checkpoint score snapshots are restored on rollback.
+  - Checkpoint score gates fail the checkpoint when any player total score is below `checkpointScoreRequirement`.
   - `scoreEvents[]` is transient and broadcast-only; clients should not infer scoring UI from aggregate score diffs.
   - `lastLevelSummary` includes team level score, MVP, finisher, exact/overbuild result, per-player level/final totals, contributed height, and bonus breakdowns.
 - Target height:
@@ -64,6 +65,9 @@
   - Max token count and per-level uses are from [[Game Config]].
   - Locked out near level end.
   - Refresh rerolls the player's current hand, tries to produce a useful remaining-height option, and does not consume or reorder the draw pile.
+- Debug level start:
+  - New rooms use `debugStartLevel`.
+  - `restartAtConfiguredStartLevel()` resets active tuning rooms to that level, clears transient room state, resets scores, and saves a new checkpoint snapshot.
 - Room close:
   - Calls [[Bot Manager]] stop.
   - Clears all timers.

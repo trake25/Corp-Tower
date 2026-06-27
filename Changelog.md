@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-06-27
+- update: Extended score popups to 3 seconds and delayed level summaries until the end-of-level popup batch fades.
 - feature: Added transient score UI events, exact/overbuild finish feedback, MVP/team callouts, level summary overlay support, and tabbed debug menu organization.
 - update: Recalibrated placement scoring with a configurable per-height score scale, expanded live balance/scoring debug tuning, and added score distribution metrics to the balance simulator.
 - update: Converted the Godot debug overlay into organized tuning categories across both UI skins.

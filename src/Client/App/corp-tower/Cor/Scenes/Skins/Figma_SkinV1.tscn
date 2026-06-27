@@ -858,6 +858,15 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
+[node name="DebugStartLevelLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Start Level: 1"
+
+[node name="DebugStartLevelSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="CooldownLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -998,6 +1007,15 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
+
+[node name="CheckpointScoreLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Checkpoint Min Score: 0"
+
+[node name="CheckpointScoreSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="PlacementScoreLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true

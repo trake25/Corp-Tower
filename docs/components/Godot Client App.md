@@ -18,7 +18,7 @@
 - A bottom-right Skin overlay can switch between `DefaultSkin` and `Figma_SkinV1` at runtime while preserving the latest displayed room/game state.
 - Shape inventory previews use fixed cells from server block payloads.
 - Tower stack rendering uses `towerBlocks` when available and falls back to aggregate `currentHeight` for legacy server payloads.
-- Score feedback uses server `scoreEvents`; level-end results use server `lastLevelSummary`.
+- Score feedback uses server `scoreEvents`; level-end results use server `lastLevelSummary` after score popups fade.
 - Debug tuning is exposed through a floating tabbed overlay when enabled for staging/debug builds.
 - Android export is configured locally through ignored `export_presets.cfg`.
 - CI uses [[Client Android Internal Workflow]] and a non-secret preset.

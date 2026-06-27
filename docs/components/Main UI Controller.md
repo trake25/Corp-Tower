@@ -30,14 +30,16 @@
 - `TowerStack.gd` keeps readable cell size and scrolls the visible tower window upward when high-level towers exceed the track height.
 - Tower center display visualizes both current height against target height and the placed-block stack.
 - Score events are tracked by stable event id per level so reconnects, skin switches, and repeat broadcasts do not duplicate animations.
-- Placement and bonus popups use player color, float upward, and fade after 2 seconds.
+- Placement and bonus popups use player color, float upward, and fade after 3 seconds.
 - Exact finish shows `PERFECT FIT`; overbuild shows target reached with wasted height; MVP/team total use larger callouts.
-- Level summaries show complete/failed state, exact/overbuild result, team score, MVP, finisher, and per-player level/final totals, then auto-hide from `levelSummaryDelayMs`.
+- Checkpoint score-gate failures show a distinct checkpoint failure callout and readable summary reason.
+- Level summaries wait for the current score popup batch to fade, then show complete/failed state, exact/overbuild result, team score, MVP, finisher, and per-player level/final totals before auto-hiding from `levelSummaryDelayMs`.
 - Refresh button sends `refresh_blocks`.
 - Skin selection reads `corp_tower/ui_skin`; default is `DefaultSkin`, with `Figma_SkinV1` available as a reskin.
 - The skin picker button swaps the active skin scene under `SkinRoot`, rebinds required nodes, reconnects skin-local buttons, and replays the last room/game state.
 - Debug overlay controls route changes through `NetworkManager.update_config` and use no-signal setters during server sync.
 - Debug overlay is tabbed into Bots, Round, Supply, Refresh, and Scoring controls.
+- Round tuning includes `debugStartLevel`; Scoring tuning includes `checkpointScoreRequirement`.
 - `update_room_closed(data)` resets stale room UI.
 
 ## Inputs/Outputs

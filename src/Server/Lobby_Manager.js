@@ -360,12 +360,14 @@ class LobbyManager {
             debugBotsEnabled: GameConfig.debugBotsEnabled,
             debugBotCount: GameConfig.debugBotCount,
             debugBotStrategy: GameConfig.debugBotStrategy,
+            debugStartLevel: GameConfig.debugStartLevel,
             debugBotDelayMin: GameConfig.debugBotDelayMin,
             debugBotDelayMax: GameConfig.debugBotDelayMax,
             placementCooldown: GameConfig.placementCooldown,
             levelTimeLimitMs: GameConfig.levelTimeLimitMs,
             startDelayMs: GameConfig.startDelayMs,
             levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
+            checkpointScoreRequirement: GameConfig.checkpointScoreRequirement,
             targetHeightMultiplier: GameConfig.targetHeightMultiplier,
             levelSupplyMinSurplus: GameConfig.levelSupplyMinSurplus,
             levelSupplyMaxSurplus: GameConfig.levelSupplyMaxSurplus,
@@ -438,12 +440,15 @@ class LobbyManager {
                     ? strategy
                     : GameConfig.debugBotStrategy;
             },
+            debugStartLevel: setGameInt("debugStartLevel", 1, GameConfig.maxLevel),
             debugBotDelayMin: setGameInt("debugBotDelayMin", 250, 10000),
             debugBotDelayMax: setGameInt("debugBotDelayMax", 250, 10000),
             placementCooldown: setGameInt("placementCooldown", 0, 5000),
             levelTimeLimitMs: setGameInt("levelTimeLimitMs", 5000, 120000),
             startDelayMs: setGameInt("startDelayMs", 0, 10000),
             levelSummaryDelayMs: setGameInt("levelSummaryDelayMs", 1000, 10000),
+            checkpointScoreRequirement:
+                setGameInt("checkpointScoreRequirement", 0, 1000000),
             targetHeightMultiplier: setGameInt("targetHeightMultiplier", 1, 20),
             levelSupplyMinSurplus: setGameInt("levelSupplyMinSurplus", 0, 20),
             levelSupplyMaxSurplus: setGameInt("levelSupplyMaxSurplus", 0, 30),
@@ -487,8 +492,26 @@ class LobbyManager {
             await this.refreshMatchmaking();
         }
 
+        if (key === "debugStartLevel") {
+            await this.restartRoomsAtDebugStartLevel();
+        }
+
         this.broadcastDebugConfig();
         return true;
+    }
+
+    async restartRoomsAtDebugStartLevel() {
+        await Promise.all(this.rooms.map(async room => {
+            if (!room.engine?.room || room.engine.room.state === "closed") {
+                return;
+            }
+
+            room.engine.restartAtConfiguredStartLevel();
+            await this.stateStore.saveRoom(
+                room,
+                room.ownerPodId === this.stateStore.getPodId()
+            );
+        }));
     }
 
     // =========================

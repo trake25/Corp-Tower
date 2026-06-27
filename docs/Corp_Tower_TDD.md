@@ -56,8 +56,8 @@
 |---|---|
 | `room_created` | New room/session assignment with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, initial `blocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
 | `room_resumed` | Existing room/session resumed with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, blocks, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
-| `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, `scoreEvents`, `levelSummaryDelayMs`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock`, `lastLevelSummary`, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
-| `debug_config` | Authoritative debug menu state, including bot enable/count/strategy, timing/target tuning, `levelSummaryDelayMs`, supply/refresh pressure, and scoring multipliers. |
+| `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, `scoreEvents`, `scorePopupDurationMs`, `levelSummaryDelayMs`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock`, `lastLevelSummary`, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
+| `debug_config` | Authoritative debug menu state, including bot enable/count/strategy, `debugStartLevel`, timing/target tuning, `levelSummaryDelayMs`, supply/refresh pressure, `checkpointScoreRequirement`, and scoring multipliers. |
 | `room_closed` | Room teardown reason for connected real players. |
 
 ### Client To Server
@@ -83,6 +83,7 @@
 - `scoreEvents[]` is transient and broadcast-only; each event has stable `id`, `type`, `level`, optional `playerId`, optional `points`, `label`, `displayOnly`, and `meta`.
 - Event types: `placement`, `finisher_bonus`, `precision_bonus`, `team_exact_bonus`, `assist_bonus`, `exact_finish`, `overbuild_finish`, `mvp`, and `team_total`.
 - Clients track seen event ids per level and never infer event UI from score diffs.
+- End-of-level summaries are queued until the current score popup batch has faded, then remain visible for `levelSummaryDelayMs`.
 - `lastLevelSummary` includes `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, and `players[]`.
 - `lastLevelSummary.players[]` includes player id, bot flag, level score, previous total score, final total score, contributed height, MVP flag, and bonus breakdown.
 - Completed summaries bank level score into final totals; failed summaries keep previous and final totals equal.

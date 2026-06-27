@@ -7,6 +7,7 @@ const LobbyManager = require("./Lobby_Manager");
 
 const originalGameConfig = {
     placementCooldown: GameConfig.placementCooldown,
+    scorePopupDurationMs: GameConfig.scorePopupDurationMs,
     levelSummaryDelayMs: GameConfig.levelSummaryDelayMs
 };
 const originalScoringConfig = { ...GameConfig.scoring };
@@ -18,6 +19,7 @@ afterEach(() => {
     });
     activeEngines.clear();
     GameConfig.placementCooldown = originalGameConfig.placementCooldown;
+    GameConfig.scorePopupDurationMs = originalGameConfig.scorePopupDurationMs;
     GameConfig.levelSummaryDelayMs = originalGameConfig.levelSummaryDelayMs;
     GameConfig.scoring = { ...originalScoringConfig };
 });
@@ -48,6 +50,7 @@ function createPlayingEngine(level = 1, targetHeight = 5) {
     });
 
     GameConfig.placementCooldown = 0;
+    GameConfig.scorePopupDurationMs = 3000;
     GameConfig.levelSummaryDelayMs = 1000;
 
     engine.createRoom(createPlayers());
@@ -99,6 +102,7 @@ test("placement emits one placement score event", () => {
 
     const message = messageWithScoreEvents(messages);
     assert.deepEqual(eventTypes(message), ["placement"]);
+    assert.equal(message.scorePopupDurationMs, 3000);
     assert.equal(message.scoreEvents[0].playerId, "P1");
     assert.equal(message.scoreEvents[0].points, 20);
     assert.equal(message.players[0].levelScore, 20);

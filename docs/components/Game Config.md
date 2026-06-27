@@ -14,11 +14,13 @@
 ## Key Logic
 - Game settings:
   - `maxLevel`
+  - `debugStartLevel`
   - `placementCooldown`
   - `targetHeightCurve`
   - `targetHeightMultiplier`
   - `startDelayMs`
   - `levelTimeLimitMs`
+  - `scorePopupDurationMs`
   - `levelSummaryDelayMs`
 - Block settings:
   - `blockUnlockLevels`
@@ -42,6 +44,7 @@
   - `refreshGenerationAttempts`
   - `refreshMinUsefulBlockHeight`
 - Scoring settings:
+  - `checkpointScoreRequirement`
   - `placementScorePerHeight`
   - `finisherBonusPerLevel`
   - `precisionBonusPerLevel`

@@ -4,7 +4,7 @@ const MAX_INVENTORY_SLOTS := 3
 const DEFAULT_UI_SKIN := "DefaultSkin"
 const SHOW_DEBUG_UI := true
 const DRAW_PILE_COLOR := Color(0.95, 0.72, 0.25, 1.0)
-const SCORE_POPUP_DURATION := 2.0
+const SCORE_POPUP_DEFAULT_DURATION_MS := 3000
 const SCORE_POPUP_FLOAT_DISTANCE := 64.0
 const LEVEL_SUMMARY_DEFAULT_DELAY_MS := 3000
 const BOT_STRATEGY_COOPERATIVE := "cooperative"
@@ -34,8 +34,13 @@ var player_color_map: Dictionary = {}
 var player_order: Array[String] = []
 var seen_score_event_ids: Dictionary = {}
 var current_level: int = 0
+var score_popup_duration_ms: int = SCORE_POPUP_DEFAULT_DURATION_MS
 var level_summary_delay_ms: int = LEVEL_SUMMARY_DEFAULT_DELAY_MS
 var last_level_summary_key: String = ""
+var pending_level_summary: Dictionary = {}
+var pending_level_summary_state: String = ""
+var pending_level_summary_key: String = ""
+var summary_show_timer: Timer
 var summary_hide_timer: Timer
 var active_inventory_slots: int = MAX_INVENTORY_SLOTS
 
@@ -83,6 +88,8 @@ var bot_delay_min_label: Label
 var bot_delay_min_slider: HSlider
 var bot_delay_max_label: Label
 var bot_delay_max_slider: HSlider
+var debug_start_level_label: Label
+var debug_start_level_slider: HSlider
 var cooldown_label: Label
 var cooldown_slider: HSlider
 var level_time_label: Label
@@ -111,6 +118,8 @@ var refresh_min_useful_height_label: Label
 var refresh_min_useful_height_slider: HSlider
 var placement_score_label: Label
 var placement_score_slider: HSlider
+var checkpoint_score_label: Label
+var checkpoint_score_slider: HSlider
 var finisher_bonus_label: Label
 var finisher_bonus_slider: HSlider
 var precision_bonus_label: Label
@@ -123,6 +132,11 @@ var assist_threshold_label: Label
 var assist_threshold_slider: HSlider
 
 func _ready() -> void:
+	summary_show_timer = Timer.new()
+	summary_show_timer.one_shot = true
+	summary_show_timer.timeout.connect(show_pending_level_summary)
+	add_child(summary_show_timer)
+
 	summary_hide_timer = Timer.new()
 	summary_hide_timer.one_shot = true
 	summary_hide_timer.timeout.connect(hide_level_summary)
@@ -263,6 +277,8 @@ func bind_skin_nodes() -> void:
 	bot_delay_min_slider = optional_node("BotDelayMinSlider") as HSlider
 	bot_delay_max_label = optional_node("BotDelayMaxLabel") as Label
 	bot_delay_max_slider = optional_node("BotDelayMaxSlider") as HSlider
+	debug_start_level_label = optional_node("DebugStartLevelLabel") as Label
+	debug_start_level_slider = optional_node("DebugStartLevelSlider") as HSlider
 	cooldown_label = optional_node("CooldownLabel") as Label
 	cooldown_slider = optional_node("CooldownSlider") as HSlider
 	level_time_label = optional_node("LevelTimeLabel") as Label
@@ -291,6 +307,8 @@ func bind_skin_nodes() -> void:
 	refresh_min_useful_height_slider = optional_node("RefreshMinUsefulHeightSlider") as HSlider
 	placement_score_label = optional_node("PlacementScoreLabel") as Label
 	placement_score_slider = optional_node("PlacementScoreSlider") as HSlider
+	checkpoint_score_label = optional_node("CheckpointScoreLabel") as Label
+	checkpoint_score_slider = optional_node("CheckpointScoreSlider") as HSlider
 	finisher_bonus_label = optional_node("FinisherBonusLabel") as Label
 	finisher_bonus_slider = optional_node("FinisherBonusSlider") as HSlider
 	precision_bonus_label = optional_node("PrecisionBonusLabel") as Label
@@ -357,6 +375,7 @@ func setup_debug_controls() -> void:
 	configure_slider(bot_count_slider, 0, 2, 1, on_bot_count_changed)
 	configure_slider(bot_delay_min_slider, 250, 10000, 250, on_bot_delay_min_changed)
 	configure_slider(bot_delay_max_slider, 250, 10000, 250, on_bot_delay_max_changed)
+	configure_slider(debug_start_level_slider, 1, 99, 1, on_debug_start_level_changed)
 	configure_slider(cooldown_slider, 0, 5000, 250, on_cooldown_changed)
 	configure_slider(level_time_slider, 5000, 120000, 1000, on_level_time_changed)
 	configure_slider(start_delay_slider, 0, 10000, 500, on_start_delay_changed)
@@ -371,6 +390,7 @@ func setup_debug_controls() -> void:
 	configure_slider(refresh_lockout_slider, 0, 60000, 1000, on_refresh_lockout_changed)
 	configure_slider(refresh_min_useful_height_slider, 1, 6, 1, on_refresh_min_useful_height_changed)
 	configure_slider(placement_score_slider, 1, 25, 1, on_placement_score_changed)
+	configure_slider(checkpoint_score_slider, 0, 1000000, 1000, on_checkpoint_score_changed)
 	configure_slider(finisher_bonus_slider, 0, 25, 1, on_finisher_bonus_changed)
 	configure_slider(precision_bonus_slider, 0, 25, 1, on_precision_bonus_changed)
 	configure_slider(team_exact_bonus_slider, 0, 25, 1, on_team_exact_bonus_changed)
@@ -444,6 +464,7 @@ func reset_ui() -> void:
 	update_draw_pile_ui(0, null)
 	refresh_button.disabled = true
 	clear_score_popups()
+	cancel_pending_level_summary()
 	hide_level_summary()
 
 	if !is_switching_skin:
@@ -577,6 +598,7 @@ func update_room(data) -> void:
 	seen_score_event_ids.clear()
 	last_level_summary_key = ""
 	clear_score_popups()
+	cancel_pending_level_summary()
 	hide_level_summary()
 	timer_label.text = "Time -"
 	tower_status_label.text = "Match starting"
@@ -611,6 +633,7 @@ func update_room_closed(data) -> void:
 	update_draw_pile_ui(0, null)
 	set_debug_overlay_open(false)
 	clear_score_popups()
+	cancel_pending_level_summary()
 	hide_level_summary()
 	seen_score_event_ids.clear()
 	last_level_summary_key = ""
@@ -626,6 +649,7 @@ func update_game_state(data) -> void:
 	var target_height: int = int(data.get("targetHeight", 0))
 	var incoming_level: int = int(data.get("level", 0))
 	var players: Array = data.get("players", [])
+	score_popup_duration_ms = int(data.get("scorePopupDurationMs", score_popup_duration_ms))
 	level_summary_delay_ms = int(data.get("levelSummaryDelayMs", level_summary_delay_ms))
 
 	if incoming_level != current_level:
@@ -633,6 +657,7 @@ func update_game_state(data) -> void:
 		seen_score_event_ids.clear()
 		last_level_summary_key = ""
 		clear_score_popups()
+		cancel_pending_level_summary()
 		if state != "finished" and state != "failed":
 			hide_level_summary()
 
@@ -696,11 +721,16 @@ func update_game_state(data) -> void:
 		int(data.get("activeInventorySlots", MAX_INVENTORY_SLOTS))
 	)
 
-	process_score_events(data.get("scoreEvents", []), players)
+	var shown_score_popup_count: int = process_score_events(data.get("scoreEvents", []), players)
 
 	if state == "finished" or state == "failed":
-		show_level_summary(data.get("lastLevelSummary", {}), state)
+		queue_level_summary_after_score_popups(
+			data.get("lastLevelSummary", {}),
+			state,
+			shown_score_popup_count
+		)
 	else:
+		cancel_pending_level_summary()
 		hide_level_summary()
 
 func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS) -> void:
@@ -862,9 +892,11 @@ func get_tower_status(state: String, current_height: int, target_height: int) ->
 	var remaining: int = max(0, target_height - current_height)
 	return str(remaining) + " height to target"
 
-func process_score_events(raw_events: Variant, players: Array) -> void:
+func process_score_events(raw_events: Variant, players: Array) -> int:
+	var shown_popup_count: int = 0
+
 	if score_popup_layer == null or typeof(raw_events) != TYPE_ARRAY:
-		return
+		return shown_popup_count
 
 	for event_value in raw_events:
 		if typeof(event_value) != TYPE_DICTIONARY:
@@ -881,6 +913,9 @@ func process_score_events(raw_events: Variant, players: Array) -> void:
 
 		seen_score_event_ids[event_id] = true
 		show_score_event_popup(event, players)
+		shown_popup_count += 1
+
+	return shown_popup_count
 
 func show_score_event_popup(event: Dictionary, players: Array) -> void:
 	if score_popup_layer == null:
@@ -935,7 +970,7 @@ func show_score_event_popup(event: Dictionary, players: Array) -> void:
 	tween.tween_property(popup, "modulate:a", 1.0, 0.12)
 	tween.tween_property(popup, "scale", Vector2(1.08, 1.08) if is_emphasis else Vector2.ONE, 0.16)
 	tween.set_parallel(false)
-	tween.tween_interval(max(0.1, SCORE_POPUP_DURATION - 0.72))
+	tween.tween_interval(max(0.1, get_score_popup_duration_seconds() - 0.72))
 	tween.set_parallel(true)
 	tween.tween_property(popup, "modulate:a", 0.0, 0.6)
 	tween.tween_property(popup, "position:y", popup.position.y - SCORE_POPUP_FLOAT_DISTANCE, 0.6)
@@ -974,6 +1009,8 @@ func get_score_event_text(event: Dictionary, players: Array) -> String:
 			return "MVP " + get_player_display_name(player_id, players) + " +" + str(points)
 		"team_total":
 			return "TEAM +" + str(points)
+		"checkpoint_failed":
+			return "CHECKPOINT FAILED"
 
 	return str(event.get("label", "")).strip_edges()
 
@@ -998,16 +1035,29 @@ func get_score_event_color(event: Dictionary) -> Color:
 	if event_type == "team_total" or event_type == "team_exact_bonus":
 		return Color(0.42, 0.84, 1.0, 1.0)
 
+	if event_type == "checkpoint_failed":
+		return Color(1.0, 0.38, 0.28, 1.0)
+
 	return Color(1.0, 1.0, 1.0, 1.0)
 
 func is_emphasis_score_event(event_type: String) -> bool:
-	return event_type == "exact_finish" or event_type == "mvp" or event_type == "team_total"
+	return (
+		event_type == "exact_finish" or
+		event_type == "mvp" or
+		event_type == "team_total" or
+		event_type == "checkpoint_failed"
+	)
 
 func get_score_popup_size(event_type: String) -> Vector2:
 	if event_type == "exact_finish":
 		return Vector2(240, 54)
 
-	if event_type == "mvp" or event_type == "team_total" or event_type == "overbuild_finish":
+	if (
+		event_type == "mvp" or
+		event_type == "team_total" or
+		event_type == "overbuild_finish" or
+		event_type == "checkpoint_failed"
+	):
 		return Vector2(220, 48)
 
 	return Vector2(128, 38)
@@ -1016,7 +1066,12 @@ func get_score_popup_font_size(event_type: String) -> int:
 	if event_type == "exact_finish":
 		return 24
 
-	if event_type == "mvp" or event_type == "team_total" or event_type == "overbuild_finish":
+	if (
+		event_type == "mvp" or
+		event_type == "team_total" or
+		event_type == "overbuild_finish" or
+		event_type == "checkpoint_failed"
+	):
 		return 20
 
 	return 16
@@ -1049,7 +1104,11 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 	if event_type == "team_total":
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.32)
 
-	if event_type == "exact_finish" or event_type == "overbuild_finish":
+	if (
+		event_type == "exact_finish" or
+		event_type == "overbuild_finish" or
+		event_type == "checkpoint_failed"
+	):
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.4)
 
 	var player_id: String = str(event.get("playerId", ""))
@@ -1074,6 +1133,75 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 	var y_ratio: float = float(y_offsets.get(event_type, 0.52))
 
 	return Vector2(x, layer_size.y * y_ratio)
+
+func get_score_popup_duration_seconds() -> float:
+	return max(0.1, float(score_popup_duration_ms) / 1000.0)
+
+func queue_level_summary_after_score_popups(
+	summary_value: Variant,
+	state: String,
+	shown_score_popup_count: int
+) -> void:
+	if level_summary_overlay == null or typeof(summary_value) != TYPE_DICTIONARY:
+		return
+
+	var summary: Dictionary = summary_value
+
+	if summary.is_empty():
+		return
+
+	var summary_key: String = get_level_summary_key(summary)
+
+	if summary_key == last_level_summary_key and level_summary_overlay.visible:
+		return
+
+	if (
+		summary_key == pending_level_summary_key and
+		summary_show_timer != null and
+		!summary_show_timer.is_stopped()
+	):
+		return
+
+	pending_level_summary = summary.duplicate(true)
+	pending_level_summary_state = state
+	pending_level_summary_key = summary_key
+
+	if shown_score_popup_count > 0:
+		if summary_hide_timer != null:
+			summary_hide_timer.stop()
+
+		if level_summary_overlay != null:
+			level_summary_overlay.visible = false
+
+		if summary_show_timer != null:
+			summary_show_timer.stop()
+			summary_show_timer.wait_time = get_score_popup_duration_seconds()
+			summary_show_timer.start()
+
+		return
+
+	show_pending_level_summary()
+
+func show_pending_level_summary() -> void:
+	if pending_level_summary.is_empty():
+		return
+
+	var summary: Dictionary = pending_level_summary
+	var state: String = pending_level_summary_state
+
+	pending_level_summary = {}
+	pending_level_summary_state = ""
+	pending_level_summary_key = ""
+
+	show_level_summary(summary, state)
+
+func cancel_pending_level_summary() -> void:
+	if summary_show_timer != null:
+		summary_show_timer.stop()
+
+	pending_level_summary = {}
+	pending_level_summary_state = ""
+	pending_level_summary_key = ""
 
 func show_level_summary(summary_value: Variant, state: String) -> void:
 	if level_summary_overlay == null or typeof(summary_value) != TYPE_DICTIONARY:
@@ -1151,7 +1279,19 @@ func get_level_summary_result_text(summary: Dictionary, result: String) -> Strin
 
 		return result_text
 
-	return "Reason: " + format_summary_reason(str(summary.get("reason", "failed")))
+	var reason: String = str(summary.get("reason", "failed"))
+
+	if reason == "checkpoint_score_requirement":
+		var required_score: int = int(summary.get("checkpointScoreRequirement", 0))
+		var blocked_level: int = int(summary.get("blockedLevel", 0))
+		var checkpoint_text: String = "Checkpoint needs " + str(required_score) + " score each"
+
+		if blocked_level > 0:
+			checkpoint_text += " before Level " + str(blocked_level)
+
+		return checkpoint_text
+
+	return "Reason: " + format_summary_reason(reason)
 
 func get_level_summary_team_text(summary: Dictionary, result: String) -> String:
 	var team_score: int = int(summary.get("teamLevelScore", 0))
@@ -1261,6 +1401,9 @@ func get_player_color(player_id: String) -> Color:
 	return PlayerColors.color_for_player_id(player_id)
 
 func format_summary_reason(reason: String) -> String:
+	if reason == "checkpoint_score_requirement":
+		return "Checkpoint score requirement"
+
 	return reason.replace("_", " ").capitalize()
 
 func on_bots_toggle(enabled: bool) -> void:
@@ -1295,6 +1438,9 @@ func on_bot_delay_max_changed(value: float) -> void:
 		return
 	update_debug_labels()
 	NetworkManager.update_config("debugBotDelayMax", int(value))
+
+func on_debug_start_level_changed(value: float) -> void:
+	send_debug_int("debugStartLevel", value)
 
 func on_cooldown_changed(value: float) -> void:
 	if is_syncing_debug_config:
@@ -1362,6 +1508,9 @@ func on_refresh_min_useful_height_changed(value: float) -> void:
 func on_placement_score_changed(value: float) -> void:
 	send_debug_int("placementScorePerHeight", value)
 
+func on_checkpoint_score_changed(value: float) -> void:
+	send_debug_int("checkpointScoreRequirement", value)
+
 func on_finisher_bonus_changed(value: float) -> void:
 	send_debug_int("finisherBonusPerLevel", value)
 
@@ -1390,6 +1539,7 @@ func update_debug_config(config) -> void:
 	set_slider_no_signal(bot_count_slider, float(config.get("debugBotCount", 0)))
 	set_slider_no_signal(bot_delay_min_slider, float(config.get("debugBotDelayMin", 2000)))
 	set_slider_no_signal(bot_delay_max_slider, float(config.get("debugBotDelayMax", 5000)))
+	set_slider_no_signal(debug_start_level_slider, float(config.get("debugStartLevel", 1)))
 	set_slider_no_signal(cooldown_slider, float(config.get("placementCooldown", 2000)))
 	set_slider_no_signal(level_time_slider, float(config.get("levelTimeLimitMs", 30000)))
 	set_slider_no_signal(start_delay_slider, float(config.get("startDelayMs", 1500)))
@@ -1405,6 +1555,7 @@ func update_debug_config(config) -> void:
 	set_slider_no_signal(refresh_lockout_slider, float(config.get("refreshLockoutMs", 10000)))
 	set_slider_no_signal(refresh_min_useful_height_slider, float(config.get("refreshMinUsefulBlockHeight", 2)))
 	set_slider_no_signal(placement_score_slider, float(config.get("placementScorePerHeight", 10)))
+	set_slider_no_signal(checkpoint_score_slider, float(config.get("checkpointScoreRequirement", 0)))
 	set_slider_no_signal(finisher_bonus_slider, float(config.get("finisherBonusPerLevel", 4)))
 	set_slider_no_signal(precision_bonus_slider, float(config.get("precisionBonusPerLevel", 6)))
 	set_slider_no_signal(team_exact_bonus_slider, float(config.get("teamExactBonusPerLevel", 4)))
@@ -1425,6 +1576,10 @@ func update_debug_labels() -> void:
 	set_debug_label_text(
 		bot_delay_max_label,
 		"Bot Delay Max: " + str(int(get_slider_value(bot_delay_max_slider, 5000))) + " ms"
+	)
+	set_debug_label_text(
+		debug_start_level_label,
+		"Start Level: " + str(int(get_slider_value(debug_start_level_slider, 1)))
 	)
 	set_debug_label_text(
 		cooldown_label,
@@ -1481,6 +1636,10 @@ func update_debug_labels() -> void:
 	set_debug_label_text(
 		placement_score_label,
 		"Placement Score/Height: " + str(int(get_slider_value(placement_score_slider, 10)))
+	)
+	set_debug_label_text(
+		checkpoint_score_label,
+		"Checkpoint Min Score: " + str(int(get_slider_value(checkpoint_score_slider)))
 	)
 	set_debug_label_text(
 		finisher_bonus_label,

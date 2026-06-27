@@ -47,6 +47,7 @@ class GameEngine {
             secondsRemaining: Math.ceil(this.getRemainingMs() / 1000),
             lastLevelSummary: this.room.lastLevelSummary,
             scoreEvents: scoreEvents,
+            scorePopupDurationMs: GameConfig.scorePopupDurationMs,
             levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
             maxRefreshTokens: GameConfig.maxRefreshTokens,
             maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
@@ -83,13 +84,15 @@ class GameEngine {
     // =========================
 
     createRoom(players) {
+        const startLevel = this.getConfiguredStartLevel();
+
         this.room = {
             id: null,
             players: players,
-            level: 1,
-            checkpointLevel: 1,
+            level: startLevel,
+            checkpointLevel: startLevel,
             checkpointScores: {},
-            targetHeight: this.getTargetHeightForLevel(1),
+            targetHeight: this.getTargetHeightForLevel(startLevel),
             currentHeight: 0,
             drawPile: [],
             teamCarryOverBlocks: [],
@@ -174,14 +177,14 @@ class GameEngine {
         if (this.room.state === "finished") {
             this.nextLevelTimer = setTimeout(() => {
                 this.nextLevel();
-            }, GameConfig.levelSummaryDelayMs);
+            }, this.getPostLevelTransitionDelayMs());
             return;
         }
 
         if (this.room.state === "failed") {
             this.nextLevelTimer = setTimeout(() => {
                 this.rollbackToCheckpoint();
-            }, GameConfig.levelSummaryDelayMs);
+            }, this.getPostLevelTransitionDelayMs());
         }
     }
 
@@ -235,6 +238,15 @@ class GameEngine {
         this.room.pendingScoreEvents = [];
 
         return events;
+    }
+
+    getPostLevelTransitionDelayMs() {
+        const scorePopupDurationMs =
+            Math.max(0, Number(GameConfig.scorePopupDurationMs) || 0);
+        const levelSummaryDelayMs =
+            Math.max(0, Number(GameConfig.levelSummaryDelayMs) || 0);
+
+        return scorePopupDurationMs + levelSummaryDelayMs;
     }
 
     startLevel() {
@@ -356,6 +368,63 @@ class GameEngine {
             1,
             Math.round(curveTarget * (GameConfig.targetHeightMultiplier / 3))
         );
+    }
+
+    getConfiguredStartLevel() {
+        return this.clampLevel(GameConfig.debugStartLevel || 1);
+    }
+
+    clampLevel(level) {
+        return Math.max(
+            1,
+            Math.min(GameConfig.maxLevel, Math.floor(Number(level) || 1))
+        );
+    }
+
+    restartAtConfiguredStartLevel() {
+        this.restartAtLevel(this.getConfiguredStartLevel(), {
+            resetScores: true
+        });
+    }
+
+    restartAtLevel(level, options = {}) {
+        if (!this.room) {
+            return;
+        }
+
+        BotManager.stopBots(this);
+        this.clearTimers();
+
+        const targetLevel = this.clampLevel(level);
+
+        this.room.level = targetLevel;
+        this.room.checkpointLevel = targetLevel;
+        this.room.drawPile = [];
+        this.room.teamCarryOverBlocks = [];
+        this.room.towerBlocks = [];
+        this.room.currentHeight = 0;
+        this.room.targetHeight = this.getTargetHeightForLevel(targetLevel);
+        this.room.lastLevelSummary = null;
+        this.room.pendingScoreEvents = [];
+        this.room.scoreEventSeq = 0;
+
+        this.room.players.forEach(player => {
+            if (options.resetScores) {
+                player.score = 0;
+            }
+
+            player.levelScore = 0;
+            player.scoreBreakdown = {};
+            player.contributedHeight = 0;
+            player.refreshTokens = 0;
+            player.refreshUsesThisLevel = 0;
+            player.blocks = [];
+            player.lastPlacementTime = 0;
+            player.botLoopLevel = null;
+        });
+
+        this.saveCheckpointScores();
+        this.startLevel();
     }
 
     getNextDrawBlock() {
@@ -992,6 +1061,10 @@ class GameEngine {
             result: options.result,
             reason: options.reason || null,
             level: this.room.level,
+            blockedLevel: options.blockedLevel || null,
+            checkpointScoreRequirement:
+                Number(options.checkpointScoreRequirement || 0),
+            checkpointScoreFailures: options.checkpointScoreFailures || [],
             teamLevelScore: teamLevelScore,
             mvpId: mvp?.id || null,
             mvpScore: Number(mvp?.levelScore || 0),
@@ -1095,7 +1168,7 @@ class GameEngine {
 
         this.nextLevelTimer = setTimeout(() => {
             this.nextLevel();
-        }, GameConfig.levelSummaryDelayMs);
+        }, this.getPostLevelTransitionDelayMs());
     }
 
     failLevel(reason) {
@@ -1140,7 +1213,7 @@ class GameEngine {
 
         this.nextLevelTimer = setTimeout(() => {
             this.rollbackToCheckpoint();
-        }, GameConfig.levelSummaryDelayMs);
+        }, this.getPostLevelTransitionDelayMs());
     }
 
     // =========================
@@ -1156,15 +1229,104 @@ class GameEngine {
             return;
         }
 
-        this.room.level += 1;
+        const nextLevel = this.room.level + 1;
+        const opensCheckpoint = this.isCheckpointLevel(nextLevel);
 
-        if ((this.room.level - 1) % GameConfig.checkpointInterval === 0) {
+        if (opensCheckpoint && !this.hasMetCheckpointScoreRequirement()) {
+            this.failCheckpointScoreRequirement(nextLevel);
+            return;
+        }
+
+        this.room.level = nextLevel;
+
+        if (opensCheckpoint) {
             this.room.checkpointLevel = this.room.level;
             this.saveCheckpointScores();
         }
 
         console.log(`\n=== LEVEL ${this.room.level} QUEUED ===`);
         this.startLevel();
+    }
+
+    isCheckpointLevel(level) {
+        const interval = Math.max(1, Number(GameConfig.checkpointInterval) || 1);
+
+        return (level - 1) % interval === 0;
+    }
+
+    getCheckpointScoreRequirement() {
+        return Math.max(0, Number(GameConfig.checkpointScoreRequirement) || 0);
+    }
+
+    getCheckpointScoreFailures() {
+        const requirement = this.getCheckpointScoreRequirement();
+
+        if (requirement <= 0) {
+            return [];
+        }
+
+        return this.room.players
+            .filter(player => Number(player.score || 0) < requirement)
+            .map(player => ({
+                id: player.id,
+                score: Number(player.score || 0),
+                requiredScore: requirement
+            }));
+    }
+
+    hasMetCheckpointScoreRequirement() {
+        return this.getCheckpointScoreFailures().length === 0;
+    }
+
+    failCheckpointScoreRequirement(blockedLevel) {
+        this.room.state = "failed";
+        this.clearTimers();
+
+        const mvp = this.getLevelMVP();
+        const previousTotalScores = this.getPlayerScoreMap();
+        const failures = this.getCheckpointScoreFailures();
+        const requirement = this.getCheckpointScoreRequirement();
+
+        this.queueScoreEvent("checkpoint_failed", {
+            label: "Checkpoint Failed",
+            displayOnly: true,
+            meta: {
+                blockedLevel: blockedLevel,
+                checkpointScoreRequirement: requirement,
+                checkpointScoreFailures: failures
+            }
+        });
+        this.queueScoreEvent("mvp", {
+            playerId: mvp.id,
+            points: mvp.levelScore,
+            label: "MVP",
+            displayOnly: true
+        });
+
+        this.room.lastLevelSummary = this.buildLevelSummary({
+            result: "failed",
+            reason: "checkpoint_score_requirement",
+            blockedLevel: blockedLevel,
+            exactFinish: false,
+            overbuildHeight: 0,
+            finisher: null,
+            finishingBlock: null,
+            carriedBlockCount: 0,
+            mvp: mvp,
+            previousTotalScores: previousTotalScores,
+            checkpointScoreRequirement: requirement,
+            checkpointScoreFailures: failures
+        });
+
+        console.log(
+            `Checkpoint score requirement failed before level ${blockedLevel}`
+        );
+        this.persistRoom();
+        this.broadcastGameState();
+
+        this.nextLevelTimer = setTimeout(() => {
+            this.rollbackToCheckpoint();
+        }, this.getPostLevelTransitionDelayMs());
     }
 
     rollbackToCheckpoint() {
