@@ -8,12 +8,19 @@
 - [[Bot Manager]]
 - [[Game Config]]
 - [[Server Docker Image]]
+- [[Balance Simulator]]
+- [[Server Score Events Tests]]
 
 ## Client
 - [[Godot Client App]]
 - [[NetworkManager]]
 - [[Main UI Controller]]
-- [[HTML Test Client]]
+- [[Client UI Skins]]
+- [[Block Preview]]
+- [[Tower Stack]]
+- [[Debug Overlay]]
+- [[Player Colors]]
+- [[Godot Client Tests]]
 
 ## CI/CD And Infrastructure
 - [[Staging Automated Master Workflow]]
