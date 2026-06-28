@@ -1169,11 +1169,6 @@ class GameEngine {
             label: "MVP",
             displayOnly: true
         });
-        this.queueScoreEvent("team_total", {
-            points: this.getTeamLevelScore(),
-            label: "Team",
-            displayOnly: true
-        });
 
         this.room.lastLevelSummary = this.buildLevelSummary({
             result: "completed",
@@ -1567,17 +1562,23 @@ class GameEngine {
     }
 
     addBonusScore(player, points, label) {
+        const safePoints = Math.round(Number(points) || 0);
+
+        if (safePoints <= 0) {
+            return 0;
+        }
+
         //player.score += points; // Only add to levelScore during gameplay
-        player.levelScore += points;
-        this.recordScoreBreakdown(player, label, points);
+        player.levelScore += safePoints;
+        this.recordScoreBreakdown(player, label, safePoints);
         this.queueScoreEvent(this.getBonusScoreEventType(label), {
             playerId: player.id,
-            points: points,
+            points: safePoints,
             label: this.getBonusScoreEventLabel(label)
         });
 
-        console.log(`${player.id} gained ${points} ${label} bonus`);
-        return points;
+        console.log(`${player.id} gained ${safePoints} ${label} bonus`);
+        return safePoints;
     }
 
     getBonusScoreEventType(label) {

@@ -30,8 +30,8 @@
 - `TowerStack.gd` keeps readable cell size and scrolls the visible tower window upward when high-level towers exceed the track height.
 - Tower center display visualizes both current height against target height and the placed-block stack.
 - Score events are tracked by stable event id per level so reconnects, skin switches, and repeat broadcasts do not duplicate animations.
-- Placement popups use player color and `placementScorePopupDurationMs`; MVP, Perfect Fit, team total, checkpoint, finisher, and bonus-style popups use `finishScorePopupDurationMs`. These durations cover the full popup lifetime, including fade-out; finish-style popups fade and float across the configured duration instead of using a short capped fade.
-- Exact finish shows `PERFECT FIT`; overbuild shows target reached with wasted height; MVP/team total use larger callouts.
+- Placement popups use player color and `placementScorePopupDurationMs`; MVP, Perfect Fit, checkpoint, finisher, and bonus-style popups use `finishScorePopupDurationMs`. These durations cover the full popup lifetime, including fade-out; finish-style popups fade and float across the configured duration instead of using a short capped fade.
+- Exact finish shows `PERFECT FIT`; overbuild shows target reached with wasted height; MVP uses a larger callout.
 - Checkpoint score-gate failures show a distinct checkpoint failure callout and a summary that mirrors the right-side checkpoint goal UI.
 - `CheckpointStatusLabel` renders `checkpointScoreStatus` under the leaderboard with the next checkpoint level, ready count, and leaderboard score goals players must surpass.
 - Level score summaries wait for the current score popup batch to fade, then show complete/failed state, exact/overbuild result, team score, MVP, finisher, and per-player level/final totals before auto-hiding from `levelSummaryDelayMs`.

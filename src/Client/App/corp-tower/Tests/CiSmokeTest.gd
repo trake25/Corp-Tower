@@ -5,13 +5,21 @@ const MAIN_SCENE_UID := "uid://c0po62b2x6ltb"
 const NETWORK_MANAGER_PATH := "res://Sys/NetMan/NetworkManager.gd"
 const DEFAULT_SKIN_PATH := "res://Cor/Scenes/Skins/DefaultSkin.tscn"
 const FIGMA_SKIN_PATH := "res://Cor/Scenes/Skins/Figma_SkinV1.tscn"
+const APPLICATION_SCRIPT_ROOTS := [
+	"res://Cor",
+	"res://Dat",
+	"res://Res",
+	"res://Sys"
+]
 
+var checked_script_count := 0
 var failures: Array[String] = []
 
 func _init() -> void:
 	call_deferred("run")
 
 func run() -> void:
+	check_application_scripts()
 	check_project_settings()
 	check_autoload()
 	check_scene_load(DEFAULT_SKIN_PATH, "default UI skin")
@@ -26,6 +34,42 @@ func run() -> void:
 		await process_frame
 
 	finish()
+
+func check_application_scripts() -> void:
+	for root_path in APPLICATION_SCRIPT_ROOTS:
+		scan_script_directory(root_path)
+
+func scan_script_directory(path: String) -> void:
+	var directory := DirAccess.open(path)
+	if directory == null:
+		failures.append("Failed to open script directory: " + path)
+		return
+
+	directory.list_dir_begin()
+	var entry := directory.get_next()
+
+	while entry != "":
+		if entry == "." or entry == "..":
+			entry = directory.get_next()
+			continue
+
+		var entry_path := path.path_join(entry)
+
+		if directory.current_is_dir():
+			scan_script_directory(entry_path)
+		elif entry_path.get_extension() == "gd":
+			check_script_loads(entry_path)
+
+		entry = directory.get_next()
+
+	directory.list_dir_end()
+
+func check_script_loads(path: String) -> void:
+	checked_script_count += 1
+	var script := load(path) as Script
+
+	if script == null:
+		failures.append("Failed to load client script: " + path)
 
 func check_project_settings() -> void:
 	var main_scene := str(ProjectSettings.get_setting("application/run/main_scene", ""))
@@ -94,7 +138,10 @@ func check_main_scene_ready(main_instance: Node) -> void:
 
 func finish() -> void:
 	if failures.is_empty():
-		print("CI smoke test passed: main scene, autoload, and UI skins load.")
+		print(
+			"CI smoke test passed: loaded " + str(checked_script_count) +
+			" client scripts; main scene, autoload, and UI skins load."
+		)
 		quit(0)
 		return
 

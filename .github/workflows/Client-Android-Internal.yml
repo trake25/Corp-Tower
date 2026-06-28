@@ -221,11 +221,11 @@ jobs:
           set -euo pipefail
           godot --headless --path "$GODOT_PROJECT_PATH" --editor --quit
 
-      - name: Run Godot client deployment smoke test
+      - name: Run Godot client compile/startup smoke test
         run: |
           set -euo pipefail
           godot --headless --path "$GODOT_PROJECT_PATH" -s Tests/CiSmokeTest.gd
-          echo "- Godot client deployment smoke test: passed" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Godot client compile/startup smoke test: passed" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run required GUT client tests
         run: |

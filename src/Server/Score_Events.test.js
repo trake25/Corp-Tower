@@ -131,17 +131,13 @@ test("exact winning placement emits exact finish and all eligible bonus events",
     assert.equal(types.filter(type => type === "finisher_bonus").length, 1);
     assert.equal(types.filter(type => type === "precision_bonus").length, 1);
     assert.equal(types.filter(type => type === "team_exact_bonus").length, 3);
-    assert.equal(types.filter(type => type === "assist_bonus").length, 1);
+    assert.equal(types.includes("assist_bonus"), false);
     assert.equal(types.filter(type => type === "mvp").length, 1);
-    assert.equal(types.filter(type => type === "team_total").length, 1);
+    assert.equal(types.includes("team_total"), false);
     assert.equal(message.lastLevelSummary.result, "completed");
     assert.equal(message.lastLevelSummary.exactFinish, true);
     assert.equal(message.lastLevelSummary.overbuildHeight, 0);
     assert.equal(message.lastLevelSummary.finisherId, "P1");
-    assert.equal(
-        message.scoreEvents.find(event => event.type === "team_total").points,
-        message.lastLevelSummary.teamLevelScore
-    );
 
 });
 

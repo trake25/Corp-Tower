@@ -29,7 +29,7 @@
   - `closed`
 - Scoring:
   - Placement points use effective height, level, and `placementScorePerHeight`.
-  - Bonuses: finisher, precision, team, assist, with multipliers from [[Game Config]].
+  - Bonuses: finisher, precision, team, and optional assist, with multipliers from [[Game Config]]. Disabled zero-value bonuses do not emit score events.
   - MVP is highest level score.
   - Checkpoint score snapshots are restored on rollback.
   - Checkpoint score gates fail when any player gained less than `checkpointMinContributionShare` of expected placement score for the checkpoint band.

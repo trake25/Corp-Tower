@@ -165,9 +165,9 @@ const GameConfig = {
     scoring: {
         placementScorePerHeight: 10,
         finisherBonusPerLevel: 4,
-        precisionBonusPerLevel: 6,
-        teamExactBonusPerLevel: 4,
-        assistBonusPerLevel: 6,
+        precisionBonusPerLevel: 8,
+        teamExactBonusPerLevel: 6,
+        assistBonusPerLevel: 0,
         assistContributionThreshold: 0.25
     },
 

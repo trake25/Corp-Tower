@@ -11,7 +11,7 @@
 - Resolve the next Android version code from Google Play.
 - Restore release keystore from secrets.
 - Import/parse Godot project.
-- Run the always-on Godot client deployment smoke test.
+- Run the always-on Godot client compile/startup smoke test.
 - Run required GUT tests.
 - Install the generated Android build template in CI and export signed Android AAB.
 - Validate the signed AAB deployment artifact before upload.
@@ -42,7 +42,7 @@
   - CI writes a valid Godot `EditorSettings` resource so Godot can read the Android SDK and Java SDK paths without parse warnings.
   - The generated Android build template is not committed to the repository.
 - Deployment tests:
-  - `res://Tests/CiSmokeTest.gd` runs before export and fails the workflow if the configured main scene, `NetworkManager` autoload, required UI skin scenes, scene instantiation, or main-scene ready wiring is broken.
+  - `res://Tests/CiSmokeTest.gd` loads application scripts under `Cor`, `Dat`, `Res`, and `Sys`, then fails the workflow if the configured main scene, `NetworkManager` autoload, required UI skin scenes, scene instantiation, or main-scene ready wiring is broken.
   - The exported AAB must be non-empty, pass zip integrity validation, contain the expected bundle config and base manifest, include `arm64-v8a` native libraries, exclude disabled native architectures, and pass Java signature verification.
   - When `upload_to_play` is true, the workflow creates a fresh Google Play edit after upload and verifies the internal track lists the resolved `ANDROID_VERSION_CODE`.
 - GUT step:
@@ -66,5 +66,5 @@
 
 ## Notes
 - Current target platform is Android only.
-- The deployment smoke test catches startup wiring regressions before GUT runs.
+- The smoke test includes the client-side equivalent of the server syntax/compile gate and catches startup wiring regressions before GUT runs.
 - GUT tests should be added under `res://Tests/Gut`.

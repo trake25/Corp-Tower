@@ -1018,6 +1018,9 @@ func process_score_events(raw_events: Variant, players: Array) -> float:
 			continue
 
 		var event: Dictionary = event_value
+		if str(event.get("type", "")) == "team_total":
+			continue
+
 		var event_id: String = str(event.get("id", ""))
 
 		if event_id == "":
@@ -1175,8 +1178,6 @@ func get_score_event_text(event: Dictionary, players: Array) -> String:
 			return "TARGET REACHED +" + str(get_event_overbuild_height(event))
 		"mvp":
 			return "MVP " + get_player_display_name(player_id, players) + " +" + str(points)
-		"team_total":
-			return "TEAM +" + str(points)
 		"checkpoint_failed":
 			return "CHECKPOINT FAILED"
 
@@ -1200,7 +1201,7 @@ func get_score_event_color(event: Dictionary) -> Color:
 	if event_type == "exact_finish":
 		return Color(1.0, 0.84, 0.26, 1.0)
 
-	if event_type == "team_total" or event_type == "team_exact_bonus":
+	if event_type == "team_exact_bonus":
 		return Color(0.42, 0.84, 1.0, 1.0)
 
 	if event_type == "checkpoint_failed":
@@ -1212,7 +1213,6 @@ func is_emphasis_score_event(event_type: String) -> bool:
 	return (
 		event_type == "exact_finish" or
 		event_type == "mvp" or
-		event_type == "team_total" or
 		event_type == "checkpoint_failed"
 	)
 
@@ -1222,7 +1222,6 @@ func get_score_popup_size(event_type: String) -> Vector2:
 
 	if (
 		event_type == "mvp" or
-		event_type == "team_total" or
 		event_type == "overbuild_finish" or
 		event_type == "checkpoint_failed"
 	):
@@ -1236,7 +1235,6 @@ func get_score_popup_font_size(event_type: String) -> int:
 
 	if (
 		event_type == "mvp" or
-		event_type == "team_total" or
 		event_type == "overbuild_finish" or
 		event_type == "checkpoint_failed"
 	):
@@ -1268,9 +1266,6 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 
 	if event_type == "mvp":
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.25)
-
-	if event_type == "team_total":
-		return Vector2(layer_size.x * 0.5, layer_size.y * 0.32)
 
 	if (
 		event_type == "exact_finish" or
@@ -1400,7 +1395,8 @@ func show_level_summary(summary_value: Variant, state: String) -> void:
 	var level_number: int = int(summary.get("level", current_level))
 	level_summary_title_label.text = "Level " + str(level_number) + (" Complete" if result == "completed" else " Failed")
 	level_summary_result_label.text = get_level_summary_result_text(summary, result)
-	level_summary_team_label.text = get_level_summary_team_text(summary, result)
+	level_summary_team_label.visible = false
+	level_summary_team_label.text = ""
 	level_summary_mvp_label.text = get_level_summary_mvp_text(summary)
 
 	clear_children(level_summary_players_box)
@@ -1539,14 +1535,6 @@ func get_checkpoint_failure_fallback_text(summary: Dictionary, blocked_level: in
 		return "Checkpoint L" + str(blocked_level) + " failed"
 
 	return "Checkpoint L" + str(blocked_level) + "\nGoals: " + ", ".join(failure_texts)
-
-func get_level_summary_team_text(summary: Dictionary, result: String) -> String:
-	var team_score: int = int(summary.get("teamLevelScore", 0))
-
-	if result == "completed":
-		return "Team +" + str(team_score)
-
-	return "Team level " + str(team_score) + " (not banked)"
 
 func get_level_summary_mvp_text(summary: Dictionary) -> String:
 	var mvp_id: String = str(summary.get("mvpId", ""))
@@ -1835,9 +1823,9 @@ func update_debug_config(config) -> void:
 		float(config.get("checkpointMinContributionShare", 0.30)) * 100.0
 	)
 	set_slider_no_signal(finisher_bonus_slider, float(config.get("finisherBonusPerLevel", 4)))
-	set_slider_no_signal(precision_bonus_slider, float(config.get("precisionBonusPerLevel", 6)))
-	set_slider_no_signal(team_exact_bonus_slider, float(config.get("teamExactBonusPerLevel", 4)))
-	set_slider_no_signal(assist_bonus_slider, float(config.get("assistBonusPerLevel", 6)))
+	set_slider_no_signal(precision_bonus_slider, float(config.get("precisionBonusPerLevel", 8)))
+	set_slider_no_signal(team_exact_bonus_slider, float(config.get("teamExactBonusPerLevel", 6)))
+	set_slider_no_signal(assist_bonus_slider, float(config.get("assistBonusPerLevel", 0)))
 	set_slider_no_signal(
 		assist_threshold_slider,
 		float(config.get("assistContributionThreshold", 0.25)) * 100.0
@@ -1939,15 +1927,16 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		precision_bonus_label,
-		"Precision Bonus/Level: " + str(int(get_slider_value(precision_bonus_slider, 6)))
+		"Precision Bonus/Level: " + str(int(get_slider_value(precision_bonus_slider, 8)))
 	)
 	set_debug_label_text(
 		team_exact_bonus_label,
-		"Team Exact Bonus/Level: " + str(int(get_slider_value(team_exact_bonus_slider, 4)))
+		"Team Exact Bonus/Level: " + str(int(get_slider_value(team_exact_bonus_slider, 6)))
 	)
+	var assist_bonus_value: int = int(get_slider_value(assist_bonus_slider, 0))
 	set_debug_label_text(
 		assist_bonus_label,
-		"Assist Bonus/Level: " + str(int(get_slider_value(assist_bonus_slider, 6)))
+		"Assist Bonus/Level: " + ("Off" if assist_bonus_value <= 0 else str(assist_bonus_value))
 	)
 	set_debug_label_text(
 		assist_threshold_label,

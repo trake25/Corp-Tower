@@ -599,10 +599,11 @@ text = "Perfect Fit"
 
 [node name="LevelSummaryTeamLabel" type="Label" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 horizontal_alignment = 1
-text = "Team +0"
+text = ""
 
 [node name="LevelSummaryMvpLabel" type="Label" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows"]
 unique_name_in_owner = true
@@ -1084,7 +1085,7 @@ layout_mode = 2
 [node name="PrecisionBonusLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Precision Bonus/Level: 0"
+text = "Precision Bonus/Level: 8"
 
 [node name="PrecisionBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
@@ -1093,7 +1094,7 @@ layout_mode = 2
 [node name="TeamExactBonusLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Team Exact Bonus/Level: 0"
+text = "Team Exact Bonus/Level: 6"
 
 [node name="TeamExactBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
@@ -1102,7 +1103,7 @@ layout_mode = 2
 [node name="AssistBonusLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Assist Bonus/Level: 0"
+text = "Assist Bonus/Level: Off"
 
 [node name="AssistBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true

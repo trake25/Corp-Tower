@@ -1,5 +1,5 @@
-# Corp Tower GDD
-> ⚠️ Verify against current implementation before trusting balancing values and scoring formulas.
+﻿# Corp Tower GDD
+> âš ï¸ Verify against current implementation before trusting balancing values and scoring formulas.
 
 ## Core Concept
 - 3-player real-time cooperative puzzle game.
@@ -54,8 +54,8 @@
 - On level failure, team carry-over is discarded during checkpoint rollback.
 
 ## Refresh Token System
-- Max 1 token per player `(1/1)` — per-player UI and variable.
-- Max 2 uses per level `(2/2)` — global UI and variable.
+- Max 1 token per player `(1/1)` â€” per-player UI and variable.
+- Max 2 uses per level `(2/2)` â€” global UI and variable.
 - Effect: replaces all current blocks.
 - Cannot be used in the last 10 seconds of a level.
 - Only refreshes current remaining inventory.
@@ -85,11 +85,11 @@
 ## Scoring System
 | Component | Formula |
 |---|---|
-| Placement Score | `effective_height × level × placementScorePerHeight` (default `10`) |
-| Finisher Bonus | `level × 4` |
-| Precision Bonus | `level × 6` (exact finish only) |
-| Team Bonus | `level × 4` (exact finish, all players) |
-| Assist Bonus | `level × 6` (if player contributes ≥ 25% of total height) |
+| Placement Score | `effective_height Ã— level Ã— placementScorePerHeight` (default `10`) |
+| Finisher Bonus | `level Ã— 4` |
+| Precision Bonus | `level x 8` (exact finish only) |
+| Team Bonus | `level x 6` (exact finish, all players) |
+| Assist Bonus | Disabled by default (`assistBonusPerLevel = 0`) |
 - MVP: player with highest level score for the level.
 - Leaderboard score is snapshotted at each checkpoint and restored on rollback, preventing repeated failed checkpoint attempts from farming score.
 - `checkpointMinContributionShare` sets the required per-player share of expected placement score for the checkpoint band; default is `30%`, and `0` disables the gate. `checkpointScoreRequirement` remains a hidden legacy flat floor when set by old tooling.
@@ -98,7 +98,7 @@
 - Placement score shows as a `+points` popup in the placing player's color, using `placementScorePopupDurationMs`.
 - Exact finish shows a distinct `PERFECT FIT` callout, followed by precision/team exact bonus feedback.
 - Overbuild finish shows target reached with the wasted height amount and does not trigger exact-finish celebration.
-- MVP and team total are display-only callouts; MVP does not award extra score.
+- MVP is a display-only callout and does not award extra score; team total is not shown to players.
 - Level summary appears after the end-of-level score popup batch has faded, showing result, team level score, MVP, finisher when present, per-player level score, final total score, contributed height, and bonus breakdown source data.
 - Failed level summaries show level score but do not bank leaderboard score.
 
@@ -132,7 +132,7 @@
 | Variable | Description |
 |---|---|
 | `debugBotsEnabled` | Enables/disables debug bots globally. |
-| `debugBotCount` | Bot slots allowed per room (0–2). |
+| `debugBotCount` | Bot slots allowed per room (0â€“2). |
 | `debugBotStrategy` | Switches QA bots between cooperative height-management and MVP-greedy play. |
 | `debugStartLevel` | Starts new rooms at a selected level and restarts active debug rooms at that level for tuning. |
 | `debugBotDelayMin` | Min bot action delay (ms). |
@@ -141,7 +141,7 @@
 | `levelTimeLimitMs` | Level timer duration (ms). |
 | `startDelayMs` | Countdown before level becomes playable (ms). |
 | `placementScorePopupDurationMs` | Placement score popup total lifetime, including fade-out (500-10000 ms, default 5000). |
-| `finishScorePopupDurationMs` | MVP, Perfect Fit, team total, and bonus popup total lifetime, including fade-out (500-10000 ms, default 5000). |
+| `finishScorePopupDurationMs` | MVP, Perfect Fit, and bonus popup total lifetime, including fade-out (500-10000 ms, default 5000). |
 | `levelSummaryDelayMs` | Completed/failed level score summary visible duration before next level or rollback (1000-10000 ms, default 6000). |
 | `checkpointMinContributionShare` | Required per-player share of expected placement score in the current checkpoint band; default `30%`, `0` disables the gate. |
 | `targetHeightMultiplier` | Debug scale applied to the target-height curve; default 3 keeps the authored curve unchanged. |
@@ -157,13 +157,13 @@
 | `finisherBonusPerLevel` | Finisher score multiplier per level. |
 | `precisionBonusPerLevel` | Exact-finish finisher score multiplier per level. |
 | `teamExactBonusPerLevel` | Exact-finish team score multiplier per level. |
-| `assistBonusPerLevel` | Assist score multiplier per level. |
-| `assistContributionThreshold` | Minimum contribution share required for assist bonus. |
+| `assistBonusPerLevel` | Assist score multiplier per level; `0` disables assist scoring. |
+| `assistContributionThreshold` | Minimum contribution share required for assist bonus when assist scoring is enabled. |
 
 ### Validation Rules
 - Unknown keys rejected.
 - Numeric values clamped to safe ranges.
-- `debugBotDelayMax` ≥ `debugBotDelayMin` enforced.
+- `debugBotDelayMax` â‰¥ `debugBotDelayMin` enforced.
 - `resetDebugConfig` restores the server-side defaults captured from `Game_Config.js` at process startup, then rebroadcasts `debug_config`.
 - Debug settings are runtime tuning only, not player progression data.
 
