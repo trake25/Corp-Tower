@@ -40,7 +40,7 @@ concurrency:
 jobs:
   classify-changes:
     name: Classify Changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       run_diagnostics: ${{ steps.classify.outputs.run_diagnostics }}
       run_infra_plan: ${{ steps.classify.outputs.run_infra_plan }}
@@ -48,7 +48,7 @@ jobs:
       fast_server_update: ${{ steps.classify.outputs.fast_server_update }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 

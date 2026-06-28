@@ -5,8 +5,9 @@
 - File: `.github/workflows/Client-Android-Internal.yml`.
 
 ## Responsibilities
+- Run on the pinned GitHub runner image `ubuntu-24.04`.
 - Download Godot `4.6.2.stable` Linux.
-- Install Android SDK packages.
+- Install Android SDK packages through `android-actions/setup-android`.
 - Resolve the next Android version code from Google Play.
 - Restore release keystore from secrets.
 - Import/parse Godot project.
@@ -27,6 +28,10 @@
   - Uses the highest release `versionCodes[]` value across all tracks plus one.
   - Uses `1` when no Google Play release exists yet.
   - Allows `version_code_override` only when it is a positive integer greater than the detected Google Play maximum.
+- Runner/action runtime:
+  - Uses Node 24-compatible GitHub Action majors.
+  - Avoids deprecated Node 20 compatibility flags.
+  - Android SDK license acceptance is handled by the setup action instead of a manual shell pipe.
 - GUT step:
   - Runs after project import.
   - Runs before signed export.

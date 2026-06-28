@@ -5,6 +5,7 @@
 - File: `.github/workflows/Server-Staging-Deploy.yml`.
 
 ## Responsibilities
+- Run CI/CD jobs on the pinned GitHub runner image `ubuntu-24.04`.
 - Test server code on GitHub VM.
 - Build Docker image.
 - Push image to ECR.
@@ -20,6 +21,7 @@
   - `build-and-push`
   - `deploy-staging`
 - CI dependency install uses `npm ci` with GitHub npm cache and the committed server lockfile.
+- GitHub Action dependencies are pinned to Node 24-compatible majors, and server tests use Node.js `24.14.1`.
 - Docker image builds use BuildKit GitHub Actions cache and push the immutable commit SHA image tag.
 - Step summaries include timing visibility for server tests, image push, EC2 target discovery, SSH setup/preflight, Redis, each worker update, and final nginx restore.
 - Server container healthchecks run on a short staging cadence so Docker reports recovery quickly during rolling deploys.

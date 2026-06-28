@@ -25,6 +25,8 @@
   - Gateway runs Docker Redis and nginx reverse proxy; worker containers connect to `redis://<EC2-1-private-ip>:6379`.
 - GitHub Actions:
   - OIDC role runs Terraform, pushes ECR images, discovers workers, and deploys Docker over SSH.
+  - Staging Terraform/deployment workflows run on the pinned GitHub runner image `ubuntu-24.04`.
+  - GitHub Action dependencies are pinned to Node 24-compatible majors; deprecated Node 20 compatibility flags are not used.
 - Remote state:
   - Staging Terraform workflow creates the S3 state bucket if missing before `terraform init`.
   - Backend uses S3 native lockfile instead of DynamoDB lock table.

@@ -5,6 +5,7 @@
 - File: `.github/workflows/Staging-Automated-Master.yml`.
 
 ## Responsibilities
+- Run the classifier job on the pinned GitHub runner image `ubuntu-24.04`.
 - Classify changed paths before choosing the staging queue.
 - Call [[Staging Diagnostics Workflow]] and [[Terraform Infrastructure]] through `Staging Infra Plan` when workflow/infra safety gates are relevant.
 - Call [[Server Staging Deploy Workflow]] directly for ordinary server-only pushes.
@@ -31,6 +32,7 @@
 - Manual full-preflight runs can pass optional diagnostic extra public IPs to diagnostics.
 - Push runs pass no extra diagnostic IPs and rely on AWS tag discovery.
 - Uses reusable workflow calls with `secrets: inherit`.
+- Called staging workflows use the same pinned runner image and Node 24-compatible GitHub Action majors.
 
 ## Excluded Workflows
 - Does not call [[Staging Runtime Cleanup Workflow]].
