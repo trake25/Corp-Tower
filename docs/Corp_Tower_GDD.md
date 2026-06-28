@@ -80,7 +80,7 @@
 - Time runs out before target height is reached.
 - All active hand blocks and the shared draw pile are exhausted before target is reached.
 - Remaining possible height cannot reach target and no refresh can still rescue the level.
-- At checkpoint boundaries, any player total score below `checkpointScoreRequirement` fails the checkpoint and rolls back the team.
+- At checkpoint boundaries, any player whose score gained since the last checkpoint is below the band-relative checkpoint requirement fails the checkpoint and rolls back the team.
 
 ## Scoring System
 | Component | Formula |
@@ -92,7 +92,7 @@
 | Assist Bonus | `level × 6` (if player contributes ≥ 25% of total height) |
 - MVP: player with highest level score for the level.
 - Leaderboard score is snapshotted at each checkpoint and restored on rollback, preventing repeated failed checkpoint attempts from farming score.
-- `checkpointScoreRequirement` is disabled at `0`; positive values enforce the selfish-cooperation rule that every player must contribute enough before the team climbs into the next checkpoint band.
+- `checkpointMinContributionShare` sets the required per-player share of expected placement score for the checkpoint band; `0` disables the gate. `checkpointScoreRequirement` remains a hidden legacy flat floor when set by old tooling.
 
 ### Scoring Feedback UX
 - Placement score shows as a `+points` popup in the placing player's color, using `placementScorePopupDurationMs`.
@@ -125,6 +125,7 @@
 - Purpose: expose selected [[Game Config]] variables to designers/QA without code changes or restarts.
 - Authority: server validates and applies all changes; broadcasts `debug_config` to all real clients.
 - Client debug controls live in a tabbed overlay and sync server state without echo loops.
+- The debug header includes a Reset action that restores exposed tunables to the server's current `Game_Config.js` defaults.
 - Tabs: Bots, Round, UI, Supply, Refresh, and Scoring.
 
 ### Currently Exposed Variables
@@ -139,10 +140,10 @@
 | `placementCooldown` | Anti-spam delay between placements (ms). |
 | `levelTimeLimitMs` | Level timer duration (ms). |
 | `startDelayMs` | Countdown before level becomes playable (ms). |
-| `placementScorePopupDurationMs` | Placement score popup total lifetime, including fade-out (500-10000 ms, default 3000). |
-| `finishScorePopupDurationMs` | MVP, Perfect Fit, team total, and bonus popup total lifetime, including fade-out (500-10000 ms, default 3000). |
-| `levelSummaryDelayMs` | Completed/failed level score summary visible duration before next level or rollback (1000-10000 ms, default 3000). |
-| `checkpointScoreRequirement` | Minimum total score each player must have when crossing a checkpoint boundary; `0` disables the gate. |
+| `placementScorePopupDurationMs` | Placement score popup total lifetime, including fade-out (500-10000 ms, default 5000). |
+| `finishScorePopupDurationMs` | MVP, Perfect Fit, team total, and bonus popup total lifetime, including fade-out (500-10000 ms, default 5000). |
+| `levelSummaryDelayMs` | Completed/failed level score summary visible duration before next level or rollback (1000-10000 ms, default 6000). |
+| `checkpointMinContributionShare` | Required per-player share of expected placement score in the current checkpoint band; `0` disables the gate. |
 | `targetHeightMultiplier` | Debug scale applied to the target-height curve; default 3 keeps the authored curve unchanged. |
 | `levelSupplyMinSurplus` | Minimum generated total-height surplus above target. |
 | `levelSupplyMaxSurplus` | Maximum generated total-height surplus above target. |
@@ -163,6 +164,7 @@
 - Unknown keys rejected.
 - Numeric values clamped to safe ranges.
 - `debugBotDelayMax` ≥ `debugBotDelayMin` enforced.
+- `resetDebugConfig` restores the server-side defaults captured from `Game_Config.js` at process startup, then rebroadcasts `debug_config`.
 - Debug settings are runtime tuning only, not player progression data.
 
 ### Bot Behavior Requirements

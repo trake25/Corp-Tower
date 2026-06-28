@@ -39,8 +39,9 @@
 - Skin selection reads `corp_tower/ui_skin`; default is `DefaultSkin`, with `Figma_SkinV1` available as a reskin.
 - The skin picker button swaps the active skin scene under `SkinRoot`, rebinds required nodes, reconnects skin-local buttons, and replays the last room/game state.
 - Debug overlay controls route changes through `NetworkManager.update_config` and use no-signal setters during server sync.
+- Debug overlay header includes Reset, which sends `resetDebugConfig` and lets the server rebroadcast default values.
 - Debug overlay is tabbed into Bots, Round, UI, Supply, Refresh, and Scoring controls.
-- Round tuning includes `debugStartLevel`; Scoring tuning includes `checkpointScoreRequirement`.
+- Round tuning includes `debugStartLevel`; Scoring tuning includes `checkpointMinContributionShare`.
 - `update_room_closed(data)` resets stale room UI.
 
 ## Inputs/Outputs

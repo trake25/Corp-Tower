@@ -1086,6 +1086,8 @@ class GameEngine {
             blockedLevel: options.blockedLevel || null,
             checkpointScoreRequirement:
                 Number(options.checkpointScoreRequirement || 0),
+            checkpointMinContributionShare:
+                Number(options.checkpointMinContributionShare || 0),
             checkpointScoreFailures: options.checkpointScoreFailures || [],
             teamLevelScore: teamLevelScore,
             mvpId: mvp?.id || null,
@@ -1254,7 +1256,10 @@ class GameEngine {
         const nextLevel = this.room.level + 1;
         const opensCheckpoint = this.isCheckpointLevel(nextLevel);
 
-        if (opensCheckpoint && !this.hasMetCheckpointScoreRequirement()) {
+        if (
+            opensCheckpoint &&
+            !this.hasMetCheckpointScoreRequirement(nextLevel)
+        ) {
             this.failCheckpointScoreRequirement(nextLevel);
             return;
         }
@@ -1280,20 +1285,55 @@ class GameEngine {
         return Math.max(0, Number(GameConfig.checkpointScoreRequirement) || 0);
     }
 
-    getCheckpointScoreFailures() {
-        const requirement = this.getCheckpointScoreRequirement();
+    getCheckpointMinContributionShare() {
+        return Math.max(
+            0,
+            Math.min(
+                1,
+                Number(GameConfig.checkpointMinContributionShare) || 0
+            )
+        );
+    }
 
-        if (requirement <= 0) {
-            return [];
+    getExpectedPlacementScoreForLevel(level) {
+        const scorePerHeight =
+            Number(GameConfig.scoring?.placementScorePerHeight) || 1;
+
+        return this.getTargetHeightForLevel(level) * level * scorePerHeight;
+    }
+
+    getExpectedPlacementScoreForCheckpointBand(blockedLevel) {
+        const checkpointLevel = this.clampLevel(
+            this.room?.checkpointLevel || this.room?.level || 1
+        );
+        const targetLevel = this.clampLevel(
+            blockedLevel || this.getNextCheckpointLevel()
+        );
+        let expectedScore = 0;
+
+        for (let level = checkpointLevel; level < targetLevel; level++) {
+            expectedScore += this.getExpectedPlacementScoreForLevel(level);
         }
 
-        return this.room.players
-            .filter(player => Number(player.score || 0) < requirement)
-            .map(player => ({
-                id: player.id,
-                score: Number(player.score || 0),
-                requiredScore: requirement
-            }));
+        return expectedScore;
+    }
+
+    getCheckpointBandScoreRequirement(blockedLevel) {
+        const share = this.getCheckpointMinContributionShare();
+        const bandRequirement = Math.round(
+            this.getExpectedPlacementScoreForCheckpointBand(blockedLevel) *
+                share
+        );
+
+        return Math.max(
+            this.getCheckpointScoreRequirement(),
+            bandRequirement
+        );
+    }
+
+    getCheckpointScoreFailures(blockedLevel) {
+        return this.getCheckpointScoreStatus(blockedLevel).players
+            .filter(player => !player.met);
     }
 
     getNextCheckpointLevel() {
@@ -1307,28 +1347,42 @@ class GameEngine {
         );
     }
 
-    getCheckpointScoreStatus() {
-        const requirement = this.getCheckpointScoreRequirement();
+    getCheckpointScoreStatus(blockedLevel = null) {
+        const nextCheckpointLevel =
+            blockedLevel || this.getNextCheckpointLevel();
+        const requirement =
+            this.getCheckpointBandScoreRequirement(nextCheckpointLevel);
+        const checkpointScores = this.room?.checkpointScores || {};
 
         return {
             requiredScore: requirement,
-            nextCheckpointLevel: this.getNextCheckpointLevel(),
+            requiredBandScore: requirement,
+            minContributionShare: this.getCheckpointMinContributionShare(),
+            checkpointLevel: this.room?.checkpointLevel || 1,
+            nextCheckpointLevel: nextCheckpointLevel,
             players: (this.room?.players || []).map(player => {
                 const score = Number(player.score || 0);
+                const checkpointScore =
+                    Number(checkpointScores[player.id] || 0);
+                const requiredScore = checkpointScore + requirement;
+                const bandScore = Math.max(0, score - checkpointScore);
 
                 return {
                     id: player.id,
                     score: score,
-                    requiredScore: requirement,
-                    remainingScore: Math.max(0, requirement - score),
-                    met: requirement <= 0 || score >= requirement
+                    checkpointScore: checkpointScore,
+                    bandScore: bandScore,
+                    requiredScore: requiredScore,
+                    requiredBandScore: requirement,
+                    remainingScore: Math.max(0, requiredScore - score),
+                    met: requirement <= 0 || score >= requiredScore
                 };
             })
         };
     }
 
-    hasMetCheckpointScoreRequirement() {
-        return this.getCheckpointScoreFailures().length === 0;
+    hasMetCheckpointScoreRequirement(blockedLevel) {
+        return this.getCheckpointScoreFailures(blockedLevel).length === 0;
     }
 
     failCheckpointScoreRequirement(blockedLevel) {
@@ -1337,8 +1391,9 @@ class GameEngine {
 
         const mvp = this.getLevelMVP();
         const previousTotalScores = this.getPlayerScoreMap();
-        const failures = this.getCheckpointScoreFailures();
-        const requirement = this.getCheckpointScoreRequirement();
+        const failures = this.getCheckpointScoreFailures(blockedLevel);
+        const requirement =
+            this.getCheckpointBandScoreRequirement(blockedLevel);
 
         this.queueScoreEvent("checkpoint_failed", {
             label: "Checkpoint Failed",
@@ -1346,6 +1401,8 @@ class GameEngine {
             meta: {
                 blockedLevel: blockedLevel,
                 checkpointScoreRequirement: requirement,
+                checkpointMinContributionShare:
+                    this.getCheckpointMinContributionShare(),
                 checkpointScoreFailures: failures
             }
         });
@@ -1368,6 +1425,8 @@ class GameEngine {
             mvp: mvp,
             previousTotalScores: previousTotalScores,
             checkpointScoreRequirement: requirement,
+            checkpointMinContributionShare:
+                this.getCheckpointMinContributionShare(),
             checkpointScoreFailures: failures
         });
 

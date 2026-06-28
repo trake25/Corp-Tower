@@ -4,6 +4,38 @@ const GameEngine = require("./Game_Engine");
 const GameConfig = require("./Game_Config");
 const { RedisState, stripRuntimePlayer } = require("./Redis_State");
 
+const DEFAULT_DEBUG_CONFIG = {
+    debugBotsEnabled: GameConfig.debugBotsEnabled,
+    debugBotCount: GameConfig.debugBotCount,
+    debugBotStrategy: GameConfig.debugBotStrategy,
+    debugStartLevel: GameConfig.debugStartLevel,
+    debugBotDelayMin: GameConfig.debugBotDelayMin,
+    debugBotDelayMax: GameConfig.debugBotDelayMax,
+    placementCooldown: GameConfig.placementCooldown,
+    levelTimeLimitMs: GameConfig.levelTimeLimitMs,
+    startDelayMs: GameConfig.startDelayMs,
+    placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
+    finishScorePopupDurationMs: GameConfig.finishScorePopupDurationMs,
+    levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
+    checkpointScoreRequirement: GameConfig.checkpointScoreRequirement,
+    checkpointMinContributionShare: GameConfig.checkpointMinContributionShare,
+    targetHeightMultiplier: GameConfig.targetHeightMultiplier,
+    levelSupplyMinSurplus: GameConfig.levelSupplyMinSurplus,
+    levelSupplyMaxSurplus: GameConfig.levelSupplyMaxSurplus,
+    minPrecisionBlocksPerLevel: GameConfig.minPrecisionBlocksPerLevel,
+    maxTeamCarryOverBlocks: GameConfig.maxTeamCarryOverBlocks,
+    maxRefreshTokens: GameConfig.maxRefreshTokens,
+    maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
+    refreshLockoutMs: GameConfig.refreshLockoutMs,
+    refreshMinUsefulBlockHeight: GameConfig.refreshMinUsefulBlockHeight,
+    placementScorePerHeight: GameConfig.scoring.placementScorePerHeight,
+    finisherBonusPerLevel: GameConfig.scoring.finisherBonusPerLevel,
+    precisionBonusPerLevel: GameConfig.scoring.precisionBonusPerLevel,
+    teamExactBonusPerLevel: GameConfig.scoring.teamExactBonusPerLevel,
+    assistBonusPerLevel: GameConfig.scoring.assistBonusPerLevel,
+    assistContributionThreshold: GameConfig.scoring.assistContributionThreshold
+};
+
 class LobbyManager {
     constructor(stateStore = new RedisState()) {
         this.stateStore = stateStore;
@@ -370,7 +402,8 @@ class LobbyManager {
             placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
             finishScorePopupDurationMs: GameConfig.finishScorePopupDurationMs,
             levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
-            checkpointScoreRequirement: GameConfig.checkpointScoreRequirement,
+            checkpointMinContributionShare:
+                GameConfig.checkpointMinContributionShare,
             targetHeightMultiplier: GameConfig.targetHeightMultiplier,
             levelSupplyMinSurplus: GameConfig.levelSupplyMinSurplus,
             levelSupplyMaxSurplus: GameConfig.levelSupplyMaxSurplus,
@@ -390,7 +423,89 @@ class LobbyManager {
         };
     }
 
+    applyDefaultDebugConfig() {
+        GameConfig.debugBotsEnabled = DEFAULT_DEBUG_CONFIG.debugBotsEnabled;
+        GameConfig.debugBotCount = DEFAULT_DEBUG_CONFIG.debugBotCount;
+        GameConfig.debugBotStrategy = DEFAULT_DEBUG_CONFIG.debugBotStrategy;
+        GameConfig.debugStartLevel = DEFAULT_DEBUG_CONFIG.debugStartLevel;
+        GameConfig.debugBotDelayMin = DEFAULT_DEBUG_CONFIG.debugBotDelayMin;
+        GameConfig.debugBotDelayMax = DEFAULT_DEBUG_CONFIG.debugBotDelayMax;
+        GameConfig.placementCooldown = DEFAULT_DEBUG_CONFIG.placementCooldown;
+        GameConfig.levelTimeLimitMs = DEFAULT_DEBUG_CONFIG.levelTimeLimitMs;
+        GameConfig.startDelayMs = DEFAULT_DEBUG_CONFIG.startDelayMs;
+        GameConfig.placementScorePopupDurationMs =
+            DEFAULT_DEBUG_CONFIG.placementScorePopupDurationMs;
+        GameConfig.finishScorePopupDurationMs =
+            DEFAULT_DEBUG_CONFIG.finishScorePopupDurationMs;
+        GameConfig.levelSummaryDelayMs =
+            DEFAULT_DEBUG_CONFIG.levelSummaryDelayMs;
+        GameConfig.checkpointScoreRequirement =
+            DEFAULT_DEBUG_CONFIG.checkpointScoreRequirement;
+        GameConfig.checkpointMinContributionShare =
+            DEFAULT_DEBUG_CONFIG.checkpointMinContributionShare;
+        GameConfig.targetHeightMultiplier =
+            DEFAULT_DEBUG_CONFIG.targetHeightMultiplier;
+        GameConfig.levelSupplyMinSurplus =
+            DEFAULT_DEBUG_CONFIG.levelSupplyMinSurplus;
+        GameConfig.levelSupplyMaxSurplus =
+            DEFAULT_DEBUG_CONFIG.levelSupplyMaxSurplus;
+        GameConfig.minPrecisionBlocksPerLevel =
+            DEFAULT_DEBUG_CONFIG.minPrecisionBlocksPerLevel;
+        GameConfig.maxTeamCarryOverBlocks =
+            DEFAULT_DEBUG_CONFIG.maxTeamCarryOverBlocks;
+        GameConfig.maxRefreshTokens = DEFAULT_DEBUG_CONFIG.maxRefreshTokens;
+        GameConfig.maxRefreshUsesPerLevel =
+            DEFAULT_DEBUG_CONFIG.maxRefreshUsesPerLevel;
+        GameConfig.refreshLockoutMs = DEFAULT_DEBUG_CONFIG.refreshLockoutMs;
+        GameConfig.refreshMinUsefulBlockHeight =
+            DEFAULT_DEBUG_CONFIG.refreshMinUsefulBlockHeight;
+        GameConfig.scoring.placementScorePerHeight =
+            DEFAULT_DEBUG_CONFIG.placementScorePerHeight;
+        GameConfig.scoring.finisherBonusPerLevel =
+            DEFAULT_DEBUG_CONFIG.finisherBonusPerLevel;
+        GameConfig.scoring.precisionBonusPerLevel =
+            DEFAULT_DEBUG_CONFIG.precisionBonusPerLevel;
+        GameConfig.scoring.teamExactBonusPerLevel =
+            DEFAULT_DEBUG_CONFIG.teamExactBonusPerLevel;
+        GameConfig.scoring.assistBonusPerLevel =
+            DEFAULT_DEBUG_CONFIG.assistBonusPerLevel;
+        GameConfig.scoring.assistContributionThreshold =
+            DEFAULT_DEBUG_CONFIG.assistContributionThreshold;
+    }
+
+    async resetDebugConfigToDefaults() {
+        const previousBotsEnabled = GameConfig.debugBotsEnabled;
+        const previousBotCount = GameConfig.debugBotCount;
+        const previousStartLevel = GameConfig.debugStartLevel;
+
+        this.applyDefaultDebugConfig();
+
+        if (!GameConfig.debugBotsEnabled) {
+            this.rooms.forEach(room => {
+                room.engine.stopBots();
+            });
+        }
+
+        if (
+            previousBotsEnabled !== GameConfig.debugBotsEnabled ||
+            previousBotCount !== GameConfig.debugBotCount
+        ) {
+            await this.refreshMatchmaking();
+        }
+
+        if (previousStartLevel !== GameConfig.debugStartLevel) {
+            await this.restartRoomsAtDebugStartLevel();
+        }
+
+        this.broadcastDebugConfig();
+    }
+
     async updateDebugConfig(key, value) {
+        if (key === "resetDebugConfig") {
+            await this.resetDebugConfigToDefaults();
+            return true;
+        }
+
         const numberValue = Number(value);
         const clampInt = (currentValue, minValue, maxValue) => {
             const sourceValue =
@@ -412,6 +527,13 @@ class LobbyManager {
         };
         const setGameInt = (configKey, minValue, maxValue) => () => {
             GameConfig[configKey] = clampInt(
+                GameConfig[configKey],
+                minValue,
+                maxValue
+            );
+        };
+        const setGameNumber = (configKey, minValue, maxValue) => () => {
+            GameConfig[configKey] = clampNumber(
                 GameConfig[configKey],
                 minValue,
                 maxValue
@@ -456,6 +578,8 @@ class LobbyManager {
             levelSummaryDelayMs: setGameInt("levelSummaryDelayMs", 1000, 10000),
             checkpointScoreRequirement:
                 setGameInt("checkpointScoreRequirement", 0, 1000000),
+            checkpointMinContributionShare:
+                setGameNumber("checkpointMinContributionShare", 0, 1),
             targetHeightMultiplier: setGameInt("targetHeightMultiplier", 1, 20),
             levelSupplyMinSurplus: setGameInt("levelSupplyMinSurplus", 0, 20),
             levelSupplyMaxSurplus: setGameInt("levelSupplyMaxSurplus", 0, 30),

@@ -57,7 +57,7 @@
 | `room_created` | New room/session assignment with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, initial `blocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
 | `room_resumed` | Existing room/session resumed with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, blocks, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
 | `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, `scoreEvents`, `checkpointScoreStatus`, `placementScorePopupDurationMs`, `finishScorePopupDurationMs`, legacy max `scorePopupDurationMs`, `levelSummaryDelayMs`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock`, `lastLevelSummary`, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
-| `debug_config` | Authoritative debug menu state, including bot enable/count/strategy, `debugStartLevel`, timing/target tuning, UI popup/summary durations, supply/refresh pressure, `checkpointScoreRequirement`, and scoring multipliers. |
+| `debug_config` | Authoritative debug menu state, including bot enable/count/strategy, `debugStartLevel`, timing/target tuning, UI popup/summary durations, supply/refresh pressure, `checkpointMinContributionShare`, and scoring multipliers. |
 | `room_closed` | Room teardown reason for connected real players. |
 
 ### Client To Server
@@ -66,7 +66,7 @@
 | `reconnect` | Token/player id may resume room; otherwise server creates a new session and queues player. |
 | `place_block` | Valid room, player, state, cooldown, inventory, and block index. |
 | `refresh_blocks` | Token count, per-level usage cap, active state, final lockout. |
-| `update_config` | Key allowlist, value ranges, bot delay min/max, debug bot count clamp, and bot strategy allowlist. |
+| `update_config` | Key allowlist, value ranges, bot delay min/max, debug bot count clamp, bot strategy allowlist, and `resetDebugConfig` default restore action. |
 
 ### Block And Tower Payloads
 - Inventory `blocks[]`: server-assigned fixed-orientation block objects `{ id, shapeId, cells, height }`.

@@ -80,6 +80,7 @@ var score_popup_layer: Control
 var debug_button: Button
 var debug_overlay: Control
 var debug_dim_layer: Control
+var reset_debug_button: Button
 var close_debug_button: Button
 var skin_button: Button
 var skin_overlay: Control
@@ -274,6 +275,7 @@ func bind_skin_nodes() -> void:
 	debug_button = optional_node("DebugButton") as Button
 	debug_overlay = optional_node("DebugOverlay") as Control
 	debug_dim_layer = optional_node("DebugDimLayer") as Control
+	reset_debug_button = optional_node("ResetDebugButton") as Button
 	close_debug_button = optional_node("CloseDebugButton") as Button
 	skin_button = optional_node("SkinButton") as Button
 	skin_overlay = optional_node("SkinOverlay") as Control
@@ -375,6 +377,9 @@ func setup_debug_controls() -> void:
 	if close_debug_button != null:
 		close_debug_button.pressed.connect(func(): set_debug_overlay_open(false))
 
+	if reset_debug_button != null:
+		reset_debug_button.pressed.connect(on_reset_debug_pressed)
+
 	if debug_dim_layer != null:
 		debug_dim_layer.mouse_filter = Control.MOUSE_FILTER_STOP
 		debug_dim_layer.gui_input.connect(on_debug_dim_layer_input)
@@ -408,7 +413,7 @@ func setup_debug_controls() -> void:
 	configure_slider(refresh_lockout_slider, 0, 60000, 1000, on_refresh_lockout_changed)
 	configure_slider(refresh_min_useful_height_slider, 1, 6, 1, on_refresh_min_useful_height_changed)
 	configure_slider(placement_score_slider, 1, 25, 1, on_placement_score_changed)
-	configure_slider(checkpoint_score_slider, 0, 1000000, 1000, on_checkpoint_score_changed)
+	configure_slider(checkpoint_score_slider, 0, 50, 5, on_checkpoint_score_changed)
 	configure_slider(finisher_bonus_slider, 0, 25, 1, on_finisher_bonus_changed)
 	configure_slider(precision_bonus_slider, 0, 25, 1, on_precision_bonus_changed)
 	configure_slider(team_exact_bonus_slider, 0, 25, 1, on_team_exact_bonus_changed)
@@ -834,13 +839,20 @@ func update_checkpoint_status_ui(raw_status: Variant) -> void:
 		return
 
 	var status: Dictionary = raw_status
-	var required_score: int = int(status.get("requiredScore", 0))
+	var required_score: int = int(status.get(
+		"requiredBandScore",
+		status.get("requiredScore", 0)
+	))
 
 	if required_score <= 0:
 		checkpoint_status_label.text = "Checkpoint: Off"
 		return
 
 	var next_checkpoint_level: int = int(status.get("nextCheckpointLevel", 0))
+	var checkpoint_level: int = int(status.get("checkpointLevel", 1))
+	var band_end_level: int = max(checkpoint_level, next_checkpoint_level - 1)
+	var contribution_share: float = float(status.get("minContributionShare", 0.0))
+	var contribution_percent: int = int(round(contribution_share * 100.0))
 	var short_players: Array[String] = []
 
 	for player_status in status.get("players", []):
@@ -859,7 +871,9 @@ func update_checkpoint_status_ui(raw_status: Variant) -> void:
 
 	var lines: Array[String] = [
 		"Next Checkpoint L" + str(next_checkpoint_level),
-		"Min " + str(required_score) + " score each"
+		"Band L" + str(checkpoint_level) + "-" + str(band_end_level) +
+			" min +" + str(required_score),
+		str(contribution_percent) + "% expected each"
 	]
 
 	if short_players.is_empty():
@@ -1407,7 +1421,7 @@ func get_level_summary_result_text(summary: Dictionary, result: String) -> Strin
 	if reason == "checkpoint_score_requirement":
 		var required_score: int = int(summary.get("checkpointScoreRequirement", 0))
 		var blocked_level: int = int(summary.get("blockedLevel", 0))
-		var checkpoint_text: String = "Checkpoint needs " + str(required_score) + " score each"
+		var checkpoint_text: String = "Checkpoint needs +" + str(required_score) + " this band each"
 
 		if blocked_level > 0:
 			checkpoint_text += " before Level " + str(blocked_level)
@@ -1525,7 +1539,7 @@ func get_player_color(player_id: String) -> Color:
 
 func format_summary_reason(reason: String) -> String:
 	if reason == "checkpoint_score_requirement":
-		return "Checkpoint score requirement"
+		return "Checkpoint contribution requirement"
 
 	return reason.replace("_", " ").capitalize()
 
@@ -1533,6 +1547,9 @@ func on_bots_toggle(enabled: bool) -> void:
 	if is_syncing_debug_config:
 		return
 	NetworkManager.update_config("debugBotsEnabled", enabled)
+
+func on_reset_debug_pressed() -> void:
+	NetworkManager.update_config("resetDebugConfig", true)
 
 func on_bot_strategy_selected(index: int) -> void:
 	if is_syncing_debug_config:
@@ -1641,7 +1658,7 @@ func on_placement_score_changed(value: float) -> void:
 	send_debug_int("placementScorePerHeight", value)
 
 func on_checkpoint_score_changed(value: float) -> void:
-	send_debug_int("checkpointScoreRequirement", value)
+	send_debug_float("checkpointMinContributionShare", value / 100.0)
 
 func on_finisher_bonus_changed(value: float) -> void:
 	send_debug_int("finisherBonusPerLevel", value)
@@ -1703,7 +1720,10 @@ func update_debug_config(config) -> void:
 	set_slider_no_signal(refresh_lockout_slider, float(config.get("refreshLockoutMs", 10000)))
 	set_slider_no_signal(refresh_min_useful_height_slider, float(config.get("refreshMinUsefulBlockHeight", 2)))
 	set_slider_no_signal(placement_score_slider, float(config.get("placementScorePerHeight", 10)))
-	set_slider_no_signal(checkpoint_score_slider, float(config.get("checkpointScoreRequirement", 0)))
+	set_slider_no_signal(
+		checkpoint_score_slider,
+		float(config.get("checkpointMinContributionShare", 0.25)) * 100.0
+	)
 	set_slider_no_signal(finisher_bonus_slider, float(config.get("finisherBonusPerLevel", 4)))
 	set_slider_no_signal(precision_bonus_slider, float(config.get("precisionBonusPerLevel", 6)))
 	set_slider_no_signal(team_exact_bonus_slider, float(config.get("teamExactBonusPerLevel", 4)))
@@ -1801,7 +1821,7 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		checkpoint_score_label,
-		"Checkpoint Min Score: " + str(int(get_slider_value(checkpoint_score_slider)))
+		"Checkpoint Share: " + str(int(get_slider_value(checkpoint_score_slider, 25))) + "%"
 	)
 	set_debug_label_text(
 		finisher_bonus_label,

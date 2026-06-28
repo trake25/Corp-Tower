@@ -45,7 +45,8 @@
   - `refreshGenerationAttempts`
   - `refreshMinUsefulBlockHeight`
 - Scoring settings:
-  - `checkpointScoreRequirement`
+  - `checkpointMinContributionShare`
+  - `checkpointScoreRequirement` hidden legacy flat floor
   - `placementScorePerHeight`
   - `finisherBonusPerLevel`
   - `precisionBonusPerLevel`

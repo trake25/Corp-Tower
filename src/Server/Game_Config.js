@@ -23,11 +23,12 @@ const GameConfig = {
     levelTimeLimitMs: 30000,
     nextLevelDelayMs: 1500,
     failRestartDelayMs: 1500,
-    placementScorePopupDurationMs: 3000,
-    finishScorePopupDurationMs: 3000,
-    levelSummaryDelayMs: 3000,
+    placementScorePopupDurationMs: 5000,
+    finishScorePopupDurationMs: 5000,
+    levelSummaryDelayMs: 6000,
     checkpointInterval: 3,
     checkpointScoreRequirement: 0,
+    checkpointMinContributionShare: 0.25,
 
     // =========================
     // BLOCK SETTINGS
@@ -174,7 +175,7 @@ const GameConfig = {
     // DEBUG SETTINGS
     // =========================
 
-    debugBotsEnabled: true,
+    debugBotsEnabled: false,
 
     debugBotCount: 2,
 
