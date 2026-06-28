@@ -3,10 +3,11 @@ name: Client Android Internal
 on:
   workflow_dispatch:
     inputs:
-      version_code:
-        description: "Google Play version code. Must be higher than the previous upload."
-        required: true
-        type: number
+      version_code_override:
+        description: "Optional manual version code. Must be higher than every version code currently on Google Play."
+        required: false
+        default: ""
+        type: string
       version_name:
         description: "Human-readable version name."
         required: true
@@ -30,6 +31,7 @@ jobs:
       GODOT_VERSION: "4.6.2"
       GODOT_STATUS: "stable"
       GODOT_PROJECT_PATH: "src/Client/App/corp-tower"
+      PACKAGE_NAME: "com.galaxxigames.corptower"
       AAB_PATH: ${{ github.workspace }}/build/CorpTower.aab
       GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.ANDROID_RELEASE_KEYSTORE_ALIAS }}
       GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
@@ -37,6 +39,98 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Authenticate to Google Play Developer API
+        id: google-play-auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Resolve Google Play version code
+        env:
+          GOOGLE_PLAY_ACCESS_TOKEN: ${{ steps.google-play-auth.outputs.access_token }}
+          VERSION_CODE_OVERRIDE: ${{ inputs.version_code_override }}
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json
+          import os
+          import re
+          import sys
+          from urllib.error import HTTPError
+          from urllib.parse import quote
+          from urllib.request import Request, urlopen
+
+          token = os.environ["GOOGLE_PLAY_ACCESS_TOKEN"]
+          package_name = os.environ["PACKAGE_NAME"]
+          override = os.environ.get("VERSION_CODE_OVERRIDE", "").strip()
+          base_url = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications"
+          package_url = f"{base_url}/{quote(package_name, safe='')}"
+
+          def request_json(method, url, payload=None, allow_empty=False):
+              body = None if payload is None else json.dumps(payload).encode("utf-8")
+              headers = {
+                  "Authorization": f"Bearer {token}",
+                  "Accept": "application/json",
+              }
+              if body is not None:
+                  headers["Content-Type"] = "application/json"
+              request = Request(url, data=body, headers=headers, method=method)
+              try:
+                  with urlopen(request, timeout=60) as response:
+                      raw = response.read().decode("utf-8")
+                      return {} if allow_empty and not raw else json.loads(raw)
+              except HTTPError as error:
+                  details = error.read().decode("utf-8", errors="replace")
+                  print(f"Google Play API request failed: {method} {url}", file=sys.stderr)
+                  print(details, file=sys.stderr)
+                  raise
+
+          edit = request_json("POST", f"{package_url}/edits", {})
+          edit_id = edit["id"]
+          max_version_code = 0
+
+          try:
+              tracks_payload = request_json("GET", f"{package_url}/edits/{quote(edit_id, safe='')}/tracks")
+              for track in tracks_payload.get("tracks", []):
+                  for release in track.get("releases", []) or []:
+                      for version_code in release.get("versionCodes", []) or []:
+                          max_version_code = max(max_version_code, int(str(version_code)))
+          finally:
+              try:
+                  request_json("DELETE", f"{package_url}/edits/{quote(edit_id, safe='')}", allow_empty=True)
+              except Exception as error:
+                  print(f"Warning: failed to delete temporary Google Play edit {edit_id}: {error}", file=sys.stderr)
+
+          if override:
+              if not re.fullmatch(r"[1-9][0-9]*", override):
+                  raise SystemExit("version_code_override must be a positive integer.")
+              resolved_version_code = int(override)
+              if resolved_version_code <= max_version_code:
+                  raise SystemExit(
+                      "version_code_override must be greater than the highest Google Play "
+                      f"version code ({max_version_code})."
+                  )
+              resolution_source = "manual override"
+          else:
+              resolved_version_code = max_version_code + 1
+              resolution_source = "Google Play max+1"
+
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              env_file.write(f"ANDROID_VERSION_CODE={resolved_version_code}\n")
+              env_file.write(f"GOOGLE_PLAY_MAX_VERSION_CODE={max_version_code}\n")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output_file:
+              output_file.write(f"android_version_code={resolved_version_code}\n")
+              output_file.write(f"google_play_max_version_code={max_version_code}\n")
+
+          print(
+              f"Resolved Android version code {resolved_version_code} "
+              f"from {resolution_source}; highest Google Play version code is {max_version_code}."
+          )
+          PY
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -87,11 +181,34 @@ jobs:
           } > "$HOME/.config/godot/editor_settings-4.6.tres"
 
       - name: Create CI export preset
+        env:
+          VERSION_NAME: ${{ inputs.version_name }}
         run: |
           set -euo pipefail
           cp .github/godot/export_presets.android.ci.cfg "$GODOT_PROJECT_PATH/export_presets.cfg"
-          sed -i 's/version\/code=.*/version\/code=${{ inputs.version_code }}/' "$GODOT_PROJECT_PATH/export_presets.cfg"
-          sed -i 's/version\/name=.*/version\/name="${{ inputs.version_name }}"/' "$GODOT_PROJECT_PATH/export_presets.cfg"
+          python3 <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          preset_path = Path(os.environ["GODOT_PROJECT_PATH"]) / "export_presets.cfg"
+          text = preset_path.read_text(encoding="utf-8")
+          text = re.sub(
+              r"^version/code=.*$",
+              f"version/code={os.environ['ANDROID_VERSION_CODE']}",
+              text,
+              flags=re.MULTILINE,
+          )
+          text = re.sub(
+              r"^version/name=.*$",
+              f"version/name={json.dumps(os.environ['VERSION_NAME'])}",
+              text,
+              flags=re.MULTILINE,
+          )
+          preset_path.write_text(text, encoding="utf-8")
+          PY
+          grep -E 'version/(code|name)=' "$GODOT_PROJECT_PATH/export_presets.cfg"
 
       - name: Restore release keystore
         env:
@@ -134,7 +251,7 @@ jobs:
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: com.galaxxigames.corptower
+          packageName: ${{ env.PACKAGE_NAME }}
           releaseFiles: ${{ env.AAB_PATH }}
           tracks: internal
           status: completed
