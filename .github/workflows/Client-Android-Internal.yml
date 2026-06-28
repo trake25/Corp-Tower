@@ -227,14 +227,15 @@ jobs:
           godot --headless --path "$GODOT_PROJECT_PATH" -s Tests/CiSmokeTest.gd
           echo "- Godot client deployment smoke test: passed" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Run GUT client tests
+      - name: Run required GUT client tests
         run: |
           set -euo pipefail
-          if [ -f "$GODOT_PROJECT_PATH/addons/gut/gut_cmdln.gd" ]; then
-            godot --headless --path "$GODOT_PROJECT_PATH" -s addons/gut/gut_cmdln.gd -gdir=res://Tests
-          else
-            echo "GUT is not installed yet; skipping client unit tests."
+          if [ ! -f "$GODOT_PROJECT_PATH/addons/gut/gut_cmdln.gd" ]; then
+            echo "::error::GUT is required but addons/gut/gut_cmdln.gd is missing."
+            exit 1
           fi
+          godot --headless --path "$GODOT_PROJECT_PATH" -s addons/gut/gut_cmdln.gd -gdir=res://Tests/Gut -ginclude_subdirs -gexit
+          echo "- GUT client tests: passed" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Export signed Android AAB
         run: |

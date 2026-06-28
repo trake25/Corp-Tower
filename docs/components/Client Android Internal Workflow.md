@@ -12,7 +12,7 @@
 - Restore release keystore from secrets.
 - Import/parse Godot project.
 - Run the always-on Godot client deployment smoke test.
-- Run GUT tests if installed.
+- Run required GUT tests.
 - Install the generated Android build template in CI and export signed Android AAB.
 - Validate the signed AAB deployment artifact before upload.
 - Upload AAB artifact.
@@ -48,7 +48,9 @@
 - GUT step:
   - Runs after project import and the smoke test.
   - Runs before signed export.
-  - Skips if `addons/gut/gut_cmdln.gd` is absent.
+  - Requires `addons/gut/gut_cmdln.gd`.
+  - Runs tests under `res://Tests/Gut` with subdirectories included.
+  - Fails the workflow when the addon is missing or a GUT test fails.
 
 ## Inputs/Outputs
 - Input: GitHub secrets, manual version name, and optional version code override.
@@ -56,11 +58,13 @@
 
 ## Dependencies
 - [[Godot Client App]]
+- `src/Client/App/corp-tower/addons/gut`
 - `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`
+- `src/Client/App/corp-tower/Tests/Gut`
 - `.github/godot/export_presets.android.ci.cfg`
 - Google Play service account with Android Publisher API access and Play Console access to `com.galaxxigames.corptower`.
 
 ## Notes
 - Current target platform is Android only.
-- The deployment smoke test is the required client code gate until fuller GUT coverage is added.
-- GUT tests should be added under `res://Tests`.
+- The deployment smoke test catches startup wiring regressions before GUT runs.
+- GUT tests should be added under `res://Tests/Gut`.

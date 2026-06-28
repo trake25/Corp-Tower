@@ -139,7 +139,7 @@
 ## Testing Strategy
 - Current server test: Node syntax checks for server modules including `Redis_State.js`, plus `node --test Score_Events.test.js` for score event and summary contracts.
 - Balance simulator: `npm run balance:simulate -- <levels> <runs>` from `src/Server` estimates generated pile reachability, exact possibility, smart-play completion, overbuild, placement counts, and level score distribution.
-- Current client pipeline: Godot import/parse, required client deployment smoke test, optional GUT tests, signed Android AAB export, deployment artifact validation, optional Google Play internal upload, and post-upload internal-track version-code verification.
+- Current client pipeline: Godot import/parse, required client deployment smoke test, required GUT tests, signed Android AAB export, deployment artifact validation, optional Google Play internal upload, and post-upload internal-track version-code verification.
 - Staging debug checks:
   - EC2-1: `corp-tower-gateway`, `corp-tower-redis`
   - EC2-2/EC2-3: `corp-tower-server`
