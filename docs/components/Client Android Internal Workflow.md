@@ -11,10 +11,13 @@
 - Resolve the next Android version code from Google Play.
 - Restore release keystore from secrets.
 - Import/parse Godot project.
+- Run the always-on Godot client deployment smoke test.
 - Run GUT tests if installed.
 - Install the generated Android build template in CI and export signed Android AAB.
+- Validate the signed AAB deployment artifact before upload.
 - Upload AAB artifact.
 - Optionally upload to Google Play internal track.
+- Verify the Google Play internal track contains the resolved version code after upload.
 
 ## Key Logic
 - Trigger: manual `workflow_dispatch`.
@@ -38,20 +41,26 @@
   - CI installs the Android build template during the headless export command with `--install-android-build-template`.
   - CI writes a valid Godot `EditorSettings` resource so Godot can read the Android SDK and Java SDK paths without parse warnings.
   - The generated Android build template is not committed to the repository.
+- Deployment tests:
+  - `res://Tests/CiSmokeTest.gd` runs before export and fails the workflow if the configured main scene, `NetworkManager` autoload, required UI skin scenes, scene instantiation, or main-scene ready wiring is broken.
+  - The exported AAB must be non-empty, pass zip integrity validation, contain the expected bundle config and base manifest, include `arm64-v8a` native libraries, exclude disabled native architectures, and pass Java signature verification.
+  - When `upload_to_play` is true, the workflow creates a fresh Google Play edit after upload and verifies the internal track lists the resolved `ANDROID_VERSION_CODE`.
 - GUT step:
-  - Runs after project import.
+  - Runs after project import and the smoke test.
   - Runs before signed export.
   - Skips if `addons/gut/gut_cmdln.gd` is absent.
 
 ## Inputs/Outputs
 - Input: GitHub secrets, manual version name, and optional version code override.
-- Output: signed `CorpTower.aab`, optional Google Play internal release.
+- Output: validated signed `CorpTower.aab`, optional verified Google Play internal release.
 
 ## Dependencies
 - [[Godot Client App]]
+- `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`
 - `.github/godot/export_presets.android.ci.cfg`
 - Google Play service account with Android Publisher API access and Play Console access to `com.galaxxigames.corptower`.
 
 ## Notes
 - Current target platform is Android only.
+- The deployment smoke test is the required client code gate until fuller GUT coverage is added.
 - GUT tests should be added under `res://Tests`.

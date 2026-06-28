@@ -1456,16 +1456,89 @@ func get_level_summary_result_text(summary: Dictionary, result: String) -> Strin
 	var reason: String = str(summary.get("reason", "failed"))
 
 	if reason == "checkpoint_score_requirement":
-		var required_score: int = int(summary.get("checkpointScoreRequirement", 0))
-		var blocked_level: int = int(summary.get("blockedLevel", 0))
-		var checkpoint_text: String = "Checkpoint needs +" + str(required_score) + " this band each"
-
-		if blocked_level > 0:
-			checkpoint_text += " before Level " + str(blocked_level)
-
-		return checkpoint_text
+		return get_checkpoint_failure_summary_text(summary)
 
 	return "Reason: " + format_summary_reason(reason)
+
+func get_checkpoint_failure_summary_text(summary: Dictionary) -> String:
+	var status: Dictionary = {}
+	var raw_status: Variant = summary.get("checkpointScoreStatus", {})
+
+	if typeof(raw_status) == TYPE_DICTIONARY:
+		status = raw_status
+
+	var blocked_level: int = int(summary.get(
+		"blockedLevel",
+		status.get("nextCheckpointLevel", 0)
+	))
+	var player_statuses: Array = status.get("players", [])
+	var player_count: int = 0
+	var ready_count: int = 0
+	var local_status: Dictionary = {}
+	var goal_texts: Array[String] = []
+
+	for raw_player_status in player_statuses:
+		if typeof(raw_player_status) != TYPE_DICTIONARY:
+			continue
+
+		var player_status: Dictionary = raw_player_status
+		var player_id: String = str(player_status.get("id", ""))
+		var is_local_player: bool = player_id == str(NetworkManager.player_id)
+		player_count += 1
+
+		if is_local_player:
+			local_status = player_status
+
+		if bool(player_status.get("met", false)):
+			ready_count += 1
+			continue
+
+		if !is_local_player:
+			goal_texts.append(
+				get_player_display_name(player_id, []) +
+				" " + str(int(player_status.get("requiredScore", 0)))
+			)
+
+	if player_count == 0:
+		return get_checkpoint_failure_fallback_text(summary, blocked_level)
+
+	var lines: Array[String] = [
+		"Checkpoint L" + str(blocked_level) + "  |  " + str(ready_count) + "/" + str(player_count) + " ready"
+	]
+
+	if !local_status.is_empty():
+		lines.append(
+			"You: " +
+			str(int(local_status.get("score", 0))) +
+			" / " +
+			str(int(local_status.get("requiredScore", 0)))
+		)
+
+	if !goal_texts.is_empty():
+		lines.append("Goals: " + ", ".join(goal_texts))
+	elif ready_count == player_count:
+		lines.append("All ready")
+
+	return "\n".join(lines)
+
+func get_checkpoint_failure_fallback_text(summary: Dictionary, blocked_level: int) -> String:
+	var failure_texts: Array[String] = []
+
+	for raw_failure in summary.get("checkpointScoreFailures", []):
+		if typeof(raw_failure) != TYPE_DICTIONARY:
+			continue
+
+		var failure: Dictionary = raw_failure
+		var player_id: String = str(failure.get("id", ""))
+		failure_texts.append(
+			get_player_display_name(player_id, []) +
+			" " + str(int(failure.get("requiredScore", 0)))
+		)
+
+	if failure_texts.is_empty():
+		return "Checkpoint L" + str(blocked_level) + " failed"
+
+	return "Checkpoint L" + str(blocked_level) + "\nGoals: " + ", ".join(failure_texts)
 
 func get_level_summary_team_text(summary: Dictionary, result: String) -> String:
 	var team_score: int = int(summary.get("teamLevelScore", 0))
@@ -1759,7 +1832,7 @@ func update_debug_config(config) -> void:
 	set_slider_no_signal(placement_score_slider, float(config.get("placementScorePerHeight", 10)))
 	set_slider_no_signal(
 		checkpoint_score_slider,
-		float(config.get("checkpointMinContributionShare", 0.35)) * 100.0
+		float(config.get("checkpointMinContributionShare", 0.30)) * 100.0
 	)
 	set_slider_no_signal(finisher_bonus_slider, float(config.get("finisherBonusPerLevel", 4)))
 	set_slider_no_signal(precision_bonus_slider, float(config.get("precisionBonusPerLevel", 6)))
@@ -1858,7 +1931,7 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		checkpoint_score_label,
-		"Checkpoint Share: " + str(int(get_slider_value(checkpoint_score_slider, 35))) + "%"
+		"Checkpoint Share: " + str(int(get_slider_value(checkpoint_score_slider, 30))) + "%"
 	)
 	set_debug_label_text(
 		finisher_bonus_label,

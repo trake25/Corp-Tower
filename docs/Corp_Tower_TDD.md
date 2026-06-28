@@ -86,7 +86,7 @@
 - Clients track seen event ids per level and never infer event UI from score diffs.
 - Placement events use `placementScorePopupDurationMs`; MVP, Perfect Fit, team total, checkpoint, and bonus-style events use `finishScorePopupDurationMs`. Both popup durations represent total popup lifetime, including fade-out.
 - Level score summaries are queued until the current score popup batch has faded, then remain visible for `levelSummaryDelayMs`.
-- `lastLevelSummary` includes `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, and `players[]`.
+- `lastLevelSummary` includes `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, and `players[]`; checkpoint failures also include `checkpointScoreStatus`.
 - `lastLevelSummary.players[]` includes player id, bot flag, level score, previous total score, final total score, contributed height, MVP flag, and bonus breakdown.
 - Completed summaries bank level score into final totals; failed summaries keep previous and final totals equal.
 
@@ -139,7 +139,7 @@
 ## Testing Strategy
 - Current server test: Node syntax checks for server modules including `Redis_State.js`, plus `node --test Score_Events.test.js` for score event and summary contracts.
 - Balance simulator: `npm run balance:simulate -- <levels> <runs>` from `src/Server` estimates generated pile reachability, exact possibility, smart-play completion, overbuild, placement counts, and level score distribution.
-- Current client pipeline: Godot import/parse and Android export; GUT tests are skipped until installed.
+- Current client pipeline: Godot import/parse, required client deployment smoke test, optional GUT tests, signed Android AAB export, deployment artifact validation, optional Google Play internal upload, and post-upload internal-track version-code verification.
 - Staging debug checks:
   - EC2-1: `corp-tower-gateway`, `corp-tower-redis`
   - EC2-2/EC2-3: `corp-tower-server`

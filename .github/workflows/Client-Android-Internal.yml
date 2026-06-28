@@ -221,6 +221,12 @@ jobs:
           set -euo pipefail
           godot --headless --path "$GODOT_PROJECT_PATH" --editor --quit
 
+      - name: Run Godot client deployment smoke test
+        run: |
+          set -euo pipefail
+          godot --headless --path "$GODOT_PROJECT_PATH" -s Tests/CiSmokeTest.gd
+          echo "- Godot client deployment smoke test: passed" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run GUT client tests
         run: |
           set -euo pipefail
@@ -237,6 +243,50 @@ jobs:
           godot --headless --path "$GODOT_PROJECT_PATH" --install-android-build-template --export-release "Android" "$AAB_PATH"
           test -f "$AAB_PATH"
 
+      - name: Validate signed Android AAB deployment artifact
+        run: |
+          set -euo pipefail
+          test -s "$AAB_PATH"
+
+          unzip -t "$AAB_PATH" >/tmp/corp-tower-aab-unzip.txt
+          unzip -l "$AAB_PATH" >/tmp/corp-tower-aab-contents.txt
+
+          require_aab_entry() {
+            local pattern="$1"
+            local description="$2"
+
+            if ! grep -Eq "$pattern" /tmp/corp-tower-aab-contents.txt; then
+              echo "::error::Signed AAB is missing ${description}."
+              cat /tmp/corp-tower-aab-contents.txt
+              exit 1
+            fi
+          }
+
+          require_aab_entry 'BundleConfig\.pb$' "bundle configuration"
+          require_aab_entry 'base/manifest/AndroidManifest\.xml$' "base Android manifest"
+          require_aab_entry 'base/lib/arm64-v8a/.*\.so$' "arm64 native libraries"
+
+          if grep -Eq 'base/lib/(armeabi-v7a|x86|x86_64)/.*\.so$' /tmp/corp-tower-aab-contents.txt; then
+            echo "::error::Signed AAB contains native libraries for disabled Android architectures."
+            grep -E 'base/lib/(armeabi-v7a|x86|x86_64)/.*\.so$' /tmp/corp-tower-aab-contents.txt
+            exit 1
+          fi
+
+          jarsigner -verify "$AAB_PATH" >/tmp/corp-tower-aab-signature.txt
+          grep -q "jar verified." /tmp/corp-tower-aab-signature.txt
+
+          AAB_SIZE_BYTES="$(wc -c < "$AAB_PATH" | tr -d ' ')"
+          {
+            echo "## Android AAB deployment artifact"
+            echo
+            echo "- Path: \`$AAB_PATH\`"
+            echo "- Size: \`${AAB_SIZE_BYTES} bytes\`"
+            echo "- Version code: \`$ANDROID_VERSION_CODE\`"
+            echo "- Zip integrity: passed"
+            echo "- Signature verification: passed"
+            echo "- Native architecture: \`arm64-v8a\` only"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v6
         with:
@@ -252,3 +302,89 @@ jobs:
           releaseFiles: ${{ env.AAB_PATH }}
           tracks: internal
           status: completed
+
+      - name: Verify Google Play internal deployment
+        if: ${{ inputs.upload_to_play }}
+        env:
+          GOOGLE_PLAY_ACCESS_TOKEN: ${{ steps.google-play-auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json
+          import os
+          import sys
+          import time
+          from urllib.error import HTTPError
+          from urllib.parse import quote
+          from urllib.request import Request, urlopen
+
+          token = os.environ["GOOGLE_PLAY_ACCESS_TOKEN"]
+          package_name = os.environ["PACKAGE_NAME"]
+          expected_version_code = str(os.environ["ANDROID_VERSION_CODE"])
+          base_url = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications"
+          package_url = f"{base_url}/{quote(package_name, safe='')}"
+
+          def request_json(method, url, payload=None, allow_empty=False):
+              body = None if payload is None else json.dumps(payload).encode("utf-8")
+              headers = {
+                  "Authorization": f"Bearer {token}",
+                  "Accept": "application/json",
+              }
+              if body is not None:
+                  headers["Content-Type"] = "application/json"
+              request = Request(url, data=body, headers=headers, method=method)
+              try:
+                  with urlopen(request, timeout=60) as response:
+                      raw = response.read().decode("utf-8")
+                      return {} if allow_empty and not raw else json.loads(raw)
+              except HTTPError as error:
+                  details = error.read().decode("utf-8", errors="replace")
+                  print(f"Google Play API request failed: {method} {url}", file=sys.stderr)
+                  print(details, file=sys.stderr)
+                  raise
+
+          def fetch_internal_track_version_codes():
+              edit = request_json("POST", f"{package_url}/edits", {})
+              edit_id = edit["id"]
+              try:
+                  track = request_json(
+                      "GET",
+                      f"{package_url}/edits/{quote(edit_id, safe='')}/tracks/internal",
+                  )
+                  version_codes = set()
+                  for release in track.get("releases", []) or []:
+                      for version_code in release.get("versionCodes", []) or []:
+                          version_codes.add(str(version_code))
+                  return version_codes
+              finally:
+                  try:
+                      request_json("DELETE", f"{package_url}/edits/{quote(edit_id, safe='')}", allow_empty=True)
+                  except Exception as error:
+                      print(f"Warning: failed to delete temporary Google Play edit {edit_id}: {error}", file=sys.stderr)
+
+          last_seen_codes = set()
+          for attempt in range(1, 7):
+              last_seen_codes = fetch_internal_track_version_codes()
+              if expected_version_code in last_seen_codes:
+                  print(
+                      f"Verified Google Play internal track contains version code {expected_version_code}."
+                  )
+                  with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+                      summary.write("\n## Google Play internal deployment\n\n")
+                      summary.write(f"- Package: `{package_name}`\n")
+                      summary.write(f"- Track: `internal`\n")
+                      summary.write(f"- Verified version code: `{expected_version_code}`\n")
+                  break
+
+              print(
+                  "Google Play internal track does not list the uploaded version yet "
+                  f"(attempt {attempt}/6). Seen: {sorted(last_seen_codes)}"
+              )
+              if attempt < 6:
+                  time.sleep(10)
+          else:
+              raise SystemExit(
+                  "Google Play internal track did not expose uploaded version code "
+                  f"{expected_version_code}. Last seen version codes: {sorted(last_seen_codes)}"
+              )
+          PY

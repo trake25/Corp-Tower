@@ -1088,6 +1088,7 @@ class GameEngine {
                 Number(options.checkpointScoreRequirement || 0),
             checkpointMinContributionShare:
                 Number(options.checkpointMinContributionShare || 0),
+            checkpointScoreStatus: options.checkpointScoreStatus || null,
             checkpointScoreFailures: options.checkpointScoreFailures || [],
             teamLevelScore: teamLevelScore,
             mvpId: mvp?.id || null,
@@ -1391,9 +1392,12 @@ class GameEngine {
 
         const mvp = this.getLevelMVP();
         const previousTotalScores = this.getPlayerScoreMap();
-        const failures = this.getCheckpointScoreFailures(blockedLevel);
-        const requirement =
-            this.getCheckpointBandScoreRequirement(blockedLevel);
+        const checkpointScoreStatus =
+            this.getCheckpointScoreStatus(blockedLevel);
+        const failures = checkpointScoreStatus.players.filter(player => {
+            return !player.met;
+        });
+        const requirement = checkpointScoreStatus.requiredBandScore;
 
         this.queueScoreEvent("checkpoint_failed", {
             label: "Checkpoint Failed",
@@ -1427,6 +1431,7 @@ class GameEngine {
             checkpointScoreRequirement: requirement,
             checkpointMinContributionShare:
                 this.getCheckpointMinContributionShare(),
+            checkpointScoreStatus: checkpointScoreStatus,
             checkpointScoreFailures: failures
         });
 
