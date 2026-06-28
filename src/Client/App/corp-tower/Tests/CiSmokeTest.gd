@@ -7,8 +7,6 @@ const DEFAULT_SKIN_PATH := "res://Cor/Scenes/Skins/DefaultSkin.tscn"
 const FIGMA_SKIN_PATH := "res://Cor/Scenes/Skins/Figma_SkinV1.tscn"
 const APPLICATION_SCRIPT_ROOTS := [
 	"res://Cor",
-	"res://Dat",
-	"res://Res",
 	"res://Sys"
 ]
 

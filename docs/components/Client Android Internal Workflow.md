@@ -42,7 +42,7 @@
   - CI writes a valid Godot `EditorSettings` resource so Godot can read the Android SDK and Java SDK paths without parse warnings.
   - The generated Android build template is not committed to the repository.
 - Deployment tests:
-  - `res://Tests/CiSmokeTest.gd` loads application scripts under `Cor`, `Dat`, `Res`, and `Sys`, then fails the workflow if the configured main scene, `NetworkManager` autoload, required UI skin scenes, scene instantiation, or main-scene ready wiring is broken.
+  - `res://Tests/CiSmokeTest.gd` loads application scripts under committed code roots `Cor` and `Sys`, then fails the workflow if the configured main scene, `NetworkManager` autoload, required UI skin scenes, scene instantiation, or main-scene ready wiring is broken.
   - The exported AAB must be non-empty, pass zip integrity validation, contain the expected bundle config and base manifest, include `arm64-v8a` native libraries, exclude disabled native architectures, and pass Java signature verification.
   - When `upload_to_play` is true, the workflow creates a fresh Google Play edit after upload and verifies the internal track lists the resolved `ANDROID_VERSION_CODE`.
 - GUT step:
