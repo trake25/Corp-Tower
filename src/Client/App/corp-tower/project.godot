@@ -18,7 +18,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-NetworkManager="*uid://8bh26paw2m4o"
+NetworkManager="*res://Sys/NetMan/NetworkManager.gd"
 
 [corp_tower]
 

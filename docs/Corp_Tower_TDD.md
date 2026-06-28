@@ -77,7 +77,7 @@
 - `cells`: array of `[x, y]` unit coordinates used by the Godot client for shape previews and tower rendering.
 - `height`: vertical footprint derived from `cells`; it is not necessarily equal to cell count.
 - `towerBlocks[]`: ordered placement history with `{ playerId, block, height, effectiveHeight, baseHeight }` so clients can redraw the current tower after broadcasts or reconnect.
-- `checkpointScoreStatus`: right-panel UI helper with required score, next checkpoint level, and per-player remaining score.
+- `checkpointScoreStatus`: right-panel UI helper with next checkpoint level, ready count inputs, and per-player leaderboard score goals.
 - Legacy numeric block values are still tolerated by the Godot client as vertical fallback blocks.
 
 ### Score UI Payloads

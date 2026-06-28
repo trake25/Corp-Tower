@@ -844,12 +844,12 @@ func update_checkpoint_status_ui(raw_status: Variant) -> void:
 		return
 
 	var status: Dictionary = raw_status
-	var required_score: int = int(status.get(
+	var required_band_score: int = int(status.get(
 		"requiredBandScore",
 		status.get("requiredScore", 0)
 	))
 
-	if required_score <= 0:
+	if required_band_score <= 0:
 		set_checkpoint_status_visible(false)
 		checkpoint_status_label.visible = false
 		checkpoint_status_label.text = ""
@@ -860,44 +860,45 @@ func update_checkpoint_status_ui(raw_status: Variant) -> void:
 	var ready_count: int = 0
 	var player_count: int = 0
 	var local_status: Dictionary = {}
-	var short_players: Array[String] = []
+	var short_player_goals: Array[String] = []
 
 	for player_status in player_statuses:
 		if typeof(player_status) != TYPE_DICTIONARY:
 			continue
 
 		var player_id: String = str(player_status.get("id", ""))
+		var is_local_player: bool = player_id == str(NetworkManager.player_id)
 		player_count += 1
 
-		if player_id == str(NetworkManager.player_id):
+		if is_local_player:
 			local_status = player_status
 
 		if bool(player_status.get("met", false)):
 			ready_count += 1
 			continue
 
-		short_players.append(
-			get_player_display_name(player_id, []) +
-			" +" + str(int(player_status.get("remainingScore", 0)))
-		)
+		if !is_local_player:
+			short_player_goals.append(
+				get_player_display_name(player_id, []) +
+				" " + str(int(player_status.get("requiredScore", required_band_score)))
+			)
 
 	var lines: Array[String] = [
-		"Checkpoint L" + str(next_checkpoint_level) + "  |  Ready " + str(ready_count) + "/" + str(player_count),
-		"Required +" + str(required_score) + " each"
+		"Checkpoint L" + str(next_checkpoint_level) + "  |  " + str(ready_count) + "/" + str(player_count) + " ready"
 	]
 
 	if !local_status.is_empty():
-		var local_band_score: int = int(local_status.get("bandScore", 0))
-		var local_remaining_score: int = int(local_status.get("remainingScore", 0))
+		var local_score: int = int(local_status.get("score", 0))
+		var local_required_score: int = int(local_status.get("requiredScore", required_band_score))
 
-		if bool(local_status.get("met", false)):
-			lines.append("You ready: " + str(local_band_score) + "/" + str(required_score))
-		else:
-			lines.append("You: " + str(local_band_score) + "/" + str(required_score) + " (+" + str(local_remaining_score) + ")")
-	elif short_players.is_empty():
+		lines.append("You: " + str(local_score) + " / " + str(local_required_score))
+	elif short_player_goals.is_empty():
 		lines.append("All players ready")
-	else:
-		lines.append("Need " + ", ".join(short_players))
+
+	if !short_player_goals.is_empty():
+		lines.append("Goals: " + ", ".join(short_player_goals))
+	elif !local_status.is_empty() && ready_count == player_count:
+		lines.append("All ready")
 
 	set_checkpoint_status_visible(true)
 	checkpoint_status_label.text = "\n".join(lines)

@@ -33,7 +33,7 @@
 - Placement popups use player color and `placementScorePopupDurationMs`; MVP, Perfect Fit, team total, checkpoint, finisher, and bonus-style popups use `finishScorePopupDurationMs`. These durations cover the full popup lifetime, including fade-out; finish-style popups fade and float across the configured duration instead of using a short capped fade.
 - Exact finish shows `PERFECT FIT`; overbuild shows target reached with wasted height; MVP/team total use larger callouts.
 - Checkpoint score-gate failures show a distinct checkpoint failure callout and readable summary reason.
-- `CheckpointStatusLabel` renders `checkpointScoreStatus` under the leaderboard with the next checkpoint level, required score, and shortfall list.
+- `CheckpointStatusLabel` renders `checkpointScoreStatus` under the leaderboard with the next checkpoint level, ready count, and leaderboard score goals players must surpass.
 - Level score summaries wait for the current score popup batch to fade, then show complete/failed state, exact/overbuild result, team score, MVP, finisher, and per-player level/final totals before auto-hiding from `levelSummaryDelayMs`.
 - Refresh button sends `refresh_blocks`.
 - Skin selection reads `corp_tower/ui_skin`; default is `DefaultSkin`, with `Figma_SkinV1` available as a reskin.

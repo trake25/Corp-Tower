@@ -32,9 +32,11 @@
   - Uses Node 24-compatible GitHub Action majors.
   - Avoids deprecated Node 20 compatibility flags.
   - Android SDK license acceptance is handled by the setup action instead of a manual shell pipe.
+  - Android command-line tools are provided by the setup action; CI installs only the specific Android platform/build/NDK/CMake packages it needs.
 - Android export:
   - The CI preset uses Godot's Gradle Android build path for AAB export.
   - CI installs the Android build template during the headless export command with `--install-android-build-template`.
+  - CI writes a valid Godot `EditorSettings` resource so Godot can read the Android SDK and Java SDK paths without parse warnings.
   - The generated Android build template is not committed to the repository.
 - GUT step:
   - Runs after project import.

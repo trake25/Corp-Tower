@@ -143,7 +143,7 @@ jobs:
         with:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
-          packages: "platform-tools build-tools;35.0.1 platforms;android-35 cmdline-tools;latest cmake;3.10.2.4988404 ndk;28.1.13356709"
+          packages: "platform-tools build-tools;35.0.1 platforms;android-35 cmake;3.10.2.4988404 ndk;28.1.13356709"
 
       - name: Download Godot and export templates
         run: |
@@ -167,6 +167,8 @@ jobs:
           set -euo pipefail
           mkdir -p "$HOME/.config/godot"
           {
+            printf '%s\n' '[gd_resource type="EditorSettings" format=3]'
+            printf '\n'
             printf '%s\n' '[resource]'
             printf 'export/android/android_sdk_path = "%s"\n' "${ANDROID_SDK_ROOT}"
             printf 'export/android/java_sdk_path = "%s"\n' "${JAVA_HOME}"
