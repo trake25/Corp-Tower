@@ -12,7 +12,7 @@
 - Restore release keystore from secrets.
 - Import/parse Godot project.
 - Run GUT tests if installed.
-- Export signed Android AAB.
+- Install the generated Android build template in CI and export signed Android AAB.
 - Upload AAB artifact.
 - Optionally upload to Google Play internal track.
 
@@ -32,6 +32,10 @@
   - Uses Node 24-compatible GitHub Action majors.
   - Avoids deprecated Node 20 compatibility flags.
   - Android SDK license acceptance is handled by the setup action instead of a manual shell pipe.
+- Android export:
+  - The CI preset uses Godot's Gradle Android build path for AAB export.
+  - CI installs the Android build template during the headless export command with `--install-android-build-template`.
+  - The generated Android build template is not committed to the repository.
 - GUT step:
   - Runs after project import.
   - Runs before signed export.

@@ -232,7 +232,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build
-          godot --headless --path "$GODOT_PROJECT_PATH" --export-release "Android" "$AAB_PATH"
+          godot --headless --path "$GODOT_PROJECT_PATH" --install-android-build-template --export-release "Android" "$AAB_PATH"
           test -f "$AAB_PATH"
 
       - name: Upload AAB artifact
