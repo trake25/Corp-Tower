@@ -92,7 +92,7 @@
 | Assist Bonus | `level × 6` (if player contributes ≥ 25% of total height) |
 - MVP: player with highest level score for the level.
 - Leaderboard score is snapshotted at each checkpoint and restored on rollback, preventing repeated failed checkpoint attempts from farming score.
-- `checkpointMinContributionShare` sets the required per-player share of expected placement score for the checkpoint band; `0` disables the gate. `checkpointScoreRequirement` remains a hidden legacy flat floor when set by old tooling.
+- `checkpointMinContributionShare` sets the required per-player share of expected placement score for the checkpoint band; default is `35%`, and `0` disables the gate. `checkpointScoreRequirement` remains a hidden legacy flat floor when set by old tooling.
 
 ### Scoring Feedback UX
 - Placement score shows as a `+points` popup in the placing player's color, using `placementScorePopupDurationMs`.
@@ -143,7 +143,7 @@
 | `placementScorePopupDurationMs` | Placement score popup total lifetime, including fade-out (500-10000 ms, default 5000). |
 | `finishScorePopupDurationMs` | MVP, Perfect Fit, team total, and bonus popup total lifetime, including fade-out (500-10000 ms, default 5000). |
 | `levelSummaryDelayMs` | Completed/failed level score summary visible duration before next level or rollback (1000-10000 ms, default 6000). |
-| `checkpointMinContributionShare` | Required per-player share of expected placement score in the current checkpoint band; `0` disables the gate. |
+| `checkpointMinContributionShare` | Required per-player share of expected placement score in the current checkpoint band; default `35%`, `0` disables the gate. |
 | `targetHeightMultiplier` | Debug scale applied to the target-height curve; default 3 keeps the authored curve unchanged. |
 | `levelSupplyMinSurplus` | Minimum generated total-height surplus above target. |
 | `levelSupplyMaxSurplus` | Maximum generated total-height surplus above target. |

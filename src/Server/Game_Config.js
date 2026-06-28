@@ -28,7 +28,7 @@ const GameConfig = {
     levelSummaryDelayMs: 6000,
     checkpointInterval: 3,
     checkpointScoreRequirement: 0,
-    checkpointMinContributionShare: 0.25,
+    checkpointMinContributionShare: 0.30,
 
     // =========================
     // BLOCK SETTINGS

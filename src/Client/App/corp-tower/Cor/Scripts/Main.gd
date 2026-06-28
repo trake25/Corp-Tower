@@ -11,6 +11,7 @@ const SCORE_POPUP_FADE_RATIO := 0.28
 const SCORE_POPUP_MIN_FADE_SECONDS := 0.35
 const SCORE_POPUP_MAX_FADE_SECONDS := 2.0
 const SCORE_POPUP_MIN_HOLD_SECONDS := 0.05
+const FINISH_SCORE_POPUP_MIN_HOLD_RATIO := 0.08
 const LEVEL_SUMMARY_DEFAULT_DELAY_MS := 3000
 const BOT_STRATEGY_COOPERATIVE := "cooperative"
 const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
@@ -57,6 +58,7 @@ var level_label: Label
 var timer_label: Label
 var score_label: Label
 var checkpoint_status_label: Label
+var checkpoint_separator: HSeparator
 var height_label: Label
 var tower_value_label: Label
 var tower_status_label: Label
@@ -230,6 +232,7 @@ func bind_skin_nodes() -> void:
 	timer_label = require_node("TimerLabel") as Label
 	score_label = require_node("ScoreLabel") as Label
 	checkpoint_status_label = require_node("CheckpointStatusLabel") as Label
+	checkpoint_separator = optional_node("CheckpointSeparator") as HSeparator
 	height_label = require_node("HeightLabel") as Label
 	tower_value_label = require_node("TowerValueLabel") as Label
 	tower_status_label = require_node("TowerStatusLabel") as Label
@@ -835,7 +838,9 @@ func update_checkpoint_status_ui(raw_status: Variant) -> void:
 		return
 
 	if typeof(raw_status) != TYPE_DICTIONARY:
-		checkpoint_status_label.text = "Checkpoint: Off"
+		set_checkpoint_status_visible(false)
+		checkpoint_status_label.visible = false
+		checkpoint_status_label.text = ""
 		return
 
 	var status: Dictionary = raw_status
@@ -845,43 +850,64 @@ func update_checkpoint_status_ui(raw_status: Variant) -> void:
 	))
 
 	if required_score <= 0:
-		checkpoint_status_label.text = "Checkpoint: Off"
+		set_checkpoint_status_visible(false)
+		checkpoint_status_label.visible = false
+		checkpoint_status_label.text = ""
 		return
 
 	var next_checkpoint_level: int = int(status.get("nextCheckpointLevel", 0))
-	var checkpoint_level: int = int(status.get("checkpointLevel", 1))
-	var band_end_level: int = max(checkpoint_level, next_checkpoint_level - 1)
-	var contribution_share: float = float(status.get("minContributionShare", 0.0))
-	var contribution_percent: int = int(round(contribution_share * 100.0))
+	var player_statuses: Array = status.get("players", [])
+	var ready_count: int = 0
+	var player_count: int = 0
+	var local_status: Dictionary = {}
 	var short_players: Array[String] = []
 
-	for player_status in status.get("players", []):
+	for player_status in player_statuses:
 		if typeof(player_status) != TYPE_DICTIONARY:
 			continue
 
 		var player_id: String = str(player_status.get("id", ""))
+		player_count += 1
+
+		if player_id == str(NetworkManager.player_id):
+			local_status = player_status
 
 		if bool(player_status.get("met", false)):
+			ready_count += 1
 			continue
 
 		short_players.append(
 			get_player_display_name(player_id, []) +
-			" -" + str(int(player_status.get("remainingScore", 0)))
+			" +" + str(int(player_status.get("remainingScore", 0)))
 		)
 
 	var lines: Array[String] = [
-		"Next Checkpoint L" + str(next_checkpoint_level),
-		"Band L" + str(checkpoint_level) + "-" + str(band_end_level) +
-			" min +" + str(required_score),
-		str(contribution_percent) + "% expected each"
+		"Checkpoint L" + str(next_checkpoint_level) + "  |  Ready " + str(ready_count) + "/" + str(player_count),
+		"Required +" + str(required_score) + " each"
 	]
 
-	if short_players.is_empty():
-		lines.append("Ready")
-	else:
-		lines.append("Short: " + ", ".join(short_players))
+	if !local_status.is_empty():
+		var local_band_score: int = int(local_status.get("bandScore", 0))
+		var local_remaining_score: int = int(local_status.get("remainingScore", 0))
 
+		if bool(local_status.get("met", false)):
+			lines.append("You ready: " + str(local_band_score) + "/" + str(required_score))
+		else:
+			lines.append("You: " + str(local_band_score) + "/" + str(required_score) + " (+" + str(local_remaining_score) + ")")
+	elif short_players.is_empty():
+		lines.append("All players ready")
+	else:
+		lines.append("Need " + ", ".join(short_players))
+
+	set_checkpoint_status_visible(true)
 	checkpoint_status_label.text = "\n".join(lines)
+
+func set_checkpoint_status_visible(should_show: bool) -> void:
+	if checkpoint_separator != null:
+		checkpoint_separator.visible = should_show
+
+	if checkpoint_status_label != null:
+		checkpoint_status_label.visible = should_show
 
 func get_local_player_color() -> Color:
 	var player_id: String = str(NetworkManager.player_id)
@@ -1065,7 +1091,8 @@ func show_score_event_popup(
 	var intro_duration_seconds: float = minf(SCORE_POPUP_INTRO_SECONDS, total_duration_seconds * 0.3)
 	var fade_duration_seconds: float = get_score_popup_fade_duration_seconds(
 		total_duration_seconds,
-		intro_duration_seconds
+		intro_duration_seconds,
+		event_type
 	)
 	var hold_duration_seconds: float = maxf(
 		0.0,
@@ -1087,12 +1114,21 @@ func show_score_event_popup(
 
 func get_score_popup_fade_duration_seconds(
 	total_duration_seconds: float,
-	intro_duration_seconds: float
+	intro_duration_seconds: float,
+	event_type: String
 ) -> float:
 	var available_duration_seconds: float = maxf(
 		0.01,
 		total_duration_seconds - intro_duration_seconds
 	)
+	if event_type != "placement":
+		var finish_hold_seconds: float = minf(
+			available_duration_seconds * FINISH_SCORE_POPUP_MIN_HOLD_RATIO,
+			0.5
+		)
+
+		return maxf(0.01, available_duration_seconds - finish_hold_seconds)
+
 	var minimum_hold_seconds: float = minf(
 		SCORE_POPUP_MIN_HOLD_SECONDS,
 		available_duration_seconds * 0.5
@@ -1722,7 +1758,7 @@ func update_debug_config(config) -> void:
 	set_slider_no_signal(placement_score_slider, float(config.get("placementScorePerHeight", 10)))
 	set_slider_no_signal(
 		checkpoint_score_slider,
-		float(config.get("checkpointMinContributionShare", 0.25)) * 100.0
+		float(config.get("checkpointMinContributionShare", 0.35)) * 100.0
 	)
 	set_slider_no_signal(finisher_bonus_slider, float(config.get("finisherBonusPerLevel", 4)))
 	set_slider_no_signal(precision_bonus_slider, float(config.get("precisionBonusPerLevel", 6)))
@@ -1821,7 +1857,7 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		checkpoint_score_label,
-		"Checkpoint Share: " + str(int(get_slider_value(checkpoint_score_slider, 25))) + "%"
+		"Checkpoint Share: " + str(int(get_slider_value(checkpoint_score_slider, 35))) + "%"
 	)
 	set_debug_label_text(
 		finisher_bonus_label,
