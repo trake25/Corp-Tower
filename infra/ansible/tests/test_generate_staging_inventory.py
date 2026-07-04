@@ -44,7 +44,7 @@ class GenerateStagingInventoryTests(unittest.TestCase):
             )
         )
 
-        self.assertEqual(list(inventory["all"]["children"]["gateway"]["hosts"].keys()), ["gateway"])
+        self.assertEqual(list(inventory["all"]["children"]["gateway"]["hosts"].keys()), ["staging_gateway"])
         self.assertEqual(len(inventory["all"]["children"]["workers"]["hosts"]), 2)
         self.assertEqual(env["GATEWAY_PRIVATE_IP"], "10.0.0.10")
         self.assertEqual(env["WORKER_PRIVATE_IPS"], "10.0.0.20 10.0.0.30")
@@ -87,6 +87,19 @@ class GenerateStagingInventoryTests(unittest.TestCase):
                     instance("i-worker-2", "docker-server-worker", "54.0.0.3", "10.0.0.30"),
                 )
             )
+
+    def test_worker_names_do_not_collide_with_groups(self):
+        inventory, _ = self.build(
+            payload(
+                instance("i-gateway", "gateway-redis-proxy-learning", "54.0.0.1", "10.0.0.10"),
+                instance("i-worker-1", "docker-server-worker", "54.0.0.2", "10.0.0.20", name="gateway"),
+                instance("i-worker-2", "docker-server-worker", "54.0.0.3", "10.0.0.30", name="workers"),
+            )
+        )
+
+        worker_hosts = inventory["all"]["children"]["workers"]["hosts"]
+        self.assertNotIn("gateway", worker_hosts)
+        self.assertNotIn("workers", worker_hosts)
 
 
 if __name__ == "__main__":

@@ -112,7 +112,9 @@ def build_inventory(
     worker_hosts_map: dict[str, dict[str, Any]] = {}
     worker_hosts: list[str] = []
 
-    gateway_hosts["gateway"] = {
+    gateway_host_name = "staging_gateway"
+    reserved_host_names = {"all", "gateway", "workers", gateway_host_name}
+    gateway_hosts[gateway_host_name] = {
         "ansible_host": gateway_public_ip,
         "private_ip": gateway_private_ip,
         "role": _tag(gateway, "Role"),
@@ -126,7 +128,7 @@ def build_inventory(
         worker_private_ips.append(private_ip)
 
         host_name = _sanitize_host_name(_tag(worker, "Name"), f"worker_{index}")
-        if host_name in gateway_hosts or host_name in worker_hosts_map:
+        if host_name in reserved_host_names or host_name in worker_hosts_map:
             host_name = f"{host_name}_{index}"
 
         worker_hosts.append(host_name)
