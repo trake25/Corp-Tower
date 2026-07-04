@@ -10,8 +10,9 @@
 - Build Docker image.
 - Push image to ECR.
 - Discover EC2 worker instances.
-- Deploy server image as Docker containers on worker EC2 instances.
-- Deploy Docker Redis and nginx reverse proxy to EC2-1 gateway.
+- Generate a transient Ansible inventory from AWS EC2 tag discovery.
+- Deploy server image as Docker containers on worker EC2 instances through Ansible.
+- Deploy Docker Redis and nginx reverse proxy to EC2-1 gateway through Ansible.
 - Fail early when the gateway and workers are not all in one subnet.
 
 ## Key Logic
@@ -23,16 +24,20 @@
 - CI dependency install uses `npm ci` with GitHub npm cache and the committed server lockfile.
 - GitHub Action dependencies are pinned to Node 24-compatible majors, and server tests use Node.js `24.14.1`.
 - Docker image builds use BuildKit GitHub Actions cache and push the immutable commit SHA image tag.
-- Step summaries include timing visibility for server tests, image push, EC2 target discovery, SSH setup/preflight, Redis, each worker update, and final nginx restore.
+- Ansible is installed from `infra/ansible/requirements.txt` and runs from `infra/ansible/playbooks/staging_deploy.yml`.
+- The inventory generator unit tests run before AWS target discovery.
+- Step summaries include timing visibility for server tests, image push, Ansible setup, EC2 target discovery, SSH host key setup, and the Ansible deploy.
 - Server container healthchecks run on a short staging cadence so Docker reports recovery quickly during rolling deploys.
 - AWS auth:
   - OIDC role via `AWS_ROLE_ARN`.
 - Deploy:
   - Finds running worker instances by Terraform tags.
   - Verifies at least two running workers and one shared subnet.
+  - Generates a temporary Ansible inventory that preserves worker public/private IP pairing from one AWS JSON response.
+  - Runs `ansible-playbook --syntax-check` before deploying.
   - Gateway EC2 runs external Redis simulation with `redis:7-alpine`.
   - Deploy keeps healthy Redis running; otherwise it recreates Redis and waits for `PONG`.
-  - EC2-2/EC2-3 pull the ECR image and run `corp-tower-server` Docker containers.
+  - EC2-2/EC2-3 pull the ECR image and prepare candidate `corp-tower-server-next` containers in parallel.
   - Worker containers use `REDIS_URL=redis://<gateway-private-ip>:6379`.
   - Worker containers use `RECONNECT_TTL_SECONDS=10` for faster staging/debug reconnect testing.
   - Deploy validates generated nginx config with `nginx -t`.

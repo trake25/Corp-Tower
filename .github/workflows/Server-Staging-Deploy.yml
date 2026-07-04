@@ -114,134 +114,80 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: infra/ansible/requirements.txt
+
+      - name: Install Ansible
+        run: |
+          set -euo pipefail
+          ansible_start_time="$(date +%s)"
+
+          python -m pip install --upgrade pip
+          python -m pip install -r infra/ansible/requirements.txt
+          ansible --version
+
+          ansible_end_time="$(date +%s)"
+          {
+            echo "## Ansible setup"
+            echo
+            echo "- Duration: \`$((ansible_end_time - ansible_start_time)) seconds\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Test Ansible inventory generator
+        run: python -m unittest discover -s infra/ansible/tests
+
       - name: Resolve EC2 learning lab targets
+        env:
+          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
+          EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
         run: |
           set -euo pipefail
           resolve_start_time="$(date +%s)"
 
-          WORKER_PRIVATE_IPS="$(
-            aws ec2 describe-instances \
-              --filters \
-                "Name=tag:Project,Values=corp-tower" \
-                "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=docker-server-worker" \
-                "Name=instance-state-name,Values=running" \
-              --query 'Reservations[].Instances[].PrivateIpAddress' \
-              --output text
-          )"
+          mkdir -p "$RUNNER_TEMP/corp-tower"
+          INSTANCES_JSON="$RUNNER_TEMP/corp-tower/staging-instances.json"
+          INVENTORY_JSON="$RUNNER_TEMP/corp-tower/staging-inventory.json"
 
-          WORKER_PUBLIC_IPS="$(
-            aws ec2 describe-instances \
-              --filters \
-                "Name=tag:Project,Values=corp-tower" \
-                "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=docker-server-worker" \
-                "Name=instance-state-name,Values=running" \
-              --query 'Reservations[].Instances[].PublicIpAddress' \
-              --output text
-          )"
+          aws ec2 describe-instances \
+            --filters \
+              "Name=tag:Project,Values=corp-tower" \
+              "Name=tag:Environment,Values=staging" \
+              "Name=tag:Role,Values=gateway-redis-proxy-learning,gateway-redis-proxy-k3s-learning,docker-server-worker" \
+              "Name=instance-state-name,Values=running" \
+            --output json > "$INSTANCES_JSON"
 
-          GATEWAY_PRIVATE_IP="$(
-            aws ec2 describe-instances \
-              --filters \
-                "Name=tag:Project,Values=corp-tower" \
-                "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=gateway-redis-proxy-learning,gateway-redis-proxy-k3s-learning" \
-                "Name=instance-state-name,Values=running" \
-              --query 'Reservations[0].Instances[0].PrivateIpAddress' \
-              --output text
-          )"
+          python infra/ansible/scripts/generate_staging_inventory.py \
+            --instances-json "$INSTANCES_JSON" \
+            --inventory "$INVENTORY_JSON" \
+            --ssh-user "$EC2_USER" \
+            --ssh-port "$EC2_PORT" \
+            --ssh-key-file "$HOME/.ssh/ec2_key" \
+            --known-hosts-file "$HOME/.ssh/known_hosts" \
+            --github-env "$GITHUB_ENV" \
+            --github-summary "$GITHUB_STEP_SUMMARY"
 
-          GATEWAY_PUBLIC_IP="$(
-            aws ec2 describe-instances \
-              --filters \
-                "Name=tag:Project,Values=corp-tower" \
-                "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=gateway-redis-proxy-learning,gateway-redis-proxy-k3s-learning" \
-                "Name=instance-state-name,Values=running" \
-              --query 'Reservations[0].Instances[0].PublicIpAddress' \
-              --output text
-          )"
-
-          STAGING_SUBNET_IDS="$(
-            aws ec2 describe-instances \
-              --filters \
-                "Name=tag:Project,Values=corp-tower" \
-                "Name=tag:Environment,Values=staging" \
-                "Name=tag:Role,Values=gateway-redis-proxy-learning,gateway-redis-proxy-k3s-learning,docker-server-worker" \
-                "Name=instance-state-name,Values=running" \
-              --query 'Reservations[].Instances[].SubnetId' \
-              --output text \
-              | tr '\t' '\n' \
-              | sed '/^$/d' \
-              | sort -u
-          )"
-          STAGING_SUBNET_COUNT="$(printf '%s\n' "$STAGING_SUBNET_IDS" | sed '/^$/d' | wc -l | tr -d ' ')"
-          WORKER_COUNT="$(printf '%s\n' "$WORKER_PRIVATE_IPS" | wc -w | tr -d ' ')"
-
-          if [ -z "$WORKER_PRIVATE_IPS" ] || [ -z "$WORKER_PUBLIC_IPS" ] || [ "$GATEWAY_PRIVATE_IP" = "None" ] || [ "$GATEWAY_PUBLIC_IP" = "None" ]; then
-            echo "Gateway or worker EC2 instances not found. Run Staging Infra Plan, then Staging Infra Apply if the plan is correct."
-            exit 1
-          fi
-
-          if [ "$WORKER_COUNT" -lt 2 ]; then
-            echo "Expected at least 2 running Docker worker EC2 instances. Found: $WORKER_COUNT."
-            exit 1
-          fi
-
-          echo "Running staging subnet IDs:"
-          printf '%s\n' "$STAGING_SUBNET_IDS"
-
-          if [ "$STAGING_SUBNET_COUNT" -ne 1 ]; then
-            echo "Gateway and workers are not all in the same subnet. Run Staging Infra Plan, then Staging Infra Apply if the plan is correct."
-            exit 1
-          fi
-
-          echo "WORKER_PRIVATE_IPS=$WORKER_PRIVATE_IPS" >> "$GITHUB_ENV"
-          echo "WORKER_PUBLIC_IPS=$WORKER_PUBLIC_IPS" >> "$GITHUB_ENV"
-          echo "GATEWAY_PRIVATE_IP=$GATEWAY_PRIVATE_IP" >> "$GITHUB_ENV"
-          echo "GATEWAY_PUBLIC_IP=$GATEWAY_PUBLIC_IP" >> "$GITHUB_ENV"
           resolve_end_time="$(date +%s)"
           {
-            echo "## EC2 target discovery"
-            echo
-            echo "- Workers found: \`$WORKER_COUNT\`"
-            echo "- Shared subnet count: \`$STAGING_SUBNET_COUNT\`"
             echo "- Duration: \`$((resolve_end_time - resolve_start_time)) seconds\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Deploy over SSH
+      - name: Prepare SSH for Ansible
         env:
-          AWS_REGION: ${{ env.AWS_REGION }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}
-          WORKER_PRIVATE_IPS: ${{ env.WORKER_PRIVATE_IPS }}
-          WORKER_PUBLIC_IPS: ${{ env.WORKER_PUBLIC_IPS }}
-          GATEWAY_PRIVATE_IP: ${{ env.GATEWAY_PRIVATE_IP }}
-          EC2_HOST: ${{ env.GATEWAY_PUBLIC_IP }}
-          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
           EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
           EC2_SSH_KEY: ${{ secrets.EC2_STAGING_SSH_KEY }}
         run: |
           set -euo pipefail
-          deploy_start_time="$(date +%s)"
+          ssh_start_time="$(date +%s)"
 
-          finish_phase() {
-            local phase_name="$1"
-            local phase_start="$2"
-            local phase_end
-            phase_end="$(date +%s)"
-            echo "- ${phase_name}: $((phase_end - phase_start)) seconds" >> "$GITHUB_STEP_SUMMARY"
-          }
-
-          {
-            echo "## Staging deploy timings"
-            echo
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          phase_start="$(date +%s)"
           mkdir -p ~/.ssh
+          mkdir -p ~/.ansible/cp
           chmod 700 ~/.ssh
+          chmod 700 ~/.ansible
+          chmod 700 ~/.ansible/cp
           printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
           chmod 600 ~/.ssh/ec2_key
           touch ~/.ssh/known_hosts
@@ -271,362 +217,58 @@ jobs:
             return 1
           }
 
-          prepare_known_host "$EC2_HOST"
-
-          REDIS_URL="redis://${GATEWAY_PRIVATE_IP}:6379"
+          prepare_known_host "$GATEWAY_PUBLIC_IP"
 
           for WORKER_HOST in $WORKER_PUBLIC_IPS; do
             prepare_known_host "$WORKER_HOST"
           done
-          finish_phase "SSH known_hosts setup" "$phase_start"
 
-          SSH_PREFLIGHT_OPTS=(
-            -i ~/.ssh/ec2_key
-            -p "$EC2_PORT"
-            -o BatchMode=yes
-            -o ConnectTimeout=20
-            -o ConnectionAttempts=3
-            -o ServerAliveInterval=15
-            -o ServerAliveCountMax=2
-            -o UserKnownHostsFile=~/.ssh/known_hosts
-            -o GlobalKnownHostsFile=/dev/null
-            -o StrictHostKeyChecking=yes
-          )
+          ssh_end_time="$(date +%s)"
+          {
+            echo "## SSH known_hosts setup"
+            echo
+            echo "- Gateway: \`$GATEWAY_PUBLIC_IP\`"
+            echo "- Workers: \`$WORKER_PUBLIC_IPS\`"
+            echo "- Duration: \`$((ssh_end_time - ssh_start_time)) seconds\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-          DEPLOY_PHASE="ssh preflight"
-          phase_start="$(date +%s)"
-          echo "::group::SSH preflight"
-          for TARGET_HOST in "$EC2_HOST" $WORKER_PUBLIC_IPS; do
-            echo "Checking SSH access to ${TARGET_HOST}"
-            if ! ssh "${SSH_PREFLIGHT_OPTS[@]}" "$EC2_USER@$TARGET_HOST" "hostname && whoami"; then
-              echo "::error::Cannot SSH to ${TARGET_HOST}. Run Staging Diagnostics for AWS-side details before deploying."
-              exit 1
-            fi
-          done
-          echo "::endgroup::"
-          finish_phase "SSH preflight" "$phase_start"
+      - name: Run Ansible syntax check
+        env:
+          ANSIBLE_CONFIG: infra/ansible/ansible.cfg
+        run: |
+          set -euo pipefail
+          ansible-playbook \
+            -i "$ANSIBLE_INVENTORY" \
+            infra/ansible/playbooks/staging_deploy.yml \
+            --syntax-check
 
-          DEPLOY_PHASE="gateway redis"
-          phase_start="$(date +%s)"
-          echo "::group::Gateway Redis"
-          timeout 360 ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-            "GATEWAY_PRIVATE_IP='$GATEWAY_PRIVATE_IP' bash -s" <<'REMOTE_GATEWAY_REDIS'
-          set -euxo pipefail
+      - name: Deploy with Ansible
+        env:
+          ANSIBLE_CONFIG: infra/ansible/ansible.cfg
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          deploy_start_time="$(date +%s)"
 
-          echo "Gateway checkpoint: sudo/docker preflight"
-          sudo -n true
-
-          if ! command -v docker >/dev/null 2>&1 || ! command -v aws >/dev/null 2>&1; then
-            sudo dnf install -y docker aws-cli
-          fi
-
-          sudo systemctl enable docker
-          sudo systemctl start docker
-          timeout 30 sudo docker version
-
-          echo "Gateway checkpoint: docker network"
-          timeout 30 sudo docker network create corp-tower-gateway 2>/dev/null || true
-
-          # Remove legacy single-EC2 server container so gateway proxy can own port 3000 later.
-          timeout 30 sudo docker stop corp-tower-server 2>/dev/null || true
-          timeout 30 sudo docker rm corp-tower-server 2>/dev/null || true
-
-          echo "Gateway checkpoint: redis health"
-          REDIS_READY=false
-          if sudo docker inspect corp-tower-redis >/dev/null 2>&1; then
-            if timeout 10 sudo docker exec corp-tower-redis redis-cli ping | grep -q PONG; then
-              REDIS_READY=true
-            else
-              timeout 30 sudo docker stop corp-tower-redis 2>/dev/null || true
-              timeout 30 sudo docker rm corp-tower-redis 2>/dev/null || true
-            fi
-          fi
-
-          if [ "$REDIS_READY" != "true" ]; then
-            echo "Gateway checkpoint: redis image pull"
-            timeout 180 sudo docker pull redis:7-alpine
-
-            echo "Gateway checkpoint: redis start"
-            timeout 60 sudo docker run -d \
-              --name corp-tower-redis \
-              --restart unless-stopped \
-              --network corp-tower-gateway \
-              -p 6379:6379 \
-              redis:7-alpine redis-server --bind 0.0.0.0 --protected-mode no
-          fi
-
-          echo "Gateway checkpoint: redis readiness"
-          for attempt in $(seq 1 30); do
-            if timeout 10 sudo docker exec corp-tower-redis redis-cli ping | grep -q PONG; then
-              exit 0
-            fi
-            sleep 1
-          done
-
-          echo "Redis did not become ready."
-          timeout 30 sudo docker logs corp-tower-redis
-          exit 1
-          REMOTE_GATEWAY_REDIS
-          echo "::endgroup::"
-          finish_phase "Gateway Redis" "$phase_start"
-
-          DEPLOY_PHASE="prepare docker worker image"
           ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
 
-          configure_gateway_upstream() {
-            local excluded_worker_ip="${1:-}"
-            local active_worker_ips=""
+          ansible-playbook \
+            -i "$ANSIBLE_INVENTORY" \
+            infra/ansible/playbooks/staging_deploy.yml \
+            -e "aws_region=${AWS_REGION}" \
+            -e "ecr_registry=${ECR_REGISTRY}" \
+            -e "image_uri=${IMAGE_URI}" \
+            -e "reconnect_ttl_seconds=10"
 
-            for WORKER_IP in $WORKER_PRIVATE_IPS; do
-              if [ -n "$excluded_worker_ip" ] && [ "$WORKER_IP" = "$excluded_worker_ip" ]; then
-                continue
-              fi
-
-              active_worker_ips="${active_worker_ips} ${WORKER_IP}"
-            done
-
-            active_worker_ips="$(printf '%s' "$active_worker_ips" | xargs)"
-
-            if [ -z "$active_worker_ips" ]; then
-              echo "::error::No active workers remain for gateway upstream."
-              return 1
-            fi
-
-            ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-              "ACTIVE_WORKER_PRIVATE_IPS='$active_worker_ips' bash -s" <<'REMOTE_GATEWAY'
-          set -euxo pipefail
-
-          sudo -n true
-
-          if ! command -v docker >/dev/null 2>&1; then
-            sudo dnf install -y docker
-          fi
-
-          sudo systemctl enable docker
-          sudo systemctl start docker
-          timeout 30 sudo docker version
-
-          sudo docker stop corp-tower-server 2>/dev/null || true
-          sudo docker rm corp-tower-server 2>/dev/null || true
-
-          for WORKER_IP in $ACTIVE_WORKER_PRIVATE_IPS; do
-            for attempt in $(seq 1 30); do
-              if timeout 5 bash -c "cat < /dev/null > /dev/tcp/${WORKER_IP}/3000"; then
-                break
-              fi
-
-              if [ "$attempt" -eq 30 ]; then
-                echo "Worker ${WORKER_IP}:3000 did not become reachable from gateway."
-                exit 1
-              fi
-
-              sleep 2
-            done
-          done
-
+          deploy_end_time="$(date +%s)"
           {
-            echo "events {}"
-            echo "http {"
-            echo "  upstream corp_tower_workers {"
-            for WORKER_IP in $ACTIVE_WORKER_PRIVATE_IPS; do
-              echo "    server ${WORKER_IP}:3000;"
-            done
-            echo "  }"
-            echo "  server {"
-            echo "    listen 3000;"
-            echo "    location / {"
-            echo "      proxy_pass http://corp_tower_workers;"
-            echo "      proxy_http_version 1.1;"
-            echo "      proxy_set_header Upgrade \$http_upgrade;"
-            echo "      proxy_set_header Connection \"Upgrade\";"
-            echo "      proxy_set_header Host \$host;"
-            echo "    }"
-            echo "  }"
-            echo "}"
-          } > /tmp/corp-tower-nginx.conf
-
-          sudo docker run --rm \
-            --network host \
-            -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
-            nginx:1.27-alpine nginx -t
-
-          GATEWAY_STATUS="$(sudo docker inspect -f '{{.State.Status}}' corp-tower-gateway 2>/dev/null || true)"
-          if [ "$GATEWAY_STATUS" = "running" ]; then
-            sudo docker exec corp-tower-gateway nginx -t
-            sudo docker exec corp-tower-gateway nginx -s reload
-          else
-            sudo docker rm -f corp-tower-gateway 2>/dev/null || true
-
-            if sudo ss -ltnp | grep -q ':3000 '; then
-              echo "Port 3000 is already listening before gateway start:"
-              sudo ss -ltnp | grep ':3000 ' || true
-              exit 1
-            fi
-
-            sudo docker run -d \
-              --name corp-tower-gateway \
-              --restart unless-stopped \
-              --network host \
-              -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
-              nginx:1.27-alpine
-          fi
-
-          sudo ss -ltnp | grep ':3000 ' || true
-          sudo docker ps --filter name=corp-tower
-          REMOTE_GATEWAY
-          }
-
-          DEPLOY_PHASE="deploy docker workers"
-          echo "::group::Deploy Docker workers"
-          read -r -a WORKER_PUBLIC_IP_ARRAY <<< "$WORKER_PUBLIC_IPS"
-          read -r -a WORKER_PRIVATE_IP_ARRAY <<< "$WORKER_PRIVATE_IPS"
-
-          if [ "${#WORKER_PUBLIC_IP_ARRAY[@]}" -ne "${#WORKER_PRIVATE_IP_ARRAY[@]}" ]; then
-            echo "::error::Worker public/private IP discovery count mismatch."
-            echo "Public IPs: $WORKER_PUBLIC_IPS"
-            echo "Private IPs: $WORKER_PRIVATE_IPS"
-            exit 1
-          fi
-
-          for WORKER_INDEX in "${!WORKER_PUBLIC_IP_ARRAY[@]}"; do
-            WORKER_HOST="${WORKER_PUBLIC_IP_ARRAY[$WORKER_INDEX]}"
-            WORKER_PRIVATE_IP="${WORKER_PRIVATE_IP_ARRAY[$WORKER_INDEX]}"
-            phase_start="$(date +%s)"
-
-            echo "Draining worker ${WORKER_PRIVATE_IP} from gateway upstream before update."
-            configure_gateway_upstream "$WORKER_PRIVATE_IP"
-            sleep 5
-
-            if ! ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$WORKER_HOST" \
-              "IMAGE_URI='$IMAGE_URI' REDIS_URL='$REDIS_URL' ECR_REGISTRY='$ECR_REGISTRY' AWS_REGION='$AWS_REGION' bash -s" <<'REMOTE_WORKER'
-          set -euxo pipefail
-
-          sudo -n true
-
-          if ! command -v docker >/dev/null 2>&1 || ! command -v aws >/dev/null 2>&1; then
-            sudo dnf install -y docker aws-cli
-          fi
-
-          sudo systemctl enable docker
-          sudo systemctl start docker
-          timeout 30 sudo docker version
-
-          sudo docker rm -f corp-tower-server-next 2>/dev/null || true
-
-          aws ecr get-login-password --region "$AWS_REGION" \
-            | sudo docker login --username AWS --password-stdin "$ECR_REGISTRY"
-
-          timeout 180 sudo docker pull "$IMAGE_URI"
-
-          CURRENT_IMAGE="$(sudo docker inspect -f '{{.Config.Image}}' corp-tower-server 2>/dev/null || true)"
-          CURRENT_STATUS="$(sudo docker inspect -f '{{.State.Status}}' corp-tower-server 2>/dev/null || true)"
-          CURRENT_HEALTH="$(sudo docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' corp-tower-server 2>/dev/null || true)"
-
-          wait_for_server_port() {
-            local container_name="$1"
-            local port="$2"
-
-            for attempt in $(seq 1 30); do
-              HEALTH_STATUS="$(sudo docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container_name")"
-              if { [ "$HEALTH_STATUS" = "healthy" ] || [ "$HEALTH_STATUS" = "running" ]; } && timeout 5 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/${port}"; then
-                return 0
-              fi
-
-              sleep 2
-            done
-
-            return 1
-          }
-
-          restore_previous_server() {
-            if [ -z "$CURRENT_IMAGE" ]; then
-              echo "::error::No previous corp-tower-server image is available for rollback."
-              return 1
-            fi
-
-            echo "::warning::Rolling worker back to previous image: ${CURRENT_IMAGE}"
-            sudo docker rm -f corp-tower-server 2>/dev/null || true
-            sudo docker run -d \
-              --name corp-tower-server \
-              --restart unless-stopped \
-              -p 3000:3000 \
-              -e NODE_ENV=staging \
-              -e REDIS_URL="$REDIS_URL" \
-              -e RECONNECT_TTL_SECONDS=10 \
-              "$CURRENT_IMAGE"
-
-            if wait_for_server_port corp-tower-server 3000; then
-              echo "::warning::Rollback container is healthy."
-              sudo docker ps --filter name=corp-tower-server
-              return 0
-            fi
-
-            echo "::error::Rollback container did not become healthy."
-            sudo docker logs corp-tower-server 2>/dev/null || true
-            return 1
-          }
-
-          if [ "$CURRENT_IMAGE" = "$IMAGE_URI" ] && { [ "$CURRENT_HEALTH" = "healthy" ] || [ "$CURRENT_STATUS" = "running" ]; }; then
-            sudo docker ps --filter name=corp-tower-server
-            exit 0
-          fi
-
-          sudo docker run -d \
-            --name corp-tower-server-next \
-            --restart no \
-            -p 3001:3000 \
-            -e NODE_ENV=staging \
-            -e REDIS_URL="$REDIS_URL" \
-            -e RECONNECT_TTL_SECONDS=10 \
-            "$IMAGE_URI"
-
-          if ! wait_for_server_port corp-tower-server-next 3001; then
-            sudo docker logs corp-tower-server-next 2>/dev/null || true
-            sudo docker rm -f corp-tower-server-next 2>/dev/null || true
-            echo "::error::Candidate server container did not become healthy; current server was not replaced."
-            exit 1
-          fi
-
-          sudo docker stop corp-tower-server 2>/dev/null || true
-          sudo docker rm corp-tower-server 2>/dev/null || true
-
-          sudo docker run -d \
-            --name corp-tower-server \
-            --restart unless-stopped \
-            -p 3000:3000 \
-            -e NODE_ENV=staging \
-            -e REDIS_URL="$REDIS_URL" \
-            -e RECONNECT_TTL_SECONDS=10 \
-            "$IMAGE_URI"
-
-          if wait_for_server_port corp-tower-server 3000; then
-            sudo docker rm -f corp-tower-server-next 2>/dev/null || true
-            sudo docker ps --filter name=corp-tower-server
-            exit 0
-          fi
-
-          sudo docker logs corp-tower-server 2>/dev/null || true
-          sudo docker rm -f corp-tower-server 2>/dev/null || true
-          sudo docker rm -f corp-tower-server-next 2>/dev/null || true
-          restore_previous_server || true
-          exit 1
-          REMOTE_WORKER
-            then
-              finish_phase "Worker ${WORKER_PRIVATE_IP} failed and gateway upstream restore" "$phase_start"
-              echo "::error::Worker ${WORKER_PRIVATE_IP} update failed. Restoring full gateway upstream before failing deploy."
-              configure_gateway_upstream
-              exit 1
-            fi
-            finish_phase "Worker ${WORKER_PRIVATE_IP} update" "$phase_start"
-          done
-          echo "::endgroup::"
-
-          DEPLOY_PHASE="gateway nginx proxy"
-          phase_start="$(date +%s)"
-          echo "::group::Gateway nginx proxy"
-          configure_gateway_upstream
-          echo "::endgroup::"
-          finish_phase "Final gateway nginx restore" "$phase_start"
-          finish_phase "Total deploy over SSH" "$deploy_start_time"
+            echo "## Ansible staging deploy"
+            echo
+            echo "- Image: \`$IMAGE_URI\`"
+            echo "- Gateway URL: \`ws://${GATEWAY_PUBLIC_IP}:3000\`"
+            echo "- Duration: \`$((deploy_end_time - deploy_start_time)) seconds\`"
+          } >> "$GITHUB_STEP_SUMMARY"

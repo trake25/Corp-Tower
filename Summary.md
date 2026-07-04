@@ -12,7 +12,7 @@
 - Server: Node WebSocket workers own matchmaking, room state, reconnect, scoring, timers, bots, and debug config.
 - State: Redis is used in staging for active matchmaking, room/session snapshots, reconnect, and worker recovery.
 - Staging: EC2-1 gateway runs nginx plus Docker Redis; EC2-2/EC2-3 run Docker `corp-tower-server` workers.
-- CI/CD: GitHub Actions handles server deploys, diagnostics, infra plan/apply, cleanup, and Android internal AAB workflow.
+- CI/CD: GitHub Actions handles server tests/builds, Ansible-driven staging deploys, diagnostics, infra plan/apply, cleanup, and Android internal AAB workflow.
 - K3s: manual learning plan only; Docker gateway/workers remain the active staging path.
 
 ## Current Focus

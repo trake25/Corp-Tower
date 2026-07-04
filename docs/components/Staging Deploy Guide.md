@@ -15,7 +15,7 @@
 - Full preflight path: run [[Staging Automated Master Workflow]] manually with `full_preflight`, or change staging workflow files, to queue `Diagnostics -> Infra Plan -> Server Update`.
 - Manual infra path: run Terraform plan/apply workflows to create, adopt, or update EC2-1 gateway and EC2-2/EC2-3 workers.
 - Server workflow builds/pushes Docker image to ECR.
-- Server workflow starts Redis/nginx on EC2-1 and game server Docker containers on EC2-2/EC2-3.
+- Server workflow installs pinned Ansible on the GitHub runner, generates a temporary EC2 inventory, then starts Redis/nginx on EC2-1 and game server Docker containers on EC2-2/EC2-3.
 - Cleanup: Run [[Staging Runtime Cleanup Workflow]] when stale nginx, Redis, server containers, Docker network, Docker images, or temp deployment files are suspected.
 - Managed AWS ALB/NLB, ElastiCache, and EKS are intentionally not used in this learning setup.
 - K3s exploration belongs in [[K3s Manual Learning Plan]] until it has been manually installed, verified, and reverted phase by phase.
@@ -36,4 +36,5 @@
 - Infra Apply and EC2 Rebuild stay manual-only because they can intentionally change infrastructure.
 - Gateway and workers should stay in the same staging VPC/subnet learning topology.
 - Check gateway logs on EC2-1 with `sudo docker logs corp-tower-gateway`; check worker logs on EC2-2/EC2-3 with `sudo docker logs corp-tower-server`.
+- Ansible deploy assets live under `infra/ansible`; deployment edits there trigger diagnostics plus server update through [[Staging Automated Master Workflow]].
 - Keep this Docker staging path as the fallback while learning K3s manually.

@@ -1,0 +1,74 @@
+---
+- name: Ensure gateway Docker network
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if sudo docker network inspect corp-tower-gateway >/dev/null 2>&1; then
+      echo exists
+      exit 0
+    fi
+
+    timeout 30 sudo docker network create corp-tower-gateway
+  args:
+    executable: /bin/bash
+  register: gateway_network_create
+  changed_when: "'exists' not in gateway_network_create.stdout"
+
+- name: Remove legacy gateway-local server container
+  ansible.builtin.shell: |
+    set -euo pipefail
+    timeout 30 sudo docker stop corp-tower-server 2>/dev/null || true
+    timeout 30 sudo docker rm corp-tower-server 2>/dev/null || true
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Check Redis container health
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if sudo docker inspect corp-tower-redis >/dev/null 2>&1; then
+      if timeout 10 sudo docker exec corp-tower-redis redis-cli ping | grep -q PONG; then
+        echo ready
+        exit 0
+      fi
+
+      timeout 30 sudo docker stop corp-tower-redis 2>/dev/null || true
+      timeout 30 sudo docker rm corp-tower-redis 2>/dev/null || true
+    fi
+
+    echo missing
+  args:
+    executable: /bin/bash
+  register: gateway_redis_health
+  changed_when: "'missing' in gateway_redis_health.stdout"
+
+- name: Pull Redis image when Redis is not ready
+  ansible.builtin.command: timeout 180 sudo docker pull redis:7-alpine
+  when: "'ready' not in gateway_redis_health.stdout"
+  changed_when: true
+
+- name: Start Redis container when Redis is not ready
+  ansible.builtin.command: >
+    timeout 60 sudo docker run -d
+    --name corp-tower-redis
+    --restart unless-stopped
+    --network corp-tower-gateway
+    -p 6379:6379
+    redis:7-alpine redis-server --bind 0.0.0.0 --protected-mode no
+  when: "'ready' not in gateway_redis_health.stdout"
+  changed_when: true
+
+- name: Wait for Redis readiness
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for attempt in $(seq 1 30); do
+      if timeout 10 sudo docker exec corp-tower-redis redis-cli ping | grep -q PONG; then
+        exit 0
+      fi
+      sleep 1
+    done
+
+    timeout 30 sudo docker logs corp-tower-redis
+    exit 1
+  args:
+    executable: /bin/bash
+  changed_when: false

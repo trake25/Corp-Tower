@@ -7,6 +7,7 @@ on:
       - master
     paths:
       - "src/Server/**"
+      - "infra/ansible/**"
       - "infra/terraform/**"
       - ".github/workflows/Staging-Automated-Master.yml"
       - ".github/workflows/Staging-Diagnostics.yml"
@@ -97,6 +98,12 @@ jobs:
             if printf '%s\n' "$changed_paths" | grep -Eq '^src/Server/'; then
               run_server_update=true
               fast_server_update=true
+            fi
+
+            if printf '%s\n' "$changed_paths" | grep -Eq '^infra/ansible/'; then
+              run_diagnostics=true
+              run_server_update=true
+              fast_server_update=false
             fi
 
             if printf '%s\n' "$changed_paths" | grep -Eq '^infra/terraform/'; then

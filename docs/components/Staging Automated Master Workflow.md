@@ -17,10 +17,14 @@
   - manual `workflow_dispatch`.
 - Watched push paths:
   - `src/Server/**`
+  - `infra/ansible/**`
   - `infra/terraform/**`
   - staging workflow files used by the master queue.
 - Client-only pushes do not trigger this workflow.
 - Server-only push queue:
+  - `Server Update`
+- Ansible deployment change queue:
+  - `Diagnostics`
   - `Server Update`
 - Workflow-change push queue:
   - `Diagnostics`

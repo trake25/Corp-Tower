@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-07-04
+- feature: Added Ansible-based staging server deployment orchestration for GitHub Actions, including transient EC2 inventory generation, gateway Redis/nginx roles, rolling worker candidate validation, and updated CI/CD docs.
+
 ## 2026-06-27
 - update: Split score popup duration tuning into placement and MVP/Perfect/team popup controls under a new debug UI tab.
 - update: Extended score popups to 3 seconds and delayed level summaries until the end-of-level popup batch fades.

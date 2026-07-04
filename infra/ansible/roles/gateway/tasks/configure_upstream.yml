@@ -1,0 +1,73 @@
+---
+- name: Require active worker upstream list
+  ansible.builtin.assert:
+    that:
+      - active_worker_private_ips is defined
+      - active_worker_private_ips | length > 0
+    fail_msg: "No active workers remain for gateway upstream."
+
+- name: Verify active worker reachability from gateway
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for attempt in $(seq 1 30); do
+      if timeout 5 bash -c "cat < /dev/null > /dev/tcp/{{ item }}/3000"; then
+        exit 0
+      fi
+      sleep 2
+    done
+
+    echo "Worker {{ item }}:3000 did not become reachable from gateway."
+    exit 1
+  args:
+    executable: /bin/bash
+  loop: "{{ active_worker_private_ips }}"
+  changed_when: false
+
+- name: Render gateway nginx config
+  ansible.builtin.template:
+    src: corp-tower-nginx.conf.j2
+    dest: /tmp/corp-tower-nginx.conf
+    mode: "0644"
+
+- name: Pull nginx image for validation and gateway runtime
+  ansible.builtin.command: timeout 180 sudo docker pull nginx:1.27-alpine
+  changed_when: false
+
+- name: Validate rendered nginx config
+  ansible.builtin.command: >
+    sudo docker run --rm
+    --network host
+    -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro
+    nginx:1.27-alpine nginx -t
+  changed_when: false
+
+- name: Reload or start gateway nginx container
+  ansible.builtin.shell: |
+    set -euo pipefail
+    GATEWAY_STATUS="$(sudo docker inspect -f '{% raw %}{{.State.Status}}{% endraw %}' corp-tower-gateway 2>/dev/null || true)"
+
+    if [ "$GATEWAY_STATUS" = "running" ]; then
+      sudo docker exec corp-tower-gateway nginx -t
+      sudo docker exec corp-tower-gateway nginx -s reload
+    else
+      sudo docker rm -f corp-tower-gateway 2>/dev/null || true
+
+      if sudo ss -ltnp | grep -q ':3000 '; then
+        echo "Port 3000 is already listening before gateway start:"
+        sudo ss -ltnp | grep ':3000 ' || true
+        exit 1
+      fi
+
+      sudo docker run -d \
+        --name corp-tower-gateway \
+        --restart unless-stopped \
+        --network host \
+        -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
+        nginx:1.27-alpine
+    fi
+
+    sudo ss -ltnp | grep ':3000 ' || true
+    sudo docker ps --filter name=corp-tower
+  args:
+    executable: /bin/bash
+  changed_when: true

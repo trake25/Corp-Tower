@@ -1,0 +1,90 @@
+---
+- name: Promote candidate server container on worker
+  ansible.builtin.shell: |
+    set -euo pipefail
+    IMAGE_URI='{{ image_uri }}'
+    REDIS_URL='{{ redis_url }}'
+    RECONNECT_TTL_SECONDS='{{ reconnect_ttl_seconds }}'
+
+    if [ -f /tmp/corp-tower-worker-current.env ]; then
+      . /tmp/corp-tower-worker-current.env
+    else
+      current_image=""
+      already_current=false
+    fi
+
+    wait_for_server_port() {
+      local container_name="$1"
+      local port="$2"
+
+      for attempt in $(seq 1 30); do
+        HEALTH_STATUS="$(sudo docker inspect -f '{% raw %}{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}{% endraw %}' "$container_name")"
+        if { [ "$HEALTH_STATUS" = "healthy" ] || [ "$HEALTH_STATUS" = "running" ]; } && timeout 5 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/${port}"; then
+          return 0
+        fi
+
+        sleep 2
+      done
+
+      return 1
+    }
+
+    restore_previous_server() {
+      if [ -z "${current_image:-}" ]; then
+        echo "::error::No previous corp-tower-server image is available for rollback."
+        return 1
+      fi
+
+      echo "::warning::Rolling worker back to previous image: ${current_image}"
+      sudo docker rm -f corp-tower-server 2>/dev/null || true
+      sudo docker run -d \
+        --name corp-tower-server \
+        --restart unless-stopped \
+        -p 3000:3000 \
+        -e NODE_ENV=staging \
+        -e REDIS_URL="$REDIS_URL" \
+        -e RECONNECT_TTL_SECONDS="$RECONNECT_TTL_SECONDS" \
+        "$current_image"
+
+      if wait_for_server_port corp-tower-server 3000; then
+        echo "::warning::Rollback container is healthy."
+        sudo docker ps --filter name=corp-tower-server
+        return 0
+      fi
+
+      echo "::error::Rollback container did not become healthy."
+      sudo docker logs corp-tower-server 2>/dev/null || true
+      return 1
+    }
+
+    if [ "${already_current:-false}" = "true" ]; then
+      sudo docker ps --filter name=corp-tower-server
+      exit 0
+    fi
+
+    sudo docker stop corp-tower-server 2>/dev/null || true
+    sudo docker rm corp-tower-server 2>/dev/null || true
+
+    sudo docker run -d \
+      --name corp-tower-server \
+      --restart unless-stopped \
+      -p 3000:3000 \
+      -e NODE_ENV=staging \
+      -e REDIS_URL="$REDIS_URL" \
+      -e RECONNECT_TTL_SECONDS="$RECONNECT_TTL_SECONDS" \
+      "$IMAGE_URI"
+
+    if wait_for_server_port corp-tower-server 3000; then
+      sudo docker rm -f corp-tower-server-next 2>/dev/null || true
+      sudo docker ps --filter name=corp-tower-server
+      exit 0
+    fi
+
+    sudo docker logs corp-tower-server 2>/dev/null || true
+    sudo docker rm -f corp-tower-server 2>/dev/null || true
+    sudo docker rm -f corp-tower-server-next 2>/dev/null || true
+    restore_previous_server || true
+    exit 1
+  args:
+    executable: /bin/bash
+  changed_when: true
