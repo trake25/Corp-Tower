@@ -9,6 +9,7 @@ permissions:
 
 env:
   AWS_REGION: ap-southeast-1
+  DUCKDNS_FQDN: corp-tower.duckdns.org
 
 jobs:
   diagnostics:
@@ -75,6 +76,46 @@ jobs:
               --output json
           fi
           echo "::endgroup::"
+
+      - name: Verify DuckDNS points at K3s gateway
+        run: |
+          set -euo pipefail
+
+          GATEWAY_PUBLIC_IP="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=k3s-lab" \
+                "Name=tag:Role,Values=k3s-gateway" \
+                "Name=instance-state-name,Values=running" \
+              --query 'Reservations[0].Instances[0].PublicIpAddress' \
+              --output text
+          )"
+
+          if [ -z "$GATEWAY_PUBLIC_IP" ] || [ "$GATEWAY_PUBLIC_IP" = "None" ]; then
+            echo "::error::No running K3s lab gateway found for DuckDNS ownership check."
+            exit 1
+          fi
+
+          resolved_ip=""
+          for attempt in $(seq 1 10); do
+            resolved_ip="$(
+              getent ahostsv4 "$DUCKDNS_FQDN" \
+                | awk '{ print $1; exit }' \
+                || true
+            )"
+
+            if [ "$resolved_ip" = "$GATEWAY_PUBLIC_IP" ]; then
+              echo "${DUCKDNS_FQDN} resolves to K3s gateway ${GATEWAY_PUBLIC_IP}."
+              exit 0
+            fi
+
+            echo "Waiting for ${DUCKDNS_FQDN} to resolve to ${GATEWAY_PUBLIC_IP}; current: ${resolved_ip:-none} (attempt ${attempt}/10)."
+            sleep 2
+          done
+
+          echo "::error::${DUCKDNS_FQDN} resolves to ${resolved_ip:-none}, expected K3s gateway ${GATEWAY_PUBLIC_IP}."
+          exit 1
 
       - name: Probe SSH through bastion
         env:

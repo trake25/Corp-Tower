@@ -7,7 +7,7 @@
 - `K3s-Lab-Infra-Plan.yml`: plans the isolated K3s Terraform root.
 - `K3s-Lab-Infra-Apply.yml`: applies reviewed K3s lab infrastructure after `APPLY_K3S_LAB`.
 - `K3s-Lab-Deploy.yml`: tests server code, builds/pushes the Docker image, installs/configures K3s, refreshes ECR pull credentials, applies the Kustomize overlay, and runs a public WSS smoke test.
-- `K3s-Lab-Diagnostics.yml`: inspects tagged lab AWS resources and probes SSH through the gateway bastion.
+- `K3s-Lab-Diagnostics.yml`: inspects tagged lab AWS resources, verifies DuckDNS points at the K3s gateway, and probes SSH through the gateway bastion.
 - `K3s-Lab-ECR-Auth-Refresh.yml`: refreshes namespace `corp-tower` secret `ecr-pull` every 6 hours while the lab is running.
 - `K3s-Lab-Cleanup.yml`: runtime cleanup removes K3s/Caddy artifacts; `terraform_destroy` removes lab AWS resources after `DESTROY_K3S_LAB`.
 
@@ -28,6 +28,7 @@
 - Redis deployment Ready.
 - Two server replicas Ready.
 - Caddy validates and reloads.
+- DuckDNS resolves to the K3s gateway public IP.
 - WebSocket smoke connects to `wss://corp-tower.duckdns.org`.
 
 ## Notes
