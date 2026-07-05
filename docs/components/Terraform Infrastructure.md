@@ -44,6 +44,9 @@
   - `Staging Automated Master` can run `Server Update` directly with `fast_server_deploy`.
   - The master path does not run Cleanup, Infra Apply, or EC2 Rebuild.
   - `Staging Infra Plan` fails when Terraform plans any create, delete, or replace action.
+- Docker infra cleanup:
+  - `Staging Infra Cleanup` uses targeted Terraform destroy to remove Docker EC2-only AWS resources.
+  - It preserves ECR and GitHub OIDC resources because K3s uses them for image push/pull and GitHub Actions authentication.
 
 ## Inputs/Outputs
 - Input: GitHub Actions secrets and Terraform variables.

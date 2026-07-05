@@ -26,6 +26,7 @@
   - DuckDNS boot updater service/script/secret installed by server update.
   - `/tmp/corp-tower-*` deployment files.
 - Cleanup leaves Docker and AWS CLI installed because normal deploys need them.
+- AWS resource cleanup belongs to [[Staging Infra Cleanup Workflow]].
 
 ## Dependencies
 - `AWS_ROLE_ARN`
@@ -35,5 +36,6 @@
 
 ## Notes
 - Use this before retrying staging deploy when EC2 hosts have stale Caddy, Redis, server containers, or legacy nginx artifacts.
+- Use [[Staging Infra Cleanup Workflow]] when the old Docker EC2 AWS resources themselves should be removed.
 - This workflow is not a K3s uninstaller. K3s lab cleanup belongs to [[K3s Lab Workflows]].
 - The workflow prints discovered public/private IPs and subnet IDs for topology debugging.

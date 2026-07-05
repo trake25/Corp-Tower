@@ -37,9 +37,19 @@
 - Private repositories need a persistent repo-read credential; GitHub Actions `GITHUB_TOKEN` is not a long-lived Argo CD repo credential.
 
 ## Rollback To Docker
-- Start the Docker staging EC2s.
+- If Docker staging AWS resources were cleaned up, run `Staging Infra Apply` first to recreate EC2 gateway/workers.
+- Start the Docker staging EC2s if they already exist but are stopped.
 - Run the existing `Staging Server Update` workflow.
 - That workflow updates DuckDNS back to the Docker EC2 gateway and redeploys the Docker Redis/Caddy/server runtime.
+
+## Observability
+- Run `K3s Lab Diagnostics` for AWS topology, DuckDNS ownership, and SSH reachability.
+- Use `kubectl -n corp-tower get pods -o wide`, `kubectl -n corp-tower get all -o wide`, and `kubectl get nodes -o wide` for current cluster state.
+- Use `kubectl -n corp-tower logs deploy/corp-tower-server --all-containers --tail=200 -f` for live game server logs.
+- Use `kubectl get events -A --sort-by=.lastTimestamp` for scheduling, image pull, restart, and readiness problems.
+- Use `kubectl top nodes` and `kubectl top pods -A` if metrics-server is available.
+- On EC2-GW, use `sudo docker logs -f corp-tower-k3s-caddy` for public gateway traffic/proxy issues.
+- On K3s nodes, use `sudo journalctl -u k3s -f` on the control plane and `sudo journalctl -u k3s-agent -f` on agents.
 
 ## Secret Notes
 - K3s workflows reuse the existing GitHub `staging` Environment.

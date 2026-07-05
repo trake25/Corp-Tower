@@ -24,6 +24,7 @@
 - `.github/workflows/Staging-Infra-Apply.yml`: manual Terraform apply after a reviewed plan. -> [[Terraform Infrastructure]]
 - `.github/workflows/Server-Staging-Deploy.yml`: Docker/ECR deploy to EC2 gateway/workers. -> [[Server Staging Deploy Workflow]]
 - `.github/workflows/Staging-Runtime-Cleanup.yml`: manual runtime cleanup for Docker artifacts created by server update. -> [[Staging Runtime Cleanup Workflow]]
+- `.github/workflows/Staging-Infra-Cleanup.yml`: manual targeted cleanup for old Docker staging AWS resources not reused by K3s. -> [[Staging Infra Cleanup Workflow]]
 - `.github/workflows/Client-Android-Internal.yml`: Android internal-testing build/upload. -> [[Client Android Internal Workflow]]
 - `docs/components/K3s Manual Learning Plan.md`: phase-gated manual K3s lab plan with rollback checks. -> [[K3s Manual Learning Plan]]
 - `.github/workflows/K3s-Lab-Deploy.yml`: K3s lab deploy and public WebSocket smoke test. -> [[K3s Lab Workflows]]
@@ -145,6 +146,9 @@
 - `Staging-Runtime-Cleanup.yml`:
   - manually removes stale Corp Tower containers, temp files, Docker network, DuckDNS boot updater, and optional server/Caddy/legacy nginx/redis images
   - leaves Docker and AWS CLI installed because server update uses them as EC2 prerequisites
+- `Staging-Infra-Cleanup.yml`:
+  - removes old Docker staging EC2-only AWS resources through a targeted Terraform destroy plan
+  - preserves ECR and GitHub OIDC resources reused by K3s
 - `K3s-Lab-Deploy.yml`:
   - tests server code and builds/pushes the server image to ECR
   - installs/configures K3s through EC2-GW bastion/NAT

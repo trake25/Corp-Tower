@@ -27,6 +27,7 @@
 - [[Server Staging Deploy Workflow]]
 - [[Staging Diagnostics Workflow]]
 - [[Staging Runtime Cleanup Workflow]]
+- [[Staging Infra Cleanup Workflow]]
 - [[Client Android Internal Workflow]]
 - [[Terraform Infrastructure]]
 - [[Staging Deploy Guide]]

@@ -17,7 +17,8 @@
 - Manual infra path: run Terraform plan/apply workflows to create, adopt, or update EC2-1 gateway and EC2-2/EC2-3 workers.
 - Server workflow builds/pushes Docker image to ECR.
 - Server workflow installs pinned Ansible on the GitHub runner, generates a temporary EC2 inventory, updates DuckDNS, then starts Redis/Caddy on EC2-1 and game server Docker containers on EC2-2/EC2-3.
-- Cleanup: Run [[Staging Runtime Cleanup Workflow]] when stale Caddy, legacy nginx, Redis, server containers, Docker network, Docker images, or temp deployment files are suspected.
+- Runtime cleanup: Run [[Staging Runtime Cleanup Workflow]] when stale Caddy, legacy nginx, Redis, server containers, Docker network, Docker images, or temp deployment files are suspected on existing Docker EC2 hosts.
+- Infra cleanup: Run [[Staging Infra Cleanup Workflow]] to remove old Docker EC2 AWS resources while preserving ECR and GitHub OIDC resources reused by K3s.
 - Managed AWS ALB/NLB, ElastiCache, and EKS are intentionally not used in this learning setup.
 - K3s exploration now has a separate parallel lab path in [[K3s Lab Stack]] and [[K3s Lab Workflows]]. Docker staging remains the rollback path.
 

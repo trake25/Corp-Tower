@@ -1,0 +1,320 @@
+name: Staging Infra Cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup_mode:
+        description: "Plan or destroy Docker staging AWS resources that K3s does not reuse."
+        required: true
+        default: "plan"
+        type: choice
+        options:
+          - plan
+          - destroy
+      confirm_cleanup:
+        description: "Type DESTROY_DOCKER_STAGING_INFRA when cleanup_mode is destroy."
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  TF_VAR_aws_region: ap-southeast-1
+  TF_VAR_environment: staging
+  TF_VAR_github_repository: ${{ github.repository }}
+  TF_VAR_ssh_public_key: ${{ secrets.EC2_STAGING_SSH_PUBLIC_KEY }}
+  TF_VAR_ssh_cidr: ${{ secrets.STAGING_SSH_CIDR || '0.0.0.0/0' }}
+  TF_VAR_game_port_cidr: ${{ secrets.STAGING_GAME_PORT_CIDR || '0.0.0.0/0' }}
+  TF_VAR_staging_subnet_id: ${{ secrets.STAGING_SUBNET_ID || '' }}
+  TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+
+jobs:
+  cleanup:
+    name: Cleanup Docker Staging Infrastructure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: staging
+    defaults:
+      run:
+        working-directory: infra/terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Resolve SSH public key for Terraform
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_STAGING_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${TF_VAR_ssh_public_key:-}" ]; then
+            exit 0
+          fi
+
+          if [ -z "${EC2_SSH_KEY:-}" ]; then
+            echo "::error::Missing EC2_STAGING_SSH_PUBLIC_KEY and EC2_STAGING_SSH_KEY. Terraform needs variable values for cleanup planning."
+            exit 1
+          fi
+
+          private_key_file="$(mktemp)"
+          trap 'rm -f "$private_key_file"' EXIT
+          printf '%s\n' "$EC2_SSH_KEY" > "$private_key_file"
+          chmod 600 "$private_key_file"
+
+          public_key="$(ssh-keygen -y -f "$private_key_file")"
+          if [ -z "$public_key" ]; then
+            echo "::error::Could not derive a public key from EC2_STAGING_SSH_KEY."
+            exit 1
+          fi
+
+          echo "TF_VAR_ssh_public_key=$public_key" >> "$GITHUB_ENV"
+
+      - name: Ensure Terraform backend bucket exists
+        run: |
+          set -euo pipefail
+          BUCKET="corp-tower-tfstate-${AWS_REGION}"
+
+          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            echo "Terraform backend bucket exists: $BUCKET"
+          else
+            aws s3api create-bucket \
+              --bucket "$BUCKET" \
+              --region "$AWS_REGION" \
+              --create-bucket-configuration LocationConstraint="$AWS_REGION"
+          fi
+
+          aws s3api put-bucket-versioning \
+            --bucket "$BUCKET" \
+            --versioning-configuration Status=Enabled
+
+          aws s3api put-bucket-encryption \
+            --bucket "$BUCKET" \
+            --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+
+          aws s3api put-public-access-block \
+            --bucket "$BUCKET" \
+            --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+
+      - name: Terraform init
+        run: terraform init -input=false -migrate-state -force-copy
+
+      - name: Adopt reusable and Docker-only staging resources into Terraform state
+        run: |
+          set -euo pipefail
+
+          import_if_missing() {
+            local address="$1"
+            local id="$2"
+
+            if [ -z "$id" ] || [ "$id" = "None" ]; then
+              echo "Skip import $address: no existing AWS resource found."
+              return
+            fi
+
+            if terraform state show "$address" >/dev/null 2>&1; then
+              echo "Already managed: $address"
+              return
+            fi
+
+            echo "Importing $address -> $id"
+            terraform import -input=false "$address" "$id"
+          }
+
+          import_ec2_instance() {
+            local address="$1"
+            local id="$2"
+
+            if [ -z "$id" ] || [ "$id" = "None" ]; then
+              echo "Skip import $address: no existing EC2 instance found."
+              return
+            fi
+
+            if terraform state show "$address" >/dev/null 2>&1; then
+              current_id="$(
+                terraform state show "$address" \
+                  | awk -F ' = ' '$1 ~ /^id$/ { print $2; exit }'
+              )"
+
+              if [ "$current_id" = "$id" ]; then
+                echo "Already managed: $address -> $id"
+                return
+              fi
+
+              current_state="$(
+                aws ec2 describe-instances \
+                  --instance-ids "$current_id" \
+                  --query 'Reservations[0].Instances[0].State.Name' \
+                  --output text 2>/dev/null || true
+              )"
+
+              if [ -z "$current_state" ] || [ "$current_state" = "None" ] || [ "$current_state" = "terminated" ]; then
+                echo "Removing stale state: $address -> $current_id"
+                terraform state rm "$address"
+              else
+                echo "Already managed: $address -> $current_id ($current_state). Not importing discovered $id."
+                return
+              fi
+            fi
+
+            echo "Importing $address -> $id"
+            terraform import -input=false "$address" "$id"
+          }
+
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          OIDC_ARN="arn:aws:iam::${ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
+
+          SECURITY_GROUP_ID="$(
+            aws ec2 describe-security-groups \
+              --filters \
+                "Name=group-name,Values=corp-tower-staging" \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+              --query 'SecurityGroups[0].GroupId' \
+              --output text 2>/dev/null || true
+          )"
+
+          GATEWAY_INSTANCE_ID="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Role,Values=gateway-redis-proxy-learning,gateway-redis-proxy-k3s-learning" \
+                "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+              --query 'Reservations[0].Instances[0].InstanceId' \
+              --output text 2>/dev/null || true
+          )"
+
+          mapfile -t WORKER_INSTANCE_IDS < <(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=staging" \
+                "Name=tag:Role,Values=docker-server-worker" \
+                "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+              --query 'Reservations[].Instances[].InstanceId' \
+              --output text \
+              | tr '\t' '\n' \
+              | sed '/^$/d'
+          )
+
+          import_if_missing aws_ecr_repository.server "$TF_VAR_ecr_repository_name"
+          import_if_missing aws_ecr_lifecycle_policy.server "$TF_VAR_ecr_repository_name"
+          import_if_missing aws_iam_openid_connect_provider.github "$OIDC_ARN"
+          import_if_missing aws_iam_role.github_actions corp-tower-staging-github-actions
+          import_if_missing aws_iam_role_policy.github_ecr_push corp-tower-staging-github-actions:ecr-push
+
+          import_if_missing aws_key_pair.staging corp-tower-staging
+          import_if_missing aws_security_group.staging "$SECURITY_GROUP_ID"
+          import_if_missing aws_iam_role.ec2 corp-tower-staging-ec2
+          import_if_missing aws_iam_instance_profile.ec2 corp-tower-staging-ec2
+          import_if_missing aws_iam_role_policy.ec2_ecr_pull corp-tower-staging-ec2:ecr-pull
+          import_ec2_instance aws_instance.staging "$GATEWAY_INSTANCE_ID"
+
+          for index in "${!WORKER_INSTANCE_IDS[@]}"; do
+            if [ "$index" -lt 2 ]; then
+              import_ec2_instance "aws_instance.worker[$index]" "${WORKER_INSTANCE_IDS[$index]}"
+            fi
+          done
+
+      - name: Terraform fmt check
+        run: terraform fmt -check
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Build targeted Docker staging cleanup plan
+        run: |
+          set -euo pipefail
+
+          target_args=(
+            -target=aws_instance.staging
+            -target=aws_instance.worker
+            -target=aws_security_group.staging
+            -target=aws_key_pair.staging
+            -target=aws_iam_role_policy.ec2_ecr_pull
+            -target=aws_iam_instance_profile.ec2
+            -target=aws_iam_role.ec2
+          )
+
+          terraform plan -destroy -input=false -out=tfplan-docker-staging-cleanup "${target_args[@]}"
+
+      - name: Show Docker staging cleanup plan
+        run: terraform show -no-color tfplan-docker-staging-cleanup
+
+      - name: Verify cleanup plan is scoped to Docker-only resources
+        run: |
+          set -euo pipefail
+
+          PROTECTED_CHANGES="$(
+            terraform show -json tfplan-docker-staging-cleanup \
+              | jq -r '
+                .resource_changes[]?
+                | select(.change.actions | index("delete"))
+                | select(.address | test("^(aws_ecr_repository\\.server|aws_ecr_lifecycle_policy\\.server|aws_iam_openid_connect_provider\\.github|aws_iam_role\\.github_actions|aws_iam_role_policy\\.github_ecr_push)$"))
+                | "\(.address): \(.change.actions | join(","))"
+              '
+          )"
+
+          if [ -n "$PROTECTED_CHANGES" ]; then
+            echo "::error::Cleanup plan would delete K3s-reused ECR or GitHub OIDC resources."
+            printf '%s\n' "$PROTECTED_CHANGES"
+            exit 1
+          fi
+
+          UNEXPECTED_DELETE_CHANGES="$(
+            terraform show -json tfplan-docker-staging-cleanup \
+              | jq -r '
+                .resource_changes[]?
+                | select(.change.actions | index("delete"))
+                | select((.address | test("^(aws_instance\\.staging|aws_instance\\.worker\\[[0-9]+\\]|aws_security_group\\.staging|aws_key_pair\\.staging|aws_iam_role_policy\\.ec2_ecr_pull|aws_iam_instance_profile\\.ec2|aws_iam_role\\.ec2)$")) | not)
+                | "\(.address): \(.change.actions | join(","))"
+              '
+          )"
+
+          if [ -n "$UNEXPECTED_DELETE_CHANGES" ]; then
+            echo "::error::Cleanup plan includes resources outside the Docker-only allowlist."
+            printf '%s\n' "$UNEXPECTED_DELETE_CHANGES"
+            exit 1
+          fi
+
+      - name: Stop after cleanup plan
+        if: ${{ inputs.cleanup_mode == 'plan' }}
+        run: |
+          echo "Cleanup mode is plan. Re-run with cleanup_mode=destroy and confirm_cleanup=DESTROY_DOCKER_STAGING_INFRA to remove Docker staging AWS resources."
+
+      - name: Check destroy confirmation
+        if: ${{ inputs.cleanup_mode == 'destroy' }}
+        run: |
+          if [ "${{ inputs.confirm_cleanup }}" != "DESTROY_DOCKER_STAGING_INFRA" ]; then
+            echo "::error::confirm_cleanup must be exactly DESTROY_DOCKER_STAGING_INFRA when cleanup_mode is destroy."
+            exit 1
+          fi
+
+      - name: Apply targeted Docker staging cleanup plan
+        if: ${{ inputs.cleanup_mode == 'destroy' }}
+        run: terraform apply -input=false -auto-approve tfplan-docker-staging-cleanup
+
+      - name: Verify K3s-reused AWS resources still exist
+        if: ${{ inputs.cleanup_mode == 'destroy' }}
+        run: |
+          set -euo pipefail
+
+          aws ecr describe-repositories --repository-names "$TF_VAR_ecr_repository_name" >/dev/null
+          aws iam get-role --role-name corp-tower-staging-github-actions >/dev/null
+
+          echo "Retained ECR repository: ${TF_VAR_ecr_repository_name}"
+          echo "Retained GitHub Actions role: corp-tower-staging-github-actions"
