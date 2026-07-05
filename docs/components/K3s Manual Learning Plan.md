@@ -7,7 +7,7 @@
 
 ## Current Baseline
 - Active staging remains the Docker EC2 gateway/workers lab:
-  - EC2-1 runs nginx and Docker Redis.
+  - EC2-1 runs Caddy and Docker Redis.
   - EC2-2/EC2-3 run Docker `corp-tower-server` workers.
   - `Staging Automated Master` runs fast guarded server updates for server-only pushes and keeps full preflight available for manual/workflow-change runs.
 - K3s is not part of the active deployment path.
@@ -47,7 +47,7 @@
 - Run `Staging Server Update` if the Docker staging path is not currently healthy.
 - Record:
   - EC2 instance ids, public IPs, private IPs, subnet id, and security group id.
-  - current game URL: `ws://<EC2-1-public-ip>:3000`
+  - current game URL: `wss://corp-tower.duckdns.org`
   - current Docker containers on each node: `sudo docker ps --format '{{.Names}} {{.Image}} {{.Status}}'`
 
 ### Proof Check
@@ -178,7 +178,7 @@ sudo k3s kubectl delete node <agent-node-name>
 
 ```sh
 sudo k3s kubectl create namespace corp-tower-k3s-lab
-sudo k3s kubectl create deployment hello --image=nginx:1.27-alpine -n corp-tower-k3s-lab
+sudo k3s kubectl create deployment hello --image=caddy:2-alpine -n corp-tower-k3s-lab
 sudo k3s kubectl expose deployment hello --port=80 --target-port=80 -n corp-tower-k3s-lab
 ```
 
@@ -234,7 +234,7 @@ sudo k3s kubectl delete namespace corp-tower
 ### Manual Action
 - Start with a temporary NodePort or port-forward instead of changing the public gateway immediately.
 - Only after internal tests pass, decide between:
-  - keep Docker nginx as the external gateway and point it to K3s node/service endpoints
+  - keep Docker Caddy as the external gateway and point it to K3s node/service endpoints
   - use a Kubernetes Ingress controller in a separate phase
   - use K3s ServiceLB in a separate phase
 
@@ -250,7 +250,7 @@ sudo k3s kubectl delete namespace corp-tower
 sudo k3s kubectl delete service <public-service-name> -n corp-tower
 ```
 
-- If exposure changed the Docker gateway, rerun [[Server Staging Deploy Workflow]] to restore nginx and Docker worker routing.
+- If exposure changed the Docker gateway, rerun [[Server Staging Deploy Workflow]] to restore Caddy and Docker worker routing.
 
 ## Phase 8 - Decide Whether To Productize
 ### Manual Action
@@ -279,7 +279,7 @@ sudo k3s kubectl delete service <public-service-name> -n corp-tower
 | K3s agent | none required beyond node baseline | node joins Ready | `k3s-agent-uninstall.sh` and delete node |
 | Test namespace | namespace manifest or command log | workload ready | delete namespace |
 | Corp Tower namespace | manifest snapshot | server and Redis pods ready | delete namespace |
-| Public exposure | record previous nginx/service config | Godot connects | delete exposure and rerun Docker deploy |
+| Public exposure | record previous Caddy/service config | Godot connects | delete exposure and rerun Docker deploy |
 
 ## Completion Definition
 - A manual K3s lab is complete only when:

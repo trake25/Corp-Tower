@@ -35,6 +35,6 @@
 
 ## Notes
 - Current release target is Android only.
-- Staging client should point to `ws://<EC2-1-public-ip>:3000`.
+- Staging client should point to `wss://corp-tower.duckdns.org`.
 - Web/Windows/iOS are future platform targets.
 - Gameplay balancing is expected to change after shape-block testing.

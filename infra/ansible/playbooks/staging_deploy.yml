@@ -12,6 +12,10 @@
           - ecr_registry | length > 0
           - aws_region is defined
           - aws_region | length > 0
+          - gateway_domain is defined
+          - gateway_domain | length > 0
+          - duckdns_domain is defined
+          - duckdns_domain | length > 0
           - reconnect_ttl_seconds is defined
           - groups.gateway | default([]) | length == 1
           - groups.workers | default([]) | length >= 2

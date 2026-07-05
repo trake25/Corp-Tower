@@ -45,7 +45,7 @@ output "worker_private_ips" {
 
 output "learning_gateway_websocket_url" {
   description = "Godot client WebSocket URL for the EC2 gateway reverse proxy."
-  value       = "ws://${aws_instance.staging.public_ip}:3000"
+  value       = "wss://${var.gateway_domain}"
 }
 
 output "staging_ssh_user" {
@@ -55,5 +55,5 @@ output "staging_ssh_user" {
 
 output "learning_topology_note" {
   description = "Cost-safe learning topology note."
-  value       = "EC2-1 simulates ALB/Redis gateway with nginx and Docker Redis. EC2-2/3 run Docker server workers. Managed AWS ElastiCache/ALB/EKS are intentionally not used."
+  value       = "EC2-1 simulates ALB/Redis gateway with Caddy and Docker Redis. EC2-2/3 run Docker server workers. Managed AWS ElastiCache/ALB/EKS are intentionally not used."
 }

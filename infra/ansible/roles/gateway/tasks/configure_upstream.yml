@@ -23,50 +23,61 @@
   loop: "{{ active_worker_private_ips }}"
   changed_when: false
 
-- name: Render gateway nginx config
+- name: Render gateway Caddyfile
   ansible.builtin.template:
-    src: corp-tower-nginx.conf.j2
-    dest: /tmp/corp-tower-nginx.conf
+    src: corp-tower-caddy.Caddyfile.j2
+    dest: /tmp/corp-tower-caddy.Caddyfile
     mode: "0644"
 
-- name: Pull nginx image for validation and gateway runtime
-  ansible.builtin.command: timeout 180 sudo docker pull nginx:1.27-alpine
+- name: Ensure Caddy persistent directories
+  ansible.builtin.command: sudo mkdir -p /var/lib/corp-tower-caddy/data /var/lib/corp-tower-caddy/config
   changed_when: false
 
-- name: Validate rendered nginx config
+- name: Pull Caddy image for validation and gateway runtime
+  ansible.builtin.command: timeout 180 sudo docker pull caddy:2-alpine
+  changed_when: false
+
+- name: Validate rendered Caddyfile
   ansible.builtin.command: >
     sudo docker run --rm
     --network host
-    -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro
-    nginx:1.27-alpine nginx -t
+    -v /tmp/corp-tower-caddy.Caddyfile:/etc/caddy/Caddyfile:ro
+    -v /var/lib/corp-tower-caddy/data:/data
+    -v /var/lib/corp-tower-caddy/config:/config
+    caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
   changed_when: false
 
-- name: Reload or start gateway nginx container
+- name: Reload or start gateway Caddy container
   ansible.builtin.shell: |
     set -euo pipefail
     GATEWAY_STATUS="$(sudo docker inspect -f '{% raw %}{{.State.Status}}{% endraw %}' corp-tower-gateway 2>/dev/null || true)"
+    GATEWAY_IMAGE="$(sudo docker inspect -f '{% raw %}{{.Config.Image}}{% endraw %}' corp-tower-gateway 2>/dev/null || true)"
 
-    if [ "$GATEWAY_STATUS" = "running" ]; then
-      sudo docker exec corp-tower-gateway nginx -t
-      sudo docker exec corp-tower-gateway nginx -s reload
+    if [ "$GATEWAY_STATUS" = "running" ] && [[ "$GATEWAY_IMAGE" == caddy:* ]]; then
+      sudo docker exec corp-tower-gateway caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      sudo docker exec corp-tower-gateway caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
     else
       sudo docker rm -f corp-tower-gateway 2>/dev/null || true
 
-      if sudo ss -ltnp | grep -q ':3000 '; then
-        echo "Port 3000 is already listening before gateway start:"
-        sudo ss -ltnp | grep ':3000 ' || true
-        exit 1
-      fi
+      for port in 80 443; do
+        if sudo ss -ltnp | grep -q ":${port} "; then
+          echo "Port ${port} is already listening before gateway start:"
+          sudo ss -ltnp | grep ":${port} " || true
+          exit 1
+        fi
+      done
 
       sudo docker run -d \
         --name corp-tower-gateway \
         --restart unless-stopped \
         --network host \
-        -v /tmp/corp-tower-nginx.conf:/etc/nginx/nginx.conf:ro \
-        nginx:1.27-alpine
+        -v /tmp/corp-tower-caddy.Caddyfile:/etc/caddy/Caddyfile:ro \
+        -v /var/lib/corp-tower-caddy/data:/data \
+        -v /var/lib/corp-tower-caddy/config:/config \
+        caddy:2-alpine
     fi
 
-    sudo ss -ltnp | grep ':3000 ' || true
+    sudo ss -ltnp | grep -E ':(80|443) ' || true
     sudo docker ps --filter name=corp-tower
   args:
     executable: /bin/bash

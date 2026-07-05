@@ -15,7 +15,7 @@
 - Send client commands to server.
 
 ## Key Logic
-- Connects to configured `ws://<server>:3000`.
+- Connects to configured `wss://corp-tower.duckdns.org`.
 - Sends `reconnect` with stored `playerId`/`reconnectToken` after connection opens.
 - Stores `playerId` and `reconnectToken` from `room_created` or `room_resumed`.
 - Tracks `game_state.players[].isBot` to enable auto-reconnect only when the last known room had no bots.

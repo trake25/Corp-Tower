@@ -16,6 +16,7 @@ const PLAYER_ID_FILE := "user://corp_tower_player_id.save"
 const RECONNECT_TOKEN_FILE := "user://corp_tower_reconnect_token.save"
 const AUTO_RECONNECT_DELAY_SECONDS := 1.0
 const AUTO_RECONNECT_MAX_ATTEMPTS := 8
+const SERVER_URL := "wss://corp-tower.duckdns.org"
 
 signal status_changed(text)
 signal room_joined(data)
@@ -25,7 +26,7 @@ signal client_status(status)
 signal debug_config_updated(config)
 
 func connect_server(is_auto_reconnect := false):
-	var url = "ws://54.254.93.194:3000"
+	var url = SERVER_URL
 	
 	if is_auto_reconnect:
 		status_changed.emit("Reconnecting...")

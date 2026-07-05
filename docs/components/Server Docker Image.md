@@ -29,4 +29,4 @@
 
 ## Notes
 - Current staging deploy avoids local Docker requirement.
-- EC2-1 gateway runs Redis/nginx containers, not the game server image.
+- EC2-1 gateway runs Redis/Caddy containers, not the game server image.

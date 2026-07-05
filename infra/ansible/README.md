@@ -6,8 +6,9 @@ This folder contains the GitHub Actions Ansible deployment layer for the Docker 
 - Generate a temporary inventory from AWS EC2 tag discovery.
 - Prepare the EC2 gateway and worker prerequisites used by staging deploys.
 - Keep Docker Redis healthy on the gateway.
+- Install the DuckDNS boot updater on the gateway.
 - Roll Docker worker containers with candidate validation, serial cutover, and rollback.
-- Render and reload the gateway nginx upstream.
+- Render and reload the gateway Caddy upstream.
 
 ## CI Entry Points
 - Workflow: `.github/workflows/Server-Staging-Deploy.yml`

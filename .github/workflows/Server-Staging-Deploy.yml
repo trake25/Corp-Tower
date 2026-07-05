@@ -175,6 +175,63 @@ jobs:
             echo "- Duration: \`$((resolve_end_time - resolve_start_time)) seconds\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Update DuckDNS gateway record
+        env:
+          DUCKDNS_DOMAIN: corp-tower
+          DUCKDNS_FQDN: corp-tower.duckdns.org
+          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${DUCKDNS_TOKEN:-}" ]; then
+            echo "::error::Missing DUCKDNS_TOKEN staging environment secret."
+            exit 1
+          fi
+
+          duckdns_response="$(
+            curl -fsS \
+              --connect-timeout 5 \
+              --max-time 15 \
+              --get "https://www.duckdns.org/update" \
+              --data-urlencode "domains=${DUCKDNS_DOMAIN}" \
+              --data-urlencode "token=${DUCKDNS_TOKEN}" \
+              --data-urlencode "ip=${GATEWAY_PUBLIC_IP}" \
+              --data-urlencode "verbose=true"
+          )"
+
+          duckdns_status="$(printf '%s\n' "$duckdns_response" | tr -d '\r' | sed -n '1p')"
+          if [ "$duckdns_status" != "OK" ]; then
+            echo "::error::DuckDNS update failed with status: ${duckdns_status}"
+            exit 1
+          fi
+
+          resolved_ip=""
+          for attempt in $(seq 1 60); do
+            resolved_ip="$(
+              getent ahostsv4 "$DUCKDNS_FQDN" \
+                | awk '{ print $1; exit }' \
+                || true
+            )"
+
+            if [ "$resolved_ip" = "$GATEWAY_PUBLIC_IP" ]; then
+              break
+            fi
+
+            echo "Waiting for ${DUCKDNS_FQDN} to resolve to ${GATEWAY_PUBLIC_IP}; current: ${resolved_ip:-none} (attempt ${attempt}/60)."
+            sleep 2
+          done
+
+          if [ "$resolved_ip" != "$GATEWAY_PUBLIC_IP" ]; then
+            echo "::error::${DUCKDNS_FQDN} did not resolve to ${GATEWAY_PUBLIC_IP} after DuckDNS update."
+            exit 1
+          fi
+
+          {
+            echo "## DuckDNS"
+            echo
+            echo "- ${DUCKDNS_FQDN}: \`${GATEWAY_PUBLIC_IP}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Prepare SSH for Ansible
         env:
           EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
@@ -248,6 +305,7 @@ jobs:
           AWS_REGION: ${{ env.AWS_REGION }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
+          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
         run: |
           set -euo pipefail
           deploy_start_time="$(date +%s)"
@@ -262,6 +320,8 @@ jobs:
             -e "aws_region=${AWS_REGION}" \
             -e "ecr_registry=${ECR_REGISTRY}" \
             -e "image_uri=${IMAGE_URI}" \
+            -e "gateway_domain=corp-tower.duckdns.org" \
+            -e "duckdns_domain=corp-tower" \
             -e "reconnect_ttl_seconds=10"
 
           deploy_end_time="$(date +%s)"
@@ -269,6 +329,6 @@ jobs:
             echo "## Ansible staging deploy"
             echo
             echo "- Image: \`$IMAGE_URI\`"
-            echo "- Gateway URL: \`ws://${GATEWAY_PUBLIC_IP}:3000\`"
+            echo "- Gateway URL: \`wss://corp-tower.duckdns.org\`"
             echo "- Duration: \`$((deploy_end_time - deploy_start_time)) seconds\`"
           } >> "$GITHUB_STEP_SUMMARY"

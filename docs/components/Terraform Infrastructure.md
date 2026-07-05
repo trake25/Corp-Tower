@@ -9,7 +9,7 @@
 - Adopt existing staging resources into Terraform state before planning.
 - Create ECR repository.
 - Avoid managed AWS ElastiCache, ALB/NLB, and EKS to reduce credit burn.
-- Create security group rules for SSH and game traffic.
+- Create security group rules for SSH and public WSS game traffic.
 - Create IAM/OIDC resources for GitHub Actions.
 - Output values needed by GitHub secrets.
 
@@ -22,7 +22,8 @@
   - Gateway and workers run in the same default VPC/subnet learning topology.
   - EC2-1 is the public gateway.
   - EC2-2 and EC2-3 run Docker server workers.
-  - Gateway runs Docker Redis and nginx reverse proxy; worker containers connect to `redis://<EC2-1-private-ip>:6379`.
+  - Gateway runs Docker Redis and Caddy reverse proxy; worker containers connect to `redis://<EC2-1-private-ip>:6379`.
+  - Public WSS uses `corp-tower.duckdns.org` on ports `80/443`.
 - GitHub Actions:
   - OIDC role runs Terraform, pushes ECR images, discovers workers, and deploys Docker over SSH.
   - Staging Terraform/deployment workflows run on the pinned GitHub runner image `ubuntu-24.04`.
@@ -36,7 +37,7 @@
   - Run `Staging Diagnostics` to inspect AWS topology and GitHub-runner SSH.
   - Run `Staging Infra Plan` to adopt/refresh state and review planned changes.
   - Run `Staging Infra Apply` only after a successful plan when infra changes are intended.
-  - Run `Staging Server Update` to deploy Docker Redis/nginx/server runtime.
+  - Run `Staging Server Update` to deploy Docker Redis/Caddy/server runtime.
   - Stop EC2 instances when not testing.
 - Automated normal update path:
   - Server-only pushes through `Staging Automated Master` run `Server Update` directly after server CI.
@@ -47,7 +48,7 @@
 
 ## Inputs/Outputs
 - Input: GitHub Actions secrets and Terraform variables.
-- Output: gateway public IP, worker public/private IPs, SSH user, ECR repo, GitHub role ARN, Godot WebSocket URL.
+- Output: gateway public IP, worker public/private IPs, SSH user, ECR repo, GitHub role ARN, Godot secure WebSocket URL.
 
 ## Dependencies
 - GitHub Actions OIDC role with enough staging infra permissions.

@@ -12,7 +12,7 @@
 - Discover EC2 worker instances.
 - Generate a transient Ansible inventory from AWS EC2 tag discovery.
 - Deploy server image as Docker containers on worker EC2 instances through Ansible.
-- Deploy Docker Redis and nginx reverse proxy to EC2-1 gateway through Ansible.
+- Deploy Docker Redis and Caddy reverse proxy to EC2-1 gateway through Ansible.
 - Fail early when the gateway and workers are not all in one subnet.
 
 ## Key Logic
@@ -40,17 +40,18 @@
   - EC2-2/EC2-3 pull the ECR image and prepare candidate `corp-tower-server-next` containers in parallel.
   - Worker containers use `REDIS_URL=redis://<gateway-private-ip>:6379`.
   - Worker containers use `RECONNECT_TTL_SECONDS=10` for faster staging/debug reconnect testing.
-  - Deploy validates generated nginx config with `nginx -t`.
-  - Before each worker update, deploy reloads nginx without that worker in the upstream.
+  - Deploy updates DuckDNS so `corp-tower.duckdns.org` points at the current EC2-1 public IP.
+  - Deploy validates generated Caddyfile with `caddy validate`.
+  - Before each worker update, deploy reloads Caddy without that worker in the upstream.
   - If a candidate container fails, the current worker container is left in place.
   - If the replacement container fails after the current worker was removed, deploy attempts to restore the previous worker image before failing.
   - If any worker update fails, deploy restores the full gateway upstream before exiting.
-  - After the worker is healthy, deploy continues to the next worker and finally restores all healthy workers in nginx.
-  - Deploy reloads an existing gateway nginx container when possible instead of always recreating it.
-  - Godot connects to gateway `ws://<gateway-public-ip>:3000`; nginx routes WebSocket traffic to worker private IPs on port `3000`.
+  - After the worker is healthy, deploy continues to the next worker and finally restores all healthy workers in Caddy.
+  - Deploy reloads an existing gateway Caddy container when possible instead of always recreating it.
+  - Godot connects to gateway `wss://corp-tower.duckdns.org`; Caddy routes WebSocket traffic to worker private IPs on port `3000`.
 
 ## Inputs/Outputs
-- Input: GitHub push/manual run and repository secrets.
+- Input: GitHub push/manual run, repository secrets, and `DUCKDNS_TOKEN` in the GitHub `staging` environment.
 - Output: gateway reverse proxy + external Redis on EC2-1, Docker server containers on EC2-2/EC2-3.
 
 ## Dependencies

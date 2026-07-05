@@ -11,9 +11,17 @@ resource "aws_security_group" "staging" {
   }
 
   ingress {
-    description = "WebSocket game server"
-    from_port   = 3000
-    to_port     = 3000
+    description = "HTTP gateway for Caddy ACME challenge and redirect"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [var.game_port_cidr]
+  }
+
+  ingress {
+    description = "HTTPS/WSS game gateway"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = [var.game_port_cidr]
   }

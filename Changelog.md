@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-07-05
+- update: Replaced the active staging gateway from nginx/plain WebSocket to Caddy with WSS on `corp-tower.duckdns.org`, deploy-time DuckDNS refresh, and a gateway boot-time DuckDNS updater.
+
 ## 2026-07-04
 - feature: Added Ansible-based staging server deployment orchestration for GitHub Actions, including transient EC2 inventory generation, gateway Redis/nginx roles, rolling worker candidate validation, and updated CI/CD docs.
 

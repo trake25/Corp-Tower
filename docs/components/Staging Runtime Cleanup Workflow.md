@@ -9,7 +9,7 @@
 - Accept extra public IPs for cleanup when tags or roles are suspect.
 - Stop and remove Corp Tower Docker containers created by [[Server Staging Deploy Workflow]].
 - Remove Corp Tower Docker network and temporary deployment files.
-- Optionally remove Corp Tower, nginx, and redis Docker images.
+- Optionally remove Corp Tower, Caddy, legacy nginx, and redis Docker images.
 - Leave EC2 prerequisites installed, including Docker and AWS CLI.
 
 ## Key Logic
@@ -22,7 +22,8 @@
 - Cleanup matches the runtime surface installed or updated by Server Update:
   - `corp-tower-*` Docker containers.
   - `corp-tower-gateway` Docker network.
-  - optional Corp Tower, nginx, and redis Docker images.
+  - optional Corp Tower, Caddy, legacy nginx, and redis Docker images.
+  - DuckDNS boot updater service/script/secret installed by server update.
   - `/tmp/corp-tower-*` deployment files.
 - Cleanup leaves Docker and AWS CLI installed because normal deploys need them.
 
@@ -33,6 +34,6 @@
 - Optional `EC2_STAGING_PORT`
 
 ## Notes
-- Use this before retrying staging deploy when EC2 hosts have stale nginx, Redis, or server containers.
+- Use this before retrying staging deploy when EC2 hosts have stale Caddy, Redis, server containers, or legacy nginx artifacts.
 - This workflow is not a k3s uninstaller anymore. k3s has been removed from the active staging path and future k3s work should be planned manually first.
 - The workflow prints discovered public/private IPs and subnet IDs for topology debugging.

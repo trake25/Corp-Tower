@@ -34,9 +34,15 @@ variable "ssh_cidr" {
 }
 
 variable "game_port_cidr" {
-  description = "CIDR allowed to reach WebSocket port 3000 on staging EC2."
+  description = "CIDR allowed to reach the public staging game gateway."
   type        = string
   default     = "0.0.0.0/0"
+}
+
+variable "gateway_domain" {
+  description = "Public DNS name for the staging WSS gateway."
+  type        = string
+  default     = "corp-tower.duckdns.org"
 }
 
 variable "ecr_repository_name" {

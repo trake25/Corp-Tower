@@ -15,13 +15,13 @@
 - Full preflight path: run [[Staging Automated Master Workflow]] manually with `full_preflight`, or change staging workflow files, to queue `Diagnostics -> Infra Plan -> Server Update`.
 - Manual infra path: run Terraform plan/apply workflows to create, adopt, or update EC2-1 gateway and EC2-2/EC2-3 workers.
 - Server workflow builds/pushes Docker image to ECR.
-- Server workflow installs pinned Ansible on the GitHub runner, generates a temporary EC2 inventory, then starts Redis/nginx on EC2-1 and game server Docker containers on EC2-2/EC2-3.
-- Cleanup: Run [[Staging Runtime Cleanup Workflow]] when stale nginx, Redis, server containers, Docker network, Docker images, or temp deployment files are suspected.
+- Server workflow installs pinned Ansible on the GitHub runner, generates a temporary EC2 inventory, updates DuckDNS, then starts Redis/Caddy on EC2-1 and game server Docker containers on EC2-2/EC2-3.
+- Cleanup: Run [[Staging Runtime Cleanup Workflow]] when stale Caddy, legacy nginx, Redis, server containers, Docker network, Docker images, or temp deployment files are suspected.
 - Managed AWS ALB/NLB, ElastiCache, and EKS are intentionally not used in this learning setup.
 - K3s exploration belongs in [[K3s Manual Learning Plan]] until it has been manually installed, verified, and reverted phase by phase.
 
 ## Inputs/Outputs
-- Input: local Terraform/AWS setup and GitHub secrets.
+- Input: local Terraform/AWS setup, repository secrets, and `DUCKDNS_TOKEN` in the GitHub `staging` environment.
 - Output: working EC2 gateway plus two Docker server workers.
 
 ## Dependencies
@@ -31,7 +31,7 @@
 
 ## Notes
 - Read this when deploying or debugging staging.
-- Godot connects to `ws://<EC2-1-public-ip>:3000`.
+- Godot connects to `wss://corp-tower.duckdns.org`.
 - Cleanup is a repair/revert helper, not part of the normal automated deployment queue.
 - Infra Apply and EC2 Rebuild stay manual-only because they can intentionally change infrastructure.
 - Gateway and workers should stay in the same staging VPC/subnet learning topology.

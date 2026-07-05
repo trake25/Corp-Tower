@@ -9,7 +9,7 @@ on:
         default: ""
         type: string
       remove_images:
-        description: "Remove Corp Tower, nginx, and redis Docker images after containers are removed."
+        description: "Remove Corp Tower, Caddy, legacy nginx, and redis Docker images after containers are removed."
         required: true
         default: "true"
         type: choice
@@ -178,7 +178,7 @@ jobs:
             if [ "$REMOVE_IMAGES" = "true" ]; then
               IMAGE_IDS="$(
                 sudo docker images --format '{{.Repository}} {{.Tag}} {{.ID}}' \
-                  | awk '$1 ~ /corp-tower-server/ || $1 == "nginx" || $1 == "redis" {print $3}' \
+                  | awk '$1 ~ /corp-tower-server/ || $1 == "caddy" || $1 == "nginx" || $1 == "redis" {print $3}' \
                   | sort -u
               )"
 
@@ -190,8 +190,15 @@ jobs:
             fi
           fi
 
+          sudo systemctl disable --now corp-tower-duckdns-update.service 2>/dev/null || true
+          sudo rm -f /etc/systemd/system/corp-tower-duckdns-update.service 2>/dev/null || true
+          sudo systemctl daemon-reload 2>/dev/null || true
+
           for CLEANUP_PATH in \
+            /tmp/corp-tower-caddy.Caddyfile \
             /tmp/corp-tower-nginx.conf \
+            /etc/corp-tower/duckdns.env \
+            /usr/local/bin/corp-tower-duckdns-update \
             /tmp/corp-tower-server.yaml \
             /tmp/corp-tower-server.rendered.yaml \
             /tmp/corp-tower-ecr-password

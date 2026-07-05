@@ -3,8 +3,8 @@
 
 ## System Overview
 - 3-player real-time selfish-cooperation puzzle game.
-- Godot `4.6.2.stable` Android client connects by WebSocket to EC2-1 gateway on port `3000`.
-- EC2-1 simulates ALB/Redis for learning: nginx reverse proxy and Docker Redis.
+- Godot `4.6.2.stable` Android client connects by secure WebSocket to `wss://corp-tower.duckdns.org`.
+- EC2-1 simulates ALB/Redis for learning: Caddy reverse proxy and Docker Redis.
 - EC2-2/EC2-3 run horizontally scaled Docker server workers.
 - EC2 gateway/workers are pinned to one subnet so private gateway-to-worker routing is predictable.
 - Server remains authoritative for matchmaking, room state, timers, shape block assignment, tower history, scoring, refresh tokens, debug tuning, bots, reconnect, and room cleanup.
@@ -30,8 +30,9 @@
 
 ## Runtime Architecture
 - EC2-1 gateway:
-  - public entrypoint `ws://<EC2-1-public-ip>:3000`
-  - `nginx:1.27-alpine` reverse proxy to worker private IPs on port `3000`
+  - public entrypoint `wss://corp-tower.duckdns.org`
+  - `caddy:2-alpine` reverse proxy to worker private IPs on port `3000`
+  - boot-time DuckDNS updater refreshes `corp-tower.duckdns.org` after EC2 stop/start IP changes
   - external Redis simulation with `redis:7-alpine` on port `6379`
 - EC2-2/EC2-3 workers:
   - run `corp-tower-server` Docker containers
@@ -124,15 +125,17 @@
   - verifies gateway/workers are in one subnet
   - starts gateway Redis and waits for `PONG`
   - deploys Docker server containers on EC2-2/EC2-3 workers
-  - generates and validates nginx config with `nginx -t`
-  - drains one worker from nginx, updates that worker, and restores all healthy workers in nginx
-  - starts/reloads gateway nginx proxy to worker private IPs on port `3000`
+  - updates DuckDNS before gateway reload so `corp-tower.duckdns.org` points at EC2-1
+  - generates and validates the Caddyfile with `caddy validate`
+  - drains one worker from Caddy, updates that worker, and restores all healthy workers in Caddy
+  - starts/reloads gateway Caddy proxy to worker private IPs on port `3000`
 - `Staging-Runtime-Cleanup.yml`:
-  - manually removes stale Corp Tower containers, temp files, Docker network, and optional server/nginx/redis images
+  - manually removes stale Corp Tower containers, temp files, Docker network, DuckDNS boot updater, and optional server/Caddy/legacy nginx/redis images
   - leaves Docker and AWS CLI installed because server update uses them as EC2 prerequisites
 
 ## Required GitHub Secrets
 - Server/infra: `AWS_ROLE_ARN`, `ECR_REPOSITORY`, `EC2_STAGING_HOST`, `EC2_STAGING_USER`, `EC2_STAGING_SSH_KEY`, `EC2_STAGING_SSH_PUBLIC_KEY`
+- Staging environment: `DUCKDNS_TOKEN`
 - Optional: `EC2_STAGING_PORT`, `STAGING_SSH_CIDR`, `STAGING_GAME_PORT_CIDR`
 - Android: `ANDROID_RELEASE_KEYSTORE_BASE64`, `ANDROID_RELEASE_KEYSTORE_ALIAS`, `ANDROID_RELEASE_KEYSTORE_PASSWORD`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`
 
@@ -144,7 +147,7 @@
   - EC2-1: `corp-tower-gateway`, `corp-tower-redis`
   - EC2-2/EC2-3: `corp-tower-server`
   - Redis: `docker exec corp-tower-redis redis-cli ping`
-  - client: connect to `ws://<EC2-1-public-ip>:3000`
+  - client: connect to `wss://corp-tower.duckdns.org`
 - Godot client import/parse check: run Godot headless against `src/Client/App/corp-tower`.
 
 ## Future Technical Work
@@ -152,7 +155,7 @@
 - Structured logging and integration tests for multi-worker Redis reconnect.
 - Admin authorization for debug config before public release.
 - Add integration tests for multi-worker Redis reconnect and gateway routing.
-- DNS or Elastic IP for stable gateway address.
+- Owned domain or Elastic IP can replace DuckDNS later when paid production infrastructure is acceptable.
 
 ## TDD Maintenance Policy
 - TDD is the source of truth for server/client architecture, deployment, CI/CD, runtime operations, message contracts, persistence, testing strategy, and tooling.

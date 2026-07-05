@@ -11,7 +11,7 @@
 - Client: Godot `4.6.2.stable` Android HUD with shape inventory, tower stack, refresh UI, score feedback, level summaries, skin switching, and tabbed debug overlay.
 - Server: Node WebSocket workers own matchmaking, room state, reconnect, scoring, timers, bots, and debug config.
 - State: Redis is used in staging for active matchmaking, room/session snapshots, reconnect, and worker recovery.
-- Staging: EC2-1 gateway runs nginx plus Docker Redis; EC2-2/EC2-3 run Docker `corp-tower-server` workers.
+- Staging: EC2-1 gateway runs Caddy plus Docker Redis; EC2-2/EC2-3 run Docker `corp-tower-server` workers.
 - CI/CD: GitHub Actions handles server tests/builds, Ansible-driven staging deploys, diagnostics, infra plan/apply, cleanup, and Android internal AAB workflow.
 - K3s: manual learning plan only; Docker gateway/workers remain the active staging path.
 
@@ -40,8 +40,8 @@
 - K3s learning: [[K3s Manual Learning Plan]]
 
 ## Runtime Flow
-- Godot connects to `ws://<EC2-1-public-ip>:3000` through [[NetworkManager]].
-- EC2-1 nginx routes WebSockets to worker containers; workers share active state through Redis on EC2-1.
+- Godot connects to `wss://corp-tower.duckdns.org` through [[NetworkManager]].
+- EC2-1 Caddy terminates WSS and routes WebSockets to worker containers; workers share active state through Redis on EC2-1.
 - [[Lobby Manager]] handles queueing, room creation, reconnect, debug config, and room close.
 - [[Game Engine]] owns authoritative gameplay and broadcasts `game_state`.
 - Client actions are `place_block`, `refresh_blocks`, and debug `update_config`; server validates all of them.

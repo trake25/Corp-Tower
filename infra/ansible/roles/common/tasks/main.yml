@@ -15,9 +15,15 @@
   changed_when: false
   failed_when: false
 
-- name: Install Docker and AWS CLI when missing
-  ansible.builtin.command: sudo dnf install -y docker aws-cli
-  when: docker_cli_check.rc != 0 or aws_cli_check.rc != 0
+- name: Check curl CLI
+  ansible.builtin.shell: command -v curl
+  register: curl_cli_check
+  changed_when: false
+  failed_when: false
+
+- name: Install Docker, AWS CLI, and curl when missing
+  ansible.builtin.command: sudo dnf install -y docker aws-cli curl
+  when: docker_cli_check.rc != 0 or aws_cli_check.rc != 0 or curl_cli_check.rc != 0
   changed_when: true
 
 - name: Enable and start Docker
