@@ -14,10 +14,13 @@
 ## Workflow Order
 1. Run `K3s Lab Infra Plan`.
 2. Run `K3s Lab Infra Apply` with `APPLY_K3S_LAB`.
-3. Run `K3s Lab Deploy`.
-4. Keep `K3s Lab ECR Auth Refresh` enabled while the lab is running.
-5. Use `K3s Lab Diagnostics` when AWS, SSH, or cluster reachability is suspicious.
-6. Use `K3s Lab Cleanup` runtime cleanup before returning the lab to a clean runtime state, or `terraform_destroy` with `DESTROY_K3S_LAB` to remove lab AWS resources.
+3. Run `K3s Lab Automated Master` with `full_preflight` for the first normal K3s queue run.
+4. Use `K3s Lab Automated Master` with `fast_server_deploy` for ordinary server/image updates when the lab is already healthy.
+5. Keep `K3s Lab ECR Auth Refresh` enabled while the lab is running so restarted pods can keep pulling private ECR images.
+6. Use `K3s Lab Diagnostics` when AWS, SSH, DNS, or cluster reachability is suspicious.
+7. Use `K3s Lab Cleanup` runtime cleanup before returning the lab to a clean runtime state, or `terraform_destroy` with `DESTROY_K3S_LAB` to remove lab AWS resources.
+
+`K3s Lab Automated Master` also runs automatically on watched server and K3s path pushes to `main` or `master`. Docker staging automation is manual-only while K3s owns the live endpoint.
 
 ## Runtime
 - K3s disables Traefik and ServiceLB.

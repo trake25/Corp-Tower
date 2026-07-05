@@ -11,8 +11,9 @@
 - Document rollback/troubleshooting.
 
 ## Key Logic
-- Normal server-only path: push through [[Staging Automated Master Workflow]] to run the fast guarded `Server Update` path.
-- Full preflight path: run [[Staging Automated Master Workflow]] manually with `full_preflight`, or change staging workflow files, to queue `Diagnostics -> Infra Plan -> Server Update`.
+- Normal Docker path is manual while K3s owns the live endpoint.
+- Full preflight path: run [[Staging Automated Master Workflow]] manually with `full_preflight` to queue `Diagnostics -> Infra Plan -> Server Update`.
+- Fast Docker rollback/showcase path: run [[Staging Automated Master Workflow]] manually with `fast_server_deploy`.
 - Manual infra path: run Terraform plan/apply workflows to create, adopt, or update EC2-1 gateway and EC2-2/EC2-3 workers.
 - Server workflow builds/pushes Docker image to ECR.
 - Server workflow installs pinned Ansible on the GitHub runner, generates a temporary EC2 inventory, updates DuckDNS, then starts Redis/Caddy on EC2-1 and game server Docker containers on EC2-2/EC2-3.
@@ -36,6 +37,6 @@
 - Infra Apply and EC2 Rebuild stay manual-only because they can intentionally change infrastructure.
 - Gateway and workers should stay in the same staging VPC/subnet learning topology.
 - Check gateway logs on EC2-1 with `sudo docker logs corp-tower-gateway`; check worker logs on EC2-2/EC2-3 with `sudo docker logs corp-tower-server`.
-- Ansible deploy assets live under `infra/ansible`; deployment edits there trigger diagnostics plus server update through [[Staging Automated Master Workflow]].
+- Ansible deploy assets live under `infra/ansible`; deployment edits should be tested through manual Docker staging runs.
 - Keep this Docker staging path as the fallback while using the parallel K3s lab.
 - If K3s owns `corp-tower.duckdns.org`, start the Docker EC2s and run [[Server Staging Deploy Workflow]] to point DuckDNS back to Docker staging.

@@ -1,7 +1,7 @@
 # Server Staging Deploy Workflow
 
 ## Purpose
-- Preferred server CI/CD path for staging.
+- Manual Docker server CI/CD path for staging rollback or showcase.
 - File: `.github/workflows/Server-Staging-Deploy.yml`.
 
 ## Responsibilities
@@ -53,7 +53,7 @@
   - Godot connects to gateway `wss://corp-tower.duckdns.org`; Caddy routes WebSocket traffic to worker private IPs on port `3000`.
 
 ## Inputs/Outputs
-- Input: GitHub push/manual run, repository secrets, and `DUCKDNS_TOKEN` in the GitHub `staging` environment.
+- Input: manual run or reusable workflow call, repository secrets, and `DUCKDNS_TOKEN` in the GitHub `staging` environment.
 - Output: gateway reverse proxy + external Redis on EC2-1, Docker server containers on EC2-2/EC2-3.
 
 ## Dependencies
@@ -63,7 +63,7 @@
 - [[Staging Runtime Cleanup Workflow]]
 
 ## Notes
-- This is the active path.
+- This is the Docker rollback/showcase path while K3s owns the live endpoint.
 - Rolling worker drain reduces new connections to a worker while it is being replaced; existing WebSocket connections on that worker can still drop and rely on client reconnect.
 - This workflow is the only workflow that should install/update the active Docker runtime; [[Staging Runtime Cleanup Workflow]] is scoped to remove what this workflow creates except EC2 prerequisites.
 - User does not test in local machine but in Github Action and staging only.

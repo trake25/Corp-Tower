@@ -33,6 +33,7 @@
 - [[K3s Manual Learning Plan]]
 - [[K3s Lab Stack]]
 - [[K3s Lab Workflows]]
+- [[K3s Lab Automated Master Workflow]]
 
 ## Global
 - [[Summary]]

@@ -1,17 +1,16 @@
 # K3s Manual Learning Plan
 
 ## Purpose
-- Plan a manual, step-by-step K3s learning implementation for Corp Tower.
+- Preserve the step-by-step K3s learning plan, proof checks, and rollback notes for Corp Tower.
 - Keep the current Docker staging path available as the known-good rollback target.
 - Require a revert path after every implementation step before moving forward.
 
 ## Current Baseline
-- Active staging remains the Docker EC2 gateway/workers lab:
-  - EC2-1 runs Caddy and Docker Redis.
-- EC2-2/EC2-3 run Docker `corp-tower-server` workers.
-- `Staging Automated Master` runs fast guarded server updates for server-only pushes and keeps full preflight available for manual/workflow-change runs.
-- K3s is not part of the active deployment path.
-- A parallel implementation track now exists in [[K3s Lab Stack]] and [[K3s Lab Workflows]]. Use that path for isolated AWS resources, separate Terraform state, and Argo CD-ready manifests.
+- Active staging now runs on the K3s lab path in [[K3s Lab Stack]] and [[K3s Lab Workflows]].
+- Docker EC2 gateway/workers remain available as the manual rollback/showcase path.
+- `Staging Automated Master` is manual-only.
+- `K3s Lab Automated Master` owns watched server/K3s path pushes while K3s is live.
+- The K3s implementation track uses isolated AWS resources, separate Terraform state, and Argo CD-ready manifests.
 - The current Terraform `instance_type` default is `t3.micro`. K3s documents a server baseline of 2 CPU cores and 2 GB RAM, while agents need 1 CPU core and 512 MB RAM. Do not start the control plane on the current default size unless the node is intentionally resized or replaced for the lab.
 
 ## Source Notes
@@ -23,7 +22,7 @@
 - K3s etcd snapshots: https://docs.k3s.io/cli/etcd-snapshot
 
 ## Guardrails
-- Use K3s as a manual learning track first, not as an immediate replacement for [[Server Staging Deploy Workflow]].
+- Keep Docker staging as the manual rollback path while K3s owns the live endpoint.
 - Do one phase at a time. Each phase must have:
   - baseline capture
   - manual action
@@ -255,19 +254,19 @@ sudo k3s kubectl delete service <public-service-name> -n corp-tower
 
 ## Phase 8 - Decide Whether To Productize
 ### Manual Action
-- Compare the manual K3s path against the current Docker workflow:
+- Decision completed: K3s is the live automated lab path and Docker remains the manual rollback/showcase path.
+- Keep comparing the K3s path against the Docker workflow for:
   - learning value
   - runtime cost
   - operational complexity
   - rollback clarity
   - GitHub Actions changes required
-- Do not automate K3s deploys until Phases 2-7 have been done manually and reverted at least once.
 
 ### Proof Check
 - Written decision in [[Staging Deploy Guide]] or [[Corp_Tower_TDD]].
 
 ### Rollback
-- Keep Docker as the active deployment path and uninstall K3s from every lab node.
+- Run the manual Docker staging workflow to point DuckDNS back to Docker, then stop or uninstall K3s lab resources as needed.
 
 ## Backup And Revert Matrix
 | Layer | Before Change | Proof | Revert |
@@ -283,8 +282,8 @@ sudo k3s kubectl delete service <public-service-name> -n corp-tower
 | Public exposure | record previous Caddy/service config | Godot connects | delete exposure and rerun Docker deploy |
 
 ## Completion Definition
-- A manual K3s lab is complete only when:
+- The K3s lab promotion is complete only when:
   - the current Docker staging path is still documented as the known-good fallback
   - K3s server install, agent join, test workload, Corp Tower internal deployment, and exposure have each been executed with proof checks
   - each phase has been reverted successfully at least once
-  - the team has decided whether to keep K3s as learning-only or promote it into CI/CD
+  - automatic K3s deploys are active and Docker deploys remain manual

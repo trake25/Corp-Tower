@@ -39,10 +39,9 @@
   - Run `Staging Infra Apply` only after a successful plan when infra changes are intended.
   - Run `Staging Server Update` to deploy Docker Redis/Caddy/server runtime.
   - Stop EC2 instances when not testing.
-- Automated normal update path:
-  - Server-only pushes through `Staging Automated Master` run `Server Update` directly after server CI.
-  - Workflow changes use `Diagnostics -> Infra Plan -> Server Update` when deployment is needed.
-  - Terraform-only changes run `Staging Infra Plan` without deploying server code.
+- Manual Docker update path:
+  - `Staging Automated Master` can run `Diagnostics -> Infra Plan -> Server Update` for full Docker staging preflight.
+  - `Staging Automated Master` can run `Server Update` directly with `fast_server_deploy`.
   - The master path does not run Cleanup, Infra Apply, or EC2 Rebuild.
   - `Staging Infra Plan` fails when Terraform plans any create, delete, or replace action.
 

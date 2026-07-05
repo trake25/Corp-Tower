@@ -1,10 +1,23 @@
-name: Staging Automated Master
+name: K3s Lab Automated Master
 
 on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "src/Server/**"
+      - "infra/k3s/ansible/**"
+      - "infra/k3s/apps/**"
+      - "infra/k3s/terraform/**"
+      - ".github/workflows/K3s-Lab-Automated-Master.yml"
+      - ".github/workflows/K3s-Lab-Diagnostics.yml"
+      - ".github/workflows/K3s-Lab-Infra-Plan.yml"
+      - ".github/workflows/K3s-Lab-Deploy.yml"
   workflow_dispatch:
     inputs:
       deploy_mode:
-        description: "Preflight level for manual staging runs."
+        description: "Preflight level for manual K3s lab runs."
         required: true
         default: "full_preflight"
         type: choice
@@ -12,36 +25,31 @@ on:
           - full_preflight
           - fast_server_deploy
           - infra_plan_only
-      extra_public_ips:
-        description: "Optional public IPs for diagnostics, separated by spaces, commas, or new lines."
-        required: false
-        default: ""
-        type: string
 
 permissions:
   id-token: write
   contents: read
 
 concurrency:
-  group: staging-automated-master-${{ github.ref }}
+  group: k3s-lab-automated-master-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   classify-changes:
-    name: Classify Manual Mode
+    name: Classify Changes
     runs-on: ubuntu-24.04
     outputs:
       run_diagnostics: ${{ steps.classify.outputs.run_diagnostics }}
       run_infra_plan: ${{ steps.classify.outputs.run_infra_plan }}
-      run_server_update: ${{ steps.classify.outputs.run_server_update }}
-      fast_server_update: ${{ steps.classify.outputs.fast_server_update }}
+      run_k3s_deploy: ${{ steps.classify.outputs.run_k3s_deploy }}
+      fast_k3s_deploy: ${{ steps.classify.outputs.fast_k3s_deploy }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Classify staging deploy mode
+      - name: Classify K3s lab path changes
         id: classify
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -53,15 +61,15 @@ jobs:
 
           run_diagnostics=false
           run_infra_plan=false
-          run_server_update=false
-          fast_server_update=false
+          run_k3s_deploy=false
+          fast_k3s_deploy=false
           changed_paths=""
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             case "$DEPLOY_MODE" in
               fast_server_deploy)
-                run_server_update=true
-                fast_server_update=true
+                run_k3s_deploy=true
+                fast_k3s_deploy=true
                 ;;
               infra_plan_only)
                 run_infra_plan=true
@@ -69,7 +77,7 @@ jobs:
               full_preflight|"")
                 run_diagnostics=true
                 run_infra_plan=true
-                run_server_update=true
+                run_k3s_deploy=true
                 ;;
               *)
                 echo "::error::Unknown deploy_mode: $DEPLOY_MODE"
@@ -83,46 +91,46 @@ jobs:
               changed_paths="$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA")"
             fi
 
-            if printf '%s\n' "$changed_paths" | grep -Eq '^src/Server/'; then
-              run_server_update=true
-              fast_server_update=true
+            if printf '%s\n' "$changed_paths" | grep -Eq '^src/Server/|^infra/k3s/apps/'; then
+              run_k3s_deploy=true
+              fast_k3s_deploy=true
             fi
 
-            if printf '%s\n' "$changed_paths" | grep -Eq '^infra/ansible/'; then
+            if printf '%s\n' "$changed_paths" | grep -Eq '^infra/k3s/ansible/'; then
               run_diagnostics=true
-              run_server_update=true
-              fast_server_update=false
+              run_k3s_deploy=true
+              fast_k3s_deploy=false
             fi
 
-            if printf '%s\n' "$changed_paths" | grep -Eq '^infra/terraform/'; then
+            if printf '%s\n' "$changed_paths" | grep -Eq '^infra/k3s/terraform/'; then
               run_infra_plan=true
-              fast_server_update=false
+              fast_k3s_deploy=false
             fi
 
-            if printf '%s\n' "$changed_paths" | grep -Eq '^\.github/workflows/(Staging-Automated-Master|Staging-Diagnostics|Staging-Infra-Plan|Server-Staging-Deploy)\.yml$'; then
+            if printf '%s\n' "$changed_paths" | grep -Eq '^\.github/workflows/(K3s-Lab-Automated-Master|K3s-Lab-Diagnostics|K3s-Lab-Infra-Plan|K3s-Lab-Deploy)\.yml$'; then
               run_diagnostics=true
               run_infra_plan=true
-              fast_server_update=false
+              fast_k3s_deploy=false
             fi
           fi
 
           {
             echo "run_diagnostics=$run_diagnostics"
             echo "run_infra_plan=$run_infra_plan"
-            echo "run_server_update=$run_server_update"
-            echo "fast_server_update=$fast_server_update"
+            echo "run_k3s_deploy=$run_k3s_deploy"
+            echo "fast_k3s_deploy=$fast_k3s_deploy"
             echo "changed_paths<<EOF"
             printf '%s\n' "$changed_paths"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
           {
-            echo "## Staging automated master classification"
+            echo "## K3s lab automated master classification"
             echo
             echo "- Diagnostics: \`$run_diagnostics\`"
             echo "- Infra plan: \`$run_infra_plan\`"
-            echo "- Server update: \`$run_server_update\`"
-            echo "- Fast server update: \`$fast_server_update\`"
+            echo "- K3s deploy: \`$run_k3s_deploy\`"
+            echo "- Fast K3s deploy: \`$fast_k3s_deploy\`"
             if [ -n "$changed_paths" ]; then
               echo
               echo "### Changed paths"
@@ -134,9 +142,7 @@ jobs:
     name: Diagnostics
     needs: classify-changes
     if: ${{ needs.classify-changes.outputs.run_diagnostics == 'true' }}
-    uses: ./.github/workflows/Staging-Diagnostics.yml
-    with:
-      extra_public_ips: ${{ github.event_name == 'workflow_dispatch' && inputs.extra_public_ips || '' }}
+    uses: ./.github/workflows/K3s-Lab-Diagnostics.yml
     secrets: inherit
 
   infra-plan:
@@ -145,22 +151,22 @@ jobs:
       - classify-changes
       - diagnostics
     if: ${{ always() && needs.classify-changes.outputs.run_infra_plan == 'true' && (needs.diagnostics.result == 'success' || needs.diagnostics.result == 'skipped') }}
-    uses: ./.github/workflows/Staging-Infra-Plan.yml
+    uses: ./.github/workflows/K3s-Lab-Infra-Plan.yml
     secrets: inherit
 
-  server-update-fast:
-    name: Server Update Fast
+  k3s-deploy-fast:
+    name: K3s Deploy Fast
     needs: classify-changes
-    if: ${{ needs.classify-changes.outputs.run_server_update == 'true' && needs.classify-changes.outputs.fast_server_update == 'true' }}
-    uses: ./.github/workflows/Server-Staging-Deploy.yml
+    if: ${{ needs.classify-changes.outputs.run_k3s_deploy == 'true' && needs.classify-changes.outputs.fast_k3s_deploy == 'true' }}
+    uses: ./.github/workflows/K3s-Lab-Deploy.yml
     secrets: inherit
 
-  server-update-after-preflight:
-    name: Server Update After Preflight
+  k3s-deploy-after-preflight:
+    name: K3s Deploy After Preflight
     needs:
       - classify-changes
       - diagnostics
       - infra-plan
-    if: ${{ always() && needs.classify-changes.outputs.run_server_update == 'true' && needs.classify-changes.outputs.fast_server_update != 'true' && (needs.diagnostics.result == 'success' || needs.diagnostics.result == 'skipped') && (needs.infra-plan.result == 'success' || needs.infra-plan.result == 'skipped') }}
-    uses: ./.github/workflows/Server-Staging-Deploy.yml
+    if: ${{ always() && needs.classify-changes.outputs.run_k3s_deploy == 'true' && needs.classify-changes.outputs.fast_k3s_deploy != 'true' && (needs.diagnostics.result == 'success' || needs.diagnostics.result == 'skipped') && (needs.infra-plan.result == 'success' || needs.infra-plan.result == 'skipped') }}
+    uses: ./.github/workflows/K3s-Lab-Deploy.yml
     secrets: inherit
