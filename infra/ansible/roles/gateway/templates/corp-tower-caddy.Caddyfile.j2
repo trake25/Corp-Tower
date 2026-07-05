@@ -1,3 +1,3 @@
 {{ gateway_domain | default('corp-tower.duckdns.org') }} {
-  reverse_proxy {% for worker_ip in active_worker_private_ips %}{{ worker_ip }}:3000{% if not loop.last %} {% endif %}{% endfor %}
+  reverse_proxy {{ active_worker_private_ips | map('regex_replace', '$', ':3000') | join(' ') }}
 }
