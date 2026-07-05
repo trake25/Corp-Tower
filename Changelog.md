@@ -1,6 +1,8 @@
 # Changelog
 
 ## 2026-07-05
+- fix: Added Redis startup retry for worker containers so EC2 worker instances can recover when they boot before the gateway Redis instance.
+- fix: Persisted the generated Caddyfile outside `/tmp` so the gateway container can restart after EC2 stop/start.
 - fix: Corrected the Caddyfile template so worker upstreams do not concatenate with the closing brace during Ansible rendering.
 - update: Replaced the active staging gateway from nginx/plain WebSocket to Caddy with WSS on `corp-tower.duckdns.org`, deploy-time DuckDNS refresh, and a gateway boot-time DuckDNS updater.
 

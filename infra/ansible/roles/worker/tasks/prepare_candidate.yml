@@ -40,6 +40,8 @@
       -e NODE_ENV=staging \
       -e REDIS_URL="$REDIS_URL" \
       -e RECONNECT_TTL_SECONDS="$RECONNECT_TTL_SECONDS" \
+      -e REDIS_CONNECT_RETRIES=180 \
+      -e REDIS_CONNECT_RETRY_DELAY_MS=2000 \
       "$IMAGE_URI"
 
     for attempt in $(seq 1 30); do

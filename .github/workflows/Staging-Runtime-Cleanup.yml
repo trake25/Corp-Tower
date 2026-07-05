@@ -197,6 +197,7 @@ jobs:
           for CLEANUP_PATH in \
             /tmp/corp-tower-caddy.Caddyfile \
             /tmp/corp-tower-nginx.conf \
+            /etc/corp-tower/caddy \
             /etc/corp-tower/duckdns.env \
             /usr/local/bin/corp-tower-duckdns-update \
             /tmp/corp-tower-server.yaml \

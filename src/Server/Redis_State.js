@@ -13,6 +13,22 @@ const POD_ID =
     process.env.HOSTNAME ||
     `local-${crypto.randomUUID()}`;
 
+const REDIS_CONNECT_RETRIES =
+    positiveNumberFromEnv("REDIS_CONNECT_RETRIES", 180);
+
+const REDIS_CONNECT_RETRY_DELAY_MS =
+    positiveNumberFromEnv("REDIS_CONNECT_RETRY_DELAY_MS", 2000);
+
+function positiveNumberFromEnv(name, fallback) {
+    const value = Number(process.env[name]);
+
+    return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function stripRuntimePlayer(player) {
     return {
         id: player.id,
@@ -84,27 +100,7 @@ class RedisState {
             options.password = process.env.REDIS_PASSWORD;
         }
 
-        this.client = redis.createClient(options);
-        this.publisher = this.client.duplicate();
-        this.subscriber = this.client.duplicate();
-
-        this.client.on("error", error => {
-            console.log("Redis client error:", error.message);
-        });
-
-        this.publisher.on("error", error => {
-            console.log("Redis publisher error:", error.message);
-        });
-
-        this.subscriber.on("error", error => {
-            console.log("Redis subscriber error:", error.message);
-        });
-
-        await Promise.all([
-            this.client.connect(),
-            this.publisher.connect(),
-            this.subscriber.connect()
-        ]);
+        await this.connectRedisClients(redis, options);
 
         await this.client.set(`pod:${POD_ID}`, String(Date.now()), {
             EX: ROOM_LEASE_SECONDS * 3
@@ -117,6 +113,75 @@ class RedisState {
                 console.log("Redis pod heartbeat failed:", error.message);
             });
         }, 2000).unref();
+    }
+
+    async connectRedisClients(redis, options) {
+        for (let attempt = 1; attempt <= REDIS_CONNECT_RETRIES; attempt++) {
+            const client = redis.createClient(options);
+            const publisher = client.duplicate();
+            const subscriber = client.duplicate();
+
+            client.on("error", error => {
+                console.log("Redis client error:", error.message);
+            });
+
+            publisher.on("error", error => {
+                console.log("Redis publisher error:", error.message);
+            });
+
+            subscriber.on("error", error => {
+                console.log("Redis subscriber error:", error.message);
+            });
+
+            try {
+                await client.connect();
+                await publisher.connect();
+                await subscriber.connect();
+
+                this.client = client;
+                this.publisher = publisher;
+                this.subscriber = subscriber;
+
+                if (attempt > 1) {
+                    console.log(`Redis connected after ${attempt} attempts.`);
+                }
+
+                return;
+            } catch (error) {
+                await Promise.allSettled([
+                    this.closeRedisClient(client),
+                    this.closeRedisClient(publisher),
+                    this.closeRedisClient(subscriber)
+                ]);
+
+                console.log(
+                    `Redis connect attempt ${attempt}/${REDIS_CONNECT_RETRIES} failed: ${error.message}`
+                );
+
+                if (attempt === REDIS_CONNECT_RETRIES) {
+                    throw error;
+                }
+
+                await sleep(REDIS_CONNECT_RETRY_DELAY_MS);
+            }
+        }
+    }
+
+    async closeRedisClient(client) {
+        try {
+            if (client.isOpen) {
+                await client.quit();
+                return;
+            }
+
+            client.disconnect();
+        } catch (_error) {
+            try {
+                client.disconnect();
+            } catch (_disconnectError) {
+                // Best effort cleanup after failed startup connection attempts.
+            }
+        }
     }
 
     getPodId() {

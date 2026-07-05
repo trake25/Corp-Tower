@@ -44,6 +44,8 @@
         -e NODE_ENV=staging \
         -e REDIS_URL="$REDIS_URL" \
         -e RECONNECT_TTL_SECONDS="$RECONNECT_TTL_SECONDS" \
+        -e REDIS_CONNECT_RETRIES=180 \
+        -e REDIS_CONNECT_RETRY_DELAY_MS=2000 \
         "$current_image"
 
       if wait_for_server_port corp-tower-server 3000; then
@@ -72,6 +74,8 @@
       -e NODE_ENV=staging \
       -e REDIS_URL="$REDIS_URL" \
       -e RECONNECT_TTL_SECONDS="$RECONNECT_TTL_SECONDS" \
+      -e REDIS_CONNECT_RETRIES=180 \
+      -e REDIS_CONNECT_RETRY_DELAY_MS=2000 \
       "$IMAGE_URI"
 
     if wait_for_server_port corp-tower-server 3000; then

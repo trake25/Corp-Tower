@@ -33,12 +33,14 @@
   - public entrypoint `wss://corp-tower.duckdns.org`
   - `caddy:2-alpine` reverse proxy to worker private IPs on port `3000`
   - boot-time DuckDNS updater refreshes `corp-tower.duckdns.org` after EC2 stop/start IP changes
+  - generated Caddyfile is persisted at `/etc/corp-tower/caddy/Caddyfile` so Docker restart can recover after reboot
   - external Redis simulation with `redis:7-alpine` on port `6379`
 - EC2-2/EC2-3 workers:
   - run `corp-tower-server` Docker containers
 - Server workers:
   - connect to Redis via `REDIS_URL=redis://<EC2-1-private-ip>:6379`
   - use `RECONNECT_TTL_SECONDS=10` for staging/debug reconnect testing
+  - retry Redis startup connection so workers can boot before the gateway during EC2 stop/start recovery
 - Redis stores active session, queue, and room state only; long-term leaderboard/player persistence remains deferred.
 
 ## Matchmaking, Rooms, And Reconnect

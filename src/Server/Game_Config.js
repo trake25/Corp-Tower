@@ -8,7 +8,7 @@ const GameConfig = {
 
     maxLevel: 99,
     debugStartLevel: 1,
-    placementCooldown: 2000,
+    placementCooldown: 1500,
     targetHeightMultiplier: 3,
     targetHeightCurve: [
         { minLevel: 1, maxLevel: 1, baseLevel: 1, baseHeight: 3, heightPerLevel: 0 },
@@ -23,9 +23,9 @@ const GameConfig = {
     levelTimeLimitMs: 30000,
     nextLevelDelayMs: 1500,
     failRestartDelayMs: 1500,
-    placementScorePopupDurationMs: 5000,
-    finishScorePopupDurationMs: 5000,
-    levelSummaryDelayMs: 6000,
+    placementScorePopupDurationMs: 4000,
+    finishScorePopupDurationMs: 4000,
+    levelSummaryDelayMs: 5000,
     checkpointInterval: 3,
     checkpointScoreRequirement: 0,
     checkpointMinContributionShare: 0.30,

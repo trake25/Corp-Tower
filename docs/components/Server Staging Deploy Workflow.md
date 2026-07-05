@@ -40,8 +40,10 @@
   - EC2-2/EC2-3 pull the ECR image and prepare candidate `corp-tower-server-next` containers in parallel.
   - Worker containers use `REDIS_URL=redis://<gateway-private-ip>:6379`.
   - Worker containers use `RECONNECT_TTL_SECONDS=10` for faster staging/debug reconnect testing.
+  - Worker containers retry Redis startup connection for EC2 stop/start boot-order recovery.
   - Deploy updates DuckDNS so `corp-tower.duckdns.org` points at the current EC2-1 public IP.
   - Deploy validates generated Caddyfile with `caddy validate`.
+  - Deploy stores the generated Caddyfile under `/etc/corp-tower/caddy` so gateway restart survives EC2 stop/start.
   - Before each worker update, deploy reloads Caddy without that worker in the upstream.
   - If a candidate container fails, the current worker container is left in place.
   - If the replacement container fails after the current worker was removed, deploy attempts to restore the previous worker image before failing.
