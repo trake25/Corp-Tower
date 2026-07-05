@@ -56,7 +56,10 @@ class GenerateK3sInventoryTests(unittest.TestCase):
         self.assertEqual(env_values["K3S_NODE_PRIVATE_IPS"], "10.60.10.10 10.60.10.11 10.60.10.12")
 
         server = inventory["all"]["children"]["k3s_server"]["hosts"]["corp-tower-k3s-lab-cp"]
-        self.assertIn("ProxyJump=ec2-user@203.0.113.10:22", server["ansible_ssh_common_args"])
+        self.assertIn("ProxyCommand=", server["ansible_ssh_common_args"])
+        self.assertIn("-i /home/runner/.ssh/ec2_key", server["ansible_ssh_common_args"])
+        self.assertIn("-p 22", server["ansible_ssh_common_args"])
+        self.assertIn("-W %h:%p ec2-user@203.0.113.10", server["ansible_ssh_common_args"])
 
 
 if __name__ == "__main__":

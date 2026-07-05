@@ -254,6 +254,8 @@ jobs:
 
           ssh "${SSH_OPTS[@]}" "$EC2_USER@$GATEWAY_PUBLIC_IP" "hostname && whoami"
 
+          PROXY_COMMAND="ssh -i $HOME/.ssh/ec2_key -p $EC2_PORT -o BatchMode=yes -o ConnectTimeout=20 -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o GlobalKnownHostsFile=/dev/null -o StrictHostKeyChecking=yes -W %h:%p $EC2_USER@$GATEWAY_PUBLIC_IP"
+
           for PRIVATE_IP in $K3S_NODE_PRIVATE_IPS; do
             scan_output="$(
               ssh "${SSH_OPTS[@]}" "$EC2_USER@$GATEWAY_PUBLIC_IP" \
@@ -318,8 +320,10 @@ jobs:
             -L "${KUBE_API_PORT}:${CONTROL_PLANE_PRIVATE_IP}:6443" \
             "$EC2_USER@$GATEWAY_PUBLIC_IP"
 
+          PROXY_COMMAND="ssh -i $HOME/.ssh/ec2_key -p $EC2_PORT -o BatchMode=yes -o ConnectTimeout=20 -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o GlobalKnownHostsFile=/dev/null -o StrictHostKeyChecking=yes -W %h:%p $EC2_USER@$GATEWAY_PUBLIC_IP"
+
           ssh "${SSH_OPTS[@]}" \
-            -J "$EC2_USER@$GATEWAY_PUBLIC_IP:$EC2_PORT" \
+            -o "ProxyCommand=$PROXY_COMMAND" \
             "$EC2_USER@$CONTROL_PLANE_PRIVATE_IP" \
             "sudo cat /etc/rancher/k3s/k3s.yaml" > "$KUBECONFIG_PATH"
 

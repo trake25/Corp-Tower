@@ -94,9 +94,18 @@ def build_inventory(args: argparse.Namespace, payload: dict) -> tuple[dict, dict
     server_name = tag(server_instance, "Name") or server_instance.get("InstanceId", "k3s-control-plane")
     server_private_ip = require_address(server_instance, "PrivateIpAddress", server_name)
 
-    proxy_jump = f"{args.ssh_user}@{gateway_public_ip}:{args.ssh_port}"
+    proxy_command = (
+        f"ssh -i {args.ssh_key_file} "
+        f"-p {args.ssh_port} "
+        "-o BatchMode=yes "
+        "-o ConnectTimeout=20 "
+        f"-o UserKnownHostsFile={args.known_hosts_file} "
+        "-o GlobalKnownHostsFile=/dev/null "
+        "-o StrictHostKeyChecking=yes "
+        f"-W %h:%p {args.ssh_user}@{gateway_public_ip}"
+    )
     private_ssh_args = (
-        f"-o ProxyJump={proxy_jump} "
+        f"-o ProxyCommand=\"{proxy_command}\" "
         f"-o UserKnownHostsFile={args.known_hosts_file} "
         "-o GlobalKnownHostsFile=/dev/null "
         "-o StrictHostKeyChecking=yes"
