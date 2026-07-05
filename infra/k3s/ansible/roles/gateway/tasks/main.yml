@@ -6,23 +6,23 @@
 - name: Install missing gateway prerequisites
   ansible.builtin.shell: |
     set -euo pipefail
-    packages=()
+    packages=""
 
-    command -v python3 >/dev/null 2>&1 || packages+=(python3)
-    command -v curl >/dev/null 2>&1 || packages+=(curl-minimal)
-    command -v jq >/dev/null 2>&1 || packages+=(jq)
-    command -v aws >/dev/null 2>&1 || packages+=(awscli)
-    command -v ip >/dev/null 2>&1 || packages+=(iproute)
-    command -v iptables >/dev/null 2>&1 || packages+=(iptables-nft)
-    command -v docker >/dev/null 2>&1 || packages+=(docker)
+    command -v python3 >/dev/null 2>&1 || packages="$packages python3"
+    command -v curl >/dev/null 2>&1 || packages="$packages curl-minimal"
+    command -v jq >/dev/null 2>&1 || packages="$packages jq"
+    command -v aws >/dev/null 2>&1 || packages="$packages awscli"
+    command -v ip >/dev/null 2>&1 || packages="$packages iproute"
+    command -v iptables >/dev/null 2>&1 || packages="$packages iptables-nft"
+    command -v docker >/dev/null 2>&1 || packages="$packages docker"
 
-    if [ "${#packages[@]}" -eq 0 ]; then
+    if [ -z "$packages" ]; then
       echo "gateway prerequisites already installed"
       exit 0
     fi
 
-    echo "installing gateway packages: ${packages[*]}"
-    sudo dnf install -y "${packages[@]}"
+    echo "installing gateway packages:$packages"
+    sudo dnf install -y $packages
   args:
     executable: /bin/bash
   register: gateway_prerequisites
