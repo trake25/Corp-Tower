@@ -359,19 +359,21 @@ jobs:
         run: |
           set -euo pipefail
 
-          TEMP_OVERLAY="$RUNNER_TEMP/corp-tower-k3s/app-overlay"
-          mkdir -p "$TEMP_OVERLAY"
+          TEMP_APP_ROOT="$RUNNER_TEMP/corp-tower-k3s/apps"
+          RUNTIME_OVERLAY="$TEMP_APP_ROOT/corp-tower/overlays/runtime"
+          mkdir -p "$TEMP_APP_ROOT" "$RUNTIME_OVERLAY"
+          cp -R "$GITHUB_WORKSPACE/infra/k3s/apps/corp-tower" "$TEMP_APP_ROOT/"
 
-          cat > "$TEMP_OVERLAY/kustomization.yaml" <<EOF
+          cat > "$RUNTIME_OVERLAY/kustomization.yaml" <<EOF
           resources:
-            - ${GITHUB_WORKSPACE}/infra/k3s/apps/corp-tower/overlays/lab
+            - ../lab
           images:
             - name: corp-tower-server
               newName: ${ECR_REGISTRY}/${ECR_REPOSITORY}
               newTag: ${GITHUB_SHA}
           EOF
 
-          kubectl apply -k "$TEMP_OVERLAY"
+          kubectl apply -k "$RUNTIME_OVERLAY"
           kubectl -n corp-tower rollout status deployment/redis --timeout=180s
           kubectl -n corp-tower rollout status deployment/corp-tower-server --timeout=240s
           kubectl get nodes -o wide
