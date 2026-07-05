@@ -56,9 +56,11 @@
 ## Refresh Token System
 - Max 1 token per player `(1/1)` â€” per-player UI and variable.
 - Max 2 uses per level `(2/2)` â€” global UI and variable.
-- Effect: replaces all current blocks.
+- Effect: replaces all current blocks using targeted rerolls.
 - Cannot be used in the last 10 seconds of a level.
 - Only refreshes current remaining inventory.
+- Blocks with size below 3 reroll into an unlocked size 3+ block when possible.
+- Blocks with size 3 or higher keep their size but reroll shape/orientation.
 - Refresh generation is target-aware and tries to include at least one useful block for the current remaining height.
 
 ### Token Rewards

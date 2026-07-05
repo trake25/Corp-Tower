@@ -161,6 +161,49 @@ test("overbuild winning placement emits overbuild finish without exact bonuses",
 
 });
 
+test("refresh upgrades small blocks to unlocked size 3 or higher", () => {
+    const { engine } = createPlayingEngine(10, 20);
+    const player = engine.room.players[0];
+
+    engine.room.endsAt = Date.now() + 60000;
+    player.refreshTokens = 1;
+    player.blocks = [
+        createBlock(1, "B1"),
+        createBlock(2, "B2")
+    ];
+
+    engine.refreshBlocks("P1");
+
+    assert.equal(player.blocks.length, 2);
+    assert.equal(player.refreshTokens, 0);
+    assert.equal(player.refreshUsesThisLevel, 1);
+    assert.equal(
+        player.blocks.every(block => engine.getBlockCellCount(block) >= 3),
+        true
+    );
+});
+
+test("refresh rerolls size 3 or higher blocks without changing size", () => {
+    const { engine } = createPlayingEngine(15, 20);
+    const player = engine.room.players[0];
+
+    engine.room.endsAt = Date.now() + 60000;
+    player.refreshTokens = 1;
+    player.blocks = [
+        createBlock(4, "B4"),
+        createBlock(5, "B5")
+    ];
+
+    engine.refreshBlocks("P1");
+
+    assert.deepEqual(
+        player.blocks.map(block => engine.getBlockCellCount(block)),
+        [4, 5]
+    );
+    assert.notEqual(player.blocks[0].shapeId, "I4V");
+    assert.notEqual(player.blocks[1].shapeId, "I5V");
+});
+
 test("failed level summary does not bank level score into final totals", () => {
     const { engine } = createPlayingEngine(1, 5);
 

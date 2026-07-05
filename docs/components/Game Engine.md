@@ -65,7 +65,7 @@
 - Refresh tokens:
   - Max token count and per-level uses are from [[Game Config]].
   - Locked out near level end.
-  - Refresh rerolls the player's current hand, tries to produce a useful remaining-height option, and does not consume or reorder the draw pile.
+  - Refresh rerolls the player's current hand, upgrades size 1-2 blocks into unlocked size 3+ blocks when possible, reshapes size 3+ blocks without changing size, tries to produce a useful remaining-height option, and does not consume or reorder the draw pile.
 - Debug level start:
   - New rooms use `debugStartLevel`.
   - `restartAtConfiguredStartLevel()` resets active tuning rooms to that level, clears transient room state, resets scores, and saves a new checkpoint snapshot.

@@ -533,13 +533,19 @@ class GameEngine {
         return this.getBlockHeight(block);
     }
 
-    createBlock(blockSize) {
+    createBlock(blockSize, excludedShapeId = null) {
         const variants =
             GameConfig.blockShapeVariants[blockSize] ||
             GameConfig.blockShapeVariants[1];
+        const availableVariants =
+            excludedShapeId && variants.length > 1
+                ? variants.filter(variant => variant.shapeId !== excludedShapeId)
+                : variants;
 
         const variant =
-            variants[Math.floor(Math.random() * variants.length)];
+            availableVariants[
+                Math.floor(Math.random() * availableVariants.length)
+            ];
 
         const cells = this.cloneCells(variant.cells);
 
@@ -907,8 +913,7 @@ class GameEngine {
         // Refresh does not top up to the max - it re-rolls whatever the
         // player currently holds. If they have 1 block left, they get 1
         // new block. Using refresh on a full hand replaces all blocks.
-        const countToRefresh = (player.blocks || []).length;
-        player.blocks = this.generateRefreshBlocks(countToRefresh);
+        player.blocks = this.generateRefreshBlocks(player.blocks || []);
 
         console.log(`${player.id} refreshed blocks:`, player.blocks);
         this.checkFailCondition();
@@ -916,7 +921,9 @@ class GameEngine {
         this.broadcastGameState();
     }
 
-    generateRefreshBlocks(blockCount) {
+    generateRefreshBlocks(currentBlocks) {
+        const blockCount = (currentBlocks || []).length;
+
         if (blockCount <= 0) {
             return [];
         }
@@ -926,11 +933,9 @@ class GameEngine {
         let bestScore = -1;
 
         for (let attempt = 0; attempt < attempts; attempt++) {
-            const blocks = [];
-
-            for (let i = 0; i < blockCount; i++) {
-                blocks.push(this.getRandomBlock());
-            }
+            const blocks = currentBlocks.map(block => {
+                return this.createRefreshBlock(block);
+            });
 
             if (this.isRefreshBlockSetUseful(blocks)) {
                 return blocks;
@@ -945,6 +950,71 @@ class GameEngine {
         }
 
         return bestBlocks;
+    }
+
+    createRefreshBlock(currentBlock) {
+        const blockSize = this.getBlockCellCount(currentBlock);
+
+        if (blockSize < 3) {
+            return this.createRandomUnlockedBlock(3);
+        }
+
+        if (this.isBlockSizeUnlocked(blockSize)) {
+            return this.createBlock(
+                blockSize,
+                typeof currentBlock === "number"
+                    ? null
+                    : currentBlock?.shapeId || null
+            );
+        }
+
+        return this.createRandomUnlockedBlock(3);
+    }
+
+    createRandomUnlockedBlock(minBlockSize = 1) {
+        const blockSize = this.getWeightedUnlockedBlockSize(minBlockSize);
+
+        return this.createBlock(blockSize);
+    }
+
+    getWeightedUnlockedBlockSize(minBlockSize = 1) {
+        const weightedPool = [];
+
+        for (const block in GameConfig.blockWeights) {
+            const blockSize = Number(block);
+
+            if (
+                blockSize < minBlockSize ||
+                !this.isBlockSizeUnlocked(blockSize)
+            ) {
+                continue;
+            }
+
+            const weight = GameConfig.blockWeights[block] || 1;
+
+            for (let i = 0; i < weight; i++) {
+                weightedPool.push(blockSize);
+            }
+        }
+
+        if (weightedPool.length === 0 && minBlockSize > 1) {
+            return this.getWeightedUnlockedBlockSize(1);
+        }
+
+        if (weightedPool.length === 0) {
+            return 1;
+        }
+
+        return weightedPool[Math.floor(Math.random() * weightedPool.length)];
+    }
+
+    isBlockSizeUnlocked(blockSize) {
+        const unlockLevel = GameConfig.blockUnlockLevels[blockSize] || 1;
+
+        return (
+            Boolean(GameConfig.blockShapeVariants[blockSize]) &&
+            this.room.level >= unlockLevel
+        );
     }
 
     isRefreshBlockSetUseful(blocks) {

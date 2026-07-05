@@ -154,7 +154,7 @@ const GameConfig = {
 
     maxRefreshTokens: 1,
     maxRefreshUsesPerLevel: 2,
-    refreshLockoutMs: 10000,
+    refreshLockoutMs: 12000,
     refreshGenerationAttempts: 100,
     refreshMinUsefulBlockHeight: 2,
 
@@ -179,11 +179,11 @@ const GameConfig = {
 
     debugBotCount: 2,
 
-    debugBotDelayMin: 2000,
+    debugBotDelayMin: 1000,
 
     debugBotDelayMax: 5000,
 
-    debugBotStrategy: "cooperative",
+    debugBotStrategy: "mvp_greedy",
     botRefreshLowInventoryHeight: 4,
 
 };
