@@ -1,0 +1,64 @@
+---
+- name: Ensure K3s config directory
+  ansible.builtin.file:
+    path: /etc/rancher/k3s
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Install K3s server config
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  register: k3s_server_config
+
+- name: Check K3s server binary
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s
+  register: k3s_server_binary
+
+- name: Install K3s server
+  ansible.builtin.shell: |
+    set -euo pipefail
+    curl -sfL https://get.k3s.io | sh -
+  args:
+    executable: /bin/bash
+  become: true
+  when: not k3s_server_binary.stat.exists
+  changed_when: true
+
+- name: Restart K3s server after config change
+  ansible.builtin.command: systemctl restart k3s
+  become: true
+  when: k3s_server_config.changed and k3s_server_binary.stat.exists
+  changed_when: true
+
+- name: Enable K3s server
+  ansible.builtin.command: systemctl enable --now k3s
+  become: true
+  changed_when: false
+
+- name: Wait for K3s server node readiness
+  ansible.builtin.command: kubectl wait --for=condition=Ready "node/{{ node_name }}" --timeout=180s
+  become: true
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  changed_when: false
+
+- name: Read K3s node token
+  ansible.builtin.slurp:
+    src: /var/lib/rancher/k3s/server/node-token
+  become: true
+  register: k3s_token_file
+  no_log: true
+
+- name: Store K3s node token for agent joins
+  ansible.builtin.set_fact:
+    k3s_node_token: "{{ k3s_token_file.content | b64decode | trim }}"
+  no_log: true

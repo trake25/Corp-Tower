@@ -1,0 +1,46 @@
+---
+- name: Ensure K3s agent config directory
+  ansible.builtin.file:
+    path: /etc/rancher/k3s
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Install K3s agent config
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
+    owner: root
+    group: root
+    mode: "0600"
+  become: true
+  register: k3s_agent_config
+  no_log: true
+
+- name: Check K3s agent binary
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s
+  register: k3s_agent_binary
+
+- name: Install K3s agent
+  ansible.builtin.shell: |
+    set -euo pipefail
+    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=agent sh -
+  args:
+    executable: /bin/bash
+  become: true
+  when: not k3s_agent_binary.stat.exists
+  changed_when: true
+
+- name: Restart K3s agent after config change
+  ansible.builtin.command: systemctl restart k3s-agent
+  become: true
+  when: k3s_agent_config.changed and k3s_agent_binary.stat.exists
+  changed_when: true
+
+- name: Enable K3s agent
+  ansible.builtin.command: systemctl enable --now k3s-agent
+  become: true
+  changed_when: false

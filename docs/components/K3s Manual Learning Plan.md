@@ -8,9 +8,10 @@
 ## Current Baseline
 - Active staging remains the Docker EC2 gateway/workers lab:
   - EC2-1 runs Caddy and Docker Redis.
-  - EC2-2/EC2-3 run Docker `corp-tower-server` workers.
-  - `Staging Automated Master` runs fast guarded server updates for server-only pushes and keeps full preflight available for manual/workflow-change runs.
+- EC2-2/EC2-3 run Docker `corp-tower-server` workers.
+- `Staging Automated Master` runs fast guarded server updates for server-only pushes and keeps full preflight available for manual/workflow-change runs.
 - K3s is not part of the active deployment path.
+- A parallel implementation track now exists in [[K3s Lab Stack]] and [[K3s Lab Workflows]]. Use that path for isolated AWS resources, separate Terraform state, and Argo CD-ready manifests.
 - The current Terraform `instance_type` default is `t3.micro`. K3s documents a server baseline of 2 CPU cores and 2 GB RAM, while agents need 1 CPU core and 512 MB RAM. Do not start the control plane on the current default size unless the node is intentionally resized or replaced for the lab.
 
 ## Source Notes

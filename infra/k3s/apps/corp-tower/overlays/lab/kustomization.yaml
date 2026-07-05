@@ -1,0 +1,10 @@
+namespace: corp-tower
+
+resources:
+  - namespace.yaml
+  - ../../base
+
+images:
+  - name: corp-tower-server
+    newName: corp-tower-server
+    newTag: lab-placeholder

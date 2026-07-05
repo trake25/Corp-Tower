@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: corp-tower
+  labels:
+    app.kubernetes.io/name: corp-tower
+    app.kubernetes.io/part-of: corp-tower

@@ -15,6 +15,7 @@
 - Image is tagged with the immutable commit SHA.
 - Pushed to ECR.
 - Docker worker containers run this image on EC2-2/EC2-3.
+- K3s lab server pods reuse this same ECR image and repository.
 - Worker deployment provides `REDIS_URL` and `RECONNECT_TTL_SECONDS`.
 - Container healthchecks use a short staging interval so rolling deploy readiness is reported quickly.
 

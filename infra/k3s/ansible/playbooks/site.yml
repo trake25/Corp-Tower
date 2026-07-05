@@ -1,0 +1,60 @@
+---
+- name: Validate K3s lab deploy inputs
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Require inventory groups and deploy variables
+      ansible.builtin.assert:
+        that:
+          - groups.gateway | default([]) | length == 1
+          - groups.k3s_server | default([]) | length == 1
+          - groups.k3s_agents | default([]) | length >= 1
+          - gateway_domain is defined
+          - gateway_domain | length > 0
+          - duckdns_domain is defined
+          - duckdns_domain | length > 0
+          - private_subnet_cidr is defined
+          - private_subnet_cidr | length > 0
+        fail_msg: "Missing required K3s lab inventory groups or deploy inputs."
+
+- name: Configure EC2-GW NAT and gateway prerequisites
+  hosts: gateway
+  gather_facts: true
+  any_errors_fatal: true
+  roles:
+    - gateway
+
+- name: Prepare private K3s nodes
+  hosts: k3s_server:k3s_agents
+  gather_facts: false
+  any_errors_fatal: true
+  roles:
+    - common
+
+- name: Install private K3s server
+  hosts: k3s_server
+  gather_facts: false
+  any_errors_fatal: true
+  roles:
+    - k3s_server
+
+- name: Install private K3s agents
+  hosts: k3s_agents
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 1
+  roles:
+    - k3s_agent
+
+- name: Configure EC2-GW Caddy upstreams
+  hosts: gateway
+  gather_facts: false
+  any_errors_fatal: true
+  vars:
+    k3s_node_hosts: "{{ groups.k3s_server + groups.k3s_agents }}"
+    active_k3s_node_private_ips: "{{ k3s_node_hosts | map('extract', hostvars, 'private_ip') | list }}"
+  tasks:
+    - name: Render and reload K3s Caddy gateway
+      ansible.builtin.include_role:
+        name: gateway
+        tasks_from: configure_caddy

@@ -1,0 +1,82 @@
+name: K3s Lab Infra Plan
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  TF_VAR_aws_region: ap-southeast-1
+  TF_VAR_environment: k3s-lab
+  TF_VAR_ssh_public_key: ${{ secrets.EC2_STAGING_SSH_PUBLIC_KEY }}
+  TF_VAR_ssh_cidr: ${{ secrets.STAGING_SSH_CIDR || '0.0.0.0/0' }}
+  TF_VAR_game_port_cidr: ${{ secrets.STAGING_GAME_PORT_CIDR || '0.0.0.0/0' }}
+  TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+
+jobs:
+  plan:
+    name: Plan K3s Lab Infrastructure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: staging
+    defaults:
+      run:
+        working-directory: infra/k3s/terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Ensure Terraform backend bucket exists
+        run: |
+          set -euo pipefail
+          BUCKET="corp-tower-tfstate-${AWS_REGION}"
+
+          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            echo "Terraform backend bucket exists: $BUCKET"
+          else
+            aws s3api create-bucket \
+              --bucket "$BUCKET" \
+              --region "$AWS_REGION" \
+              --create-bucket-configuration LocationConstraint="$AWS_REGION"
+          fi
+
+          aws s3api put-bucket-versioning \
+            --bucket "$BUCKET" \
+            --versioning-configuration Status=Enabled
+
+          aws s3api put-bucket-encryption \
+            --bucket "$BUCKET" \
+            --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+
+          aws s3api put-public-access-block \
+            --bucket "$BUCKET" \
+            --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform fmt check
+        run: terraform fmt -check
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Show Terraform plan summary
+        run: terraform show -no-color tfplan

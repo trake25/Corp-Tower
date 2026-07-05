@@ -1,0 +1,153 @@
+name: K3s Lab Diagnostics
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+
+jobs:
+  diagnostics:
+    name: Diagnose K3s Lab
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: staging
+
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Show AWS topology
+        run: |
+          set -euo pipefail
+
+          echo "::group::K3s lab instances"
+          aws ec2 describe-instances \
+            --filters \
+              "Name=tag:Project,Values=corp-tower" \
+              "Name=tag:Environment,Values=k3s-lab" \
+              "Name=tag:Role,Values=k3s-gateway,k3s-control-plane,k3s-agent" \
+              "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+            --query 'Reservations[].Instances[].{InstanceId:InstanceId,Name:Tags[?Key==`Name`]|[0].Value,Role:Tags[?Key==`Role`]|[0].Value,State:State.Name,PublicIp:PublicIpAddress,PrivateIp:PrivateIpAddress,SubnetId:SubnetId,VpcId:VpcId,SecurityGroups:SecurityGroups[].GroupId}' \
+            --output table
+          echo "::endgroup::"
+
+          echo "::group::K3s lab security groups"
+          SECURITY_GROUP_IDS="$(
+            aws ec2 describe-security-groups \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=k3s-lab" \
+              --query 'SecurityGroups[].GroupId' \
+              --output text
+          )"
+
+          for SECURITY_GROUP_ID in $SECURITY_GROUP_IDS; do
+            echo "Security group: ${SECURITY_GROUP_ID}"
+            aws ec2 describe-security-group-rules \
+              --filters "Name=group-id,Values=${SECURITY_GROUP_ID}" \
+              --query 'SecurityGroupRules[?IsEgress==`false`].{RuleId:SecurityGroupRuleId,Protocol:IpProtocol,From:FromPort,To:ToPort,Cidr:CidrIpv4,ReferencedGroup:ReferencedGroupInfo.GroupId,Description:Description}' \
+              --output table
+          done
+          echo "::endgroup::"
+
+          echo "::group::K3s lab route tables"
+          VPC_ID="$(
+            aws ec2 describe-vpcs \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=k3s-lab" \
+              --query 'Vpcs[0].VpcId' \
+              --output text
+          )"
+
+          if [ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ]; then
+            aws ec2 describe-route-tables \
+              --filters "Name=vpc-id,Values=${VPC_ID}" \
+              --query 'RouteTables[].{RouteTableId:RouteTableId,Associations:Associations[].SubnetId,Routes:Routes[].{Destination:DestinationCidrBlock,Gateway:GatewayId,NetworkInterface:NetworkInterfaceId,State:State}}' \
+              --output json
+          fi
+          echo "::endgroup::"
+
+      - name: Probe SSH through bastion
+        env:
+          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
+          EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
+          EC2_SSH_KEY: ${{ secrets.EC2_STAGING_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+          GATEWAY_PUBLIC_IP="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=k3s-lab" \
+                "Name=tag:Role,Values=k3s-gateway" \
+                "Name=instance-state-name,Values=running" \
+              --query 'Reservations[0].Instances[0].PublicIpAddress' \
+              --output text
+          )"
+
+          if [ -z "$GATEWAY_PUBLIC_IP" ] || [ "$GATEWAY_PUBLIC_IP" = "None" ]; then
+            echo "::warning::No running K3s lab gateway found; skipping SSH probes."
+            exit 0
+          fi
+
+          K3S_PRIVATE_IPS="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=k3s-lab" \
+                "Name=tag:Role,Values=k3s-control-plane,k3s-agent" \
+                "Name=instance-state-name,Values=running" \
+              --query 'Reservations[].Instances[].PrivateIpAddress' \
+              --output text
+          )"
+
+          SSH_OPTS=(
+            -i ~/.ssh/ec2_key
+            -p "$EC2_PORT"
+            -o BatchMode=yes
+            -o ConnectTimeout=20
+            -o ConnectionAttempts=3
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=2
+            -o UserKnownHostsFile=~/.ssh/known_hosts
+            -o GlobalKnownHostsFile=/dev/null
+            -o StrictHostKeyChecking=yes
+          )
+
+          ssh-keygen -R "[$GATEWAY_PUBLIC_IP]:$EC2_PORT" -f ~/.ssh/known_hosts >/dev/null 2>&1 || true
+          ssh-keyscan -T 10 -p "$EC2_PORT" -H "$GATEWAY_PUBLIC_IP" >> ~/.ssh/known_hosts
+
+          ssh "${SSH_OPTS[@]}" "$EC2_USER@$GATEWAY_PUBLIC_IP" "hostname && whoami"
+
+          for PRIVATE_IP in $K3S_PRIVATE_IPS; do
+            scan_output="$(
+              ssh "${SSH_OPTS[@]}" "$EC2_USER@$GATEWAY_PUBLIC_IP" \
+                "ssh-keyscan -T 10 -p '$EC2_PORT' -H '$PRIVATE_IP' 2>/dev/null" || true
+            )"
+
+            if [ -n "$scan_output" ]; then
+              printf '%s\n' "$scan_output" >> ~/.ssh/known_hosts
+            fi
+
+            ssh "${SSH_OPTS[@]}" \
+              -J "$EC2_USER@$GATEWAY_PUBLIC_IP:$EC2_PORT" \
+              "$EC2_USER@$PRIVATE_IP" \
+              "hostname && whoami"
+          done

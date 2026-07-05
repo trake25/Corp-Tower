@@ -1,0 +1,412 @@
+name: K3s Lab Deploy
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: k3s-lab-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  IMAGE_NAME: corp-tower-server
+  DUCKDNS_DOMAIN: corp-tower
+  DUCKDNS_FQDN: corp-tower.duckdns.org
+
+jobs:
+  test-server:
+    name: Test Server On GitHub VM
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: src/Server
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.14.1"
+          cache: npm
+          cache-dependency-path: src/Server/package-lock.json
+
+      - name: Install server dependencies
+        run: npm ci
+
+      - name: Run server tests
+        run: npm test
+
+  build-and-push:
+    name: Build And Push Docker Image To ECR
+    runs-on: ubuntu-24.04
+    needs: test-server
+    if: ${{ needs.test-server.result == 'success' }}
+    timeout-minutes: 15
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: src/Server
+          file: src/Server/Dockerfile
+          push: true
+          tags: ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Record pushed image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
+          echo "Docker image pushed: $IMAGE_URI" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-k3s:
+    name: Install K3s And Deploy Corp Tower
+    runs-on: ubuntu-24.04
+    needs: build-and-push
+    if: ${{ needs.build-and-push.result == 'success' }}
+    timeout-minutes: 35
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: infra/k3s/ansible/requirements.txt
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Setup Node.js for WebSocket smoke test
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.14.1"
+
+      - name: Install Ansible
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r infra/k3s/ansible/requirements.txt
+          ansible --version
+
+      - name: Test K3s inventory generator
+        run: python -m unittest discover -s infra/k3s/ansible/tests
+
+      - name: Resolve K3s lab targets
+        env:
+          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
+          EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$RUNNER_TEMP/corp-tower-k3s"
+          INSTANCES_JSON="$RUNNER_TEMP/corp-tower-k3s/k3s-lab-instances.json"
+          INVENTORY_JSON="$RUNNER_TEMP/corp-tower-k3s/k3s-lab-inventory.json"
+
+          aws ec2 describe-instances \
+            --filters \
+              "Name=tag:Project,Values=corp-tower" \
+              "Name=tag:Environment,Values=k3s-lab" \
+              "Name=tag:Role,Values=k3s-gateway,k3s-control-plane,k3s-agent" \
+              "Name=instance-state-name,Values=running" \
+            --output json > "$INSTANCES_JSON"
+
+          python infra/k3s/ansible/scripts/generate_k3s_inventory.py \
+            --instances-json "$INSTANCES_JSON" \
+            --inventory "$INVENTORY_JSON" \
+            --ssh-user "$EC2_USER" \
+            --ssh-port "$EC2_PORT" \
+            --ssh-key-file "$HOME/.ssh/ec2_key" \
+            --known-hosts-file "$HOME/.ssh/known_hosts" \
+            --github-env "$GITHUB_ENV" \
+            --github-summary "$GITHUB_STEP_SUMMARY"
+
+          PRIVATE_SUBNET_CIDR="$(
+            aws ec2 describe-subnets \
+              --filters \
+                "Name=tag:Project,Values=corp-tower" \
+                "Name=tag:Environment,Values=k3s-lab" \
+                "Name=tag:Tier,Values=private" \
+              --query 'Subnets[0].CidrBlock' \
+              --output text
+          )"
+
+          if [ -z "$PRIVATE_SUBNET_CIDR" ] || [ "$PRIVATE_SUBNET_CIDR" = "None" ]; then
+            echo "::error::Could not resolve K3s lab private subnet CIDR."
+            exit 1
+          fi
+
+          echo "PRIVATE_SUBNET_CIDR=$PRIVATE_SUBNET_CIDR" >> "$GITHUB_ENV"
+
+      - name: Update DuckDNS gateway record
+        env:
+          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${DUCKDNS_TOKEN:-}" ]; then
+            echo "::error::Missing DUCKDNS_TOKEN staging environment secret."
+            exit 1
+          fi
+
+          duckdns_response="$(
+            curl -fsS \
+              --connect-timeout 5 \
+              --max-time 15 \
+              --get "https://www.duckdns.org/update" \
+              --data-urlencode "domains=${DUCKDNS_DOMAIN}" \
+              --data-urlencode "token=${DUCKDNS_TOKEN}" \
+              --data-urlencode "ip=${GATEWAY_PUBLIC_IP}" \
+              --data-urlencode "verbose=true"
+          )"
+
+          duckdns_status="$(printf '%s\n' "$duckdns_response" | tr -d '\r' | sed -n '1p')"
+          if [ "$duckdns_status" != "OK" ]; then
+            echo "::error::DuckDNS update failed with status: ${duckdns_status}"
+            exit 1
+          fi
+
+          for attempt in $(seq 1 60); do
+            resolved_ip="$(getent ahostsv4 "$DUCKDNS_FQDN" | awk '{ print $1; exit }' || true)"
+            if [ "$resolved_ip" = "$GATEWAY_PUBLIC_IP" ]; then
+              exit 0
+            fi
+            echo "Waiting for ${DUCKDNS_FQDN} to resolve to ${GATEWAY_PUBLIC_IP}; current: ${resolved_ip:-none} (attempt ${attempt}/60)."
+            sleep 2
+          done
+
+          echo "::error::${DUCKDNS_FQDN} did not resolve to ${GATEWAY_PUBLIC_IP} after DuckDNS update."
+          exit 1
+
+      - name: Prepare SSH known hosts
+        env:
+          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
+          EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
+          EC2_SSH_KEY: ${{ secrets.EC2_STAGING_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          mkdir -p ~/.ansible/cp
+          chmod 700 ~/.ssh
+          chmod 700 ~/.ansible
+          chmod 700 ~/.ansible/cp
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+          SSH_OPTS=(
+            -i ~/.ssh/ec2_key
+            -p "$EC2_PORT"
+            -o BatchMode=yes
+            -o ConnectTimeout=20
+            -o ConnectionAttempts=3
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=2
+            -o UserKnownHostsFile=~/.ssh/known_hosts
+            -o GlobalKnownHostsFile=/dev/null
+            -o StrictHostKeyChecking=yes
+          )
+
+          ssh-keygen -R "[$GATEWAY_PUBLIC_IP]:$EC2_PORT" -f ~/.ssh/known_hosts >/dev/null 2>&1 || true
+          ssh-keyscan -T 10 -p "$EC2_PORT" -H "$GATEWAY_PUBLIC_IP" >> ~/.ssh/known_hosts
+
+          ssh "${SSH_OPTS[@]}" "$EC2_USER@$GATEWAY_PUBLIC_IP" "hostname && whoami"
+
+          for PRIVATE_IP in $K3S_NODE_PRIVATE_IPS; do
+            scan_output="$(
+              ssh "${SSH_OPTS[@]}" "$EC2_USER@$GATEWAY_PUBLIC_IP" \
+                "ssh-keyscan -T 10 -p '$EC2_PORT' -H '$PRIVATE_IP' 2>/dev/null" || true
+            )"
+
+            if [ -z "$scan_output" ]; then
+              echo "::error::Could not fetch SSH host key for private K3s node ${PRIVATE_IP} through EC2-GW."
+              exit 1
+            fi
+
+            printf '%s\n' "$scan_output" >> ~/.ssh/known_hosts
+          done
+
+      - name: Run K3s Ansible syntax check
+        env:
+          ANSIBLE_CONFIG: infra/k3s/ansible/ansible.cfg
+        run: |
+          set -euo pipefail
+          ansible-playbook \
+            -i "$ANSIBLE_INVENTORY" \
+            infra/k3s/ansible/playbooks/site.yml \
+            --syntax-check
+
+      - name: Configure K3s lab hosts with Ansible
+        env:
+          ANSIBLE_CONFIG: infra/k3s/ansible/ansible.cfg
+          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+        run: |
+          set -euo pipefail
+          ansible-playbook \
+            -i "$ANSIBLE_INVENTORY" \
+            infra/k3s/ansible/playbooks/site.yml \
+            -e "gateway_domain=${DUCKDNS_FQDN}" \
+            -e "duckdns_domain=${DUCKDNS_DOMAIN}" \
+            -e "private_subnet_cidr=${PRIVATE_SUBNET_CIDR}"
+
+      - name: Open bastion tunnel and fetch kubeconfig
+        env:
+          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
+          EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
+        run: |
+          set -euo pipefail
+
+          KUBE_API_PORT=16443
+          KUBECONFIG_PATH="$RUNNER_TEMP/corp-tower-k3s/kubeconfig"
+          SSH_OPTS=(
+            -i ~/.ssh/ec2_key
+            -p "$EC2_PORT"
+            -o BatchMode=yes
+            -o ConnectTimeout=20
+            -o ExitOnForwardFailure=yes
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=2
+            -o UserKnownHostsFile=~/.ssh/known_hosts
+            -o GlobalKnownHostsFile=/dev/null
+            -o StrictHostKeyChecking=yes
+          )
+
+          ssh "${SSH_OPTS[@]}" \
+            -f -N \
+            -L "${KUBE_API_PORT}:${CONTROL_PLANE_PRIVATE_IP}:6443" \
+            "$EC2_USER@$GATEWAY_PUBLIC_IP"
+
+          ssh "${SSH_OPTS[@]}" \
+            -J "$EC2_USER@$GATEWAY_PUBLIC_IP:$EC2_PORT" \
+            "$EC2_USER@$CONTROL_PLANE_PRIVATE_IP" \
+            "sudo cat /etc/rancher/k3s/k3s.yaml" > "$KUBECONFIG_PATH"
+
+          sed -i "s#https://127.0.0.1:6443#https://127.0.0.1:${KUBE_API_PORT}#g" "$KUBECONFIG_PATH"
+          chmod 600 "$KUBECONFIG_PATH"
+          echo "KUBECONFIG=$KUBECONFIG_PATH" >> "$GITHUB_ENV"
+
+      - name: Refresh ECR image pull secret
+        env:
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          set -euo pipefail
+
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          ECR_PASSWORD="$(aws ecr get-login-password --region "$AWS_REGION")"
+
+          kubectl create namespace corp-tower --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n corp-tower create secret docker-registry ecr-pull \
+            --docker-server="$ECR_REGISTRY" \
+            --docker-username=AWS \
+            --docker-password="$ECR_PASSWORD" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          {
+            echo "ECR_REGISTRY=$ECR_REGISTRY"
+            echo "IMAGE_URI=${ECR_REGISTRY}/${ECR_REPOSITORY}:${GITHUB_SHA}"
+          } >> "$GITHUB_ENV"
+
+      - name: Apply Corp Tower Kustomize overlay
+        env:
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          set -euo pipefail
+
+          TEMP_OVERLAY="$RUNNER_TEMP/corp-tower-k3s/app-overlay"
+          mkdir -p "$TEMP_OVERLAY"
+
+          cat > "$TEMP_OVERLAY/kustomization.yaml" <<EOF
+          resources:
+            - ${GITHUB_WORKSPACE}/infra/k3s/apps/corp-tower/overlays/lab
+          images:
+            - name: corp-tower-server
+              newName: ${ECR_REGISTRY}/${ECR_REPOSITORY}
+              newTag: ${GITHUB_SHA}
+          EOF
+
+          kubectl apply -k "$TEMP_OVERLAY"
+          kubectl -n corp-tower rollout status deployment/redis --timeout=180s
+          kubectl -n corp-tower rollout status deployment/corp-tower-server --timeout=240s
+          kubectl get nodes -o wide
+          kubectl -n corp-tower get all -o wide
+
+      - name: Smoke test public WebSocket
+        env:
+          WS_URL: wss://corp-tower.duckdns.org
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 30); do
+            if node - <<'NODE'
+          const url = process.env.WS_URL;
+          const timeout = setTimeout(() => {
+            console.error(`Timed out connecting to ${url}`);
+            process.exit(1);
+          }, 5000);
+
+          const socket = new WebSocket(url);
+          socket.addEventListener("open", () => {
+            clearTimeout(timeout);
+            socket.close();
+            process.exit(0);
+          });
+          socket.addEventListener("error", (event) => {
+            clearTimeout(timeout);
+            console.error(`WebSocket error for ${url}`);
+            process.exit(1);
+          });
+          NODE
+            then
+              echo "WebSocket smoke connected to ${WS_URL}."
+              exit 0
+            fi
+
+            echo "Waiting for public WebSocket through Caddy (attempt ${attempt}/30)."
+            sleep 10
+          done
+
+          echo "::error::WebSocket smoke could not connect to ${WS_URL}."
+          exit 1

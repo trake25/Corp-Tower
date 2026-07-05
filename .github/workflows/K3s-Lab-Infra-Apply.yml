@@ -1,0 +1,118 @@
+name: K3s Lab Infra Apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_apply:
+        description: "Type APPLY_K3S_LAB to apply the reviewed K3s lab infrastructure plan."
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  TF_VAR_aws_region: ap-southeast-1
+  TF_VAR_environment: k3s-lab
+  TF_VAR_ssh_public_key: ${{ secrets.EC2_STAGING_SSH_PUBLIC_KEY }}
+  TF_VAR_ssh_cidr: ${{ secrets.STAGING_SSH_CIDR || '0.0.0.0/0' }}
+  TF_VAR_game_port_cidr: ${{ secrets.STAGING_GAME_PORT_CIDR || '0.0.0.0/0' }}
+  TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+
+jobs:
+  apply:
+    name: Apply K3s Lab Infrastructure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: staging
+    defaults:
+      run:
+        working-directory: infra/k3s/terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check apply confirmation
+        run: |
+          if [ "${{ inputs.confirm_apply }}" != "APPLY_K3S_LAB" ]; then
+            echo "confirm_apply must be exactly APPLY_K3S_LAB."
+            exit 1
+          fi
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Ensure Terraform backend bucket exists
+        run: |
+          set -euo pipefail
+          BUCKET="corp-tower-tfstate-${AWS_REGION}"
+
+          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            echo "Terraform backend bucket exists: $BUCKET"
+          else
+            aws s3api create-bucket \
+              --bucket "$BUCKET" \
+              --region "$AWS_REGION" \
+              --create-bucket-configuration LocationConstraint="$AWS_REGION"
+          fi
+
+          aws s3api put-bucket-versioning \
+            --bucket "$BUCKET" \
+            --versioning-configuration Status=Enabled
+
+          aws s3api put-bucket-encryption \
+            --bucket "$BUCKET" \
+            --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+
+          aws s3api put-public-access-block \
+            --bucket "$BUCKET" \
+            --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform fmt check
+        run: terraform fmt -check
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan before apply
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Show Terraform plan summary
+        run: terraform show -no-color tfplan
+
+      - name: Reject destructive infrastructure plan
+        run: |
+          set -euo pipefail
+
+          DESTRUCTIVE_CHANGES="$(
+            terraform show -json tfplan \
+              | jq -r '
+                .resource_changes[]?
+                | select(.change.actions | index("delete"))
+                | "\(.address): \(.change.actions | join(","))"
+              '
+          )"
+
+          if [ -n "$DESTRUCTIVE_CHANGES" ]; then
+            echo "::error::Plan includes delete or replace actions. Use K3s Lab Cleanup with terraform_destroy for intentional teardown."
+            printf '%s\n' "$DESTRUCTIVE_CHANGES"
+            exit 1
+          fi
+
+      - name: Terraform apply
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Show Terraform outputs
+        run: terraform output

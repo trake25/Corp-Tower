@@ -12,8 +12,8 @@
 - Server: Node WebSocket workers own matchmaking, room state, reconnect, scoring, timers, bots, and debug config.
 - State: Redis is used in staging for active matchmaking, room/session snapshots, reconnect, and worker recovery.
 - Staging: EC2-1 gateway runs Caddy plus Docker Redis; EC2-2/EC2-3 run Docker `corp-tower-server` workers.
-- CI/CD: GitHub Actions handles server tests/builds, Ansible-driven staging deploys, diagnostics, infra plan/apply, cleanup, and Android internal AAB workflow.
-- K3s: manual learning plan only; Docker gateway/workers remain the active staging path.
+- K3s lab: parallel isolated AWS/K3s stack under `infra/k3s`, with private K3s nodes behind EC2-GW and Argo CD-ready manifests that are not applied by default.
+- CI/CD: GitHub Actions handles server tests/builds, Ansible-driven staging deploys, K3s lab deploys, diagnostics, infra plan/apply, cleanup, and Android internal AAB workflow.
 
 ## Current Focus
 - Active: shape-block progression/failure-pressure playtesting and score popup/level summary validation.
@@ -37,11 +37,12 @@
 - Client tests: [[Godot Client Tests]]
 - Staging/infra: [[Staging Automated Master Workflow]], [[Server Staging Deploy Workflow]], [[Staging Diagnostics Workflow]], [[Staging Runtime Cleanup Workflow]], [[Terraform Infrastructure]], [[Staging Deploy Guide]]
 - Android release: [[Client Android Internal Workflow]]
-- K3s learning: [[K3s Manual Learning Plan]]
+- K3s learning: [[K3s Manual Learning Plan]], [[K3s Lab Stack]], [[K3s Lab Workflows]]
 
 ## Runtime Flow
 - Godot connects to `wss://corp-tower.duckdns.org` through [[NetworkManager]].
 - EC2-1 Caddy terminates WSS and routes WebSockets to worker containers; workers share active state through Redis on EC2-1.
+- When the K3s lab owns DuckDNS, EC2-GW Caddy terminates WSS and routes to private K3s node IPs on NodePort `30300`; Docker staging and K3s lab do not coexist as live endpoints.
 - [[Lobby Manager]] handles queueing, room creation, reconnect, debug config, and room close.
 - [[Game Engine]] owns authoritative gameplay and broadcasts `game_state`.
 - Client actions are `place_block`, `refresh_blocks`, and debug `update_config`; server validates all of them.
@@ -54,7 +55,7 @@
 - Staging region: `ap-southeast-1`.
 - Server CI target: Node `24.14.1`.
 - User prefers GitHub Actions/staging validation over local manual Terraform, Docker, or Redis runs.
-- Infra Apply, EC2 Rebuild, cleanup, and K3s remain manual-only.
+- Infra Apply, EC2 Rebuild, cleanup, and K3s lab deploy/cleanup remain manual-only.
 
 ## Fast Start For Agent AIs
 - Read this first.

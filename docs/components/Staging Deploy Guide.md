@@ -18,7 +18,7 @@
 - Server workflow installs pinned Ansible on the GitHub runner, generates a temporary EC2 inventory, updates DuckDNS, then starts Redis/Caddy on EC2-1 and game server Docker containers on EC2-2/EC2-3.
 - Cleanup: Run [[Staging Runtime Cleanup Workflow]] when stale Caddy, legacy nginx, Redis, server containers, Docker network, Docker images, or temp deployment files are suspected.
 - Managed AWS ALB/NLB, ElastiCache, and EKS are intentionally not used in this learning setup.
-- K3s exploration belongs in [[K3s Manual Learning Plan]] until it has been manually installed, verified, and reverted phase by phase.
+- K3s exploration now has a separate parallel lab path in [[K3s Lab Stack]] and [[K3s Lab Workflows]]. Docker staging remains the rollback path.
 
 ## Inputs/Outputs
 - Input: local Terraform/AWS setup, repository secrets, and `DUCKDNS_TOKEN` in the GitHub `staging` environment.
@@ -37,4 +37,5 @@
 - Gateway and workers should stay in the same staging VPC/subnet learning topology.
 - Check gateway logs on EC2-1 with `sudo docker logs corp-tower-gateway`; check worker logs on EC2-2/EC2-3 with `sudo docker logs corp-tower-server`.
 - Ansible deploy assets live under `infra/ansible`; deployment edits there trigger diagnostics plus server update through [[Staging Automated Master Workflow]].
-- Keep this Docker staging path as the fallback while learning K3s manually.
+- Keep this Docker staging path as the fallback while using the parallel K3s lab.
+- If K3s owns `corp-tower.duckdns.org`, start the Docker EC2s and run [[Server Staging Deploy Workflow]] to point DuckDNS back to Docker staging.

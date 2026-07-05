@@ -1,0 +1,163 @@
+---
+- name: Verify passwordless sudo
+  ansible.builtin.command: sudo -n true
+  changed_when: false
+
+- name: Install gateway prerequisites
+  ansible.builtin.command: sudo dnf install -y python3 curl jq aws-cli iproute iptables docker
+  changed_when: true
+
+- name: Enable Docker on EC2-GW
+  ansible.builtin.command: sudo systemctl enable --now docker
+  changed_when: false
+
+- name: Ensure Corp Tower K3s config directory
+  ansible.builtin.file:
+    path: /etc/corp-tower/k3s
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  become: true
+
+- name: Install K3s lab NAT script
+  ansible.builtin.template:
+    src: corp-tower-k3s-nat.sh.j2
+    dest: /usr/local/bin/corp-tower-k3s-nat
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Install K3s lab NAT service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/corp-tower-k3s-nat.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Corp Tower K3s lab EC2-GW NAT
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      ExecStart=/usr/local/bin/corp-tower-k3s-nat
+
+      [Install]
+      WantedBy=multi-user.target
+  become: true
+
+- name: Enable and run K3s lab NAT service
+  ansible.builtin.shell: |
+    set -euo pipefail
+    sudo systemctl daemon-reload
+    sudo systemctl enable corp-tower-k3s-nat.service
+    sudo systemctl restart corp-tower-k3s-nat.service
+  args:
+    executable: /bin/bash
+  changed_when: true
+
+- name: Require DuckDNS token for gateway boot updater
+  ansible.builtin.assert:
+    that:
+      - lookup('ansible.builtin.env', 'DUCKDNS_TOKEN') | length > 0
+    fail_msg: "DUCKDNS_TOKEN must be provided as a GitHub staging environment secret."
+  no_log: true
+
+- name: Install DuckDNS updater secret
+  ansible.builtin.copy:
+    dest: /etc/corp-tower/k3s/duckdns.env
+    owner: root
+    group: root
+    mode: "0600"
+    content: |
+      DUCKDNS_DOMAIN={{ duckdns_domain | default('corp-tower') }}
+      DUCKDNS_TOKEN={{ lookup('ansible.builtin.env', 'DUCKDNS_TOKEN') }}
+  become: true
+  no_log: true
+
+- name: Install DuckDNS boot updater script
+  ansible.builtin.copy:
+    dest: /usr/local/bin/corp-tower-k3s-duckdns-update
+    owner: root
+    group: root
+    mode: "0755"
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      source /etc/corp-tower/k3s/duckdns.env
+
+      IMDS_TOKEN="$(
+        curl -fsS \
+          --connect-timeout 2 \
+          --max-time 5 \
+          -X PUT \
+          -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" \
+          "http://169.254.169.254/latest/api/token"
+      )"
+
+      PUBLIC_IP="$(
+        curl -fsS \
+          --connect-timeout 2 \
+          --max-time 5 \
+          -H "X-aws-ec2-metadata-token: ${IMDS_TOKEN}" \
+          "http://169.254.169.254/latest/meta-data/public-ipv4"
+      )"
+
+      RESPONSE="$(
+        curl -fsS \
+          --connect-timeout 5 \
+          --max-time 15 \
+          --get "https://www.duckdns.org/update" \
+          --data-urlencode "domains=${DUCKDNS_DOMAIN}" \
+          --data-urlencode "token=${DUCKDNS_TOKEN}" \
+          --data-urlencode "ip=${PUBLIC_IP}" \
+          --data-urlencode "verbose=true"
+      )"
+
+      STATUS="$(printf '%s\n' "${RESPONSE}" | tr -d '\r' | sed -n '1p')"
+      if [ "${STATUS}" != "OK" ]; then
+        echo "DuckDNS update failed with status: ${STATUS}"
+        exit 1
+      fi
+
+      echo "DuckDNS ${DUCKDNS_DOMAIN}.duckdns.org updated to ${PUBLIC_IP}."
+  become: true
+
+- name: Install DuckDNS boot updater service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/corp-tower-k3s-duckdns-update.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Update Corp Tower K3s lab DuckDNS gateway record
+      Wants=network-online.target
+      After=network-online.target
+      StartLimitIntervalSec=10min
+      StartLimitBurst=10
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/corp-tower-k3s-duckdns-update
+      Restart=on-failure
+      RestartSec=30s
+
+      [Install]
+      WantedBy=multi-user.target
+  become: true
+
+- name: Enable and run DuckDNS boot updater
+  ansible.builtin.shell: |
+    set -euo pipefail
+    sudo systemctl daemon-reload
+    sudo systemctl enable corp-tower-k3s-duckdns-update.service
+    sudo systemctl restart corp-tower-k3s-duckdns-update.service
+  args:
+    executable: /bin/bash
+  changed_when: true

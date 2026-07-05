@@ -31,6 +31,8 @@
 - [[Terraform Infrastructure]]
 - [[Staging Deploy Guide]]
 - [[K3s Manual Learning Plan]]
+- [[K3s Lab Stack]]
+- [[K3s Lab Workflows]]
 
 ## Global
 - [[Summary]]

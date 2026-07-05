@@ -9,6 +9,10 @@ infra/terraform/staging.tfvars
 infra/bootstrap/.terraform/
 infra/bootstrap/*.tfstate
 infra/bootstrap/*.tfstate.*
+infra/k3s/terraform/.terraform/
+infra/k3s/terraform/*.tfstate
+infra/k3s/terraform/*.tfstate.*
+infra/k3s/terraform/k3s-lab.tfvars
 # Corp Tower GDD
 *.docx
 *.docx.bak

@@ -35,5 +35,5 @@
 
 ## Notes
 - Use this before retrying staging deploy when EC2 hosts have stale Caddy, Redis, server containers, or legacy nginx artifacts.
-- This workflow is not a k3s uninstaller anymore. k3s has been removed from the active staging path and future k3s work should be planned manually first.
+- This workflow is not a K3s uninstaller. K3s lab cleanup belongs to [[K3s Lab Workflows]].
 - The workflow prints discovered public/private IPs and subnet IDs for topology debugging.

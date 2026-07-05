@@ -1,0 +1,4 @@
+server: "https://{{ hostvars[groups.k3s_server[0]].private_ip }}:6443"
+token: "{{ hostvars[groups.k3s_server[0]].k3s_node_token }}"
+node-name: "{{ node_name }}"
+node-ip: "{{ private_ip }}"

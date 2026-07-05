@@ -1,0 +1,199 @@
+name: K3s Lab Cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup_mode:
+        description: "Runtime cleanup uninstalls K3s/Caddy artifacts. Terraform destroy removes lab AWS resources."
+        required: true
+        default: runtime_only
+        type: choice
+        options:
+          - runtime_only
+          - terraform_destroy
+      confirm_cleanup:
+        description: "Type CLEANUP_K3S_LAB for runtime cleanup or DESTROY_K3S_LAB for terraform_destroy."
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  TF_VAR_aws_region: ap-southeast-1
+  TF_VAR_environment: k3s-lab
+  TF_VAR_ssh_public_key: ${{ secrets.EC2_STAGING_SSH_PUBLIC_KEY }}
+  TF_VAR_ssh_cidr: ${{ secrets.STAGING_SSH_CIDR || '0.0.0.0/0' }}
+  TF_VAR_game_port_cidr: ${{ secrets.STAGING_GAME_PORT_CIDR || '0.0.0.0/0' }}
+  TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+
+jobs:
+  runtime-cleanup:
+    name: Runtime Cleanup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: staging
+    if: ${{ inputs.cleanup_mode == 'runtime_only' }}
+
+    steps:
+      - name: Check cleanup confirmation
+        run: |
+          if [ "${{ inputs.confirm_cleanup }}" != "CLEANUP_K3S_LAB" ]; then
+            echo "confirm_cleanup must be exactly CLEANUP_K3S_LAB for runtime cleanup."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: infra/k3s/ansible/requirements.txt
+
+      - name: Install Ansible
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r infra/k3s/ansible/requirements.txt
+          ansible --version
+
+      - name: Resolve running K3s lab targets
+        env:
+          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
+          EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$RUNNER_TEMP/corp-tower-k3s"
+          INSTANCES_JSON="$RUNNER_TEMP/corp-tower-k3s/k3s-lab-instances.json"
+          INVENTORY_JSON="$RUNNER_TEMP/corp-tower-k3s/k3s-lab-inventory.json"
+
+          aws ec2 describe-instances \
+            --filters \
+              "Name=tag:Project,Values=corp-tower" \
+              "Name=tag:Environment,Values=k3s-lab" \
+              "Name=tag:Role,Values=k3s-gateway,k3s-control-plane,k3s-agent" \
+              "Name=instance-state-name,Values=running" \
+            --output json > "$INSTANCES_JSON"
+
+          python infra/k3s/ansible/scripts/generate_k3s_inventory.py \
+            --instances-json "$INSTANCES_JSON" \
+            --inventory "$INVENTORY_JSON" \
+            --ssh-user "$EC2_USER" \
+            --ssh-port "$EC2_PORT" \
+            --ssh-key-file "$HOME/.ssh/ec2_key" \
+            --known-hosts-file "$HOME/.ssh/known_hosts" \
+            --github-env "$GITHUB_ENV" \
+            --github-summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Prepare SSH known hosts
+        env:
+          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
+          EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
+          EC2_SSH_KEY: ${{ secrets.EC2_STAGING_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          mkdir -p ~/.ansible/cp
+          chmod 700 ~/.ssh
+          chmod 700 ~/.ansible
+          chmod 700 ~/.ansible/cp
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+          SSH_OPTS=(
+            -i ~/.ssh/ec2_key
+            -p "$EC2_PORT"
+            -o BatchMode=yes
+            -o ConnectTimeout=20
+            -o ConnectionAttempts=3
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=2
+            -o UserKnownHostsFile=~/.ssh/known_hosts
+            -o GlobalKnownHostsFile=/dev/null
+            -o StrictHostKeyChecking=yes
+          )
+
+          ssh-keyscan -T 10 -p "$EC2_PORT" -H "$GATEWAY_PUBLIC_IP" >> ~/.ssh/known_hosts
+
+          for PRIVATE_IP in $K3S_NODE_PRIVATE_IPS; do
+            scan_output="$(
+              ssh "${SSH_OPTS[@]}" "$EC2_USER@$GATEWAY_PUBLIC_IP" \
+                "ssh-keyscan -T 10 -p '$EC2_PORT' -H '$PRIVATE_IP' 2>/dev/null" || true
+            )"
+            printf '%s\n' "$scan_output" >> ~/.ssh/known_hosts
+          done
+
+      - name: Run K3s runtime cleanup
+        env:
+          ANSIBLE_CONFIG: infra/k3s/ansible/ansible.cfg
+        run: |
+          set -euo pipefail
+          ansible-playbook \
+            -i "$ANSIBLE_INVENTORY" \
+            infra/k3s/ansible/playbooks/cleanup.yml \
+            -e "confirm_cleanup=CLEANUP_K3S_LAB"
+
+  terraform-destroy:
+    name: Terraform Destroy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: staging
+    if: ${{ inputs.cleanup_mode == 'terraform_destroy' }}
+    defaults:
+      run:
+        working-directory: infra/k3s/terraform
+
+    steps:
+      - name: Check destroy confirmation
+        run: |
+          if [ "${{ inputs.confirm_cleanup }}" != "DESTROY_K3S_LAB" ]; then
+            echo "confirm_cleanup must be exactly DESTROY_K3S_LAB for terraform_destroy."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Ensure Terraform backend bucket exists
+        run: |
+          set -euo pipefail
+          BUCKET="corp-tower-tfstate-${AWS_REGION}"
+
+          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            echo "Terraform backend bucket exists: $BUCKET"
+          else
+            aws s3api create-bucket \
+              --bucket "$BUCKET" \
+              --region "$AWS_REGION" \
+              --create-bucket-configuration LocationConstraint="$AWS_REGION"
+          fi
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform destroy K3s lab resources
+        run: terraform destroy -input=false -auto-approve

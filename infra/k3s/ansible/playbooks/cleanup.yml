@@ -1,0 +1,75 @@
+---
+- name: Validate K3s lab cleanup confirmation
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Require explicit cleanup confirmation
+      ansible.builtin.assert:
+        that:
+          - confirm_cleanup is defined
+          - confirm_cleanup == "CLEANUP_K3S_LAB"
+        fail_msg: "confirm_cleanup must be exactly CLEANUP_K3S_LAB."
+
+- name: Uninstall K3s agents
+  hosts: k3s_agents
+  gather_facts: false
+  tasks:
+    - name: Check K3s agent uninstall script
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s-agent-uninstall.sh
+      register: k3s_agent_uninstall
+
+    - name: Run K3s agent uninstall
+      ansible.builtin.command: /usr/local/bin/k3s-agent-uninstall.sh
+      become: true
+      when: k3s_agent_uninstall.stat.exists
+      changed_when: true
+
+- name: Uninstall K3s server
+  hosts: k3s_server
+  gather_facts: false
+  tasks:
+    - name: Check K3s server uninstall script
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s-uninstall.sh
+      register: k3s_server_uninstall
+
+    - name: Run K3s server uninstall
+      ansible.builtin.command: /usr/local/bin/k3s-uninstall.sh
+      become: true
+      when: k3s_server_uninstall.stat.exists
+      changed_when: true
+
+- name: Remove K3s gateway runtime artifacts
+  hosts: gateway
+  gather_facts: false
+  tasks:
+    - name: Remove Caddy container
+      ansible.builtin.shell: |
+        set -euo pipefail
+        sudo docker rm -f corp-tower-k3s-caddy 2>/dev/null || true
+      args:
+        executable: /bin/bash
+      changed_when: true
+
+    - name: Disable K3s lab services
+      ansible.builtin.shell: |
+        set -euo pipefail
+        sudo systemctl disable --now corp-tower-k3s-duckdns-update.service 2>/dev/null || true
+        sudo systemctl disable --now corp-tower-k3s-nat.service 2>/dev/null || true
+        sudo systemctl daemon-reload
+      args:
+        executable: /bin/bash
+      changed_when: true
+
+    - name: Remove K3s lab gateway files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      become: true
+      loop:
+        - /etc/corp-tower/k3s
+        - /etc/systemd/system/corp-tower-k3s-duckdns-update.service
+        - /etc/systemd/system/corp-tower-k3s-nat.service
+        - /usr/local/bin/corp-tower-k3s-duckdns-update
+        - /usr/local/bin/corp-tower-k3s-nat

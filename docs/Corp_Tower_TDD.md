@@ -9,7 +9,7 @@
 - EC2 gateway/workers are pinned to one subnet so private gateway-to-worker routing is predictable.
 - Server remains authoritative for matchmaking, room state, timers, shape block assignment, tower history, scoring, refresh tokens, debug tuning, bots, reconnect, and room cleanup.
 - Managed AWS ALB/NLB, ElastiCache, and EKS are intentionally avoided to reduce learning-lab credit usage.
-- K3s is tracked as a manual learning path in [[K3s Manual Learning Plan]], not as the active staging deployment path.
+- K3s is tracked as a parallel lab stack in [[K3s Lab Stack]] and [[K3s Lab Workflows]]. Docker staging remains the rollback path.
 
 ## Repository Layout
 - `src/Server/Server.js`: WebSocket entry point and message router. -> [[Server Entry]]
@@ -27,6 +27,8 @@
 - `.github/workflows/Staging-Runtime-Cleanup.yml`: manual runtime cleanup for Docker artifacts created by server update. -> [[Staging Runtime Cleanup Workflow]]
 - `.github/workflows/Client-Android-Internal.yml`: Android internal-testing build/upload. -> [[Client Android Internal Workflow]]
 - `docs/components/K3s Manual Learning Plan.md`: phase-gated manual K3s lab plan with rollback checks. -> [[K3s Manual Learning Plan]]
+- `.github/workflows/K3s-Lab-Deploy.yml`: K3s lab deploy and public WebSocket smoke test. -> [[K3s Lab Workflows]]
+- `infra/k3s`: isolated K3s Terraform, Ansible, Kustomize, and Argo bootstrap assets. -> [[K3s Lab Stack]]
 
 ## Runtime Architecture
 - EC2-1 gateway:
@@ -42,6 +44,15 @@
   - use `RECONNECT_TTL_SECONDS=10` for staging/debug reconnect testing
   - retry Redis startup connection so workers can boot before the gateway during EC2 stop/start recovery
 - Redis stores active session, queue, and room state only; long-term leaderboard/player persistence remains deferred.
+
+## K3s Lab Architecture
+- K3s lab uses separate Terraform state key `k3s-lab/terraform.tfstate` and AWS resources tagged `Environment=k3s-lab`.
+- EC2-GW is public and acts as Caddy gateway, SSH bastion, DuckDNS updater, and NAT instance.
+- K3s control plane and agents are private EC2 instances in the lab VPC private subnet.
+- K3s disables Traefik and ServiceLB; public traffic stays on EC2-GW Caddy.
+- Corp Tower runs in namespace `corp-tower` with in-cluster Redis service `redis:6379`, two server replicas, and fixed NodePort `30300/tcp`.
+- K3s deploys use the same ECR repository secret as Docker staging and refresh namespace secret `ecr-pull`.
+- Argo CD manifests are present but not applied in the first rollout. Later Argo CD access is bastion plus port-forward only.
 
 ## Matchmaking, Rooms, And Reconnect
 - Room requires exactly 3 participants.
@@ -104,7 +115,7 @@
 - Manual automated master runs default to `Diagnostics -> Infra Plan -> Server Update`, with explicit fast server deploy and infra-plan-only options.
 - Server-side pushes to `main`/`master` trigger the automated master workflow; client-only pushes do not.
 - Cleanup is manual-only and used when an implementation fails or a revert needs to remove stale Docker runtime artifacts.
-- K3s work is manual-only until the install, agent join, test workload, Corp Tower workload, exposure, and rollback phases have been verified.
+- K3s lab workflows are manual except scheduled ECR pull-secret refresh. Argo CD is not installed by the first K3s rollout.
 - Infra Apply and EC2 Rebuild are manual-only because they can intentionally change infrastructure.
 - Infra plan/apply workflows are manual-only because creating or changing EC2 instances is an AWS side effect.
 - `Staging-Automated-Master.yml`:
@@ -134,6 +145,12 @@
 - `Staging-Runtime-Cleanup.yml`:
   - manually removes stale Corp Tower containers, temp files, Docker network, DuckDNS boot updater, and optional server/Caddy/legacy nginx/redis images
   - leaves Docker and AWS CLI installed because server update uses them as EC2 prerequisites
+- `K3s-Lab-Deploy.yml`:
+  - tests server code and builds/pushes the server image to ECR
+  - installs/configures K3s through EC2-GW bastion/NAT
+  - refreshes the `ecr-pull` Kubernetes image pull secret
+  - applies the Kustomize overlay that Argo CD will later watch
+  - validates K3s nodes, Redis, server replicas, Caddy, and public WSS
 
 ## Required GitHub Secrets
 - Server/infra: `AWS_ROLE_ARN`, `ECR_REPOSITORY`, `EC2_STAGING_HOST`, `EC2_STAGING_USER`, `EC2_STAGING_SSH_KEY`, `EC2_STAGING_SSH_PUBLIC_KEY`
@@ -149,6 +166,13 @@
   - EC2-1: `corp-tower-gateway`, `corp-tower-redis`
   - EC2-2/EC2-3: `corp-tower-server`
   - Redis: `docker exec corp-tower-redis redis-cli ping`
+  - client: connect to `wss://corp-tower.duckdns.org`
+- K3s lab checks:
+  - all K3s nodes Ready
+  - Redis deployment Ready
+  - two server replicas Ready
+  - `ecr-pull` secret exists in namespace `corp-tower`
+  - EC2-GW Caddy validates and proxies to NodePort `30300`
   - client: connect to `wss://corp-tower.duckdns.org`
 - Godot client import/parse check: run Godot headless against `src/Client/App/corp-tower`.
 

@@ -1,0 +1,3 @@
+{{ gateway_domain | default('corp-tower.duckdns.org') }} {
+  reverse_proxy {{ active_k3s_node_private_ips | map('regex_replace', '$', ':30300') | join(' ') }}
+}

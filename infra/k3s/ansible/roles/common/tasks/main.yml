@@ -1,0 +1,12 @@
+---
+- name: Verify passwordless sudo
+  ansible.builtin.command: sudo -n true
+  changed_when: false
+
+- name: Install private node prerequisites through EC2-GW NAT
+  ansible.builtin.command: sudo dnf install -y python3 curl jq aws-cli iproute iptables
+  changed_when: true
+
+- name: Verify curl can reach K3s installer endpoint
+  ansible.builtin.command: timeout 20 curl -fsSI https://get.k3s.io
+  changed_when: false

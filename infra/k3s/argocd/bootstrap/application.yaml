@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: corp-tower
+  namespace: argocd
+spec:
+  project: corp-tower-lab
+  source:
+    repoURL: https://github.com/trake25/Corp-Tower.git
+    targetRevision: codex/k3s-lab-stack-argocd-readiness
+    path: infra/k3s/apps/corp-tower/overlays/lab
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: corp-tower
+  syncPolicy: {}
