@@ -3,9 +3,42 @@
   ansible.builtin.command: sudo -n true
   changed_when: false
 
-- name: Install private node prerequisites through EC2-GW NAT
-  ansible.builtin.command: sudo dnf install -y python3 curl jq aws-cli iproute iptables
-  changed_when: true
+- name: Install missing private node prerequisites through EC2-GW NAT
+  ansible.builtin.shell: |
+    set -euo pipefail
+    packages=()
+
+    command -v python3 >/dev/null 2>&1 || packages+=(python3)
+    command -v curl >/dev/null 2>&1 || packages+=(curl-minimal)
+    command -v jq >/dev/null 2>&1 || packages+=(jq)
+    command -v aws >/dev/null 2>&1 || packages+=(awscli)
+    command -v ip >/dev/null 2>&1 || packages+=(iproute)
+    command -v iptables >/dev/null 2>&1 || packages+=(iptables-nft)
+
+    if [ "${#packages[@]}" -eq 0 ]; then
+      echo "private node prerequisites already installed"
+      exit 0
+    fi
+
+    echo "installing private node packages: ${packages[*]}"
+    sudo dnf install -y "${packages[@]}"
+  args:
+    executable: /bin/bash
+  register: private_node_prerequisites
+  changed_when: "'installing private node packages:' in private_node_prerequisites.stdout"
+
+- name: Verify private node prerequisite commands
+  ansible.builtin.shell: "command -v {{ item }}"
+  args:
+    executable: /bin/bash
+  changed_when: false
+  loop:
+    - python3
+    - curl
+    - jq
+    - aws
+    - ip
+    - iptables
 
 - name: Verify curl can reach K3s installer endpoint
   ansible.builtin.command: timeout 20 curl -fsSI https://get.k3s.io

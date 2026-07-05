@@ -8,7 +8,7 @@ locals {
     #!/bin/bash
     set -euo pipefail
     dnf update -y
-    dnf install -y python3 curl jq aws-cli iproute iptables docker
+    dnf install -y python3 curl-minimal jq awscli iproute iptables-nft docker
     systemctl enable docker
     systemctl start docker
   EOF

@@ -3,9 +3,44 @@
   ansible.builtin.command: sudo -n true
   changed_when: false
 
-- name: Install gateway prerequisites
-  ansible.builtin.command: sudo dnf install -y python3 curl jq aws-cli iproute iptables docker
-  changed_when: true
+- name: Install missing gateway prerequisites
+  ansible.builtin.shell: |
+    set -euo pipefail
+    packages=()
+
+    command -v python3 >/dev/null 2>&1 || packages+=(python3)
+    command -v curl >/dev/null 2>&1 || packages+=(curl-minimal)
+    command -v jq >/dev/null 2>&1 || packages+=(jq)
+    command -v aws >/dev/null 2>&1 || packages+=(awscli)
+    command -v ip >/dev/null 2>&1 || packages+=(iproute)
+    command -v iptables >/dev/null 2>&1 || packages+=(iptables-nft)
+    command -v docker >/dev/null 2>&1 || packages+=(docker)
+
+    if [ "${#packages[@]}" -eq 0 ]; then
+      echo "gateway prerequisites already installed"
+      exit 0
+    fi
+
+    echo "installing gateway packages: ${packages[*]}"
+    sudo dnf install -y "${packages[@]}"
+  args:
+    executable: /bin/bash
+  register: gateway_prerequisites
+  changed_when: "'installing gateway packages:' in gateway_prerequisites.stdout"
+
+- name: Verify gateway prerequisite commands
+  ansible.builtin.shell: "command -v {{ item }}"
+  args:
+    executable: /bin/bash
+  changed_when: false
+  loop:
+    - python3
+    - curl
+    - jq
+    - aws
+    - ip
+    - iptables
+    - docker
 
 - name: Enable Docker on EC2-GW
   ansible.builtin.command: sudo systemctl enable --now docker
