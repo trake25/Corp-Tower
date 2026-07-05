@@ -16,9 +16,9 @@
 - `ECR_REPOSITORY`
 - `EC2_STAGING_USER`
 - `EC2_STAGING_SSH_KEY`
-- `EC2_STAGING_SSH_PUBLIC_KEY`
 - `DUCKDNS_TOKEN`
-- Optional: `EC2_STAGING_PORT`, `STAGING_SSH_CIDR`, `STAGING_GAME_PORT_CIDR`
+- Optional: `EC2_STAGING_SSH_PUBLIC_KEY`, `EC2_STAGING_PORT`, `STAGING_SSH_CIDR`, `STAGING_GAME_PORT_CIDR`
+- K3s infra workflows derive the EC2 key-pair public key from `EC2_STAGING_SSH_KEY` when `EC2_STAGING_SSH_PUBLIC_KEY` is empty.
 
 ## Operational Checks
 - Terraform `fmt` and `validate`.

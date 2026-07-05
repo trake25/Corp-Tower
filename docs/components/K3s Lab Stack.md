@@ -6,7 +6,7 @@
 
 ## Responsibilities
 - Keep K3s lab AWS resources and Terraform state separate from Docker staging.
-- Reuse existing GitHub staging secrets and ECR repository.
+- Reuse existing GitHub staging secrets and ECR repository. The K3s infra workflows can derive the EC2 public key from `EC2_STAGING_SSH_KEY` when `EC2_STAGING_SSH_PUBLIC_KEY` is empty.
 - Route public WSS through EC2-GW Caddy to K3s NodePort `30300`.
 - Keep K3s nodes private behind EC2-GW bastion/NAT.
 - Keep Argo CD manifests ready but unapplied during the first rollout.

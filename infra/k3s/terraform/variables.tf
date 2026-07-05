@@ -11,8 +11,16 @@ variable "environment" {
 }
 
 variable "ssh_public_key" {
-  description = "Public SSH key for EC2 access. Reuse EC2_STAGING_SSH_PUBLIC_KEY."
+  description = "Public SSH key for EC2 access. Workflows use EC2_STAGING_SSH_PUBLIC_KEY or derive it from EC2_STAGING_SSH_KEY."
   type        = string
+
+  validation {
+    condition = can(regex(
+      "^(ssh-rsa|ssh-ed25519|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521|sk-ssh-ed25519@openssh.com|sk-ecdsa-sha2-nistp256@openssh.com)\\s+",
+      trimspace(var.ssh_public_key)
+    ))
+    error_message = "ssh_public_key must be a non-empty OpenSSH public key. Set EC2_STAGING_SSH_PUBLIC_KEY or let the K3s workflows derive it from EC2_STAGING_SSH_KEY."
+  }
 }
 
 variable "ssh_cidr" {

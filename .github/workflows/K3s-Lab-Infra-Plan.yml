@@ -40,6 +40,36 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
 
+      - name: Resolve SSH public key for Terraform
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_STAGING_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${TF_VAR_ssh_public_key:-}" ]; then
+            echo "Using EC2_STAGING_SSH_PUBLIC_KEY for Terraform key pair." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [ -z "${EC2_SSH_KEY:-}" ]; then
+            echo "::error::Missing EC2_STAGING_SSH_PUBLIC_KEY and EC2_STAGING_SSH_KEY. K3s Terraform needs a public key for the EC2 key pair."
+            exit 1
+          fi
+
+          private_key_file="$(mktemp)"
+          trap 'rm -f "$private_key_file"' EXIT
+          printf '%s\n' "$EC2_SSH_KEY" > "$private_key_file"
+          chmod 600 "$private_key_file"
+
+          public_key="$(ssh-keygen -y -f "$private_key_file")"
+          if [ -z "$public_key" ]; then
+            echo "::error::Could not derive a public key from EC2_STAGING_SSH_KEY."
+            exit 1
+          fi
+
+          echo "TF_VAR_ssh_public_key=$public_key" >> "$GITHUB_ENV"
+          echo "Derived Terraform key pair public key from EC2_STAGING_SSH_KEY." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Ensure Terraform backend bucket exists
         run: |
           set -euo pipefail

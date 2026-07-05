@@ -37,3 +37,8 @@
 - Start the Docker staging EC2s.
 - Run the existing `Staging Server Update` workflow.
 - That workflow updates DuckDNS back to the Docker EC2 gateway and redeploys the Docker Redis/Caddy/server runtime.
+
+## Secret Notes
+- K3s workflows reuse the existing GitHub `staging` Environment.
+- `EC2_STAGING_SSH_PUBLIC_KEY` is preferred for Terraform key-pair creation.
+- If `EC2_STAGING_SSH_PUBLIC_KEY` is empty, K3s infra workflows derive the public key from `EC2_STAGING_SSH_KEY`.
