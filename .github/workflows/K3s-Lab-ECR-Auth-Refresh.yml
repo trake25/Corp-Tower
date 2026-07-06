@@ -2,9 +2,6 @@ name: K3s Lab ECR Auth Refresh
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 */6 * * *"
-
 permissions:
   id-token: write
   contents: read
