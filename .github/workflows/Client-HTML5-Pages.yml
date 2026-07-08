@@ -1,0 +1,95 @@
+name: Client HTML5 Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: client-html5-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    env:
+      GODOT_VERSION: "4.6.2"
+      GODOT_STATUS: "stable"
+      GODOT_PROJECT_PATH: "src/Client/App/corp-tower"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Download Godot and export templates
+        run: |
+          set -euo pipefail
+
+          GODOT_TAG="${GODOT_VERSION}-${GODOT_STATUS}"
+          GODOT_FILE="Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64"
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}"
+
+          curl -L -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_TAG}/${GODOT_FILE}.zip"
+
+          unzip -q godot.zip
+          chmod +x "$GODOT_FILE"
+          sudo mv "$GODOT_FILE" /usr/local/bin/godot
+
+          curl -L -o templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_TAG}/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz"
+
+          mkdir -p "$TEMPLATE_DIR"
+          unzip -q templates.tpz
+          cp -R templates/* "$TEMPLATE_DIR/"
+
+      - name: Create CI Web export preset
+        run: |
+          cp .github/godot/export_presets.web.ci.cfg \
+             "$GODOT_PROJECT_PATH/export_presets.cfg"
+
+      - name: Import Godot project
+        run: |
+          godot --headless \
+            --path "$GODOT_PROJECT_PATH" \
+            --editor \
+            --quit
+
+      - name: Export HTML5
+        run: |
+          mkdir -p build/web
+
+          godot \
+            --headless \
+            --path "$GODOT_PROJECT_PATH" \
+            --export-release "Web" \
+            "$GITHUB_WORKSPACE/build/web/index.html"
+
+      - name: Disable Jekyll
+        run: |
+          touch build/web/.nojekyll
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+
+    runs-on: ubuntu-24.04
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
