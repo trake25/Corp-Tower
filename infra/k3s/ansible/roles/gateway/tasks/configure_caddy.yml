@@ -6,7 +6,7 @@
       - active_k3s_node_private_ips | length > 0
     fail_msg: "active_k3s_node_private_ips must include at least one private K3s node IP."
 
-- name: Render K3s lab Caddyfile
+- name: Render Server K3s Caddyfile
   ansible.builtin.template:
     src: corp-tower-k3s-caddy.Caddyfile.j2
     dest: /etc/corp-tower/k3s/Caddyfile
@@ -19,14 +19,14 @@
   ansible.builtin.command: timeout 180 sudo docker pull caddy:2-alpine
   changed_when: true
 
-- name: Validate rendered K3s lab Caddyfile
+- name: Validate rendered Server K3s Caddyfile
   ansible.builtin.command: >
     timeout 30 sudo docker run --rm
     -v /etc/corp-tower/k3s/Caddyfile:/etc/caddy/Caddyfile:ro
     caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
   changed_when: false
 
-- name: Start or reload K3s lab Caddy gateway
+- name: Start or reload Server K3s Caddy gateway
   ansible.builtin.shell: |
     set -euo pipefail
     if sudo docker inspect corp-tower-k3s-caddy >/dev/null 2>&1; then

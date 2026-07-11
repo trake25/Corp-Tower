@@ -1,8 +1,8 @@
-# Corp Tower K3s Lab Ansible
+# Corp Tower Server K3s Ansible
 
 ## Purpose
-- Configure the isolated K3s lab after Terraform creates EC2-GW and private K3s nodes.
-- Keep the K3s lab separate from the Docker staging Ansible path.
+- Configure the isolated Server K3s after Terraform creates EC2-GW and private K3s nodes.
+- Keep the Server K3s separate from the Docker staging Ansible path.
 
 ## Responsibilities
 - Generate a temporary inventory from AWS EC2 tag discovery.
@@ -12,8 +12,8 @@
 - Provide a runtime cleanup playbook for K3s services and gateway artifacts.
 
 ## CI Entry Points
-- Workflow: `.github/workflows/K3s-Lab-Deploy.yml`
-- Workflow: `.github/workflows/K3s-Lab-Cleanup.yml`
+- Workflow: `.github/workflows/Server-K3s-Deploy.yml`
+- Workflow: `.github/workflows/Server-K3s-Cleanup.yml`
 - Playbook: `playbooks/site.yml`
 - Cleanup playbook: `playbooks/cleanup.yml`
 - Inventory generator: `scripts/generate_k3s_inventory.py`

@@ -2,14 +2,13 @@
 
 ## Purpose
 - Preserve the step-by-step K3s learning plan, proof checks, and rollback notes for Corp Tower.
-- Keep the current Docker staging path available as the known-good rollback target.
+- Keep the old Docker staging notes only as historical rollback context.
 - Require a revert path after every implementation step before moving forward.
 
 ## Current Baseline
-- Active staging now runs on the K3s lab path in [[K3s Lab Stack]] and [[K3s Lab Workflows]].
-- Docker EC2 gateway/workers remain available as the manual rollback/showcase path.
-- `Staging Automated Master` is manual-only.
-- `K3s Lab Automated Master` owns watched server/K3s path pushes while K3s is live.
+- Active staging now runs on the Server K3s path in [[Server K3s Stack]] and [[Server K3s Workflows]].
+- Docker staging GitHub Actions workflows have been removed.
+- `Server K3s Automated Master` owns watched server/K3s path pushes while K3s is live.
 - The K3s implementation track uses isolated AWS resources, separate Terraform state, and Argo CD-ready manifests.
 - The current Terraform `instance_type` default is `t3.micro`. K3s documents a server baseline of 2 CPU cores and 2 GB RAM, while agents need 1 CPU core and 512 MB RAM. Do not start the control plane on the current default size unless the node is intentionally resized or replaced for the lab.
 
@@ -22,13 +21,13 @@
 - K3s etcd snapshots: https://docs.k3s.io/cli/etcd-snapshot
 
 ## Guardrails
-- Keep Docker staging as the manual rollback path while K3s owns the live endpoint.
+- Keep rollback steps explicit while K3s owns the live endpoint.
 - Do one phase at a time. Each phase must have:
   - baseline capture
   - manual action
   - proof check
   - rollback command or AWS rollback path
-- Prefer an isolated K3s lab EC2 set if AWS credits allow it. If reusing staging EC2, stop or clean Docker runtime first and accept that staging may be unavailable during the lab.
+- Prefer an isolated Server K3s EC2 set if AWS credits allow it. If reusing staging EC2, stop or clean Docker runtime first and accept that staging may be unavailable during the lab.
 - Keep K3s node networking private where possible. Do not expose Flannel VXLAN UDP `8472` to the internet.
 - Use a K3s config file for settings we want to remember instead of relying only on install command flags.
 - Take AWS EBS snapshots before installing K3s on any existing staging node.
@@ -42,21 +41,19 @@
 
 ## Phase 0 - Baseline And Stop Criteria
 ### Manual Action
-- Run `Staging Diagnostics`.
-- Run `Staging Infra Plan` and confirm no create, delete, or replace action is planned.
-- Run `Staging Server Update` if the Docker staging path is not currently healthy.
+- Run `Server K3s Diagnostics`.
+- Run `Server K3s Infra Plan` and review the plan.
 - Record:
   - EC2 instance ids, public IPs, private IPs, subnet id, and security group id.
   - current game URL: `wss://corp-tower.duckdns.org`
   - current Docker containers on each node: `sudo docker ps --format '{{.Names}} {{.Image}} {{.Status}}'`
 
 ### Proof Check
-- Godot can connect to the Docker staging gateway.
-- Gateway Redis returns `PONG`.
-- Worker server containers are healthy.
+- Godot can connect to the Server K3s gateway.
+- K3s nodes, Redis, and server replicas are ready.
 
 ### Rollback
-- No changes should have been made. If Docker staging is broken, run [[Staging Runtime Cleanup Workflow]] and then [[Server Staging Deploy Workflow]].
+- No changes should have been made.
 
 ## Phase 1 - Infra Safety Prep
 ### Manual Action
@@ -250,11 +247,11 @@ sudo k3s kubectl delete namespace corp-tower
 sudo k3s kubectl delete service <public-service-name> -n corp-tower
 ```
 
-- If exposure changed the Docker gateway, rerun [[Server Staging Deploy Workflow]] to restore Caddy and Docker worker routing.
+- If exposure changed the Server K3s gateway, rerun [[Server K3s Workflows]] with `full_preflight`.
 
 ## Phase 8 - Decide Whether To Productize
 ### Manual Action
-- Decision completed: K3s is the live automated lab path and Docker remains the manual rollback/showcase path.
+- Decision completed: Server K3s is the live automated lab path.
 - Keep comparing the K3s path against the Docker workflow for:
   - learning value
   - runtime cost
@@ -263,16 +260,16 @@ sudo k3s kubectl delete service <public-service-name> -n corp-tower
   - GitHub Actions changes required
 
 ### Proof Check
-- Written decision in [[Staging Deploy Guide]] or [[Corp_Tower_TDD]].
+- Written decision in [[Corp_Tower_TDD]].
 
 ### Rollback
-- Run the manual Docker staging workflow to point DuckDNS back to Docker, then stop or uninstall K3s lab resources as needed.
+- Stop or uninstall Server K3s resources as needed.
 
 ## Backup And Revert Matrix
 | Layer | Before Change | Proof | Revert |
 |---|---|---|---|
 | Docs | commit or patch review | links resolve | revert doc commit |
-| Terraform/security group | `Staging Infra Plan` | rules visible in AWS | remove rules and re-apply |
+| Terraform/security group | `Server K3s Infra Plan` | rules visible in AWS | remove rules and re-apply |
 | EC2 root volume | EBS snapshot | snapshot completed | stop instance, restore/swap volume |
 | K3s server config | copy `/etc/rancher/k3s/config.yaml` | config file readable | edit config, restart, or uninstall |
 | K3s SQLite datastore | copy `/var/lib/rancher/k3s/server/db/` and `/var/lib/rancher/k3s/server/token` | backup files exist off-node | stop K3s, restore db and token |
@@ -282,8 +279,8 @@ sudo k3s kubectl delete service <public-service-name> -n corp-tower
 | Public exposure | record previous Caddy/service config | Godot connects | delete exposure and rerun Docker deploy |
 
 ## Completion Definition
-- The K3s lab promotion is complete only when:
-  - the current Docker staging path is still documented as the known-good fallback
+- The Server K3s promotion is complete only when:
+  - Server K3s is documented as the active path
   - K3s server install, agent join, test workload, Corp Tower internal deployment, and exposure have each been executed with proof checks
   - each phase has been reverted successfully at least once
   - automatic K3s deploys are active and Docker deploys remain manual

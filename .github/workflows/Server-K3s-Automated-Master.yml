@@ -1,4 +1,4 @@
-name: K3s Lab Automated Master
+name: Server K3s Automated Master
 
 on:
   push:
@@ -10,14 +10,14 @@ on:
       - "infra/k3s/ansible/**"
       - "infra/k3s/apps/**"
       - "infra/k3s/terraform/**"
-      - ".github/workflows/K3s-Lab-Automated-Master.yml"
-      - ".github/workflows/K3s-Lab-Diagnostics.yml"
-      - ".github/workflows/K3s-Lab-Infra-Plan.yml"
-      - ".github/workflows/K3s-Lab-Deploy.yml"
+      - ".github/workflows/Server-K3s-Automated-Master.yml"
+      - ".github/workflows/Server-K3s-Diagnostics.yml"
+      - ".github/workflows/Server-K3s-Infra-Plan.yml"
+      - ".github/workflows/Server-K3s-Deploy.yml"
   workflow_dispatch:
     inputs:
       deploy_mode:
-        description: "Preflight level for manual K3s lab runs."
+        description: "Preflight level for manual Server K3s runs."
         required: true
         default: "full_preflight"
         type: choice
@@ -31,7 +31,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: k3s-lab-automated-master-${{ github.ref }}
+  group: server-k3s-automated-master-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -49,7 +49,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Classify K3s lab path changes
+      - name: Classify Server K3s path changes
         id: classify
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -107,7 +107,7 @@ jobs:
               fast_k3s_deploy=false
             fi
 
-            if printf '%s\n' "$changed_paths" | grep -Eq '^\.github/workflows/(K3s-Lab-Automated-Master|K3s-Lab-Diagnostics|K3s-Lab-Infra-Plan|K3s-Lab-Deploy)\.yml$'; then
+            if printf '%s\n' "$changed_paths" | grep -Eq '^\.github/workflows/(Server-K3s-Automated-Master|Server-K3s-Diagnostics|Server-K3s-Infra-Plan|Server-K3s-Deploy)\.yml$'; then
               run_diagnostics=true
               run_infra_plan=true
               fast_k3s_deploy=false
@@ -125,7 +125,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
           {
-            echo "## K3s lab automated master classification"
+            echo "## Server K3s automated master classification"
             echo
             echo "- Diagnostics: \`$run_diagnostics\`"
             echo "- Infra plan: \`$run_infra_plan\`"
@@ -142,7 +142,7 @@ jobs:
     name: Diagnostics
     needs: classify-changes
     if: ${{ needs.classify-changes.outputs.run_diagnostics == 'true' }}
-    uses: ./.github/workflows/K3s-Lab-Diagnostics.yml
+    uses: ./.github/workflows/Server-K3s-Diagnostics.yml
     secrets: inherit
 
   infra-plan:
@@ -151,14 +151,14 @@ jobs:
       - classify-changes
       - diagnostics
     if: ${{ always() && needs.classify-changes.outputs.run_infra_plan == 'true' && (needs.diagnostics.result == 'success' || needs.diagnostics.result == 'skipped') }}
-    uses: ./.github/workflows/K3s-Lab-Infra-Plan.yml
+    uses: ./.github/workflows/Server-K3s-Infra-Plan.yml
     secrets: inherit
 
   k3s-deploy-fast:
     name: K3s Deploy Fast
     needs: classify-changes
     if: ${{ needs.classify-changes.outputs.run_k3s_deploy == 'true' && needs.classify-changes.outputs.fast_k3s_deploy == 'true' }}
-    uses: ./.github/workflows/K3s-Lab-Deploy.yml
+    uses: ./.github/workflows/Server-K3s-Deploy.yml
     secrets: inherit
 
   k3s-deploy-after-preflight:
@@ -168,5 +168,5 @@ jobs:
       - diagnostics
       - infra-plan
     if: ${{ always() && needs.classify-changes.outputs.run_k3s_deploy == 'true' && needs.classify-changes.outputs.fast_k3s_deploy != 'true' && (needs.diagnostics.result == 'success' || needs.diagnostics.result == 'skipped') && (needs.infra-plan.result == 'success' || needs.infra-plan.result == 'skipped') }}
-    uses: ./.github/workflows/K3s-Lab-Deploy.yml
+    uses: ./.github/workflows/Server-K3s-Deploy.yml
     secrets: inherit

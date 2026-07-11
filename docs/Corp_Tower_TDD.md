@@ -4,11 +4,11 @@
 ## System Overview
 - 3-player real-time selfish-cooperation puzzle game.
 - Godot `4.6.2.stable` Android client connects by secure WebSocket to `wss://corp-tower.duckdns.org`.
-- Live staging currently runs on the K3s lab stack behind EC2-GW Caddy.
-- Docker EC2-1/EC2-2/EC2-3 staging remains the manual rollback and showcase path.
+- Live staging currently runs on the Server K3s stack behind EC2-GW Caddy.
+- Docker EC2-1/EC2-2/EC2-3 staging workflows are deprecated and removed.
 - Server remains authoritative for matchmaking, room state, timers, shape block assignment, tower history, scoring, refresh tokens, debug tuning, bots, reconnect, and room cleanup.
-- Managed AWS ALB/NLB, ElastiCache, and EKS are intentionally avoided to reduce learning-lab credit usage.
-- K3s is tracked in [[K3s Lab Stack]] and [[K3s Lab Workflows]] with Docker staging retained as the rollback path.
+- K3s is tracked in [[Server K3s Stack]] and [[Server K3s Workflows]].
+- EKS, NLB with Elastic IPs, and ElastiCache Redis are tracked as a parallel plan-only path in [[Server EKS Stack]] and [[Server EKS Workflow]].
 
 ## Repository Layout
 - `src/Server/Server.js`: WebSocket entry point and message router. -> [[Server Entry]]
@@ -18,20 +18,15 @@
 - `src/Server/Game_Config.js`: runtime balance and debug-tuning variables. -> [[Game Config]]
 - `src/Server/Bot_Manager.js`: QA bot action loops and placement behavior. -> [[Bot Manager]]
 - `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd`: Godot WebSocket adapter with reconnect identity persistence. -> [[NetworkManager]]
-- `.github/workflows/Staging-Diagnostics.yml`: manual read-only AWS/network/SSH diagnostics. -> [[Staging Diagnostics Workflow]]
-- `.github/workflows/Staging-Automated-Master.yml`: manual queue for Docker staging rollback/showcase updates. -> [[Staging Automated Master Workflow]]
-- `.github/workflows/Staging-Infra-Plan.yml`: manual Terraform plan for EC2 learning lab. -> [[Terraform Infrastructure]]
-- `.github/workflows/Staging-Infra-Apply.yml`: manual Terraform apply after a reviewed plan. -> [[Terraform Infrastructure]]
-- `.github/workflows/Server-Staging-Deploy.yml`: Docker/ECR deploy to EC2 gateway/workers. -> [[Server Staging Deploy Workflow]]
-- `.github/workflows/Staging-Runtime-Cleanup.yml`: manual runtime cleanup for Docker artifacts created by server update. -> [[Staging Runtime Cleanup Workflow]]
-- `.github/workflows/Staging-Infra-Cleanup.yml`: manual targeted cleanup for old Docker staging AWS resources not reused by K3s. -> [[Staging Infra Cleanup Workflow]]
 - `.github/workflows/Client-Android-Internal.yml`: Android internal-testing build/upload. -> [[Client Android Internal Workflow]]
-- `docs/components/K3s Manual Learning Plan.md`: phase-gated manual K3s lab plan with rollback checks. -> [[K3s Manual Learning Plan]]
-- `.github/workflows/K3s-Lab-Deploy.yml`: K3s lab deploy and public WebSocket smoke test. -> [[K3s Lab Workflows]]
-- `.github/workflows/K3s-Lab-Automated-Master.yml`: automatic/manual K3s lab deploy queue. -> [[K3s Lab Automated Master Workflow]]
-- `infra/k3s`: isolated K3s Terraform, Ansible, Kustomize, and Argo bootstrap assets. -> [[K3s Lab Stack]]
+- `docs/components/K3s Manual Learning Plan.md`: phase-gated manual Server K3s plan with rollback checks. -> [[K3s Manual Learning Plan]]
+- `.github/workflows/Server-K3s-Deploy.yml`: Server K3s deploy and public WebSocket smoke test. -> [[Server K3s Workflows]]
+- `.github/workflows/Server-K3s-Automated-Master.yml`: automatic/manual Server K3s deploy queue. -> [[Server K3s Automated Master Workflow]]
+- `.github/workflows/Server-EKS-Infra-Plan.yml`: plan-only managed AWS Server EKS path. -> [[Server EKS Workflow]]
+- `infra/k3s`: isolated K3s Terraform, Ansible, Kustomize, and Argo bootstrap assets. -> [[Server K3s Stack]]
+- `infra/eks`: plan-only EKS, NLB/EIP, and ElastiCache Terraform assets. -> [[Server EKS Stack]]
 
-## Docker Rollback Runtime Architecture
+## Deprecated Docker Runtime Architecture
 - EC2-1 gateway:
   - public entrypoint `wss://corp-tower.duckdns.org`
   - `caddy:2-alpine` reverse proxy to worker private IPs on port `3000`
@@ -46,8 +41,8 @@
   - retry Redis startup connection so workers can boot before the gateway during EC2 stop/start recovery
 - Redis stores active session, queue, and room state only; long-term leaderboard/player persistence remains deferred.
 
-## Active K3s Lab Architecture
-- K3s lab uses separate Terraform state key `k3s-lab/terraform.tfstate` and AWS resources tagged `Environment=k3s-lab`.
+## Active Server K3s Architecture
+- Server K3s uses separate Terraform state key `k3s-lab/terraform.tfstate` and AWS resources tagged `Environment=k3s-lab`.
 - EC2-GW is public and acts as Caddy gateway, SSH bastion, DuckDNS updater, and NAT instance.
 - K3s control plane and agents are private EC2 instances in the lab VPC private subnet.
 - K3s disables Traefik and ServiceLB; public traffic stays on EC2-GW Caddy.
@@ -111,54 +106,28 @@
 - `drawPile` and `nextDrawBlock` are persisted so reconnecting clients see the same shared refill queue.
 
 ## CI/CD
-- Normal server-only pushes run the K3s fast deploy path through `K3s-Lab-Automated-Master.yml`.
-- K3s workflow changes run `Diagnostics -> Infra Plan` before K3s deploy when deployment is needed; K3s infra-only changes run `Infra Plan` without deploying.
-- Manual K3s master runs default to `Diagnostics -> Infra Plan -> K3s Deploy`, with explicit fast server deploy and infra-plan-only options.
-- Docker staging automated master is manual-only for rollback/showcase.
-- Cleanup is manual-only and used when an implementation fails or a revert needs to remove stale Docker runtime artifacts.
-- K3s lab workflows include an automatic/manual master queue, manual infra apply/cleanup, and scheduled ECR pull-secret refresh. Argo CD is not installed by the first K3s rollout.
-- Infra Apply and EC2 Rebuild are manual-only because they can intentionally change infrastructure.
-- Infra plan/apply workflows are manual-only because creating or changing EC2 instances is an AWS side effect.
-- `Staging-Automated-Master.yml`:
-  - classifies the selected manual deploy mode before selecting the queue
-  - runs manual fast Docker server updates directly
-  - triggers only through manual dispatch
-  - does not call cleanup, infra apply, or EC2 rebuild
-- `Staging-Diagnostics.yml`:
-  - verifies tagged EC2 topology, status checks, security group rules, routes, NACLs, and SSH reachability
-- `Staging-Infra-Plan.yml`:
-  - creates S3 backend bucket if missing
-  - imports existing staging resources into Terraform state
-  - plans EC2-1 gateway and EC2-2/EC2-3 worker changes without applying them
-  - fails when Terraform plans create, delete, or replace actions
-- `Staging-Infra-Apply.yml`:
-  - applies the reviewed Terraform plan path only after manual `APPLY` confirmation
-- `Server-Staging-Deploy.yml`:
-  - tests server on GitHub VM
-  - builds/pushes Docker image to ECR
-  - verifies gateway/workers are in one subnet
-  - starts gateway Redis and waits for `PONG`
-  - deploys Docker server containers on EC2-2/EC2-3 workers
-  - updates DuckDNS before gateway reload so `corp-tower.duckdns.org` points at EC2-1
-  - generates and validates the Caddyfile with `caddy validate`
-  - drains one worker from Caddy, updates that worker, and restores all healthy workers in Caddy
-  - starts/reloads gateway Caddy proxy to worker private IPs on port `3000`
-- `Staging-Runtime-Cleanup.yml`:
-  - manually removes stale Corp Tower containers, temp files, Docker network, DuckDNS boot updater, and optional server/Caddy/legacy nginx/redis images
-  - leaves Docker and AWS CLI installed because server update uses them as EC2 prerequisites
-- `Staging-Infra-Cleanup.yml`:
-  - removes old Docker staging EC2-only AWS resources through a targeted Terraform destroy plan
-  - preserves ECR and GitHub OIDC resources reused by K3s
-- `K3s-Lab-Deploy.yml`:
+- Normal server-only pushes run the Server K3s fast deploy path through `Server-K3s-Automated-Master.yml`.
+- Server K3s workflow changes run `Diagnostics -> Infra Plan` before deploy when deployment is needed; K3s infra-only changes run `Infra Plan` without deploying.
+- Manual Server K3s master runs default to `Diagnostics -> Infra Plan -> K3s Deploy`, with explicit fast server deploy and infra-plan-only options.
+- Server K3s cleanup is manual-only. Runtime cleanup removes K3s/Caddy artifacts; `terraform_destroy` removes all AWS resources managed by `infra/k3s/terraform`.
+- Server K3s infra apply is manual-only because it creates or changes EC2, VPC, IAM, route, security group, and key pair resources.
+- `Server-K3s-Infra-Plan.yml` plans all K3s Terraform resources without applying them and allows create/delete actions to be reviewed for weekend recreate or weekday cleanup checks.
+- `Server-K3s-Infra-Apply.yml` applies the reviewed K3s Terraform plan only after manual `APPLY_SERVER_K3S` confirmation.
+- `Server-K3s-Cleanup.yml` destroys the K3s AWS stack only after manual `DESTROY_SERVER_K3S` confirmation.
+- `Server-K3s-Deploy.yml`:
   - tests server code and builds/pushes the server image to ECR
   - installs/configures K3s through EC2-GW bastion/NAT
   - refreshes the `ecr-pull` Kubernetes image pull secret
   - applies the Kustomize overlay that Argo CD will later watch
   - validates K3s nodes, Redis, server replicas, Caddy, and public WSS
-- `K3s-Lab-Automated-Master.yml`:
+- `Server-K3s-Automated-Master.yml`:
   - runs watched server and K3s path pushes automatically
   - manual `full_preflight` runs `Diagnostics -> Infra Plan -> K3s Deploy`
   - manual `fast_server_deploy` runs K3s deploy directly
+- `Server-EKS-Infra-Plan.yml`:
+  - plans the parallel managed AWS path under `infra/eks/terraform`
+  - includes EKS, private managed nodes, internet-facing NLB, Elastic IPs, and ElastiCache Redis
+  - does not apply infrastructure
 
 ## Required GitHub Secrets
 - Server/infra: `AWS_ROLE_ARN`, `ECR_REPOSITORY`, `EC2_STAGING_HOST`, `EC2_STAGING_USER`, `EC2_STAGING_SSH_KEY`, `EC2_STAGING_SSH_PUBLIC_KEY`
@@ -170,12 +139,7 @@
 - Current server test: Node syntax checks for server modules including `Redis_State.js`, plus `node --test Score_Events.test.js` for score event and summary contracts.
 - Balance simulator: `npm run balance:simulate -- <levels> <runs>` from `src/Server` estimates generated pile reachability, exact possibility, smart-play completion, overbuild, placement counts, and level score distribution.
 - Current client pipeline: Godot import/parse, required client compile/startup smoke test, required GUT tests, signed Android AAB export, deployment artifact validation, optional Google Play internal upload, and post-upload internal-track version-code verification.
-- Staging debug checks:
-  - EC2-1: `corp-tower-gateway`, `corp-tower-redis`
-  - EC2-2/EC2-3: `corp-tower-server`
-  - Redis: `docker exec corp-tower-redis redis-cli ping`
-  - client: connect to `wss://corp-tower.duckdns.org`
-- K3s lab checks:
+- Server K3s checks:
   - all K3s nodes Ready
   - Redis deployment Ready
   - two server replicas Ready
@@ -189,7 +153,7 @@
 - Structured logging and integration tests for multi-worker Redis reconnect.
 - Admin authorization for debug config before public release.
 - Add integration tests for multi-worker Redis reconnect and gateway routing.
-- Owned domain or Elastic IP can replace DuckDNS later when paid production infrastructure is acceptable.
+- Review Server EKS plan output and cost impact before adding apply/deploy workflows.
 
 ## TDD Maintenance Policy
 - TDD is the source of truth for server/client architecture, deployment, CI/CD, runtime operations, message contracts, persistence, testing strategy, and tooling.

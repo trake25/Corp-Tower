@@ -1,7 +1,7 @@
 # Changelog
 
 ## 2026-07-05
-- feature: Added a parallel isolated K3s lab stack with separate Terraform state, private K3s nodes behind EC2-GW, Kustomize manifests, Argo CD bootstrap readiness, and dedicated GitHub Actions workflows.
+- feature: Added a parallel isolated Server K3s stack with separate Terraform state, private K3s nodes behind EC2-GW, Kustomize manifests, Argo CD bootstrap readiness, and dedicated GitHub Actions workflows.
 - fix: Added Redis startup retry for worker containers so EC2 worker instances can recover when they boot before the gateway Redis instance.
 - fix: Persisted the generated Caddyfile outside `/tmp` so the gateway container can restart after EC2 stop/start.
 - fix: Corrected the Caddyfile template so worker upstreams do not concatenate with the closing brace during Ansible rendering.

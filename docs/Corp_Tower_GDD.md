@@ -1,5 +1,5 @@
-﻿# Corp Tower GDD
-> âš ï¸ Verify against current implementation before trusting balancing values and scoring formulas.
+# Corp Tower GDD
+> ⚠️ Verify against current implementation before trusting balancing values and scoring formulas.
 
 ## Core Concept
 - 3-player real-time cooperative puzzle game.
@@ -54,8 +54,8 @@
 - On level failure, team carry-over is discarded during checkpoint rollback.
 
 ## Refresh Token System
-- Max 1 token per player `(1/1)` â€” per-player UI and variable.
-- Max 2 uses per level `(2/2)` â€” global UI and variable.
+- Max 1 token per player `(1/1)` — per-player UI and variable.
+- Max 2 uses per level `(2/2)` — global UI and variable.
 - Effect: replaces all current blocks using targeted rerolls.
 - Cannot be used in the last 10 seconds of a level.
 - Only refreshes current remaining inventory.
@@ -87,8 +87,8 @@
 ## Scoring System
 | Component | Formula |
 |---|---|
-| Placement Score | `effective_height Ã— level Ã— placementScorePerHeight` (default `10`) |
-| Finisher Bonus | `level Ã— 4` |
+| Placement Score | `effective_height × level × placementScorePerHeight` (default `10`) |
+| Finisher Bonus | `level × 4` |
 | Precision Bonus | `level x 8` (exact finish only) |
 | Team Bonus | `level x 6` (exact finish, all players) |
 | Assist Bonus | Disabled by default (`assistBonusPerLevel = 0`) |
@@ -134,7 +134,7 @@
 | Variable | Description |
 |---|---|
 | `debugBotsEnabled` | Enables/disables debug bots globally. |
-| `debugBotCount` | Bot slots allowed per room (0â€“2). |
+| `debugBotCount` | Bot slots allowed per room (0–2). |
 | `debugBotStrategy` | Switches QA bots between cooperative height-management and MVP-greedy play. |
 | `debugStartLevel` | Starts new rooms at a selected level and restarts active debug rooms at that level for tuning. |
 | `debugBotDelayMin` | Min bot action delay (ms). |
@@ -165,7 +165,7 @@
 ### Validation Rules
 - Unknown keys rejected.
 - Numeric values clamped to safe ranges.
-- `debugBotDelayMax` â‰¥ `debugBotDelayMin` enforced.
+- `debugBotDelayMax` ≥ `debugBotDelayMin` enforced.
 - `resetDebugConfig` restores the server-side defaults captured from `Game_Config.js` at process startup, then rebroadcasts `debug_config`.
 - Debug settings are runtime tuning only, not player progression data.
 

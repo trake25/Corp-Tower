@@ -11,11 +11,11 @@
 - Expose port `3000`.
 
 ## Key Logic
-- Built in [[Server Staging Deploy Workflow]].
+- Built in [[Server K3s Workflows]].
 - Image is tagged with the immutable commit SHA.
 - Pushed to ECR.
 - Docker worker containers run this image on EC2-2/EC2-3.
-- K3s lab server pods reuse this same ECR image and repository.
+- Server K3s server pods reuse this same ECR image and repository.
 - Worker deployment provides `REDIS_URL` and `RECONNECT_TTL_SECONDS`.
 - Container healthchecks use a short staging interval so rolling deploy readiness is reported quickly.
 
@@ -26,7 +26,7 @@
 ## Dependencies
 - Node runtime in Docker image.
 - [[Server Entry]]
-- [[Server Staging Deploy Workflow]]
+- [[Server K3s Workflows]]
 
 ## Notes
 - Current staging deploy avoids local Docker requirement.

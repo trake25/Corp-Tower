@@ -1,10 +1,10 @@
-name: K3s Lab Cleanup
+name: Server K3s Cleanup
 
 on:
   workflow_dispatch:
     inputs:
       cleanup_mode:
-        description: "Runtime cleanup uninstalls K3s/Caddy artifacts. Terraform destroy removes lab AWS resources."
+        description: "Runtime cleanup uninstalls Server K3s/Caddy artifacts. Terraform destroy removes AWS resources managed by infra/k3s/terraform."
         required: true
         default: runtime_only
         type: choice
@@ -12,7 +12,7 @@ on:
           - runtime_only
           - terraform_destroy
       confirm_cleanup:
-        description: "Type CLEANUP_K3S_LAB for runtime cleanup or DESTROY_K3S_LAB for terraform_destroy."
+        description: "Type CLEANUP_SERVER_K3S for runtime cleanup or DESTROY_SERVER_K3S for terraform_destroy."
         required: true
         type: string
 
@@ -40,8 +40,8 @@ jobs:
     steps:
       - name: Check cleanup confirmation
         run: |
-          if [ "${{ inputs.confirm_cleanup }}" != "CLEANUP_K3S_LAB" ]; then
-            echo "confirm_cleanup must be exactly CLEANUP_K3S_LAB for runtime cleanup."
+          if [ "${{ inputs.confirm_cleanup }}" != "CLEANUP_SERVER_K3S" ]; then
+            echo "confirm_cleanup must be exactly CLEANUP_SERVER_K3S for runtime cleanup."
             exit 1
           fi
 
@@ -68,7 +68,7 @@ jobs:
           python -m pip install -r infra/k3s/ansible/requirements.txt
           ansible --version
 
-      - name: Resolve running K3s lab targets
+      - name: Resolve running Server K3s targets
         env:
           EC2_USER: ${{ secrets.EC2_STAGING_USER }}
           EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
@@ -146,7 +146,7 @@ jobs:
           ansible-playbook \
             -i "$ANSIBLE_INVENTORY" \
             infra/k3s/ansible/playbooks/cleanup.yml \
-            -e "confirm_cleanup=CLEANUP_K3S_LAB"
+            -e "confirm_cleanup=CLEANUP_SERVER_K3S"
 
   terraform-destroy:
     name: Terraform Destroy
@@ -161,8 +161,8 @@ jobs:
     steps:
       - name: Check destroy confirmation
         run: |
-          if [ "${{ inputs.confirm_cleanup }}" != "DESTROY_K3S_LAB" ]; then
-            echo "confirm_cleanup must be exactly DESTROY_K3S_LAB for terraform_destroy."
+          if [ "${{ inputs.confirm_cleanup }}" != "DESTROY_SERVER_K3S" ]; then
+            echo "confirm_cleanup must be exactly DESTROY_SERVER_K3S for terraform_destroy."
             exit 1
           fi
 
@@ -225,5 +225,5 @@ jobs:
       - name: Terraform init
         run: terraform init -input=false
 
-      - name: Terraform destroy K3s lab resources
+      - name: Terraform destroy Server K3s resources
         run: terraform destroy -input=false -auto-approve

@@ -1,11 +1,11 @@
-# K3s Lab Stack
+# Server K3s Stack
 
 ## Purpose
-- Parallel K3s lab infrastructure for Corp Tower.
+- Parallel Server K3s infrastructure for Corp Tower.
 - Files: `infra/k3s/terraform`, `infra/k3s/ansible`, `infra/k3s/apps`, and `infra/k3s/argocd/bootstrap`.
 
 ## Responsibilities
-- Keep K3s lab AWS resources and Terraform state separate from Docker staging.
+- Keep Server K3s AWS resources and Terraform state separate from the deprecated Docker staging Terraform root.
 - Reuse existing GitHub staging secrets and ECR repository. The K3s infra workflows can derive the EC2 public key from `EC2_STAGING_SSH_KEY` when `EC2_STAGING_SSH_PUBLIC_KEY` is empty.
 - Route public WSS through EC2-GW Caddy to K3s NodePort `30300`.
 - Keep K3s nodes private behind EC2-GW bastion/NAT.
@@ -33,11 +33,10 @@
   - fixed NodePort `30300/tcp`
 
 ## Dependencies
-- [[K3s Lab Workflows]]
+- [[Server K3s Workflows]]
 - [[Server Docker Image]]
-- [[Staging Deploy Guide]]
+- [[Server EKS Stack]]
 
 ## Notes
-- Docker staging remains the rollback target.
-- `corp-tower.duckdns.org` can point to either Docker staging or K3s lab, not both.
+- `corp-tower.duckdns.org` currently points to the active Server K3s gateway.
 - EC2-GW uses Docker only to run the Caddy gateway container; the game server workload runs in K3s.

@@ -1,5 +1,5 @@
 ---
-- name: Validate K3s lab cleanup confirmation
+- name: Validate Server K3s cleanup confirmation
   hosts: localhost
   gather_facts: false
   tasks:
@@ -7,8 +7,8 @@
       ansible.builtin.assert:
         that:
           - confirm_cleanup is defined
-          - confirm_cleanup == "CLEANUP_K3S_LAB"
-        fail_msg: "confirm_cleanup must be exactly CLEANUP_K3S_LAB."
+          - confirm_cleanup == "CLEANUP_SERVER_K3S"
+        fail_msg: "confirm_cleanup must be exactly CLEANUP_SERVER_K3S."
 
 - name: Uninstall K3s agents
   hosts: k3s_agents
@@ -52,7 +52,7 @@
         executable: /bin/bash
       changed_when: true
 
-    - name: Disable K3s lab services
+    - name: Disable Server K3s services
       ansible.builtin.shell: |
         set -euo pipefail
         sudo systemctl disable --now corp-tower-k3s-duckdns-update.service 2>/dev/null || true
@@ -62,7 +62,7 @@
         executable: /bin/bash
       changed_when: true
 
-    - name: Remove K3s lab gateway files
+    - name: Remove Server K3s gateway files
       ansible.builtin.file:
         path: "{{ item }}"
         state: absent

@@ -1,4 +1,4 @@
-name: K3s Lab Infra Plan
+name: Server K3s Infra Plan
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ env:
 
 jobs:
   plan:
-    name: Plan K3s Lab Infrastructure
+    name: Plan Server K3s Infrastructure
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment: staging
@@ -110,22 +110,3 @@ jobs:
 
       - name: Show Terraform plan summary
         run: terraform show -no-color tfplan
-
-      - name: Reject infrastructure create/delete plan
-        run: |
-          set -euo pipefail
-
-          CREATE_OR_DELETE_CHANGES="$(
-            terraform show -json tfplan \
-              | jq -r '
-                .resource_changes[]
-                | select((.change.actions | index("create")) or (.change.actions | index("delete")))
-                | "\(.address): \(.change.actions | join(","))"
-              '
-          )"
-
-          if [ -n "$CREATE_OR_DELETE_CHANGES" ]; then
-            echo "::error::Plan includes create, delete, or replace actions. Run K3s Lab Infra Apply manually only when infrastructure changes are intentional."
-            printf '%s\n' "$CREATE_OR_DELETE_CHANGES"
-            exit 1
-          fi

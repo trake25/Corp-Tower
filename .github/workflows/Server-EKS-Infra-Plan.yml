@@ -1,12 +1,8 @@
-name: Staging Infra Rebuild EC2
+name: Server EKS Infra Plan
 
 on:
   workflow_dispatch:
-    inputs:
-      confirm_rebuild:
-        description: "Type REBUILD_EC2 to destroy/recreate the staging gateway and worker EC2 instances."
-        required: true
-        type: string
+  workflow_call:
 
 permissions:
   id-token: write
@@ -15,33 +11,22 @@ permissions:
 env:
   AWS_REGION: ap-southeast-1
   TF_VAR_aws_region: ap-southeast-1
-  TF_VAR_environment: staging
-  TF_VAR_github_repository: ${{ github.repository }}
-  TF_VAR_ssh_public_key: ${{ secrets.EC2_STAGING_SSH_PUBLIC_KEY }}
-  TF_VAR_ssh_cidr: ${{ secrets.STAGING_SSH_CIDR || '0.0.0.0/0' }}
-  TF_VAR_game_port_cidr: ${{ secrets.STAGING_GAME_PORT_CIDR || '0.0.0.0/0' }}
-  TF_VAR_staging_subnet_id: ${{ secrets.STAGING_SUBNET_ID || '' }}
+  TF_VAR_environment: eks-lab
+  TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
 
 jobs:
-  rebuild:
-    name: Rebuild Staging EC2 Instances
+  plan:
+    name: Plan Server EKS Infrastructure
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment: staging
     defaults:
       run:
-        working-directory: infra/terraform
+        working-directory: infra/eks/terraform
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      - name: Check rebuild confirmation
-        run: |
-          if [ "${{ inputs.confirm_rebuild }}" != "REBUILD_EC2" ]; then
-            echo "confirm_rebuild must be exactly REBUILD_EC2."
-            exit 1
-          fi
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v6
@@ -79,7 +64,7 @@ jobs:
             --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 
       - name: Terraform init
-        run: terraform init -input=false -migrate-state -force-copy
+        run: terraform init -input=false
 
       - name: Terraform fmt check
         run: terraform fmt -check
@@ -87,19 +72,9 @@ jobs:
       - name: Terraform validate
         run: terraform validate
 
-      - name: Plan EC2 rebuild
-        run: |
-          set -euo pipefail
-          terraform plan -input=false -out=tfplan \
-            -replace=aws_instance.staging \
-            -replace='aws_instance.worker[0]' \
-            -replace='aws_instance.worker[1]'
+      - name: Terraform plan
+        run: terraform plan -input=false -out=tfplan
 
-      - name: Show EC2 rebuild plan
+      - name: Show Terraform plan summary
         run: terraform show -no-color tfplan
 
-      - name: Apply EC2 rebuild
-        run: terraform apply -input=false -auto-approve tfplan
-
-      - name: Show Terraform outputs
-        run: terraform output

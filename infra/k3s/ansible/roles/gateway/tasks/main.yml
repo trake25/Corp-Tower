@@ -55,7 +55,7 @@
     mode: "0700"
   become: true
 
-- name: Install K3s lab NAT script
+- name: Install Server K3s NAT script
   ansible.builtin.template:
     src: corp-tower-k3s-nat.sh.j2
     dest: /usr/local/bin/corp-tower-k3s-nat
@@ -64,7 +64,7 @@
     mode: "0755"
   become: true
 
-- name: Install K3s lab NAT service
+- name: Install Server K3s NAT service
   ansible.builtin.copy:
     dest: /etc/systemd/system/corp-tower-k3s-nat.service
     owner: root
@@ -72,7 +72,7 @@
     mode: "0644"
     content: |
       [Unit]
-      Description=Corp Tower K3s lab EC2-GW NAT
+      Description=Corp Tower Server K3s EC2-GW NAT
       Wants=network-online.target
       After=network-online.target
 
@@ -85,7 +85,7 @@
       WantedBy=multi-user.target
   become: true
 
-- name: Enable and run K3s lab NAT service
+- name: Enable and run Server K3s NAT service
   ansible.builtin.shell: |
     set -euo pipefail
     sudo systemctl daemon-reload
@@ -171,7 +171,7 @@
     mode: "0644"
     content: |
       [Unit]
-      Description=Update Corp Tower K3s lab DuckDNS gateway record
+      Description=Update Corp Tower Server K3s DuckDNS gateway record
       Wants=network-online.target
       After=network-online.target
       StartLimitIntervalSec=10min

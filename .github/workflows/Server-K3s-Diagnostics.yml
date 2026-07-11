@@ -1,4 +1,4 @@
-name: K3s Lab Diagnostics
+name: Server K3s Diagnostics
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ env:
 
 jobs:
   diagnostics:
-    name: Diagnose K3s Lab
+    name: Diagnose Server K3s
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment: staging
@@ -30,7 +30,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "::group::K3s lab instances"
+          echo "::group::Server K3s instances"
           aws ec2 describe-instances \
             --filters \
               "Name=tag:Project,Values=corp-tower" \
@@ -41,7 +41,7 @@ jobs:
             --output table
           echo "::endgroup::"
 
-          echo "::group::K3s lab security groups"
+          echo "::group::Server K3s security groups"
           SECURITY_GROUP_IDS="$(
             aws ec2 describe-security-groups \
               --filters \
@@ -60,7 +60,7 @@ jobs:
           done
           echo "::endgroup::"
 
-          echo "::group::K3s lab route tables"
+          echo "::group::Server K3s route tables"
           VPC_ID="$(
             aws ec2 describe-vpcs \
               --filters \
@@ -94,7 +94,7 @@ jobs:
           )"
 
           if [ -z "$GATEWAY_PUBLIC_IP" ] || [ "$GATEWAY_PUBLIC_IP" = "None" ]; then
-            echo "::error::No running K3s lab gateway found for DuckDNS ownership check."
+            echo "::error::No running Server K3s gateway found for DuckDNS ownership check."
             exit 1
           fi
 
@@ -145,7 +145,7 @@ jobs:
           )"
 
           if [ -z "$GATEWAY_PUBLIC_IP" ] || [ "$GATEWAY_PUBLIC_IP" = "None" ]; then
-            echo "::warning::No running K3s lab gateway found; skipping SSH probes."
+            echo "::warning::No running Server K3s gateway found; skipping SSH probes."
             exit 0
           fi
 

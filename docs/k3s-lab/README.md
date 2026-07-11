@@ -1,8 +1,8 @@
-# K3s Lab
+# Server K3s
 
 ## Purpose
 - Build a parallel K3s learning stack without mutating the Docker staging Terraform, Ansible, workflows, or EC2 resources.
-- Keep `wss://corp-tower.duckdns.org` as the single public endpoint. Docker staging and K3s lab should not both own DuckDNS at the same time.
+- Keep `wss://corp-tower.duckdns.org` as the single public endpoint. Docker staging and Server K3s should not both own DuckDNS at the same time.
 - Prepare the K3s manifests so Argo CD can adopt the stack later after the lab is stable.
 
 ## Topology
@@ -12,15 +12,14 @@
 - VPC CIDR defaults to `10.60.0.0/16` to avoid K3s default pod CIDR `10.42.0.0/16` and service CIDR `10.43.0.0/16`.
 
 ## Workflow Order
-1. Run `K3s Lab Infra Plan`.
-2. Run `K3s Lab Infra Apply` with `APPLY_K3S_LAB`.
-3. Run `K3s Lab Automated Master` with `full_preflight` for the first normal K3s queue run.
-4. Use `K3s Lab Automated Master` with `fast_server_deploy` for ordinary server/image updates when the lab is already healthy.
-5. Keep `K3s Lab ECR Auth Refresh` enabled while the lab is running so restarted pods can keep pulling private ECR images.
-6. Use `K3s Lab Diagnostics` when AWS, SSH, DNS, or cluster reachability is suspicious.
-7. Use `K3s Lab Cleanup` runtime cleanup before returning the lab to a clean runtime state, or `terraform_destroy` with `DESTROY_K3S_LAB` to remove lab AWS resources.
+1. Run `Server K3s Infra Plan`.
+2. Run `Server K3s Infra Apply` with `APPLY_SERVER_K3S`.
+3. Run `Server K3s Automated Master` with `full_preflight` for the first normal K3s queue run.
+4. Use `Server K3s Automated Master` with `fast_server_deploy` for ordinary server/image updates when the lab is already healthy.
+5. Use `Server K3s Diagnostics` when AWS, SSH, DNS, or cluster reachability is suspicious.
+6. Use `Server K3s Cleanup` runtime cleanup before returning the lab to a clean runtime state, or `terraform_destroy` with `DESTROY_SERVER_K3S` to remove Server K3s AWS resources.
 
-`K3s Lab Automated Master` also runs automatically on watched server and K3s path pushes to `main` or `master`. Docker staging automation is manual-only while K3s owns the live endpoint.
+`Server K3s Automated Master` also runs automatically on watched server and K3s path pushes to `main` or `master`.
 
 ## Runtime
 - K3s disables Traefik and ServiceLB.
@@ -36,14 +35,12 @@
 - First sync is manual. Automated prune/self-heal waits until one manual sync and rollback test succeed.
 - Private repositories need a persistent repo-read credential; GitHub Actions `GITHUB_TOKEN` is not a long-lived Argo CD repo credential.
 
-## Rollback To Docker
-- If Docker staging AWS resources were cleaned up, run `Staging Infra Apply` first to recreate EC2 gateway/workers.
-- Start the Docker staging EC2s if they already exist but are stopped.
-- Run the existing `Staging Server Update` workflow.
-- That workflow updates DuckDNS back to the Docker EC2 gateway and redeploys the Docker Redis/Caddy/server runtime.
+## Deprecated Docker Rollback
+- Docker staging GitHub Actions workflows have been removed.
+- Use Server K3s workflows for the active stack.
 
 ## Observability
-- Run `K3s Lab Diagnostics` for AWS topology, DuckDNS ownership, and SSH reachability.
+- Run `Server K3s Diagnostics` for AWS topology, DuckDNS ownership, and SSH reachability.
 - Use `kubectl -n corp-tower get pods -o wide`, `kubectl -n corp-tower get all -o wide`, and `kubectl get nodes -o wide` for current cluster state.
 - Use `kubectl -n corp-tower logs deploy/corp-tower-server --all-containers --tail=200 -f` for live game server logs.
 - Use `kubectl get events -A --sort-by=.lastTimestamp` for scheduling, image pull, restart, and readiness problems.

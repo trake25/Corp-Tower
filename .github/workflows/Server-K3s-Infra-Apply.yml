@@ -1,10 +1,10 @@
-name: K3s Lab Infra Apply
+name: Server K3s Infra Apply
 
 on:
   workflow_dispatch:
     inputs:
       confirm_apply:
-        description: "Type APPLY_K3S_LAB to apply the reviewed K3s lab infrastructure plan."
+        description: "Type APPLY_SERVER_K3S to apply the reviewed Server K3s infrastructure plan."
         required: true
         type: string
 
@@ -23,7 +23,7 @@ env:
 
 jobs:
   apply:
-    name: Apply K3s Lab Infrastructure
+    name: Apply Server K3s Infrastructure
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment: staging
@@ -37,8 +37,8 @@ jobs:
 
       - name: Check apply confirmation
         run: |
-          if [ "${{ inputs.confirm_apply }}" != "APPLY_K3S_LAB" ]; then
-            echo "confirm_apply must be exactly APPLY_K3S_LAB."
+          if [ "${{ inputs.confirm_apply }}" != "APPLY_SERVER_K3S" ]; then
+            echo "confirm_apply must be exactly APPLY_SERVER_K3S."
             exit 1
           fi
 
@@ -136,7 +136,7 @@ jobs:
           )"
 
           if [ -n "$DESTRUCTIVE_CHANGES" ]; then
-            echo "::error::Plan includes delete or replace actions. Use K3s Lab Cleanup with terraform_destroy for intentional teardown."
+            echo "::error::Plan includes delete or replace actions. Use Server K3s Cleanup with terraform_destroy for intentional teardown."
             printf '%s\n' "$DESTRUCTIVE_CHANGES"
             exit 1
           fi

@@ -4,7 +4,7 @@ metadata:
   name: corp-tower-lab
   namespace: argocd
 spec:
-  description: Corp Tower K3s lab applications
+  description: Corp Tower Server K3s applications
   sourceRepos:
     - https://github.com/trake25/Corp-Tower.git
   destinations:

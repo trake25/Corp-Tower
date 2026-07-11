@@ -34,9 +34,8 @@
 ## Infrastructure / Deploy Change (e.g. Redis, Kubernetes, new AWS resource)
 - Summary.md
 - Corp_Tower_TDD.md
-- Server Staging Deploy Workflow.md + workflow .yml
-- Terraform Infrastructure.md + relevant .tf files
-- Staging Deploy Guide.md
+- Server K3s Workflows.md or Server EKS Workflow.md + workflow .yml
+- Terraform Infrastructure.md + relevant `.tf` files
 
 ## Android Pipeline Change
 - Summary.md

@@ -23,18 +23,14 @@
 - [[Godot Client Tests]]
 
 ## CI/CD And Infrastructure
-- [[Staging Automated Master Workflow]]
-- [[Server Staging Deploy Workflow]]
-- [[Staging Diagnostics Workflow]]
-- [[Staging Runtime Cleanup Workflow]]
-- [[Staging Infra Cleanup Workflow]]
 - [[Client Android Internal Workflow]]
 - [[Terraform Infrastructure]]
-- [[Staging Deploy Guide]]
 - [[K3s Manual Learning Plan]]
-- [[K3s Lab Stack]]
-- [[K3s Lab Workflows]]
-- [[K3s Lab Automated Master Workflow]]
+- [[Server K3s Stack]]
+- [[Server K3s Workflows]]
+- [[Server K3s Automated Master Workflow]]
+- [[Server EKS Stack]]
+- [[Server EKS Workflow]]
 
 ## Global
 - [[Summary]]

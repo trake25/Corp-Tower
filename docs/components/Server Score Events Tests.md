@@ -7,7 +7,7 @@
 ## Runtime Classification
 - CI/test-only file.
 - Not required by the running game server or client.
-- Runs through `npm test`, which is called by [[Server Staging Deploy Workflow]] before Docker build/deploy.
+- Runs through `npm test`, which is called by [[Server K3s Workflows]] before server image build/deploy.
 
 ## Responsibilities
 - Verify placement score events.

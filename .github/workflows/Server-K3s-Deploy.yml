@@ -1,11 +1,11 @@
-name: K3s Lab Deploy
+name: Server K3s Deploy
 
 on:
   workflow_dispatch:
   workflow_call:
 
 concurrency:
-  group: k3s-lab-deploy-${{ github.ref }}
+  group: server-k3s-deploy-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -133,7 +133,7 @@ jobs:
       - name: Test K3s inventory generator
         run: python -m unittest discover -s infra/k3s/ansible/tests
 
-      - name: Resolve K3s lab targets
+      - name: Resolve Server K3s targets
         env:
           EC2_USER: ${{ secrets.EC2_STAGING_USER }}
           EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
@@ -173,7 +173,7 @@ jobs:
           )"
 
           if [ -z "$PRIVATE_SUBNET_CIDR" ] || [ "$PRIVATE_SUBNET_CIDR" = "None" ]; then
-            echo "::error::Could not resolve K3s lab private subnet CIDR."
+            echo "::error::Could not resolve Server K3s private subnet CIDR."
             exit 1
           fi
 
@@ -281,7 +281,7 @@ jobs:
             infra/k3s/ansible/playbooks/site.yml \
             --syntax-check
 
-      - name: Configure K3s lab hosts with Ansible
+      - name: Configure Server K3s hosts with Ansible
         env:
           ANSIBLE_CONFIG: infra/k3s/ansible/ansible.cfg
           DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}

@@ -13,6 +13,10 @@ infra/k3s/terraform/.terraform/
 infra/k3s/terraform/*.tfstate
 infra/k3s/terraform/*.tfstate.*
 infra/k3s/terraform/k3s-lab.tfvars
+infra/eks/terraform/.terraform/
+infra/eks/terraform/*.tfstate
+infra/eks/terraform/*.tfstate.*
+infra/eks/terraform/eks-lab.tfvars
 # Corp Tower GDD
 *.docx
 *.docx.bak
