@@ -159,15 +159,15 @@ jobs:
         working-directory: infra/k3s/terraform
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
       - name: Check destroy confirmation
         run: |
           if [ "${{ inputs.confirm_cleanup }}" != "DESTROY_SERVER_K3S" ]; then
             echo "confirm_cleanup must be exactly DESTROY_SERVER_K3S for terraform_destroy."
             exit 1
           fi
-
-      - name: Checkout repository
-        uses: actions/checkout@v6
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v6
