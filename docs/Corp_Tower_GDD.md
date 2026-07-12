@@ -72,7 +72,7 @@
 - Politics unlock at level 4 by default. Each player has up to 3 Politics inventory slots.
 - Each eligible level has one shared random side quest. Valid starter quests are: first to place an unlocked 4-, 5-, or 6-cell block, or first to make the exact-finishing placement.
 - The first eligible player to complete the quest receives one random Politics item if they have inventory space. After a completed checkpoint, the player with the highest total score also receives one random Politics item if they have space.
-- Default item lifetime is the current level; a future tunable mode may allow carry-through-match items. Level transitions, rollback, restart, and room close clear items according to the configured lifetime rule.
+- Unused Politics items persist through subsequent levels in the same match, up to the 3-slot cap. Items clear when the match closes; rollback/restart behavior follows the configured lifetime rule.
 - Players activate an item by dragging its Politics slot onto a player target. Politics have a 3-second activation cooldown and cannot be used in the final 3 seconds of a level.
 - Starter effects:
   - **Score Cap (Offensive):** set the selected target's total score exactly to that target's next checkpoint score requirement, whether their prior score was above or below it.

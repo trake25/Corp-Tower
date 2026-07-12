@@ -413,9 +413,6 @@ class GameEngine {
             player.lastQuickChatTime = 0;
             player.scoreCap = null;
             player.scoreCapCasterId = null;
-            if (GameConfig.politicsLifetime === "level") {
-                player.politicsInventory = [];
-            }
         });
 
         this.buildDrawPile();

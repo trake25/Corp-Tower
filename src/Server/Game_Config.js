@@ -43,7 +43,7 @@ const GameConfig = {
     politicsUnlockLevel: 4,
     politicsMaxSlots: 3,
     politicsActivationCooldownMs: 3000,
-    politicsLifetime: "level",
+    politicsLifetime: "match",
     politicsCatalog: {
         score_cap: { category: "Offensive", title: "Score Cap" },
         copy_score: { category: "Defensive", title: "Copy Score" },
