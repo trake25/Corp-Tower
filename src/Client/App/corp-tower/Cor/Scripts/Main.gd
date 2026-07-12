@@ -37,6 +37,8 @@ var politics_target_buttons: Array = []
 var politics_dragging := false
 var politics_drag_ghost: Label
 var politics_feedback_tween: Tween
+var score_line_labels: Dictionary = {}
+var score_tints: Dictionary = {}
 var block_previews: Array = []
 var block_height_labels: Array = []
 var block_name_labels: Array = []
@@ -961,6 +963,7 @@ func update_room_closed(data) -> void:
 	current_level = 0
 
 func update_game_state(data) -> void:
+	
 	if !is_switching_skin:
 		last_game_state_data = data
 
@@ -1004,6 +1007,13 @@ func update_game_state(data) -> void:
 		var quest_label := "Unlocks at Level 4"
 		if typeof(side_quest) == TYPE_DICTIONARY:
 			quest_label = str(side_quest.get("label", quest_label))
+			var completed_by := str(side_quest.get("claimedBy", ""))
+			if completed_by != "" or completed_by != null:				
+				politics_quest_label.modulate = player_color_map.get(completed_by, Color.WHITE)
+			else:
+				politics_quest_label.modulate = Color.WHITE
+		else:
+			politics_quest_label.modulate = Color.WHITE
 		politics_quest_label.text = "Politics Quest\n" + quest_label
 	if tower_stack.has_method("set_player_color_map"):
 		tower_stack.call("set_player_color_map", player_color_map)
@@ -1026,20 +1036,19 @@ func update_game_state(data) -> void:
 		data.get("nextDrawBlock", null)
 	)
 
-	var scores_text: String = ""
+	var _scores_text :String = ""
 	var my_refresh_tokens: int = 0
 	var my_refresh_uses_remaining: int = 0
 	var max_refresh_tokens: int = int(data.get("maxRefreshTokens", 1))
 	var max_uses_per_level: int = int(data.get("maxRefreshUsesPerLevel", 2))
 	var my_blocks: Array = []
 	var my_politics: Array = []
-
+	
 	for i in range(players.size()):
 		var player: Dictionary = players[i]
 		var player_id: String = str(player.get("id", "P?"))
 		var prefix: String = LOCAL_PLAYER_MARKER if player_id == NetworkManager.player_id else player_id
-		scores_text += prefix + ": " + str(int(player.get("score", 0)))
-		scores_text += " total / " + str(int(player.get("levelScore", 0))) + " level"
+		_scores_text += prefix + ": " + str(int(player.get("score", 0))) + " total / " + str(int(player.get("levelScore", 0))) + " level"
 
 		if player_id == NetworkManager.player_id:
 			my_refresh_tokens = int(player.get("refreshTokens", 0))
@@ -1048,9 +1057,9 @@ func update_game_state(data) -> void:
 			my_politics = player.get("politicsInventory", [])
 
 		if i < players.size() - 1:
-			scores_text += "\n"
+			_scores_text += "\n"
 
-	score_label.text = scores_text if scores_text != "" else "Waiting for players"
+	update_score_lines(players)
 	update_checkpoint_status_ui(data.get("checkpointScoreStatus", {}))
 	refresh_token_label.text = "Token " + str(my_refresh_tokens) + "/" + str(max_refresh_tokens)
 
@@ -1470,7 +1479,7 @@ func process_politics_events(raw_events: Variant) -> void:
 		var caster_color: Color = player_color_map.get(str(event.get("playerId", "")), Color.WHITE)
 		var target_id := str(event.get("targetPlayerId", ""))
 		if bool(meta.get("tintTargetScore", false)) and target_id != "":
-			show_politics_tint(score_label, caster_color)
+			score_tints[target_id] = { "color": caster_color, "until": Time.get_ticks_msec() + 4000 }
 		elif bool(meta.get("tintTargetToken", false)) and target_id == str(NetworkManager.player_id):
 			show_politics_tint(refresh_token_label, caster_color)
 
@@ -1483,6 +1492,28 @@ func show_politics_tint(control: Control, tint: Color) -> void:
 	politics_feedback_tween = create_tween()
 	politics_feedback_tween.tween_interval(4.0)
 	politics_feedback_tween.tween_property(control, "modulate", Color.WHITE, 0.2)
+
+func update_score_lines(players: Array) -> void:
+	score_label.text = ""
+	score_label.custom_minimum_size = Vector2(0, max(1, players.size()) * 34)
+	for i in range(players.size()):
+		var player: Dictionary = players[i]
+		var player_id := str(player.get("id", ""))
+		var line: Label = score_line_labels.get(player_id, null)
+		if line == null:
+			line = Label.new()
+			line.add_theme_font_size_override("font_size", 14)
+			score_label.add_child(line)
+			score_line_labels[player_id] = line
+		line.position = Vector2(0, i * 34)
+		line.size = Vector2(score_label.size.x, 32)
+		var prefix := LOCAL_PLAYER_MARKER if player_id == NetworkManager.player_id else player_id
+		line.text = prefix + ": " + str(int(player.get("score", 0))) + " total / " + str(int(player.get("levelScore", 0))) + " level"
+		var tint: Dictionary = score_tints.get(player_id, {})
+		if !tint.is_empty() and int(tint.get("until", 0)) > Time.get_ticks_msec():
+			line.modulate = tint.get("color", Color.WHITE)
+		else:
+			line.modulate = Color.WHITE
 
 func show_score_event_popup(
 	event: Dictionary,
