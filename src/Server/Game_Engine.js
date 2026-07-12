@@ -106,6 +106,7 @@ class GameEngine {
             level: startLevel,
             checkpointLevel: startLevel,
             checkpointScores: {},
+            checkpointPolitics: {},
             targetHeight: this.getTargetHeightForLevel(startLevel),
             currentHeight: 0,
             drawPile: [],
@@ -138,7 +139,7 @@ class GameEngine {
             player.lastPoliticsActivationTime = 0;
             player.lastQuickChatTime = 0;
         });
-        this.saveCheckpointScores();
+        this.saveCheckpointState();
 
         console.log("Room created:", this.room.id);
     }
@@ -152,6 +153,7 @@ class GameEngine {
             level: snapshot.state.level,
             checkpointLevel: snapshot.state.checkpointLevel,
             checkpointScores: snapshot.state.checkpointScores || {},
+            checkpointPolitics: snapshot.state.checkpointPolitics || {},
             targetHeight: snapshot.state.targetHeight,
             currentHeight: snapshot.state.currentHeight,
             drawPile: snapshot.state.drawPile || [],
@@ -169,7 +171,7 @@ class GameEngine {
             sideQuest: snapshot.state.sideQuest || null,
             scoreEventSeq: 0
         };
-        this.ensureCheckpointScores();
+        this.ensureCheckpointState();
         this.recalculateTowerStability();
 
         this.restoreTimersFromState();
@@ -557,6 +559,7 @@ class GameEngine {
         this.room.players.forEach(player => {
             if (options.resetScores) {
                 player.score = 0;
+                player.politicsInventory = [];
             }
 
             player.levelScore = 0;
@@ -569,7 +572,7 @@ class GameEngine {
             player.botLoopLevel = null;
         });
 
-        this.saveCheckpointScores();
+        this.saveCheckpointState();
         this.startLevel();
     }
 
@@ -581,6 +584,10 @@ class GameEngine {
         }
 
         return drawPile[0];
+    }
+
+    clonePoliticsInventory(items = []) {
+        return items.map(item => ({ ...item }));
     }
 
     saveCheckpointScores() {
@@ -595,6 +602,24 @@ class GameEngine {
         });
     }
 
+    saveCheckpointPolitics() {
+        if (!this.room) {
+            return;
+        }
+
+        this.room.checkpointPolitics = {};
+
+        this.room.players.forEach(player => {
+            this.room.checkpointPolitics[player.id] =
+                this.clonePoliticsInventory(player.politicsInventory || []);
+        });
+    }
+
+    saveCheckpointState() {
+        this.saveCheckpointScores();
+        this.saveCheckpointPolitics();
+    }
+
     ensureCheckpointScores() {
         if (
             !this.room.checkpointScores ||
@@ -604,11 +629,39 @@ class GameEngine {
         }
     }
 
+    ensureCheckpointPolitics() {
+        if (
+            !this.room.checkpointPolitics ||
+            Object.keys(this.room.checkpointPolitics).length === 0
+        ) {
+            this.saveCheckpointPolitics();
+        }
+    }
+
+    ensureCheckpointState() {
+        this.ensureCheckpointScores();
+        this.ensureCheckpointPolitics();
+    }
+
     restoreCheckpointScores() {
         const checkpointScores = this.room.checkpointScores || {};
 
         this.room.players.forEach(player => {
             player.score = Number(checkpointScores[player.id] || 0);
+        });
+    }
+
+    restoreCheckpointPolitics() {
+        if (GameConfig.politicsLifetime !== "checkpoint") {
+            return;
+        }
+
+        const checkpointPolitics = this.room.checkpointPolitics || {};
+
+        this.room.players.forEach(player => {
+            player.politicsInventory = this.clonePoliticsInventory(
+                checkpointPolitics[player.id] || []
+            );
         });
     }
 
@@ -1489,7 +1542,7 @@ class GameEngine {
         if (opensCheckpoint) {
             this.awardCheckpointPolitics();
             this.room.checkpointLevel = this.room.level;
-            this.saveCheckpointScores();
+            this.saveCheckpointState();
         }
 
         console.log(`\n=== LEVEL ${this.room.level} QUEUED ===`);
@@ -1695,6 +1748,7 @@ class GameEngine {
         this.room.drawPile = [];
         this.room.teamCarryOverBlocks = [];
         this.restoreCheckpointScores();
+        this.restoreCheckpointPolitics();
 
         this.room.players.forEach(player => {
             player.blocks = [];

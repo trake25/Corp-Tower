@@ -34,6 +34,7 @@
   - Bonuses: finisher, precision, team, and optional assist, with multipliers from [[Game Config]]. Disabled zero-value bonuses do not emit score events.
   - MVP is highest level score.
   - Checkpoint score snapshots are restored on rollback.
+  - Checkpoint politics snapshots are restored on rollback when `politicsLifetime` is `checkpoint`, removing items earned after the last completed checkpoint.
   - Checkpoint score gates fail when any player gained less than `checkpointMinContributionShare` of expected placement score for the checkpoint band.
   - `checkpointScoreStatus` broadcasts the active band-relative gate, next checkpoint level, and per-player leaderboard score goals for the right-side UI.
   - `scoreEvents[]` is transient and broadcast-only; clients should not infer scoring UI from aggregate score diffs.

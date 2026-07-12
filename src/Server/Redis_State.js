@@ -61,6 +61,7 @@ function stripRuntimeRoom(room) {
             level: engineRoom.level || 1,
             checkpointLevel: engineRoom.checkpointLevel || 1,
             checkpointScores: engineRoom.checkpointScores || {},
+            checkpointPolitics: engineRoom.checkpointPolitics || {},
             targetHeight: engineRoom.targetHeight || 0,
             currentHeight: engineRoom.currentHeight || 0,
             drawPile: engineRoom.drawPile || [],

@@ -12,6 +12,7 @@ const originalGameConfig = {
     finishScorePopupDurationMs: GameConfig.finishScorePopupDurationMs,
     levelSummaryDelayMs: GameConfig.levelSummaryDelayMs
     ,quickChatCooldownMs: GameConfig.quickChatCooldownMs
+    ,politicsLifetime: GameConfig.politicsLifetime
 };
 const originalScoringConfig = { ...GameConfig.scoring };
 const activeEngines = new Set();
@@ -28,6 +29,7 @@ afterEach(() => {
         originalGameConfig.finishScorePopupDurationMs;
     GameConfig.levelSummaryDelayMs = originalGameConfig.levelSummaryDelayMs;
     GameConfig.quickChatCooldownMs = originalGameConfig.quickChatCooldownMs;
+    GameConfig.politicsLifetime = originalGameConfig.politicsLifetime;
     GameConfig.scoring = { ...originalScoringConfig };
 });
 
@@ -276,4 +278,48 @@ test("UI durations are exposed and clamped in debug config", async () => {
     assert.equal(lobbyManager.getDebugConfig().placementScorePopupDurationMs, 10000);
     assert.equal(lobbyManager.getDebugConfig().finishScorePopupDurationMs, 10000);
     assert.equal(lobbyManager.getDebugConfig().levelSummaryDelayMs, 10000);
+});
+
+test("rollback restores politics inventory from checkpoint snapshot", () => {
+    GameConfig.politicsLifetime = "checkpoint";
+    const { engine } = createPlayingEngine(6, 20);
+
+    engine.room.checkpointLevel = 4;
+    engine.room.checkpointPolitics = {
+        P1: [{ id: "score_cap", earnedLevel: 4 }],
+        P2: [],
+        P3: []
+    };
+    engine.room.players[0].politicsInventory = [
+        { id: "score_cap", earnedLevel: 4 },
+        { id: "free_refresh", earnedLevel: 5 },
+        { id: "copy_score", earnedLevel: 6 }
+    ];
+
+    engine.restoreCheckpointPolitics();
+
+    assert.equal(engine.room.players[0].politicsInventory.length, 1);
+    assert.equal(engine.room.players[0].politicsInventory[0].id, "score_cap");
+    assert.equal(engine.room.players[0].politicsInventory[0].earnedLevel, 4);
+});
+
+test("saveCheckpointPolitics captures each player's current inventory", () => {
+    const { engine } = createPlayingEngine(4, 10);
+
+    engine.room.players[0].politicsInventory = [
+        { id: "free_refresh", earnedLevel: 4, source: "checkpoint_mvp" }
+    ];
+    engine.room.players[1].politicsInventory = [
+        { id: "copy_score", earnedLevel: 5 }
+    ];
+
+    engine.saveCheckpointPolitics();
+
+    assert.deepEqual(engine.room.checkpointPolitics.P1, [
+        { id: "free_refresh", earnedLevel: 4, source: "checkpoint_mvp" }
+    ]);
+    assert.deepEqual(engine.room.checkpointPolitics.P2, [
+        { id: "copy_score", earnedLevel: 5 }
+    ]);
+    assert.deepEqual(engine.room.checkpointPolitics.P3, []);
 });

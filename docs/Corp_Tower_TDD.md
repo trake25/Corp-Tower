@@ -111,8 +111,9 @@
 - Completed summaries bank level score into final totals; failed summaries keep previous and final totals equal.
 
 ### Persisted Room Gameplay State
-- Redis room snapshots include `checkpointScores`, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`, timers, level state, and serializable player inventory/score/token fields.
+- Redis room snapshots include `checkpointScores`, `checkpointPolitics`, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`, timers, level state, and serializable player inventory/score/token fields.
 - `checkpointScores` restores leaderboard totals during rollback so reconnect and multi-worker recovery do not reintroduce score farming.
+- `checkpointPolitics` restores politics inventory during rollback when `politicsLifetime` is `checkpoint`, preventing failed checkpoint-band attempts from farming Politics items.
 - `drawPile` and `nextDrawBlock` are persisted so reconnecting clients see the same shared refill queue.
 
 ## CI/CD

@@ -875,6 +875,7 @@ class LobbyManager {
                 level: snapshot.state.level,
                 checkpointLevel: snapshot.state.checkpointLevel,
                 checkpointScores: snapshot.state.checkpointScores || {},
+                checkpointPolitics: snapshot.state.checkpointPolitics || {},
                 targetHeight: snapshot.state.targetHeight,
                 currentHeight: snapshot.state.currentHeight,
                 drawPile: snapshot.state.drawPile || [],
