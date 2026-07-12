@@ -99,6 +99,11 @@ async function handleMessage(player, message) {
         }
 
         player.room.engine.queueQuickChat(player, data.slot);
+        return;
+    }
+
+    if (data.type === "activate_politics" && player.room) {
+        player.room.engine.activatePolitics(player.id, data.slot, data.targetPlayerId);
     }
 }
 

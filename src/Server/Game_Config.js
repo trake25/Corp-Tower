@@ -40,6 +40,15 @@ const GameConfig = {
     towerStabilityWarningThreshold: 60,
     towerStabilityCriticalThreshold: 30,
     towerStabilityFeedbackMode: "warnings_only",
+    politicsUnlockLevel: 4,
+    politicsMaxSlots: 3,
+    politicsActivationCooldownMs: 3000,
+    politicsLifetime: "level",
+    politicsCatalog: {
+        score_cap: { category: "Offensive", title: "Score Cap" },
+        copy_score: { category: "Defensive", title: "Copy Score" },
+        free_refresh: { category: "Utility", title: "Free Refresh" }
+    },
 
     // =========================
     // BLOCK SETTINGS

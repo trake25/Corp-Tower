@@ -43,6 +43,9 @@ function stripRuntimePlayer(player) {
         blocks: player.blocks || [],
         lastPlacementTime: player.lastPlacementTime || 0,
         lastQuickChatTime: player.lastQuickChatTime || 0,
+        politicsInventory: player.politicsInventory || [],
+        lastPoliticsActivationTime: player.lastPoliticsActivationTime || 0,
+        scoreCap: player.scoreCap || null,
         botLoopLevel: player.botLoopLevel || null
     };
 }
@@ -65,6 +68,7 @@ function stripRuntimeRoom(room) {
             towerBlocks: engineRoom.towerBlocks || [],
             towerStability: engineRoom.towerStability ?? 100,
             towerStabilityDiagnostics: engineRoom.towerStabilityDiagnostics || {},
+            sideQuest: engineRoom.sideQuest || null,
             state: engineRoom.state || "waiting",
             startsAt: engineRoom.startsAt || 0,
             endsAt: engineRoom.endsAt || 0,

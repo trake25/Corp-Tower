@@ -177,6 +177,10 @@ func send_quick_chat(slot: int) -> void:
 		"slot": slot
 	}))
 
+func activate_politics(slot: int, target_player_id: String) -> void:
+	if is_conn_estab:
+		ws.send_text(JSON.stringify({"type": "activate_politics", "slot": slot, "targetPlayerId": target_player_id}))
+
 func _process(delta: float) -> void:
 	if auto_reconnect_delay_remaining >= 0.0:
 		auto_reconnect_delay_remaining -= delta

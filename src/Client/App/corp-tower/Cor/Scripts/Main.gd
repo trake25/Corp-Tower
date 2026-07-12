@@ -31,6 +31,10 @@ var active_skin: Control
 var inventory_buttons: Array = []
 var cooldown_overlays: Array = []
 var quick_chat_buttons: Array = []
+var politics_buttons: Array = []
+var selected_politics_slot: int = -1
+var politics_target_buttons: Array = []
+var politics_dragging := false
 var block_previews: Array = []
 var block_height_labels: Array = []
 var block_name_labels: Array = []
@@ -68,6 +72,7 @@ var drag_pointer_id: int = DRAG_POINTER_MOUSE
 var inventory_slot_blocks: Array = []
 
 var status_label: Label
+var politics_target_box: VBoxContainer
 var player_label: Label
 var room_label: Label
 var level_label: Label
@@ -75,6 +80,7 @@ var timer_label: Label
 var score_label: Label
 var checkpoint_status_label: Label
 var checkpoint_separator: HSeparator
+var tower_stability_label: Label
 var height_label: Label
 var tower_value_label: Label
 var tower_status_label: Label
@@ -244,6 +250,7 @@ func prepare_active_skin() -> bool:
 func bind_skin_nodes() -> void:
 	missing_required_nodes.clear()
 	status_label = require_node("StatusLabel") as Label
+	politics_target_box = optional_node("PoliticsTargetBox") as VBoxContainer
 	player_label = require_node("PlayerLabel") as Label
 	room_label = require_node("RoomLabel") as Label
 	level_label = require_node("LevelLabel") as Label
@@ -251,6 +258,7 @@ func bind_skin_nodes() -> void:
 	score_label = require_node("ScoreLabel") as Label
 	checkpoint_status_label = require_node("CheckpointStatusLabel") as Label
 	checkpoint_separator = optional_node("CheckpointSeparator") as HSeparator
+	tower_stability_label = optional_node("TowerStabilityLabel") as Label
 	height_label = require_node("HeightLabel") as Label
 	tower_value_label = require_node("TowerValueLabel") as Label
 	tower_status_label = require_node("TowerStatusLabel") as Label
@@ -302,6 +310,7 @@ func bind_skin_nodes() -> void:
 		optional_node("QuickChatButton2") as Button,
 		optional_node("QuickChatButton3") as Button
 	]
+	politics_buttons = [optional_node("PoliticsButton1") as Button, optional_node("PoliticsButton2") as Button, optional_node("PoliticsButton3") as Button]
 
 	debug_button = optional_node("DebugButton") as Button
 	debug_overlay = optional_node("DebugOverlay") as Control
@@ -412,6 +421,13 @@ func setup_inventory_controls() -> void:
 			quick_chat_button.focus_mode = Control.FOCUS_NONE
 			quick_chat_button.pressed.connect(func(): on_quick_chat_pressed(i))
 	update_quick_chat_buttons()
+	for i in range(politics_buttons.size()):
+		if politics_buttons[i] != null:
+			politics_buttons[i].gui_input.connect(func(event):
+				if event is InputEventMouseButton and event.pressed and !politics_buttons[i].disabled:
+					selected_politics_slot = i
+					politics_dragging = true
+			)
 
 func setup_debug_controls() -> void:
 	if debug_button == null:
@@ -567,6 +583,12 @@ func _unhandled_input(event: InputEvent) -> void:
 func _input(event: InputEvent) -> void:
 	if is_block_dragging:
 		_handle_block_drag_input(event)
+	if politics_dragging and event is InputEventMouseButton and !event.pressed:
+		for target in politics_target_buttons:
+			if target.get_global_rect().has_point(event.global_position):
+				NetworkManager.activate_politics(selected_politics_slot, str(target.get_meta("player_id")))
+		politics_dragging = false
+		selected_politics_slot = -1
 
 func _process(_delta: float) -> void:
 	update_placement_cooldown_overlays()
@@ -898,6 +920,7 @@ func update_room(data) -> void:
 		data.get("nextDrawBlock", null)
 	)
 	update_checkpoint_status_ui(data.get("checkpointScoreStatus", {}))
+	update_tower_stability_ui(int(data.get("towerStability", 100)), data.get("towerStabilityDiagnostics", {}))
 
 func update_room_closed(data) -> void:
 	last_room_data = null
@@ -966,6 +989,11 @@ func update_game_state(data) -> void:
 			hide_level_summary()
 
 	update_player_color_map(players)
+	update_politics_target_ui(players)
+	var politics_quest_label := optional_node("PoliticsQuestLabel") as Label
+	if politics_quest_label != null:
+		var side_quest: Dictionary = data.get("sideQuest", {})
+		politics_quest_label.text = "Politics Quest\n" + str(side_quest.get("label", "Unlocks at Level 4"))
 	if tower_stack.has_method("set_player_color_map"):
 		tower_stack.call("set_player_color_map", player_color_map)
 
@@ -992,6 +1020,7 @@ func update_game_state(data) -> void:
 	var max_refresh_tokens: int = int(data.get("maxRefreshTokens", 1))
 	var max_uses_per_level: int = int(data.get("maxRefreshUsesPerLevel", 2))
 	var my_blocks: Array = []
+	var my_politics: Array = []
 
 	for i in range(players.size()):
 		var player: Dictionary = players[i]
@@ -1004,6 +1033,7 @@ func update_game_state(data) -> void:
 			my_refresh_tokens = int(player.get("refreshTokens", 0))
 			my_refresh_uses_remaining = int(player.get("refreshUsesRemaining", 0))
 			my_blocks = player.get("blocks", [])
+			my_politics = player.get("politicsInventory", [])
 
 		if i < players.size() - 1:
 			scores_text += "\n"
@@ -1030,6 +1060,7 @@ func update_game_state(data) -> void:
 		my_blocks,
 		int(data.get("activeInventorySlots", MAX_INVENTORY_SLOTS))
 	)
+	update_politics_inventory_ui(my_politics)
 	quick_chat_templates = data.get("quickChatTemplates", quick_chat_templates)
 	quick_chat_cooldown_ms = int(data.get("quickChatCooldownMs", quick_chat_cooldown_ms))
 	update_quick_chat_buttons()
@@ -1190,6 +1221,14 @@ func set_checkpoint_status_visible(should_show: bool) -> void:
 	if checkpoint_status_label != null:
 		checkpoint_status_label.visible = should_show
 
+func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
+	if tower_stability_label == null:
+		return
+	var safe_stability: int = clampi(stability, 0, 100)
+	var state := "Stable" if safe_stability > 60 else ("Warning" if safe_stability > 30 else "Critical")
+	tower_stability_label.text = "Tower Stability: " + str(safe_stability) + "% (" + state + ")"
+	tower_stability_label.modulate = Color(0.7, 1.0, 0.75, 1.0) if safe_stability > 60 else (Color(1.0, 0.8, 0.3, 1.0) if safe_stability > 30 else Color(1.0, 0.4, 0.32, 1.0))
+
 func get_local_player_color() -> Color:
 	var player_id: String = str(NetworkManager.player_id)
 	if player_color_map.has(player_id):
@@ -1210,6 +1249,39 @@ func update_player_color_map(players: Array) -> void:
 
 	player_color_map = updated_map
 	player_order = updated_order
+
+func update_politics_target_ui(players: Array) -> void:
+	if politics_target_box == null:
+		return
+	for child in politics_target_box.get_children():
+		child.queue_free()
+	politics_target_buttons = []
+	for player in players:
+		var player_id := str(player.get("id", ""))
+		if player_id == "" or player_id == str(NetworkManager.player_id):
+			continue
+		var target := Button.new()
+		target.text = player_id
+		target.tooltip_text = "Drop a Politics item here to target " + player_id
+		target.add_theme_color_override("font_color", player_color_map.get(player_id, Color.WHITE))
+		target.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+		target.add_theme_constant_override("outline_size", 3)
+		target.custom_minimum_size = Vector2(72, 24)
+		politics_target_box.add_child(target)
+		target.set_meta("player_id", player_id)
+		politics_target_buttons.append(target)
+
+func update_politics_inventory_ui(items: Array) -> void:
+	for i in range(politics_buttons.size()):
+		var button: Button = politics_buttons[i]
+		if button == null:
+			continue
+		if i < items.size() and typeof(items[i]) == TYPE_DICTIONARY:
+			button.text = str(items[i].get("id", "Politics")).replace("_", " ").capitalize()
+			button.disabled = current_match_state != "playing"
+		else:
+			button.text = "Politics"
+			button.disabled = true
 
 func normalize_block(raw_block, index: int) -> Dictionary:
 	if typeof(raw_block) == TYPE_DICTIONARY:

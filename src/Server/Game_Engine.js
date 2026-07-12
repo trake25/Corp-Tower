@@ -49,6 +49,8 @@ class GameEngine {
             towerBlocks: this.room.towerBlocks || [],
             towerStability: this.room.towerStability ?? 100,
             towerStabilityDiagnostics: this.room.towerStabilityDiagnostics || {},
+            sideQuest: this.room.sideQuest || null,
+            politicsEvents: this.consumePoliticsEvents(),
             towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode,
             secondsRemaining: Math.ceil(this.getRemainingMs() / 1000),
             lastLevelSummary: this.room.lastLevelSummary,
@@ -74,6 +76,7 @@ class GameEngine {
                     GameConfig.maxRefreshUsesPerLevel - player.refreshUsesThisLevel
                 ),
                 blocks: player.blocks
+                ,politicsInventory: player.politicsInventory || []
             }))
         };
 
@@ -116,6 +119,8 @@ class GameEngine {
             lastLevelSummary: null,
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
+            pendingPoliticsEvents: [],
+            sideQuest: null,
             scoreEventSeq: 0
         };
 
@@ -129,6 +134,8 @@ class GameEngine {
             player.blocks = [];
             player.lastPlacementTime = 0;
             player.lastQuickChatTime = 0;
+            player.politicsInventory = [];
+            player.lastPoliticsActivationTime = 0;
             player.lastQuickChatTime = 0;
         });
         this.saveCheckpointScores();
@@ -158,6 +165,8 @@ class GameEngine {
             lastLevelSummary: snapshot.state.lastLevelSummary,
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
+            pendingPoliticsEvents: [],
+            sideQuest: snapshot.state.sideQuest || null,
             scoreEventSeq: 0
         };
         this.ensureCheckpointScores();
@@ -301,6 +310,47 @@ class GameEngine {
         return events;
     }
 
+    consumePoliticsEvents() {
+        const events = this.room?.pendingPoliticsEvents || [];
+        if (this.room) this.room.pendingPoliticsEvents = [];
+        return events;
+    }
+
+    setupSideQuest() {
+        if (this.room.level < GameConfig.politicsUnlockLevel) { this.room.sideQuest = null; return; }
+        const sizes = Object.keys(GameConfig.blockShapeVariants).map(Number).filter(size => this.isBlockSizeUnlocked(size) && size >= 4);
+        const options = sizes.map(size => ({ id: `place_${size}`, type: "place_size", size, label: `First to place a ${size}-cell block` }));
+        options.push({ id: "exact_finish", type: "exact_finish", label: "First to finish exactly" });
+        this.room.sideQuest = { ...options[Math.floor(Math.random() * options.length)], claimedBy: null, rewardId: Object.keys(GameConfig.politicsCatalog)[Math.floor(Math.random() * 3)] };
+    }
+
+    tryCompleteSideQuest(player, block, exactFinish) {
+        const quest = this.room.sideQuest;
+        if (!quest || quest.claimedBy) return;
+        const complete = (quest.type === "place_size" && this.getBlockCellCount(block) === quest.size) || (quest.type === "exact_finish" && exactFinish);
+        if (!complete || player.politicsInventory.length >= GameConfig.politicsMaxSlots) return;
+        quest.claimedBy = player.id;
+        player.politicsInventory.push({ id: quest.rewardId, earnedLevel: this.room.level });
+        this.room.pendingPoliticsEvents.push({ id: `${this.room.level}:quest:${player.id}`, type: "politics_earned", playerId: player.id, politicsId: quest.rewardId, label: "Politics earned" });
+    }
+
+    activatePolitics(playerId, slot, targetPlayerId) {
+        if (!this.room || this.room.state !== "playing") return false;
+        const player = this.room.players.find(p => p.id === playerId);
+        const target = this.room.players.find(p => p.id === targetPlayerId);
+        if (!player || !target || !Number.isInteger(Number(slot))) return false;
+        if (Date.now() - Number(player.lastPoliticsActivationTime || 0) < GameConfig.politicsActivationCooldownMs) return false;
+        const item = player.politicsInventory[Number(slot)];
+        if (!item) return false;
+        player.politicsInventory.splice(Number(slot), 1);
+        player.lastPoliticsActivationTime = Date.now();
+        if (item.id === "copy_score") { target.score = player.score; this.room.checkpointScores[target.id] = player.score; }
+        if (item.id === "free_refresh") { if (target.refreshTokens < GameConfig.maxRefreshTokens) target.refreshTokens++; else target.blocks = this.generateRefreshBlocks(target.blocks || []); }
+        if (item.id === "score_cap") { target.scoreCap = this.getCheckpointScoreStatus().players.find(p => p.id === target.id)?.requiredScore || target.score; target.scoreCapCasterId = player.id; }
+        this.room.pendingPoliticsEvents.push({ id: `${this.room.level}:politics:${Date.now()}`, type: "politics_activated", playerId, targetPlayerId, politicsId: item.id, label: GameConfig.politicsCatalog[item.id].title });
+        this.persistRoom(); this.broadcastGameState(); return true;
+    }
+
     getPostLevelTransitionDelayMs() {
         const levelSummaryDelayMs =
             Math.max(0, Number(GameConfig.levelSummaryDelayMs) || 0);
@@ -343,6 +393,7 @@ class GameEngine {
         this.room.endsAt = this.room.startsAt + GameConfig.levelTimeLimitMs;
         this.room.lastLevelSummary = null;
         this.room.pendingScoreEvents = [];
+        this.setupSideQuest();
 
         this.room.players.forEach(player => {
             player.levelScore = 0;
@@ -933,6 +984,8 @@ class GameEngine {
         this.refillPlayerBlock(player);
 
         this.addPlacementScore(player, block, effectiveHeight);
+
+        this.tryCompleteSideQuest(player, block, this.room.currentHeight === this.room.targetHeight);
 
         console.log(`${player.id} placed block (${blockHeight})`);
         console.log("Current Height:", this.room.currentHeight);
@@ -1767,7 +1820,15 @@ class GameEngine {
     addLevelScoreToLeaderboard() {
         // Add levelScore to main score only when level is completed
         this.room.players.forEach(player => {
-            player.score += player.levelScore;
+            const cap = Number(player.scoreCap || Infinity);
+            const allowed = Math.max(0, cap - player.score);
+            const banked = Math.min(player.levelScore, allowed);
+            const overflow = player.levelScore - banked;
+            player.score += banked;
+            if (overflow > 0) {
+                const caster = this.room.players.find(candidate => candidate.id === player.scoreCapCasterId);
+                if (caster) caster.score += overflow;
+            }
             console.log(`${player.id} level score (${player.levelScore}) added to leaderboard score. New total: ${player.score}`);
         });
     }

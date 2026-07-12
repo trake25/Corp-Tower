@@ -125,6 +125,12 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 18
 text = "Disconnected"
 
+[node name="TopPoliticsTargetBox" type="VBoxContainer" parent="SafeArea/Root/TopHud/HudMargin/HudRows/StatusRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(82, 0)
+layout_mode = 2
+theme_override_constants/separation = 2
+
 [node name="ConnectButton" type="Button" parent="SafeArea/Root/TopHud/HudMargin/HudRows/StatusRow" unique_id=2055968287]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 40)
@@ -181,6 +187,20 @@ theme_override_constants/margin_bottom = 10
 [node name="CenterColumns" type="HBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin"]
 layout_mode = 2
 theme_override_constants/separation = 10
+
+[node name="PoliticsPanel" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+
+[node name="PoliticsQuestLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/PoliticsPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+text = "Politics Quest\nUnlocks at Level 4"
+
+[node name="PoliticsTargetBox" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/PoliticsPanel"]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="TowerColumn" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns"]
 layout_mode = 2
@@ -302,6 +322,12 @@ theme_override_colors/font_color = Color(0.84, 0.9, 0.98, 1)
 horizontal_alignment = 0
 autowrap_mode = 3
 text = "Checkpoint"
+
+[node name="TowerStabilityLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Tower Stability: 100% (Stable)"
 
 [node name="BottomControls" type="PanelContainer" parent="SafeArea/Root"]
 layout_mode = 2
@@ -1173,6 +1199,28 @@ layout_mode = 2
 [node name="QuickChatRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
 layout_mode = 2
 theme_override_constants/separation = 6
+
+[node name="PoliticsRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PoliticsButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PoliticsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Politics"
+
+[node name="PoliticsButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PoliticsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Politics"
+
+[node name="PoliticsButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PoliticsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Politics"
 
 [node name="QuickChatButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/QuickChatRow"]
 unique_name_in_owner = true
