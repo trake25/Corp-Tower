@@ -16,7 +16,10 @@ const LEVEL_SUMMARY_DEFAULT_DELAY_MS := 3000
 const BOT_STRATEGY_COOPERATIVE := "cooperative"
 const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
+const BlockPreviewScript = preload("res://Cor/Scripts/BlockPreview.gd")
 const LOCAL_PLAYER_MARKER := "You"
+const DRAG_PREVIEW_SIZE := Vector2(96, 96)
+const DRAG_POINTER_MOUSE := -1
 const SKIN_SCENES := {
 	"DefaultSkin": "res://Cor/Scenes/Skins/DefaultSkin.tscn",
 	"Figma_SkinV1": "res://Cor/Scenes/Skins/Figma_SkinV1.tscn"
@@ -50,6 +53,13 @@ var pending_level_summary_key: String = ""
 var summary_show_timer: Timer
 var summary_hide_timer: Timer
 var active_inventory_slots: int = MAX_INVENTORY_SLOTS
+var current_match_state: String = ""
+var placement_cooldown_ms: int = 2000
+var last_placement_sent_at_ms: int = 0
+var is_block_dragging: bool = false
+var drag_slot_index: int = -1
+var drag_pointer_id: int = DRAG_POINTER_MOUSE
+var inventory_slot_blocks: Array = []
 
 var status_label: Label
 var player_label: Label
@@ -64,6 +74,8 @@ var tower_value_label: Label
 var tower_status_label: Label
 var tower_fill: Panel
 var tower_stack: Control
+var tower_drop_zone: Control
+var drag_preview: Control
 var block_label: Label
 var draw_pile_name_label: Label
 var draw_pile_count_label: Label
@@ -238,6 +250,8 @@ func bind_skin_nodes() -> void:
 	tower_status_label = require_node("TowerStatusLabel") as Label
 	tower_fill = require_node("TowerFill") as Panel
 	tower_stack = require_node("TowerStack") as Control
+	tower_drop_zone = require_node("TowerDropZone") as Control
+	drag_preview = require_node("DragPreview") as Control
 	block_label = require_node("BlockLabel") as Label
 	draw_pile_name_label = require_node("DrawPileNameLabel") as Label
 	draw_pile_count_label = require_node("DrawPileCountLabel") as Label
@@ -359,9 +373,22 @@ func setup_inventory_controls() -> void:
 	for preview in block_previews:
 		preview.cell_color = get_local_player_color()
 
-	inventory_buttons[0].pressed.connect(func(): on_block_pressed(0))
-	inventory_buttons[1].pressed.connect(func(): on_block_pressed(1))
-	inventory_buttons[2].pressed.connect(func(): on_block_pressed(2))
+	for i in range(inventory_buttons.size()):
+		var button: Button = inventory_buttons[i]
+		button.focus_mode = Control.FOCUS_NONE
+		button.toggle_mode = false
+		button.gui_input.connect(func(event: InputEvent): _on_inventory_card_gui_input(event, i))
+
+	if drag_preview != null:
+		drag_preview.visible = false
+		drag_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		drag_preview.custom_minimum_size = DRAG_PREVIEW_SIZE
+		drag_preview.size = DRAG_PREVIEW_SIZE
+		if drag_preview.has_method("set_preview_mode"):
+			drag_preview.call(
+				"set_preview_mode",
+				BlockPreviewScript.PreviewMode.FLOATING_DRAG
+			)
 
 	connect_button.pressed.connect(on_connect_pressed)
 	refresh_button.pressed.connect(on_refresh_pressed)
@@ -478,6 +505,9 @@ func reset_ui() -> void:
 	level_label.text = "Level -"
 	timer_label.text = "Time -"
 	score_label.text = "Waiting for players"
+	current_match_state = ""
+	last_placement_sent_at_ms = 0
+	cancel_block_drag()
 	update_checkpoint_status_ui({})
 	height_label.text = "Height 0/0"
 	tower_value_label.text = "0 / 0"
@@ -493,6 +523,7 @@ func reset_ui() -> void:
 	clear_score_popups()
 	cancel_pending_level_summary()
 	hide_level_summary()
+	cancel_block_drag()
 
 	if !is_switching_skin:
 		seen_score_event_ids.clear()
@@ -513,11 +544,187 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_cancel") and skin_overlay != null and skin_overlay.visible:
 		set_skin_overlay_open(false)
 
+func _input(event: InputEvent) -> void:
+	if is_block_dragging:
+		_handle_block_drag_input(event)
+
 func on_connect_pressed() -> void:
 	NetworkManager.toggle_connection()
 
 func on_block_pressed(index: int) -> void:
+	if !can_place_block(index):
+		return
+
+	last_placement_sent_at_ms = Time.get_ticks_msec()
 	NetworkManager.place_block(index)
+
+func _on_inventory_card_gui_input(event: InputEvent, index: int) -> void:
+	if is_block_dragging:
+		return
+
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event
+
+		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
+			return
+
+		if mouse_event.pressed:
+			if can_start_block_drag(index):
+				begin_block_drag(index, mouse_event.global_position, DRAG_POINTER_MOUSE)
+				get_viewport().set_input_as_handled()
+		elif is_block_dragging and drag_slot_index == index:
+			finish_block_drag(mouse_event.global_position)
+			get_viewport().set_input_as_handled()
+	elif event is InputEventScreenTouch:
+		var touch_event: InputEventScreenTouch = event
+
+		if touch_event.pressed:
+			if can_start_block_drag(index):
+				begin_block_drag(index, touch_event.position, touch_event.index)
+				get_viewport().set_input_as_handled()
+		elif is_block_dragging and drag_pointer_id == touch_event.index:
+			finish_block_drag(touch_event.position)
+			get_viewport().set_input_as_handled()
+
+func _handle_block_drag_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion and drag_pointer_id == DRAG_POINTER_MOUSE:
+		update_block_drag(event.global_position)
+		get_viewport().set_input_as_handled()
+	elif event is InputEventScreenDrag and event.index == drag_pointer_id:
+		update_block_drag(event.position)
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event
+
+		if (
+			mouse_event.button_index == MOUSE_BUTTON_LEFT and
+			!mouse_event.pressed and
+			drag_pointer_id == DRAG_POINTER_MOUSE
+		):
+			finish_block_drag(mouse_event.global_position)
+			get_viewport().set_input_as_handled()
+	elif event is InputEventScreenTouch:
+		var touch_event: InputEventScreenTouch = event
+
+		if !touch_event.pressed and drag_pointer_id == touch_event.index:
+			finish_block_drag(touch_event.position)
+			get_viewport().set_input_as_handled()
+
+func can_start_block_drag(index: int) -> bool:
+	return can_place_block(index)
+
+func can_place_block(index: int) -> bool:
+	if index < 0 or index >= inventory_buttons.size():
+		return false
+
+	if inventory_buttons[index].disabled:
+		return false
+
+	if index >= active_inventory_slots:
+		return false
+
+	if index >= inventory_slot_blocks.size():
+		return false
+
+	if typeof(inventory_slot_blocks[index]) != TYPE_DICTIONARY:
+		return false
+
+	if inventory_slot_blocks[index].is_empty():
+		return false
+
+	return is_placement_input_allowed()
+
+func is_placement_input_allowed() -> bool:
+	if !NetworkManager.is_conn_estab:
+		return false
+
+	if current_match_state != "playing":
+		return false
+
+	if is_block_dragging:
+		return true
+
+	return get_placement_cooldown_remaining_ms() <= 0
+
+func get_placement_cooldown_remaining_ms() -> int:
+	if last_placement_sent_at_ms <= 0:
+		return 0
+
+	var elapsed_ms: int = Time.get_ticks_msec() - last_placement_sent_at_ms
+	return maxi(0, placement_cooldown_ms - elapsed_ms)
+
+func begin_block_drag(index: int, global_pos: Vector2, pointer_id: int) -> void:
+	if drag_preview == null:
+		return
+
+	var block: Dictionary = inventory_slot_blocks[index]
+	is_block_dragging = true
+	drag_slot_index = index
+	drag_pointer_id = pointer_id
+	drag_preview.cell_color = get_local_player_color()
+
+	if drag_preview.has_method("set_preview_mode"):
+		drag_preview.call(
+			"set_preview_mode",
+			BlockPreviewScript.PreviewMode.FLOATING_DRAG
+		)
+
+	drag_preview.set_block(block)
+	drag_preview.visible = true
+	drag_preview.z_index = 40
+	update_block_drag(global_pos)
+
+func update_block_drag(global_pos: Vector2) -> void:
+	if drag_preview == null or !is_block_dragging:
+		return
+
+	drag_preview.global_position = global_pos - drag_preview.size * 0.5
+	update_tower_drop_zone_highlight(global_pos)
+
+func finish_block_drag(global_pos: Vector2) -> void:
+	if !is_block_dragging:
+		return
+
+	var slot_index: int = drag_slot_index
+	var should_place: bool = (
+		slot_index >= 0 and
+		is_pointer_in_tower_drop_zone(global_pos) and
+		can_place_block(slot_index)
+	)
+
+	cancel_block_drag()
+
+	if should_place:
+		on_block_pressed(slot_index)
+
+func cancel_block_drag() -> void:
+	is_block_dragging = false
+	drag_slot_index = -1
+	drag_pointer_id = DRAG_POINTER_MOUSE
+	reset_tower_drop_zone_highlight()
+
+	if drag_preview != null:
+		drag_preview.visible = false
+		drag_preview.clear_block()
+
+func is_pointer_in_tower_drop_zone(global_pos: Vector2) -> bool:
+	var drop_zone: Control = tower_drop_zone if tower_drop_zone != null else tower_stack
+
+	if drop_zone == null:
+		return false
+
+	return drop_zone.get_global_rect().has_point(global_pos)
+
+func update_tower_drop_zone_highlight(global_pos: Vector2) -> void:
+	if tower_fill == null:
+		return
+
+	var in_drop_zone: bool = is_pointer_in_tower_drop_zone(global_pos)
+	tower_fill.modulate = Color(1.18, 1.18, 1.18, 1.0) if in_drop_zone else Color.WHITE
+
+func reset_tower_drop_zone_highlight() -> void:
+	if tower_fill != null:
+		tower_fill.modulate = Color.WHITE
 
 func on_refresh_pressed() -> void:
 	NetworkManager.refresh_blocks()
@@ -567,6 +774,7 @@ func switch_skin(skin_name: String) -> void:
 		set_skin_overlay_open(false)
 		return
 
+	cancel_block_drag()
 	is_switching_skin = true
 	load_skin(skin_name)
 	if active_skin == null or !prepare_active_skin():
@@ -644,6 +852,9 @@ func update_room(data) -> void:
 func update_room_closed(data) -> void:
 	last_room_data = null
 	last_game_state_data = null
+	current_match_state = ""
+	last_placement_sent_at_ms = 0
+	cancel_block_drag()
 	room_label.text = "Room closed"
 	level_label.text = "Level -"
 	timer_label.text = "Time -"
@@ -673,6 +884,11 @@ func update_game_state(data) -> void:
 		last_game_state_data = data
 
 	var state: String = str(data.get("state", "playing"))
+	current_match_state = state
+
+	if state != "playing" and is_block_dragging:
+		cancel_block_drag()
+
 	var seconds_remaining: int = int(data.get("secondsRemaining", 0))
 	var current_height: int = int(data.get("currentHeight", 0))
 	var target_height: int = int(data.get("targetHeight", 0))
@@ -775,6 +991,7 @@ func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS)
 	var clean_blocks: Array = []
 	var local_player_color: Color = get_local_player_color()
 	active_inventory_slots = clampi(active_slots, 1, MAX_INVENTORY_SLOTS)
+	inventory_slot_blocks = [{}, {}, {}]
 
 	for i in range(blocks.size()):
 		clean_blocks.append(normalize_block(blocks[i], i))
@@ -794,6 +1011,7 @@ func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS)
 			preview.clear_block()
 			slot_height_label.text = "Locked"
 			name_label.text = "Level " + str(get_slot_unlock_level(i))
+			inventory_slot_blocks[i] = {}
 		elif i < clean_blocks.size():
 			var block: Dictionary = clean_blocks[i]
 			button.disabled = false
@@ -801,12 +1019,14 @@ func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS)
 			preview.set_block(block)
 			slot_height_label.text = "Height " + str(int(block.get("height", 0)))
 			name_label.text = str(block.get("shapeId", "BLOCK"))
+			inventory_slot_blocks[i] = block
 		else:
 			button.disabled = true
 			button.text = ""
 			preview.clear_block()
 			slot_height_label.text = "Empty"
 			name_label.text = "Slot " + str(i + 1)
+			inventory_slot_blocks[i] = {}
 
 func get_slot_unlock_level(slot_index: int) -> int:
 	if slot_index <= 0:
@@ -1778,6 +1998,7 @@ func update_debug_config(config) -> void:
 		return
 
 	is_syncing_debug_config = true
+	placement_cooldown_ms = int(config.get("placementCooldown", placement_cooldown_ms))
 	bots_toggle.set_pressed_no_signal(bool(config.get("debugBotsEnabled", false)))
 	if bot_strategy_button != null:
 		var strategy: String = str(config.get("debugBotStrategy", BOT_STRATEGY_COOPERATIVE))

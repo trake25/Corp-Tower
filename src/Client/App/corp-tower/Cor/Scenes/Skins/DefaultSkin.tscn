@@ -221,6 +221,16 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("3_towerstack")
 
+[node name="TowerDropZone" type="Control" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/TowerColumn/TowerTrack"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
 [node name="TowerValueLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/TowerColumn/TowerTrack"]
 unique_name_in_owner = true
 layout_mode = 1
@@ -617,6 +627,17 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 4
+
+[node name="DragPreview" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 40
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 0
+offset_right = 96.0
+offset_bottom = 96.0
+mouse_filter = 2
+script = ExtResource("2_blockpreview")
 
 [node name="ScorePopupLayer" type="Control" parent="."]
 unique_name_in_owner = true

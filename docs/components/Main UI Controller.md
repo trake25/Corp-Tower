@@ -5,7 +5,7 @@
 - File: `src/Client/App/corp-tower/Cor/Scripts/Main.gd`.
 
 ## Responsibilities
-- Wire connect, block placement, and refresh buttons.
+- Wire connect, block drag-and-drop placement, and refresh buttons.
 - Display connection, room, score, checkpoint minimum score status, timer, tower height/progress, 3-slot block inventory, draw pile preview, and refresh state.
 - Render shape-based block inventory cards from server-provided fixed-orientation cells.
 - Render the visible `nextDrawBlock` and remaining `drawPileCount` in the former 4th inventory-card position.
@@ -19,13 +19,18 @@
 - Clear stale UI on `room_closed`.
 
 ## Key Logic
-- Inventory buttons map to block indexes.
+- Inventory cards use touch/mouse drag instead of tap-to-place.
+- Drag starts only on active inventory slots with a block, while match state is `playing`, and while local placement cooldown has elapsed.
+- Locked and empty slots remain visible but do not start drags.
+- Drag shows a floating `BlockPreview` shape that follows the pointer; release inside `TowerDropZone` sends the existing index-based `place_block` request.
+- Release outside the tower drop zone cancels locally without contacting the server.
+- Drag coordinates do not affect placement or tower geometry; the server contract remains index-based.
 - Only the 3 active inventory slots are actionable.
 - Locked slots remain visible but disabled until their unlock level.
 - The draw-pile preview is not clickable; it shows the shared next refill block that whichever player places next will receive.
 - The draw-pile preview can legitimately show `0 left`, especially on level 1 before any unused blocks have been saved.
 - Inventory cards tolerate legacy numeric blocks and new `{ id, shapeId, cells, height }` block objects.
-- `BlockPreview.gd` draws inventory shape cells.
+- `BlockPreview.gd` draws inventory shape cells and the floating drag preview.
 - `TowerStack.gd` draws placed-block tower history; when connected to an old numeric-block server it falls back to a simple stack from `currentHeight`.
 - `TowerStack.gd` keeps readable cell size and scrolls the visible tower window upward when high-level towers exceed the track height.
 - Tower center display visualizes both current height against target height and the placed-block stack.
@@ -58,3 +63,4 @@
 - Current working UI is preserved as `DefaultSkin`; Figma-inspired UI is `Figma_SkinV1`.
 - Debug and skin menu UI are available as bottom-right floating buttons with overlay panels.
 - The center tower is visual only; placement is still server-authoritative and index-based.
+- `TowerDropZone` defines the tower release target; `DragPreview` renders the floating drag shape above gameplay UI.

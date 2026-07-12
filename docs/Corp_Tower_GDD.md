@@ -18,6 +18,7 @@
 ## Players
 - 3 players per match.
 - Real-time interaction; placement order by who acts first.
+- Players drag blocks from inventory cards onto the shared tower drop zone to place them.
 
 ## Reconnect and Shared Room Continuity
 - Players receive a persistent server-issued player id and reconnect token.

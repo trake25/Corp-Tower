@@ -15,8 +15,12 @@
 
 ## Responsibilities
 - Provide the required node contract consumed by [[Main UI Controller]].
-- Host HUD, inventory, draw-pile preview, tower, score, summary, skin picker, and debug overlay nodes.
+- Host HUD, inventory, draw-pile preview, tower, tower drop zone, drag preview, score, summary, skin picker, and debug overlay nodes.
 - Allow runtime switching between `DefaultSkin` and `Figma_SkinV1`.
+
+## Required Drag Nodes
+- `TowerDropZone`: full-rect control over the tower track used to validate drag release.
+- `DragPreview`: hidden `BlockPreview` instance shown while dragging an inventory block.
 
 ## Dependencies
 - [[Main UI Controller]]

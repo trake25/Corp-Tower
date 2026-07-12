@@ -78,6 +78,13 @@
 | `refresh_blocks` | Token count, per-level usage cap, active state, final lockout. |
 | `update_config` | Key allowlist, value ranges, bot delay min/max, debug bot count clamp, bot strategy allowlist, and `resetDebugConfig` default restore action. |
 
+### Client Placement UI
+- Inventory cards use drag-and-drop instead of tap-to-place.
+- Drag starts only on active slots with blocks while match state is `playing` and local placement cooldown has elapsed; locked/empty slots and blocked server states do not start drags.
+- Release inside skin node `TowerDropZone` sends the existing index-only `place_block` request; release elsewhere cancels locally with no server message.
+- Drag pointer position is visual only and does not change placement geometry or the server contract.
+- `game_state` and `debug_config` remain backward-compatible; drag behavior uses existing authoritative fields plus local cooldown timing from `placementCooldown`.
+
 ### Block And Tower Payloads
 - Inventory `blocks[]`: server-assigned fixed-orientation block objects `{ id, shapeId, cells, height }`.
 - `activeInventorySlots`: number of currently unlocked active hand slots.

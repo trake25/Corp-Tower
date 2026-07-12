@@ -12,8 +12,13 @@
 ## Responsibilities
 - Render server-provided block `cells`.
 - Center previews inside inventory and draw-pile cards.
+- Render a larger semi-transparent floating preview during inventory drag.
 - Show unavailable/disabled preview state.
 - Support array-style and dictionary-style cell coordinates.
+
+## Preview Modes
+- `INVENTORY`: compact card preview used by inventory slots and the draw pile.
+- `FLOATING_DRAG`: larger pointer-following preview used while dragging a block toward the tower.
 
 ## Dependencies
 - [[Main UI Controller]]
