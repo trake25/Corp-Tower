@@ -1477,12 +1477,37 @@ class GameEngine {
         this.room.level = nextLevel;
 
         if (opensCheckpoint) {
+            this.awardCheckpointPolitics();
             this.room.checkpointLevel = this.room.level;
             this.saveCheckpointScores();
         }
 
         console.log(`\n=== LEVEL ${this.room.level} QUEUED ===`);
         this.startLevel();
+    }
+
+    awardCheckpointPolitics() {
+        const winner = this.room.players.reduce((best, player) => {
+            return !best || Number(player.score || 0) > Number(best.score || 0)
+                ? player
+                : best;
+        }, null);
+        if (!winner || (winner.politicsInventory || []).length >= GameConfig.politicsMaxSlots) {
+            return;
+        }
+        const ids = Object.keys(GameConfig.politicsCatalog || {});
+        if (ids.length === 0) return;
+        const politicsId = ids[Math.floor(Math.random() * ids.length)];
+        winner.politicsInventory = winner.politicsInventory || [];
+        winner.politicsInventory.push({ id: politicsId, earnedLevel: this.room.level, source: "checkpoint_mvp" });
+        this.room.pendingPoliticsEvents = this.room.pendingPoliticsEvents || [];
+        this.room.pendingPoliticsEvents.push({
+            id: `${this.room.level}:checkpoint-politics:${winner.id}`,
+            type: "politics_checkpoint_reward",
+            playerId: winner.id,
+            politicsId: politicsId,
+            label: "Checkpoint Politics"
+        });
     }
 
     isCheckpointLevel(level) {

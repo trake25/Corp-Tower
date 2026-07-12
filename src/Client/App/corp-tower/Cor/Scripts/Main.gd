@@ -35,6 +35,7 @@ var politics_buttons: Array = []
 var selected_politics_slot: int = -1
 var politics_target_buttons: Array = []
 var politics_dragging := false
+var politics_drag_ghost: Label
 var block_previews: Array = []
 var block_height_labels: Array = []
 var block_name_labels: Array = []
@@ -427,6 +428,7 @@ func setup_inventory_controls() -> void:
 				if event is InputEventMouseButton and event.pressed and !politics_buttons[i].disabled:
 					selected_politics_slot = i
 					politics_dragging = true
+					show_politics_drag_ghost(politics_buttons[i].text, event.global_position)
 			)
 
 func setup_debug_controls() -> void:
@@ -589,6 +591,11 @@ func _input(event: InputEvent) -> void:
 				NetworkManager.activate_politics(selected_politics_slot, str(target.get_meta("player_id")))
 		politics_dragging = false
 		selected_politics_slot = -1
+		hide_politics_drag_ghost()
+	if politics_dragging and event is InputEventMouseMotion:
+		move_politics_drag_ghost(event.global_position)
+	if politics_dragging and event is InputEventScreenDrag:
+		move_politics_drag_ghost(event.position)
 
 func _process(_delta: float) -> void:
 	update_placement_cooldown_overlays()
@@ -992,8 +999,11 @@ func update_game_state(data) -> void:
 	update_politics_target_ui(players)
 	var politics_quest_label := optional_node("PoliticsQuestLabel") as Label
 	if politics_quest_label != null:
-		var side_quest: Dictionary = data.get("sideQuest", {})
-		politics_quest_label.text = "Politics Quest\n" + str(side_quest.get("label", "Unlocks at Level 4"))
+		var side_quest: Variant = data.get("sideQuest", {})
+		var quest_label := "Unlocks at Level 4"
+		if typeof(side_quest) == TYPE_DICTIONARY:
+			quest_label = str(side_quest.get("label", quest_label))
+		politics_quest_label.text = "Politics Quest\n" + quest_label
 	if tower_stack.has_method("set_player_color_map"):
 		tower_stack.call("set_player_color_map", player_color_map)
 
@@ -1221,7 +1231,7 @@ func set_checkpoint_status_visible(should_show: bool) -> void:
 	if checkpoint_status_label != null:
 		checkpoint_status_label.visible = should_show
 
-func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
+func update_tower_stability_ui(stability: int, _diagnostics: Variant) -> void:
 	if tower_stability_label == null:
 		return
 	var safe_stability: int = clampi(stability, 0, 100)
@@ -1258,7 +1268,7 @@ func update_politics_target_ui(players: Array) -> void:
 	politics_target_buttons = []
 	for player in players:
 		var player_id := str(player.get("id", ""))
-		if player_id == "" or player_id == str(NetworkManager.player_id):
+		if player_id == "":
 			continue
 		var target := Button.new()
 		target.text = player_id
@@ -1270,6 +1280,20 @@ func update_politics_target_ui(players: Array) -> void:
 		politics_target_box.add_child(target)
 		target.set_meta("player_id", player_id)
 		politics_target_buttons.append(target)
+		target.gui_input.connect(func(event):
+			if politics_dragging and event is InputEventMouseButton and !event.pressed:
+				NetworkManager.activate_politics(selected_politics_slot, player_id)
+				politics_dragging = false
+				selected_politics_slot = -1
+				hide_politics_drag_ghost()
+				get_viewport().set_input_as_handled()
+			elif politics_dragging and event is InputEventScreenTouch and !event.pressed:
+				NetworkManager.activate_politics(selected_politics_slot, player_id)
+				politics_dragging = false
+				selected_politics_slot = -1
+				hide_politics_drag_ghost()
+				get_viewport().set_input_as_handled()
+		)
 
 func update_politics_inventory_ui(items: Array) -> void:
 	for i in range(politics_buttons.size()):
@@ -1282,6 +1306,26 @@ func update_politics_inventory_ui(items: Array) -> void:
 		else:
 			button.text = "Politics"
 			button.disabled = true
+
+func show_politics_drag_ghost(text: String, global_position: Vector2) -> void:
+	if politics_drag_ghost == null:
+		politics_drag_ghost = Label.new()
+		politics_drag_ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		politics_drag_ghost.z_index = 100
+		politics_drag_ghost.add_theme_font_size_override("font_size", 18)
+		politics_drag_ghost.add_theme_color_override("font_color", Color(1.0, 0.86, 0.3, 0.9))
+		active_skin.add_child(politics_drag_ghost)
+	politics_drag_ghost.text = text
+	politics_drag_ghost.visible = true
+	move_politics_drag_ghost(global_position)
+
+func move_politics_drag_ghost(global_position: Vector2) -> void:
+	if politics_drag_ghost != null:
+		politics_drag_ghost.global_position = global_position + Vector2(14, 14)
+
+func hide_politics_drag_ghost() -> void:
+	if politics_drag_ghost != null:
+		politics_drag_ghost.visible = false
 
 func normalize_block(raw_block, index: int) -> Dictionary:
 	if typeof(raw_block) == TYPE_DICTIONARY:

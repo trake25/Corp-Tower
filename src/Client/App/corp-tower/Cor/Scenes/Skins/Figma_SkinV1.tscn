@@ -1206,18 +1206,21 @@ theme_override_constants/separation = 6
 
 [node name="PoliticsButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PoliticsRow"]
 unique_name_in_owner = true
+disabled = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Politics"
 
 [node name="PoliticsButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PoliticsRow"]
 unique_name_in_owner = true
+disabled = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Politics"
 
 [node name="PoliticsButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PoliticsRow"]
 unique_name_in_owner = true
+disabled = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Politics"
