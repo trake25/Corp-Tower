@@ -15,7 +15,7 @@
 
 ## Responsibilities
 - Provide the required node contract consumed by [[Main UI Controller]].
-- Host HUD, inventory, draw-pile preview, tower, tower drop zone, drag preview, score, summary, skin picker, and debug overlay nodes.
+- Host HUD, inventory, radial cooldown overlays, quick-chat controls, draw-pile preview, tower, tower drop zone, drag preview, score, summary, skin picker, and debug overlay nodes.
 - Allow runtime switching between `DefaultSkin` and `Figma_SkinV1`.
 
 ## Required Drag Nodes

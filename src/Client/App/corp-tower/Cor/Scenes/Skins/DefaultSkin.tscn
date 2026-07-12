@@ -1,9 +1,10 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/BlockPreview.gd" id="2_blockpreview"]
 [ext_resource type="Script" path="res://Cor/Scripts/TowerStack.gd" id="3_towerstack"]
 [ext_resource type="Script" path="res://Cor/Scripts/DebugOverlay.gd" id="4_debugoverlay"]
 [ext_resource type="Theme" path="res://Cor/Themes/DefaultSkinTheme.tres" id="5_theme"]
+[ext_resource type="Script" path="res://Cor/Scripts/CooldownOverlay.gd" id="6_cooldown"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Background"]
 bg_color = Color(0.07, 0.08, 0.095, 1)
@@ -352,6 +353,16 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxFlat_ActionButton")
 
+[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_cooldown")
+
 [node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton1"]
 layout_mode = 1
 anchors_preset = 15
@@ -400,6 +411,16 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxFlat_ActionButton")
 
+[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_cooldown")
+
 [node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton2"]
 layout_mode = 1
 anchors_preset = 15
@@ -447,6 +468,16 @@ custom_minimum_size = Vector2(118, 102)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxFlat_ActionButton")
+
+[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton3"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_cooldown")
 
 [node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton3"]
 layout_mode = 1
@@ -1138,3 +1169,28 @@ text = "Assist Threshold: 0%"
 [node name="AssistThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="QuickChatRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="QuickChatButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/QuickChatRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Place now!"
+
+[node name="QuickChatButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/QuickChatRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "I'm out of blocks!"
+
+[node name="QuickChatButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/QuickChatRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sorry!"

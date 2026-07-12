@@ -79,6 +79,11 @@
 - Default level time limit (Configurable): 30 seconds.
 - Adjustable through server-side debug tuning (`levelTimeLimitMs`); public gameplay UI does not expose debug controls in the current design pass.
 
+## Quick Chat
+- Each player has three fixed quick-chat slots: `Place now!`, `I'm out of blocks!`, and `Sorry!`.
+- Messages are visible to all current room participants and have a server-authoritative per-player cooldown (default: 6 seconds) to prevent spam.
+- Templates and cooldown are config-driven so future meme text/emoticons can replace the defaults without changing gameplay contracts.
+
 ## Failure Conditions
 - Time runs out before target height is reached.
 - All active hand blocks and the shared draw pile are exhausted before target is reached.

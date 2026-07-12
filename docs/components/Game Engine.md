@@ -11,6 +11,7 @@
 - Maintain authoritative placed-block tower history.
 - Run start delay, level timer, and tick broadcasts.
 - Validate block placement and refresh token use.
+- Validate and broadcast transient quick-chat messages.
 - Calculate scores and bonuses.
 - Emit transient score UI events for placement, finish, bonus, MVP, and team-total feedback.
 - Detect success/failure.
@@ -78,6 +79,7 @@
 - Input: players from [[Lobby Manager]], `place_block`, `refresh_blocks`.
 - Output: `game_state` broadcasts, `towerBlocks`, `scoreEvents`, score updates, level summaries, level transitions.
 - `game_state.players[]` includes `isBot` so clients can distinguish real-player rooms from bot-filled debug rooms.
+- `quickChatEvents[]` is transient and broadcast-only; it is never persisted in room snapshots.
 
 ## Dependencies
 - [[Game Config]]

@@ -16,7 +16,7 @@
 - `RECONNECT_TTL_SECONDS` controls session expiry; staging deploy currently sets `10`.
 - Session records map reconnect token/player id to room id and connection state.
 - Room snapshots remove live WebSocket references before storing.
-- Room snapshots preserve serializable gameplay state such as shape inventory, `currentHeight`, `checkpointScores`, `drawPile`, `teamCarryOverBlocks`, and `towerBlocks`.
+- Room snapshots preserve serializable gameplay state such as shape inventory, `currentHeight`, `checkpointScores`, `drawPile`, `teamCarryOverBlocks`, and `towerBlocks`; quick-chat cooldown timestamps are retained while transient chat events are excluded.
 - Matchmaking lock prevents multiple workers from creating the same room.
 - Room publish events include source pod/worker id so workers ignore their own echo.
 

@@ -22,6 +22,7 @@
   - `update_config` -> [[Lobby Manager]].
   - `place_block` -> current room [[Game Engine]].
   - `refresh_blocks` -> current room [[Game Engine]].
+  - `send_quick_chat` -> current room [[Game Engine]].
 - On close:
   - Remove player through [[Lobby Manager]].
   - Reconnect TTL remains active through [[Lobby Manager]].

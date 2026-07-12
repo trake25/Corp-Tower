@@ -168,6 +168,15 @@ func refresh_blocks():
 
 	print("refresh_blocks sent")
 
+func send_quick_chat(slot: int) -> void:
+	if !is_conn_estab:
+		return
+
+	ws.send_text(JSON.stringify({
+		"type": "send_quick_chat",
+		"slot": slot
+	}))
+
 func _process(delta: float) -> void:
 	if auto_reconnect_delay_remaining >= 0.0:
 		auto_reconnect_delay_remaining -= delta

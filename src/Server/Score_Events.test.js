@@ -10,6 +10,7 @@ const originalGameConfig = {
     placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
     finishScorePopupDurationMs: GameConfig.finishScorePopupDurationMs,
     levelSummaryDelayMs: GameConfig.levelSummaryDelayMs
+    ,quickChatCooldownMs: GameConfig.quickChatCooldownMs
 };
 const originalScoringConfig = { ...GameConfig.scoring };
 const activeEngines = new Set();
@@ -25,6 +26,7 @@ afterEach(() => {
     GameConfig.finishScorePopupDurationMs =
         originalGameConfig.finishScorePopupDurationMs;
     GameConfig.levelSummaryDelayMs = originalGameConfig.levelSummaryDelayMs;
+    GameConfig.quickChatCooldownMs = originalGameConfig.quickChatCooldownMs;
     GameConfig.scoring = { ...originalScoringConfig };
 });
 
@@ -114,6 +116,22 @@ test("placement emits one placement score event", () => {
     assert.equal(message.scoreEvents[0].points, 20);
     assert.equal(message.players[0].levelScore, 20);
 
+});
+
+test("quick chat broadcasts a transient event and enforces the player cooldown", () => {
+    const { engine, messages } = createPlayingEngine(1, 5);
+    const player = engine.room.players[0];
+
+    GameConfig.quickChatCooldownMs = 6000;
+
+    assert.equal(engine.queueQuickChat(player, 1), true);
+    const message = latestMessage(messages);
+    assert.equal(message.quickChatEvents.length, 1);
+    assert.equal(message.quickChatEvents[0].playerId, "P1");
+    assert.equal(message.quickChatEvents[0].text, "I'm out of blocks!");
+    assert.equal(message.quickChatCooldownMs, 6000);
+    assert.equal(engine.queueQuickChat(player, 1), false);
+    assert.equal(engine.queueQuickChat(player, 99), false);
 });
 
 test("exact winning placement emits exact finish and all eligible bonus events", () => {

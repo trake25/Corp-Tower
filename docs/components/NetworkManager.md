@@ -33,6 +33,7 @@
   - `reconnect`
   - `place_block`
   - `refresh_blocks`
+  - `send_quick_chat`
   - `update_config`
 
 ## Inputs/Outputs

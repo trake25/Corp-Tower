@@ -16,6 +16,7 @@
   - `maxLevel`
   - `debugStartLevel`
   - `placementCooldown`
+  - `quickChatCooldownMs` and `quickChatTemplates`
   - `targetHeightCurve`
   - `targetHeightMultiplier`
   - `startDelayMs`

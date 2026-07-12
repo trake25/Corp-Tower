@@ -89,6 +89,16 @@ async function handleMessage(player, message) {
         }
 
         player.room.engine.refreshBlocks(player.id);
+        return;
+    }
+
+    if (data.type === "send_quick_chat") {
+        if (!player.room) {
+            console.log("Player has no room");
+            return;
+        }
+
+        player.room.engine.queueQuickChat(player, data.slot);
     }
 }
 

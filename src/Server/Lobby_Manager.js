@@ -397,6 +397,7 @@ class LobbyManager {
             debugBotDelayMin: GameConfig.debugBotDelayMin,
             debugBotDelayMax: GameConfig.debugBotDelayMax,
             placementCooldown: GameConfig.placementCooldown,
+            quickChatCooldownMs: GameConfig.quickChatCooldownMs,
             levelTimeLimitMs: GameConfig.levelTimeLimitMs,
             startDelayMs: GameConfig.startDelayMs,
             placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
@@ -431,6 +432,7 @@ class LobbyManager {
         GameConfig.debugBotDelayMin = DEFAULT_DEBUG_CONFIG.debugBotDelayMin;
         GameConfig.debugBotDelayMax = DEFAULT_DEBUG_CONFIG.debugBotDelayMax;
         GameConfig.placementCooldown = DEFAULT_DEBUG_CONFIG.placementCooldown;
+        GameConfig.quickChatCooldownMs = DEFAULT_DEBUG_CONFIG.quickChatCooldownMs;
         GameConfig.levelTimeLimitMs = DEFAULT_DEBUG_CONFIG.levelTimeLimitMs;
         GameConfig.startDelayMs = DEFAULT_DEBUG_CONFIG.startDelayMs;
         GameConfig.placementScorePopupDurationMs =
@@ -569,6 +571,7 @@ class LobbyManager {
             debugBotDelayMin: setGameInt("debugBotDelayMin", 250, 10000),
             debugBotDelayMax: setGameInt("debugBotDelayMax", 250, 10000),
             placementCooldown: setGameInt("placementCooldown", 0, 5000),
+            quickChatCooldownMs: setGameInt("quickChatCooldownMs", 1000, 30000),
             levelTimeLimitMs: setGameInt("levelTimeLimitMs", 5000, 120000),
             startDelayMs: setGameInt("startDelayMs", 0, 10000),
             placementScorePopupDurationMs:

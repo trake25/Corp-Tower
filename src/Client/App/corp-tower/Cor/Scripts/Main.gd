@@ -29,6 +29,8 @@ const SKIN_SCENES := {
 
 var active_skin: Control
 var inventory_buttons: Array = []
+var cooldown_overlays: Array = []
+var quick_chat_buttons: Array = []
 var block_previews: Array = []
 var block_height_labels: Array = []
 var block_name_labels: Array = []
@@ -42,6 +44,10 @@ var is_switching_skin: bool = false
 var player_color_map: Dictionary = {}
 var player_order: Array[String] = []
 var seen_score_event_ids: Dictionary = {}
+var seen_quick_chat_event_ids: Dictionary = {}
+var quick_chat_templates: Array = []
+var quick_chat_cooldown_ms: int = 6000
+var last_quick_chat_sent_at_ms: int = 0
 var current_level: int = 0
 var placement_score_popup_duration_ms: int = SCORE_POPUP_DEFAULT_DURATION_MS
 var finish_score_popup_duration_ms: int = SCORE_POPUP_DEFAULT_DURATION_MS
@@ -288,6 +294,14 @@ func bind_skin_nodes() -> void:
 		require_node("BlockNameLabel2") as Label,
 		require_node("BlockNameLabel3") as Label
 	]
+	cooldown_overlays = []
+	for button in inventory_buttons:
+		cooldown_overlays.append(button.get_node_or_null("CooldownOverlay") as Control)
+	quick_chat_buttons = [
+		optional_node("QuickChatButton1") as Button,
+		optional_node("QuickChatButton2") as Button,
+		optional_node("QuickChatButton3") as Button
+	]
 
 	debug_button = optional_node("DebugButton") as Button
 	debug_overlay = optional_node("DebugOverlay") as Control
@@ -392,6 +406,12 @@ func setup_inventory_controls() -> void:
 
 	connect_button.pressed.connect(on_connect_pressed)
 	refresh_button.pressed.connect(on_refresh_pressed)
+	for i in range(quick_chat_buttons.size()):
+		var quick_chat_button: Button = quick_chat_buttons[i]
+		if quick_chat_button != null:
+			quick_chat_button.focus_mode = Control.FOCUS_NONE
+			quick_chat_button.pressed.connect(func(): on_quick_chat_pressed(i))
+	update_quick_chat_buttons()
 
 func setup_debug_controls() -> void:
 	if debug_button == null:
@@ -548,6 +568,9 @@ func _input(event: InputEvent) -> void:
 	if is_block_dragging:
 		_handle_block_drag_input(event)
 
+func _process(_delta: float) -> void:
+	update_placement_cooldown_overlays()
+
 func on_connect_pressed() -> void:
 	NetworkManager.toggle_connection()
 
@@ -557,6 +580,16 @@ func on_block_pressed(index: int) -> void:
 
 	last_placement_sent_at_ms = Time.get_ticks_msec()
 	NetworkManager.place_block(index)
+
+func on_quick_chat_pressed(slot: int) -> void:
+	if !NetworkManager.is_conn_estab or current_match_state != "playing":
+		return
+	if slot < 0 or slot >= quick_chat_templates.size():
+		return
+	if Time.get_ticks_msec() - last_quick_chat_sent_at_ms < quick_chat_cooldown_ms:
+		return
+	last_quick_chat_sent_at_ms = Time.get_ticks_msec()
+	NetworkManager.send_quick_chat(slot)
 
 func _on_inventory_card_gui_input(event: InputEvent, index: int) -> void:
 	if is_block_dragging:
@@ -652,6 +685,23 @@ func get_placement_cooldown_remaining_ms() -> int:
 
 	var elapsed_ms: int = Time.get_ticks_msec() - last_placement_sent_at_ms
 	return maxi(0, placement_cooldown_ms - elapsed_ms)
+
+func update_placement_cooldown_overlays() -> void:
+	var ratio: float = 0.0
+	if placement_cooldown_ms > 0:
+		ratio = float(get_placement_cooldown_remaining_ms()) / float(placement_cooldown_ms)
+	for overlay in cooldown_overlays:
+		if overlay != null and overlay.has_method("set_remaining_ratio"):
+			overlay.call("set_remaining_ratio", ratio)
+
+func update_quick_chat_buttons() -> void:
+	for i in range(quick_chat_buttons.size()):
+		var button: Button = quick_chat_buttons[i]
+		if button == null:
+			continue
+		var has_template: bool = i < quick_chat_templates.size()
+		button.text = str(quick_chat_templates[i]) if has_template else "Chat"
+		button.disabled = !has_template or !NetworkManager.is_conn_estab or current_match_state != "playing"
 
 func begin_block_drag(index: int, global_pos: Vector2, pointer_id: int) -> void:
 	if drag_preview == null:
@@ -910,6 +960,7 @@ func update_game_state(data) -> void:
 		seen_score_event_ids.clear()
 		last_level_summary_key = ""
 		clear_score_popups()
+		seen_quick_chat_event_ids.clear()
 		cancel_pending_level_summary()
 		if state != "finished" and state != "failed":
 			hide_level_summary()
@@ -974,6 +1025,10 @@ func update_game_state(data) -> void:
 		my_blocks,
 		int(data.get("activeInventorySlots", MAX_INVENTORY_SLOTS))
 	)
+	quick_chat_templates = data.get("quickChatTemplates", quick_chat_templates)
+	quick_chat_cooldown_ms = int(data.get("quickChatCooldownMs", quick_chat_cooldown_ms))
+	update_quick_chat_buttons()
+	process_quick_chat_events(data.get("quickChatEvents", []), players)
 
 	var score_popup_wait_seconds: float = process_score_events(data.get("scoreEvents", []), players)
 
@@ -1258,6 +1313,25 @@ func process_score_events(raw_events: Variant, players: Array) -> float:
 		)
 
 	return max_popup_duration_seconds
+
+func process_quick_chat_events(raw_events: Variant, players: Array) -> void:
+	if typeof(raw_events) != TYPE_ARRAY:
+		return
+
+	for raw_event in raw_events:
+		if typeof(raw_event) != TYPE_DICTIONARY:
+			continue
+		var event: Dictionary = raw_event
+		var event_id: String = str(event.get("id", ""))
+		if event_id == "" or seen_quick_chat_event_ids.has(event_id):
+			continue
+		seen_quick_chat_event_ids[event_id] = true
+		var player_id: String = str(event.get("playerId", ""))
+		show_score_event_popup({
+			"type": "quick_chat",
+			"playerId": player_id,
+			"label": get_player_display_name(player_id, players) + ": " + str(event.get("text", ""))
+		}, players, 2.5)
 
 func show_score_event_popup(
 	event: Dictionary,

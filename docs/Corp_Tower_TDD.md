@@ -76,6 +76,7 @@
 | `reconnect` | Token/player id may resume room; otherwise server creates a new session and queues player. |
 | `place_block` | Valid room, player, state, cooldown, inventory, and block index. |
 | `refresh_blocks` | Token count, per-level usage cap, active state, final lockout. |
+| `send_quick_chat` | Valid active room, template slot `0..2`, and server-authoritative per-player cooldown. |
 | `update_config` | Key allowlist, value ranges, bot delay min/max, debug bot count clamp, bot strategy allowlist, and `resetDebugConfig` default restore action. |
 
 ### Client Placement UI
@@ -99,6 +100,7 @@
 
 ### Score UI Payloads
 - `scoreEvents[]` is transient and broadcast-only; each event has stable `id`, `type`, `level`, optional `playerId`, optional `points`, `label`, `displayOnly`, and `meta`.
+- `quickChatEvents[]` is transient and broadcast-only. Each event has stable `id`, `playerId`, template `slot`, display `text`, and `createdAt`; it is never persisted or replayed after reconnect.
 - Event types: `placement`, `finisher_bonus`, `precision_bonus`, `team_exact_bonus`, `assist_bonus` when enabled, `exact_finish`, `overbuild_finish`, and `mvp`.
 - Clients track seen event ids per level and never infer event UI from score diffs.
 - Placement events use `placementScorePopupDurationMs`; MVP, Perfect Fit, checkpoint, and bonus-style events use `finishScorePopupDurationMs`. Both popup durations represent total popup lifetime, including fade-out.

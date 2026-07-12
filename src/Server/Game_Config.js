@@ -9,6 +9,8 @@ const GameConfig = {
     maxLevel: 99,
     debugStartLevel: 1,
     placementCooldown: 1500,
+    quickChatCooldownMs: 6000,
+    quickChatTemplates: ["Place now!", "I'm out of blocks!", "Sorry!"],
     targetHeightMultiplier: 3,
     targetHeightCurve: [
         { minLevel: 1, maxLevel: 1, baseLevel: 1, baseHeight: 3, heightPerLevel: 0 },

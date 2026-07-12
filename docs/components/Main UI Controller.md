@@ -41,6 +41,8 @@
 - `CheckpointStatusLabel` renders `checkpointScoreStatus` under the leaderboard with the next checkpoint level, ready count, and leaderboard score goals players must surpass.
 - Level score summaries wait for the current score popup batch to fade, then show complete/failed state, exact/overbuild result, team score, MVP, finisher, and per-player level/final totals before auto-hiding from `levelSummaryDelayMs`.
 - Refresh button sends `refresh_blocks`.
+- Three quick-chat buttons send server-configured templates and show transient room-wide callouts.
+- Inventory cards render a radial overlay while their drag-to-place cooldown is active.
 - Skin selection reads `corp_tower/ui_skin`; default is `DefaultSkin`, with `Figma_SkinV1` available as a reskin.
 - The skin picker button swaps the active skin scene under `SkinRoot`, rebinds required nodes, reconnects skin-local buttons, and replays the last room/game state.
 - Debug overlay controls route changes through `NetworkManager.update_config` and use no-signal setters during server sync.

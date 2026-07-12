@@ -32,6 +32,7 @@ class GameEngine {
         }
 
         const scoreEvents = this.consumeScoreEvents();
+        const quickChatEvents = this.consumeQuickChatEvents();
         const gameState = {
             type: "game_state",
             state: this.room.state,
@@ -48,6 +49,9 @@ class GameEngine {
             secondsRemaining: Math.ceil(this.getRemainingMs() / 1000),
             lastLevelSummary: this.room.lastLevelSummary,
             scoreEvents: scoreEvents,
+            quickChatEvents: quickChatEvents,
+            quickChatCooldownMs: Math.max(0, Number(GameConfig.quickChatCooldownMs) || 0),
+            quickChatTemplates: GameConfig.quickChatTemplates || [],
             placementScorePopupDurationMs: this.getPlacementScorePopupDurationMs(),
             finishScorePopupDurationMs: this.getFinishScorePopupDurationMs(),
             scorePopupDurationMs: this.getMaxScorePopupDurationMs(),
@@ -105,6 +109,7 @@ class GameEngine {
             endsAt: 0,
             lastLevelSummary: null,
             pendingScoreEvents: [],
+            pendingQuickChatEvents: [],
             scoreEventSeq: 0
         };
 
@@ -117,6 +122,8 @@ class GameEngine {
             player.refreshUsesThisLevel = 0;
             player.blocks = [];
             player.lastPlacementTime = 0;
+            player.lastQuickChatTime = 0;
+            player.lastQuickChatTime = 0;
         });
         this.saveCheckpointScores();
 
@@ -142,6 +149,7 @@ class GameEngine {
             endsAt: snapshot.state.endsAt,
             lastLevelSummary: snapshot.state.lastLevelSummary,
             pendingScoreEvents: [],
+            pendingQuickChatEvents: [],
             scoreEventSeq: 0
         };
         this.ensureCheckpointScores();
@@ -243,6 +251,47 @@ class GameEngine {
         return events;
     }
 
+    queueQuickChat(player, slot) {
+        if (!this.room || this.room.state !== "playing") {
+            return false;
+        }
+
+        const templates = Array.isArray(GameConfig.quickChatTemplates)
+            ? GameConfig.quickChatTemplates
+            : [];
+        const slotIndex = Number(slot);
+
+        if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= templates.length) {
+            return false;
+        }
+
+        const now = Date.now();
+        const cooldownMs = Math.max(0, Number(GameConfig.quickChatCooldownMs) || 0);
+        if (now - Number(player.lastQuickChatTime || 0) < cooldownMs) {
+            return false;
+        }
+
+        player.lastQuickChatTime = now;
+        this.room.pendingQuickChatEvents = this.room.pendingQuickChatEvents || [];
+        this.room.pendingQuickChatEvents.push({
+            id: [this.room.level, now, player.id, slotIndex].join(":"),
+            playerId: player.id,
+            slot: slotIndex,
+            text: String(templates[slotIndex]),
+            createdAt: now
+        });
+        this.broadcastGameState();
+        return true;
+    }
+
+    consumeQuickChatEvents() {
+        const events = this.room?.pendingQuickChatEvents || [];
+        if (this.room) {
+            this.room.pendingQuickChatEvents = [];
+        }
+        return events;
+    }
+
     getPostLevelTransitionDelayMs() {
         const levelSummaryDelayMs =
             Math.max(0, Number(GameConfig.levelSummaryDelayMs) || 0);
@@ -291,6 +340,7 @@ class GameEngine {
             player.refreshUsesThisLevel = 0;
             player.blocks = [];
             player.lastPlacementTime = 0;
+            player.lastQuickChatTime = 0;
         });
 
         this.buildDrawPile();

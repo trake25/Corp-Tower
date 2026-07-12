@@ -42,6 +42,7 @@ function stripRuntimePlayer(player) {
         refreshUsesThisLevel: player.refreshUsesThisLevel || 0,
         blocks: player.blocks || [],
         lastPlacementTime: player.lastPlacementTime || 0,
+        lastQuickChatTime: player.lastQuickChatTime || 0,
         botLoopLevel: player.botLoopLevel || null
     };
 }

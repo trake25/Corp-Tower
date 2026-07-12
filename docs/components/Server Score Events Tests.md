@@ -14,6 +14,7 @@
 - Verify exact-finish and overbuild event behavior.
 - Verify level summary banking behavior for failed levels.
 - Verify debug-config clamping for popup and summary durations.
+- Verify quick-chat event and cooldown contracts.
 
 ## Inputs/Outputs
 - Input: `npm test` from `src/Server`.
