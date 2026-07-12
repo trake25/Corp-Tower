@@ -1,4 +1,5 @@
 const GameEngine = require("./Game_Engine");
+const TowerStability = require("./Tower_Stability");
 
 const DEFAULT_LEVELS = 20;
 const DEFAULT_RUNS = 1000;
@@ -105,13 +106,26 @@ function simulateSmartPlay(engine) {
         const block = placement.player.blocks.splice(placement.blockIndex, 1)[0];
         const blockHeight = engine.getBlockHeight(block);
         const previousHeight = engine.room.currentHeight;
+        const placementPosition = TowerStability.settleBlock(
+            engine.room.towerBlocks || [], block, 7
+        );
+        const projected = [...(engine.room.towerBlocks || []), {
+            playerId: placement.player.id, block, ...placementPosition
+        }];
+        const newHeight = TowerStability.topHeight(projected);
         const effectiveHeight = Math.max(
             0,
-            Math.min(blockHeight, engine.room.targetHeight - previousHeight)
+            Math.min(newHeight - previousHeight, engine.room.targetHeight - previousHeight)
         );
 
         placement.player.contributedHeight += effectiveHeight;
-        engine.room.currentHeight += blockHeight;
+        engine.room.currentHeight = newHeight;
+        engine.room.towerBlocks.push({ playerId: placement.player.id, block, ...placementPosition });
+        const structure = TowerStability.evaluate(engine.room.towerBlocks, require("./Game_Config"));
+        engine.room.towerStability = structure.stability;
+        if (structure.stability <= 0) {
+            return { completed: false, collapsed: true, placements: placements + 1, ...getScoreSummary(engine) };
+        }
         engine.addPlacementScore(placement.player, block, effectiveHeight);
         placements += 1;
         finisher = placement.player;
@@ -131,6 +145,8 @@ function simulateSmartPlay(engine) {
         exact: exact,
         overbuild: Math.max(0, engine.room.currentHeight - engine.room.targetHeight),
         placements: placements,
+        collapsed: false,
+        stability: engine.room.towerStability || 100,
         ...scoreSummary
     };
 }

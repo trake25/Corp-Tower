@@ -75,6 +75,11 @@
 - Exact height triggers precision bonus rewards.
 - The client renders placed blocks as a stacked tower from authoritative server history when `towerBlocks` is available.
 
+### Tower Stability
+- The shared tower uses a 7-cell authoritative structural grid. Fixed-orientation blocks fall to ground or first contact when placed.
+- Gaps, overhangs, off-center supports, and overloaded support paths reduce deterministic stability from 100 to 0.
+- Warning and critical wobble feedback occurs at tuned thresholds. Stability reaching 0 collapses the tower and fails the level before a target-height completion can count.
+
 ## Timer
 - Default level time limit (Configurable): 30 seconds.
 - Adjustable through server-side debug tuning (`levelTimeLimitMs`); public gameplay UI does not expose debug controls in the current design pass.

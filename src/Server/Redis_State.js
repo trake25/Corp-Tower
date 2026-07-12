@@ -63,6 +63,8 @@ function stripRuntimeRoom(room) {
             drawPile: engineRoom.drawPile || [],
             teamCarryOverBlocks: engineRoom.teamCarryOverBlocks || [],
             towerBlocks: engineRoom.towerBlocks || [],
+            towerStability: engineRoom.towerStability ?? 100,
+            towerStabilityDiagnostics: engineRoom.towerStabilityDiagnostics || {},
             state: engineRoom.state || "waiting",
             startsAt: engineRoom.startsAt || 0,
             endsAt: engineRoom.endsAt || 0,

@@ -9,6 +9,7 @@
 - Assign fixed-orientation shape blocks.
 - Build and deal the shared draw pile.
 - Maintain authoritative placed-block tower history.
+- Resolve grid settling and deterministic tower stability before level completion.
 - Run start delay, level timer, and tick broadcasts.
 - Validate block placement and refresh token use.
 - Validate and broadcast transient quick-chat messages.

@@ -31,6 +31,15 @@ const GameConfig = {
     checkpointInterval: 3,
     checkpointScoreRequirement: 0,
     checkpointMinContributionShare: 0.30,
+    towerGridWidth: 7,
+    towerPlacementMode: "auto_center",
+    towerCellLoadCapacity: 12,
+    towerUnsupportedLoadPenalty: 8,
+    towerEccentricLoadPenalty: 3,
+    towerOverloadPenalty: 4,
+    towerStabilityWarningThreshold: 60,
+    towerStabilityCriticalThreshold: 30,
+    towerStabilityFeedbackMode: "warnings_only",
 
     // =========================
     // BLOCK SETTINGS

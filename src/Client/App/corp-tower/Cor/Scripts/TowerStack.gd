@@ -15,6 +15,7 @@ var tower_blocks: Array = []
 var current_height: int = 0
 var target_height: int = 0
 var player_color_map: Dictionary = {}
+var tower_stability: int = 100
 
 func _ready() -> void:
 	clip_contents = true
@@ -23,10 +24,11 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		queue_redraw()
 
-func set_tower(blocks: Array, new_current_height: int, new_target_height: int) -> void:
+func set_tower(blocks: Array, new_current_height: int, new_target_height: int, new_stability: int = 100) -> void:
 	tower_blocks = blocks
 	current_height = max(0, new_current_height)
 	target_height = max(0, new_target_height)
+	tower_stability = clampi(new_stability, 0, 100)
 	queue_redraw()
 
 func set_player_color_map(new_player_color_map: Dictionary) -> void:
@@ -49,6 +51,7 @@ func _draw() -> void:
 
 	var unit: float = _unit_size()
 	var base_x: float = size.x * 0.5
+	var wobble: float = sin(Time.get_ticks_msec() * 0.008) * float(100 - tower_stability) * 0.05
 	var baseline: float = size.y - BOTTOM_PADDING
 	var scroll_offset_units: int = _scroll_offset_units(unit)
 	var tower_units: int = max(target_height, current_height, 1)
@@ -57,13 +60,14 @@ func _draw() -> void:
 		var entry: Dictionary = tower_blocks[i]
 		var block: Dictionary = _normalize_block_entry(entry)
 		var cells: Array = block.get("cells", [])
-		var base_height: int = int(entry.get("baseHeight", 0))
+		var base_height: int = int(entry.get("originY", entry.get("baseHeight", 0)))
+		var origin_x: int = int(entry.get("originX", 0))
 		var color: Color = _player_color(entry)
 
 		for cell in cells:
 			var cell_x: int = _cell_x(cell)
 			var cell_y: int = _cell_y(cell)
-			var x: float = base_x + float(cell_x) * unit - unit * 0.5
+			var x: float = base_x + (float(origin_x + cell_x) - 3.0) * unit - unit * 0.5 + wobble
 			var y_units: int = base_height + int(block.get("height", 0)) - cell_y - 1
 			var y: float = baseline - float(y_units + 1 - scroll_offset_units) * unit
 			var rect: Rect2 = Rect2(Vector2(x, y), Vector2(unit - 2.0, unit - 2.0))

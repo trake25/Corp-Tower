@@ -6,6 +6,7 @@
 
 ## Responsibilities
 - Render authoritative `towerBlocks` entries from `game_state`.
+- Render resolved structural coordinates, visible gaps, and stability-driven wobble.
 - Color placed blocks by player.
 - Draw the target-height marker.
 - Scroll the visible tower window when high-level towers exceed the track.

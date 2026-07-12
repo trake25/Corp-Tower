@@ -4,6 +4,7 @@ const { afterEach, test } = require("node:test");
 const GameConfig = require("./Game_Config");
 const GameEngine = require("./Game_Engine");
 const LobbyManager = require("./Lobby_Manager");
+const TowerStability = require("./Tower_Stability");
 
 const originalGameConfig = {
     placementCooldown: GameConfig.placementCooldown,
@@ -116,6 +117,16 @@ test("placement emits one placement score event", () => {
     assert.equal(message.scoreEvents[0].points, 20);
     assert.equal(message.players[0].levelScore, 20);
 
+});
+
+test("centered Z block settles with an unsupported overhang", () => {
+    const block = { cells: [[0, 0], [1, 0], [1, 1], [2, 1]] };
+    const first = { block: createBlock(1), originX: 3, originY: 0 };
+    const settled = TowerStability.settleBlock([first], block, 7);
+    const result = TowerStability.evaluate([first, { block, ...settled }], GameConfig);
+    assert.equal(settled.originX, 2);
+    assert.equal(settled.originY, 1);
+    assert.ok(result.stability < 100);
 });
 
 test("quick chat broadcasts a transient event and enforces the player cooldown", () => {

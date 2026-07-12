@@ -2,6 +2,7 @@
 
 const GameConfig = require("./Game_Config");
 const BotManager = require("./Bot_Manager");
+const TowerStability = require("./Tower_Stability");
 
 class GameEngine {
     constructor(options = {}) {
@@ -46,6 +47,9 @@ class GameEngine {
             drawPileCount: (this.room.drawPile || []).length,
             nextDrawBlock: this.getNextDrawBlock(),
             towerBlocks: this.room.towerBlocks || [],
+            towerStability: this.room.towerStability ?? 100,
+            towerStabilityDiagnostics: this.room.towerStabilityDiagnostics || {},
+            towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode,
             secondsRemaining: Math.ceil(this.getRemainingMs() / 1000),
             lastLevelSummary: this.room.lastLevelSummary,
             scoreEvents: scoreEvents,
@@ -104,6 +108,8 @@ class GameEngine {
             drawPile: [],
             teamCarryOverBlocks: [],
             towerBlocks: [],
+            towerStability: 100,
+            towerStabilityDiagnostics: {},
             state: "waiting",
             startsAt: 0,
             endsAt: 0,
@@ -144,6 +150,8 @@ class GameEngine {
             drawPile: snapshot.state.drawPile || [],
             teamCarryOverBlocks: snapshot.state.teamCarryOverBlocks || [],
             towerBlocks: snapshot.state.towerBlocks || [],
+            towerStability: snapshot.state.towerStability ?? 100,
+            towerStabilityDiagnostics: snapshot.state.towerStabilityDiagnostics || {},
             state: snapshot.state.state,
             startsAt: snapshot.state.startsAt,
             endsAt: snapshot.state.endsAt,
@@ -153,6 +161,7 @@ class GameEngine {
             scoreEventSeq: 0
         };
         this.ensureCheckpointScores();
+        this.recalculateTowerStability();
 
         this.restoreTimersFromState();
     }
@@ -326,6 +335,8 @@ class GameEngine {
         this.room.state = "starting";
         this.room.currentHeight = 0;
         this.room.towerBlocks = [];
+        this.room.towerStability = 100;
+        this.room.towerStabilityDiagnostics = {};
         this.room.targetHeight =
             this.getTargetHeightForLevel(this.room.level);
         this.room.startsAt = Date.now() + GameConfig.startDelayMs;
@@ -475,6 +486,8 @@ class GameEngine {
         this.room.teamCarryOverBlocks = [];
         this.room.towerBlocks = [];
         this.room.currentHeight = 0;
+        this.room.towerStability = 100;
+        this.room.towerStabilityDiagnostics = {};
         this.room.targetHeight = this.getTargetHeightForLevel(targetLevel);
         this.room.lastLevelSummary = null;
         this.room.pendingScoreEvents = [];
@@ -891,21 +904,31 @@ class GameEngine {
         const block = player.blocks.splice(blockIndex, 1)[0];
         const blockHeight = this.getBlockHeight(block);
         const previousHeight = this.room.currentHeight;
+        const placement = TowerStability.settleBlock(
+            this.room.towerBlocks || [], block, GameConfig.towerGridWidth
+        );
+        const projectedBlocks = [...(this.room.towerBlocks || []), {
+            playerId: player.id, block, originX: placement.originX, originY: placement.originY
+        }];
+        const newHeight = TowerStability.topHeight(projectedBlocks);
+        const heightGain = Math.max(0, newHeight - previousHeight);
         const effectiveHeight = Math.max(
             0,
-            Math.min(blockHeight, this.room.targetHeight - previousHeight)
+            Math.min(heightGain, this.room.targetHeight - previousHeight)
         );
 
         player.lastPlacementTime = Date.now();
         player.contributedHeight += effectiveHeight;
-        this.room.currentHeight += blockHeight;
+        this.room.currentHeight = newHeight;
         this.room.towerBlocks = this.room.towerBlocks || [];
         this.room.towerBlocks.push({
             playerId: player.id,
             block: block,
             height: blockHeight,
             effectiveHeight: effectiveHeight,
-            baseHeight: previousHeight
+            baseHeight: placement.originY,
+            originX: placement.originX,
+            originY: placement.originY
         });
         this.refillPlayerBlock(player);
 
@@ -914,7 +937,13 @@ class GameEngine {
         console.log(`${player.id} placed block (${blockHeight})`);
         console.log("Current Height:", this.room.currentHeight);
 
-        this.checkWinCondition(player, block);
+        this.recalculateTowerStability();
+
+        if (this.room.towerStability <= 0) {
+            this.failLevel("tower_collapsed");
+        } else {
+            this.checkWinCondition(player, block);
+        }
 
         if (this.room.state === "playing") {
             this.checkFailCondition();
@@ -969,6 +998,18 @@ class GameEngine {
         this.checkFailCondition();
         this.persistRoom();
         this.broadcastGameState();
+    }
+
+    recalculateTowerStability() {
+        const result = TowerStability.evaluate(this.room.towerBlocks || [], GameConfig);
+        const previous = this.room.towerStability ?? 100;
+        this.room.towerStability = result.stability;
+        this.room.towerStabilityDiagnostics = result.diagnostics;
+        if (previous > GameConfig.towerStabilityCriticalThreshold && result.stability <= GameConfig.towerStabilityCriticalThreshold) {
+            this.queueScoreEvent("tower_critical", { label: "Tower Critical", displayOnly: true });
+        } else if (previous > GameConfig.towerStabilityWarningThreshold && result.stability <= GameConfig.towerStabilityWarningThreshold) {
+            this.queueScoreEvent("tower_warning", { label: "Tower Wobbling", displayOnly: true });
+        }
     }
 
     generateRefreshBlocks(currentBlocks) {

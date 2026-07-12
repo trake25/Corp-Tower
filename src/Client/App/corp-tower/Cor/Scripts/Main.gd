@@ -974,8 +974,13 @@ func update_game_state(data) -> void:
 	height_label.text = "Height " + str(current_height) + "/" + str(target_height)
 	tower_value_label.text = str(current_height) + " / " + str(target_height)
 	tower_status_label.text = get_tower_status(state, current_height, target_height)
+	if str(data.get("towerStabilityFeedbackMode", "warnings_only")) == "meter_only":
+		tower_status_label.text += " | Stability " + str(int(data.get("towerStability", 100))) + "%"
 	set_tower_progress(current_height, target_height)
-	tower_stack.set_tower(data.get("towerBlocks", []), current_height, target_height)
+	tower_stack.set_tower(
+		data.get("towerBlocks", []), current_height, target_height,
+		int(data.get("towerStability", 100))
+	)
 	update_draw_pile_ui(
 		int(data.get("drawPileCount", 0)),
 		data.get("nextDrawBlock", null)
@@ -1474,6 +1479,10 @@ func get_score_event_text(event: Dictionary, players: Array) -> String:
 			return "MVP " + get_player_display_name(player_id, players) + " +" + str(points)
 		"checkpoint_failed":
 			return "CHECKPOINT FAILED"
+		"tower_warning":
+			return "TOWER WOBBLING"
+		"tower_critical":
+			return "TOWER CRITICAL"
 
 	return str(event.get("label", "")).strip_edges()
 
@@ -1500,6 +1509,9 @@ func get_score_event_color(event: Dictionary) -> Color:
 
 	if event_type == "checkpoint_failed":
 		return Color(1.0, 0.38, 0.28, 1.0)
+
+	if event_type == "tower_warning" or event_type == "tower_critical":
+		return Color(1.0, 0.55, 0.2, 1.0)
 
 	return Color(1.0, 1.0, 1.0, 1.0)
 

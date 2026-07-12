@@ -398,6 +398,7 @@ class LobbyManager {
             debugBotDelayMax: GameConfig.debugBotDelayMax,
             placementCooldown: GameConfig.placementCooldown,
             quickChatCooldownMs: GameConfig.quickChatCooldownMs,
+            towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode,
             levelTimeLimitMs: GameConfig.levelTimeLimitMs,
             startDelayMs: GameConfig.startDelayMs,
             placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
@@ -433,6 +434,7 @@ class LobbyManager {
         GameConfig.debugBotDelayMax = DEFAULT_DEBUG_CONFIG.debugBotDelayMax;
         GameConfig.placementCooldown = DEFAULT_DEBUG_CONFIG.placementCooldown;
         GameConfig.quickChatCooldownMs = DEFAULT_DEBUG_CONFIG.quickChatCooldownMs;
+        GameConfig.towerStabilityFeedbackMode = DEFAULT_DEBUG_CONFIG.towerStabilityFeedbackMode;
         GameConfig.levelTimeLimitMs = DEFAULT_DEBUG_CONFIG.levelTimeLimitMs;
         GameConfig.startDelayMs = DEFAULT_DEBUG_CONFIG.startDelayMs;
         GameConfig.placementScorePopupDurationMs =
@@ -572,6 +574,12 @@ class LobbyManager {
             debugBotDelayMax: setGameInt("debugBotDelayMax", 250, 10000),
             placementCooldown: setGameInt("placementCooldown", 0, 5000),
             quickChatCooldownMs: setGameInt("quickChatCooldownMs", 1000, 30000),
+            towerStabilityFeedbackMode: () => {
+                const mode = String(value);
+                if (["warnings_only", "meter_only", "live_preview"].includes(mode)) {
+                    GameConfig.towerStabilityFeedbackMode = mode;
+                }
+            },
             levelTimeLimitMs: setGameInt("levelTimeLimitMs", 5000, 120000),
             startDelayMs: setGameInt("startDelayMs", 0, 10000),
             placementScorePopupDurationMs:
