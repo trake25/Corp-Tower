@@ -68,6 +68,18 @@
 - MVP of previous level receives 1 token.
 - Exact target height finish: all players receive 1 token (capped at 1).
 
+## Politics System
+- Politics unlock at level 4 by default. Each player has up to 3 Politics inventory slots.
+- Each eligible level has one shared random side quest. Valid starter quests are: first to place an unlocked 4-, 5-, or 6-cell block, or first to make the exact-finishing placement.
+- The first eligible player to complete the quest receives one random Politics item if they have inventory space. After a completed checkpoint, the player with the highest total score also receives one random Politics item if they have space.
+- Default item lifetime is the current level; a future tunable mode may allow carry-through-match items. Level transitions, rollback, restart, and room close clear items according to the configured lifetime rule.
+- Players activate an item by dragging its Politics slot onto a player target. Politics have a 3-second activation cooldown and cannot be used in the final 3 seconds of a level.
+- Starter effects:
+  - **Score Cap (Offensive):** set the selected target's total score exactly to that target's next checkpoint score requirement, whether their prior score was above or below it.
+  - **Copy Score (Defensive):** set the selected target's total score to the caster's total score and update the target's checkpoint snapshot/baseline to the copied score.
+  - **Free Refresh (Utility):** give the selected target a refresh token if below cap; otherwise immediately refresh that target's hand without spending a token.
+- For 4 seconds after Score Cap or Copy Score, the target's total-score UI uses the caster color. For 4 seconds after Free Refresh, the target's refresh-token UI uses the caster color.
+
 ## Tower System
 - Target height uses a level-band curve, scaled by `targetHeightMultiplier` for debug tuning.
 - Default curve: L1=3, L2=6, L3=8, L4-L12 ramps quickly, L13-L31 grows about 3 height every 4 levels, and L32+ grows about 1 height every 2 levels.

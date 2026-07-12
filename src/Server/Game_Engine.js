@@ -336,6 +336,7 @@ class GameEngine {
 
     activatePolitics(playerId, slot, targetPlayerId) {
         if (!this.room || this.room.state !== "playing") return false;
+        if (this.getRemainingMs() <= 3000) return false;
         const player = this.room.players.find(p => p.id === playerId);
         const target = this.room.players.find(p => p.id === targetPlayerId);
         if (!player || !target || !Number.isInteger(Number(slot))) return false;
@@ -344,10 +345,17 @@ class GameEngine {
         if (!item) return false;
         player.politicsInventory.splice(Number(slot), 1);
         player.lastPoliticsActivationTime = Date.now();
-        if (item.id === "copy_score") { target.score = player.score; this.room.checkpointScores[target.id] = player.score; }
+        if (item.id === "copy_score") {
+            target.score = player.score;
+            this.room.checkpointScores[target.id] = player.score;
+        }
         if (item.id === "free_refresh") { if (target.refreshTokens < GameConfig.maxRefreshTokens) target.refreshTokens++; else target.blocks = this.generateRefreshBlocks(target.blocks || []); }
-        if (item.id === "score_cap") { target.scoreCap = this.getCheckpointScoreStatus().players.find(p => p.id === target.id)?.requiredScore || target.score; target.scoreCapCasterId = player.id; }
-        this.room.pendingPoliticsEvents.push({ id: `${this.room.level}:politics:${Date.now()}`, type: "politics_activated", playerId, targetPlayerId, politicsId: item.id, label: GameConfig.politicsCatalog[item.id].title });
+        if (item.id === "score_cap") {
+            target.score = this.getCheckpointScoreStatus().players.find(p => p.id === target.id)?.requiredScore || target.score;
+            target.scoreCap = null;
+            target.scoreCapCasterId = null;
+        }
+        this.room.pendingPoliticsEvents.push({ id: `${this.room.level}:politics:${Date.now()}`, type: "politics_activated", playerId, targetPlayerId, politicsId: item.id, label: GameConfig.politicsCatalog[item.id].title, meta: { tintTargetScore: item.id !== "free_refresh", tintTargetToken: item.id === "free_refresh", tintDurationMs: 4000 } });
         this.persistRoom(); this.broadcastGameState(); return true;
     }
 
@@ -403,6 +411,11 @@ class GameEngine {
             player.blocks = [];
             player.lastPlacementTime = 0;
             player.lastQuickChatTime = 0;
+            player.scoreCap = null;
+            player.scoreCapCasterId = null;
+            if (GameConfig.politicsLifetime === "level") {
+                player.politicsInventory = [];
+            }
         });
 
         this.buildDrawPile();
@@ -1845,15 +1858,7 @@ class GameEngine {
     addLevelScoreToLeaderboard() {
         // Add levelScore to main score only when level is completed
         this.room.players.forEach(player => {
-            const cap = Number(player.scoreCap || Infinity);
-            const allowed = Math.max(0, cap - player.score);
-            const banked = Math.min(player.levelScore, allowed);
-            const overflow = player.levelScore - banked;
-            player.score += banked;
-            if (overflow > 0) {
-                const caster = this.room.players.find(candidate => candidate.id === player.scoreCapCasterId);
-                if (caster) caster.score += overflow;
-            }
+            player.score += player.levelScore;
             console.log(`${player.id} level score (${player.levelScore}) added to leaderboard score. New total: ${player.score}`);
         });
     }

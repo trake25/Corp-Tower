@@ -36,6 +36,7 @@ var selected_politics_slot: int = -1
 var politics_target_buttons: Array = []
 var politics_dragging := false
 var politics_drag_ghost: Label
+var politics_feedback_tween: Tween
 var block_previews: Array = []
 var block_height_labels: Array = []
 var block_name_labels: Array = []
@@ -1010,6 +1011,7 @@ func update_game_state(data) -> void:
 	level_label.text = "Level " + str(incoming_level) + " - " + state.capitalize()
 	timer_label.text = "Time " + str(seconds_remaining) + "s"
 	height_label.text = "Height " + str(current_height) + "/" + str(target_height)
+	update_tower_stability_ui(int(data.get("towerStability", 100)), data.get("towerStabilityDiagnostics", {}))
 	tower_value_label.text = str(current_height) + " / " + str(target_height)
 	tower_status_label.text = get_tower_status(state, current_height, target_height)
 	if str(data.get("towerStabilityFeedbackMode", "warnings_only")) == "meter_only":
@@ -1075,6 +1077,7 @@ func update_game_state(data) -> void:
 	quick_chat_cooldown_ms = int(data.get("quickChatCooldownMs", quick_chat_cooldown_ms))
 	update_quick_chat_buttons()
 	process_quick_chat_events(data.get("quickChatEvents", []), players)
+	process_politics_events(data.get("politicsEvents", []))
 
 	var score_popup_wait_seconds: float = process_score_events(data.get("scoreEvents", []), players)
 
@@ -1307,7 +1310,7 @@ func update_politics_inventory_ui(items: Array) -> void:
 			button.text = "Politics"
 			button.disabled = true
 
-func show_politics_drag_ghost(text: String, global_position: Vector2) -> void:
+func show_politics_drag_ghost(text: String, pointer_position: Vector2) -> void:
 	if politics_drag_ghost == null:
 		politics_drag_ghost = Label.new()
 		politics_drag_ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1317,11 +1320,11 @@ func show_politics_drag_ghost(text: String, global_position: Vector2) -> void:
 		active_skin.add_child(politics_drag_ghost)
 	politics_drag_ghost.text = text
 	politics_drag_ghost.visible = true
-	move_politics_drag_ghost(global_position)
+	move_politics_drag_ghost(pointer_position)
 
-func move_politics_drag_ghost(global_position: Vector2) -> void:
+func move_politics_drag_ghost(pointer_position: Vector2) -> void:
 	if politics_drag_ghost != null:
-		politics_drag_ghost.global_position = global_position + Vector2(14, 14)
+		politics_drag_ghost.global_position = pointer_position + Vector2(14, 14)
 
 func hide_politics_drag_ghost() -> void:
 	if politics_drag_ghost != null:
@@ -1453,6 +1456,33 @@ func process_quick_chat_events(raw_events: Variant, players: Array) -> void:
 			"playerId": player_id,
 			"label": get_player_display_name(player_id, players) + ": " + str(event.get("text", ""))
 		}, players, 2.5)
+
+func process_politics_events(raw_events: Variant) -> void:
+	if typeof(raw_events) != TYPE_ARRAY:
+		return
+	for raw_event in raw_events:
+		if typeof(raw_event) != TYPE_DICTIONARY:
+			continue
+		var event: Dictionary = raw_event
+		var meta: Variant = event.get("meta", {})
+		if typeof(meta) != TYPE_DICTIONARY:
+			continue
+		var caster_color: Color = player_color_map.get(str(event.get("playerId", "")), Color.WHITE)
+		var target_id := str(event.get("targetPlayerId", ""))
+		if bool(meta.get("tintTargetScore", false)) and target_id != "":
+			show_politics_tint(score_label, caster_color)
+		elif bool(meta.get("tintTargetToken", false)) and target_id == str(NetworkManager.player_id):
+			show_politics_tint(refresh_token_label, caster_color)
+
+func show_politics_tint(control: Control, tint: Color) -> void:
+	if control == null:
+		return
+	if politics_feedback_tween != null:
+		politics_feedback_tween.kill()
+	control.modulate = tint
+	politics_feedback_tween = create_tween()
+	politics_feedback_tween.tween_interval(4.0)
+	politics_feedback_tween.tween_property(control, "modulate", Color.WHITE, 0.2)
 
 func show_score_event_popup(
 	event: Dictionary,
