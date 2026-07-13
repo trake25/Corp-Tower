@@ -1029,7 +1029,8 @@ func update_game_state(data) -> void:
 	set_tower_progress(current_height, target_height)
 	tower_stack.set_tower(
 		data.get("towerBlocks", []), current_height, target_height,
-		int(data.get("towerStability", 100))
+		int(data.get("towerStability", 100)),
+		data.get("towerStabilityDiagnostics", {})
 	)
 	update_draw_pile_ui(
 		int(data.get("drawPileCount", 0)),
@@ -1243,12 +1244,17 @@ func set_checkpoint_status_visible(should_show: bool) -> void:
 	if checkpoint_status_label != null:
 		checkpoint_status_label.visible = should_show
 
-func update_tower_stability_ui(stability: int, _diagnostics: Variant) -> void:
+func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
 	if tower_stability_label == null:
 		return
 	var safe_stability: int = clampi(stability, 0, 100)
 	var state := "Stable" if safe_stability > 60 else ("Warning" if safe_stability > 30 else "Critical")
-	tower_stability_label.text = "Tower Stability: " + str(safe_stability) + "% (" + state + ")"
+	var lean_suffix := ""
+	if typeof(diagnostics) == TYPE_DICTIONARY:
+		var lean_direction := str(diagnostics.get("leanDirection", "center"))
+		if lean_direction != "center":
+			lean_suffix = " - leaning " + lean_direction
+	tower_stability_label.text = "Tower Stability: " + str(safe_stability) + "% (" + state + lean_suffix + ")"
 	tower_stability_label.modulate = Color(0.7, 1.0, 0.75, 1.0) if safe_stability > 60 else (Color(1.0, 0.8, 0.3, 1.0) if safe_stability > 30 else Color(1.0, 0.4, 0.32, 1.0))
 
 func get_local_player_color() -> Color:

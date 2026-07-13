@@ -33,10 +33,17 @@ const GameConfig = {
     checkpointMinContributionShare: 0.30,
     towerGridWidth: 7,
     towerPlacementMode: "auto_center",
-    towerCellLoadCapacity: 12,
-    towerUnsupportedLoadPenalty: 8,
-    towerEccentricLoadPenalty: 3,
-    towerOverloadPenalty: 4,
+    // Weight of a single unsupported cell in the just-placed block, relative
+    // to a full column-width of center-of-mass drift (tune this before the
+    // collapse threshold - it's the main "does one bad piece feel bad"
+    // lever).
+    towerOverhangWeight: 0.18,
+    // Visual lean cap in degrees, reached when tiltScore hits +-1.0.
+    towerMaxTiltAngleDeg: 24,
+    // |tiltScore| at or above this triggers collapse. 1.0 is the physical
+    // "center of mass has left the base" point - raise it to make the tower
+    // more forgiving, lower it to make it hairier.
+    towerCollapseTiltScore: 1.0,
     towerStabilityWarningThreshold: 60,
     towerStabilityCriticalThreshold: 30,
     towerStabilityFeedbackMode: "warnings_only",
