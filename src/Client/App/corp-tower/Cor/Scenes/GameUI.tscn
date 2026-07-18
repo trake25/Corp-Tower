@@ -657,7 +657,10 @@ theme_type_variation = &"ActionButton"
 theme_override_font_sizes/font_size = 14
 text = "Debug"
 
-[node name="DebugOverlay" type="Control" parent="."]
+[node name="DebugLayer" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="DebugOverlay" type="Control" parent="DebugLayer"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -668,7 +671,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("4_debugoverlay")
 
-[node name="DebugDimLayer" type="ColorRect" parent="DebugOverlay"]
+[node name="DebugDimLayer" type="ColorRect" parent="DebugLayer/DebugOverlay"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -678,7 +681,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.5)
 
-[node name="DebugPanel" type="PanelContainer" parent="DebugOverlay"]
+[node name="DebugPanel" type="PanelContainer" parent="DebugLayer/DebugOverlay"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(382, 0)
 layout_mode = 1
@@ -693,397 +696,397 @@ grow_horizontal = 0
 grow_vertical = 2
 theme_type_variation = &"HudPanel"
 
-[node name="DebugMargin" type="MarginContainer" parent="DebugOverlay/DebugPanel"]
+[node name="DebugMargin" type="MarginContainer" parent="DebugLayer/DebugOverlay/DebugPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 12
 
-[node name="DebugOuterRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin"]
+[node name="DebugOuterRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="DebugHeader" type="HBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows"]
+[node name="DebugHeader" type="HBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows"]
 layout_mode = 2
 
-[node name="DebugTitle" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader"]
+[node name="DebugTitle" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 18
 text = "Debug Tuning"
 
-[node name="ResetDebugButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader"]
+[node name="ResetDebugButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(92, 34)
 layout_mode = 2
 text = "Reset"
 
-[node name="CloseDebugButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader"]
+[node name="CloseDebugButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(42, 34)
 layout_mode = 2
 text = "X"
 
-[node name="DebugTabs" type="TabContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows"]
+[node name="DebugTabs" type="TabContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Bots" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Bots" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
 layout_mode = 2
 
-[node name="BotsRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots"]
+[node name="BotsRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="BotsToggle" type="CheckButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotsToggle" type="CheckButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Bots"
 
-[node name="BotStrategyLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotStrategyLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Bot Strategy"
 
-[node name="BotStrategyButton" type="OptionButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotStrategyButton" type="OptionButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BotCountLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotCountLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Bot Count: 0"
 
-[node name="BotCountSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotCountSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BotDelayMinLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotDelayMinLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Bot Delay Min: 0 ms"
 
-[node name="BotDelayMinSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotDelayMinSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BotDelayMaxLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotDelayMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Bot Delay Max: 0 ms"
 
-[node name="BotDelayMaxSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotDelayMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Round" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Round" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
 layout_mode = 2
 
-[node name="RoundRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round"]
+[node name="RoundRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="DebugStartLevelLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="DebugStartLevelLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Start Level: 1"
 
-[node name="DebugStartLevelSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="DebugStartLevelSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="CooldownLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="CooldownLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Placement Cooldown: 0 ms"
 
-[node name="CooldownSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="CooldownSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="LevelTimeLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="LevelTimeLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Level Time: 0 sec"
 
-[node name="LevelTimeSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="LevelTimeSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="StartDelayLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="StartDelayLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Start Delay: 0 ms"
 
-[node name="StartDelaySlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="StartDelaySlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TargetMultiplierLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="TargetMultiplierLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Target Multiplier: 0"
 
-[node name="TargetMultiplierSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="TargetMultiplierSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="UI" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="UI" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
 layout_mode = 2
 
-[node name="UIRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI"]
+[node name="UIRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="PlacementPopupDurationLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="PlacementPopupDurationLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Placement Popups: 3000 ms"
 
-[node name="PlacementPopupDurationSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="PlacementPopupDurationSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="FinishPopupDurationLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="FinishPopupDurationLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "MVP / Perfect / Team Popups: 3000 ms"
 
-[node name="FinishPopupDurationSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="FinishPopupDurationSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="LevelSummaryDelayLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="LevelSummaryDelayLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Level Score Summary: 3000 ms"
 
-[node name="LevelSummaryDelaySlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="LevelSummaryDelaySlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Supply" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Supply" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
 layout_mode = 2
 
-[node name="SupplyRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply"]
+[node name="SupplyRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="LevelSupplyMinLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="LevelSupplyMinLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Supply Min Surplus: 0"
 
-[node name="LevelSupplyMinSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="LevelSupplyMinSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="LevelSupplyMaxLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="LevelSupplyMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Supply Max Surplus: 0"
 
-[node name="LevelSupplyMaxSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="LevelSupplyMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MinPrecisionBlocksLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="MinPrecisionBlocksLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Precision Blocks: 0"
 
-[node name="MinPrecisionBlocksSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="MinPrecisionBlocksSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MaxTeamCarryOverLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="MaxTeamCarryOverLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Carry-Over Blocks: 0"
 
-[node name="MaxTeamCarryOverSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="MaxTeamCarryOverSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="RefreshMinUsefulHeightLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="RefreshMinUsefulHeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Refresh Useful Height: 0"
 
-[node name="RefreshMinUsefulHeightSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="RefreshMinUsefulHeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Scoring" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Scoring" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
 layout_mode = 2
 
-[node name="ScoringRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring"]
+[node name="ScoringRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="ImpactScoreLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="ImpactScoreLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Impact Share: 30%"
 
-[node name="ImpactScoreSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="ImpactScoreSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PlacementScoreLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="PlacementScoreLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Placement Score/Height: 0"
 
-[node name="PlacementScoreSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="PlacementScoreSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="FinisherBonusLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="FinisherBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Finisher Bonus/Level: 0"
 
-[node name="FinisherBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="FinisherBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PrecisionBonusLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="PrecisionBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Precision Bonus/Level: 8"
 
-[node name="PrecisionBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="PrecisionBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TeamExactBonusLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="TeamExactBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Team Exact Bonus/Level: 6"
 
-[node name="TeamExactBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="TeamExactBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="AssistBonusLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="AssistBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Assist Bonus/Level: Off"
 
-[node name="AssistBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="AssistBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="AssistThresholdLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="AssistThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Assist Threshold: 0%"
 
-[node name="AssistThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="AssistThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Tower" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Tower" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
 layout_mode = 2
 
-[node name="TowerRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower"]
+[node name="TowerRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="TowerOverhangWeightLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerOverhangWeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Overhang Weight: 18%"
 
-[node name="TowerOverhangWeightSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerOverhangWeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerMaxTiltLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerMaxTiltLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Max Tilt Angle: 24°"
 
-[node name="TowerMaxTiltSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerMaxTiltSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerCollapseThresholdLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerCollapseThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Collapse Threshold: 1.00"
 
-[node name="TowerCollapseThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerCollapseThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerWarningThresholdLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerWarningThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Warning Threshold: 60%"
 
-[node name="TowerWarningThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerWarningThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerCriticalThresholdLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerCriticalThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Critical Threshold: 30%"
 
-[node name="TowerCriticalThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerCriticalThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerFeedbackModeLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerFeedbackModeLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Stability Feedback"
 
-[node name="TowerFeedbackModeButton" type="OptionButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerFeedbackModeButton" type="OptionButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Power" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Power" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
 layout_mode = 2
 
-[node name="PowerRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power"]
+[node name="PowerRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="PowerUnlockLevelLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerUnlockLevelLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Power Unlock Level: 4"
 
-[node name="PowerUnlockLevelSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerUnlockLevelSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PowerMaxSlotsLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerMaxSlotsLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Power Slots: 3"
 
-[node name="PowerMaxSlotsSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerMaxSlotsSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PowerCooldownLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerCooldownLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Power Cooldown: 3.0 sec"
 
-[node name="PowerCooldownSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerCooldownSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
 unique_name_in_owner = true
 layout_mode = 2
 

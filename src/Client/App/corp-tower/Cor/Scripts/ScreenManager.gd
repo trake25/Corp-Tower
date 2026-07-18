@@ -12,7 +12,8 @@ const DRAG_POINTER_NONE := -2
 @onready var screen_container: Control = $ScreenContainer
 @onready var debug_button: Button = $DebugButton
 
-var current_screen: Node = null
+var current_overlay: Node = null
+var play_instance: Node = null
 var debug_button_dragging := false
 var debug_button_pointer_id := DRAG_POINTER_NONE
 var debug_button_drag_distance := 0.0
@@ -20,37 +21,35 @@ var debug_button_drag_distance := 0.0
 func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
 	NetworkManager.room_closed.connect(_on_room_closed)
+	NetworkManager.status_changed.connect(_on_status_changed)
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
 	reset_debug_button_position()
 	show_join_screen()
 
+func _on_status_changed(_text: String) -> void:
+	update_debug_button_availability()
+
 func _on_room_joined(_data) -> void:
-	show_play_screen()
+	_ensure_play_instance()
+	_clear_overlay()
+	reset_debug_button_position()
+	update_debug_button_availability()
 
 func _on_room_closed(_data) -> void:
 	show_join_screen()
 
 func show_join_screen() -> void:
+	_teardown_play_instance()
 	var screen := JoinScreenScene.instantiate()
 	screen.find_match_requested.connect(_on_find_match_requested)
-	_set_current_screen(screen)
+	_set_overlay(screen)
 
 func show_find_match_screen() -> void:
+	_ensure_play_instance()
+
 	var screen := FindMatchScreenScene.instantiate()
 	screen.cancel_requested.connect(_on_cancel_requested)
-	_set_current_screen(screen)
-
-func show_play_screen() -> void:
-	_set_current_screen(PlayScreenScene.instantiate())
-	reset_debug_button_position()
-
-func _set_current_screen(screen: Node) -> void:
-	if current_screen != null and is_instance_valid(current_screen):
-		current_screen.queue_free()
-
-	current_screen = screen
-	screen_container.add_child(screen)
-	update_debug_button_availability()
+	_set_overlay(screen)
 
 func _on_find_match_requested() -> void:
 	NetworkManager.connect_server()
@@ -61,8 +60,39 @@ func _on_cancel_requested() -> void:
 	NetworkManager.disconnect_server()
 	show_join_screen()
 
+func _ensure_play_instance() -> void:
+	if play_instance != null and is_instance_valid(play_instance):
+		return
+
+	play_instance = PlayScreenScene.instantiate()
+	screen_container.add_child(play_instance)
+	update_debug_button_availability()
+
+func _teardown_play_instance() -> void:
+	if play_instance != null and is_instance_valid(play_instance):
+		play_instance.queue_free()
+
+	play_instance = null
+	update_debug_button_availability()
+
+func _set_overlay(screen: Node) -> void:
+	_clear_overlay()
+	current_overlay = screen
+	screen_container.add_child(screen)
+
+func _clear_overlay() -> void:
+	if current_overlay != null and is_instance_valid(current_overlay):
+		current_overlay.queue_free()
+
+	current_overlay = null
+
 func update_debug_button_availability() -> void:
-	debug_button.disabled = current_screen == null or !current_screen.has_method("toggle_debug_overlay")
+	var has_play_instance: bool = (
+		play_instance != null
+		and is_instance_valid(play_instance)
+		and play_instance.has_method("toggle_debug_overlay")
+	)
+	debug_button.disabled = !has_play_instance or !NetworkManager.is_conn_estab
 
 func reset_debug_button_position() -> void:
 	debug_button.position = Vector2(
@@ -119,5 +149,8 @@ func _move_debug_button(relative: Vector2) -> void:
 	)
 
 func _on_debug_button_tapped() -> void:
-	if current_screen != null and is_instance_valid(current_screen) and current_screen.has_method("toggle_debug_overlay"):
-		current_screen.call("toggle_debug_overlay")
+	if debug_button.disabled:
+		return
+
+	if play_instance != null and is_instance_valid(play_instance) and play_instance.has_method("toggle_debug_overlay"):
+		play_instance.call("toggle_debug_overlay")
