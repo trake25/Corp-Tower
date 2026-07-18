@@ -1,0 +1,29 @@
+name: AWS Terraform Setup
+description: >-
+  Configure AWS credentials via GitHub OIDC and (optionally) install the
+  Terraform CLI. Shared by every workflow that talks to AWS.
+
+inputs:
+  role-to-assume:
+    description: IAM role ARN to assume via OIDC.
+    required: true
+  aws-region:
+    description: AWS region for credentials.
+    required: true
+  setup-terraform:
+    description: Install the Terraform CLI ("true"/"false").
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Configure AWS credentials (OIDC)
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        role-to-assume: ${{ inputs.role-to-assume }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Setup Terraform
+      if: ${{ inputs.setup-terraform == 'true' }}
+      uses: hashicorp/setup-terraform@v4

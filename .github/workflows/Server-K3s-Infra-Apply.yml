@@ -42,85 +42,26 @@ jobs:
             exit 1
           fi
 
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v6
+      - name: Setup AWS credentials and Terraform
+        uses: ./.github/actions/aws-terraform-setup
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
-
       - name: Resolve SSH public key for Terraform
-        env:
-          EC2_SSH_KEY: ${{ secrets.EC2_STAGING_SSH_KEY }}
-        run: |
-          set -euo pipefail
-
-          if [ -n "${TF_VAR_ssh_public_key:-}" ]; then
-            echo "Using EC2_STAGING_SSH_PUBLIC_KEY for Terraform key pair." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-
-          if [ -z "${EC2_SSH_KEY:-}" ]; then
-            echo "::error::Missing EC2_STAGING_SSH_PUBLIC_KEY and EC2_STAGING_SSH_KEY. K3s Terraform needs a public key for the EC2 key pair."
-            exit 1
-          fi
-
-          private_key_file="$(mktemp)"
-          trap 'rm -f "$private_key_file"' EXIT
-          printf '%s\n' "$EC2_SSH_KEY" > "$private_key_file"
-          chmod 600 "$private_key_file"
-
-          public_key="$(ssh-keygen -y -f "$private_key_file")"
-          if [ -z "$public_key" ]; then
-            echo "::error::Could not derive a public key from EC2_STAGING_SSH_KEY."
-            exit 1
-          fi
-
-          echo "TF_VAR_ssh_public_key=$public_key" >> "$GITHUB_ENV"
-          echo "Derived Terraform key pair public key from EC2_STAGING_SSH_KEY." >> "$GITHUB_STEP_SUMMARY"
+        uses: ./.github/actions/resolve-ssh-key
+        with:
+          ssh-private-key: ${{ secrets.EC2_STAGING_SSH_KEY }}
 
       - name: Ensure Terraform backend bucket exists
-        run: |
-          set -euo pipefail
-          BUCKET="corp-tower-tfstate-${AWS_REGION}"
+        uses: ./.github/actions/terraform-backend-bootstrap
+        with:
+          aws-region: ${{ env.AWS_REGION }}
 
-          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
-            echo "Terraform backend bucket exists: $BUCKET"
-          else
-            aws s3api create-bucket \
-              --bucket "$BUCKET" \
-              --region "$AWS_REGION" \
-              --create-bucket-configuration LocationConstraint="$AWS_REGION"
-          fi
-
-          aws s3api put-bucket-versioning \
-            --bucket "$BUCKET" \
-            --versioning-configuration Status=Enabled
-
-          aws s3api put-bucket-encryption \
-            --bucket "$BUCKET" \
-            --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
-
-          aws s3api put-public-access-block \
-            --bucket "$BUCKET" \
-            --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
-
-      - name: Terraform init
-        run: terraform init -input=false
-
-      - name: Terraform fmt check
-        run: terraform fmt -check
-
-      - name: Terraform validate
-        run: terraform validate
-
-      - name: Terraform plan before apply
-        run: terraform plan -input=false -out=tfplan
-
-      - name: Show Terraform plan summary
-        run: terraform show -no-color tfplan
+      - name: Terraform validate and plan before apply
+        uses: ./.github/actions/terraform-validate-plan
+        with:
+          working-directory: infra/k3s/terraform
 
       - name: Reject destructive infrastructure plan
         run: |

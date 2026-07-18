@@ -1,0 +1,38 @@
+name: Terraform Validate And Plan
+description: >-
+  Run the shared Terraform check sequence in a stack directory: init, fmt
+  check, validate, plan (saved to ./tfplan for later apply steps), and a
+  human-readable plan summary.
+
+inputs:
+  working-directory:
+    description: Terraform stack directory (e.g. infra/k3s/terraform).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Terraform init
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform init -input=false
+
+    - name: Terraform fmt check
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform fmt -check
+
+    - name: Terraform validate
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform validate
+
+    - name: Terraform plan
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform plan -input=false -out=tfplan
+
+    - name: Show Terraform plan summary
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform show -no-color tfplan
