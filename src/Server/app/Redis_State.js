@@ -31,6 +31,7 @@ function stripRuntimePlayer(player) {
     return {
         id: player.id,
         sessionId: player.sessionId || null,
+        profileId: player.profileId || null,
         isBot: Boolean(player.isBot),
         score: player.score || 0,
         levelScore: player.levelScore || 0,

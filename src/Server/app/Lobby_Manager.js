@@ -1,6 +1,7 @@
 const GameEngine = require("./Game_Engine");
 const GameConfig = require("./Game_Config");
 const { RedisState, stripRuntimePlayer } = require("./Redis_State");
+const ProfileStore = require("./Profile_Store");
 
 const DEFAULT_DEBUG_CONFIG = {
     debugBotsEnabled: GameConfig.debugBotsEnabled,
@@ -44,6 +45,7 @@ const DEFAULT_DEBUG_CONFIG = {
 class LobbyManager {
     constructor(stateStore = new RedisState()) {
         this.stateStore = stateStore;
+        this.profileStore = new ProfileStore();
         this.waitingPlayers = [];
         this.rooms = [];
         this.connectedPlayers = new Map();
@@ -53,6 +55,7 @@ class LobbyManager {
 
     async start() {
         await this.stateStore.connect();
+        await this.profileStore.connect();
         console.log(
             `Lobby state: ${this.stateStore.enabled ? "Redis" : "memory"} (${this.stateStore.getPodId()})`
         );
@@ -69,6 +72,7 @@ class LobbyManager {
             const player = {
                 id: existingSession.playerId,
                 sessionId: existingSession.sessionId,
+                profileId: reconnectRequest.profileId || null,
                 ws: ws,
                 score: 0,
                 lastPlacementTime: 0
@@ -88,6 +92,7 @@ class LobbyManager {
         const player = {
             id: await this.stateStore.nextPlayerId(),
             sessionId: sessionId,
+            profileId: reconnectRequest.profileId || null,
             ws: ws,
             score: 0,
             lastPlacementTime: 0
@@ -142,6 +147,7 @@ class LobbyManager {
 
         roomPlayer.ws = player.ws;
         roomPlayer.sessionId = player.sessionId;
+        roomPlayer.profileId = player.profileId || roomPlayer.profileId;
         player.room = room;
         this.cancelRoomReconnectExpiry(room.id);
 
@@ -152,6 +158,8 @@ class LobbyManager {
             roomId: room.id,
             connected: true
         });
+
+        const roster = await this.buildRoomRoster(room);
 
         this.sendPlayer(player, {
             type: "room_resumed",
@@ -166,7 +174,8 @@ class LobbyManager {
             maxActiveBlocks: GameConfig.maxActiveBlocks,
             blocks: roomPlayer.blocks || [],
             drawPileCount: (room.engine.room.drawPile || []).length,
-            nextDrawBlock: room.engine.getNextDrawBlock()
+            nextDrawBlock: room.engine.getNextDrawBlock(),
+            roster: roster
         });
 
         room.engine.broadcastGameState();
@@ -817,6 +826,8 @@ class LobbyManager {
 
         console.log(`Room ${room.id} created with ${roomPlayers.length} players`);
 
+        const roster = await this.buildRoomRoster(room);
+
         roomPlayers.forEach(player => {
             if (player.isBot) {
                 return;
@@ -835,11 +846,24 @@ class LobbyManager {
                 maxActiveBlocks: GameConfig.maxActiveBlocks,
                 blocks: player.blocks,
                 drawPileCount: (engine.room.drawPile || []).length,
-                nextDrawBlock: engine.getNextDrawBlock()
+                nextDrawBlock: engine.getNextDrawBlock(),
+                roster: roster
             });
         });
 
         engine.broadcastGameState();
+    }
+
+    async buildRoomRoster(room) {
+        return Promise.all(room.players.map(async (player, seatIndex) => {
+            const profile = await this.profileStore.getProfile(player.profileId, seatIndex);
+            return {
+                id: player.id,
+                isBot: Boolean(player.isBot),
+                displayName: profile.displayName,
+                avatarId: profile.avatarId
+            };
+        }));
     }
 
     createEngine() {

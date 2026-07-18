@@ -10,9 +10,11 @@ var auto_reconnect_delay_remaining := -1.0
 
 var player_id := ""
 var reconnect_token := ""
+var profile_id := ""
 
 const PLAYER_ID_FILE := "user://corp_tower_player_id.save"
 const RECONNECT_TOKEN_FILE := "user://corp_tower_reconnect_token.save"
+const PROFILE_ID_FILE := "user://corp_tower_profile_id.save"
 const AUTO_RECONNECT_DELAY_SECONDS := 1.0
 const AUTO_RECONNECT_MAX_ATTEMPTS := 8
 const SERVER_URL := "wss://ws.tod.galaxxigames.com"
@@ -90,6 +92,24 @@ func load_reconnect_identity():
 	if FileAccess.file_exists(RECONNECT_TOKEN_FILE):
 		reconnect_token = FileAccess.get_file_as_string(RECONNECT_TOKEN_FILE).strip_edges()
 
+	if FileAccess.file_exists(PROFILE_ID_FILE):
+		profile_id = FileAccess.get_file_as_string(PROFILE_ID_FILE).strip_edges()
+
+	if profile_id == "":
+		profile_id = generate_uuid_v4()
+		var profile_file = FileAccess.open(PROFILE_ID_FILE, FileAccess.WRITE)
+		profile_file.store_string(profile_id)
+
+func generate_uuid_v4() -> String:
+	var bytes := Crypto.new().generate_random_bytes(16)
+	bytes[6] = (bytes[6] & 0x0F) | 0x40
+	bytes[8] = (bytes[8] & 0x3F) | 0x80
+	var hex := bytes.hex_encode()
+	return "%s-%s-%s-%s-%s" % [
+		hex.substr(0, 8), hex.substr(8, 4), hex.substr(12, 4),
+		hex.substr(16, 4), hex.substr(20, 12)
+	]
+
 func save_reconnect_identity(data):
 	player_id = str(data.get("playerId", player_id))
 	reconnect_token = str(data.get("reconnectToken", reconnect_token))
@@ -106,7 +126,8 @@ func send_reconnect_request():
 	var data = {
 		"type": "reconnect",
 		"playerId": player_id,
-		"reconnectToken": reconnect_token
+		"reconnectToken": reconnect_token,
+		"profileId": profile_id
 	}
 
 	ws.send_text(JSON.stringify(data))

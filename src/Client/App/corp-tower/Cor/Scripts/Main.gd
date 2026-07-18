@@ -48,6 +48,7 @@ var quick_chat_templates: Array = []
 var quick_chat_cooldown_ms: int = 6000
 var last_quick_chat_sent_at_ms: int = 0
 var current_level: int = 0
+var current_roster: Array = []
 var placement_score_popup_duration_ms: int = SCORE_POPUP_DEFAULT_DURATION_MS
 var finish_score_popup_duration_ms: int = SCORE_POPUP_DEFAULT_DURATION_MS
 var level_summary_delay_ms: int = LEVEL_SUMMARY_DEFAULT_DELAY_MS
@@ -774,6 +775,7 @@ func update_connect_button(status: String) -> void:
 
 func update_room(data) -> void:
 	connect_button.disabled = true
+	current_roster = data.get("roster", [])
 	player_label.text = LOCAL_PLAYER_MARKER + " " + str(data.playerId)
 	room_label.text = "Room " + str(int(data.roomId))
 	level_label.text = "Level " + str(int(data.level))
@@ -800,6 +802,7 @@ func update_room(data) -> void:
 
 func update_room_closed(data) -> void:
 	current_match_state = ""
+	current_roster = []
 	last_placement_sent_at_ms = 0
 	cancel_block_drag()
 	room_label.text = "Room closed"
@@ -1948,6 +1951,10 @@ func get_player_display_name(player_id: String, _players: Array) -> String:
 
 	if player_id == str(NetworkManager.player_id):
 		return LOCAL_PLAYER_MARKER
+
+	for roster_entry in current_roster:
+		if str(roster_entry.get("id", "")) == player_id:
+			return str(roster_entry.get("displayName", player_id))
 
 	return player_id
 
