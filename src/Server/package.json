@@ -4,7 +4,7 @@
   "main": "app/Server.js",
   "scripts": {
     "start": "node app/Server.js",
-    "test": "node --check app/Server.js && node --check app/Lobby_Manager.js && node --check app/Game_Engine.js && node --check app/Game_Config.js && node --check app/Bot_Manager.js && node --check app/Redis_State.js && node --check app/Tower_Stability.js && node --check tools/Balance_Simulator.js && node --test tests/Score_Events.test.js",
+    "test": "node --check app/Server.js && node --check app/Lobby_Manager.js && node --check app/Game_Engine.js && node --check app/engine/Block_Supply.js && node --check app/engine/Scoring.js && node --check app/engine/Checkpoints.js && node --check app/Game_Config.js && node --check app/Bot_Manager.js && node --check app/Redis_State.js && node --check app/Tower_Stability.js && node --check tools/Balance_Simulator.js && node --test tests/Score_Events.test.js",
     "balance:simulate": "node tools/Balance_Simulator.js"
   },
   "keywords": [],

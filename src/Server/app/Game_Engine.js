@@ -1,7 +1,14 @@
 const GameConfig = require("./Game_Config");
 const BotManager = require("./Bot_Manager");
 const TowerStability = require("./Tower_Stability");
+const BlockSupply = require("./engine/Block_Supply");
+const Scoring = require("./engine/Scoring");
+const Checkpoints = require("./engine/Checkpoints");
 
+// Authoritative gameplay for one room. This class owns the room/level
+// lifecycle, timers, and action validation; the heavier rule areas live in
+// engine/ modules (Block_Supply, Scoring, Checkpoints) and are exposed here
+// as delegating methods so callers and internal code use one interface.
 class GameEngine {
     constructor(options = {}) {
         this.room = null;
@@ -217,48 +224,6 @@ class GameEngine {
         this.onRoomChanged(this.room).catch(error => {
             console.error("Room persistence failed:", error.message);
         });
-    }
-
-    createScoreEvent(type, options = {}) {
-        this.room.scoreEventSeq = (this.room.scoreEventSeq || 0) + 1;
-
-        return {
-            id: [
-                this.room.level,
-                this.room.scoreEventSeq,
-                type
-            ].join(":"),
-            type: type,
-            level: this.room.level,
-            playerId: options.playerId || null,
-            points: Number(options.points || 0),
-            label: options.label || type,
-            displayOnly: Boolean(options.displayOnly),
-            meta: options.meta || {}
-        };
-    }
-
-    queueScoreEvent(type, options = {}) {
-        if (!this.room) {
-            return null;
-        }
-
-        this.room.pendingScoreEvents = this.room.pendingScoreEvents || [];
-        const event = this.createScoreEvent(type, options);
-
-        this.room.pendingScoreEvents.push(event);
-        return event;
-    }
-
-    consumeScoreEvents() {
-        if (!this.room) {
-            return [];
-        }
-
-        const events = this.room.pendingScoreEvents || [];
-        this.room.pendingScoreEvents = [];
-
-        return events;
     }
 
     queueQuickChat(player, slot) {
@@ -562,402 +527,6 @@ class GameEngine {
         this.startLevel();
     }
 
-    getNextDrawBlock() {
-        const drawPile = this.room?.drawPile || [];
-
-        if (drawPile.length === 0) {
-            return null;
-        }
-
-        return drawPile[0];
-    }
-
-    clonePoliticsInventory(items = []) {
-        return items.map(item => ({ ...item }));
-    }
-
-    saveCheckpointScores() {
-        if (!this.room) {
-            return;
-        }
-
-        this.room.checkpointScores = {};
-
-        this.room.players.forEach(player => {
-            this.room.checkpointScores[player.id] = player.score || 0;
-        });
-    }
-
-    saveCheckpointPolitics() {
-        if (!this.room) {
-            return;
-        }
-
-        this.room.checkpointPolitics = {};
-
-        this.room.players.forEach(player => {
-            this.room.checkpointPolitics[player.id] =
-                this.clonePoliticsInventory(player.politicsInventory || []);
-        });
-    }
-
-    saveCheckpointState() {
-        this.saveCheckpointScores();
-        this.saveCheckpointPolitics();
-    }
-
-    ensureCheckpointScores() {
-        if (
-            !this.room.checkpointScores ||
-            Object.keys(this.room.checkpointScores).length === 0
-        ) {
-            this.saveCheckpointScores();
-        }
-    }
-
-    ensureCheckpointPolitics() {
-        if (
-            !this.room.checkpointPolitics ||
-            Object.keys(this.room.checkpointPolitics).length === 0
-        ) {
-            this.saveCheckpointPolitics();
-        }
-    }
-
-    ensureCheckpointState() {
-        this.ensureCheckpointScores();
-        this.ensureCheckpointPolitics();
-    }
-
-    restoreCheckpointScores() {
-        const checkpointScores = this.room.checkpointScores || {};
-
-        this.room.players.forEach(player => {
-            player.score = Number(checkpointScores[player.id] || 0);
-        });
-    }
-
-    restoreCheckpointPolitics() {
-        if (GameConfig.politicsLifetime !== "checkpoint") {
-            return;
-        }
-
-        const checkpointPolitics = this.room.checkpointPolitics || {};
-
-        this.room.players.forEach(player => {
-            player.politicsInventory = this.clonePoliticsInventory(
-                checkpointPolitics[player.id] || []
-            );
-        });
-    }
-
-    createBlockId() {
-        return `B${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    }
-
-    cloneCells(cells) {
-        return cells.map(cell => [Number(cell[0]), Number(cell[1])]);
-    }
-
-    getBlockHeight(block) {
-        if (typeof block === "number") {
-            return block;
-        }
-
-        if (!block || typeof block !== "object") {
-            return 0;
-        }
-
-        if (Number.isFinite(Number(block.height))) {
-            return Number(block.height);
-        }
-
-        if (!Array.isArray(block.cells) || block.cells.length === 0) {
-            return 0;
-        }
-
-        const rows = block.cells.map(cell => Number(cell[1]));
-        return Math.max(...rows) - Math.min(...rows) + 1;
-    }
-
-    getBlockCellCount(block) {
-        if (typeof block === "number") {
-            return block;
-        }
-
-        if (Array.isArray(block?.cells)) {
-            return block.cells.length;
-        }
-
-        return this.getBlockHeight(block);
-    }
-
-    createBlock(blockSize, excludedShapeId = null) {
-        const variants =
-            GameConfig.blockShapeVariants[blockSize] ||
-            GameConfig.blockShapeVariants[1];
-        const availableVariants =
-            excludedShapeId && variants.length > 1
-                ? variants.filter(variant => variant.shapeId !== excludedShapeId)
-                : variants;
-
-        const variant =
-            availableVariants[
-                Math.floor(Math.random() * availableVariants.length)
-            ];
-
-        const cells = this.cloneCells(variant.cells);
-
-        return {
-            id: this.createBlockId(),
-            shapeId: variant.shapeId,
-            cells: cells,
-            height: this.getBlockHeight({ cells: cells })
-        };
-    }
-
-    getRandomBlock() {
-        const availableBlocks = {};
-
-        for (const block in GameConfig.blockWeights) {
-            const unlockLevel =
-                GameConfig.blockUnlockLevels[block] || 1;
-
-            if (this.room.level >= unlockLevel) {
-                availableBlocks[block] = GameConfig.blockWeights[block];
-            }
-        }
-
-        const weightedPool = [];
-
-        for (const block in availableBlocks) {
-            const weight = availableBlocks[block];
-
-            for (let i = 0; i < weight; i++) {
-                weightedPool.push(Number(block));
-            }
-        }
-
-        if (weightedPool.length === 0) {
-            return this.createBlock(1);
-        }
-
-        const randomIndex =
-            Math.floor(Math.random() * weightedPool.length);
-
-        return this.createBlock(weightedPool[randomIndex]);
-    }
-
-    getBlocksPerPlayer() {
-        let blocksPerPlayer = 1;
-
-        for (const level in GameConfig.inventoryScaling) {
-            if (this.room.level >= Number(level)) {
-                blocksPerPlayer = GameConfig.inventoryScaling[level];
-            }
-        }
-
-        return Math.min(blocksPerPlayer, GameConfig.maxActiveBlocks);
-    }
-
-    buildDrawPile() {
-        const teamCarryOverBlocks = this.room.teamCarryOverBlocks || [];
-        const generatedDrawPileBlocks =
-            this.generateDrawPileBlocks(this.getGeneratedDrawPileBlockCount());
-
-        this.room.drawPile = this.shuffleBlocks([
-            ...teamCarryOverBlocks,
-            ...generatedDrawPileBlocks
-        ]);
-        this.room.teamCarryOverBlocks = [];
-
-        console.log(
-            `Level ${this.room.level} draw pile: ${this.room.drawPile.length} blocks`
-        );
-    }
-
-    getGeneratedDrawPileBlockCount() {
-        let generatedBlockCount = 0;
-
-        for (const level in GameConfig.generatedDrawPileScaling || {}) {
-            if (this.room.level >= Number(level)) {
-                generatedBlockCount =
-                    GameConfig.generatedDrawPileScaling[level];
-            }
-        }
-
-        return Math.min(
-            generatedBlockCount,
-            GameConfig.maxGeneratedDrawPileBlocks
-        );
-    }
-
-    generateDrawPileBlocks(blockCount) {
-        const blocks = [];
-
-        for (let i = 0; i < blockCount; i++) {
-            blocks.push(this.getRandomBlock());
-        }
-
-        return blocks;
-    }
-
-    generateSolvableOpeningHandBlocks() {
-        const attempts = Math.max(1, GameConfig.openingHandGenerationAttempts);
-        let fallbackBlocks = [];
-        const openingHandBlockCount =
-            this.room.players.length * this.getBlocksPerPlayer();
-
-        for (let attempt = 0; attempt < attempts; attempt++) {
-            const newBlocks = [];
-
-            while (newBlocks.length < openingHandBlockCount) {
-                newBlocks.push(this.getRandomBlock());
-            }
-
-            const combinedBlocks = [
-                ...(this.room.drawPile || []),
-                ...newBlocks
-            ];
-
-            fallbackBlocks = newBlocks;
-
-            if (
-                this.isLevelBlockSupplyValid(
-                    combinedBlocks,
-                    openingHandBlockCount
-                )
-            ) {
-                return newBlocks;
-            }
-        }
-
-        return fallbackBlocks;
-    }
-
-    isLevelBlockSupplyValid(blocks, minimumOpeningBlocks) {
-        const targetHeight = this.room.targetHeight;
-        const minTotalHeight =
-            targetHeight + GameConfig.levelSupplyMinSurplus;
-        const maxTotalHeight =
-            targetHeight + GameConfig.levelSupplyMaxSurplus;
-        const totalHeight = this.getTotalBlockHeight(blocks);
-
-        return (
-            blocks.length >= minimumOpeningBlocks &&
-            totalHeight >= minTotalHeight &&
-            totalHeight <= maxTotalHeight &&
-            this.countPrecisionBlocks(blocks) >=
-                Math.min(
-                    GameConfig.minPrecisionBlocksPerLevel,
-                    blocks.length
-                ) &&
-            this.hasExactHeightCombination(blocks, targetHeight)
-        );
-    }
-
-    getTotalBlockHeight(blocks) {
-        return (blocks || []).reduce((total, block) => {
-            return total + this.getBlockHeight(block);
-        }, 0);
-    }
-
-    countPrecisionBlocks(blocks) {
-        return (blocks || []).filter(block => {
-            return this.getBlockHeight(block) <= 2;
-        }).length;
-    }
-
-    hasExactHeightCombination(blocks, targetHeight) {
-        const reachableHeights = new Set([0]);
-
-        (blocks || []).forEach(block => {
-            const blockHeight = this.getBlockHeight(block);
-            const nextHeights = new Set(reachableHeights);
-
-            reachableHeights.forEach(height => {
-                const nextHeight = height + blockHeight;
-
-                if (nextHeight <= targetHeight) {
-                    nextHeights.add(nextHeight);
-                }
-            });
-
-            reachableHeights.clear();
-            nextHeights.forEach(height => reachableHeights.add(height));
-        });
-
-        return reachableHeights.has(targetHeight);
-    }
-
-    shuffleBlocks(blocks) {
-        const shuffled = [...blocks];
-
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-
-        return shuffled;
-    }
-
-    dealOpeningHands() {
-        const blocksPerPlayer = this.getBlocksPerPlayer();
-        const openingHandBlocks = this.generateSolvableOpeningHandBlocks();
-        let nextBlockIndex = 0;
-
-        this.room.players.forEach(player => {
-            player.blocks = [];
-
-            while (player.blocks.length < blocksPerPlayer) {
-                player.blocks.push(openingHandBlocks[nextBlockIndex]);
-                nextBlockIndex += 1;
-            }
-
-            player.blocks = this.trimInventory(player.blocks);
-        });
-    }
-
-    drawBlockFromPile() {
-        if (!this.room.drawPile || this.room.drawPile.length === 0) {
-            return null;
-        }
-
-        return this.room.drawPile.shift();
-    }
-
-    refillPlayerBlock(player) {
-        const blocksPerPlayer = this.getBlocksPerPlayer();
-
-        while (
-            player.blocks.length < blocksPerPlayer &&
-            (this.room.drawPile || []).length > 0
-        ) {
-            player.blocks.push(this.drawBlockFromPile());
-        }
-    }
-
-    trimInventory(blocks) {
-        const maxBlocks = GameConfig.maxActiveBlocks;
-
-        if (blocks.length <= maxBlocks) {
-            return blocks;
-        }
-
-        return [...blocks]
-            .sort((a, b) => {
-                const heightDiff =
-                    this.getBlockHeight(b) - this.getBlockHeight(a);
-
-                if (heightDiff !== 0) {
-                    return heightDiff;
-                }
-
-                return this.getBlockCellCount(b) - this.getBlockCellCount(a);
-            })
-            .slice(0, maxBlocks);
-    }
-
     placeBlock(playerId, blockIndex) {
         if (this.room.state !== "playing") {
             console.log("Cannot place block, level not active");
@@ -1102,133 +671,6 @@ class GameEngine {
         }
     }
 
-    generateRefreshBlocks(currentBlocks) {
-        const blockCount = (currentBlocks || []).length;
-
-        if (blockCount <= 0) {
-            return [];
-        }
-
-        const attempts = Math.max(1, GameConfig.refreshGenerationAttempts);
-        let bestBlocks = [];
-        let bestScore = -1;
-
-        for (let attempt = 0; attempt < attempts; attempt++) {
-            const blocks = currentBlocks.map(block => {
-                return this.createRefreshBlock(block);
-            });
-
-            if (this.isRefreshBlockSetUseful(blocks)) {
-                return blocks;
-            }
-
-            const score = this.scoreRefreshBlockSet(blocks);
-
-            if (score > bestScore) {
-                bestScore = score;
-                bestBlocks = blocks;
-            }
-        }
-
-        return bestBlocks;
-    }
-
-    createRefreshBlock(currentBlock) {
-        const blockSize = this.getBlockCellCount(currentBlock);
-
-        if (blockSize < 3) {
-            return this.createRandomUnlockedBlock(3);
-        }
-
-        if (this.isBlockSizeUnlocked(blockSize)) {
-            return this.createBlock(
-                blockSize,
-                typeof currentBlock === "number"
-                    ? null
-                    : currentBlock?.shapeId || null
-            );
-        }
-
-        return this.createRandomUnlockedBlock(3);
-    }
-
-    createRandomUnlockedBlock(minBlockSize = 1) {
-        const blockSize = this.getWeightedUnlockedBlockSize(minBlockSize);
-
-        return this.createBlock(blockSize);
-    }
-
-    getWeightedUnlockedBlockSize(minBlockSize = 1) {
-        const weightedPool = [];
-
-        for (const block in GameConfig.blockWeights) {
-            const blockSize = Number(block);
-
-            if (
-                blockSize < minBlockSize ||
-                !this.isBlockSizeUnlocked(blockSize)
-            ) {
-                continue;
-            }
-
-            const weight = GameConfig.blockWeights[block] || 1;
-
-            for (let i = 0; i < weight; i++) {
-                weightedPool.push(blockSize);
-            }
-        }
-
-        if (weightedPool.length === 0 && minBlockSize > 1) {
-            return this.getWeightedUnlockedBlockSize(1);
-        }
-
-        if (weightedPool.length === 0) {
-            return 1;
-        }
-
-        return weightedPool[Math.floor(Math.random() * weightedPool.length)];
-    }
-
-    isBlockSizeUnlocked(blockSize) {
-        const unlockLevel = GameConfig.blockUnlockLevels[blockSize] || 1;
-
-        return (
-            Boolean(GameConfig.blockShapeVariants[blockSize]) &&
-            this.room.level >= unlockLevel
-        );
-    }
-
-    isRefreshBlockSetUseful(blocks) {
-        const remainingHeight =
-            Math.max(1, this.room.targetHeight - this.room.currentHeight);
-        const usefulHeight =
-            Math.min(remainingHeight, GameConfig.refreshMinUsefulBlockHeight);
-
-        return (blocks || []).some(block => {
-            const blockHeight = this.getBlockHeight(block);
-
-            return (
-                blockHeight <= remainingHeight &&
-                blockHeight >= usefulHeight
-            );
-        });
-    }
-
-    scoreRefreshBlockSet(blocks) {
-        const remainingHeight =
-            Math.max(1, this.room.targetHeight - this.room.currentHeight);
-
-        return (blocks || []).reduce((score, block) => {
-            const blockHeight = this.getBlockHeight(block);
-
-            if (blockHeight > remainingHeight) {
-                return score;
-            }
-
-            return score + blockHeight;
-        }, 0);
-    }
-
     checkWinCondition(finisher, finishingBlock) {
         if (this.room.currentHeight < this.room.targetHeight) {
             return;
@@ -1290,76 +732,6 @@ class GameEngine {
                 player.refreshUsesThisLevel < GameConfig.maxRefreshUsesPerLevel
             );
         });
-    }
-
-    getPlayerScoreMap() {
-        const scores = {};
-
-        this.room.players.forEach(player => {
-            scores[player.id] = Number(player.score || 0);
-        });
-
-        return scores;
-    }
-
-    getTeamLevelScore() {
-        return this.room.players.reduce((total, player) => {
-            return total + Number(player.levelScore || 0);
-        }, 0);
-    }
-
-    getPlayerBonusBreakdown(player) {
-        const breakdown = player.scoreBreakdown || {};
-
-        return {
-            placement: Number(breakdown.placement || 0),
-            finisher: Number(breakdown.finisher || 0),
-            precision: Number(breakdown.precision || 0),
-            teamExact: Number(breakdown.team || 0),
-            assist: Number(breakdown.assist || 0)
-        };
-    }
-
-    buildLevelSummary(options) {
-        const mvp = options.mvp || this.getLevelMVP();
-        const previousTotalScores = options.previousTotalScores || {};
-        const teamLevelScore = this.getTeamLevelScore();
-
-        return {
-            result: options.result,
-            reason: options.reason || null,
-            level: this.room.level,
-            blockedLevel: options.blockedLevel || null,
-            checkpointScoreRequirement:
-                Number(options.checkpointScoreRequirement || 0),
-            checkpointMinContributionShare:
-                Number(options.checkpointMinContributionShare || 0),
-            checkpointScoreStatus: options.checkpointScoreStatus || null,
-            checkpointScoreFailures: options.checkpointScoreFailures || [],
-            teamLevelScore: teamLevelScore,
-            mvpId: mvp?.id || null,
-            mvpScore: Number(mvp?.levelScore || 0),
-            exactFinish: Boolean(options.exactFinish),
-            overbuildHeight: Number(options.overbuildHeight || 0),
-            finisherId: options.finisher?.id || null,
-            finishingBlock: options.finishingBlock || null,
-            carriedBlockCount: Number(options.carriedBlockCount || 0),
-            players: this.room.players.map(player => {
-                const previousTotalScore =
-                    Number(previousTotalScores[player.id] || 0);
-
-                return {
-                    id: player.id,
-                    isBot: Boolean(player.isBot),
-                    levelScore: Number(player.levelScore || 0),
-                    previousTotalScore: previousTotalScore,
-                    finalTotalScore: Number(player.score || 0),
-                    contributedHeight: Number(player.contributedHeight || 0),
-                    isMvp: player.id === mvp?.id,
-                    bonusBreakdown: this.getPlayerBonusBreakdown(player)
-                };
-            })
-        };
     }
 
     completeLevel(finisher, finishingBlock) {
@@ -1506,382 +878,81 @@ class GameEngine {
         this.startLevel();
     }
 
-    awardCheckpointPolitics() {
-        const winner = this.room.players.reduce((best, player) => {
-            return !best || Number(player.score || 0) > Number(best.score || 0)
-                ? player
-                : best;
-        }, null);
-        if (!winner || (winner.politicsInventory || []).length >= GameConfig.politicsMaxSlots) {
-            return;
-        }
-        const ids = Object.keys(GameConfig.politicsCatalog || {});
-        if (ids.length === 0) return;
-        const politicsId = ids[Math.floor(Math.random() * ids.length)];
-        winner.politicsInventory = winner.politicsInventory || [];
-        winner.politicsInventory.push({ id: politicsId, earnedLevel: this.room.level, source: "checkpoint_mvp" });
-        this.room.pendingPoliticsEvents = this.room.pendingPoliticsEvents || [];
-        this.room.pendingPoliticsEvents.push({
-            id: `${this.room.level}:checkpoint-politics:${winner.id}`,
-            type: "politics_checkpoint_reward",
-            playerId: winner.id,
-            politicsId: politicsId,
-            label: "Checkpoint Politics"
-        });
-    }
+    // --- Block supply: engine/Block_Supply.js ---
 
-    isCheckpointLevel(level) {
-        const interval = Math.max(1, Number(GameConfig.checkpointInterval) || 1);
+    getNextDrawBlock() { return BlockSupply.getNextDrawBlock(this); }
+    createBlockId() { return BlockSupply.createBlockId(this); }
+    cloneCells(cells) { return BlockSupply.cloneCells(this, cells); }
+    getBlockHeight(block) { return BlockSupply.getBlockHeight(this, block); }
+    getBlockCellCount(block) { return BlockSupply.getBlockCellCount(this, block); }
+    createBlock(blockSize, excludedShapeId = null) { return BlockSupply.createBlock(this, blockSize, excludedShapeId); }
+    getRandomBlock() { return BlockSupply.getRandomBlock(this); }
+    getBlocksPerPlayer() { return BlockSupply.getBlocksPerPlayer(this); }
+    buildDrawPile() { return BlockSupply.buildDrawPile(this); }
+    getGeneratedDrawPileBlockCount() { return BlockSupply.getGeneratedDrawPileBlockCount(this); }
+    generateDrawPileBlocks(blockCount) { return BlockSupply.generateDrawPileBlocks(this, blockCount); }
+    generateSolvableOpeningHandBlocks() { return BlockSupply.generateSolvableOpeningHandBlocks(this); }
+    isLevelBlockSupplyValid(blocks, minimumOpeningBlocks) { return BlockSupply.isLevelBlockSupplyValid(this, blocks, minimumOpeningBlocks); }
+    getTotalBlockHeight(blocks) { return BlockSupply.getTotalBlockHeight(this, blocks); }
+    countPrecisionBlocks(blocks) { return BlockSupply.countPrecisionBlocks(this, blocks); }
+    hasExactHeightCombination(blocks, targetHeight) { return BlockSupply.hasExactHeightCombination(this, blocks, targetHeight); }
+    shuffleBlocks(blocks) { return BlockSupply.shuffleBlocks(this, blocks); }
+    dealOpeningHands() { return BlockSupply.dealOpeningHands(this); }
+    drawBlockFromPile() { return BlockSupply.drawBlockFromPile(this); }
+    refillPlayerBlock(player) { return BlockSupply.refillPlayerBlock(this, player); }
+    trimInventory(blocks) { return BlockSupply.trimInventory(this, blocks); }
+    generateRefreshBlocks(currentBlocks) { return BlockSupply.generateRefreshBlocks(this, currentBlocks); }
+    createRefreshBlock(currentBlock) { return BlockSupply.createRefreshBlock(this, currentBlock); }
+    createRandomUnlockedBlock(minBlockSize = 1) { return BlockSupply.createRandomUnlockedBlock(this, minBlockSize); }
+    getWeightedUnlockedBlockSize(minBlockSize = 1) { return BlockSupply.getWeightedUnlockedBlockSize(this, minBlockSize); }
+    isBlockSizeUnlocked(blockSize) { return BlockSupply.isBlockSizeUnlocked(this, blockSize); }
+    isRefreshBlockSetUseful(blocks) { return BlockSupply.isRefreshBlockSetUseful(this, blocks); }
+    scoreRefreshBlockSet(blocks) { return BlockSupply.scoreRefreshBlockSet(this, blocks); }
+    prepareTeamCarryOverBlocks() { return BlockSupply.prepareTeamCarryOverBlocks(this); }
 
-        return (level - 1) % interval === 0;
-    }
+    // --- Scoring: engine/Scoring.js ---
 
-    getCheckpointScoreRequirement() {
-        return Math.max(0, Number(GameConfig.checkpointScoreRequirement) || 0);
-    }
+    createScoreEvent(type, options = {}) { return Scoring.createScoreEvent(this, type, options); }
+    queueScoreEvent(type, options = {}) { return Scoring.queueScoreEvent(this, type, options); }
+    consumeScoreEvents() { return Scoring.consumeScoreEvents(this); }
+    getPlayerScoreMap() { return Scoring.getPlayerScoreMap(this); }
+    getTeamLevelScore() { return Scoring.getTeamLevelScore(this); }
+    getPlayerBonusBreakdown(player) { return Scoring.getPlayerBonusBreakdown(this, player); }
+    buildLevelSummary(options) { return Scoring.buildLevelSummary(this, options); }
+    recordScoreBreakdown(player, key, points) { return Scoring.recordScoreBreakdown(this, player, key, points); }
+    addPlacementScore(player, block, effectiveHeight) { return Scoring.addPlacementScore(this, player, block, effectiveHeight); }
+    awardCompletionBonuses(finisher, exactFinish) { return Scoring.awardCompletionBonuses(this, finisher, exactFinish); }
+    addBonusScore(player, points, label) { return Scoring.addBonusScore(this, player, points, label); }
+    getBonusScoreEventType(label) { return Scoring.getBonusScoreEventType(this, label); }
+    getBonusScoreEventLabel(label) { return Scoring.getBonusScoreEventLabel(this, label); }
+    addLevelScoreToLeaderboard() { return Scoring.addLevelScoreToLeaderboard(this); }
+    awardRefreshToken(player) { return Scoring.awardRefreshToken(this, player); }
+    getLevelMVP() { return Scoring.getLevelMVP(this); }
 
-    getCheckpointMinContributionShare() {
-        return Math.max(
-            0,
-            Math.min(
-                1,
-                Number(GameConfig.checkpointMinContributionShare) || 0
-            )
-        );
-    }
+    // --- Checkpoints: engine/Checkpoints.js ---
 
-    getExpectedPlacementScoreForLevel(level) {
-        const scorePerHeight =
-            Number(GameConfig.scoring?.placementScorePerHeight) || 1;
-
-        return this.getTargetHeightForLevel(level) * level * scorePerHeight;
-    }
-
-    getExpectedPlacementScoreForCheckpointBand(blockedLevel) {
-        const checkpointLevel = this.clampLevel(
-            this.room?.checkpointLevel || this.room?.level || 1
-        );
-        const targetLevel = this.clampLevel(
-            blockedLevel || this.getNextCheckpointLevel()
-        );
-        let expectedScore = 0;
-
-        for (let level = checkpointLevel; level < targetLevel; level++) {
-            expectedScore += this.getExpectedPlacementScoreForLevel(level);
-        }
-
-        return expectedScore;
-    }
-
-    getCheckpointBandScoreRequirement(blockedLevel) {
-        const share = this.getCheckpointMinContributionShare();
-        const bandRequirement = Math.round(
-            this.getExpectedPlacementScoreForCheckpointBand(blockedLevel) *
-                share
-        );
-
-        return Math.max(
-            this.getCheckpointScoreRequirement(),
-            bandRequirement
-        );
-    }
-
-    getCheckpointScoreFailures(blockedLevel) {
-        return this.getCheckpointScoreStatus(blockedLevel).players
-            .filter(player => !player.met);
-    }
-
-    getNextCheckpointLevel() {
-        const interval = Math.max(1, Number(GameConfig.checkpointInterval) || 1);
-        const currentLevel = this.room?.level || 1;
-        const offset = (currentLevel - 1) % interval;
-
-        return Math.min(
-            GameConfig.maxLevel,
-            currentLevel + interval - offset
-        );
-    }
-
-    getCheckpointScoreStatus(blockedLevel = null) {
-        const nextCheckpointLevel =
-            blockedLevel || this.getNextCheckpointLevel();
-        const requirement =
-            this.getCheckpointBandScoreRequirement(nextCheckpointLevel);
-        const checkpointScores = this.room?.checkpointScores || {};
-
-        return {
-            requiredScore: requirement,
-            requiredBandScore: requirement,
-            minContributionShare: this.getCheckpointMinContributionShare(),
-            checkpointLevel: this.room?.checkpointLevel || 1,
-            nextCheckpointLevel: nextCheckpointLevel,
-            players: (this.room?.players || []).map(player => {
-                const score = Number(player.score || 0);
-                const checkpointScore =
-                    Number(checkpointScores[player.id] || 0);
-                const requiredScore = checkpointScore + requirement;
-                const bandScore = Math.max(0, score - checkpointScore);
-
-                return {
-                    id: player.id,
-                    score: score,
-                    checkpointScore: checkpointScore,
-                    bandScore: bandScore,
-                    requiredScore: requiredScore,
-                    requiredBandScore: requirement,
-                    remainingScore: Math.max(0, requiredScore - score),
-                    met: requirement <= 0 || score >= requiredScore
-                };
-            })
-        };
-    }
-
-    hasMetCheckpointScoreRequirement(blockedLevel) {
-        return this.getCheckpointScoreFailures(blockedLevel).length === 0;
-    }
-
-    failCheckpointScoreRequirement(blockedLevel) {
-        this.room.state = "failed";
-        this.clearTimers();
-
-        const mvp = this.getLevelMVP();
-        const previousTotalScores = this.getPlayerScoreMap();
-        const checkpointScoreStatus =
-            this.getCheckpointScoreStatus(blockedLevel);
-        const failures = checkpointScoreStatus.players.filter(player => {
-            return !player.met;
-        });
-        const requirement = checkpointScoreStatus.requiredBandScore;
-
-        this.queueScoreEvent("checkpoint_failed", {
-            label: "Checkpoint Failed",
-            displayOnly: true,
-            meta: {
-                blockedLevel: blockedLevel,
-                checkpointScoreRequirement: requirement,
-                checkpointMinContributionShare:
-                    this.getCheckpointMinContributionShare(),
-                checkpointScoreFailures: failures
-            }
-        });
-        this.queueScoreEvent("mvp", {
-            playerId: mvp.id,
-            points: mvp.levelScore,
-            label: "MVP",
-            displayOnly: true
-        });
-
-        this.room.lastLevelSummary = this.buildLevelSummary({
-            result: "failed",
-            reason: "checkpoint_score_requirement",
-            blockedLevel: blockedLevel,
-            exactFinish: false,
-            overbuildHeight: 0,
-            finisher: null,
-            finishingBlock: null,
-            carriedBlockCount: 0,
-            mvp: mvp,
-            previousTotalScores: previousTotalScores,
-            checkpointScoreRequirement: requirement,
-            checkpointMinContributionShare:
-                this.getCheckpointMinContributionShare(),
-            checkpointScoreStatus: checkpointScoreStatus,
-            checkpointScoreFailures: failures
-        });
-
-        console.log(
-            `Checkpoint score requirement failed before level ${blockedLevel}`
-        );
-        this.persistRoom();
-        this.broadcastGameState();
-
-        this.nextLevelTimer = setTimeout(() => {
-            this.rollbackToCheckpoint();
-        }, this.getPostLevelTransitionDelayMs());
-    }
-
-    rollbackToCheckpoint() {
-        this.room.level = this.room.checkpointLevel;
-        this.room.drawPile = [];
-        this.room.teamCarryOverBlocks = [];
-        this.restoreCheckpointScores();
-        this.restoreCheckpointPolitics();
-
-        this.room.players.forEach(player => {
-            player.blocks = [];
-            player.levelScore = 0;
-            player.scoreBreakdown = {};
-            player.contributedHeight = 0;
-        });
-
-        console.log(`Rolling back to checkpoint level ${this.room.level}`);
-        this.startLevel();
-    }
-
-    prepareTeamCarryOverBlocks() {
-        const unusedHandBlocks = this.room.players.flatMap(player => {
-            return player.blocks || [];
-        });
-        const unusedDrawPileBlocks = this.room.drawPile || [];
-
-        this.room.teamCarryOverBlocks = [
-            ...unusedHandBlocks,
-            ...unusedDrawPileBlocks
-        ]
-            .sort((a, b) => {
-                const heightDiff =
-                    this.getBlockHeight(a) - this.getBlockHeight(b);
-
-                if (heightDiff !== 0) {
-                    return heightDiff;
-                }
-
-                return this.getBlockCellCount(a) - this.getBlockCellCount(b);
-            })
-            .slice(0, GameConfig.maxTeamCarryOverBlocks);
-
-        this.room.drawPile = [];
-
-        return this.room.teamCarryOverBlocks.length;
-    }
-
-    recordScoreBreakdown(player, key, points) {
-        player.scoreBreakdown = player.scoreBreakdown || {};
-        player.scoreBreakdown[key] =
-            Number(player.scoreBreakdown[key] || 0) + Number(points || 0);
-    }
-
-    addPlacementScore(player, block, effectiveHeight) {
-        const scorePerHeight =
-            Number(GameConfig.scoring.placementScorePerHeight) || 1;
-        const points = Math.round(
-            effectiveHeight *
-                this.room.level *
-                scorePerHeight
-        );
-
-        player.levelScore += points;
-        this.recordScoreBreakdown(player, "placement", points);
-        this.queueScoreEvent("placement", {
-            playerId: player.id,
-            points: points,
-            label: "Placement",
-            meta: {
-                effectiveHeight: effectiveHeight,
-                blockHeight: this.getBlockHeight(block),
-                block: block
-            }
-        });
-
-        console.log(`${player.id} gained ${points} score`);
-        return points;
-    }
-
-    awardCompletionBonuses(finisher, exactFinish) {
-        this.addBonusScore(
-            finisher,
-            this.room.level * GameConfig.scoring.finisherBonusPerLevel,
-            "finisher"
-        );
-
-        if (exactFinish) {
-            this.addBonusScore(
-                finisher,
-                this.room.level * GameConfig.scoring.precisionBonusPerLevel,
-                "precision"
-            );
-
-            this.room.players.forEach(player => {
-                this.addBonusScore(
-                    player,
-                    this.room.level * GameConfig.scoring.teamExactBonusPerLevel,
-                    "team"
-                );
-            });
-        }
-
-        this.room.players.forEach(player => {
-            const share =
-                this.room.targetHeight === 0
-                    ? 0
-                    : player.contributedHeight / this.room.targetHeight;
-
-            if (share >= GameConfig.scoring.assistContributionThreshold) {
-                this.addBonusScore(
-                    player,
-                    this.room.level * GameConfig.scoring.assistBonusPerLevel,
-                    "assist"
-                );
-            }
-        });
-    }
-
-    addBonusScore(player, points, label) {
-        const safePoints = Math.round(Number(points) || 0);
-
-        if (safePoints <= 0) {
-            return 0;
-        }
-
-        player.levelScore += safePoints;
-        this.recordScoreBreakdown(player, label, safePoints);
-        this.queueScoreEvent(this.getBonusScoreEventType(label), {
-            playerId: player.id,
-            points: safePoints,
-            label: this.getBonusScoreEventLabel(label)
-        });
-
-        console.log(`${player.id} gained ${safePoints} ${label} bonus`);
-        return safePoints;
-    }
-
-    getBonusScoreEventType(label) {
-        const eventTypes = {
-            finisher: "finisher_bonus",
-            precision: "precision_bonus",
-            team: "team_exact_bonus",
-            assist: "assist_bonus"
-        };
-
-        return eventTypes[label] || "bonus";
-    }
-
-    getBonusScoreEventLabel(label) {
-        const labels = {
-            finisher: "Finisher",
-            precision: "Precision",
-            team: "Team Exact",
-            assist: "Assist"
-        };
-
-        return labels[label] || "Bonus";
-    }
-
-    addLevelScoreToLeaderboard() {
-        this.room.players.forEach(player => {
-            player.score += player.levelScore;
-            console.log(`${player.id} level score (${player.levelScore}) added to leaderboard score. New total: ${player.score}`);
-        });
-    }
-
-    awardRefreshToken(player) {
-        player.refreshTokens = Math.min(
-            GameConfig.maxRefreshTokens,
-            player.refreshTokens + 1
-        );
-    }
-
-    getLevelMVP() {
-        let mvp = this.room.players[0];
-
-        this.room.players.forEach(player => {
-            if (player.levelScore > mvp.levelScore) {
-                mvp = player;
-            }
-        });
-
-        return mvp;
-    }
+    clonePoliticsInventory(items = []) { return Checkpoints.clonePoliticsInventory(this, items); }
+    saveCheckpointScores() { return Checkpoints.saveCheckpointScores(this); }
+    saveCheckpointPolitics() { return Checkpoints.saveCheckpointPolitics(this); }
+    saveCheckpointState() { return Checkpoints.saveCheckpointState(this); }
+    ensureCheckpointScores() { return Checkpoints.ensureCheckpointScores(this); }
+    ensureCheckpointPolitics() { return Checkpoints.ensureCheckpointPolitics(this); }
+    ensureCheckpointState() { return Checkpoints.ensureCheckpointState(this); }
+    restoreCheckpointScores() { return Checkpoints.restoreCheckpointScores(this); }
+    restoreCheckpointPolitics() { return Checkpoints.restoreCheckpointPolitics(this); }
+    awardCheckpointPolitics() { return Checkpoints.awardCheckpointPolitics(this); }
+    isCheckpointLevel(level) { return Checkpoints.isCheckpointLevel(this, level); }
+    getCheckpointScoreRequirement() { return Checkpoints.getCheckpointScoreRequirement(this); }
+    getCheckpointMinContributionShare() { return Checkpoints.getCheckpointMinContributionShare(this); }
+    getExpectedPlacementScoreForLevel(level) { return Checkpoints.getExpectedPlacementScoreForLevel(this, level); }
+    getExpectedPlacementScoreForCheckpointBand(blockedLevel) { return Checkpoints.getExpectedPlacementScoreForCheckpointBand(this, blockedLevel); }
+    getCheckpointBandScoreRequirement(blockedLevel) { return Checkpoints.getCheckpointBandScoreRequirement(this, blockedLevel); }
+    getCheckpointScoreFailures(blockedLevel) { return Checkpoints.getCheckpointScoreFailures(this, blockedLevel); }
+    getNextCheckpointLevel() { return Checkpoints.getNextCheckpointLevel(this); }
+    getCheckpointScoreStatus(blockedLevel = null) { return Checkpoints.getCheckpointScoreStatus(this, blockedLevel); }
+    hasMetCheckpointScoreRequirement(blockedLevel) { return Checkpoints.hasMetCheckpointScoreRequirement(this, blockedLevel); }
+    failCheckpointScoreRequirement(blockedLevel) { return Checkpoints.failCheckpointScoreRequirement(this, blockedLevel); }
+    rollbackToCheckpoint() { return Checkpoints.rollbackToCheckpoint(this); }
 }
 
 module.exports = GameEngine;
