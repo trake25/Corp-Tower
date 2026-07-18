@@ -70,6 +70,11 @@ async function handleMessage(player, message) {
         return;
     }
 
+    if (data.type === "leave_queue") {
+        await lobbyManager.leaveQueue(player);
+        return;
+    }
+
     if (data.type === "place_block") {
         if (!player.room) {
             console.log("Player has no room");

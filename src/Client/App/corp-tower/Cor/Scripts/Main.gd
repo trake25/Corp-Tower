@@ -22,7 +22,7 @@ const LOCAL_PLAYER_MARKER := "You"
 const DRAG_PREVIEW_SIZE := Vector2(96, 96)
 const DRAG_POINTER_MOUSE := -1
 
-@onready var ui_root: Control = $UIRoot
+@onready var ui_root: Control = self
 
 var inventory_buttons: Array = []
 var cooldown_overlays: Array = []

@@ -201,6 +201,15 @@ class LobbyManager {
         console.log(`${player.id} disconnected; reconnect TTL active`);
     }
 
+    async leaveQueue(player) {
+        await this.stateStore.removeQueuedPlayer(player.id);
+        this.waitingPlayers = this.waitingPlayers.filter(
+            waitingPlayer => waitingPlayer.id !== player.id
+        );
+        this.resetBotCounterIfIdle();
+        console.log(`${player.id} left queue`);
+    }
+
     scheduleRoomReconnectExpiry(room) {
         if (!room || this.roomReconnectTimers.has(room.id)) {
             return;

@@ -1,0 +1,132 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/JoinScreen.gd" id="1_joinscreen"]
+
+[node name="JoinScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_joinscreen")
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Root" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="PanelContainer" parent="SafeArea/Root"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_type_variation = &"HudPanel"
+
+[node name="HeaderMargin" type="MarginContainer" parent="SafeArea/Root/Header"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="HeaderRow" type="HBoxContainer" parent="SafeArea/Root/Header/HeaderMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BackButton" type="Button" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+theme_type_variation = &"ActionButton"
+text = "<"
+
+[node name="TitleLabel" type="Label" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "Join Server"
+
+[node name="HeaderSpacer" type="Control" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
+custom_minimum_size = Vector2(38, 0)
+layout_mode = 2
+
+[node name="PrivatePanel" type="PanelContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_type_variation = &"HudPanel"
+
+[node name="PrivateMargin" type="MarginContainer" parent="SafeArea/Root/PrivatePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="PrivateRows" type="VBoxContainer" parent="SafeArea/Root/PrivatePanel/PrivateMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PrivateTitleLabel" type="Label" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+text = "Join Private Server"
+
+[node name="PlayerNameEdit" type="LineEdit" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows"]
+layout_mode = 2
+editable = false
+placeholder_text = "Player name"
+
+[node name="ServerIdEdit" type="LineEdit" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows"]
+layout_mode = 2
+editable = false
+placeholder_text = "Server ID"
+
+[node name="PasswordEdit" type="LineEdit" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows"]
+layout_mode = 2
+editable = false
+placeholder_text = "Enter password"
+secret = true
+
+[node name="JoinButton" type="Button" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_type_variation = &"ActionButton"
+text = "Join"
+
+[node name="PublicPanel" type="PanelContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_type_variation = &"HudPanel"
+
+[node name="PublicMargin" type="MarginContainer" parent="SafeArea/Root/PublicPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="PublicRows" type="VBoxContainer" parent="SafeArea/Root/PublicPanel/PublicMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PublicTitleLabel" type="Label" parent="SafeArea/Root/PublicPanel/PublicMargin/PublicRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+text = "Join Public Match"
+
+[node name="FindMatchButton" type="Button" parent="SafeArea/Root/PublicPanel/PublicMargin/PublicRows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Find Match"

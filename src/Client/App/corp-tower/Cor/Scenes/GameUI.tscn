@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/BlockPreview.gd" id="2_blockpreview"]
 [ext_resource type="Script" path="res://Cor/Scripts/TowerStack.gd" id="3_towerstack"]
 [ext_resource type="Script" path="res://Cor/Scripts/DebugOverlay.gd" id="4_debugoverlay"]
 [ext_resource type="Theme" path="res://Cor/Themes/GameUITheme.tres" id="5_theme"]
 [ext_resource type="Script" path="res://Cor/Scripts/CooldownOverlay.gd" id="6_cooldown"]
+[ext_resource type="Script" uid="uid://dwvcruandm3c" path="res://Cor/Scripts/Main.gd" id="7_main"]
 
 [node name="GameUI" type="Control" unique_id=20707474]
 layout_mode = 3
@@ -14,6 +15,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("5_theme")
+script = ExtResource("7_main")
 
 [node name="Background" type="Panel" parent="."]
 layout_mode = 1
@@ -637,6 +639,7 @@ mouse_filter = 2
 
 [node name="DebugButton" type="Button" parent="."]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(92, 42)
 layout_mode = 1
 anchors_preset = 3

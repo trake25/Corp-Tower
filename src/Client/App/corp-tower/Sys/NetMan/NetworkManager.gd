@@ -77,6 +77,12 @@ func place_block(block_index):
 
 	ws.send_text(JSON.stringify(data))
 
+func leave_queue():
+	if not is_conn_estab:
+		return
+
+	ws.send_text(JSON.stringify({"type": "leave_queue"}))
+
 func load_reconnect_identity():
 	if FileAccess.file_exists(PLAYER_ID_FILE):
 		player_id = FileAccess.get_file_as_string(PLAYER_ID_FILE).strip_edges()

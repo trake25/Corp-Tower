@@ -29,6 +29,8 @@ func run() -> void:
 		main_instance.queue_free()
 		await process_frame
 
+	await check_play_scene_ready()
+
 	finish()
 
 func check_application_scripts() -> void:
@@ -113,20 +115,33 @@ func instantiate_scene(path: String, description: String) -> Node:
 	return instance
 
 func check_main_scene_ready(main_instance: Node) -> void:
-	var ui_root := main_instance.get_node_or_null("UIRoot")
-	if ui_root == null:
-		failures.append("Main scene is missing UIRoot.")
+	var screen_container := main_instance.get_node_or_null("ScreenContainer")
+	if screen_container == null:
+		failures.append("Main scene is missing ScreenContainer.")
+	elif screen_container.get_child_count() == 0:
+		failures.append("Main scene ScreenContainer has no active screen.")
+
+	var debug_button := main_instance.get_node_or_null("DebugButton")
+	if debug_button == null:
+		failures.append("Main scene is missing the overlay DebugButton.")
+
+func check_play_scene_ready() -> void:
+	var play_instance: Node = instantiate_scene(UI_SCENE_PATH, "Play scene")
+	if play_instance == null:
 		return
 
-	if ui_root.get_child_count() == 0:
-		failures.append("Main scene UIRoot has no UI nodes.")
+	root.add_child(play_instance)
+	await process_frame
 
-	var missing_required_nodes: Variant = main_instance.get("missing_required_nodes")
+	var missing_required_nodes: Variant = play_instance.get("missing_required_nodes")
 	if missing_required_nodes is Array and !missing_required_nodes.is_empty():
 		failures.append(
-			"Main scene UI is missing required nodes: " +
+			"Play scene UI is missing required nodes: " +
 			", ".join(missing_required_nodes)
 		)
+
+	play_instance.queue_free()
+	await process_frame
 
 func finish() -> void:
 	if failures.is_empty():

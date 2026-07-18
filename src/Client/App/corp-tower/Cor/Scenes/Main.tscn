@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c0po62b2x6ltb"]
 
-[ext_resource type="Script" uid="uid://dwvcruandm3c" path="res://Cor/Scripts/Main.gd" id="1_main"]
-[ext_resource type="PackedScene" path="res://Cor/Scenes/GameUI.tscn" id="2_ui"]
+[ext_resource type="Script" path="res://Cor/Scripts/ScreenManager.gd" id="1_screenmanager"]
+[ext_resource type="Theme" path="res://Cor/Themes/GameUITheme.tres" id="2_theme"]
 
 [node name="Main" type="Control" unique_id=20707474]
 layout_mode = 3
@@ -10,12 +10,21 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_main")
+theme = ExtResource("2_theme")
+script = ExtResource("1_screenmanager")
 
-[node name="UIRoot" parent="." instance=ExtResource("2_ui")]
+[node name="ScreenContainer" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="DebugButton" type="Button" parent="."]
+custom_minimum_size = Vector2(92, 42)
+layout_mode = 0
+size = Vector2(92, 42)
+theme_type_variation = &"ActionButton"
+theme_override_font_sizes/font_size = 14
+text = "Debug"
