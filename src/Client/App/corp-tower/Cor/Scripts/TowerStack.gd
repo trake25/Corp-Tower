@@ -10,13 +10,7 @@ const MAX_UNIT_SIZE := 34.0
 const TOP_PADDING := 14.0
 const BOTTOM_PADDING := 12.0
 const SCROLL_HEADROOM_UNITS := 2
-# Exaggerated lean angle once the server reports an actual collapse, so the
-# topple reads clearly even though live-play tilt is capped much lower
-# (see Game_Config.towerMaxTiltAngleDeg, typically 24).
 const COLLAPSE_TILT_DEG := 70.0
-# Higher = snappier easing toward the target tilt. This is purely a visual
-# smoothing constant - the underlying tilt value itself is recalculated
-# from scratch server-side on every placement, not animated there.
 const TILT_EASE_SPEED := 6.0
 
 var tower_blocks: Array = []
@@ -24,12 +18,7 @@ var current_height: int = 0
 var target_height: int = 0
 var player_color_map: Dictionary = {}
 var tower_stability: int = 100
-# Target lean, in degrees, taken directly from diagnostics.tiltAngleDeg.
-# Positive leans right, negative leans left - same sign convention as the
-# server's tiltScore.
 var tower_tilt_deg: float = 0.0
-# Eased value actually used for drawing, so tilt changes glide instead of
-# snapping on every placement.
 var displayed_tilt_deg: float = 0.0
 var tower_collapsed: bool = false
 
@@ -50,9 +39,6 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	var reported_tilt: float = float(diagnostics.get("tiltAngleDeg", 0.0))
 
 	if tower_collapsed:
-		# Once collapsed, lean hard in whatever direction it was already
-		# going rather than sitting at the (comparatively small) live-play
-		# tilt cap - this is purely cosmetic, the level has already ended.
 		var lean_sign: float = 1.0 if reported_tilt >= 0.0 else -1.0
 		tower_tilt_deg = lean_sign * COLLAPSE_TILT_DEG
 	else:
@@ -89,10 +75,6 @@ func _draw() -> void:
 	var scroll_offset_units: int = _scroll_offset_units(unit)
 	var tower_units: int = max(target_height, current_height, 1)
 
-	# Pivot at the bottom-center of the tower, matching where it actually
-	# rests on the ground - the same "transform-origin: 50% 100%" idea as
-	# the web prototype. Everything drawn between draw_set_transform() and
-	# the reset below is rotated around this point.
 	var pivot: Vector2 = Vector2(base_x, baseline)
 	draw_set_transform(pivot, deg_to_rad(displayed_tilt_deg), Vector2.ONE)
 
@@ -112,9 +94,6 @@ func _draw() -> void:
 			var abs_y: float = baseline - float(y_units + 1 - scroll_offset_units) * unit
 			var abs_rect: Rect2 = Rect2(Vector2(abs_x, abs_y), Vector2(unit - 2.0, unit - 2.0))
 
-			# Culling uses pre-rotation position - a cheap approximation
-			# that's fine at the shallow angles this ever reaches (<=~24
-			# degrees live, <=70 only in the post-collapse animation).
 			if !_is_rect_visible(abs_rect):
 				continue
 

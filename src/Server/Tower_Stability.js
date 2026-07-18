@@ -29,33 +29,6 @@ function settleBlock(entries, block, width) {
     return { originX, originY };
 }
 
-// ---------------------------------------------------------------------------
-// Stability model
-//
-// Deterministic and grid-only: a pure function of the current block
-// positions in `entries` - no history, no randomness, no hidden state.
-// Re-running evaluate() on the same array always produces the same result,
-// which the balance simulator depends on (thousands of runs must be
-// reproducible) and which lets the client re-derive the same tilt from a
-// state snapshot after reconnecting, rather than needing a replayed history.
-//
-// Two components:
-//
-// 1. comOffset - whole-tower lean. Is the tower's overall center of mass
-//    still over its footprint on the ground? This is the same criterion
-//    that determines whether a physical stack of boxes tips: only the
-//    horizontal position of the center of mass matters, not the height of
-//    the stack.
-//
-// 2. overhangPenalty - reaction to the block that was JUST placed. A block
-//    landing with part of it hanging over empty space should read as a bad
-//    placement immediately, even if it barely moves the tower's overall
-//    center of mass (one small block is a rounding error against a tall
-//    tower). This only looks at the most recently placed entry, so it
-//    reacts to the placement that caused it rather than re-penalizing old,
-//    already-settled overhangs on every subsequent turn.
-// ---------------------------------------------------------------------------
-
 function evaluate(entries, config) {
     if (!entries || entries.length === 0) {
         return {
@@ -89,8 +62,6 @@ function evaluate(entries, config) {
         }
     }
 
-    // Guard against dividing by an empty base - shouldn't happen in normal
-    // play since the first block always settles onto the floor.
     if (!Number.isFinite(groundMinX)) {
         groundMinX = 0;
         groundMaxX = 0;
@@ -101,7 +72,6 @@ function evaluate(entries, config) {
     const comX = comSum / cellCount;
     const comOffset = (comX - baseCenter) / baseHalfWidth;
 
-    // Overhang penalty from the block that was just placed (last entry).
     const lastEntry = entries[entries.length - 1];
     const overhangWeight = config.towerOverhangWeight ?? 0.18;
     let overhangPenalty = 0;

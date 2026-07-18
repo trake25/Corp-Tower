@@ -1196,6 +1196,41 @@ text = "Assist Threshold: 0%"
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="Tower" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+layout_mode = 2
+
+[node name="TowerRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="TowerOverhangWeightLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Overhang Weight: 18%"
+
+[node name="TowerOverhangWeightSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerMaxTiltLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Max Tilt Angle: 24°"
+
+[node name="TowerMaxTiltSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerCollapseThresholdLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Collapse Threshold: 1.00"
+
+[node name="TowerCollapseThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="QuickChatRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
 layout_mode = 2
 theme_override_constants/separation = 6

@@ -1,28 +1,30 @@
 # Block Preview
 
 ## Purpose
-- Draw fixed-orientation block previews in the Godot HUD.
-- File: `src/Client/App/corp-tower/Cor/Scripts/BlockPreview.gd`.
-
-## Runtime Classification
-- Runtime client file.
-- Required by the current UI to draw inventory and next-draw block previews.
-- Visual-only; it does not decide placement legality or gameplay state.
+Draws fixed-orientation block previews in the Godot HUD. File:
+`src/Client/App/corp-tower/Cor/Scripts/BlockPreview.gd`. Visual-only — it
+never decides placement legality or gameplay state.
 
 ## Responsibilities
 - Render server-provided block `cells`.
 - Center previews inside inventory and draw-pile cards.
-- Render a larger semi-transparent floating preview during inventory drag.
-- Show unavailable/disabled preview state.
-- Support array-style and dictionary-style cell coordinates.
+- Render a larger, semi-transparent floating preview during inventory drag.
+- Show a disabled/unavailable preview state.
+- Support both array-style and dictionary-style cell coordinates from the
+  server payload.
 
-## Preview Modes
-- `INVENTORY`: compact card preview used by inventory slots and the draw pile.
-- `FLOATING_DRAG`: larger pointer-following preview used while dragging a block toward the tower.
+## Public interface
+- Two display modes: `INVENTORY` (compact card preview for inventory slots
+  and the draw pile) and `FLOATING_DRAG` (larger pointer-following preview
+  used while dragging a block toward the tower).
+- Set via the block-preview node's exposed properties/setter (cells, mode,
+  enabled state) — driven entirely by [[Main UI Controller]]; this component
+  holds no gameplay state of its own.
 
-## Dependencies
-- [[Main UI Controller]]
-- [[Client UI Skins]]
+## Depends on
+- Internal: none
+- External: none
 
 ## Notes
-- This is visual-only; placement remains index-based and server-authoritative.
+- Placement stays index-based and server-authoritative; this component only
+  ever draws what it's told, matching [[Client UI Skins]]' node contract.

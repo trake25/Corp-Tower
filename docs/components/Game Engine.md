@@ -1,95 +1,92 @@
 # Game Engine
 
 ## Purpose
-- Authoritative gameplay rules and level lifecycle.
-- File: `src/Server/Game_Engine.js`.
+Authoritative gameplay rules and level lifecycle for one room. File:
+`src/Server/Game_Engine.js`.
 
 ## Responsibilities
-- Create room state.
-- Assign fixed-orientation shape blocks.
+- Create room state; assign fixed-orientation shape blocks.
 - Build and deal the shared draw pile.
-- Maintain authoritative placed-block tower history.
-- Resolve grid settling and deterministic tower stability before level completion.
+- Maintain the authoritative placed-block tower history.
+- Resolve grid settling and deterministic tower stability before level
+  completion (via [[Tower Stability]]).
 - Run start delay, level timer, and tick broadcasts.
-- Validate block placement and refresh token use.
-- Validate and broadcast transient quick-chat messages.
-- Calculate scores and bonuses.
-- Emit transient score UI events for placement, finish, bonus, MVP, and team-total feedback.
-- Detect success/failure.
-- Advance levels, preserve team carry-over blocks, or roll back checkpoints.
+- Validate block placement and refresh-token use.
+- Validate and broadcast transient quick-chat and politics messages.
+- Calculate scores and bonuses; emit transient score UI events.
+- Detect success/failure; advance levels, preserve team carry-over blocks, or
+  roll back checkpoints.
 - Stop timers and bots on room close.
-- Notify [[Lobby Manager]] when room state changes so shared state can be persisted.
+- Notify [[Lobby Manager]] when room state changes so it can be persisted.
 
-## Key Logic
-- Level states:
-  - `waiting`
-  - `starting`
-  - `playing`
-  - `finished`
-  - `failed`
-  - `game_completed`
-  - `closed`
-- Scoring:
-  - Placement points use effective height, level, and `placementScorePerHeight`.
-  - Bonuses: finisher, precision, team, and optional assist, with multipliers from [[Game Config]]. Disabled zero-value bonuses do not emit score events.
-  - MVP is highest level score.
-  - Checkpoint score snapshots are restored on rollback.
-  - Checkpoint politics snapshots are restored on rollback when `politicsLifetime` is `checkpoint`, removing items earned after the last completed checkpoint.
-  - Checkpoint score gates fail when any player gained less than `checkpointMinContributionShare` of expected placement score for the checkpoint band.
-  - `checkpointScoreStatus` broadcasts the active band-relative gate, next checkpoint level, and per-player leaderboard score goals for the right-side UI.
-  - `scoreEvents[]` is transient and broadcast-only; clients should not infer scoring UI from aggregate score diffs.
-  - `lastLevelSummary` includes team level score, MVP, finisher, exact/overbuild result, per-player level/final totals, contributed height, and bonus breakdowns. Checkpoint failures include `checkpointScoreStatus`.
-- Target height:
-  - Uses the authored target-height curve from [[Game Config]].
-  - `targetHeightMultiplier` scales the curve for debug tuning.
-- Blocks:
-  - New blocks are objects `{ id, shapeId, cells, height }`.
-  - `height` is derived from the vertical span of `cells`.
-  - Legacy numeric blocks are still interpreted as vertical height values by helper logic.
-  - Block sizes unlock through [[Game Config]] so level 1 starts with height-1 `I1` blocks only.
-- Inventory:
-  - Active slots scale through [[Game Config]].
-  - Default unlocks are 1 slot at level 1, 2 slots at level 2, and 3 slots at level 4.
-- Opening hands:
-  - Active hand slots are filled by newly generated level blocks.
-  - Opening hands are generated with minimum surplus, precision-block, and exact-combination constraints.
-- Draw pile:
-  - The shared pile is built from unused team carry-over blocks and generated reserve blocks unlocked by level.
-  - Level 1 starts with an empty draw pile and levels 1-3 have no generated reserve.
-  - A placement refills the acting player's hand from the pile when possible.
-  - `game_state` includes `drawPileCount` and `nextDrawBlock`.
-- Team carry-over:
-  - On level completion, unused active hand blocks and remaining draw pile blocks are collected.
-  - Up to 3 small precision-friendly blocks are kept and shuffled into the next level draw pile.
-  - Team carry-over is discarded on level failure before checkpoint restart.
-- Tower history:
-  - `towerBlocks[]` records each placement with player id, block, height, effective height, and base height.
-  - History resets at level start and is broadcast in `game_state`.
-- Refresh tokens:
-  - Max token count and per-level uses are from [[Game Config]].
-  - Locked out near level end.
-  - Refresh rerolls the player's current hand, upgrades size 1-2 blocks into unlocked size 3+ blocks when possible, reshapes size 3+ blocks without changing size, tries to produce a useful remaining-height option, and does not consume or reorder the draw pile.
-- Debug level start:
-  - New rooms use `debugStartLevel`.
-  - `restartAtConfiguredStartLevel()` resets active tuning rooms to that level, clears transient room state, resets scores, and saves a new checkpoint snapshot.
-- Room close:
-  - Calls [[Bot Manager]] stop.
-  - Clears all timers.
-  - Marks state `closed`.
+## Public interface
+One class, `GameEngine`, one per room. Selected methods (grouped by area,
+signature-level):
 
-## Inputs/Outputs
-- Input: players from [[Lobby Manager]], `place_block`, `refresh_blocks`.
-- Output: `game_state` broadcasts, `towerBlocks`, `scoreEvents`, score updates, level summaries, level transitions.
-- `game_state.players[]` includes `isBot` so clients can distinguish real-player rooms from bot-filled debug rooms.
-- `quickChatEvents[]` is transient and broadcast-only; it is never persisted in room snapshots.
+- **Lifecycle** — `createRoom(...)`, `hydrateRoom(...)`, `closeRoom(reason)`,
+  `startLevel()`, `restartAtConfiguredStartLevel()`.
+- **Placement** — `placeBlock(playerId, blockIndex)`, `refreshBlocks(playerId)`.
+- **Scoring** — `addPlacementScore(...)`, `awardCompletionBonuses(...)`,
+  `addLevelScoreToLeaderboard()`, `getLevelMVP()`, `buildLevelSummary(...)`.
+- **Checkpoints** — `saveCheckpointState()`, `restoreCheckpointState()`,
+  `rollbackToCheckpoint()`.
+- **Side features** — `setupSideQuest()`, `activatePolitics(...)`.
+- **Stability** — `recalculateTowerStability()` (delegates the actual math to
+  [[Tower Stability]]).
 
-## Dependencies
-- [[Game Config]]
-- [[Bot Manager]]
-- [[Lobby Manager]]
+## Depends on
+- Internal: [[Game Config]], [[Tower Stability]], [[Bot Manager]],
+  [[Lobby Manager]] (notified of room changes, not called into for gameplay
+  logic)
+- External: none
 
 ## Notes
-- Engine owns live timers and authoritative rule execution; [[Lobby Manager]]/[[Redis State]] persist shared room snapshots.
-- No persistent leaderboard yet.
-- The engine should remain server authoritative.
-- Shape-block migration changes balance assumptions; progression/target tuning needs a future recalibration pass.
+- Level states: `waiting`, `starting`, `playing`, `finished`, `failed`,
+  `game_completed`, `closed`.
+- **Score banking is two-stage**: placement/bonus points accumulate in
+  `player.levelScore` during a level; only `addLevelScoreToLeaderboard()`
+  (called from `completeLevel()`/on level advance) moves that into
+  `player.score`. This is why a failed level's score doesn't count toward the
+  final total — see `Score_Events.test.js`'s "failed level summary does not
+  bank level score into final totals".
+- Bonuses (finisher, precision, team, optional assist) use multipliers from
+  [[Game Config]]; disabled (zero-value) bonuses don't emit score events.
+- Checkpoint score gates fail when any player contributed less than
+  `checkpointMinContributionShare` of expected placement score for the
+  checkpoint band; `checkpointScoreStatus` broadcasts the active gate, next
+  checkpoint level, and per-player leaderboard goals for the right-side UI.
+- Checkpoint rollback restores both score snapshots and politics snapshots
+  (the latter only when `politicsLifetime` is `checkpoint`, removing items
+  earned after the last completed checkpoint).
+- `scoreEvents[]` and `quickChatEvents[]` are transient, broadcast-only, and
+  never persisted in room snapshots — clients shouldn't infer scoring UI from
+  aggregate score diffs alone.
+- Blocks are objects `{ id, shapeId, cells, height }`; `height` is derived
+  from the vertical span of `cells`. Legacy numeric blocks are still
+  interpreted as plain height values by helper logic. Sizes unlock through
+  [[Game Config]], so level 1 starts with height-1 `I1` blocks only.
+- Inventory active-slot count scales through [[Game Config]] (1 slot at
+  level 1, 2 at level 2, 3 at level 4 by default).
+- Draw pile: built from unused team carry-over blocks plus generated reserve
+  blocks unlocked by level. Level 1 starts with an empty pile and levels 1–3
+  have no generated reserve. A placement refills the acting player's hand
+  from the pile when possible; `game_state` includes `drawPileCount` and
+  `nextDrawBlock`.
+- Team carry-over: on level completion, unused hand + remaining pile blocks
+  are collected; up to 3 small precision-friendly blocks are kept and
+  shuffled into the next level's pile. Discarded entirely on level failure,
+  before the checkpoint restart.
+- Refresh tokens: max count and per-level uses come from [[Game Config]];
+  locked out near level end. Refresh **replaces only the blocks currently in
+  the player's hand** — it does not top up to the max. A player with 1 block
+  left gets 1 new block back; using refresh on a full hand replaces all of
+  them. Refresh upgrades size 1–2 blocks into unlocked size 3+ blocks when
+  possible, reshapes size 3+ blocks without changing size, and tries to
+  produce a useful remaining-height option — it never consumes or reorders
+  the draw pile.
+- Engine owns live timers and authoritative rule execution;
+  [[Lobby Manager]] / [[Redis State]] persist shared room snapshots — this
+  file never talks to Redis directly.
+- No persistent leaderboard yet. Shape-block migration changed balance
+  assumptions; progression/target tuning needs a future recalibration pass
+  (see [[Balance Simulator]]).

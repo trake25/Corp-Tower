@@ -1,10 +1,4 @@
-// Game_Config.js
-
 const GameConfig = {
-
-    // =========================
-    // GAME SETTINGS
-    // =========================
 
     maxLevel: 99,
     debugStartLevel: 1,
@@ -33,16 +27,8 @@ const GameConfig = {
     checkpointMinContributionShare: 0.30,
     towerGridWidth: 7,
     towerPlacementMode: "auto_center",
-    // Weight of a single unsupported cell in the just-placed block, relative
-    // to a full column-width of center-of-mass drift (tune this before the
-    // collapse threshold - it's the main "does one bad piece feel bad"
-    // lever).
     towerOverhangWeight: 0.18,
-    // Visual lean cap in degrees, reached when tiltScore hits +-1.0.
     towerMaxTiltAngleDeg: 24,
-    // |tiltScore| at or above this triggers collapse. 1.0 is the physical
-    // "center of mass has left the base" point - raise it to make the tower
-    // more forgiving, lower it to make it hairier.
     towerCollapseTiltScore: 1.0,
     towerStabilityWarningThreshold: 60,
     towerStabilityCriticalThreshold: 30,
@@ -56,10 +42,6 @@ const GameConfig = {
         copy_score: { category: "Defensive", title: "Copy Score" },
         free_refresh: { category: "Utility", title: "Free Refresh" }
     },
-
-    // =========================
-    // BLOCK SETTINGS
-    // =========================
 
     blockUnlockLevels: {
         1: 1,
@@ -117,10 +99,6 @@ const GameConfig = {
         ]
     },
 
-    // =========================
-    // INVENTORY SETTINGS
-    // =========================
-
     inventoryScaling: {
         1: 1,
         2: 2,
@@ -128,10 +106,6 @@ const GameConfig = {
     },
 
     maxActiveBlocks: 3,
-
-    // =========================
-    // DRAW PILE SETTINGS
-    // =========================
 
     maxTeamCarryOverBlocks: 3,
     generatedDrawPileScaling: {
@@ -175,19 +149,11 @@ const GameConfig = {
     minPrecisionBlocksPerLevel: 2,
     openingHandGenerationAttempts: 1000,
 
-    // =========================
-    // REFRESH TOKEN SETTINGS
-    // =========================
-
     maxRefreshTokens: 1,
     maxRefreshUsesPerLevel: 2,
     refreshLockoutMs: 12000,
     refreshGenerationAttempts: 100,
     refreshMinUsefulBlockHeight: 2,
-
-    // =========================
-    // SCORING SETTINGS
-    // =========================
 
     scoring: {
         placementScorePerHeight: 10,
@@ -197,10 +163,6 @@ const GameConfig = {
         assistBonusPerLevel: 0,
         assistContributionThreshold: 0.25
     },
-
-    // =========================
-    // DEBUG SETTINGS
-    // =========================
 
     debugBotsEnabled: false,
 

@@ -1,68 +1,87 @@
 # Main UI Controller
 
 ## Purpose
-- Godot UI controller for the main game screen.
-- File: `src/Client/App/corp-tower/Cor/Scripts/Main.gd`.
+Godot UI controller for the main game screen — the single script that wires
+input, renders server state, and hosts debug tuning for the active skin.
+File: `src/Client/App/corp-tower/Cor/Scripts/Main.gd`.
 
 ## Responsibilities
 - Wire connect, block drag-and-drop placement, and refresh buttons.
-- Display connection, room, score, checkpoint minimum score status, timer, tower height/progress, 3-slot block inventory, draw pile preview, and refresh state.
-- Render shape-based block inventory cards from server-provided fixed-orientation cells.
-- Render the visible `nextDrawBlock` and remaining `drawPileCount` in the former 4th inventory-card position.
-- Render locked inactive inventory slots from `activeInventorySlots` so low levels start with fewer usable slots.
-- Render placed blocks in the center tower area from server `towerBlocks` history.
-- Render score popups from server `scoreEvents` and level-end summaries from `lastLevelSummary`.
+- Display connection, room, score, checkpoint minimum-score status, timer,
+  tower height/progress, 3-slot block inventory, draw-pile preview, and
+  refresh state.
+- Render shape-based block inventory cards from server-provided
+  fixed-orientation cells.
+- Render placed blocks in the center tower area from server `towerBlocks`
+  history.
+- Render score popups from server `scoreEvents` and level-end summaries from
+  `lastLevelSummary`.
 - Send block and refresh actions.
-- Load the selected UI skin and bind the shared skin node contract.
-- Switch skins at runtime through a bottom-right overlay without changing gameplay/network logic.
-- Reintroduce debug tuning through an overlay instead of embedding it in gameplay layout.
+- Load the selected UI skin and bind the shared skin node contract; switch
+  skins at runtime without touching gameplay/network logic.
+- Host debug tuning through an overlay instead of embedding it in gameplay
+  layout.
 - Clear stale UI on `room_closed`.
 
-## Key Logic
-- Inventory cards use touch/mouse drag instead of tap-to-place.
-- Drag starts only on active inventory slots with a block, while match state is `playing`, and while local placement cooldown has elapsed.
-- Locked and empty slots remain visible but do not start drags.
-- Drag shows a floating `BlockPreview` shape that follows the pointer; release inside `TowerDropZone` sends the existing index-based `place_block` request.
-- Release outside the tower drop zone cancels locally without contacting the server.
-- Drag coordinates do not affect placement or tower geometry; the server contract remains index-based.
-- Only the 3 active inventory slots are actionable.
-- Locked slots remain visible but disabled until their unlock level.
-- The draw-pile preview is not clickable; it shows the shared next refill block that whichever player places next will receive.
-- The draw-pile preview can legitimately show `0 left`, especially on level 1 before any unused blocks have been saved.
-- Inventory cards tolerate legacy numeric blocks and new `{ id, shapeId, cells, height }` block objects.
-- `BlockPreview.gd` draws inventory shape cells and the floating drag preview.
-- `TowerStack.gd` draws placed-block tower history; when connected to an old numeric-block server it falls back to a simple stack from `currentHeight`.
-- `TowerStack.gd` keeps readable cell size and scrolls the visible tower window upward when high-level towers exceed the track height.
-- Tower center display visualizes both current height against target height and the placed-block stack.
-- Score events are tracked by stable event id per level so reconnects, skin switches, and repeat broadcasts do not duplicate animations.
-- Placement popups use player color and `placementScorePopupDurationMs`; MVP, Perfect Fit, checkpoint, finisher, and bonus-style popups use `finishScorePopupDurationMs`. These durations cover the full popup lifetime, including fade-out; finish-style popups fade and float across the configured duration instead of using a short capped fade.
-- Exact finish shows `PERFECT FIT`; overbuild shows target reached with wasted height; MVP uses a larger callout.
-- Checkpoint score-gate failures show a distinct checkpoint failure callout and a summary that mirrors the right-side checkpoint goal UI.
-- `CheckpointStatusLabel` renders `checkpointScoreStatus` under the leaderboard with the next checkpoint level, ready count, and leaderboard score goals players must surpass.
-- Level score summaries wait for the current score popup batch to fade, then show complete/failed state, exact/overbuild result, team score, MVP, finisher, and per-player level/final totals before auto-hiding from `levelSummaryDelayMs`.
-- Refresh button sends `refresh_blocks`.
-- Three quick-chat buttons send server-configured templates and show transient room-wide callouts.
-- Inventory cards render a radial overlay while their drag-to-place cooldown is active.
-- Skin selection reads `corp_tower/ui_skin`; default is `DefaultSkin`, with `Figma_SkinV1` available as a reskin.
-- The skin picker button swaps the active skin scene under `SkinRoot`, rebinds required nodes, reconnects skin-local buttons, and replays the last room/game state.
-- Debug overlay controls route changes through `NetworkManager.update_config` and use no-signal setters during server sync.
-- Debug overlay header includes Reset, which sends `resetDebugConfig` and lets the server rebroadcast default values.
-- Debug overlay is tabbed into Bots, Round, UI, Supply, Refresh, and Scoring controls.
-- Round tuning includes `debugStartLevel`; Scoring tuning includes `checkpointMinContributionShare`.
-- `update_room_closed(data)` resets stale room UI.
+## Public interface
+- **Driven by [[NetworkManager]] signals**: `update_status`,
+  `update_connect_button`, `update_room(data)`, `update_room_closed(data)`,
+  `update_game_state(data)`, `update_debug_config(config)` — all connected in
+  `connect_network_signals()`.
+- **UI action handlers**: `on_connect_pressed`, `on_block_pressed(index)`,
+  `on_refresh_pressed`, `on_quick_chat_pressed(slot)`, plus the drag-input
+  handlers (`begin_block_drag`, `update_block_drag`, `finish_block_drag`,
+  `cancel_block_drag`) — all call back out through [[NetworkManager]].
+- **Skin lifecycle**: `load_skin(skin_name)`, `switch_skin(skin_name)`,
+  `bind_skin_nodes()` — used by the skin-picker overlay and at startup.
 
-## Inputs/Outputs
-- Input: signals from [[NetworkManager]].
-- Output: player action calls to [[NetworkManager]].
-
-## Dependencies
-- [[NetworkManager]]
-- [[Godot Client App]]
+## Depends on
+- Internal: [[NetworkManager]] (all server I/O), [[Godot Client App]] (the
+  project it's the controller for), [[Block Preview]] (inventory/drag
+  shapes), [[Tower Stack]] (placed-block rendering), [[Cooldown Overlay]]
+  (per-card cooldown rings), [[Debug Overlay]] (debug panel shell),
+  [[Player Colors]] (player color lookups)
+- External: none
 
 ## Notes
-- UI is an Android-first gameplay HUD with top status, center tower stage, and bottom touch controls.
-- Bottom controls are laid out as 3 inventory card positions, 1 shared next-draw preview card, and the refresh button.
-- Current working UI is preserved as `DefaultSkin`; Figma-inspired UI is `Figma_SkinV1`.
-- Debug and skin menu UI are available as bottom-right floating buttons with overlay panels.
-- The center tower is visual only; placement is still server-authoritative and index-based.
-- `TowerDropZone` defines the tower release target; `DragPreview` renders the floating drag shape above gameplay UI.
+- Inventory cards use touch/mouse drag instead of tap-to-place. A drag
+  starts only on active inventory slots with a block, while match state is
+  `playing`, and while the local placement cooldown has elapsed; locked and
+  empty slots stay visible but never start a drag. Release inside
+  `TowerDropZone` sends the existing index-based `place_block` request;
+  release outside cancels locally without contacting the server. Drag
+  coordinates never affect placement or tower geometry — the server contract
+  stays index-based throughout.
+- The draw-pile preview isn't clickable; it shows the shared next-refill
+  block that whichever player places next will receive, and can legitimately
+  read `0 left` (e.g. level 1 before any unused blocks have been banked).
+- Inventory cards tolerate both legacy numeric blocks and
+  `{ id, shapeId, cells, height }` block objects.
+- Score events are tracked by stable event id per level so reconnects, skin
+  switches, and repeat broadcasts don't duplicate animations. Placement
+  popups use `placementScorePopupDurationMs`; MVP/Perfect-Fit/checkpoint/
+  finisher/bonus popups use `finishScorePopupDurationMs` — both durations
+  cover the full popup lifetime including fade-out.
+- Level score summaries wait for the current score-popup batch to fade, then
+  show complete/failed state, exact/overbuild result, team score, MVP,
+  finisher, and per-player level/final totals before auto-hiding after
+  `levelSummaryDelayMs`.
+- Debug overlay controls route every change through
+  `NetworkManager.update_config`, using no-signal setters while syncing from
+  the server so an incoming config update doesn't re-trigger the handler
+  that sent it. The 26 slider handlers that just forward a value are wired as
+  inline lambdas straight to two shared helpers, `send_debug_int` /
+  `send_debug_float`, at their `configure_slider(...)` call site in
+  `setup_debug_controls()` — only handlers with an extra local side effect
+  (popup/summary duration sliders, which also cache the value locally for
+  the popup-timing code above) keep a named function. Reset sends
+  `resetDebugConfig` and lets the server rebroadcast defaults; the panel is
+  tabbed into Bots, Round, UI, Supply, Refresh, and Scoring.
+- UI is an Android-first HUD: top status, center tower stage, bottom touch
+  controls (3 inventory cards, 1 shared next-draw preview card, refresh
+  button). Debug and skin menus are bottom-right floating buttons with
+  overlay panels. The center tower is visual only — placement is still
+  server-authoritative and index-based.
+- Has no behavioral test coverage (see [[Godot Client Tests]]) — sizable
+  changes here are currently verified by manual play-testing / CI's smoke
+  test, not automated regression tests.

@@ -1,5 +1,3 @@
-// Server.js
-
 const WebSocket = require("ws");
 
 const LobbyManager = require("./Lobby_Manager");

@@ -1,24 +1,33 @@
 # Godot Client Tests
 
 ## Purpose
-- Godot-side client smoke and GUT coverage.
-- Files:
-  - `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`
-  - `src/Client/App/corp-tower/Tests/Gut/test_player_colors.gd`
+Godot-side client smoke and unit-test coverage. Files:
+`src/Client/App/corp-tower/Tests/CiSmokeTest.gd`,
+`src/Client/App/corp-tower/Tests/Gut/test_player_colors.gd`.
 
 ## Responsibilities
-- Load application scripts under `Cor` and `Sys`.
-- Verify main scene and `NetworkManager` autoload wiring.
-- Verify required UI skins load and instantiate.
-- Verify player color utility behavior through GUT.
+- Load application scripts under `Cor` and `Sys` (catches load-time/syntax
+  errors before they reach CI's build step).
+- Verify the main scene and `NetworkManager` autoload wiring.
+- Verify both required UI skins load and instantiate.
+- Verify [[Player Colors]] utility behavior through GUT.
 
-## Inputs/Outputs
-- Input: [[Client Android Internal Workflow]].
-- Output: CI pass/fail before signed Android export.
+## Public interface
+Run headlessly through the vendored GUT framework (`addons/gut`), invoked by
+[[Client Android Internal Workflow]] before a signed Android export. Not
+run locally in this pass — Godot isn't installed in the working sandbox;
+this mirrors what CI already does on push.
 
-## Dependencies
-- [[Godot Client App]]
-- [[NetworkManager]]
-- [[Main UI Controller]]
-- [[Client UI Skins]]
-- [[Player Colors]]
+## Depends on
+- Internal: [[Godot Client App]], [[NetworkManager]], [[Main UI Controller]],
+  [[Client UI Skins]], [[Player Colors]]
+- External: GUT (Godot Unit Test), vendored under `addons/gut`
+
+## Notes
+- Coverage is structural, not behavioral, for almost everything except
+  [[Player Colors]]: `CiSmokeTest.gd` confirms scripts/scenes load and
+  instantiate without error, but doesn't exercise gameplay logic.
+  [[Main UI Controller]], [[NetworkManager]], [[Block Preview]],
+  [[Tower Stack]], [[Cooldown Overlay]], and [[Debug Overlay]] have no
+  behavioral test
+  coverage today — worth keeping in mind before larger refactors there.

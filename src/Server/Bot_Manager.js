@@ -1,5 +1,3 @@
-// Bot_Manager.js
-
 const GameConfig =
     require("./Game_Config");
 
@@ -57,7 +55,6 @@ class BotManager {
             });
     }
 
-
     stopBot(bot) {
 
         if (
@@ -71,7 +68,6 @@ class BotManager {
         bot.botTimer = null;
         bot.botLoopLevel = null;
     }
-
 
     runBotLoop(
         bot,
@@ -103,7 +99,6 @@ class BotManager {
 
             GameConfig
                 .debugBotDelayMin;
-
 
         bot.botTimer = setTimeout(() => {
 
@@ -141,10 +136,6 @@ class BotManager {
             ) {
                 return;
             }
-
-            console.log(
-                `${bot.id} BOT PLAY`
-            );
 
             const action = this.chooseBotAction(bot, engine);
 

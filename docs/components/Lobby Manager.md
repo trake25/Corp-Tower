@@ -1,60 +1,53 @@
 # Lobby Manager
 
 ## Purpose
-- Matchmaking, room lifecycle, and runtime debug config coordinator.
-- File: `src/Server/Lobby_Manager.js`.
+Matchmaking, room lifecycle, and runtime debug-config coordinator. File:
+`src/Server/Lobby_Manager.js`.
 
 ## Responsibilities
-- Maintain waiting players and active rooms through shared Redis state when `REDIS_URL` is enabled.
-- Create 3-participant rooms.
-- Fill rooms with debug bots when enabled.
+- Maintain waiting players and active rooms, through shared Redis state when
+  `REDIS_URL` is enabled.
+- Create 3-participant rooms, filling with debug bots when enabled.
 - Validate and broadcast debug config updates.
-- Allow real players to resume their room within reconnect TTL.
-- Destroy rooms when reconnect TTL expires and no connected real players remain.
-- Reset room-session state during testing phase.
-- Preserve hydrated room state, including shape inventories and tower history, when rooms are recovered from shared state.
+- Let real players resume their room within the reconnect TTL.
+- Destroy rooms when the reconnect TTL expires and no connected real players
+  remain.
+- Preserve hydrated room state (shape inventories, tower history) when a room
+  is recovered from shared state.
 
-## Key Logic
-- `addPlayer(player)`:
-  - Resets participant session state.
-  - Adds player to waiting queue.
-  - Attempts room creation.
-- `tryCreateRoom()`:
-  - Adds debug bots when allowed.
-  - Creates room with 3 participants.
-  - Starts [[Game Engine]].
-- `closeRoom(room, reason, disconnectedPlayer)`:
-  - Calls [[Game Engine]] close.
-  - Removes room from active list.
-  - Resets player/bot scores and session state.
-  - Sends `room_closed` to remaining connected real players.
-  - Requeues remaining real players for a fresh test room.
-- `resumePlayer(player, roomId)`:
-  - Reattaches a reconnecting player to the same room/player slot when session token is valid.
-  - Sends current room metadata and player block inventory before the engine broadcasts full `game_state`.
-- `handleRoomReconnectExpired(roomId)`:
-  - Closes rooms with reason `reconnect_ttl_expired` when all real players miss the reconnect window.
-- `updateDebugConfig(key, value)`:
-  - Allows only known keys.
-  - Clamps numeric values.
-  - Clamps `placementScorePopupDurationMs` and `finishScorePopupDurationMs` to 500-10000 ms.
-  - Clamps `levelSummaryDelayMs` to 1000-10000 ms.
-  - Allows `debugBotStrategy` only as `cooperative` or `mvp_greedy`.
-  - Applies `debugStartLevel` immediately by restarting active debug rooms at the configured level.
-  - Exposes `checkpointMinContributionShare` for checkpoint score-gate tuning.
-  - Handles `resetDebugConfig` by restoring exposed tunables to the `Game_Config.js` startup defaults.
-  - Broadcasts `debug_config`.
+## Public interface
+- `addPlayer(player)` — resets session state, queues the player, attempts
+  room creation.
+- `tryCreateRoom()` — adds debug bots if allowed, creates a 3-participant
+  room, starts [[Game Engine]].
+- `closeRoom(room, reason, disconnectedPlayer)` — stops the engine, removes
+  the room, resets scores/session state, sends `room_closed` to remaining
+  connected real players, requeues them for a fresh room.
+- `resumePlayer(player, roomId)` — reattaches a reconnecting player to their
+  room/slot if the session token is valid; sends room metadata and inventory
+  ahead of the engine's next full `game_state`.
+- `handleRoomReconnectExpired(roomId)` — closes a room with reason
+  `reconnect_ttl_expired` once every real player has missed the reconnect
+  window.
+- `updateDebugConfig(key, value)` — validates and applies one debug tuning
+  change; only known keys are accepted, numeric values are clamped, see Notes
+  for specifics. Broadcasts `debug_config` on success.
 
-## Inputs/Outputs
-- Input: player connections, disconnects, debug config requests.
-- Output: rooms, debug config broadcasts, `room_created`/`room_resumed`, `room_closed` messages.
-
-## Dependencies
-- [[Game Engine]]
-- [[Game Config]]
-- [[Bot Manager]] indirectly through game engine.
+## Depends on
+- Internal: [[Game Engine]], [[Game Config]]. [[Bot Manager]] indirectly,
+  through the engine it starts.
+- External: none directly (Redis access goes through [[Redis State]] when
+  the caller wires it in).
 
 ## Notes
-- Staging/debug reconnect TTL is currently 10 seconds through `RECONNECT_TTL_SECONDS`.
-- Redis stores session/room lookup for the EC2 gateway/workers learning lab.
-- Hydrated room snapshots include `towerBlocks` so non-owner workers and reconnecting clients can redraw the tower.
+- Reconnect TTL is currently 10 seconds (`RECONNECT_TTL_SECONDS`) — a staging
+  value, not necessarily final for production.
+- `updateDebugConfig` clamps `placementScorePopupDurationMs` /
+  `finishScorePopupDurationMs` to 500–10000 ms and `levelSummaryDelayMs` to
+  1000–10000 ms; accepts `debugBotStrategy` only as `cooperative` or
+  `mvp_greedy`; applies `debugStartLevel` immediately by restarting active
+  debug rooms at that level; `resetDebugConfig` restores all exposed
+  tunables to the [[Game Config]] startup defaults.
+- Hydrated room snapshots include `towerBlocks` so non-owner workers and
+  reconnecting clients can redraw the tower without the client recomputing
+  it.

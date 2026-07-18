@@ -1,5 +1,3 @@
-// Game_Engine.js
-
 const GameConfig = require("./Game_Config");
 const BotManager = require("./Bot_Manager");
 const TowerStability = require("./Tower_Stability");
@@ -14,10 +12,6 @@ class GameEngine {
         this.onRoomChanged = options.onRoomChanged || null;
         this.onRoomMessage = options.onRoomMessage || null;
     }
-
-    // =========================
-    // BROADCAST SYSTEM
-    // =========================
 
     getRemainingMs() {
         if (!this.room || !this.room.endsAt) {
@@ -92,10 +86,6 @@ class GameEngine {
             player.ws.send(JSON.stringify(gameState));
         });
     }
-
-    // =========================
-    // ROOM SYSTEM
-    // =========================
 
     createRoom(players) {
         const startLevel = this.getConfiguredStartLevel();
@@ -225,7 +215,7 @@ class GameEngine {
         }
 
         this.onRoomChanged(this.room).catch(error => {
-            console.log("Room persistence failed:", error.message);
+            console.error("Room persistence failed:", error.message);
         });
     }
 
@@ -487,10 +477,6 @@ class GameEngine {
         BotManager.stopBots(this);
     }
 
-    // =========================
-    // LEVEL TUNING
-    // =========================
-
     getTargetHeightForLevel(level) {
         const curve = GameConfig.targetHeightCurve || [];
         const targetBand = curve.find(band => {
@@ -664,10 +650,6 @@ class GameEngine {
             );
         });
     }
-
-    // =========================
-    // BLOCK SYSTEM
-    // =========================
 
     createBlockId() {
         return `B${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -933,8 +915,6 @@ class GameEngine {
             }
 
             player.blocks = this.trimInventory(player.blocks);
-
-            console.log(`${player.id} blocks:`, player.blocks);
         });
     }
 
@@ -1051,7 +1031,6 @@ class GameEngine {
         this.tryCompleteSideQuest(player, block, this.room.currentHeight === this.room.targetHeight);
 
         console.log(`${player.id} placed block (${blockHeight})`);
-        console.log("Current Height:", this.room.currentHeight);
 
         this.recalculateTowerStability();
 
@@ -1104,13 +1083,8 @@ class GameEngine {
         player.refreshTokens -= 1;
         player.refreshUsesThisLevel += 1;
 
-        // Replace only the blocks currently in the player's inventory.
-        // Refresh does not top up to the max - it re-rolls whatever the
-        // player currently holds. If they have 1 block left, they get 1
-        // new block. Using refresh on a full hand replaces all blocks.
         player.blocks = this.generateRefreshBlocks(player.blocks || []);
 
-        console.log(`${player.id} refreshed blocks:`, player.blocks);
         this.checkFailCondition();
         this.persistRoom();
         this.broadcastGameState();
@@ -1255,16 +1229,11 @@ class GameEngine {
         }, 0);
     }
 
-    // =========================
-    // GAME RULES
-    // =========================
-
     checkWinCondition(finisher, finishingBlock) {
         if (this.room.currentHeight < this.room.targetHeight) {
             return;
         }
 
-        console.log("TARGET REACHED. LEVEL COMPLETED.");
         this.completeLevel(finisher, finishingBlock);
     }
 
@@ -1427,7 +1396,6 @@ class GameEngine {
         }
 
         this.awardCompletionBonuses(finisher, exactFinish);
-        // ADD LEVEL SCORE TO LEADERBOARD SCORE WHEN LEVEL IS COMPLETED
         this.addLevelScoreToLeaderboard();
         const carriedBlockCount = this.prepareTeamCarryOverBlocks();
 
@@ -1458,8 +1426,6 @@ class GameEngine {
             previousTotalScores: previousTotalScores
         });
 
-        this.showScoreboard();
-        this.showLevelMVP();
         this.persistRoom();
         this.broadcastGameState();
 
@@ -1501,9 +1467,6 @@ class GameEngine {
             previousTotalScores: previousTotalScores
         });
 
-        this.showScoreboard();
-        this.showLevelMVP();
-
         console.log(`Level FAILED: ${reason}`);
         this.persistRoom();
         this.broadcastGameState();
@@ -1513,13 +1476,8 @@ class GameEngine {
         }, this.getPostLevelTransitionDelayMs());
     }
 
-    // =========================
-    // GAME FLOW
-    // =========================
-
     nextLevel() {
         if (this.room.level >= GameConfig.maxLevel) {
-            console.log("\nGAME COMPLETED!");
             this.room.state = "game_completed";
             this.persistRoom();
             this.broadcastGameState();
@@ -1545,7 +1503,6 @@ class GameEngine {
             this.saveCheckpointState();
         }
 
-        console.log(`\n=== LEVEL ${this.room.level} QUEUED ===`);
         this.startLevel();
     }
 
@@ -1788,10 +1745,6 @@ class GameEngine {
         return this.room.teamCarryOverBlocks.length;
     }
 
-    // =========================
-    // SCORE SYSTEM
-    // =========================
-
     recordScoreBreakdown(player, key, points) {
         player.scoreBreakdown = player.scoreBreakdown || {};
         player.scoreBreakdown[key] =
@@ -1807,7 +1760,6 @@ class GameEngine {
                 scorePerHeight
         );
 
-        //player.score += points; //Only add to levelScore during gameplay
         player.levelScore += points;
         this.recordScoreBreakdown(player, "placement", points);
         this.queueScoreEvent("placement", {
@@ -1871,7 +1823,6 @@ class GameEngine {
             return 0;
         }
 
-        //player.score += points; // Only add to levelScore during gameplay
         player.levelScore += safePoints;
         this.recordScoreBreakdown(player, label, safePoints);
         this.queueScoreEvent(this.getBonusScoreEventType(label), {
@@ -1907,7 +1858,6 @@ class GameEngine {
     }
 
     addLevelScoreToLeaderboard() {
-        // Add levelScore to main score only when level is completed
         this.room.players.forEach(player => {
             player.score += player.levelScore;
             console.log(`${player.id} level score (${player.levelScore}) added to leaderboard score. New total: ${player.score}`);
@@ -1931,24 +1881,6 @@ class GameEngine {
         });
 
         return mvp;
-    }
-
-    showLevelMVP() {
-        const mvp = this.getLevelMVP();
-
-        console.log(
-            `Level MVP: ${mvp.id} (${mvp.levelScore} level score)`
-        );
-    }
-
-    showScoreboard() {
-        console.log("\n=== SCOREBOARD ===");
-
-        this.room.players.forEach(player => {
-            console.log(
-                `${player.id}: ${player.score} total / ${player.levelScore} level`
-            );
-        });
     }
 }
 

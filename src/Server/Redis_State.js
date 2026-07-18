@@ -1,5 +1,3 @@
-// Redis_State.js
-
 const crypto = require("crypto");
 
 const RECONNECT_TTL_SECONDS =
@@ -118,7 +116,7 @@ class RedisState {
             this.client?.set(`pod:${POD_ID}`, String(Date.now()), {
                 EX: ROOM_LEASE_SECONDS * 3
             }).catch(error => {
-                console.log("Redis pod heartbeat failed:", error.message);
+                console.error("Redis pod heartbeat failed:", error.message);
             });
         }, 2000).unref();
     }
@@ -130,15 +128,15 @@ class RedisState {
             const subscriber = client.duplicate();
 
             client.on("error", error => {
-                console.log("Redis client error:", error.message);
+                console.error("Redis client error:", error.message);
             });
 
             publisher.on("error", error => {
-                console.log("Redis publisher error:", error.message);
+                console.error("Redis publisher error:", error.message);
             });
 
             subscriber.on("error", error => {
-                console.log("Redis subscriber error:", error.message);
+                console.error("Redis subscriber error:", error.message);
             });
 
             try {
@@ -162,7 +160,7 @@ class RedisState {
                     this.closeRedisClient(subscriber)
                 ]);
 
-                console.log(
+                console.error(
                     `Redis connect attempt ${attempt}/${REDIS_CONNECT_RETRIES} failed: ${error.message}`
                 );
 
@@ -187,7 +185,6 @@ class RedisState {
             try {
                 client.disconnect();
             } catch (_disconnectError) {
-                // Best effort cleanup after failed startup connection attempts.
             }
         }
     }

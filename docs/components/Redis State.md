@@ -1,36 +1,50 @@
 # Redis State
 
 ## Purpose
-- Shared state adapter for horizontally scaled Corp Tower server workers.
-- File: `src/Server/Redis_State.js`.
+Shared-state adapter so multiple Corp Tower server workers can share
+matchmaking/room state. File: `src/Server/Redis_State.js`.
 
 ## Responsibilities
-- Connect to Redis when `REDIS_URL` is configured.
+- Connect to Redis when `REDIS_URL` is configured; otherwise operate as an
+  in-memory fallback with the same interface.
 - Generate global player and room ids.
-- Store reconnect sessions and reconnect TTL.
-- Store shared matchmaking queue and room snapshots, including tower placement history.
+- Store reconnect sessions and their TTL.
+- Store the shared matchmaking queue and room snapshots, including tower
+  placement history.
 - Publish room events across workers.
-- Fall back to in-memory maps when `REDIS_URL` is not configured.
 
-## Key Logic
-- `RECONNECT_TTL_SECONDS` controls session expiry; staging deploy currently sets `10`.
-- Session records map reconnect token/player id to room id and connection state.
-- Room snapshots remove live WebSocket references before storing.
-- Room snapshots preserve serializable gameplay state such as shape inventory, `currentHeight`, `checkpointScores`, `checkpointPolitics`, `drawPile`, `teamCarryOverBlocks`, and `towerBlocks`; quick-chat cooldown timestamps are retained while transient chat events are excluded.
-- Matchmaking lock prevents multiple workers from creating the same room.
-- Room publish events include source pod/worker id so workers ignore their own echo.
+## Public interface
+- `nextPlayerId()` / room-id equivalents — global id generation (memory
+  counters when Redis is disabled).
+- Session methods — store/read reconnect token ↔ player/room mapping with
+  TTL.
+- Room snapshot methods — read/write serializable room state (strips live
+  WebSocket references before storing).
+- Matchmaking queue methods — shared waiting-player queue, with a lock to
+  stop two workers creating the same room.
+- Pub/sub methods — publish room events tagged with the source pod/worker id
+  so a worker can ignore its own echo.
+- `getPodId()` / `getReconnectTtlSeconds()` — accessors used by
+  [[Lobby Manager]] for logging/TTL decisions.
 
-## Inputs/Outputs
-- Input: [[Lobby Manager]] state operations and Redis endpoint from deploy env.
-- Output: Redis keys/channels for sessions, matchmaking, rooms, room leases, and room events.
-
-## Dependencies
-- `redis` npm package.
-- [[Lobby Manager]]
+## Depends on
+- Internal: none (consumed by [[Lobby Manager]], doesn't depend back on it).
+- External: `redis` npm package (lazily required only when a real connection
+  is attempted, so this file loads fine even without the package present).
 
 ## Notes
-- Redis in staging runs as Docker `redis:7-alpine` on EC2-1 gateway.
-- This is active-session state, not long-term player/leaderboard persistence.
-- `towerBlocks` persistence lets resumed rooms redraw the visible tower without recomputing it client-side.
-- `checkpointScores` persistence keeps rollback score behavior consistent after reconnect or worker recovery.
-- `checkpointPolitics` persistence keeps rollback politics inventory consistent after reconnect or worker recovery.
+- This is active-session state for matchmaking/reconnect, not long-term
+  player/leaderboard persistence.
+- Room snapshots preserve serializable gameplay state — shape inventory,
+  `currentHeight`, `checkpointScores`, `checkpointPolitics`, `drawPile`,
+  `teamCarryOverBlocks`, `towerBlocks`, quick-chat cooldown timestamps —
+  while excluding transient chat events. `checkpointScores` /
+  `checkpointPolitics` persistence is what keeps rollback behavior correct
+  after a reconnect or worker recovery.
+- The connection retry loop's final cleanup step wraps `client.disconnect()`
+  in its own try/catch that intentionally swallows errors — this is
+  best-effort cleanup after an already-failed connection attempt, not a bug;
+  there's nothing meaningful left to do if the disconnect itself also fails.
+- Falls back to in-memory maps when `REDIS_URL` is not configured, so the
+  server (and [[Balance Simulator]], which never goes through this file)
+  keeps working in single-worker/local setups.

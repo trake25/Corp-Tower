@@ -1,5 +1,3 @@
-// Lobby_Manager.js
-
 const GameEngine = require("./Game_Engine");
 const GameConfig = require("./Game_Config");
 const { RedisState, stripRuntimePlayer } = require("./Redis_State");
@@ -12,6 +10,8 @@ const DEFAULT_DEBUG_CONFIG = {
     debugBotDelayMin: GameConfig.debugBotDelayMin,
     debugBotDelayMax: GameConfig.debugBotDelayMax,
     placementCooldown: GameConfig.placementCooldown,
+    quickChatCooldownMs: GameConfig.quickChatCooldownMs,
+    towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode,
     levelTimeLimitMs: GameConfig.levelTimeLimitMs,
     startDelayMs: GameConfig.startDelayMs,
     placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
@@ -28,6 +28,9 @@ const DEFAULT_DEBUG_CONFIG = {
     maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
     refreshLockoutMs: GameConfig.refreshLockoutMs,
     refreshMinUsefulBlockHeight: GameConfig.refreshMinUsefulBlockHeight,
+    towerOverhangWeight: GameConfig.towerOverhangWeight,
+    towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
+    towerCollapseTiltScore: GameConfig.towerCollapseTiltScore,
     placementScorePerHeight: GameConfig.scoring.placementScorePerHeight,
     finisherBonusPerLevel: GameConfig.scoring.finisherBonusPerLevel,
     precisionBonusPerLevel: GameConfig.scoring.precisionBonusPerLevel,
@@ -52,10 +55,6 @@ class LobbyManager {
             `Lobby state: ${this.stateStore.enabled ? "Redis" : "memory"} (${this.stateStore.getPodId()})`
         );
     }
-
-    // =========================
-    // PLAYER MANAGEMENT
-    // =========================
 
     async createPlayer(ws, reconnectRequest = {}) {
         const existingSession =
@@ -209,7 +208,7 @@ class LobbyManager {
 
         const timer = setTimeout(() => {
             this.handleRoomReconnectExpired(room.id).catch(error => {
-                console.log("Reconnect expiry handling failed:", error.message);
+                console.error("Reconnect expiry handling failed:", error.message);
             });
         }, ttlMs);
 
@@ -404,6 +403,7 @@ class LobbyManager {
             placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
             finishScorePopupDurationMs: GameConfig.finishScorePopupDurationMs,
             levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
+            checkpointScoreRequirement: GameConfig.checkpointScoreRequirement,
             checkpointMinContributionShare:
                 GameConfig.checkpointMinContributionShare,
             targetHeightMultiplier: GameConfig.targetHeightMultiplier,
@@ -415,6 +415,9 @@ class LobbyManager {
             maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
             refreshLockoutMs: GameConfig.refreshLockoutMs,
             refreshMinUsefulBlockHeight: GameConfig.refreshMinUsefulBlockHeight,
+            towerOverhangWeight: GameConfig.towerOverhangWeight,
+            towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
+            towerCollapseTiltScore: GameConfig.towerCollapseTiltScore,
             placementScorePerHeight: GameConfig.scoring.placementScorePerHeight,
             finisherBonusPerLevel: GameConfig.scoring.finisherBonusPerLevel,
             precisionBonusPerLevel: GameConfig.scoring.precisionBonusPerLevel,
@@ -463,6 +466,9 @@ class LobbyManager {
         GameConfig.refreshLockoutMs = DEFAULT_DEBUG_CONFIG.refreshLockoutMs;
         GameConfig.refreshMinUsefulBlockHeight =
             DEFAULT_DEBUG_CONFIG.refreshMinUsefulBlockHeight;
+        GameConfig.towerOverhangWeight = DEFAULT_DEBUG_CONFIG.towerOverhangWeight;
+        GameConfig.towerMaxTiltAngleDeg = DEFAULT_DEBUG_CONFIG.towerMaxTiltAngleDeg;
+        GameConfig.towerCollapseTiltScore = DEFAULT_DEBUG_CONFIG.towerCollapseTiltScore;
         GameConfig.scoring.placementScorePerHeight =
             DEFAULT_DEBUG_CONFIG.placementScorePerHeight;
         GameConfig.scoring.finisherBonusPerLevel =
@@ -600,6 +606,9 @@ class LobbyManager {
             maxRefreshUsesPerLevel: setGameInt("maxRefreshUsesPerLevel", 0, 5),
             refreshLockoutMs: setGameInt("refreshLockoutMs", 0, 60000),
             refreshMinUsefulBlockHeight: setGameInt("refreshMinUsefulBlockHeight", 1, 6),
+            towerOverhangWeight: setGameNumber("towerOverhangWeight", 0, 1),
+            towerMaxTiltAngleDeg: setGameInt("towerMaxTiltAngleDeg", 5, 60),
+            towerCollapseTiltScore: setGameNumber("towerCollapseTiltScore", 0.3, 3),
             placementScorePerHeight: setScoringInt("placementScorePerHeight", 1, 25),
             finisherBonusPerLevel: setScoringInt("finisherBonusPerLevel", 0, 25),
             precisionBonusPerLevel: setScoringInt("precisionBonusPerLevel", 0, 25),
@@ -655,10 +664,6 @@ class LobbyManager {
             );
         }));
     }
-
-    // =========================
-    // BOT CREATION
-    // =========================
 
     createBot() {
         return {
@@ -721,10 +726,6 @@ class LobbyManager {
         this.fillQueueWithBotsIfNeeded();
         await this.tryCreateRoom();
     }
-
-    // =========================
-    // ROOM CREATION
-    // =========================
 
     async tryCreateRoom() {
         await this.stateStore.withMatchmakingLock(async () => {

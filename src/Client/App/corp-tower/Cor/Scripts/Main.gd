@@ -172,6 +172,12 @@ var assist_bonus_label: Label
 var assist_bonus_slider: HSlider
 var assist_threshold_label: Label
 var assist_threshold_slider: HSlider
+var tower_overhang_weight_label: Label
+var tower_overhang_weight_slider: HSlider
+var tower_max_tilt_label: Label
+var tower_max_tilt_slider: HSlider
+var tower_collapse_threshold_label: Label
+var tower_collapse_threshold_slider: HSlider
 
 func _ready() -> void:
 	summary_show_timer = Timer.new()
@@ -381,6 +387,12 @@ func bind_skin_nodes() -> void:
 	assist_bonus_slider = optional_node("AssistBonusSlider") as HSlider
 	assist_threshold_label = optional_node("AssistThresholdLabel") as Label
 	assist_threshold_slider = optional_node("AssistThresholdSlider") as HSlider
+	tower_overhang_weight_label = optional_node("TowerOverhangWeightLabel") as Label
+	tower_overhang_weight_slider = optional_node("TowerOverhangWeightSlider") as HSlider
+	tower_max_tilt_label = optional_node("TowerMaxTiltLabel") as Label
+	tower_max_tilt_slider = optional_node("TowerMaxTiltSlider") as HSlider
+	tower_collapse_threshold_label = optional_node("TowerCollapseThresholdLabel") as Label
+	tower_collapse_threshold_slider = optional_node("TowerCollapseThresholdSlider") as HSlider
 
 func require_node(node_name: String) -> Node:
 	var node: Node = optional_node(node_name)
@@ -464,32 +476,35 @@ func setup_debug_controls() -> void:
 		bot_strategy_button.add_item("MVP Greedy", 1)
 		bot_strategy_button.item_selected.connect(on_bot_strategy_selected)
 
-	configure_slider(bot_count_slider, 0, 2, 1, on_bot_count_changed)
-	configure_slider(bot_delay_min_slider, 250, 10000, 250, on_bot_delay_min_changed)
-	configure_slider(bot_delay_max_slider, 250, 10000, 250, on_bot_delay_max_changed)
-	configure_slider(debug_start_level_slider, 1, 99, 1, on_debug_start_level_changed)
-	configure_slider(cooldown_slider, 0, 5000, 250, on_cooldown_changed)
-	configure_slider(level_time_slider, 5000, 120000, 1000, on_level_time_changed)
-	configure_slider(start_delay_slider, 0, 10000, 500, on_start_delay_changed)
+	configure_slider(bot_count_slider, 0, 2, 1, func(value): send_debug_int("debugBotCount", value))
+	configure_slider(bot_delay_min_slider, 250, 10000, 250, func(value): send_debug_int("debugBotDelayMin", value))
+	configure_slider(bot_delay_max_slider, 250, 10000, 250, func(value): send_debug_int("debugBotDelayMax", value))
+	configure_slider(debug_start_level_slider, 1, 99, 1, func(value): send_debug_int("debugStartLevel", value))
+	configure_slider(cooldown_slider, 0, 5000, 250, func(value): send_debug_int("placementCooldown", value))
+	configure_slider(level_time_slider, 5000, 120000, 1000, func(value): send_debug_int("levelTimeLimitMs", value))
+	configure_slider(start_delay_slider, 0, 10000, 500, func(value): send_debug_int("startDelayMs", value))
 	configure_slider(placement_popup_duration_slider, 500, 10000, 500, on_placement_popup_duration_changed)
 	configure_slider(finish_popup_duration_slider, 500, 10000, 500, on_finish_popup_duration_changed)
 	configure_slider(level_summary_delay_slider, 1000, 10000, 500, on_level_summary_delay_changed)
-	configure_slider(target_multiplier_slider, 1, 20, 1, on_target_multiplier_changed)
-	configure_slider(level_supply_min_slider, 0, 20, 1, on_level_supply_min_changed)
-	configure_slider(level_supply_max_slider, 0, 30, 1, on_level_supply_max_changed)
-	configure_slider(min_precision_blocks_slider, 0, 9, 1, on_min_precision_blocks_changed)
-	configure_slider(max_team_carry_over_slider, 0, 12, 1, on_max_team_carry_over_changed)
-	configure_slider(max_refresh_tokens_slider, 0, 5, 1, on_max_refresh_tokens_changed)
-	configure_slider(max_refresh_uses_slider, 0, 5, 1, on_max_refresh_uses_changed)
-	configure_slider(refresh_lockout_slider, 0, 60000, 1000, on_refresh_lockout_changed)
-	configure_slider(refresh_min_useful_height_slider, 1, 6, 1, on_refresh_min_useful_height_changed)
-	configure_slider(placement_score_slider, 1, 25, 1, on_placement_score_changed)
-	configure_slider(checkpoint_score_slider, 0, 50, 5, on_checkpoint_score_changed)
-	configure_slider(finisher_bonus_slider, 0, 25, 1, on_finisher_bonus_changed)
-	configure_slider(precision_bonus_slider, 0, 25, 1, on_precision_bonus_changed)
-	configure_slider(team_exact_bonus_slider, 0, 25, 1, on_team_exact_bonus_changed)
-	configure_slider(assist_bonus_slider, 0, 25, 1, on_assist_bonus_changed)
-	configure_slider(assist_threshold_slider, 0, 100, 5, on_assist_threshold_changed)
+	configure_slider(target_multiplier_slider, 1, 20, 1, func(value): send_debug_int("targetHeightMultiplier", value))
+	configure_slider(level_supply_min_slider, 0, 20, 1, func(value): send_debug_int("levelSupplyMinSurplus", value))
+	configure_slider(level_supply_max_slider, 0, 30, 1, func(value): send_debug_int("levelSupplyMaxSurplus", value))
+	configure_slider(min_precision_blocks_slider, 0, 9, 1, func(value): send_debug_int("minPrecisionBlocksPerLevel", value))
+	configure_slider(max_team_carry_over_slider, 0, 12, 1, func(value): send_debug_int("maxTeamCarryOverBlocks", value))
+	configure_slider(max_refresh_tokens_slider, 0, 5, 1, func(value): send_debug_int("maxRefreshTokens", value))
+	configure_slider(max_refresh_uses_slider, 0, 5, 1, func(value): send_debug_int("maxRefreshUsesPerLevel", value))
+	configure_slider(refresh_lockout_slider, 0, 60000, 1000, func(value): send_debug_int("refreshLockoutMs", value))
+	configure_slider(refresh_min_useful_height_slider, 1, 6, 1, func(value): send_debug_int("refreshMinUsefulBlockHeight", value))
+	configure_slider(placement_score_slider, 1, 25, 1, func(value): send_debug_int("placementScorePerHeight", value))
+	configure_slider(checkpoint_score_slider, 0, 50, 5, func(value): send_debug_float("checkpointMinContributionShare", value / 100.0))
+	configure_slider(finisher_bonus_slider, 0, 25, 1, func(value): send_debug_int("finisherBonusPerLevel", value))
+	configure_slider(precision_bonus_slider, 0, 25, 1, func(value): send_debug_int("precisionBonusPerLevel", value))
+	configure_slider(team_exact_bonus_slider, 0, 25, 1, func(value): send_debug_int("teamExactBonusPerLevel", value))
+	configure_slider(assist_bonus_slider, 0, 25, 1, func(value): send_debug_int("assistBonusPerLevel", value))
+	configure_slider(assist_threshold_slider, 0, 100, 5, func(value): send_debug_float("assistContributionThreshold", value / 100.0))
+	configure_slider(tower_overhang_weight_slider, 0, 100, 5, func(value): send_debug_float("towerOverhangWeight", value / 100.0))
+	configure_slider(tower_max_tilt_slider, 5, 60, 1, func(value): send_debug_int("towerMaxTiltAngleDeg", value))
+	configure_slider(tower_collapse_threshold_slider, 0.3, 3.0, 0.1, func(value): send_debug_float("towerCollapseTiltScore", value))
 	update_debug_labels()
 
 func setup_skin_controls() -> void:
@@ -2148,63 +2163,6 @@ func on_bot_strategy_selected(index: int) -> void:
 
 	NetworkManager.update_config("debugBotStrategy", strategy)
 
-func on_bot_count_changed(value: float) -> void:
-	if is_syncing_debug_config:
-		return
-	update_debug_labels()
-	NetworkManager.update_config("debugBotCount", int(value))
-
-func on_bot_delay_min_changed(value: float) -> void:
-	if is_syncing_debug_config:
-		return
-	update_debug_labels()
-	NetworkManager.update_config("debugBotDelayMin", int(value))
-
-func on_bot_delay_max_changed(value: float) -> void:
-	if is_syncing_debug_config:
-		return
-	update_debug_labels()
-	NetworkManager.update_config("debugBotDelayMax", int(value))
-
-func on_debug_start_level_changed(value: float) -> void:
-	send_debug_int("debugStartLevel", value)
-
-func on_cooldown_changed(value: float) -> void:
-	if is_syncing_debug_config:
-		return
-	update_debug_labels()
-	NetworkManager.update_config("placementCooldown", int(value))
-
-func on_level_time_changed(value: float) -> void:
-	if is_syncing_debug_config:
-		return
-	update_debug_labels()
-	NetworkManager.update_config("levelTimeLimitMs", int(value))
-
-func on_start_delay_changed(value: float) -> void:
-	if is_syncing_debug_config:
-		return
-	update_debug_labels()
-	NetworkManager.update_config("startDelayMs", int(value))
-
-func on_placement_popup_duration_changed(value: float) -> void:
-	placement_score_popup_duration_ms = int(value)
-	send_debug_int("placementScorePopupDurationMs", value)
-
-func on_finish_popup_duration_changed(value: float) -> void:
-	finish_score_popup_duration_ms = int(value)
-	send_debug_int("finishScorePopupDurationMs", value)
-
-func on_level_summary_delay_changed(value: float) -> void:
-	level_summary_delay_ms = int(value)
-	send_debug_int("levelSummaryDelayMs", value)
-
-func on_target_multiplier_changed(value: float) -> void:
-	if is_syncing_debug_config:
-		return
-	update_debug_labels()
-	NetworkManager.update_config("targetHeightMultiplier", int(value))
-
 func send_debug_int(key: String, value: float) -> void:
 	if is_syncing_debug_config:
 		return
@@ -2217,50 +2175,17 @@ func send_debug_float(key: String, value: float) -> void:
 	update_debug_labels()
 	NetworkManager.update_config(key, value)
 
-func on_level_supply_min_changed(value: float) -> void:
-	send_debug_int("levelSupplyMinSurplus", value)
+func on_placement_popup_duration_changed(value: float) -> void:
+	placement_score_popup_duration_ms = int(value)
+	send_debug_int("placementScorePopupDurationMs", value)
 
-func on_level_supply_max_changed(value: float) -> void:
-	send_debug_int("levelSupplyMaxSurplus", value)
+func on_finish_popup_duration_changed(value: float) -> void:
+	finish_score_popup_duration_ms = int(value)
+	send_debug_int("finishScorePopupDurationMs", value)
 
-func on_min_precision_blocks_changed(value: float) -> void:
-	send_debug_int("minPrecisionBlocksPerLevel", value)
-
-func on_max_team_carry_over_changed(value: float) -> void:
-	send_debug_int("maxTeamCarryOverBlocks", value)
-
-func on_max_refresh_tokens_changed(value: float) -> void:
-	send_debug_int("maxRefreshTokens", value)
-
-func on_max_refresh_uses_changed(value: float) -> void:
-	send_debug_int("maxRefreshUsesPerLevel", value)
-
-func on_refresh_lockout_changed(value: float) -> void:
-	send_debug_int("refreshLockoutMs", value)
-
-func on_refresh_min_useful_height_changed(value: float) -> void:
-	send_debug_int("refreshMinUsefulBlockHeight", value)
-
-func on_placement_score_changed(value: float) -> void:
-	send_debug_int("placementScorePerHeight", value)
-
-func on_checkpoint_score_changed(value: float) -> void:
-	send_debug_float("checkpointMinContributionShare", value / 100.0)
-
-func on_finisher_bonus_changed(value: float) -> void:
-	send_debug_int("finisherBonusPerLevel", value)
-
-func on_precision_bonus_changed(value: float) -> void:
-	send_debug_int("precisionBonusPerLevel", value)
-
-func on_team_exact_bonus_changed(value: float) -> void:
-	send_debug_int("teamExactBonusPerLevel", value)
-
-func on_assist_bonus_changed(value: float) -> void:
-	send_debug_int("assistBonusPerLevel", value)
-
-func on_assist_threshold_changed(value: float) -> void:
-	send_debug_float("assistContributionThreshold", value / 100.0)
+func on_level_summary_delay_changed(value: float) -> void:
+	level_summary_delay_ms = int(value)
+	send_debug_int("levelSummaryDelayMs", value)
 
 func update_debug_config(config) -> void:
 	if bots_toggle == null:
@@ -2319,6 +2244,15 @@ func update_debug_config(config) -> void:
 	set_slider_no_signal(
 		assist_threshold_slider,
 		float(config.get("assistContributionThreshold", 0.25)) * 100.0
+	)
+	set_slider_no_signal(
+		tower_overhang_weight_slider,
+		float(config.get("towerOverhangWeight", 0.18)) * 100.0
+	)
+	set_slider_no_signal(tower_max_tilt_slider, float(config.get("towerMaxTiltAngleDeg", 24)))
+	set_slider_no_signal(
+		tower_collapse_threshold_slider,
+		float(config.get("towerCollapseTiltScore", 1.0))
 	)
 	update_debug_labels()
 	is_syncing_debug_config = false
@@ -2431,4 +2365,16 @@ func update_debug_labels() -> void:
 	set_debug_label_text(
 		assist_threshold_label,
 		"Assist Threshold: " + str(int(get_slider_value(assist_threshold_slider, 25))) + "%"
+	)
+	set_debug_label_text(
+		tower_overhang_weight_label,
+		"Overhang Weight: " + str(int(get_slider_value(tower_overhang_weight_slider, 18))) + "%"
+	)
+	set_debug_label_text(
+		tower_max_tilt_label,
+		"Max Tilt Angle: " + str(int(get_slider_value(tower_max_tilt_slider, 24))) + "\u00b0"
+	)
+	set_debug_label_text(
+		tower_collapse_threshold_label,
+		"Collapse Threshold: " + ("%.2f" % get_slider_value(tower_collapse_threshold_slider, 1.0))
 	)

@@ -1,41 +1,37 @@
 # Server Entry
 
 ## Purpose
-- WebSocket entry point for the authoritative Corp Tower server.
-- File: `src/Server/Server.js`.
+WebSocket entry point for the authoritative Corp Tower server. File:
+`src/Server/Server.js`.
 
 ## Responsibilities
-- Start WebSocket server on `PORT` or `3000`.
-- Accept initial reconnect handshake and create/resume server-issued player sessions.
+- Start the WebSocket server on `PORT` (default `3000`).
+- Accept the initial reconnect handshake and create/resume server-issued
+  player sessions.
 - Add players to [[Lobby Manager]].
-- Route client messages to game/config handlers.
-- Keep disconnect handling delegated to [[Lobby Manager]] so reconnect TTL can run.
+- Route client messages to the right game/config handler.
+- Delegate disconnect handling to [[Lobby Manager]] so reconnect TTL can run.
 
-## Key Logic
-- On connection:
-  - Wait for first client message.
-  - `reconnect` -> [[Lobby Manager]] creates or resumes a player session.
-  - Queue new players through [[Lobby Manager]].
-  - Broadcast current debug config.
-- On message:
-  - Parse JSON safely.
-  - `update_config` -> [[Lobby Manager]].
-  - `place_block` -> current room [[Game Engine]].
-  - `refresh_blocks` -> current room [[Game Engine]].
-  - `send_quick_chat` -> current room [[Game Engine]].
-- On close:
-  - Remove player through [[Lobby Manager]].
-  - Reconnect TTL remains active through [[Lobby Manager]].
+## Public interface
+Not a module with exports — this is the process entry point. Its interface is
+the WebSocket message protocol:
 
-## Inputs/Outputs
-- Input: WebSocket JSON messages from [[NetworkManager]].
-- Output: WebSocket JSON messages such as `room_created`, `room_resumed`, `game_state`, `debug_config`, `room_closed`.
-- `game_state` payloads are produced by [[Game Engine]] and may include shape inventory and `towerBlocks`.
+- **Accepts** (client → server): `reconnect` (first message on a new
+  connection; creates or resumes a session via [[Lobby Manager]]),
+  `update_config`, `place_block`, `refresh_blocks`, `send_quick_chat`,
+  `activate_politics` (last four routed to the player's current room's
+  [[Game Engine]]).
+- **Emits** (server → client): `room_created`, `room_resumed`, `game_state`
+  (produced by [[Game Engine]], may include shape inventory and
+  `towerBlocks`), `debug_config`, `room_closed`.
+- On socket close: removes the player through [[Lobby Manager]]; reconnect
+  TTL handling continues there so a brief disconnect doesn't end the room.
 
-## Dependencies
-- `ws`
-- [[Lobby Manager]]
+## Depends on
+- Internal: [[Lobby Manager]]
+- External: `ws`
 
 ## Notes
 - Server is authoritative; client requests are never trusted as final state.
-- Disconnect handling is delegated to [[Lobby Manager]] so rooms can close cleanly.
+- JSON parse failures on incoming messages are logged and ignored rather than
+  crashing the connection.
