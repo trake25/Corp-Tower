@@ -18,9 +18,10 @@ the WebSocket message protocol:
 
 - **Accepts** (client → server): `reconnect` (first message on a new
   connection; creates or resumes a session via [[Lobby Manager]]),
-  `update_config`, `place_block`, `refresh_blocks`, `send_quick_chat`,
-  `activate_politics` (last four routed to the player's current room's
-  [[Game Engine]]).
+  `update_config`, `place_block`, `send_quick_chat`, `activate_power` (last
+  three routed to the player's current room's [[Game Engine]]; `activate_power`
+  is also how a block refresh happens now — there is no separate
+  `refresh_blocks` message).
 - **Emits** (server → client): `room_created`, `room_resumed`, `game_state`
   (produced by [[Game Engine]], may include shape inventory and
   `towerBlocks`), `debug_config`, `room_closed`.

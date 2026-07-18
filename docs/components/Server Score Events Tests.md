@@ -11,16 +11,19 @@ calls before a server image build/deploy.
 - Verify placement score events.
 - Verify exact-finish and overbuild event behavior.
 - Verify level-summary banking behavior for failed levels.
-- Verify debug-config clamping for popup and summary durations.
+- Verify debug-config clamping for popup/summary durations and tower
+  stability thresholds.
 - Verify quick-chat event and cooldown contracts.
-- Verify refresh-block upgrade (size 1–2 → unlocked size 3+) and reroll
-  (size 3+ keeps size) behavior.
-- Verify checkpoint politics snapshot/rollback behavior.
+- Verify block refresh generation (size 1–2 upgrades to unlocked size 3+,
+  size 3+ rerolls without changing size).
+- Verify activating a held `refresh` Power item rerolls the target's blocks,
+  and that holding one defers the not-enough-height fail check.
+- Verify Impact Power-inventory snapshot/rollback behavior.
 
 ## Public interface
 Run via `npm test` (or `node --test tests/Score_Events.test.js`) from
 `src/Server`. Node's built-in test runner; no separate test framework.
-Currently 11 tests, all passing.
+Currently 14 tests, all passing.
 
 ## Depends on
 - Internal: [[Game Engine]], [[Game Config]], [[Lobby Manager]],
@@ -35,3 +38,6 @@ Currently 11 tests, all passing.
 - Coverage is concentrated on [[Game Engine]]'s scoring/summary paths;
   [[Bot Manager]], [[Redis State]], [[Balance Simulator]], and
   [[Server Entry]] have no dedicated tests here.
+- No test exercises `checkFailCondition()`'s `all_blocks_used` branch or
+  `setupSideQuest()`/quest completion directly — worth adding before a
+  larger refactor of the Power side-quest flow.

@@ -68,10 +68,12 @@ Grouped by area (signature-level):
 - Team carry-over: on level completion, unused hand + remaining pile blocks
   are collected; up to 3 small precision-friendly blocks are kept and
   shuffled into the next level's pile. Discarded entirely on level failure,
-  before the checkpoint restart ([[Game Engine]] never calls
+  before the Impact restart ([[Game Engine]] never calls
   `prepareTeamCarryOverBlocks` on the failure path).
 - Refresh generation upgrades size 1–2 blocks into unlocked size 3+ blocks
   when possible, reshapes size 3+ blocks without changing size, and tries to
   produce a useful remaining-height option — it never consumes or reorders
-  the draw pile. The token/cooldown/lockout gating around *when* a refresh
-  is allowed lives in [[Game Engine]]'s `refreshBlocks()`, not here.
+  the draw pile. There is no token/cooldown/lockout gating around *when* a
+  refresh is allowed anymore; it fires unconditionally whenever a player
+  activates a held `refresh` Power item, from [[Game Engine]]'s
+  `activatePower()`.

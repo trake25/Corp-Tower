@@ -6,7 +6,7 @@
 - Godot `4.6.2.stable` Android client connects by secure WebSocket to `wss://ws.tod.galaxxigames.com`.
 - Live staging currently runs on the Server K3s stack behind EC2-GW Caddy.
 - Docker EC2-1/EC2-2/EC2-3 staging workflows, Terraform, and Ansible have been removed.
-- Server remains authoritative for matchmaking, room state, timers, shape block assignment, tower history, scoring, refresh tokens, debug tuning, bots, reconnect, and room cleanup.
+- Server remains authoritative for matchmaking, room state, timers, shape block assignment, tower history, scoring, Power items (including block refresh), debug tuning, bots, reconnect, and room cleanup.
 - K3s is tracked in [[Server K3s Stack]] and [[Server K3s Workflows]].
 - EKS, NLB with Elastic IPs, and ElastiCache Redis are tracked as a parallel plan-only path in [[Server EKS Stack]] and [[Server EKS Workflow]].
 
@@ -15,7 +15,7 @@
   - `Server.js`: WebSocket entry point and message router. -> [[Server Entry]]
   - `Lobby_Manager.js`: Redis-backed matchmaking, rooms, reconnect, debug config, and room lifecycle. -> [[Lobby Manager]]
   - `Redis_State.js`: Redis adapter for sessions, queue, room snapshots, locks, and room events. -> [[Redis State]]
-  - `Game_Engine.js`: authoritative level lifecycle, timers, scoring, tokens, carry-over, win/fail, checkpoints; delegates block-supply/scoring/checkpoint logic to `engine/Block_Supply.js`, `engine/Scoring.js`, `engine/Checkpoints.js`. -> [[Game Engine]]
+  - `Game_Engine.js`: authoritative level lifecycle, timers, scoring, carry-over, win/fail, Impacts; delegates block-supply/scoring/Impact logic to `engine/Block_Supply.js`, `engine/Scoring.js`, `engine/Impacts.js`. -> [[Game Engine]]
   - `Game_Config.js`: runtime balance and debug-tuning variables. -> [[Game Config]]
   - `Bot_Manager.js`: QA bot action loops and placement behavior. -> [[Bot Manager]]
 - `src/Server/tools/Balance_Simulator.js`: offline balance-sampling CLI, not shipped in the image. -> [[Balance Simulator]]
@@ -54,8 +54,8 @@
 |---|---|
 | `room_created` | New room/session assignment with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, initial `blocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
 | `room_resumed` | Existing room/session resumed with `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, blocks, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, and `nextDrawBlock`. |
-| `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, `scoreEvents`, `checkpointScoreStatus`, `placementScorePopupDurationMs`, `finishScorePopupDurationMs`, legacy max `scorePopupDurationMs`, `levelSummaryDelayMs`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock`, `lastLevelSummary`, refresh caps, and per-player score/inventory/token fields including `isBot`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
-| `debug_config` | Authoritative debug menu state, including bot enable/count/strategy, `debugStartLevel`, timing/target tuning, UI popup/summary durations, supply/refresh pressure, `checkpointMinContributionShare`, and scoring multipliers. |
+| `game_state` | Authoritative live state: level, timer, height, `towerBlocks`, `towerStability`/`towerStabilityDiagnostics`, `scoreEvents`, `powerEvents`, `sideQuest`, `impactScoreStatus`, `placementScorePopupDurationMs`, `finishScorePopupDurationMs`, legacy max `scorePopupDurationMs`, `levelSummaryDelayMs`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock`, `lastLevelSummary`, `towerStabilityFeedbackMode`, and per-player fields including `isBot`, `score`, `levelScore`, `contributedHeight`, `blocks`, and `powerInventory`. Inventory `blocks` are shape objects `{ id, shapeId, cells, height }`; legacy numeric blocks are tolerated by the client. |
+| `debug_config` | Authoritative debug menu state, including bot enable/count/strategy, `debugStartLevel`, timing/target tuning, UI popup/summary durations, supply pressure, `impactMinContributionShare`, tower-stability tuning (overhang/tilt/collapse weights, warning/critical thresholds, feedback mode), Power tuning (`powerUnlockLevel`, `powerMaxSlots`, `powerActivationCooldownMs`), and scoring multipliers. |
 | `room_closed` | Room teardown reason for connected real players. |
 
 ### Client To Server
@@ -63,14 +63,14 @@
 |---|---|
 | `reconnect` | Token/player id may resume room; otherwise server creates a new session and queues player. |
 | `place_block` | Valid room, player, state, cooldown, inventory, and block index. |
-| `refresh_blocks` | Token count, per-level usage cap, active state, final lockout. |
+| `activate_power` | Valid room, player, slot index, held item, target player, and the shared activation cooldown. There is no separate refresh message — refresh is one of the Power item effects (`activate_power` with a `refresh` item), and re-rolls the target's blocks unconditionally. |
 | `send_quick_chat` | Valid active room, template slot `0..2`, and server-authoritative per-player cooldown. |
-| `update_config` | Key allowlist, value ranges, bot delay min/max, debug bot count clamp, bot strategy allowlist, and `resetDebugConfig` default restore action. |
+| `update_config` | Key allowlist, value ranges, bot delay min/max, debug bot count clamp, bot strategy allowlist, tower-stability feedback-mode allowlist, and `resetDebugConfig` default restore action. |
 
 ### Client Placement UI
 - Inventory cards use drag-and-drop instead of tap-to-place.
 - Drag starts only on active slots with blocks while match state is `playing` and local placement cooldown has elapsed; locked/empty slots and blocked server states do not start drags.
-- Release inside skin node `TowerDropZone` sends the existing index-only `place_block` request; release elsewhere cancels locally with no server message.
+- Release inside the `TowerDropZone` node sends the existing index-only `place_block` request; release elsewhere cancels locally with no server message.
 - Drag pointer position is visual only and does not change placement geometry or the server contract.
 - `game_state` and `debug_config` remain backward-compatible; drag behavior uses existing authoritative fields plus local cooldown timing from `placementCooldown`.
 
@@ -84,7 +84,7 @@
 - `height`: vertical footprint derived from `cells`; it is not necessarily equal to cell count.
 - `towerBlocks[]`: ordered placement history with `{ playerId, block, height, effectiveHeight, baseHeight }` so clients can redraw the current tower after broadcasts or reconnect.
 - Stability-enabled entries also include resolved `originX` and `originY`; `game_state` includes `towerStability` and diagnostic data. Redis persists these fields so recovered rooms reproduce the same structure.
-- `checkpointScoreStatus`: right-panel UI helper with next checkpoint level, ready count inputs, and per-player leaderboard score goals.
+- `impactScoreStatus`: right-panel UI helper with next Impact level, ready count inputs, and per-player leaderboard score goals.
 - Legacy numeric block values are still tolerated by the Godot client as vertical fallback blocks.
 
 ### Score UI Payloads
@@ -92,16 +92,16 @@
 - `quickChatEvents[]` is transient and broadcast-only. Each event has stable `id`, `playerId`, template `slot`, display `text`, and `createdAt`; it is never persisted or replayed after reconnect.
 - Event types: `placement`, `finisher_bonus`, `precision_bonus`, `team_exact_bonus`, `assist_bonus` when enabled, `exact_finish`, `overbuild_finish`, and `mvp`.
 - Clients track seen event ids per level and never infer event UI from score diffs.
-- Placement events use `placementScorePopupDurationMs`; MVP, Perfect Fit, checkpoint, and bonus-style events use `finishScorePopupDurationMs`. Both popup durations represent total popup lifetime, including fade-out.
+- Placement events use `placementScorePopupDurationMs`; MVP, Perfect Fit, Impact, and bonus-style events use `finishScorePopupDurationMs`. Both popup durations represent total popup lifetime, including fade-out.
 - Level score summaries are queued until the current score popup batch has faded, then remain visible for `levelSummaryDelayMs`.
-- `lastLevelSummary` includes `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, and `players[]`; checkpoint failures also include `checkpointScoreStatus`.
+- `lastLevelSummary` includes `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, and `players[]`; Impact failures also include `impactScoreStatus`.
 - `lastLevelSummary.players[]` includes player id, bot flag, level score, previous total score, final total score, contributed height, MVP flag, and bonus breakdown.
 - Completed summaries bank level score into final totals; failed summaries keep previous and final totals equal.
 
 ### Persisted Room Gameplay State
-- Redis room snapshots include `checkpointScores`, `checkpointPolitics`, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`, timers, level state, and serializable player inventory/score/token fields.
-- `checkpointScores` restores leaderboard totals during rollback so reconnect and multi-worker recovery do not reintroduce score farming.
-- `checkpointPolitics` restores politics inventory during rollback when `politicsLifetime` is `checkpoint`, preventing failed checkpoint-band attempts from farming Politics items.
+- Redis room snapshots include `impactScores`, `impactPowers`, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`, timers, level state, and serializable player inventory/score fields.
+- `impactScores` restores leaderboard totals during rollback so reconnect and multi-worker recovery do not reintroduce score farming.
+- `impactPowers` restores Power inventory during rollback when `powerLifetime` is `impact`, preventing failed Impact-band attempts from farming Power items.
 - `drawPile` and `nextDrawBlock` are persisted so reconnecting clients see the same shared refill queue.
 
 ## CI/CD
@@ -135,7 +135,7 @@
 - Android: `ANDROID_RELEASE_KEYSTORE_BASE64`, `ANDROID_RELEASE_KEYSTORE_ALIAS`, `ANDROID_RELEASE_KEYSTORE_PASSWORD`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`
 
 ## Testing Strategy
-- Current server test: Node syntax checks for server modules including `Redis_State.js`, plus `node --test tests/Score_Events.test.js` for score event and summary contracts.
+- Current server test: Node syntax checks for every server module (`app/*.js`, `app/engine/*.js`, `tools/Balance_Simulator.js`), plus `node --test tests/Score_Events.test.js` for score event and summary contracts.
 - Balance simulator: `npm run balance:simulate -- <levels> <runs>` from `src/Server` estimates generated pile reachability, exact possibility, smart-play completion, overbuild, placement counts, and level score distribution.
 - Current client pipeline: Godot import/parse, required client compile/startup smoke test, required GUT tests, signed Android AAB export, deployment artifact validation, optional Google Play internal upload, and post-upload internal-track version-code verification.
 - Server K3s checks:

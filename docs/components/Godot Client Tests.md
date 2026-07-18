@@ -9,7 +9,8 @@ Godot-side client smoke and unit-test coverage. Files:
 - Load application scripts under `Cor` and `Sys` (catches load-time/syntax
   errors before they reach CI's build step).
 - Verify the main scene and `NetworkManager` autoload wiring.
-- Verify both required UI skins load and instantiate.
+- Verify the [[Game UI Scene]] loads and instantiates, with every node the
+  controller requires present.
 - Verify [[Player Colors]] utility behavior through GUT.
 
 ## Public interface
@@ -18,7 +19,7 @@ Run headlessly through the vendored GUT framework (`addons/gut`), invoked by
 
 ## Depends on
 - Internal: [[Godot Client App]], [[NetworkManager]], [[Main UI Controller]],
-  [[Client UI Skins]], [[Player Colors]]
+  [[Game UI Scene]], [[Player Colors]]
 - External: GUT (Godot Unit Test), vendored under `addons/gut`
 
 ## Notes

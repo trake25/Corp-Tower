@@ -2,27 +2,26 @@
 
 ## Purpose
 Godot UI controller for the main game screen — the single script that wires
-input, renders server state, and hosts debug tuning for the active skin.
+input, renders server state, and hosts debug tuning.
 File: `src/Client/App/corp-tower/Cor/Scripts/Main.gd`.
 
 ## Responsibilities
-- Wire connect, block drag-and-drop placement, and refresh buttons.
-- Display connection, room, score, checkpoint minimum-score status, timer,
-  tower height/progress, 3-slot block inventory, draw-pile preview, and
-  refresh state.
+- Wire connect and block drag-and-drop placement.
+- Display connection, room, score, Impact minimum-score status, timer,
+  tower height/progress, and 3-slot block inventory with draw-pile preview.
 - Render shape-based block inventory cards from server-provided
   fixed-orientation cells.
 - Render placed blocks in the center tower area from server `towerBlocks`
   history.
 - Render score popups from server `scoreEvents` and level-end summaries from
   `lastLevelSummary`.
-- Render quick-chat buttons/cooldown and politics inventory; build dynamic
-  per-player politics-target buttons and the drag-to-target flow; process
-  `quickChatEvents`/politics activation results into popups and score/token
-  tint feedback.
-- Send block, refresh, quick-chat, and politics actions.
-- Load the selected UI skin and bind the shared skin node contract; switch
-  skins at runtime without touching gameplay/network logic.
+- Render quick-chat buttons/cooldown and Power inventory; build dynamic
+  per-player Power-target buttons and the drag-to-target flow; process
+  `quickChatEvents`/Power activation results into popups and score tint
+  feedback.
+- Send block, quick-chat, and Power actions (Power activation is also how a
+  refresh happens — there is no separate refresh button/action).
+- Bind the game UI scene's required node contract once at startup.
 - Host debug tuning through an overlay instead of embedding it in gameplay
   layout.
 - Clear stale UI on `room_closed`.
@@ -33,18 +32,19 @@ File: `src/Client/App/corp-tower/Cor/Scripts/Main.gd`.
   `update_game_state(data)`, `update_debug_config(config)` — all connected in
   `connect_network_signals()`.
 - **UI action handlers**: `on_connect_pressed`, `on_block_pressed(index)`,
-  `on_refresh_pressed`, `on_quick_chat_pressed(slot)`, plus the drag-input
-  handlers (`begin_block_drag`, `update_block_drag`, `finish_block_drag`,
+  `on_quick_chat_pressed(slot)`, plus the drag-input handlers
+  (`begin_block_drag`, `update_block_drag`, `finish_block_drag`,
   `cancel_block_drag`) — all call back out through [[NetworkManager]].
-- **Skin lifecycle**: `load_skin(skin_name)`, `switch_skin(skin_name)`,
-  `bind_skin_nodes()` — used by the skin-picker overlay and at startup.
+- **UI setup**: `bind_ui_nodes()`, `prepare_ui()` — bind the game UI scene's
+  node contract once at `_ready()`; there is no runtime scene swap anymore.
 
 ## Depends on
 - Internal: [[NetworkManager]] (all server I/O), [[Godot Client App]] (the
-  project it's the controller for), [[Block Preview]] (inventory/drag
-  shapes), [[Tower Stack]] (placed-block rendering), [[Cooldown Overlay]]
-  (per-card cooldown rings), [[Debug Overlay]] (debug panel shell),
-  [[Player Colors]] (player color lookups)
+  project it's the controller for), [[Game UI Scene]] (the scene it binds
+  against), [[Block Preview]] (inventory/drag shapes), [[Tower Stack]]
+  (placed-block rendering), [[Cooldown Overlay]] (per-card cooldown rings),
+  [[Debug Overlay]] (debug panel shell), [[Player Colors]] (player color
+  lookups)
 - External: none
 
 ## Notes
@@ -61,11 +61,11 @@ File: `src/Client/App/corp-tower/Cor/Scripts/Main.gd`.
   read `0 left` (e.g. level 1 before any unused blocks have been banked).
 - Inventory cards tolerate both legacy numeric blocks and
   `{ id, shapeId, cells, height }` block objects.
-- Score events are tracked by stable event id per level so reconnects, skin
-  switches, and repeat broadcasts don't duplicate animations. Placement
-  popups use `placementScorePopupDurationMs`; MVP/Perfect-Fit/checkpoint/
-  finisher/bonus popups use `finishScorePopupDurationMs` — both durations
-  cover the full popup lifetime including fade-out.
+- Score events are tracked by stable event id per level so reconnects and
+  repeat broadcasts don't duplicate animations. Placement popups use
+  `placementScorePopupDurationMs`; MVP/Perfect-Fit/Impact/finisher/bonus
+  popups use `finishScorePopupDurationMs` — both durations cover the full
+  popup lifetime including fade-out.
 - Level score summaries wait for the current score-popup batch to fade, then
   show complete/failed state, exact/overbuild result, team score, MVP,
   finisher, and per-player level/final totals before auto-hiding after
@@ -73,21 +73,24 @@ File: `src/Client/App/corp-tower/Cor/Scripts/Main.gd`.
 - Debug overlay controls route every change through
   `NetworkManager.update_config`, using no-signal setters while syncing from
   the server so an incoming config update doesn't re-trigger the handler
-  that sent it. The 26 slider handlers that just forward a value are wired as
+  that sent it. Slider handlers that just forward a value are wired as
   inline lambdas straight to two shared helpers, `send_debug_int` /
   `send_debug_float`, at their `configure_slider(...)` call site in
   `setup_debug_controls()` — only handlers with an extra local side effect
   (popup/summary duration sliders, which also cache the value locally for
-  the popup-timing code above) keep a named function. Reset sends
+  the popup-timing code above) keep a named function. The
+  `towerStabilityFeedbackMode` and `debugBotStrategy` enum controls are
+  `OptionButton`s that call `NetworkManager.update_config` directly instead,
+  since they send a string rather than a number. Reset sends
   `resetDebugConfig` and lets the server rebroadcast defaults; the panel is
-  tabbed into Bots, Round, UI, Supply, Refresh, and Scoring.
+  tabbed into Bots, Round, UI, Supply, Scoring, Tower, and Power.
 - UI is an Android-first HUD: top status, center tower stage, bottom touch
-  controls (3 inventory cards, 1 shared next-draw preview card, refresh
-  button). Debug and skin menus are bottom-right floating buttons with
-  overlay panels. The center tower is visual only — placement is still
+  controls (3 inventory cards, 1 shared next-draw preview card, Power item
+  row). The debug menu is a bottom-right floating button with an overlay
+  panel. The center tower is visual only — placement is still
   server-authoritative and index-based.
 - Has no behavioral test coverage (see [[Godot Client Tests]]) — sizable
   changes here are currently verified by manual play-testing / CI's smoke
   test, not automated regression tests.
-- `prepare_active_skin()` push_errors and falls back to `DefaultSkin` if the
-  loaded skin is missing a node `require_node()` expects.
+- `prepare_ui()` push_errors if the game UI scene is missing a node
+  `require_node()` expects; there is no fallback scene to load anymore.

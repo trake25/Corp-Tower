@@ -40,11 +40,11 @@ matchmaking/room state. File: `src/Server/app/Redis_State.js`.
 - This is active-session state for matchmaking/reconnect, not long-term
   player/leaderboard persistence.
 - Room snapshots preserve serializable gameplay state — shape inventory,
-  `currentHeight`, `checkpointScores`, `checkpointPolitics`, `drawPile`,
+  `currentHeight`, `impactScores`, `impactPowers`, `drawPile`,
   `teamCarryOverBlocks`, `towerBlocks`, quick-chat cooldown timestamps —
-  while excluding transient chat events. `checkpointScores` /
-  `checkpointPolitics` persistence is what keeps rollback behavior correct
-  after a reconnect or worker recovery.
+  while excluding transient chat events. `impactScores` / `impactPowers`
+  persistence is what keeps rollback behavior correct after a reconnect or
+  worker recovery.
 - The connection retry loop's final cleanup step wraps `client.disconnect()`
   in its own try/catch that intentionally swallows errors — this is
   best-effort cleanup after an already-failed connection attempt, not a bug;

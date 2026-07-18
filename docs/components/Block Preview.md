@@ -30,4 +30,4 @@ never decides placement legality or gameplay state.
 
 ## Notes
 - Placement stays index-based and server-authoritative; this component only
-  ever draws what it's told, matching [[Client UI Skins]]' node contract.
+  ever draws what it's told, matching [[Game UI Scene]]'s node contract.

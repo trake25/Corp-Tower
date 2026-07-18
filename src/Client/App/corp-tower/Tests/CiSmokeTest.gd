@@ -3,8 +3,7 @@ extends SceneTree
 const MAIN_SCENE_PATH := "res://Cor/Scenes/Main.tscn"
 const MAIN_SCENE_UID := "uid://c0po62b2x6ltb"
 const NETWORK_MANAGER_PATH := "res://Sys/NetMan/NetworkManager.gd"
-const DEFAULT_SKIN_PATH := "res://Cor/Scenes/Skins/DefaultSkin.tscn"
-const FIGMA_SKIN_PATH := "res://Cor/Scenes/Skins/Figma_SkinV1.tscn"
+const UI_SCENE_PATH := "res://Cor/Scenes/GameUI.tscn"
 const APPLICATION_SCRIPT_ROOTS := [
 	"res://Cor",
 	"res://Sys"
@@ -20,8 +19,7 @@ func run() -> void:
 	check_application_scripts()
 	check_project_settings()
 	check_autoload()
-	check_scene_load(DEFAULT_SKIN_PATH, "default UI skin")
-	check_scene_load(FIGMA_SKIN_PATH, "Figma UI skin")
+	check_scene_load(UI_SCENE_PATH, "UI scene")
 
 	var main_instance: Node = instantiate_scene(MAIN_SCENE_PATH, "main scene")
 	if main_instance != null:
@@ -115,22 +113,18 @@ func instantiate_scene(path: String, description: String) -> Node:
 	return instance
 
 func check_main_scene_ready(main_instance: Node) -> void:
-	var skin_root := main_instance.get_node_or_null("SkinRoot")
-	if skin_root == null:
-		failures.append("Main scene is missing SkinRoot.")
+	var ui_root := main_instance.get_node_or_null("UIRoot")
+	if ui_root == null:
+		failures.append("Main scene is missing UIRoot.")
 		return
 
-	if skin_root.get_child_count() == 0:
-		failures.append("Main scene did not load an active UI skin during _ready().")
-
-	var active_skin: Variant = main_instance.get("active_skin")
-	if active_skin == null:
-		failures.append("Main scene active_skin is null after _ready().")
+	if ui_root.get_child_count() == 0:
+		failures.append("Main scene UIRoot has no UI nodes.")
 
 	var missing_required_nodes: Variant = main_instance.get("missing_required_nodes")
 	if missing_required_nodes is Array and !missing_required_nodes.is_empty():
 		failures.append(
-			"Main scene UI skin is missing required nodes: " +
+			"Main scene UI is missing required nodes: " +
 			", ".join(missing_required_nodes)
 		)
 
@@ -138,7 +132,7 @@ func finish() -> void:
 	if failures.is_empty():
 		print(
 			"CI smoke test passed: loaded " + str(checked_script_count) +
-			" client scripts; main scene, autoload, and UI skins load."
+			" client scripts; main scene, autoload, and UI scene load."
 		)
 		quit(0)
 		return

@@ -1,7 +1,6 @@
 extends Control
 
 const MAX_INVENTORY_SLOTS := 3
-const DEFAULT_UI_SKIN := "DefaultSkin"
 const SHOW_DEBUG_UI := true
 const DRAW_PILE_COLOR := Color(0.95, 0.72, 0.25, 1.0)
 const SCORE_POPUP_DEFAULT_DURATION_MS := 3000
@@ -15,40 +14,32 @@ const FINISH_SCORE_POPUP_MIN_HOLD_RATIO := 0.08
 const LEVEL_SUMMARY_DEFAULT_DELAY_MS := 3000
 const BOT_STRATEGY_COOPERATIVE := "cooperative"
 const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
+const TOWER_FEEDBACK_MODES := ["warnings_only", "meter_only", "live_preview"]
+const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Meter Only", "Live Preview"]
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const BlockPreviewScript = preload("res://Cor/Scripts/BlockPreview.gd")
 const LOCAL_PLAYER_MARKER := "You"
 const DRAG_PREVIEW_SIZE := Vector2(96, 96)
 const DRAG_POINTER_MOUSE := -1
-const SKIN_SCENES := {
-	"DefaultSkin": "res://Cor/Scenes/Skins/DefaultSkin.tscn",
-	"Figma_SkinV1": "res://Cor/Scenes/Skins/Figma_SkinV1.tscn"
-}
 
-@onready var skin_root: Control = $SkinRoot
+@onready var ui_root: Control = $UIRoot
 
-var active_skin: Control
 var inventory_buttons: Array = []
 var cooldown_overlays: Array = []
 var quick_chat_buttons: Array = []
-var politics_buttons: Array = []
-var selected_politics_slot: int = -1
-var politics_target_buttons: Array = []
-var politics_dragging := false
-var politics_drag_ghost: Label
-var politics_feedback_tween: Tween
+var power_buttons: Array = []
+var selected_power_slot: int = -1
+var power_target_buttons: Array = []
+var power_dragging := false
+var power_drag_ghost: Label
+var power_feedback_tween: Tween
 var score_line_labels: Dictionary = {}
 var score_tints: Dictionary = {}
 var block_previews: Array = []
 var block_height_labels: Array = []
 var block_name_labels: Array = []
 var is_syncing_debug_config: bool = false
-var active_skin_name: String = DEFAULT_UI_SKIN
 var missing_required_nodes: Array[String] = []
-var last_room_data: Variant = null
-var last_game_state_data: Variant = null
-var last_status_text: String = "Disconnected"
-var is_switching_skin: bool = false
 var player_color_map: Dictionary = {}
 var player_order: Array[String] = []
 var seen_score_event_ids: Dictionary = {}
@@ -76,14 +67,14 @@ var drag_pointer_id: int = DRAG_POINTER_MOUSE
 var inventory_slot_blocks: Array = []
 
 var status_label: Label
-var politics_target_box: VBoxContainer
+var power_target_box: VBoxContainer
 var player_label: Label
 var room_label: Label
 var level_label: Label
 var timer_label: Label
 var score_label: Label
-var checkpoint_status_label: Label
-var checkpoint_separator: HSeparator
+var impact_status_label: Label
+var impact_separator: HSeparator
 var tower_stability_label: Label
 var height_label: Label
 var tower_value_label: Label
@@ -97,9 +88,6 @@ var draw_pile_name_label: Label
 var draw_pile_count_label: Label
 var draw_pile_preview: Control
 var connect_button: Button
-var refresh_button: Button
-var refresh_token_label: Label
-var refresh_uses_label: Label
 var level_summary_overlay: Control
 var level_summary_title_label: Label
 var level_summary_result_label: Label
@@ -112,12 +100,6 @@ var debug_overlay: Control
 var debug_dim_layer: Control
 var reset_debug_button: Button
 var close_debug_button: Button
-var skin_button: Button
-var skin_overlay: Control
-var skin_dim_layer: Control
-var close_skin_button: Button
-var default_skin_button: Button
-var figma_skin_button: Button
 var bots_toggle: CheckButton
 var bot_strategy_button: OptionButton
 var bot_count_label: Label
@@ -150,18 +132,12 @@ var min_precision_blocks_label: Label
 var min_precision_blocks_slider: HSlider
 var max_team_carry_over_label: Label
 var max_team_carry_over_slider: HSlider
-var max_refresh_tokens_label: Label
-var max_refresh_tokens_slider: HSlider
-var max_refresh_uses_label: Label
-var max_refresh_uses_slider: HSlider
-var refresh_lockout_label: Label
-var refresh_lockout_slider: HSlider
 var refresh_min_useful_height_label: Label
 var refresh_min_useful_height_slider: HSlider
 var placement_score_label: Label
 var placement_score_slider: HSlider
-var checkpoint_score_label: Label
-var checkpoint_score_slider: HSlider
+var impact_score_label: Label
+var impact_score_slider: HSlider
 var finisher_bonus_label: Label
 var finisher_bonus_slider: HSlider
 var precision_bonus_label: Label
@@ -178,6 +154,17 @@ var tower_max_tilt_label: Label
 var tower_max_tilt_slider: HSlider
 var tower_collapse_threshold_label: Label
 var tower_collapse_threshold_slider: HSlider
+var tower_warning_threshold_label: Label
+var tower_warning_threshold_slider: HSlider
+var tower_critical_threshold_label: Label
+var tower_critical_threshold_slider: HSlider
+var tower_feedback_mode_button: OptionButton
+var power_unlock_level_label: Label
+var power_unlock_level_slider: HSlider
+var power_max_slots_label: Label
+var power_max_slots_slider: HSlider
+var power_cooldown_label: Label
+var power_cooldown_slider: HSlider
 
 func _ready() -> void:
 	summary_show_timer = Timer.new()
@@ -190,84 +177,34 @@ func _ready() -> void:
 	summary_hide_timer.timeout.connect(hide_level_summary)
 	add_child(summary_hide_timer)
 
-	load_selected_skin()
-	if active_skin == null:
-		return
-
-	if !prepare_active_skin():
+	if !prepare_ui():
 		return
 
 	setup_inventory_controls()
 	setup_debug_controls()
-	setup_skin_controls()
 	reset_ui()
 	connect_network_signals()
 
-func load_selected_skin() -> void:
-	var skin_name: String = DEFAULT_UI_SKIN
-
-	if ProjectSettings.has_setting("corp_tower/ui_skin"):
-		skin_name = str(ProjectSettings.get_setting("corp_tower/ui_skin"))
-
-	load_skin(skin_name)
-
-func load_skin(skin_name: String) -> void:
-	var skin_path: String = str(SKIN_SCENES.get(skin_name, ""))
-
-	if skin_path == "":
-		push_error("Unknown UI skin: " + skin_name + ". Falling back to " + DEFAULT_UI_SKIN)
-		skin_path = str(SKIN_SCENES[DEFAULT_UI_SKIN])
-		skin_name = DEFAULT_UI_SKIN
-
-	var scene: PackedScene = load(skin_path) as PackedScene
-
-	if scene == null and skin_name != DEFAULT_UI_SKIN:
-		push_error("Failed to load UI skin: " + skin_name + ". Falling back to " + DEFAULT_UI_SKIN)
-		scene = load(str(SKIN_SCENES[DEFAULT_UI_SKIN])) as PackedScene
-		skin_name = DEFAULT_UI_SKIN
-
-	if scene == null:
-		push_error("Failed to load default UI skin.")
-		return
-
-	for child in skin_root.get_children():
-		skin_root.remove_child(child)
-		child.queue_free()
-
-	active_skin = scene.instantiate() as Control
-	active_skin_name = skin_name
-	active_skin.name = skin_name
-	active_skin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	skin_root.add_child(active_skin)
-
-func prepare_active_skin() -> bool:
-	bind_skin_nodes()
-	if !missing_required_nodes.is_empty() and active_skin_name != DEFAULT_UI_SKIN:
-		push_error(
-			"UI skin " + active_skin_name +
-			" is missing required nodes: " + ", ".join(missing_required_nodes) +
-			". Falling back to " + DEFAULT_UI_SKIN
-		)
-		load_skin(DEFAULT_UI_SKIN)
-		bind_skin_nodes()
+func prepare_ui() -> bool:
+	bind_ui_nodes()
 
 	if !missing_required_nodes.is_empty():
-		push_error("Default UI skin is missing required nodes: " + ", ".join(missing_required_nodes))
+		push_error("UI is missing required nodes: " + ", ".join(missing_required_nodes))
 		return false
 
 	return true
 
-func bind_skin_nodes() -> void:
+func bind_ui_nodes() -> void:
 	missing_required_nodes.clear()
 	status_label = require_node("StatusLabel") as Label
-	politics_target_box = optional_node("PoliticsTargetBox") as VBoxContainer
+	power_target_box = optional_node("PowerTargetBox") as VBoxContainer
 	player_label = require_node("PlayerLabel") as Label
 	room_label = require_node("RoomLabel") as Label
 	level_label = require_node("LevelLabel") as Label
 	timer_label = require_node("TimerLabel") as Label
 	score_label = require_node("ScoreLabel") as Label
-	checkpoint_status_label = require_node("CheckpointStatusLabel") as Label
-	checkpoint_separator = optional_node("CheckpointSeparator") as HSeparator
+	impact_status_label = require_node("ImpactStatusLabel") as Label
+	impact_separator = optional_node("ImpactSeparator") as HSeparator
 	tower_stability_label = optional_node("TowerStabilityLabel") as Label
 	height_label = require_node("HeightLabel") as Label
 	tower_value_label = require_node("TowerValueLabel") as Label
@@ -281,9 +218,6 @@ func bind_skin_nodes() -> void:
 	draw_pile_count_label = require_node("DrawPileCountLabel") as Label
 	draw_pile_preview = require_node("DrawPilePreview") as Control
 	connect_button = require_node("ConnectButton") as Button
-	refresh_button = require_node("RefreshButton") as Button
-	refresh_token_label = require_node("RefreshTokenLabel") as Label
-	refresh_uses_label = require_node("RefreshUsesLabel") as Label
 	level_summary_overlay = require_node("LevelSummaryOverlay") as Control
 	level_summary_title_label = require_node("LevelSummaryTitleLabel") as Label
 	level_summary_result_label = require_node("LevelSummaryResultLabel") as Label
@@ -320,19 +254,13 @@ func bind_skin_nodes() -> void:
 		optional_node("QuickChatButton2") as Button,
 		optional_node("QuickChatButton3") as Button
 	]
-	politics_buttons = [optional_node("PoliticsButton1") as Button, optional_node("PoliticsButton2") as Button, optional_node("PoliticsButton3") as Button]
+	power_buttons = [optional_node("PowerButton1") as Button, optional_node("PowerButton2") as Button, optional_node("PowerButton3") as Button]
 
 	debug_button = optional_node("DebugButton") as Button
 	debug_overlay = optional_node("DebugOverlay") as Control
 	debug_dim_layer = optional_node("DebugDimLayer") as Control
 	reset_debug_button = optional_node("ResetDebugButton") as Button
 	close_debug_button = optional_node("CloseDebugButton") as Button
-	skin_button = optional_node("SkinButton") as Button
-	skin_overlay = optional_node("SkinOverlay") as Control
-	skin_dim_layer = optional_node("SkinDimLayer") as Control
-	close_skin_button = optional_node("CloseSkinButton") as Button
-	default_skin_button = optional_node("DefaultSkinButton") as Button
-	figma_skin_button = optional_node("FigmaSkinButton") as Button
 	bots_toggle = optional_node("BotsToggle") as CheckButton
 	bot_strategy_button = optional_node("BotStrategyButton") as OptionButton
 	bot_count_label = optional_node("BotCountLabel") as Label
@@ -365,18 +293,12 @@ func bind_skin_nodes() -> void:
 	min_precision_blocks_slider = optional_node("MinPrecisionBlocksSlider") as HSlider
 	max_team_carry_over_label = optional_node("MaxTeamCarryOverLabel") as Label
 	max_team_carry_over_slider = optional_node("MaxTeamCarryOverSlider") as HSlider
-	max_refresh_tokens_label = optional_node("MaxRefreshTokensLabel") as Label
-	max_refresh_tokens_slider = optional_node("MaxRefreshTokensSlider") as HSlider
-	max_refresh_uses_label = optional_node("MaxRefreshUsesLabel") as Label
-	max_refresh_uses_slider = optional_node("MaxRefreshUsesSlider") as HSlider
-	refresh_lockout_label = optional_node("RefreshLockoutLabel") as Label
-	refresh_lockout_slider = optional_node("RefreshLockoutSlider") as HSlider
 	refresh_min_useful_height_label = optional_node("RefreshMinUsefulHeightLabel") as Label
 	refresh_min_useful_height_slider = optional_node("RefreshMinUsefulHeightSlider") as HSlider
 	placement_score_label = optional_node("PlacementScoreLabel") as Label
 	placement_score_slider = optional_node("PlacementScoreSlider") as HSlider
-	checkpoint_score_label = optional_node("CheckpointScoreLabel") as Label
-	checkpoint_score_slider = optional_node("CheckpointScoreSlider") as HSlider
+	impact_score_label = optional_node("ImpactScoreLabel") as Label
+	impact_score_slider = optional_node("ImpactScoreSlider") as HSlider
 	finisher_bonus_label = optional_node("FinisherBonusLabel") as Label
 	finisher_bonus_slider = optional_node("FinisherBonusSlider") as HSlider
 	precision_bonus_label = optional_node("PrecisionBonusLabel") as Label
@@ -393,6 +315,17 @@ func bind_skin_nodes() -> void:
 	tower_max_tilt_slider = optional_node("TowerMaxTiltSlider") as HSlider
 	tower_collapse_threshold_label = optional_node("TowerCollapseThresholdLabel") as Label
 	tower_collapse_threshold_slider = optional_node("TowerCollapseThresholdSlider") as HSlider
+	tower_warning_threshold_label = optional_node("TowerWarningThresholdLabel") as Label
+	tower_warning_threshold_slider = optional_node("TowerWarningThresholdSlider") as HSlider
+	tower_critical_threshold_label = optional_node("TowerCriticalThresholdLabel") as Label
+	tower_critical_threshold_slider = optional_node("TowerCriticalThresholdSlider") as HSlider
+	tower_feedback_mode_button = optional_node("TowerFeedbackModeButton") as OptionButton
+	power_unlock_level_label = optional_node("PowerUnlockLevelLabel") as Label
+	power_unlock_level_slider = optional_node("PowerUnlockLevelSlider") as HSlider
+	power_max_slots_label = optional_node("PowerMaxSlotsLabel") as Label
+	power_max_slots_slider = optional_node("PowerMaxSlotsSlider") as HSlider
+	power_cooldown_label = optional_node("PowerCooldownLabel") as Label
+	power_cooldown_slider = optional_node("PowerCooldownSlider") as HSlider
 
 func require_node(node_name: String) -> Node:
 	var node: Node = optional_node(node_name)
@@ -403,10 +336,10 @@ func require_node(node_name: String) -> Node:
 	return node
 
 func optional_node(node_name: String) -> Node:
-	if active_skin == null:
+	if ui_root == null:
 		return null
 
-	return active_skin.find_child(node_name, true, false)
+	return ui_root.find_child(node_name, true, false)
 
 func setup_inventory_controls() -> void:
 	for preview in block_previews:
@@ -430,20 +363,19 @@ func setup_inventory_controls() -> void:
 			)
 
 	connect_button.pressed.connect(on_connect_pressed)
-	refresh_button.pressed.connect(on_refresh_pressed)
 	for i in range(quick_chat_buttons.size()):
 		var quick_chat_button: Button = quick_chat_buttons[i]
 		if quick_chat_button != null:
 			quick_chat_button.focus_mode = Control.FOCUS_NONE
 			quick_chat_button.pressed.connect(func(): on_quick_chat_pressed(i))
 	update_quick_chat_buttons()
-	for i in range(politics_buttons.size()):
-		if politics_buttons[i] != null:
-			politics_buttons[i].gui_input.connect(func(event):
-				if event is InputEventMouseButton and event.pressed and !politics_buttons[i].disabled:
-					selected_politics_slot = i
-					politics_dragging = true
-					show_politics_drag_ghost(politics_buttons[i].text, event.global_position)
+	for i in range(power_buttons.size()):
+		if power_buttons[i] != null:
+			power_buttons[i].gui_input.connect(func(event):
+				if event is InputEventMouseButton and event.pressed and !power_buttons[i].disabled:
+					selected_power_slot = i
+					power_dragging = true
+					show_power_drag_ghost(power_buttons[i].text, event.global_position)
 			)
 
 func setup_debug_controls() -> void:
@@ -491,12 +423,9 @@ func setup_debug_controls() -> void:
 	configure_slider(level_supply_max_slider, 0, 30, 1, func(value): send_debug_int("levelSupplyMaxSurplus", value))
 	configure_slider(min_precision_blocks_slider, 0, 9, 1, func(value): send_debug_int("minPrecisionBlocksPerLevel", value))
 	configure_slider(max_team_carry_over_slider, 0, 12, 1, func(value): send_debug_int("maxTeamCarryOverBlocks", value))
-	configure_slider(max_refresh_tokens_slider, 0, 5, 1, func(value): send_debug_int("maxRefreshTokens", value))
-	configure_slider(max_refresh_uses_slider, 0, 5, 1, func(value): send_debug_int("maxRefreshUsesPerLevel", value))
-	configure_slider(refresh_lockout_slider, 0, 60000, 1000, func(value): send_debug_int("refreshLockoutMs", value))
 	configure_slider(refresh_min_useful_height_slider, 1, 6, 1, func(value): send_debug_int("refreshMinUsefulBlockHeight", value))
 	configure_slider(placement_score_slider, 1, 25, 1, func(value): send_debug_int("placementScorePerHeight", value))
-	configure_slider(checkpoint_score_slider, 0, 50, 5, func(value): send_debug_float("checkpointMinContributionShare", value / 100.0))
+	configure_slider(impact_score_slider, 0, 50, 5, func(value): send_debug_float("impactMinContributionShare", value / 100.0))
 	configure_slider(finisher_bonus_slider, 0, 25, 1, func(value): send_debug_int("finisherBonusPerLevel", value))
 	configure_slider(precision_bonus_slider, 0, 25, 1, func(value): send_debug_int("precisionBonusPerLevel", value))
 	configure_slider(team_exact_bonus_slider, 0, 25, 1, func(value): send_debug_int("teamExactBonusPerLevel", value))
@@ -505,29 +434,19 @@ func setup_debug_controls() -> void:
 	configure_slider(tower_overhang_weight_slider, 0, 100, 5, func(value): send_debug_float("towerOverhangWeight", value / 100.0))
 	configure_slider(tower_max_tilt_slider, 5, 60, 1, func(value): send_debug_int("towerMaxTiltAngleDeg", value))
 	configure_slider(tower_collapse_threshold_slider, 0.3, 3.0, 0.1, func(value): send_debug_float("towerCollapseTiltScore", value))
+	configure_slider(tower_warning_threshold_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityWarningThreshold", value))
+	configure_slider(tower_critical_threshold_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityCriticalThreshold", value))
+	configure_slider(power_unlock_level_slider, 1, 20, 1, func(value): send_debug_int("powerUnlockLevel", value))
+	configure_slider(power_max_slots_slider, 1, 6, 1, func(value): send_debug_int("powerMaxSlots", value))
+	configure_slider(power_cooldown_slider, 0, 30000, 500, func(value): send_debug_int("powerActivationCooldownMs", value))
+
+	if tower_feedback_mode_button != null:
+		tower_feedback_mode_button.clear()
+		for i in range(TOWER_FEEDBACK_MODES.size()):
+			tower_feedback_mode_button.add_item(TOWER_FEEDBACK_MODE_TITLES[i], i)
+		tower_feedback_mode_button.item_selected.connect(on_tower_feedback_mode_selected)
+
 	update_debug_labels()
-
-func setup_skin_controls() -> void:
-	if skin_button != null:
-		skin_button.pressed.connect(toggle_skin_overlay, CONNECT_DEFERRED)
-
-	if skin_overlay != null:
-		set_skin_overlay_open(false)
-
-	if close_skin_button != null:
-		close_skin_button.pressed.connect(func(): set_skin_overlay_open(false), CONNECT_DEFERRED)
-
-	if skin_dim_layer != null:
-		skin_dim_layer.mouse_filter = Control.MOUSE_FILTER_STOP
-		skin_dim_layer.gui_input.connect(on_skin_dim_layer_input)
-
-	if default_skin_button != null:
-		default_skin_button.pressed.connect(func(): switch_skin(DEFAULT_UI_SKIN), CONNECT_DEFERRED)
-
-	if figma_skin_button != null:
-		figma_skin_button.pressed.connect(func(): switch_skin("Figma_SkinV1"), CONNECT_DEFERRED)
-
-	update_skin_button_states()
 
 func configure_slider(slider: HSlider, min_value: float, max_value: float, step: float, callback: Callable) -> void:
 	if slider == null:
@@ -554,7 +473,6 @@ func set_debug_label_text(label: Label, text: String) -> void:
 
 func reset_ui() -> void:
 	connect_button.text = "Connect"
-	refresh_button.text = "Refresh"
 	status_label.text = "Disconnected"
 	player_label.text = "Player -"
 	room_label.text = "Room -"
@@ -564,27 +482,22 @@ func reset_ui() -> void:
 	current_match_state = ""
 	last_placement_sent_at_ms = 0
 	cancel_block_drag()
-	update_checkpoint_status_ui({})
+	update_impact_status_ui({})
 	height_label.text = "Height 0/0"
 	tower_value_label.text = "0 / 0"
 	tower_status_label.text = "Connect to start"
 	block_label.text = "Inventory"
-	refresh_token_label.text = "Token 0/1"
-	refresh_uses_label.text = "Level refreshes 0/2"
 	set_tower_progress(0, 0)
 	tower_stack.clear_tower()
 	update_inventory_ui([], MAX_INVENTORY_SLOTS)
 	update_draw_pile_ui(0, null)
-	refresh_button.disabled = true
 	clear_score_popups()
 	cancel_pending_level_summary()
 	hide_level_summary()
 	cancel_block_drag()
-
-	if !is_switching_skin:
-		seen_score_event_ids.clear()
-		last_level_summary_key = ""
-		current_level = 0
+	seen_score_event_ids.clear()
+	last_level_summary_key = ""
+	current_level = 0
 
 func connect_network_signals() -> void:
 	NetworkManager.status_changed.connect(update_status)
@@ -597,23 +510,21 @@ func connect_network_signals() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and debug_overlay != null and debug_overlay.visible:
 		set_debug_overlay_open(false)
-	elif event.is_action_pressed("ui_cancel") and skin_overlay != null and skin_overlay.visible:
-		set_skin_overlay_open(false)
 
 func _input(event: InputEvent) -> void:
 	if is_block_dragging:
 		_handle_block_drag_input(event)
-	if politics_dragging and event is InputEventMouseButton and !event.pressed:
-		for target in politics_target_buttons:
+	if power_dragging and event is InputEventMouseButton and !event.pressed:
+		for target in power_target_buttons:
 			if target.get_global_rect().has_point(event.global_position):
-				NetworkManager.activate_politics(selected_politics_slot, str(target.get_meta("player_id")))
-		politics_dragging = false
-		selected_politics_slot = -1
-		hide_politics_drag_ghost()
-	if politics_dragging and event is InputEventMouseMotion:
-		move_politics_drag_ghost(event.global_position)
-	if politics_dragging and event is InputEventScreenDrag:
-		move_politics_drag_ghost(event.position)
+				NetworkManager.activate_power(selected_power_slot, str(target.get_meta("player_id")))
+		power_dragging = false
+		selected_power_slot = -1
+		hide_power_drag_ghost()
+	if power_dragging and event is InputEventMouseMotion:
+		move_power_drag_ghost(event.global_position)
+	if power_dragging and event is InputEventScreenDrag:
+		move_power_drag_ghost(event.position)
 
 func _process(_delta: float) -> void:
 	update_placement_cooldown_overlays()
@@ -823,9 +734,6 @@ func reset_tower_drop_zone_highlight() -> void:
 	if tower_fill != null:
 		tower_fill.modulate = Color.WHITE
 
-func on_refresh_pressed() -> void:
-	NetworkManager.refresh_blocks()
-
 func toggle_debug_overlay() -> void:
 	if debug_overlay == null:
 		return
@@ -848,61 +756,7 @@ func on_debug_dim_layer_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		set_debug_overlay_open(false)
 
-func toggle_skin_overlay() -> void:
-	if skin_overlay == null:
-		return
-
-	set_skin_overlay_open(!skin_overlay.visible)
-
-func set_skin_overlay_open(open: bool) -> void:
-	if skin_overlay == null:
-		return
-
-	skin_overlay.visible = open
-	if skin_dim_layer != null:
-		skin_dim_layer.visible = open
-
-func on_skin_dim_layer_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
-		set_skin_overlay_open(false)
-
-func switch_skin(skin_name: String) -> void:
-	if is_switching_skin or skin_name == active_skin_name:
-		set_skin_overlay_open(false)
-		return
-
-	cancel_block_drag()
-	is_switching_skin = true
-	load_skin(skin_name)
-	if active_skin == null or !prepare_active_skin():
-		is_switching_skin = false
-		return
-
-	setup_inventory_controls()
-	setup_debug_controls()
-	setup_skin_controls()
-	reset_ui()
-	update_status(last_status_text)
-
-	if typeof(last_room_data) == TYPE_DICTIONARY:
-		update_room(last_room_data)
-
-	if typeof(last_game_state_data) == TYPE_DICTIONARY:
-		update_game_state(last_game_state_data)
-
-	ProjectSettings.set_setting("corp_tower/ui_skin", active_skin_name)
-	set_skin_overlay_open(false)
-	is_switching_skin = false
-
-func update_skin_button_states() -> void:
-	if default_skin_button != null:
-		default_skin_button.disabled = active_skin_name == DEFAULT_UI_SKIN
-
-	if figma_skin_button != null:
-		figma_skin_button.disabled = active_skin_name == "Figma_SkinV1"
-
 func update_status(text: String) -> void:
-	last_status_text = text
 	status_label.text = text
 
 	if debug_button == null:
@@ -919,9 +773,6 @@ func update_connect_button(status: String) -> void:
 		connect_button.text = status.replace("[", "").replace("]", "").strip_edges()
 
 func update_room(data) -> void:
-	if !is_switching_skin:
-		last_room_data = data
-
 	connect_button.disabled = true
 	player_label.text = LOCAL_PLAYER_MARKER + " " + str(data.playerId)
 	room_label.text = "Room " + str(int(data.roomId))
@@ -944,12 +795,10 @@ func update_room(data) -> void:
 		int(data.get("drawPileCount", 0)),
 		data.get("nextDrawBlock", null)
 	)
-	update_checkpoint_status_ui(data.get("checkpointScoreStatus", {}))
+	update_impact_status_ui(data.get("impactScoreStatus", {}))
 	update_tower_stability_ui(int(data.get("towerStability", 100)), data.get("towerStabilityDiagnostics", {}))
 
 func update_room_closed(data) -> void:
-	last_room_data = null
-	last_game_state_data = null
 	current_match_state = ""
 	last_placement_sent_at_ms = 0
 	cancel_block_drag()
@@ -958,13 +807,9 @@ func update_room_closed(data) -> void:
 	timer_label.text = "Time -"
 	height_label.text = "Height -"
 	score_label.text = "Room closed: " + str(data.get("reason", "unknown"))
-	update_checkpoint_status_ui({})
+	update_impact_status_ui({})
 	tower_status_label.text = "Room closed"
 	block_label.text = "Inventory"
-	refresh_button.text = "Refresh"
-	refresh_button.disabled = true
-	refresh_token_label.text = "Token 0/1"
-	refresh_uses_label.text = "Level refreshes 0/2"
 	set_tower_progress(0, 0)
 	tower_stack.clear_tower()
 	update_inventory_ui([], MAX_INVENTORY_SLOTS)
@@ -978,10 +823,6 @@ func update_room_closed(data) -> void:
 	current_level = 0
 
 func update_game_state(data) -> void:
-	
-	if !is_switching_skin:
-		last_game_state_data = data
-
 	var state: String = str(data.get("state", "playing"))
 	current_match_state = state
 
@@ -1015,21 +856,21 @@ func update_game_state(data) -> void:
 			hide_level_summary()
 
 	update_player_color_map(players)
-	update_politics_target_ui(players)
-	var politics_quest_label := optional_node("PoliticsQuestLabel") as Label
-	if politics_quest_label != null:
+	update_power_target_ui(players)
+	var power_quest_label := optional_node("PowerQuestLabel") as Label
+	if power_quest_label != null:
 		var side_quest: Variant = data.get("sideQuest", {})
 		var quest_label := "Unlocks at Level 4"
 		if typeof(side_quest) == TYPE_DICTIONARY:
 			quest_label = str(side_quest.get("label", quest_label))
 			var completed_by := str(side_quest.get("claimedBy", ""))
 			if completed_by != "" or completed_by != null:				
-				politics_quest_label.modulate = player_color_map.get(completed_by, Color.WHITE)
+				power_quest_label.modulate = player_color_map.get(completed_by, Color.WHITE)
 			else:
-				politics_quest_label.modulate = Color.WHITE
+				power_quest_label.modulate = Color.WHITE
 		else:
-			politics_quest_label.modulate = Color.WHITE
-		politics_quest_label.text = "Politics Quest\n" + quest_label
+			power_quest_label.modulate = Color.WHITE
+		power_quest_label.text = "Power Quest\n" + quest_label
 	if tower_stack.has_method("set_player_color_map"):
 		tower_stack.call("set_player_color_map", player_color_map)
 
@@ -1053,12 +894,8 @@ func update_game_state(data) -> void:
 	)
 
 	var _scores_text :String = ""
-	var my_refresh_tokens: int = 0
-	var my_refresh_uses_remaining: int = 0
-	var max_refresh_tokens: int = int(data.get("maxRefreshTokens", 1))
-	var max_uses_per_level: int = int(data.get("maxRefreshUsesPerLevel", 2))
 	var my_blocks: Array = []
-	var my_politics: Array = []
+	var my_power: Array = []
 	
 	for i in range(players.size()):
 		var player: Dictionary = players[i]
@@ -1067,42 +904,25 @@ func update_game_state(data) -> void:
 		_scores_text += prefix + ": " + str(int(player.get("score", 0))) + " total / " + str(int(player.get("levelScore", 0))) + " level"
 
 		if player_id == NetworkManager.player_id:
-			my_refresh_tokens = int(player.get("refreshTokens", 0))
-			my_refresh_uses_remaining = int(player.get("refreshUsesRemaining", 0))
 			my_blocks = player.get("blocks", [])
-			my_politics = player.get("politicsInventory", [])
+			my_power = player.get("powerInventory", [])
 
 		if i < players.size() - 1:
 			_scores_text += "\n"
 
 	update_score_lines(players)
-	update_checkpoint_status_ui(data.get("checkpointScoreStatus", {}))
-	refresh_token_label.text = "Token " + str(my_refresh_tokens) + "/" + str(max_refresh_tokens)
-
-	var level_refreshes_used: int = max_uses_per_level - my_refresh_uses_remaining
-	refresh_uses_label.text = "Level refreshes " + str(level_refreshes_used) + "/" + str(max_uses_per_level)
-
-	var in_lockout: bool = seconds_remaining <= 10 and state == "playing"
-	refresh_button.text = "Refresh"
-	refresh_button.disabled = (
-		my_refresh_tokens <= 0 or
-		my_refresh_uses_remaining <= 0 or
-		in_lockout or
-		state == "failed" or
-		state == "finished" or
-		state == "game_completed"
-	)
+	update_impact_status_ui(data.get("impactScoreStatus", {}))
 
 	update_inventory_ui(
 		my_blocks,
 		int(data.get("activeInventorySlots", MAX_INVENTORY_SLOTS))
 	)
-	update_politics_inventory_ui(my_politics)
+	update_power_inventory_ui(my_power)
 	quick_chat_templates = data.get("quickChatTemplates", quick_chat_templates)
 	quick_chat_cooldown_ms = int(data.get("quickChatCooldownMs", quick_chat_cooldown_ms))
 	update_quick_chat_buttons()
 	process_quick_chat_events(data.get("quickChatEvents", []), players)
-	process_politics_events(data.get("politicsEvents", []))
+	process_power_events(data.get("powerEvents", []))
 
 	var score_popup_wait_seconds: float = process_score_events(data.get("scoreEvents", []), players)
 
@@ -1182,14 +1002,14 @@ func update_draw_pile_ui(draw_pile_count: int, raw_next_block: Variant) -> void:
 	draw_pile_count_label.text = str(draw_pile_count) + " left"
 	draw_pile_preview.set_block(next_block)
 
-func update_checkpoint_status_ui(raw_status: Variant) -> void:
-	if checkpoint_status_label == null:
+func update_impact_status_ui(raw_status: Variant) -> void:
+	if impact_status_label == null:
 		return
 
 	if typeof(raw_status) != TYPE_DICTIONARY:
-		set_checkpoint_status_visible(false)
-		checkpoint_status_label.visible = false
-		checkpoint_status_label.text = ""
+		set_impact_status_visible(false)
+		impact_status_label.visible = false
+		impact_status_label.text = ""
 		return
 
 	var status: Dictionary = raw_status
@@ -1199,12 +1019,12 @@ func update_checkpoint_status_ui(raw_status: Variant) -> void:
 	))
 
 	if required_band_score <= 0:
-		set_checkpoint_status_visible(false)
-		checkpoint_status_label.visible = false
-		checkpoint_status_label.text = ""
+		set_impact_status_visible(false)
+		impact_status_label.visible = false
+		impact_status_label.text = ""
 		return
 
-	var next_checkpoint_level: int = int(status.get("nextCheckpointLevel", 0))
+	var next_impact_level: int = int(status.get("nextImpactLevel", 0))
 	var player_statuses: Array = status.get("players", [])
 	var ready_count: int = 0
 	var player_count: int = 0
@@ -1233,7 +1053,7 @@ func update_checkpoint_status_ui(raw_status: Variant) -> void:
 			)
 
 	var lines: Array[String] = [
-		"Checkpoint L" + str(next_checkpoint_level) + "  |  " + str(ready_count) + "/" + str(player_count) + " ready"
+		"Impact L" + str(next_impact_level) + "  |  " + str(ready_count) + "/" + str(player_count) + " ready"
 	]
 
 	if !local_status.is_empty():
@@ -1249,15 +1069,15 @@ func update_checkpoint_status_ui(raw_status: Variant) -> void:
 	elif !local_status.is_empty() && ready_count == player_count:
 		lines.append("All ready")
 
-	set_checkpoint_status_visible(true)
-	checkpoint_status_label.text = "\n".join(lines)
+	set_impact_status_visible(true)
+	impact_status_label.text = "\n".join(lines)
 
-func set_checkpoint_status_visible(should_show: bool) -> void:
-	if checkpoint_separator != null:
-		checkpoint_separator.visible = should_show
+func set_impact_status_visible(should_show: bool) -> void:
+	if impact_separator != null:
+		impact_separator.visible = should_show
 
-	if checkpoint_status_label != null:
-		checkpoint_status_label.visible = should_show
+	if impact_status_label != null:
+		impact_status_label.visible = should_show
 
 func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
 	if tower_stability_label == null:
@@ -1293,72 +1113,72 @@ func update_player_color_map(players: Array) -> void:
 	player_color_map = updated_map
 	player_order = updated_order
 
-func update_politics_target_ui(players: Array) -> void:
-	if politics_target_box == null:
+func update_power_target_ui(players: Array) -> void:
+	if power_target_box == null:
 		return
-	for child in politics_target_box.get_children():
+	for child in power_target_box.get_children():
 		child.queue_free()
-	politics_target_buttons = []
+	power_target_buttons = []
 	for player in players:
 		var player_id := str(player.get("id", ""))
 		if player_id == "":
 			continue
 		var target := Button.new()
 		target.text = player_id
-		target.tooltip_text = "Drop a Politics item here to target " + player_id
+		target.tooltip_text = "Drop a Power item here to target " + player_id
 		target.add_theme_color_override("font_color", player_color_map.get(player_id, Color.WHITE))
 		target.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 		target.add_theme_constant_override("outline_size", 3)
 		target.custom_minimum_size = Vector2(72, 24)
-		politics_target_box.add_child(target)
+		power_target_box.add_child(target)
 		target.set_meta("player_id", player_id)
-		politics_target_buttons.append(target)
+		power_target_buttons.append(target)
 		target.gui_input.connect(func(event):
-			if politics_dragging and event is InputEventMouseButton and !event.pressed:
-				NetworkManager.activate_politics(selected_politics_slot, player_id)
-				politics_dragging = false
-				selected_politics_slot = -1
-				hide_politics_drag_ghost()
+			if power_dragging and event is InputEventMouseButton and !event.pressed:
+				NetworkManager.activate_power(selected_power_slot, player_id)
+				power_dragging = false
+				selected_power_slot = -1
+				hide_power_drag_ghost()
 				get_viewport().set_input_as_handled()
-			elif politics_dragging and event is InputEventScreenTouch and !event.pressed:
-				NetworkManager.activate_politics(selected_politics_slot, player_id)
-				politics_dragging = false
-				selected_politics_slot = -1
-				hide_politics_drag_ghost()
+			elif power_dragging and event is InputEventScreenTouch and !event.pressed:
+				NetworkManager.activate_power(selected_power_slot, player_id)
+				power_dragging = false
+				selected_power_slot = -1
+				hide_power_drag_ghost()
 				get_viewport().set_input_as_handled()
 		)
 
-func update_politics_inventory_ui(items: Array) -> void:
-	for i in range(politics_buttons.size()):
-		var button: Button = politics_buttons[i]
+func update_power_inventory_ui(items: Array) -> void:
+	for i in range(power_buttons.size()):
+		var button: Button = power_buttons[i]
 		if button == null:
 			continue
 		if i < items.size() and typeof(items[i]) == TYPE_DICTIONARY:
-			button.text = str(items[i].get("id", "Politics")).replace("_", " ").capitalize()
+			button.text = str(items[i].get("id", "Power")).replace("_", " ").capitalize()
 			button.disabled = current_match_state != "playing"
 		else:
-			button.text = "Politics"
+			button.text = "Power"
 			button.disabled = true
 
-func show_politics_drag_ghost(text: String, pointer_position: Vector2) -> void:
-	if politics_drag_ghost == null:
-		politics_drag_ghost = Label.new()
-		politics_drag_ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		politics_drag_ghost.z_index = 100
-		politics_drag_ghost.add_theme_font_size_override("font_size", 18)
-		politics_drag_ghost.add_theme_color_override("font_color", Color(1.0, 0.86, 0.3, 0.9))
-		active_skin.add_child(politics_drag_ghost)
-	politics_drag_ghost.text = text
-	politics_drag_ghost.visible = true
-	move_politics_drag_ghost(pointer_position)
+func show_power_drag_ghost(text: String, pointer_position: Vector2) -> void:
+	if power_drag_ghost == null:
+		power_drag_ghost = Label.new()
+		power_drag_ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		power_drag_ghost.z_index = 100
+		power_drag_ghost.add_theme_font_size_override("font_size", 18)
+		power_drag_ghost.add_theme_color_override("font_color", Color(1.0, 0.86, 0.3, 0.9))
+		ui_root.add_child(power_drag_ghost)
+	power_drag_ghost.text = text
+	power_drag_ghost.visible = true
+	move_power_drag_ghost(pointer_position)
 
-func move_politics_drag_ghost(pointer_position: Vector2) -> void:
-	if politics_drag_ghost != null:
-		politics_drag_ghost.global_position = pointer_position + Vector2(14, 14)
+func move_power_drag_ghost(pointer_position: Vector2) -> void:
+	if power_drag_ghost != null:
+		power_drag_ghost.global_position = pointer_position + Vector2(14, 14)
 
-func hide_politics_drag_ghost() -> void:
-	if politics_drag_ghost != null:
-		politics_drag_ghost.visible = false
+func hide_power_drag_ghost() -> void:
+	if power_drag_ghost != null:
+		power_drag_ghost.visible = false
 
 func normalize_block(raw_block, index: int) -> Dictionary:
 	if typeof(raw_block) == TYPE_DICTIONARY:
@@ -1487,7 +1307,7 @@ func process_quick_chat_events(raw_events: Variant, players: Array) -> void:
 			"label": get_player_display_name(player_id, players) + ": " + str(event.get("text", ""))
 		}, players, 2.5)
 
-func process_politics_events(raw_events: Variant) -> void:
+func process_power_events(raw_events: Variant) -> void:
 	if typeof(raw_events) != TYPE_ARRAY:
 		return
 	for raw_event in raw_events:
@@ -1501,18 +1321,16 @@ func process_politics_events(raw_events: Variant) -> void:
 		var target_id := str(event.get("targetPlayerId", ""))
 		if bool(meta.get("tintTargetScore", false)) and target_id != "":
 			score_tints[target_id] = { "color": caster_color, "until": Time.get_ticks_msec() + 4000 }
-		elif bool(meta.get("tintTargetToken", false)) and target_id == str(NetworkManager.player_id):
-			show_politics_tint(refresh_token_label, caster_color)
 
-func show_politics_tint(control: Control, tint: Color) -> void:
+func show_power_tint(control: Control, tint: Color) -> void:
 	if control == null:
 		return
-	if politics_feedback_tween != null:
-		politics_feedback_tween.kill()
+	if power_feedback_tween != null:
+		power_feedback_tween.kill()
 	control.modulate = tint
-	politics_feedback_tween = create_tween()
-	politics_feedback_tween.tween_interval(4.0)
-	politics_feedback_tween.tween_property(control, "modulate", Color.WHITE, 0.2)
+	power_feedback_tween = create_tween()
+	power_feedback_tween.tween_interval(4.0)
+	power_feedback_tween.tween_property(control, "modulate", Color.WHITE, 0.2)
 
 func update_score_lines(players: Array) -> void:
 	score_label.text = ""
@@ -1675,8 +1493,8 @@ func get_score_event_text(event: Dictionary, players: Array) -> String:
 			return "TARGET REACHED +" + str(get_event_overbuild_height(event))
 		"mvp":
 			return "MVP " + get_player_display_name(player_id, players) + " +" + str(points)
-		"checkpoint_failed":
-			return "CHECKPOINT FAILED"
+		"impact_failed":
+			return "IMPACT FAILED"
 		"tower_warning":
 			return "TOWER WOBBLING"
 		"tower_critical":
@@ -1705,7 +1523,7 @@ func get_score_event_color(event: Dictionary) -> Color:
 	if event_type == "team_exact_bonus":
 		return Color(0.42, 0.84, 1.0, 1.0)
 
-	if event_type == "checkpoint_failed":
+	if event_type == "impact_failed":
 		return Color(1.0, 0.38, 0.28, 1.0)
 
 	if event_type == "tower_warning" or event_type == "tower_critical":
@@ -1717,7 +1535,7 @@ func is_emphasis_score_event(event_type: String) -> bool:
 	return (
 		event_type == "exact_finish" or
 		event_type == "mvp" or
-		event_type == "checkpoint_failed"
+		event_type == "impact_failed"
 	)
 
 func get_score_popup_size(event_type: String) -> Vector2:
@@ -1727,7 +1545,7 @@ func get_score_popup_size(event_type: String) -> Vector2:
 	if (
 		event_type == "mvp" or
 		event_type == "overbuild_finish" or
-		event_type == "checkpoint_failed"
+		event_type == "impact_failed"
 	):
 		return Vector2(220, 48)
 
@@ -1740,7 +1558,7 @@ func get_score_popup_font_size(event_type: String) -> int:
 	if (
 		event_type == "mvp" or
 		event_type == "overbuild_finish" or
-		event_type == "checkpoint_failed"
+		event_type == "impact_failed"
 	):
 		return 20
 
@@ -1774,7 +1592,7 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 	if (
 		event_type == "exact_finish" or
 		event_type == "overbuild_finish" or
-		event_type == "checkpoint_failed"
+		event_type == "impact_failed"
 	):
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.4)
 
@@ -1955,21 +1773,21 @@ func get_level_summary_result_text(summary: Dictionary, result: String) -> Strin
 
 	var reason: String = str(summary.get("reason", "failed"))
 
-	if reason == "checkpoint_score_requirement":
-		return get_checkpoint_failure_summary_text(summary)
+	if reason == "impact_score_requirement":
+		return get_impact_failure_summary_text(summary)
 
 	return "Reason: " + format_summary_reason(reason)
 
-func get_checkpoint_failure_summary_text(summary: Dictionary) -> String:
+func get_impact_failure_summary_text(summary: Dictionary) -> String:
 	var status: Dictionary = {}
-	var raw_status: Variant = summary.get("checkpointScoreStatus", {})
+	var raw_status: Variant = summary.get("impactScoreStatus", {})
 
 	if typeof(raw_status) == TYPE_DICTIONARY:
 		status = raw_status
 
 	var blocked_level: int = int(summary.get(
 		"blockedLevel",
-		status.get("nextCheckpointLevel", 0)
+		status.get("nextImpactLevel", 0)
 	))
 	var player_statuses: Array = status.get("players", [])
 	var player_count: int = 0
@@ -2000,10 +1818,10 @@ func get_checkpoint_failure_summary_text(summary: Dictionary) -> String:
 			)
 
 	if player_count == 0:
-		return get_checkpoint_failure_fallback_text(summary, blocked_level)
+		return get_impact_failure_fallback_text(summary, blocked_level)
 
 	var lines: Array[String] = [
-		"Checkpoint L" + str(blocked_level) + "  |  " + str(ready_count) + "/" + str(player_count) + " ready"
+		"Impact L" + str(blocked_level) + "  |  " + str(ready_count) + "/" + str(player_count) + " ready"
 	]
 
 	if !local_status.is_empty():
@@ -2021,10 +1839,10 @@ func get_checkpoint_failure_summary_text(summary: Dictionary) -> String:
 
 	return "\n".join(lines)
 
-func get_checkpoint_failure_fallback_text(summary: Dictionary, blocked_level: int) -> String:
+func get_impact_failure_fallback_text(summary: Dictionary, blocked_level: int) -> String:
 	var failure_texts: Array[String] = []
 
-	for raw_failure in summary.get("checkpointScoreFailures", []):
+	for raw_failure in summary.get("impactScoreFailures", []):
 		if typeof(raw_failure) != TYPE_DICTIONARY:
 			continue
 
@@ -2036,9 +1854,9 @@ func get_checkpoint_failure_fallback_text(summary: Dictionary, blocked_level: in
 		)
 
 	if failure_texts.is_empty():
-		return "Checkpoint L" + str(blocked_level) + " failed"
+		return "Impact L" + str(blocked_level) + " failed"
 
-	return "Checkpoint L" + str(blocked_level) + "\nGoals: " + ", ".join(failure_texts)
+	return "Impact L" + str(blocked_level) + "\nGoals: " + ", ".join(failure_texts)
 
 func get_level_summary_mvp_text(summary: Dictionary) -> String:
 	var mvp_id: String = str(summary.get("mvpId", ""))
@@ -2140,8 +1958,8 @@ func get_player_color(player_id: String) -> Color:
 	return PlayerColors.color_for_player_id(player_id)
 
 func format_summary_reason(reason: String) -> String:
-	if reason == "checkpoint_score_requirement":
-		return "Checkpoint contribution requirement"
+	if reason == "impact_score_requirement":
+		return "Impact contribution requirement"
 
 	return reason.replace("_", " ").capitalize()
 
@@ -2162,6 +1980,15 @@ func on_bot_strategy_selected(index: int) -> void:
 		strategy = BOT_STRATEGY_MVP_GREEDY
 
 	NetworkManager.update_config("debugBotStrategy", strategy)
+
+func on_tower_feedback_mode_selected(index: int) -> void:
+	if is_syncing_debug_config:
+		return
+
+	if index < 0 or index >= TOWER_FEEDBACK_MODES.size():
+		return
+
+	NetworkManager.update_config("towerStabilityFeedbackMode", TOWER_FEEDBACK_MODES[index])
 
 func send_debug_int(key: String, value: float) -> void:
 	if is_syncing_debug_config:
@@ -2228,14 +2055,11 @@ func update_debug_config(config) -> void:
 	set_slider_no_signal(level_supply_max_slider, float(config.get("levelSupplyMaxSurplus", 6)))
 	set_slider_no_signal(min_precision_blocks_slider, float(config.get("minPrecisionBlocksPerLevel", 2)))
 	set_slider_no_signal(max_team_carry_over_slider, float(config.get("maxTeamCarryOverBlocks", 3)))
-	set_slider_no_signal(max_refresh_tokens_slider, float(config.get("maxRefreshTokens", 1)))
-	set_slider_no_signal(max_refresh_uses_slider, float(config.get("maxRefreshUsesPerLevel", 2)))
-	set_slider_no_signal(refresh_lockout_slider, float(config.get("refreshLockoutMs", 10000)))
 	set_slider_no_signal(refresh_min_useful_height_slider, float(config.get("refreshMinUsefulBlockHeight", 2)))
 	set_slider_no_signal(placement_score_slider, float(config.get("placementScorePerHeight", 10)))
 	set_slider_no_signal(
-		checkpoint_score_slider,
-		float(config.get("checkpointMinContributionShare", 0.30)) * 100.0
+		impact_score_slider,
+		float(config.get("impactMinContributionShare", 0.30)) * 100.0
 	)
 	set_slider_no_signal(finisher_bonus_slider, float(config.get("finisherBonusPerLevel", 4)))
 	set_slider_no_signal(precision_bonus_slider, float(config.get("precisionBonusPerLevel", 8)))
@@ -2254,6 +2078,21 @@ func update_debug_config(config) -> void:
 		tower_collapse_threshold_slider,
 		float(config.get("towerCollapseTiltScore", 1.0))
 	)
+	set_slider_no_signal(
+		tower_warning_threshold_slider,
+		float(config.get("towerStabilityWarningThreshold", 60))
+	)
+	set_slider_no_signal(
+		tower_critical_threshold_slider,
+		float(config.get("towerStabilityCriticalThreshold", 30))
+	)
+	if tower_feedback_mode_button != null:
+		var feedback_mode: String = str(config.get("towerStabilityFeedbackMode", TOWER_FEEDBACK_MODES[0]))
+		var feedback_mode_index: int = TOWER_FEEDBACK_MODES.find(feedback_mode)
+		tower_feedback_mode_button.select(max(feedback_mode_index, 0))
+	set_slider_no_signal(power_unlock_level_slider, float(config.get("powerUnlockLevel", 4)))
+	set_slider_no_signal(power_max_slots_slider, float(config.get("powerMaxSlots", 3)))
+	set_slider_no_signal(power_cooldown_slider, float(config.get("powerActivationCooldownMs", 3000)))
 	update_debug_labels()
 	is_syncing_debug_config = false
 
@@ -2322,18 +2161,6 @@ func update_debug_labels() -> void:
 		"Carry-Over Blocks: " + str(int(get_slider_value(max_team_carry_over_slider, 3)))
 	)
 	set_debug_label_text(
-		max_refresh_tokens_label,
-		"Refresh Tokens: " + str(int(get_slider_value(max_refresh_tokens_slider, 1)))
-	)
-	set_debug_label_text(
-		max_refresh_uses_label,
-		"Refresh Uses: " + str(int(get_slider_value(max_refresh_uses_slider, 2)))
-	)
-	set_debug_label_text(
-		refresh_lockout_label,
-		"Refresh Lockout: " + str(int(get_slider_value(refresh_lockout_slider, 10000) / 1000.0)) + " sec"
-	)
-	set_debug_label_text(
 		refresh_min_useful_height_label,
 		"Refresh Useful Height: " + str(int(get_slider_value(refresh_min_useful_height_slider, 2)))
 	)
@@ -2342,8 +2169,8 @@ func update_debug_labels() -> void:
 		"Placement Score/Height: " + str(int(get_slider_value(placement_score_slider, 10)))
 	)
 	set_debug_label_text(
-		checkpoint_score_label,
-		"Checkpoint Share: " + str(int(get_slider_value(checkpoint_score_slider, 30))) + "%"
+		impact_score_label,
+		"Impact Share: " + str(int(get_slider_value(impact_score_slider, 30))) + "%"
 	)
 	set_debug_label_text(
 		finisher_bonus_label,
@@ -2377,4 +2204,24 @@ func update_debug_labels() -> void:
 	set_debug_label_text(
 		tower_collapse_threshold_label,
 		"Collapse Threshold: " + ("%.2f" % get_slider_value(tower_collapse_threshold_slider, 1.0))
+	)
+	set_debug_label_text(
+		tower_warning_threshold_label,
+		"Warning Threshold: " + str(int(get_slider_value(tower_warning_threshold_slider, 60))) + "%"
+	)
+	set_debug_label_text(
+		tower_critical_threshold_label,
+		"Critical Threshold: " + str(int(get_slider_value(tower_critical_threshold_slider, 30))) + "%"
+	)
+	set_debug_label_text(
+		power_unlock_level_label,
+		"Power Unlock Level: " + str(int(get_slider_value(power_unlock_level_slider, 4)))
+	)
+	set_debug_label_text(
+		power_max_slots_label,
+		"Power Slots: " + str(int(get_slider_value(power_max_slots_slider, 3)))
+	)
+	set_debug_label_text(
+		power_cooldown_label,
+		"Power Cooldown: " + ("%.1f" % (get_slider_value(power_cooldown_slider, 3000) / 1000.0)) + " sec"
 	)

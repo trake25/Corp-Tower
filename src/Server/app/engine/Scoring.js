@@ -80,12 +80,12 @@ function buildLevelSummary(engine, options) {
         reason: options.reason || null,
         level: engine.room.level,
         blockedLevel: options.blockedLevel || null,
-        checkpointScoreRequirement:
-            Number(options.checkpointScoreRequirement || 0),
-        checkpointMinContributionShare:
-            Number(options.checkpointMinContributionShare || 0),
-        checkpointScoreStatus: options.checkpointScoreStatus || null,
-        checkpointScoreFailures: options.checkpointScoreFailures || [],
+        impactScoreRequirement:
+            Number(options.impactScoreRequirement || 0),
+        impactMinContributionShare:
+            Number(options.impactMinContributionShare || 0),
+        impactScoreStatus: options.impactScoreStatus || null,
+        impactScoreFailures: options.impactScoreFailures || [],
         teamLevelScore: teamLevelScore,
         mvpId: mvp?.id || null,
         mvpScore: Number(mvp?.levelScore || 0),
@@ -231,13 +231,6 @@ function addLevelScoreToLeaderboard(engine) {
     });
 }
 
-function awardRefreshToken(engine, player) {
-    player.refreshTokens = Math.min(
-        GameConfig.maxRefreshTokens,
-        player.refreshTokens + 1
-    );
-}
-
 function getLevelMVP(engine) {
     let mvp = engine.room.players[0];
 
@@ -265,6 +258,5 @@ module.exports = {
     getBonusScoreEventType,
     getBonusScoreEventLabel,
     addLevelScoreToLeaderboard,
-    awardRefreshToken,
     getLevelMVP
 };

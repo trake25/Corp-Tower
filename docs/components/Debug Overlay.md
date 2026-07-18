@@ -23,10 +23,10 @@ Lightweight show/hide shell for the Godot debug-tuning panel. File:
   the panel's visibility shell.
 - Server-side validation of anything this panel sends lives in
   [[Lobby Manager]] and [[Game Config]].
-- Referenced by both [[Client UI Skins]] scenes, so it's part of the current
-  runtime; core gameplay could run without it if the skins/controller were
-  adjusted to drop debug tuning entirely.
+- Referenced by [[Game UI Scene]], so it's part of the current runtime; core
+  gameplay could run without it if the scene/controller were adjusted to
+  drop debug tuning entirely.
 - Expects two unique-named descendants, `%DebugDimLayer` and `%DebugPanel`,
-  within its own node tree (`unique_name_in_owner`) — any new skin must
-  replicate these exact unique names or toggling silently does nothing for
-  that piece.
+  within its own node tree (`unique_name_in_owner`) — a future replacement
+  scene must replicate these exact unique names or toggling silently does
+  nothing for that piece.

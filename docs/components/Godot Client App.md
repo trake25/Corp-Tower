@@ -8,10 +8,10 @@ Android-first game client for Corp Tower. Project root:
 - Connect to the server gateway, which routes to authoritative server
   workers.
 - Render room, level, timer, tower height/progress, placed-block tower
-  stack, score, shape inventory, refresh UI, score popups, and level
-  summaries.
-- Send player actions, including quick-chat messages and politics item
-  activation.
+  stack, score, shape inventory, score popups, and level summaries.
+- Send player actions, including quick-chat messages and Power item
+  activation (including refresh, which is now a Power item effect rather
+  than its own action).
 - Reflect server state rather than calculating final gameplay locally.
 
 ## Public interface
@@ -20,7 +20,7 @@ externally:
 
 - `project.godot` autoloads [[NetworkManager]] as a singleton.
 - `Main.tscn` is a thin controller shell (owns [[Main UI Controller]]) that
-  loads a skin scene into `SkinRoot`.
+  statically instances the [[Game UI Scene]] under `UIRoot`.
 - Android export config lives in the gitignored local `export_presets.cfg`;
   CI uses [[Client Android Internal Workflow]] with a non-secret preset.
 
@@ -31,10 +31,11 @@ externally:
 ## Notes
 - Current release target is Android only; web/Windows/iOS are future
   platform targets, not active work.
-- `DefaultSkin` is the stable default UI; `Figma_SkinV1` is a Figma-inspired
-  reskin, selectable through `corp_tower/ui_skin` or a runtime bottom-right
-  overlay that swaps skins while preserving the latest displayed room/game
-  state (see [[Client UI Skins]]).
+- There is a single production-facing UI ([[Game UI Scene]]) — the previous
+  runtime skin-switching system (`DefaultSkin` / `Figma_SkinV1`, a
+  bottom-right overlay for swapping between them) was removed ahead of the
+  production UI design pass, since both were prototypes and every scene edit
+  had to be made twice.
 - Shape inventory previews use fixed cells from server block payloads
   ([[Block Preview]]); tower rendering uses `towerBlocks` when available and
   falls back to aggregate `currentHeight` for legacy server payloads

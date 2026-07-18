@@ -20,10 +20,6 @@ config/icon="res://icon.svg"
 
 NetworkManager="*res://Sys/NetMan/NetworkManager.gd"
 
-[corp_tower]
-
-ui_skin="DefaultSkin"
-
 [display]
 
 window/stretch/mode="viewport"

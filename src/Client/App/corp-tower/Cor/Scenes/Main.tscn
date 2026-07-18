@@ -1,6 +1,7 @@
-[gd_scene format=3 uid="uid://c0po62b2x6ltb"]
+[gd_scene load_steps=3 format=3 uid="uid://c0po62b2x6ltb"]
 
 [ext_resource type="Script" uid="uid://dwvcruandm3c" path="res://Cor/Scripts/Main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://Cor/Scenes/GameUI.tscn" id="2_ui"]
 
 [node name="Main" type="Control" unique_id=20707474]
 layout_mode = 3
@@ -11,7 +12,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
 
-[node name="SkinRoot" type="Control" parent="." unique_id=199457641]
+[node name="UIRoot" parent="." instance=ExtResource("2_ui")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

@@ -17,8 +17,7 @@ registered as an autoload singleton.
 ## Public interface
 - **Methods**: `connect_server(is_auto_reconnect := false)`,
   `disconnect_server()`, `toggle_connection()`, `place_block(block_index)`,
-  `refresh_blocks()`, `send_quick_chat(slot)`,
-  `activate_politics(slot, target_player_id)`,
+  `send_quick_chat(slot)`, `activate_power(slot, target_player_id)`,
   `update_config(key, value)`.
 - **Signals**: `status_changed(text)`, `room_joined(data)`,
   `room_closed(data)`, `game_state_updated(data)`, `client_status(status)`,

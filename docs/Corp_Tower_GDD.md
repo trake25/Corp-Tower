@@ -46,41 +46,34 @@
 - Each level creates a server-owned shared draw pile.
 - The pile is built from unused team carry-over blocks saved from completed levels plus generated high-level reserve blocks.
 - Level 1 starts with an empty draw pile; levels 1-3 do not receive generated reserve blocks.
-- Generated reserve blocks scale gradually by checkpoint band: level 4 starts with 1, level 7 with 2, level 10 with 3, and the pattern continues up to 32 generated draw blocks by level 97.
+- Generated reserve blocks scale gradually by Impact band: level 4 starts with 1, level 7 with 2, level 10 with 3, and the pattern continues up to 32 generated draw blocks by level 97.
 - Newly generated opening blocks fill active hand slots directly; they do not use the draw pile.
 - The draw pile is shuffled before the level starts.
 - On level completion, unused active hand blocks and any remaining draw pile blocks become the next team carry-over pool.
 - Only up to 3 team carry-over blocks are kept.
 - Carry-over prioritizes smaller precision blocks first.
-- On level failure, team carry-over is discarded during checkpoint rollback.
+- On level failure, team carry-over is discarded during Impact rollback.
 
-## Refresh Token System
-- Max 1 token per player `(1/1)` — per-player UI and variable.
-- Max 2 uses per level `(2/2)` — global UI and variable.
-- Effect: replaces all current blocks using targeted rerolls.
-- Cannot be used in the last 10 seconds of a level.
-- Only refreshes current remaining inventory.
+## Power System
+- Power unlocks at level 4 by default (`powerUnlockLevel`). Each player has up to 3 Power inventory slots (`powerMaxSlots`).
+- Each eligible level has one shared random side quest. Valid starter quests are: first to place an unlocked 4-, 5-, or 6-cell block, or first to make the exact-finishing placement.
+- The first eligible player to complete the quest receives one random Power item if they have inventory space. After a completed Impact, the player with the highest total score also receives one random Power item if they have space.
+- Unused Power items persist through subsequent levels in the same match, up to the slot cap. Items clear when the match closes.
+- Power inventory is snapshotted at each completed Impact (including Impact MVP rewards). On rollback to the last Impact, any Power items earned after that snapshot are removed and each player's inventory is restored to the snapshotted state, preventing failed Impact-band attempts from farming items.
+- `powerLifetime` controls rollback behavior: `impact` restores the snapshotted inventory on rollback; `match` keeps earned items across rollback (debug/legacy only).
+- Players activate an item by dragging its Power slot onto a player target. Power activation has a 3-second cooldown (`powerActivationCooldownMs`) and cannot be used in the final 3 seconds of a level.
+- Starter effects:
+  - **Score Cap (Offensive):** set the selected target's total score exactly to that target's next Impact score requirement, whether their prior score was above or below it.
+  - **Copy Score (Defensive):** set the selected target's total score to the caster's total score and update the target's Impact snapshot/baseline to the copied score.
+  - **Refresh (Utility):** immediately reroll the selected target's hand. There is no token or use-count economy — activating the item is the entire effect, gated only by the shared Power activation cooldown.
+- For 4 seconds after any Power activation, the target's total-score UI uses the caster color.
+
+### Refresh Effect Details
+- Refresh is not a standalone player action anymore — it only happens when a player activates a held Refresh Power item on a target.
+- Effect: replaces all of the target's current blocks using targeted rerolls.
 - Blocks with size below 3 reroll into an unlocked size 3+ block when possible.
 - Blocks with size 3 or higher keep their size but reroll shape/orientation.
 - Refresh generation is target-aware and tries to include at least one useful block for the current remaining height.
-
-### Token Rewards
-- MVP of previous level receives 1 token.
-- Exact target height finish: all players receive 1 token (capped at 1).
-
-## Politics System
-- Politics unlock at level 4 by default. Each player has up to 3 Politics inventory slots.
-- Each eligible level has one shared random side quest. Valid starter quests are: first to place an unlocked 4-, 5-, or 6-cell block, or first to make the exact-finishing placement.
-- The first eligible player to complete the quest receives one random Politics item if they have inventory space. After a completed checkpoint, the player with the highest total score also receives one random Politics item if they have space.
-- Unused Politics items persist through subsequent levels in the same match, up to the 3-slot cap. Items clear when the match closes.
-- Politics inventory is snapshotted at each completed checkpoint (including checkpoint MVP rewards). On rollback to the last checkpoint, any Politics items earned after that snapshot are removed and each player's inventory is restored to the snapshotted state, preventing failed checkpoint-band attempts from farming items.
-- `politicsLifetime` controls rollback behavior: `checkpoint` restores the snapshotted inventory on rollback; `match` keeps earned items across rollback (debug/legacy only).
-- Players activate an item by dragging its Politics slot onto a player target. Politics have a 3-second activation cooldown and cannot be used in the final 3 seconds of a level.
-- Starter effects:
-  - **Score Cap (Offensive):** set the selected target's total score exactly to that target's next checkpoint score requirement, whether their prior score was above or below it.
-  - **Copy Score (Defensive):** set the selected target's total score to the caster's total score and update the target's checkpoint snapshot/baseline to the copied score.
-  - **Free Refresh (Utility):** give the selected target a refresh token if below cap; otherwise immediately refresh that target's hand without spending a token.
-- For 4 seconds after Score Cap or Copy Score, the target's total-score UI uses the caster color. For 4 seconds after Free Refresh, the target's refresh-token UI uses the caster color.
 
 ## Tower System
 - Target height uses a level-band curve, scaled by `targetHeightMultiplier` for debug tuning.
@@ -106,8 +99,8 @@
 ## Failure Conditions
 - Time runs out before target height is reached.
 - All active hand blocks and the shared draw pile are exhausted before target is reached.
-- Remaining possible height cannot reach target and no refresh can still rescue the level.
-- At checkpoint boundaries, any player whose score gained since the last checkpoint is below the band-relative checkpoint requirement fails the checkpoint and rolls back the team.
+- Remaining possible height cannot reach target and no player holds a Refresh Power item that could still rescue the level.
+- At Impact boundaries, any player whose score gained since the last Impact is below the band-relative Impact requirement fails the Impact and rolls back the team.
 
 ## Scoring System
 | Component | Formula |
@@ -118,8 +111,8 @@
 | Team Bonus | `level x 6` (exact finish, all players) |
 | Assist Bonus | Disabled by default (`assistBonusPerLevel = 0`) |
 - MVP: player with highest level score for the level.
-- Leaderboard score is snapshotted at each checkpoint and restored on rollback, preventing repeated failed checkpoint attempts from farming score.
-- `checkpointMinContributionShare` sets the required per-player share of expected placement score for the checkpoint band; default is `30%`, and `0` disables the gate. `checkpointScoreRequirement` remains a hidden legacy flat floor when set by old tooling.
+- Leaderboard score is snapshotted at each Impact and restored on rollback, preventing repeated failed Impact attempts from farming score.
+- `impactMinContributionShare` sets the required per-player share of expected placement score for the Impact band; default is `30%`, and `0` disables the gate. `impactScoreRequirement` remains a hidden legacy flat floor when set by old tooling.
 
 ### Scoring Feedback UX
 - Placement score shows as a `+points` popup in the placing player's color, using `placementScorePopupDurationMs`.
@@ -133,8 +126,8 @@
 - Target height increases each level.
 - Block complexity increases with level: height-1 blocks at level 1, size-2 shapes at level 2, size-3 shapes at level 3, size-4 shapes at level 5, size-5 shapes at level 10, and size-6 shapes at level 15. Late unlocks include true vertical height-5 and height-6 line blocks.
 - Inventory capacity increases with level: 1 active slot at level 1, 2 at level 2, and 3 at level 4.
-- Checkpoints after every 3 levels.
-- Failing a level rolls back to last completed checkpoint level.
+- Impacts after every 3 levels.
+- Failing a level rolls back to last completed Impact level.
 - Opening hands are generated with solvability constraints so random supply should not make a level impossible before player decisions.
 
 ## Leaderboard
@@ -153,7 +146,7 @@
 - Authority: server validates and applies all changes; broadcasts `debug_config` to all real clients.
 - Client debug controls live in a tabbed overlay and sync server state without echo loops.
 - The debug header includes a Reset action that restores exposed tunables to the server's current `Game_Config.js` defaults.
-- Tabs: Bots, Round, UI, Supply, Refresh, and Scoring.
+- Tabs: Bots, Round, UI, Supply, Scoring, Tower, and Power.
 
 ### Currently Exposed Variables
 | Variable | Description |
@@ -170,16 +163,21 @@
 | `placementScorePopupDurationMs` | Placement score popup total lifetime, including fade-out (500-10000 ms, default 5000). |
 | `finishScorePopupDurationMs` | MVP, Perfect Fit, and bonus popup total lifetime, including fade-out (500-10000 ms, default 5000). |
 | `levelSummaryDelayMs` | Completed/failed level score summary visible duration before next level or rollback (1000-10000 ms, default 6000). |
-| `checkpointMinContributionShare` | Required per-player share of expected placement score in the current checkpoint band; default `30%`, `0` disables the gate. |
+| `impactMinContributionShare` | Required per-player share of expected placement score in the current Impact band; default `30%`, `0` disables the gate. |
 | `targetHeightMultiplier` | Debug scale applied to the target-height curve; default 3 keeps the authored curve unchanged. |
 | `levelSupplyMinSurplus` | Minimum generated total-height surplus above target. |
 | `levelSupplyMaxSurplus` | Maximum generated total-height surplus above target. |
 | `minPrecisionBlocksPerLevel` | Minimum count of height-1/2 precision blocks required in solvable supply. |
 | `maxTeamCarryOverBlocks` | Max unused team blocks carried into the next completed level. |
-| `maxRefreshTokens` | Per-player refresh token cap. |
-| `maxRefreshUsesPerLevel` | Per-player refresh uses allowed each level. |
-| `refreshLockoutMs` | End-of-level refresh lockout window. |
-| `refreshMinUsefulBlockHeight` | Minimum useful generated refresh height when remaining height allows it. |
+| `refreshMinUsefulBlockHeight` | Minimum useful generated refresh height when remaining height allows it (used by the Refresh Power item's reroll). |
+| `towerOverhangWeight` | Weight of a single unsupported cell in the just-placed block relative to a full column-width of center-of-mass drift. |
+| `towerMaxTiltAngleDeg` | Visual lean cap in degrees, reached when tilt score hits ±1.0. |
+| `towerCollapseTiltScore` | The tilt-score magnitude at or above which the tower collapses. |
+| `towerStabilityWarningThreshold` | Stability percentage (0-100) at or below which a wobble warning fires. |
+| `towerStabilityCriticalThreshold` | Stability percentage (0-100) at or below which a critical warning fires; clamped to never exceed the warning threshold. |
+| `powerUnlockLevel` | Level at which the Power system (side quests, items) unlocks. |
+| `powerMaxSlots` | Per-player Power inventory slot cap. |
+| `powerActivationCooldownMs` | Cooldown between a player's Power activations. |
 | `placementScorePerHeight` | Placement score scale applied to effective height and level. |
 | `finisherBonusPerLevel` | Finisher score multiplier per level. |
 | `precisionBonusPerLevel` | Exact-finish finisher score multiplier per level. |
@@ -199,12 +197,12 @@
 - Bot loops are level-scoped; delayed actions from previous levels cannot fire in next level.
 - Bot actions stop when `debugBotsEnabled` is false.
 - Bots only fill rooms when at least one real player is waiting.
-- Cooperative bots prefer exact finishing blocks, avoid overbuilding near the target, otherwise play the highest useful block, and refresh only when total inventory height is below the low-inventory threshold.
+- Cooperative bots prefer exact finishing blocks, avoid overbuilding near the target, and otherwise play the highest useful block. Bots never hold or activate Power items, so they always place — they have no refresh behavior.
 - MVP-greedy bots prefer the highest effective score contribution, still taking exact finishes when available.
 
 ### Future Debug Variables (Planned)
-- `blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `checkpointInterval`, target-height curve bands, and per-shape generation pools.
-- Shape-block recalibration candidates: per-level shape pools, guaranteed minimum available height, target curve by level band, refresh rewards, and fail-condition pressure.
+- `blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `impactInterval`, target-height curve bands, and per-shape generation pools.
+- Shape-block recalibration candidates: per-level shape pools, guaranteed minimum available height, target curve by level band, and fail-condition pressure.
 
 ### Shipping Requirement
 - Debug Menu must be disabled behind a build flag, QA account permission, or server-side admin authorization before public release.

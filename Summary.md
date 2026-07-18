@@ -7,8 +7,8 @@
 - Future platform targets are deferred until staging gameplay and Android/HTML5 pipeline are stable.
 
 ## Current Snapshot
-- Gameplay: server-authoritative rooms, shape blocks, refresh, score events, level summaries, checkpoints, debug bots, and live tuning.
-- Client Android: Godot `4.6.2.stable` Android HUD with shape inventory, tower stack, refresh UI, score feedback, level summaries, skin switching, and tabbed debug overlay.
+- Gameplay: server-authoritative rooms, shape blocks, score events, level summaries, Impacts (score-gated checkpoints), Power items (including refresh), debug bots, and live tuning.
+- Client Android: Godot `4.6.2.stable` Android HUD with shape inventory, tower stack, score feedback, level summaries, and a tabbed debug overlay, all on a single UI scene (no runtime skin switching).
 - Client HTML5: Deploys via GitHub Pages; Cloudflare planned next.
 - Server: Node WebSocket workers own matchmaking, room state, reconnect, scoring, timers, bots, and debug config.
 - State: Redis is used for active matchmaking, room/session snapshots, reconnect, and worker recovery.
@@ -30,18 +30,17 @@
 ## Game Systems
 - Core loop, matchmaking, reconnect: GDD `Core Game Loop`, `Reconnect and Shared Room Continuity`.
 - Blocks, inventory, draw pile/carry-over: GDD `Block System`.
-- Refresh tokens: GDD `Refresh Token System`.
-- Politics (quest items, checkpoint rollback): GDD `Politics System`.
+- Power (quest items, refresh, Impact rollback): GDD `Power System`.
 - Tower height/stability: GDD `Tower System` (engine: [[Tower Stability]]).
 - Scoring formulas, feedback UX: GDD `Scoring System`.
-- Level/progression curve, checkpoints: GDD `Progression`.
+- Level/progression curve, Impacts: GDD `Progression`.
 - Debug menu / live-tuning variables: GDD `Debug Menu and Live Tuning`, [[Game Config]].
 
 ## Component Map
 - Navigation: [[Component-Index]]
-- Server: [[Server Entry]], [[Lobby Manager]], [[Game Engine]], [[Block Supply]], [[Scoring]], [[Checkpoints]], [[Tower Stability]], [[Redis State]], [[Bot Manager]], [[Game Config]], [[Server Docker Image]]
+- Server: [[Server Entry]], [[Lobby Manager]], [[Game Engine]], [[Block Supply]], [[Scoring]], [[Impacts]], [[Tower Stability]], [[Redis State]], [[Bot Manager]], [[Game Config]], [[Server Docker Image]]
 - Server CI/tooling: [[Server Score Events Tests]], [[Balance Simulator]]
-- Client runtime: [[Godot Client App]], [[NetworkManager]], [[Main UI Controller]], [[Client UI Skins]], [[Block Preview]], [[Tower Stack]], [[Cooldown Overlay]], [[Debug Overlay]], [[Player Colors]]
+- Client runtime: [[Godot Client App]], [[NetworkManager]], [[Main UI Controller]], [[Game UI Scene]], [[Block Preview]], [[Tower Stack]], [[Cooldown Overlay]], [[Debug Overlay]], [[Player Colors]]
 - Client tests: [[Godot Client Tests]]
 - Server infra & IaC: [[Terraform Infrastructure]], [[Server K3s Stack]], [[Server K3s Workflows]], [[Server K3s Automated Master Workflow]]
 - Android release: [[Client Android Internal Workflow]]
@@ -57,6 +56,6 @@
 
 ## Contracts & Testing
 - Server→client: `room_created`, `room_resumed`, `game_state`, `debug_config`, `room_closed`.
-- Client→server: `reconnect`, `place_block`, `refresh_blocks`, `send_quick_chat`, `update_config`.
+- Client→server: `reconnect`, `place_block`, `activate_power`, `send_quick_chat`, `update_config`.
 - Full payload shapes: TDD `Message Contracts`.
 - Tests: `node --test tests/Score_Events.test.js` (server); `npm run balance:simulate -- <levels> <runs>` from `src/Server` (balance); Godot smoke test + GUT (client) — TDD `Testing Strategy`.

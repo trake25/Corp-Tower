@@ -22,25 +22,25 @@ const GameConfig = {
     placementScorePopupDurationMs: 3000,
     finishScorePopupDurationMs: 3500,
     levelSummaryDelayMs: 4000,
-    checkpointInterval: 3,
-    checkpointScoreRequirement: 0,
-    checkpointMinContributionShare: 0.30,
+    impactInterval: 3,
+    impactScoreRequirement: 0,
+    impactMinContributionShare: 0.30,
     towerGridWidth: 7,
     towerPlacementMode: "auto_center",
     towerOverhangWeight: 0.18,
     towerMaxTiltAngleDeg: 24,
-    towerCollapseTiltScore: 1.0,
+    towerCollapseTiltScore: 2.0,
     towerStabilityWarningThreshold: 60,
     towerStabilityCriticalThreshold: 30,
     towerStabilityFeedbackMode: "warnings_only",
-    politicsUnlockLevel: 4,
-    politicsMaxSlots: 3,
-    politicsActivationCooldownMs: 3000,
-    politicsLifetime: "checkpoint",
-    politicsCatalog: {
+    powerUnlockLevel: 4,
+    powerMaxSlots: 3,
+    powerActivationCooldownMs: 3000,
+    powerLifetime: "impact",
+    powerCatalog: {
         score_cap: { category: "Offensive", title: "Score Cap" },
         copy_score: { category: "Defensive", title: "Copy Score" },
-        free_refresh: { category: "Utility", title: "Free Refresh" }
+        refresh: { category: "Utility", title: "Refresh" }
     },
 
     blockUnlockLevels: {
@@ -149,9 +149,6 @@ const GameConfig = {
     minPrecisionBlocksPerLevel: 2,
     openingHandGenerationAttempts: 1000,
 
-    maxRefreshTokens: 1,
-    maxRefreshUsesPerLevel: 2,
-    refreshLockoutMs: 12000,
     refreshGenerationAttempts: 100,
     refreshMinUsefulBlockHeight: 2,
 
@@ -173,7 +170,6 @@ const GameConfig = {
     debugBotDelayMax: 5000,
 
     debugBotStrategy: "mvp_greedy",
-    botRefreshLowInventoryHeight: 4,
 
 };
 

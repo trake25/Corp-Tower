@@ -24,4 +24,4 @@ drag-to-place cooldown is active. File:
   via `update_placement_cooldown_overlays()`.
 - One instance per inventory card, found via
   `button.get_node_or_null("CooldownOverlay")`, so it must exist under that
-  exact node name in both [[Client UI Skins]] scenes.
+  exact node name in [[Game UI Scene]].

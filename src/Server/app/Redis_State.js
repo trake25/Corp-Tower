@@ -36,13 +36,11 @@ function stripRuntimePlayer(player) {
         levelScore: player.levelScore || 0,
         scoreBreakdown: player.scoreBreakdown || {},
         contributedHeight: player.contributedHeight || 0,
-        refreshTokens: player.refreshTokens || 0,
-        refreshUsesThisLevel: player.refreshUsesThisLevel || 0,
         blocks: player.blocks || [],
         lastPlacementTime: player.lastPlacementTime || 0,
         lastQuickChatTime: player.lastQuickChatTime || 0,
-        politicsInventory: player.politicsInventory || [],
-        lastPoliticsActivationTime: player.lastPoliticsActivationTime || 0,
+        powerInventory: player.powerInventory || [],
+        lastPowerActivationTime: player.lastPowerActivationTime || 0,
         scoreCap: player.scoreCap || null,
         botLoopLevel: player.botLoopLevel || null
     };
@@ -57,9 +55,9 @@ function stripRuntimeRoom(room) {
         players: (room.players || []).map(stripRuntimePlayer),
         state: {
             level: engineRoom.level || 1,
-            checkpointLevel: engineRoom.checkpointLevel || 1,
-            checkpointScores: engineRoom.checkpointScores || {},
-            checkpointPolitics: engineRoom.checkpointPolitics || {},
+            impactLevel: engineRoom.impactLevel || 1,
+            impactScores: engineRoom.impactScores || {},
+            impactPowers: engineRoom.impactPowers || {},
             targetHeight: engineRoom.targetHeight || 0,
             currentHeight: engineRoom.currentHeight || 0,
             drawPile: engineRoom.drawPile || [],

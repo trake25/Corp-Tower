@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://Cor/Scripts/BlockPreview.gd" id="2_blockpreview"]
 [ext_resource type="Script" path="res://Cor/Scripts/TowerStack.gd" id="3_towerstack"]
 [ext_resource type="Script" path="res://Cor/Scripts/DebugOverlay.gd" id="4_debugoverlay"]
-[ext_resource type="Theme" path="res://Cor/Themes/DefaultSkinTheme.tres" id="5_theme"]
+[ext_resource type="Theme" path="res://Cor/Themes/GameUITheme.tres" id="5_theme"]
 [ext_resource type="Script" path="res://Cor/Scripts/CooldownOverlay.gd" id="6_cooldown"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Background"]
@@ -64,7 +64,7 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[node name="DefaultSkin" type="Control" unique_id=20707474]
+[node name="GameUI" type="Control" unique_id=20707474]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -125,7 +125,7 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 18
 text = "Disconnected"
 
-[node name="TopPoliticsTargetBox" type="VBoxContainer" parent="SafeArea/Root/TopHud/HudMargin/HudRows/StatusRow"]
+[node name="TopPowerTargetBox" type="VBoxContainer" parent="SafeArea/Root/TopHud/HudMargin/HudRows/StatusRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(82, 0)
 layout_mode = 2
@@ -188,17 +188,17 @@ theme_override_constants/margin_bottom = 10
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="PoliticsPanel" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns"]
+[node name="PowerPanel" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 
-[node name="PoliticsQuestLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/PoliticsPanel"]
+[node name="PowerQuestLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/PowerPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 3
-text = "Politics Quest\nUnlocks at Level 4"
+text = "Power Quest\nUnlocks at Level 4"
 
-[node name="PoliticsTargetBox" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/PoliticsPanel"]
+[node name="PowerTargetBox" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/PowerPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -309,11 +309,11 @@ vertical_alignment = 0
 autowrap_mode = 3
 text = "Waiting for players"
 
-[node name="CheckpointSeparator" type="HSeparator" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
+[node name="ImpactSeparator" type="HSeparator" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
 visible = false
 layout_mode = 2
 
-[node name="CheckpointStatusLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
+[node name="ImpactStatusLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -321,7 +321,7 @@ theme_override_font_sizes/font_size = 13
 theme_override_colors/font_color = Color(0.84, 0.9, 0.98, 1)
 horizontal_alignment = 0
 autowrap_mode = 3
-text = "Checkpoint"
+text = "Impact"
 
 [node name="TowerStabilityLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
 unique_name_in_owner = true
@@ -355,18 +355,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 16
 text = "Inventory"
-
-[node name="RefreshTokenLabel" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/InventoryHeader" unique_id=1581234448]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Token 0/1"
-
-[node name="RefreshUsesLabel" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/InventoryHeader" unique_id=1581234449]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Level refreshes 0/2"
 
 [node name="ActionRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
 layout_mode = 2
@@ -593,14 +581,6 @@ theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 text = "0 left"
 
-[node name="RefreshButton" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow" unique_id=1581234447]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 102)
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_PrimaryButton")
-theme_override_font_sizes/font_size = 18
-text = "Refresh"
-
 [node name="LevelSummaryOverlay" type="Control" parent="."]
 unique_name_in_owner = true
 visible = false
@@ -706,25 +686,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="SkinButton" type="Button" parent="."]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(92, 42)
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -104.0
-offset_top = -102.0
-offset_right = -12.0
-offset_bottom = -60.0
-grow_horizontal = 0
-grow_vertical = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_ActionButton")
-theme_override_font_sizes/font_size = 14
-text = "Skin"
-
 [node name="DebugButton" type="Button" parent="."]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(92, 42)
@@ -743,90 +704,6 @@ grow_vertical = 0
 theme_override_styles/normal = SubResource("StyleBoxFlat_ActionButton")
 theme_override_font_sizes/font_size = 14
 text = "Debug"
-
-[node name="SkinOverlay" type="Control" parent="."]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="SkinDimLayer" type="ColorRect" parent="SkinOverlay"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.42)
-
-[node name="SkinPanel" type="PanelContainer" parent="SkinOverlay"]
-custom_minimum_size = Vector2(300, 0)
-layout_mode = 1
-anchors_preset = 11
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -322.0
-offset_top = -258.0
-offset_right = -16.0
-offset_bottom = -72.0
-grow_horizontal = 0
-grow_vertical = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_Panel")
-
-[node name="SkinMargin" type="MarginContainer" parent="SkinOverlay/SkinPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 12
-
-[node name="SkinRows" type="VBoxContainer" parent="SkinOverlay/SkinPanel/SkinMargin"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="SkinHeader" type="HBoxContainer" parent="SkinOverlay/SkinPanel/SkinMargin/SkinRows"]
-layout_mode = 2
-
-[node name="SkinTitle" type="Label" parent="SkinOverlay/SkinPanel/SkinMargin/SkinRows/SkinHeader"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
-text = "UI Skin"
-
-[node name="CloseSkinButton" type="Button" parent="SkinOverlay/SkinPanel/SkinMargin/SkinRows/SkinHeader"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(42, 34)
-layout_mode = 2
-text = "X"
-
-[node name="SkinHint" type="Label" parent="SkinOverlay/SkinPanel/SkinMargin/SkinRows"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-autowrap_mode = 3
-text = "Switch the client skin without changing gameplay or reconnecting."
-
-[node name="DefaultSkinButton" type="Button" parent="SkinOverlay/SkinPanel/SkinMargin/SkinRows"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 42)
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_PrimaryButton")
-theme_override_font_sizes/font_size = 15
-text = "DefaultSkin"
-
-[node name="FigmaSkinButton" type="Button" parent="SkinOverlay/SkinPanel/SkinMargin/SkinRows"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 42)
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_ActionButton")
-theme_override_font_sizes/font_size = 15
-text = "Figma_SkinV1"
 
 [node name="DebugOverlay" type="Control" parent="."]
 unique_name_in_owner = true
@@ -1081,47 +958,12 @@ text = "Carry-Over Blocks: 0"
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Refresh" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
-layout_mode = 2
-
-[node name="RefreshRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Refresh"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 6
-
-[node name="MaxRefreshTokensLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Refresh/RefreshRows"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Refresh Tokens: 0"
-
-[node name="MaxRefreshTokensSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Refresh/RefreshRows"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="MaxRefreshUsesLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Refresh/RefreshRows"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Refresh Uses: 0"
-
-[node name="MaxRefreshUsesSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Refresh/RefreshRows"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="RefreshLockoutLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Refresh/RefreshRows"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Refresh Lockout: 0 sec"
-
-[node name="RefreshLockoutSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Refresh/RefreshRows"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="RefreshMinUsefulHeightLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Refresh/RefreshRows"]
+[node name="RefreshMinUsefulHeightLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Refresh Useful Height: 0"
 
-[node name="RefreshMinUsefulHeightSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Refresh/RefreshRows"]
+[node name="RefreshMinUsefulHeightSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -1133,12 +975,12 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="CheckpointScoreLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="ImpactScoreLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Checkpoint Share: 30%"
+text = "Impact Share: 30%"
 
-[node name="CheckpointScoreSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="ImpactScoreSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -1231,34 +1073,96 @@ text = "Collapse Threshold: 1.00"
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="TowerWarningThresholdLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Warning Threshold: 60%"
+
+[node name="TowerWarningThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerCriticalThresholdLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Critical Threshold: 30%"
+
+[node name="TowerCriticalThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerFeedbackModeLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Stability Feedback"
+
+[node name="TowerFeedbackModeButton" type="OptionButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Power" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+layout_mode = 2
+
+[node name="PowerRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="PowerUnlockLevelLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Power Unlock Level: 4"
+
+[node name="PowerUnlockLevelSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PowerMaxSlotsLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Power Slots: 3"
+
+[node name="PowerMaxSlotsSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PowerCooldownLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Power Cooldown: 3.0 sec"
+
+[node name="PowerCooldownSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="QuickChatRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="PoliticsRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
+[node name="PowerRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="PoliticsButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PoliticsRow"]
+[node name="PowerButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PowerRow"]
 unique_name_in_owner = true
 disabled = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Politics"
+text = "Power"
 
-[node name="PoliticsButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PoliticsRow"]
+[node name="PowerButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PowerRow"]
 unique_name_in_owner = true
 disabled = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Politics"
+text = "Power"
 
-[node name="PoliticsButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PoliticsRow"]
+[node name="PowerButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PowerRow"]
 unique_name_in_owner = true
 disabled = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Politics"
+text = "Power"
 
 [node name="QuickChatButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/QuickChatRow"]
 unique_name_in_owner = true

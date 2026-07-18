@@ -139,14 +139,10 @@ class BotManager {
 
             const action = this.chooseBotAction(bot, engine);
 
-            if (action.type === "refresh") {
-                engine.refreshBlocks(bot.id);
-            } else {
-                engine.placeBlock(
-                    bot.id,
-                    action.blockIndex
-                );
-            }
+            engine.placeBlock(
+                bot.id,
+                action.blockIndex
+            );
 
             this.runBotLoop(
                 bot,
@@ -173,18 +169,6 @@ class BotManager {
             engine.room.targetHeight - engine.room.currentHeight
         );
         const blocks = bot.blocks || [];
-        const inventoryHeight = this.getInventoryHeight(bot, engine);
-
-        if (
-            remainingHeight > 0 &&
-            this.canBotRefresh(bot, engine) &&
-            remainingHeight > GameConfig.botRefreshLowInventoryHeight &&
-            inventoryHeight < GameConfig.botRefreshLowInventoryHeight
-        ) {
-            return {
-                type: "refresh"
-            };
-        }
 
         const exactIndex = blocks.findIndex(block => {
             return engine.getBlockHeight(block) === remainingHeight;
@@ -274,16 +258,6 @@ class BotManager {
             };
         }
 
-        if (
-            this.canBotRefresh(bot, engine) &&
-            this.getInventoryHeight(bot, engine) <
-                GameConfig.botRefreshLowInventoryHeight
-        ) {
-            return {
-                type: "refresh"
-            };
-        }
-
         const largestBlock = candidates.sort((a, b) => {
             return b.height - a.height;
         })[0];
@@ -315,22 +289,6 @@ class BotManager {
                 };
             })
             .filter(candidate => candidate.height > 0);
-    }
-
-    getInventoryHeight(bot, engine) {
-
-        return (bot.blocks || []).reduce((total, block) => {
-            return total + engine.getBlockHeight(block);
-        }, 0);
-    }
-
-    canBotRefresh(bot, engine) {
-
-        return (
-            bot.refreshTokens > 0 &&
-            bot.refreshUsesThisLevel < GameConfig.maxRefreshUsesPerLevel &&
-            engine.getRemainingMs() > GameConfig.refreshLockoutMs
-        );
     }
 
 }

@@ -17,20 +17,22 @@ const DEFAULT_DEBUG_CONFIG = {
     placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
     finishScorePopupDurationMs: GameConfig.finishScorePopupDurationMs,
     levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
-    checkpointScoreRequirement: GameConfig.checkpointScoreRequirement,
-    checkpointMinContributionShare: GameConfig.checkpointMinContributionShare,
+    impactScoreRequirement: GameConfig.impactScoreRequirement,
+    impactMinContributionShare: GameConfig.impactMinContributionShare,
     targetHeightMultiplier: GameConfig.targetHeightMultiplier,
     levelSupplyMinSurplus: GameConfig.levelSupplyMinSurplus,
     levelSupplyMaxSurplus: GameConfig.levelSupplyMaxSurplus,
     minPrecisionBlocksPerLevel: GameConfig.minPrecisionBlocksPerLevel,
     maxTeamCarryOverBlocks: GameConfig.maxTeamCarryOverBlocks,
-    maxRefreshTokens: GameConfig.maxRefreshTokens,
-    maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
-    refreshLockoutMs: GameConfig.refreshLockoutMs,
     refreshMinUsefulBlockHeight: GameConfig.refreshMinUsefulBlockHeight,
     towerOverhangWeight: GameConfig.towerOverhangWeight,
     towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
     towerCollapseTiltScore: GameConfig.towerCollapseTiltScore,
+    towerStabilityWarningThreshold: GameConfig.towerStabilityWarningThreshold,
+    towerStabilityCriticalThreshold: GameConfig.towerStabilityCriticalThreshold,
+    powerUnlockLevel: GameConfig.powerUnlockLevel,
+    powerMaxSlots: GameConfig.powerMaxSlots,
+    powerActivationCooldownMs: GameConfig.powerActivationCooldownMs,
     placementScorePerHeight: GameConfig.scoring.placementScorePerHeight,
     finisherBonusPerLevel: GameConfig.scoring.finisherBonusPerLevel,
     precisionBonusPerLevel: GameConfig.scoring.precisionBonusPerLevel,
@@ -159,7 +161,7 @@ class LobbyManager {
             roomId: room.id,
             level: room.engine.room.level,
             targetHeight: room.engine.room.targetHeight,
-            checkpointScoreStatus: room.engine.getCheckpointScoreStatus(),
+            impactScoreStatus: room.engine.getImpactScoreStatus(),
             activeInventorySlots: room.engine.getBlocksPerPlayer(),
             maxActiveBlocks: GameConfig.maxActiveBlocks,
             blocks: roomPlayer.blocks || [],
@@ -260,8 +262,6 @@ class LobbyManager {
         player.levelScore = player.levelScore || 0;
         player.scoreBreakdown = player.scoreBreakdown || {};
         player.contributedHeight = player.contributedHeight || 0;
-        player.refreshTokens = player.refreshTokens || 0;
-        player.refreshUsesThisLevel = player.refreshUsesThisLevel || 0;
         player.blocks = player.blocks || [];
         player.lastPlacementTime = player.lastPlacementTime || 0;
         player.botLoopLevel = null;
@@ -403,21 +403,25 @@ class LobbyManager {
             placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
             finishScorePopupDurationMs: GameConfig.finishScorePopupDurationMs,
             levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
-            checkpointScoreRequirement: GameConfig.checkpointScoreRequirement,
-            checkpointMinContributionShare:
-                GameConfig.checkpointMinContributionShare,
+            impactScoreRequirement: GameConfig.impactScoreRequirement,
+            impactMinContributionShare:
+                GameConfig.impactMinContributionShare,
             targetHeightMultiplier: GameConfig.targetHeightMultiplier,
             levelSupplyMinSurplus: GameConfig.levelSupplyMinSurplus,
             levelSupplyMaxSurplus: GameConfig.levelSupplyMaxSurplus,
             minPrecisionBlocksPerLevel: GameConfig.minPrecisionBlocksPerLevel,
             maxTeamCarryOverBlocks: GameConfig.maxTeamCarryOverBlocks,
-            maxRefreshTokens: GameConfig.maxRefreshTokens,
-            maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
-            refreshLockoutMs: GameConfig.refreshLockoutMs,
             refreshMinUsefulBlockHeight: GameConfig.refreshMinUsefulBlockHeight,
             towerOverhangWeight: GameConfig.towerOverhangWeight,
             towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
             towerCollapseTiltScore: GameConfig.towerCollapseTiltScore,
+            towerStabilityWarningThreshold:
+                GameConfig.towerStabilityWarningThreshold,
+            towerStabilityCriticalThreshold:
+                GameConfig.towerStabilityCriticalThreshold,
+            powerUnlockLevel: GameConfig.powerUnlockLevel,
+            powerMaxSlots: GameConfig.powerMaxSlots,
+            powerActivationCooldownMs: GameConfig.powerActivationCooldownMs,
             placementScorePerHeight: GameConfig.scoring.placementScorePerHeight,
             finisherBonusPerLevel: GameConfig.scoring.finisherBonusPerLevel,
             precisionBonusPerLevel: GameConfig.scoring.precisionBonusPerLevel,
@@ -446,10 +450,10 @@ class LobbyManager {
             DEFAULT_DEBUG_CONFIG.finishScorePopupDurationMs;
         GameConfig.levelSummaryDelayMs =
             DEFAULT_DEBUG_CONFIG.levelSummaryDelayMs;
-        GameConfig.checkpointScoreRequirement =
-            DEFAULT_DEBUG_CONFIG.checkpointScoreRequirement;
-        GameConfig.checkpointMinContributionShare =
-            DEFAULT_DEBUG_CONFIG.checkpointMinContributionShare;
+        GameConfig.impactScoreRequirement =
+            DEFAULT_DEBUG_CONFIG.impactScoreRequirement;
+        GameConfig.impactMinContributionShare =
+            DEFAULT_DEBUG_CONFIG.impactMinContributionShare;
         GameConfig.targetHeightMultiplier =
             DEFAULT_DEBUG_CONFIG.targetHeightMultiplier;
         GameConfig.levelSupplyMinSurplus =
@@ -460,15 +464,19 @@ class LobbyManager {
             DEFAULT_DEBUG_CONFIG.minPrecisionBlocksPerLevel;
         GameConfig.maxTeamCarryOverBlocks =
             DEFAULT_DEBUG_CONFIG.maxTeamCarryOverBlocks;
-        GameConfig.maxRefreshTokens = DEFAULT_DEBUG_CONFIG.maxRefreshTokens;
-        GameConfig.maxRefreshUsesPerLevel =
-            DEFAULT_DEBUG_CONFIG.maxRefreshUsesPerLevel;
-        GameConfig.refreshLockoutMs = DEFAULT_DEBUG_CONFIG.refreshLockoutMs;
         GameConfig.refreshMinUsefulBlockHeight =
             DEFAULT_DEBUG_CONFIG.refreshMinUsefulBlockHeight;
         GameConfig.towerOverhangWeight = DEFAULT_DEBUG_CONFIG.towerOverhangWeight;
         GameConfig.towerMaxTiltAngleDeg = DEFAULT_DEBUG_CONFIG.towerMaxTiltAngleDeg;
         GameConfig.towerCollapseTiltScore = DEFAULT_DEBUG_CONFIG.towerCollapseTiltScore;
+        GameConfig.towerStabilityWarningThreshold =
+            DEFAULT_DEBUG_CONFIG.towerStabilityWarningThreshold;
+        GameConfig.towerStabilityCriticalThreshold =
+            DEFAULT_DEBUG_CONFIG.towerStabilityCriticalThreshold;
+        GameConfig.powerUnlockLevel = DEFAULT_DEBUG_CONFIG.powerUnlockLevel;
+        GameConfig.powerMaxSlots = DEFAULT_DEBUG_CONFIG.powerMaxSlots;
+        GameConfig.powerActivationCooldownMs =
+            DEFAULT_DEBUG_CONFIG.powerActivationCooldownMs;
         GameConfig.scoring.placementScorePerHeight =
             DEFAULT_DEBUG_CONFIG.placementScorePerHeight;
         GameConfig.scoring.finisherBonusPerLevel =
@@ -593,22 +601,27 @@ class LobbyManager {
             finishScorePopupDurationMs:
                 setGameInt("finishScorePopupDurationMs", 500, 10000),
             levelSummaryDelayMs: setGameInt("levelSummaryDelayMs", 1000, 10000),
-            checkpointScoreRequirement:
-                setGameInt("checkpointScoreRequirement", 0, 1000000),
-            checkpointMinContributionShare:
-                setGameNumber("checkpointMinContributionShare", 0, 1),
+            impactScoreRequirement:
+                setGameInt("impactScoreRequirement", 0, 1000000),
+            impactMinContributionShare:
+                setGameNumber("impactMinContributionShare", 0, 1),
             targetHeightMultiplier: setGameInt("targetHeightMultiplier", 1, 20),
             levelSupplyMinSurplus: setGameInt("levelSupplyMinSurplus", 0, 20),
             levelSupplyMaxSurplus: setGameInt("levelSupplyMaxSurplus", 0, 30),
             minPrecisionBlocksPerLevel: setGameInt("minPrecisionBlocksPerLevel", 0, 9),
             maxTeamCarryOverBlocks: setGameInt("maxTeamCarryOverBlocks", 0, 12),
-            maxRefreshTokens: setGameInt("maxRefreshTokens", 0, 5),
-            maxRefreshUsesPerLevel: setGameInt("maxRefreshUsesPerLevel", 0, 5),
-            refreshLockoutMs: setGameInt("refreshLockoutMs", 0, 60000),
             refreshMinUsefulBlockHeight: setGameInt("refreshMinUsefulBlockHeight", 1, 6),
             towerOverhangWeight: setGameNumber("towerOverhangWeight", 0, 1),
             towerMaxTiltAngleDeg: setGameInt("towerMaxTiltAngleDeg", 5, 60),
             towerCollapseTiltScore: setGameNumber("towerCollapseTiltScore", 0.3, 3),
+            towerStabilityWarningThreshold:
+                setGameInt("towerStabilityWarningThreshold", 0, 100),
+            towerStabilityCriticalThreshold:
+                setGameInt("towerStabilityCriticalThreshold", 0, 100),
+            powerUnlockLevel: setGameInt("powerUnlockLevel", 1, GameConfig.maxLevel),
+            powerMaxSlots: setGameInt("powerMaxSlots", 1, 6),
+            powerActivationCooldownMs:
+                setGameInt("powerActivationCooldownMs", 0, 30000),
             placementScorePerHeight: setScoringInt("placementScorePerHeight", 1, 25),
             finisherBonusPerLevel: setScoringInt("finisherBonusPerLevel", 0, 25),
             precisionBonusPerLevel: setScoringInt("precisionBonusPerLevel", 0, 25),
@@ -631,6 +644,14 @@ class LobbyManager {
 
         if (GameConfig.levelSupplyMaxSurplus < GameConfig.levelSupplyMinSurplus) {
             GameConfig.levelSupplyMaxSurplus = GameConfig.levelSupplyMinSurplus;
+        }
+
+        if (
+            GameConfig.towerStabilityCriticalThreshold >
+            GameConfig.towerStabilityWarningThreshold
+        ) {
+            GameConfig.towerStabilityCriticalThreshold =
+                GameConfig.towerStabilityWarningThreshold;
         }
 
         if (key === "debugBotsEnabled" || key === "debugBotCount") {
@@ -800,7 +821,7 @@ class LobbyManager {
                 roomId: room.id,
                 level: engine.room.level,
                 targetHeight: engine.room.targetHeight,
-                checkpointScoreStatus: engine.getCheckpointScoreStatus(),
+                impactScoreStatus: engine.getImpactScoreStatus(),
                 activeInventorySlots: engine.getBlocksPerPlayer(),
                 maxActiveBlocks: GameConfig.maxActiveBlocks,
                 blocks: player.blocks,
@@ -874,9 +895,9 @@ class LobbyManager {
                 id: snapshot.id,
                 players: runtimePlayers,
                 level: snapshot.state.level,
-                checkpointLevel: snapshot.state.checkpointLevel,
-                checkpointScores: snapshot.state.checkpointScores || {},
-                checkpointPolitics: snapshot.state.checkpointPolitics || {},
+                impactLevel: snapshot.state.impactLevel,
+                impactScores: snapshot.state.impactScores || {},
+                impactPowers: snapshot.state.impactPowers || {},
                 targetHeight: snapshot.state.targetHeight,
                 currentHeight: snapshot.state.currentHeight,
                 drawPile: snapshot.state.drawPile || [],

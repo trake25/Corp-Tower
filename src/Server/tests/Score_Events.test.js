@@ -12,7 +12,9 @@ const originalGameConfig = {
     finishScorePopupDurationMs: GameConfig.finishScorePopupDurationMs,
     levelSummaryDelayMs: GameConfig.levelSummaryDelayMs
     ,quickChatCooldownMs: GameConfig.quickChatCooldownMs
-    ,politicsLifetime: GameConfig.politicsLifetime
+    ,powerLifetime: GameConfig.powerLifetime
+    ,towerStabilityWarningThreshold: GameConfig.towerStabilityWarningThreshold
+    ,towerStabilityCriticalThreshold: GameConfig.towerStabilityCriticalThreshold
 };
 const originalScoringConfig = { ...GameConfig.scoring };
 const activeEngines = new Set();
@@ -29,7 +31,11 @@ afterEach(() => {
         originalGameConfig.finishScorePopupDurationMs;
     GameConfig.levelSummaryDelayMs = originalGameConfig.levelSummaryDelayMs;
     GameConfig.quickChatCooldownMs = originalGameConfig.quickChatCooldownMs;
-    GameConfig.politicsLifetime = originalGameConfig.politicsLifetime;
+    GameConfig.powerLifetime = originalGameConfig.powerLifetime;
+    GameConfig.towerStabilityWarningThreshold =
+        originalGameConfig.towerStabilityWarningThreshold;
+    GameConfig.towerStabilityCriticalThreshold =
+        originalGameConfig.towerStabilityCriticalThreshold;
     GameConfig.scoring = { ...originalScoringConfig };
 });
 
@@ -81,8 +87,6 @@ function createPlayingEngine(level = 1, targetHeight = 5) {
         player.scoreBreakdown = {};
         player.contributedHeight = 0;
         player.lastPlacementTime = 0;
-        player.refreshTokens = 0;
-        player.refreshUsesThisLevel = 0;
     });
 
     return { engine, messages };
@@ -194,45 +198,77 @@ test("overbuild winning placement emits overbuild finish without exact bonuses",
 
 test("refresh upgrades small blocks to unlocked size 3 or higher", () => {
     const { engine } = createPlayingEngine(10, 20);
-    const player = engine.room.players[0];
 
-    engine.room.endsAt = Date.now() + 60000;
-    player.refreshTokens = 1;
-    player.blocks = [
+    const refreshed = engine.generateRefreshBlocks([
         createBlock(1, "B1"),
         createBlock(2, "B2")
-    ];
+    ]);
 
-    engine.refreshBlocks("P1");
-
-    assert.equal(player.blocks.length, 2);
-    assert.equal(player.refreshTokens, 0);
-    assert.equal(player.refreshUsesThisLevel, 1);
+    assert.equal(refreshed.length, 2);
     assert.equal(
-        player.blocks.every(block => engine.getBlockCellCount(block) >= 3),
+        refreshed.every(block => engine.getBlockCellCount(block) >= 3),
         true
     );
 });
 
 test("refresh rerolls size 3 or higher blocks without changing size", () => {
     const { engine } = createPlayingEngine(15, 20);
+
+    const refreshed = engine.generateRefreshBlocks([
+        createBlock(4, "B4"),
+        createBlock(5, "B5")
+    ]);
+
+    assert.deepEqual(
+        refreshed.map(block => engine.getBlockCellCount(block)),
+        [4, 5]
+    );
+    assert.notEqual(refreshed[0].shapeId, "I4V");
+    assert.notEqual(refreshed[1].shapeId, "I5V");
+});
+
+test("activating the refresh power item rerolls the target's blocks", () => {
+    const { engine } = createPlayingEngine(10, 20);
+    const caster = engine.room.players[0];
+    const target = engine.room.players[1];
+
+    engine.room.endsAt = Date.now() + 60000;
+    caster.powerInventory = [{ id: "refresh", earnedLevel: 10 }];
+    caster.lastPowerActivationTime = 0;
+    target.blocks = [
+        createBlock(1, "B1"),
+        createBlock(2, "B2")
+    ];
+
+    assert.equal(engine.activatePower(caster.id, 0, target.id), true);
+
+    assert.equal(caster.powerInventory.length, 0);
+    assert.equal(
+        target.blocks.every(block => engine.getBlockCellCount(block) >= 3),
+        true
+    );
+});
+
+test("a held refresh power item defers the not-enough-height fail", () => {
+    const { engine } = createPlayingEngine(10, 20);
     const player = engine.room.players[0];
 
     engine.room.endsAt = Date.now() + 60000;
-    player.refreshTokens = 1;
-    player.blocks = [
-        createBlock(4, "B4"),
-        createBlock(5, "B5")
-    ];
+    engine.room.currentHeight = 0;
+    engine.room.drawPile = [];
+    engine.room.players.forEach(p => {
+        p.blocks = [];
+        p.powerInventory = [];
+    });
+    player.blocks = [createBlock(1, "B1")];
 
-    engine.refreshBlocks("P1");
+    player.powerInventory = [{ id: "refresh", earnedLevel: 10 }];
+    engine.checkFailCondition();
+    assert.equal(engine.room.state, "playing");
 
-    assert.deepEqual(
-        player.blocks.map(block => engine.getBlockCellCount(block)),
-        [4, 5]
-    );
-    assert.notEqual(player.blocks[0].shapeId, "I4V");
-    assert.notEqual(player.blocks[1].shapeId, "I5V");
+    player.powerInventory = [];
+    engine.checkFailCondition();
+    assert.equal(engine.room.state, "failed");
 });
 
 test("failed level summary does not bank level score into final totals", () => {
@@ -280,46 +316,65 @@ test("UI durations are exposed and clamped in debug config", async () => {
     assert.equal(lobbyManager.getDebugConfig().levelSummaryDelayMs, 10000);
 });
 
-test("rollback restores politics inventory from checkpoint snapshot", () => {
-    GameConfig.politicsLifetime = "checkpoint";
+test("tower stability thresholds are exposed and clamped in debug config", async () => {
+    const lobbyManager = new LobbyManager();
+
+    await lobbyManager.updateDebugConfig("towerStabilityWarningThreshold", 150);
+    assert.equal(GameConfig.towerStabilityWarningThreshold, 100);
+
+    await lobbyManager.updateDebugConfig("towerStabilityWarningThreshold", -20);
+    assert.equal(GameConfig.towerStabilityWarningThreshold, 0);
+    assert.equal(GameConfig.towerStabilityCriticalThreshold, 0);
+
+    await lobbyManager.updateDebugConfig("towerStabilityWarningThreshold", 60);
+    await lobbyManager.updateDebugConfig("towerStabilityCriticalThreshold", 80);
+    assert.equal(GameConfig.towerStabilityCriticalThreshold, 60);
+
+    await lobbyManager.updateDebugConfig("towerStabilityCriticalThreshold", 30);
+    assert.equal(lobbyManager.getDebugConfig().towerStabilityWarningThreshold, 60);
+    assert.equal(lobbyManager.getDebugConfig().towerStabilityCriticalThreshold, 30);
+});
+
+test("rollback restores power inventory from impact snapshot", () => {
+    GameConfig.powerLifetime = "impact";
     const { engine } = createPlayingEngine(6, 20);
 
-    engine.room.checkpointLevel = 4;
-    engine.room.checkpointPolitics = {
+    engine.room.impactLevel = 4;
+    engine.room.impactPowers = {
         P1: [{ id: "score_cap", earnedLevel: 4 }],
         P2: [],
         P3: []
     };
-    engine.room.players[0].politicsInventory = [
+    engine.room.players[0].powerInventory = [
         { id: "score_cap", earnedLevel: 4 },
-        { id: "free_refresh", earnedLevel: 5 },
+        { id: "refresh", earnedLevel: 5 },
         { id: "copy_score", earnedLevel: 6 }
     ];
 
-    engine.restoreCheckpointPolitics();
+    engine.restoreImpactPowers();
 
-    assert.equal(engine.room.players[0].politicsInventory.length, 1);
-    assert.equal(engine.room.players[0].politicsInventory[0].id, "score_cap");
-    assert.equal(engine.room.players[0].politicsInventory[0].earnedLevel, 4);
+    assert.equal(engine.room.players[0].powerInventory.length, 1);
+    assert.equal(engine.room.players[0].powerInventory[0].id, "score_cap");
+    assert.equal(engine.room.players[0].powerInventory[0].earnedLevel, 4);
 });
 
-test("saveCheckpointPolitics captures each player's current inventory", () => {
+test("saveImpactPowers captures each player's current inventory", () => {
     const { engine } = createPlayingEngine(4, 10);
 
-    engine.room.players[0].politicsInventory = [
-        { id: "free_refresh", earnedLevel: 4, source: "checkpoint_mvp" }
+    engine.room.players[0].powerInventory = [
+        { id: "refresh", earnedLevel: 4, source: "impact_mvp" }
     ];
-    engine.room.players[1].politicsInventory = [
+    engine.room.players[1].powerInventory = [
         { id: "copy_score", earnedLevel: 5 }
     ];
 
-    engine.saveCheckpointPolitics();
+    engine.saveImpactPowers();
 
-    assert.deepEqual(engine.room.checkpointPolitics.P1, [
-        { id: "free_refresh", earnedLevel: 4, source: "checkpoint_mvp" }
+    assert.deepEqual(engine.room.impactPowers.P1, [
+        { id: "refresh", earnedLevel: 4, source: "impact_mvp" }
     ]);
-    assert.deepEqual(engine.room.checkpointPolitics.P2, [
+    assert.deepEqual(engine.room.impactPowers.P2, [
         { id: "copy_score", earnedLevel: 5 }
     ]);
-    assert.deepEqual(engine.room.checkpointPolitics.P3, []);
+    assert.deepEqual(engine.room.impactPowers.P3, []);
 });

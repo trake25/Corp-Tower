@@ -80,16 +80,6 @@ async function handleMessage(player, message) {
         return;
     }
 
-    if (data.type === "refresh_blocks") {
-        if (!player.room) {
-            console.log("Player has no room");
-            return;
-        }
-
-        player.room.engine.refreshBlocks(player.id);
-        return;
-    }
-
     if (data.type === "send_quick_chat") {
         if (!player.room) {
             console.log("Player has no room");
@@ -100,8 +90,8 @@ async function handleMessage(player, message) {
         return;
     }
 
-    if (data.type === "activate_politics" && player.room) {
-        player.room.engine.activatePolitics(player.id, data.slot, data.targetPlayerId);
+    if (data.type === "activate_power" && player.room) {
+        player.room.engine.activatePower(player.id, data.slot, data.targetPlayerId);
     }
 }
 

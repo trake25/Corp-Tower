@@ -3,7 +3,7 @@ const BotManager = require("./Bot_Manager");
 const TowerStability = require("./Tower_Stability");
 const BlockSupply = require("./engine/Block_Supply");
 const Scoring = require("./engine/Scoring");
-const Checkpoints = require("./engine/Checkpoints");
+const Impacts = require("./engine/Impacts");
 
 class GameEngine {
     constructor(options = {}) {
@@ -35,10 +35,10 @@ class GameEngine {
             type: "game_state",
             state: this.room.state,
             level: this.room.level,
-            checkpointLevel: this.room.checkpointLevel,
+            impactLevel: this.room.impactLevel,
             currentHeight: this.room.currentHeight,
             targetHeight: this.room.targetHeight,
-            checkpointScoreStatus: this.getCheckpointScoreStatus(),
+            impactScoreStatus: this.getImpactScoreStatus(),
             activeInventorySlots: this.getBlocksPerPlayer(),
             maxActiveBlocks: GameConfig.maxActiveBlocks,
             drawPileCount: (this.room.drawPile || []).length,
@@ -47,7 +47,7 @@ class GameEngine {
             towerStability: this.room.towerStability ?? 100,
             towerStabilityDiagnostics: this.room.towerStabilityDiagnostics || {},
             sideQuest: this.room.sideQuest || null,
-            politicsEvents: this.consumePoliticsEvents(),
+            powerEvents: this.consumePowerEvents(),
             towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode,
             secondsRemaining: Math.ceil(this.getRemainingMs() / 1000),
             lastLevelSummary: this.room.lastLevelSummary,
@@ -59,21 +59,14 @@ class GameEngine {
             finishScorePopupDurationMs: this.getFinishScorePopupDurationMs(),
             scorePopupDurationMs: this.getMaxScorePopupDurationMs(),
             levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
-            maxRefreshTokens: GameConfig.maxRefreshTokens,
-            maxRefreshUsesPerLevel: GameConfig.maxRefreshUsesPerLevel,
             players: this.room.players.map(player => ({
                 id: player.id,
                 isBot: Boolean(player.isBot),
                 score: player.score,
                 levelScore: player.levelScore,
                 contributedHeight: player.contributedHeight,
-                refreshTokens: player.refreshTokens,
-                refreshUsesRemaining: Math.max(
-                    0,
-                    GameConfig.maxRefreshUsesPerLevel - player.refreshUsesThisLevel
-                ),
-                blocks: player.blocks
-                ,politicsInventory: player.politicsInventory || []
+                blocks: player.blocks,
+                powerInventory: player.powerInventory || []
             }))
         };
 
@@ -97,9 +90,9 @@ class GameEngine {
             id: null,
             players: players,
             level: startLevel,
-            checkpointLevel: startLevel,
-            checkpointScores: {},
-            checkpointPolitics: {},
+            impactLevel: startLevel,
+            impactScores: {},
+            impactPowers: {},
             targetHeight: this.getTargetHeightForLevel(startLevel),
             currentHeight: 0,
             drawPile: [],
@@ -113,7 +106,7 @@ class GameEngine {
             lastLevelSummary: null,
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
-            pendingPoliticsEvents: [],
+            pendingPowerEvents: [],
             sideQuest: null,
             scoreEventSeq: 0
         };
@@ -123,16 +116,14 @@ class GameEngine {
             player.levelScore = 0;
             player.scoreBreakdown = {};
             player.contributedHeight = 0;
-            player.refreshTokens = 0;
-            player.refreshUsesThisLevel = 0;
             player.blocks = [];
             player.lastPlacementTime = 0;
             player.lastQuickChatTime = 0;
-            player.politicsInventory = [];
-            player.lastPoliticsActivationTime = 0;
+            player.powerInventory = [];
+            player.lastPowerActivationTime = 0;
             player.lastQuickChatTime = 0;
         });
-        this.saveCheckpointState();
+        this.saveImpactState();
 
         console.log("Room created:", this.room.id);
     }
@@ -144,9 +135,9 @@ class GameEngine {
             id: snapshot.id,
             players: runtimePlayers,
             level: snapshot.state.level,
-            checkpointLevel: snapshot.state.checkpointLevel,
-            checkpointScores: snapshot.state.checkpointScores || {},
-            checkpointPolitics: snapshot.state.checkpointPolitics || {},
+            impactLevel: snapshot.state.impactLevel,
+            impactScores: snapshot.state.impactScores || {},
+            impactPowers: snapshot.state.impactPowers || {},
             targetHeight: snapshot.state.targetHeight,
             currentHeight: snapshot.state.currentHeight,
             drawPile: snapshot.state.drawPile || [],
@@ -160,11 +151,11 @@ class GameEngine {
             lastLevelSummary: snapshot.state.lastLevelSummary,
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
-            pendingPoliticsEvents: [],
+            pendingPowerEvents: [],
             sideQuest: snapshot.state.sideQuest || null,
             scoreEventSeq: 0
         };
-        this.ensureCheckpointState();
+        this.ensureImpactState();
         this.recalculateTowerStability();
 
         this.restoreTimersFromState();
@@ -207,7 +198,7 @@ class GameEngine {
 
         if (this.room.state === "failed") {
             this.nextLevelTimer = setTimeout(() => {
-                this.rollbackToCheckpoint();
+                this.rollbackToImpact();
             }, this.getPostLevelTransitionDelayMs());
         }
     }
@@ -263,52 +254,58 @@ class GameEngine {
         return events;
     }
 
-    consumePoliticsEvents() {
-        const events = this.room?.pendingPoliticsEvents || [];
-        if (this.room) this.room.pendingPoliticsEvents = [];
+    consumePowerEvents() {
+        const events = this.room?.pendingPowerEvents || [];
+        if (this.room) this.room.pendingPowerEvents = [];
         return events;
     }
 
+    clonePowerInventory(items = []) {
+        return items.map(item => ({ ...item }));
+    }
+
     setupSideQuest() {
-        if (this.room.level < GameConfig.politicsUnlockLevel) { this.room.sideQuest = null; return; }
+        if (this.room.level < GameConfig.powerUnlockLevel) { this.room.sideQuest = null; return; }
         const sizes = Object.keys(GameConfig.blockShapeVariants).map(Number).filter(size => this.isBlockSizeUnlocked(size) && size >= 4);
         const options = sizes.map(size => ({ id: `place_${size}`, type: "place_size", size, label: `First to place a ${size}-cell block` }));
         options.push({ id: "exact_finish", type: "exact_finish", label: "First to finish exactly" });
-        this.room.sideQuest = { ...options[Math.floor(Math.random() * options.length)], claimedBy: null, rewardId: Object.keys(GameConfig.politicsCatalog)[Math.floor(Math.random() * 3)] };
+        this.room.sideQuest = { ...options[Math.floor(Math.random() * options.length)], claimedBy: null, rewardId: Object.keys(GameConfig.powerCatalog)[Math.floor(Math.random() * 3)] };
     }
 
     tryCompleteSideQuest(player, block, exactFinish) {
         const quest = this.room.sideQuest;
         if (!quest || quest.claimedBy) return;
         const complete = (quest.type === "place_size" && this.getBlockCellCount(block) === quest.size) || (quest.type === "exact_finish" && exactFinish);
-        if (!complete || player.politicsInventory.length >= GameConfig.politicsMaxSlots) return;
+        if (!complete || player.powerInventory.length >= GameConfig.powerMaxSlots) return;
         quest.claimedBy = player.id;
-        player.politicsInventory.push({ id: quest.rewardId, earnedLevel: this.room.level });
-        this.room.pendingPoliticsEvents.push({ id: `${this.room.level}:quest:${player.id}`, type: "politics_earned", playerId: player.id, politicsId: quest.rewardId, label: "Politics earned" });
+        player.powerInventory.push({ id: quest.rewardId, earnedLevel: this.room.level });
+        this.room.pendingPowerEvents.push({ id: `${this.room.level}:quest:${player.id}`, type: "power_earned", playerId: player.id, powerId: quest.rewardId, label: "Power earned" });
     }
 
-    activatePolitics(playerId, slot, targetPlayerId) {
+    activatePower(playerId, slot, targetPlayerId) {
         if (!this.room || this.room.state !== "playing") return false;
         if (this.getRemainingMs() <= 3000) return false;
         const player = this.room.players.find(p => p.id === playerId);
         const target = this.room.players.find(p => p.id === targetPlayerId);
         if (!player || !target || !Number.isInteger(Number(slot))) return false;
-        if (Date.now() - Number(player.lastPoliticsActivationTime || 0) < GameConfig.politicsActivationCooldownMs) return false;
-        const item = player.politicsInventory[Number(slot)];
+        if (Date.now() - Number(player.lastPowerActivationTime || 0) < GameConfig.powerActivationCooldownMs) return false;
+        const item = player.powerInventory[Number(slot)];
         if (!item) return false;
-        player.politicsInventory.splice(Number(slot), 1);
-        player.lastPoliticsActivationTime = Date.now();
+        player.powerInventory.splice(Number(slot), 1);
+        player.lastPowerActivationTime = Date.now();
         if (item.id === "copy_score") {
             target.score = player.score;
-            this.room.checkpointScores[target.id] = player.score;
+            this.room.impactScores[target.id] = player.score;
         }
-        if (item.id === "free_refresh") { if (target.refreshTokens < GameConfig.maxRefreshTokens) target.refreshTokens++; else target.blocks = this.generateRefreshBlocks(target.blocks || []); }
+        if (item.id === "refresh") {
+            target.blocks = this.generateRefreshBlocks(target.blocks || []);
+        }
         if (item.id === "score_cap") {
-            target.score = this.getCheckpointScoreStatus().players.find(p => p.id === target.id)?.requiredScore || target.score;
+            target.score = this.getImpactScoreStatus().players.find(p => p.id === target.id)?.requiredScore || target.score;
             target.scoreCap = null;
             target.scoreCapCasterId = null;
         }
-        this.room.pendingPoliticsEvents.push({ id: `${this.room.level}:politics:${Date.now()}`, type: "politics_activated", playerId, targetPlayerId, politicsId: item.id, label: GameConfig.politicsCatalog[item.id].title, meta: { tintTargetScore: item.id !== "free_refresh", tintTargetToken: item.id === "free_refresh", tintDurationMs: 4000 } });
+        this.room.pendingPowerEvents.push({ id: `${this.room.level}:power:${Date.now()}`, type: "power_activated", playerId, targetPlayerId, powerId: item.id, label: GameConfig.powerCatalog[item.id].title, meta: { tintTargetScore: true, tintDurationMs: 4000 } });
         this.persistRoom(); this.broadcastGameState(); return true;
     }
 
@@ -360,7 +357,6 @@ class GameEngine {
             player.levelScore = 0;
             player.scoreBreakdown = {};
             player.contributedHeight = 0;
-            player.refreshUsesThisLevel = 0;
             player.blocks = [];
             player.lastPlacementTime = 0;
             player.lastQuickChatTime = 0;
@@ -491,7 +487,7 @@ class GameEngine {
         const targetLevel = this.clampLevel(level);
 
         this.room.level = targetLevel;
-        this.room.checkpointLevel = targetLevel;
+        this.room.impactLevel = targetLevel;
         this.room.drawPile = [];
         this.room.teamCarryOverBlocks = [];
         this.room.towerBlocks = [];
@@ -506,20 +502,18 @@ class GameEngine {
         this.room.players.forEach(player => {
             if (options.resetScores) {
                 player.score = 0;
-                player.politicsInventory = [];
+                player.powerInventory = [];
             }
 
             player.levelScore = 0;
             player.scoreBreakdown = {};
             player.contributedHeight = 0;
-            player.refreshTokens = 0;
-            player.refreshUsesThisLevel = 0;
             player.blocks = [];
             player.lastPlacementTime = 0;
             player.botLoopLevel = null;
         });
 
-        this.saveCheckpointState();
+        this.saveImpactState();
         this.startLevel();
     }
 
@@ -613,48 +607,6 @@ class GameEngine {
         this.broadcastGameState();
     }
 
-    refreshBlocks(playerId) {
-        if (this.room.state !== "playing" && this.room.state !== "starting") {
-            console.log("Cannot refresh, level not active");
-            return;
-        }
-
-        const player =
-            this.room.players.find(p => p.id === playerId);
-
-        if (!player) {
-            console.log("Player not found");
-            return;
-        }
-
-        if (player.refreshTokens <= 0) {
-            console.log(`${player.id} has no refresh tokens`);
-            return;
-        }
-
-        if (player.refreshUsesThisLevel >= GameConfig.maxRefreshUsesPerLevel) {
-            console.log(`${player.id} used all refreshes this level`);
-            return;
-        }
-
-        if (
-            this.room.state === "playing" &&
-            this.getRemainingMs() <= GameConfig.refreshLockoutMs
-        ) {
-            console.log("Cannot refresh during final lockout");
-            return;
-        }
-
-        player.refreshTokens -= 1;
-        player.refreshUsesThisLevel += 1;
-
-        player.blocks = this.generateRefreshBlocks(player.blocks || []);
-
-        this.checkFailCondition();
-        this.persistRoom();
-        this.broadcastGameState();
-    }
-
     recalculateTowerStability() {
         const result = TowerStability.evaluate(this.room.towerBlocks || [], GameConfig);
         const previous = this.room.towerStability ?? 100;
@@ -715,18 +667,10 @@ class GameEngine {
     }
 
     anyPlayerCanRefresh() {
-        if (
-            this.room.state === "playing" &&
-            this.getRemainingMs() <= GameConfig.refreshLockoutMs
-        ) {
-            return false;
-        }
-
         return this.room.players.some(player => {
-            return (
-                player.refreshTokens > 0 &&
-                player.refreshUsesThisLevel < GameConfig.maxRefreshUsesPerLevel
-            );
+            return (player.powerInventory || []).some(item => {
+                return item && item.id === "refresh";
+            });
         });
     }
 
@@ -768,13 +712,6 @@ class GameEngine {
         const carriedBlockCount = this.prepareTeamCarryOverBlocks();
 
         const mvp = this.getLevelMVP();
-        this.awardRefreshToken(mvp);
-
-        if (exactFinish) {
-            this.room.players.forEach(player => {
-                this.awardRefreshToken(player);
-            });
-        }
 
         this.queueScoreEvent("mvp", {
             playerId: mvp.id,
@@ -840,7 +777,7 @@ class GameEngine {
         this.broadcastGameState();
 
         this.nextLevelTimer = setTimeout(() => {
-            this.rollbackToCheckpoint();
+            this.rollbackToImpact();
         }, this.getPostLevelTransitionDelayMs());
     }
 
@@ -853,22 +790,22 @@ class GameEngine {
         }
 
         const nextLevel = this.room.level + 1;
-        const opensCheckpoint = this.isCheckpointLevel(nextLevel);
+        const opensImpact = this.isImpactLevel(nextLevel);
 
         if (
-            opensCheckpoint &&
-            !this.hasMetCheckpointScoreRequirement(nextLevel)
+            opensImpact &&
+            !this.hasMetImpactScoreRequirement(nextLevel)
         ) {
-            this.failCheckpointScoreRequirement(nextLevel);
+            this.failImpactScoreRequirement(nextLevel);
             return;
         }
 
         this.room.level = nextLevel;
 
-        if (opensCheckpoint) {
-            this.awardCheckpointPolitics();
-            this.room.checkpointLevel = this.room.level;
-            this.saveCheckpointState();
+        if (opensImpact) {
+            this.awardImpactPower();
+            this.room.impactLevel = this.room.level;
+            this.saveImpactState();
         }
 
         this.startLevel();
@@ -918,31 +855,29 @@ class GameEngine {
     getBonusScoreEventType(label) { return Scoring.getBonusScoreEventType(this, label); }
     getBonusScoreEventLabel(label) { return Scoring.getBonusScoreEventLabel(this, label); }
     addLevelScoreToLeaderboard() { return Scoring.addLevelScoreToLeaderboard(this); }
-    awardRefreshToken(player) { return Scoring.awardRefreshToken(this, player); }
     getLevelMVP() { return Scoring.getLevelMVP(this); }
 
-    clonePoliticsInventory(items = []) { return Checkpoints.clonePoliticsInventory(this, items); }
-    saveCheckpointScores() { return Checkpoints.saveCheckpointScores(this); }
-    saveCheckpointPolitics() { return Checkpoints.saveCheckpointPolitics(this); }
-    saveCheckpointState() { return Checkpoints.saveCheckpointState(this); }
-    ensureCheckpointScores() { return Checkpoints.ensureCheckpointScores(this); }
-    ensureCheckpointPolitics() { return Checkpoints.ensureCheckpointPolitics(this); }
-    ensureCheckpointState() { return Checkpoints.ensureCheckpointState(this); }
-    restoreCheckpointScores() { return Checkpoints.restoreCheckpointScores(this); }
-    restoreCheckpointPolitics() { return Checkpoints.restoreCheckpointPolitics(this); }
-    awardCheckpointPolitics() { return Checkpoints.awardCheckpointPolitics(this); }
-    isCheckpointLevel(level) { return Checkpoints.isCheckpointLevel(this, level); }
-    getCheckpointScoreRequirement() { return Checkpoints.getCheckpointScoreRequirement(this); }
-    getCheckpointMinContributionShare() { return Checkpoints.getCheckpointMinContributionShare(this); }
-    getExpectedPlacementScoreForLevel(level) { return Checkpoints.getExpectedPlacementScoreForLevel(this, level); }
-    getExpectedPlacementScoreForCheckpointBand(blockedLevel) { return Checkpoints.getExpectedPlacementScoreForCheckpointBand(this, blockedLevel); }
-    getCheckpointBandScoreRequirement(blockedLevel) { return Checkpoints.getCheckpointBandScoreRequirement(this, blockedLevel); }
-    getCheckpointScoreFailures(blockedLevel) { return Checkpoints.getCheckpointScoreFailures(this, blockedLevel); }
-    getNextCheckpointLevel() { return Checkpoints.getNextCheckpointLevel(this); }
-    getCheckpointScoreStatus(blockedLevel = null) { return Checkpoints.getCheckpointScoreStatus(this, blockedLevel); }
-    hasMetCheckpointScoreRequirement(blockedLevel) { return Checkpoints.hasMetCheckpointScoreRequirement(this, blockedLevel); }
-    failCheckpointScoreRequirement(blockedLevel) { return Checkpoints.failCheckpointScoreRequirement(this, blockedLevel); }
-    rollbackToCheckpoint() { return Checkpoints.rollbackToCheckpoint(this); }
+    saveImpactScores() { return Impacts.saveImpactScores(this); }
+    saveImpactPowers() { return Impacts.saveImpactPowers(this); }
+    saveImpactState() { return Impacts.saveImpactState(this); }
+    ensureImpactScores() { return Impacts.ensureImpactScores(this); }
+    ensureImpactPowers() { return Impacts.ensureImpactPowers(this); }
+    ensureImpactState() { return Impacts.ensureImpactState(this); }
+    restoreImpactScores() { return Impacts.restoreImpactScores(this); }
+    restoreImpactPowers() { return Impacts.restoreImpactPowers(this); }
+    awardImpactPower() { return Impacts.awardImpactPower(this); }
+    isImpactLevel(level) { return Impacts.isImpactLevel(this, level); }
+    getImpactScoreRequirement() { return Impacts.getImpactScoreRequirement(this); }
+    getImpactMinContributionShare() { return Impacts.getImpactMinContributionShare(this); }
+    getExpectedPlacementScoreForLevel(level) { return Impacts.getExpectedPlacementScoreForLevel(this, level); }
+    getExpectedPlacementScoreForImpactBand(blockedLevel) { return Impacts.getExpectedPlacementScoreForImpactBand(this, blockedLevel); }
+    getImpactBandScoreRequirement(blockedLevel) { return Impacts.getImpactBandScoreRequirement(this, blockedLevel); }
+    getImpactScoreFailures(blockedLevel) { return Impacts.getImpactScoreFailures(this, blockedLevel); }
+    getNextImpactLevel() { return Impacts.getNextImpactLevel(this); }
+    getImpactScoreStatus(blockedLevel = null) { return Impacts.getImpactScoreStatus(this, blockedLevel); }
+    hasMetImpactScoreRequirement(blockedLevel) { return Impacts.hasMetImpactScoreRequirement(this, blockedLevel); }
+    failImpactScoreRequirement(blockedLevel) { return Impacts.failImpactScoreRequirement(this, blockedLevel); }
+    rollbackToImpact() { return Impacts.rollbackToImpact(this); }
 }
 
 module.exports = GameEngine;
