@@ -19,7 +19,7 @@
 - `src/Server/Bot_Manager.js`: QA bot action loops and placement behavior. -> [[Bot Manager]]
 - `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd`: Godot WebSocket adapter with reconnect identity persistence. -> [[NetworkManager]]
 - `.github/workflows/Client-Android-Internal.yml`: Android internal-testing build/upload. -> [[Client Android Internal Workflow]]
-- `docs/components/K3s Manual Learning Plan.md`: phase-gated manual Server K3s plan with rollback checks. -> [[K3s Manual Learning Plan]]
+- `.github/workflows/Client-HTML5-Pages.yml`: Godot Web export deploy to GitHub Pages. -> [[Client HTML5 Pages]]
 - `.github/workflows/Server-K3s-Deploy.yml`: Server K3s deploy and public WebSocket smoke test. -> [[Server K3s Workflows]]
 - `.github/workflows/Server-K3s-Automated-Master.yml`: automatic/manual Server K3s deploy queue. -> [[Server K3s Automated Master Workflow]]
 - `.github/workflows/Server-EKS-Infra-Plan.yml`: plan-only managed AWS Server EKS path. -> [[Server EKS Workflow]]

@@ -12,6 +12,9 @@ calls before a server image build/deploy.
 - Verify level-summary banking behavior for failed levels.
 - Verify debug-config clamping for popup and summary durations.
 - Verify quick-chat event and cooldown contracts.
+- Verify refresh-block upgrade (size 1–2 → unlocked size 3+) and reroll
+  (size 3+ keeps size) behavior.
+- Verify checkpoint politics snapshot/rollback behavior.
 
 ## Public interface
 Run via `npm test` (or `node --test Score_Events.test.js`) from
@@ -19,7 +22,8 @@ Run via `npm test` (or `node --test Score_Events.test.js`) from
 Currently 11 tests, all passing.
 
 ## Depends on
-- Internal: [[Game Engine]], [[Game Config]], [[Lobby Manager]]
+- Internal: [[Game Engine]], [[Game Config]], [[Lobby Manager]],
+  [[Tower Stability]] (directly required; exercised by a block-settling test)
 - External: `node:test`, `node:assert/strict` (both Node built-ins)
 
 ## Notes

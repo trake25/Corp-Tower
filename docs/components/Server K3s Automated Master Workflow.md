@@ -23,9 +23,10 @@
   - Server K3s workflow files used by the master queue
 - Server or Kustomize app changes use the fast deploy path.
 - Ansible changes run diagnostics before deploy.
-- Terraform changes run infra plan and stop if create/delete/replace actions are planned.
+- Terraform changes run infra plan only (via the reusable `Server-K3s-Infra-Plan.yml` call) for manual review — the plan is not auto-rejected here even if it contains delete/replace actions; that gate lives only in `Server-K3s-Infra-Apply.yml`, which this workflow never calls.
 - Workflow changes run diagnostics and infra plan.
 
 ## Notes
 - Use manual `fast_server_deploy` for immediate K3s redeploys when you do not want to wait for a push-triggered run.
 - Use manual `full_preflight` after K3s infrastructure restarts, Ansible changes, workflow changes, or uncertainty about current lab health.
+- Concurrency group `server-k3s-automated-master-<ref>` queues overlapping runs instead of canceling them (`cancel-in-progress: false`), unlike `Server-K3s-Deploy.yml`'s own group.

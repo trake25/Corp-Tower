@@ -9,7 +9,8 @@
 - Download Godot `4.6.2.stable` Linux.
 - Install Android SDK packages through `android-actions/setup-android`.
 - Resolve the next Android version code from Google Play.
-- Restore release keystore from secrets.
+- Restore release keystore from secrets (`ANDROID_RELEASE_KEYSTORE_ALIAS`,
+  `ANDROID_RELEASE_KEYSTORE_PASSWORD`, `ANDROID_RELEASE_KEYSTORE_BASE64`).
 - Import/parse Godot project.
 - Run the always-on Godot client compile/startup smoke test.
 - Run required GUT tests.

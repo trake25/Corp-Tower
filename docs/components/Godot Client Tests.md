@@ -14,9 +14,7 @@ Godot-side client smoke and unit-test coverage. Files:
 
 ## Public interface
 Run headlessly through the vendored GUT framework (`addons/gut`), invoked by
-[[Client Android Internal Workflow]] before a signed Android export. Not
-run locally in this pass — Godot isn't installed in the working sandbox;
-this mirrors what CI already does on push.
+[[Client Android Internal Workflow]] before a signed Android export.
 
 ## Depends on
 - Internal: [[Godot Client App]], [[NetworkManager]], [[Main UI Controller]],

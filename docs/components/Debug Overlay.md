@@ -9,8 +9,9 @@ Lightweight show/hide shell for the Godot debug-tuning panel. File:
 - Keep the dim layer and panel visibility in sync.
 
 ## Public interface
-- Open/close toggle driven by [[Main UI Controller]]'s debug button handler;
-  this script owns no gameplay or config state itself.
+- `set_open(open: bool)`, `toggle()` — open/close the panel; driven by
+  [[Main UI Controller]]'s debug button handler. This script owns no
+  gameplay or config state itself.
 
 ## Depends on
 - Internal: none
@@ -25,3 +26,7 @@ Lightweight show/hide shell for the Godot debug-tuning panel. File:
 - Referenced by both [[Client UI Skins]] scenes, so it's part of the current
   runtime; core gameplay could run without it if the skins/controller were
   adjusted to drop debug tuning entirely.
+- Expects two unique-named descendants, `%DebugDimLayer` and `%DebugPanel`,
+  within its own node tree (`unique_name_in_owner`) — any new skin must
+  replicate these exact unique names or toggling silently does nothing for
+  that piece.

@@ -19,13 +19,15 @@ A single exported object, `GameConfig`, grouped as:
   `quickChatCooldownMs` / `quickChatTemplates`, `targetHeightCurve` /
   `targetHeightMultiplier`, `startDelayMs`, `levelTimeLimitMs`,
   `placementScorePopupDurationMs`, `finishScorePopupDurationMs`,
-  `levelSummaryDelayMs`.
-- **Tower stability settings** — `towerGridWidth`, `towerPlacementMode`,
-  `towerOverhangWeight`, `towerMaxTiltAngleDeg`, `towerCollapseTiltScore`,
+  `levelSummaryDelayMs`, `checkpointInterval`.
+- **Tower stability settings** — `towerGridWidth`, `towerOverhangWeight`,
+  `towerMaxTiltAngleDeg`, `towerCollapseTiltScore`,
   `towerStabilityWarningThreshold`, `towerStabilityCriticalThreshold`,
-  `towerStabilityFeedbackMode`. Consumed by [[Tower Stability]] (the first
-  three) and [[Game Engine]] (the thresholds/feedback mode). See Notes for
-  what each tuning knob actually does.
+  `towerStabilityFeedbackMode`. Consumed by [[Tower Stability]]
+  (`towerOverhangWeight`/`towerMaxTiltAngleDeg`/`towerCollapseTiltScore`) and
+  [[Game Engine]] (the thresholds/feedback mode). See Notes for what each
+  tuning knob actually does. `towerPlacementMode` is also defined here but is
+  dead/unused — see Notes.
 - **Politics settings** — `politicsUnlockLevel`, `politicsMaxSlots`,
   `politicsActivationCooldownMs`, `politicsLifetime`, and `politicsCatalog`
   (currently `score_cap`, `copy_score`, `free_refresh`, each with a
@@ -59,6 +61,11 @@ A single exported object, `GameConfig`, grouped as:
 - Server validates debug changes ([[Lobby Manager]]) before mutating this
   object; production should restrict debug writes behind admin permissions
   later (not yet implemented).
+- `towerPlacementMode`, `nextLevelDelayMs`, and `failRestartDelayMs` are
+  unused/dead keys — nothing in `src/Server` reads them. The actual
+  post-level transition delay is `getPostLevelTransitionDelayMs()` (score-
+  popup duration + `levelSummaryDelayMs`), not `nextLevelDelayMs`/
+  `failRestartDelayMs`.
 - Balance and score distribution can be inspected with
   `npm run balance:simulate -- <levels> <runs>` from `src/Server` ([[Balance Simulator]]).
 - Tower-stability tuning knob rationale (moved here from inline code comments,

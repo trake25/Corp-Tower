@@ -14,10 +14,12 @@ QA/testing bot action scheduler. File: `src/Server/Bot_Manager.js`.
 ## Public interface
 - `startBots(engine)` — stops any existing bot timers, then starts one loop
   per bot in the room.
-- `stopBot(bot)` — clears the bot's pending timeout and loop-level tracking.
-- Internally: `runBotLoop` (schedules and re-validates on each tick) and
-  `chooseBotAction` (strategy dispatch) are not called from outside this
-  file.
+- `stopBots(engine)` — stops all bot timers for bots currently in
+  `engine.room`; the actual method [[Game Engine]] calls (on room
+  close/restart/stop). Internally calls `stopBot(bot)` per bot.
+- Internally: `stopBot(bot)` (per-bot timer/tracking cleanup), `runBotLoop`
+  (schedules and re-validates on each tick), and `chooseBotAction` (strategy
+  dispatch) are not called from outside this file.
 
 ## Depends on
 - Internal: [[Game Config]], [[Game Engine]]

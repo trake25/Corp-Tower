@@ -10,8 +10,9 @@ binds their required nodes to function at all.
 ## Responsibilities
 - Provide the required node contract [[Main UI Controller]] binds against.
 - Host HUD, inventory, radial cooldown overlays, quick-chat controls,
-  draw-pile preview, tower, tower drop zone, drag preview, score, summary,
-  skin picker, and debug overlay nodes.
+  politics target/inventory and quest-label nodes, draw-pile preview, tower,
+  tower drop zone, drag preview, score, summary, skin picker, and debug
+  overlay nodes.
 - Allow runtime switching between `DefaultSkin` and `Figma_SkinV1`.
 
 ## Public interface
@@ -33,3 +34,6 @@ expects to find and bind when it loads a skin. The two required drag nodes:
   Figma-inspired reskin. Both must expose the same node contract so
   [[Main UI Controller]] can switch between them at runtime without special
   cases.
+- The `.tres` theme resources are currently empty placeholders (zero
+  properties) — all real styling is inline `theme_override_*` properties on
+  individual scene nodes, not the shared Theme resource.

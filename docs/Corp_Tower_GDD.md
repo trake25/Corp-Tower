@@ -22,7 +22,7 @@
 
 ## Reconnect and Shared Room Continuity
 - Players receive a persistent server-issued player id and reconnect token.
-- If a player disconnects and reconnects within 10 seconds during staging/debug testing, the server resumes the same player slot in the same room.
+- If a player disconnects and reconnects within the reconnect TTL (default 60 seconds, configurable via `RECONNECT_TTL_SECONDS`), the server resumes the same player slot in the same room.
 - The client must be able to display/retain the current room id after room creation or resume.
 - Routing is transparent to players: the learning gateway should usually route a WebSocket to one worker server, but any healthy worker can recover the room/player session from shared Redis state.
 - Redis is the authoritative shared state layer for active matchmaking, room/session lookup, reconnect identity, and room ownership across horizontally scaled server workers.

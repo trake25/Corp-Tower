@@ -10,7 +10,8 @@ Android-first game client for Corp Tower. Project root:
 - Render room, level, timer, tower height/progress, placed-block tower
   stack, score, shape inventory, refresh UI, score popups, and level
   summaries.
-- Send player actions.
+- Send player actions, including quick-chat messages and politics item
+  activation.
 - Reflect server state rather than calculating final gameplay locally.
 
 ## Public interface
@@ -40,7 +41,8 @@ externally:
   ([[Tower Stack]]).
 - Score feedback uses server `scoreEvents`; level-end results use server
   `lastLevelSummary` after score popups fade.
-- Debug tuning is exposed through a floating tabbed overlay when enabled for
-  staging/debug builds ([[Debug Overlay]]).
+- Debug tuning is exposed through a floating tabbed overlay, gated by the
+  `SHOW_DEBUG_UI` constant in `Main.gd` — currently hardcoded on for every
+  build, not just staging/debug ([[Debug Overlay]]).
 - Gameplay balancing is expected to change after further shape-block testing
   (see [[Balance Simulator]]).

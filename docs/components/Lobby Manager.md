@@ -32,15 +32,18 @@ Matchmaking, room lifecycle, and runtime debug-config coordinator. File:
 - `updateDebugConfig(key, value)` — validates and applies one debug tuning
   change; only known keys are accepted, numeric values are clamped, see Notes
   for specifics. Broadcasts `debug_config` on success.
+- `start()`, `createPlayer(ws, reconnectRequest)`, `broadcastDebugConfig()`,
+  `removePlayer(player)` — the actual integration points [[Server Entry]]
+  calls directly to drive the connection lifecycle.
 
 ## Depends on
-- Internal: [[Game Engine]], [[Game Config]]. [[Bot Manager]] indirectly,
-  through the engine it starts.
-- External: none directly (Redis access goes through [[Redis State]] when
-  the caller wires it in).
+- Internal: [[Game Engine]], [[Game Config]], [[Redis State]] (required and
+  default-instantiated, not just optionally wired in by the caller).
+  [[Bot Manager]] indirectly, through the engine it starts.
+- External: none directly.
 
 ## Notes
-- Reconnect TTL is currently 10 seconds (`RECONNECT_TTL_SECONDS`) — a staging
+- Reconnect TTL default is 60 seconds (`RECONNECT_TTL_SECONDS`) — a staging
   value, not necessarily final for production.
 - `updateDebugConfig` clamps `placementScorePopupDurationMs` /
   `finishScorePopupDurationMs` to 500–10000 ms and `levelSummaryDelayMs` to

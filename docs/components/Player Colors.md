@@ -12,6 +12,9 @@ Shared Godot color utility for player-owned UI elements. File:
 ## Public interface
 - `color_for_player_id(player_id: String) -> Color` — the color to render for
   that player, consistent across the session.
+- `color_for_player_index(player_index: int) -> Color` — seat-order color
+  lookup; wraps around `PLAYER_COLORS`, returns `FALLBACK_COLOR` for negative
+  indexes. Used by [[Main UI Controller]]'s `update_player_color_map()`.
 - `FALLBACK_COLOR: Color` — constant used whenever a player id can't be
   resolved.
 

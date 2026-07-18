@@ -18,3 +18,5 @@ infra/eks/terraform/eks-lab.tfvars
 *.docx.bak
 *.exe
 /.cursor
+CLAUDE.md
+.claude/commands/

@@ -35,3 +35,6 @@ the WebSocket message protocol:
 - Server is authoritative; client requests are never trusted as final state.
 - JSON parse failures on incoming messages are logged and ignored rather than
   crashing the connection.
+- Every new connection triggers a `debug_config` broadcast to all connected
+  real players (`lobbyManager.broadcastDebugConfig()` on first message), not
+  just on config changes.

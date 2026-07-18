@@ -30,6 +30,10 @@
   - server deployment with two replicas
   - `ecr-pull` image pull secret refreshed by workflow
   - fixed NodePort `30300/tcp`
+  - `Server-K3s-Deploy.yml` generates an uncommitted `overlays/runtime`
+    Kustomize overlay on top of `overlays/lab` at deploy time to inject the
+    real ECR image tag — the committed `lab-placeholder` tag in
+    `overlays/lab` is never what actually runs.
 
 ## Dependencies
 - [[Server K3s Workflows]]
@@ -39,3 +43,7 @@
 ## Notes
 - `ws.tod.galaxxigames.com` currently points to the active Server K3s gateway via Cloudflare DNS.
 - EC2-GW uses Docker only to run the Caddy gateway container; the game server workload runs in K3s.
+- Known issue: `infra/k3s/argocd/bootstrap/application.yaml`'s
+  `spec.source.targetRevision` is pinned to an already-merged feature branch
+  instead of `main`. Harmless while Argo CD manifests stay unapplied, but fix
+  this before ever enabling Argo CD or syncs will track the wrong ref.

@@ -19,6 +19,9 @@
 ## Constraints
 - This stack currently has a plan workflow only.
 - No apply or deploy workflow should be added until the plan output and expected monthly/free-tier cost impact are reviewed.
+- The NLB target group has no pod/node registration mechanism yet — no Load
+  Balancer Controller or IRSA OIDC provider exists in this Terraform root.
+  That wiring is unimplemented, another reason apply/deploy isn't ready.
 
 ## Links
 - [[Server EKS Workflow]]

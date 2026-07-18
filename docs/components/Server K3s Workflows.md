@@ -6,10 +6,10 @@
 ## Workflows
 - `Server-K3s-Automated-Master.yml`: Server K3s equivalent of the staging automated master, with full preflight, fast server deploy, and infra-plan-only modes.
 - `Server-K3s-Infra-Plan.yml`: plans the isolated K3s Terraform root and allows create/delete actions to be reviewed manually.
-- `Server-K3s-Infra-Apply.yml`: applies reviewed Server K3s infrastructure after `APPLY_SERVER_K3S`.
+- `Server-K3s-Infra-Apply.yml`: applies reviewed Server K3s infrastructure after `APPLY_SERVER_K3S`. Plans first and hard-fails if the plan contains any delete/replace action — use `Server-K3s-Cleanup.yml`'s `terraform_destroy` first if a plan would replace/delete resources.
 - `Server-K3s-Deploy.yml`: tests server code, builds/pushes the Docker image, installs/configures K3s, refreshes ECR pull credentials, applies the Kustomize overlay, and runs a public WSS smoke test.
 - `Server-K3s-Diagnostics.yml`: inspects tagged lab AWS resources, verifies Cloudflare DNS points at the K3s gateway, and probes SSH through the gateway bastion.
-- `Server-K3s-Cleanup.yml`: runtime cleanup removes K3s/Caddy artifacts; `terraform_destroy` removes AWS resources managed by `infra/k3s/terraform` after `DESTROY_SERVER_K3S`.
+- `Server-K3s-Cleanup.yml`: `runtime_only` mode removes K3s/Caddy artifacts and requires `confirm_cleanup=CLEANUP_SERVER_K3S`; `terraform_destroy` mode removes AWS resources managed by `infra/k3s/terraform` and requires `confirm_cleanup=DESTROY_SERVER_K3S`.
 
 ## Automated Master
 - Manual `full_preflight`: `Diagnostics -> Infra Plan -> K3s Deploy`.
@@ -41,6 +41,6 @@
 
 ## Notes
 - Workflows use the existing GitHub `staging` Environment to avoid duplicating secret names.
-- K3s deploy and diagnostics are reusable workflow calls so `Server-K3s-Automated-Master.yml` can orchestrate them.
+- K3s deploy, diagnostics, and infra plan are all reusable workflow calls so `Server-K3s-Automated-Master.yml` can orchestrate them.
 - Server K3s owns automatic server-push deployment while the lab is live.
 - Argo CD is prepared in manifests only; no K3s workflow installs or exposes it.

@@ -28,11 +28,15 @@ signature-level):
 - **Placement** — `placeBlock(playerId, blockIndex)`, `refreshBlocks(playerId)`.
 - **Scoring** — `addPlacementScore(...)`, `awardCompletionBonuses(...)`,
   `addLevelScoreToLeaderboard()`, `getLevelMVP()`, `buildLevelSummary(...)`.
-- **Checkpoints** — `saveCheckpointState()`, `restoreCheckpointState()`,
-  `rollbackToCheckpoint()`.
+- **Checkpoints** — `saveCheckpointState()`, `restoreCheckpointScores()`,
+  `restoreCheckpointPolitics()`, `rollbackToCheckpoint()`.
 - **Side features** — `setupSideQuest()`, `activatePolitics(...)`.
 - **Stability** — `recalculateTowerStability()` (delegates the actual math to
   [[Tower Stability]]).
+- **Called by [[Lobby Manager]]** — `stopBots()`, `broadcastGameState()`,
+  `getCheckpointScoreStatus()`, `getBlocksPerPlayer()`, `getNextDrawBlock()`
+  (room metadata/inventory for `room_created`/`room_resumed`, plus lifecycle
+  control).
 
 ## Depends on
 - Internal: [[Game Config]], [[Tower Stability]], [[Bot Manager]],

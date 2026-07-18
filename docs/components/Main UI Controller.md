@@ -16,7 +16,11 @@ File: `src/Client/App/corp-tower/Cor/Scripts/Main.gd`.
   history.
 - Render score popups from server `scoreEvents` and level-end summaries from
   `lastLevelSummary`.
-- Send block and refresh actions.
+- Render quick-chat buttons/cooldown and politics inventory; build dynamic
+  per-player politics-target buttons and the drag-to-target flow; process
+  `quickChatEvents`/politics activation results into popups and score/token
+  tint feedback.
+- Send block, refresh, quick-chat, and politics actions.
 - Load the selected UI skin and bind the shared skin node contract; switch
   skins at runtime without touching gameplay/network logic.
 - Host debug tuning through an overlay instead of embedding it in gameplay
@@ -85,3 +89,5 @@ File: `src/Client/App/corp-tower/Cor/Scripts/Main.gd`.
 - Has no behavioral test coverage (see [[Godot Client Tests]]) — sizable
   changes here are currently verified by manual play-testing / CI's smoke
   test, not automated regression tests.
+- `prepare_active_skin()` push_errors and falls back to `DefaultSkin` if the
+  loaded skin is missing a node `require_node()` expects.

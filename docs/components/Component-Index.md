@@ -26,14 +26,11 @@
 
 ## CI/CD And Infrastructure
 - [[Client Android Internal Workflow]]
+- [[Client HTML5 Pages]]
 - [[Terraform Infrastructure]]
-- [[K3s Manual Learning Plan]]
 - [[Server K3s Stack]]
 - [[Server K3s Workflows]]
 - [[Server K3s Automated Master Workflow]]
-- [[Server EKS Stack]]
-- [[Server EKS Workflow]]
 
 ## Global
 - [[Summary]]
-- [[Changelog]]

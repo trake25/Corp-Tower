@@ -36,7 +36,7 @@ flowchart LR
 | Module | One-line | Depends on |
 |---|---|---|
 | [[Server Entry]] | WebSocket process entry point; routes messages | [[Lobby Manager]] |
-| [[Lobby Manager]] | Matchmaking, room lifecycle, debug-config coordinator | [[Game Engine]], [[Game Config]], [[Bot Manager]] (indirect) |
+| [[Lobby Manager]] | Matchmaking, room lifecycle, debug-config coordinator | [[Game Engine]], [[Game Config]], [[Bot Manager]] (indirect), [[Redis State]] |
 | [[Game Engine]] | Authoritative per-room gameplay rules and level lifecycle | [[Game Config]], [[Tower Stability]], [[Bot Manager]], [[Lobby Manager]] (notify-only) |
 | [[Tower Stability]] | Pure grid-settling and stability scoring | none |
 | [[Bot Manager]] | Debug bot action scheduler | [[Game Config]], [[Game Engine]] |
@@ -63,27 +63,21 @@ flowchart LR
 
 ## Infrastructure & CI/CD
 
-Audited at a lighter depth this pass (see the note in `CLEANUP_AUDIT_AND_PLAN.md`);
-listed here for completeness, one line each, unchanged from before this
-cleanup pass:
-
-| Module | One-line |
-|---|---|
-| [[Client Android Internal Workflow]] | Builds/tests the Godot client, signs an internal Android build |
-| [[Terraform Infrastructure]] | Terraform module map for the active K3s and plan-only EKS stacks |
-| [[Server K3s Stack]] | Active self-hosted K3s-on-EC2 server infrastructure |
-| [[Server K3s Workflows]] | CI workflows that deploy/diagnose/clean up the K3s stack |
-| [[Server K3s Automated Master Workflow]] | Orchestrates the individual K3s workflows |
-| [[Server EKS Stack]] | Parallel, plan-only AWS EKS infrastructure path (not yet applied) |
-| [[Server EKS Workflow]] | CI workflow for the EKS plan-only path |
-| [[K3s Manual Learning Plan]] | Notes from manually learning the K3s stack |
+| Module | One-line | Depends on |
+|---|---|---|
+| [[Client Android Internal Workflow]] | Builds/tests the Godot client, signs an internal Android build | [[Godot Client App]] |
+| [[Client HTML5 Pages]] | Builds/exports the Godot client and deploys it to GitHub Pages | [[Godot Client App]] |
+| [[Terraform Infrastructure]] | Terraform root map for the active K3s and plan-only EKS stacks | — |
+| [[Server K3s Stack]] | Active self-hosted K3s-on-EC2 server infrastructure | [[Terraform Infrastructure]] |
+| [[Server K3s Workflows]] | CI workflows that deploy/diagnose/clean up the K3s stack | [[Server K3s Stack]] |
+| [[Server K3s Automated Master Workflow]] | Orchestrates the individual K3s workflows | [[Server K3s Workflows]] |
+| [[Server EKS Stack]] | Parallel, plan-only AWS EKS infrastructure (not yet applied) | [[Terraform Infrastructure]] |
+| [[Server EKS Workflow]] | CI workflow for the EKS plan-only path | [[Server EKS Stack]] |
 
 ## Global
 
-- [[Summary]] — project status, current focus, "fast start" pointers
+- [[Summary]] — project status, game systems index, component map, "fast start" pointers
 - [[Corp_Tower_GDD]] — game design document
 - [[Corp_Tower_TDD]] — technical design document (system architecture,
   message contracts, testing strategy, future technical work)
-- `Changelog` — linked from Summary and Component-Index, but not present as
-  a file in this repo as of this pass (pre-existing gap, not introduced by
-  this cleanup)
+- `Changelog` — referenced by [[Component-Index]]; no file exists yet.

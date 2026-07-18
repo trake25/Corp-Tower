@@ -19,11 +19,15 @@ matchmaking/room state. File: `src/Server/Redis_State.js`.
 - Session methods — store/read reconnect token ↔ player/room mapping with
   TTL.
 - Room snapshot methods — read/write serializable room state (strips live
-  WebSocket references before storing).
+  WebSocket references before storing). `saveRoom(room, renewLease)` takes an
+  optional `renewLease` flag (see room-lease methods below).
 - Matchmaking queue methods — shared waiting-player queue, with a lock to
   stop two workers creating the same room.
 - Pub/sub methods — publish room events tagged with the source pod/worker id
   so a worker can ignore its own echo.
+- Room lease methods — `claimRoomLease(roomId)` / `getRoomLeaseOwner(roomId)`,
+  backed by `ROOM_LEASE_SECONDS`; decide which pod owns a hydrated room's
+  timers. Used by [[Lobby Manager]]'s `hydrateRoom` (`canOwnTimers` check).
 - `getPodId()` / `getReconnectTtlSeconds()` — accessors used by
   [[Lobby Manager]] for logging/TTL decisions.
 
@@ -48,3 +52,5 @@ matchmaking/room state. File: `src/Server/Redis_State.js`.
 - Falls back to in-memory maps when `REDIS_URL` is not configured, so the
   server (and [[Balance Simulator]], which never goes through this file)
   keeps working in single-worker/local setups.
+- Only the pod holding a room's lease should run that room's timers — other
+  pods may still read/hydrate the room's state without owning its clock.

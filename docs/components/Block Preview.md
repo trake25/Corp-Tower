@@ -14,12 +14,15 @@ never decides placement legality or gameplay state.
   server payload.
 
 ## Public interface
-- Two display modes: `INVENTORY` (compact card preview for inventory slots
-  and the draw pile) and `FLOATING_DRAG` (larger pointer-following preview
-  used while dragging a block toward the tower).
-- Set via the block-preview node's exposed properties/setter (cells, mode,
-  enabled state) — driven entirely by [[Main UI Controller]]; this component
-  holds no gameplay state of its own.
+- `set_block(block: Dictionary)` — sets the cells to draw.
+- `clear_block()` — clears the current preview.
+- `set_preview_mode(mode: PreviewMode)` — `PreviewMode` enum:
+  `{INVENTORY, FLOATING_DRAG}`. `INVENTORY` is the compact card preview for
+  inventory slots and the draw pile; `FLOATING_DRAG` is the larger
+  pointer-following preview shown while dragging a block toward the tower.
+- `cell_color: Color` — public var set directly by callers.
+- Driven entirely by [[Main UI Controller]]; this component holds no
+  gameplay state of its own.
 
 ## Depends on
 - Internal: none

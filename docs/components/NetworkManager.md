@@ -23,6 +23,8 @@ registered as an autoload singleton.
 - **Signals**: `status_changed(text)`, `room_joined(data)`,
   `room_closed(data)`, `game_state_updated(data)`, `client_status(status)`,
   `debug_config_updated(config)`.
+- **State**: `is_conn_estab: bool`, `player_id: String` — read directly by
+  [[Main UI Controller]] in several places, not only observed via signals.
 
 ## Depends on
 - Internal: none
@@ -31,11 +33,12 @@ registered as an autoload singleton.
 ## Notes
 - Connects to `wss://ws.tod.galaxxigames.com`. Sends `reconnect` with the
   stored `playerId`/`reconnectToken` immediately after the socket opens.
-- Tracks `game_state.players[].isBot` to only enable auto-reconnect when the
-  last known room had no bots (bot-filled debug rooms aren't worth
-  reconnecting into).
+- Tracks `game_state.players[].isBot` and player count to only enable
+  auto-reconnect when the last known room was full (3 players) and had no
+  bots (bot-filled or understaffed debug rooms aren't worth reconnecting
+  into).
 - Retries unintended disconnects with a short delay and a finite attempt
-  count; suppresses auto-reconnect after a manual disconnect, app close, or
+  count; suppresses auto-reconnect after a manual disconnect or a
   server-sent `room_closed`.
 - The server remains authoritative — this file only updates UI state after a
   server message arrives, never optimistically. It doesn't interpret block
