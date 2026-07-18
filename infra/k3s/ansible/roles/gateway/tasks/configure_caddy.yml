@@ -29,10 +29,7 @@
 - name: Start or reload Server K3s Caddy gateway
   ansible.builtin.shell: |
     set -euo pipefail
-    if sudo docker inspect corp-tower-k3s-caddy >/dev/null 2>&1; then
-      sudo docker exec corp-tower-k3s-caddy caddy reload --config /etc/caddy/Caddyfile
-      exit 0
-    fi
+    sudo docker rm -f corp-tower-k3s-caddy >/dev/null 2>&1 || true
 
     sudo docker run -d \
       --name corp-tower-k3s-caddy \
