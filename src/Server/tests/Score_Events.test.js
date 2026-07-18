@@ -1,10 +1,10 @@
 const assert = require("node:assert/strict");
 const { afterEach, test } = require("node:test");
 
-const GameConfig = require("./Game_Config");
-const GameEngine = require("./Game_Engine");
-const LobbyManager = require("./Lobby_Manager");
-const TowerStability = require("./Tower_Stability");
+const GameConfig = require("../app/Game_Config");
+const GameEngine = require("../app/Game_Engine");
+const LobbyManager = require("../app/Lobby_Manager");
+const TowerStability = require("../app/Tower_Stability");
 
 const originalGameConfig = {
     placementCooldown: GameConfig.placementCooldown,

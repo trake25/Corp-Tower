@@ -29,3 +29,6 @@
 # OS junk
 Thumbs.db
 .DS_Store
+
+# Editor temp files
+*.tmp

@@ -1,5 +1,5 @@
-const GameEngine = require("./Game_Engine");
-const TowerStability = require("./Tower_Stability");
+const GameEngine = require("../app/Game_Engine");
+const TowerStability = require("../app/Tower_Stability");
 
 const DEFAULT_LEVELS = 20;
 const DEFAULT_RUNS = 1000;
@@ -121,7 +121,7 @@ function simulateSmartPlay(engine) {
         placement.player.contributedHeight += effectiveHeight;
         engine.room.currentHeight = newHeight;
         engine.room.towerBlocks.push({ playerId: placement.player.id, block, ...placementPosition });
-        const structure = TowerStability.evaluate(engine.room.towerBlocks, require("./Game_Config"));
+        const structure = TowerStability.evaluate(engine.room.towerBlocks, require("../app/Game_Config"));
         engine.room.towerStability = structure.stability;
         if (structure.stability <= 0) {
             return { completed: false, collapsed: true, placements: placements + 1, ...getScoreSummary(engine) };
