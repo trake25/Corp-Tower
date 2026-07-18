@@ -125,43 +125,47 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="CenterColumns" type="HBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin"]
+[node name="CenterColumnsScroll" type="ScrollContainer" parent="SafeArea/Root/CenterStage/CenterMargin"]
+layout_mode = 2
+vertical_scroll_mode = 0
+
+[node name="CenterColumns" type="HBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="PowerPanel" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns"]
+[node name="PowerPanel" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 
-[node name="PowerQuestLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/PowerPanel"]
+[node name="PowerQuestLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/PowerPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 3
 text = "Power Quest\nUnlocks at Level 4"
 
-[node name="PowerTargetBox" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/PowerPanel"]
+[node name="PowerTargetBox" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/PowerPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerColumn" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns"]
+[node name="TowerColumn" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="TowerStatusLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/TowerColumn"]
+[node name="TowerStatusLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 text = "Connect to start"
 
-[node name="TowerTrack" type="Panel" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/TowerColumn"]
+[node name="TowerTrack" type="Panel" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn"]
 custom_minimum_size = Vector2(260, 220)
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"TowerTrackPanel"
 
-[node name="TowerFill" type="Panel" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/TowerColumn/TowerTrack"]
+[node name="TowerFill" type="Panel" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn/TowerTrack"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 12
@@ -172,7 +176,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_type_variation = &"TowerFillPanel"
 
-[node name="TowerStack" type="Control" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/TowerColumn/TowerTrack"]
+[node name="TowerStack" type="Control" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn/TowerTrack"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -183,7 +187,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("3_towerstack")
 
-[node name="TowerDropZone" type="Control" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/TowerColumn/TowerTrack"]
+[node name="TowerDropZone" type="Control" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn/TowerTrack"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -193,7 +197,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="TowerValueLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/TowerColumn/TowerTrack"]
+[node name="TowerValueLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn/TowerTrack"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
@@ -212,37 +216,37 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text = "0 / 0"
 
-[node name="HeightLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/TowerColumn" unique_id=727880221]
+[node name="HeightLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn" unique_id=727880221]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 horizontal_alignment = 1
 text = "Height 0/0"
 
-[node name="ScorePanel" type="PanelContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns"]
+[node name="ScorePanel" type="PanelContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns"]
 custom_minimum_size = Vector2(210, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_type_variation = &"ActionCardPanel"
 
-[node name="ScoreMargin" type="MarginContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel"]
+[node name="ScoreMargin" type="MarginContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="ScoreRows" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin"]
+[node name="ScoreRows" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="ScoreTitle" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
+[node name="ScoreTitle" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 horizontal_alignment = 1
 text = "Scores"
 
-[node name="ScoreLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin/ScoreRows" unique_id=1265606165]
+[node name="ScoreLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin/ScoreRows" unique_id=1265606165]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"InfoLabel"
@@ -250,11 +254,11 @@ vertical_alignment = 0
 autowrap_mode = 3
 text = "Waiting for players"
 
-[node name="ImpactSeparator" type="HSeparator" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
+[node name="ImpactSeparator" type="HSeparator" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
 visible = false
 layout_mode = 2
 
-[node name="ImpactStatusLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
+[node name="ImpactStatusLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -264,7 +268,7 @@ horizontal_alignment = 0
 autowrap_mode = 3
 text = "Impact"
 
-[node name="TowerStabilityLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
+[node name="TowerStabilityLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
@@ -297,18 +301,22 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 16
 text = "Inventory"
 
-[node name="ActionRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
+[node name="ActionRowScroll" type="ScrollContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
+layout_mode = 2
+vertical_scroll_mode = 0
+
+[node name="ActionRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PlaceBlockButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow" unique_id=169731104]
+[node name="PlaceBlockButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow" unique_id=169731104]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(118, 102)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"ActionButton"
 
-[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton1"]
+[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -318,7 +326,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("6_cooldown")
 
-[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton1"]
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -331,11 +339,11 @@ theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
-[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton1/CardMargin"]
+[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin"]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="BlockNameLabel1" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton1/CardMargin/CardRows"]
+[node name="BlockNameLabel1" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin/CardRows"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -343,7 +351,7 @@ theme_type_variation = &"CardMetaLabel"
 horizontal_alignment = 1
 text = "Slot 1"
 
-[node name="BlockPreview1" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton1/CardMargin/CardRows"]
+[node name="BlockPreview1" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin/CardRows"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(70, 44)
 layout_mode = 2
@@ -351,7 +359,7 @@ size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
-[node name="BlockHeightLabel1" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton1/CardMargin/CardRows"]
+[node name="BlockHeightLabel1" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin/CardRows"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -359,14 +367,14 @@ theme_type_variation = &"CardMetaLabel"
 horizontal_alignment = 1
 text = "Empty"
 
-[node name="PlaceBlockButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow" unique_id=1688257059]
+[node name="PlaceBlockButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow" unique_id=1688257059]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(118, 102)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"ActionButton"
 
-[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton2"]
+[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -376,7 +384,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("6_cooldown")
 
-[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton2"]
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -389,11 +397,11 @@ theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
-[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton2/CardMargin"]
+[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin"]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="BlockNameLabel2" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton2/CardMargin/CardRows"]
+[node name="BlockNameLabel2" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin/CardRows"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -401,7 +409,7 @@ theme_type_variation = &"CardMetaLabel"
 horizontal_alignment = 1
 text = "Slot 2"
 
-[node name="BlockPreview2" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton2/CardMargin/CardRows"]
+[node name="BlockPreview2" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin/CardRows"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(70, 44)
 layout_mode = 2
@@ -409,7 +417,7 @@ size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
-[node name="BlockHeightLabel2" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton2/CardMargin/CardRows"]
+[node name="BlockHeightLabel2" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin/CardRows"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -417,14 +425,14 @@ theme_type_variation = &"CardMetaLabel"
 horizontal_alignment = 1
 text = "Empty"
 
-[node name="PlaceBlockButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow" unique_id=1361965894]
+[node name="PlaceBlockButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow" unique_id=1361965894]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(118, 102)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"ActionButton"
 
-[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton3"]
+[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -434,7 +442,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("6_cooldown")
 
-[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton3"]
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -447,11 +455,11 @@ theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
-[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton3/CardMargin"]
+[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin"]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="BlockNameLabel3" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton3/CardMargin/CardRows"]
+[node name="BlockNameLabel3" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin/CardRows"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -459,7 +467,7 @@ theme_type_variation = &"CardMetaLabel"
 horizontal_alignment = 1
 text = "Slot 3"
 
-[node name="BlockPreview3" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton3/CardMargin/CardRows"]
+[node name="BlockPreview3" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin/CardRows"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(70, 44)
 layout_mode = 2
@@ -467,7 +475,7 @@ size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
-[node name="BlockHeightLabel3" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/PlaceBlockButton3/CardMargin/CardRows"]
+[node name="BlockHeightLabel3" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin/CardRows"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -475,14 +483,14 @@ theme_type_variation = &"CardMetaLabel"
 horizontal_alignment = 1
 text = "Empty"
 
-[node name="DrawPilePanel" type="PanelContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow"]
+[node name="DrawPilePanel" type="PanelContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(118, 102)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"ActionCardPanel"
 
-[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/DrawPilePanel"]
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -494,11 +502,11 @@ theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
-[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/DrawPilePanel/CardMargin"]
+[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel/CardMargin"]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="DrawPileNameLabel" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/DrawPilePanel/CardMargin/CardRows"]
+[node name="DrawPileNameLabel" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel/CardMargin/CardRows"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -506,7 +514,7 @@ theme_type_variation = &"CardMetaLabel"
 horizontal_alignment = 1
 text = "Next Draw"
 
-[node name="DrawPilePreview" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/DrawPilePanel/CardMargin/CardRows"]
+[node name="DrawPilePreview" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel/CardMargin/CardRows"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(70, 44)
 layout_mode = 2
@@ -514,7 +522,7 @@ size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
-[node name="DrawPileCountLabel" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRow/DrawPilePanel/CardMargin/CardRows"]
+[node name="DrawPileCountLabel" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel/CardMargin/CardRows"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
