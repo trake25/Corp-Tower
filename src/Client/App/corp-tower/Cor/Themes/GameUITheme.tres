@@ -1,3 +1,78 @@
-[gd_resource type="Theme" format=3]
+[gd_resource type="Theme" load_steps=7 format=3]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Background"]
+bg_color = Color(0.07, 0.08, 0.095, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Panel"]
+bg_color = Color(0.13, 0.15, 0.18, 0.96)
+border_color = Color(0.28, 0.33, 0.39, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TowerTrack"]
+bg_color = Color(0.1, 0.115, 0.135, 1)
+border_color = Color(0.44, 0.5, 0.58, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TowerFill"]
+bg_color = Color(0.22, 0.55, 0.92, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ActionButton"]
+bg_color = Color(0.16, 0.19, 0.23, 1)
+border_color = Color(0.36, 0.43, 0.5, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_PrimaryButton"]
+bg_color = Color(0.23, 0.48, 0.84, 1)
+border_color = Color(0.74, 0.86, 1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [resource]
+Panel/styles/panel = SubResource("StyleBoxFlat_Background")
+HudPanel/base_type = &"PanelContainer"
+HudPanel/styles/panel = SubResource("StyleBoxFlat_Panel")
+TowerTrackPanel/base_type = &"Panel"
+TowerTrackPanel/styles/panel = SubResource("StyleBoxFlat_TowerTrack")
+TowerFillPanel/base_type = &"Panel"
+TowerFillPanel/styles/panel = SubResource("StyleBoxFlat_TowerFill")
+ActionCardPanel/base_type = &"PanelContainer"
+ActionCardPanel/styles/panel = SubResource("StyleBoxFlat_ActionButton")
+ActionButton/base_type = &"Button"
+ActionButton/styles/normal = SubResource("StyleBoxFlat_ActionButton")
+PrimaryButton/base_type = &"Button"
+PrimaryButton/styles/normal = SubResource("StyleBoxFlat_PrimaryButton")
+CardMetaLabel/base_type = &"Label"
+CardMetaLabel/font_sizes/font_size = 12
+InfoLabel/base_type = &"Label"
+InfoLabel/font_sizes/font_size = 14

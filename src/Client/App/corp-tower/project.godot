@@ -22,7 +22,11 @@ NetworkManager="*res://Sys/NetMan/NetworkManager.gd"
 
 [display]
 
-window/stretch/mode="viewport"
+window/size/viewport_width=412
+window/size/viewport_height=917
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation="portrait"
 
 [editor_plugins]
 
