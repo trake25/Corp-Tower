@@ -6,7 +6,9 @@
 
 ## Responsibilities
 - Install server dependencies.
-- Copy server source.
+- Copy server source from `src/Server/app` only — tooling
+  ([[Balance Simulator]]) and tests ([[Server Score Events Tests]]) live
+  outside `app/` and are not copied in.
 - Run `Server.js` in a container.
 - Expose port `3000`.
 
@@ -19,7 +21,7 @@
 - Container healthchecks use a short staging interval so rolling deploy readiness is reported quickly.
 
 ## Inputs/Outputs
-- Input: `src/Server` source, `package.json`, and `package-lock.json`.
+- Input: `src/Server/app` source, `package.json`, and `package-lock.json`.
 - Output: Docker image in ECR.
 
 ## Dependencies

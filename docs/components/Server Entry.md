@@ -2,7 +2,7 @@
 
 ## Purpose
 WebSocket entry point for the authoritative Corp Tower server. File:
-`src/Server/Server.js`.
+`src/Server/app/Server.js`.
 
 ## Responsibilities
 - Start the WebSocket server on `PORT` (default `3000`).

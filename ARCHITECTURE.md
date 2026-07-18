@@ -37,7 +37,10 @@ flowchart LR
 |---|---|---|
 | [[Server Entry]] | WebSocket process entry point; routes messages | [[Lobby Manager]] |
 | [[Lobby Manager]] | Matchmaking, room lifecycle, debug-config coordinator | [[Game Engine]], [[Game Config]], [[Bot Manager]] (indirect), [[Redis State]] |
-| [[Game Engine]] | Authoritative per-room gameplay rules and level lifecycle | [[Game Config]], [[Tower Stability]], [[Bot Manager]], [[Lobby Manager]] (notify-only) |
+| [[Game Engine]] | Authoritative per-room gameplay rules and level lifecycle; delegates block supply/scoring/checkpoints to `engine/` modules | [[Game Config]], [[Tower Stability]], [[Bot Manager]], [[Lobby Manager]] (notify-only), [[Block Supply]], [[Scoring]], [[Checkpoints]] |
+| [[Block Supply]] | Block creation, draw pile, opening hands, refresh generation (`engine/` module) | [[Game Config]] |
+| [[Scoring]] | Score events, bonuses, leaderboard banking, MVP, level summaries (`engine/` module) | [[Game Config]], [[Block Supply]] (indirect) |
+| [[Checkpoints]] | Checkpoint snapshots, rollback, score gate (`engine/` module) | [[Game Config]], [[Game Engine]] (lifecycle callback), [[Scoring]] (indirect) |
 | [[Tower Stability]] | Pure grid-settling and stability scoring | none |
 | [[Bot Manager]] | Debug bot action scheduler | [[Game Config]], [[Game Engine]] |
 | [[Game Config]] | Central tuning/config data object | none |

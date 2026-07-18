@@ -2,7 +2,7 @@
 
 ## Purpose
 Matchmaking, room lifecycle, and runtime debug-config coordinator. File:
-`src/Server/Lobby_Manager.js`.
+`src/Server/app/Lobby_Manager.js`.
 
 ## Responsibilities
 - Maintain waiting players and active rooms, through shared Redis state when

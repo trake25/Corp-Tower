@@ -2,8 +2,9 @@
 
 ## Purpose
 Server test coverage for score-event and level-summary contracts. File:
-`src/Server/Score_Events.test.js`. CI/test-only — not required by the running
-game server or client; runs via `npm test`, which [[Server K3s Workflows]]
+`src/Server/tests/Score_Events.test.js`. CI/test-only — not required by the
+running game server or client, and not copied into the Docker image (see
+[[Server Docker Image]]); runs via `npm test`, which [[Server K3s Workflows]]
 calls before a server image build/deploy.
 
 ## Responsibilities
@@ -17,7 +18,7 @@ calls before a server image build/deploy.
 - Verify checkpoint politics snapshot/rollback behavior.
 
 ## Public interface
-Run via `npm test` (or `node --test Score_Events.test.js`) from
+Run via `npm test` (or `node --test tests/Score_Events.test.js`) from
 `src/Server`. Node's built-in test runner; no separate test framework.
 Currently 11 tests, all passing.
 

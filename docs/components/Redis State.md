@@ -2,7 +2,7 @@
 
 ## Purpose
 Shared-state adapter so multiple Corp Tower server workers can share
-matchmaking/room state. File: `src/Server/Redis_State.js`.
+matchmaking/room state. File: `src/Server/app/Redis_State.js`.
 
 ## Responsibilities
 - Connect to Redis when `REDIS_URL` is configured; otherwise operate as an

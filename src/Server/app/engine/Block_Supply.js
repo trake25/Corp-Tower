@@ -1,6 +1,3 @@
-// Block supply for one room: block creation, the shared draw pile, opening
-// hands, refresh-block generation, and team carry-over. Every function takes
-// the owning GameEngine as `engine`; GameEngine exposes each one as a method.
 const GameConfig = require("../Game_Config");
 
 function getNextDrawBlock(engine) {

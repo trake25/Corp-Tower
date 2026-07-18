@@ -1,7 +1,3 @@
-// Checkpoints for one room: score/politics snapshots, rollback, the
-// checkpoint score gate, and its per-player status payload. Every function
-// takes the owning GameEngine as `engine`; GameEngine exposes each one as a
-// method.
 const GameConfig = require("../Game_Config");
 
 function clonePoliticsInventory(engine, items = []) {

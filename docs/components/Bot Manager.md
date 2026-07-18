@@ -1,7 +1,7 @@
 # Bot Manager
 
 ## Purpose
-QA/testing bot action scheduler. File: `src/Server/Bot_Manager.js`.
+QA/testing bot action scheduler. File: `src/Server/app/Bot_Manager.js`.
 
 ## Responsibilities
 - Start and stop bot action loops for bot participants in a room.

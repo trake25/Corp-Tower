@@ -24,6 +24,11 @@
 
 ## Notes
 - Region: `ap-southeast-1`.
-- Workflows create the shared S3 backend bucket if it is missing.
+- Workflows create the shared S3 backend bucket if it is missing, via the
+  shared `.github/actions/terraform-backend-bootstrap` composite action.
+  AWS/Terraform CLI setup, SSH-key resolution, and the
+  init/fmt/validate/plan sequence are similarly shared through
+  `.github/actions/aws-terraform-setup`, `resolve-ssh-key`, and
+  `terraform-validate-plan`, used by K3s Plan/Apply/Cleanup and EKS Plan.
 - User prefers GitHub Actions for Terraform validation and planning instead of local manual Terraform runs.
 - Managed AWS resources in the EKS path may exceed free-tier expectations; review plan output and cost before adding apply/deploy workflows.

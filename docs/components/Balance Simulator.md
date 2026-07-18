@@ -2,8 +2,9 @@
 
 ## Purpose
 Offline balance-sampling tool for shape-block supply and scoring. File:
-`src/Server/Balance_Simulator.js`. Tooling only — not required by the running
-game server or client.
+`src/Server/tools/Balance_Simulator.js`. Tooling only — not required by the
+running game server or client, and not copied into the Docker image (see
+[[Server Docker Image]]).
 
 ## Responsibilities
 - Instantiate [[Game Engine]] directly (not through [[Lobby Manager]] — no

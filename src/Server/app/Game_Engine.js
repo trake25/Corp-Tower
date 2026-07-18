@@ -5,10 +5,6 @@ const BlockSupply = require("./engine/Block_Supply");
 const Scoring = require("./engine/Scoring");
 const Checkpoints = require("./engine/Checkpoints");
 
-// Authoritative gameplay for one room. This class owns the room/level
-// lifecycle, timers, and action validation; the heavier rule areas live in
-// engine/ modules (Block_Supply, Scoring, Checkpoints) and are exposed here
-// as delegating methods so callers and internal code use one interface.
 class GameEngine {
     constructor(options = {}) {
         this.room = null;
@@ -878,8 +874,6 @@ class GameEngine {
         this.startLevel();
     }
 
-    // --- Block supply: engine/Block_Supply.js ---
-
     getNextDrawBlock() { return BlockSupply.getNextDrawBlock(this); }
     createBlockId() { return BlockSupply.createBlockId(this); }
     cloneCells(cells) { return BlockSupply.cloneCells(this, cells); }
@@ -910,8 +904,6 @@ class GameEngine {
     scoreRefreshBlockSet(blocks) { return BlockSupply.scoreRefreshBlockSet(this, blocks); }
     prepareTeamCarryOverBlocks() { return BlockSupply.prepareTeamCarryOverBlocks(this); }
 
-    // --- Scoring: engine/Scoring.js ---
-
     createScoreEvent(type, options = {}) { return Scoring.createScoreEvent(this, type, options); }
     queueScoreEvent(type, options = {}) { return Scoring.queueScoreEvent(this, type, options); }
     consumeScoreEvents() { return Scoring.consumeScoreEvents(this); }
@@ -928,8 +920,6 @@ class GameEngine {
     addLevelScoreToLeaderboard() { return Scoring.addLevelScoreToLeaderboard(this); }
     awardRefreshToken(player) { return Scoring.awardRefreshToken(this, player); }
     getLevelMVP() { return Scoring.getLevelMVP(this); }
-
-    // --- Checkpoints: engine/Checkpoints.js ---
 
     clonePoliticsInventory(items = []) { return Checkpoints.clonePoliticsInventory(this, items); }
     saveCheckpointScores() { return Checkpoints.saveCheckpointScores(this); }

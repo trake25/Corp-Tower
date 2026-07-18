@@ -1,6 +1,3 @@
-// Scoring for one room: transient score events, placement points, completion
-// bonuses, leaderboard banking, MVP, and level summaries. Every function takes
-// the owning GameEngine as `engine`; GameEngine exposes each one as a method.
 const GameConfig = require("../Game_Config");
 
 function createScoreEvent(engine, type, options = {}) {

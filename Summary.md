@@ -18,10 +18,13 @@
 
 ## Source Of Truth & Fast Start
 - Read this file first, then only the linked docs/sections needed for the task.
+- Read relevant component source code only when the `.md` files don't provide enough context (refactors, redesigns) or when actually implementing. Read only the relevant sections/functions, not whole files, unless a full-file read is required to be correct.
 - [[Corp_Tower_GDD]] — design, rules, scoring, balance, progression (see Game Systems below for which section).
 - [[Corp_Tower_TDD]] — architecture, deploy, message contracts, persistence, testing, CI/CD (see Contracts & Testing below).
 - [[Component-Index]] — full component list; the Component Map below omits plan-only/not-yet-applied work (e.g. Server EKS).
 - Docs are only updated when the user runs `/update-docs`, after confirming the goal is fully reached.
+- Do not commit, push, pull, compare with remote git repo unless instructed.
+- Do not put comments on the source code, instead any context helping info should be in its corresponding .md docs.
 - Keep `Summary.md` brief; link to details instead of duplicating them.
 
 ## Game Systems
@@ -36,7 +39,7 @@
 
 ## Component Map
 - Navigation: [[Component-Index]]
-- Server: [[Server Entry]], [[Lobby Manager]], [[Game Engine]], [[Tower Stability]], [[Redis State]], [[Bot Manager]], [[Game Config]], [[Server Docker Image]]
+- Server: [[Server Entry]], [[Lobby Manager]], [[Game Engine]], [[Block Supply]], [[Scoring]], [[Checkpoints]], [[Tower Stability]], [[Redis State]], [[Bot Manager]], [[Game Config]], [[Server Docker Image]]
 - Server CI/tooling: [[Server Score Events Tests]], [[Balance Simulator]]
 - Client runtime: [[Godot Client App]], [[NetworkManager]], [[Main UI Controller]], [[Client UI Skins]], [[Block Preview]], [[Tower Stack]], [[Cooldown Overlay]], [[Debug Overlay]], [[Player Colors]]
 - Client tests: [[Godot Client Tests]]
@@ -56,4 +59,4 @@
 - Server→client: `room_created`, `room_resumed`, `game_state`, `debug_config`, `room_closed`.
 - Client→server: `reconnect`, `place_block`, `refresh_blocks`, `send_quick_chat`, `update_config`.
 - Full payload shapes: TDD `Message Contracts`.
-- Tests: `node --test Score_Events.test.js` (server); `npm run balance:simulate -- <levels> <runs>` from `src/Server` (balance); Godot smoke test + GUT (client) — TDD `Testing Strategy`.
+- Tests: `node --test tests/Score_Events.test.js` (server); `npm run balance:simulate -- <levels> <runs>` from `src/Server` (balance); Godot smoke test + GUT (client) — TDD `Testing Strategy`.

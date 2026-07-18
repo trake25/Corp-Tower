@@ -3,7 +3,7 @@
 ## Purpose
 Pure, deterministic grid physics: settles a newly placed block onto the
 existing stack and scores how stable the resulting tower is. File:
-`src/Server/Tower_Stability.js`.
+`src/Server/app/Tower_Stability.js`.
 
 ## Responsibilities
 - Compute where a newly placed block comes to rest on top of the existing

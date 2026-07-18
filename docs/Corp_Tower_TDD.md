@@ -11,12 +11,15 @@
 - EKS, NLB with Elastic IPs, and ElastiCache Redis are tracked as a parallel plan-only path in [[Server EKS Stack]] and [[Server EKS Workflow]].
 
 ## Repository Layout
-- `src/Server/Server.js`: WebSocket entry point and message router. -> [[Server Entry]]
-- `src/Server/Lobby_Manager.js`: Redis-backed matchmaking, rooms, reconnect, debug config, and room lifecycle. -> [[Lobby Manager]]
-- `src/Server/Redis_State.js`: Redis adapter for sessions, queue, room snapshots, locks, and room events. -> [[Redis State]]
-- `src/Server/Game_Engine.js`: authoritative level lifecycle, timers, scoring, tokens, carry-over, win/fail, checkpoints. -> [[Game Engine]]
-- `src/Server/Game_Config.js`: runtime balance and debug-tuning variables. -> [[Game Config]]
-- `src/Server/Bot_Manager.js`: QA bot action loops and placement behavior. -> [[Bot Manager]]
+- `src/Server/app`: everything the Docker image ships (the deployed runtime).
+  - `Server.js`: WebSocket entry point and message router. -> [[Server Entry]]
+  - `Lobby_Manager.js`: Redis-backed matchmaking, rooms, reconnect, debug config, and room lifecycle. -> [[Lobby Manager]]
+  - `Redis_State.js`: Redis adapter for sessions, queue, room snapshots, locks, and room events. -> [[Redis State]]
+  - `Game_Engine.js`: authoritative level lifecycle, timers, scoring, tokens, carry-over, win/fail, checkpoints; delegates block-supply/scoring/checkpoint logic to `engine/Block_Supply.js`, `engine/Scoring.js`, `engine/Checkpoints.js`. -> [[Game Engine]]
+  - `Game_Config.js`: runtime balance and debug-tuning variables. -> [[Game Config]]
+  - `Bot_Manager.js`: QA bot action loops and placement behavior. -> [[Bot Manager]]
+- `src/Server/tools/Balance_Simulator.js`: offline balance-sampling CLI, not shipped in the image. -> [[Balance Simulator]]
+- `src/Server/tests/Score_Events.test.js`: score/summary contract tests, not shipped in the image. -> [[Server Score Events Tests]]
 - `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd`: Godot WebSocket adapter with reconnect identity persistence. -> [[NetworkManager]]
 - `.github/workflows/Client-Android-Internal.yml`: Android internal-testing build/upload. -> [[Client Android Internal Workflow]]
 - `.github/workflows/Client-HTML5-Pages.yml`: Godot Web export deploy to GitHub Pages. -> [[Client HTML5 Pages]]
@@ -132,7 +135,7 @@
 - Android: `ANDROID_RELEASE_KEYSTORE_BASE64`, `ANDROID_RELEASE_KEYSTORE_ALIAS`, `ANDROID_RELEASE_KEYSTORE_PASSWORD`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`
 
 ## Testing Strategy
-- Current server test: Node syntax checks for server modules including `Redis_State.js`, plus `node --test Score_Events.test.js` for score event and summary contracts.
+- Current server test: Node syntax checks for server modules including `Redis_State.js`, plus `node --test tests/Score_Events.test.js` for score event and summary contracts.
 - Balance simulator: `npm run balance:simulate -- <levels> <runs>` from `src/Server` estimates generated pile reachability, exact possibility, smart-play completion, overbuild, placement counts, and level score distribution.
 - Current client pipeline: Godot import/parse, required client compile/startup smoke test, required GUT tests, signed Android AAB export, deployment artifact validation, optional Google Play internal upload, and post-upload internal-track version-code verification.
 - Server K3s checks:

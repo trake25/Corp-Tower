@@ -2,7 +2,7 @@
 
 ## Purpose
 Central runtime balance and debug tuning object — the single source of truth
-for every numeric/rule constant the server uses. File: `src/Server/Game_Config.js`.
+for every numeric/rule constant the server uses. File: `src/Server/app/Game_Config.js`.
 
 ## Responsibilities
 - Store game pacing values.
