@@ -1,12 +1,12 @@
 # Server K3s
 
 ## Purpose
-- Build a parallel K3s learning stack without mutating the Docker staging Terraform, Ansible, workflows, or EC2 resources.
-- Keep `wss://corp-tower.duckdns.org` as the single public endpoint. Docker staging and Server K3s should not both own DuckDNS at the same time.
+- Build a parallel K3s learning stack without mutating EC2 resources outside the K3s Terraform root.
+- Keep `wss://ws.tod.galaxxigames.com` as the single public endpoint, DNS-managed in Cloudflare.
 - Prepare the K3s manifests so Argo CD can adopt the stack later after the lab is stable.
 
 ## Topology
-- `EC2-GW`: public IPv4, SSH bastion, Caddy WSS gateway, DuckDNS updater, and NAT instance.
+- `EC2-GW`: public IPv4, SSH bastion, Caddy WSS gateway, Cloudflare DNS updater, and NAT instance.
 - `EC2-K3S-CP`: private K3s server/control plane, default `t3.small`.
 - `EC2-K3S-A1` and `EC2-K3S-A2`: private K3s agents, default `t3.micro`.
 - VPC CIDR defaults to `10.60.0.0/16` to avoid K3s default pod CIDR `10.42.0.0/16` and service CIDR `10.43.0.0/16`.
@@ -26,7 +26,7 @@
 - Redis runs in-cluster as `redis:6379`.
 - The game server runs two replicas with `REDIS_URL=redis://redis:6379`.
 - The game service is a fixed NodePort on `30300/tcp`.
-- EC2-GW Caddy reverse-proxies `corp-tower.duckdns.org` to private K3s node IPs on `30300`.
+- EC2-GW Caddy reverse-proxies `ws.tod.galaxxigames.com` to private K3s node IPs on `30300`.
 
 ## Argo CD Readiness
 - Argo CD is not installed by the first K3s rollout.
@@ -40,7 +40,7 @@
 - Use Server K3s workflows for the active stack.
 
 ## Observability
-- Run `Server K3s Diagnostics` for AWS topology, DuckDNS ownership, and SSH reachability.
+- Run `Server K3s Diagnostics` for AWS topology, Cloudflare DNS ownership, and SSH reachability.
 - Use `kubectl -n corp-tower get pods -o wide`, `kubectl -n corp-tower get all -o wide`, and `kubectl get nodes -o wide` for current cluster state.
 - Use `kubectl -n corp-tower logs deploy/corp-tower-server --all-containers --tail=200 -f` for live game server logs.
 - Use `kubectl get events -A --sort-by=.lastTimestamp` for scheduling, image pull, restart, and readiness problems.

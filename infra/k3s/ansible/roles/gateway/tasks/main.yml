@@ -95,28 +95,30 @@
     executable: /bin/bash
   changed_when: true
 
-- name: Require DuckDNS token for gateway boot updater
+- name: Require Cloudflare API token and zone ID for gateway boot updater
   ansible.builtin.assert:
     that:
-      - lookup('ansible.builtin.env', 'DUCKDNS_TOKEN') | length > 0
-    fail_msg: "DUCKDNS_TOKEN must be provided as a GitHub staging environment secret."
+      - lookup('ansible.builtin.env', 'CLOUDFLARE_API_TOKEN') | length > 0
+      - lookup('ansible.builtin.env', 'CLOUDFLARE_ZONE_ID') | length > 0
+    fail_msg: "CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID must be provided as GitHub staging environment secrets."
   no_log: true
 
-- name: Install DuckDNS updater secret
+- name: Install Cloudflare updater secret
   ansible.builtin.copy:
-    dest: /etc/corp-tower/k3s/duckdns.env
+    dest: /etc/corp-tower/k3s/cloudflare.env
     owner: root
     group: root
     mode: "0600"
     content: |
-      DUCKDNS_DOMAIN={{ duckdns_domain | default('corp-tower') }}
-      DUCKDNS_TOKEN={{ lookup('ansible.builtin.env', 'DUCKDNS_TOKEN') }}
+      CLOUDFLARE_RECORD_NAME={{ gateway_domain }}
+      CLOUDFLARE_ZONE_ID={{ lookup('ansible.builtin.env', 'CLOUDFLARE_ZONE_ID') }}
+      CLOUDFLARE_API_TOKEN={{ lookup('ansible.builtin.env', 'CLOUDFLARE_API_TOKEN') }}
   become: true
   no_log: true
 
-- name: Install DuckDNS boot updater script
+- name: Install Cloudflare boot updater script
   ansible.builtin.copy:
-    dest: /usr/local/bin/corp-tower-k3s-duckdns-update
+    dest: /usr/local/bin/corp-tower-k3s-cloudflare-update
     owner: root
     group: root
     mode: "0755"
@@ -124,7 +126,7 @@
       #!/usr/bin/env bash
       set -euo pipefail
 
-      source /etc/corp-tower/k3s/duckdns.env
+      source /etc/corp-tower/k3s/cloudflare.env
 
       IMDS_TOKEN="$(
         curl -fsS \
@@ -143,35 +145,62 @@
           "http://169.254.169.254/latest/meta-data/public-ipv4"
       )"
 
-      RESPONSE="$(
+      AUTH_HEADER="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+
+      EXISTING_RECORD_ID="$(
         curl -fsS \
           --connect-timeout 5 \
           --max-time 15 \
-          --get "https://www.duckdns.org/update" \
-          --data-urlencode "domains=${DUCKDNS_DOMAIN}" \
-          --data-urlencode "token=${DUCKDNS_TOKEN}" \
-          --data-urlencode "ip=${PUBLIC_IP}" \
-          --data-urlencode "verbose=true"
+          -H "${AUTH_HEADER}" \
+          -H "Content-Type: application/json" \
+          --get "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+          --data-urlencode "type=A" \
+          --data-urlencode "name=${CLOUDFLARE_RECORD_NAME}" \
+        | jq -r '.result[0].id // empty'
       )"
 
-      STATUS="$(printf '%s\n' "${RESPONSE}" | tr -d '\r' | sed -n '1p')"
-      if [ "${STATUS}" != "OK" ]; then
-        echo "DuckDNS update failed with status: ${STATUS}"
+      if [ -n "${EXISTING_RECORD_ID}" ]; then
+        RESPONSE="$(
+          curl -fsS \
+            --connect-timeout 5 \
+            --max-time 15 \
+            -X PATCH \
+            -H "${AUTH_HEADER}" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${EXISTING_RECORD_ID}" \
+            --data "$(jq -n --arg ip "${PUBLIC_IP}" '{content:$ip}')"
+        )"
+      else
+        RESPONSE="$(
+          curl -fsS \
+            --connect-timeout 5 \
+            --max-time 15 \
+            -X POST \
+            -H "${AUTH_HEADER}" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+            --data "$(jq -n --arg name "${CLOUDFLARE_RECORD_NAME}" --arg ip "${PUBLIC_IP}" '{type:"A",name:$name,content:$ip,ttl:60,proxied:false}')"
+        )"
+      fi
+
+      SUCCESS="$(printf '%s\n' "${RESPONSE}" | jq -r '.success')"
+      if [ "${SUCCESS}" != "true" ]; then
+        echo "Cloudflare DNS update failed: ${RESPONSE}"
         exit 1
       fi
 
-      echo "DuckDNS ${DUCKDNS_DOMAIN}.duckdns.org updated to ${PUBLIC_IP}."
+      echo "Cloudflare DNS record ${CLOUDFLARE_RECORD_NAME} updated to ${PUBLIC_IP}."
   become: true
 
-- name: Install DuckDNS boot updater service
+- name: Install Cloudflare boot updater service
   ansible.builtin.copy:
-    dest: /etc/systemd/system/corp-tower-k3s-duckdns-update.service
+    dest: /etc/systemd/system/corp-tower-k3s-cloudflare-update.service
     owner: root
     group: root
     mode: "0644"
     content: |
       [Unit]
-      Description=Update Corp Tower Server K3s DuckDNS gateway record
+      Description=Update Corp Tower Server K3s Cloudflare gateway record
       Wants=network-online.target
       After=network-online.target
       StartLimitIntervalSec=10min
@@ -179,7 +208,7 @@
 
       [Service]
       Type=oneshot
-      ExecStart=/usr/local/bin/corp-tower-k3s-duckdns-update
+      ExecStart=/usr/local/bin/corp-tower-k3s-cloudflare-update
       Restart=on-failure
       RestartSec=30s
 
@@ -187,12 +216,12 @@
       WantedBy=multi-user.target
   become: true
 
-- name: Enable and run DuckDNS boot updater
+- name: Enable and run Cloudflare boot updater
   ansible.builtin.shell: |
     set -euo pipefail
     sudo systemctl daemon-reload
-    sudo systemctl enable corp-tower-k3s-duckdns-update.service
-    sudo systemctl restart corp-tower-k3s-duckdns-update.service
+    sudo systemctl enable corp-tower-k3s-cloudflare-update.service
+    sudo systemctl restart corp-tower-k3s-cloudflare-update.service
   args:
     executable: /bin/bash
   changed_when: true

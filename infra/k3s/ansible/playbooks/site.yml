@@ -11,8 +11,6 @@
           - groups.k3s_agents | default([]) | length >= 1
           - gateway_domain is defined
           - gateway_domain | length > 0
-          - duckdns_domain is defined
-          - duckdns_domain | length > 0
           - private_subnet_cidr is defined
           - private_subnet_cidr | length > 0
         fail_msg: "Missing required Server K3s inventory groups or deploy inputs."

@@ -70,7 +70,7 @@ cleanup pass:
 | Module | One-line |
 |---|---|
 | [[Client Android Internal Workflow]] | Builds/tests the Godot client, signs an internal Android build |
-| [[Terraform Infrastructure]] | Terraform module map, including the deprecated Docker-staging path kept as history |
+| [[Terraform Infrastructure]] | Terraform module map for the active K3s and plan-only EKS stacks |
 | [[Server K3s Stack]] | Active self-hosted K3s-on-EC2 server infrastructure |
 | [[Server K3s Workflows]] | CI workflows that deploy/diagnose/clean up the K3s stack |
 | [[Server K3s Automated Master Workflow]] | Orchestrates the individual K3s workflows |

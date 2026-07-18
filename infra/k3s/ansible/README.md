@@ -2,11 +2,10 @@
 
 ## Purpose
 - Configure the isolated Server K3s after Terraform creates EC2-GW and private K3s nodes.
-- Keep the Server K3s separate from the Docker staging Ansible path.
 
 ## Responsibilities
 - Generate a temporary inventory from AWS EC2 tag discovery.
-- Configure EC2-GW as SSH bastion, NAT instance, DuckDNS updater, and Caddy gateway.
+- Configure EC2-GW as SSH bastion, NAT instance, Cloudflare DNS updater, and Caddy gateway.
 - Install a single K3s server and private K3s agents.
 - Render Caddy upstreams to K3s node private IPs on NodePort `30300`.
 - Provide a runtime cleanup playbook for K3s services and gateway artifacts.

@@ -5,7 +5,6 @@
 - Files: `infra/k3s/terraform`, `infra/k3s/ansible`, `infra/k3s/apps`, and `infra/k3s/argocd/bootstrap`.
 
 ## Responsibilities
-- Keep Server K3s AWS resources and Terraform state separate from the deprecated Docker staging Terraform root.
 - Reuse existing GitHub staging secrets and ECR repository. The K3s infra workflows can derive the EC2 public key from `EC2_STAGING_SSH_KEY` when `EC2_STAGING_SSH_PUBLIC_KEY` is empty.
 - Route public WSS through EC2-GW Caddy to K3s NodePort `30300`.
 - Keep K3s nodes private behind EC2-GW bastion/NAT.
@@ -38,5 +37,5 @@
 - [[Server EKS Stack]]
 
 ## Notes
-- `corp-tower.duckdns.org` currently points to the active Server K3s gateway.
+- `ws.tod.galaxxigames.com` currently points to the active Server K3s gateway via Cloudflare DNS.
 - EC2-GW uses Docker only to run the Caddy gateway container; the game server workload runs in K3s.

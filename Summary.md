@@ -40,7 +40,7 @@
 - K3s learning: [[K3s Manual Learning Plan]], [[Server K3s Stack]], [[Server K3s Workflows]]
 
 ## Runtime Flow
-- Godot connects to `wss://corp-tower.duckdns.org` through [[NetworkManager]].
+- Godot connects to `wss://ws.tod.galaxxigames.com` through [[NetworkManager]].
 - In Server K3s, EC2-GW Caddy terminates WSS and routes to private K3s node IPs on NodePort `30300`.
 - In the planned Server EKS path, an internet-facing NLB with Elastic IPs replaces EC2-GW Caddy and ElastiCache replaces Docker/in-cluster Redis.
 - [[Lobby Manager]] handles queueing, room creation, reconnect, debug config, and room close.

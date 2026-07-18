@@ -6,7 +6,6 @@
 ## Roots
 - `infra/k3s/terraform`: active Server K3s AWS learning stack.
 - `infra/eks/terraform`: plan-only parallel Server EKS managed AWS stack.
-- `infra/terraform`: deprecated Docker staging EC2 stack retained as source history only; its GitHub Actions workflows were removed.
 
 ## Server K3s
 - Workflows: [[Server K3s Workflows]].

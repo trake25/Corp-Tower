@@ -19,7 +19,7 @@ output "private_subnet_id" {
 }
 
 output "gateway_public_ip" {
-  description = "EC2-GW public IPv4 address for SSH, Caddy, DuckDNS, and NAT."
+  description = "EC2-GW public IPv4 address for SSH, Caddy, Cloudflare DNS, and NAT."
   value       = aws_instance.gateway.public_ip
 }
 
@@ -59,7 +59,7 @@ output "ecr_repository_name" {
 }
 
 output "learning_gateway_websocket_url" {
-  description = "Godot client WebSocket URL for whichever lab stack currently owns DuckDNS."
+  description = "Godot client WebSocket URL for whichever lab stack currently owns the Cloudflare DNS record."
   value       = "wss://${var.gateway_domain}"
 }
 

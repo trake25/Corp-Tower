@@ -15,8 +15,7 @@ permissions:
 env:
   AWS_REGION: ap-southeast-1
   IMAGE_NAME: corp-tower-server
-  DUCKDNS_DOMAIN: corp-tower
-  DUCKDNS_FQDN: corp-tower.duckdns.org
+  GATEWAY_DOMAIN: ws.tod.galaxxigames.com
 
 jobs:
   test-server:
@@ -179,44 +178,70 @@ jobs:
 
           echo "PRIVATE_SUBNET_CIDR=$PRIVATE_SUBNET_CIDR" >> "$GITHUB_ENV"
 
-      - name: Update DuckDNS gateway record
+      - name: Update Cloudflare DNS record
         env:
-          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           set -euo pipefail
 
-          if [ -z "${DUCKDNS_TOKEN:-}" ]; then
-            echo "::error::Missing DUCKDNS_TOKEN staging environment secret."
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ZONE_ID:-}" ]; then
+            echo "::error::Missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ZONE_ID staging environment secret."
             exit 1
           fi
 
-          duckdns_response="$(
+          existing_record_id="$(
             curl -fsS \
               --connect-timeout 5 \
               --max-time 15 \
-              --get "https://www.duckdns.org/update" \
-              --data-urlencode "domains=${DUCKDNS_DOMAIN}" \
-              --data-urlencode "token=${DUCKDNS_TOKEN}" \
-              --data-urlencode "ip=${GATEWAY_PUBLIC_IP}" \
-              --data-urlencode "verbose=true"
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --get "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+              --data-urlencode "type=A" \
+              --data-urlencode "name=${GATEWAY_DOMAIN}" \
+            | jq -r '.result[0].id // empty'
           )"
 
-          duckdns_status="$(printf '%s\n' "$duckdns_response" | tr -d '\r' | sed -n '1p')"
-          if [ "$duckdns_status" != "OK" ]; then
-            echo "::error::DuckDNS update failed with status: ${duckdns_status}"
+          if [ -n "$existing_record_id" ]; then
+            cloudflare_response="$(
+              curl -fsS \
+                --connect-timeout 5 \
+                --max-time 15 \
+                -X PATCH \
+                -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+                -H "Content-Type: application/json" \
+                "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${existing_record_id}" \
+                --data "$(jq -n --arg ip "${GATEWAY_PUBLIC_IP}" '{content:$ip}')"
+            )"
+          else
+            cloudflare_response="$(
+              curl -fsS \
+                --connect-timeout 5 \
+                --max-time 15 \
+                -X POST \
+                -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+                -H "Content-Type: application/json" \
+                "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+                --data "$(jq -n --arg name "${GATEWAY_DOMAIN}" --arg ip "${GATEWAY_PUBLIC_IP}" '{type:"A",name:$name,content:$ip,ttl:60,proxied:false}')"
+            )"
+          fi
+
+          cloudflare_success="$(printf '%s\n' "$cloudflare_response" | jq -r '.success')"
+          if [ "$cloudflare_success" != "true" ]; then
+            echo "::error::Cloudflare DNS update failed: ${cloudflare_response}"
             exit 1
           fi
 
           for attempt in $(seq 1 60); do
-            resolved_ip="$(getent ahostsv4 "$DUCKDNS_FQDN" | awk '{ print $1; exit }' || true)"
+            resolved_ip="$(getent ahostsv4 "$GATEWAY_DOMAIN" | awk '{ print $1; exit }' || true)"
             if [ "$resolved_ip" = "$GATEWAY_PUBLIC_IP" ]; then
               exit 0
             fi
-            echo "Waiting for ${DUCKDNS_FQDN} to resolve to ${GATEWAY_PUBLIC_IP}; current: ${resolved_ip:-none} (attempt ${attempt}/60)."
+            echo "Waiting for ${GATEWAY_DOMAIN} to resolve to ${GATEWAY_PUBLIC_IP}; current: ${resolved_ip:-none} (attempt ${attempt}/60)."
             sleep 2
           done
 
-          echo "::error::${DUCKDNS_FQDN} did not resolve to ${GATEWAY_PUBLIC_IP} after DuckDNS update."
+          echo "::error::${GATEWAY_DOMAIN} did not resolve to ${GATEWAY_PUBLIC_IP} after Cloudflare DNS update."
           exit 1
 
       - name: Prepare SSH known hosts
@@ -284,14 +309,14 @@ jobs:
       - name: Configure Server K3s hosts with Ansible
         env:
           ANSIBLE_CONFIG: infra/k3s/ansible/ansible.cfg
-          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           set -euo pipefail
           ansible-playbook \
             -i "$ANSIBLE_INVENTORY" \
             infra/k3s/ansible/playbooks/site.yml \
-            -e "gateway_domain=${DUCKDNS_FQDN}" \
-            -e "duckdns_domain=${DUCKDNS_DOMAIN}" \
+            -e "gateway_domain=${GATEWAY_DOMAIN}" \
             -e "private_subnet_cidr=${PRIVATE_SUBNET_CIDR}"
 
       - name: Open bastion tunnel and fetch kubeconfig
@@ -382,7 +407,7 @@ jobs:
 
       - name: Smoke test public WebSocket
         env:
-          WS_URL: wss://corp-tower.duckdns.org
+          WS_URL: wss://ws.tod.galaxxigames.com
         run: |
           set -euo pipefail
 

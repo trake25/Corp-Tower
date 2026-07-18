@@ -29,7 +29,7 @@ registered as an autoload singleton.
 - External: Godot's `WebSocketPeer`
 
 ## Notes
-- Connects to `wss://corp-tower.duckdns.org`. Sends `reconnect` with the
+- Connects to `wss://ws.tod.galaxxigames.com`. Sends `reconnect` with the
   stored `playerId`/`reconnectToken` immediately after the socket opens.
 - Tracks `game_state.players[].isBot` to only enable auto-reconnect when the
   last known room had no bots (bot-filled debug rooms aren't worth

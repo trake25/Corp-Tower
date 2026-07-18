@@ -1,6 +1,6 @@
 resource "aws_security_group" "gateway" {
   name        = "corp-tower-${var.environment}-gateway"
-  description = "Public K3s lab gateway, bastion, Caddy, DuckDNS, and NAT instance"
+  description = "Public K3s lab gateway, bastion, Caddy, Cloudflare DNS, and NAT instance"
   vpc_id      = aws_vpc.lab.id
 
   ingress {
@@ -28,7 +28,7 @@ resource "aws_security_group" "gateway" {
   }
 
   egress {
-    description = "All outbound for NAT, package updates, Caddy ACME, and DuckDNS"
+    description = "All outbound for NAT, package updates, Caddy ACME, and Cloudflare DNS"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

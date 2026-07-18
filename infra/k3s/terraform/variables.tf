@@ -38,7 +38,7 @@ variable "game_port_cidr" {
 variable "gateway_domain" {
   description = "Public DNS name for the K3s lab WSS gateway."
   type        = string
-  default     = "corp-tower.duckdns.org"
+  default     = "ws.tod.galaxxigames.com"
 }
 
 variable "ecr_repository_name" {

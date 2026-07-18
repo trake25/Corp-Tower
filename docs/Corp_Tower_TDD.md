@@ -3,9 +3,9 @@
 
 ## System Overview
 - 3-player real-time selfish-cooperation puzzle game.
-- Godot `4.6.2.stable` Android client connects by secure WebSocket to `wss://corp-tower.duckdns.org`.
+- Godot `4.6.2.stable` Android client connects by secure WebSocket to `wss://ws.tod.galaxxigames.com`.
 - Live staging currently runs on the Server K3s stack behind EC2-GW Caddy.
-- Docker EC2-1/EC2-2/EC2-3 staging workflows are deprecated and removed.
+- Docker EC2-1/EC2-2/EC2-3 staging workflows, Terraform, and Ansible have been removed.
 - Server remains authoritative for matchmaking, room state, timers, shape block assignment, tower history, scoring, refresh tokens, debug tuning, bots, reconnect, and room cleanup.
 - K3s is tracked in [[Server K3s Stack]] and [[Server K3s Workflows]].
 - EKS, NLB with Elastic IPs, and ElastiCache Redis are tracked as a parallel plan-only path in [[Server EKS Stack]] and [[Server EKS Workflow]].
@@ -26,24 +26,9 @@
 - `infra/k3s`: isolated K3s Terraform, Ansible, Kustomize, and Argo bootstrap assets. -> [[Server K3s Stack]]
 - `infra/eks`: plan-only EKS, NLB/EIP, and ElastiCache Terraform assets. -> [[Server EKS Stack]]
 
-## Deprecated Docker Runtime Architecture
-- EC2-1 gateway:
-  - public entrypoint `wss://corp-tower.duckdns.org`
-  - `caddy:2-alpine` reverse proxy to worker private IPs on port `3000`
-  - boot-time DuckDNS updater refreshes `corp-tower.duckdns.org` after EC2 stop/start IP changes
-  - generated Caddyfile is persisted at `/etc/corp-tower/caddy/Caddyfile` so Docker restart can recover after reboot
-  - external Redis simulation with `redis:7-alpine` on port `6379`
-- EC2-2/EC2-3 workers:
-  - run `corp-tower-server` Docker containers
-- Server workers:
-  - connect to Redis via `REDIS_URL=redis://<EC2-1-private-ip>:6379`
-  - use `RECONNECT_TTL_SECONDS=10` for staging/debug reconnect testing
-  - retry Redis startup connection so workers can boot before the gateway during EC2 stop/start recovery
-- Redis stores active session, queue, and room state only; long-term leaderboard/player persistence remains deferred.
-
 ## Active Server K3s Architecture
 - Server K3s uses separate Terraform state key `k3s-lab/terraform.tfstate` and AWS resources tagged `Environment=k3s-lab`.
-- EC2-GW is public and acts as Caddy gateway, SSH bastion, DuckDNS updater, and NAT instance.
+- EC2-GW is public and acts as Caddy gateway, SSH bastion, Cloudflare DNS updater, and NAT instance.
 - K3s control plane and agents are private EC2 instances in the lab VPC private subnet.
 - K3s disables Traefik and ServiceLB; public traffic stays on EC2-GW Caddy.
 - Corp Tower runs in namespace `corp-tower` with in-cluster Redis service `redis:6379`, two server replicas, and fixed NodePort `30300/tcp`.
@@ -142,7 +127,7 @@
 
 ## Required GitHub Secrets
 - Server/infra: `AWS_ROLE_ARN`, `ECR_REPOSITORY`, `EC2_STAGING_HOST`, `EC2_STAGING_USER`, `EC2_STAGING_SSH_KEY`, `EC2_STAGING_SSH_PUBLIC_KEY`
-- Staging environment: `DUCKDNS_TOKEN`
+- Staging environment: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`
 - Optional: `EC2_STAGING_PORT`, `STAGING_SSH_CIDR`, `STAGING_GAME_PORT_CIDR`
 - Android: `ANDROID_RELEASE_KEYSTORE_BASE64`, `ANDROID_RELEASE_KEYSTORE_ALIAS`, `ANDROID_RELEASE_KEYSTORE_PASSWORD`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`
 
@@ -156,7 +141,7 @@
   - two server replicas Ready
   - `ecr-pull` secret exists in namespace `corp-tower`
   - EC2-GW Caddy validates and proxies to NodePort `30300`
-  - client: connect to `wss://corp-tower.duckdns.org`
+  - client: connect to `wss://ws.tod.galaxxigames.com`
 - Godot client import/parse check: run Godot headless against `src/Client/App/corp-tower`.
 
 ## Future Technical Work

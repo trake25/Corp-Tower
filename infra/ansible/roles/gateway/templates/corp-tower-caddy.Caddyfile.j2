@@ -1,3 +1,0 @@
-{{ gateway_domain | default('corp-tower.duckdns.org') }} {
-  reverse_proxy {{ active_worker_private_ips | map('regex_replace', '$', ':3000') | join(' ') }}
-}
