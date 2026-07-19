@@ -170,9 +170,9 @@ func send_quick_chat(slot: int) -> void:
 		"slot": slot
 	}))
 
-func activate_power(slot: int, target_player_id: String) -> void:
+func activate_power(slot: int) -> void:
 	if is_conn_estab:
-		ws.send_text(JSON.stringify({"type": "activate_power", "slot": slot, "targetPlayerId": target_player_id}))
+		ws.send_text(JSON.stringify({"type": "activate_power", "slot": slot}))
 
 func _process(delta: float) -> void:
 	if auto_reconnect_delay_remaining >= 0.0:

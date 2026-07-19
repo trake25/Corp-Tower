@@ -70,6 +70,7 @@ function stripRuntimeRoom(room) {
             state: engineRoom.state || "waiting",
             startsAt: engineRoom.startsAt || 0,
             endsAt: engineRoom.endsAt || 0,
+            freezeEndsAt: engineRoom.freezeEndsAt || 0,
             lastLevelSummary: engineRoom.lastLevelSummary || null
         }
     };

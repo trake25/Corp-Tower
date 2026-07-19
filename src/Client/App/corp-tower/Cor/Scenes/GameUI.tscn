@@ -664,6 +664,26 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 1
 
+[node name="Card" parent="TeamInventoryPopover" index="1"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -316.0
+offset_bottom = -153.0
+
+[node name="QuestPopover" parent="." unique_id=1310220007 instance=ExtResource("16_popover")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+
+[node name="Card" parent="QuestPopover" index="1"]
+anchor_left = 0.0
+anchor_right = 0.0
+offset_left = 86.0
+offset_top = 175.0
+offset_right = 346.0
+offset_bottom = 315.0
+grow_horizontal = 1
+
 [node name="DebugLayer" type="CanvasLayer" parent="." unique_id=1157871814]
 layer = 5
 

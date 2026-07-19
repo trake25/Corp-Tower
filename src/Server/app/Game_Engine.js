@@ -17,7 +17,19 @@ class GameEngine {
     }
 
     getRemainingMs() {
-        if (!this.room || !this.room.endsAt) {
+        if (!this.room) {
+            return 0;
+        }
+
+        if (this.room.state === "starting") {
+            return Math.max(0, (this.room.startsAt || 0) - Date.now());
+        }
+
+        if (this.room.state === "finished" || this.room.state === "failed") {
+            return Math.max(0, (this.room.freezeEndsAt || 0) - Date.now());
+        }
+
+        if (!this.room.endsAt) {
             return 0;
         }
 
@@ -104,6 +116,7 @@ class GameEngine {
             state: "waiting",
             startsAt: 0,
             endsAt: 0,
+            freezeEndsAt: 0,
             lastLevelSummary: null,
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
@@ -149,6 +162,7 @@ class GameEngine {
             state: snapshot.state.state,
             startsAt: snapshot.state.startsAt,
             endsAt: snapshot.state.endsAt,
+            freezeEndsAt: snapshot.state.freezeEndsAt || 0,
             lastLevelSummary: snapshot.state.lastLevelSummary,
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
@@ -283,30 +297,32 @@ class GameEngine {
         this.room.pendingPowerEvents.push({ id: `${this.room.level}:quest:${player.id}`, type: "power_earned", playerId: player.id, powerId: quest.rewardId, label: "Power earned" });
     }
 
-    activatePower(playerId, slot, targetPlayerId) {
+    activatePower(playerId, slot) {
         if (!this.room || this.room.state !== "playing") return false;
         if (this.getRemainingMs() <= 3000) return false;
         const player = this.room.players.find(p => p.id === playerId);
-        const target = this.room.players.find(p => p.id === targetPlayerId);
-        if (!player || !target || !Number.isInteger(Number(slot))) return false;
+        if (!player || !Number.isInteger(Number(slot))) return false;
         if (Date.now() - Number(player.lastPowerActivationTime || 0) < GameConfig.powerActivationCooldownMs) return false;
         const item = player.powerInventory[Number(slot)];
         if (!item) return false;
         player.powerInventory.splice(Number(slot), 1);
         player.lastPowerActivationTime = Date.now();
-        if (item.id === "copy_score") {
-            target.score = player.score;
-            this.room.impactScores[target.id] = player.score;
-        }
-        if (item.id === "refresh") {
-            target.blocks = this.generateRefreshBlocks(target.blocks || []);
-        }
-        if (item.id === "score_cap") {
-            target.score = this.getImpactScoreStatus().players.find(p => p.id === target.id)?.requiredScore || target.score;
-            target.scoreCap = null;
-            target.scoreCapCasterId = null;
-        }
-        this.room.pendingPowerEvents.push({ id: `${this.room.level}:power:${Date.now()}`, type: "power_activated", playerId, targetPlayerId, powerId: item.id, label: GameConfig.powerCatalog[item.id].title, meta: { tintTargetScore: true, tintDurationMs: 4000 } });
+        const impactStatusPlayers = this.getImpactScoreStatus().players;
+        this.room.players.forEach(target => {
+            if (item.id === "copy_score") {
+                target.score = player.score;
+                this.room.impactScores[target.id] = player.score;
+            }
+            if (item.id === "refresh") {
+                target.blocks = this.generateRefreshBlocks(target.blocks || []);
+            }
+            if (item.id === "score_cap") {
+                target.score = impactStatusPlayers.find(p => p.id === target.id)?.requiredScore || target.score;
+                target.scoreCap = null;
+                target.scoreCapCasterId = null;
+            }
+        });
+        this.room.pendingPowerEvents.push({ id: `${this.room.level}:power:${Date.now()}`, type: "power_activated", playerId, powerId: item.id, label: GameConfig.powerCatalog[item.id].title, meta: { tintAllScores: true, tintDurationMs: 4000 } });
         this.persistRoom(); this.broadcastGameState(); return true;
     }
 
@@ -677,6 +693,8 @@ class GameEngine {
 
     completeLevel(finisher, finishingBlock) {
         this.room.state = "finished";
+        this.room.freezeEndsAt =
+            Date.now() + this.getPostLevelTransitionDelayMs() + GameConfig.startDelayMs;
         clearTimeout(this.levelTimer);
         clearInterval(this.tickTimer);
 
@@ -749,6 +767,8 @@ class GameEngine {
         }
 
         this.room.state = "failed";
+        this.room.freezeEndsAt =
+            Date.now() + this.getPostLevelTransitionDelayMs() + GameConfig.startDelayMs;
         this.clearTimers();
 
         const mvp = this.getLevelMVP();

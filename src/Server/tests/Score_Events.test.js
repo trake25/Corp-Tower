@@ -227,26 +227,31 @@ test("refresh rerolls size 3 or higher blocks without changing size", () => {
     assert.notEqual(refreshed[1].shapeId, "I5V");
 });
 
-test("activating the refresh power item rerolls the target's blocks", () => {
+test("activating the refresh power item rerolls every player's blocks", () => {
     const { engine } = createPlayingEngine(10, 20);
     const caster = engine.room.players[0];
-    const target = engine.room.players[1];
+    const teammateA = engine.room.players[1];
+    const teammateB = engine.room.players[2];
 
     engine.room.endsAt = Date.now() + 60000;
     caster.powerInventory = [{ id: "refresh", earnedLevel: 10 }];
     caster.lastPowerActivationTime = 0;
-    target.blocks = [
+    caster.blocks = [createBlock(1, "B0")];
+    teammateA.blocks = [
         createBlock(1, "B1"),
         createBlock(2, "B2")
     ];
+    teammateB.blocks = [createBlock(2, "B3")];
 
-    assert.equal(engine.activatePower(caster.id, 0, target.id), true);
+    assert.equal(engine.activatePower(caster.id, 0), true);
 
     assert.equal(caster.powerInventory.length, 0);
-    assert.equal(
-        target.blocks.every(block => engine.getBlockCellCount(block) >= 3),
-        true
-    );
+    for (const player of [caster, teammateA, teammateB]) {
+        assert.equal(
+            player.blocks.every(block => engine.getBlockCellCount(block) >= 3),
+            true
+        );
+    }
 });
 
 test("a held refresh power item defers the not-enough-height fail", () => {

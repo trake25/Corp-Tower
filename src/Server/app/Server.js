@@ -96,7 +96,7 @@ async function handleMessage(player, message) {
     }
 
     if (data.type === "activate_power" && player.room) {
-        player.room.engine.activatePower(player.id, data.slot, data.targetPlayerId);
+        player.room.engine.activatePower(player.id, data.slot);
     }
 }
 

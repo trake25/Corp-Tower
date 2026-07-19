@@ -33,6 +33,26 @@ func add_row(text: String) -> Label:
 
 	if rows_box.get_child_count() > 1:
 		var rule := HSeparator.new()
+		rows_box.add_child(rule)
+		rows_box.move_child(rule, rows_box.get_child_count() - 2)
+
+	return row
+
+func add_icon_row(icon: Control, text: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	row.add_child(icon)
+
+	var label := Label.new()
+	label.theme_type_variation = &"PopoverBodyLabel"
+	label.text = text
+	row.add_child(label)
+
+	rows_box.add_child(row)
+	if rows_box.get_child_count() > 1:
+		var rule := HSeparator.new()
+		rows_box.add_child(rule)
 		rows_box.move_child(rule, rows_box.get_child_count() - 2)
 
 	return row

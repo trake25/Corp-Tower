@@ -8,6 +8,7 @@ const SCORE_POPUP_INTRO_SECONDS := 0.16
 const SCORE_POPUP_FADE_RATIO := 0.28
 const SCORE_POPUP_MIN_FADE_SECONDS := 0.35
 const SCORE_POPUP_MAX_FADE_SECONDS := 2.0
+const CHAT_BUBBLE_MAX_WIDTH := 240.0
 const SCORE_POPUP_MIN_HOLD_SECONDS := 0.05
 const FINISH_SCORE_POPUP_MIN_HOLD_RATIO := 0.08
 const LEVEL_SUMMARY_DEFAULT_DELAY_MS := 3000
@@ -24,6 +25,7 @@ const RoundTimeFreezeTexture = preload("res://Cor/Art/Static/timer-freeze-time.p
 const PlayerRailEntryScene = preload("res://Cor/Scenes/PlayerRailEntry.tscn")
 const ImpactBarScene = preload("res://Cor/Scenes/ImpactBar.tscn")
 const QuestIdleTexture = preload("res://Cor/Art/Static/ic-quest-state1.png")
+const QuestUnseenTexture = preload("res://Cor/Art/Static/ic-quest-state2.png")
 const QuestClearedTexture = preload("res://Cor/Art/Static/ic-quest-state3.png")
 const PLAYER_NAME_MAX_LENGTH := 10
 const MAX_RAIL_PLAYERS := 3
@@ -52,6 +54,8 @@ var impact_pill: Control
 var quest_chip: TextureButton
 var quest_badge: TextureRect
 var quest_seen_level: int = -1
+var last_side_quest: Dictionary = {}
+var quest_popover: Control
 var quick_chat_trigger: TextureButton
 var power_trigger: TextureButton
 var last_power_inventory: Array = []
@@ -73,6 +77,7 @@ var player_color_map: Dictionary = {}
 var player_order: Array[String] = []
 var seen_score_event_ids: Dictionary = {}
 var seen_quick_chat_event_ids: Dictionary = {}
+var seen_power_event_ids: Dictionary = {}
 var quick_chat_templates: Array = []
 var quick_chat_cooldown_ms: int = 6000
 var last_quick_chat_sent_at_ms: int = 0
@@ -251,6 +256,7 @@ func bind_ui_nodes() -> void:
 		quest_chip.pressed.connect(on_quest_chip_pressed)
 	team_inventory_button = optional_node("TeamInventoryButton") as TextureButton
 	team_inventory_popover = optional_node("TeamInventoryPopover") as Control
+	quest_popover = optional_node("QuestPopover") as Control
 	impact_status_label = require_node("ImpactStatusLabel") as Label
 	impact_separator = optional_node("ImpactSeparator") as HSeparator
 	tower_stability_label = optional_node("TowerStabilityLabel") as Label
@@ -273,6 +279,8 @@ func bind_ui_nodes() -> void:
 	level_summary_mvp_label = require_node("LevelSummaryMvpLabel") as Label
 	level_summary_players_box = require_node("LevelSummaryPlayersBox") as VBoxContainer
 	score_popup_layer = require_node("ScorePopupLayer") as Control
+	if score_popup_layer != null:
+		score_popup_layer.visible = true
 
 	inventory_buttons = [
 		require_node("PlaceBlockButton1") as Button,
@@ -419,6 +427,22 @@ func setup_popover_controls() -> void:
 	if power_trigger != null:
 		power_trigger.pressed.connect(open_power_popover)
 
+	connect_button.pressed.connect(on_connect_pressed)
+	for i in range(quick_chat_buttons.size()):
+		var quick_chat_button: Button = quick_chat_buttons[i]
+		if quick_chat_button != null:
+			quick_chat_button.focus_mode = Control.FOCUS_NONE
+			quick_chat_button.pressed.connect(func(): on_quick_chat_pressed(i))
+	update_quick_chat_buttons()
+	for i in range(power_buttons.size()):
+		if power_buttons[i] != null:
+			power_buttons[i].gui_input.connect(func(event):
+				if event is InputEventMouseButton and event.pressed and !power_buttons[i].disabled:
+					selected_power_slot = i
+					power_dragging = true
+					show_power_drag_ghost(power_buttons[i].text, event.global_position)
+			)
+
 func open_quick_chat_popover() -> void:
 	if team_inventory_popover == null:
 		return
@@ -456,19 +480,24 @@ func open_power_popover() -> void:
 		for i in range(last_power_inventory.size()):
 			var index: int = i
 			var entry: Variant = last_power_inventory[i]
-			var label: String = str(entry.get("name", entry.get("id", "Power"))) \
-				if typeof(entry) == TYPE_DICTIONARY else str(entry)
+			var power_id: String = str(entry.get("id", "")) if typeof(entry) == TYPE_DICTIONARY else str(entry)
 			team_inventory_popover.call(
 				"add_action_row",
-				label,
+				get_power_row_label(power_id),
 				func():
-					selected_power_slot = index
+					NetworkManager.activate_power(index)
 					close_active_popover()
 			)
 
 	close_active_popover()
 	active_popover = team_inventory_popover
 	team_inventory_popover.call("open")
+
+func get_power_row_label(power_id: String) -> String:
+	if power_id == "refresh":
+		return "Refresh team inventory"
+
+	return power_id.replace("_", " ").capitalize()
 
 func open_team_inventory_popover() -> void:
 	if team_inventory_popover == null:
@@ -477,19 +506,21 @@ func open_team_inventory_popover() -> void:
 	team_inventory_popover.call("set_title", "Team Inventory")
 	team_inventory_popover.call("clear_rows")
 
-	if last_draw_pile_count <= 0 or last_next_draw_block == null:
-		team_inventory_popover.call("add_row", "No bricks remaining")
-	else:
+	if last_draw_pile_count > 0 and last_next_draw_block != null:
 		var next_block: Dictionary = normalize_block(last_next_draw_block, 0)
-		team_inventory_popover.call(
-			"add_row",
-			"Next brick: " + str(next_block.get("shapeId", "BLOCK"))
-		)
+		var icon := Control.new()
+		icon.set_script(BlockPreviewScript)
+		icon.custom_minimum_size = Vector2(32.0, 32.0)
+		icon.set("cell_color", DRAW_PILE_COLOR)
+		icon.call("set_block", next_block)
+		team_inventory_popover.call("add_icon_row", icon, "Next brick")
 
-	team_inventory_popover.call(
+	var remaining_label: Label = team_inventory_popover.call(
 		"add_row",
-		str(last_draw_pile_count) + " remaining bricks"
+		str(last_draw_pile_count) + " Remaining bricks"
 	)
+	if remaining_label != null:
+		remaining_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 	close_active_popover()
 	active_popover = team_inventory_popover
@@ -499,22 +530,6 @@ func close_active_popover() -> void:
 	if active_popover != null:
 		active_popover.call("close")
 		active_popover = null
-
-	connect_button.pressed.connect(on_connect_pressed)
-	for i in range(quick_chat_buttons.size()):
-		var quick_chat_button: Button = quick_chat_buttons[i]
-		if quick_chat_button != null:
-			quick_chat_button.focus_mode = Control.FOCUS_NONE
-			quick_chat_button.pressed.connect(func(): on_quick_chat_pressed(i))
-	update_quick_chat_buttons()
-	for i in range(power_buttons.size()):
-		if power_buttons[i] != null:
-			power_buttons[i].gui_input.connect(func(event):
-				if event is InputEventMouseButton and event.pressed and !power_buttons[i].disabled:
-					selected_power_slot = i
-					power_dragging = true
-					show_power_drag_ghost(power_buttons[i].text, event.global_position)
-			)
 
 func setup_debug_controls() -> void:
 	if debug_overlay != null:
@@ -653,7 +668,7 @@ func _input(event: InputEvent) -> void:
 	if power_dragging and event is InputEventMouseButton and !event.pressed:
 		for target in power_target_buttons:
 			if target.get_global_rect().has_point(event.global_position):
-				NetworkManager.activate_power(selected_power_slot, str(target.get_meta("player_id")))
+				NetworkManager.activate_power(selected_power_slot)
 		power_dragging = false
 		selected_power_slot = -1
 		hide_power_drag_ghost()
@@ -1014,6 +1029,7 @@ func update_game_state(data) -> void:
 		last_level_summary_key = ""
 		clear_score_popups()
 		seen_quick_chat_event_ids.clear()
+		seen_power_event_ids.clear()
 		cancel_pending_level_summary()
 		if state != "finished" and state != "failed":
 			hide_level_summary()
@@ -1072,8 +1088,8 @@ func update_game_state(data) -> void:
 	quick_chat_templates = data.get("quickChatTemplates", quick_chat_templates)
 	quick_chat_cooldown_ms = int(data.get("quickChatCooldownMs", quick_chat_cooldown_ms))
 	update_quick_chat_buttons()
-	process_quick_chat_events(data.get("quickChatEvents", []), players)
-	process_power_events(data.get("powerEvents", []))
+	process_quick_chat_events(data.get("quickChatEvents", []))
+	process_power_events(data.get("powerEvents", []), players)
 
 	var score_popup_wait_seconds: float = process_score_events(data.get("scoreEvents", []), players)
 
@@ -1235,22 +1251,45 @@ func update_quest_chip(raw_side_quest: Variant) -> void:
 		return
 
 	var side_quest: Dictionary = raw_side_quest if typeof(raw_side_quest) == TYPE_DICTIONARY else {}
+	last_side_quest = side_quest
 	var is_unlocked: bool = str(side_quest.get("label", "")) != ""
 	var is_cleared: bool = str(side_quest.get("claimedBy", "")) != ""
 	var is_seen: bool = quest_seen_level == current_level
 
 	quest_chip.visible = true
-	quest_chip.texture_normal = QuestClearedTexture if is_cleared else QuestIdleTexture
+	if is_cleared:
+		quest_chip.texture_normal = QuestClearedTexture
+	elif is_unlocked and !is_seen:
+		quest_chip.texture_normal = QuestUnseenTexture
+	else:
+		quest_chip.texture_normal = QuestIdleTexture
 	quest_chip.tooltip_text = str(side_quest.get("label", ""))
-
-	if quest_badge != null:
-		quest_badge.visible = is_unlocked and !is_cleared and !is_seen
 
 func on_quest_chip_pressed() -> void:
 	quest_seen_level = current_level
+	update_quest_chip(last_side_quest)
+	open_quest_popover()
 
-	if quest_badge != null:
-		quest_badge.visible = false
+func open_quest_popover() -> void:
+	if quest_popover == null:
+		return
+
+	quest_popover.call("set_title", "Quest")
+	quest_popover.call("clear_rows")
+
+	var label: String = str(last_side_quest.get("label", ""))
+	var claimed_by: String = str(last_side_quest.get("claimedBy", ""))
+
+	if label == "":
+		quest_popover.call("add_row", "No active quest yet")
+	else:
+		quest_popover.call("add_row", label)
+		if claimed_by != "":
+			quest_popover.call("add_row", "Claimed by " + get_player_display_name(claimed_by, []))
+
+	close_active_popover()
+	active_popover = quest_popover
+	quest_popover.call("open")
 
 func update_impact_track(player_statuses: Array, next_impact_level: int) -> void:
 	if impact_track == null:
@@ -1284,7 +1323,9 @@ func update_impact_track(player_statuses: Array, next_impact_level: int) -> void
 		var current: int = int(player_status.get(
 			"bandScore",
 			player_status.get("score", 0)
-		)) + int(player_level_scores.get(player_id, 0))
+		))
+		if current_match_state == "playing":
+			current += int(player_level_scores.get(player_id, 0))
 		var ratio: float = 1.0 if bool(player_status.get("met", false)) else 0.0
 
 		if required > 0:
@@ -1370,13 +1411,13 @@ func update_power_target_ui(players: Array) -> void:
 		power_target_buttons.append(target)
 		target.gui_input.connect(func(event):
 			if power_dragging and event is InputEventMouseButton and !event.pressed:
-				NetworkManager.activate_power(selected_power_slot, player_id)
+				NetworkManager.activate_power(selected_power_slot)
 				power_dragging = false
 				selected_power_slot = -1
 				hide_power_drag_ghost()
 				get_viewport().set_input_as_handled()
 			elif power_dragging and event is InputEventScreenTouch and !event.pressed:
-				NetworkManager.activate_power(selected_power_slot, player_id)
+				NetworkManager.activate_power(selected_power_slot)
 				power_dragging = false
 				selected_power_slot = -1
 				hide_power_drag_ghost()
@@ -1550,7 +1591,7 @@ func process_score_events(raw_events: Variant, players: Array) -> float:
 
 	return max_popup_duration_seconds
 
-func process_quick_chat_events(raw_events: Variant, players: Array) -> void:
+func process_quick_chat_events(raw_events: Variant) -> void:
 	if typeof(raw_events) != TYPE_ARRAY:
 		return
 
@@ -1563,26 +1604,109 @@ func process_quick_chat_events(raw_events: Variant, players: Array) -> void:
 			continue
 		seen_quick_chat_event_ids[event_id] = true
 		var player_id: String = str(event.get("playerId", ""))
+		show_quick_chat_bubble(player_id, str(event.get("text", "")), 3.0)
+
+func show_quick_chat_bubble(player_id: String, text: String, duration_seconds: float) -> void:
+	if score_popup_layer == null or text == "":
+		return
+
+	var entry: Control = player_rail_entries.get(player_id, null)
+	if entry == null or player_rail_box == null:
 		show_score_event_popup({
 			"type": "quick_chat",
 			"playerId": player_id,
-			"label": get_player_display_name(player_id, players) + ": " + str(event.get("text", ""))
-		}, players, 2.5)
+			"label": text
+		}, [], duration_seconds)
+		return
 
-func process_power_events(raw_events: Variant) -> void:
+	var bubble: PanelContainer = PanelContainer.new()
+	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bubble.z_index = 20
+	bubble.modulate.a = 0.0
+	bubble.add_theme_stylebox_override("panel", make_chat_bubble_style())
+
+	var margin: MarginContainer = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_bottom", 8)
+
+	var label: Label = Label.new()
+	label.text = text
+	label.theme_type_variation = &"PopoverBodyLabel"
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.custom_minimum_size = Vector2(CHAT_BUBBLE_MAX_WIDTH, 0)
+
+	margin.add_child(label)
+	bubble.add_child(margin)
+	score_popup_layer.add_child(bubble)
+
+	bubble.size = bubble.get_combined_minimum_size()
+	bubble.pivot_offset = bubble.size * 0.5
+	bubble.scale = Vector2(0.9, 0.9)
+
+	var rail_right: float = player_rail_box.global_position.x + player_rail_box.size.x
+	var row_center_y: float = entry.global_position.y + entry.size.y * 0.5
+	bubble.position = Vector2(rail_right + 8.0, row_center_y - bubble.size.y * 0.5)
+
+	var total_duration: float = maxf(0.1, duration_seconds)
+	var intro_duration: float = minf(SCORE_POPUP_INTRO_SECONDS, total_duration * 0.3)
+	var fade_duration: float = minf(0.35, total_duration * 0.3)
+	var hold_duration: float = maxf(0.0, total_duration - intro_duration - fade_duration)
+
+	var tween: Tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(bubble, "modulate:a", 1.0, intro_duration)
+	tween.tween_property(bubble, "scale", Vector2.ONE, intro_duration)
+	tween.set_parallel(false)
+	tween.tween_interval(hold_duration)
+	tween.tween_property(bubble, "modulate:a", 0.0, fade_duration)
+	tween.tween_callback(Callable(bubble, "queue_free"))
+
+func make_chat_bubble_style() -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(1, 1, 1, 1)
+	style.corner_radius_top_left = 14
+	style.corner_radius_top_right = 14
+	style.corner_radius_bottom_right = 14
+	style.corner_radius_bottom_left = 4
+	style.shadow_color = Color(0.42, 0.55, 0.6, 0.22)
+	style.shadow_size = 8
+	style.shadow_offset = Vector2(0, 4)
+	return style
+
+func process_power_events(raw_events: Variant, players: Array) -> void:
 	if typeof(raw_events) != TYPE_ARRAY:
 		return
 	for raw_event in raw_events:
 		if typeof(raw_event) != TYPE_DICTIONARY:
 			continue
 		var event: Dictionary = raw_event
+		var event_id: String = str(event.get("id", ""))
+		if event_id == "" or seen_power_event_ids.has(event_id):
+			continue
+		seen_power_event_ids[event_id] = true
+
 		var meta: Variant = event.get("meta", {})
 		if typeof(meta) != TYPE_DICTIONARY:
-			continue
+			meta = {}
 		var caster_color: Color = player_color_map.get(str(event.get("playerId", "")), Color.WHITE)
-		var target_id := str(event.get("targetPlayerId", ""))
-		if bool(meta.get("tintTargetScore", false)) and target_id != "":
-			score_tints[target_id] = { "color": caster_color, "until": Time.get_ticks_msec() + 4000 }
+
+		if bool(meta.get("tintAllScores", false)):
+			var tint_until: int = Time.get_ticks_msec() + int(meta.get("tintDurationMs", 4000))
+			for player in players:
+				score_tints[str(player.get("id", ""))] = { "color": caster_color, "until": tint_until }
+
+		show_score_event_popup({
+			"type": "power_activated",
+			"label": get_power_toast_text(str(event.get("powerId", "")), str(event.get("label", "Power")))
+		}, players, 3.0)
+
+func get_power_toast_text(power_id: String, catalog_label: String) -> String:
+	if power_id == "refresh":
+		return "All players inventory refreshed"
+
+	return catalog_label + " activated for everyone"
 
 func show_power_tint(control: Control, tint: Color) -> void:
 	if control == null:
@@ -1826,6 +1950,9 @@ func get_score_popup_size(event_type: String) -> Vector2:
 	if event_type == "exact_finish":
 		return Vector2(240, 54)
 
+	if event_type == "power_activated":
+		return Vector2(300, 36)
+
 	if (
 		event_type == "mvp" or
 		event_type == "overbuild_finish" or
@@ -1872,6 +1999,9 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 
 	if event_type == "mvp":
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.25)
+
+	if event_type == "power_activated":
+		return Vector2(layer_size.x * 0.5, layer_size.y * 0.816)
 
 	if (
 		event_type == "exact_finish" or
