@@ -48,8 +48,8 @@ func test_apply_config_refreshes_value_labels() -> void:
 
 func test_apply_config_updates_popup_and_summary_durations() -> void:
 	harness.main.update_debug_config(CONFIG_FIXTURE)
-	assert_eq(harness.main.get_score_event_popup_duration_seconds({"type": "placement"}), 4.0, "Placement popups should use the configured placement duration.")
-	assert_eq(harness.main.get_score_event_popup_duration_seconds({"type": "mvp"}), 5.0, "Finish popups should use the configured finish duration.")
+	assert_eq(harness.main.score_popups.get_score_event_popup_duration_seconds({"type": "placement"}), 4.0, "Placement popups should use the configured placement duration.")
+	assert_eq(harness.main.score_popups.get_score_event_popup_duration_seconds({"type": "mvp"}), 5.0, "Finish popups should use the configured finish duration.")
 
 func test_apply_config_leaves_sync_guard_released() -> void:
 	harness.main.update_debug_config(CONFIG_FIXTURE)

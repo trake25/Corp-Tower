@@ -61,9 +61,9 @@ func test_game_state_renders_rail_and_top_bar() -> void:
 
 func test_score_events_deduplicate_by_id() -> void:
 	var layer: Control = harness.find("ScorePopupLayer") as Control
-	var first_wait: float = harness.main.process_score_events(GAME_STATE_FIXTURE["scoreEvents"], PLAYERS_FIXTURE)
+	var first_wait: float = harness.main.score_popups.process_score_events(GAME_STATE_FIXTURE["scoreEvents"], PLAYERS_FIXTURE)
 	var popup_count_after_first: int = layer.get_child_count()
-	var second_wait: float = harness.main.process_score_events(GAME_STATE_FIXTURE["scoreEvents"], PLAYERS_FIXTURE)
+	var second_wait: float = harness.main.score_popups.process_score_events(GAME_STATE_FIXTURE["scoreEvents"], PLAYERS_FIXTURE)
 	assert_gt(first_wait, 0.0, "New score events should report a popup wait time.")
 	assert_eq(second_wait, 0.0, "Replayed score events must not report a popup wait time.")
 	assert_eq(layer.get_child_count(), popup_count_after_first, "Replayed score events must not spawn duplicate popups.")
@@ -71,7 +71,7 @@ func test_score_events_deduplicate_by_id() -> void:
 func test_team_total_events_never_spawn_popups() -> void:
 	var layer: Control = harness.find("ScorePopupLayer") as Control
 	var before_count: int = layer.get_child_count()
-	harness.main.process_score_events([{"id": "t1", "type": "team_total", "points": 20}], PLAYERS_FIXTURE)
+	harness.main.score_popups.process_score_events([{"id": "t1", "type": "team_total", "points": 20}], PLAYERS_FIXTURE)
 	assert_eq(layer.get_child_count(), before_count, "team_total events are aggregate rows, not popups.")
 
 func test_inventory_renders_active_empty_and_locked_slots() -> void:

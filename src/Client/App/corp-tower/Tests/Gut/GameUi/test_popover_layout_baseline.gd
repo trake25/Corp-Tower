@@ -57,12 +57,12 @@ func test_quest_card_tracks_chip_when_root_grows() -> void:
 
 func test_score_popup_positions_scale_with_layer_size() -> void:
 	await mount_at(DESIGN_SIZE)
-	var design_position: Vector2 = harness.main.get_score_popup_position({"type": "mvp"})
+	var design_position: Vector2 = harness.main.score_popups.get_score_popup_position({"type": "mvp"})
 	assert_almost_eq(design_position.x, DESIGN_SIZE.x * 0.5, 0.5, "MVP popups should center horizontally at the design size.")
 	assert_almost_eq(design_position.y, DESIGN_SIZE.y * 0.25, 0.5, "MVP popups should sit at a quarter height at the design size.")
 	harness.resize(EXPANDED_SIZE)
 	await get_tree().process_frame
-	var expanded_position: Vector2 = harness.main.get_score_popup_position({"type": "mvp"})
+	var expanded_position: Vector2 = harness.main.score_popups.get_score_popup_position({"type": "mvp"})
 	assert_almost_eq(expanded_position.x, EXPANDED_SIZE.x * 0.5, 0.5, "MVP popups should keep centering horizontally when the layer grows.")
 	assert_almost_eq(expanded_position.y, EXPANDED_SIZE.y * 0.25, 0.5, "MVP popups should keep their proportional height when the layer grows.")
 
@@ -70,9 +70,9 @@ func test_placement_popup_lane_positions_interpolate_across_players() -> void:
 	await mount_at(DESIGN_SIZE)
 	harness.main.players_ctx.update_from_players([{"id": "P1"}, {"id": "P2"}, {"id": "P3"}])
 	var layer_size: Vector2 = (harness.find("ScorePopupLayer") as Control).size
-	var first_lane: Vector2 = harness.main.get_score_popup_position({"type": "placement", "playerId": "P1"})
-	var middle_lane: Vector2 = harness.main.get_score_popup_position({"type": "placement", "playerId": "P2"})
-	var last_lane: Vector2 = harness.main.get_score_popup_position({"type": "placement", "playerId": "P3"})
+	var first_lane: Vector2 = harness.main.score_popups.get_score_popup_position({"type": "placement", "playerId": "P1"})
+	var middle_lane: Vector2 = harness.main.score_popups.get_score_popup_position({"type": "placement", "playerId": "P2"})
+	var last_lane: Vector2 = harness.main.score_popups.get_score_popup_position({"type": "placement", "playerId": "P3"})
 	assert_almost_eq(first_lane.x, layer_size.x * 0.22, 0.5, "The first player's placement popup should use the left lane.")
 	assert_almost_eq(middle_lane.x, layer_size.x * 0.5, 0.5, "The middle player's placement popup should center.")
 	assert_almost_eq(last_lane.x, layer_size.x * 0.78, 0.5, "The last player's placement popup should use the right lane.")
