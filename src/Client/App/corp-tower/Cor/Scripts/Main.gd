@@ -14,6 +14,7 @@ const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const UiNodeBinderScript = preload("res://Cor/Scripts/GameUi/UiNodeBinder.gd")
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
 const DebugPanelControllerScript = preload("res://Cor/Scripts/GameUi/DebugPanelController.gd")
+const PointerTriggerRouterScript = preload("res://Cor/Scripts/GameUi/PointerTriggerRouter.gd")
 const BlockPreviewScript = preload("res://Cor/Scripts/BlockPreview.gd")
 const LevelBadgeNormalTexture = preload("res://Cor/Art/Static/level.png")
 const LevelBadgeSafeTexture = preload("res://Cor/Art/Static/safe.png")
@@ -72,6 +73,7 @@ var block_name_labels: Array = []
 var missing_required_nodes: Array[String] = []
 var tuning
 var debug_panel
+var trigger_router
 var player_color_map: Dictionary = {}
 var player_order: Array[String] = []
 var seen_score_event_ids: Dictionary = {}
@@ -94,7 +96,6 @@ var last_placement_sent_at_ms: int = 0
 var is_block_dragging: bool = false
 var drag_slot_index: int = -1
 var drag_pointer_id: int = DRAG_POINTER_MOUSE
-var last_pointer_trigger_frame: int = -1
 var inventory_slot_blocks: Array = []
 
 var status_label: Label
@@ -151,8 +152,30 @@ func _ready() -> void:
 	setup_inventory_controls()
 	debug_panel.setup(tuning, NetworkManager)
 	setup_popover_controls()
+	setup_trigger_router()
 	reset_ui()
 	connect_network_signals()
+
+func setup_trigger_router() -> void:
+	trigger_router = PointerTriggerRouterScript.new()
+	trigger_router.add_guard(func(): return debug_panel.is_open())
+	trigger_router.add_guard(func(): return level_summary_overlay != null and level_summary_overlay.visible)
+	trigger_router.add_trigger(
+		func(): return quest_chip.get_global_rect() if quest_chip != null else null,
+		on_quest_chip_pressed
+	)
+	trigger_router.add_trigger(
+		func(): return quick_chat_trigger.get_global_rect() if quick_chat_trigger != null else null,
+		open_quick_chat_popover
+	)
+	trigger_router.add_trigger(
+		func(): return team_inventory_button.get_global_rect() if team_inventory_button != null else null,
+		open_team_inventory_popover
+	)
+	trigger_router.add_trigger(
+		func(): return power_trigger.get_global_rect() if power_trigger != null else null,
+		open_power_popover
+	)
 
 func prepare_ui() -> bool:
 	bind_ui_nodes()
@@ -477,33 +500,8 @@ func _input(event: InputEvent) -> void:
 	if power_dragging and event is InputEventScreenDrag:
 		move_power_drag_ghost(event.position)
 
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if Engine.get_process_frames() != last_pointer_trigger_frame:
-			last_pointer_trigger_frame = Engine.get_process_frames()
-			_try_activate_popover_trigger(event.global_position)
-	elif event is InputEventScreenTouch and event.pressed:
-		if Engine.get_process_frames() != last_pointer_trigger_frame:
-			last_pointer_trigger_frame = Engine.get_process_frames()
-			_try_activate_popover_trigger(event.position)
-
-func _try_activate_popover_trigger(global_pos: Vector2) -> void:
-	if debug_panel.is_open():
-		return
-	if level_summary_overlay != null and level_summary_overlay.visible:
-		return
-
-	if quest_chip != null and quest_chip.get_global_rect().has_point(global_pos):
-		on_quest_chip_pressed()
-	elif quick_chat_trigger != null and quick_chat_trigger.get_global_rect().has_point(global_pos):
-		open_quick_chat_popover()
-	elif team_inventory_button != null and team_inventory_button.get_global_rect().has_point(global_pos):
-		open_team_inventory_popover()
-	elif power_trigger != null and power_trigger.get_global_rect().has_point(global_pos):
-		open_power_popover()
-	else:
-		return
-
-	get_viewport().set_input_as_handled()
+	if trigger_router.process(event, Engine.get_process_frames()):
+		get_viewport().set_input_as_handled()
 
 func _process(_delta: float) -> void:
 	update_placement_cooldown_overlays()
