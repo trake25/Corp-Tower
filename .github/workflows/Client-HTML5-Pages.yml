@@ -4,7 +4,7 @@ name: Client HTML5 Pages
 # Teardown lives in Client-HTML5-Undeploy.yml.
 #
 # Cost note: GitHub Actions minutes are free and unlimited on public repos, and
-# the R2 fetch sits far inside Cloudflare's permanent free tier.
+# the R2 asset fetch sits far inside R2's permanent free tier.
 # See docs/private-assets-setup.md for the cost tripwires before changing this.
 
 on:
@@ -56,9 +56,6 @@ jobs:
           secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           version-override: ${{ inputs.art_version_override }}
 
-      # No enforce-max-file-mib: GitHub Pages allows 100 MB per file. The size
-      # report still runs — this is how we measure whether the export would fit
-      # Cloudflare's 25 MiB per-file ceiling before committing to that target.
       - name: Build web export
         uses: ./.github/actions/build-godot-web
         with:

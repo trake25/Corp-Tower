@@ -1,8 +1,7 @@
 name: Build Godot Web Export
 description: >-
   Install Godot and export templates, export the project for the web, and report
-  output file sizes. Shared by every HTML5 deploy workflow so the artifact is
-  byte-identical regardless of where it is deployed.
+  output file sizes.
 
   Assumes private assets are already staged (run fetch-private-assets first).
 
@@ -22,19 +21,6 @@ inputs:
   preset-config:
     description: Path to the CI export preset to copy into the project.
     required: true
-  emit-headers:
-    description: >-
-      Write a Cloudflare `_headers` file setting COOP/COEP. Enables
-      SharedArrayBuffer for threaded builds. Ignored by GitHub Pages, which
-      cannot serve custom headers.
-    required: false
-    default: "false"
-  enforce-max-file-mib:
-    description: >-
-      Fail the build if any output file is at least this many MiB. Set to 25 for
-      Cloudflare Pages, which rejects larger files. Leave empty to report only.
-    required: false
-    default: ""
 
 outputs:
   largest-file-bytes:
@@ -104,30 +90,11 @@ runs:
         godot --headless --path "$PROJECT_PATH" --export-release "Web" "$OUTPUT_DIR/index.html"
         test -f "$OUTPUT_DIR/index.html" || { echo "::error::Web export produced no index.html"; exit 1; }
 
-    - name: Write Cloudflare _headers
-      if: ${{ inputs.emit-headers == 'true' }}
-      shell: bash
-      env:
-        OUTPUT_DIR: ${{ inputs.output-dir }}
-      run: |
-        set -euo pipefail
-        # Cross-origin isolation. Required for SharedArrayBuffer if the export
-        # preset ever enables thread support. Harmless while single-threaded.
-        # Leading two spaces on the header lines are part of the _headers format.
-        {
-          echo "/*"
-          echo "  Cross-Origin-Opener-Policy: same-origin"
-          echo "  Cross-Origin-Embedder-Policy: require-corp"
-        } > "$OUTPUT_DIR/_headers"
-        echo "Wrote _headers (COOP/COEP):"
-        cat "$OUTPUT_DIR/_headers"
-
     - name: Report export file sizes
       id: size-report
       shell: bash
       env:
         OUTPUT_DIR: ${{ inputs.output-dir }}
-        ENFORCE_MAX_MIB: ${{ inputs.enforce-max-file-mib }}
       run: |
         set -euo pipefail
 
@@ -149,17 +116,5 @@ runs:
           echo
           echo "Largest file: \`${LARGEST_NAME}\` at $(awk -v b="$LARGEST_BYTES" 'BEGIN{printf "%.2f", b/1048576}') MiB"
           echo
-          echo "> Cloudflare Pages rejects any single file of 25 MiB or more, on every plan."
-          echo "> GitHub Pages allows up to 100 MB per file."
+          echo "> GitHub Pages allows up to 100 MB per file and 1 GB per site."
         } >> "$GITHUB_STEP_SUMMARY"
-
-        if [ -n "$ENFORCE_MAX_MIB" ]; then
-          LIMIT=$(( ENFORCE_MAX_MIB * 1048576 ))
-          if [ "$LARGEST_BYTES" -ge "$LIMIT" ]; then
-            echo "::error::'${LARGEST_NAME}' is $(awk -v b="$LARGEST_BYTES" 'BEGIN{printf "%.2f", b/1048576}') MiB, \
-        at or above the ${ENFORCE_MAX_MIB} MiB per-file limit. Cloudflare Pages will reject this deployment. \
-        Deploy to GitHub Pages instead, or serve the oversized file from a public R2 bucket."
-            exit 1
-          fi
-          echo "All files under ${ENFORCE_MAX_MIB} MiB"
-        fi

@@ -26,6 +26,10 @@ window/size/viewport_width=412
 window/size/viewport_height=917
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+; Web-only: pillarbox to the 412:917 portrait ratio instead of expanding to
+; fill the browser window. Android keeps "expand" so it uses the full screen
+; on phones whose aspect ratio differs from the design size.
+window/stretch/aspect.web="keep"
 window/handheld/orientation="portrait"
 
 [editor_plugins]

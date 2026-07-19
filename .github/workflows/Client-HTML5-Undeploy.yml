@@ -1,31 +1,20 @@
 name: Client HTML5 Undeploy
 
-# Manual teardown of a live HTML5 build. Destructive and outward-facing, so it
-# requires typing UNDEPLOY to run.
+# Manual teardown of the live GitHub Pages build. Destructive and
+# outward-facing, so it requires typing UNDEPLOY to run.
 #
 # Modes:
-#   hard — removes the site entirely (GitHub Pages site deleted / Cloudflare
-#          Pages project deleted). URL returns 404.
-#   soft — replaces the game with a small "offline" page. The site keeps
-#          existing. Use this if hard mode is blocked by token permissions, or
-#          when you want the URL to explain itself rather than 404.
+#   soft — replaces the game with an "offline" page. The site keeps existing.
+#   hard — deletes the GitHub Pages site entirely. URL returns 404.
 #
-# Redeploying afterwards is just running the matching deploy workflow again:
-# Client-HTML5-Pages.yml calls configure-pages with enablement: true, which
-# recreates a deleted Pages site.
+# Redeploying is just running Client-HTML5-Pages.yml again: it calls
+# configure-pages with enablement: true, which recreates a hard-deleted site.
 
 on:
   workflow_dispatch:
     inputs:
-      target:
-        description: "Which deployment to tear down."
-        required: true
-        type: choice
-        options:
-          - github-pages
-          - cloudflare-pages
       mode:
-        description: "hard = delete the site (404). soft = replace with an offline page."
+        description: "soft = replace with an offline page. hard = delete the site (404)."
         required: true
         default: "soft"
         type: choice
@@ -55,11 +44,11 @@ jobs:
             echo "::error::Confirmation failed. Type UNDEPLOY exactly to run this workflow."
             exit 1
           fi
-          echo "Confirmed: ${{ inputs.mode }} undeploy of ${{ inputs.target }}"
+          echo "Confirmed: ${{ inputs.mode }} undeploy of GitHub Pages"
 
-  github-pages-hard:
+  hard-undeploy:
     needs: guard
-    if: ${{ inputs.target == 'github-pages' && inputs.mode == 'hard' }}
+    if: ${{ inputs.mode == 'hard' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -81,18 +70,19 @@ jobs:
           case "$STATUS" in
             204)
               echo "GitHub Pages site deleted. The URL now returns 404."
-              echo "## GitHub Pages undeployed (hard)" >> "$GITHUB_STEP_SUMMARY"
-              echo "" >> "$GITHUB_STEP_SUMMARY"
-              echo "Site deleted. Re-run **Client HTML5 Pages** to recreate it." >> "$GITHUB_STEP_SUMMARY"
+              {
+                echo "## GitHub Pages undeployed (hard)"
+                echo
+                echo "Site deleted. Re-run **Client HTML5 Pages** to recreate it."
+              } >> "$GITHUB_STEP_SUMMARY"
               ;;
             404)
               echo "::notice::No Pages site exists — already undeployed. Nothing to do."
               ;;
             403)
               echo "::error::GITHUB_TOKEN lacks permission to delete the Pages site."
-              echo "The delete endpoint requires repo-admin rights, which the default token may not carry."
-              echo "Use mode 'soft' instead, or delete the site manually:"
-              echo "  Settings > Pages > Unpublish site"
+              echo "This endpoint requires repo-admin rights, which the default token may not carry."
+              echo "Use mode 'soft' instead, or unpublish manually: Settings > Pages > Unpublish site"
               cat /tmp/resp.txt
               exit 1
               ;;
@@ -103,9 +93,9 @@ jobs:
               ;;
           esac
 
-  github-pages-soft:
+  soft-undeploy:
     needs: guard
-    if: ${{ inputs.target == 'github-pages' && inputs.mode == 'soft' }}
+    if: ${{ inputs.mode == 'soft' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -170,99 +160,4 @@ jobs:
             echo
             echo "The game has been replaced with an offline placeholder."
             echo "Re-run **Client HTML5 Pages** to restore the build."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  cloudflare-pages:
-    needs: guard
-    if: ${{ inputs.target == 'cloudflare-pages' }}
-    runs-on: ubuntu-24.04
-    env:
-      CF_PAGES_PROJECT: "corp-tower"
-    steps:
-      - name: Delete Cloudflare Pages project
-        if: ${{ inputs.mode == 'hard' }}
-        env:
-          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-
-          STATUS="$(curl -s -o /tmp/resp.json -w '%{http_code}' \
-            -X DELETE \
-            -H "Authorization: Bearer $CF_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${CF_PAGES_PROJECT}")"
-
-          if [ "$STATUS" = "200" ]; then
-            echo "Cloudflare Pages project '${CF_PAGES_PROJECT}' deleted."
-            {
-              echo "## Cloudflare Pages undeployed (hard)"
-              echo
-              echo "Project deleted. Custom domain and Access policy are detached and"
-              echo "must be reattached after recreating the project."
-            } >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "::error::Failed to delete Pages project (HTTP $STATUS)."
-            echo "Token needs the Pages:Edit permission."
-            cat /tmp/resp.json
-            exit 1
-          fi
-
-      - name: Checkout repository
-        if: ${{ inputs.mode == 'soft' }}
-        uses: actions/checkout@v6
-
-      - name: Build offline placeholder
-        if: ${{ inputs.mode == 'soft' }}
-        run: |
-          set -euo pipefail
-          mkdir -p build/offline
-          cat > build/offline/index.html <<'EOF'
-          <!doctype html>
-          <html lang="en">
-            <head>
-              <meta charset="utf-8" />
-              <meta name="viewport" content="width=device-width, initial-scale=1" />
-              <meta name="robots" content="noindex" />
-              <title>Corp Tower — build offline</title>
-              <style>
-                :root { color-scheme: light dark; }
-                body {
-                  margin: 0; min-height: 100vh;
-                  display: grid; place-items: center;
-                  font: 16px/1.6 system-ui, sans-serif;
-                  text-align: center; padding: 2rem;
-                }
-                h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
-                p { margin: 0; opacity: .7; }
-              </style>
-            </head>
-            <body>
-              <main>
-                <h1>Corp Tower is offline</h1>
-                <p>This build has been taken down. Check back later.</p>
-              </main>
-            </body>
-          </html>
-          EOF
-
-      - name: Deploy placeholder to Cloudflare Pages
-        if: ${{ inputs.mode == 'soft' }}
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: >-
-            pages deploy build/offline
-            --project-name=${{ env.CF_PAGES_PROJECT }}
-            --branch=main
-            --commit-dirty=true
-
-      - name: Summarise soft undeploy
-        if: ${{ inputs.mode == 'soft' }}
-        run: |
-          {
-            echo "## Cloudflare Pages undeployed (soft)"
-            echo
-            echo "The game has been replaced with an offline placeholder."
-            echo "Re-run **Client HTML5 Cloudflare Pages** to restore the build."
           } >> "$GITHUB_STEP_SUMMARY"
