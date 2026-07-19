@@ -36,6 +36,7 @@ class GameEngine {
             state: this.room.state,
             level: this.room.level,
             impactLevel: this.room.impactLevel,
+            impactInterval: Math.max(1, Number(GameConfig.impactInterval) || 1),
             currentHeight: this.room.currentHeight,
             targetHeight: this.room.targetHeight,
             impactScoreStatus: this.getImpactScoreStatus(),

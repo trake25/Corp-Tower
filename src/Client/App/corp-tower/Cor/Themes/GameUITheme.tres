@@ -12,6 +12,16 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_CircleButton"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0.42, 0.55, 0.6, 0.25)
+shadow_size = 5
+shadow_offset = Vector2(0, 3)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_GreenPill"]
 bg_color = Color(0.431, 0.976, 0.467, 1)
 border_width_left = 2
@@ -108,11 +118,11 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_WhiteCard"]
-bg_color = Color(1, 1, 1, 0.97)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 shadow_color = Color(0.42, 0.55, 0.6, 0.22)
 shadow_size = 8
 shadow_offset = Vector2(0, 4)
@@ -124,6 +134,13 @@ ActionCardPanel/base_type = &"PanelContainer"
 ActionCardPanel/styles/panel = SubResource("StyleBoxFlat_ActionButton")
 CardMetaLabel/base_type = &"Label"
 CardMetaLabel/font_sizes/font_size = 12
+WhiteCardButton/base_type = &"Button"
+WhiteCardButton/styles/normal = SubResource("StyleBoxFlat_WhiteCard")
+WhiteCardButton/styles/hover = SubResource("StyleBoxFlat_WhiteCard")
+WhiteCardButton/styles/pressed = SubResource("StyleBoxFlat_WhiteCard")
+WhiteCardButton/styles/disabled = SubResource("StyleBoxFlat_WhiteCard")
+CircleButtonPanel/base_type = &"Panel"
+CircleButtonPanel/styles/panel = SubResource("StyleBoxFlat_CircleButton")
 GreenPillPanel/base_type = &"PanelContainer"
 GreenPillPanel/styles/panel = SubResource("StyleBoxFlat_GreenPill")
 HudPanel/base_type = &"PanelContainer"

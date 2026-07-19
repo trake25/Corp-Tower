@@ -1,7 +1,6 @@
 extends Control
 
 @onready var fill: TextureRect = %ImpactBarFill
-@onready var dot: Panel = %ImpactBarDot
 
 var gradient: Gradient
 var gradient_texture: GradientTexture2D
@@ -25,7 +24,3 @@ func set_bar(seat_color: Color, ratio: float) -> void:
 	gradient.set_color(1, seat_color.darkened(0.12))
 
 	fill.anchor_top = 1.0 - clampf(ratio, 0.0, 1.0)
-
-	var dot_style := dot.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-	dot_style.bg_color = seat_color
-	dot.add_theme_stylebox_override("panel", dot_style)

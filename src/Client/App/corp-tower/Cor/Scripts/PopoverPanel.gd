@@ -37,6 +37,19 @@ func add_row(text: String) -> Label:
 
 	return row
 
+func add_action_row(text: String, on_pressed: Callable) -> Button:
+	var row := Button.new()
+	row.theme_type_variation = &"PopoverRowButton"
+	row.text = text
+	row.focus_mode = Control.FOCUS_NONE
+	row.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	row.custom_minimum_size = Vector2(0, 34)
+	row.pressed.connect(on_pressed)
+	rows_box.add_child(row)
+
+	return row
+
 func open() -> void:
 	visible = true
 	if auto_close_seconds > 0.0:

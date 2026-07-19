@@ -23,8 +23,8 @@ const RoundTimeNormalTexture = preload("res://Cor/Art/Static/timer-round-time.pn
 const RoundTimeFreezeTexture = preload("res://Cor/Art/Static/timer-freeze-time.png")
 const PlayerRailEntryScene = preload("res://Cor/Scenes/PlayerRailEntry.tscn")
 const ImpactBarScene = preload("res://Cor/Scenes/ImpactBar.tscn")
-const QuestActiveTexture = preload("res://Cor/Art/Static/ic-quest-active-uncleared.png")
-const QuestClearedTexture = preload("res://Cor/Art/Static/ic-quest-cleared.png")
+const QuestIdleTexture = preload("res://Cor/Art/Static/ic-quest-state1.png")
+const QuestClearedTexture = preload("res://Cor/Art/Static/ic-quest-state3.png")
 const PLAYER_NAME_MAX_LENGTH := 10
 const MAX_RAIL_PLAYERS := 3
 const LOCAL_PLAYER_MARKER := "You"
@@ -50,6 +50,14 @@ var player_rail_box: VBoxContainer
 var impact_track: VBoxContainer
 var impact_pill: Control
 var quest_chip: TextureButton
+var quest_badge: TextureRect
+var quest_seen_level: int = -1
+var quick_chat_trigger: TextureButton
+var power_trigger: TextureButton
+var last_power_inventory: Array = []
+var impact_interval: int = 3
+var timer_deadline_ms: int = 0
+var timer_shown_seconds: int = -1
 var team_inventory_button: TextureButton
 var team_inventory_popover: Control
 var active_popover: Control
@@ -235,6 +243,12 @@ func bind_ui_nodes() -> void:
 	impact_track = optional_node("ImpactTrack") as VBoxContainer
 	impact_pill = optional_node("ImpactPill") as Control
 	quest_chip = optional_node("QuestChip") as TextureButton
+	quest_badge = optional_node("QuestBadge") as TextureRect
+	quick_chat_trigger = optional_node("QuickChatTrigger") as TextureButton
+	power_trigger = optional_node("PowerTrigger") as TextureButton
+
+	if quest_chip != null:
+		quest_chip.pressed.connect(on_quest_chip_pressed)
 	team_inventory_button = optional_node("TeamInventoryButton") as TextureButton
 	team_inventory_popover = optional_node("TeamInventoryPopover") as Control
 	impact_status_label = require_node("ImpactStatusLabel") as Label
@@ -398,6 +412,63 @@ func setup_inventory_controls() -> void:
 func setup_popover_controls() -> void:
 	if team_inventory_button != null:
 		team_inventory_button.pressed.connect(open_team_inventory_popover)
+
+	if quick_chat_trigger != null:
+		quick_chat_trigger.pressed.connect(open_quick_chat_popover)
+
+	if power_trigger != null:
+		power_trigger.pressed.connect(open_power_popover)
+
+func open_quick_chat_popover() -> void:
+	if team_inventory_popover == null:
+		return
+
+	team_inventory_popover.call("set_title", "Quick Chat")
+	team_inventory_popover.call("clear_rows")
+
+	if quick_chat_templates.is_empty():
+		team_inventory_popover.call("add_row", "No quick chat available")
+	else:
+		for i in range(quick_chat_templates.size()):
+			var index: int = i
+			team_inventory_popover.call(
+				"add_action_row",
+				str(quick_chat_templates[i]),
+				func():
+					on_quick_chat_pressed(index)
+					close_active_popover()
+			)
+
+	close_active_popover()
+	active_popover = team_inventory_popover
+	team_inventory_popover.call("open")
+
+func open_power_popover() -> void:
+	if team_inventory_popover == null:
+		return
+
+	team_inventory_popover.call("set_title", "Power")
+	team_inventory_popover.call("clear_rows")
+
+	if last_power_inventory.is_empty():
+		team_inventory_popover.call("add_row", "No power items")
+	else:
+		for i in range(last_power_inventory.size()):
+			var index: int = i
+			var entry: Variant = last_power_inventory[i]
+			var label: String = str(entry.get("name", entry.get("id", "Power"))) \
+				if typeof(entry) == TYPE_DICTIONARY else str(entry)
+			team_inventory_popover.call(
+				"add_action_row",
+				label,
+				func():
+					selected_power_slot = index
+					close_active_popover()
+			)
+
+	close_active_popover()
+	active_popover = team_inventory_popover
+	team_inventory_popover.call("open")
 
 func open_team_inventory_popover() -> void:
 	if team_inventory_popover == null:
@@ -593,6 +664,27 @@ func _input(event: InputEvent) -> void:
 
 func _process(_delta: float) -> void:
 	update_placement_cooldown_overlays()
+	tick_round_timer()
+
+func tick_round_timer() -> void:
+	if timer_label == null or timer_deadline_ms <= 0:
+		return
+
+	var remaining: int = int(ceil(
+		float(timer_deadline_ms - Time.get_ticks_msec()) / 1000.0
+	))
+	remaining = maxi(0, remaining)
+
+	if remaining == timer_shown_seconds:
+		return
+
+	timer_shown_seconds = remaining
+	timer_label.text = format_clock(remaining)
+
+func format_clock(total_seconds: int) -> String:
+	var safe_seconds: int = maxi(0, total_seconds)
+
+	return "%02d:%02d" % [safe_seconds / 60, safe_seconds % 60]
 
 func on_connect_pressed() -> void:
 	NetworkManager.toggle_connection()
@@ -903,6 +995,7 @@ func update_game_state(data) -> void:
 	var target_height: int = int(data.get("targetHeight", 0))
 	var incoming_level: int = int(data.get("level", 0))
 	var impact_level: int = int(data.get("impactLevel", 0))
+	impact_interval = maxi(1, int(data.get("impactInterval", impact_interval)))
 	var players: Array = data.get("players", [])
 	var fallback_popup_duration_ms: int = int(data.get("scorePopupDurationMs", SCORE_POPUP_DEFAULT_DURATION_MS))
 	placement_score_popup_duration_ms = int(data.get(
@@ -974,6 +1067,7 @@ func update_game_state(data) -> void:
 		my_blocks,
 		int(data.get("activeInventorySlots", MAX_INVENTORY_SLOTS))
 	)
+	last_power_inventory = my_power
 	update_power_inventory_ui(my_power)
 	quick_chat_templates = data.get("quickChatTemplates", quick_chat_templates)
 	quick_chat_cooldown_ms = int(data.get("quickChatCooldownMs", quick_chat_cooldown_ms))
@@ -1140,16 +1234,23 @@ func update_quest_chip(raw_side_quest: Variant) -> void:
 	if quest_chip == null:
 		return
 
-	if typeof(raw_side_quest) != TYPE_DICTIONARY:
-		quest_chip.visible = false
-		return
-
-	var side_quest: Dictionary = raw_side_quest
+	var side_quest: Dictionary = raw_side_quest if typeof(raw_side_quest) == TYPE_DICTIONARY else {}
+	var is_unlocked: bool = str(side_quest.get("label", "")) != ""
 	var is_cleared: bool = str(side_quest.get("claimedBy", "")) != ""
+	var is_seen: bool = quest_seen_level == current_level
 
 	quest_chip.visible = true
-	quest_chip.texture_normal = QuestClearedTexture if is_cleared else QuestActiveTexture
+	quest_chip.texture_normal = QuestClearedTexture if is_cleared else QuestIdleTexture
 	quest_chip.tooltip_text = str(side_quest.get("label", ""))
+
+	if quest_badge != null:
+		quest_badge.visible = is_unlocked and !is_cleared and !is_seen
+
+func on_quest_chip_pressed() -> void:
+	quest_seen_level = current_level
+
+	if quest_badge != null:
+		quest_badge.visible = false
 
 func update_impact_track(player_statuses: Array, next_impact_level: int) -> void:
 	if impact_track == null:
@@ -1198,7 +1299,7 @@ func update_impact_track(player_statuses: Array, next_impact_level: int) -> void
 			impact_bars.erase(player_id)
 
 	if impact_pill != null:
-		impact_pill.visible = next_impact_level > 0 and next_impact_level == current_level + 1
+		impact_pill.visible = true
 
 func get_impact_seat_color(player_id: String) -> Color:
 	if player_color_map.has(player_id):
@@ -1383,11 +1484,14 @@ func set_top_indicator_progress(current_height: int, target_height: int) -> void
 	top_indicator_fill.anchor_right = ratio
 
 func update_top_bar_display(level: int, impact_level: int, state: String, seconds_remaining: int) -> void:
-	var is_impact_level: bool = level > 0 and level == impact_level
+	var is_impact_level: bool = level > 1 and (level - 1) % impact_interval == 0
 	var is_frozen: bool = state != "playing"
 
 	level_label.text = str(level) if level > 0 else "-"
-	timer_label.text = str(seconds_remaining) if seconds_remaining > 0 else "0"
+
+	timer_deadline_ms = Time.get_ticks_msec() + seconds_remaining * 1000
+	timer_shown_seconds = seconds_remaining
+	timer_label.text = format_clock(seconds_remaining)
 
 	if level_badge_texture != null:
 		level_badge_texture.texture = LevelBadgeSafeTexture if is_impact_level else LevelBadgeNormalTexture

@@ -1,65 +1,41 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/ImpactBar.gd" id="1_impactbar"]
+[ext_resource type="Texture2D" path="res://Cor/Art/Static/impact-bar.png" id="2_impactbar_art"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ImpactFrame"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ImpactCapsule"]
 bg_color = Color(1, 1, 1, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.16)
-shadow_size = 3
-shadow_offset = Vector2(0, 2)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ImpactTrack"]
-bg_color = Color(0.69, 0.851, 0.898, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ImpactDot"]
-bg_color = Color(0.6, 0.6, 0.6, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 1, 1, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
 [node name="ImpactBar" type="Control"]
-custom_minimum_size = Vector2(16, 105)
+custom_minimum_size = Vector2(36, 166)
 layout_mode = 3
 mouse_filter = 2
 script = ExtResource("1_impactbar")
 
-[node name="Frame" type="Panel" parent="."]
+[node name="BarTexture" type="TextureRect" parent="."]
 layout_mode = 0
-offset_right = 16.0
-offset_bottom = 90.0
+offset_right = 36.0
+offset_bottom = 187.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_ImpactFrame")
+texture = ExtResource("2_impactbar_art")
+expand_mode = 1
+stretch_mode = 0
 
-[node name="ImpactBarTrack" type="Panel" parent="Frame"]
-clip_children = 2
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 3.0
-offset_top = 3.0
-offset_right = -3.0
-offset_bottom = -3.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="ImpactBarTrack" type="Panel" parent="."]
+clip_children = 1
+layout_mode = 0
+offset_left = 13.0
+offset_top = 9.0
+offset_right = 23.0
+offset_bottom = 170.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_ImpactTrack")
+theme_override_styles/panel = SubResource("StyleBoxFlat_ImpactCapsule")
 
-[node name="ImpactBarFill" type="TextureRect" parent="Frame/ImpactBarTrack"]
+[node name="ImpactBarFill" type="TextureRect" parent="ImpactBarTrack"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 12
@@ -71,13 +47,3 @@ grow_vertical = 0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 0
-
-[node name="ImpactBarDot" type="Panel" parent="."]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 2.0
-offset_top = 92.0
-offset_right = 14.0
-offset_bottom = 104.0
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_ImpactDot")
