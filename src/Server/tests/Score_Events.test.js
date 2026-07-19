@@ -145,7 +145,7 @@ test("quick chat broadcasts a transient event and enforces the player cooldown",
     const message = latestMessage(messages);
     assert.equal(message.quickChatEvents.length, 1);
     assert.equal(message.quickChatEvents[0].playerId, "P1");
-    assert.equal(message.quickChatEvents[0].text, "I'm out of blocks!");
+    assert.equal(message.quickChatEvents[0].text, "Holy Cow! We are going to make it!!!");
     assert.equal(message.quickChatCooldownMs, 6000);
     assert.equal(engine.queueQuickChat(player, 1), false);
     assert.equal(engine.queueQuickChat(player, 99), false);
