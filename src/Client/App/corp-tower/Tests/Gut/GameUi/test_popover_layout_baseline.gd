@@ -68,7 +68,7 @@ func test_score_popup_positions_scale_with_layer_size() -> void:
 
 func test_placement_popup_lane_positions_interpolate_across_players() -> void:
 	await mount_at(DESIGN_SIZE)
-	harness.main.update_player_color_map([{"id": "P1"}, {"id": "P2"}, {"id": "P3"}])
+	harness.main.players_ctx.update_from_players([{"id": "P1"}, {"id": "P2"}, {"id": "P3"}])
 	var layer_size: Vector2 = (harness.find("ScorePopupLayer") as Control).size
 	var first_lane: Vector2 = harness.main.get_score_popup_position({"type": "placement", "playerId": "P1"})
 	var middle_lane: Vector2 = harness.main.get_score_popup_position({"type": "placement", "playerId": "P2"})

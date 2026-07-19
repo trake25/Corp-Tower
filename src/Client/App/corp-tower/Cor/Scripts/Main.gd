@@ -15,6 +15,8 @@ const UiNodeBinderScript = preload("res://Cor/Scripts/GameUi/UiNodeBinder.gd")
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
 const DebugPanelControllerScript = preload("res://Cor/Scripts/GameUi/DebugPanelController.gd")
 const PointerTriggerRouterScript = preload("res://Cor/Scripts/GameUi/PointerTriggerRouter.gd")
+const PlayerContextScript = preload("res://Cor/Scripts/GameUi/PlayerContext.gd")
+const MatchStateScript = preload("res://Cor/Scripts/GameUi/MatchState.gd")
 const BlockPreviewScript = preload("res://Cor/Scripts/BlockPreview.gd")
 const LevelBadgeNormalTexture = preload("res://Cor/Art/Static/level.png")
 const LevelBadgeSafeTexture = preload("res://Cor/Art/Static/safe.png")
@@ -25,9 +27,7 @@ const ImpactBarScene = preload("res://Cor/Scenes/ImpactBar.tscn")
 const QuestIdleTexture = preload("res://Cor/Art/Static/ic-quest-state1.png")
 const QuestUnseenTexture = preload("res://Cor/Art/Static/ic-quest-state2.png")
 const QuestClearedTexture = preload("res://Cor/Art/Static/ic-quest-state3.png")
-const PLAYER_NAME_MAX_LENGTH := 10
 const MAX_RAIL_PLAYERS := 3
-const LOCAL_PLAYER_MARKER := "You"
 const DRAG_PREVIEW_SIZE := Vector2(96, 96)
 const DRAG_POINTER_MOUSE := -1
 
@@ -44,7 +44,6 @@ var power_drag_ghost: Label
 var power_feedback_tween: Tween
 var player_rail_entries: Dictionary = {}
 var impact_bars: Dictionary = {}
-var player_seat_index: Dictionary = {}
 var player_level_scores: Dictionary = {}
 var player_rail_box: VBoxContainer
 var impact_track: VBoxContainer
@@ -57,7 +56,6 @@ var quest_popover: Control
 var quick_chat_trigger: TextureButton
 var power_trigger: TextureButton
 var last_power_inventory: Array = []
-var impact_interval: int = 3
 var timer_deadline_ms: int = 0
 var timer_shown_seconds: int = -1
 var team_inventory_button: TextureButton
@@ -74,16 +72,14 @@ var missing_required_nodes: Array[String] = []
 var tuning
 var debug_panel
 var trigger_router
-var player_color_map: Dictionary = {}
-var player_order: Array[String] = []
+var players_ctx
+var match_state
 var seen_score_event_ids: Dictionary = {}
 var seen_quick_chat_event_ids: Dictionary = {}
 var seen_power_event_ids: Dictionary = {}
 var quick_chat_templates: Array = []
 var quick_chat_cooldown_ms: int = 6000
 var last_quick_chat_sent_at_ms: int = 0
-var current_level: int = 0
-var current_roster: Array = []
 var last_level_summary_key: String = ""
 var pending_level_summary: Dictionary = {}
 var pending_level_summary_state: String = ""
@@ -91,7 +87,6 @@ var pending_level_summary_key: String = ""
 var summary_show_timer: Timer
 var summary_hide_timer: Timer
 var active_inventory_slots: int = MAX_INVENTORY_SLOTS
-var current_match_state: String = ""
 var last_placement_sent_at_ms: int = 0
 var is_block_dragging: bool = false
 var drag_slot_index: int = -1
@@ -133,6 +128,9 @@ var score_popup_layer: Control
 
 func _ready() -> void:
 	tuning = UiTuningScript.new()
+	players_ctx = PlayerContextScript.new()
+	players_ctx.get_local_id = func(): return str(NetworkManager.player_id)
+	match_state = MatchStateScript.new()
 	debug_panel = DebugPanelControllerScript.new()
 	add_child(debug_panel)
 
@@ -268,7 +266,7 @@ func bind_ui_nodes() -> void:
 
 func setup_inventory_controls() -> void:
 	for preview in block_previews:
-		preview.cell_color = get_local_player_color()
+		preview.cell_color = players_ctx.local_color()
 
 	for i in range(inventory_buttons.size()):
 		var button: Button = inventory_buttons[i]
@@ -452,7 +450,7 @@ func reset_ui() -> void:
 	if round_time_texture != null:
 		round_time_texture.texture = RoundTimeNormalTexture
 	score_label.text = "Waiting for players"
-	current_match_state = ""
+	match_state.current_match_state = ""
 	last_placement_sent_at_ms = 0
 	cancel_block_drag()
 	update_impact_status_ui({})
@@ -471,7 +469,7 @@ func reset_ui() -> void:
 	cancel_block_drag()
 	seen_score_event_ids.clear()
 	last_level_summary_key = ""
-	current_level = 0
+	match_state.current_level = 0
 
 func connect_network_signals() -> void:
 	NetworkManager.status_changed.connect(update_status)
@@ -538,7 +536,7 @@ func on_block_pressed(index: int) -> void:
 	NetworkManager.place_block(index)
 
 func on_quick_chat_pressed(slot: int) -> void:
-	if !NetworkManager.is_conn_estab or current_match_state != "playing":
+	if !NetworkManager.is_conn_estab or match_state.current_match_state != "playing":
 		return
 	if slot < 0 or slot >= quick_chat_templates.size():
 		return
@@ -627,7 +625,7 @@ func is_placement_input_allowed() -> bool:
 	if !NetworkManager.is_conn_estab:
 		return false
 
-	if current_match_state != "playing":
+	if match_state.current_match_state != "playing":
 		return false
 
 	if is_block_dragging:
@@ -657,7 +655,7 @@ func update_quick_chat_buttons() -> void:
 			continue
 		var has_template: bool = i < quick_chat_templates.size()
 		button.text = str(quick_chat_templates[i]) if has_template else "Chat"
-		button.disabled = !has_template or !NetworkManager.is_conn_estab or current_match_state != "playing"
+		button.disabled = !has_template or !NetworkManager.is_conn_estab or match_state.current_match_state != "playing"
 
 func begin_block_drag(index: int, global_pos: Vector2, pointer_id: int) -> void:
 	if drag_preview == null:
@@ -669,7 +667,7 @@ func begin_block_drag(index: int, global_pos: Vector2, pointer_id: int) -> void:
 	is_block_dragging = true
 	drag_slot_index = index
 	drag_pointer_id = pointer_id
-	drag_preview.cell_color = get_local_player_color()
+	drag_preview.cell_color = players_ctx.local_color()
 
 	if drag_preview.has_method("set_preview_mode"):
 		drag_preview.call(
@@ -750,11 +748,11 @@ func update_connect_button(status: String) -> void:
 
 func update_room(data) -> void:
 	connect_button.disabled = true
-	current_roster = data.get("roster", [])
-	player_label.text = LOCAL_PLAYER_MARKER + " " + str(data.playerId)
+	players_ctx.roster = data.get("roster", [])
+	player_label.text = PlayerContextScript.LOCAL_PLAYER_MARKER + " " + str(data.playerId)
 	room_label.text = "Room " + str(int(data.roomId))
 	update_top_bar_display(int(data.get("level", 0)), int(data.get("level", 0)), "starting", 0)
-	current_level = int(data.get("level", 0))
+	match_state.current_level = int(data.get("level", 0))
 	seen_score_event_ids.clear()
 	last_level_summary_key = ""
 	clear_score_popups()
@@ -776,8 +774,8 @@ func update_room(data) -> void:
 	update_tower_stability_ui(int(data.get("towerStability", 100)), data.get("towerStabilityDiagnostics", {}))
 
 func update_room_closed(data) -> void:
-	current_match_state = ""
-	current_roster = []
+	match_state.current_match_state = ""
+	players_ctx.roster = []
 	last_placement_sent_at_ms = 0
 	cancel_block_drag()
 	room_label.text = "Room closed"
@@ -803,11 +801,11 @@ func update_room_closed(data) -> void:
 	hide_level_summary()
 	seen_score_event_ids.clear()
 	last_level_summary_key = ""
-	current_level = 0
+	match_state.current_level = 0
 
 func update_game_state(data) -> void:
 	var state: String = str(data.get("state", "playing"))
-	current_match_state = state
+	match_state.current_match_state = state
 
 	if state != "playing" and is_block_dragging:
 		cancel_block_drag()
@@ -817,7 +815,7 @@ func update_game_state(data) -> void:
 	var target_height: int = int(data.get("targetHeight", 0))
 	var incoming_level: int = int(data.get("level", 0))
 	var impact_level: int = int(data.get("impactLevel", 0))
-	impact_interval = maxi(1, int(data.get("impactInterval", impact_interval)))
+	match_state.impact_interval = maxi(1, int(data.get("impactInterval", match_state.impact_interval)))
 	var players: Array = data.get("players", [])
 	var fallback_popup_duration_ms: int = int(data.get("scorePopupDurationMs", UiTuningScript.SCORE_POPUP_DEFAULT_DURATION_MS))
 	tuning.placement_score_popup_duration_ms = int(data.get(
@@ -830,8 +828,8 @@ func update_game_state(data) -> void:
 	))
 	tuning.level_summary_delay_ms = int(data.get("levelSummaryDelayMs", tuning.level_summary_delay_ms))
 
-	if incoming_level != current_level:
-		current_level = incoming_level
+	if incoming_level != match_state.current_level:
+		match_state.current_level = incoming_level
 		seen_score_event_ids.clear()
 		last_level_summary_key = ""
 		clear_score_popups()
@@ -841,11 +839,11 @@ func update_game_state(data) -> void:
 		if state != "finished" and state != "failed":
 			hide_level_summary()
 
-	update_player_color_map(players)
+	players_ctx.update_from_players(players)
 	update_power_target_ui(players)
 	update_quest_chip(data.get("sideQuest", {}))
 	if tower_stack.has_method("set_player_color_map"):
-		tower_stack.call("set_player_color_map", player_color_map)
+		tower_stack.call("set_player_color_map", players_ctx.color_map)
 
 	update_top_bar_display(incoming_level, impact_level, state, seconds_remaining)
 	set_top_indicator_progress(current_height, target_height)
@@ -873,10 +871,10 @@ func update_game_state(data) -> void:
 	for i in range(players.size()):
 		var player: Dictionary = players[i]
 		var player_id: String = str(player.get("id", "P?"))
-		var prefix: String = LOCAL_PLAYER_MARKER if player_id == NetworkManager.player_id else player_id
+		var prefix: String = PlayerContextScript.LOCAL_PLAYER_MARKER if players_ctx.is_local(player_id) else player_id
 		_scores_text += prefix + ": " + str(int(player.get("score", 0))) + " total / " + str(int(player.get("levelScore", 0))) + " level"
 
-		if player_id == NetworkManager.player_id:
+		if players_ctx.is_local(player_id):
 			my_blocks = player.get("blocks", [])
 			my_power = player.get("powerInventory", [])
 
@@ -912,7 +910,7 @@ func update_game_state(data) -> void:
 
 func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS) -> void:
 	var clean_blocks: Array = []
-	var local_player_color: Color = get_local_player_color()
+	var local_player_color: Color = players_ctx.local_color()
 	active_inventory_slots = clampi(active_slots, 1, MAX_INVENTORY_SLOTS)
 	inventory_slot_blocks = [{}, {}, {}]
 
@@ -1015,7 +1013,7 @@ func update_impact_status_ui(raw_status: Variant) -> void:
 			continue
 
 		var player_id: String = str(player_status.get("id", ""))
-		var is_local_player: bool = player_id == str(NetworkManager.player_id)
+		var is_local_player: bool = players_ctx.is_local(player_id)
 		player_count += 1
 
 		if is_local_player:
@@ -1027,7 +1025,7 @@ func update_impact_status_ui(raw_status: Variant) -> void:
 
 		if !is_local_player:
 			short_player_goals.append(
-				get_player_display_name(player_id, []) +
+				players_ctx.display_name(player_id) +
 				" " + str(int(player_status.get("requiredScore", required_band_score)))
 			)
 
@@ -1061,7 +1059,7 @@ func update_quest_chip(raw_side_quest: Variant) -> void:
 	last_side_quest = side_quest
 	var is_unlocked: bool = str(side_quest.get("label", "")) != ""
 	var is_cleared: bool = get_quest_claimed_by(side_quest) != ""
-	var is_seen: bool = quest_seen_level == current_level
+	var is_seen: bool = quest_seen_level == match_state.current_level
 
 	quest_chip.visible = true
 	if is_cleared:
@@ -1077,7 +1075,7 @@ func get_quest_claimed_by(side_quest: Dictionary) -> String:
 	return claimed_by if typeof(claimed_by) == TYPE_STRING else ""
 
 func on_quest_chip_pressed() -> void:
-	quest_seen_level = current_level
+	quest_seen_level = match_state.current_level
 	update_quest_chip(last_side_quest)
 
 	if quest_popover != null and active_popover == quest_popover and quest_popover.visible:
@@ -1103,10 +1101,10 @@ func open_quest_popover() -> void:
 		if claimed_by != "":
 			var claim_row: Label = quest_popover.call(
 				"add_row",
-				"Claimed by " + get_player_display_name(claimed_by, [])
+				"Claimed by " + players_ctx.display_name(claimed_by)
 			)
 			if claim_row != null:
-				claim_row.add_theme_color_override("font_color", get_player_color(claimed_by))
+				claim_row.add_theme_color_override("font_color", players_ctx.color_for(claimed_by))
 
 	close_active_popover()
 	active_popover = quest_popover
@@ -1146,14 +1144,14 @@ func update_impact_track(player_statuses: Array, next_impact_level: int) -> void
 			"bandScore",
 			player_status.get("score", 0)
 		))
-		if current_match_state == "playing":
+		if match_state.current_match_state == "playing":
 			current += int(player_level_scores.get(player_id, 0))
 		var ratio: float = 1.0 if bool(player_status.get("met", false)) else 0.0
 
 		if required > 0:
 			ratio = clampf(float(current) / float(required), 0.0, 1.0)
 
-		bar.call("set_bar", get_impact_seat_color(player_id), ratio)
+		bar.call("set_bar", players_ctx.seat_color(player_id), ratio)
 		slot += 1
 
 	for player_id in impact_bars.keys():
@@ -1163,12 +1161,6 @@ func update_impact_track(player_statuses: Array, next_impact_level: int) -> void
 
 	if impact_pill != null:
 		impact_pill.visible = true
-
-func get_impact_seat_color(player_id: String) -> Color:
-	if player_color_map.has(player_id):
-		return player_color_map[player_id]
-
-	return PlayerColors.color_for_player_index(int(player_seat_index.get(player_id, 0)))
 
 func set_impact_status_visible(should_show: bool) -> void:
 	if impact_separator != null:
@@ -1190,27 +1182,6 @@ func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
 	tower_stability_label.text = "Tower Stability: " + str(safe_stability) + "% (" + state + lean_suffix + ")"
 	tower_stability_label.modulate = Color(0.7, 1.0, 0.75, 1.0) if safe_stability > 60 else (Color(1.0, 0.8, 0.3, 1.0) if safe_stability > 30 else Color(1.0, 0.4, 0.32, 1.0))
 
-func get_local_player_color() -> Color:
-	var player_id: String = str(NetworkManager.player_id)
-	if player_color_map.has(player_id):
-		return player_color_map[player_id]
-
-	return PlayerColors.color_for_player_id(player_id)
-
-func update_player_color_map(players: Array) -> void:
-	var updated_map: Dictionary = {}
-	var updated_order: Array[String] = []
-
-	for i in range(players.size()):
-		var player: Dictionary = players[i]
-		var player_id: String = str(player.get("id", ""))
-		if player_id != "":
-			updated_map[player_id] = PlayerColors.color_for_player_index(i)
-			updated_order.append(player_id)
-
-	player_color_map = updated_map
-	player_order = updated_order
-
 func update_power_target_ui(players: Array) -> void:
 	if power_target_box == null:
 		return
@@ -1224,7 +1195,7 @@ func update_power_target_ui(players: Array) -> void:
 		var target := Button.new()
 		target.text = player_id
 		target.tooltip_text = "Drop a Power item here to target " + player_id
-		target.add_theme_color_override("font_color", player_color_map.get(player_id, Color.WHITE))
+		target.add_theme_color_override("font_color", players_ctx.color_map.get(player_id, Color.WHITE))
 		target.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 		target.add_theme_constant_override("outline_size", 3)
 		target.custom_minimum_size = Vector2(72, 24)
@@ -1253,7 +1224,7 @@ func update_power_inventory_ui(items: Array) -> void:
 			continue
 		if i < items.size() and typeof(items[i]) == TYPE_DICTIONARY:
 			button.text = str(items[i].get("id", "Power")).replace("_", " ").capitalize()
-			button.disabled = current_match_state != "playing"
+			button.disabled = match_state.current_match_state != "playing"
 		else:
 			button.text = "Power"
 			button.disabled = true
@@ -1347,7 +1318,7 @@ func set_top_indicator_progress(current_height: int, target_height: int) -> void
 	top_indicator_fill.anchor_right = ratio
 
 func update_top_bar_display(level: int, impact_level: int, state: String, seconds_remaining: int) -> void:
-	var is_impact_level: bool = level > 1 and (level - 1) % impact_interval == 0
+	var is_impact_level: bool = level > 1 and (level - 1) % match_state.impact_interval == 0
 	var is_frozen: bool = state != "playing"
 
 	level_label.text = str(level) if level > 0 else "-"
@@ -1398,7 +1369,7 @@ func process_score_events(raw_events: Variant, players: Array) -> float:
 		var event_id: String = str(event.get("id", ""))
 
 		if event_id == "":
-			event_id = str(event.get("level", current_level)) + ":" + str(event.get("type", "")) + ":" + str(seen_score_event_ids.size())
+			event_id = str(event.get("level", match_state.current_level)) + ":" + str(event.get("type", "")) + ":" + str(seen_score_event_ids.size())
 
 		if seen_score_event_ids.has(event_id):
 			continue
@@ -1512,7 +1483,7 @@ func process_power_events(raw_events: Variant, players: Array) -> void:
 		var meta: Variant = event.get("meta", {})
 		if typeof(meta) != TYPE_DICTIONARY:
 			meta = {}
-		var caster_color: Color = player_color_map.get(str(event.get("playerId", "")), Color.WHITE)
+		var caster_color: Color = players_ctx.color_map.get(str(event.get("playerId", "")), Color.WHITE)
 
 		if bool(meta.get("tintAllScores", false)):
 			var tint_until: int = Time.get_ticks_msec() + int(meta.get("tintDurationMs", 4000))
@@ -1556,7 +1527,7 @@ func update_score_lines(players: Array) -> void:
 		var player: Dictionary = players[i]
 		var player_id := str(player.get("id", ""))
 		seen_player_ids[player_id] = true
-		player_seat_index[player_id] = i
+		players_ctx.seat_index[player_id] = i
 
 		var entry: Control = player_rail_entries.get(player_id, null)
 		if entry == null:
@@ -1567,10 +1538,10 @@ func update_score_lines(players: Array) -> void:
 		entry.get_parent().move_child(entry, i)
 		entry.call(
 			"set_entry",
-			format_player_rail_name(player_id),
+			players_ctx.rail_name(player_id),
 			int(player.get("score", 0)) + int(player.get("levelScore", 0)),
 			i,
-			get_player_avatar_id(player_id)
+			players_ctx.avatar_id(player_id)
 		)
 
 		var tint: Dictionary = score_tints.get(player_id, {})
@@ -1722,7 +1693,7 @@ func get_score_event_text(event: Dictionary, players: Array) -> String:
 		"overbuild_finish":
 			return "TARGET REACHED +" + str(get_event_overbuild_height(event))
 		"mvp":
-			return "MVP " + get_player_display_name(player_id, players) + " +" + str(points)
+			return "MVP " + players_ctx.display_name(player_id) + " +" + str(points)
 		"impact_failed":
 			return "IMPACT FAILED"
 		"tower_warning":
@@ -1744,8 +1715,8 @@ func get_score_event_color(event: Dictionary) -> Color:
 	var event_type: String = str(event.get("type", ""))
 	var player_id: String = str(event.get("playerId", ""))
 
-	if player_id != "" and player_color_map.has(player_id):
-		return player_color_map[player_id]
+	if player_id != "" and players_ctx.color_map.has(player_id):
+		return players_ctx.color_map[player_id]
 
 	if event_type == "exact_finish":
 		return Color(1.0, 0.84, 0.26, 1.0)
@@ -1833,8 +1804,8 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.4)
 
 	var player_id: String = str(event.get("playerId", ""))
-	var lane_count: int = max(1, player_order.size())
-	var lane_index: int = player_order.find(player_id)
+	var lane_count: int = max(1, players_ctx.order.size())
+	var lane_index: int = players_ctx.order.find(player_id)
 
 	if lane_index < 0:
 		lane_index = 0
@@ -1950,7 +1921,7 @@ func show_level_summary(summary_value: Variant, state: String) -> void:
 	level_summary_overlay.modulate.a = 0.0
 
 	var result: String = str(summary.get("result", state))
-	var level_number: int = int(summary.get("level", current_level))
+	var level_number: int = int(summary.get("level", match_state.current_level))
 	level_summary_title_label.text = "Level " + str(level_number) + (" Complete" if result == "completed" else " Failed")
 	level_summary_result_label.text = get_level_summary_result_text(summary, result)
 	level_summary_team_label.visible = false
@@ -1989,7 +1960,7 @@ func hide_level_summary() -> void:
 
 func get_level_summary_key(summary: Dictionary) -> String:
 	return (
-		str(summary.get("level", current_level)) + ":" +
+		str(summary.get("level", match_state.current_level)) + ":" +
 		str(summary.get("result", "")) + ":" +
 		str(summary.get("teamLevelScore", 0)) + ":" +
 		str(summary.get("mvpId", "")) + ":" +
@@ -2003,7 +1974,7 @@ func get_level_summary_result_text(summary: Dictionary, result: String) -> Strin
 		var finisher_id: String = str(summary.get("finisherId", ""))
 
 		if finisher_id != "":
-			result_text += " | Finisher " + get_player_display_name(finisher_id, [])
+			result_text += " | Finisher " + players_ctx.display_name(finisher_id)
 
 		return result_text
 
@@ -2037,7 +2008,7 @@ func get_impact_failure_summary_text(summary: Dictionary) -> String:
 
 		var player_status: Dictionary = raw_player_status
 		var player_id: String = str(player_status.get("id", ""))
-		var is_local_player: bool = player_id == str(NetworkManager.player_id)
+		var is_local_player: bool = players_ctx.is_local(player_id)
 		player_count += 1
 
 		if is_local_player:
@@ -2049,7 +2020,7 @@ func get_impact_failure_summary_text(summary: Dictionary) -> String:
 
 		if !is_local_player:
 			goal_texts.append(
-				get_player_display_name(player_id, []) +
+				players_ctx.display_name(player_id) +
 				" " + str(int(player_status.get("requiredScore", 0)))
 			)
 
@@ -2085,7 +2056,7 @@ func get_impact_failure_fallback_text(summary: Dictionary, blocked_level: int) -
 		var failure: Dictionary = raw_failure
 		var player_id: String = str(failure.get("id", ""))
 		failure_texts.append(
-			get_player_display_name(player_id, []) +
+			players_ctx.display_name(player_id) +
 			" " + str(int(failure.get("requiredScore", 0)))
 		)
 
@@ -2100,12 +2071,12 @@ func get_level_summary_mvp_text(summary: Dictionary) -> String:
 	if mvp_id == "":
 		return "MVP -"
 
-	return "MVP " + get_player_display_name(mvp_id, []) + " +" + str(int(summary.get("mvpScore", 0)))
+	return "MVP " + players_ctx.display_name(mvp_id) + " +" + str(int(summary.get("mvpScore", 0)))
 
 func create_level_summary_player_row(player_summary: Dictionary, result: String) -> Control:
 	var player_id: String = str(player_summary.get("id", ""))
 	var is_mvp: bool = bool(player_summary.get("isMvp", false))
-	var player_color: Color = get_player_color(player_id)
+	var player_color: Color = players_ctx.color_for(player_id)
 	var row_panel: PanelContainer = PanelContainer.new()
 
 	row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2122,7 +2093,7 @@ func create_level_summary_player_row(player_summary: Dictionary, result: String)
 	row.add_theme_constant_override("separation", 8)
 
 	var name_label: Label = Label.new()
-	name_label.text = ("MVP " if is_mvp else "") + get_player_display_name(player_id, [])
+	name_label.text = ("MVP " if is_mvp else "") + players_ctx.display_name(player_id)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.add_theme_color_override("font_color", player_color if is_mvp else Color(0.92, 0.94, 0.98, 1.0))
 	name_label.add_theme_font_size_override("font_size", 13)
@@ -2177,40 +2148,6 @@ func clear_children(container: Node) -> void:
 
 	for child in container.get_children():
 		child.queue_free()
-
-func get_player_display_name(player_id: String, _players: Array) -> String:
-	if player_id == "":
-		return "-"
-
-	if player_id == str(NetworkManager.player_id):
-		return LOCAL_PLAYER_MARKER
-
-	for roster_entry in current_roster:
-		if str(roster_entry.get("id", "")) == player_id:
-			return str(roster_entry.get("displayName", player_id))
-
-	return player_id
-
-func get_player_avatar_id(player_id: String) -> String:
-	for roster_entry in current_roster:
-		if str(roster_entry.get("id", "")) == player_id:
-			return str(roster_entry.get("avatarId", ""))
-
-	return ""
-
-func format_player_rail_name(player_id: String) -> String:
-	var full_name := get_player_display_name(player_id, [])
-
-	if full_name.length() > PLAYER_NAME_MAX_LENGTH:
-		return full_name.substr(0, PLAYER_NAME_MAX_LENGTH - 2) + ".."
-
-	return full_name
-
-func get_player_color(player_id: String) -> Color:
-	if player_color_map.has(player_id):
-		return player_color_map[player_id]
-
-	return PlayerColors.color_for_player_id(player_id)
 
 func format_summary_reason(reason: String) -> String:
 	if reason == "impact_score_requirement":
