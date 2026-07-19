@@ -251,9 +251,6 @@ func bind_ui_nodes() -> void:
 	quest_badge = optional_node("QuestBadge") as TextureRect
 	quick_chat_trigger = optional_node("QuickChatTrigger") as TextureButton
 	power_trigger = optional_node("PowerTrigger") as TextureButton
-
-	if quest_chip != null:
-		quest_chip.pressed.connect(on_quest_chip_pressed)
 	team_inventory_button = optional_node("TeamInventoryButton") as TextureButton
 	team_inventory_popover = optional_node("TeamInventoryPopover") as Control
 	quest_popover = optional_node("QuestPopover") as Control
@@ -418,15 +415,6 @@ func setup_inventory_controls() -> void:
 			)
 
 func setup_popover_controls() -> void:
-	if team_inventory_button != null:
-		team_inventory_button.pressed.connect(open_team_inventory_popover)
-
-	if quick_chat_trigger != null:
-		quick_chat_trigger.pressed.connect(open_quick_chat_popover)
-
-	if power_trigger != null:
-		power_trigger.pressed.connect(open_power_popover)
-
 	connect_button.pressed.connect(on_connect_pressed)
 	for i in range(quick_chat_buttons.size()):
 		var quick_chat_button: Button = quick_chat_buttons[i]
@@ -676,6 +664,30 @@ func _input(event: InputEvent) -> void:
 		move_power_drag_ghost(event.global_position)
 	if power_dragging and event is InputEventScreenDrag:
 		move_power_drag_ghost(event.position)
+
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_try_activate_popover_trigger(event.global_position)
+	elif event is InputEventScreenTouch and event.pressed:
+		_try_activate_popover_trigger(event.position)
+
+func _try_activate_popover_trigger(global_pos: Vector2) -> void:
+	if debug_overlay != null and debug_overlay.visible:
+		return
+	if level_summary_overlay != null and level_summary_overlay.visible:
+		return
+
+	if quest_chip != null and quest_chip.get_global_rect().has_point(global_pos):
+		on_quest_chip_pressed()
+	elif quick_chat_trigger != null and quick_chat_trigger.get_global_rect().has_point(global_pos):
+		open_quick_chat_popover()
+	elif team_inventory_button != null and team_inventory_button.get_global_rect().has_point(global_pos):
+		open_team_inventory_popover()
+	elif power_trigger != null and power_trigger.get_global_rect().has_point(global_pos):
+		open_power_popover()
+	else:
+		return
+
+	get_viewport().set_input_as_handled()
 
 func _process(_delta: float) -> void:
 	update_placement_cooldown_overlays()

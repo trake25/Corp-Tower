@@ -282,7 +282,17 @@ class GameEngine {
     setupSideQuest() {
         if (this.room.level < GameConfig.powerUnlockLevel) { this.room.sideQuest = null; return; }
         const quest = { id: "exact_finish", type: "exact_finish", label: "First to finish exactly" };
-        this.room.sideQuest = { ...quest, claimedBy: null, rewardId: Object.keys(GameConfig.powerCatalog)[Math.floor(Math.random() * 3)] };
+        this.room.sideQuest = { ...quest, claimedBy: null, rewardId: "refresh" };
+    }
+
+    grantDefaultPowers() {
+        if (this.room.level < GameConfig.powerUnlockLevel) return;
+        this.room.players.forEach(player => {
+            const hasRefresh = (player.powerInventory || []).some(item => item.id === "refresh");
+            if (!hasRefresh && player.powerInventory.length < GameConfig.powerMaxSlots) {
+                player.powerInventory.push({ id: "refresh", earnedLevel: this.room.level });
+            }
+        });
     }
 
     tryCompleteSideQuest(player, block, exactFinish) {
@@ -367,6 +377,7 @@ class GameEngine {
         this.room.lastLevelSummary = null;
         this.room.pendingScoreEvents = [];
         this.setupSideQuest();
+        this.grantDefaultPowers();
 
         this.room.players.forEach(player => {
             player.levelScore = 0;

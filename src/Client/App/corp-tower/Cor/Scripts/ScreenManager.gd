@@ -97,7 +97,7 @@ func update_debug_button_availability() -> void:
 func reset_debug_button_position() -> void:
 	debug_button.position = Vector2(
 		size.x - debug_button.size.x - DEBUG_BUTTON_MARGIN,
-		size.y - debug_button.size.y - DEBUG_BUTTON_MARGIN
+		DEBUG_BUTTON_MARGIN
 	)
 
 func _on_debug_button_gui_input(event: InputEvent) -> void:
