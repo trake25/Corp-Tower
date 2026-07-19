@@ -1,0 +1,164 @@
+name: Fetch Private Assets
+description: >-
+  Download a version-pinned asset bundle from a private Cloudflare R2 bucket,
+  verify its integrity, and extract it into the build tree. Fails closed on any
+  mismatch so a build can never silently ship with missing assets.
+
+  Not project-specific: any repo needing private build inputs can use this.
+
+inputs:
+  manifest-path:
+    description: Path to the JSON manifest pinning version, object key, sha256 and file_count.
+    required: true
+  dest-path:
+    description: Directory to extract the bundle into. Created if absent, replaced if present.
+    required: true
+  bucket:
+    description: R2 bucket name.
+    required: true
+  account-id:
+    description: Cloudflare account ID, used to build the S3 endpoint.
+    required: true
+  access-key-id:
+    description: R2 access key ID (read-only token).
+    required: true
+  secret-access-key:
+    description: R2 secret access key (read-only token).
+    required: true
+  version-override:
+    description: >-
+      Optional version (e.g. "v2") to fetch instead of the manifest's. Testing
+      escape hatch only — skips sha256 verification, since no trusted hash
+      exists for an unpinned version. Never use for a release build.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve asset manifest
+      id: manifest
+      shell: bash
+      env:
+        MANIFEST_PATH: ${{ inputs.manifest-path }}
+        VERSION_OVERRIDE: ${{ inputs.version-override }}
+      run: |
+        set -euo pipefail
+        test -f "$MANIFEST_PATH" || { echo "::error::Asset manifest not found: $MANIFEST_PATH"; exit 1; }
+
+        python3 <<'PY' >> "$GITHUB_OUTPUT"
+        import json, os
+
+        manifest = json.load(open(os.environ["MANIFEST_PATH"], encoding="utf-8"))
+        override = os.environ.get("VERSION_OVERRIDE", "").strip()
+
+        if override:
+            version = override
+            obj = f"art/releases/art-{override}.tar.gz"
+            sha = ""
+        else:
+            version = manifest["version"]
+            obj = manifest["object"]
+            sha = manifest["sha256"]
+
+        print(f"version={version}")
+        print(f"object={obj}")
+        print(f"sha256={sha}")
+        print(f"file_count={manifest['file_count']}")
+        print("sentinels=" + "\n".join(manifest.get("sentinels", [])).replace("\n", "|"))
+        PY
+
+    - name: Warn on unverified override
+      if: ${{ inputs.version-override != '' }}
+      shell: bash
+      run: |
+        echo "::warning::Fetching asset version '${{ inputs.version-override }}' via override. \
+        sha256 verification is SKIPPED — this build must not be released."
+
+    - name: Download and verify asset bundle
+      shell: bash
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.secret-access-key }}
+        AWS_DEFAULT_REGION: auto
+        AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+        AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+        R2_BUCKET: ${{ inputs.bucket }}
+        R2_ACCOUNT_ID: ${{ inputs.account-id }}
+        DEST_PATH: ${{ inputs.dest-path }}
+        OBJECT_KEY: ${{ steps.manifest.outputs.object }}
+        EXPECTED_SHA: ${{ steps.manifest.outputs.sha256 }}
+        EXPECTED_COUNT: ${{ steps.manifest.outputs.file_count }}
+        SENTINELS: ${{ steps.manifest.outputs.sentinels }}
+        ASSET_VERSION: ${{ steps.manifest.outputs.version }}
+      run: |
+        # No `set -x` anywhere in this step — it would echo credentials.
+        set -euo pipefail
+
+        command -v aws >/dev/null 2>&1 || { echo "::error::aws CLI not available on this runner."; exit 1; }
+
+        ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+        WORK="$(mktemp -d)"
+        ARCHIVE="$WORK/assets.tar.gz"
+
+        echo "Fetching ${OBJECT_KEY} (${ASSET_VERSION}) from private R2 bucket"
+        if ! aws s3api get-object \
+              --endpoint-url "$ENDPOINT" \
+              --bucket "$R2_BUCKET" \
+              --key "$OBJECT_KEY" \
+              "$ARCHIVE" >/dev/null 2>"$WORK/err.txt"; then
+          echo "::error::Failed to download ${OBJECT_KEY} from R2."
+          echo "Check that the R2 secrets are set and the read-only token is scoped to bucket '${R2_BUCKET}'."
+          sed -e 's/[A-Za-z0-9/+=]\{32,\}/<redacted>/g' "$WORK/err.txt" >&2 || true
+          exit 1
+        fi
+
+        if [ -n "$EXPECTED_SHA" ]; then
+          ACTUAL_SHA="$(sha256sum "$ARCHIVE" | cut -d' ' -f1)"
+          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+            echo "::error::Asset bundle sha256 mismatch — refusing to build."
+            echo "  expected: $EXPECTED_SHA"
+            echo "  actual:   $ACTUAL_SHA"
+            echo "The object in R2 does not match the manifest pinned in this commit."
+            exit 1
+          fi
+          echo "sha256 verified: $ACTUAL_SHA"
+        else
+          echo "sha256 verification skipped (version override)"
+        fi
+
+        rm -rf "$DEST_PATH"
+        mkdir -p "$DEST_PATH"
+        tar -xzf "$ARCHIVE" -C "$DEST_PATH"
+
+        ACTUAL_COUNT="$(find "$DEST_PATH" -type f | wc -l | tr -d ' ')"
+        if [ "$ACTUAL_COUNT" != "$EXPECTED_COUNT" ]; then
+          echo "::error::Asset file count mismatch — expected ${EXPECTED_COUNT}, extracted ${ACTUAL_COUNT}."
+          exit 1
+        fi
+
+        # Sentinel files catch a structurally valid but wrong-content bundle.
+        IFS='|' read -ra FILES <<< "$SENTINELS"
+        for f in "${FILES[@]}"; do
+          [ -z "$f" ] && continue
+          if [ ! -f "$DEST_PATH/$f" ]; then
+            echo "::error::Required asset missing after extraction: $f"
+            exit 1
+          fi
+        done
+
+        rm -rf "$WORK"
+
+        echo "Extracted ${ACTUAL_COUNT} asset files to ${DEST_PATH}"
+        {
+          echo "## Private assets"
+          echo
+          echo "- Version: \`${ASSET_VERSION}\`"
+          echo "- Object: \`${OBJECT_KEY}\`"
+          echo "- Files extracted: \`${ACTUAL_COUNT}\`"
+          if [ -n "$EXPECTED_SHA" ]; then
+            echo "- Integrity: sha256 verified"
+          else
+            echo "- Integrity: **NOT VERIFIED (version override)** — do not release this build"
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"

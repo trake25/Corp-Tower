@@ -1,7 +1,20 @@
 name: Client HTML5 Pages
 
+# Manual only. Deploys the web build to GitHub Pages.
+# Teardown lives in Client-HTML5-Undeploy.yml.
+#
+# Cost note: GitHub Actions minutes are free and unlimited on public repos, and
+# the R2 fetch sits far inside Cloudflare's permanent free tier.
+# See docs/private-assets-setup.md for the cost tripwires before changing this.
+
 on:
   workflow_dispatch:
+    inputs:
+      art_version_override:
+        description: "Optional art bundle version (e.g. v2) to fetch instead of the pinned manifest. Skips sha256 verification — testing only, never for release."
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -25,61 +38,47 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      # enablement: true recreates the Pages site if it was torn down by
+      # Client-HTML5-Undeploy.yml, making deploy/undeploy round-trippable.
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
-      - name: Download Godot and export templates
-        run: |
-          set -euo pipefail
+      - name: Fetch private art assets
+        uses: ./.github/actions/fetch-private-assets
+        with:
+          manifest-path: src/Client/App/corp-tower/Cor/art-manifest.json
+          dest-path: src/Client/App/corp-tower/Cor/Art
+          bucket: ${{ secrets.R2_BUCKET }}
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          version-override: ${{ inputs.art_version_override }}
 
-          GODOT_TAG="${GODOT_VERSION}-${GODOT_STATUS}"
-          GODOT_FILE="Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64"
-          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}"
-
-          curl -L -o godot.zip \
-            "https://github.com/godotengine/godot/releases/download/${GODOT_TAG}/${GODOT_FILE}.zip"
-
-          unzip -q godot.zip
-          chmod +x "$GODOT_FILE"
-          sudo mv "$GODOT_FILE" /usr/local/bin/godot
-
-          curl -L -o templates.tpz \
-            "https://github.com/godotengine/godot/releases/download/${GODOT_TAG}/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz"
-
-          mkdir -p "$TEMPLATE_DIR"
-          unzip -q templates.tpz
-          cp -R templates/* "$TEMPLATE_DIR/"
-
-      - name: Create CI Web export preset
-        run: |
-          cp .github/godot/export_presets.web.ci.cfg \
-             "$GODOT_PROJECT_PATH/export_presets.cfg"
-
-      - name: Import Godot project
-        run: |
-          godot --headless \
-            --path "$GODOT_PROJECT_PATH" \
-            --editor \
-            --quit
-
-      - name: Export HTML5
-        run: |
-          mkdir -p build/web
-
-          godot \
-            --headless \
-            --path "$GODOT_PROJECT_PATH" \
-            --export-release "Web" \
-            "$GITHUB_WORKSPACE/build/web/index.html"
+      # No enforce-max-file-mib: GitHub Pages allows 100 MB per file. The size
+      # report still runs — this is how we measure whether the export would fit
+      # Cloudflare's 25 MiB per-file ceiling before committing to that target.
+      - name: Build web export
+        uses: ./.github/actions/build-godot-web
+        with:
+          godot-version: ${{ env.GODOT_VERSION }}
+          godot-status: ${{ env.GODOT_STATUS }}
+          project-path: ${{ env.GODOT_PROJECT_PATH }}
+          output-dir: ${{ github.workspace }}/build/web
+          preset-config: .github/godot/export_presets.web.ci.cfg
 
       - name: Disable Jekyll
-        run: |
-          touch build/web/.nojekyll
+        run: touch build/web/.nojekyll
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: build/web
+
+      - name: Remove private assets from runner
+        if: always()
+        run: rm -rf "$GODOT_PROJECT_PATH/Cor/Art"
 
   deploy:
     needs: build

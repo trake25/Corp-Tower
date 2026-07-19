@@ -1,0 +1,165 @@
+name: Build Godot Web Export
+description: >-
+  Install Godot and export templates, export the project for the web, and report
+  output file sizes. Shared by every HTML5 deploy workflow so the artifact is
+  byte-identical regardless of where it is deployed.
+
+  Assumes private assets are already staged (run fetch-private-assets first).
+
+inputs:
+  godot-version:
+    description: Godot version, e.g. "4.6.2".
+    required: true
+  godot-status:
+    description: Godot release status, e.g. "stable".
+    required: true
+  project-path:
+    description: Path to the Godot project directory.
+    required: true
+  output-dir:
+    description: Directory to write the web export into.
+    required: true
+  preset-config:
+    description: Path to the CI export preset to copy into the project.
+    required: true
+  emit-headers:
+    description: >-
+      Write a Cloudflare `_headers` file setting COOP/COEP. Enables
+      SharedArrayBuffer for threaded builds. Ignored by GitHub Pages, which
+      cannot serve custom headers.
+    required: false
+    default: "false"
+  enforce-max-file-mib:
+    description: >-
+      Fail the build if any output file is at least this many MiB. Set to 25 for
+      Cloudflare Pages, which rejects larger files. Leave empty to report only.
+    required: false
+    default: ""
+
+outputs:
+  largest-file-bytes:
+    description: Size in bytes of the largest file in the export.
+    value: ${{ steps.size-report.outputs.largest_bytes }}
+  largest-file-name:
+    description: Name of the largest file in the export.
+    value: ${{ steps.size-report.outputs.largest_name }}
+
+runs:
+  using: composite
+  steps:
+    - name: Download Godot and export templates
+      shell: bash
+      env:
+        GODOT_VERSION: ${{ inputs.godot-version }}
+        GODOT_STATUS: ${{ inputs.godot-status }}
+      run: |
+        set -euo pipefail
+
+        GODOT_TAG="${GODOT_VERSION}-${GODOT_STATUS}"
+        GODOT_FILE="Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64"
+        TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}"
+        WORK="$(mktemp -d)"
+
+        curl -fL -o "$WORK/godot.zip" \
+          "https://github.com/godotengine/godot/releases/download/${GODOT_TAG}/${GODOT_FILE}.zip"
+        unzip -q "$WORK/godot.zip" -d "$WORK"
+        chmod +x "$WORK/$GODOT_FILE"
+        sudo mv "$WORK/$GODOT_FILE" /usr/local/bin/godot
+
+        curl -fL -o "$WORK/templates.tpz" \
+          "https://github.com/godotengine/godot/releases/download/${GODOT_TAG}/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz"
+        mkdir -p "$TEMPLATE_DIR"
+        unzip -q "$WORK/templates.tpz" -d "$WORK"
+        cp -R "$WORK/templates/". "$TEMPLATE_DIR/"
+
+        rm -rf "$WORK"
+        godot --version
+
+    - name: Create CI Web export preset
+      shell: bash
+      env:
+        PRESET_CONFIG: ${{ inputs.preset-config }}
+        PROJECT_PATH: ${{ inputs.project-path }}
+      run: |
+        set -euo pipefail
+        test -f "$PRESET_CONFIG" || { echo "::error::Export preset not found: $PRESET_CONFIG"; exit 1; }
+        cp "$PRESET_CONFIG" "$PROJECT_PATH/export_presets.cfg"
+
+    - name: Import Godot project
+      shell: bash
+      env:
+        PROJECT_PATH: ${{ inputs.project-path }}
+      run: |
+        set -euo pipefail
+        godot --headless --path "$PROJECT_PATH" --editor --quit
+
+    - name: Export HTML5
+      shell: bash
+      env:
+        PROJECT_PATH: ${{ inputs.project-path }}
+        OUTPUT_DIR: ${{ inputs.output-dir }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$OUTPUT_DIR"
+        godot --headless --path "$PROJECT_PATH" --export-release "Web" "$OUTPUT_DIR/index.html"
+        test -f "$OUTPUT_DIR/index.html" || { echo "::error::Web export produced no index.html"; exit 1; }
+
+    - name: Write Cloudflare _headers
+      if: ${{ inputs.emit-headers == 'true' }}
+      shell: bash
+      env:
+        OUTPUT_DIR: ${{ inputs.output-dir }}
+      run: |
+        set -euo pipefail
+        # Cross-origin isolation. Required for SharedArrayBuffer if the export
+        # preset ever enables thread support. Harmless while single-threaded.
+        # Leading two spaces on the header lines are part of the _headers format.
+        {
+          echo "/*"
+          echo "  Cross-Origin-Opener-Policy: same-origin"
+          echo "  Cross-Origin-Embedder-Policy: require-corp"
+        } > "$OUTPUT_DIR/_headers"
+        echo "Wrote _headers (COOP/COEP):"
+        cat "$OUTPUT_DIR/_headers"
+
+    - name: Report export file sizes
+      id: size-report
+      shell: bash
+      env:
+        OUTPUT_DIR: ${{ inputs.output-dir }}
+        ENFORCE_MAX_MIB: ${{ inputs.enforce-max-file-mib }}
+      run: |
+        set -euo pipefail
+
+        LARGEST_NAME="$(find "$OUTPUT_DIR" -type f -printf '%s %P\n' | sort -rn | head -1 | cut -d' ' -f2-)"
+        LARGEST_BYTES="$(find "$OUTPUT_DIR" -type f -printf '%s\n' | sort -rn | head -1)"
+
+        echo "largest_name=$LARGEST_NAME" >> "$GITHUB_OUTPUT"
+        echo "largest_bytes=$LARGEST_BYTES" >> "$GITHUB_OUTPUT"
+
+        {
+          echo "## Web export size report"
+          echo
+          echo "| File | Size |"
+          echo "| --- | ---: |"
+          find "$OUTPUT_DIR" -type f -printf '%s %P\n' | sort -rn | head -10 | \
+            while read -r bytes name; do
+              printf '| `%s` | %s MiB |\n' "$name" "$(awk -v b="$bytes" 'BEGIN{printf "%.2f", b/1048576}')"
+            done
+          echo
+          echo "Largest file: \`${LARGEST_NAME}\` at $(awk -v b="$LARGEST_BYTES" 'BEGIN{printf "%.2f", b/1048576}') MiB"
+          echo
+          echo "> Cloudflare Pages rejects any single file of 25 MiB or more, on every plan."
+          echo "> GitHub Pages allows up to 100 MB per file."
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [ -n "$ENFORCE_MAX_MIB" ]; then
+          LIMIT=$(( ENFORCE_MAX_MIB * 1048576 ))
+          if [ "$LARGEST_BYTES" -ge "$LIMIT" ]; then
+            echo "::error::'${LARGEST_NAME}' is $(awk -v b="$LARGEST_BYTES" 'BEGIN{printf "%.2f", b/1048576}') MiB, \
+        at or above the ${ENFORCE_MAX_MIB} MiB per-file limit. Cloudflare Pages will reject this deployment. \
+        Deploy to GitHub Pages instead, or serve the oversized file from a public R2 bucket."
+            exit 1
+          fi
+          echo "All files under ${ENFORCE_MAX_MIB} MiB"
+        fi

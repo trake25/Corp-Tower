@@ -18,6 +18,11 @@ on:
         required: true
         default: true
         type: boolean
+      art_version_override:
+        description: "Optional art bundle version (e.g. v2) to fetch instead of the pinned manifest. Skips sha256 verification — testing only, never for a Play release."
+        required: false
+        default: ""
+        type: string
 
 concurrency:
   group: client-android-internal
@@ -39,6 +44,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      # Art assets live in a private R2 bucket, never in this repo. Must land
+      # before the Godot import step or the export ships missing textures.
+      - name: Fetch private art assets
+        uses: ./.github/actions/fetch-private-assets
+        with:
+          manifest-path: src/Client/App/corp-tower/Cor/art-manifest.json
+          dest-path: src/Client/App/corp-tower/Cor/Art
+          bucket: ${{ secrets.R2_BUCKET }}
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          version-override: ${{ inputs.art_version_override }}
 
       - name: Authenticate to Google Play Developer API
         id: google-play-auth
@@ -389,3 +407,7 @@ jobs:
                   f"{expected_version_code}. Last seen version codes: {sorted(last_seen_codes)}"
               )
           PY
+
+      - name: Remove private assets from runner
+        if: always()
+        run: rm -rf "$GODOT_PROJECT_PATH/Cor/Art"

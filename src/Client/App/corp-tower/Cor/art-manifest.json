@@ -1,0 +1,12 @@
+{
+  "_comment": "Pins the private art bundle this commit builds against. Bump via scripts/art-push.sh, then commit. CI fails closed if sha256 or file_count do not match.",
+  "version": "v1",
+  "object": "art/releases/art-v1.tar.gz",
+  "sha256": "f981edeab8a8863f6ddc9a230134f4014d4f5bd75999d1b9de83c4470006e98f",
+  "file_count": 112,
+  "sentinels": [
+    "Static/bg.png",
+    "Static/bg.png.import",
+    "Cosmetics/avatar/avatar_0/avatar.png"
+  ]
+}
