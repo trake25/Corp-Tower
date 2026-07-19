@@ -63,7 +63,7 @@
 |---|---|
 | `reconnect` | Token/player id may resume room; otherwise server creates a new session and queues player. |
 | `place_block` | Valid room, player, state, cooldown, inventory, and block index. |
-| `activate_power` | Valid room, player, slot index, held item, target player, and the shared activation cooldown. There is no separate refresh message — refresh is one of the Power item effects (`activate_power` with a `refresh` item), and re-rolls the target's blocks unconditionally. |
+| `activate_power` | Valid room, player, held item at `slot`, and the shared activation cooldown. No target field — the effect applies to every player in the room (caster included). There is no separate refresh message — refresh is one of the Power item effects (`activate_power` with a `refresh` item), and re-rolls every player's blocks unconditionally. |
 | `send_quick_chat` | Valid active room, template slot `0..2`, and server-authoritative per-player cooldown. |
 | `update_config` | Key allowlist, value ranges, bot delay min/max, debug bot count clamp, bot strategy allowlist, tower-stability feedback-mode allowlist, and `resetDebugConfig` default restore action. |
 

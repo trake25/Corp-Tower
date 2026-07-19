@@ -18,10 +18,13 @@
 ## Client
 - [[Godot Client App]]
 - [[NetworkManager]]
+- [[Screen Manager]]
 - [[Main UI Controller]]
 - [[Game UI Scene]]
 - [[Block Preview]]
 - [[Tower Stack]]
+- [[Popover Panel]]
+- [[Impact Bar]]
 - [[Cooldown Overlay]]
 - [[Debug Overlay]]
 - [[Player Colors]]

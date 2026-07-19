@@ -10,8 +10,9 @@ Lightweight show/hide shell for the Godot debug-tuning panel. File:
 
 ## Public interface
 - `set_open(open: bool)`, `toggle()` — open/close the panel; driven by
-  [[Main UI Controller]]'s debug button handler. This script owns no
-  gameplay or config state itself.
+  [[Main UI Controller]]'s `toggle_debug_overlay()`/`set_debug_overlay_open()`
+  handlers, which [[Screen Manager]]'s global floating debug button calls via
+  duck-typed `call()`. This script owns no gameplay or config state itself.
 
 ## Depends on
 - Internal: none

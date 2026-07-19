@@ -34,10 +34,11 @@ signature-level):
   `addLevelScoreToLeaderboard()`, `getLevelMVP()`, `buildLevelSummary(...)`.
 - **Impacts** — `saveImpactState()`, `restoreImpactScores()`,
   `restoreImpactPowers()`, `rollbackToImpact()`.
-- **Power** — `setupSideQuest()`, `activatePower(playerId, slot,
-  targetPlayerId)`, `consumePowerEvents()`, `clonePowerInventory(items)`,
-  `anyPlayerCanRefresh()` (used by the not-enough-height fail check to defer
-  failure while a player still holds a Refresh item).
+- **Power** — `setupSideQuest()`, `grantDefaultPowers()`,
+  `activatePower(playerId, slot)`, `consumePowerEvents()`,
+  `clonePowerInventory(items)`, `anyPlayerCanRefresh()` (used by the
+  not-enough-height fail check to defer failure while a player still holds a
+  Refresh item).
 - **Stability** — `recalculateTowerStability()` (delegates the actual math to
   [[Tower Stability]]).
 - **Called by [[Lobby Manager]]** — `stopBots()`, `broadcastGameState()`,
@@ -67,13 +68,23 @@ signature-level):
   `game_completed`, `closed`.
 - **The refresh token economy is gone.** There is no `refresh_blocks`
   action, no per-player token count, and no per-level use cap. Refresh is now
-  purely an effect of the `refresh` Power item: `activatePower()` calls
-  `this.generateRefreshBlocks(target.blocks || [])` unconditionally when that
-  item is activated — the actual block-shape generation is still
-  [[Block Supply]]'s job. The `not_enough_height_remaining` fail check
+  purely an effect of the `refresh` Power item: `activatePower()` no longer
+  takes a target — it loops every player in `room.players` and calls
+  `this.generateRefreshBlocks(target.blocks || [])` for each when a `refresh`
+  item is activated (the other two catalog effects, `score_cap`/
+  `copy_score`, loop the same way) — the actual block-shape generation is
+  still [[Block Supply]]'s job. The `not_enough_height_remaining` fail check
   (`checkFailCondition()`) is deferred by `anyPlayerCanRefresh()`, which now
   scans every player's Power inventory for a held `refresh` item instead of
   checking a token count.
+- **Every player gets a guaranteed Refresh item.** `grantDefaultPowers()`
+  runs from `startLevel()` (every level start/restart/rollback) and gives
+  each player one `{ id: "refresh" }` item if they don't already hold one and
+  have inventory space, independent of the side-quest/Impact-MVP reward
+  paths. `setupSideQuest()`'s reward is also hardcoded to `"refresh"` for
+  now — `score_cap`/`copy_score` stay defined in `GameConfig.powerCatalog`
+  but aren't awarded by the quest path; `Impacts.js`'s `awardImpactPower()`
+  is unchanged and still picks randomly across the whole catalog.
 - `scoreEvents[]` (built in [[Scoring]]) and `quickChatEvents[]`/
   `powerEvents[]` (queued directly here) are transient, broadcast-only, and
   never persisted in room snapshots — clients shouldn't infer scoring UI
@@ -81,6 +92,15 @@ signature-level):
 - Engine owns live timers and authoritative rule execution;
   [[Lobby Manager]] / [[Redis State]] persist shared room snapshots — this
   file never talks to Redis directly.
+- `getRemainingMs()` (backs the broadcast `secondsRemaining` field) is
+  state-dependent, not a single `endsAt`-based clock: during `starting` it
+  counts down to `room.startsAt`; during `finished`/`failed` it counts down
+  to `room.freezeEndsAt`, set by `completeLevel()`/`failLevel()` to
+  `now + getPostLevelTransitionDelayMs() + GameConfig.startDelayMs` (level
+  summary duration plus the next level's start delay); only during `playing`
+  does it use `room.endsAt`. This keeps the client's frozen-timer display
+  counting down the actual time until play resumes instead of the stale
+  round clock from the level that just ended.
 - No persistent leaderboard yet. Shape-block migration changed balance
   assumptions; progression/target tuning needs a future recalibration pass
   (see [[Balance Simulator]]).

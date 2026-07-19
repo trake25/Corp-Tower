@@ -40,7 +40,7 @@
 - Navigation: [[Component-Index]]
 - Server: [[Server Entry]], [[Lobby Manager]], [[Game Engine]], [[Block Supply]], [[Scoring]], [[Impacts]], [[Tower Stability]], [[Redis State]], [[Bot Manager]], [[Game Config]], [[Server Docker Image]]
 - Server CI/tooling: [[Server Score Events Tests]], [[Balance Simulator]]
-- Client runtime: [[Godot Client App]], [[NetworkManager]], [[Main UI Controller]], [[Game UI Scene]], [[Block Preview]], [[Tower Stack]], [[Cooldown Overlay]], [[Debug Overlay]], [[Player Colors]]
+- Client runtime: [[Godot Client App]], [[NetworkManager]], [[Screen Manager]], [[Main UI Controller]], [[Game UI Scene]], [[Block Preview]], [[Tower Stack]], [[Popover Panel]], [[Impact Bar]], [[Cooldown Overlay]], [[Debug Overlay]], [[Player Colors]]
 - Client tests: [[Godot Client Tests]]
 - Server infra & IaC: [[Terraform Infrastructure]], [[Server K3s Stack]], [[Server K3s Workflows]], [[Server K3s Automated Master Workflow]]
 - Android release: [[Client Android Internal Workflow]]

@@ -4,9 +4,9 @@
 The single Godot scene hosting every HUD/debug node the main gameplay
 controller binds against. File:
 `src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn`, themed by
-`Cor/Themes/GameUITheme.tres`. Required at runtime — [[Main UI Controller]]
-statically instances it under `Main.tscn`'s `UIRoot` and binds its required
-nodes to function at all.
+`Cor/Themes/GameUITheme.tres`. Required at runtime — [[Screen Manager]]
+instances it dynamically once a match is found, and [[Main UI Controller]]
+binds its required nodes at that point to function at all.
 
 ## Responsibilities
 - Provide the required node contract [[Main UI Controller]] binds against.
@@ -33,9 +33,13 @@ expects to find and bind when it loads. The two required drag nodes:
   `Figma_SkinV1.tscn`), picked at runtime through a skin-picker overlay. Both
   were UI prototypes; the runtime skin system, the picker overlay, and the
   Figma variant were removed ahead of the production UI design pass, leaving
-  this one scene as the only UI. `Main.tscn` now instances it statically —
-  there is no more runtime scene swap, `ProjectSettings` skin preference, or
-  skin-picker node group to keep in sync.
-- The `.tres` theme resource is currently an empty placeholder (zero
-  properties) — all real styling is inline `theme_override_*` properties on
-  individual scene nodes, not the shared Theme resource.
+  this one scene as the only gameplay UI — there is no `ProjectSettings`
+  skin preference or skin-picker node group to keep in sync anymore. It is
+  now instanced dynamically by [[Screen Manager]] (created when a match is
+  found, freed when the room closes) rather than being a static child of
+  `Main.tscn`.
+- The `.tres` theme resource defines the shared `theme_type_variation`
+  styles used across the scene (e.g. `ActionButton`, `CircleButtonPanel`,
+  `HudPanel`, `WhiteCardButton`, `TopBarFramePanel`/`TopBarTrackPanel`,
+  `TowerFillPanel`/`TowerTrackPanel`) — most per-node fine-tuning is still
+  inline `theme_override_*` properties on individual scene nodes.

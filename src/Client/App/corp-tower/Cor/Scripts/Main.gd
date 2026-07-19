@@ -65,6 +65,7 @@ var timer_shown_seconds: int = -1
 var team_inventory_button: TextureButton
 var team_inventory_popover: Control
 var active_popover: Control
+var shared_popover_mode: String = ""
 var last_draw_pile_count: int = 0
 var last_next_draw_block: Variant = null
 var score_tints: Dictionary = {}
@@ -435,6 +436,11 @@ func open_quick_chat_popover() -> void:
 	if team_inventory_popover == null:
 		return
 
+	if active_popover == team_inventory_popover and shared_popover_mode == "quick_chat" \
+			and team_inventory_popover.visible:
+		close_active_popover()
+		return
+
 	team_inventory_popover.call("set_title", "Quick Chat")
 	team_inventory_popover.call("clear_rows")
 
@@ -453,10 +459,16 @@ func open_quick_chat_popover() -> void:
 
 	close_active_popover()
 	active_popover = team_inventory_popover
+	shared_popover_mode = "quick_chat"
 	team_inventory_popover.call("open")
 
 func open_power_popover() -> void:
 	if team_inventory_popover == null:
+		return
+
+	if active_popover == team_inventory_popover and shared_popover_mode == "power" \
+			and team_inventory_popover.visible:
+		close_active_popover()
 		return
 
 	team_inventory_popover.call("set_title", "Power")
@@ -479,6 +491,7 @@ func open_power_popover() -> void:
 
 	close_active_popover()
 	active_popover = team_inventory_popover
+	shared_popover_mode = "power"
 	team_inventory_popover.call("open")
 
 func get_power_row_label(power_id: String) -> String:
@@ -489,6 +502,11 @@ func get_power_row_label(power_id: String) -> String:
 
 func open_team_inventory_popover() -> void:
 	if team_inventory_popover == null:
+		return
+
+	if active_popover == team_inventory_popover and shared_popover_mode == "team_inventory" \
+			and team_inventory_popover.visible:
+		close_active_popover()
 		return
 
 	team_inventory_popover.call("set_title", "Team Inventory")
@@ -512,12 +530,14 @@ func open_team_inventory_popover() -> void:
 
 	close_active_popover()
 	active_popover = team_inventory_popover
+	shared_popover_mode = "team_inventory"
 	team_inventory_popover.call("open")
 
 func close_active_popover() -> void:
 	if active_popover != null:
 		active_popover.call("close")
 		active_popover = null
+	shared_popover_mode = ""
 
 func setup_debug_controls() -> void:
 	if debug_overlay != null:
@@ -1284,6 +1304,11 @@ func get_quest_claimed_by(side_quest: Dictionary) -> String:
 func on_quest_chip_pressed() -> void:
 	quest_seen_level = current_level
 	update_quest_chip(last_side_quest)
+
+	if quest_popover != null and active_popover == quest_popover and quest_popover.visible:
+		close_active_popover()
+		return
+
 	open_quest_popover()
 
 func open_quest_popover() -> void:

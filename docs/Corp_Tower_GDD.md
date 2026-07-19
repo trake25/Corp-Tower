@@ -56,24 +56,25 @@
 
 ## Power System
 - Power unlocks at level 4 by default (`powerUnlockLevel`). Each player has up to 3 Power inventory slots (`powerMaxSlots`).
-- Each eligible level has one shared random side quest. Valid starter quests are: first to place an unlocked 4-, 5-, or 6-cell block, or first to make the exact-finishing placement.
-- The first eligible player to complete the quest receives one random Power item if they have inventory space. After a completed Impact, the player with the highest total score also receives one random Power item if they have space.
+- Each eligible level has one shared side quest. Currently fixed to "first to make the exact-finishing placement" for every level (`setupSideQuest()` in [[Game Engine]]) — the block-size starter quest variant ("first to place a 4/5/6-cell block") is temporarily disabled; its completion check still exists in `tryCompleteSideQuest()` but is unreachable since no quest of that type is generated right now.
+- Every player is guaranteed one Refresh item as soon as the room reaches `powerUnlockLevel`, re-granted at the start of any level (including restarts and Impact rollback) if they don't already hold one and have inventory space — no quest or luck required for the baseline.
+- On top of that: the first eligible player to complete the level's side quest also receives a Power item if they have space (currently hardcoded to Refresh, since Score Cap/Copy Score aren't awarded by the quest path right now), and after a completed Impact, the player with the highest total score receives one Power item picked at random from the full catalog (Score Cap, Copy Score, or Refresh) if they have space.
 - Unused Power items persist through subsequent levels in the same match, up to the slot cap. Items clear when the match closes.
 - Power inventory is snapshotted at each completed Impact (including Impact MVP rewards). On rollback to the last Impact, any Power items earned after that snapshot are removed and each player's inventory is restored to the snapshotted state, preventing failed Impact-band attempts from farming items.
 - `powerLifetime` controls rollback behavior: `impact` restores the snapshotted inventory on rollback; `match` keeps earned items across rollback (debug/legacy only).
-- Players activate an item by dragging its Power slot onto a player target. Power activation has a 3-second cooldown (`powerActivationCooldownMs`) and cannot be used in the final 3 seconds of a level.
-- Starter effects:
-  - **Score Cap (Offensive):** set the selected target's total score exactly to that target's next Impact score requirement, whether their prior score was above or below it.
-  - **Copy Score (Defensive):** set the selected target's total score to the caster's total score and update the target's Impact snapshot/baseline to the copied score.
-  - **Refresh (Utility):** immediately reroll the selected target's hand. There is no token or use-count economy — activating the item is the entire effect, gated only by the shared Power activation cooldown.
-- For 4 seconds after any Power activation, the target's total-score UI uses the caster color.
+- Players activate an item by tapping the Power icon to open a list of their held items, then tapping one — activation is instant, no target selection. Every activation affects **all players in the room** (caster included), not a single chosen target. Power activation has a 3-second cooldown (`powerActivationCooldownMs`) and cannot be used in the final 3 seconds of a level.
+- Starter effects (all room-wide as of the tap-to-activate redesign):
+  - **Score Cap (Offensive):** set every player's total score exactly to their own next Impact score requirement, whether their prior score was above or below it. Only obtainable via the Impact-MVP reward right now, not the side quest.
+  - **Copy Score (Defensive):** set every player's total score to the caster's total score and update their Impact snapshot/baseline to the copied score. Only obtainable via the Impact-MVP reward right now, not the side quest.
+  - **Refresh (Utility):** immediately reroll every player's hand. There is no token or use-count economy — activating the item is the entire effect, gated only by the shared Power activation cooldown.
+- For 4 seconds after any Power activation, every player's total-score UI uses the caster color, and a toast names the effect (e.g. "All players inventory refreshed" for Refresh).
 
 ### Refresh Effect Details
-- Refresh is not a standalone player action anymore — it only happens when a player activates a held Refresh Power item on a target.
-- Effect: replaces all of the target's current blocks using targeted rerolls.
+- Refresh is not a standalone player action anymore — it only happens when a player activates a held Refresh Power item, and it rerolls every player's hand at once, not just the caster's.
+- Effect: replaces all of a player's current blocks using targeted rerolls.
 - Blocks with size below 3 reroll into an unlocked size 3+ block when possible.
 - Blocks with size 3 or higher keep their size but reroll shape/orientation.
-- Refresh generation is target-aware and tries to include at least one useful block for the current remaining height.
+- Refresh generation is aware of each player's own remaining height and tries to include at least one useful block for it.
 
 ## Tower System
 - Target height uses a level-band curve, scaled by `targetHeightMultiplier` for debug tuning.
@@ -160,9 +161,9 @@
 | `placementCooldown` | Anti-spam delay between placements (ms). |
 | `levelTimeLimitMs` | Level timer duration (ms). |
 | `startDelayMs` | Countdown before level becomes playable (ms). |
-| `placementScorePopupDurationMs` | Placement score popup total lifetime, including fade-out (500-10000 ms, default 5000). |
-| `finishScorePopupDurationMs` | MVP, Perfect Fit, and bonus popup total lifetime, including fade-out (500-10000 ms, default 5000). |
-| `levelSummaryDelayMs` | Completed/failed level score summary visible duration before next level or rollback (1000-10000 ms, default 6000). |
+| `placementScorePopupDurationMs` | Placement score popup total lifetime, including fade-out (500-10000 ms, default 3000). |
+| `finishScorePopupDurationMs` | MVP, Perfect Fit, and bonus popup total lifetime, including fade-out (500-10000 ms, default 3000). |
+| `levelSummaryDelayMs` | Completed/failed level score summary visible duration before next level or rollback (1000-10000 ms, default 3000). |
 | `impactMinContributionShare` | Required per-player share of expected placement score in the current Impact band; default `30%`, `0` disables the gate. |
 | `targetHeightMultiplier` | Debug scale applied to the target-height curve; default 3 keeps the authored curve unchanged. |
 | `levelSupplyMinSurplus` | Minimum generated total-height surplus above target. |
