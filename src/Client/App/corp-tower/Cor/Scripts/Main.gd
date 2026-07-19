@@ -1253,7 +1253,7 @@ func update_quest_chip(raw_side_quest: Variant) -> void:
 	var side_quest: Dictionary = raw_side_quest if typeof(raw_side_quest) == TYPE_DICTIONARY else {}
 	last_side_quest = side_quest
 	var is_unlocked: bool = str(side_quest.get("label", "")) != ""
-	var is_cleared: bool = str(side_quest.get("claimedBy", "")) != ""
+	var is_cleared: bool = get_quest_claimed_by(side_quest) != ""
 	var is_seen: bool = quest_seen_level == current_level
 
 	quest_chip.visible = true
@@ -1264,6 +1264,10 @@ func update_quest_chip(raw_side_quest: Variant) -> void:
 	else:
 		quest_chip.texture_normal = QuestIdleTexture
 	quest_chip.tooltip_text = str(side_quest.get("label", ""))
+
+func get_quest_claimed_by(side_quest: Dictionary) -> String:
+	var claimed_by: Variant = side_quest.get("claimedBy", null)
+	return claimed_by if typeof(claimed_by) == TYPE_STRING else ""
 
 func on_quest_chip_pressed() -> void:
 	quest_seen_level = current_level
@@ -1278,14 +1282,19 @@ func open_quest_popover() -> void:
 	quest_popover.call("clear_rows")
 
 	var label: String = str(last_side_quest.get("label", ""))
-	var claimed_by: String = str(last_side_quest.get("claimedBy", ""))
+	var claimed_by: String = get_quest_claimed_by(last_side_quest)
 
 	if label == "":
 		quest_popover.call("add_row", "No active quest yet")
 	else:
 		quest_popover.call("add_row", label)
 		if claimed_by != "":
-			quest_popover.call("add_row", "Claimed by " + get_player_display_name(claimed_by, []))
+			var claim_row: Label = quest_popover.call(
+				"add_row",
+				"Claimed by " + get_player_display_name(claimed_by, [])
+			)
+			if claim_row != null:
+				claim_row.add_theme_color_override("font_color", get_player_color(claimed_by))
 
 	close_active_popover()
 	active_popover = quest_popover

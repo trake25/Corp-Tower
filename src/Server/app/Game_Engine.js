@@ -281,10 +281,8 @@ class GameEngine {
 
     setupSideQuest() {
         if (this.room.level < GameConfig.powerUnlockLevel) { this.room.sideQuest = null; return; }
-        const sizes = Object.keys(GameConfig.blockShapeVariants).map(Number).filter(size => this.isBlockSizeUnlocked(size) && size >= 4);
-        const options = sizes.map(size => ({ id: `place_${size}`, type: "place_size", size, label: `First to place a ${size}-cell block` }));
-        options.push({ id: "exact_finish", type: "exact_finish", label: "First to finish exactly" });
-        this.room.sideQuest = { ...options[Math.floor(Math.random() * options.length)], claimedBy: null, rewardId: Object.keys(GameConfig.powerCatalog)[Math.floor(Math.random() * 3)] };
+        const quest = { id: "exact_finish", type: "exact_finish", label: "First to finish exactly" };
+        this.room.sideQuest = { ...quest, claimedBy: null, rewardId: Object.keys(GameConfig.powerCatalog)[Math.floor(Math.random() * 3)] };
     }
 
     tryCompleteSideQuest(player, block, exactFinish) {
