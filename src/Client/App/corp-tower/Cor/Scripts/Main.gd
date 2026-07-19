@@ -2,7 +2,6 @@ extends Control
 
 const MAX_INVENTORY_SLOTS := 3
 const DRAW_PILE_COLOR := Color(0.95, 0.72, 0.25, 1.0)
-const SCORE_POPUP_DEFAULT_DURATION_MS := 3000
 const SCORE_POPUP_FLOAT_DISTANCE := 64.0
 const SCORE_POPUP_INTRO_SECONDS := 0.16
 const SCORE_POPUP_FADE_RATIO := 0.28
@@ -11,12 +10,10 @@ const SCORE_POPUP_MAX_FADE_SECONDS := 2.0
 const CHAT_BUBBLE_MAX_WIDTH := 240.0
 const SCORE_POPUP_MIN_HOLD_SECONDS := 0.05
 const FINISH_SCORE_POPUP_MIN_HOLD_RATIO := 0.08
-const LEVEL_SUMMARY_DEFAULT_DELAY_MS := 3000
-const BOT_STRATEGY_COOPERATIVE := "cooperative"
-const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
-const TOWER_FEEDBACK_MODES := ["warnings_only", "meter_only", "live_preview"]
-const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Meter Only", "Live Preview"]
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
+const UiNodeBinderScript = preload("res://Cor/Scripts/GameUi/UiNodeBinder.gd")
+const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
+const DebugPanelControllerScript = preload("res://Cor/Scripts/GameUi/DebugPanelController.gd")
 const BlockPreviewScript = preload("res://Cor/Scripts/BlockPreview.gd")
 const LevelBadgeNormalTexture = preload("res://Cor/Art/Static/level.png")
 const LevelBadgeSafeTexture = preload("res://Cor/Art/Static/safe.png")
@@ -72,8 +69,9 @@ var score_tints: Dictionary = {}
 var block_previews: Array = []
 var block_height_labels: Array = []
 var block_name_labels: Array = []
-var is_syncing_debug_config: bool = false
 var missing_required_nodes: Array[String] = []
+var tuning
+var debug_panel
 var player_color_map: Dictionary = {}
 var player_order: Array[String] = []
 var seen_score_event_ids: Dictionary = {}
@@ -84,9 +82,6 @@ var quick_chat_cooldown_ms: int = 6000
 var last_quick_chat_sent_at_ms: int = 0
 var current_level: int = 0
 var current_roster: Array = []
-var placement_score_popup_duration_ms: int = SCORE_POPUP_DEFAULT_DURATION_MS
-var finish_score_popup_duration_ms: int = SCORE_POPUP_DEFAULT_DURATION_MS
-var level_summary_delay_ms: int = LEVEL_SUMMARY_DEFAULT_DELAY_MS
 var last_level_summary_key: String = ""
 var pending_level_summary: Dictionary = {}
 var pending_level_summary_state: String = ""
@@ -95,7 +90,6 @@ var summary_show_timer: Timer
 var summary_hide_timer: Timer
 var active_inventory_slots: int = MAX_INVENTORY_SLOTS
 var current_match_state: String = ""
-var placement_cooldown_ms: int = 2000
 var last_placement_sent_at_ms: int = 0
 var is_block_dragging: bool = false
 var drag_slot_index: int = -1
@@ -135,77 +129,12 @@ var level_summary_team_label: Label
 var level_summary_mvp_label: Label
 var level_summary_players_box: VBoxContainer
 var score_popup_layer: Control
-var debug_overlay: Control
-var debug_dim_layer: Control
-var reset_debug_button: Button
-var close_debug_button: Button
-var bots_toggle: CheckButton
-var bot_strategy_button: OptionButton
-var bot_count_label: Label
-var bot_count_slider: HSlider
-var bot_delay_min_label: Label
-var bot_delay_min_slider: HSlider
-var bot_delay_max_label: Label
-var bot_delay_max_slider: HSlider
-var debug_start_level_label: Label
-var debug_start_level_slider: HSlider
-var cooldown_label: Label
-var cooldown_slider: HSlider
-var level_time_label: Label
-var level_time_slider: HSlider
-var start_delay_label: Label
-var start_delay_slider: HSlider
-var placement_popup_duration_label: Label
-var placement_popup_duration_slider: HSlider
-var finish_popup_duration_label: Label
-var finish_popup_duration_slider: HSlider
-var level_summary_delay_label: Label
-var level_summary_delay_slider: HSlider
-var target_multiplier_label: Label
-var target_multiplier_slider: HSlider
-var level_supply_min_label: Label
-var level_supply_min_slider: HSlider
-var level_supply_max_label: Label
-var level_supply_max_slider: HSlider
-var min_precision_blocks_label: Label
-var min_precision_blocks_slider: HSlider
-var max_team_carry_over_label: Label
-var max_team_carry_over_slider: HSlider
-var refresh_min_useful_height_label: Label
-var refresh_min_useful_height_slider: HSlider
-var placement_score_label: Label
-var placement_score_slider: HSlider
-var impact_score_label: Label
-var impact_score_slider: HSlider
-var finisher_bonus_label: Label
-var finisher_bonus_slider: HSlider
-var precision_bonus_label: Label
-var precision_bonus_slider: HSlider
-var team_exact_bonus_label: Label
-var team_exact_bonus_slider: HSlider
-var assist_bonus_label: Label
-var assist_bonus_slider: HSlider
-var assist_threshold_label: Label
-var assist_threshold_slider: HSlider
-var tower_overhang_weight_label: Label
-var tower_overhang_weight_slider: HSlider
-var tower_max_tilt_label: Label
-var tower_max_tilt_slider: HSlider
-var tower_collapse_threshold_label: Label
-var tower_collapse_threshold_slider: HSlider
-var tower_warning_threshold_label: Label
-var tower_warning_threshold_slider: HSlider
-var tower_critical_threshold_label: Label
-var tower_critical_threshold_slider: HSlider
-var tower_feedback_mode_button: OptionButton
-var power_unlock_level_label: Label
-var power_unlock_level_slider: HSlider
-var power_max_slots_label: Label
-var power_max_slots_slider: HSlider
-var power_cooldown_label: Label
-var power_cooldown_slider: HSlider
 
 func _ready() -> void:
+	tuning = UiTuningScript.new()
+	debug_panel = DebugPanelControllerScript.new()
+	add_child(debug_panel)
+
 	summary_show_timer = Timer.new()
 	summary_show_timer.one_shot = true
 	summary_show_timer.timeout.connect(show_pending_level_summary)
@@ -220,7 +149,7 @@ func _ready() -> void:
 		return
 
 	setup_inventory_controls()
-	setup_debug_controls()
+	debug_panel.setup(tuning, NetworkManager)
 	setup_popover_controls()
 	reset_ui()
 	connect_network_signals()
@@ -235,165 +164,84 @@ func prepare_ui() -> bool:
 	return true
 
 func bind_ui_nodes() -> void:
-	missing_required_nodes.clear()
-	status_label = require_node("StatusLabel") as Label
-	power_target_box = optional_node("PowerTargetBox") as VBoxContainer
-	player_label = require_node("PlayerLabel") as Label
-	room_label = require_node("RoomLabel") as Label
-	level_label = require_node("LevelLabel") as Label
-	timer_label = require_node("TimerLabel") as Label
-	level_badge_texture = optional_node("LevelBadgeTexture") as TextureRect
-	round_time_texture = optional_node("RoundTimeTexture") as TextureRect
-	top_indicator_fill = optional_node("TopIndicatorFill") as TextureRect
-	score_label = require_node("ScoreLabel") as Label
-	player_rail_box = optional_node("PlayerRailBox") as VBoxContainer
-	impact_track = optional_node("ImpactTrack") as VBoxContainer
-	impact_pill = optional_node("ImpactPill") as Control
-	quest_chip = optional_node("QuestChip") as TextureButton
-	quest_badge = optional_node("QuestBadge") as TextureRect
-	quick_chat_trigger = optional_node("QuickChatTrigger") as TextureButton
-	power_trigger = optional_node("PowerTrigger") as TextureButton
-	team_inventory_button = optional_node("TeamInventoryButton") as TextureButton
-	team_inventory_popover = optional_node("TeamInventoryPopover") as Control
-	quest_popover = optional_node("QuestPopover") as Control
-	impact_status_label = require_node("ImpactStatusLabel") as Label
-	impact_separator = optional_node("ImpactSeparator") as HSeparator
-	tower_stability_label = optional_node("TowerStabilityLabel") as Label
-	height_label = require_node("HeightLabel") as Label
-	tower_value_label = require_node("TowerValueLabel") as Label
-	tower_status_label = require_node("TowerStatusLabel") as Label
-	tower_fill = require_node("TowerFill") as Panel
-	tower_stack = require_node("TowerStack") as Control
-	tower_drop_zone = require_node("TowerDropZone") as Control
-	drag_preview = require_node("DragPreview") as Control
-	block_label = require_node("BlockLabel") as Label
-	draw_pile_name_label = require_node("DrawPileNameLabel") as Label
-	draw_pile_count_label = require_node("DrawPileCountLabel") as Label
-	draw_pile_preview = require_node("DrawPilePreview") as Control
-	connect_button = require_node("ConnectButton") as Button
-	level_summary_overlay = require_node("LevelSummaryOverlay") as Control
-	level_summary_title_label = require_node("LevelSummaryTitleLabel") as Label
-	level_summary_result_label = require_node("LevelSummaryResultLabel") as Label
-	level_summary_team_label = require_node("LevelSummaryTeamLabel") as Label
-	level_summary_mvp_label = require_node("LevelSummaryMvpLabel") as Label
-	level_summary_players_box = require_node("LevelSummaryPlayersBox") as VBoxContainer
-	score_popup_layer = require_node("ScorePopupLayer") as Control
+	var binder = UiNodeBinderScript.new(ui_root)
+	status_label = binder.require_node("StatusLabel") as Label
+	power_target_box = binder.optional_node("PowerTargetBox") as VBoxContainer
+	player_label = binder.require_node("PlayerLabel") as Label
+	room_label = binder.require_node("RoomLabel") as Label
+	level_label = binder.require_node("LevelLabel") as Label
+	timer_label = binder.require_node("TimerLabel") as Label
+	level_badge_texture = binder.optional_node("LevelBadgeTexture") as TextureRect
+	round_time_texture = binder.optional_node("RoundTimeTexture") as TextureRect
+	top_indicator_fill = binder.optional_node("TopIndicatorFill") as TextureRect
+	score_label = binder.require_node("ScoreLabel") as Label
+	player_rail_box = binder.optional_node("PlayerRailBox") as VBoxContainer
+	impact_track = binder.optional_node("ImpactTrack") as VBoxContainer
+	impact_pill = binder.optional_node("ImpactPill") as Control
+	quest_chip = binder.optional_node("QuestChip") as TextureButton
+	quest_badge = binder.optional_node("QuestBadge") as TextureRect
+	quick_chat_trigger = binder.optional_node("QuickChatTrigger") as TextureButton
+	power_trigger = binder.optional_node("PowerTrigger") as TextureButton
+	team_inventory_button = binder.optional_node("TeamInventoryButton") as TextureButton
+	team_inventory_popover = binder.optional_node("TeamInventoryPopover") as Control
+	quest_popover = binder.optional_node("QuestPopover") as Control
+	impact_status_label = binder.require_node("ImpactStatusLabel") as Label
+	impact_separator = binder.optional_node("ImpactSeparator") as HSeparator
+	tower_stability_label = binder.optional_node("TowerStabilityLabel") as Label
+	height_label = binder.require_node("HeightLabel") as Label
+	tower_value_label = binder.require_node("TowerValueLabel") as Label
+	tower_status_label = binder.require_node("TowerStatusLabel") as Label
+	tower_fill = binder.require_node("TowerFill") as Panel
+	tower_stack = binder.require_node("TowerStack") as Control
+	tower_drop_zone = binder.require_node("TowerDropZone") as Control
+	drag_preview = binder.require_node("DragPreview") as Control
+	block_label = binder.require_node("BlockLabel") as Label
+	draw_pile_name_label = binder.require_node("DrawPileNameLabel") as Label
+	draw_pile_count_label = binder.require_node("DrawPileCountLabel") as Label
+	draw_pile_preview = binder.require_node("DrawPilePreview") as Control
+	connect_button = binder.require_node("ConnectButton") as Button
+	level_summary_overlay = binder.require_node("LevelSummaryOverlay") as Control
+	level_summary_title_label = binder.require_node("LevelSummaryTitleLabel") as Label
+	level_summary_result_label = binder.require_node("LevelSummaryResultLabel") as Label
+	level_summary_team_label = binder.require_node("LevelSummaryTeamLabel") as Label
+	level_summary_mvp_label = binder.require_node("LevelSummaryMvpLabel") as Label
+	level_summary_players_box = binder.require_node("LevelSummaryPlayersBox") as VBoxContainer
+	score_popup_layer = binder.require_node("ScorePopupLayer") as Control
 	if score_popup_layer != null:
 		score_popup_layer.visible = true
 
 	inventory_buttons = [
-		require_node("PlaceBlockButton1") as Button,
-		require_node("PlaceBlockButton2") as Button,
-		require_node("PlaceBlockButton3") as Button
+		binder.require_node("PlaceBlockButton1") as Button,
+		binder.require_node("PlaceBlockButton2") as Button,
+		binder.require_node("PlaceBlockButton3") as Button
 	]
 	block_previews = [
-		require_node("BlockPreview1") as Control,
-		require_node("BlockPreview2") as Control,
-		require_node("BlockPreview3") as Control
+		binder.require_node("BlockPreview1") as Control,
+		binder.require_node("BlockPreview2") as Control,
+		binder.require_node("BlockPreview3") as Control
 	]
 	block_height_labels = [
-		require_node("BlockHeightLabel1") as Label,
-		require_node("BlockHeightLabel2") as Label,
-		require_node("BlockHeightLabel3") as Label
+		binder.require_node("BlockHeightLabel1") as Label,
+		binder.require_node("BlockHeightLabel2") as Label,
+		binder.require_node("BlockHeightLabel3") as Label
 	]
 	block_name_labels = [
-		require_node("BlockNameLabel1") as Label,
-		require_node("BlockNameLabel2") as Label,
-		require_node("BlockNameLabel3") as Label
+		binder.require_node("BlockNameLabel1") as Label,
+		binder.require_node("BlockNameLabel2") as Label,
+		binder.require_node("BlockNameLabel3") as Label
 	]
 	cooldown_overlays = []
 	for button in inventory_buttons:
 		cooldown_overlays.append(button.get_node_or_null("CooldownOverlay") as Control)
 	quick_chat_buttons = [
-		optional_node("QuickChatButton1") as Button,
-		optional_node("QuickChatButton2") as Button,
-		optional_node("QuickChatButton3") as Button
+		binder.optional_node("QuickChatButton1") as Button,
+		binder.optional_node("QuickChatButton2") as Button,
+		binder.optional_node("QuickChatButton3") as Button
 	]
-	power_buttons = [optional_node("PowerButton1") as Button, optional_node("PowerButton2") as Button, optional_node("PowerButton3") as Button]
+	power_buttons = [binder.optional_node("PowerButton1") as Button, binder.optional_node("PowerButton2") as Button, binder.optional_node("PowerButton3") as Button]
 
-	debug_overlay = optional_node("DebugOverlay") as Control
-	debug_dim_layer = optional_node("DebugDimLayer") as Control
-	reset_debug_button = optional_node("ResetDebugButton") as Button
-	close_debug_button = optional_node("CloseDebugButton") as Button
-	bots_toggle = optional_node("BotsToggle") as CheckButton
-	bot_strategy_button = optional_node("BotStrategyButton") as OptionButton
-	bot_count_label = optional_node("BotCountLabel") as Label
-	bot_count_slider = optional_node("BotCountSlider") as HSlider
-	bot_delay_min_label = optional_node("BotDelayMinLabel") as Label
-	bot_delay_min_slider = optional_node("BotDelayMinSlider") as HSlider
-	bot_delay_max_label = optional_node("BotDelayMaxLabel") as Label
-	bot_delay_max_slider = optional_node("BotDelayMaxSlider") as HSlider
-	debug_start_level_label = optional_node("DebugStartLevelLabel") as Label
-	debug_start_level_slider = optional_node("DebugStartLevelSlider") as HSlider
-	cooldown_label = optional_node("CooldownLabel") as Label
-	cooldown_slider = optional_node("CooldownSlider") as HSlider
-	level_time_label = optional_node("LevelTimeLabel") as Label
-	level_time_slider = optional_node("LevelTimeSlider") as HSlider
-	start_delay_label = optional_node("StartDelayLabel") as Label
-	start_delay_slider = optional_node("StartDelaySlider") as HSlider
-	placement_popup_duration_label = optional_node("PlacementPopupDurationLabel") as Label
-	placement_popup_duration_slider = optional_node("PlacementPopupDurationSlider") as HSlider
-	finish_popup_duration_label = optional_node("FinishPopupDurationLabel") as Label
-	finish_popup_duration_slider = optional_node("FinishPopupDurationSlider") as HSlider
-	level_summary_delay_label = optional_node("LevelSummaryDelayLabel") as Label
-	level_summary_delay_slider = optional_node("LevelSummaryDelaySlider") as HSlider
-	target_multiplier_label = optional_node("TargetMultiplierLabel") as Label
-	target_multiplier_slider = optional_node("TargetMultiplierSlider") as HSlider
-	level_supply_min_label = optional_node("LevelSupplyMinLabel") as Label
-	level_supply_min_slider = optional_node("LevelSupplyMinSlider") as HSlider
-	level_supply_max_label = optional_node("LevelSupplyMaxLabel") as Label
-	level_supply_max_slider = optional_node("LevelSupplyMaxSlider") as HSlider
-	min_precision_blocks_label = optional_node("MinPrecisionBlocksLabel") as Label
-	min_precision_blocks_slider = optional_node("MinPrecisionBlocksSlider") as HSlider
-	max_team_carry_over_label = optional_node("MaxTeamCarryOverLabel") as Label
-	max_team_carry_over_slider = optional_node("MaxTeamCarryOverSlider") as HSlider
-	refresh_min_useful_height_label = optional_node("RefreshMinUsefulHeightLabel") as Label
-	refresh_min_useful_height_slider = optional_node("RefreshMinUsefulHeightSlider") as HSlider
-	placement_score_label = optional_node("PlacementScoreLabel") as Label
-	placement_score_slider = optional_node("PlacementScoreSlider") as HSlider
-	impact_score_label = optional_node("ImpactScoreLabel") as Label
-	impact_score_slider = optional_node("ImpactScoreSlider") as HSlider
-	finisher_bonus_label = optional_node("FinisherBonusLabel") as Label
-	finisher_bonus_slider = optional_node("FinisherBonusSlider") as HSlider
-	precision_bonus_label = optional_node("PrecisionBonusLabel") as Label
-	precision_bonus_slider = optional_node("PrecisionBonusSlider") as HSlider
-	team_exact_bonus_label = optional_node("TeamExactBonusLabel") as Label
-	team_exact_bonus_slider = optional_node("TeamExactBonusSlider") as HSlider
-	assist_bonus_label = optional_node("AssistBonusLabel") as Label
-	assist_bonus_slider = optional_node("AssistBonusSlider") as HSlider
-	assist_threshold_label = optional_node("AssistThresholdLabel") as Label
-	assist_threshold_slider = optional_node("AssistThresholdSlider") as HSlider
-	tower_overhang_weight_label = optional_node("TowerOverhangWeightLabel") as Label
-	tower_overhang_weight_slider = optional_node("TowerOverhangWeightSlider") as HSlider
-	tower_max_tilt_label = optional_node("TowerMaxTiltLabel") as Label
-	tower_max_tilt_slider = optional_node("TowerMaxTiltSlider") as HSlider
-	tower_collapse_threshold_label = optional_node("TowerCollapseThresholdLabel") as Label
-	tower_collapse_threshold_slider = optional_node("TowerCollapseThresholdSlider") as HSlider
-	tower_warning_threshold_label = optional_node("TowerWarningThresholdLabel") as Label
-	tower_warning_threshold_slider = optional_node("TowerWarningThresholdSlider") as HSlider
-	tower_critical_threshold_label = optional_node("TowerCriticalThresholdLabel") as Label
-	tower_critical_threshold_slider = optional_node("TowerCriticalThresholdSlider") as HSlider
-	tower_feedback_mode_button = optional_node("TowerFeedbackModeButton") as OptionButton
-	power_unlock_level_label = optional_node("PowerUnlockLevelLabel") as Label
-	power_unlock_level_slider = optional_node("PowerUnlockLevelSlider") as HSlider
-	power_max_slots_label = optional_node("PowerMaxSlotsLabel") as Label
-	power_max_slots_slider = optional_node("PowerMaxSlotsSlider") as HSlider
-	power_cooldown_label = optional_node("PowerCooldownLabel") as Label
-	power_cooldown_slider = optional_node("PowerCooldownSlider") as HSlider
-
-func require_node(node_name: String) -> Node:
-	var node: Node = optional_node(node_name)
-
-	if node == null:
-		missing_required_nodes.append(node_name)
-
-	return node
-
-func optional_node(node_name: String) -> Node:
-	if ui_root == null:
-		return null
-
-	return ui_root.find_child(node_name, true, false)
+	debug_panel.bind_nodes(binder)
+	missing_required_nodes = binder.missing
 
 func setup_inventory_controls() -> void:
 	for preview in block_previews:
@@ -569,92 +417,6 @@ func position_quest_popover_card() -> void:
 		chip_rect.position.y
 	))
 
-func setup_debug_controls() -> void:
-	if debug_overlay != null:
-		set_debug_overlay_open(false)
-
-	if close_debug_button != null:
-		close_debug_button.pressed.connect(func(): set_debug_overlay_open(false))
-
-	if reset_debug_button != null:
-		reset_debug_button.pressed.connect(on_reset_debug_pressed)
-
-	if debug_dim_layer != null:
-		debug_dim_layer.mouse_filter = Control.MOUSE_FILTER_STOP
-		debug_dim_layer.gui_input.connect(on_debug_dim_layer_input)
-
-	if bots_toggle != null:
-		bots_toggle.toggled.connect(on_bots_toggle)
-
-	if bot_strategy_button != null:
-		bot_strategy_button.clear()
-		bot_strategy_button.add_item("Cooperative", 0)
-		bot_strategy_button.add_item("MVP Greedy", 1)
-		bot_strategy_button.item_selected.connect(on_bot_strategy_selected)
-
-	configure_slider(bot_count_slider, 0, 2, 1, func(value): send_debug_int("debugBotCount", value))
-	configure_slider(bot_delay_min_slider, 250, 10000, 250, func(value): send_debug_int("debugBotDelayMin", value))
-	configure_slider(bot_delay_max_slider, 250, 10000, 250, func(value): send_debug_int("debugBotDelayMax", value))
-	configure_slider(debug_start_level_slider, 1, 99, 1, func(value): send_debug_int("debugStartLevel", value))
-	configure_slider(cooldown_slider, 0, 5000, 250, func(value): send_debug_int("placementCooldown", value))
-	configure_slider(level_time_slider, 5000, 120000, 1000, func(value): send_debug_int("levelTimeLimitMs", value))
-	configure_slider(start_delay_slider, 0, 10000, 500, func(value): send_debug_int("startDelayMs", value))
-	configure_slider(placement_popup_duration_slider, 500, 10000, 500, on_placement_popup_duration_changed)
-	configure_slider(finish_popup_duration_slider, 500, 10000, 500, on_finish_popup_duration_changed)
-	configure_slider(level_summary_delay_slider, 1000, 10000, 500, on_level_summary_delay_changed)
-	configure_slider(target_multiplier_slider, 1, 20, 1, func(value): send_debug_int("targetHeightMultiplier", value))
-	configure_slider(level_supply_min_slider, 0, 20, 1, func(value): send_debug_int("levelSupplyMinSurplus", value))
-	configure_slider(level_supply_max_slider, 0, 30, 1, func(value): send_debug_int("levelSupplyMaxSurplus", value))
-	configure_slider(min_precision_blocks_slider, 0, 9, 1, func(value): send_debug_int("minPrecisionBlocksPerLevel", value))
-	configure_slider(max_team_carry_over_slider, 0, 12, 1, func(value): send_debug_int("maxTeamCarryOverBlocks", value))
-	configure_slider(refresh_min_useful_height_slider, 1, 6, 1, func(value): send_debug_int("refreshMinUsefulBlockHeight", value))
-	configure_slider(placement_score_slider, 1, 25, 1, func(value): send_debug_int("placementScorePerHeight", value))
-	configure_slider(impact_score_slider, 0, 50, 5, func(value): send_debug_float("impactMinContributionShare", value / 100.0))
-	configure_slider(finisher_bonus_slider, 0, 25, 1, func(value): send_debug_int("finisherBonusPerLevel", value))
-	configure_slider(precision_bonus_slider, 0, 25, 1, func(value): send_debug_int("precisionBonusPerLevel", value))
-	configure_slider(team_exact_bonus_slider, 0, 25, 1, func(value): send_debug_int("teamExactBonusPerLevel", value))
-	configure_slider(assist_bonus_slider, 0, 25, 1, func(value): send_debug_int("assistBonusPerLevel", value))
-	configure_slider(assist_threshold_slider, 0, 100, 5, func(value): send_debug_float("assistContributionThreshold", value / 100.0))
-	configure_slider(tower_overhang_weight_slider, 0, 100, 5, func(value): send_debug_float("towerOverhangWeight", value / 100.0))
-	configure_slider(tower_max_tilt_slider, 5, 60, 1, func(value): send_debug_int("towerMaxTiltAngleDeg", value))
-	configure_slider(tower_collapse_threshold_slider, 0.3, 3.0, 0.1, func(value): send_debug_float("towerCollapseTiltScore", value))
-	configure_slider(tower_warning_threshold_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityWarningThreshold", value))
-	configure_slider(tower_critical_threshold_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityCriticalThreshold", value))
-	configure_slider(power_unlock_level_slider, 1, 20, 1, func(value): send_debug_int("powerUnlockLevel", value))
-	configure_slider(power_max_slots_slider, 1, 6, 1, func(value): send_debug_int("powerMaxSlots", value))
-	configure_slider(power_cooldown_slider, 0, 30000, 500, func(value): send_debug_int("powerActivationCooldownMs", value))
-
-	if tower_feedback_mode_button != null:
-		tower_feedback_mode_button.clear()
-		for i in range(TOWER_FEEDBACK_MODES.size()):
-			tower_feedback_mode_button.add_item(TOWER_FEEDBACK_MODE_TITLES[i], i)
-		tower_feedback_mode_button.item_selected.connect(on_tower_feedback_mode_selected)
-
-	update_debug_labels()
-
-func configure_slider(slider: HSlider, min_value: float, max_value: float, step: float, callback: Callable) -> void:
-	if slider == null:
-		return
-
-	slider.min_value = min_value
-	slider.max_value = max_value
-	slider.step = step
-	slider.value_changed.connect(callback)
-
-func set_slider_no_signal(slider: HSlider, value: float) -> void:
-	if slider != null:
-		slider.set_value_no_signal(value)
-
-func get_slider_value(slider: HSlider, fallback: float = 0.0) -> float:
-	if slider == null:
-		return fallback
-
-	return slider.value
-
-func set_debug_label_text(label: Label, text: String) -> void:
-	if label != null:
-		label.text = text
-
 func reset_ui() -> void:
 	connect_button.text = "Connect"
 	status_label.text = "Disconnected"
@@ -697,8 +459,8 @@ func connect_network_signals() -> void:
 	NetworkManager.debug_config_updated.connect(update_debug_config)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel") and debug_overlay != null and debug_overlay.visible:
-		set_debug_overlay_open(false)
+	if event.is_action_pressed("ui_cancel") and debug_panel.is_open():
+		debug_panel.set_open(false)
 
 func _input(event: InputEvent) -> void:
 	if is_block_dragging:
@@ -725,7 +487,7 @@ func _input(event: InputEvent) -> void:
 			_try_activate_popover_trigger(event.position)
 
 func _try_activate_popover_trigger(global_pos: Vector2) -> void:
-	if debug_overlay != null and debug_overlay.visible:
+	if debug_panel.is_open():
 		return
 	if level_summary_overlay != null and level_summary_overlay.visible:
 		return
@@ -880,12 +642,12 @@ func get_placement_cooldown_remaining_ms() -> int:
 		return 0
 
 	var elapsed_ms: int = Time.get_ticks_msec() - last_placement_sent_at_ms
-	return maxi(0, placement_cooldown_ms - elapsed_ms)
+	return maxi(0, tuning.placement_cooldown_ms - elapsed_ms)
 
 func update_placement_cooldown_overlays() -> void:
 	var ratio: float = 0.0
-	if placement_cooldown_ms > 0:
-		ratio = float(get_placement_cooldown_remaining_ms()) / float(placement_cooldown_ms)
+	if tuning.placement_cooldown_ms > 0:
+		ratio = float(get_placement_cooldown_remaining_ms()) / float(tuning.placement_cooldown_ms)
 	for overlay in cooldown_overlays:
 		if overlay != null and overlay.has_method("set_remaining_ratio"):
 			overlay.call("set_remaining_ratio", ratio)
@@ -975,26 +737,7 @@ func reset_tower_drop_zone_highlight() -> void:
 		tower_fill.modulate = Color.WHITE
 
 func toggle_debug_overlay() -> void:
-	if debug_overlay == null:
-		return
-
-	if debug_overlay.has_method("toggle"):
-		debug_overlay.call("toggle")
-	else:
-		debug_overlay.visible = !debug_overlay.visible
-
-func set_debug_overlay_open(open: bool) -> void:
-	if debug_overlay == null:
-		return
-
-	if debug_overlay.has_method("set_open"):
-		debug_overlay.call("set_open", open)
-	else:
-		debug_overlay.visible = open
-
-func on_debug_dim_layer_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
-		set_debug_overlay_open(false)
+	debug_panel.toggle()
 
 func update_status(text: String) -> void:
 	status_label.text = text
@@ -1056,7 +799,7 @@ func update_room_closed(data) -> void:
 	tower_stack.clear_tower()
 	update_inventory_ui([], MAX_INVENTORY_SLOTS)
 	update_draw_pile_ui(0, null)
-	set_debug_overlay_open(false)
+	debug_panel.set_open(false)
 	clear_score_popups()
 	cancel_pending_level_summary()
 	hide_level_summary()
@@ -1078,16 +821,16 @@ func update_game_state(data) -> void:
 	var impact_level: int = int(data.get("impactLevel", 0))
 	impact_interval = maxi(1, int(data.get("impactInterval", impact_interval)))
 	var players: Array = data.get("players", [])
-	var fallback_popup_duration_ms: int = int(data.get("scorePopupDurationMs", SCORE_POPUP_DEFAULT_DURATION_MS))
-	placement_score_popup_duration_ms = int(data.get(
+	var fallback_popup_duration_ms: int = int(data.get("scorePopupDurationMs", UiTuningScript.SCORE_POPUP_DEFAULT_DURATION_MS))
+	tuning.placement_score_popup_duration_ms = int(data.get(
 		"placementScorePopupDurationMs",
 		fallback_popup_duration_ms
 	))
-	finish_score_popup_duration_ms = int(data.get(
+	tuning.finish_score_popup_duration_ms = int(data.get(
 		"finishScorePopupDurationMs",
 		fallback_popup_duration_ms
 	))
-	level_summary_delay_ms = int(data.get("levelSummaryDelayMs", level_summary_delay_ms))
+	tuning.level_summary_delay_ms = int(data.get("levelSummaryDelayMs", tuning.level_summary_delay_ms))
 
 	if incoming_level != current_level:
 		current_level = incoming_level
@@ -2116,10 +1859,10 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 
 func get_score_event_popup_duration_seconds(event: Dictionary) -> float:
 	var event_type: String = str(event.get("type", ""))
-	var duration_ms: int = finish_score_popup_duration_ms
+	var duration_ms: int = tuning.finish_score_popup_duration_ms
 
 	if event_type == "placement":
-		duration_ms = placement_score_popup_duration_ms
+		duration_ms = tuning.placement_score_popup_duration_ms
 
 	return max(0.1, float(duration_ms) / 1000.0)
 
@@ -2235,7 +1978,7 @@ func show_level_summary(summary_value: Variant, state: String) -> void:
 
 	if summary_hide_timer != null:
 		summary_hide_timer.stop()
-		summary_hide_timer.wait_time = clamp(float(level_summary_delay_ms) / 1000.0, 1.0, 10.0)
+		summary_hide_timer.wait_time = clamp(float(tuning.level_summary_delay_ms) / 1000.0, 1.0, 10.0)
 		summary_hide_timer.start()
 
 func hide_level_summary() -> void:
@@ -2477,265 +2220,6 @@ func format_summary_reason(reason: String) -> String:
 
 	return reason.replace("_", " ").capitalize()
 
-func on_bots_toggle(enabled: bool) -> void:
-	if is_syncing_debug_config:
-		return
-	NetworkManager.update_config("debugBotsEnabled", enabled)
-
-func on_reset_debug_pressed() -> void:
-	NetworkManager.update_config("resetDebugConfig", true)
-
-func on_bot_strategy_selected(index: int) -> void:
-	if is_syncing_debug_config:
-		return
-
-	var strategy: String = BOT_STRATEGY_COOPERATIVE
-	if index == 1:
-		strategy = BOT_STRATEGY_MVP_GREEDY
-
-	NetworkManager.update_config("debugBotStrategy", strategy)
-
-func on_tower_feedback_mode_selected(index: int) -> void:
-	if is_syncing_debug_config:
-		return
-
-	if index < 0 or index >= TOWER_FEEDBACK_MODES.size():
-		return
-
-	NetworkManager.update_config("towerStabilityFeedbackMode", TOWER_FEEDBACK_MODES[index])
-
-func send_debug_int(key: String, value: float) -> void:
-	if is_syncing_debug_config:
-		return
-	update_debug_labels()
-	NetworkManager.update_config(key, int(value))
-
-func send_debug_float(key: String, value: float) -> void:
-	if is_syncing_debug_config:
-		return
-	update_debug_labels()
-	NetworkManager.update_config(key, value)
-
-func on_placement_popup_duration_changed(value: float) -> void:
-	placement_score_popup_duration_ms = int(value)
-	send_debug_int("placementScorePopupDurationMs", value)
-
-func on_finish_popup_duration_changed(value: float) -> void:
-	finish_score_popup_duration_ms = int(value)
-	send_debug_int("finishScorePopupDurationMs", value)
-
-func on_level_summary_delay_changed(value: float) -> void:
-	level_summary_delay_ms = int(value)
-	send_debug_int("levelSummaryDelayMs", value)
-
 func update_debug_config(config) -> void:
-	if bots_toggle == null:
-		return
+	debug_panel.apply_config(config)
 
-	is_syncing_debug_config = true
-	placement_cooldown_ms = int(config.get("placementCooldown", placement_cooldown_ms))
-	bots_toggle.set_pressed_no_signal(bool(config.get("debugBotsEnabled", false)))
-	if bot_strategy_button != null:
-		var strategy: String = str(config.get("debugBotStrategy", BOT_STRATEGY_COOPERATIVE))
-		var selected_strategy_index: int = 1 if strategy == BOT_STRATEGY_MVP_GREEDY else 0
-		bot_strategy_button.select(selected_strategy_index)
-	set_slider_no_signal(bot_count_slider, float(config.get("debugBotCount", 0)))
-	set_slider_no_signal(bot_delay_min_slider, float(config.get("debugBotDelayMin", 2000)))
-	set_slider_no_signal(bot_delay_max_slider, float(config.get("debugBotDelayMax", 5000)))
-	set_slider_no_signal(debug_start_level_slider, float(config.get("debugStartLevel", 1)))
-	set_slider_no_signal(cooldown_slider, float(config.get("placementCooldown", 2000)))
-	set_slider_no_signal(level_time_slider, float(config.get("levelTimeLimitMs", 30000)))
-	set_slider_no_signal(start_delay_slider, float(config.get("startDelayMs", 1500)))
-	placement_score_popup_duration_ms = int(config.get(
-		"placementScorePopupDurationMs",
-		SCORE_POPUP_DEFAULT_DURATION_MS
-	))
-	finish_score_popup_duration_ms = int(config.get(
-		"finishScorePopupDurationMs",
-		SCORE_POPUP_DEFAULT_DURATION_MS
-	))
-	level_summary_delay_ms = int(config.get("levelSummaryDelayMs", LEVEL_SUMMARY_DEFAULT_DELAY_MS))
-	set_slider_no_signal(
-		placement_popup_duration_slider,
-		float(config.get("placementScorePopupDurationMs", SCORE_POPUP_DEFAULT_DURATION_MS))
-	)
-	set_slider_no_signal(
-		finish_popup_duration_slider,
-		float(config.get("finishScorePopupDurationMs", SCORE_POPUP_DEFAULT_DURATION_MS))
-	)
-	set_slider_no_signal(level_summary_delay_slider, float(config.get("levelSummaryDelayMs", LEVEL_SUMMARY_DEFAULT_DELAY_MS)))
-	set_slider_no_signal(target_multiplier_slider, float(config.get("targetHeightMultiplier", 3)))
-	set_slider_no_signal(level_supply_min_slider, float(config.get("levelSupplyMinSurplus", 0)))
-	set_slider_no_signal(level_supply_max_slider, float(config.get("levelSupplyMaxSurplus", 6)))
-	set_slider_no_signal(min_precision_blocks_slider, float(config.get("minPrecisionBlocksPerLevel", 2)))
-	set_slider_no_signal(max_team_carry_over_slider, float(config.get("maxTeamCarryOverBlocks", 3)))
-	set_slider_no_signal(refresh_min_useful_height_slider, float(config.get("refreshMinUsefulBlockHeight", 2)))
-	set_slider_no_signal(placement_score_slider, float(config.get("placementScorePerHeight", 10)))
-	set_slider_no_signal(
-		impact_score_slider,
-		float(config.get("impactMinContributionShare", 0.30)) * 100.0
-	)
-	set_slider_no_signal(finisher_bonus_slider, float(config.get("finisherBonusPerLevel", 4)))
-	set_slider_no_signal(precision_bonus_slider, float(config.get("precisionBonusPerLevel", 8)))
-	set_slider_no_signal(team_exact_bonus_slider, float(config.get("teamExactBonusPerLevel", 6)))
-	set_slider_no_signal(assist_bonus_slider, float(config.get("assistBonusPerLevel", 0)))
-	set_slider_no_signal(
-		assist_threshold_slider,
-		float(config.get("assistContributionThreshold", 0.25)) * 100.0
-	)
-	set_slider_no_signal(
-		tower_overhang_weight_slider,
-		float(config.get("towerOverhangWeight", 0.18)) * 100.0
-	)
-	set_slider_no_signal(tower_max_tilt_slider, float(config.get("towerMaxTiltAngleDeg", 24)))
-	set_slider_no_signal(
-		tower_collapse_threshold_slider,
-		float(config.get("towerCollapseTiltScore", 1.0))
-	)
-	set_slider_no_signal(
-		tower_warning_threshold_slider,
-		float(config.get("towerStabilityWarningThreshold", 60))
-	)
-	set_slider_no_signal(
-		tower_critical_threshold_slider,
-		float(config.get("towerStabilityCriticalThreshold", 30))
-	)
-	if tower_feedback_mode_button != null:
-		var feedback_mode: String = str(config.get("towerStabilityFeedbackMode", TOWER_FEEDBACK_MODES[0]))
-		var feedback_mode_index: int = TOWER_FEEDBACK_MODES.find(feedback_mode)
-		tower_feedback_mode_button.select(max(feedback_mode_index, 0))
-	set_slider_no_signal(power_unlock_level_slider, float(config.get("powerUnlockLevel", 4)))
-	set_slider_no_signal(power_max_slots_slider, float(config.get("powerMaxSlots", 3)))
-	set_slider_no_signal(power_cooldown_slider, float(config.get("powerActivationCooldownMs", 3000)))
-	update_debug_labels()
-	is_syncing_debug_config = false
-
-func update_debug_labels() -> void:
-	set_debug_label_text(bot_count_label, "Bot Count: " + str(int(get_slider_value(bot_count_slider))))
-	set_debug_label_text(
-		bot_delay_min_label,
-		"Bot Delay Min: " + str(int(get_slider_value(bot_delay_min_slider, 2000))) + " ms"
-	)
-	set_debug_label_text(
-		bot_delay_max_label,
-		"Bot Delay Max: " + str(int(get_slider_value(bot_delay_max_slider, 5000))) + " ms"
-	)
-	set_debug_label_text(
-		debug_start_level_label,
-		"Start Level: " + str(int(get_slider_value(debug_start_level_slider, 1)))
-	)
-	set_debug_label_text(
-		cooldown_label,
-		"Placement Cooldown: " + str(int(get_slider_value(cooldown_slider, 2000))) + " ms"
-	)
-	set_debug_label_text(
-		level_time_label,
-		"Level Time: " + str(int(get_slider_value(level_time_slider, 30000) / 1000.0)) + " sec"
-	)
-	set_debug_label_text(
-		start_delay_label,
-		"Start Delay: " + str(int(get_slider_value(start_delay_slider, 1500))) + " ms"
-	)
-	set_debug_label_text(
-		placement_popup_duration_label,
-		"Placement Popups: " + str(int(get_slider_value(
-			placement_popup_duration_slider,
-			SCORE_POPUP_DEFAULT_DURATION_MS
-		))) + " ms"
-	)
-	set_debug_label_text(
-		finish_popup_duration_label,
-		"MVP / Perfect / Team Popups: " + str(int(get_slider_value(
-			finish_popup_duration_slider,
-			SCORE_POPUP_DEFAULT_DURATION_MS
-		))) + " ms"
-	)
-	set_debug_label_text(
-		level_summary_delay_label,
-		"Level Score Summary: " + str(int(get_slider_value(level_summary_delay_slider, LEVEL_SUMMARY_DEFAULT_DELAY_MS))) + " ms"
-	)
-	set_debug_label_text(
-		target_multiplier_label,
-		"Target Multiplier: " + str(int(get_slider_value(target_multiplier_slider, 3)))
-	)
-	set_debug_label_text(
-		level_supply_min_label,
-		"Supply Min Surplus: " + str(int(get_slider_value(level_supply_min_slider)))
-	)
-	set_debug_label_text(
-		level_supply_max_label,
-		"Supply Max Surplus: " + str(int(get_slider_value(level_supply_max_slider, 6)))
-	)
-	set_debug_label_text(
-		min_precision_blocks_label,
-		"Precision Blocks: " + str(int(get_slider_value(min_precision_blocks_slider, 2)))
-	)
-	set_debug_label_text(
-		max_team_carry_over_label,
-		"Carry-Over Blocks: " + str(int(get_slider_value(max_team_carry_over_slider, 3)))
-	)
-	set_debug_label_text(
-		refresh_min_useful_height_label,
-		"Refresh Useful Height: " + str(int(get_slider_value(refresh_min_useful_height_slider, 2)))
-	)
-	set_debug_label_text(
-		placement_score_label,
-		"Placement Score/Height: " + str(int(get_slider_value(placement_score_slider, 10)))
-	)
-	set_debug_label_text(
-		impact_score_label,
-		"Impact Share: " + str(int(get_slider_value(impact_score_slider, 30))) + "%"
-	)
-	set_debug_label_text(
-		finisher_bonus_label,
-		"Finisher Bonus/Level: " + str(int(get_slider_value(finisher_bonus_slider, 4)))
-	)
-	set_debug_label_text(
-		precision_bonus_label,
-		"Precision Bonus/Level: " + str(int(get_slider_value(precision_bonus_slider, 8)))
-	)
-	set_debug_label_text(
-		team_exact_bonus_label,
-		"Team Exact Bonus/Level: " + str(int(get_slider_value(team_exact_bonus_slider, 6)))
-	)
-	var assist_bonus_value: int = int(get_slider_value(assist_bonus_slider, 0))
-	set_debug_label_text(
-		assist_bonus_label,
-		"Assist Bonus/Level: " + ("Off" if assist_bonus_value <= 0 else str(assist_bonus_value))
-	)
-	set_debug_label_text(
-		assist_threshold_label,
-		"Assist Threshold: " + str(int(get_slider_value(assist_threshold_slider, 25))) + "%"
-	)
-	set_debug_label_text(
-		tower_overhang_weight_label,
-		"Overhang Weight: " + str(int(get_slider_value(tower_overhang_weight_slider, 18))) + "%"
-	)
-	set_debug_label_text(
-		tower_max_tilt_label,
-		"Max Tilt Angle: " + str(int(get_slider_value(tower_max_tilt_slider, 24))) + "\u00b0"
-	)
-	set_debug_label_text(
-		tower_collapse_threshold_label,
-		"Collapse Threshold: " + ("%.2f" % get_slider_value(tower_collapse_threshold_slider, 1.0))
-	)
-	set_debug_label_text(
-		tower_warning_threshold_label,
-		"Warning Threshold: " + str(int(get_slider_value(tower_warning_threshold_slider, 60))) + "%"
-	)
-	set_debug_label_text(
-		tower_critical_threshold_label,
-		"Critical Threshold: " + str(int(get_slider_value(tower_critical_threshold_slider, 30))) + "%"
-	)
-	set_debug_label_text(
-		power_unlock_level_label,
-		"Power Unlock Level: " + str(int(get_slider_value(power_unlock_level_slider, 4)))
-	)
-	set_debug_label_text(
-		power_max_slots_label,
-		"Power Slots: " + str(int(get_slider_value(power_max_slots_slider, 3)))
-	)
-	set_debug_label_text(
-		power_cooldown_label,
-		"Power Cooldown: " + ("%.1f" % (get_slider_value(power_cooldown_slider, 3000) / 1000.0)) + " sec"
-	)
