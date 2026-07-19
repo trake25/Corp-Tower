@@ -1,31 +1,92 @@
-[gd_resource type="Theme" load_steps=7 format=3]
+[gd_resource type="Theme" format=3 uid="uid://u7rmxm0gc7i3"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Background"]
-bg_color = Color(0.07, 0.08, 0.095, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Panel"]
-bg_color = Color(0.13, 0.15, 0.18, 0.96)
-border_color = Color(0.28, 0.33, 0.39, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ActionButton"]
+bg_color = Color(0.16, 0.19, 0.23, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
+border_color = Color(0.36, 0.43, 0.5, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TowerTrack"]
-bg_color = Color(0.1, 0.115, 0.135, 1)
-border_color = Color(0.44, 0.5, 0.58, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_GreenPill"]
+bg_color = Color(0.431, 0.976, 0.467, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.16)
+shadow_size = 3
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Panel"]
+bg_color = Color(0.13, 0.15, 0.18, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.28, 0.33, 0.39, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Background"]
+bg_color = Color(0.55, 0.83, 0.96, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_PrimaryButton"]
+bg_color = Color(0.23, 0.48, 0.84, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.74, 0.86, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ScorePill"]
+bg_color = Color(1, 0.8, 0.13, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.14)
+shadow_size = 3
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TopBarFrame"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.18)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_TopBar"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TopBarTrack"]
+bg_color = Color(0.667, 0.812, 0.867, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TowerFill"]
 bg_color = Color(0.22, 0.55, 0.92, 1)
@@ -34,45 +95,67 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ActionButton"]
-bg_color = Color(0.16, 0.19, 0.23, 1)
-border_color = Color(0.36, 0.43, 0.5, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TowerTrack"]
+bg_color = Color(0.1, 0.115, 0.135, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.44, 0.5, 0.58, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_PrimaryButton"]
-bg_color = Color(0.23, 0.48, 0.84, 1)
-border_color = Color(0.74, 0.86, 1, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_WhiteCard"]
+bg_color = Color(1, 1, 1, 0.97)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0.42, 0.55, 0.6, 0.22)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
 
 [resource]
-Panel/styles/panel = SubResource("StyleBoxFlat_Background")
-HudPanel/base_type = &"PanelContainer"
-HudPanel/styles/panel = SubResource("StyleBoxFlat_Panel")
-TowerTrackPanel/base_type = &"Panel"
-TowerTrackPanel/styles/panel = SubResource("StyleBoxFlat_TowerTrack")
-TowerFillPanel/base_type = &"Panel"
-TowerFillPanel/styles/panel = SubResource("StyleBoxFlat_TowerFill")
-ActionCardPanel/base_type = &"PanelContainer"
-ActionCardPanel/styles/panel = SubResource("StyleBoxFlat_ActionButton")
 ActionButton/base_type = &"Button"
 ActionButton/styles/normal = SubResource("StyleBoxFlat_ActionButton")
-PrimaryButton/base_type = &"Button"
-PrimaryButton/styles/normal = SubResource("StyleBoxFlat_PrimaryButton")
+ActionCardPanel/base_type = &"PanelContainer"
+ActionCardPanel/styles/panel = SubResource("StyleBoxFlat_ActionButton")
 CardMetaLabel/base_type = &"Label"
 CardMetaLabel/font_sizes/font_size = 12
+GreenPillPanel/base_type = &"PanelContainer"
+GreenPillPanel/styles/panel = SubResource("StyleBoxFlat_GreenPill")
+HudPanel/base_type = &"PanelContainer"
+HudPanel/styles/panel = SubResource("StyleBoxFlat_Panel")
 InfoLabel/base_type = &"Label"
 InfoLabel/font_sizes/font_size = 14
+Panel/styles/panel = SubResource("StyleBoxFlat_Background")
+PopoverBodyLabel/base_type = &"Label"
+PopoverBodyLabel/colors/font_color = Color(0.1, 0.1, 0.12, 1)
+PopoverBodyLabel/font_sizes/font_size = 16
+PopoverTitleLabel/base_type = &"Label"
+PopoverTitleLabel/colors/font_color = Color(0.1, 0.1, 0.12, 1)
+PopoverTitleLabel/font_sizes/font_size = 20
+PrimaryButton/base_type = &"Button"
+PrimaryButton/styles/normal = SubResource("StyleBoxFlat_PrimaryButton")
+RailNameLabel/base_type = &"Label"
+RailNameLabel/colors/font_color = Color(0.063, 0.063, 0.063, 1)
+RailNameLabel/font_sizes/font_size = 13
+RailScoreLabel/base_type = &"Label"
+RailScoreLabel/colors/font_color = Color(0.1, 0.1, 0.12, 1)
+RailScoreLabel/font_sizes/font_size = 15
+ScorePillPanel/base_type = &"PanelContainer"
+ScorePillPanel/styles/panel = SubResource("StyleBoxFlat_ScorePill")
+TopBarFramePanel/base_type = &"Panel"
+TopBarFramePanel/styles/panel = SubResource("StyleBoxFlat_TopBarFrame")
+TopBarPanel/base_type = &"PanelContainer"
+TopBarPanel/styles/panel = SubResource("StyleBoxEmpty_TopBar")
+TopBarTrackPanel/base_type = &"Panel"
+TopBarTrackPanel/styles/panel = SubResource("StyleBoxFlat_TopBarTrack")
+TowerFillPanel/base_type = &"Panel"
+TowerFillPanel/styles/panel = SubResource("StyleBoxFlat_TowerFill")
+TowerTrackPanel/base_type = &"Panel"
+TowerTrackPanel/styles/panel = SubResource("StyleBoxFlat_TowerTrack")
+WhiteCardPanel/base_type = &"PanelContainer"
+WhiteCardPanel/styles/panel = SubResource("StyleBoxFlat_WhiteCard")

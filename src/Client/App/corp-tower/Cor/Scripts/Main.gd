@@ -1,7 +1,6 @@
 extends Control
 
 const MAX_INVENTORY_SLOTS := 3
-const SHOW_DEBUG_UI := true
 const DRAW_PILE_COLOR := Color(0.95, 0.72, 0.25, 1.0)
 const SCORE_POPUP_DEFAULT_DURATION_MS := 3000
 const SCORE_POPUP_FLOAT_DISTANCE := 64.0
@@ -18,6 +17,16 @@ const TOWER_FEEDBACK_MODES := ["warnings_only", "meter_only", "live_preview"]
 const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Meter Only", "Live Preview"]
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const BlockPreviewScript = preload("res://Cor/Scripts/BlockPreview.gd")
+const LevelBadgeNormalTexture = preload("res://Cor/Art/Static/level.png")
+const LevelBadgeSafeTexture = preload("res://Cor/Art/Static/safe.png")
+const RoundTimeNormalTexture = preload("res://Cor/Art/Static/timer-round-time.png")
+const RoundTimeFreezeTexture = preload("res://Cor/Art/Static/timer-freeze-time.png")
+const PlayerRailEntryScene = preload("res://Cor/Scenes/PlayerRailEntry.tscn")
+const ImpactBarScene = preload("res://Cor/Scenes/ImpactBar.tscn")
+const QuestActiveTexture = preload("res://Cor/Art/Static/ic-quest-active-uncleared.png")
+const QuestClearedTexture = preload("res://Cor/Art/Static/ic-quest-cleared.png")
+const PLAYER_NAME_MAX_LENGTH := 10
+const MAX_RAIL_PLAYERS := 3
 const LOCAL_PLAYER_MARKER := "You"
 const DRAG_PREVIEW_SIZE := Vector2(96, 96)
 const DRAG_POINTER_MOUSE := -1
@@ -33,7 +42,19 @@ var power_target_buttons: Array = []
 var power_dragging := false
 var power_drag_ghost: Label
 var power_feedback_tween: Tween
-var score_line_labels: Dictionary = {}
+var player_rail_entries: Dictionary = {}
+var impact_bars: Dictionary = {}
+var player_seat_index: Dictionary = {}
+var player_level_scores: Dictionary = {}
+var player_rail_box: VBoxContainer
+var impact_track: VBoxContainer
+var impact_pill: Control
+var quest_chip: TextureButton
+var team_inventory_button: TextureButton
+var team_inventory_popover: Control
+var active_popover: Control
+var last_draw_pile_count: int = 0
+var last_next_draw_block: Variant = null
 var score_tints: Dictionary = {}
 var block_previews: Array = []
 var block_height_labels: Array = []
@@ -73,6 +94,9 @@ var player_label: Label
 var room_label: Label
 var level_label: Label
 var timer_label: Label
+var level_badge_texture: TextureRect
+var round_time_texture: TextureRect
+var top_indicator_fill: TextureRect
 var score_label: Label
 var impact_status_label: Label
 var impact_separator: HSeparator
@@ -96,7 +120,6 @@ var level_summary_team_label: Label
 var level_summary_mvp_label: Label
 var level_summary_players_box: VBoxContainer
 var score_popup_layer: Control
-var debug_button: Button
 var debug_overlay: Control
 var debug_dim_layer: Control
 var reset_debug_button: Button
@@ -183,6 +206,7 @@ func _ready() -> void:
 
 	setup_inventory_controls()
 	setup_debug_controls()
+	setup_popover_controls()
 	reset_ui()
 	connect_network_signals()
 
@@ -203,7 +227,16 @@ func bind_ui_nodes() -> void:
 	room_label = require_node("RoomLabel") as Label
 	level_label = require_node("LevelLabel") as Label
 	timer_label = require_node("TimerLabel") as Label
+	level_badge_texture = optional_node("LevelBadgeTexture") as TextureRect
+	round_time_texture = optional_node("RoundTimeTexture") as TextureRect
+	top_indicator_fill = optional_node("TopIndicatorFill") as TextureRect
 	score_label = require_node("ScoreLabel") as Label
+	player_rail_box = optional_node("PlayerRailBox") as VBoxContainer
+	impact_track = optional_node("ImpactTrack") as VBoxContainer
+	impact_pill = optional_node("ImpactPill") as Control
+	quest_chip = optional_node("QuestChip") as TextureButton
+	team_inventory_button = optional_node("TeamInventoryButton") as TextureButton
+	team_inventory_popover = optional_node("TeamInventoryPopover") as Control
 	impact_status_label = require_node("ImpactStatusLabel") as Label
 	impact_separator = optional_node("ImpactSeparator") as HSeparator
 	tower_stability_label = optional_node("TowerStabilityLabel") as Label
@@ -257,7 +290,6 @@ func bind_ui_nodes() -> void:
 	]
 	power_buttons = [optional_node("PowerButton1") as Button, optional_node("PowerButton2") as Button, optional_node("PowerButton3") as Button]
 
-	debug_button = optional_node("DebugButton") as Button
 	debug_overlay = optional_node("DebugOverlay") as Control
 	debug_dim_layer = optional_node("DebugDimLayer") as Control
 	reset_debug_button = optional_node("ResetDebugButton") as Button
@@ -363,6 +395,40 @@ func setup_inventory_controls() -> void:
 				BlockPreviewScript.PreviewMode.FLOATING_DRAG
 			)
 
+func setup_popover_controls() -> void:
+	if team_inventory_button != null:
+		team_inventory_button.pressed.connect(open_team_inventory_popover)
+
+func open_team_inventory_popover() -> void:
+	if team_inventory_popover == null:
+		return
+
+	team_inventory_popover.call("set_title", "Team Inventory")
+	team_inventory_popover.call("clear_rows")
+
+	if last_draw_pile_count <= 0 or last_next_draw_block == null:
+		team_inventory_popover.call("add_row", "No bricks remaining")
+	else:
+		var next_block: Dictionary = normalize_block(last_next_draw_block, 0)
+		team_inventory_popover.call(
+			"add_row",
+			"Next brick: " + str(next_block.get("shapeId", "BLOCK"))
+		)
+
+	team_inventory_popover.call(
+		"add_row",
+		str(last_draw_pile_count) + " remaining bricks"
+	)
+
+	close_active_popover()
+	active_popover = team_inventory_popover
+	team_inventory_popover.call("open")
+
+func close_active_popover() -> void:
+	if active_popover != null:
+		active_popover.call("close")
+		active_popover = null
+
 	connect_button.pressed.connect(on_connect_pressed)
 	for i in range(quick_chat_buttons.size()):
 		var quick_chat_button: Button = quick_chat_buttons[i]
@@ -380,13 +446,6 @@ func setup_inventory_controls() -> void:
 			)
 
 func setup_debug_controls() -> void:
-	if debug_button == null:
-		return
-
-	debug_button.visible = SHOW_DEBUG_UI
-	debug_button.disabled = true
-	debug_button.pressed.connect(toggle_debug_overlay)
-
 	if debug_overlay != null:
 		set_debug_overlay_open(false)
 
@@ -477,8 +536,12 @@ func reset_ui() -> void:
 	status_label.text = "Disconnected"
 	player_label.text = "Player -"
 	room_label.text = "Room -"
-	level_label.text = "Level -"
-	timer_label.text = "Time -"
+	level_label.text = "-"
+	timer_label.text = "-"
+	if level_badge_texture != null:
+		level_badge_texture.texture = LevelBadgeNormalTexture
+	if round_time_texture != null:
+		round_time_texture.texture = RoundTimeNormalTexture
 	score_label.text = "Waiting for players"
 	current_match_state = ""
 	last_placement_sent_at_ms = 0
@@ -489,6 +552,7 @@ func reset_ui() -> void:
 	tower_status_label.text = "Connect to start"
 	block_label.text = "Inventory"
 	set_tower_progress(0, 0)
+	set_top_indicator_progress(0, 0)
 	tower_stack.clear_tower()
 	update_inventory_ui([], MAX_INVENTORY_SLOTS)
 	update_draw_pile_ui(0, null)
@@ -666,6 +730,8 @@ func begin_block_drag(index: int, global_pos: Vector2, pointer_id: int) -> void:
 	if drag_preview == null:
 		return
 
+	close_active_popover()
+
 	var block: Dictionary = inventory_slot_blocks[index]
 	is_block_dragging = true
 	drag_slot_index = index
@@ -760,11 +826,6 @@ func on_debug_dim_layer_input(event: InputEvent) -> void:
 func update_status(text: String) -> void:
 	status_label.text = text
 
-	if debug_button == null:
-		return
-
-	debug_button.disabled = text != "Connected"
-
 func update_connect_button(status: String) -> void:
 	if status == "[Connect]":
 		connect_button.text = "Connect"
@@ -778,16 +839,16 @@ func update_room(data) -> void:
 	current_roster = data.get("roster", [])
 	player_label.text = LOCAL_PLAYER_MARKER + " " + str(data.playerId)
 	room_label.text = "Room " + str(int(data.roomId))
-	level_label.text = "Level " + str(int(data.level))
+	update_top_bar_display(int(data.get("level", 0)), int(data.get("level", 0)), "starting", 0)
 	current_level = int(data.get("level", 0))
 	seen_score_event_ids.clear()
 	last_level_summary_key = ""
 	clear_score_popups()
 	cancel_pending_level_summary()
 	hide_level_summary()
-	timer_label.text = "Time -"
 	tower_status_label.text = "Match starting"
 	set_tower_progress(0, int(data.get("targetHeight", 0)))
+	set_top_indicator_progress(0, int(data.get("targetHeight", 0)))
 	tower_stack.clear_tower()
 	update_inventory_ui(
 		data.get("blocks", []),
@@ -806,14 +867,19 @@ func update_room_closed(data) -> void:
 	last_placement_sent_at_ms = 0
 	cancel_block_drag()
 	room_label.text = "Room closed"
-	level_label.text = "Level -"
-	timer_label.text = "Time -"
+	level_label.text = "-"
+	timer_label.text = "-"
+	if level_badge_texture != null:
+		level_badge_texture.texture = LevelBadgeNormalTexture
+	if round_time_texture != null:
+		round_time_texture.texture = RoundTimeNormalTexture
 	height_label.text = "Height -"
 	score_label.text = "Room closed: " + str(data.get("reason", "unknown"))
 	update_impact_status_ui({})
 	tower_status_label.text = "Room closed"
 	block_label.text = "Inventory"
 	set_tower_progress(0, 0)
+	set_top_indicator_progress(0, 0)
 	tower_stack.clear_tower()
 	update_inventory_ui([], MAX_INVENTORY_SLOTS)
 	update_draw_pile_ui(0, null)
@@ -836,6 +902,7 @@ func update_game_state(data) -> void:
 	var current_height: int = int(data.get("currentHeight", 0))
 	var target_height: int = int(data.get("targetHeight", 0))
 	var incoming_level: int = int(data.get("level", 0))
+	var impact_level: int = int(data.get("impactLevel", 0))
 	var players: Array = data.get("players", [])
 	var fallback_popup_duration_ms: int = int(data.get("scorePopupDurationMs", SCORE_POPUP_DEFAULT_DURATION_MS))
 	placement_score_popup_duration_ms = int(data.get(
@@ -860,25 +927,12 @@ func update_game_state(data) -> void:
 
 	update_player_color_map(players)
 	update_power_target_ui(players)
-	var power_quest_label := optional_node("PowerQuestLabel") as Label
-	if power_quest_label != null:
-		var side_quest: Variant = data.get("sideQuest", {})
-		var quest_label := "Unlocks at Level 4"
-		if typeof(side_quest) == TYPE_DICTIONARY:
-			quest_label = str(side_quest.get("label", quest_label))
-			var completed_by := str(side_quest.get("claimedBy", ""))
-			if completed_by != "" or completed_by != null:				
-				power_quest_label.modulate = player_color_map.get(completed_by, Color.WHITE)
-			else:
-				power_quest_label.modulate = Color.WHITE
-		else:
-			power_quest_label.modulate = Color.WHITE
-		power_quest_label.text = "Power Quest\n" + quest_label
+	update_quest_chip(data.get("sideQuest", {}))
 	if tower_stack.has_method("set_player_color_map"):
 		tower_stack.call("set_player_color_map", player_color_map)
 
-	level_label.text = "Level " + str(incoming_level) + " - " + state.capitalize()
-	timer_label.text = "Time " + str(seconds_remaining) + "s"
+	update_top_bar_display(incoming_level, impact_level, state, seconds_remaining)
+	set_top_indicator_progress(current_height, target_height)
 	height_label.text = "Height " + str(current_height) + "/" + str(target_height)
 	update_tower_stability_ui(int(data.get("towerStability", 100)), data.get("towerStabilityDiagnostics", {}))
 	tower_value_label.text = str(current_height) + " / " + str(target_height)
@@ -989,6 +1043,9 @@ func get_slot_unlock_level(slot_index: int) -> int:
 	return 4
 
 func update_draw_pile_ui(draw_pile_count: int, raw_next_block: Variant) -> void:
+	last_draw_pile_count = draw_pile_count
+	last_next_draw_block = raw_next_block
+
 	if draw_pile_preview == null:
 		return
 
@@ -1013,6 +1070,7 @@ func update_impact_status_ui(raw_status: Variant) -> void:
 		set_impact_status_visible(false)
 		impact_status_label.visible = false
 		impact_status_label.text = ""
+		update_impact_track([], 0)
 		return
 
 	var status: Dictionary = raw_status
@@ -1025,6 +1083,7 @@ func update_impact_status_ui(raw_status: Variant) -> void:
 		set_impact_status_visible(false)
 		impact_status_label.visible = false
 		impact_status_label.text = ""
+		update_impact_track([], 0)
 		return
 
 	var next_impact_level: int = int(status.get("nextImpactLevel", 0))
@@ -1074,6 +1133,78 @@ func update_impact_status_ui(raw_status: Variant) -> void:
 
 	set_impact_status_visible(true)
 	impact_status_label.text = "\n".join(lines)
+
+	update_impact_track(player_statuses, next_impact_level)
+
+func update_quest_chip(raw_side_quest: Variant) -> void:
+	if quest_chip == null:
+		return
+
+	if typeof(raw_side_quest) != TYPE_DICTIONARY:
+		quest_chip.visible = false
+		return
+
+	var side_quest: Dictionary = raw_side_quest
+	var is_cleared: bool = str(side_quest.get("claimedBy", "")) != ""
+
+	quest_chip.visible = true
+	quest_chip.texture_normal = QuestClearedTexture if is_cleared else QuestActiveTexture
+	quest_chip.tooltip_text = str(side_quest.get("label", ""))
+
+func update_impact_track(player_statuses: Array, next_impact_level: int) -> void:
+	if impact_track == null:
+		return
+
+	var seen_player_ids: Dictionary = {}
+	var slot: int = 0
+
+	for player_status in player_statuses:
+		if typeof(player_status) != TYPE_DICTIONARY:
+			continue
+
+		if slot >= MAX_RAIL_PLAYERS:
+			break
+
+		var player_id: String = str(player_status.get("id", ""))
+		seen_player_ids[player_id] = true
+
+		var bar: Control = impact_bars.get(player_id, null)
+		if bar == null:
+			bar = ImpactBarScene.instantiate()
+			impact_track.add_child(bar)
+			impact_bars[player_id] = bar
+
+		bar.get_parent().move_child(bar, slot)
+
+		var required: int = int(player_status.get(
+			"requiredBandScore",
+			player_status.get("requiredScore", 0)
+		))
+		var current: int = int(player_status.get(
+			"bandScore",
+			player_status.get("score", 0)
+		)) + int(player_level_scores.get(player_id, 0))
+		var ratio: float = 1.0 if bool(player_status.get("met", false)) else 0.0
+
+		if required > 0:
+			ratio = clampf(float(current) / float(required), 0.0, 1.0)
+
+		bar.call("set_bar", get_impact_seat_color(player_id), ratio)
+		slot += 1
+
+	for player_id in impact_bars.keys():
+		if not seen_player_ids.has(player_id):
+			impact_bars[player_id].queue_free()
+			impact_bars.erase(player_id)
+
+	if impact_pill != null:
+		impact_pill.visible = next_impact_level > 0 and next_impact_level == current_level + 1
+
+func get_impact_seat_color(player_id: String) -> Color:
+	if player_color_map.has(player_id):
+		return player_color_map[player_id]
+
+	return PlayerColors.color_for_player_index(int(player_seat_index.get(player_id, 0)))
 
 func set_impact_status_visible(should_show: bool) -> void:
 	if impact_separator != null:
@@ -1240,6 +1371,30 @@ func set_tower_progress(current_height: int, target_height: int) -> void:
 	tower_fill.offset_left = 0.0
 	tower_fill.offset_right = 0.0
 
+func set_top_indicator_progress(current_height: int, target_height: int) -> void:
+	if top_indicator_fill == null:
+		return
+
+	var ratio: float = 0.0
+
+	if target_height > 0:
+		ratio = clamp(float(current_height) / float(target_height), 0.0, 1.0)
+
+	top_indicator_fill.anchor_right = ratio
+
+func update_top_bar_display(level: int, impact_level: int, state: String, seconds_remaining: int) -> void:
+	var is_impact_level: bool = level > 0 and level == impact_level
+	var is_frozen: bool = state != "playing"
+
+	level_label.text = str(level) if level > 0 else "-"
+	timer_label.text = str(seconds_remaining) if seconds_remaining > 0 else "0"
+
+	if level_badge_texture != null:
+		level_badge_texture.texture = LevelBadgeSafeTexture if is_impact_level else LevelBadgeNormalTexture
+
+	if round_time_texture != null:
+		round_time_texture.texture = RoundTimeFreezeTexture if is_frozen else RoundTimeNormalTexture
+
 func get_tower_status(state: String, current_height: int, target_height: int) -> String:
 	if state == "starting":
 		return "Get ready"
@@ -1336,26 +1491,48 @@ func show_power_tint(control: Control, tint: Color) -> void:
 	power_feedback_tween.tween_property(control, "modulate", Color.WHITE, 0.2)
 
 func update_score_lines(players: Array) -> void:
-	score_label.text = ""
-	score_label.custom_minimum_size = Vector2(0, max(1, players.size()) * 34)
-	for i in range(players.size()):
+	if player_rail_box == null:
+		return
+
+	var rail_player_count: int = min(players.size(), MAX_RAIL_PLAYERS)
+	var seen_player_ids: Dictionary = {}
+
+	player_level_scores.clear()
+
+	for player in players:
+		player_level_scores[str(player.get("id", ""))] = int(player.get("levelScore", 0))
+
+	for i in range(rail_player_count):
 		var player: Dictionary = players[i]
 		var player_id := str(player.get("id", ""))
-		var line: Label = score_line_labels.get(player_id, null)
-		if line == null:
-			line = Label.new()
-			line.add_theme_font_size_override("font_size", 14)
-			score_label.add_child(line)
-			score_line_labels[player_id] = line
-		line.position = Vector2(0, i * 34)
-		line.size = Vector2(score_label.size.x, 32)
-		var prefix := LOCAL_PLAYER_MARKER if player_id == NetworkManager.player_id else player_id
-		line.text = prefix + ": " + str(int(player.get("score", 0))) + " total / " + str(int(player.get("levelScore", 0))) + " level"
+		seen_player_ids[player_id] = true
+		player_seat_index[player_id] = i
+
+		var entry: Control = player_rail_entries.get(player_id, null)
+		if entry == null:
+			entry = PlayerRailEntryScene.instantiate()
+			player_rail_box.add_child(entry)
+			player_rail_entries[player_id] = entry
+
+		entry.get_parent().move_child(entry, i)
+		entry.call(
+			"set_entry",
+			format_player_rail_name(player_id),
+			int(player.get("score", 0)) + int(player.get("levelScore", 0)),
+			i,
+			get_player_avatar_id(player_id)
+		)
+
 		var tint: Dictionary = score_tints.get(player_id, {})
 		if !tint.is_empty() and int(tint.get("until", 0)) > Time.get_ticks_msec():
-			line.modulate = tint.get("color", Color.WHITE)
+			entry.modulate = tint.get("color", Color.WHITE)
 		else:
-			line.modulate = Color.WHITE
+			entry.modulate = Color.WHITE
+
+	for player_id in player_rail_entries.keys():
+		if not seen_player_ids.has(player_id):
+			player_rail_entries[player_id].queue_free()
+			player_rail_entries.erase(player_id)
 
 func show_score_event_popup(
 	event: Dictionary,
@@ -1957,6 +2134,21 @@ func get_player_display_name(player_id: String, _players: Array) -> String:
 			return str(roster_entry.get("displayName", player_id))
 
 	return player_id
+
+func get_player_avatar_id(player_id: String) -> String:
+	for roster_entry in current_roster:
+		if str(roster_entry.get("id", "")) == player_id:
+			return str(roster_entry.get("avatarId", ""))
+
+	return ""
+
+func format_player_rail_name(player_id: String) -> String:
+	var full_name := get_player_display_name(player_id, [])
+
+	if full_name.length() > PLAYER_NAME_MAX_LENGTH:
+		return full_name.substr(0, PLAYER_NAME_MAX_LENGTH - 2) + ".."
+
+	return full_name
 
 func get_player_color(player_id: String) -> Color:
 	if player_color_map.has(player_id):

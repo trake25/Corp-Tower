@@ -1,0 +1,87 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/PlayerRailEntry.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_AvatarRing"]
+bg_color = Color(0.6, 0.6, 0.6, 1)
+border_color = Color(1, 1, 1, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[node name="PlayerRailEntry" type="Control"]
+custom_minimum_size = Vector2(59, 90)
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("1_script")
+
+[node name="Rows" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 2
+alignment = 0
+
+[node name="AvatarWrap" type="Control" parent="Rows"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="AvatarRing" type="Panel" parent="Rows/AvatarWrap"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_AvatarRing")
+
+[node name="AvatarTexture" type="TextureRect" parent="Rows/AvatarWrap"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"RailNameLabel"
+horizontal_alignment = 1
+text = "Player"
+
+[node name="ScorePillPanel" type="PanelContainer" parent="Rows"]
+custom_minimum_size = Vector2(59, 24)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"ScorePillPanel"
+
+[node name="ScoreMargin" type="MarginContainer" parent="Rows/ScorePillPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_right = 8
+
+[node name="ScoreLabel" type="Label" parent="Rows/ScorePillPanel/ScoreMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"RailScoreLabel"
+horizontal_alignment = 1
+text = "0"

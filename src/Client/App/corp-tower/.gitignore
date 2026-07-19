@@ -32,3 +32,9 @@ Thumbs.db
 
 # Editor temp files
 *.tmp
+
+# Godot Editor
+*.exe
+
+# Assets
+Cor/Art/

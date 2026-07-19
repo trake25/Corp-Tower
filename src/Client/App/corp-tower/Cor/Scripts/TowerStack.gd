@@ -4,7 +4,6 @@ const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
-const TARGET_MARKER_COLOR := Color(1.0, 0.82, 0.25, 1.0)
 const MIN_UNIT_SIZE := 12.0
 const MAX_UNIT_SIZE := 34.0
 const TOP_PADDING := 14.0
@@ -62,9 +61,6 @@ func clear_tower() -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	if target_height > 0:
-		_draw_target_marker()
-
 	if tower_blocks.is_empty():
 		_draw_fallback_stack()
 		return
@@ -128,22 +124,6 @@ func _draw_fallback_stack() -> void:
 
 		draw_rect(rect, FALLBACK_COLOR, true)
 		draw_rect(rect, GRID_COLOR, false, 1.0)
-
-func _draw_target_marker() -> void:
-	var unit: float = _unit_size()
-	var baseline: float = size.y - BOTTOM_PADDING
-	var scroll_offset_units: int = _scroll_offset_units(unit)
-	var marker_y: float = baseline - float(target_height - scroll_offset_units) * unit
-
-	if marker_y < 0.0 or marker_y > size.y:
-		return
-
-	draw_line(
-		Vector2(size.x * 0.12, marker_y),
-		Vector2(size.x * 0.88, marker_y),
-		TARGET_MARKER_COLOR,
-		2.0
-	)
 
 func _unit_size() -> float:
 	var tower_units: int = max(target_height, current_height, 1)

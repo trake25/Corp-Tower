@@ -1,0 +1,83 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/ImpactBar.gd" id="1_impactbar"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ImpactFrame"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.16)
+shadow_size = 3
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ImpactTrack"]
+bg_color = Color(0.69, 0.851, 0.898, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ImpactDot"]
+bg_color = Color(0.6, 0.6, 0.6, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="ImpactBar" type="Control"]
+custom_minimum_size = Vector2(16, 105)
+layout_mode = 3
+mouse_filter = 2
+script = ExtResource("1_impactbar")
+
+[node name="Frame" type="Panel" parent="."]
+layout_mode = 0
+offset_right = 16.0
+offset_bottom = 90.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ImpactFrame")
+
+[node name="ImpactBarTrack" type="Panel" parent="Frame"]
+clip_children = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = -3.0
+offset_bottom = -3.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ImpactTrack")
+
+[node name="ImpactBarFill" type="TextureRect" parent="Frame/ImpactBarTrack"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="ImpactBarDot" type="Panel" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 2.0
+offset_top = 92.0
+offset_right = 14.0
+offset_bottom = 104.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ImpactDot")

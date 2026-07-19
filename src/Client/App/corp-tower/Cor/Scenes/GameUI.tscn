@@ -1,11 +1,27 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://0kvbw8qr8q5x"]
 
-[ext_resource type="Script" path="res://Cor/Scripts/BlockPreview.gd" id="2_blockpreview"]
-[ext_resource type="Script" path="res://Cor/Scripts/TowerStack.gd" id="3_towerstack"]
-[ext_resource type="Script" path="res://Cor/Scripts/DebugOverlay.gd" id="4_debugoverlay"]
-[ext_resource type="Theme" path="res://Cor/Themes/GameUITheme.tres" id="5_theme"]
-[ext_resource type="Script" path="res://Cor/Scripts/CooldownOverlay.gd" id="6_cooldown"]
+[ext_resource type="Script" uid="uid://xcgtj0oaftef" path="res://Cor/Scripts/BlockPreview.gd" id="2_blockpreview"]
+[ext_resource type="Script" uid="uid://0lvf4bd13i4n" path="res://Cor/Scripts/TowerStack.gd" id="3_towerstack"]
+[ext_resource type="Script" uid="uid://vxbr68uclvp4" path="res://Cor/Scripts/DebugOverlay.gd" id="4_debugoverlay"]
+[ext_resource type="Theme" uid="uid://u7rmxm0gc7i3" path="res://Cor/Themes/GameUITheme.tres" id="5_theme"]
+[ext_resource type="Script" uid="uid://ck4u6fflu3cy3" path="res://Cor/Scripts/CooldownOverlay.gd" id="6_cooldown"]
 [ext_resource type="Script" uid="uid://dwvcruandm3c" path="res://Cor/Scripts/Main.gd" id="7_main"]
+[ext_resource type="Texture2D" uid="uid://b0dlpjeh71j0c" path="res://Cor/Art/Static/bg.png" id="8_bg"]
+[ext_resource type="Texture2D" uid="uid://bypg06jvodky3" path="res://Cor/Art/Static/bg-platform.png" id="9_platform"]
+[ext_resource type="Texture2D" uid="uid://etnn73tfxb05" path="res://Cor/Art/Static/ic-burger.png" id="10_burger"]
+[ext_resource type="Texture2D" uid="uid://c03udqp6kbfm8" path="res://Cor/Art/Static/timer-round-time.png" id="11_roundtime"]
+[ext_resource type="Texture2D" uid="uid://3q1arbtnnf4x" path="res://Cor/Art/Static/level.png" id="13_level"]
+[ext_resource type="Texture2D" uid="uid://pbhmsjefpeab" path="res://Cor/Art/Static/ic-stockpile.png" id="15_stockpile"]
+[ext_resource type="PackedScene" path="res://Cor/Scenes/PopoverPanel.tscn" id="16_popover"]
+[ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-quest-active-uncleared.png" id="18_questactive"]
+
+[sub_resource type="Gradient" id="Gradient_TopBarFill"]
+colors = PackedColorArray(0.192, 0.725, 0.271, 1, 0.714, 0.992, 0.29, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_TopBarFill"]
+gradient = SubResource("Gradient_TopBarFill")
+width = 256
+height = 8
 
 [node name="GameUI" type="Control" unique_id=20707474]
 layout_mode = 3
@@ -17,7 +33,7 @@ grow_vertical = 2
 theme = ExtResource("5_theme")
 script = ExtResource("7_main")
 
-[node name="Background" type="Panel" parent="."]
+[node name="Background" type="Panel" parent="." unique_id=1138238358]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -25,7 +41,117 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="SafeArea" type="MarginContainer" parent="."]
+[node name="BgArt" type="TextureRect" parent="." unique_id=935119192]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 122.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="PlayField" type="Control" parent="." unique_id=1310220001]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PlatformArt" type="TextureRect" parent="PlayField" unique_id=158231656]
+layout_mode = 0
+offset_left = 70.0
+offset_top = 712.0
+offset_right = 342.0
+offset_bottom = 769.0
+mouse_filter = 2
+texture = ExtResource("9_platform")
+expand_mode = 1
+
+[node name="TowerFill" type="Panel" parent="PlayField" unique_id=1497040853]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 70.0
+offset_top = 111.0
+offset_right = 342.0
+offset_bottom = 731.0
+theme_type_variation = &"TowerFillPanel"
+
+[node name="TowerStack" type="Control" parent="PlayField" unique_id=1556131207]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 70.0
+offset_top = 111.0
+offset_right = 342.0
+offset_bottom = 731.0
+mouse_filter = 2
+script = ExtResource("3_towerstack")
+
+[node name="TowerDropZone" type="Control" parent="PlayField" unique_id=1969328060]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 70.0
+offset_top = 111.0
+offset_right = 342.0
+offset_bottom = 731.0
+mouse_filter = 2
+
+[node name="QuestChip" type="TextureButton" parent="PlayField" unique_id=1310220005]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 5.0
+offset_top = 173.5
+offset_right = 81.0
+offset_bottom = 245.5
+texture_normal = ExtResource("18_questactive")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="PlayerRailBox" type="VBoxContainer" parent="PlayField" unique_id=1576617832]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 13.0
+offset_top = 246.0
+offset_right = 72.0
+offset_bottom = 751.0
+theme_override_constants/separation = 11
+alignment = 0
+
+[node name="ImpactTrack" type="VBoxContainer" parent="PlayField" unique_id=1310220002]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 389.0
+offset_top = 176.0
+offset_right = 405.0
+offset_bottom = 701.0
+theme_override_constants/separation = 0
+alignment = 0
+
+[node name="ImpactPill" type="PanelContainer" parent="PlayField" unique_id=1310220003]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 326.0
+offset_top = 138.0
+offset_right = 405.0
+offset_bottom = 168.0
+theme_type_variation = &"GreenPillPanel"
+
+[node name="ImpactPillLabel" type="Label" parent="PlayField/ImpactPill" unique_id=1310220004]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 16
+text = "Impact"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SafeArea" type="MarginContainer" parent="." unique_id=360753234]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -37,277 +163,198 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="Root" type="VBoxContainer" parent="SafeArea"]
+[node name="Root" type="VBoxContainer" parent="SafeArea" unique_id=1538421296]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TopHud" type="PanelContainer" parent="SafeArea/Root"]
+[node name="TopHud" type="PanelContainer" parent="SafeArea/Root" unique_id=1850881319]
 layout_mode = 2
 size_flags_vertical = 0
-theme_type_variation = &"HudPanel"
+theme_type_variation = &"TopBarPanel"
 
-[node name="HudMargin" type="MarginContainer" parent="SafeArea/Root/TopHud"]
+[node name="HudMargin" type="MarginContainer" parent="SafeArea/Root/TopHud" unique_id=1976012629]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 6
 
-[node name="HudRows" type="VBoxContainer" parent="SafeArea/Root/TopHud/HudMargin"]
+[node name="HudRows" type="VBoxContainer" parent="SafeArea/Root/TopHud/HudMargin" unique_id=847729867]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="StatusRow" type="HBoxContainer" parent="SafeArea/Root/TopHud/HudMargin/HudRows"]
+[node name="TopBarRow" type="HBoxContainer" parent="SafeArea/Root/TopHud/HudMargin/HudRows" unique_id=1340455233]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="StatusLabel" type="Label" parent="SafeArea/Root/TopHud/HudMargin/HudRows/StatusRow" unique_id=546576960]
+[node name="HamburgerButton" type="TextureButton" parent="SafeArea/Root/TopHud/HudMargin/HudRows/TopBarRow" unique_id=745964074]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_vertical = 4
+texture_normal = ExtResource("10_burger")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="RoundTimeBadge" type="Control" parent="SafeArea/Root/TopHud/HudMargin/HudRows/TopBarRow" unique_id=1351152604]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
-text = "Disconnected"
 
-[node name="TopPowerTargetBox" type="VBoxContainer" parent="SafeArea/Root/TopHud/HudMargin/HudRows/StatusRow"]
+[node name="RoundTimeTexture" type="TextureRect" parent="SafeArea/Root/TopHud/HudMargin/HudRows/TopBarRow/RoundTimeBadge" unique_id=286087668]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(82, 0)
-layout_mode = 2
-theme_override_constants/separation = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_roundtime")
+expand_mode = 1
+stretch_mode = 6
 
-[node name="ConnectButton" type="Button" parent="SafeArea/Root/TopHud/HudMargin/HudRows/StatusRow" unique_id=2055968287]
+[node name="TimerLabel" type="Label" parent="SafeArea/Root/TopHud/HudMargin/HudRows/TopBarRow/RoundTimeBadge" unique_id=1614056574]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 40)
-layout_mode = 2
-theme_type_variation = &"PrimaryButton"
-theme_override_font_sizes/font_size = 16
-text = "Connect"
-
-[node name="InfoRow" type="HBoxContainer" parent="SafeArea/Root/TopHud/HudMargin/HudRows"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="PlayerLabel" type="Label" parent="SafeArea/Root/TopHud/HudMargin/HudRows/InfoRow" unique_id=1124339455]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"InfoLabel"
-text = "Player -"
-
-[node name="RoomLabel" type="Label" parent="SafeArea/Root/TopHud/HudMargin/HudRows/InfoRow" unique_id=1767853773]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"InfoLabel"
-text = "Room -"
-
-[node name="LevelLabel" type="Label" parent="SafeArea/Root/TopHud/HudMargin/HudRows/InfoRow" unique_id=831203825]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"InfoLabel"
-text = "Level -"
-
-[node name="TimerLabel" type="Label" parent="SafeArea/Root/TopHud/HudMargin/HudRows/InfoRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"InfoLabel"
-horizontal_alignment = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 20
 text = "Time -"
-
-[node name="CenterStage" type="PanelContainer" parent="SafeArea/Root"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_type_variation = &"HudPanel"
-
-[node name="CenterMargin" type="MarginContainer" parent="SafeArea/Root/CenterStage"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="CenterColumnsScroll" type="ScrollContainer" parent="SafeArea/Root/CenterStage/CenterMargin"]
-layout_mode = 2
-vertical_scroll_mode = 0
-
-[node name="CenterColumns" type="HBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="PowerPanel" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns"]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-
-[node name="PowerQuestLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/PowerPanel"]
-unique_name_in_owner = true
-layout_mode = 2
-autowrap_mode = 3
-text = "Power Quest\nUnlocks at Level 4"
-
-[node name="PowerTargetBox" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/PowerPanel"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="TowerColumn" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 6
-
-[node name="TowerStatusLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-horizontal_alignment = 1
-text = "Connect to start"
-
-[node name="TowerTrack" type="Panel" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn"]
-custom_minimum_size = Vector2(260, 220)
-layout_mode = 2
-size_flags_vertical = 3
-theme_type_variation = &"TowerTrackPanel"
-
-[node name="TowerFill" type="Panel" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn/TowerTrack"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_type_variation = &"TowerFillPanel"
-
-[node name="TowerStack" type="Control" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn/TowerTrack"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-script = ExtResource("3_towerstack")
-
-[node name="TowerDropZone" type="Control" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn/TowerTrack"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="TowerValueLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn/TowerTrack"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -80.0
-offset_top = -22.0
-offset_right = 80.0
-offset_bottom = 22.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 24
 horizontal_alignment = 1
 vertical_alignment = 1
-text = "0 / 0"
 
-[node name="HeightLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/TowerColumn" unique_id=727880221]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-horizontal_alignment = 1
-text = "Height 0/0"
-
-[node name="ScorePanel" type="PanelContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns"]
-custom_minimum_size = Vector2(210, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-theme_type_variation = &"ActionCardPanel"
-
-[node name="ScoreMargin" type="MarginContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="ScoreRows" type="VBoxContainer" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="ScoreTitle" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-horizontal_alignment = 1
-text = "Scores"
-
-[node name="ScoreLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin/ScoreRows" unique_id=1265606165]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"InfoLabel"
-vertical_alignment = 0
-autowrap_mode = 3
-text = "Waiting for players"
-
-[node name="ImpactSeparator" type="HSeparator" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
-visible = false
-layout_mode = 2
-
-[node name="ImpactStatusLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
+[node name="LevelBadge" type="Control" parent="SafeArea/Root/TopHud/HudMargin/HudRows/TopBarRow" unique_id=23158317]
 unique_name_in_owner = true
 visible = false
+custom_minimum_size = Vector2(64, 56)
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
-theme_override_colors/font_color = Color(0.84, 0.9, 0.98, 1)
-horizontal_alignment = 0
-autowrap_mode = 3
-text = "Impact"
 
-[node name="TowerStabilityLabel" type="Label" parent="SafeArea/Root/CenterStage/CenterMargin/CenterColumnsScroll/CenterColumns/ScorePanel/ScoreMargin/ScoreRows"]
+[node name="LevelBadgeTexture" type="TextureRect" parent="SafeArea/Root/TopHud/HudMargin/HudRows/TopBarRow/LevelBadge" unique_id=76970094]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-text = "Tower Stability: 100% (Stable)"
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_level")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="BottomControls" type="PanelContainer" parent="SafeArea/Root"]
+[node name="LevelLabel" type="Label" parent="SafeArea/Root/TopHud/HudMargin/HudRows/TopBarRow/LevelBadge" unique_id=628644062]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 0.62
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 18
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TopIndicatorRow" type="Control" parent="SafeArea/Root/TopHud/HudMargin/HudRows" unique_id=1135729857]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+
+[node name="TopIndicatorFrame" type="Panel" parent="SafeArea/Root/TopHud/HudMargin/HudRows/TopIndicatorRow" unique_id=831164527]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 3.0
+offset_bottom = -3.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"TopBarFramePanel"
+
+[node name="TopIndicatorTrack" type="Panel" parent="SafeArea/Root/TopHud/HudMargin/HudRows/TopIndicatorRow/TopIndicatorFrame" unique_id=1712004411]
+clip_children = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"TopBarTrackPanel"
+
+[node name="TopIndicatorFill" type="TextureRect" parent="SafeArea/Root/TopHud/HudMargin/HudRows/TopIndicatorRow/TopIndicatorFrame/TopIndicatorTrack" unique_id=1316656720]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_TopBarFill")
+expand_mode = 1
+
+[node name="TopIndicatorLabel" type="Label" parent="SafeArea/Root/TopHud/HudMargin/HudRows/TopIndicatorRow" unique_id=778896618]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 16
+text = "TOP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BottomControls" type="PanelContainer" parent="SafeArea/Root" unique_id=1443010791]
+visible = false
 layout_mode = 2
 size_flags_vertical = 0
 theme_type_variation = &"HudPanel"
 
-[node name="BottomMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls"]
+[node name="BottomMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls" unique_id=413306272]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 8
 
-[node name="BottomRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin"]
+[node name="BottomRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin" unique_id=115947498]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="InventoryHeader" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
+[node name="TriggerRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows" unique_id=460934445]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="TeamInventoryButton" type="TextureButton" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/TriggerRow" unique_id=1977610145]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+texture_normal = ExtResource("15_stockpile")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="InventoryHeader" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows" unique_id=1408660281]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="BlockLabel" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/InventoryHeader" unique_id=1880050889]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 16
-text = "Inventory"
-
-[node name="ActionRowScroll" type="ScrollContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
+[node name="ActionRowScroll" type="ScrollContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows" unique_id=512814748]
 layout_mode = 2
 vertical_scroll_mode = 0
 
-[node name="ActionRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll"]
+[node name="ActionRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll" unique_id=1790326432]
 layout_mode = 2
 theme_override_constants/separation = 8
 
@@ -318,7 +365,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"ActionButton"
 
-[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1"]
+[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1" unique_id=1729639853]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -328,7 +375,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("6_cooldown")
 
-[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1"]
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1" unique_id=716931399]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -341,19 +388,18 @@ theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
-[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin"]
+[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin" unique_id=1195819121]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="BlockNameLabel1" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin/CardRows"]
+[node name="BlockNameLabel1" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin/CardRows" unique_id=1512281476]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
 theme_type_variation = &"CardMetaLabel"
-horizontal_alignment = 1
 text = "Slot 1"
+horizontal_alignment = 1
 
-[node name="BlockPreview1" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin/CardRows"]
+[node name="BlockPreview1" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin/CardRows" unique_id=1941618900]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(70, 44)
 layout_mode = 2
@@ -361,13 +407,12 @@ size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
-[node name="BlockHeightLabel1" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin/CardRows"]
+[node name="BlockHeightLabel1" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton1/CardMargin/CardRows" unique_id=92563347]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
 theme_type_variation = &"CardMetaLabel"
-horizontal_alignment = 1
 text = "Empty"
+horizontal_alignment = 1
 
 [node name="PlaceBlockButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow" unique_id=1688257059]
 unique_name_in_owner = true
@@ -376,7 +421,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"ActionButton"
 
-[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2"]
+[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2" unique_id=1796180633]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -386,7 +431,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("6_cooldown")
 
-[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2"]
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2" unique_id=951159880]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -399,19 +444,18 @@ theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
-[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin"]
+[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin" unique_id=1121205579]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="BlockNameLabel2" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin/CardRows"]
+[node name="BlockNameLabel2" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin/CardRows" unique_id=263004265]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
 theme_type_variation = &"CardMetaLabel"
-horizontal_alignment = 1
 text = "Slot 2"
+horizontal_alignment = 1
 
-[node name="BlockPreview2" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin/CardRows"]
+[node name="BlockPreview2" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin/CardRows" unique_id=1547697295]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(70, 44)
 layout_mode = 2
@@ -419,13 +463,12 @@ size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
-[node name="BlockHeightLabel2" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin/CardRows"]
+[node name="BlockHeightLabel2" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton2/CardMargin/CardRows" unique_id=457625149]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
 theme_type_variation = &"CardMetaLabel"
-horizontal_alignment = 1
 text = "Empty"
+horizontal_alignment = 1
 
 [node name="PlaceBlockButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow" unique_id=1361965894]
 unique_name_in_owner = true
@@ -434,7 +477,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"ActionButton"
 
-[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3"]
+[node name="CooldownOverlay" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3" unique_id=1415790811]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -444,7 +487,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("6_cooldown")
 
-[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3"]
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3" unique_id=983207920]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -457,19 +500,18 @@ theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
-[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin"]
+[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin" unique_id=1646897227]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="BlockNameLabel3" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin/CardRows"]
+[node name="BlockNameLabel3" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin/CardRows" unique_id=1993362837]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
 theme_type_variation = &"CardMetaLabel"
-horizontal_alignment = 1
 text = "Slot 3"
+horizontal_alignment = 1
 
-[node name="BlockPreview3" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin/CardRows"]
+[node name="BlockPreview3" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin/CardRows" unique_id=1640407898]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(70, 44)
 layout_mode = 2
@@ -477,62 +519,82 @@ size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
-[node name="BlockHeightLabel3" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin/CardRows"]
+[node name="BlockHeightLabel3" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/PlaceBlockButton3/CardMargin/CardRows" unique_id=242861446]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
 theme_type_variation = &"CardMetaLabel"
-horizontal_alignment = 1
 text = "Empty"
+horizontal_alignment = 1
 
-[node name="DrawPilePanel" type="PanelContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow"]
+[node name="DrawPilePanel" type="PanelContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow" unique_id=1151031701]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(118, 102)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"ActionCardPanel"
 
-[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel" unique_id=1044935479]
+layout_mode = 2
 theme_override_constants/margin_left = 6
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
-[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel/CardMargin"]
+[node name="CardRows" type="VBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel/CardMargin" unique_id=1397604629]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="DrawPileNameLabel" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel/CardMargin/CardRows"]
+[node name="QuickChatRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows" unique_id=344550209]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="QuickChatButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/QuickChatRow" unique_id=1946995580]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Place now!"
+
+[node name="QuickChatButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/QuickChatRow" unique_id=948887427]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "I'm out of blocks!"
+
+[node name="QuickChatButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/QuickChatRow" unique_id=1461693108]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sorry!"
+
+[node name="PowerRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows" unique_id=1857643616]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PowerButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PowerRow" unique_id=1719926982]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"CardMetaLabel"
-horizontal_alignment = 1
-text = "Next Draw"
+size_flags_horizontal = 3
+disabled = true
+text = "Power"
 
-[node name="DrawPilePreview" type="Control" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel/CardMargin/CardRows"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(70, 44)
-layout_mode = 2
-size_flags_vertical = 3
-mouse_filter = 2
-script = ExtResource("2_blockpreview")
-
-[node name="DrawPileCountLabel" type="Label" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/ActionRowScroll/ActionRow/DrawPilePanel/CardMargin/CardRows"]
+[node name="PowerButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PowerRow" unique_id=2061393088]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"CardMetaLabel"
-horizontal_alignment = 1
-text = "0 left"
+size_flags_horizontal = 3
+disabled = true
+text = "Power"
 
-[node name="LevelSummaryOverlay" type="Control" parent="."]
+[node name="PowerButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PowerRow" unique_id=1642627410]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Power"
+
+[node name="LevelSummaryOverlay" type="Control" parent="." unique_id=959750494]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -543,7 +605,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="LevelSummaryDim" type="ColorRect" parent="LevelSummaryOverlay"]
+[node name="LevelSummaryDim" type="ColorRect" parent="LevelSummaryOverlay" unique_id=741058060]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -553,9 +615,10 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0.18)
 
-[node name="LevelSummaryPanel" type="PanelContainer" parent="LevelSummaryOverlay"]
+[node name="LevelSummaryPanel" type="PanelContainer" parent="LevelSummaryOverlay" unique_id=1114412928]
 custom_minimum_size = Vector2(340, 0)
 layout_mode = 1
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -569,66 +632,66 @@ grow_vertical = 2
 mouse_filter = 2
 theme_type_variation = &"HudPanel"
 
-[node name="LevelSummaryMargin" type="MarginContainer" parent="LevelSummaryOverlay/LevelSummaryPanel"]
+[node name="LevelSummaryMargin" type="MarginContainer" parent="LevelSummaryOverlay/LevelSummaryPanel" unique_id=1521839363]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 12
 
-[node name="LevelSummaryRows" type="VBoxContainer" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin"]
+[node name="LevelSummaryRows" type="VBoxContainer" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin" unique_id=76000954]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="LevelSummaryTitleLabel" type="Label" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows"]
+[node name="LevelSummaryTitleLabel" type="Label" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=935464998]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-horizontal_alignment = 1
 text = "Level Complete"
+horizontal_alignment = 1
 
-[node name="LevelSummaryResultLabel" type="Label" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows"]
+[node name="LevelSummaryResultLabel" type="Label" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1908294111]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
+text = "Perfect Fit"
 horizontal_alignment = 1
 autowrap_mode = 3
-text = "Perfect Fit"
 
-[node name="LevelSummaryTeamLabel" type="Label" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows"]
+[node name="LevelSummaryTeamLabel" type="Label" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1289834528]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 horizontal_alignment = 1
-text = ""
 
-[node name="LevelSummaryMvpLabel" type="Label" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows"]
+[node name="LevelSummaryMvpLabel" type="Label" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1481643262]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
 text = "MVP -"
+horizontal_alignment = 1
 
-[node name="LevelSummaryPlayersBox" type="VBoxContainer" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows"]
+[node name="LevelSummaryPlayersBox" type="VBoxContainer" parent="LevelSummaryOverlay/LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1912707215]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 4
 
-[node name="DragPreview" type="Control" parent="."]
+[node name="DragPreview" type="Control" parent="." unique_id=1504348550]
 unique_name_in_owner = true
 visible = false
 z_index = 40
 custom_minimum_size = Vector2(96, 96)
-layout_mode = 0
+anchors_preset = 0
 offset_right = 96.0
 offset_bottom = 96.0
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
-[node name="ScorePopupLayer" type="Control" parent="."]
+[node name="ScorePopupLayer" type="Control" parent="." unique_id=981608802]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -637,33 +700,18 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="DebugButton" type="Button" parent="."]
+[node name="TeamInventoryPopover" parent="." unique_id=1178997543 instance=ExtResource("16_popover")]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(92, 42)
 layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -104.0
-offset_top = -54.0
-offset_right = -12.0
-offset_bottom = -12.0
-grow_horizontal = 0
-grow_vertical = 0
-theme_type_variation = &"ActionButton"
-theme_override_font_sizes/font_size = 14
-text = "Debug"
 
-[node name="DebugLayer" type="CanvasLayer" parent="."]
+[node name="DebugLayer" type="CanvasLayer" parent="." unique_id=1157871814]
 layer = 5
 
-[node name="DebugOverlay" type="Control" parent="DebugLayer"]
+[node name="DebugOverlay" type="Control" parent="DebugLayer" unique_id=1666106004]
 unique_name_in_owner = true
 visible = false
-layout_mode = 1
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -671,7 +719,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("4_debugoverlay")
 
-[node name="DebugDimLayer" type="ColorRect" parent="DebugLayer/DebugOverlay"]
+[node name="DebugDimLayer" type="ColorRect" parent="DebugLayer/DebugOverlay" unique_id=2503172]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -681,10 +729,11 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.5)
 
-[node name="DebugPanel" type="PanelContainer" parent="DebugLayer/DebugOverlay"]
+[node name="DebugPanel" type="PanelContainer" parent="DebugLayer/DebugOverlay" unique_id=682526209]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(382, 0)
 layout_mode = 1
+anchors_preset = 11
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -696,446 +745,528 @@ grow_horizontal = 0
 grow_vertical = 2
 theme_type_variation = &"HudPanel"
 
-[node name="DebugMargin" type="MarginContainer" parent="DebugLayer/DebugOverlay/DebugPanel"]
+[node name="DebugMargin" type="MarginContainer" parent="DebugLayer/DebugOverlay/DebugPanel" unique_id=1562878086]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 12
 
-[node name="DebugOuterRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin"]
+[node name="DebugOuterRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin" unique_id=1516476987]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="DebugHeader" type="HBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows"]
+[node name="DebugHeader" type="HBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows" unique_id=70378753]
 layout_mode = 2
 
-[node name="DebugTitle" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader"]
+[node name="DebugTitle" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader" unique_id=834076282]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 18
 text = "Debug Tuning"
 
-[node name="ResetDebugButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader"]
+[node name="ResetDebugButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader" unique_id=644048044]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(92, 34)
 layout_mode = 2
 text = "Reset"
 
-[node name="CloseDebugButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader"]
+[node name="CloseDebugButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader" unique_id=1808011100]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(42, 34)
 layout_mode = 2
 text = "X"
 
-[node name="DebugTabs" type="TabContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows"]
+[node name="DebugTabs" type="TabContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows" unique_id=668842452]
 layout_mode = 2
 size_flags_vertical = 3
+current_tab = 0
 
-[node name="Bots" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Bots" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs" unique_id=1510574939]
 layout_mode = 2
+metadata/_tab_index = 0
 
-[node name="BotsRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots"]
+[node name="BotsRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots" unique_id=1571193449]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="BotsToggle" type="CheckButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotsToggle" type="CheckButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows" unique_id=968013586]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Bots"
 
-[node name="BotStrategyLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotStrategyLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows" unique_id=290450912]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Bot Strategy"
 
-[node name="BotStrategyButton" type="OptionButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotStrategyButton" type="OptionButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows" unique_id=59447071]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BotCountLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotCountLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows" unique_id=1781783485]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Bot Count: 0"
 
-[node name="BotCountSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotCountSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows" unique_id=114794480]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BotDelayMinLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotDelayMinLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows" unique_id=1594808286]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Bot Delay Min: 0 ms"
 
-[node name="BotDelayMinSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotDelayMinSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows" unique_id=719477356]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BotDelayMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotDelayMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows" unique_id=2078800852]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Bot Delay Max: 0 ms"
 
-[node name="BotDelayMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows"]
+[node name="BotDelayMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Bots/BotsRows" unique_id=1227952984]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Round" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Round" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs" unique_id=1408585364]
+visible = false
 layout_mode = 2
+metadata/_tab_index = 1
 
-[node name="RoundRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round"]
+[node name="RoundRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round" unique_id=233870292]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="DebugStartLevelLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="DebugStartLevelLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows" unique_id=580939467]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Start Level: 1"
 
-[node name="DebugStartLevelSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="DebugStartLevelSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows" unique_id=1642970222]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="CooldownLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="CooldownLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows" unique_id=615705880]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Placement Cooldown: 0 ms"
 
-[node name="CooldownSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="CooldownSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows" unique_id=1982550019]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="LevelTimeLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="LevelTimeLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows" unique_id=1487808310]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Level Time: 0 sec"
 
-[node name="LevelTimeSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="LevelTimeSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows" unique_id=1835656855]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="StartDelayLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="StartDelayLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows" unique_id=992849455]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Start Delay: 0 ms"
 
-[node name="StartDelaySlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="StartDelaySlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows" unique_id=411157870]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TargetMultiplierLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="TargetMultiplierLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows" unique_id=346562521]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Target Multiplier: 0"
 
-[node name="TargetMultiplierSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows"]
+[node name="TargetMultiplierSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Round/RoundRows" unique_id=483799854]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="UI" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="UI" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs" unique_id=9569995]
+visible = false
 layout_mode = 2
+metadata/_tab_index = 2
 
-[node name="UIRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI"]
+[node name="UIRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI" unique_id=463126846]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="PlacementPopupDurationLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="PlacementPopupDurationLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows" unique_id=220601865]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Placement Popups: 3000 ms"
 
-[node name="PlacementPopupDurationSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="PlacementPopupDurationSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows" unique_id=2120894656]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="FinishPopupDurationLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="FinishPopupDurationLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows" unique_id=186831508]
 unique_name_in_owner = true
 layout_mode = 2
 text = "MVP / Perfect / Team Popups: 3000 ms"
 
-[node name="FinishPopupDurationSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="FinishPopupDurationSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows" unique_id=294896845]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="LevelSummaryDelayLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="LevelSummaryDelayLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows" unique_id=653248227]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Level Score Summary: 3000 ms"
 
-[node name="LevelSummaryDelaySlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows"]
+[node name="LevelSummaryDelaySlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/UI/UIRows" unique_id=804780835]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Supply" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Supply" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs" unique_id=1426294074]
+visible = false
 layout_mode = 2
+metadata/_tab_index = 3
 
-[node name="SupplyRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply"]
+[node name="SupplyRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply" unique_id=1455163486]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="LevelSupplyMinLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="LevelSupplyMinLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows" unique_id=631111006]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Supply Min Surplus: 0"
 
-[node name="LevelSupplyMinSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="LevelSupplyMinSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows" unique_id=486544706]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="LevelSupplyMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="LevelSupplyMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows" unique_id=637280422]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Supply Max Surplus: 0"
 
-[node name="LevelSupplyMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="LevelSupplyMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows" unique_id=1629212750]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MinPrecisionBlocksLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="MinPrecisionBlocksLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows" unique_id=245163706]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Precision Blocks: 0"
 
-[node name="MinPrecisionBlocksSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="MinPrecisionBlocksSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows" unique_id=1246278065]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MaxTeamCarryOverLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="MaxTeamCarryOverLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows" unique_id=1635849830]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Carry-Over Blocks: 0"
 
-[node name="MaxTeamCarryOverSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="MaxTeamCarryOverSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows" unique_id=1088790391]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="RefreshMinUsefulHeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="RefreshMinUsefulHeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows" unique_id=573564990]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Refresh Useful Height: 0"
 
-[node name="RefreshMinUsefulHeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows"]
+[node name="RefreshMinUsefulHeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Supply/SupplyRows" unique_id=487856901]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Scoring" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Scoring" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs" unique_id=1598351355]
+visible = false
 layout_mode = 2
+metadata/_tab_index = 4
 
-[node name="ScoringRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring"]
+[node name="ScoringRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring" unique_id=753479048]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="ImpactScoreLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="ImpactScoreLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=595048624]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Impact Share: 30%"
 
-[node name="ImpactScoreSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="ImpactScoreSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=1818947184]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PlacementScoreLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="PlacementScoreLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=352407178]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Placement Score/Height: 0"
 
-[node name="PlacementScoreSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="PlacementScoreSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=1024438532]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="FinisherBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="FinisherBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=139808929]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Finisher Bonus/Level: 0"
 
-[node name="FinisherBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="FinisherBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=1807352692]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PrecisionBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="PrecisionBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=1710362908]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Precision Bonus/Level: 8"
 
-[node name="PrecisionBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="PrecisionBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=1462440336]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TeamExactBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="TeamExactBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=2039693562]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Team Exact Bonus/Level: 6"
 
-[node name="TeamExactBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="TeamExactBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=1929465846]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="AssistBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="AssistBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=1213208760]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Assist Bonus/Level: Off"
 
-[node name="AssistBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="AssistBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=798699984]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="AssistThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="AssistThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=1469810237]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Assist Threshold: 0%"
 
-[node name="AssistThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows"]
+[node name="AssistThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Scoring/ScoringRows" unique_id=1297854840]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Tower" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Tower" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs" unique_id=1828240395]
+visible = false
 layout_mode = 2
+metadata/_tab_index = 5
 
-[node name="TowerRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower"]
+[node name="TowerRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower" unique_id=1044242845]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="TowerOverhangWeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerOverhangWeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=1165131622]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Overhang Weight: 18%"
 
-[node name="TowerOverhangWeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerOverhangWeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=960593163]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerMaxTiltLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerMaxTiltLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=899188429]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Max Tilt Angle: 24°"
 
-[node name="TowerMaxTiltSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerMaxTiltSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=716228579]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerCollapseThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerCollapseThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=1166976525]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Collapse Threshold: 1.00"
 
-[node name="TowerCollapseThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerCollapseThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=10150772]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerWarningThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerWarningThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=1461938673]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Warning Threshold: 60%"
 
-[node name="TowerWarningThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerWarningThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=810871450]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerCriticalThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerCriticalThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=1295051467]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Critical Threshold: 30%"
 
-[node name="TowerCriticalThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerCriticalThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=1282531320]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerFeedbackModeLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerFeedbackModeLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=2065074815]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Stability Feedback"
 
-[node name="TowerFeedbackModeButton" type="OptionButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows"]
+[node name="TowerFeedbackModeButton" type="OptionButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Tower/TowerRows" unique_id=1040232117]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Power" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs"]
+[node name="Power" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs" unique_id=703822891]
+visible = false
 layout_mode = 2
+metadata/_tab_index = 6
 
-[node name="PowerRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power"]
+[node name="PowerRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power" unique_id=36922153]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="PowerUnlockLevelLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerUnlockLevelLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows" unique_id=1416400272]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Power Unlock Level: 4"
 
-[node name="PowerUnlockLevelSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerUnlockLevelSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows" unique_id=605786371]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PowerMaxSlotsLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerMaxSlotsLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows" unique_id=1397039025]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Power Slots: 3"
 
-[node name="PowerMaxSlotsSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerMaxSlotsSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows" unique_id=1862095730]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PowerCooldownLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerCooldownLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows" unique_id=582603513]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Power Cooldown: 3.0 sec"
 
-[node name="PowerCooldownSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows"]
+[node name="PowerCooldownSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugTabs/Power/PowerRows" unique_id=1169427666]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="QuickChatRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
-layout_mode = 2
-theme_override_constants/separation = 6
+[node name="LegacyHidden" type="Control" parent="." unique_id=1010101010]
+visible = false
+anchors_preset = 0
+mouse_filter = 2
 
-[node name="PowerRow" type="HBoxContainer" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="PowerButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PowerRow"]
+[node name="StatusLabel" type="Label" parent="LegacyHidden" unique_id=546576960]
 unique_name_in_owner = true
-disabled = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Power"
+layout_mode = 0
+theme_override_font_sizes/font_size = 18
+text = "Disconnected"
 
-[node name="PowerButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PowerRow"]
+[node name="ConnectButton" type="Button" parent="LegacyHidden" unique_id=2055968287]
 unique_name_in_owner = true
-disabled = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Power"
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 0
+theme_type_variation = &"PrimaryButton"
+theme_override_font_sizes/font_size = 16
+text = "Connect"
 
-[node name="PowerButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/PowerRow"]
+[node name="PlayerLabel" type="Label" parent="LegacyHidden" unique_id=1124339455]
 unique_name_in_owner = true
-disabled = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Power"
+layout_mode = 0
+theme_type_variation = &"InfoLabel"
+text = "Player -"
 
-[node name="QuickChatButton1" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/QuickChatRow"]
+[node name="RoomLabel" type="Label" parent="LegacyHidden" unique_id=1767853773]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Place now!"
+layout_mode = 0
+theme_type_variation = &"InfoLabel"
+text = "Room -"
 
-[node name="QuickChatButton2" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/QuickChatRow"]
+[node name="TowerStatusLabel" type="Label" parent="LegacyHidden" unique_id=1048868068]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "I'm out of blocks!"
+layout_mode = 0
+theme_override_font_sizes/font_size = 18
+text = "Connect to start"
+horizontal_alignment = 1
 
-[node name="QuickChatButton3" type="Button" parent="SafeArea/Root/BottomControls/BottomMargin/BottomRows/QuickChatRow"]
+[node name="TowerValueLabel" type="Label" parent="LegacyHidden" unique_id=313491058]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Sorry!"
+layout_mode = 0
+theme_override_font_sizes/font_size = 24
+text = "0 / 0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HeightLabel" type="Label" parent="LegacyHidden" unique_id=727880221]
+unique_name_in_owner = true
+layout_mode = 0
+theme_override_font_sizes/font_size = 16
+text = "Height 0/0"
+horizontal_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="LegacyHidden" unique_id=1265606165]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+theme_type_variation = &"InfoLabel"
+text = "Waiting for players"
+autowrap_mode = 3
+
+[node name="ImpactSeparator" type="HSeparator" parent="LegacyHidden" unique_id=58388377]
+visible = false
+layout_mode = 0
+
+[node name="ImpactStatusLabel" type="Label" parent="LegacyHidden" unique_id=2127769895]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.9, 0.98, 1)
+theme_override_font_sizes/font_size = 13
+text = "Impact"
+autowrap_mode = 3
+
+[node name="TowerStabilityLabel" type="Label" parent="LegacyHidden" unique_id=1117939618]
+unique_name_in_owner = true
+layout_mode = 0
+theme_override_font_sizes/font_size = 13
+text = "Tower Stability: 100% (Stable)"
+
+[node name="BlockLabel" type="Label" parent="LegacyHidden" unique_id=1880050889]
+unique_name_in_owner = true
+layout_mode = 0
+theme_override_font_sizes/font_size = 16
+text = "Inventory"
+
+[node name="DrawPileNameLabel" type="Label" parent="LegacyHidden" unique_id=871671783]
+unique_name_in_owner = true
+layout_mode = 0
+theme_type_variation = &"CardMetaLabel"
+text = "Next Draw"
+horizontal_alignment = 1
+
+[node name="DrawPilePreview" type="Control" parent="LegacyHidden" unique_id=794062199]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(70, 44)
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("2_blockpreview")
+
+[node name="DrawPileCountLabel" type="Label" parent="LegacyHidden" unique_id=1530720750]
+unique_name_in_owner = true
+layout_mode = 0
+theme_type_variation = &"CardMetaLabel"
+text = "0 left"
+horizontal_alignment = 1
+
+[node name="PowerQuestLabel" type="Label" parent="LegacyHidden" unique_id=103165954]
+unique_name_in_owner = true
+layout_mode = 0
+text = "Power Quest
+Unlocks at Level 4"
+autowrap_mode = 3
+
+[node name="PowerTargetBox" type="VBoxContainer" parent="LegacyHidden" unique_id=1294208557]
+unique_name_in_owner = true
+layout_mode = 0

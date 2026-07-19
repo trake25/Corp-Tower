@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://c0po62b2x6ltb"]
+[gd_scene format=3 uid="uid://c0po62b2x6ltb"]
 
-[ext_resource type="Script" path="res://Cor/Scripts/ScreenManager.gd" id="1_screenmanager"]
-[ext_resource type="Theme" path="res://Cor/Themes/GameUITheme.tres" id="2_theme"]
+[ext_resource type="Script" uid="uid://bcycnosx2nvc1" path="res://Cor/Scripts/ScreenManager.gd" id="1_screenmanager"]
+[ext_resource type="Theme" uid="uid://u7rmxm0gc7i3" path="res://Cor/Themes/GameUITheme.tres" id="2_theme"]
 
 [node name="Main" type="Control" unique_id=20707474]
 layout_mode = 3
@@ -13,7 +13,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_screenmanager")
 
-[node name="ScreenContainer" type="Control" parent="."]
+[node name="ScreenContainer" type="Control" parent="." unique_id=160675656]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -21,10 +21,11 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="DebugButton" type="Button" parent="."]
+[node name="DebugButton" type="Button" parent="." unique_id=404599538]
 custom_minimum_size = Vector2(92, 42)
 layout_mode = 0
-size = Vector2(92, 42)
+offset_right = 92.0
+offset_bottom = 42.0
 theme_type_variation = &"ActionButton"
 theme_override_font_sizes/font_size = 14
 text = "Debug"
