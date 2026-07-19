@@ -75,6 +75,18 @@ func open() -> void:
 	if auto_close_seconds > 0.0:
 		close_timer.start(auto_close_seconds)
 
+func get_card_size() -> Vector2:
+	return card.size
+
+func set_card_global_position(target: Vector2) -> void:
+	var bounds: Rect2 = get_global_rect()
+	var max_x: float = bounds.position.x + bounds.size.x - card.size.x
+	var max_y: float = bounds.position.y + bounds.size.y - card.size.y
+	card.global_position = Vector2(
+		clampf(target.x, bounds.position.x, maxf(bounds.position.x, max_x)),
+		clampf(target.y, bounds.position.y, maxf(bounds.position.y, max_y))
+	)
+
 func close() -> void:
 	if not visible:
 		return

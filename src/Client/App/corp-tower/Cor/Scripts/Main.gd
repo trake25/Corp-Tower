@@ -462,6 +462,7 @@ func open_quick_chat_popover() -> void:
 	active_popover = team_inventory_popover
 	shared_popover_mode = "quick_chat"
 	team_inventory_popover.call("open")
+	position_shared_popover_card()
 
 func open_power_popover() -> void:
 	if team_inventory_popover == null:
@@ -494,6 +495,7 @@ func open_power_popover() -> void:
 	active_popover = team_inventory_popover
 	shared_popover_mode = "power"
 	team_inventory_popover.call("open")
+	position_shared_popover_card()
 
 func get_power_row_label(power_id: String) -> String:
 	if power_id == "refresh":
@@ -533,12 +535,39 @@ func open_team_inventory_popover() -> void:
 	active_popover = team_inventory_popover
 	shared_popover_mode = "team_inventory"
 	team_inventory_popover.call("open")
+	position_shared_popover_card()
 
 func close_active_popover() -> void:
 	if active_popover != null:
 		active_popover.call("close")
 		active_popover = null
 	shared_popover_mode = ""
+
+func position_shared_popover_card() -> void:
+	if team_inventory_popover == null:
+		return
+	var row_anchor: Control = power_trigger
+	if row_anchor == null:
+		row_anchor = quick_chat_trigger
+	if row_anchor == null:
+		row_anchor = team_inventory_button
+	if row_anchor == null:
+		return
+	var anchor_rect: Rect2 = row_anchor.get_global_rect()
+	var card_size: Vector2 = team_inventory_popover.call("get_card_size")
+	team_inventory_popover.call("set_card_global_position", Vector2(
+		anchor_rect.position.x + anchor_rect.size.x + 2.0 - card_size.x,
+		anchor_rect.position.y - 13.0 - card_size.y
+	))
+
+func position_quest_popover_card() -> void:
+	if quest_popover == null or quest_chip == null:
+		return
+	var chip_rect: Rect2 = quest_chip.get_global_rect()
+	quest_popover.call("set_card_global_position", Vector2(
+		chip_rect.position.x + chip_rect.size.x + 5.0,
+		chip_rect.position.y
+	))
 
 func setup_debug_controls() -> void:
 	if debug_overlay != null:
@@ -687,10 +716,12 @@ func _input(event: InputEvent) -> void:
 		move_power_drag_ghost(event.position)
 
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		last_pointer_trigger_frame = Engine.get_process_frames()
-		_try_activate_popover_trigger(event.global_position)
+		if Engine.get_process_frames() != last_pointer_trigger_frame:
+			last_pointer_trigger_frame = Engine.get_process_frames()
+			_try_activate_popover_trigger(event.global_position)
 	elif event is InputEventScreenTouch and event.pressed:
 		if Engine.get_process_frames() != last_pointer_trigger_frame:
+			last_pointer_trigger_frame = Engine.get_process_frames()
 			_try_activate_popover_trigger(event.position)
 
 func _try_activate_popover_trigger(global_pos: Vector2) -> void:
@@ -1339,6 +1370,7 @@ func open_quest_popover() -> void:
 	close_active_popover()
 	active_popover = quest_popover
 	quest_popover.call("open")
+	position_quest_popover_card()
 
 func update_impact_track(player_statuses: Array, next_impact_level: int) -> void:
 	if impact_track == null:
