@@ -30,7 +30,11 @@ window/stretch/aspect="expand"
 ; fill the browser window. Android keeps "expand" so it uses the full screen
 ; on phones whose aspect ratio differs from the design size.
 window/stretch/aspect.web="keep"
-window/handheld/orientation="portrait"
+; DisplayServer.ScreenOrientation enum, not a string. Godot 3 used "portrait";
+; Godot 4 needs the integer. A string here silently falls back to 0
+; (SCREEN_LANDSCAPE), which is what forced landscape on Android.
+; 1 = SCREEN_PORTRAIT
+window/handheld/orientation=1
 
 [editor_plugins]
 
