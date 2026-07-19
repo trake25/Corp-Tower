@@ -1,12 +1,5 @@
 name: Client HTML5 Pages
 
-# Manual only. Deploys the web build to GitHub Pages.
-# Teardown lives in Client-HTML5-Undeploy.yml.
-#
-# Cost note: GitHub Actions minutes are free and unlimited on public repos, and
-# the R2 asset fetch sits far inside R2's permanent free tier.
-# See docs/private-assets-setup.md for the cost tripwires before changing this.
-
 on:
   workflow_dispatch:
     inputs:
@@ -38,8 +31,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # enablement: true recreates the Pages site if it was torn down by
-      # Client-HTML5-Undeploy.yml, making deploy/undeploy round-trippable.
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
         with:

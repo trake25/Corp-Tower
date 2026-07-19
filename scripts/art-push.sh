@@ -1,13 +1,4 @@
 #!/usr/bin/env bash
-# Corp Tower — package Cor/Art/ and publish it to R2 as an immutable version.
-#
-#   ./scripts/art-push.sh v2
-#
-# Refuses to overwrite an existing version. Published versions are immutable so
-# that a commit which pins v1 builds identically forever. To change art, publish
-# a new version and update Cor/art-manifest.json.
-#
-# Requires the READ-WRITE dev token in .env.art. CI's token cannot do this.
 
 source "$(dirname "${BASH_SOURCE[0]}")/art-common.sh"
 
@@ -24,7 +15,6 @@ OBJECT="art/releases/art-${VERSION}.tar.gz"
 
 echo "Publishing art $VERSION to r2://$R2_BUCKET/$OBJECT"
 
-# Immutability guard: never overwrite a published version.
 if r2 head-object --bucket "$R2_BUCKET" --key "$OBJECT" >/dev/null 2>&1; then
   die "$OBJECT already exists in R2.
   Published versions are immutable. Use the next version number instead."
@@ -48,7 +38,6 @@ info "uploading ${SIZE} bytes..."
 r2 put-object --bucket "$R2_BUCKET" --key "$OBJECT" --body "$ARCHIVE" >/dev/null \
   || die "upload failed — check that .env.art holds the READ-WRITE dev token"
 
-# Read back and verify what R2 actually stored, rather than trusting the upload.
 VERIFY="$TMP/verify.tar.gz"
 r2 get-object --bucket "$R2_BUCKET" --key "$OBJECT" "$VERIFY" >/dev/null
 [ "$(sha256_of "$VERIFY")" = "$SHA" ] || die "post-upload verification failed — stored object does not match local archive"

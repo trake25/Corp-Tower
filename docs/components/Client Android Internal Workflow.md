@@ -6,6 +6,7 @@
 
 ## Responsibilities
 - Run on the pinned GitHub runner image `ubuntu-24.04`.
+- Fetch private art into `Cor/Art` before any Godot step ([[Private Asset Pipeline]]).
 - Download Godot `4.6.2.stable` Linux.
 - Install Android SDK packages through `android-actions/setup-android`.
 - Resolve the next Android version code from Google Play.
@@ -19,6 +20,7 @@
 - Upload AAB artifact.
 - Optionally upload to Google Play internal track.
 - Verify the Google Play internal track contains the resolved version code after upload.
+- Remove the fetched art from the runner in an `if: always()` step.
 
 ## Key Logic
 - Trigger: manual `workflow_dispatch`.
@@ -26,6 +28,7 @@
   - `version_code_override`
   - `version_name`
   - `upload_to_play`
+  - `art_version_override` — optional, testing only; skips asset sha256 verification and must never be used for a Play release ([[Private Asset Pipeline]])
 - Version code:
   - Authenticates to the Google Play Android Publisher API using `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`.
   - Creates a temporary edit and reads every track for `com.galaxxigames.corptower`.
@@ -59,6 +62,8 @@
 
 ## Dependencies
 - [[Godot Client App]]
+- [[Private Asset Pipeline]]
+- `.github/actions/fetch-private-assets`
 - `src/Client/App/corp-tower/addons/gut`
 - `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`
 - `src/Client/App/corp-tower/Tests/Gut`

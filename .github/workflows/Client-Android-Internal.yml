@@ -45,8 +45,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # Art assets live in a private R2 bucket, never in this repo. Must land
-      # before the Godot import step or the export ships missing textures.
       - name: Fetch private art assets
         uses: ./.github/actions/fetch-private-assets
         with:

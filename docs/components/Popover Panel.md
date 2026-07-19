@@ -53,6 +53,14 @@ tap-triggered popover in the play screen. File:
   the trigger's owner finding out synchronously, so checking `.visible` is
   what keeps a stale "already open" read from silently swallowing the next
   tap instead of reopening the popover.
+- Open issue (web only): popover cards anchor to viewport edges at fixed
+  offsets and never track the trigger that opened them — `PopoverPanel.gd` sets
+  no position at runtime, and [[Main UI Controller]] only swaps title/rows. The
+  card positions therefore shift with viewport size, and after the web stretch
+  aspect changed to `keep` ([[Godot Client App]]) they land wrong in the browser
+  while remaining correct in the editor. Not yet diagnosed; deferred to a
+  separate session. The editor cannot reproduce it, so this needs a deployed
+  build to investigate.
 - Team Inventory's rows are the one case using `add_icon_row`: when
   `last_draw_pile_count > 0` and a next block exists, an `add_icon_row` shows
   a `BlockPreview` instance (tinted with the same `DRAW_PILE_COLOR` as the

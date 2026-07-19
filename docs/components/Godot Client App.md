@@ -19,6 +19,11 @@ Not a single script — this is the project as a whole. The pieces that matter
 externally:
 
 - `project.godot` autoloads [[NetworkManager]] as a singleton.
+- `project.godot` defines the display contract: 412×917 portrait design size,
+  `canvas_items` stretch mode, and per-platform stretch aspect — `expand` by
+  default so Android fills phone screens of any ratio, overridden to `keep` for
+  web (`window/stretch/aspect.web`) so the browser pillarboxes to 412:917
+  instead of widening the viewport. See Notes for the orientation trap.
 - `Main.tscn` is the app root, owning [[Screen Manager]]. It swaps between
   the join screen, find-match screen, and the [[Game UI Scene]] (instanced
   under `Main UI Controller`) as the player moves through matchmaking; there
@@ -33,6 +38,18 @@ externally:
 ## Notes
 - Current release target is Android only; web/Windows/iOS are future
   platform targets, not active work.
+- `window/handheld/orientation` is a `DisplayServer.ScreenOrientation` integer
+  in Godot 4, not the Godot 3 string. It must be `1` (`SCREEN_PORTRAIT`). A
+  string value cannot be coerced, silently falls back to `0`
+  (`SCREEN_LANDSCAPE`), and produces no warning — this is what shipped every
+  Android build in forced landscape until it was corrected. Check this value
+  first if orientation ever regresses, because the string form looks correct.
+- `expand` and `keep` produce genuinely different viewport sizes, not just
+  different letterboxing: under `expand` the viewport grows past 412×917 to
+  match the window aspect, while under `keep` it stays exactly 412×917. The two
+  coincide when the run window is already 412×917, which is why the editor
+  looks identical under either setting and cannot be used to validate web
+  layout. Verify web layout from a deployed build ([[Client HTML5 Pages]]).
 - There is a single production-facing gameplay UI ([[Game UI Scene]]) — the
   previous runtime skin-switching system (`DefaultSkin` / `Figma_SkinV1`, a
   bottom-right overlay for swapping between them) was removed ahead of the

@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# Corp Tower — download the pinned art bundle from R2 into Cor/Art/.
-#
-#   ./scripts/art-pull.sh            pull the version pinned in art-manifest.json
-#   ./scripts/art-pull.sh --force    overwrite local art even if it differs
-#
-# Refuses to clobber local art that does not match the manifest unless --force
-# is given, so in-progress art work is not silently destroyed.
 
 source "$(dirname "${BASH_SOURCE[0]}")/art-common.sh"
 
@@ -21,7 +14,6 @@ WANT_COUNT="$(manifest_field file_count)"
 
 echo "Pulling art $VERSION from r2://$R2_BUCKET/$OBJECT"
 
-# Skip the download entirely if local art already matches the manifest.
 if [ -d "$ART_DIR" ] && [ -n "$(ls -A "$ART_DIR" 2>/dev/null || true)" ]; then
   TMP_CHECK="$(mktemp -t art-check-XXXXXX.tar.gz)"
   pack_art "$ART_DIR" "$TMP_CHECK"

@@ -9,12 +9,13 @@
 ## Current Snapshot
 - Gameplay: server-authoritative rooms, shape blocks, score events, level summaries, Impacts (score-gated checkpoints), Power items (including refresh), debug bots, and live tuning.
 - Client Android: Godot `4.6.2.stable` Android HUD with shape inventory, tower stack, score feedback, level summaries, and a tabbed debug overlay, all on a single UI scene (no runtime skin switching).
-- Client HTML5: Deploys via GitHub Pages; Cloudflare planned next.
+- Client HTML5: Deploys via GitHub Pages, with a paired manual undeploy (soft/hard) workflow. Cloudflare Pages was evaluated and rejected — its 25 MiB per-file cap cannot host the 35.95 MiB `index.wasm`.
+- Production art: kept out of the public repo entirely and injected at build time from a private Cloudflare R2 bucket, version-pinned per commit ([[Private Asset Pipeline]]).
 - Server: Node WebSocket workers own matchmaking, room state, reconnect, scoring, timers, bots, and debug config.
 - State: Redis is used for active matchmaking, room/session snapshots, reconnect, and worker recovery.
 - Server K3s: active AWS/K3s stack under `infra/k3s`, with private K3s nodes behind EC2-GW and Argo CD-ready manifests that are not applied by default.
 - Server EKS: new parallel plan-only Terraform path under `infra/eks` for EKS, NLB with Elastic IPs, and ElastiCache Redis.
-- CI/CD: GitHub Actions handles server tests/builds, Server K3s deploys, diagnostics, infra plan/apply, cleanup, Server EKS infra planning, and Android internal AAB workflow.
+- CI/CD: GitHub Actions handles server tests/builds, Server K3s deploys, diagnostics, infra plan/apply, cleanup, Server EKS infra planning, Android internal AAB workflow, and HTML5 Pages deploy/undeploy. Every client build workflow fetches private art from R2 first and fails closed if it cannot be verified.
 
 ## Source Of Truth & Fast Start
 - Read this file first, then only the linked docs/sections needed for the task.
@@ -25,6 +26,7 @@
 - Docs are only updated when the user runs `/update-docs`, after confirming the goal is fully reached.
 - Do not commit, push, pull, compare with remote git repo unless instructed.
 - Do not put comments on the source code, instead any context helping info should be in its corresponding .md docs.
+  - Sole exception: comments that prevent a future edit from leaking credentials or otherwise creating a security hole, where the risk is not visible from the code itself. These are marked `SAFETY EXCEPTION` with the reason inline, since moving them to a doc would put the warning where nobody editing that line will read it. Currently three: two in `.github/actions/fetch-private-assets/action.yml`, one in `scripts/art-common.sh`.
 - Keep `Summary.md` brief; link to details instead of duplicating them.
 
 ## Game Systems
@@ -45,6 +47,7 @@
 - Server infra & IaC: [[Terraform Infrastructure]], [[Server K3s Stack]], [[Server K3s Workflows]], [[Server K3s Automated Master Workflow]]
 - Android release: [[Client Android Internal Workflow]]
 - WebGL HTML5 release: [[Client HTML5 Pages]]
+- Private production art: [[Private Asset Pipeline]]
 
 ## Runtime Flow
 - Godot connects to `wss://ws.tod.galaxxigames.com` through [[NetworkManager]].

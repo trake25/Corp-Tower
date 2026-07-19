@@ -33,6 +33,7 @@
 ## CI/CD And Infrastructure
 - [[Client Android Internal Workflow]]
 - [[Client HTML5 Pages]]
+- [[Private Asset Pipeline]]
 - [[Terraform Infrastructure]]
 - [[Server K3s Stack]]
 - [[Server K3s Workflows]]

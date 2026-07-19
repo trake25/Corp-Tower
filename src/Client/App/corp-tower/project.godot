@@ -26,15 +26,8 @@ window/size/viewport_width=412
 window/size/viewport_height=917
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-; Web-only: pillarbox to the 412:917 portrait ratio instead of expanding to
-; fill the browser window. Android keeps "expand" so it uses the full screen
-; on phones whose aspect ratio differs from the design size.
-window/stretch/aspect.web="keep"
-; DisplayServer.ScreenOrientation enum, not a string. Godot 3 used "portrait";
-; Godot 4 needs the integer. A string here silently falls back to 0
-; (SCREEN_LANDSCAPE), which is what forced landscape on Android.
-; 1 = SCREEN_PORTRAIT
 window/handheld/orientation=1
+window/stretch/aspect.web="keep"
 
 [editor_plugins]
 

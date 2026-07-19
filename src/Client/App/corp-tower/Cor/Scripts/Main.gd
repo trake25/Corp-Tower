@@ -100,6 +100,7 @@ var last_placement_sent_at_ms: int = 0
 var is_block_dragging: bool = false
 var drag_slot_index: int = -1
 var drag_pointer_id: int = DRAG_POINTER_MOUSE
+var last_pointer_trigger_frame: int = -1
 var inventory_slot_blocks: Array = []
 
 var status_label: Label
@@ -686,9 +687,11 @@ func _input(event: InputEvent) -> void:
 		move_power_drag_ghost(event.position)
 
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		last_pointer_trigger_frame = Engine.get_process_frames()
 		_try_activate_popover_trigger(event.global_position)
 	elif event is InputEventScreenTouch and event.pressed:
-		_try_activate_popover_trigger(event.position)
+		if Engine.get_process_frames() != last_pointer_trigger_frame:
+			_try_activate_popover_trigger(event.position)
 
 func _try_activate_popover_trigger(global_pos: Vector2) -> void:
 	if debug_overlay != null and debug_overlay.visible:

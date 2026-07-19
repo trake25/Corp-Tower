@@ -1,15 +1,5 @@
 name: Client HTML5 Undeploy
 
-# Manual teardown of the live GitHub Pages build. Destructive and
-# outward-facing, so it requires typing UNDEPLOY to run.
-#
-# Modes:
-#   soft — replaces the game with an "offline" page. The site keeps existing.
-#   hard — deletes the GitHub Pages site entirely. URL returns 404.
-#
-# Redeploying is just running Client-HTML5-Pages.yml again: it calls
-# configure-pages with enablement: true, which recreates a hard-deleted site.
-
 on:
   workflow_dispatch:
     inputs:
