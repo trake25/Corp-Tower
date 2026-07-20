@@ -1268,10 +1268,6 @@ text = "Power Quest
 Unlocks at Level 4"
 autowrap_mode = 3
 
-[node name="PowerTargetBox" type="VBoxContainer" parent="LegacyHidden" unique_id=1294208557]
-unique_name_in_owner = true
-layout_mode = 0
-
 [node name="QuickChatButton1" type="Button" parent="LegacyHidden" unique_id=1946995580]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 34)
@@ -1288,22 +1284,4 @@ layout_mode = 0
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 34)
 text = "Sorry!"
-layout_mode = 0
-
-[node name="PowerButton1" type="Button" parent="LegacyHidden" unique_id=1719926982]
-unique_name_in_owner = true
-disabled = true
-text = "Power"
-layout_mode = 0
-
-[node name="PowerButton2" type="Button" parent="LegacyHidden" unique_id=2061393088]
-unique_name_in_owner = true
-disabled = true
-text = "Power"
-layout_mode = 0
-
-[node name="PowerButton3" type="Button" parent="LegacyHidden" unique_id=1642627410]
-unique_name_in_owner = true
-disabled = true
-text = "Power"
 layout_mode = 0

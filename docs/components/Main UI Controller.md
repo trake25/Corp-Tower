@@ -12,9 +12,9 @@ single-purpose modules under `Cor/Scripts/GameUi/`.
   children, never scene nodes), bind the [[Game UI Scene]] node contract once
   through `UiNodeBinder`, and abort via `prepare_ui()` if any required node is
   missing.
-- Own the Godot input/frame callbacks and delegate them in the original order:
-  `_input()` → `inventory.handle_input()`, `power.handle_input()`,
-  `trigger_router.process()`; `_process()` → `inventory.tick()`,
+- Own the Godot input/frame callbacks: `_input()` → `inventory.handle_input()`
+  only (each popover trigger connects its own native `.pressed` signal instead
+  of being hit-tested here — see Notes); `_process()` → `inventory.tick()`,
   `top_bar.tick_round_timer()`; `_unhandled_input()` → close the debug overlay
   on `ui_cancel`.
 - Wire the six [[NetworkManager]] signals in `connect_network_signals()` and
@@ -22,13 +22,14 @@ single-purpose modules under `Cor/Scripts/GameUi/`.
   `game_state` payload into the matching module.
 - Keep the small surface other components call directly: `toggle_debug_overlay()`
   (duck-typed from [[Screen Manager]]), `on_connect_pressed()`,
-  `open_team_inventory_popover()` / `position_shared_popover_card()`, and the
-  connection/room/status handlers (`update_status`, `update_connect_button`,
-  `update_room`, `update_room_closed`).
+  `open_team_inventory_popover()` / `position_team_inventory_popover_card()`,
+  `should_block_popovers()` (the shared debug-panel/level-summary guard passed
+  into each controller's `setup()`), and the connection/room/status handlers
+  (`update_status`, `update_connect_button`, `update_room`, `update_room_closed`).
 - Expose `missing_required_nodes` (read by [[Godot Client Tests]]' smoke test)
   and the module handles (`inventory`, `power`, `roster`, `score_popups`,
   `summary`, `quest`, `chat`, `top_bar`, `debug_panel`, `popovers`, `players_ctx`,
-  `match_state`, `tuning`, `trigger_router`) for tests and cross-module wiring.
+  `match_state`, `tuning`) for tests and cross-module wiring.
 
 ## Module family (`Cor/Scripts/GameUi/`)
 Two shapes: pure state/logic units extend `RefCounted` (instantiable in GUT with
@@ -48,10 +49,12 @@ Shared services (RefCounted, injected everywhere):
   "is local" checks and [[Player Colors]] lookups).
 - `UiNodeBinder` — wraps the `find_child` node-contract binding and collects
   missing required names.
-- `PointerEvents` / `PointerTriggerRouter` — pointer id/position statics, and the
-  trigger hit-test router (see Notes for the input contract).
-- `PopoverCoordinator` — `active_popover` + `shared_popover_mode` with
-  `present()` / `is_open()` / `close_active()`.
+- `PointerEvents` — pointer id/position statics, still used by
+  `InventoryController`'s touch-aware block drag.
+- `PopoverCoordinator` — `active_popover` with `present()` / `is_open()` /
+  `close_active()`. No shared-mode string: every popover (Quest, Chat, Power,
+  Team Inventory) is its own instance now, so `is_open()` just compares against
+  `active_popover`.
 - `BlockData` — `normalize_block` / `calculate_block_height` statics (shared by
   inventory, draw pile, and the Team Inventory popover).
 
@@ -68,8 +71,12 @@ View controllers (Node):
 - `QuestController` — the three-state quest chip and its popover.
 - `QuickChatController` — quick-chat buttons/cooldown, incoming chat events, and
   the speech-bubble anchored to the sender's rail row.
-- `PowerController` — the Power popover rows, activation toast, room-wide tint,
-  and the legacy (dead-code) drag-onto-target flow retained verbatim.
+- `PowerController` — the Power popover rows (tap-to-activate; `activate_power`
+  has no target field, so the effect always applies room-wide), activation
+  toast, and room-wide tint. The earlier drag-onto-target UI (`PowerButton1-3`,
+  `PowerTargetBox`) was dead code — never reachable by players, hidden in
+  `LegacyHidden` — and has been removed along with its handling in this
+  controller.
 - `InventoryController` — the 3-slot inventory cards, drag-to-place input, the
   local placement cooldown, and the draw-pile preview.
 - `TopBarController` — level badge, round timer, tower height/progress
@@ -95,18 +102,20 @@ module handles rather than as methods on Main.
   moved verbatim; only references were rewritten to the injected services.
   Characterization coverage was added first under `Tests/Gut/GameUi/`
   (see [[Godot Client Tests]]).
-- **Popover triggers are hit-tested in `_input()`, not via each button's
-  `pressed` signal.** Every popover's full-screen `OutsideCatcher` is a later
-  sibling than the trigger buttons in [[Game UI Scene]], so it wins normal GUI
-  hit-testing while any popover is open. `_input()` fires before GUI routing, so
-  `PointerTriggerRouter` checks the four trigger rects there (skipping while the
-  debug overlay or level-summary overlay is up) and calls
-  `set_input_as_handled()` on a hit. The router responds only to
-  `InputEventMouseButton` presses: every device tap arrives as a raw touch plus
-  an emulated mouse event (`emulate_mouse_from_touch`, pinned on in
-  `project.godot`), so keying off the single mouse event avoids the touch/mouse
-  double-activation. **Both platform bugs below are still open** — see the
-  hand-off plan `TOD20260720-01.md`.
+- **Each popover trigger connects its own native `.pressed` signal**
+  (`QuestChip`, `QuickChatTrigger`, `TeamInventoryButton`, `PowerTrigger`), not
+  a shared `_input()` hit-test router. This replaced an earlier
+  `PointerTriggerRouter` that hit-tested trigger rects in `_input()` because a
+  popover's full-screen `OutsideCatcher` — a later sibling than the triggers in
+  [[Game UI Scene]] — otherwise wins normal GUI hit-testing while a popover is
+  open. Each trigger's opener (`open_team_inventory_popover`,
+  `chat.open_quick_chat_popover`, `power.open_power_popover`,
+  `quest.on_quest_chip_pressed`) now checks `should_block_popovers()` itself
+  (debug overlay open or level-summary visible) instead of a router guard.
+  `PointerTriggerRouter.gd` and its dedicated test were deleted as dead code
+  once nothing referenced them. **Quest, Chat, and Team Inventory triggers are
+  confirmed working after this change; Power's trigger tap is still under
+  investigation** despite structurally identical wiring to the other three.
 - **`ScorePopupLayer` ships `visible = false`** in [[Game UI Scene]];
   `ScorePopupController.bind_nodes()` re-enables it, since Godot hides a hidden
   `CanvasItem`'s whole subtree and would otherwise block every popup/bubble.
@@ -118,9 +127,8 @@ module handles rather than as methods on Main.
   double-counting a just-completed level during the finished/failed transition.
 - The top-bar round timer only counts down locally while `is_playing()`; while
   frozen it changes only when the next `game_state` broadcast arrives.
-- **Two open platform-only bugs** (popover cards mis-position on WebGL/Android;
-  trigger taps misbehave on Android/WebGL) are not reproducible in the editor and
-  are tracked in `TOD20260720-01.md`, not fixed here.
+- **Popover card mis-positioning on WebGL/Android and Power's trigger tap** are
+  not reproducible in the editor.
 - Has no full behavioral test coverage of the orchestrator's fan-out beyond the
   characterization suite; sizable changes are still verified by manual
   play-testing and CI's smoke test.

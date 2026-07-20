@@ -1,64 +1,30 @@
 extends Node
 
 var players_ctx
-var match_state
 var network
 var popovers
 var popover_blocked: Callable = Callable()
 var roster
 var score_popups
 var power_popover: Control
-var ghost_parent: Control
-var power_buttons: Array = []
 var power_trigger: TextureButton
-var power_target_box: VBoxContainer
-var power_target_buttons: Array = []
-var selected_power_slot: int = -1
-var power_dragging := false
-var power_drag_ghost: Label
 var power_feedback_tween: Tween
 var last_power_inventory: Array = []
 var seen_power_event_ids: Dictionary = {}
 
 func bind_nodes(binder) -> void:
-	power_buttons = [binder.optional_node("PowerButton1") as Button, binder.optional_node("PowerButton2") as Button, binder.optional_node("PowerButton3") as Button]
 	power_trigger = binder.optional_node("PowerTrigger") as TextureButton
-	power_target_box = binder.optional_node("PowerTargetBox") as VBoxContainer
 	power_popover = binder.optional_node("PowerPopover") as Control
 	if power_trigger != null:
 		power_trigger.pressed.connect(open_power_popover)
 
-func setup(players_ref, match_state_ref, network_ref, popovers_ref, roster_ref, score_popups_ref, ghost_parent_ref: Control, popover_blocked_ref: Callable = Callable()) -> void:
+func setup(players_ref, network_ref, popovers_ref, roster_ref, score_popups_ref, popover_blocked_ref: Callable = Callable()) -> void:
 	players_ctx = players_ref
-	match_state = match_state_ref
 	network = network_ref
 	popovers = popovers_ref
 	roster = roster_ref
 	score_popups = score_popups_ref
-	ghost_parent = ghost_parent_ref
 	popover_blocked = popover_blocked_ref
-
-	for i in range(power_buttons.size()):
-		if power_buttons[i] != null:
-			power_buttons[i].gui_input.connect(func(event):
-				if event is InputEventMouseButton and event.pressed and !power_buttons[i].disabled:
-					selected_power_slot = i
-					power_dragging = true
-					show_power_drag_ghost(power_buttons[i].text, event.global_position)
-			)
-
-func handle_input(event: InputEvent) -> void:
-	if power_dragging and event is InputEventMouseButton and !event.pressed:
-		for target in power_target_buttons:
-			if target.get_global_rect().has_point(event.global_position):
-				network.activate_power(selected_power_slot)
-		power_dragging = false
-		selected_power_slot = -1
-		hide_power_drag_ghost()
-	if power_dragging and event is InputEventMouseMotion:
-		move_power_drag_ghost(event.global_position)
-	if power_dragging and event is InputEventScreenDrag:
-		move_power_drag_ghost(event.position)
 
 func open_power_popover() -> void:
 	if popover_blocked.is_valid() and bool(popover_blocked.call()):
@@ -107,73 +73,6 @@ func get_power_row_label(power_id: String) -> String:
 		return "Refresh team inventory"
 
 	return power_id.replace("_", " ").capitalize()
-
-func update_power_target_ui(players: Array) -> void:
-	if power_target_box == null:
-		return
-	for child in power_target_box.get_children():
-		child.queue_free()
-	power_target_buttons = []
-	for player in players:
-		var player_id := str(player.get("id", ""))
-		if player_id == "":
-			continue
-		var target := Button.new()
-		target.text = player_id
-		target.tooltip_text = "Drop a Power item here to target " + player_id
-		target.add_theme_color_override("font_color", players_ctx.color_map.get(player_id, Color.WHITE))
-		target.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-		target.add_theme_constant_override("outline_size", 3)
-		target.custom_minimum_size = Vector2(72, 24)
-		power_target_box.add_child(target)
-		target.set_meta("player_id", player_id)
-		power_target_buttons.append(target)
-		target.gui_input.connect(func(event):
-			if power_dragging and event is InputEventMouseButton and !event.pressed:
-				network.activate_power(selected_power_slot)
-				power_dragging = false
-				selected_power_slot = -1
-				hide_power_drag_ghost()
-				get_viewport().set_input_as_handled()
-			elif power_dragging and event is InputEventScreenTouch and !event.pressed:
-				network.activate_power(selected_power_slot)
-				power_dragging = false
-				selected_power_slot = -1
-				hide_power_drag_ghost()
-				get_viewport().set_input_as_handled()
-		)
-
-func update_power_inventory_ui(items: Array) -> void:
-	for i in range(power_buttons.size()):
-		var button: Button = power_buttons[i]
-		if button == null:
-			continue
-		if i < items.size() and typeof(items[i]) == TYPE_DICTIONARY:
-			button.text = str(items[i].get("id", "Power")).replace("_", " ").capitalize()
-			button.disabled = match_state.current_match_state != "playing"
-		else:
-			button.text = "Power"
-			button.disabled = true
-
-func show_power_drag_ghost(text: String, pointer_position: Vector2) -> void:
-	if power_drag_ghost == null:
-		power_drag_ghost = Label.new()
-		power_drag_ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		power_drag_ghost.z_index = 100
-		power_drag_ghost.add_theme_font_size_override("font_size", 18)
-		power_drag_ghost.add_theme_color_override("font_color", Color(1.0, 0.86, 0.3, 0.9))
-		ghost_parent.add_child(power_drag_ghost)
-	power_drag_ghost.text = text
-	power_drag_ghost.visible = true
-	move_power_drag_ghost(pointer_position)
-
-func move_power_drag_ghost(pointer_position: Vector2) -> void:
-	if power_drag_ghost != null:
-		power_drag_ghost.global_position = pointer_position + Vector2(14, 14)
-
-func hide_power_drag_ghost() -> void:
-	if power_drag_ghost != null:
-		power_drag_ghost.visible = false
 
 func process_power_events(raw_events: Variant, players: Array) -> void:
 	if typeof(raw_events) != TYPE_ARRAY:

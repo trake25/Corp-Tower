@@ -78,7 +78,7 @@ func _ready() -> void:
 	roster.setup(players_ctx, match_state)
 	quest.setup(players_ctx, match_state, popovers, should_block_popovers)
 	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_popovers)
-	power.setup(players_ctx, match_state, NetworkManager, popovers, roster, score_popups, ui_root, should_block_popovers)
+	power.setup(players_ctx, NetworkManager, popovers, roster, score_popups, should_block_popovers)
 	setup_popover_controls()
 	reset_ui()
 	connect_network_signals()
@@ -210,7 +210,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _input(event: InputEvent) -> void:
 	inventory.handle_input(event)
-	power.handle_input(event)
 
 func _process(_delta: float) -> void:
 	inventory.tick()
@@ -321,7 +320,6 @@ func update_game_state(data) -> void:
 			summary.hide_level_summary()
 
 	players_ctx.update_from_players(players)
-	power.update_power_target_ui(players)
 	quest.update_quest_chip(data.get("sideQuest", {}))
 	if tower_stack.has_method("set_player_color_map"):
 		tower_stack.call("set_player_color_map", players_ctx.color_map)
@@ -370,7 +368,6 @@ func update_game_state(data) -> void:
 		int(data.get("activeInventorySlots", InventoryControllerScript.MAX_INVENTORY_SLOTS))
 	)
 	power.last_power_inventory = my_power
-	power.update_power_inventory_ui(my_power)
 	chat.quick_chat_templates = data.get("quickChatTemplates", chat.quick_chat_templates)
 	chat.quick_chat_cooldown_ms = int(data.get("quickChatCooldownMs", chat.quick_chat_cooldown_ms))
 	chat.update_quick_chat_buttons()

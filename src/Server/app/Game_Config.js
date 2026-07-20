@@ -5,9 +5,9 @@ const GameConfig = {
     placementCooldown: 1500,
     quickChatCooldownMs: 6000,
     quickChatTemplates: [
-        "Waaahhh...it's going to fall down!!!",
-        "Holy Cow! We are going to make it!!!",
-        "Oh Yeah!!!"
+        "Place Block!",
+        "Sorry!",
+        "Hello!"
     ],
     targetHeightMultiplier: 3,
     targetHeightCurve: [
