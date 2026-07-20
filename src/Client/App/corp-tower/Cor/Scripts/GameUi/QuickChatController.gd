@@ -1,0 +1,172 @@
+extends Node
+
+const CHAT_BUBBLE_MAX_WIDTH := 240.0
+const ScorePopupControllerScript = preload("res://Cor/Scripts/GameUi/ScorePopupController.gd")
+
+var match_state
+var network
+var popovers
+var roster
+var score_popups
+var shared_popover: Control
+var position_shared_card: Callable = Callable()
+var quick_chat_buttons: Array = []
+var quick_chat_trigger: TextureButton
+var quick_chat_templates: Array = []
+var quick_chat_cooldown_ms: int = 6000
+var last_quick_chat_sent_at_ms: int = 0
+var seen_quick_chat_event_ids: Dictionary = {}
+
+func bind_nodes(binder) -> void:
+	quick_chat_buttons = [
+		binder.optional_node("QuickChatButton1") as Button,
+		binder.optional_node("QuickChatButton2") as Button,
+		binder.optional_node("QuickChatButton3") as Button
+	]
+	quick_chat_trigger = binder.optional_node("QuickChatTrigger") as TextureButton
+
+func setup(match_state_ref, network_ref, popovers_ref, roster_ref, score_popups_ref, shared_popover_ref: Control, position_shared_card_ref: Callable) -> void:
+	match_state = match_state_ref
+	network = network_ref
+	popovers = popovers_ref
+	roster = roster_ref
+	score_popups = score_popups_ref
+	shared_popover = shared_popover_ref
+	position_shared_card = position_shared_card_ref
+
+	for i in range(quick_chat_buttons.size()):
+		var quick_chat_button: Button = quick_chat_buttons[i]
+		if quick_chat_button != null:
+			quick_chat_button.focus_mode = Control.FOCUS_NONE
+			quick_chat_button.pressed.connect(func(): on_quick_chat_pressed(i))
+	update_quick_chat_buttons()
+
+func on_quick_chat_pressed(slot: int) -> void:
+	if !network.is_conn_estab or match_state.current_match_state != "playing":
+		return
+	if slot < 0 or slot >= quick_chat_templates.size():
+		return
+	if Time.get_ticks_msec() - last_quick_chat_sent_at_ms < quick_chat_cooldown_ms:
+		return
+	last_quick_chat_sent_at_ms = Time.get_ticks_msec()
+	network.send_quick_chat(slot)
+
+func update_quick_chat_buttons() -> void:
+	for i in range(quick_chat_buttons.size()):
+		var button: Button = quick_chat_buttons[i]
+		if button == null:
+			continue
+		var has_template: bool = i < quick_chat_templates.size()
+		button.text = str(quick_chat_templates[i]) if has_template else "Chat"
+		button.disabled = !has_template or !network.is_conn_estab or match_state.current_match_state != "playing"
+
+func open_quick_chat_popover() -> void:
+	if shared_popover == null:
+		return
+
+	if popovers.is_open(shared_popover, "quick_chat"):
+		popovers.close_active()
+		return
+
+	shared_popover.call("set_title", "Quick Chat")
+	shared_popover.call("clear_rows")
+
+	if quick_chat_templates.is_empty():
+		shared_popover.call("add_row", "No quick chat available")
+	else:
+		for i in range(quick_chat_templates.size()):
+			var index: int = i
+			shared_popover.call(
+				"add_action_row",
+				str(quick_chat_templates[i]),
+				func():
+					on_quick_chat_pressed(index)
+					popovers.close_active()
+			)
+
+	popovers.present(shared_popover, "quick_chat")
+	position_shared_card.call()
+
+func process_quick_chat_events(raw_events: Variant) -> void:
+	if typeof(raw_events) != TYPE_ARRAY:
+		return
+
+	for raw_event in raw_events:
+		if typeof(raw_event) != TYPE_DICTIONARY:
+			continue
+		var event: Dictionary = raw_event
+		var event_id: String = str(event.get("id", ""))
+		if event_id == "" or seen_quick_chat_event_ids.has(event_id):
+			continue
+		seen_quick_chat_event_ids[event_id] = true
+		var player_id: String = str(event.get("playerId", ""))
+		show_quick_chat_bubble(player_id, str(event.get("text", "")), 3.0)
+
+func show_quick_chat_bubble(player_id: String, text: String, duration_seconds: float) -> void:
+	if score_popups.score_popup_layer == null or text == "":
+		return
+
+	var entry: Control = roster.player_rail_entries.get(player_id, null)
+	if entry == null or roster.player_rail_box == null:
+		score_popups.show_score_event_popup({
+			"type": "quick_chat",
+			"playerId": player_id,
+			"label": text
+		}, [], duration_seconds)
+		return
+
+	var bubble: PanelContainer = PanelContainer.new()
+	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bubble.z_index = 20
+	bubble.modulate.a = 0.0
+	bubble.add_theme_stylebox_override("panel", make_chat_bubble_style())
+
+	var margin: MarginContainer = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_bottom", 8)
+
+	var label: Label = Label.new()
+	label.text = text
+	label.theme_type_variation = &"PopoverBodyLabel"
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.custom_minimum_size = Vector2(CHAT_BUBBLE_MAX_WIDTH, 0)
+
+	margin.add_child(label)
+	bubble.add_child(margin)
+	score_popups.score_popup_layer.add_child(bubble)
+
+	bubble.size = bubble.get_combined_minimum_size()
+	bubble.pivot_offset = bubble.size * 0.5
+	bubble.scale = Vector2(0.9, 0.9)
+
+	var rail_right: float = roster.player_rail_box.global_position.x + roster.player_rail_box.size.x
+	var row_center_y: float = entry.global_position.y + entry.size.y * 0.5
+	bubble.position = Vector2(rail_right + 8.0, row_center_y - bubble.size.y * 0.5)
+
+	var total_duration: float = maxf(0.1, duration_seconds)
+	var intro_duration: float = minf(ScorePopupControllerScript.SCORE_POPUP_INTRO_SECONDS, total_duration * 0.3)
+	var fade_duration: float = minf(0.35, total_duration * 0.3)
+	var hold_duration: float = maxf(0.0, total_duration - intro_duration - fade_duration)
+
+	var tween: Tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(bubble, "modulate:a", 1.0, intro_duration)
+	tween.tween_property(bubble, "scale", Vector2.ONE, intro_duration)
+	tween.set_parallel(false)
+	tween.tween_interval(hold_duration)
+	tween.tween_property(bubble, "modulate:a", 0.0, fade_duration)
+	tween.tween_callback(Callable(bubble, "queue_free"))
+
+func make_chat_bubble_style() -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(1, 1, 1, 1)
+	style.corner_radius_top_left = 14
+	style.corner_radius_top_right = 14
+	style.corner_radius_bottom_right = 14
+	style.corner_radius_bottom_left = 4
+	style.shadow_color = Color(0.42, 0.55, 0.6, 0.22)
+	style.shadow_size = 8
+	style.shadow_offset = Vector2(0, 4)
+	return style

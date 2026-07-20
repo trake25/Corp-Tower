@@ -2,7 +2,6 @@ extends Control
 
 const MAX_INVENTORY_SLOTS := 3
 const DRAW_PILE_COLOR := Color(0.95, 0.72, 0.25, 1.0)
-const CHAT_BUBBLE_MAX_WIDTH := 240.0
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const UiNodeBinderScript = preload("res://Cor/Scripts/GameUi/UiNodeBinder.gd")
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
@@ -13,14 +12,15 @@ const MatchStateScript = preload("res://Cor/Scripts/GameUi/MatchState.gd")
 const ScorePopupControllerScript = preload("res://Cor/Scripts/GameUi/ScorePopupController.gd")
 const LevelSummaryControllerScript = preload("res://Cor/Scripts/GameUi/LevelSummaryController.gd")
 const RosterViewControllerScript = preload("res://Cor/Scripts/GameUi/RosterViewController.gd")
+const PopoverCoordinatorScript = preload("res://Cor/Scripts/GameUi/PopoverCoordinator.gd")
+const QuestControllerScript = preload("res://Cor/Scripts/GameUi/QuestController.gd")
+const QuickChatControllerScript = preload("res://Cor/Scripts/GameUi/QuickChatController.gd")
+const PowerControllerScript = preload("res://Cor/Scripts/GameUi/PowerController.gd")
 const BlockPreviewScript = preload("res://Cor/Scripts/BlockPreview.gd")
 const LevelBadgeNormalTexture = preload("res://Cor/Art/Static/level.png")
 const LevelBadgeSafeTexture = preload("res://Cor/Art/Static/safe.png")
 const RoundTimeNormalTexture = preload("res://Cor/Art/Static/timer-round-time.png")
 const RoundTimeFreezeTexture = preload("res://Cor/Art/Static/timer-freeze-time.png")
-const QuestIdleTexture = preload("res://Cor/Art/Static/ic-quest-state1.png")
-const QuestUnseenTexture = preload("res://Cor/Art/Static/ic-quest-state2.png")
-const QuestClearedTexture = preload("res://Cor/Art/Static/ic-quest-state3.png")
 const DRAG_PREVIEW_SIZE := Vector2(96, 96)
 const DRAG_POINTER_MOUSE := -1
 
@@ -28,27 +28,10 @@ const DRAG_POINTER_MOUSE := -1
 
 var inventory_buttons: Array = []
 var cooldown_overlays: Array = []
-var quick_chat_buttons: Array = []
-var power_buttons: Array = []
-var selected_power_slot: int = -1
-var power_target_buttons: Array = []
-var power_dragging := false
-var power_drag_ghost: Label
-var power_feedback_tween: Tween
-var quest_chip: TextureButton
-var quest_badge: TextureRect
-var quest_seen_level: int = -1
-var last_side_quest: Dictionary = {}
-var quest_popover: Control
-var quick_chat_trigger: TextureButton
-var power_trigger: TextureButton
-var last_power_inventory: Array = []
 var timer_deadline_ms: int = 0
 var timer_shown_seconds: int = -1
 var team_inventory_button: TextureButton
 var team_inventory_popover: Control
-var active_popover: Control
-var shared_popover_mode: String = ""
 var last_draw_pile_count: int = 0
 var last_next_draw_block: Variant = null
 var block_previews: Array = []
@@ -63,11 +46,10 @@ var match_state
 var score_popups
 var summary
 var roster
-var seen_quick_chat_event_ids: Dictionary = {}
-var seen_power_event_ids: Dictionary = {}
-var quick_chat_templates: Array = []
-var quick_chat_cooldown_ms: int = 6000
-var last_quick_chat_sent_at_ms: int = 0
+var popovers
+var quest
+var chat
+var power
 var active_inventory_slots: int = MAX_INVENTORY_SLOTS
 var last_placement_sent_at_ms: int = 0
 var is_block_dragging: bool = false
@@ -76,7 +58,6 @@ var drag_pointer_id: int = DRAG_POINTER_MOUSE
 var inventory_slot_blocks: Array = []
 
 var status_label: Label
-var power_target_box: VBoxContainer
 var player_label: Label
 var room_label: Label
 var level_label: Label
@@ -112,6 +93,13 @@ func _ready() -> void:
 	add_child(summary)
 	roster = RosterViewControllerScript.new()
 	add_child(roster)
+	popovers = PopoverCoordinatorScript.new()
+	quest = QuestControllerScript.new()
+	add_child(quest)
+	chat = QuickChatControllerScript.new()
+	add_child(chat)
+	power = PowerControllerScript.new()
+	add_child(power)
 
 	if !prepare_ui():
 		return
@@ -121,6 +109,9 @@ func _ready() -> void:
 	score_popups.setup(players_ctx, match_state, tuning)
 	summary.setup(players_ctx, match_state, tuning)
 	roster.setup(players_ctx, match_state)
+	quest.setup(players_ctx, match_state, popovers)
+	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, team_inventory_popover, position_shared_popover_card)
+	power.setup(players_ctx, match_state, NetworkManager, popovers, roster, score_popups, team_inventory_popover, position_shared_popover_card, ui_root)
 	setup_popover_controls()
 	setup_trigger_router()
 	reset_ui()
@@ -131,20 +122,20 @@ func setup_trigger_router() -> void:
 	trigger_router.add_guard(func(): return debug_panel.is_open())
 	trigger_router.add_guard(func(): return summary.is_overlay_visible())
 	trigger_router.add_trigger(
-		func(): return quest_chip.get_global_rect() if quest_chip != null else null,
-		on_quest_chip_pressed
+		func(): return quest.quest_chip.get_global_rect() if quest.quest_chip != null else null,
+		quest.on_quest_chip_pressed
 	)
 	trigger_router.add_trigger(
-		func(): return quick_chat_trigger.get_global_rect() if quick_chat_trigger != null else null,
-		open_quick_chat_popover
+		func(): return chat.quick_chat_trigger.get_global_rect() if chat.quick_chat_trigger != null else null,
+		chat.open_quick_chat_popover
 	)
 	trigger_router.add_trigger(
 		func(): return team_inventory_button.get_global_rect() if team_inventory_button != null else null,
 		open_team_inventory_popover
 	)
 	trigger_router.add_trigger(
-		func(): return power_trigger.get_global_rect() if power_trigger != null else null,
-		open_power_popover
+		func(): return power.power_trigger.get_global_rect() if power.power_trigger != null else null,
+		power.open_power_popover
 	)
 
 func prepare_ui() -> bool:
@@ -159,7 +150,6 @@ func prepare_ui() -> bool:
 func bind_ui_nodes() -> void:
 	var binder = UiNodeBinderScript.new(ui_root)
 	status_label = binder.require_node("StatusLabel") as Label
-	power_target_box = binder.optional_node("PowerTargetBox") as VBoxContainer
 	player_label = binder.require_node("PlayerLabel") as Label
 	room_label = binder.require_node("RoomLabel") as Label
 	level_label = binder.require_node("LevelLabel") as Label
@@ -168,13 +158,8 @@ func bind_ui_nodes() -> void:
 	round_time_texture = binder.optional_node("RoundTimeTexture") as TextureRect
 	top_indicator_fill = binder.optional_node("TopIndicatorFill") as TextureRect
 	score_label = binder.require_node("ScoreLabel") as Label
-	quest_chip = binder.optional_node("QuestChip") as TextureButton
-	quest_badge = binder.optional_node("QuestBadge") as TextureRect
-	quick_chat_trigger = binder.optional_node("QuickChatTrigger") as TextureButton
-	power_trigger = binder.optional_node("PowerTrigger") as TextureButton
 	team_inventory_button = binder.optional_node("TeamInventoryButton") as TextureButton
 	team_inventory_popover = binder.optional_node("TeamInventoryPopover") as Control
-	quest_popover = binder.optional_node("QuestPopover") as Control
 	tower_stability_label = binder.optional_node("TowerStabilityLabel") as Label
 	height_label = binder.require_node("HeightLabel") as Label
 	tower_value_label = binder.require_node("TowerValueLabel") as Label
@@ -212,17 +197,14 @@ func bind_ui_nodes() -> void:
 	cooldown_overlays = []
 	for button in inventory_buttons:
 		cooldown_overlays.append(button.get_node_or_null("CooldownOverlay") as Control)
-	quick_chat_buttons = [
-		binder.optional_node("QuickChatButton1") as Button,
-		binder.optional_node("QuickChatButton2") as Button,
-		binder.optional_node("QuickChatButton3") as Button
-	]
-	power_buttons = [binder.optional_node("PowerButton1") as Button, binder.optional_node("PowerButton2") as Button, binder.optional_node("PowerButton3") as Button]
 
 	debug_panel.bind_nodes(binder)
 	score_popups.bind_nodes(binder)
 	summary.bind_nodes(binder)
 	roster.bind_nodes(binder)
+	quest.bind_nodes(binder)
+	chat.bind_nodes(binder)
+	power.bind_nodes(binder)
 	missing_required_nodes = binder.missing
 
 func setup_inventory_controls() -> void:
@@ -248,98 +230,13 @@ func setup_inventory_controls() -> void:
 
 func setup_popover_controls() -> void:
 	connect_button.pressed.connect(on_connect_pressed)
-	for i in range(quick_chat_buttons.size()):
-		var quick_chat_button: Button = quick_chat_buttons[i]
-		if quick_chat_button != null:
-			quick_chat_button.focus_mode = Control.FOCUS_NONE
-			quick_chat_button.pressed.connect(func(): on_quick_chat_pressed(i))
-	update_quick_chat_buttons()
-	for i in range(power_buttons.size()):
-		if power_buttons[i] != null:
-			power_buttons[i].gui_input.connect(func(event):
-				if event is InputEventMouseButton and event.pressed and !power_buttons[i].disabled:
-					selected_power_slot = i
-					power_dragging = true
-					show_power_drag_ghost(power_buttons[i].text, event.global_position)
-			)
-
-func open_quick_chat_popover() -> void:
-	if team_inventory_popover == null:
-		return
-
-	if active_popover == team_inventory_popover and shared_popover_mode == "quick_chat" \
-			and team_inventory_popover.visible:
-		close_active_popover()
-		return
-
-	team_inventory_popover.call("set_title", "Quick Chat")
-	team_inventory_popover.call("clear_rows")
-
-	if quick_chat_templates.is_empty():
-		team_inventory_popover.call("add_row", "No quick chat available")
-	else:
-		for i in range(quick_chat_templates.size()):
-			var index: int = i
-			team_inventory_popover.call(
-				"add_action_row",
-				str(quick_chat_templates[i]),
-				func():
-					on_quick_chat_pressed(index)
-					close_active_popover()
-			)
-
-	close_active_popover()
-	active_popover = team_inventory_popover
-	shared_popover_mode = "quick_chat"
-	team_inventory_popover.call("open")
-	position_shared_popover_card()
-
-func open_power_popover() -> void:
-	if team_inventory_popover == null:
-		return
-
-	if active_popover == team_inventory_popover and shared_popover_mode == "power" \
-			and team_inventory_popover.visible:
-		close_active_popover()
-		return
-
-	team_inventory_popover.call("set_title", "Power")
-	team_inventory_popover.call("clear_rows")
-
-	if last_power_inventory.is_empty():
-		team_inventory_popover.call("add_row", "No power items")
-	else:
-		for i in range(last_power_inventory.size()):
-			var index: int = i
-			var entry: Variant = last_power_inventory[i]
-			var power_id: String = str(entry.get("id", "")) if typeof(entry) == TYPE_DICTIONARY else str(entry)
-			team_inventory_popover.call(
-				"add_action_row",
-				get_power_row_label(power_id),
-				func():
-					NetworkManager.activate_power(index)
-					close_active_popover()
-			)
-
-	close_active_popover()
-	active_popover = team_inventory_popover
-	shared_popover_mode = "power"
-	team_inventory_popover.call("open")
-	position_shared_popover_card()
-
-func get_power_row_label(power_id: String) -> String:
-	if power_id == "refresh":
-		return "Refresh team inventory"
-
-	return power_id.replace("_", " ").capitalize()
 
 func open_team_inventory_popover() -> void:
 	if team_inventory_popover == null:
 		return
 
-	if active_popover == team_inventory_popover and shared_popover_mode == "team_inventory" \
-			and team_inventory_popover.visible:
-		close_active_popover()
+	if popovers.is_open(team_inventory_popover, "team_inventory"):
+		popovers.close_active()
 		return
 
 	team_inventory_popover.call("set_title", "Team Inventory")
@@ -361,24 +258,15 @@ func open_team_inventory_popover() -> void:
 	if remaining_label != null:
 		remaining_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	close_active_popover()
-	active_popover = team_inventory_popover
-	shared_popover_mode = "team_inventory"
-	team_inventory_popover.call("open")
+	popovers.present(team_inventory_popover, "team_inventory")
 	position_shared_popover_card()
-
-func close_active_popover() -> void:
-	if active_popover != null:
-		active_popover.call("close")
-		active_popover = null
-	shared_popover_mode = ""
 
 func position_shared_popover_card() -> void:
 	if team_inventory_popover == null:
 		return
-	var row_anchor: Control = power_trigger
+	var row_anchor: Control = power.power_trigger
 	if row_anchor == null:
-		row_anchor = quick_chat_trigger
+		row_anchor = chat.quick_chat_trigger
 	if row_anchor == null:
 		row_anchor = team_inventory_button
 	if row_anchor == null:
@@ -388,15 +276,6 @@ func position_shared_popover_card() -> void:
 	team_inventory_popover.call("set_card_global_position", Vector2(
 		anchor_rect.position.x + anchor_rect.size.x + 2.0 - card_size.x,
 		anchor_rect.position.y - 13.0 - card_size.y
-	))
-
-func position_quest_popover_card() -> void:
-	if quest_popover == null or quest_chip == null:
-		return
-	var chip_rect: Rect2 = quest_chip.get_global_rect()
-	quest_popover.call("set_card_global_position", Vector2(
-		chip_rect.position.x + chip_rect.size.x + 5.0,
-		chip_rect.position.y
 	))
 
 func reset_ui() -> void:
@@ -447,17 +326,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _input(event: InputEvent) -> void:
 	if is_block_dragging:
 		_handle_block_drag_input(event)
-	if power_dragging and event is InputEventMouseButton and !event.pressed:
-		for target in power_target_buttons:
-			if target.get_global_rect().has_point(event.global_position):
-				NetworkManager.activate_power(selected_power_slot)
-		power_dragging = false
-		selected_power_slot = -1
-		hide_power_drag_ghost()
-	if power_dragging and event is InputEventMouseMotion:
-		move_power_drag_ghost(event.global_position)
-	if power_dragging and event is InputEventScreenDrag:
-		move_power_drag_ghost(event.position)
+	power.handle_input(event)
 
 	if trigger_router.process(event, Engine.get_process_frames()):
 		get_viewport().set_input_as_handled()
@@ -495,16 +364,6 @@ func on_block_pressed(index: int) -> void:
 
 	last_placement_sent_at_ms = Time.get_ticks_msec()
 	NetworkManager.place_block(index)
-
-func on_quick_chat_pressed(slot: int) -> void:
-	if !NetworkManager.is_conn_estab or match_state.current_match_state != "playing":
-		return
-	if slot < 0 or slot >= quick_chat_templates.size():
-		return
-	if Time.get_ticks_msec() - last_quick_chat_sent_at_ms < quick_chat_cooldown_ms:
-		return
-	last_quick_chat_sent_at_ms = Time.get_ticks_msec()
-	NetworkManager.send_quick_chat(slot)
 
 func _on_inventory_card_gui_input(event: InputEvent, index: int) -> void:
 	if is_block_dragging:
@@ -609,20 +468,11 @@ func update_placement_cooldown_overlays() -> void:
 		if overlay != null and overlay.has_method("set_remaining_ratio"):
 			overlay.call("set_remaining_ratio", ratio)
 
-func update_quick_chat_buttons() -> void:
-	for i in range(quick_chat_buttons.size()):
-		var button: Button = quick_chat_buttons[i]
-		if button == null:
-			continue
-		var has_template: bool = i < quick_chat_templates.size()
-		button.text = str(quick_chat_templates[i]) if has_template else "Chat"
-		button.disabled = !has_template or !NetworkManager.is_conn_estab or match_state.current_match_state != "playing"
-
 func begin_block_drag(index: int, global_pos: Vector2, pointer_id: int) -> void:
 	if drag_preview == null:
 		return
 
-	close_active_popover()
+	popovers.close_active()
 
 	var block: Dictionary = inventory_slot_blocks[index]
 	is_block_dragging = true
@@ -794,15 +644,15 @@ func update_game_state(data) -> void:
 		score_popups.seen_score_event_ids.clear()
 		summary.last_level_summary_key = ""
 		score_popups.clear_score_popups()
-		seen_quick_chat_event_ids.clear()
-		seen_power_event_ids.clear()
+		chat.seen_quick_chat_event_ids.clear()
+		power.seen_power_event_ids.clear()
 		summary.cancel_pending_level_summary()
 		if state != "finished" and state != "failed":
 			summary.hide_level_summary()
 
 	players_ctx.update_from_players(players)
-	update_power_target_ui(players)
-	update_quest_chip(data.get("sideQuest", {}))
+	power.update_power_target_ui(players)
+	quest.update_quest_chip(data.get("sideQuest", {}))
 	if tower_stack.has_method("set_player_color_map"):
 		tower_stack.call("set_player_color_map", players_ctx.color_map)
 
@@ -849,13 +699,13 @@ func update_game_state(data) -> void:
 		my_blocks,
 		int(data.get("activeInventorySlots", MAX_INVENTORY_SLOTS))
 	)
-	last_power_inventory = my_power
-	update_power_inventory_ui(my_power)
-	quick_chat_templates = data.get("quickChatTemplates", quick_chat_templates)
-	quick_chat_cooldown_ms = int(data.get("quickChatCooldownMs", quick_chat_cooldown_ms))
-	update_quick_chat_buttons()
-	process_quick_chat_events(data.get("quickChatEvents", []))
-	process_power_events(data.get("powerEvents", []), players)
+	power.last_power_inventory = my_power
+	power.update_power_inventory_ui(my_power)
+	chat.quick_chat_templates = data.get("quickChatTemplates", chat.quick_chat_templates)
+	chat.quick_chat_cooldown_ms = int(data.get("quickChatCooldownMs", chat.quick_chat_cooldown_ms))
+	chat.update_quick_chat_buttons()
+	chat.process_quick_chat_events(data.get("quickChatEvents", []))
+	power.process_power_events(data.get("powerEvents", []), players)
 
 	var score_popup_wait_seconds: float = score_popups.process_score_events(data.get("scoreEvents", []), players)
 
@@ -938,66 +788,6 @@ func update_draw_pile_ui(draw_pile_count: int, raw_next_block: Variant) -> void:
 	draw_pile_count_label.text = str(draw_pile_count) + " left"
 	draw_pile_preview.set_block(next_block)
 
-func update_quest_chip(raw_side_quest: Variant) -> void:
-	if quest_chip == null:
-		return
-
-	var side_quest: Dictionary = raw_side_quest if typeof(raw_side_quest) == TYPE_DICTIONARY else {}
-	last_side_quest = side_quest
-	var is_unlocked: bool = str(side_quest.get("label", "")) != ""
-	var is_cleared: bool = get_quest_claimed_by(side_quest) != ""
-	var is_seen: bool = quest_seen_level == match_state.current_level
-
-	quest_chip.visible = true
-	if is_cleared:
-		quest_chip.texture_normal = QuestClearedTexture
-	elif is_unlocked and !is_seen:
-		quest_chip.texture_normal = QuestUnseenTexture
-	else:
-		quest_chip.texture_normal = QuestIdleTexture
-	quest_chip.tooltip_text = str(side_quest.get("label", ""))
-
-func get_quest_claimed_by(side_quest: Dictionary) -> String:
-	var claimed_by: Variant = side_quest.get("claimedBy", null)
-	return claimed_by if typeof(claimed_by) == TYPE_STRING else ""
-
-func on_quest_chip_pressed() -> void:
-	quest_seen_level = match_state.current_level
-	update_quest_chip(last_side_quest)
-
-	if quest_popover != null and active_popover == quest_popover and quest_popover.visible:
-		close_active_popover()
-		return
-
-	open_quest_popover()
-
-func open_quest_popover() -> void:
-	if quest_popover == null:
-		return
-
-	quest_popover.call("set_title", "Quest")
-	quest_popover.call("clear_rows")
-
-	var label: String = str(last_side_quest.get("label", ""))
-	var claimed_by: String = get_quest_claimed_by(last_side_quest)
-
-	if label == "":
-		quest_popover.call("add_row", "No active quest yet")
-	else:
-		quest_popover.call("add_row", label)
-		if claimed_by != "":
-			var claim_row: Label = quest_popover.call(
-				"add_row",
-				"Claimed by " + players_ctx.display_name(claimed_by)
-			)
-			if claim_row != null:
-				claim_row.add_theme_color_override("font_color", players_ctx.color_for(claimed_by))
-
-	close_active_popover()
-	active_popover = quest_popover
-	quest_popover.call("open")
-	position_quest_popover_card()
-
 func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
 	if tower_stability_label == null:
 		return
@@ -1010,73 +800,6 @@ func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
 			lean_suffix = " - leaning " + lean_direction
 	tower_stability_label.text = "Tower Stability: " + str(safe_stability) + "% (" + state + lean_suffix + ")"
 	tower_stability_label.modulate = Color(0.7, 1.0, 0.75, 1.0) if safe_stability > 60 else (Color(1.0, 0.8, 0.3, 1.0) if safe_stability > 30 else Color(1.0, 0.4, 0.32, 1.0))
-
-func update_power_target_ui(players: Array) -> void:
-	if power_target_box == null:
-		return
-	for child in power_target_box.get_children():
-		child.queue_free()
-	power_target_buttons = []
-	for player in players:
-		var player_id := str(player.get("id", ""))
-		if player_id == "":
-			continue
-		var target := Button.new()
-		target.text = player_id
-		target.tooltip_text = "Drop a Power item here to target " + player_id
-		target.add_theme_color_override("font_color", players_ctx.color_map.get(player_id, Color.WHITE))
-		target.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-		target.add_theme_constant_override("outline_size", 3)
-		target.custom_minimum_size = Vector2(72, 24)
-		power_target_box.add_child(target)
-		target.set_meta("player_id", player_id)
-		power_target_buttons.append(target)
-		target.gui_input.connect(func(event):
-			if power_dragging and event is InputEventMouseButton and !event.pressed:
-				NetworkManager.activate_power(selected_power_slot)
-				power_dragging = false
-				selected_power_slot = -1
-				hide_power_drag_ghost()
-				get_viewport().set_input_as_handled()
-			elif power_dragging and event is InputEventScreenTouch and !event.pressed:
-				NetworkManager.activate_power(selected_power_slot)
-				power_dragging = false
-				selected_power_slot = -1
-				hide_power_drag_ghost()
-				get_viewport().set_input_as_handled()
-		)
-
-func update_power_inventory_ui(items: Array) -> void:
-	for i in range(power_buttons.size()):
-		var button: Button = power_buttons[i]
-		if button == null:
-			continue
-		if i < items.size() and typeof(items[i]) == TYPE_DICTIONARY:
-			button.text = str(items[i].get("id", "Power")).replace("_", " ").capitalize()
-			button.disabled = match_state.current_match_state != "playing"
-		else:
-			button.text = "Power"
-			button.disabled = true
-
-func show_power_drag_ghost(text: String, pointer_position: Vector2) -> void:
-	if power_drag_ghost == null:
-		power_drag_ghost = Label.new()
-		power_drag_ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		power_drag_ghost.z_index = 100
-		power_drag_ghost.add_theme_font_size_override("font_size", 18)
-		power_drag_ghost.add_theme_color_override("font_color", Color(1.0, 0.86, 0.3, 0.9))
-		ui_root.add_child(power_drag_ghost)
-	power_drag_ghost.text = text
-	power_drag_ghost.visible = true
-	move_power_drag_ghost(pointer_position)
-
-func move_power_drag_ghost(pointer_position: Vector2) -> void:
-	if power_drag_ghost != null:
-		power_drag_ghost.global_position = pointer_position + Vector2(14, 14)
-
-func hide_power_drag_ghost() -> void:
-	if power_drag_ghost != null:
-		power_drag_ghost.visible = false
 
 func normalize_block(raw_block, index: int) -> Dictionary:
 	if typeof(raw_block) == TYPE_DICTIONARY:
@@ -1180,133 +903,6 @@ func get_tower_status(state: String, current_height: int, target_height: int) ->
 
 	var remaining: int = max(0, target_height - current_height)
 	return str(remaining) + " height to target"
-
-func process_quick_chat_events(raw_events: Variant) -> void:
-	if typeof(raw_events) != TYPE_ARRAY:
-		return
-
-	for raw_event in raw_events:
-		if typeof(raw_event) != TYPE_DICTIONARY:
-			continue
-		var event: Dictionary = raw_event
-		var event_id: String = str(event.get("id", ""))
-		if event_id == "" or seen_quick_chat_event_ids.has(event_id):
-			continue
-		seen_quick_chat_event_ids[event_id] = true
-		var player_id: String = str(event.get("playerId", ""))
-		show_quick_chat_bubble(player_id, str(event.get("text", "")), 3.0)
-
-func show_quick_chat_bubble(player_id: String, text: String, duration_seconds: float) -> void:
-	if score_popups.score_popup_layer == null or text == "":
-		return
-
-	var entry: Control = roster.player_rail_entries.get(player_id, null)
-	if entry == null or roster.player_rail_box == null:
-		score_popups.show_score_event_popup({
-			"type": "quick_chat",
-			"playerId": player_id,
-			"label": text
-		}, [], duration_seconds)
-		return
-
-	var bubble: PanelContainer = PanelContainer.new()
-	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bubble.z_index = 20
-	bubble.modulate.a = 0.0
-	bubble.add_theme_stylebox_override("panel", make_chat_bubble_style())
-
-	var margin: MarginContainer = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_bottom", 8)
-
-	var label: Label = Label.new()
-	label.text = text
-	label.theme_type_variation = &"PopoverBodyLabel"
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.custom_minimum_size = Vector2(CHAT_BUBBLE_MAX_WIDTH, 0)
-
-	margin.add_child(label)
-	bubble.add_child(margin)
-	score_popups.score_popup_layer.add_child(bubble)
-
-	bubble.size = bubble.get_combined_minimum_size()
-	bubble.pivot_offset = bubble.size * 0.5
-	bubble.scale = Vector2(0.9, 0.9)
-
-	var rail_right: float = roster.player_rail_box.global_position.x + roster.player_rail_box.size.x
-	var row_center_y: float = entry.global_position.y + entry.size.y * 0.5
-	bubble.position = Vector2(rail_right + 8.0, row_center_y - bubble.size.y * 0.5)
-
-	var total_duration: float = maxf(0.1, duration_seconds)
-	var intro_duration: float = minf(ScorePopupControllerScript.SCORE_POPUP_INTRO_SECONDS, total_duration * 0.3)
-	var fade_duration: float = minf(0.35, total_duration * 0.3)
-	var hold_duration: float = maxf(0.0, total_duration - intro_duration - fade_duration)
-
-	var tween: Tween = create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(bubble, "modulate:a", 1.0, intro_duration)
-	tween.tween_property(bubble, "scale", Vector2.ONE, intro_duration)
-	tween.set_parallel(false)
-	tween.tween_interval(hold_duration)
-	tween.tween_property(bubble, "modulate:a", 0.0, fade_duration)
-	tween.tween_callback(Callable(bubble, "queue_free"))
-
-func make_chat_bubble_style() -> StyleBoxFlat:
-	var style: StyleBoxFlat = StyleBoxFlat.new()
-	style.bg_color = Color(1, 1, 1, 1)
-	style.corner_radius_top_left = 14
-	style.corner_radius_top_right = 14
-	style.corner_radius_bottom_right = 14
-	style.corner_radius_bottom_left = 4
-	style.shadow_color = Color(0.42, 0.55, 0.6, 0.22)
-	style.shadow_size = 8
-	style.shadow_offset = Vector2(0, 4)
-	return style
-
-func process_power_events(raw_events: Variant, players: Array) -> void:
-	if typeof(raw_events) != TYPE_ARRAY:
-		return
-	for raw_event in raw_events:
-		if typeof(raw_event) != TYPE_DICTIONARY:
-			continue
-		var event: Dictionary = raw_event
-		var event_id: String = str(event.get("id", ""))
-		if event_id == "" or seen_power_event_ids.has(event_id):
-			continue
-		seen_power_event_ids[event_id] = true
-
-		var meta: Variant = event.get("meta", {})
-		if typeof(meta) != TYPE_DICTIONARY:
-			meta = {}
-		var caster_color: Color = players_ctx.color_map.get(str(event.get("playerId", "")), Color.WHITE)
-
-		if bool(meta.get("tintAllScores", false)):
-			var tint_until: int = Time.get_ticks_msec() + int(meta.get("tintDurationMs", 4000))
-			for player in players:
-				roster.score_tints[str(player.get("id", ""))] = { "color": caster_color, "until": tint_until }
-
-		score_popups.show_score_event_popup({
-			"type": "power_activated",
-			"label": get_power_toast_text(str(event.get("powerId", "")), str(event.get("label", "Power")))
-		}, players, 3.0)
-
-func get_power_toast_text(power_id: String, catalog_label: String) -> String:
-	if power_id == "refresh":
-		return "All players inventory refreshed"
-
-	return catalog_label + " activated for everyone"
-
-func show_power_tint(control: Control, tint: Color) -> void:
-	if control == null:
-		return
-	if power_feedback_tween != null:
-		power_feedback_tween.kill()
-	control.modulate = tint
-	power_feedback_tween = create_tween()
-	power_feedback_tween.tween_interval(4.0)
-	power_feedback_tween.tween_property(control, "modulate", Color.WHITE, 0.2)
 
 func update_debug_config(config) -> void:
 	debug_panel.apply_config(config)

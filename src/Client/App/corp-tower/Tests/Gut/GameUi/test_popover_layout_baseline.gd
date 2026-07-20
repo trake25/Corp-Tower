@@ -25,7 +25,7 @@ func assert_shared_card_tracks_trigger_row() -> void:
 	assert_almost_eq(card_rect.position.y + card_rect.size.y, trigger_rect.position.y - 13.0, 0.5, "The shared popover card should sit just above the trigger row.")
 
 func assert_quest_card_tracks_chip() -> void:
-	harness.main.open_quest_popover()
+	harness.main.quest.open_quest_popover()
 	var chip_rect: Rect2 = (harness.find("QuestChip") as Control).get_global_rect()
 	var card_rect: Rect2 = quest_card().get_global_rect()
 	assert_almost_eq(card_rect.position.x, chip_rect.position.x + chip_rect.size.x + 5.0, 0.5, "The quest popover card should open just right of the quest chip.")

@@ -14,7 +14,7 @@ func shared_popover() -> Control:
 func test_mouse_press_on_quick_chat_trigger_opens_shared_popover() -> void:
 	harness.main._input(HarnessScript.mouse_press(harness.center_of("QuickChatTrigger")))
 	assert_true(shared_popover().visible, "A mouse press on the quick chat trigger should open the shared popover.")
-	assert_eq(harness.main.shared_popover_mode, "quick_chat", "The shared popover should be in quick_chat mode.")
+	assert_eq(harness.main.popovers.shared_popover_mode, "quick_chat", "The shared popover should be in quick_chat mode.")
 
 func test_repeat_mouse_press_on_same_trigger_toggles_closed() -> void:
 	var press_position: Vector2 = harness.center_of("QuickChatTrigger")
@@ -28,7 +28,7 @@ func test_switching_triggers_reuses_shared_popover_with_new_mode() -> void:
 	await get_tree().process_frame
 	harness.main._input(HarnessScript.mouse_press(harness.center_of("TeamInventoryButton")))
 	assert_true(shared_popover().visible, "Switching triggers should keep the shared popover open in the new mode.")
-	assert_eq(harness.main.shared_popover_mode, "team_inventory", "The shared popover should switch to team_inventory mode.")
+	assert_eq(harness.main.popovers.shared_popover_mode, "team_inventory", "The shared popover should switch to team_inventory mode.")
 
 func test_touch_then_emulated_mouse_same_frame_is_single_activation() -> void:
 	var press_position: Vector2 = harness.center_of("QuickChatTrigger")
