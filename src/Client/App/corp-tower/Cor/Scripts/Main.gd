@@ -370,7 +370,6 @@ func update_game_state(data) -> void:
 	power.last_power_inventory = my_power
 	chat.quick_chat_templates = data.get("quickChatTemplates", chat.quick_chat_templates)
 	chat.quick_chat_cooldown_ms = int(data.get("quickChatCooldownMs", chat.quick_chat_cooldown_ms))
-	chat.update_quick_chat_buttons()
 	chat.process_quick_chat_events(data.get("quickChatEvents", []))
 	power.process_power_events(data.get("powerEvents", []), players)
 

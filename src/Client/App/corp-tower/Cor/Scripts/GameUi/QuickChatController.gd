@@ -10,7 +10,6 @@ var popover_blocked: Callable = Callable()
 var roster
 var score_popups
 var chat_popover: Control
-var quick_chat_buttons: Array = []
 var quick_chat_trigger: TextureButton
 var quick_chat_templates: Array = []
 var quick_chat_cooldown_ms: int = 6000
@@ -18,11 +17,6 @@ var last_quick_chat_sent_at_ms: int = 0
 var seen_quick_chat_event_ids: Dictionary = {}
 
 func bind_nodes(binder) -> void:
-	quick_chat_buttons = [
-		binder.optional_node("QuickChatButton1") as Button,
-		binder.optional_node("QuickChatButton2") as Button,
-		binder.optional_node("QuickChatButton3") as Button
-	]
 	quick_chat_trigger = binder.optional_node("QuickChatTrigger") as TextureButton
 	chat_popover = binder.optional_node("ChatPopover") as Control
 	if quick_chat_trigger != null:
@@ -36,13 +30,6 @@ func setup(match_state_ref, network_ref, popovers_ref, roster_ref, score_popups_
 	score_popups = score_popups_ref
 	popover_blocked = popover_blocked_ref
 
-	for i in range(quick_chat_buttons.size()):
-		var quick_chat_button: Button = quick_chat_buttons[i]
-		if quick_chat_button != null:
-			quick_chat_button.focus_mode = Control.FOCUS_NONE
-			quick_chat_button.pressed.connect(func(): on_quick_chat_pressed(i))
-	update_quick_chat_buttons()
-
 func on_quick_chat_pressed(slot: int) -> void:
 	if !network.is_conn_estab or match_state.current_match_state != "playing":
 		return
@@ -52,15 +39,6 @@ func on_quick_chat_pressed(slot: int) -> void:
 		return
 	last_quick_chat_sent_at_ms = Time.get_ticks_msec()
 	network.send_quick_chat(slot)
-
-func update_quick_chat_buttons() -> void:
-	for i in range(quick_chat_buttons.size()):
-		var button: Button = quick_chat_buttons[i]
-		if button == null:
-			continue
-		var has_template: bool = i < quick_chat_templates.size()
-		button.text = str(quick_chat_templates[i]) if has_template else "Chat"
-		button.disabled = !has_template or !network.is_conn_estab or match_state.current_match_state != "playing"
 
 func open_quick_chat_popover() -> void:
 	if popover_blocked.is_valid() and bool(popover_blocked.call()):

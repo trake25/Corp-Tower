@@ -1267,21 +1267,3 @@ layout_mode = 0
 text = "Power Quest
 Unlocks at Level 4"
 autowrap_mode = 3
-
-[node name="QuickChatButton1" type="Button" parent="LegacyHidden" unique_id=1946995580]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
-text = "Place now!"
-layout_mode = 0
-
-[node name="QuickChatButton2" type="Button" parent="LegacyHidden" unique_id=948887427]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
-text = "I'm out of blocks!"
-layout_mode = 0
-
-[node name="QuickChatButton3" type="Button" parent="LegacyHidden" unique_id=1461693108]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
-text = "Sorry!"
-layout_mode = 0

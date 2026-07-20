@@ -69,8 +69,11 @@ View controllers (Node):
   score tints; exposes `rail_entry()`/`rail_box()` (chat-bubble anchors) and
   `apply_score_tint()`.
 - `QuestController` — the three-state quest chip and its popover.
-- `QuickChatController` — quick-chat buttons/cooldown, incoming chat events, and
-  the speech-bubble anchored to the sender's rail row.
+- `QuickChatController` — the Quick Chat popover rows (tap-to-send, cooldown-gated),
+  incoming chat events, and the speech-bubble anchored to the sender's rail row.
+  The earlier `QuickChatButton1-3` — dead code, hidden in `LegacyHidden` and
+  never reachable by players — have been removed along with `bind_nodes()`'s
+  binding and `update_quick_chat_buttons()`.
 - `PowerController` — the Power popover rows (tap-to-activate; `activate_power`
   has no target field, so the effect always applies room-wide), activation
   toast, and room-wide tint. The earlier drag-onto-target UI (`PowerButton1-3`,

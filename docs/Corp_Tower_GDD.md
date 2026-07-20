@@ -93,7 +93,7 @@
 - Adjustable through server-side debug tuning (`levelTimeLimitMs`); public gameplay UI does not expose debug controls in the current design pass.
 
 ## Quick Chat
-- Each player has three fixed quick-chat slots: `Place now!`, `I'm out of blocks!`, and `Sorry!`.
+- Each player has three fixed quick-chat slots, currently: `Place Block!`, `Sorry!`, and `Hello!`.
 - Messages are visible to all current room participants and have a server-authoritative per-player cooldown (default: 6 seconds) to prevent spam.
 - Templates and cooldown are config-driven so future meme text/emoticons can replace the defaults without changing gameplay contracts.
 
