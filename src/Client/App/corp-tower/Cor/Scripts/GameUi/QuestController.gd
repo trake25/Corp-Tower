@@ -7,6 +7,7 @@ const QuestClearedTexture = preload("res://Cor/Art/Static/ic-quest-state3.png")
 var players_ctx
 var match_state
 var popovers
+var popover_blocked: Callable = Callable()
 var quest_chip: TextureButton
 var quest_badge: TextureRect
 var quest_popover: Control
@@ -17,11 +18,14 @@ func bind_nodes(binder) -> void:
 	quest_chip = binder.optional_node("QuestChip") as TextureButton
 	quest_badge = binder.optional_node("QuestBadge") as TextureRect
 	quest_popover = binder.optional_node("QuestPopover") as Control
+	if quest_chip != null:
+		quest_chip.pressed.connect(on_quest_chip_pressed)
 
-func setup(players_ref, match_state_ref, popovers_ref) -> void:
+func setup(players_ref, match_state_ref, popovers_ref, popover_blocked_ref: Callable = Callable()) -> void:
 	players_ctx = players_ref
 	match_state = match_state_ref
 	popovers = popovers_ref
+	popover_blocked = popover_blocked_ref
 
 func update_quest_chip(raw_side_quest: Variant) -> void:
 	if quest_chip == null:
@@ -47,6 +51,9 @@ func get_quest_claimed_by(side_quest: Dictionary) -> String:
 	return claimed_by if typeof(claimed_by) == TYPE_STRING else ""
 
 func on_quest_chip_pressed() -> void:
+	if popover_blocked.is_valid() and bool(popover_blocked.call()):
+		return
+
 	quest_seen_level = match_state.current_level
 	update_quest_chip(last_side_quest)
 

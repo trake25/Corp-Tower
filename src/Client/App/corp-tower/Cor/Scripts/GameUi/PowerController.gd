@@ -4,10 +4,10 @@ var players_ctx
 var match_state
 var network
 var popovers
+var popover_blocked: Callable = Callable()
 var roster
 var score_popups
-var shared_popover: Control
-var position_shared_card: Callable = Callable()
+var power_popover: Control
 var ghost_parent: Control
 var power_buttons: Array = []
 var power_trigger: TextureButton
@@ -24,17 +24,19 @@ func bind_nodes(binder) -> void:
 	power_buttons = [binder.optional_node("PowerButton1") as Button, binder.optional_node("PowerButton2") as Button, binder.optional_node("PowerButton3") as Button]
 	power_trigger = binder.optional_node("PowerTrigger") as TextureButton
 	power_target_box = binder.optional_node("PowerTargetBox") as VBoxContainer
+	power_popover = binder.optional_node("PowerPopover") as Control
+	if power_trigger != null:
+		power_trigger.pressed.connect(open_power_popover)
 
-func setup(players_ref, match_state_ref, network_ref, popovers_ref, roster_ref, score_popups_ref, shared_popover_ref: Control, position_shared_card_ref: Callable, ghost_parent_ref: Control) -> void:
+func setup(players_ref, match_state_ref, network_ref, popovers_ref, roster_ref, score_popups_ref, ghost_parent_ref: Control, popover_blocked_ref: Callable = Callable()) -> void:
 	players_ctx = players_ref
 	match_state = match_state_ref
 	network = network_ref
 	popovers = popovers_ref
 	roster = roster_ref
 	score_popups = score_popups_ref
-	shared_popover = shared_popover_ref
-	position_shared_card = position_shared_card_ref
 	ghost_parent = ghost_parent_ref
+	popover_blocked = popover_blocked_ref
 
 	for i in range(power_buttons.size()):
 		if power_buttons[i] != null:
@@ -59,24 +61,27 @@ func handle_input(event: InputEvent) -> void:
 		move_power_drag_ghost(event.position)
 
 func open_power_popover() -> void:
-	if shared_popover == null:
+	if popover_blocked.is_valid() and bool(popover_blocked.call()):
 		return
 
-	if popovers.is_open(shared_popover, "power"):
+	if power_popover == null:
+		return
+
+	if popovers.is_open(power_popover):
 		popovers.close_active()
 		return
 
-	shared_popover.call("set_title", "Power")
-	shared_popover.call("clear_rows")
+	power_popover.call("set_title", "Power")
+	power_popover.call("clear_rows")
 
 	if last_power_inventory.is_empty():
-		shared_popover.call("add_row", "No power items")
+		power_popover.call("add_row", "No power items")
 	else:
 		for i in range(last_power_inventory.size()):
 			var index: int = i
 			var entry: Variant = last_power_inventory[i]
 			var power_id: String = str(entry.get("id", "")) if typeof(entry) == TYPE_DICTIONARY else str(entry)
-			shared_popover.call(
+			power_popover.call(
 				"add_action_row",
 				get_power_row_label(power_id),
 				func():
@@ -84,8 +89,18 @@ func open_power_popover() -> void:
 					popovers.close_active()
 			)
 
-	popovers.present(shared_popover, "power")
-	position_shared_card.call()
+	popovers.present(power_popover)
+	position_power_popover_card()
+
+func position_power_popover_card() -> void:
+	if power_popover == null or power_trigger == null:
+		return
+	var trigger_rect: Rect2 = power_trigger.get_global_rect()
+	var card_size: Vector2 = power_popover.call("get_card_size")
+	power_popover.call("set_card_global_position", Vector2(
+		trigger_rect.position.x + trigger_rect.size.x + 2.0 - card_size.x,
+		trigger_rect.position.y - 13.0 - card_size.y
+	))
 
 func get_power_row_label(power_id: String) -> String:
 	if power_id == "refresh":

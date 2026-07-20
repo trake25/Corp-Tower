@@ -19,10 +19,10 @@ func quest_card() -> Control:
 
 func assert_shared_card_tracks_trigger_row() -> void:
 	harness.main.open_team_inventory_popover()
-	var trigger_rect: Rect2 = (harness.find("PowerTrigger") as Control).get_global_rect()
+	var trigger_rect: Rect2 = (harness.find("TeamInventoryButton") as Control).get_global_rect()
 	var card_rect: Rect2 = shared_card().get_global_rect()
-	assert_almost_eq(card_rect.position.x + card_rect.size.x, trigger_rect.position.x + trigger_rect.size.x + 2.0, 0.5, "The shared popover card's right edge should track the trigger row's right edge.")
-	assert_almost_eq(card_rect.position.y + card_rect.size.y, trigger_rect.position.y - 13.0, 0.5, "The shared popover card should sit just above the trigger row.")
+	assert_almost_eq(card_rect.position.x + card_rect.size.x, trigger_rect.position.x + trigger_rect.size.x + 2.0, 0.5, "The team inventory popover card's right edge should track its own trigger's right edge.")
+	assert_almost_eq(card_rect.position.y + card_rect.size.y, trigger_rect.position.y - 13.0, 0.5, "The team inventory popover card should sit just above its own trigger.")
 
 func assert_quest_card_tracks_chip() -> void:
 	harness.main.quest.open_quest_popover()

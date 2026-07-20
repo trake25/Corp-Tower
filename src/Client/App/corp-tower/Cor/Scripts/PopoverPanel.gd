@@ -21,8 +21,14 @@ func set_title(text: String) -> void:
 	title_label.text = text
 
 func clear_rows() -> void:
+	# free() (not queue_free()) so rows_box.get_children() no longer
+	# includes the old rows immediately after this call. get_card_size()
+	# runs right after the popover is repopulated, and queue_free()'d
+	# nodes are still counted in the minimum-size calculation until the
+	# deferred free actually happens - that stale count is what throws
+	# off the card's measured size on repeat opens.
 	for child in rows_box.get_children():
-		child.queue_free()
+		child.free()
 
 func add_row(text: String) -> Label:
 	var row := Label.new()

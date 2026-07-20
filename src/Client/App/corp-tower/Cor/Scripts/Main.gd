@@ -3,7 +3,6 @@ extends Control
 const UiNodeBinderScript = preload("res://Cor/Scripts/GameUi/UiNodeBinder.gd")
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
 const DebugPanelControllerScript = preload("res://Cor/Scripts/GameUi/DebugPanelController.gd")
-const PointerTriggerRouterScript = preload("res://Cor/Scripts/GameUi/PointerTriggerRouter.gd")
 const PlayerContextScript = preload("res://Cor/Scripts/GameUi/PlayerContext.gd")
 const MatchStateScript = preload("res://Cor/Scripts/GameUi/MatchState.gd")
 const ScorePopupControllerScript = preload("res://Cor/Scripts/GameUi/ScorePopupController.gd")
@@ -24,7 +23,6 @@ var team_inventory_popover: Control
 var missing_required_nodes: Array[String] = []
 var tuning
 var debug_panel
-var trigger_router
 var players_ctx
 var match_state
 var score_popups
@@ -78,34 +76,19 @@ func _ready() -> void:
 	score_popups.setup(players_ctx, match_state, tuning)
 	summary.setup(players_ctx, match_state, tuning)
 	roster.setup(players_ctx, match_state)
-	quest.setup(players_ctx, match_state, popovers)
-	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, team_inventory_popover, position_shared_popover_card)
-	power.setup(players_ctx, match_state, NetworkManager, popovers, roster, score_popups, team_inventory_popover, position_shared_popover_card, ui_root)
+	quest.setup(players_ctx, match_state, popovers, should_block_popovers)
+	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_popovers)
+	power.setup(players_ctx, match_state, NetworkManager, popovers, roster, score_popups, ui_root, should_block_popovers)
 	setup_popover_controls()
-	setup_trigger_router()
 	reset_ui()
 	connect_network_signals()
 
-func setup_trigger_router() -> void:
-	trigger_router = PointerTriggerRouterScript.new()
-	trigger_router.add_guard(func(): return debug_panel.is_open())
-	trigger_router.add_guard(func(): return summary.is_overlay_visible())
-	trigger_router.add_trigger(
-		func(): return quest.quest_chip.get_global_rect() if quest.quest_chip != null else null,
-		quest.on_quest_chip_pressed
-	)
-	trigger_router.add_trigger(
-		func(): return chat.quick_chat_trigger.get_global_rect() if chat.quick_chat_trigger != null else null,
-		chat.open_quick_chat_popover
-	)
-	trigger_router.add_trigger(
-		func(): return team_inventory_button.get_global_rect() if team_inventory_button != null else null,
-		open_team_inventory_popover
-	)
-	trigger_router.add_trigger(
-		func(): return power.power_trigger.get_global_rect() if power.power_trigger != null else null,
-		power.open_power_popover
-	)
+# Same guard the old PointerTriggerRouter applied to every trigger: don't let
+# a tap open a popover while the debug panel or the level-summary overlay is
+# covering the screen. Passed into each controller's setup() and also used
+# directly below for the team inventory button.
+func should_block_popovers() -> bool:
+	return debug_panel.is_open() or summary.is_overlay_visible()
 
 func prepare_ui() -> bool:
 	bind_ui_nodes()
@@ -140,12 +123,17 @@ func bind_ui_nodes() -> void:
 
 func setup_popover_controls() -> void:
 	connect_button.pressed.connect(on_connect_pressed)
+	if team_inventory_button != null:
+		team_inventory_button.pressed.connect(open_team_inventory_popover)
 
 func open_team_inventory_popover() -> void:
+	if should_block_popovers():
+		return
+
 	if team_inventory_popover == null:
 		return
 
-	if popovers.is_open(team_inventory_popover, "team_inventory"):
+	if popovers.is_open(team_inventory_popover):
 		popovers.close_active()
 		return
 
@@ -168,20 +156,13 @@ func open_team_inventory_popover() -> void:
 	if remaining_label != null:
 		remaining_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	popovers.present(team_inventory_popover, "team_inventory")
-	position_shared_popover_card()
+	popovers.present(team_inventory_popover)
+	position_team_inventory_popover_card()
 
-func position_shared_popover_card() -> void:
-	if team_inventory_popover == null:
+func position_team_inventory_popover_card() -> void:
+	if team_inventory_popover == null or team_inventory_button == null:
 		return
-	var row_anchor: Control = power.power_trigger
-	if row_anchor == null:
-		row_anchor = chat.quick_chat_trigger
-	if row_anchor == null:
-		row_anchor = team_inventory_button
-	if row_anchor == null:
-		return
-	var anchor_rect: Rect2 = row_anchor.get_global_rect()
+	var anchor_rect: Rect2 = team_inventory_button.get_global_rect()
 	var card_size: Vector2 = team_inventory_popover.call("get_card_size")
 	team_inventory_popover.call("set_card_global_position", Vector2(
 		anchor_rect.position.x + anchor_rect.size.x + 2.0 - card_size.x,
@@ -230,9 +211,6 @@ func _unhandled_input(event: InputEvent) -> void:
 func _input(event: InputEvent) -> void:
 	inventory.handle_input(event)
 	power.handle_input(event)
-
-	if trigger_router.process(event):
-		get_viewport().set_input_as_handled()
 
 func _process(_delta: float) -> void:
 	inventory.tick()

@@ -6,10 +6,10 @@ const ScorePopupControllerScript = preload("res://Cor/Scripts/GameUi/ScorePopupC
 var match_state
 var network
 var popovers
+var popover_blocked: Callable = Callable()
 var roster
 var score_popups
-var shared_popover: Control
-var position_shared_card: Callable = Callable()
+var chat_popover: Control
 var quick_chat_buttons: Array = []
 var quick_chat_trigger: TextureButton
 var quick_chat_templates: Array = []
@@ -24,15 +24,17 @@ func bind_nodes(binder) -> void:
 		binder.optional_node("QuickChatButton3") as Button
 	]
 	quick_chat_trigger = binder.optional_node("QuickChatTrigger") as TextureButton
+	chat_popover = binder.optional_node("ChatPopover") as Control
+	if quick_chat_trigger != null:
+		quick_chat_trigger.pressed.connect(open_quick_chat_popover)
 
-func setup(match_state_ref, network_ref, popovers_ref, roster_ref, score_popups_ref, shared_popover_ref: Control, position_shared_card_ref: Callable) -> void:
+func setup(match_state_ref, network_ref, popovers_ref, roster_ref, score_popups_ref, popover_blocked_ref: Callable = Callable()) -> void:
 	match_state = match_state_ref
 	network = network_ref
 	popovers = popovers_ref
 	roster = roster_ref
 	score_popups = score_popups_ref
-	shared_popover = shared_popover_ref
-	position_shared_card = position_shared_card_ref
+	popover_blocked = popover_blocked_ref
 
 	for i in range(quick_chat_buttons.size()):
 		var quick_chat_button: Button = quick_chat_buttons[i]
@@ -61,22 +63,25 @@ func update_quick_chat_buttons() -> void:
 		button.disabled = !has_template or !network.is_conn_estab or match_state.current_match_state != "playing"
 
 func open_quick_chat_popover() -> void:
-	if shared_popover == null:
+	if popover_blocked.is_valid() and bool(popover_blocked.call()):
 		return
 
-	if popovers.is_open(shared_popover, "quick_chat"):
+	if chat_popover == null:
+		return
+
+	if popovers.is_open(chat_popover):
 		popovers.close_active()
 		return
 
-	shared_popover.call("set_title", "Quick Chat")
-	shared_popover.call("clear_rows")
+	chat_popover.call("set_title", "Quick Chat")
+	chat_popover.call("clear_rows")
 
 	if quick_chat_templates.is_empty():
-		shared_popover.call("add_row", "No quick chat available")
+		chat_popover.call("add_row", "No quick chat available")
 	else:
 		for i in range(quick_chat_templates.size()):
 			var index: int = i
-			shared_popover.call(
+			chat_popover.call(
 				"add_action_row",
 				str(quick_chat_templates[i]),
 				func():
@@ -84,8 +89,18 @@ func open_quick_chat_popover() -> void:
 					popovers.close_active()
 			)
 
-	popovers.present(shared_popover, "quick_chat")
-	position_shared_card.call()
+	popovers.present(chat_popover)
+	position_chat_popover_card()
+
+func position_chat_popover_card() -> void:
+	if chat_popover == null or quick_chat_trigger == null:
+		return
+	var trigger_rect: Rect2 = quick_chat_trigger.get_global_rect()
+	var card_size: Vector2 = chat_popover.call("get_card_size")
+	chat_popover.call("set_card_global_position", Vector2(
+		trigger_rect.position.x + trigger_rect.size.x + 2.0 - card_size.x,
+		trigger_rect.position.y - 13.0 - card_size.y
+	))
 
 func process_quick_chat_events(raw_events: Variant) -> void:
 	if typeof(raw_events) != TYPE_ARRAY:

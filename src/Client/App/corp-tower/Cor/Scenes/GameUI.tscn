@@ -670,6 +670,28 @@ anchor_bottom = 1.0
 offset_top = -316.0
 offset_bottom = -153.0
 
+[node name="ChatPopover" parent="." unique_id=1178997544 instance=ExtResource("16_popover")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+
+[node name="Card" parent="ChatPopover" index="1"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -316.0
+offset_bottom = -153.0
+
+[node name="PowerPopover" parent="." unique_id=1178997545 instance=ExtResource("16_popover")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+
+[node name="Card" parent="PowerPopover" index="1"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -316.0
+offset_bottom = -153.0
+
 [node name="QuestPopover" parent="." unique_id=1310220007 instance=ExtResource("16_popover")]
 unique_name_in_owner = true
 visible = false
