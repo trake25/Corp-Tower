@@ -54,7 +54,7 @@ func test_reset_ui_restores_idle_labels() -> void:
 
 func test_game_state_renders_rail_and_top_bar() -> void:
 	harness.main.update_game_state(GAME_STATE_FIXTURE)
-	assert_eq(harness.main.player_rail_entries.size(), 3, "A three player payload should produce three rail entries.")
+	assert_eq(harness.main.roster.player_rail_entries.size(), 3, "A three player payload should produce three rail entries.")
 	assert_eq((harness.find("HeightLabel") as Label).text, "Height 2/12", "The height label should reflect the payload heights.")
 	assert_eq((harness.find("TowerValueLabel") as Label).text, "2 / 12", "The tower value label should reflect the payload heights.")
 	assert_eq((harness.find("LevelLabel") as Label).text, "1", "The level label should reflect the payload level.")
@@ -95,13 +95,13 @@ func test_normalize_block_accepts_dictionary_and_legacy_int_forms() -> void:
 	assert_eq((legacy["cells"] as Array).size(), 3, "Legacy numeric blocks should synthesize one cell per height unit.")
 
 func test_impact_status_renders_track_and_ready_counts() -> void:
-	harness.main.update_impact_status_ui(IMPACT_STATUS_FIXTURE)
-	assert_eq(harness.main.impact_bars.size(), 3, "Each impact player status should get a track bar.")
+	harness.main.roster.update_impact_status_ui(IMPACT_STATUS_FIXTURE)
+	assert_eq(harness.main.roster.impact_bars.size(), 3, "Each impact player status should get a track bar.")
 	var status_label: Label = harness.find("ImpactStatusLabel") as Label
 	assert_true(status_label.visible, "The impact status label should show while a requirement is active.")
 	assert_true(status_label.text.begins_with("Impact L3  |  1/3 ready"), "The impact status should show the blocked level and ready count.")
 
 func test_empty_impact_status_hides_track() -> void:
-	harness.main.update_impact_status_ui(IMPACT_STATUS_FIXTURE)
-	harness.main.update_impact_status_ui({})
+	harness.main.roster.update_impact_status_ui(IMPACT_STATUS_FIXTURE)
+	harness.main.roster.update_impact_status_ui({})
 	assert_false((harness.find("ImpactStatusLabel") as Label).visible, "Clearing the impact status should hide the label.")
