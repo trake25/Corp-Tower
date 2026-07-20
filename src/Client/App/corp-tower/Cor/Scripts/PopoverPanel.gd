@@ -2,7 +2,11 @@ extends Control
 
 signal dismissed
 
+const OUTSIDE_TAP_GRACE_MS := 250
+
 @export var auto_close_seconds: float = 4.0
+
+var opened_at_ms: int = -OUTSIDE_TAP_GRACE_MS
 
 @onready var outside_catcher: Control = %OutsideCatcher
 @onready var card: PanelContainer = %Card
@@ -78,6 +82,7 @@ func add_action_row(text: String, on_pressed: Callable) -> Button:
 
 func open() -> void:
 	visible = true
+	opened_at_ms = Time.get_ticks_msec()
 	if auto_close_seconds > 0.0:
 		close_timer.start(auto_close_seconds)
 
@@ -111,6 +116,8 @@ func close() -> void:
 	dismissed.emit()
 
 func _on_outside_catcher_gui_input(event: InputEvent) -> void:
+	if Time.get_ticks_msec() - opened_at_ms < OUTSIDE_TAP_GRACE_MS:
+		return
 	if event is InputEventMouseButton and event.pressed:
 		close()
 	elif event is InputEventScreenTouch and event.pressed:

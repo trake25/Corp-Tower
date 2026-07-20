@@ -116,9 +116,14 @@ module handles rather than as methods on Main.
   `quest.on_quest_chip_pressed`) now checks `should_block_popovers()` itself
   (debug overlay open or level-summary visible) instead of a router guard.
   `PointerTriggerRouter.gd` and its dedicated test were deleted as dead code
-  once nothing referenced them. **Quest, Chat, and Team Inventory triggers are
-  confirmed working after this change; Power's trigger tap is still under
-  investigation** despite structurally identical wiring to the other three.
+  once nothing referenced them. Quest, Chat, and Team Inventory triggers were
+  confirmed working after this change; Power's trigger tap still looked broken
+  ("does nothing" on a single tap, then intermittently opened on repeated
+  taps on both Android and WebGL). That intermittency was a same-tap
+  self-close race in [[Popover Panel]], not anything specific to Power's
+  wiring — see its Notes for the fix (`OUTSIDE_TAP_GRACE_MS`). The other three
+  triggers likely had the same latent race; it just wasn't exercised enough
+  in casual testing to surface as visibly.
 - **`ScorePopupLayer` ships `visible = false`** in [[Game UI Scene]];
   `ScorePopupController.bind_nodes()` re-enables it, since Godot hides a hidden
   `CanvasItem`'s whole subtree and would otherwise block every popup/bubble.

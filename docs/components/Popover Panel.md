@@ -9,8 +9,9 @@ tap-triggered popover in the play screen. File:
 ## Responsibilities
 - Render a title + rule + vertical list of rows inside an anchored card.
 - Auto-close after `auto_close_seconds` (default 4s), on tap/touch outside
-  the card (via a full-screen `OutsideCatcher`), or when the owner explicitly
-  closes it (e.g. on drag start — see [[Main UI Controller]]).
+  the card (via a full-screen `OutsideCatcher`, ignoring presses for
+  `OUTSIDE_TAP_GRACE_MS` after `open()` — see Notes), or when the owner
+  explicitly closes it (e.g. on drag start — see [[Main UI Controller]]).
 - Stay non-blocking — it never pauses gameplay underneath it.
 
 ## Public interface
@@ -67,6 +68,21 @@ tap-triggered popover in the play screen. File:
   out synchronously, so checking `.visible` is what keeps a stale
   "already open" read from silently swallowing the next tap instead of
   reopening the popover.
+- **Fixed: same-tap self-close race (Android + WebGL).** `OutsideCatcher` is a
+  full-screen `mouse_filter=STOP` Control, so once a popover is open it covers
+  the trigger's own screen position too. Every physical tap on Android/WebGL
+  produces both a real input event and an emulated partner
+  (`emulate_mouse_from_touch`, on in `project.godot`); the trigger's `.pressed`
+  signal consumes one of the pair to open the popover, and the other one then
+  landed on the freshly-visible `OutsideCatcher` and closed it again on the
+  same tap — a timing-dependent race, hence "tap it repeatedly and it opens
+  only sometimes." `open()` now stamps `opened_at_ms`, and
+  `_on_outside_catcher_gui_input` ignores presses within
+  `OUTSIDE_TAP_GRACE_MS` (250ms) of that stamp, swallowing the emulated
+  partner without eating a genuine outside tap to dismiss (that gesture just
+  needs to land after the grace window). Doesn't affect toggle-close
+  (re-tapping the same trigger) or switching triggers — both call `close()`
+  directly, bypassing `OutsideCatcher`.
 - **Open bug (WebGL + Android, not the editor): popover cards still land at the
   wrong position/size on device.** Runtime positioning was added
   (`set_card_global_position`, driven from the trigger's `get_global_rect()`),
