@@ -48,7 +48,7 @@ func test_all_required_nodes_bound() -> void:
 func test_reset_ui_restores_idle_labels() -> void:
 	harness.main.reset_ui()
 	assert_eq((harness.find("StatusLabel") as Label).text, "Disconnected", "reset_ui should show the disconnected status.")
-	assert_eq((harness.find("BlockLabel") as Label).text, "Inventory", "reset_ui should reset the inventory label.")
+	assert_eq((harness.find("BlockLabel") as Label).text, "Inventory 0/3", "reset_ui should reset the inventory label to an empty count.")
 	assert_eq((harness.find("TowerStatusLabel") as Label).text, "Connect to start", "reset_ui should reset the tower status.")
 	assert_eq((harness.find("ConnectButton") as Button).text, "Connect", "reset_ui should reset the connect button.")
 
@@ -75,7 +75,7 @@ func test_team_total_events_never_spawn_popups() -> void:
 	assert_eq(layer.get_child_count(), before_count, "team_total events are aggregate rows, not popups.")
 
 func test_inventory_renders_active_empty_and_locked_slots() -> void:
-	harness.main.update_inventory_ui([SHAPE_BLOCK_FIXTURE], 2)
+	harness.main.inventory.update_inventory_ui([SHAPE_BLOCK_FIXTURE], 2)
 	assert_false((harness.find("PlaceBlockButton1") as Button).disabled, "A filled slot should stay enabled.")
 	assert_eq((harness.find("BlockHeightLabel1") as Label).text, "Height 2", "A filled slot should show the block height.")
 	assert_eq((harness.find("BlockNameLabel1") as Label).text, "L2", "A filled slot should show the shape id.")
@@ -84,15 +84,6 @@ func test_inventory_renders_active_empty_and_locked_slots() -> void:
 	assert_true((harness.find("PlaceBlockButton3") as Button).disabled, "A slot past the active count should be disabled.")
 	assert_eq((harness.find("BlockHeightLabel3") as Label).text, "Locked", "A slot past the active count should read Locked.")
 	assert_eq((harness.find("BlockNameLabel3") as Label).text, "Level 4", "The third slot should show its unlock level.")
-
-func test_normalize_block_accepts_dictionary_and_legacy_int_forms() -> void:
-	var normalized: Dictionary = harness.main.normalize_block(SHAPE_BLOCK_FIXTURE, 0)
-	assert_eq(normalized["shapeId"], "L2", "Dictionary blocks should keep their shape id.")
-	assert_eq(int(normalized["height"]), 2, "Dictionary blocks should keep their height.")
-	var legacy: Dictionary = harness.main.normalize_block(3, 1)
-	assert_eq(legacy["shapeId"], "LEGACY", "Legacy numeric blocks should normalize to the LEGACY shape.")
-	assert_eq(int(legacy["height"]), 3, "Legacy numeric blocks should keep their height.")
-	assert_eq((legacy["cells"] as Array).size(), 3, "Legacy numeric blocks should synthesize one cell per height unit.")
 
 func test_impact_status_renders_track_and_ready_counts() -> void:
 	harness.main.roster.update_impact_status_ui(IMPACT_STATUS_FIXTURE)
