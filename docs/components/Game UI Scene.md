@@ -43,3 +43,11 @@ expects to find and bind when it loads. The two required drag nodes:
   `HudPanel`, `WhiteCardButton`, `TopBarFramePanel`/`TopBarTrackPanel`,
   `TowerFillPanel`/`TowerTrackPanel`) — most per-node fine-tuning is still
   inline `theme_override_*` properties on individual scene nodes.
+- Non-interactive nodes positioned over/near a tappable control (buttons,
+  the Power/team-inventory triggers, etc.) must set `mouse_filter = 2`
+  (ignore); Godot's default `mouse_filter = 0` (stop) makes a Control
+  swallow touches even when it draws nothing there. `ImpactTrack` (the
+  [[Impact Bar]] column) overlaps ~80% of the `PowerTrigger` tap area and
+  was missing this, making the Power icon tap inconsistent until fixed —
+  check new overlay/decorative nodes against nearby interactive controls
+  before assuming the default filter is harmless.

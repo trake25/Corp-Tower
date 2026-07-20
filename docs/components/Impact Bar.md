@@ -28,3 +28,7 @@ scene `Cor/Scenes/ImpactBar.tscn`.
   first appearance and kept in the `impact_bars` dictionary keyed by player
   id, freed when a player drops out of the current Impact status payload —
   same reuse/lifecycle pattern as `PlayerRailEntry`.
+- Hosted inside the `ImpactTrack` `VBoxContainer` in `GameUI.tscn`, which
+  overlaps part of the `PowerTrigger` button's tap area. `ImpactTrack` sets
+  `mouse_filter = 2` (ignore) so it never intercepts touches meant for the
+  Power icon — see [[Game UI Scene]] Notes.
