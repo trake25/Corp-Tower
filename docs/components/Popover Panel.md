@@ -21,6 +21,16 @@ tap-triggered popover in the play screen. File:
 - `add_icon_row(icon: Control, text: String) -> HBoxContainer` — icon + text
   row (used for the Team Inventory "next brick" preview).
 - `open()` / `close()`, `dismissed` signal.
+- `get_card_size() -> Vector2` — the card's content-driven size
+  (`get_combined_minimum_size()` floored by `custom_minimum_size`, valid
+  synchronously right after rows are added).
+- `set_card_global_position(target: Vector2)` — resets the card's anchors to
+  top-left, sets an explicit size, and places its top-left at `target` clamped
+  to the popover's visible rect. Callers ([[Main UI Controller]]'s
+  `position_shared_popover_card()` and `QuestController`'s
+  `position_quest_popover_card()`) compute `target` from the trigger's live
+  `get_global_rect()` so the card tracks the trigger instead of the viewport
+  edge. **Still not fully correct on device** — see the note below.
 - Each new row after the first gets an `HSeparator` inserted above it — rows
   are added to the tree before the separator is positioned via
   `move_child()`, since Godot requires a node to already be a child before it
@@ -40,27 +50,28 @@ tap-triggered popover in the play screen. File:
   different screen location. Only one popover is ever open at a time,
   tracked by [[Main UI Controller]]'s `active_popover`.
 - Opening any popover closes whichever one is currently active first
-  (`close_active_popover()`), so switching triggers can't leave two cards
-  open. Starting a block drag also closes the active popover, so a popover
+  (`PopoverCoordinator.close_active()`), so switching triggers can't leave two
+  cards open. Starting a block drag also closes the active popover, so a popover
   can't eat the first drag input of a 30-second round.
 - All four triggers toggle: tapping a trigger while its own popover is
   already open closes it instead of reopening (resetting the auto-close
-  timer). Each `open_*_popover()` guards this with the popover's current
-  `.visible` state, not just its own last-known "is this mine and open"
+  timer). Each opener guards this with the popover's current `.visible` state
+  via `PopoverCoordinator.is_open(popover, mode)`, not just last-known
   bookkeeping (`active_popover` + `shared_popover_mode` for the shared
   `TeamInventoryPopover`, `active_popover` alone for `QuestPopover`) — `close()`
   can fire asynchronously from the auto-close timer or an outside tap without
   the trigger's owner finding out synchronously, so checking `.visible` is
   what keeps a stale "already open" read from silently swallowing the next
   tap instead of reopening the popover.
-- Open issue (web only): popover cards anchor to viewport edges at fixed
-  offsets and never track the trigger that opened them — `PopoverPanel.gd` sets
-  no position at runtime, and [[Main UI Controller]] only swaps title/rows. The
-  card positions therefore shift with viewport size, and after the web stretch
-  aspect changed to `keep` ([[Godot Client App]]) they land wrong in the browser
-  while remaining correct in the editor. Not yet diagnosed; deferred to a
-  separate session. The editor cannot reproduce it, so this needs a deployed
-  build to investigate.
+- **Open bug (WebGL + Android, not the editor): popover cards still land at the
+  wrong position/size on device.** Runtime positioning was added
+  (`set_card_global_position`, driven from the trigger's `get_global_rect()`),
+  which fixed the editor and the GUT layout tests but has not resolved the
+  on-device symptom. The editor runs at exactly the 412×917 design size — the
+  one size where the authored layout is already correct — so it cannot
+  reproduce the failure; a deployed WebGL build or an Android build is required
+  to see ground truth. Full diagnosis, what has already been tried, and the
+  next steps are in the hand-off plan `TOD20260720-01.md`.
 - Team Inventory's rows are the one case using `add_icon_row`: when
   `last_draw_pile_count > 0` and a next block exists, an `add_icon_row` shows
   a `BlockPreview` instance (tinted with the same `DRAW_PILE_COLOR` as the
