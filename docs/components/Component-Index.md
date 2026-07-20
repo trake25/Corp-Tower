@@ -19,7 +19,12 @@
 - [[Godot Client App]]
 - [[NetworkManager]]
 - [[Screen Manager]]
-- [[Main UI Controller]]
+- [[Main UI Controller]] (slim orchestrator + the `Cor/Scripts/GameUi/` module
+  family: UiTuning, MatchState, PlayerContext, UiNodeBinder, PointerEvents,
+  PointerTriggerRouter, PopoverCoordinator, BlockData, DebugPanelController,
+  ScorePopupController, LevelSummaryController, RosterViewController,
+  QuestController, QuickChatController, PowerController, InventoryController,
+  TopBarController — documented within Main UI Controller, not as separate files)
 - [[Game UI Scene]]
 - [[Block Preview]]
 - [[Tower Stack]]

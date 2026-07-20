@@ -55,7 +55,7 @@ flowchart LR
 |---|---|---|
 | [[Godot Client App]] | The Godot project as a whole | [[NetworkManager]], [[Main UI Controller]] |
 | [[NetworkManager]] | WebSocket adapter and signal bridge, autoloaded singleton | Godot `WebSocketPeer` |
-| [[Main UI Controller]] | Main-screen UI controller: input, rendering, debug tuning | [[NetworkManager]], [[Block Preview]], [[Tower Stack]], [[Cooldown Overlay]], [[Debug Overlay]], [[Player Colors]] |
+| [[Main UI Controller]] | Slim main-screen orchestrator: engine callbacks + `game_state` fan-out, delegating to the `Cor/Scripts/GameUi/` module family | [[NetworkManager]], [[Block Preview]], [[Tower Stack]], [[Cooldown Overlay]], [[Debug Overlay]], [[Player Colors]], [[Popover Panel]], [[Impact Bar]] |
 | [[Client UI Skins]] | Two swappable UI skin scenes + themes | [[Block Preview]], [[Tower Stack]], [[Cooldown Overlay]], [[Debug Overlay]] |
 | [[Block Preview]] | Draws fixed-orientation block shape previews | none |
 | [[Tower Stack]] | Draws the placed-block tower and its tilt animation | [[Player Colors]] |
