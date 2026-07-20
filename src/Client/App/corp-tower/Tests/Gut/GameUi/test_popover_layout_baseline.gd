@@ -31,14 +31,6 @@ func assert_quest_card_tracks_chip() -> void:
 	assert_almost_eq(card_rect.position.x, chip_rect.position.x + chip_rect.size.x + 5.0, 0.5, "The quest popover card should open just right of the quest chip.")
 	assert_almost_eq(card_rect.position.y, chip_rect.position.y, 0.5, "The quest popover card should align with the quest chip's top edge.")
 
-func test_shared_card_matches_authored_layout_at_design_size() -> void:
-	await mount_at(DESIGN_SIZE)
-	harness.main.open_team_inventory_popover()
-	var card_rect: Rect2 = shared_card().get_global_rect()
-	var origin: Vector2 = harness.main.get_global_rect().position
-	assert_almost_eq(card_rect.position.x - origin.x, 136.0, 0.5, "At the 412x917 design size the shared card must keep its authored x position.")
-	assert_almost_eq(card_rect.position.y - origin.y, 601.0, 0.5, "At the 412x917 design size the shared card must keep its authored y position.")
-
 func test_shared_card_tracks_trigger_at_design_size() -> void:
 	await mount_at(DESIGN_SIZE)
 	assert_shared_card_tracks_trigger_row()

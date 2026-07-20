@@ -76,15 +76,25 @@ func open() -> void:
 		close_timer.start(auto_close_seconds)
 
 func get_card_size() -> Vector2:
-	return card.size
+	var min_size: Vector2 = card.get_combined_minimum_size()
+	return Vector2(
+		maxf(min_size.x, card.custom_minimum_size.x),
+		maxf(min_size.y, card.custom_minimum_size.y)
+	)
 
 func set_card_global_position(target: Vector2) -> void:
+	var card_size: Vector2 = get_card_size()
+	card.anchor_left = 0.0
+	card.anchor_top = 0.0
+	card.anchor_right = 0.0
+	card.anchor_bottom = 0.0
+	card.size = card_size
 	var bounds: Rect2 = get_global_rect()
-	var max_x: float = bounds.position.x + bounds.size.x - card.size.x
-	var max_y: float = bounds.position.y + bounds.size.y - card.size.y
+	var max_x: float = maxf(bounds.position.x, bounds.position.x + bounds.size.x - card_size.x)
+	var max_y: float = maxf(bounds.position.y, bounds.position.y + bounds.size.y - card_size.y)
 	card.global_position = Vector2(
-		clampf(target.x, bounds.position.x, maxf(bounds.position.x, max_x)),
-		clampf(target.y, bounds.position.y, maxf(bounds.position.y, max_y))
+		clampf(target.x, bounds.position.x, max_x),
+		clampf(target.y, bounds.position.y, max_y)
 	)
 
 func close() -> void:

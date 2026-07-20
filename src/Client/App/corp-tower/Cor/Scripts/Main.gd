@@ -231,7 +231,7 @@ func _input(event: InputEvent) -> void:
 	inventory.handle_input(event)
 	power.handle_input(event)
 
-	if trigger_router.process(event, Engine.get_process_frames()):
+	if trigger_router.process(event):
 		get_viewport().set_input_as_handled()
 
 func _process(_delta: float) -> void:

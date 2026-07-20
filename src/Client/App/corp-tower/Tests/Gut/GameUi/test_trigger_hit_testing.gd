@@ -30,22 +30,20 @@ func test_switching_triggers_reuses_shared_popover_with_new_mode() -> void:
 	assert_true(shared_popover().visible, "Switching triggers should keep the shared popover open in the new mode.")
 	assert_eq(harness.main.popovers.shared_popover_mode, "team_inventory", "The shared popover should switch to team_inventory mode.")
 
-func test_touch_then_emulated_mouse_same_frame_is_single_activation() -> void:
+func test_touch_paired_with_emulated_mouse_activates_once() -> void:
 	var press_position: Vector2 = harness.center_of("QuickChatTrigger")
 	harness.main._input(HarnessScript.touch_press(press_position))
 	harness.main._input(HarnessScript.mouse_press(press_position))
-	assert_true(shared_popover().visible, "Android delivers touch before the emulated mouse event; the pair must count as one activation, not an open-then-close toggle.")
+	assert_true(shared_popover().visible, "Every device tap arrives as a raw touch plus an emulated mouse event; only the mouse event activates, so the pair opens the popover exactly once instead of toggling it open then closed.")
 
-func test_mouse_then_emulated_touch_same_frame_is_single_activation() -> void:
-	var press_position: Vector2 = harness.center_of("QuickChatTrigger")
-	harness.main._input(HarnessScript.mouse_press(press_position))
-	harness.main._input(HarnessScript.touch_press(press_position))
-	assert_true(shared_popover().visible, "Desktop delivers mouse before an emulated touch event; the pair must count as one activation.")
+func test_raw_touch_without_a_mouse_event_does_nothing() -> void:
+	harness.main._input(HarnessScript.touch_press(harness.center_of("QuickChatTrigger")))
+	assert_false(shared_popover().visible, "A raw touch event with no accompanying mouse event must not activate a trigger; the emulated mouse event is the single activation path.")
 
-func test_touch_press_alone_opens_quest_popover() -> void:
-	harness.main._input(HarnessScript.touch_press(harness.center_of("QuestChip")))
+func test_mouse_press_opens_quest_popover() -> void:
+	harness.main._input(HarnessScript.mouse_press(harness.center_of("QuestChip")))
 	var quest_popover: Control = harness.find("QuestPopover") as Control
-	assert_true(quest_popover.visible, "A touch press on the quest chip should open the quest popover.")
+	assert_true(quest_popover.visible, "A mouse press on the quest chip should open the quest popover.")
 
 func test_press_outside_all_triggers_opens_nothing() -> void:
 	harness.main._input(HarnessScript.mouse_press(Vector2(206, 458)))
