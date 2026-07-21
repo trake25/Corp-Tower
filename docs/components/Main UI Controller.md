@@ -65,9 +65,8 @@ View controllers (Node):
   `get_score_popup_position()` (viewport-ratio based).
 - `LevelSummaryController` — owns the two one-shot `Timer`s, queues the summary
   after the score-popup batch fades, and builds the summary/impact-failure text.
-- `RosterViewController` — the player rail, per-player [[Impact Bar]] track, and
-  score tints; exposes `rail_entry()`/`rail_box()` (chat-bubble anchors) and
-  `apply_score_tint()`.
+- `RosterViewController` — the player rail and per-player [[Impact Bar]] track;
+  exposes `rail_entry()`/`rail_box()` (chat-bubble anchors).
 - `QuestController` — the three-state quest chip and its popover.
 - `QuickChatController` — the Quick Chat popover rows (tap-to-send, cooldown-gated),
   incoming chat events, and the speech-bubble anchored to the sender's rail row.
@@ -75,11 +74,13 @@ View controllers (Node):
   never reachable by players — have been removed along with `bind_nodes()`'s
   binding and `update_quick_chat_buttons()`.
 - `PowerController` — the Power popover rows (tap-to-activate; `activate_power`
-  has no target field, so the effect always applies room-wide), activation
-  toast, and room-wide tint. The earlier drag-onto-target UI (`PowerButton1-3`,
+  has no target field, so the effect always applies room-wide) and the
+  activation toast. The earlier drag-onto-target UI (`PowerButton1-3`,
   `PowerTargetBox`) was dead code — never reachable by players, hidden in
   `LegacyHidden` — and has been removed along with its handling in this
-  controller.
+  controller. The legacy room-wide score-rail tint (every player's rail entry
+  briefly recolored to the caster's color on activation) has also been removed;
+  the activation toast is the sole feedback.
 - `InventoryController` — the 3-slot inventory cards, drag-to-place input, the
   local placement cooldown, and the draw-pile preview.
 - `TopBarController` — level badge, round timer, tower height/progress
