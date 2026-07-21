@@ -330,7 +330,7 @@ class GameEngine {
                 target.scoreCapCasterId = null;
             }
         });
-        this.room.pendingPowerEvents.push({ id: `${this.room.level}:power:${Date.now()}`, type: "power_activated", playerId, powerId: item.id, label: GameConfig.powerCatalog[item.id].title, meta: { tintAllScores: true, tintDurationMs: 4000 } });
+        this.room.pendingPowerEvents.push({ id: `${this.room.level}:power:${Date.now()}`, type: "power_activated", playerId, powerId: item.id, label: GameConfig.powerCatalog[item.id].title });
         this.persistRoom(); this.broadcastGameState(); return true;
     }
 

@@ -1,14 +1,11 @@
 extends Node
 
-var players_ctx
 var network
 var popovers
 var popover_blocked: Callable = Callable()
-var roster
 var score_popups
 var power_popover: Control
 var power_trigger: TextureButton
-var power_feedback_tween: Tween
 var last_power_inventory: Array = []
 var seen_power_event_ids: Dictionary = {}
 
@@ -18,11 +15,9 @@ func bind_nodes(binder) -> void:
 	if power_trigger != null:
 		power_trigger.pressed.connect(open_power_popover)
 
-func setup(players_ref, network_ref, popovers_ref, roster_ref, score_popups_ref, popover_blocked_ref: Callable = Callable()) -> void:
-	players_ctx = players_ref
+func setup(network_ref, popovers_ref, score_popups_ref, popover_blocked_ref: Callable = Callable()) -> void:
 	network = network_ref
 	popovers = popovers_ref
-	roster = roster_ref
 	score_popups = score_popups_ref
 	popover_blocked = popover_blocked_ref
 
@@ -86,16 +81,6 @@ func process_power_events(raw_events: Variant, players: Array) -> void:
 			continue
 		seen_power_event_ids[event_id] = true
 
-		var meta: Variant = event.get("meta", {})
-		if typeof(meta) != TYPE_DICTIONARY:
-			meta = {}
-		var caster_color: Color = players_ctx.color_map.get(str(event.get("playerId", "")), Color.WHITE)
-
-		if bool(meta.get("tintAllScores", false)):
-			var tint_until: int = Time.get_ticks_msec() + int(meta.get("tintDurationMs", 4000))
-			for player in players:
-				roster.score_tints[str(player.get("id", ""))] = { "color": caster_color, "until": tint_until }
-
 		score_popups.show_score_event_popup({
 			"type": "power_activated",
 			"label": get_power_toast_text(str(event.get("powerId", "")), str(event.get("label", "Power")))
@@ -106,13 +91,3 @@ func get_power_toast_text(power_id: String, catalog_label: String) -> String:
 		return "All players inventory refreshed"
 
 	return catalog_label + " activated for everyone"
-
-func show_power_tint(control: Control, tint: Color) -> void:
-	if control == null:
-		return
-	if power_feedback_tween != null:
-		power_feedback_tween.kill()
-	control.modulate = tint
-	power_feedback_tween = create_tween()
-	power_feedback_tween.tween_interval(4.0)
-	power_feedback_tween.tween_property(control, "modulate", Color.WHITE, 0.2)

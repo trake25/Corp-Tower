@@ -67,7 +67,7 @@
   - **Score Cap (Offensive):** set every player's total score exactly to their own next Impact score requirement, whether their prior score was above or below it. Only obtainable via the Impact-MVP reward right now, not the side quest.
   - **Copy Score (Defensive):** set every player's total score to the caster's total score and update their Impact snapshot/baseline to the copied score. Only obtainable via the Impact-MVP reward right now, not the side quest.
   - **Refresh (Utility):** immediately reroll every player's hand. There is no token or use-count economy — activating the item is the entire effect, gated only by the shared Power activation cooldown.
-- For 4 seconds after any Power activation, every player's total-score UI uses the caster color, and a toast names the effect (e.g. "All players inventory refreshed" for Refresh).
+- Every Power activation surfaces a toast naming the effect (e.g. "All players inventory refreshed" for Refresh). This toast is the sole activation feedback; the earlier legacy cue that recolored every player's score-rail entry to the caster color for 4 seconds has been removed.
 
 ### Refresh Effect Details
 - Refresh is not a standalone player action anymore — it only happens when a player activates a held Refresh Power item, and it rerolls every player's hand at once, not just the caster's.

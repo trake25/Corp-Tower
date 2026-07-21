@@ -29,16 +29,6 @@ func test_rail_records_seat_indexes() -> void:
 	assert_eq(int(harness.main.players_ctx.seat_index["P1"]), 0, "The first payload player should sit in seat 0.")
 	assert_eq(int(harness.main.players_ctx.seat_index["P3"]), 2, "The third payload player should sit in seat 2.")
 
-func test_active_tint_colors_rail_entry() -> void:
-	roster().score_tints["P1"] = {"color": Color.RED, "until": Time.get_ticks_msec() + 10000}
-	roster().update_score_lines(PLAYERS_FIXTURE)
-	assert_eq((roster().player_rail_entries["P1"] as Control).modulate, Color.RED, "An active tint should color the player's rail entry.")
-
-func test_expired_tint_resets_rail_entry() -> void:
-	roster().score_tints["P1"] = {"color": Color.RED, "until": Time.get_ticks_msec() - 1}
-	roster().update_score_lines(PLAYERS_FIXTURE)
-	assert_eq((roster().player_rail_entries["P1"] as Control).modulate, Color.WHITE, "An expired tint should leave the rail entry white.")
-
 func test_impact_bars_follow_status_membership() -> void:
 	roster().update_impact_status_ui({
 		"requiredBandScore": 40,

@@ -78,7 +78,7 @@ func _ready() -> void:
 	roster.setup(players_ctx, match_state)
 	quest.setup(players_ctx, match_state, popovers, should_block_popovers)
 	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_popovers)
-	power.setup(players_ctx, NetworkManager, popovers, roster, score_popups, should_block_popovers)
+	power.setup(NetworkManager, popovers, score_popups, should_block_popovers)
 	setup_popover_controls()
 	reset_ui()
 	connect_network_signals()
