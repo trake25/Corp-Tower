@@ -9,7 +9,6 @@ var match_state
 var player_rail_entries: Dictionary = {}
 var impact_bars: Dictionary = {}
 var player_level_scores: Dictionary = {}
-var score_tints: Dictionary = {}
 var player_rail_box: VBoxContainer
 var impact_track: VBoxContainer
 var impact_pill: Control
@@ -65,12 +64,6 @@ func update_score_lines(players: Array) -> void:
 			i,
 			players_ctx.avatar_id(player_id)
 		)
-
-		var tint: Dictionary = score_tints.get(player_id, {})
-		if !tint.is_empty() and int(tint.get("until", 0)) > Time.get_ticks_msec():
-			entry.modulate = tint.get("color", Color.WHITE)
-		else:
-			entry.modulate = Color.WHITE
 
 	for player_id in player_rail_entries.keys():
 		if not seen_player_ids.has(player_id):
