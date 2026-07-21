@@ -37,7 +37,8 @@ func clear_rows() -> void:
 func add_row(text: String) -> Label:
 	var row := Label.new()
 	row.theme_type_variation = &"PopoverBodyLabel"
-	row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	row.autowrap_mode = TextServer.AUTOWRAP_OFF
+	row.clip_text = true
 	row.text = text
 	rows_box.add_child(row)
 
@@ -73,7 +74,8 @@ func add_action_row(text: String, on_pressed: Callable) -> Button:
 	row.text = text
 	row.focus_mode = Control.FOCUS_NONE
 	row.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	row.autowrap_mode = TextServer.AUTOWRAP_OFF
+	row.clip_text = true
 	row.custom_minimum_size = Vector2(0, 34)
 	row.pressed.connect(on_pressed)
 	rows_box.add_child(row)
