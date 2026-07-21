@@ -43,6 +43,12 @@ expects to find and bind when it loads. The two required drag nodes:
   `HudPanel`, `WhiteCardButton`, `TopBarFramePanel`/`TopBarTrackPanel`,
   `TowerFillPanel`/`TowerTrackPanel`) — most per-node fine-tuning is still
   inline `theme_override_*` properties on individual scene nodes.
+- The four [[Popover Panel]] instances each override their `Card` node with an
+  explicit `custom_minimum_size` that fixes the popover's design footprint —
+  `260x163` for `TeamInventoryPopover`, `ChatPopover`, and `PowerPopover`, and
+  `260x140` for `QuestPopover`. This is the authored source of the fixed card
+  size that `get_card_size()` returns at runtime; changing a popover's design
+  size means editing that node here.
 - Non-interactive nodes positioned over/near a tappable control (buttons,
   the Power/team-inventory triggers, etc.) must set `mouse_filter = 2`
   (ignore); Godot's default `mouse_filter = 0` (stop) makes a Control

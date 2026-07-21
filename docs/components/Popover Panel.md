@@ -16,15 +16,22 @@ tap-triggered popover in the play screen. File:
 
 ## Public interface
 - `set_title(text: String)`, `clear_rows()`.
-- `add_row(text: String) -> Label` — plain text row.
+- `add_row(text: String) -> Label` — plain text row. Single-line: autowrap is
+  off and `clip_text` is on, so overflowing text is clipped horizontally
+  inside the fixed card rather than wrapping to extra lines and growing it.
 - `add_action_row(text: String, on_pressed: Callable) -> Button` — tappable
-  row.
+  row (same single-line `clip_text` treatment as `add_row`).
 - `add_icon_row(icon: Control, text: String) -> HBoxContainer` — icon + text
   row (used for the Team Inventory "next brick" preview).
 - `open()` / `close()`, `dismissed` signal.
-- `get_card_size() -> Vector2` — the card's content-driven size
-  (`get_combined_minimum_size()` floored by `custom_minimum_size`, valid
-  synchronously right after rows are added).
+- `get_card_size() -> Vector2` — `get_combined_minimum_size()` floored by the
+  card's `custom_minimum_size`, valid synchronously right after rows are
+  added. Each popover instance sets an explicit design-size
+  `custom_minimum_size` in [[Game UI Scene]] — `260x163` for the three
+  bottom-row popovers and `260x140` for Quest — so this returns that fixed
+  size for the common (short) content instead of a smaller content-only box.
+  Combined with single-line `clip_text` rows, long text can't inflate it
+  either, so the card holds its design footprint in both directions.
 - `set_card_global_position(target: Vector2)` — resets the card's anchors to
   top-left, sets an explicit size, and places its top-left at `target` clamped
   to the popover's visible rect. Each controller computes `target` from its
@@ -33,8 +40,10 @@ tap-triggered popover in the play screen. File:
   `position_team_inventory_popover_card()`, `QuestController`'s
   `position_quest_popover_card()`, `QuickChatController`'s
   `position_chat_popover_card()`, and `PowerController`'s
-  `position_power_popover_card()`. **Still not fully correct on device** — see
-  the note below.
+  `position_power_popover_card()`. The three bottom-row popovers share a
+  bottom-edge baseline: each sits at `trigger.y - 13 - card_height`, so their
+  now-equal fixed height lands their bottom edges on the same y (they differ
+  only in x, per trigger). Quest anchors top-left off its chip instead.
 - Each new row after the first gets an `HSeparator` inserted above it — rows
   are added to the tree before the separator is positioned via
   `move_child()`, since Godot requires a node to already be a child before it
@@ -83,14 +92,21 @@ tap-triggered popover in the play screen. File:
   needs to land after the grace window). Doesn't affect toggle-close
   (re-tapping the same trigger) or switching triggers — both call `close()`
   directly, bypassing `OutsideCatcher`.
-- **Open bug (WebGL + Android, not the editor): popover cards still land at the
-  wrong position/size on device.** Runtime positioning was added
-  (`set_card_global_position`, driven from the trigger's `get_global_rect()`),
-  which fixed the editor and the GUT layout tests but has not resolved the
-  on-device symptom. The editor runs at exactly the 412×917 design size — the
-  one size where the authored layout is already correct — so it cannot
-  reproduce the failure; a deployed WebGL build or an Android build is required
-  to see ground truth.
+- **Card size (fixed at the source; on-device verification pending).** The
+  cards used to size themselves purely from content: the base `Card` floored
+  only width (`custom_minimum_size = (260, 0)`), leaving height floored at 0.
+  Chat happened to measure ~163 and looked right, but Team Inventory and Power
+  measured shorter and — because the y-anchor is `trigger.y - 13 - card_height`
+  — their bottom edges drifted off Chat's baseline, while a wrapped long Quest
+  label grew that card past its 140 design height. Fixed by giving each popover
+  `Card` an explicit design-size `custom_minimum_size` (`260x163` bottom row,
+  `260x140` Quest) so `get_card_size()` returns the design size, plus switching
+  rows to single-line `clip_text` so long text is clipped horizontally instead
+  of inflating the card. Runtime positioning (`set_card_global_position`, driven
+  from the trigger's `get_global_rect()`) was already in place and unchanged.
+  The editor and GUT layout tests confirm the sizes and shared baseline, but
+  the editor only runs at the 412×917 design size, so a deployed WebGL or
+  Android build is still required to confirm the on-device symptom is resolved.
 - Team Inventory's rows are the one case using `add_icon_row`: when
   `last_draw_pile_count > 0` and a next block exists, an `add_icon_row` shows
   a `BlockPreview` instance (tinted with the same `DRAW_PILE_COLOR` as the

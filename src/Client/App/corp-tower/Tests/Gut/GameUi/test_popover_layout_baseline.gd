@@ -17,6 +17,9 @@ func shared_card() -> Control:
 func quest_card() -> Control:
 	return (harness.find("QuestPopover") as Control).get_node("%Card") as Control
 
+func card_of(popover_name: String) -> Control:
+	return (harness.find(popover_name) as Control).get_node("%Card") as Control
+
 func assert_shared_card_tracks_trigger_row() -> void:
 	harness.main.open_team_inventory_popover()
 	var trigger_rect: Rect2 = (harness.find("TeamInventoryButton") as Control).get_global_rect()
@@ -46,6 +49,29 @@ func test_quest_card_tracks_chip_at_design_size() -> void:
 func test_quest_card_tracks_chip_when_root_grows() -> void:
 	await mount_at(EXPANDED_SIZE)
 	assert_quest_card_tracks_chip()
+
+func test_bottom_popovers_share_fixed_size_and_baseline() -> void:
+	await mount_at(DESIGN_SIZE)
+	harness.main.open_team_inventory_popover()
+	var team_rect: Rect2 = card_of("TeamInventoryPopover").get_global_rect()
+	harness.main.power.open_power_popover()
+	var power_rect: Rect2 = card_of("PowerPopover").get_global_rect()
+	harness.main.chat.open_quick_chat_popover()
+	var chat_rect: Rect2 = card_of("ChatPopover").get_global_rect()
+	for entry in [["team inventory", team_rect], ["power", power_rect], ["chat", chat_rect]]:
+		var rect: Rect2 = entry[1]
+		assert_almost_eq(rect.size.x, 260.0, 0.5, "The %s popover card should render at the fixed design width." % entry[0])
+		assert_almost_eq(rect.size.y, 163.0, 0.5, "The %s popover card should render at the fixed design height shared by every bottom-row popover." % entry[0])
+	assert_almost_eq(power_rect.position.y + power_rect.size.y, team_rect.position.y + team_rect.size.y, 0.5, "The power popover should share the team inventory popover's bottom-edge baseline.")
+	assert_almost_eq(chat_rect.position.y + chat_rect.size.y, team_rect.position.y + team_rect.size.y, 0.5, "The chat popover should share the team inventory popover's bottom-edge baseline.")
+
+func test_quest_card_stays_fixed_size_with_overlong_label() -> void:
+	await mount_at(DESIGN_SIZE)
+	harness.main.quest.last_side_quest = {"label": "This side quest label is deliberately far too long to fit on a single popover row so that it would wrap onto several lines and grow the card unless the row clips its text horizontally within the fixed card."}
+	harness.main.quest.open_quest_popover()
+	var card_rect: Rect2 = quest_card().get_global_rect()
+	assert_almost_eq(card_rect.size.x, 260.0, 0.5, "An overlong quest label must be clipped horizontally, keeping the quest card at its fixed design width.")
+	assert_almost_eq(card_rect.size.y, 140.0, 0.5, "An overlong quest label must be clipped horizontally, keeping the quest card at its fixed design height instead of wrapping and growing.")
 
 func test_score_popup_positions_scale_with_layer_size() -> void:
 	await mount_at(DESIGN_SIZE)
