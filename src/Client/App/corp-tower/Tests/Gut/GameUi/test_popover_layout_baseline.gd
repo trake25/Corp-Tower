@@ -12,7 +12,7 @@ func mount_at(root_size: Vector2) -> void:
 	await harness.mount(self, root_size)
 
 func shared_card() -> Control:
-	return (harness.find("TeamInventoryPopover") as Control).get_node("%Card") as Control
+	return (harness.find("PowerPopover") as Control).get_node("%Card") as Control
 
 func quest_card() -> Control:
 	return (harness.find("QuestPopover") as Control).get_node("%Card") as Control
@@ -21,11 +21,11 @@ func card_of(popover_name: String) -> Control:
 	return (harness.find(popover_name) as Control).get_node("%Card") as Control
 
 func assert_shared_card_tracks_trigger_row() -> void:
-	harness.main.open_team_inventory_popover()
-	var trigger_rect: Rect2 = (harness.find("TeamInventoryButton") as Control).get_global_rect()
+	harness.main.power.open_power_popover()
+	var trigger_rect: Rect2 = (harness.find("PowerTrigger") as Control).get_global_rect()
 	var card_rect: Rect2 = shared_card().get_global_rect()
-	assert_almost_eq(card_rect.position.x + card_rect.size.x, trigger_rect.position.x + trigger_rect.size.x + 2.0, 0.5, "The team inventory popover card's right edge should track its own trigger's right edge.")
-	assert_almost_eq(card_rect.position.y + card_rect.size.y, trigger_rect.position.y - 13.0, 0.5, "The team inventory popover card should sit just above its own trigger.")
+	assert_almost_eq(card_rect.position.x + card_rect.size.x, trigger_rect.position.x + trigger_rect.size.x + 2.0, 0.5, "The power popover card's right edge should track its own trigger's right edge.")
+	assert_almost_eq(card_rect.position.y + card_rect.size.y, trigger_rect.position.y - 13.0, 0.5, "The power popover card should sit just above its own trigger.")
 
 func assert_quest_card_tracks_chip() -> void:
 	harness.main.quest.open_quest_popover()
@@ -52,18 +52,15 @@ func test_quest_card_tracks_chip_when_root_grows() -> void:
 
 func test_bottom_popovers_share_fixed_size_and_baseline() -> void:
 	await mount_at(DESIGN_SIZE)
-	harness.main.open_team_inventory_popover()
-	var team_rect: Rect2 = card_of("TeamInventoryPopover").get_global_rect()
 	harness.main.power.open_power_popover()
 	var power_rect: Rect2 = card_of("PowerPopover").get_global_rect()
 	harness.main.chat.open_quick_chat_popover()
 	var chat_rect: Rect2 = card_of("ChatPopover").get_global_rect()
-	for entry in [["team inventory", team_rect], ["power", power_rect], ["chat", chat_rect]]:
+	for entry in [["power", power_rect], ["chat", chat_rect]]:
 		var rect: Rect2 = entry[1]
 		assert_almost_eq(rect.size.x, 260.0, 0.5, "The %s popover card should render at the fixed design width." % entry[0])
 		assert_almost_eq(rect.size.y, 163.0, 0.5, "The %s popover card should render at the fixed design height shared by every bottom-row popover." % entry[0])
-	assert_almost_eq(power_rect.position.y + power_rect.size.y, team_rect.position.y + team_rect.size.y, 0.5, "The power popover should share the team inventory popover's bottom-edge baseline.")
-	assert_almost_eq(chat_rect.position.y + chat_rect.size.y, team_rect.position.y + team_rect.size.y, 0.5, "The chat popover should share the team inventory popover's bottom-edge baseline.")
+	assert_almost_eq(chat_rect.position.y + chat_rect.size.y, power_rect.position.y + power_rect.size.y, 0.5, "The chat popover should share the power popover's bottom-edge baseline.")
 
 func test_quest_card_stays_fixed_size_with_overlong_label() -> void:
 	await mount_at(DESIGN_SIZE)

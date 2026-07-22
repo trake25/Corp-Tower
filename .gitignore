@@ -22,6 +22,9 @@ CLAUDE.md
 .claude/commands/
 TOD20260719-01
 plan/
+task/
+reference/
+*.x86_64
 
 # Private art asset pipeline — R2 credentials for local dev.
 # The assets themselves are ignored in src/Client/App/corp-tower/.gitignore

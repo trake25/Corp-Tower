@@ -13,13 +13,10 @@ const QuestControllerScript = preload("res://Cor/Scripts/GameUi/QuestController.
 const QuickChatControllerScript = preload("res://Cor/Scripts/GameUi/QuickChatController.gd")
 const PowerControllerScript = preload("res://Cor/Scripts/GameUi/PowerController.gd")
 const InventoryControllerScript = preload("res://Cor/Scripts/GameUi/InventoryController.gd")
-const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 const TopBarControllerScript = preload("res://Cor/Scripts/GameUi/TopBarController.gd")
 
 @onready var ui_root: Control = self
 
-var team_inventory_button: TextureButton
-var team_inventory_popover: Control
 var missing_required_nodes: Array[String] = []
 var tuning
 var debug_panel
@@ -85,8 +82,7 @@ func _ready() -> void:
 
 # Same guard the old PointerTriggerRouter applied to every trigger: don't let
 # a tap open a popover while the debug panel or the level-summary overlay is
-# covering the screen. Passed into each controller's setup() and also used
-# directly below for the team inventory button.
+# covering the screen. Passed into each controller's setup().
 func should_block_popovers() -> bool:
 	return debug_panel.is_open() or summary.is_overlay_visible()
 
@@ -105,8 +101,6 @@ func bind_ui_nodes() -> void:
 	player_label = binder.require_node("PlayerLabel") as Label
 	room_label = binder.require_node("RoomLabel") as Label
 	score_label = binder.require_node("ScoreLabel") as Label
-	team_inventory_button = binder.optional_node("TeamInventoryButton") as TextureButton
-	team_inventory_popover = binder.optional_node("TeamInventoryPopover") as Control
 	tower_stack = binder.require_node("TowerStack") as Control
 	connect_button = binder.require_node("ConnectButton") as Button
 
@@ -123,51 +117,6 @@ func bind_ui_nodes() -> void:
 
 func setup_popover_controls() -> void:
 	connect_button.pressed.connect(on_connect_pressed)
-	if team_inventory_button != null:
-		team_inventory_button.pressed.connect(open_team_inventory_popover)
-
-func open_team_inventory_popover() -> void:
-	if should_block_popovers():
-		return
-
-	if team_inventory_popover == null:
-		return
-
-	if popovers.is_open(team_inventory_popover):
-		popovers.close_active()
-		return
-
-	team_inventory_popover.call("set_title", "Team Inventory")
-	team_inventory_popover.call("clear_rows")
-
-	if inventory.last_draw_pile_count > 0 and inventory.last_next_draw_block != null:
-		var next_block: Dictionary = BlockDataScript.normalize_block(inventory.last_next_draw_block, 0)
-		var icon := Control.new()
-		icon.set_script(InventoryControllerScript.BlockPreviewScript)
-		icon.custom_minimum_size = Vector2(32.0, 32.0)
-		icon.set("cell_color", InventoryControllerScript.DRAW_PILE_COLOR)
-		icon.call("set_block", next_block)
-		team_inventory_popover.call("add_icon_row", icon, "Next brick")
-
-	var remaining_label: Label = team_inventory_popover.call(
-		"add_row",
-		str(inventory.last_draw_pile_count) + " Remaining bricks"
-	)
-	if remaining_label != null:
-		remaining_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-	popovers.present(team_inventory_popover)
-	position_team_inventory_popover_card()
-
-func position_team_inventory_popover_card() -> void:
-	if team_inventory_popover == null or team_inventory_button == null:
-		return
-	var anchor_rect: Rect2 = team_inventory_button.get_global_rect()
-	var card_size: Vector2 = team_inventory_popover.call("get_card_size")
-	team_inventory_popover.call("set_card_global_position", Vector2(
-		anchor_rect.position.x + anchor_rect.size.x + 2.0 - card_size.x,
-		anchor_rect.position.y - 13.0 - card_size.y
-	))
 
 func reset_ui() -> void:
 	connect_button.text = "Connect"

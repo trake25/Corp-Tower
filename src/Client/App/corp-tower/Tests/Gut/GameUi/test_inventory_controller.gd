@@ -88,10 +88,10 @@ func test_drag_ignores_other_pointer_ids() -> void:
 
 func test_drag_start_closes_active_popover() -> void:
 	enter_playing_state_with_block()
-	harness.main.open_team_inventory_popover()
-	assert_true((harness.find("TeamInventoryPopover") as Control).visible, "The popover should open before the drag begins.")
+	harness.main.power.open_power_popover()
+	assert_true((harness.find("PowerPopover") as Control).visible, "The popover should open before the drag begins.")
 	inventory()._on_inventory_card_gui_input(HarnessScript.touch_press(harness.center_of("PlaceBlockButton1"), 0), 0)
-	assert_false((harness.find("TeamInventoryPopover") as Control).visible, "Starting a drag must dismiss any open popover.")
+	assert_false((harness.find("PowerPopover") as Control).visible, "Starting a drag must dismiss any open popover.")
 
 func test_block_data_normalizes_dictionary_and_legacy_forms() -> void:
 	var normalized: Dictionary = BlockDataScript.normalize_block(SHAPE_BLOCK_FIXTURE, 0)
