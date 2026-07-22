@@ -442,3 +442,31 @@ jobs:
 
           echo "::error::WebSocket smoke could not connect to ${WS_URL}."
           exit 1
+
+      - name: Dump Caddy gateway logs on smoke test failure
+        if: failure()
+        env:
+          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
+          EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
+        run: |
+          set -euo pipefail
+
+          SSH_OPTS=(
+            -i ~/.ssh/ec2_key
+            -p "$EC2_PORT"
+            -o BatchMode=yes
+            -o ConnectTimeout=20
+            -o UserKnownHostsFile=~/.ssh/known_hosts
+            -o GlobalKnownHostsFile=/dev/null
+            -o StrictHostKeyChecking=yes
+          )
+
+          echo "::group::corp-tower-k3s-caddy container status"
+          ssh "${SSH_OPTS[@]}" "$EC2_USER@$GATEWAY_PUBLIC_IP" \
+            "sudo docker ps -a --filter name=corp-tower-k3s-caddy" || true
+          echo "::endgroup::"
+
+          echo "::group::corp-tower-k3s-caddy logs (last 200 lines)"
+          ssh "${SSH_OPTS[@]}" "$EC2_USER@$GATEWAY_PUBLIC_IP" \
+            "sudo docker logs --tail 200 corp-tower-k3s-caddy" || true
+          echo "::endgroup::"

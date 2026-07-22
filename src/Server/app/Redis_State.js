@@ -314,21 +314,40 @@ class RedisState {
         return queued.map(raw => JSON.parse(raw)).reverse();
     }
 
-    async replaceQueue(players) {
+    async dequeueRealPlayers(maxCount) {
+        if (!this.enabled) {
+            return this.memoryQueue.splice(0, maxCount);
+        }
+
+        const raw = await this.client.sendCommand(
+            ["RPOP", "matchmaking:queue", String(maxCount)]
+        );
+
+        if (!raw) {
+            return [];
+        }
+
+        return raw.map(item => JSON.parse(item));
+    }
+
+    async requeuePlayers(players) {
+        if (players.length === 0) {
+            return;
+        }
+
         const cleanPlayers = players.map(stripRuntimePlayer);
 
         if (!this.enabled) {
-            this.memoryQueue = cleanPlayers;
+            this.memoryQueue.unshift(...cleanPlayers);
             return;
         }
 
         const multi = this.client.multi();
-        multi.del("matchmaking:queue");
         cleanPlayers
             .slice()
             .reverse()
             .forEach(player => {
-                multi.lPush("matchmaking:queue", JSON.stringify(player));
+                multi.rPush("matchmaking:queue", JSON.stringify(player));
             });
         await multi.exec();
     }
@@ -458,6 +477,27 @@ class RedisState {
         }
 
         await this.subscriber.subscribe(`room:${roomId}:events`, raw => {
+            handler(JSON.parse(raw));
+        });
+    }
+
+    async publishPlayerAssignment(playerId, roomId) {
+        if (!this.enabled) {
+            return;
+        }
+
+        await this.publisher.publish(
+            "player:assignments",
+            JSON.stringify({ playerId, roomId, sourcePodId: POD_ID })
+        );
+    }
+
+    async subscribeToPlayerAssignments(handler) {
+        if (!this.enabled) {
+            return;
+        }
+
+        await this.subscriber.subscribe("player:assignments", raw => {
             handler(JSON.parse(raw));
         });
     }

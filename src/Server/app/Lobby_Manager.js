@@ -56,9 +56,30 @@ class LobbyManager {
     async start() {
         await this.stateStore.connect();
         await this.profileStore.connect();
+
+        await this.stateStore.subscribeToPlayerAssignments(message => {
+            this.handlePlayerAssignment(message).catch(error => {
+                console.error("Player assignment handling failed:", error.message);
+            });
+        });
+
         console.log(
             `Lobby state: ${this.stateStore.enabled ? "Redis" : "memory"} (${this.stateStore.getPodId()})`
         );
+    }
+
+    async handlePlayerAssignment({ playerId, roomId, sourcePodId }) {
+        if (sourcePodId === this.stateStore.getPodId()) {
+            return;
+        }
+
+        const player = this.connectedPlayers.get(playerId);
+
+        if (!player || player.room) {
+            return;
+        }
+
+        await this.resumePlayer(player, roomId);
     }
 
     async createPlayer(ws, reconnectRequest = {}) {
@@ -768,9 +789,9 @@ class LobbyManager {
 
     async tryCreateRoom() {
         await this.stateStore.withMatchmakingLock(async () => {
-            const sharedQueue = await this.stateStore.getQueuedPlayers();
+            const poppedRealPlayers = await this.stateStore.dequeueRealPlayers(3);
 
-            this.waitingPlayers = sharedQueue.map(player => {
+            this.waitingPlayers = poppedRealPlayers.map(player => {
                 const connected = this.connectedPlayers.get(player.id);
 
                 if (connected) {
@@ -790,12 +811,14 @@ class LobbyManager {
             this.fillQueueWithBotsIfNeeded();
 
             if (this.waitingPlayers.length < 3) {
-                await this.stateStore.replaceQueue(this.waitingPlayers);
+                const realPlayersToRequeue =
+                    this.waitingPlayers.filter(player => !player.isBot);
+
+                await this.stateStore.requeuePlayers(realPlayersToRequeue);
                 return;
             }
 
             const roomPlayers = this.waitingPlayers.splice(0, 3);
-            await this.stateStore.replaceQueue(this.waitingPlayers);
             await this.createRoom(roomPlayers);
         });
     }
@@ -828,12 +851,12 @@ class LobbyManager {
 
         const roster = await this.buildRoomRoster(room);
 
-        roomPlayers.forEach(player => {
+        for (const player of roomPlayers) {
             if (player.isBot) {
-                return;
+                continue;
             }
 
-            this.sendPlayer(player, {
+            const roomCreatedMessage = {
                 type: "room_created",
                 playerId: player.id,
                 reconnectToken: player.sessionId,
@@ -848,8 +871,17 @@ class LobbyManager {
                 drawPileCount: (engine.room.drawPile || []).length,
                 nextDrawBlock: engine.getNextDrawBlock(),
                 roster: roster
-            });
-        });
+            };
+
+            if (player.ws && player.ws.readyState === 1) {
+                this.sendPlayer(player, roomCreatedMessage);
+            } else {
+                // Player's live socket lives on a different pod than the one
+                // that formed this room; hand off so that pod can hydrate
+                // and deliver via the same path reconnects already use.
+                await this.stateStore.publishPlayerAssignment(player.id, room.id);
+            }
+        }
 
         engine.broadcastGameState();
     }

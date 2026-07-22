@@ -10,7 +10,17 @@ Scope: everything that verifies or tunes behavior — server contract tests, the
 
 **Depends on:** Game Engine, Game Config, Lobby Manager, Tower Stability (directly required; exercised by a block-settling test). External: `node:test`, `node:assert/strict`.
 
-**Notes:** protects the UI-facing payload contracts [Main UI Controller](./ui.md#main-ui-controller) renders directly — a passing suite is a reasonable signal client-visible scoring/summary behavior hasn't shifted. Coverage concentrates on Game Engine's scoring/summary paths; Bot Manager, Redis State, Balance Simulator, and Server Entry have **no dedicated tests here**.
+**Notes:** protects the UI-facing payload contracts [Main UI Controller](./ui.md#main-ui-controller) renders directly — a passing suite is a reasonable signal client-visible scoring/summary behavior hasn't shifted. Coverage concentrates on Game Engine's scoring/summary paths; Bot Manager, Balance Simulator, and Server Entry have **no dedicated tests here** — Redis State's matchmaking-queue path now has coverage via [Server Matchmaking Queue Tests](#server-matchmaking-queue-tests) below.
+
+## Server Matchmaking Queue Tests
+
+`src/Server/tests/Matchmaking_Queue.test.js` — CI/test-only, **not** shipped in the Docker image. Runs via `npm test`, or directly: `node --test tests/Matchmaking_Queue.test.js` from `src/Server`. **1 test, passing.**
+
+**Covers:** the multi-pod matchmaking race fixed in [decisions.md](./decisions.md#matchmaking-queue-lost-update-and-cross-pod-room-delivery-gap) — two `LobbyManager` instances (simulating two server pods) share one fake Redis-backed state store with artificial async gaps (`setImmediate` ticks) between read/write steps, so concurrent joins actually get a chance to interleave the way real network I/O would. Three players join near-simultaneously, two via one "pod" and one via the other; the test asserts all three end up assigned to the same room and each player's own socket receives a `room_created`/`room_resumed` message.
+
+**Depends on:** Lobby Manager, Redis State (only for `stripRuntimeRoom`, reused so the fake store's `saveRoom`/`getRoom` produce the same snapshot shape `hydrateRoom()` expects). External: `node:test`, `node:assert/strict`.
+
+**Notes:** the fake state store's `withMatchmakingLock` chains onto one shared promise across both simulated pods, faithfully serializing the matchmaking decision the way Redis's `SET NX` lock does — only `enqueuePlayer` is deliberately left unlocked, matching production, since that's the actual race window. Confirmed as a meaningful regression test by running it against the pre-fix queue logic (restored a `replaceQueue`-shaped fake store method matching the removed `Redis_State.js` method): it failed reliably there and passes against the fix.
 
 ## Balance Simulator
 
@@ -40,10 +50,10 @@ Files: `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`, `Tests/Gut/test_player_
 |---|---|---|
 | Client Android Internal | `CiSmokeTest.gd`, required GUT tests | Yes — before signed export |
 | Client HTML5 Pages | (build/export only — no test gate beyond the build itself) | — |
-| Server K3s Deploy | `npm test` (syntax checks + `Score_Events.test.js`) | Yes — before image build/push |
+| Server K3s Deploy | `npm test` (syntax checks + `Score_Events.test.js` + `Matchmaking_Queue.test.js`) | Yes — before image build/push |
 
 ## Known coverage gaps
 
 - `checkFailCondition()`'s `all_blocks_used` branch and `setupSideQuest()`/quest completion have no direct test — worth adding before a larger refactor of the Power side-quest flow.
-- No integration tests yet for multi-worker Redis reconnect or gateway routing — planned future work (see [decisions.md](./decisions.md#no-persistent-leaderboard-yet)).
+- Multi-worker matchmaking (queue draining + cross-pod room handoff) now has regression coverage — see [Server Matchmaking Queue Tests](#server-matchmaking-queue-tests). Reconnect and gateway routing across pods more broadly still have no integration tests — planned future work (see [decisions.md](./decisions.md#no-persistent-leaderboard-yet)).
 - Most client UI components (Main UI Controller, NetworkManager, Block Preview, Tower Stack, Cooldown Overlay, Debug Overlay) have structural coverage only, not behavioral.

@@ -43,3 +43,26 @@
   args:
     executable: /bin/bash
   changed_when: true
+
+- name: Give Caddy a moment to start or crash
+  ansible.builtin.pause:
+    seconds: 3
+
+- name: Verify Server K3s Caddy gateway container is running
+  block:
+    - name: Check Caddy container state
+      ansible.builtin.command: >
+        sudo docker inspect -f "{{ '{{' }}.State.Running{{ '}}' }}" corp-tower-k3s-caddy
+      register: caddy_container_running
+      changed_when: false
+      failed_when: caddy_container_running.stdout | trim != "true"
+  rescue:
+    - name: Capture Caddy container logs for diagnosis
+      ansible.builtin.command: sudo docker logs --tail 200 corp-tower-k3s-caddy
+      register: caddy_logs
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with Caddy logs
+      ansible.builtin.fail:
+        msg: "corp-tower-k3s-caddy is not running after start/reload. Logs:\n{{ caddy_logs.stdout }}\n{{ caddy_logs.stderr }}"

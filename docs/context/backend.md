@@ -12,8 +12,9 @@ All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block
 - Creates 3-participant rooms, filling with debug bots when allowed.
 - Validates/broadcasts debug-config updates; lets real players resume within the reconnect TTL; destroys rooms when the TTL expires with no connected real players.
 - Preserves hydrated room state (shape inventories, tower history) when a room is recovered from shared state.
+- Hands a player off to whichever pod owns their live WebSocket when that pod isn't the one that formed their room — see the cross-pod room handoff note below.
 
-**Interface:** `addPlayer(player)`, `tryCreateRoom()`, `closeRoom(room, reason, disconnectedPlayer)`, `resumePlayer(player, roomId)`, `handleRoomReconnectExpired(roomId)`, `updateDebugConfig(key, value)`, `start()`, `createPlayer(ws, reconnectRequest)`, `broadcastDebugConfig()`, `removePlayer(player)`.
+**Interface:** `addPlayer(player)`, `tryCreateRoom()`, `closeRoom(room, reason, disconnectedPlayer)`, `resumePlayer(player, roomId)`, `handleRoomReconnectExpired(roomId)`, `handlePlayerAssignment({playerId, roomId, sourcePodId})`, `updateDebugConfig(key, value)`, `start()`, `createPlayer(ws, reconnectRequest)`, `broadcastDebugConfig()`, `removePlayer(player)`.
 
 **Depends on:** Game Engine, Game Config, Redis State (required, default-instantiated — not just optionally wired in), Bot Manager (indirectly, via the engine it starts).
 
@@ -28,6 +29,8 @@ All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block
   - `resetDebugConfig` restores all exposed tunables to the Game Config startup defaults, then rebroadcasts `debug_config`.
   - Debug settings are runtime tuning only, never player progression data.
 - Hydrated room snapshots include `towerBlocks`, so non-owner workers and reconnecting clients can redraw the tower without recomputing it client-side.
+- **Matchmaking queue draining is atomic, not read-modify-write:** `tryCreateRoom()` calls Redis State's `dequeueRealPlayers(3)` (atomic pop) instead of reading the full queue and rewriting it — see [decisions.md](./decisions.md#matchmaking-queue-lost-update-and-cross-pod-room-delivery-gap) for why.
+- **Cross-pod room handoff:** when `createRoom()` assigns a player who isn't locally connected on this pod (their `ws` is `null` here), it calls Redis State's `publishPlayerAssignment(playerId, roomId)` instead of sending directly. Every pod subscribes to this at `start()`; the pod that actually owns that player's socket receives the event via `handlePlayerAssignment` and calls `resumePlayer(player, roomId)` — the same `hydrateRoom`/subscribe path already used for genuine reconnects, so `room_created`/`room_resumed` and all subsequent `game_state` broadcasts reach the player correctly regardless of which pod formed the room.
 
 ## Game Engine
 
@@ -148,7 +151,7 @@ All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block
 
 `Redis_State.js` — shared-state adapter so multiple server workers can share matchmaking/room state. Active-session state only (matchmaking/reconnect), **not** long-term player/leaderboard persistence.
 
-**Interface:** `nextPlayerId()`/room-id equivalents (memory counters when Redis is disabled); session methods (reconnect token ↔ player/room mapping + TTL); room snapshot methods (`saveRoom(room, renewLease)`, strips live WebSocket refs before storing); matchmaking queue methods (shared waiting-player queue + a lock preventing two workers creating the same room); pub/sub methods (tagged with source pod/worker id so a worker can ignore its own echo); room lease methods (`claimRoomLease(roomId)`/`getRoomLeaseOwner(roomId)`, backed by `ROOM_LEASE_SECONDS` — decide which pod owns a hydrated room's timers, used by Lobby Manager's `hydrateRoom` `canOwnTimers` check); `getPodId()`/`getReconnectTtlSeconds()` accessors.
+**Interface:** `nextPlayerId()`/room-id equivalents (memory counters when Redis is disabled); session methods (reconnect token ↔ player/room mapping + TTL); room snapshot methods (`saveRoom(room, renewLease)`, strips live WebSocket refs before storing); matchmaking queue methods — `enqueuePlayer(player)` (unlocked `lPush`), `dequeueRealPlayers(maxCount)` (atomic `RPOP ... maxCount`, oldest-first), `requeuePlayers(players)` (atomic `RPUSH`, puts real players back without touching anything another pod concurrently enqueued), `getQueuedPlayers()` (read-only inspection), plus a lock (`withMatchmakingLock`) serializing the take-3-or-requeue decision across workers; pub/sub methods — per-room event channels plus a global `publishPlayerAssignment(playerId, roomId)`/`subscribeToPlayerAssignments(handler)` channel used for the cross-pod room handoff (all tagged with source pod/worker id so a worker can ignore its own echo); room lease methods (`claimRoomLease(roomId)`/`getRoomLeaseOwner(roomId)`, backed by `ROOM_LEASE_SECONDS` — decide which pod owns a hydrated room's timers, used by Lobby Manager's `hydrateRoom` `canOwnTimers` check); `getPodId()`/`getReconnectTtlSeconds()` accessors.
 
 **Depends on:** `redis` npm package (lazily required only when a real connection is attempted, so this file loads fine without the package present).
 
@@ -157,6 +160,7 @@ All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block
 - Room snapshots preserve serializable gameplay state (shape inventory, `currentHeight`, `impactScores`, `impactPowers`, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`, quick-chat cooldown timestamps) while excluding transient chat events.
 - The connection retry loop's final cleanup wraps `client.disconnect()` in its own try/catch that intentionally swallows errors — best-effort cleanup after an already-failed connection, not a bug.
 - Only the pod holding a room's lease runs that room's timers; other pods may still read/hydrate the room without owning its clock.
+- `dequeueRealPlayers`/`requeuePlayers` replaced a prior `replaceQueue(players)` (read-then-full-overwrite) — removed, not deprecated-in-place, because its read/write gap was the source of a real lost-update bug. See [decisions.md](./decisions.md#matchmaking-queue-lost-update-and-cross-pod-room-delivery-gap).
 
 ## Tooling & tests (pointers)
 

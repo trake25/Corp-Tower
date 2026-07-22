@@ -56,7 +56,16 @@ The floating debug overlay is present in every client build (no build flag, no `
 
 ## No persistent leaderboard yet
 
-Redis is active-session state (matchmaking/reconnect/room snapshots), not long-term persistence. There is no durable leaderboard or player-stat storage yet — planned future technical work, along with structured logging and integration tests for multi-worker Redis reconnect/gateway routing (currently untested at the integration level; see [testing.md](./testing.md)).
+Redis is active-session state (matchmaking/reconnect/room snapshots), not long-term persistence. There is no durable leaderboard or player-stat storage yet — planned future technical work, along with structured logging. Multi-worker matchmaking now has integration-level regression coverage (see [testing.md](./testing.md#server-matchmaking-queue-tests)); reconnect/gateway routing across pods more broadly is still untested at that level.
+
+## Matchmaking queue lost-update and cross-pod room-delivery gap
+
+Reported symptom: when two players joined from the same network at nearly the same moment (plus a third player from elsewhere), only one of the two made it to the play screen. Player identity was already `playerId`/`reconnectToken`-based, not IP-based, so the cause was elsewhere. Two independent multi-pod bugs were found and fixed together in `Lobby_Manager.js`/`Redis_State.js`:
+
+1. **Lost-update race in the shared queue.** `tryCreateRoom()` used to read the entire Redis matchmaking queue, then unconditionally overwrite it (`replaceQueue()`: `DEL` + rewrite). `addPlayer()` calls `enqueuePlayer()` (an unlocked `lPush`) *before* acquiring the matchmaking lock, so if another pod's `enqueuePlayer()` landed in the gap between one pod's read and its full-queue rewrite, that player's entry was silently wiped from Redis — they stayed connected but never got queued into any room. Fixed by replacing the read-all/rewrite-all pattern with `dequeueRealPlayers(maxCount)` (atomic `RPOP ... count`) and `requeuePlayers(players)` (atomic `RPUSH` of only what was actually taken back out) — neither can clobber an entry it never touched. `replaceQueue()` was deleted rather than kept as a fallback, since its read/write gap was the actual defect.
+2. **Cross-pod delivery gap.** Whichever pod wins the matchmaking lock is the one that runs `createRoom()`, but with 2 server replicas behind round-robin, that pod only holds live WebSocket references for players connected to itself — a teammate connected to a different pod got added to the room's player list server-side, but the direct `sendPlayer()` call silently no-op'd (`ws` was `null` locally), so `room_created` never reached them and their socket just sat open and silent. Fixed by publishing a lightweight `player:assignments` pub/sub event (`Redis_State.js`'s `publishPlayerAssignment`/`subscribeToPlayerAssignments`) whenever a room-assigned player isn't locally connected; the pod that actually owns that player's socket receives it and calls `resumePlayer()`, reusing the same `hydrateRoom()`/room-channel-subscribe path already relied on for genuine reconnects, rather than inventing a parallel state-relay mechanism.
+
+Regression coverage: [Server Matchmaking Queue Tests](./testing.md#server-matchmaking-queue-tests).
 
 ## Shape-block system invalidated old balance assumptions
 
