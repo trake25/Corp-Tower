@@ -43,7 +43,7 @@ Adding a new engine-owned system: put it in its own `engine/` module following t
 
 Neither shape is added to `GameUI.tscn` directly — each declares the nodes it needs via its own `bind_nodes(binder)` method, which Main aggregates through `UiNodeBinder`. Follow this shape for new UI modules rather than adding logic back into `Main.gd`.
 
-**Popover triggers wire their own signal.** Each trigger (`QuestChip`, `QuickChatTrigger`, `TeamInventoryButton`, `PowerTrigger`) connects its own native `.pressed` signal and calls `should_block_popovers()` itself, rather than routing through a shared `_input()` hit-test dispatcher — a prior shared-router design (`PointerTriggerRouter`) was removed for this reason (see [decisions.md](./decisions.md)). Add new popover triggers the same way.
+**Popover triggers wire their own signal.** Each trigger (`QuestChip`, `QuickChatTrigger`, `PowerTrigger`) connects its own native `.pressed` signal and calls `should_block_popovers()` itself, rather than routing through a shared `_input()` hit-test dispatcher — a prior shared-router design (`PointerTriggerRouter`) was removed for this reason (see [decisions.md](./decisions.md)). Add new popover triggers the same way. (The former `TeamInventoryButton` trigger was removed entirely — see [decisions.md](./decisions.md#team-inventory-popover-removed--always-visible-team-inventory-panel).)
 
 ## Godot UI gotchas to respect
 
