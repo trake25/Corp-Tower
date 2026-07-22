@@ -1,7 +1,6 @@
 extends Node
 
 const MAX_INVENTORY_SLOTS := 3
-const DRAW_PILE_COLOR := Color(0.95, 0.72, 0.25, 1.0)
 const DRAG_PREVIEW_SIZE := Vector2(96, 96)
 const BlockPreviewScript = preload("res://Cor/Scripts/BlockPreview.gd")
 const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
@@ -343,7 +342,7 @@ func update_draw_pile_ui(draw_pile_count: int, raw_next_block: Variant) -> void:
 	if draw_pile_preview == null:
 		return
 
-	draw_pile_preview.cell_color = DRAW_PILE_COLOR
+	draw_pile_preview.cell_color = players_ctx.local_color()
 
 	if draw_pile_count <= 0 or raw_next_block == null:
 		draw_pile_name_label.text = "Next Draw"
