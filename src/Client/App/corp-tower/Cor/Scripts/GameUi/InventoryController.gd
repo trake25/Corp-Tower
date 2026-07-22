@@ -346,11 +346,11 @@ func update_draw_pile_ui(draw_pile_count: int, raw_next_block: Variant) -> void:
 
 	if draw_pile_count <= 0 or raw_next_block == null:
 		draw_pile_name_label.text = "Next Draw"
-		draw_pile_count_label.text = "0 left"
+		draw_pile_count_label.text = "0 Remaining Bricks"
 		draw_pile_preview.clear_block()
 		return
 
 	var next_block: Dictionary = BlockDataScript.normalize_block(raw_next_block, 0)
-	draw_pile_name_label.text = "Next " + str(next_block.get("shapeId", "BLOCK"))
-	draw_pile_count_label.text = str(draw_pile_count) + " left"
+	draw_pile_name_label.text = "Next Draw"
+	draw_pile_count_label.text = str(draw_pile_count) + " Remaining Bricks"
 	draw_pile_preview.set_block(next_block)
