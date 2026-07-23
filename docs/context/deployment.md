@@ -39,6 +39,19 @@ Workflows create the shared S3 backend bucket if missing, via `.github/actions/t
 - `ecr-pull` image-pull secret is refreshed by the deploy workflow, reusing the same ECR repository secret as the old Docker staging path.
 - `Server-K3s-Deploy.yml` generates an **uncommitted** `overlays/runtime` Kustomize overlay on top of the committed `overlays/lab` at deploy time, to inject the real ECR image tag — the committed `lab-placeholder` tag in `overlays/lab` is never what actually runs.
 
+## Caddy gateway ACME cert persistence (R2)
+
+EC2-GW's root volume is ephemeral, so a destroyed/recreated gateway used to lose Caddy's automatic-HTTPS state and request a brand-new Let's Encrypt cert every time — see [decisions.md](./decisions.md#caddy-gateway-acme-cert-cache-persisted-to-r2) for the rate-limit incident this caused. `configure_caddy.yml` (`infra/k3s/ansible/roles/gateway/tasks/`) now round-trips the `corp-tower-k3s-caddy-data` Docker volume through R2 bucket `corp-tower-gateway-state`:
+
+- **Restore** (before Caddy starts): `Server-K3s-Deploy.yml`'s `Restore Caddy gateway state from R2` step downloads the archive (no-ops if none exists yet) and `scp`s it to EC2-GW; Ansible extracts it into the volume.
+- **Liveness check**: after start, Ansible waits 3s and asserts the container is still running, capturing `docker logs` and failing loudly if not — replaces a prior silent failure mode where a crashed Caddy container wasn't caught until the public WSS smoke test timed out 5 minutes later.
+- **Persist** (after the liveness check passes): Ansible re-archives the volume; the `Persist Caddy gateway state to R2` step `scp`s it back and uploads it.
+- On smoke-test failure regardless of cause, `Dump Caddy gateway logs on smoke test failure` SSHes to EC2-GW and dumps `docker ps`/`docker logs` into the CI log.
+
+The archive holds the gateway's live ACME account key and TLS private key: both the runner and EC2-GW sides restrict it to `0600` immediately after it's written and delete it once consumed. R2 was chosen over AWS S3 to reuse the project's existing free R2 usage without adding AWS IAM scope; the payload is a few KB and R2's free tier (10 GB storage, 1M/10M Class A/B ops/month, no egress fee) has no realistic exposure at this cadence.
+
+**Not yet verified end-to-end** — added while blocked on the rate limit it fixes; first live confirmation is pending the next deploy.
+
 ## K3s workflows
 
 | Workflow | Trigger | Behavior |
@@ -46,7 +59,7 @@ Workflows create the shared S3 backend bucket if missing, via `.github/actions/t
 | `Server-K3s-Automated-Master.yml` | Auto (push to `main`/`master` on watched paths) or manual | Orchestrates the others — see modes below |
 | `Server-K3s-Infra-Plan.yml` | Reusable / manual | Plans the K3s Terraform root; intentionally allows create/delete actions to be reviewed (e.g. weekend recreate after weekday cleanup) |
 | `Server-K3s-Infra-Apply.yml` | Manual, requires `APPLY_SERVER_K3S` | Plans first and **hard-fails if the plan contains any delete/replace action** — run Cleanup's `terraform_destroy` first if a plan would replace/delete resources |
-| `Server-K3s-Deploy.yml` | Reusable / manual | Tests server code → builds/pushes Docker image → installs/configures K3s via EC2-GW bastion/NAT → refreshes `ecr-pull` → applies the Kustomize overlay → validates nodes/Redis/replicas/Caddy/public WSS |
+| `Server-K3s-Deploy.yml` | Reusable / manual | Tests server code → builds/pushes Docker image → installs/configures K3s via EC2-GW bastion/NAT (restoring/persisting Caddy's ACME cert cache to R2 around the Ansible run) → refreshes `ecr-pull` → applies the Kustomize overlay → validates nodes/Redis/replicas/Caddy/public WSS |
 | `Server-K3s-Diagnostics.yml` | Reusable / manual | Inspects tagged lab AWS resources, verifies Cloudflare DNS ownership, probes SSH through the bastion |
 | `Server-K3s-Cleanup.yml` | Manual, requires `confirm_cleanup` | `runtime_only` (needs `CLEANUP_SERVER_K3S`) removes K3s/Caddy artifacts; `terraform_destroy` (needs `DESTROY_SERVER_K3S`) removes all AWS resources in `infra/k3s/terraform` |
 
@@ -73,7 +86,7 @@ Use manual `fast_server_deploy` when you don't want to wait for a push-triggered
 
 ### Operational checks (what "healthy" means)
 
-Terraform `fmt`/`validate` · server `npm test` · K3s Ansible syntax check · all K3s nodes Ready · Redis deployment Ready · two server replicas Ready · `ecr-pull` secret present in `corp-tower` · EC2-GW Caddy validates and reloads · Cloudflare DNS resolves to the K3s gateway public IP · WebSocket smoke connects to `wss://ws.tod.galaxxigames.com`.
+Terraform `fmt`/`validate` · server `npm test` · K3s Ansible syntax check · all K3s nodes Ready · Redis deployment Ready · two server replicas Ready · `ecr-pull` secret present in `corp-tower` · EC2-GW Caddy validates, reloads, and is confirmed still running (liveness-checked with `docker logs` captured on failure) · Cloudflare DNS resolves to the K3s gateway public IP · WebSocket smoke connects to `wss://ws.tod.galaxxigames.com`.
 
 ### Observability commands
 
@@ -112,8 +125,9 @@ Not installed by the first K3s rollout. Bootstrap manifests: `infra/k3s/argocd/b
 | `EC2_STAGING_SSH_PUBLIC_KEY` | *(optional)* Preferred for Terraform key-pair creation; if empty, K3s infra workflows derive the public key from `EC2_STAGING_SSH_KEY` |
 | `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ZONE_ID` | DNS updates for `ws.tod.galaxxigames.com` |
 | `EC2_STAGING_PORT`, `STAGING_SSH_CIDR`, `STAGING_GAME_PORT_CIDR` | *(optional)* |
+| `R2_GATEWAY_BUCKET`, `R2_GATEWAY_ACCESS_KEY_ID`, `R2_GATEWAY_SECRET_ACCESS_KEY` | Caddy ACME cert cache persistence to R2 bucket `corp-tower-gateway-state` (reuses `R2_ACCOUNT_ID` from [build.md](./build.md#required-secrets-client--art-scope)); repo secrets (not environment-scoped), so `deploy-k3s`'s `environment: staging` job can still see them — steps no-op if unset |
 
-K3s workflows reuse the existing GitHub `staging` Environment rather than duplicating secret names. Client/Android/art secrets are scoped separately — see [build.md](./build.md#required-secrets-client--art-scope).
+K3s workflows reuse the existing GitHub `staging` Environment rather than duplicating secret names — except the `R2_GATEWAY_*` trio and `R2_ACCOUNT_ID`, which are repo secrets shared with the art pipeline, not environment-scoped. Client/Android/art secrets are scoped separately — see [build.md](./build.md#required-secrets-client--art-scope).
 
 ## EKS (plan-only)
 

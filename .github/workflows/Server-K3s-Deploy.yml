@@ -296,6 +296,56 @@ jobs:
             printf '%s\n' "$scan_output" >> ~/.ssh/known_hosts
           done
 
+      - name: Restore Caddy gateway state from R2
+        env:
+          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
+          EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_GATEWAY_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_GATEWAY_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          R2_BUCKET: ${{ secrets.R2_GATEWAY_BUCKET }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+        run: |
+          # SAFETY EXCEPTION to the no-source-comments convention (Summary.md):
+          # this step holds R2 credentials in env, and the downloaded archive
+          # holds the gateway's ACME account key + TLS private key. Never add
+          # `set -x` here, and never widen the umask/permissions below.
+          set -euo pipefail
+          umask 077
+
+          if [ -z "${R2_BUCKET:-}" ]; then
+            echo "R2_GATEWAY_BUCKET not set; skipping Caddy state restore."
+            exit 0
+          fi
+
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          ARCHIVE="$RUNNER_TEMP/corp-tower-caddy-data.tar.gz"
+          ERR_LOG="$RUNNER_TEMP/r2-restore-err.txt"
+          trap 'rm -f "$ARCHIVE" "$ERR_LOG"' EXIT
+
+          SSH_OPTS=(
+            -i ~/.ssh/ec2_key
+            -o BatchMode=yes
+            -o ConnectTimeout=20
+            -o UserKnownHostsFile=~/.ssh/known_hosts
+            -o GlobalKnownHostsFile=/dev/null
+            -o StrictHostKeyChecking=yes
+          )
+
+          if aws s3api get-object \
+                --endpoint-url "$ENDPOINT" \
+                --bucket "$R2_BUCKET" \
+                --key "gateway/caddy-data.tar.gz" \
+                "$ARCHIVE" >/dev/null 2>"$ERR_LOG"; then
+            echo "Restoring saved Caddy gateway ACME cache from R2."
+            scp "${SSH_OPTS[@]}" -P "$EC2_PORT" "$ARCHIVE" "$EC2_USER@$GATEWAY_PUBLIC_IP:/tmp/corp-tower-caddy-data.tar.gz"
+          else
+            echo "No saved Caddy gateway state in R2 yet, or fetch failed; continuing without restore."
+            sed -e 's/[A-Za-z0-9/+=]\{32,\}/<redacted>/g' "$ERR_LOG" || true
+          fi
+
       - name: Run K3s Ansible syntax check
         env:
           ANSIBLE_CONFIG: infra/k3s/ansible/ansible.cfg
@@ -318,6 +368,62 @@ jobs:
             infra/k3s/ansible/playbooks/site.yml \
             -e "gateway_domain=${GATEWAY_DOMAIN}" \
             -e "private_subnet_cidr=${PRIVATE_SUBNET_CIDR}"
+
+      - name: Persist Caddy gateway state to R2
+        env:
+          EC2_USER: ${{ secrets.EC2_STAGING_USER }}
+          EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_GATEWAY_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_GATEWAY_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          R2_BUCKET: ${{ secrets.R2_GATEWAY_BUCKET }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+        run: |
+          # SAFETY EXCEPTION to the no-source-comments convention (Summary.md):
+          # this step holds R2 credentials in env, and the fetched archive
+          # holds the gateway's ACME account key + TLS private key. Never add
+          # `set -x` here, and never widen the umask/permissions below.
+          set -euo pipefail
+          umask 077
+
+          if [ -z "${R2_BUCKET:-}" ]; then
+            echo "R2_GATEWAY_BUCKET not set; skipping Caddy state persistence."
+            exit 0
+          fi
+
+          ARCHIVE="$RUNNER_TEMP/corp-tower-caddy-data-save.tar.gz"
+          ERR_LOG="$RUNNER_TEMP/r2-persist-err.txt"
+          trap 'rm -f "$ARCHIVE" "$ERR_LOG"' EXIT
+
+          SSH_OPTS=(
+            -i ~/.ssh/ec2_key
+            -o BatchMode=yes
+            -o ConnectTimeout=20
+            -o UserKnownHostsFile=~/.ssh/known_hosts
+            -o GlobalKnownHostsFile=/dev/null
+            -o StrictHostKeyChecking=yes
+          )
+
+          scp "${SSH_OPTS[@]}" -P "$EC2_PORT" \
+            "$EC2_USER@$GATEWAY_PUBLIC_IP:/tmp/corp-tower-caddy-data.tar.gz" "$ARCHIVE"
+
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          if ! aws s3api put-object \
+                --endpoint-url "$ENDPOINT" \
+                --bucket "$R2_BUCKET" \
+                --key "gateway/caddy-data.tar.gz" \
+                --body "$ARCHIVE" >/dev/null 2>"$ERR_LOG"; then
+            echo "::error::Failed to save Caddy gateway state to R2."
+            sed -e 's/[A-Za-z0-9/+=]\{32,\}/<redacted>/g' "$ERR_LOG" || true
+            exit 1
+          fi
+
+          ssh "${SSH_OPTS[@]}" -p "$EC2_PORT" "$EC2_USER@$GATEWAY_PUBLIC_IP" \
+            "rm -f /tmp/corp-tower-caddy-data.tar.gz" || true
+
+          echo "Saved Caddy gateway ACME cache to R2."
 
       - name: Open bastion tunnel and fetch kubeconfig
         env:

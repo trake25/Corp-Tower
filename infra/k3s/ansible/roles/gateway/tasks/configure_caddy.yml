@@ -19,6 +19,33 @@
   ansible.builtin.command: timeout 180 sudo docker pull caddy:2-alpine
   changed_when: true
 
+- name: Check for restored Caddy ACME cache archive
+  ansible.builtin.stat:
+    path: /tmp/corp-tower-caddy-data.tar.gz
+  register: caddy_data_archive
+
+- name: Restrict permissions on restored archive before use
+  ansible.builtin.file:
+    path: /tmp/corp-tower-caddy-data.tar.gz
+    mode: "0600"
+  when: caddy_data_archive.stat.exists
+
+- name: Restore Caddy ACME cache from archive
+  ansible.builtin.command: >
+    sudo docker run --rm
+    -v corp-tower-k3s-caddy-data:/data
+    -v /tmp:/restore:ro
+    caddy:2-alpine
+    tar xzf /restore/corp-tower-caddy-data.tar.gz -C /data
+  when: caddy_data_archive.stat.exists
+  changed_when: true
+
+- name: Remove restored archive after extraction
+  ansible.builtin.file:
+    path: /tmp/corp-tower-caddy-data.tar.gz
+    state: absent
+  when: caddy_data_archive.stat.exists
+
 - name: Validate rendered Server K3s Caddyfile
   ansible.builtin.command: >
     timeout 30 sudo docker run --rm
@@ -66,3 +93,20 @@
     - name: Fail with Caddy logs
       ansible.builtin.fail:
         msg: "corp-tower-k3s-caddy is not running after start/reload. Logs:\n{{ caddy_logs.stdout }}\n{{ caddy_logs.stderr }}"
+
+- name: Archive current Caddy ACME cache for persistence
+  ansible.builtin.command: >
+    sudo docker run --rm
+    -v corp-tower-k3s-caddy-data:/data
+    -v /tmp:/backup
+    caddy:2-alpine
+    tar czf /backup/corp-tower-caddy-data.tar.gz -C /data .
+  changed_when: true
+
+- name: Restrict ownership and permissions on archived Caddy state
+  ansible.builtin.file:
+    path: /tmp/corp-tower-caddy-data.tar.gz
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0600"
+  become: true

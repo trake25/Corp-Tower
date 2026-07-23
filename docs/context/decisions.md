@@ -42,6 +42,16 @@ Note on the guarantee's actual scope: art is absent from the repo/history and no
 
 The earlier Docker EC2-1/EC2-2/EC2-3 staging workflows, Terraform, and Ansible have been fully removed. The K3s lab (`infra/k3s`) is the current active stack; see [deployment.md](./deployment.md).
 
+## Caddy gateway ACME cert cache persisted to R2
+
+EC2-GW's `root_block_device` is ephemeral (`infra/k3s/terraform/ec2.tf`) — every `terraform destroy`/recreate of the K3s lab wipes the Docker volume backing Caddy's automatic-HTTPS state (`corp-tower-k3s-caddy-data`), forcing a fresh Let's Encrypt certificate request for `ws.tod.galaxxigames.com` on every rebuild. Repeated destroy/recreate cycles within one week hit Let's Encrypt's "5 duplicate certificates per exact identifier set per 168h" limit, blocking the public WSS smoke test with a `429 rateLimited` until the rolling window cleared — with nothing surfacing the real cause beyond a generic 5-minute smoke-test timeout, since neither the Ansible role nor the deploy workflow checked whether the Caddy container actually stayed up.
+
+Fixed two ways, both in `configure_caddy.yml` / `Server-K3s-Deploy.yml`: (1) a post-start liveness check now fails fast with `docker logs` output instead of waiting out the smoke-test timeout; (2) the ACME cache round-trips through a dedicated Cloudflare R2 bucket (`corp-tower-gateway-state`) around each deploy — restored before Caddy starts, saved after it's confirmed running — so a destroyed-and-recreated gateway reuses the still-valid 90-day cert instead of requesting a new one, and recreates stop counting against the weekly quota. R2 was chosen over AWS S3 specifically to avoid adding AWS IAM scope and reuse the project's existing free R2 usage (see [Private Asset Pipeline credential split](#private-asset-pipeline-credential-split) for the other R2 consumer); the payload is a few KB and R2's free tier has no realistic exposure at this cadence. Full mechanism → [deployment.md](./deployment.md#caddy-gateway-acme-cert-persistence-r2).
+
+Since the archive carries the gateway's live ACME account key and TLS private key, both the GitHub runner and EC2-GW restrict it to `0600` immediately after it's written/received and delete it once consumed, rather than leaving it in shared `/tmp` at default permissions.
+
+**Not yet verified end-to-end** — implemented while blocked on the same rate limit it fixes; first live confirmation is pending the next deploy after the 429 window clears.
+
 ## EKS kept plan-only
 
 The EKS path (`infra/eks`) is Terraform **plan only** — deliberately not applied. Two reasons: (1) managed AWS resources in this path may exceed free-tier expectations, so plan output and cost need review before any apply/deploy workflow is added; (2) the NLB target group has no pod/node registration mechanism yet (no Load Balancer Controller or IRSA OIDC provider exists in this Terraform root), so applying it wouldn't produce working ingress yet regardless of cost.
