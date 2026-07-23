@@ -80,7 +80,7 @@ mouse_filter = 2
 texture = ExtResource("9_platform")
 expand_mode = 1
 script = ExtResource("3b_backgroundparallax")
-parallax_ratio = 1.0
+parallax_ratio = 0.8
 
 [node name="TowerFill" type="Panel" parent="PlayField" unique_id=1497040853]
 unique_name_in_owner = true

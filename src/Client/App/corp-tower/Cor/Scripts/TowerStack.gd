@@ -7,7 +7,7 @@ const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 const BRICK_UNIT_SIZE := 34.0
 const TOP_PADDING := 14.0
 const BOTTOM_PADDING := 12.0
-const SCROLL_TRIGGER_RATIO := 0.5
+const SCROLL_TRIGGER_RATIO := 0.65
 const COLLAPSE_TILT_DEG := 70.0
 const TILT_EASE_SPEED := 6.0
 
@@ -22,9 +22,6 @@ var tower_tilt_deg: float = 0.0
 var displayed_tilt_deg: float = 0.0
 var tower_collapsed: bool = false
 var _last_scroll_pixels: float = 0.0
-
-func _ready() -> void:
-	clip_contents = true
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
@@ -157,9 +154,14 @@ func _visible_unit_capacity(unit: float) -> int:
 	return max(1, int(floor(available_height / unit)))
 
 func _is_rect_visible(rect: Rect2) -> bool:
+	var bottom_limit: float = size.y
+
+	if get_parent() is Control:
+		bottom_limit = maxf(bottom_limit, get_parent().size.y - position.y)
+
 	return (
 		rect.position.y + rect.size.y >= 0.0 &&
-		rect.position.y <= size.y &&
+		rect.position.y <= bottom_limit &&
 		rect.position.x + rect.size.x >= 0.0 &&
 		rect.position.x <= size.x
 	)
