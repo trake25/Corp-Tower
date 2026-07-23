@@ -11,6 +11,8 @@ var auto_reconnect_delay_remaining := -1.0
 var player_id := ""
 var reconnect_token := ""
 var profile_id := ""
+var current_url := ""
+var tried_failover := false
 
 const PLAYER_ID_FILE := "user://corp_tower_player_id.save"
 const RECONNECT_TOKEN_FILE := "user://corp_tower_reconnect_token.save"
@@ -18,6 +20,7 @@ const PROFILE_ID_FILE := "user://corp_tower_profile_id.save"
 const AUTO_RECONNECT_DELAY_SECONDS := 1.0
 const AUTO_RECONNECT_MAX_ATTEMPTS := 8
 const SERVER_URL := "wss://ws.tod.galaxxigames.com"
+const FAILOVER_SERVER_URL := "wss://devtod.galaxxigames.com"
 
 signal status_changed(text)
 signal room_joined(data)
@@ -26,12 +29,14 @@ signal game_state_updated(data)
 signal client_status(status)
 signal debug_config_updated(config)
 
-func connect_server(is_auto_reconnect := false):
-	var url = SERVER_URL
-
+func connect_server(is_auto_reconnect := false, is_failover_retry := false):
 	if is_auto_reconnect:
 		status_changed.emit("Reconnecting...")
+	elif is_failover_retry:
+		status_changed.emit("Primary server unreachable, trying backup...")
 	else:
+		current_url = SERVER_URL
+		tried_failover = false
 		status_changed.emit("Connecting...")
 
 	if is_conn_estab or is_connecting:
@@ -44,7 +49,7 @@ func connect_server(is_auto_reconnect := false):
 	is_connecting = true
 	load_reconnect_identity()
 
-	var error = ws.connect_to_url(url)
+	var error = ws.connect_to_url(current_url)
 
 	if error == OK:
 		if not is_auto_reconnect:
@@ -53,6 +58,10 @@ func connect_server(is_auto_reconnect := false):
 		is_connecting = false
 		if is_auto_reconnect:
 			schedule_auto_reconnect()
+		elif not tried_failover:
+			tried_failover = true
+			current_url = FAILOVER_SERVER_URL
+			connect_server(false, true)
 
 func disconnect_server():
 	status_changed.emit("Disconnecting...")
@@ -234,6 +243,11 @@ func _process(delta: float) -> void:
 			if is_conn_estab or is_connecting:
 				if auto_reconnect_enabled and not manual_disconnect_requested:
 					schedule_auto_reconnect()
+				elif is_connecting and not is_conn_estab and not tried_failover and not manual_disconnect_requested:
+					tried_failover = true
+					current_url = FAILOVER_SERVER_URL
+					is_connecting = false
+					connect_server(false, true)
 				else:
 					status_changed.emit("Disconnected")
 					client_status.emit("[Connect]")
