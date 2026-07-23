@@ -27,6 +27,7 @@ All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block
   - `debugBotDelayMax` ≥ `debugBotDelayMin` enforced.
   - `debugStartLevel` applies immediately by restarting active debug rooms at that level.
   - `resetDebugConfig` restores all exposed tunables to the Game Config startup defaults, then rebroadcasts `debug_config`.
+  - `restartLevel` is a boolean action key (same shape as `resetDebugConfig`, not a real tunable): restarts every active room at its **current** level via `restartAtLevel(room.level, { resetScores: false })` — level state (blocks/tower/timer) resets but total player score is preserved, unlike `debugStartLevel`'s full reset. Triggered by the Debug Overlay's Restart button ([ui.md](./ui.md#main-ui-controller)), which also closes the overlay on press.
   - Debug settings are runtime tuning only, never player progression data.
 - Hydrated room snapshots include `towerBlocks`, so non-owner workers and reconnecting clients can redraw the tower without recomputing it client-side.
 - **Matchmaking queue draining is atomic, not read-modify-write:** `tryCreateRoom()` calls Redis State's `dequeueRealPlayers(3)` (atomic pop) instead of reading the full queue and rewriting it — see [decisions.md](./decisions.md#matchmaking-queue-lost-update-and-cross-pod-room-delivery-gap) for why.
@@ -39,7 +40,7 @@ All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block
 **Responsibilities:** create room state and assign blocks; build/deal the draw pile; maintain placed-block tower history; resolve settling/stability before completion (via Tower Stability); run start-delay/timer/tick broadcasts; validate placement; validate/broadcast quick-chat and Power messages; run the Power side-quest and item-activation system; calculate scores; detect success/failure and advance/roll back levels; stop timers/bots on close; notify Lobby Manager of state changes for persistence.
 
 **Interface** (one `GameEngine` class per room):
-- **Lifecycle:** `createRoom(...)`, `hydrateRoom(...)`, `closeRoom(reason)`, `startLevel()`, `restartAtConfiguredStartLevel()`
+- **Lifecycle:** `createRoom(...)`, `hydrateRoom(...)`, `closeRoom(reason)`, `startLevel()`, `restartAtConfiguredStartLevel()`, `restartAtLevel(level, options)` (shared restart primitive; `restartAtConfiguredStartLevel()` calls it with `{ resetScores: true }` at `debugStartLevel` — Lobby Manager's `restartRoomsAtCurrentLevel()` calls it directly with the room's current level and `{ resetScores: false }`)
 - **Placement:** `placeBlock(playerId, blockIndex)`
 - **Scoring:** `addPlacementScore(...)`, `awardCompletionBonuses(...)`, `addLevelScoreToLeaderboard()`, `getLevelMVP()`, `buildLevelSummary(...)`
 - **Impacts:** `saveImpactState()`, `restoreImpactScores()`, `restoreImpactPowers()`, `rollbackToImpact()`

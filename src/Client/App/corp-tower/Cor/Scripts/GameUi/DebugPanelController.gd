@@ -13,6 +13,7 @@ var is_syncing_debug_config: bool = false
 var debug_overlay: Control
 var debug_dim_layer: Control
 var reset_debug_button: Button
+var restart_level_button: Button
 var close_debug_button: Button
 var bots_toggle: CheckButton
 var bot_strategy_button: OptionButton
@@ -84,6 +85,7 @@ func bind_nodes(binder) -> void:
 	debug_overlay = binder.optional_node("DebugOverlay") as Control
 	debug_dim_layer = binder.optional_node("DebugDimLayer") as Control
 	reset_debug_button = binder.optional_node("ResetDebugButton") as Button
+	restart_level_button = binder.optional_node("RestartLevelButton") as Button
 	close_debug_button = binder.optional_node("CloseDebugButton") as Button
 	bots_toggle = binder.optional_node("BotsToggle") as CheckButton
 	bot_strategy_button = binder.optional_node("BotStrategyButton") as OptionButton
@@ -163,6 +165,9 @@ func setup(tuning_ref, network_ref) -> void:
 
 	if reset_debug_button != null:
 		reset_debug_button.pressed.connect(on_reset_debug_pressed)
+
+	if restart_level_button != null:
+		restart_level_button.pressed.connect(on_restart_level_pressed)
 
 	if debug_dim_layer != null:
 		debug_dim_layer.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -272,6 +277,10 @@ func on_bots_toggle(enabled: bool) -> void:
 
 func on_reset_debug_pressed() -> void:
 	network.update_config("resetDebugConfig", true)
+
+func on_restart_level_pressed() -> void:
+	network.update_config("restartLevel", true)
+	set_open(false)
 
 func on_bot_strategy_selected(index: int) -> void:
 	if is_syncing_debug_config:

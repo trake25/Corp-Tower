@@ -563,6 +563,11 @@ class LobbyManager {
             return true;
         }
 
+        if (key === "restartLevel") {
+            await this.restartRoomsAtCurrentLevel();
+            return true;
+        }
+
         const numberValue = Number(value);
         const clampInt = (currentValue, minValue, maxValue) => {
             const sourceValue =
@@ -718,6 +723,22 @@ class LobbyManager {
             }
 
             room.engine.restartAtConfiguredStartLevel();
+            await this.stateStore.saveRoom(
+                room,
+                room.ownerPodId === this.stateStore.getPodId()
+            );
+        }));
+    }
+
+    async restartRoomsAtCurrentLevel() {
+        await Promise.all(this.rooms.map(async room => {
+            if (!room.engine?.room || room.engine.room.state === "closed") {
+                return;
+            }
+
+            room.engine.restartAtLevel(room.engine.room.level, {
+                resetScores: false
+            });
             await this.stateStore.saveRoom(
                 room,
                 room.ownerPodId === this.stateStore.getPodId()

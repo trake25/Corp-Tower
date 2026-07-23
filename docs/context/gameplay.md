@@ -177,7 +177,7 @@ Highest level reached; MVP scores; optional stats (finisher count, exact-finish 
 
 ## Debug menu and live tuning
 
-Purpose: expose selected [Game Config](./backend.md#game-config) variables to designers/QA without code changes or restarts. Server validates and applies every change, then broadcasts `debug_config` to all real clients (validation rules and exact clamp ranges → [backend.md § Lobby Manager](./backend.md#lobby-manager)). Client debug controls live in a tabbed overlay (Bots / Round / UI / Supply / Scoring / Tower / Power tabs) with a Reset action that restores exposed tunables to `Game_Config.js` defaults.
+Purpose: expose selected [Game Config](./backend.md#game-config) variables to designers/QA without code changes or restarts. Server validates and applies every change, then broadcasts `debug_config` to all real clients (validation rules and exact clamp ranges → [backend.md § Lobby Manager](./backend.md#lobby-manager)). Client debug controls live in a tabbed overlay (Bots / Round / UI / Supply / Scoring / Tower / Power tabs) with a Reset action that restores exposed tunables to `Game_Config.js` defaults, and a header Restart action that restarts the active room at its current level (score preserved) and closes the overlay.
 
 ### Currently exposed variables
 

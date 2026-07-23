@@ -62,7 +62,7 @@ Project root. Android-first client; connects through [NetworkManager](./networki
 
 | Module | Purpose |
 |---|---|
-| `DebugPanelController` | Entire tabbed debug overlay: slider/label wiring, `apply_config()`, `toggle()`/`set_open()`/`is_open()` |
+| `DebugPanelController` | Entire tabbed debug overlay: slider/label wiring, `apply_config()`, `toggle()`/`set_open()`/`is_open()`, header Reset/Restart actions (`on_reset_debug_pressed()` sends `resetDebugConfig`; `on_restart_level_pressed()` sends the `restartLevel` action key then closes the overlay via `set_open(false)` — see [gameplay.md](./gameplay.md#debug-menu-and-live-tuning)) |
 | `ScorePopupController` | Score-event dedup, popup spawn/animation, `get_score_popup_position()` (viewport-ratio based) |
 | `LevelSummaryController` | Owns the two one-shot `Timer`s; queues the summary after the score-popup batch fades; builds summary/impact-failure text |
 | `RosterViewController` | Player rail + per-player [Impact Bar](#leaf-components) track; exposes `rail_entry()`/`rail_box()` (chat-bubble anchors) |

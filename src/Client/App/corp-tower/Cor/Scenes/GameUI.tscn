@@ -800,6 +800,12 @@ custom_minimum_size = Vector2(92, 34)
 layout_mode = 2
 text = "Reset"
 
+[node name="RestartLevelButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader" unique_id=644048045]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 34)
+layout_mode = 2
+text = "Restart"
+
 [node name="CloseDebugButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader" unique_id=1808011100]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(42, 34)
