@@ -39,6 +39,7 @@ var score_label: Label
 var tower_stack: Control
 var connect_button: Button
 var background_parallax: Control
+var platform_parallax: Control
 
 func _ready() -> void:
 	tuning = UiTuningScript.new()
@@ -81,6 +82,7 @@ func _ready() -> void:
 
 	if tower_stack.has_signal("scroll_offset_changed"):
 		tower_stack.connect("scroll_offset_changed", Callable(background_parallax, "set_scroll_pixels"))
+		tower_stack.connect("scroll_offset_changed", Callable(platform_parallax, "set_scroll_pixels"))
 
 	reset_ui()
 	connect_network_signals()
@@ -109,6 +111,7 @@ func bind_ui_nodes() -> void:
 	tower_stack = binder.require_node("TowerStack") as Control
 	connect_button = binder.require_node("ConnectButton") as Button
 	background_parallax = binder.require_node("BgArt") as Control
+	platform_parallax = binder.require_node("PlatformArt") as Control
 
 	top_bar.bind_nodes(binder)
 	inventory.bind_nodes(binder)

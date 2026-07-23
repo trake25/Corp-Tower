@@ -53,6 +53,7 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | Server K3s Automated Master Workflow | `.github/workflows/Server-K3s-Automated-Master.yml` | Orchestrates the individual K3s workflows | Server K3s Workflows | [deployment.md](./deployment.md#k3s-workflows) |
 | Server EKS Stack | `infra/eks/` | Plan-only parallel managed-AWS infra | Terraform Infrastructure | [deployment.md](./deployment.md#eks-plan-only) |
 | Server EKS Workflow | `.github/workflows/Server-EKS-Infra-Plan.yml` | CI plan-only path for EKS | Server EKS Stack | [deployment.md](./deployment.md#eks-plan-only) |
+| Server Backup Workflows | `.github/workflows/Server-Backup-*.yml` | Deploy/clean up the manual physical backup server via a self-hosted runner | `~/corp-tower-server-backup/` (outside repo, on the physical machine) | [deployment.md](./deployment.md#backup-server-manual-physical-machine) |
 
 ## Global / cross-cutting docs
 

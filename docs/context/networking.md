@@ -4,8 +4,9 @@ Scope: the WebSocket wire protocol end to end — message contracts, payload sha
 
 ## Connection
 
-- Endpoint: `wss://ws.tod.galaxxigames.com` (Cloudflare-DNS-managed).
-- Client: Godot `WebSocketPeer`, wrapped by [NetworkManager](#networkmanager).
+- Primary endpoint: `wss://ws.tod.galaxxigames.com` (K3s-on-EC2, Cloudflare-DNS-managed `A` record).
+- Failover endpoint: `wss://devtod.galaxxigames.com` — a manually-operated physical backup machine, reached via Cloudflare Tunnel. Separate hostname, deliberately not a subdomain of `tod.` — rationale (cert-depth, DNS-ownership split) → [deployment.md § Backup server](./deployment.md#backup-server-manual-physical-machine) and [decisions.md](./decisions.md#backup-server-separate-hostname-and-out-of-repo-automation).
+- Client: Godot `WebSocketPeer`, wrapped by [NetworkManager](#networkmanager), which tries the primary endpoint first and automatically falls over to the backup endpoint on connect failure/timeout — see [NetworkManager](#networkmanager) below.
 - Server: `ws` package, entry point [Server Entry](#server-entry).
 - Server is always authoritative — client requests are never trusted as final state; NetworkManager only updates UI state after a server message arrives, never optimistically.
 
@@ -106,9 +107,10 @@ Room snapshots include `impactScores`, `impactPowers`, `drawPile`, `teamCarryOve
 
 `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` — the client's only connection to the server, registered as an autoload singleton.
 
-- **Methods:** `connect_server(is_auto_reconnect := false)`, `disconnect_server()`, `toggle_connection()`, `place_block(block_index)`, `send_quick_chat(slot)`, `activate_power(slot)`, `update_config(key, value)`.
+- **Methods:** `connect_server(is_auto_reconnect := false, is_failover_retry := false)`, `disconnect_server()`, `toggle_connection()`, `place_block(block_index)`, `send_quick_chat(slot)`, `activate_power(slot)`, `update_config(key, value)`.
 - **Signals:** `status_changed(text)`, `room_joined(data)`, `room_closed(data)`, `game_state_updated(data)`, `client_status(status)`, `debug_config_updated(config)`.
 - **State (read directly by [Main UI Controller](./ui.md#main-ui-controller) in places, not only via signals):** `is_conn_estab: bool`, `player_id: String`.
+- **Primary/backup failover:** every fresh connect (`is_auto_reconnect` and `is_failover_retry` both false) starts at `SERVER_URL` (primary). `WebSocketPeer` has no built-in connect timeout, so a manual one is enforced: a connection stuck in `STATE_CONNECTING` past `CONNECT_TIMEOUT_SECONDS` (`5.0`) is force-closed via `ws.close()`, which flows into the normal `STATE_CLOSED` handling. If that closure happened before the socket ever reached `STATE_OPEN`, and the backup hasn't been tried yet this connect cycle (`tried_failover`), NetworkManager retries once against `FAILOVER_SERVER_URL` (`connect_server(false, true)`), emitting `"Primary server unreachable, trying backup..."`. Once failed over, in-game auto-reconnects (real `is_auto_reconnect` retries) keep targeting the backup rather than flipping back to primary — a fresh manual connect (`toggle_connection()`) is what resets to primary again.
 - Doesn't interpret block geometry itself — [Main UI Controller](./ui.md#main-ui-controller) and [Tower Stack](./ui.md#leaf-components) own shape previews and tower drawing.
 - Carries no debug logging by design — every state transition is already observable through its signals.
 

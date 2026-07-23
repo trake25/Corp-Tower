@@ -135,6 +135,25 @@ K3s workflows reuse the existing GitHub `staging` Environment rather than duplic
 
 **`Server-EKS-Infra-Plan.yml`:** manual `workflow_dispatch` or reusable `workflow_call`. Configures AWS via OIDC, ensures the shared S3 backend bucket exists, runs `init`/`fmt -check`/`validate`/`plan`, shows the full no-color plan in workflow logs. Does not apply infrastructure.
 
+## Backup server (manual, physical machine)
+
+A manually-operated physical machine (Linux Mint) acts as a standby for the whole K3s stack, for when it's destroyed or unusable (e.g. the Caddy/Let's Encrypt cert rate limit — see [decisions.md](./decisions.md#caddy-gateway-acme-cert-cache-persisted-to-r2)). It's an entirely separate path, not a K3s node: one Docker container running the unmodified `src/Server/Dockerfile` image, no Redis (`Redis_State.js`'s single-instance in-memory mode is used deliberately), exposed at `wss://devtod.galaxxigames.com` via a Cloudflare Tunnel (`cloudflared`) rather than Caddy — Cloudflare terminates TLS at its edge with its own certificate, so this path never touches Let's Encrypt. `ws.tod.galaxxigames.com` and `devtod.galaxxigames.com` are separate DNS names/records that never fight each other; only one is meant to be actively used at a time, decided manually. Client-side automatic failover between the two → [networking.md § NetworkManager](./networking.md#networkmanager). Full rationale for the separate hostname and the out-of-repo automation → [decisions.md](./decisions.md#backup-server-separate-hostname-and-out-of-repo-automation).
+
+**Where the automation actually lives:** `~/corp-tower-server-backup/` on the physical machine itself — deliberately **outside** the git repo (it holds live Cloudflare credentials in a gitignored-equivalent `.env.backup`, and `actions/checkout`'s clean step would wipe anything gitignored *inside* the repo checkout on every CI run anyway). Only the two workflow files below live in the repo, and they contain no secrets — they call the external scripts by absolute path (`$HOME/corp-tower-server-backup/server-backup-{up,down}.sh`) on the self-hosted runner.
+
+| Workflow | Trigger | Behavior |
+|---|---|---|
+| `Server-Backup-Deploy.yml` | Manual `workflow_dispatch` only | Runs on self-hosted runner (label `backup`); calls `server-backup-up.sh` — builds the server image, runs the container, starts `cloudflared` (user-level systemd service), upserts the `devtod.` Cloudflare CNAME, verifies the container logs, and self-updates `CORP_TOWER_IMAGE_TAG` in `.env.backup` to the deployed commit |
+| `Server-Backup-Cleanup.yml` | Manual `workflow_dispatch`, requires `confirm_cleanup` = `CLEANUP_SERVER_BACKUP` | Runs on the same self-hosted runner; calls `server-backup-down.sh` — stops/removes the container and stops `cloudflared`. Leaves the `devtod.` DNS record in place (idle tunnel, harmless) |
+
+Neither workflow has a `pull_request`/`pull_request_target` trigger, matching every other workflow in this (public) repo — required, since a self-hosted runner would otherwise let any external contributor's PR execute code on the physical machine. Only collaborators with repo write access can dispatch these.
+
+### Operational runbook (backup server)
+
+1. **Bring it up:** dispatch `Server-Backup-Deploy.yml`, or run `~/corp-tower-server-backup/server-backup-up.sh` directly on the machine.
+2. **Check state (read-only, any time):** `~/corp-tower-server-backup/server-backup-status.sh`.
+3. **Stand down once K3s is healthy again:** dispatch `Server-Backup-Cleanup.yml` (`CLEANUP_SERVER_BACKUP`), then trigger `Server K3s Automated Master` (`fast_server_deploy`) so `ws.tod.galaxxigames.com` is confirmed current.
+
 ## Deprecated: Docker EC2 staging
 
 Removed — see [decisions.md](./decisions.md#docker-ec2-staging-removed-in-favor-of-k3s).

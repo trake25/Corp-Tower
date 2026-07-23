@@ -13,7 +13,7 @@ Read this first, then load **only** the docs the task needs (see Task router). T
 | Shared state | Redis (multi-worker matchmaking / room / reconnect) |
 | Infra | Terraform · K3s-on-EC2 (active) · EKS (plan-only) · Docker · Caddy |
 | CI/CD | GitHub Actions |
-| Endpoint | `wss://ws.tod.galaxxigames.com` |
+| Endpoint | `wss://ws.tod.galaxxigames.com` (primary) · `wss://devtod.galaxxigames.com` (manual physical backup, see [deployment.md](./deployment.md#backup-server-manual-physical-machine)) |
 
 ## Working rules (always apply)
 

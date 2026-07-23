@@ -70,6 +70,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="PlatformArt" type="TextureRect" parent="PlayField" unique_id=158231656]
+unique_name_in_owner = true
 layout_mode = 0
 offset_left = 70.0
 offset_top = 712.0
@@ -78,6 +79,8 @@ offset_bottom = 769.0
 mouse_filter = 2
 texture = ExtResource("9_platform")
 expand_mode = 1
+script = ExtResource("3b_backgroundparallax")
+parallax_ratio = 1.0
 
 [node name="TowerFill" type="Panel" parent="PlayField" unique_id=1497040853]
 unique_name_in_owner = true
