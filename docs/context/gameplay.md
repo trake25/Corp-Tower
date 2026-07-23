@@ -76,7 +76,7 @@ Wire-level reconnect contract → [networking.md](./networking.md#reconnect). Se
 |---|---|---|---|
 | Guaranteed baseline | Start of any level, incl. restarts/rollback | Refresh | Only if not already held and a slot is free — no quest/luck required |
 | Side quest completion | First eligible player to complete the level's side quest | Refresh (hardcoded) | Slot free |
-| Impact-MVP reward | After a completed Impact | Random from full catalog | Highest total scorer; slot free |
+| Impact-MVP reward | After a completed Impact | Random from the catalog's **active** entries only (currently just Refresh — see Effects catalog) | Highest total scorer; slot free |
 
 ### Activation
 
@@ -84,11 +84,13 @@ Tap the Power icon → tap a held item. Instant, **no target selection** — eve
 
 ### Effects catalog
 
-| Effect | Category | Effect | Obtainable via |
-|---|---|---|---|
-| **Score Cap** | Offensive | Sets every player's total score exactly to their own next Impact score requirement, whether previously above or below it | Impact-MVP reward only |
-| **Copy Score** | Defensive | Sets every player's total score to the caster's; updates their Impact snapshot/baseline to the copied score | Impact-MVP reward only |
-| **Refresh** | Utility | Immediately rerolls every player's hand. No token/use-count economy — activation *is* the effect | All three paths above |
+Each catalog entry (`GameConfig.powerCatalog`) carries an `active` flag gating whether `awardImpactPower()` can ever grant it. Only **Refresh** is currently active — Score Cap and Copy Score stay fully defined (title/category/activation effect all intact in `Game_Engine.js`'s `activatePower()`) but `active: false`, so they're never granted and never appear in a player's Power list. Re-enabling either is a one-line flip of its `active` flag in [Game Config](./backend.md#game-config); see [decisions.md](./decisions.md#score-cap--copy-score-disabled-via-powercatalog-active-flag).
+
+| Effect | Category | Effect | Obtainable via | Active |
+|---|---|---|---|---|
+| **Score Cap** | Offensive | Sets every player's total score exactly to their own next Impact score requirement, whether previously above or below it | Impact-MVP reward only | No — disabled for now |
+| **Copy Score** | Defensive | Sets every player's total score to the caster's; updates their Impact snapshot/baseline to the copied score | Impact-MVP reward only | No — disabled for now |
+| **Refresh** | Utility | Immediately rerolls every player's hand. No token/use-count economy — activation *is* the effect | All three paths above | Yes |
 
 **Refresh reroll rules:** blocks below size 3 reroll into an unlocked size-3+ block when possible; blocks size 3+ keep their size but reroll shape/orientation; generation is aware of each player's own remaining height and tries to include at least one block useful for it.
 

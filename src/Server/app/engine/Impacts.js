@@ -84,7 +84,8 @@ function awardImpactPower(engine) {
     if (!winner || (winner.powerInventory || []).length >= GameConfig.powerMaxSlots) {
         return;
     }
-    const ids = Object.keys(GameConfig.powerCatalog || {});
+    const catalog = GameConfig.powerCatalog || {};
+    const ids = Object.keys(catalog).filter(id => catalog[id].active);
     if (ids.length === 0) return;
     const powerId = ids[Math.floor(Math.random() * ids.length)];
     winner.powerInventory = winner.powerInventory || [];

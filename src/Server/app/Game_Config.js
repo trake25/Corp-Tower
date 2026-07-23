@@ -42,9 +42,9 @@ const GameConfig = {
     powerActivationCooldownMs: 3000,
     powerLifetime: "impact",
     powerCatalog: {
-        score_cap: { category: "Offensive", title: "Score Cap" },
-        copy_score: { category: "Defensive", title: "Copy Score" },
-        refresh: { category: "Utility", title: "Refresh" }
+        score_cap: { category: "Offensive", title: "Score Cap", active: false },
+        copy_score: { category: "Defensive", title: "Copy Score", active: false },
+        refresh: { category: "Utility", title: "Refresh", active: true }
     },
 
     blockUnlockLevels: {
