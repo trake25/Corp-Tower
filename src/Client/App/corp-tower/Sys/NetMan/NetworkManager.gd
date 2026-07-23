@@ -13,12 +13,14 @@ var reconnect_token := ""
 var profile_id := ""
 var current_url := ""
 var tried_failover := false
+var connect_attempt_elapsed := 0.0
 
 const PLAYER_ID_FILE := "user://corp_tower_player_id.save"
 const RECONNECT_TOKEN_FILE := "user://corp_tower_reconnect_token.save"
 const PROFILE_ID_FILE := "user://corp_tower_profile_id.save"
 const AUTO_RECONNECT_DELAY_SECONDS := 1.0
 const AUTO_RECONNECT_MAX_ATTEMPTS := 8
+const CONNECT_TIMEOUT_SECONDS := 5.0
 const SERVER_URL := "wss://ws.tod.galaxxigames.com"
 const FAILOVER_SERVER_URL := "wss://devtod.galaxxigames.com"
 
@@ -52,6 +54,7 @@ func connect_server(is_auto_reconnect := false, is_failover_retry := false):
 	var error = ws.connect_to_url(current_url)
 
 	if error == OK:
+		connect_attempt_elapsed = 0.0
 		if not is_auto_reconnect:
 			auto_reconnect_attempts = 0
 	else:
@@ -225,7 +228,10 @@ func _process(delta: float) -> void:
 	match state:
 
 		WebSocketPeer.STATE_CONNECTING:
-			pass
+			if is_connecting:
+				connect_attempt_elapsed += delta
+				if connect_attempt_elapsed >= CONNECT_TIMEOUT_SECONDS:
+					ws.close()
 
 		WebSocketPeer.STATE_OPEN:
 			if not is_conn_estab:
