@@ -4,13 +4,17 @@ const LevelBadgeNormalTexture = preload("res://Cor/Art/Static/level.png")
 const LevelBadgeSafeTexture = preload("res://Cor/Art/Static/safe.png")
 const RoundTimeNormalTexture = preload("res://Cor/Art/Static/timer-round-time.png")
 const RoundTimeFreezeTexture = preload("res://Cor/Art/Static/timer-freeze-time.png")
+const TopIndicatorFillOverTexture = preload("res://Cor/Themes/TopIndicatorFillOver.tres")
 
 var match_state
 var level_label: Label
 var timer_label: Label
 var level_badge_texture: TextureRect
 var round_time_texture: TextureRect
+var top_indicator_frame: Panel
 var top_indicator_fill: TextureRect
+var top_indicator_fill_texture: Texture2D
+var top_indicator_label: Label
 var height_label: Label
 var tower_value_label: Label
 var tower_status_label: Label
@@ -24,7 +28,11 @@ func bind_nodes(binder) -> void:
 	timer_label = binder.require_node("TimerLabel") as Label
 	level_badge_texture = binder.optional_node("LevelBadgeTexture") as TextureRect
 	round_time_texture = binder.optional_node("RoundTimeTexture") as TextureRect
+	top_indicator_frame = binder.optional_node("TopIndicatorFrame") as Panel
 	top_indicator_fill = binder.optional_node("TopIndicatorFill") as TextureRect
+	top_indicator_label = binder.optional_node("TopIndicatorLabel") as Label
+	if top_indicator_fill != null:
+		top_indicator_fill_texture = top_indicator_fill.texture
 	height_label = binder.require_node("HeightLabel") as Label
 	tower_value_label = binder.require_node("TowerValueLabel") as Label
 	tower_status_label = binder.require_node("TowerStatusLabel") as Label
@@ -79,12 +87,30 @@ func set_top_indicator_progress(current_height: int, target_height: int) -> void
 	if top_indicator_fill == null:
 		return
 
+	var is_perfect_build: bool = target_height > 0 and current_height == target_height
+	var is_over_build: bool = target_height > 0 and current_height > target_height
+	var is_achieved: bool = is_perfect_build or is_over_build
+
 	var ratio: float = 0.0
 
 	if target_height > 0:
-		ratio = clamp(float(current_height) / float(target_height), 0.0, 1.0)
+		ratio = 1.0 if is_achieved else clamp(float(current_height) / float(target_height), 0.0, 1.0)
 
 	top_indicator_fill.anchor_right = ratio
+	top_indicator_fill.texture = TopIndicatorFillOverTexture if is_over_build else top_indicator_fill_texture
+
+	if top_indicator_frame != null:
+		top_indicator_frame.theme_type_variation = &"TopBarFrameAchievedPanel" if is_achieved else &"TopBarFramePanel"
+
+	if top_indicator_label != null:
+		if target_height <= 0:
+			top_indicator_label.text = "TOP"
+		elif is_over_build:
+			top_indicator_label.text = "OVER BUILD (%d/%d)" % [current_height, target_height]
+		elif is_perfect_build:
+			top_indicator_label.text = "PERFECT BUILD (%d/%d)" % [current_height, target_height]
+		else:
+			top_indicator_label.text = "TOP (%d/%d)" % [current_height, target_height]
 
 func update_top_bar_display(level: int, impact_level: int, state: String, seconds_remaining: int) -> void:
 	var is_impact_level: bool = level > 1 and (level - 1) % match_state.impact_interval == 0

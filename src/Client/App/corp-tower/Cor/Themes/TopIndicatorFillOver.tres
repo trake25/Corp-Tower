@@ -1,0 +1,9 @@
+[gd_resource type="GradientTexture2D" format=3]
+
+[sub_resource type="Gradient" id="Gradient_TopBarFillOver"]
+colors = PackedColorArray(0.902, 0.204, 0.145, 1, 0.984, 0.549, 0.129, 1)
+
+[resource]
+gradient = SubResource("Gradient_TopBarFillOver")
+width = 256
+height = 8

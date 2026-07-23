@@ -70,7 +70,7 @@ Project root. Android-first client; connects through [NetworkManager](./networki
 | `QuickChatController` | Quick Chat popover rows (tap-to-send, cooldown-gated), incoming chat events, sender-anchored speech bubble. Dead `QuickChatButton1-3` code (never reachable) removed along with its binding |
 | `PowerController` | Power popover rows (tap-to-activate; no target field, effect always room-wide) + activation toast. Dead drag-onto-target UI removed; legacy room-wide score-rail tint on activation also removed — toast is the sole feedback |
 | `InventoryController` | 3-slot inventory cards, drag-to-place input, local placement cooldown, draw-pile preview shown in the always-visible [Team Inventory Panel](#team-inventory-panel) |
-| `TopBarController` | Level badge, round timer, tower height/progress, tower-stability readout |
+| `TopBarController` | Level badge, round timer, tower height/progress, tower-stability readout, three-state Top Indicator (see Notes) |
 
 **Interface (driven by NetworkManager signals):** `update_status`, `update_connect_button`, `update_room(data)`, `update_room_closed(data)`, `update_game_state(data)`, `update_debug_config(config)` — all wired in `connect_network_signals()`. Action handlers live on the owning controller (`inventory.on_block_pressed`, `chat.on_quick_chat_pressed`, `power.open_power_popover`, `quest.on_quest_chip_pressed`).
 
@@ -83,6 +83,7 @@ Project root. Android-first client; connects through [NetworkManager](./networki
 - Score events dedup by stable event id per level.
 - Each rail player's Impact Bar fill = `bandScore / requiredBandScore` **plus** the locally-tracked live `levelScore` only while `is_playing()` — avoids double-counting a just-completed level during the finished/failed transition.
 - The top-bar round timer counts down locally only while `is_playing()`; while frozen it changes only on the next `game_state` broadcast.
+- **Top Indicator** (`TopIndicatorRow` in Game UI Scene) is a three-state progress readout, driven purely client-side by `TopBarController.set_top_indicator_progress(current_height, target_height)` off the same `current_height`/`target_height` the tower-progress bar uses — display only, no new server data. States: **TOP** (`current < target`) — green→lime fill sized to progress ratio, plain white `TopBarFramePanel` frame; **PERFECT BUILD** (`current == target`) — full green→lime fill, gold-bordered `TopBarFrameAchievedPanel` frame (`Cor/Themes/GameUITheme.tres`); **OVER BUILD** (`current > target`) — full fill swapped to the red→orange `Cor/Themes/TopIndicatorFillOver.tres` texture, same gold-bordered frame. Label text mirrors the state, e.g. `"PERFECT BUILD (1000/1000)"`. Corresponds to the [Exact finish/Precision and Overbuild](./glossary.md#gameplay-terms) gameplay terms, which still solely govern actual bonus scoring.
 - Popover card mis-positioning on WebGL/Android and Power's trigger-tap issue are **not reproducible in the editor** — always verify UI-timing fixes on a deployed build.
 - No full behavioral test coverage of the orchestrator's fan-out beyond the characterization suite; sizable changes still need manual play-testing + CI's smoke test.
 
@@ -94,7 +95,7 @@ Project root. Android-first client; connects through [NetworkManager](./networki
 
 **Notes:**
 - Formerly one of two swappable "skins" — see [decisions.md](./decisions.md#ui-skin-switching-system-removed). No `ProjectSettings` skin preference or skin-picker group exists anymore.
-- The `.tres` theme defines shared `theme_type_variation` styles (`ActionButton`, `CircleButtonPanel`, `HudPanel`, `WhiteCardButton`, `TopBarFramePanel`/`TopBarTrackPanel`, `TowerFillPanel`/`TowerTrackPanel`); most per-node fine-tuning is still inline `theme_override_*` properties.
+- The `.tres` theme defines shared `theme_type_variation` styles (`ActionButton`, `CircleButtonPanel`, `HudPanel`, `WhiteCardButton`, `TopBarFramePanel`/`TopBarFrameAchievedPanel`/`TopBarTrackPanel`, `TowerFillPanel`/`TowerTrackPanel`); most per-node fine-tuning is still inline `theme_override_*` properties. `TopBarFrameAchievedPanel` is swapped onto `TopIndicatorFrame` at runtime by `TopBarController` (not statically assigned in the scene) — see [Top Indicator](#main-ui-controller).
 - The three [Popover Panel](#popover-panel) instances each override their `Card` node with an explicit `custom_minimum_size` — `260x163` for `ChatPopover`/`PowerPopover`, `260x140` for `QuestPopover`. This is the authored source of the fixed card size `get_card_size()` returns — change a popover's design size here.
 - **`mouse_filter` gotcha:** non-interactive nodes positioned over/near a tappable control must set `mouse_filter = 2` (ignore) — Godot's default `mouse_filter = 0` (stop) swallows touches even for nodes that draw nothing there. `ImpactTrack` (the Impact Bar column) overlaps ~80% of `PowerTrigger`'s tap area and was missing this, making the Power icon tap inconsistent until fixed. Check new overlay/decorative nodes against nearby interactive controls before assuming the default is harmless.
 

@@ -89,6 +89,21 @@ shadow_color = Color(0, 0, 0, 0.18)
 shadow_size = 4
 shadow_offset = Vector2(0, 2)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TopBarFrameAchieved"]
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.702, 0.055, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.18)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_TopBar"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TopBarTrack"]
@@ -159,6 +174,8 @@ RailScoreLabel/colors/font_color = Color(0.1, 0.1, 0.12, 1)
 RailScoreLabel/font_sizes/font_size = 15
 ScorePillPanel/base_type = &"PanelContainer"
 ScorePillPanel/styles/panel = SubResource("StyleBoxFlat_ScorePill")
+TopBarFrameAchievedPanel/base_type = &"Panel"
+TopBarFrameAchievedPanel/styles/panel = SubResource("StyleBoxFlat_TopBarFrameAchieved")
 TopBarFramePanel/base_type = &"Panel"
 TopBarFramePanel/styles/panel = SubResource("StyleBoxFlat_TopBarFrame")
 TopBarPanel/base_type = &"PanelContainer"
