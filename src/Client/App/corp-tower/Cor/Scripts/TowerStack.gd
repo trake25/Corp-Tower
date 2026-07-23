@@ -4,13 +4,14 @@ const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
-const MIN_UNIT_SIZE := 12.0
-const MAX_UNIT_SIZE := 34.0
+const BRICK_UNIT_SIZE := 34.0
 const TOP_PADDING := 14.0
 const BOTTOM_PADDING := 12.0
 const SCROLL_HEADROOM_UNITS := 2
 const COLLAPSE_TILT_DEG := 70.0
 const TILT_EASE_SPEED := 6.0
+
+signal scroll_offset_changed(pixels: float)
 
 var tower_blocks: Array = []
 var current_height: int = 0
@@ -20,6 +21,7 @@ var tower_stability: int = 100
 var tower_tilt_deg: float = 0.0
 var displayed_tilt_deg: float = 0.0
 var tower_collapsed: bool = false
+var _last_scroll_pixels: float = 0.0
 
 func _ready() -> void:
 	clip_contents = true
@@ -43,6 +45,7 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	else:
 		tower_tilt_deg = reported_tilt
 
+	_update_scroll_offset()
 	queue_redraw()
 
 func _process(delta: float) -> void:
@@ -58,7 +61,18 @@ func clear_tower() -> void:
 	tower_blocks = []
 	current_height = 0
 	target_height = 0
+	_update_scroll_offset()
 	queue_redraw()
+
+func _update_scroll_offset() -> void:
+	var unit: float = _unit_size()
+	var scroll_pixels: float = float(_scroll_offset_units(unit)) * unit
+
+	if is_equal_approx(scroll_pixels, _last_scroll_pixels):
+		return
+
+	_last_scroll_pixels = scroll_pixels
+	scroll_offset_changed.emit(scroll_pixels)
 
 func _draw() -> void:
 	if tower_blocks.is_empty():
@@ -126,14 +140,7 @@ func _draw_fallback_stack() -> void:
 		draw_rect(rect, GRID_COLOR, false, 1.0)
 
 func _unit_size() -> float:
-	var tower_units: int = max(target_height, current_height, 1)
-	var available_height: float = max(1.0, size.y - TOP_PADDING - BOTTOM_PADDING)
-	var fit_unit: float = available_height / float(tower_units)
-
-	if fit_unit >= MIN_UNIT_SIZE:
-		return min(fit_unit, MAX_UNIT_SIZE)
-
-	return MIN_UNIT_SIZE
+	return BRICK_UNIT_SIZE
 
 func _scroll_offset_units(unit: float) -> int:
 	var visible_units: int = _visible_unit_capacity(unit)

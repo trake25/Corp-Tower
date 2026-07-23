@@ -31,7 +31,8 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | Main UI Controller | `Cor/Scripts/Main.gd` | Slim orchestrator over the `GameUi/` module family | NetworkManager, Game UI Scene, and every leaf UI component | [ui.md](./ui.md#main-ui-controller) |
 | Game UI Scene | `Cor/Scenes/GameUI.tscn` | The one gameplay UI scene; node contract Main binds against | Block Preview, Tower Stack, Cooldown Overlay, Debug Overlay | [ui.md](./ui.md#game-ui-scene) |
 | Block Preview | `Cor/Scripts/BlockPreview.gd` | Draws fixed-orientation block previews | none | [ui.md](./ui.md#leaf-components) |
-| Tower Stack | `Cor/Scripts/TowerStack.gd` | Draws placed-block tower + tilt animation | Player Colors | [ui.md](./ui.md#leaf-components) |
+| Tower Stack | `Cor/Scripts/TowerStack.gd` | Draws placed-block tower (fixed brick size, unlimited scroll/clip) + tilt animation | Player Colors | [ui.md](./ui.md#leaf-components) |
+| Background Parallax | `Cor/Scripts/BackgroundParallax.gd` | Pans `BgArt` in response to Tower Stack's scroll to simulate a camera pan up the tower | Tower Stack (via Main UI Controller) | [ui.md](./ui.md#leaf-components) |
 | Popover Panel | `Cor/Scripts/PopoverPanel.gd` | Reusable anchored card for tap-triggered popovers | none | [ui.md](./ui.md#popover-panel) |
 | Impact Bar | `Cor/Scripts/ImpactBar.gd` | Per-player Impact-progress fill bar | none | [ui.md](./ui.md#leaf-components) |
 | Cooldown Overlay | `Cor/Scripts/CooldownOverlay.gd` | Radial per-card cooldown indicator | none | [ui.md](./ui.md#leaf-components) |

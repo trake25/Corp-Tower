@@ -38,6 +38,7 @@ var room_label: Label
 var score_label: Label
 var tower_stack: Control
 var connect_button: Button
+var background_parallax: Control
 
 func _ready() -> void:
 	tuning = UiTuningScript.new()
@@ -77,6 +78,10 @@ func _ready() -> void:
 	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_popovers)
 	power.setup(NetworkManager, popovers, score_popups, should_block_popovers)
 	setup_popover_controls()
+
+	if tower_stack.has_signal("scroll_offset_changed"):
+		tower_stack.connect("scroll_offset_changed", Callable(background_parallax, "set_scroll_pixels"))
+
 	reset_ui()
 	connect_network_signals()
 
@@ -103,6 +108,7 @@ func bind_ui_nodes() -> void:
 	score_label = binder.require_node("ScoreLabel") as Label
 	tower_stack = binder.require_node("TowerStack") as Control
 	connect_button = binder.require_node("ConnectButton") as Button
+	background_parallax = binder.require_node("BgArt") as Control
 
 	top_bar.bind_nodes(binder)
 	inventory.bind_nodes(binder)
