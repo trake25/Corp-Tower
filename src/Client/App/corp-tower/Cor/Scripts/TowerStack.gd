@@ -7,7 +7,7 @@ const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 const BRICK_UNIT_SIZE := 34.0
 const TOP_PADDING := 14.0
 const BOTTOM_PADDING := 12.0
-const SCROLL_HEADROOM_UNITS := 2
+const SCROLL_TRIGGER_RATIO := 0.7
 const COLLAPSE_TILT_DEG := 70.0
 const TILT_EASE_SPEED := 6.0
 
@@ -144,12 +144,13 @@ func _unit_size() -> float:
 
 func _scroll_offset_units(unit: float) -> int:
 	var visible_units: int = _visible_unit_capacity(unit)
+	var trigger_units: int = max(1, int(floor(float(visible_units) * SCROLL_TRIGGER_RATIO)))
 	var focus_height: int = max(current_height, 1)
 
-	if focus_height <= visible_units:
+	if focus_height <= trigger_units:
 		return 0
 
-	return focus_height - visible_units + SCROLL_HEADROOM_UNITS
+	return focus_height - trigger_units
 
 func _visible_unit_capacity(unit: float) -> int:
 	var available_height: float = max(1.0, size.y - TOP_PADDING - BOTTOM_PADDING)
