@@ -1,6 +1,6 @@
 extends TextureRect
 
-@export var parallax_ratio: float = 0.3
+@export var parallax_ratio: float = 0.4
 @export var ease_speed: float = 4.0
 
 var target_offset: float = 0.0
