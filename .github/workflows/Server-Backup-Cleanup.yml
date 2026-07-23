@@ -1,0 +1,26 @@
+name: Server Backup Cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_cleanup:
+        description: "Type CLEANUP_SERVER_BACKUP to confirm."
+        required: true
+        type: string
+
+jobs:
+  cleanup-backup:
+    name: Stop Corp Tower Server On Backup Machine
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 10
+
+    steps:
+      - name: Check cleanup confirmation
+        run: |
+          if [ "${{ inputs.confirm_cleanup }}" != "CLEANUP_SERVER_BACKUP" ]; then
+            echo "confirm_cleanup must be exactly CLEANUP_SERVER_BACKUP."
+            exit 1
+          fi
+
+      - name: Run backup server down
+        run: "$HOME/corp-tower-server-backup/server-backup-down.sh"

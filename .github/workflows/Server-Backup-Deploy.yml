@@ -1,0 +1,23 @@
+name: Server Backup Deploy
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: server-backup-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy-backup:
+    name: Deploy Corp Tower Server To Backup Machine
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run backup server up
+        run: "$HOME/corp-tower-server-backup/server-backup-up.sh"
+        env:
+          CORP_TOWER_REPO_ROOT: ${{ github.workspace }}
