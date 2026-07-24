@@ -1,5 +1,7 @@
 extends Control
 
+const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
+
 enum PreviewMode {
 	INVENTORY,
 	FLOATING_DRAG
@@ -11,21 +13,28 @@ const DEFAULT_BORDER_COLOR := Color(0.87, 0.92, 1.0, 1.0)
 const FLOATING_DRAG_FILL_ALPHA := 0.88
 const FLOATING_DRAG_BORDER_ALPHA := 0.95
 const FLOATING_DRAG_SHADOW_ALPHA := 0.28
+const FLOATING_DRAG_SHADOW_OFFSET := Vector2(0.0, 4.0)
 const FLOATING_DRAG_MIN_CELL_SIZE := 14.0
-const FLOATING_DRAG_CELL_GAP := 5.0
+const PREVIEW_GAP := 6.0
 
 var cells: Array = []
+var shape_id: String = ""
 var is_available: bool = false
 var cell_color: Color = DEFAULT_CELL_COLOR
 var preview_mode: PreviewMode = PreviewMode.INVENTORY
 
+func _ready() -> void:
+	material = BlockDataScript.brick_shader_material()
+
 func set_block(block: Dictionary) -> void:
 	cells = block.get("cells", [])
+	shape_id = str(block.get("shapeId", ""))
 	is_available = cells.size() > 0
 	queue_redraw()
 
 func clear_block() -> void:
 	cells = []
+	shape_id = ""
 	is_available = false
 	queue_redraw()
 
@@ -37,13 +46,51 @@ func _draw() -> void:
 	if cells.is_empty():
 		return
 
+	var texture: Texture2D = BlockDataScript.brick_texture(shape_id)
+
+	if texture == null:
+		_draw_fallback_cells()
+		return
+
 	match preview_mode:
 		PreviewMode.INVENTORY:
-			_draw_inventory_preview()
+			_draw_brick(texture, cell_color if is_available else DEFAULT_DISABLED_COLOR, Vector2.ZERO)
 		PreviewMode.FLOATING_DRAG:
-			_draw_floating_drag_preview()
+			_draw_brick(texture, Color(0.0, 0.0, 0.0, FLOATING_DRAG_SHADOW_ALPHA), FLOATING_DRAG_SHADOW_OFFSET)
+			_draw_brick(texture, Color(cell_color.r, cell_color.g, cell_color.b, FLOATING_DRAG_FILL_ALPHA), Vector2.ZERO)
 
-func _draw_inventory_preview() -> void:
+func _draw_brick(texture: Texture2D, color: Color, offset: Vector2) -> void:
+	var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+	var columns: int = bounds.max_x - bounds.min_x + 1
+	var rows: int = bounds.max_y - bounds.min_y + 1
+	var available_size: Vector2 = size - Vector2(PREVIEW_GAP, PREVIEW_GAP) * 2.0
+	var cell_size: float = minf(
+		available_size.x / float(columns),
+		available_size.y / float(rows)
+	)
+
+	cell_size = maxf(FLOATING_DRAG_MIN_CELL_SIZE, cell_size)
+
+	var rotation_steps: int = BlockDataScript.detect_rotation_steps(shape_id, cells)
+	var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(BlockDataScript.BRICK_SHAPES.get(shape_id, cells))
+	var canonical_columns: int = canonical_bounds.max_x - canonical_bounds.min_x + 1
+	var canonical_rows: int = canonical_bounds.max_y - canonical_bounds.min_y + 1
+	var canonical_size: Vector2 = Vector2(float(canonical_columns), float(canonical_rows)) * cell_size
+
+	var center: Vector2 = size * 0.5 + offset
+	var points: PackedVector2Array = BlockDataScript.brick_quad_points(center, canonical_size, rotation_steps)
+	var colors := PackedColorArray([color, color, color, color])
+
+	draw_primitive(points, colors, BlockDataScript.brick_quad_uvs(), texture)
+
+func _draw_fallback_cells() -> void:
+	match preview_mode:
+		PreviewMode.INVENTORY:
+			_draw_inventory_fallback()
+		PreviewMode.FLOATING_DRAG:
+			_draw_floating_drag_fallback()
+
+func _draw_inventory_fallback() -> void:
 	var bounds: Dictionary = _get_cell_bounds()
 	var columns: int = bounds.max_x - bounds.min_x + 1
 	var rows: int = bounds.max_y - bounds.min_y + 1
@@ -65,11 +112,11 @@ func _draw_inventory_preview() -> void:
 
 	_draw_cells(bounds, origin, cell_size, gap, fill_color, DEFAULT_BORDER_COLOR, 2.0)
 
-func _draw_floating_drag_preview() -> void:
+func _draw_floating_drag_fallback() -> void:
 	var bounds: Dictionary = _get_cell_bounds()
 	var columns: int = bounds.max_x - bounds.min_x + 1
 	var rows: int = bounds.max_y - bounds.min_y + 1
-	var gap: float = FLOATING_DRAG_CELL_GAP
+	var gap: float = 5.0
 	var available_size: Vector2 = size - Vector2(gap * 2.0, gap * 2.0)
 	var cell_size: float = minf(
 		available_size.x / float(columns),
@@ -91,11 +138,10 @@ func _draw_floating_drag_preview() -> void:
 		FLOATING_DRAG_BORDER_ALPHA
 	)
 	var shadow_color: Color = Color(0.0, 0.0, 0.0, FLOATING_DRAG_SHADOW_ALPHA)
-	var shadow_offset: Vector2 = Vector2(0.0, 4.0)
 
 	_draw_cells(
 		bounds,
-		origin + shadow_offset,
+		origin + FLOATING_DRAG_SHADOW_OFFSET,
 		cell_size,
 		gap,
 		shadow_color,
@@ -127,25 +173,7 @@ func _draw_cells(
 			draw_rect(rect, border_color, false, border_width)
 
 func _get_cell_bounds() -> Dictionary:
-	var min_x: int = 999999
-	var min_y: int = 999999
-	var max_x: int = -999999
-	var max_y: int = -999999
-
-	for cell in cells:
-		var bounds_cell_x: int = _cell_x(cell)
-		var bounds_cell_y: int = _cell_y(cell)
-		min_x = mini(min_x, bounds_cell_x)
-		min_y = mini(min_y, bounds_cell_y)
-		max_x = maxi(max_x, bounds_cell_x)
-		max_y = maxi(max_y, bounds_cell_y)
-
-	return {
-		"min_x": min_x,
-		"min_y": min_y,
-		"max_x": max_x,
-		"max_y": max_y
-	}
+	return BlockDataScript.cell_bounds(cells)
 
 func _cell_x(cell) -> int:
 	if typeof(cell) == TYPE_DICTIONARY:

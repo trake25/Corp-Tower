@@ -1,10 +1,12 @@
 extends Control
 
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
+const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 const BRICK_UNIT_SIZE := 34.0
+const BRICK_GAP := 2.0
 const GRID_WIDTH := 5
 const GRID_CENTER_COL := 2.0
 const TOP_PADDING := 14.0
@@ -32,6 +34,9 @@ var active_lane: String = ""
 var _drop_anim_id: String = ""
 var _drop_anim_t: float = 0.0
 var _prev_block_count: int = 0
+
+func _ready() -> void:
+	material = BlockDataScript.brick_shader_material()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
@@ -146,6 +151,7 @@ func _draw() -> void:
 		var entry: Dictionary = tower_blocks[i]
 		var block: Dictionary = _normalize_block_entry(entry)
 		var cells: Array = block.get("cells", [])
+		var shape_id: String = str(block.get("shapeId", ""))
 		var base_height: int = int(entry.get("originY", entry.get("baseHeight", 0)))
 		var origin_x: int = int(entry.get("originX", 0))
 		var color: Color = _player_color(entry)
@@ -154,21 +160,38 @@ func _draw() -> void:
 		if _drop_anim_id != "" and _entry_block_id(entry) == _drop_anim_id:
 			drop_offset = (1.0 - _drop_ease(_drop_anim_t)) * DROP_HEIGHT_UNITS
 
-		for cell in cells:
-			var cell_x: int = _cell_x(cell)
-			var cell_y: int = _cell_y(cell)
-			var abs_x: float = base_x + (float(origin_x + cell_x) - GRID_CENTER_COL) * unit - unit * 0.5
-			var y_units: int = base_height + cell_y
-			var abs_y: float = baseline - (float(y_units + 1 - scroll_offset_units) + drop_offset) * unit
-			var abs_rect: Rect2 = Rect2(Vector2(abs_x, abs_y), Vector2(unit - 2.0, unit - 2.0))
+		var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+		var width_units: int = bounds.max_x - bounds.min_x + 1
+		var height_units: int = bounds.max_y - bounds.min_y + 1
+		var y_max_units: int = base_height + bounds.max_y
 
-			if !_is_rect_visible(abs_rect):
-				continue
+		var box_left: float = base_x + (float(origin_x + bounds.min_x) - GRID_CENTER_COL) * unit - unit * 0.5
+		var box_top: float = baseline - (float(y_max_units + 1 - scroll_offset_units) + drop_offset) * unit
+		var box_rect: Rect2 = Rect2(
+			Vector2(box_left, box_top),
+			Vector2(float(width_units) * unit, float(height_units) * unit)
+		)
 
-			var rect: Rect2 = Rect2(abs_rect.position - pivot, abs_rect.size)
-			draw_rect(rect, color, true)
-			draw_rect(rect.grow(-3.0), Color(color.r, color.g, color.b, 0.36), true)
-			draw_rect(rect, GRID_COLOR, false, 1.5)
+		if !_is_rect_visible(box_rect):
+			continue
+
+		var center: Vector2 = box_rect.position + box_rect.size * 0.5 - pivot
+		var texture: Texture2D = BlockDataScript.brick_texture(shape_id)
+
+		if texture == null:
+			_draw_fallback_block(center, box_rect.size, color)
+			continue
+
+		var rotation_steps: int = BlockDataScript.detect_rotation_steps(shape_id, cells)
+		var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(BlockDataScript.BRICK_SHAPES[shape_id])
+		var canonical_size: Vector2 = Vector2(
+			float(canonical_bounds.max_x - canonical_bounds.min_x + 1) * unit - BRICK_GAP,
+			float(canonical_bounds.max_y - canonical_bounds.min_y + 1) * unit - BRICK_GAP
+		)
+		var points: PackedVector2Array = BlockDataScript.brick_quad_points(center, canonical_size, rotation_steps)
+		var colors := PackedColorArray([color, color, color, color])
+
+		draw_primitive(points, colors, BlockDataScript.brick_quad_uvs(), texture)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -189,6 +212,11 @@ func _draw_lane_guides(unit: float, base_x: float, baseline: float) -> void:
 
 		draw_rect(band, fill, true)
 		draw_rect(band, border, false, 2.0 if is_active else 1.0)
+
+func _draw_fallback_block(center: Vector2, box_size: Vector2, color: Color) -> void:
+	var rect: Rect2 = Rect2(center - box_size * 0.5, box_size).grow(-1.0)
+	draw_rect(rect, color, true)
+	draw_rect(rect, GRID_COLOR, false, 1.5)
 
 func _draw_fallback_stack() -> void:
 	if current_height <= 0:
@@ -267,15 +295,3 @@ func _player_color(entry: Dictionary) -> Color:
 		return player_color_map[player_id]
 
 	return PlayerColors.color_for_player_id(player_id)
-
-func _cell_x(cell) -> int:
-	if typeof(cell) == TYPE_DICTIONARY:
-		return int(cell.get("x", 0))
-
-	return int(cell[0])
-
-func _cell_y(cell) -> int:
-	if typeof(cell) == TYPE_DICTIONARY:
-		return int(cell.get("y", 0))
-
-	return int(cell[1])
