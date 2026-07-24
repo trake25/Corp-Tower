@@ -32,6 +32,12 @@ Cloudflare Pages was evaluated and rejected: it caps individual files at 25 MiB 
 
 **Consequence:** the deployed HTML5 build is public to anyone with the URL; GitHub Pages has no access control. If invite-only playtesting becomes a requirement, itch.io supports restricted projects for free at this file size.
 
+## Pages custom domain must be set manually
+
+Tried automating the `play.tod.galaxxigames.com` custom domain by adding a workflow step that calls `PUT /repos/{owner}/{repo}/pages` with `{"cname": "..."}` using the default `GITHUB_TOKEN` (which the workflow already grants `pages: write`). Rejected: that request failed (curl exit 22 / HTTP 403) because this specific endpoint requires the caller to be a repo admin/maintainer — `github-actions[bot]` never holds that role, regardless of the `permissions:` block. The `pages: write` workflow permission only unlocks the *deployment* API (`actions/deploy-pages` internals), not the Pages *settings* API.
+
+**Consequence:** the custom domain is set once, manually, via Settings → Pages → Custom domain. It's stored as repo config and survives normal deploys and soft-undeploy; a **hard** undeploy deletes the Pages site object and the setting with it, requiring it to be re-added by hand → [build.md § Client HTML5 Pages](./build.md#client-html5-pages).
+
 ## Private Asset Pipeline credential split
 
 Cloudflare's R2 S3-compatible endpoint doesn't accept GitHub OIDC federation (unlike the AWS Terraform workflows, which do use OIDC), so this path needs static credentials. The mitigation is a strict read/write split: CI holds an **Object Read only** R2 token (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` secrets) and cannot publish or delete art; only local dev holds an **Object Read & Write** token (gitignored `.env.art`). Publishing (`art-push.sh`) is therefore local and manual by design — automating it would require a write token in GitHub Secrets and defeat the split.
