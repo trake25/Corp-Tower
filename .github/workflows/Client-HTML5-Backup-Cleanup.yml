@@ -2,6 +2,12 @@ name: Client HTML5 Backup Cleanup
 
 on:
   workflow_call:
+    inputs:
+      invoked_via_call:
+        description: "Internal marker — always true here. Lets the guard job tell a reusable workflow_call apart from a direct workflow_dispatch, since github.event_name reflects the top-level run's trigger even when nested, not this workflow's own invocation."
+        required: false
+        default: true
+        type: boolean
 
   workflow_dispatch:
     inputs:
@@ -16,7 +22,7 @@ concurrency:
 
 jobs:
   guard:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ inputs.invoked_via_call != true }}
     runs-on: ubuntu-24.04
     steps:
       - name: Check cleanup confirmation

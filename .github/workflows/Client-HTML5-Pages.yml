@@ -115,3 +115,5 @@ jobs:
     needs: deploy
     if: always() && inputs.restore_from_backup && needs.deploy.result == 'success'
     uses: ./.github/workflows/Client-HTML5-Backup-Cleanup.yml
+    with:
+      invoked_via_call: true

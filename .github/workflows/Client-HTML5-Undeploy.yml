@@ -18,6 +18,11 @@ on:
         required: false
         default: ""
         type: string
+      invoked_via_call:
+        description: "Internal marker — always true here. Lets the guard job tell a reusable workflow_call apart from a direct workflow_dispatch, since github.event_name reflects the top-level run's trigger even when nested, not this workflow's own invocation."
+        required: false
+        default: true
+        type: boolean
     secrets:
       R2_BUCKET:
         required: true
@@ -60,7 +65,7 @@ concurrency:
 
 jobs:
   guard:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ inputs.invoked_via_call != true }}
     runs-on: ubuntu-24.04
     steps:
       - name: Verify confirmation
@@ -201,6 +206,7 @@ jobs:
     with:
       expected: undeploy
       art_version_override: ${{ inputs.art_version_override }}
+      invoked_via_call: true
     secrets:
       R2_BUCKET: ${{ secrets.R2_BUCKET }}
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
