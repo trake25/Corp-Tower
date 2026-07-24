@@ -115,7 +115,7 @@ func _draw_cells(
 ) -> void:
 	for cell in cells:
 		var draw_cell_x: int = _cell_x(cell) - bounds.min_x
-		var draw_cell_y: int = _cell_y(cell) - bounds.min_y
+		var draw_cell_y: int = bounds.max_y - _cell_y(cell)
 		var rect: Rect2 = Rect2(
 			origin + Vector2(float(draw_cell_x) * (cell_size + gap), float(draw_cell_y) * (cell_size + gap)),
 			Vector2(cell_size, cell_size)

@@ -2,7 +2,7 @@
 
 Source of truth for game design: rules, scoring, balance, progression. Technical implementation of these systems → [backend.md](./backend.md). Wire contract → [networking.md](./networking.md). Doc ownership: update this file for design/rules/scoring/balance/progression/debug-tuning-semantics/bot-behavior changes; see [coding-conventions.md](./coding-conventions.md) for the full doc-ownership map.
 
-> ⚠️ Verify against current implementation before trusting balance values and scoring formulas — shape-block migration invalidated some old assumptions (see [decisions.md](./decisions.md)).
+> ⚠️ The 5-brick / 3-lane overhaul is implemented but **balance tuning is ongoing** — high-level completion is still low in the greedy simulator. Verify stability weights, the target-height curve, and scoring rates against current values before trusting them (see [decisions.md](./decisions.md#five-fixed-bricks--3-lane-placement-replace-the-size-ramp)).
 
 ## Core concept
 
@@ -18,7 +18,7 @@ Source of truth for game design: rules, scoring, balance, progression. Technical
 6. Level ends on target height reached or a failure condition.
 7. Score, save unused blocks into next draw pile, advance level.
 
-Placement: players drag blocks from inventory cards onto the shared tower drop zone (client UX detail → [networking.md § Client Placement UI](./networking.md#client-placement-ui)).
+Placement: players drag a brick from an inventory card onto the shared tower and release over one of **three lanes — left / center / right** (see [Placement lanes](#placement-lanes)); the release x-position picks the lane (client UX detail → [networking.md § Client Placement UI](./networking.md#client-placement-ui)).
 
 ## Reconnect and shared room continuity (design rule)
 
@@ -30,9 +30,11 @@ Wire-level reconnect contract → [networking.md](./networking.md#reconnect). Se
 
 ## Block system
 
-- Blocks are assigned at level start; shape is random (Tetris-like) and **cannot be rotated**.
-- **Effective height** = the block's fixed vertical footprint, not cell count. A 3-cell vertical block contributes height 3; a 3-cell horizontal block contributes height 1; a 3-cell L-block contributes height 2.
-- Server sends each block as `{ id, shapeId, cells, height }`. Shape-id naming → [glossary.md](./glossary.md).
+- **Five fixed brick types only:** `I`, `O`, `L`, `T`, `Z` — all 4-cell tetrominoes, **fixed orientation, cannot be rotated**, and **all available from level 1** (no size-unlock ramp). Defined in `Game_Config.brickShapes`; drawn by weight (`brickWeights`). Shapes/heights: `I` (1×4, h4), `O` (2×2, h2), `L` (2×3, h3), `T` (3×2, h2, stem-down), `Z` (3×2, h2). Shape-id naming → [glossary.md](./glossary.md).
+- **Effective height** = the brick's fixed vertical footprint, not cell count. `I`=4, `L`=3, `O`/`T`/`Z`=2. Precision blocks = height ≤ 2 (`O`/`T`/`Z`).
+- Server sends each block as `{ id, shapeId, cells, anchorX, height }`. `anchorX` is the local cell column that aligns to the chosen placement lane (see [Placement lanes](#placement-lanes)).
+
+> **In progress (not yet implemented):** a design change to assign each brick a **random rotation** at generation (still not player-rotatable once dealt). Until shipped, bricks are the single fixed orientations above. See [decisions.md](./decisions.md#five-fixed-bricks--3-lane-placement-replace-the-size-ramp).
 
 ### Inventory rules
 
@@ -110,10 +112,16 @@ Each catalog entry (`GameConfig.powerCatalog`) carries an `active` flag gating w
 - Overbuilding is allowed; excess height is wasted. Exact height triggers precision-bonus rewards.
 - Client renders the tower from authoritative server placement history (`towerBlocks`) when available.
 
+### Placement lanes
+
+- The shared tower is a **5-column authoritative grid** (`towerGridWidth` = 5). Players can aim at **three lanes** — left / center / right = columns 1 / 2 / 3 (`placeableLanes`). Columns 0 and 4 are **outer overflow only**, never directly selectable.
+- The chosen lane places the brick's `anchorX` cell on that column: `originX = laneColumn − anchorX`, clamped so the brick stays within columns 0–4. Consequence: 1-wide `I` has all three lane options; 2-wide `O`/`L` have two effective positions; 3-wide `T`/`Z` spill one cell into an outer column on the left/right lanes. Server-side resolution: `Game_Engine.resolveLaneOriginX()` → [backend.md § Game Engine](./backend.md#game-engine).
+- The brick then **falls to first contact per column** and may cantilever/overhang (e.g. a `T` placed centered balances on its single stem — the intended stability hook).
+
 ### Tower stability (design view)
 
-- Shared tower uses a 7-cell authoritative structural grid. Fixed-orientation blocks fall to ground or first contact.
-- Gaps, overhangs, off-center supports, and overloaded support paths reduce deterministic stability 100 → 0.
+- Fixed-orientation bricks fall to ground or first contact on the 5-column grid.
+- Center-of-mass drift, **lane-height imbalance** (an uneven spread across the columns leans the tower toward the taller side), overhangs, and off-center supports reduce deterministic stability 100 → 0.
 - Warning/critical wobble feedback fires at tuned thresholds; stability hitting 0 collapses the tower and fails the level **before** a target-height completion can count.
 - Algorithm detail (pure grid physics) → [backend.md § Tower Stability](./backend.md#tower-stability).
 
@@ -134,12 +142,15 @@ Default level time limit: 30s, tunable via `levelTimeLimitMs`. Public gameplay U
 
 ## Scoring system
 
+Overhauled to reward **helping fill the Impact** and **reaching target height, especially exact finish**. Overbuild finishing earns no finish bonus at all.
+
 | Component | Formula |
 |---|---|
-| Placement Score | `effective_height × level × placementScorePerHeight` (default `10`) |
-| Finisher Bonus | `level × 4` |
-| Precision Bonus (exact finish only) | `level × 8` |
-| Team Bonus (exact finish, all players) | `level × 6` |
+| Contribution Score (per placement) | `effective_height × level × placementScorePerHeight` (default `10`) — the core "helped reach target / fill the Impact" earning; also what the Impact contribution gate measures |
+| Precision Bonus (exact finish only, finisher) | `level × precisionBonusPerLevel` (default `20`) |
+| Team Exact Bonus (exact finish, all players) | `level × teamExactBonusPerLevel` (default `15`) |
+| Impact-Fill Bonus (at each passed Impact) | `round(band_overshoot × impactFillBonusRate)` (default rate `0.5`), where `band_overshoot = max(0, player band score − required band score)` — rewards carrying the band. Only when the gate requirement > 0. Added to leaderboard total and baked into the Impact snapshot |
+| Finisher Bonus | Removed (`finisherBonusPerLevel = 0`) — overbuild finish earns nothing beyond banked contribution |
 | Assist Bonus | Disabled by default (`assistBonusPerLevel = 0`) |
 
 - MVP = highest level score for that level.
@@ -160,7 +171,7 @@ Default level time limit: 30s, tunable via `levelTimeLimitMs`. Public gameplay U
 | System | Curve |
 |---|---|
 | Target height | See Tower System above |
-| Block complexity | height-1 blocks @L1, size-2 @L2, size-3 @L3, size-4 @L5, size-5 @L10, size-6 @L15 (late: true vertical height-5/6 lines) |
+| Block complexity | All 5 bricks (`I`/`O`/`L`/`T`/`Z`) available from L1 — no size-unlock ramp; difficulty comes from target height, timer, stability sensitivity, and lane play |
 | Inventory capacity | 1 slot @L1, 2 @L2, 3 @L4 |
 | Impacts | Every 3 levels |
 

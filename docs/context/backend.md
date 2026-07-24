@@ -41,7 +41,7 @@ All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block
 
 **Interface** (one `GameEngine` class per room):
 - **Lifecycle:** `createRoom(...)`, `hydrateRoom(...)`, `closeRoom(reason)`, `startLevel()`, `restartAtConfiguredStartLevel()`, `restartAtLevel(level, options)` (shared restart primitive; `restartAtConfiguredStartLevel()` calls it with `{ resetScores: true }` at `debugStartLevel` — Lobby Manager's `restartRoomsAtCurrentLevel()` calls it directly with the room's current level and `{ resetScores: false }`)
-- **Placement:** `placeBlock(playerId, blockIndex)`
+- **Placement:** `placeBlock(playerId, blockIndex, lane)` (lane = `left`/`center`/`right`, default `center`), `resolveLaneOriginX(block, lane)` (maps the chosen lane to a clamped settle `originX` from the brick's `anchorX`)
 - **Scoring:** `addPlacementScore(...)`, `awardCompletionBonuses(...)`, `addLevelScoreToLeaderboard()`, `getLevelMVP()`, `buildLevelSummary(...)`
 - **Impacts:** `saveImpactState()`, `restoreImpactScores()`, `restoreImpactPowers()`, `rollbackToImpact()`
 - **Power:** `setupSideQuest()`, `grantDefaultPowers()`, `activatePower(playerId, slot)`, `consumePowerEvents()`, `clonePowerInventory(items)`, `anyPlayerCanRefresh()` (defers the not-enough-height fail check while a player still holds Refresh)
@@ -64,10 +64,10 @@ All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block
 
 `engine/Block_Supply.js` — block creation, shared draw pile, opening hands, refresh-block generation for one room. Follows the [engine module delegation pattern](./coding-conventions.md#server-engine-module-delegation-pattern).
 
-**Responsibilities:** create blocks (id, shape variant, cells, derived height; level-weighted random size); build/shuffle/deal the draw pile (sized via Game Config's generated-pile scaling); generate a **solvable** opening hand (retries until hand+pile can exactly reach target height, with enough precision blocks and surplus within bounds — falls back to the last attempt if none qualifies); refill a hand slot after placement; trim an oversized hand to `maxActiveBlocks` (keeping tallest/largest); generate a useful refresh set; prepare team carry-over blocks on completion.
+**Responsibilities:** create bricks from the **5 fixed shapes** (`brickShapes`, weighted by `brickWeights`, all available from level 1 — no size unlock; each `{ id, shapeId, cells, anchorX, derived height }`); build/shuffle/deal the draw pile (sized via Game Config's generated-pile scaling); generate a **solvable** opening hand (retries until hand+pile can exactly reach target height, with enough precision blocks and surplus within bounds — falls back to the last attempt if none qualifies); refill a hand slot after placement; trim an oversized hand to `maxActiveBlocks` (keeping tallest/largest); generate a useful refresh set; prepare team carry-over blocks on completion.
 
 **Interface (grouped):**
-- Block creation — `createBlock(blockSize, excludedShapeId)`, `getRandomBlock()`, `createRandomUnlockedBlock(minBlockSize)`, `isBlockSizeUnlocked(blockSize)`, `getWeightedUnlockedBlockSize(minBlockSize)`, `createBlockId()`, `cloneCells(cells)`, `getBlockHeight(block)`, `getBlockCellCount(block)`
+- Block creation — `pickWeightedShape(excludedShapeId)`, `createBlock(shapeId, excludedShapeId)` (`shapeId` null = weighted-random pick, optionally excluding one shape), `getRandomBlock()`, `createBlockId()`, `cloneCells(cells)`, `getBlockHeight(block)`, `getBlockCellCount(block)`
 - Draw pile — `getNextDrawBlock()`, `buildDrawPile()`, `getGeneratedDrawPileBlockCount()`, `generateDrawPileBlocks(count)`, `drawBlockFromPile()`, `shuffleBlocks(blocks)`, `getTotalBlockHeight(blocks)`
 - Opening hand — `getBlocksPerPlayer()`, `dealOpeningHands()`, `generateSolvableOpeningHandBlocks()`, `isLevelBlockSupplyValid(blocks, minimumOpeningBlocks)`, `countPrecisionBlocks(blocks)`, `hasExactHeightCombination(blocks, targetHeight)`, `refillPlayerBlock(player)`, `trimInventory(blocks)`
 - Refresh — `generateRefreshBlocks(currentBlocks)`, `createRefreshBlock(currentBlock)`, `isRefreshBlockSetUseful(blocks)`, `scoreRefreshBlockSet(blocks)`
@@ -75,7 +75,7 @@ All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block
 
 **Depends on:** Game Config (direct `require`); Game Engine for room state and cross-calls between its own functions.
 
-**Notes:** blocks are `{ id, shapeId, cells, height }` objects (`height` derived from `cells`' vertical span); legacy numeric blocks are still read as plain height values. Sizes unlock through Game Config. Team carry-over: discarded entirely on level failure — Game Engine never calls `prepareTeamCarryOverBlocks` on the failure path. Refresh generation never touches the draw pile; there's no cooldown/lockout gating *when* a refresh can happen anymore beyond the shared Power activation cooldown.
+**Notes:** blocks are `{ id, shapeId, cells, anchorX, height }` objects (`height` derived from `cells`' vertical span); legacy numeric blocks are still read as plain height values. All 5 bricks are available from level 1 (no size unlock). `createRefreshBlock` rerolls a brick to a **different random shape** (excludes the current `shapeId`); since every brick is 4 cells, refresh no longer changes cell-count. Team carry-over: precision-first (height ≤ 2 kept), discarded entirely on level failure — Game Engine never calls `prepareTeamCarryOverBlocks` on the failure path. Refresh generation never touches the draw pile; there's no cooldown/lockout gating *when* a refresh can happen anymore beyond the shared Power activation cooldown.
 
 ## Scoring
 
@@ -103,25 +103,25 @@ All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block
 **Interface (grouped):**
 - Snapshots — `saveImpactScores()`, `saveImpactPowers()`, `saveImpactState()`, `ensureImpactScores()`, `ensureImpactPowers()`, `ensureImpactState()`, `restoreImpactScores()`, `restoreImpactPowers()`
 - Score gate — `isImpactLevel(level)`, `getImpactScoreRequirement()`, `getImpactMinContributionShare()`, `getExpectedPlacementScoreForLevel(level)`, `getExpectedPlacementScoreForImpactBand(blockedLevel)`, `getImpactBandScoreRequirement(blockedLevel)`, `getImpactScoreFailures(blockedLevel)`, `getNextImpactLevel()`, `getImpactScoreStatus(blockedLevel)`, `hasMetImpactScoreRequirement(blockedLevel)`
-- Rewards/rollback — `awardImpactPower()`, `failImpactScoreRequirement(blockedLevel)`, `rollbackToImpact()`
+- Rewards/rollback — `awardImpactPower()`, `awardImpactFillBonus(blockedLevel)`, `failImpactScoreRequirement(blockedLevel)`, `rollbackToImpact()`
 
 **Depends on:** Game Config (direct `require`); Game Engine via facade for lifecycle calls; Scoring via facade for score-event/summary calls.
 
-**Notes:** `rollbackToImpact()` calls `engine.startLevel()` directly at the end — the room re-enters `starting` for the Impact level in the same call, not on a separate timer tick. `clonePowerInventory` used to live here but moved onto the Game Engine facade directly (pure Power data, no Impact semantics; it always ignored the `engine` argument it took).
+**Notes:** `awardImpactFillBonus(blockedLevel)` runs from `nextLevel()` when a band's Impact opens **and** the gate is met, before `awardImpactPower()`/`saveImpactState()` — so the bonus is baked into the snapshot and survives rollback. It pays each player `round(overshoot × scoring.impactFillBonusRate)` where `overshoot = max(0, bandScore − requiredBandScore)`, straight into `player.score`, and queues an `impact_fill_bonus` score event; skipped entirely when the band requirement is 0. The event survives the transition because `startLevel()` now **preserves** any already-queued `pendingScoreEvents` (`= pendingScoreEvents || []`) instead of clearing them, so the fill-bonus popups reach the Impact level's first broadcast (same pattern as `awardImpactPower`'s power events). `rollbackToImpact()` calls `engine.startLevel()` directly at the end — the room re-enters `starting` for the Impact level in the same call, not on a separate timer tick. `clonePowerInventory` used to live here but moved onto the Game Engine facade directly (pure Power data, no Impact semantics; it always ignored the `engine` argument it took).
 
 ## Tower Stability
 
 `Tower_Stability.js` — pure, deterministic grid physics: settles a newly placed block and scores the resulting tower's stability. **Zero dependencies, internal or external.**
 
 **Interface:**
-- `settleBlock(entries, block, width) -> { originX, originY }` — drops `block` into `entries` on a grid of `width` columns; returns where it lands
-- `evaluate(entries, config) -> { stability, diagnostics }` — `diagnostics = { comOffset, overhangPenalty, tiltScore, tiltAngleDeg, leanDirection, collapsed }`. Reads `towerOverhangWeight`, `towerMaxTiltAngleDeg`, `towerCollapseTiltScore` off `config`
+- `settleBlock(entries, block, originX) -> { originX, originY }` — drops `block` into `entries` at the caller-provided **lane-derived `originX`** (rounded) and returns where it lands (drop-to-first-contact per column, no auto-centering). The lane→`originX` mapping lives in [Game Engine](#game-engine)'s `resolveLaneOriginX()`, not here.
+- `evaluate(entries, config) -> { stability, diagnostics }` — `diagnostics = { comOffset, laneImbalance, overhangPenalty, tiltScore, tiltAngleDeg, leanDirection, collapsed }`. Reads `towerOverhangWeight`, `towerLaneImbalanceWeight`, `towerMaxTiltAngleDeg`, `towerCollapseTiltScore` off `config`
 - `cellsFor(entry)` / `cellsForEntries(entries)` — absolute grid cells for one or many entries
 - `topHeight(entries)` — current highest occupied row
 
 **Notes:**
 - **Must stay pure — see [decisions.md](./decisions.md#tower-stability-must-stay-a-pure-function).**
-- Tilt score = two independent components summed: `comOffset` (whole-tower lean — only horizontal CoM position vs. footprint matters, not height) + `overhangPenalty` (reaction to only the just-placed entry, so a bad placement reads as bad immediately without re-penalizing old, already-settled overhangs every later turn).
+- Tilt score = three components summed: `comOffset` (whole-tower cell-count lean — horizontal CoM vs. ground footprint) + `laneImbalance` (signed, height-weighted column centroid vs. base center × `towerLaneImbalanceWeight` — leans toward the taller columns) + `overhangPenalty` (reaction to only the just-placed entry, so a bad placement reads as bad immediately without re-penalizing old, already-settled overhangs every later turn). Narrow ground footprints normalize small (`baseHalfWidth` floor 0.5), so tall towers on a narrow base read as tippy — the intended pressure to build wide bases on the 5-column grid.
 - Called from Game Engine: `settleBlock()` at placement time, `evaluate()` inside `recalculateTowerStability()` after every placement. Game Engine (not this file) compares the result against the warning/critical thresholds.
 - Tuning-knob rationale lives in [Game Config](#game-config) — previously duplicated across this file, `Game_Config.js`, and `Lobby_Manager.js`.
 - Guards against dividing by an empty base (no cells at `y === 0`), even though the first block placed should always settle on the floor.
@@ -134,13 +134,13 @@ All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block
 
 **Depends on:** Game Config, Game Engine.
 
-**Notes:** bots place through `Game Engine`'s `placeBlock()` by inventory index — the same authoritative path real players use. Timer tracking (`bot.botTimer`, `botLoopLevel`) exists specifically so a disconnected/closed room's bots don't keep running in the background. Bots never hold or activate Power items and always dispatch to `placeBlock` — no bot refresh behavior (`canBotRefresh` and related branches were removed with the refresh token economy).
+**Notes:** bots place through `Game Engine`'s `placeBlock()` by inventory index **plus a lane** — the same authoritative path real players use. `chooseBotLane(engine, block)` tries each placeable lane (left/center/right), settles + `evaluate`s via Tower Stability, and picks the highest-stability lane (tie → center), so bots keep the tower balanced. Timer tracking (`bot.botTimer`, `botLoopLevel`) exists specifically so a disconnected/closed room's bots don't keep running in the background. Bots never hold or activate Power items and always dispatch to `placeBlock` — no bot refresh behavior (`canBotRefresh` and related branches were removed with the refresh token economy).
 
 ## Game Config
 
 `Game_Config.js` — single exported `GameConfig` object; the source of truth for every numeric/rule constant the server uses. **No dependencies, internal or external.**
 
-**Grouped contents:** game settings (pacing, cooldowns, popup/summary durations, `impactInterval`), tower-stability settings, Power settings, block settings (`blockUnlockLevels`, `blockWeights`, `blockShapeVariants`), inventory settings, draw-pile/opening-hand/carry-over settings, refresh block-generation settings, scoring settings (`scoring` sub-object), debug settings. Full field-by-field table with current values/defaults → [gameplay.md § Currently exposed variables](./gameplay.md#currently-exposed-variables).
+**Grouped contents:** game settings (pacing, cooldowns, popup/summary durations, `impactInterval`), tower/lane settings (`towerGridWidth` = 5, `placeableLanes` `{left:1,center:2,right:3}`), tower-stability settings (incl. `towerLaneImbalanceWeight`), Power settings, brick settings (`brickShapes` — the 5 fixed tetrominoes `I`/`O`/`L`/`T`/`Z`, each with `cells` + `anchorX`; `brickWeights`), inventory settings, draw-pile/opening-hand/carry-over settings, refresh block-generation settings, scoring settings (`scoring` sub-object: `placementScorePerHeight`, `precisionBonusPerLevel`, `teamExactBonusPerLevel`, `impactFillBonusRate`; `finisherBonusPerLevel`/`assistBonusPerLevel` = 0), debug settings. Debug-exposed tunables → [gameplay.md § Currently exposed variables](./gameplay.md#currently-exposed-variables); scoring defaults → [gameplay.md § Scoring system](./gameplay.md#scoring-system).
 
 **Notes:**
 - Lobby Manager validates debug changes before mutating this object; production should restrict debug writes behind admin permissions later (not yet implemented — see [decisions.md](./decisions.md#debug-menu--debug-config-not-yet-gated)).

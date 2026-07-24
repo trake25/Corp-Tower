@@ -6,7 +6,7 @@ Scope: everything that verifies or tunes behavior — server contract tests, the
 
 `src/Server/tests/Score_Events.test.js` — CI/test-only, **not** shipped in the Docker image. Runs via `npm test` (Node's built-in test runner, no separate framework), or directly: `node --test tests/Score_Events.test.js` from `src/Server`. **14 tests, all passing.** Called by [Server K3s Deploy](./deployment.md#k3s-workflows) before a server image build/deploy.
 
-**Covers:** placement score events; exact-finish and overbuild event behavior; level-summary banking for failed levels (score not counted toward final total); debug-config clamping (popup/summary durations, tower-stability thresholds); quick-chat event/cooldown contracts; block refresh generation (size 1–2 → unlocked size 3+, size 3+ reroll without changing size); activating a held `refresh` item rerolls the target's blocks, and holding one defers the not-enough-height fail check; Impact Power-inventory snapshot/rollback behavior.
+**Covers:** placement score events; exact-finish (precision + team bonus) and overbuild (no finish bonus) behavior; **lane→`originX` mapping** (`resolveLaneOriginX` centering wide bricks, spilling into outer columns) and a lane-origin overhang/stability check; **Impact-fill bonus** (rewards band contribution above the requirement); level-summary banking for failed levels; debug-config clamping (popup/summary durations, tower-stability thresholds); quick-chat event/cooldown contracts; refresh generation (rerolls into the 5-brick set; `createRefreshBlock` avoids repeating the input shape); activating a held `refresh` item rerolls the target's blocks, and holding one defers the not-enough-height fail check; Impact Power-inventory snapshot/rollback behavior.
 
 **Depends on:** Game Engine, Game Config, Lobby Manager, Tower Stability (directly required; exercised by a block-settling test). External: `node:test`, `node:assert/strict`.
 
@@ -27,7 +27,7 @@ Scope: everything that verifies or tunes behavior — server contract tests, the
 `src/Server/tools/Balance_Simulator.js` — offline balance-sampling tool. Tooling only: not required by the running server/client, not copied into the Docker image, not `require()`d by anything else (CI only syntax-checks it via `node --check` in `npm test`; it never actually runs in CI).
 
 - Instantiates [Game Engine](./backend.md#game-engine) directly at a chosen level — no Lobby Manager, no Redis, no WebSocket, no room-of-real-players setup.
-- Deals opening hands/draw piles through that engine, runs simple smart-play placement logic to simulate a level, prints CSV metrics: completion rate, exact-finish rate, overbuild, placement count, score spread.
+- Deals opening hands/draw piles through that engine, runs simple smart-play placement logic — picking the highest-stability **lane** per brick via `chooseStablestLane` (mirrors the bot heuristic) — to simulate a level, prints CSV metrics: completion rate, exact-finish rate, overbuild, placement count, score spread. (Current caveat: the greedy bot builds narrow towers, so high-level completion reads low — a tuning signal, not a correctness failure; see [gameplay.md](./gameplay.md).)
 - Run: `npm run balance:simulate -- <levels> <runs>` from `src/Server`.
 
 **Depends on:** Game Engine, Game Config, Tower Stability (used directly for a standalone stability check on the simulated result, not just transitively through the engine).

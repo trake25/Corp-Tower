@@ -240,6 +240,11 @@ func update_block_drag(global_pos: Vector2) -> void:
 
 	drag_preview.global_position = global_pos - drag_preview.size * 0.5
 	update_tower_drop_zone_highlight(global_pos)
+	set_tower_lane_guides(true, lane_for_global_pos(global_pos))
+
+func set_tower_lane_guides(active: bool, lane: String = "") -> void:
+	if tower_stack_fallback != null and tower_stack_fallback.has_method("set_lane_guides"):
+		tower_stack_fallback.call("set_lane_guides", active, lane)
 
 func finish_block_drag(global_pos: Vector2) -> void:
 	if !is_block_dragging:
@@ -263,6 +268,7 @@ func cancel_block_drag() -> void:
 	drag_slot_index = -1
 	drag_pointer_id = PointerEventsScript.POINTER_MOUSE
 	reset_tower_drop_zone_highlight()
+	set_tower_lane_guides(false, "")
 
 	if drag_preview != null:
 		drag_preview.visible = false

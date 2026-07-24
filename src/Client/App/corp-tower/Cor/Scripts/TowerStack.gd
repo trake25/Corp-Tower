@@ -12,6 +12,9 @@ const BOTTOM_PADDING := 12.0
 const SCROLL_TRIGGER_RATIO := 0.7
 const COLLAPSE_TILT_DEG := 70.0
 const TILT_EASE_SPEED := 6.0
+const DROP_DURATION := 0.28
+const DROP_HEIGHT_UNITS := 6.0
+const LANE_COLUMNS := {"left": 1, "center": 2, "right": 3}
 
 signal scroll_offset_changed(pixels: float)
 
@@ -24,6 +27,11 @@ var tower_tilt_deg: float = 0.0
 var displayed_tilt_deg: float = 0.0
 var tower_collapsed: bool = false
 var _last_scroll_pixels: float = 0.0
+var lane_guides_active: bool = false
+var active_lane: String = ""
+var _drop_anim_id: String = ""
+var _drop_anim_t: float = 0.0
+var _prev_block_count: int = 0
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
@@ -44,12 +52,53 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	else:
 		tower_tilt_deg = reported_tilt
 
+	_maybe_start_drop_animation()
 	_update_scroll_offset()
 	queue_redraw()
 
+func set_lane_guides(active: bool, lane: String = "") -> void:
+	if lane_guides_active == active and active_lane == lane:
+		return
+	lane_guides_active = active
+	active_lane = lane
+	queue_redraw()
+
+func _maybe_start_drop_animation() -> void:
+	var new_count: int = tower_blocks.size()
+
+	if new_count == _prev_block_count + 1 and new_count > 0:
+		_drop_anim_id = _entry_block_id(tower_blocks[new_count - 1])
+		_drop_anim_t = 0.0
+	elif new_count != _prev_block_count:
+		_drop_anim_id = ""
+
+	_prev_block_count = new_count
+
+func _entry_block_id(entry: Dictionary) -> String:
+	var block: Variant = entry.get("block", {})
+	if typeof(block) == TYPE_DICTIONARY:
+		return str(block.get("id", ""))
+	return ""
+
+func _drop_ease(t: float) -> float:
+	var clamped: float = clampf(t, 0.0, 1.0)
+	return 1.0 - pow(1.0 - clamped, 3.0)
+
 func _process(delta: float) -> void:
+	var needs_redraw: bool = false
+
 	if absf(displayed_tilt_deg - tower_tilt_deg) > 0.01:
 		displayed_tilt_deg = lerpf(displayed_tilt_deg, tower_tilt_deg, minf(1.0, TILT_EASE_SPEED * delta))
+		needs_redraw = true
+
+	if _drop_anim_id != "":
+		_drop_anim_t += delta / DROP_DURATION
+		if _drop_anim_t >= 1.0:
+			_drop_anim_t = 1.0
+			_drop_anim_id = ""
+		needs_redraw = true
+
+	if needs_redraw:
 		queue_redraw()
 
 func set_player_color_map(new_player_color_map: Dictionary) -> void:
@@ -60,6 +109,8 @@ func clear_tower() -> void:
 	tower_blocks = []
 	current_height = 0
 	target_height = 0
+	_prev_block_count = 0
+	_drop_anim_id = ""
 	_update_scroll_offset()
 	queue_redraw()
 
@@ -74,13 +125,17 @@ func _update_scroll_offset() -> void:
 	scroll_offset_changed.emit(scroll_pixels)
 
 func _draw() -> void:
+	var unit: float = _unit_size()
+	var base_x: float = size.x * 0.5
+	var baseline: float = size.y - BOTTOM_PADDING
+
+	if lane_guides_active:
+		_draw_lane_guides(unit, base_x, baseline)
+
 	if tower_blocks.is_empty():
 		_draw_fallback_stack()
 		return
 
-	var unit: float = _unit_size()
-	var base_x: float = size.x * 0.5
-	var baseline: float = size.y - BOTTOM_PADDING
 	var scroll_offset_units: int = _scroll_offset_units(unit)
 	var tower_units: int = max(target_height, current_height, 1)
 
@@ -95,12 +150,16 @@ func _draw() -> void:
 		var origin_x: int = int(entry.get("originX", 0))
 		var color: Color = _player_color(entry)
 
+		var drop_offset: float = 0.0
+		if _drop_anim_id != "" and _entry_block_id(entry) == _drop_anim_id:
+			drop_offset = (1.0 - _drop_ease(_drop_anim_t)) * DROP_HEIGHT_UNITS
+
 		for cell in cells:
 			var cell_x: int = _cell_x(cell)
 			var cell_y: int = _cell_y(cell)
 			var abs_x: float = base_x + (float(origin_x + cell_x) - GRID_CENTER_COL) * unit - unit * 0.5
-			var y_units: int = base_height + int(block.get("height", 0)) - cell_y - 1
-			var abs_y: float = baseline - float(y_units + 1 - scroll_offset_units) * unit
+			var y_units: int = base_height + cell_y
+			var abs_y: float = baseline - (float(y_units + 1 - scroll_offset_units) + drop_offset) * unit
 			var abs_rect: Rect2 = Rect2(Vector2(abs_x, abs_y), Vector2(unit - 2.0, unit - 2.0))
 
 			if !_is_rect_visible(abs_rect):
@@ -115,6 +174,21 @@ func _draw() -> void:
 
 	if current_height > tower_units:
 		_draw_fallback_stack()
+
+func _draw_lane_guides(unit: float, base_x: float, baseline: float) -> void:
+	var top_y: float = TOP_PADDING
+	var band_height: float = maxf(0.0, baseline - top_y)
+
+	for lane_name in LANE_COLUMNS:
+		var lane_column: int = LANE_COLUMNS[lane_name]
+		var band_x: float = base_x + (float(lane_column) - GRID_CENTER_COL) * unit - unit * 0.5
+		var is_active: bool = (lane_name == active_lane)
+		var fill: Color = Color(1.0, 1.0, 1.0, 0.16 if is_active else 0.05)
+		var border: Color = Color(1.0, 1.0, 1.0, 0.55 if is_active else 0.16)
+		var band: Rect2 = Rect2(Vector2(band_x, top_y), Vector2(unit, band_height))
+
+		draw_rect(band, fill, true)
+		draw_rect(band, border, false, 2.0 if is_active else 1.0)
 
 func _draw_fallback_stack() -> void:
 	if current_height <= 0:

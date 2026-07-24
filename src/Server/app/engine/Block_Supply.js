@@ -84,6 +84,44 @@ function pickWeightedShape(engine, excludedShapeId = null) {
     return weightedPool[Math.floor(Math.random() * weightedPool.length)];
 }
 
+function normalizeCells(cells) {
+    const minX = Math.min(...cells.map(cell => Number(cell[0])));
+    const minY = Math.min(...cells.map(cell => Number(cell[1])));
+    return cells.map(cell => [Number(cell[0]) - minX, Number(cell[1]) - minY]);
+}
+
+function rotateCellsCW(cells) {
+    return normalizeCells(cells.map(cell => [Number(cell[1]), -Number(cell[0])]));
+}
+
+function getRotations(cells) {
+    const rotations = [];
+    const seen = new Set();
+    let current = normalizeCells(cells);
+
+    for (let i = 0; i < 4; i++) {
+        const rotationKey = current
+            .map(cell => cell.join(","))
+            .sort()
+            .join("|");
+
+        if (!seen.has(rotationKey)) {
+            seen.add(rotationKey);
+            rotations.push(current);
+        }
+
+        current = rotateCellsCW(current);
+    }
+
+    return rotations;
+}
+
+function getBlockAnchorX(cells) {
+    const xs = cells.map(cell => Number(cell[0]));
+    const width = Math.max(...xs) - Math.min(...xs) + 1;
+    return Math.floor((width - 1) / 2);
+}
+
 function createBlock(engine, shapeId = null, excludedShapeId = null) {
     const shapes = GameConfig.brickShapes || [];
     let shape = shapeId
@@ -98,13 +136,15 @@ function createBlock(engine, shapeId = null, excludedShapeId = null) {
         return null;
     }
 
-    const cells = engine.cloneCells(shape.cells);
+    const rotations = getRotations(shape.cells);
+    const rotation = rotations[Math.floor(Math.random() * rotations.length)];
+    const cells = engine.cloneCells(rotation);
 
     return {
         id: engine.createBlockId(),
         shapeId: shape.shapeId,
         cells: cells,
-        anchorX: Number(shape.anchorX) || 0,
+        anchorX: getBlockAnchorX(cells),
         height: engine.getBlockHeight({ cells: cells })
     };
 }

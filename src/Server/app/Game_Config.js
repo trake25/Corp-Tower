@@ -49,11 +49,11 @@ const GameConfig = {
     },
 
     brickShapes: [
-        { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]], anchorX: 0 },
-        { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]], anchorX: 0 },
-        { shapeId: "L", cells: [[0, 0], [1, 0], [0, 1], [0, 2]], anchorX: 0 },
-        { shapeId: "T", cells: [[1, 0], [0, 1], [1, 1], [2, 1]], anchorX: 1 },
-        { shapeId: "Z", cells: [[1, 0], [2, 0], [0, 1], [1, 1]], anchorX: 1 }
+        { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]] },
+        { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] },
+        { shapeId: "L", cells: [[0, 0], [1, 0], [0, 1], [0, 2]] },
+        { shapeId: "T", cells: [[1, 0], [0, 1], [1, 1], [2, 1]] },
+        { shapeId: "Z", cells: [[1, 0], [2, 0], [0, 1], [1, 1]] }
     ],
 
     brickWeights: {

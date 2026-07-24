@@ -221,7 +221,20 @@ test("refresh rerolls blocks into the five-brick set", () => {
     assert.equal(refreshed.length, 2);
     assert.equal(refreshed.every(block => validShapes.has(block.shapeId)), true);
     assert.equal(refreshed.every(block => engine.getBlockCellCount(block) === 4), true);
-    assert.equal(refreshed.every(block => block.height >= 2 && block.height <= 4), true);
+    assert.equal(refreshed.every(block => block.height >= 1 && block.height <= 4), true);
+});
+
+test("bricks are created with a random rotation (I appears both tall and flat)", () => {
+    const { engine } = createPlayingEngine(1, 8);
+    const heights = new Set();
+
+    for (let i = 0; i < 200; i++) {
+        heights.add(engine.getBlockHeight(engine.createBlock("I")));
+    }
+
+    // I rotates between vertical (height 4) and horizontal (height 1)
+    assert.equal(heights.has(4), true);
+    assert.equal(heights.has(1), true);
 });
 
 test("createRefreshBlock rerolls a brick to a different shape", () => {

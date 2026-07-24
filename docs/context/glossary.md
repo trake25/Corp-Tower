@@ -27,7 +27,10 @@ Scope: project-specific terms. If a chat log, branch name, or old PR uses a term
 | **Precision block** | A block with height ≤ 2 — useful for landing an exact finish. |
 | **Cooperative (bot strategy)** | Bots prefer exact-finishing blocks, avoid overbuilding near target, otherwise play the highest useful block. |
 | **MVP-greedy (bot strategy)** | Bots prefer exact-finishing blocks, otherwise the highest effective-height contribution — even if it overbuilds. |
-| **Shape ID** | Compact orientation name for a block, e.g. `I4H` (4-cell horizontal line), `I4V` (4-cell vertical line), `I1` (1-cell), `I5V`/`I6V` (late-game height-5/6 lines). Tetris-style multi-cell variants use `O`/`T`/`L`/`J`/`S`/`Z`. |
+| **Shape ID** | One of the **5 fixed brick types**: `I` (1×4, h4), `O` (2×2, h2), `L` (2×3, h3), `T` (3×2, h2, stem-down), `Z` (3×2, h2). All 4-cell, fixed orientation, available from level 1. (Old size-1..6 variant ids like `I4H`/`I5V`/`J`/`S` are retired.) |
+| **Lane** | One of three placeable columns — **left / center / right** = grid columns 1 / 2 / 3 on the 5-wide tower. Columns 0 and 4 are outer overflow only. The player picks a lane; the server maps it to `originX` via the brick's `anchorX`. |
+| **`anchorX`** | The local cell column of a brick that lands on the chosen lane column (`I`/`O`/`L` = 0, `T`/`Z` = 1). `originX = laneColumn − anchorX`, clamped to the grid. |
+| **Impact-fill bonus** | Score awarded at each passed Impact, `round(band_overshoot × impactFillBonusRate)`, rewarding a player whose band contribution exceeded the minimum requirement. |
 | **`towerBlocks`** | Ordered authoritative placement history broadcast to clients; source of truth for tower rendering. |
 | **Level states** | `waiting` → `starting` → `playing` → `finished` \| `failed` → (next level or Impact rollback) → … → `game_completed` \| `closed`. |
 

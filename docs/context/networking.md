@@ -36,7 +36,7 @@ Every new connection triggers a `debug_config` broadcast to all connected real p
 | Message | Validation |
 |---|---|
 | `reconnect` | Token/player id may resume a room; otherwise server creates a new session and queues the player |
-| `place_block` | Valid room, player, state, cooldown, inventory, block index |
+| `place_block` | Valid room, player, state, cooldown, inventory, block index; `lane` = `left`/`center`/`right` (defaults to `center` if absent/invalid). Server maps lane → grid `originX` via `resolveLaneOriginX` |
 | `activate_power` | Valid room, player, held item at `slot`, shared activation cooldown. **No target field** — effect applies to every player in the room, caster included. There is no separate refresh message; refresh is `activate_power` with a `refresh` item, and rerolls every player's blocks unconditionally |
 | `send_quick_chat` | Valid active room, template slot `0..2`, server-authoritative per-player cooldown |
 | `update_config` | Key allowlist, value ranges, bot-delay min/max, bot-count clamp, bot-strategy allowlist, tower-stability feedback-mode allowlist, `resetDebugConfig` default-restore action — exact clamp ranges in [backend.md § Lobby Manager](./backend.md#lobby-manager) |
@@ -45,15 +45,15 @@ Every new connection triggers a `debug_config` broadcast to all connected real p
 
 Inventory cards use drag-and-drop, not tap-to-place:
 - Drag starts only on active slots with blocks, while match state is `playing` and the local placement cooldown has elapsed. Locked/empty slots and blocked server states don't start a drag.
-- Release inside `TowerDropZone` sends the existing index-only `place_block` request; release elsewhere cancels locally with no server message.
-- Drag pointer position is visual only — it doesn't change placement geometry or the server contract.
+- Release inside `TowerDropZone` sends `place_block` with the brick's inventory index **and a `lane`**. The lane comes from the release x-position within the drop zone, split into thirds → `left`/`center`/`right` (`InventoryController.lane_for_global_pos`). Release elsewhere cancels locally with no server message.
+- Only the x→lane bucket is meaningful; exact pointer y/geometry is visual only. The server still owns the final grid `originX`/`originY` (drop-to-contact).
 - `game_state`/`debug_config` stay backward-compatible; drag behavior layers local cooldown timing (from `placementCooldown`) on top of existing authoritative fields.
 
 ## Block & tower payloads
 
 | Field | Meaning |
 |---|---|
-| `blocks[]` (inventory) | Server-assigned fixed-orientation objects `{ id, shapeId, cells, height }` |
+| `blocks[]` (inventory) | Server-assigned fixed-orientation bricks `{ id, shapeId, cells, anchorX, height }` (5 shapes `I`/`O`/`L`/`T`/`Z`). `anchorX` = the local cell column aligned to the chosen placement lane |
 | `activeInventorySlots` | Currently unlocked active hand slots |
 | `maxActiveBlocks` | Max active hand slots the UI/rules support |
 | `nextDrawBlock` | First block in the shared draw pile, or `null` when empty |
@@ -61,8 +61,8 @@ Inventory cards use drag-and-drop, not tap-to-place:
 | `cells` | `[x, y]` unit-coordinate array; used by the client for shape previews and tower rendering |
 | `height` | Vertical footprint derived from `cells` — not necessarily equal to cell count |
 | `towerBlocks[]` | Ordered placement history: `{ playerId, block, height, effectiveHeight, baseHeight }`, so clients can redraw the tower after a broadcast or reconnect |
-| `originX` / `originY` | Resolved structural coordinates on stability-enabled entries |
-| `towerStability` / `towerStabilityDiagnostics` | Stability score + diagnostic data (see [backend.md § Tower Stability](./backend.md#tower-stability)) |
+| `originX` / `originY` | Resolved structural coordinates (lane-derived `originX`, drop-settled `originY`) on the 5-column grid |
+| `towerStability` / `towerStabilityDiagnostics` | Stability score + diagnostics `{ comOffset, laneImbalance, overhangPenalty, tiltScore, tiltAngleDeg, leanDirection, collapsed }` (see [backend.md § Tower Stability](./backend.md#tower-stability)) |
 | `impactScoreStatus` | Right-panel helper: next Impact level, ready-count inputs, per-player leaderboard score goals |
 
 Legacy numeric block values are still tolerated by the Godot client as vertical fallback blocks. Redis persists structural fields (`originX`/`originY` etc.) so a recovered room reproduces the same tower structure.
@@ -71,7 +71,7 @@ Legacy numeric block values are still tolerated by the Godot client as vertical 
 
 | Field | Meaning |
 |---|---|
-| `scoreEvents[]` | Transient, broadcast-only. Each: stable `id`, `type`, `level`, optional `playerId`/`points`/`label`/`displayOnly`/`meta`. Types: `placement`, `finisher_bonus`, `precision_bonus`, `team_exact_bonus`, `assist_bonus` (when enabled), `exact_finish`, `overbuild_finish`, `mvp` |
+| `scoreEvents[]` | Transient, broadcast-only. Each: stable `id`, `type`, `level`, optional `playerId`/`points`/`label`/`displayOnly`/`meta`. Types: `placement`, `precision_bonus`, `team_exact_bonus`, `impact_fill_bonus`, `exact_finish`, `overbuild_finish`, `mvp` (plus `finisher_bonus`/`assist_bonus` only if those multipliers are re-enabled — both default 0, so no event) |
 | `quickChatEvents[]` | Transient, broadcast-only: `id`, `playerId`, template `slot`, display `text`, `createdAt`. Never persisted or replayed after reconnect |
 | `lastLevelSummary` | `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, `players[]` (per-player: id, bot flag, level score, previous/final total, contributed height, MVP flag, bonus breakdown). Impact failures also include `impactScoreStatus` |
 
