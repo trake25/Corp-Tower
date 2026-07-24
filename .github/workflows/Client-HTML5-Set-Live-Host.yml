@@ -1,0 +1,88 @@
+name: Client HTML5 Set Live Host
+
+# Picks which host serves https://play.tod.galaxxigames.com and stands the
+# other one down, since GitHub Pages and the physical backup are never meant
+# to both be live at once. This is a thin dispatcher over the existing
+# workflows — it adds no new deploy/undeploy logic of its own:
+#   target: pages   -> runs Client HTML5 Pages (which already stands the
+#                       backup down itself via its restore_from_backup step)
+#   target: backup  -> runs Client HTML5 Undeploy in soft mode (which
+#                       already fails over to the backup itself via its
+#                       failover_to_backup step)
+# Both underlying workflows remain independently dispatchable exactly as
+# before — this workflow does not change their standalone behavior.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where play.tod.galaxxigames.com should serve the game from."
+        required: true
+        type: choice
+        options:
+          - pages
+          - backup
+        default: pages
+      art_version_override:
+        description: "Optional art bundle version (e.g. v2) to fetch instead of the pinned manifest. Skips sha256 verification — testing only, never for release."
+        required: false
+        default: ""
+        type: string
+      confirm_backup:
+        description: "Only required when target=backup (this takes GitHub Pages offline): type SWITCH_TO_BACKUP to confirm."
+        required: false
+        default: ""
+        type: string
+
+concurrency:
+  group: client-html5-set-live-host
+  cancel-in-progress: false
+
+jobs:
+  guard-backup:
+    if: ${{ inputs.target == 'backup' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm_backup }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRM" != "SWITCH_TO_BACKUP" ]; then
+            echo "::error::Switching to the backup takes GitHub Pages offline. Type SWITCH_TO_BACKUP in confirm_backup to proceed."
+            exit 1
+          fi
+
+  to-pages:
+    if: ${{ inputs.target == 'pages' }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/Client-HTML5-Pages.yml
+    with:
+      art_version_override: ${{ inputs.art_version_override }}
+      restore_from_backup: true
+    secrets:
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+
+  to-backup:
+    needs: guard-backup
+    if: ${{ inputs.target == 'backup' && needs.guard-backup.result == 'success' }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/Client-HTML5-Undeploy.yml
+    with:
+      mode: soft
+      failover_to_backup: true
+      art_version_override: ${{ inputs.art_version_override }}
+    secrets:
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

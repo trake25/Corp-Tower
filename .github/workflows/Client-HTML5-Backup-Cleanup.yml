@@ -1,0 +1,38 @@
+name: Client HTML5 Backup Cleanup
+
+on:
+  workflow_call:
+
+  workflow_dispatch:
+    inputs:
+      confirm_cleanup:
+        description: "Type CLEANUP_WEB_BACKUP to confirm."
+        required: true
+        type: string
+
+concurrency:
+  group: client-html5-web-backup
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check cleanup confirmation
+        run: |
+          if [ "${{ inputs.confirm_cleanup }}" != "CLEANUP_WEB_BACKUP" ]; then
+            echo "confirm_cleanup must be exactly CLEANUP_WEB_BACKUP."
+            exit 1
+          fi
+
+  cleanup-backup:
+    needs: [guard]
+    if: always() && (needs.guard.result == 'success' || needs.guard.result == 'skipped')
+    name: Restore play.tod.galaxxigames.com to GitHub Pages
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 10
+
+    steps:
+      - name: Run web backup down
+        run: "$HOME/corp-tower-server-backup/web-backup-down.sh"

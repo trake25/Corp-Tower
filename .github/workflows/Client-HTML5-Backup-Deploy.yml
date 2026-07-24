@@ -1,4 +1,4 @@
-name: Client HTML5 Pages
+name: Client HTML5 Backup Deploy
 
 on:
   workflow_call:
@@ -8,11 +8,11 @@ on:
         required: false
         default: ""
         type: string
-      restore_from_backup:
-        description: "Also point play.tod.galaxxigames.com back at GitHub Pages if the physical backup machine is currently serving it."
+      expected:
+        description: "'undeploy' when called automatically after GitHub Pages was just undeployed (skips the healthy-site warning); 'manual' otherwise."
         required: false
-        default: true
-        type: boolean
+        default: "manual"
+        type: string
     secrets:
       R2_BUCKET:
         required: true
@@ -30,23 +30,34 @@ on:
         required: false
         default: ""
         type: string
-      restore_from_backup:
-        description: "Also point play.tod.galaxxigames.com back at GitHub Pages if the physical backup machine is currently serving it."
+      confirm:
+        description: "Type FAILOVER_WEB_BACKUP to confirm cutting play.tod.galaxxigames.com over to the backup machine."
         required: true
-        default: true
-        type: boolean
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+        default: ""
+        type: string
 
 concurrency:
-  group: client-html5-pages
+  group: client-html5-web-backup
   cancel-in-progress: false
 
 jobs:
+  guard:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRM" != "FAILOVER_WEB_BACKUP" ]; then
+            echo "::error::Confirmation failed. Type FAILOVER_WEB_BACKUP exactly to run this workflow directly."
+            exit 1
+          fi
+
   build:
+    needs: [guard]
+    if: always() && (needs.guard.result == 'success' || needs.guard.result == 'skipped')
     runs-on: ubuntu-24.04
 
     env:
@@ -57,11 +68,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      - name: Setup GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Fetch private art assets
         uses: ./.github/actions/fetch-private-assets
@@ -83,35 +89,32 @@ jobs:
           output-dir: ${{ github.workspace }}/build/web
           preset-config: .github/godot/export_presets.web.ci.cfg
 
-      - name: Disable Jekyll
-        run: touch build/web/.nojekyll
-
-      - name: Set custom domain
-        run: echo "play.tod.galaxxigames.com" > build/web/CNAME
-
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v4
+      - name: Upload web build artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: web-build
           path: build/web
+          retention-days: 7
 
       - name: Remove private assets from runner
         if: always()
         run: rm -rf "$GODOT_PROJECT_PATH/Cor/Art"
 
-  deploy:
+  deploy-to-backup:
     needs: build
-
-    runs-on: ubuntu-24.04
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 15
 
     steps:
-      - id: deploy
-        uses: actions/deploy-pages@v4
+      - name: Download web build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: build/web
 
-  restore-dns:
-    needs: deploy
-    if: always() && inputs.restore_from_backup && needs.deploy.result == 'success'
-    uses: ./.github/workflows/Client-HTML5-Backup-Cleanup.yml
+      - name: Deploy to backup machine
+        run: "$HOME/corp-tower-server-backup/web-backup-up.sh"
+        env:
+          CORP_TOWER_WEB_BUILD_DIR: ${{ github.workspace }}/build/web
+          CORP_TOWER_WEB_BUILD_SHA: ${{ github.sha }}
+          CORP_TOWER_EXPECTED: ${{ inputs.expected || 'manual' }}
