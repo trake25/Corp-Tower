@@ -7,8 +7,8 @@ const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 const BRICK_UNIT_SIZE := 34.0
 const BRICK_GAP := 2.0
-const GRID_WIDTH := 5
-const GRID_CENTER_COL := 2.0
+const GRID_WIDTH := 9
+const GRID_CENTER_COL := 4.0
 const TOP_PADDING := 14.0
 const BOTTOM_PADDING := 12.0
 const SCROLL_TRIGGER_RATIO := 0.7
@@ -16,7 +16,7 @@ const COLLAPSE_TILT_DEG := 70.0
 const TILT_EASE_SPEED := 6.0
 const DROP_DURATION := 0.28
 const DROP_HEIGHT_UNITS := 6.0
-const LANE_COLUMNS := {"left": 1, "center": 2, "right": 3}
+const LANE_COLUMNS := {"left": 1, "center": 4, "right": 7}
 
 signal scroll_offset_changed(pixels: float)
 

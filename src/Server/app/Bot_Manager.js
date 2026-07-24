@@ -175,7 +175,7 @@ class BotManager {
         }
 
         const lanes = Object.keys(
-            GameConfig.placeableLanes || { left: 1, center: 2, right: 3 }
+            GameConfig.placeableLanes || { left: 1, center: 4, right: 7 }
         );
         let best = null;
 
