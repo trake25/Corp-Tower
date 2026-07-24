@@ -29,6 +29,7 @@ static func normalize_block(raw_block, index: int) -> Dictionary:
 			"id": str(raw_block.get("id", "slot-" + str(index))),
 			"shapeId": str(raw_block.get("shapeId", "BLOCK")),
 			"cells": dictionary_cells,
+			"anchorX": int(raw_block.get("anchorX", 0)),
 			"height": block_height
 		}
 

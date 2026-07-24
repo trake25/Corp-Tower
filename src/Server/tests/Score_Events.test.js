@@ -135,29 +135,42 @@ test("a Z block placed at a lane origin settles with an unsupported overhang", (
     assert.ok(result.stability < 100);
 });
 
-test("resolveLaneOriginX anchors on the brick cell nearest the chosen lane's guide", () => {
+test("resolveLaneOriginX places the block's anchor cell on the chosen lane's guide", () => {
     const { engine } = createPlayingEngine(1, 8);
-    const tBlock = { shapeId: "T", cells: [[1, 0], [0, 1], [1, 1], [2, 1]] };
-    const verticalIBlock = { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]] };
-    const horizontalIBlock = { shapeId: "I", cells: [[0, 0], [1, 0], [2, 0], [3, 0]] };
+    const tBlock = { shapeId: "T", cells: [[1, 0], [0, 1], [1, 1], [2, 1]], anchorX: 1 };
+    const verticalIBlock = { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]], anchorX: 0 };
 
-    // width 3: with guides only 1 column apart (3/4/5), the anchor cell for each
-    // lane lands exactly on that lane's guide, and a 3-wide brick spans all of
-    // 3-4-5 regardless of which lane is chosen -- all three collapse to the same origin
-    assert.equal(engine.resolveLaneOriginX(tBlock, "left"), 3);
+    assert.equal(engine.resolveLaneOriginX(tBlock, "left"), 2);
     assert.equal(engine.resolveLaneOriginX(tBlock, "center"), 3);
-    assert.equal(engine.resolveLaneOriginX(tBlock, "right"), 3);
-
-    // width 1: single cell always lands exactly on the chosen lane's guide column
+    assert.equal(engine.resolveLaneOriginX(tBlock, "right"), 4);
     assert.equal(engine.resolveLaneOriginX(verticalIBlock, "left"), 3);
     assert.equal(engine.resolveLaneOriginX(verticalIBlock, "center"), 4);
     assert.equal(engine.resolveLaneOriginX(verticalIBlock, "right"), 5);
+});
 
-    // width 4 (the widest current brick): left and center collapse together,
-    // only right stays distinct
-    assert.equal(engine.resolveLaneOriginX(horizontalIBlock, "left"), 3);
-    assert.equal(engine.resolveLaneOriginX(horizontalIBlock, "center"), 3);
-    assert.equal(engine.resolveLaneOriginX(horizontalIBlock, "right"), 2);
+test("a brick's randomly chosen anchor cell determines which columns it occupies in a lane", () => {
+    const { engine } = createPlayingEngine(1, 8);
+    const oCells = [[0, 0], [1, 0], [0, 1], [1, 1]];
+    const anchorOnLeftCell = { shapeId: "O", cells: oCells, anchorX: 0 };
+    const anchorOnRightCell = { shapeId: "O", cells: oCells, anchorX: 1 };
+
+    // anchor on the leftmost cell: L lane -> columns 3,4
+    assert.equal(engine.resolveLaneOriginX(anchorOnLeftCell, "left"), 3);
+    // anchor on the rightmost cell: L lane -> columns 2,3
+    assert.equal(engine.resolveLaneOriginX(anchorOnRightCell, "left"), 2);
+});
+
+test("createBlock assigns a random anchor cell within the brick's width", () => {
+    const { engine } = createPlayingEngine(1, 8);
+    const anchors = new Set();
+
+    for (let i = 0; i < 200; i++) {
+        anchors.add(engine.createBlock("O").anchorX);
+    }
+
+    // O is 2 cells wide (columns 0-1); over many draws the anchor should land on both
+    assert.equal(anchors.has(0), true);
+    assert.equal(anchors.has(1), true);
 });
 
 test("quick chat broadcasts a transient event and enforces the player cooldown", () => {

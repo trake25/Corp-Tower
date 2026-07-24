@@ -544,26 +544,15 @@ class GameEngine {
     }
 
     resolveLaneOriginX(block, lane) {
-        const lanes = GameConfig.placeableLanes || { left: 1, center: 4, right: 7 };
+        const lanes = GameConfig.placeableLanes || { left: 3, center: 4, right: 5 };
         const laneCol = Number.isFinite(Number(lanes[lane]))
             ? Number(lanes[lane])
             : Number(lanes.center);
+        const anchorX = Number(block?.anchorX) || 0;
         const cellXs = (block?.cells || []).map(cell => Number(cell[0]));
-        const minX = cellXs.length ? Math.min(...cellXs) : 0;
-        const maxX = cellXs.length ? Math.max(...cellXs) : 0;
-        const width = maxX - minX + 1;
-
-        // Anchor is the cell nearest the chosen lane's guide: the block's
-        // leftmost cell for "left", rightmost for "right", middle for "center".
-        let anchorX;
-        if (lane === "left") {
-            anchorX = minX;
-        } else if (lane === "right") {
-            anchorX = maxX;
-        } else {
-            anchorX = minX + Math.floor((maxX - minX) / 2);
-        }
-
+        const width = cellXs.length
+            ? Math.max(...cellXs) - Math.min(...cellXs) + 1
+            : 1;
         const maxOriginX = Math.max(0, GameConfig.towerGridWidth - width);
 
         return Math.max(0, Math.min(maxOriginX, laneCol - anchorX));

@@ -116,6 +116,14 @@ function getRotations(cells) {
     return rotations;
 }
 
+function getRandomAnchorX(cells) {
+    const xs = cells.map(cell => Number(cell[0]));
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const width = maxX - minX + 1;
+    return minX + Math.floor(Math.random() * width);
+}
+
 function createBlock(engine, shapeId = null, excludedShapeId = null) {
     const shapes = GameConfig.brickShapes || [];
     let shape = shapeId
@@ -138,6 +146,7 @@ function createBlock(engine, shapeId = null, excludedShapeId = null) {
         id: engine.createBlockId(),
         shapeId: shape.shapeId,
         cells: cells,
+        anchorX: getRandomAnchorX(cells),
         height: engine.getBlockHeight({ cells: cells })
     };
 }

@@ -1,6 +1,17 @@
 name: Client HTML5 Pages
 
 on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "src/Client/**"
+      - ".github/actions/build-godot-web/**"
+      - ".github/actions/fetch-private-assets/**"
+      - ".github/godot/export_presets.web.ci.cfg"
+      - ".github/workflows/Client-HTML5-Pages.yml"
+
   workflow_call:
     inputs:
       art_version_override:
@@ -36,7 +47,34 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check-pages-status:
+    name: Check Live Pages Status
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    outputs:
+      pages_active: ${{ steps.check.outputs.pages_active }}
+    steps:
+      - name: Check whether play.tod.galaxxigames.com is currently live
+        id: check
+        run: |
+          set -euo pipefail
+          status="$(curl -sS -o /tmp/pages_check.html -w '%{http_code}' https://play.tod.galaxxigames.com/)"
+
+          if [ "$status" = "404" ]; then
+            echo "pages_active=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::play.tod.galaxxigames.com returned 404 (hard-undeployed) — skipping auto-deploy. Dispatch this workflow manually to redeploy."
+          elif grep -q "Corp Tower is offline" /tmp/pages_check.html; then
+            echo "pages_active=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::play.tod.galaxxigames.com is showing the soft-undeploy placeholder — skipping auto-deploy. Dispatch this workflow manually to redeploy."
+          else
+            echo "pages_active=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: check-pages-status
+    if: |
+      always() &&
+      (needs.check-pages-status.result == 'skipped' || needs.check-pages-status.outputs.pages_active == 'true')
     runs-on: ubuntu-24.04
 
     env:

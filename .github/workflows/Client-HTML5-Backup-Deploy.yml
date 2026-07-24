@@ -25,7 +25,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check-web-backup-status:
+    name: Check Web Backup Status
+    if: github.event_name == 'push'
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 5
+    outputs:
+      backup_web_up: ${{ steps.check.outputs.backup_web_up }}
+    steps:
+      - name: Check for a running web backup container
+        id: check
+        run: |
+          set -euo pipefail
+          if docker ps --filter "name=corp-tower-web" --filter "status=running" --format '{{.Names}}' | grep -q .; then
+            echo "backup_web_up=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "backup_web_up=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::corp-tower-web is not running on the backup machine (stood down) — skipping auto-deploy. Dispatch this workflow manually to redeploy."
+          fi
+
   build:
+    needs: check-web-backup-status
+    if: |
+      always() &&
+      (needs.check-web-backup-status.result == 'skipped' || needs.check-web-backup-status.outputs.backup_web_up == 'true')
     runs-on: ubuntu-24.04
 
     env:
