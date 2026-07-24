@@ -125,14 +125,27 @@ test("placement emits one placement score event", () => {
 
 });
 
-test("centered Z block settles with an unsupported overhang", () => {
+test("a Z block placed at a lane origin settles with an unsupported overhang", () => {
     const block = { cells: [[0, 0], [1, 0], [1, 1], [2, 1]] };
     const first = { block: createBlock(1), originX: 3, originY: 0 };
-    const settled = TowerStability.settleBlock([first], block, 7);
+    const settled = TowerStability.settleBlock([first], block, 2);
     const result = TowerStability.evaluate([first, { block, ...settled }], GameConfig);
     assert.equal(settled.originX, 2);
     assert.equal(settled.originY, 1);
     assert.ok(result.stability < 100);
+});
+
+test("resolveLaneOriginX centers wide bricks and spills into outer columns", () => {
+    const { engine } = createPlayingEngine(1, 8);
+    const tBlock = { shapeId: "T", cells: [[1, 0], [0, 1], [1, 1], [2, 1]], anchorX: 1 };
+    const iBlock = { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]], anchorX: 0 };
+
+    assert.equal(engine.resolveLaneOriginX(tBlock, "left"), 0);
+    assert.equal(engine.resolveLaneOriginX(tBlock, "center"), 1);
+    assert.equal(engine.resolveLaneOriginX(tBlock, "right"), 2);
+    assert.equal(engine.resolveLaneOriginX(iBlock, "left"), 1);
+    assert.equal(engine.resolveLaneOriginX(iBlock, "center"), 2);
+    assert.equal(engine.resolveLaneOriginX(iBlock, "right"), 3);
 });
 
 test("quick chat broadcasts a transient event and enforces the player cooldown", () => {
@@ -163,7 +176,7 @@ test("exact winning placement emits exact finish and all eligible bonus events",
 
     assert.equal(types.filter(type => type === "placement").length, 1);
     assert.equal(types.filter(type => type === "exact_finish").length, 1);
-    assert.equal(types.filter(type => type === "finisher_bonus").length, 1);
+    assert.equal(types.filter(type => type === "finisher_bonus").length, 0);
     assert.equal(types.filter(type => type === "precision_bonus").length, 1);
     assert.equal(types.filter(type => type === "team_exact_bonus").length, 3);
     assert.equal(types.includes("assist_bonus"), false);
@@ -196,35 +209,28 @@ test("overbuild winning placement emits overbuild finish without exact bonuses",
 
 });
 
-test("refresh upgrades small blocks to unlocked size 3 or higher", () => {
+test("refresh rerolls blocks into the five-brick set", () => {
     const { engine } = createPlayingEngine(10, 20);
+    const validShapes = new Set(["I", "O", "L", "T", "Z"]);
 
     const refreshed = engine.generateRefreshBlocks([
-        createBlock(1, "B1"),
-        createBlock(2, "B2")
+        engine.createBlock("O"),
+        engine.createBlock("T")
     ]);
 
     assert.equal(refreshed.length, 2);
-    assert.equal(
-        refreshed.every(block => engine.getBlockCellCount(block) >= 3),
-        true
-    );
+    assert.equal(refreshed.every(block => validShapes.has(block.shapeId)), true);
+    assert.equal(refreshed.every(block => engine.getBlockCellCount(block) === 4), true);
+    assert.equal(refreshed.every(block => block.height >= 2 && block.height <= 4), true);
 });
 
-test("refresh rerolls size 3 or higher blocks without changing size", () => {
-    const { engine } = createPlayingEngine(15, 20);
+test("createRefreshBlock rerolls a brick to a different shape", () => {
+    const { engine } = createPlayingEngine(10, 20);
+    const original = engine.createBlock("O");
 
-    const refreshed = engine.generateRefreshBlocks([
-        createBlock(4, "B4"),
-        createBlock(5, "B5")
-    ]);
-
-    assert.deepEqual(
-        refreshed.map(block => engine.getBlockCellCount(block)),
-        [4, 5]
-    );
-    assert.notEqual(refreshed[0].shapeId, "I4V");
-    assert.notEqual(refreshed[1].shapeId, "I5V");
+    for (let i = 0; i < 20; i++) {
+        assert.notEqual(engine.createRefreshBlock(original).shapeId, "O");
+    }
 });
 
 test("activating the refresh power item rerolls every player's blocks", () => {
@@ -382,4 +388,29 @@ test("saveImpactPowers captures each player's current inventory", () => {
         { id: "copy_score", earnedLevel: 5 }
     ]);
     assert.deepEqual(engine.room.impactPowers.P3, []);
+});
+
+test("impact-fill bonus rewards band contribution above the requirement", () => {
+    GameConfig.impactMinContributionShare = 0.3;
+    GameConfig.scoring.impactFillBonusRate = 0.5;
+    const { engine } = createPlayingEngine(3, 8);
+
+    engine.room.impactLevel = 1;
+    engine.room.impactScores = { P1: 0, P2: 0, P3: 0 };
+    engine.room.players[0].score = 1000;
+    engine.room.players[1].score = 0;
+    engine.room.players[2].score = 0;
+    engine.room.pendingScoreEvents = [];
+
+    const before = engine.room.players[0].score;
+    engine.awardImpactFillBonus(4);
+
+    assert.ok(engine.room.players[0].score > before);
+    assert.equal(engine.room.players[1].score, 0);
+
+    const event = engine.room.pendingScoreEvents.find(pendingEvent => {
+        return pendingEvent.type === "impact_fill_bonus" && pendingEvent.playerId === "P1";
+    });
+    assert.ok(event);
+    assert.ok(event.points > 0);
 });

@@ -54,6 +54,7 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | Server EKS Stack | `infra/eks/` | Plan-only parallel managed-AWS infra | Terraform Infrastructure | [deployment.md](./deployment.md#eks-plan-only) |
 | Server EKS Workflow | `.github/workflows/Server-EKS-Infra-Plan.yml` | CI plan-only path for EKS | Server EKS Stack | [deployment.md](./deployment.md#eks-plan-only) |
 | Server Backup Workflows | `.github/workflows/Server-Backup-*.yml` | Deploy/clean up the manual physical backup server via a self-hosted runner | `~/corp-tower-server-backup/` (outside repo, on the physical machine) | [deployment.md](./deployment.md#backup-server-manual-physical-machine) |
+| Client HTML5 Backup Workflows | `.github/workflows/Client-HTML5-Backup-Deploy.yml`, `-Backup-Cleanup.yml`, `-Set-Live-Host.yml` | Build the Web export and deploy/stand down the physical backup's web server (`devplay.galaxxigames.com`) via the self-hosted runner; Set Live Host is a thin dispatcher choosing GitHub Pages vs the backup | Private Asset Pipeline, `~/corp-tower-server-backup/` (outside repo, on the physical machine) | [deployment.md](./deployment.md#web-html5-backup) |
 
 ## Global / cross-cutting docs
 

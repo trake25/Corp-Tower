@@ -375,7 +375,7 @@ class GameEngine {
         this.room.startsAt = Date.now() + GameConfig.startDelayMs;
         this.room.endsAt = this.room.startsAt + GameConfig.levelTimeLimitMs;
         this.room.lastLevelSummary = null;
-        this.room.pendingScoreEvents = [];
+        this.room.pendingScoreEvents = this.room.pendingScoreEvents || [];
         this.setupSideQuest();
         this.grantDefaultPowers();
 
@@ -543,7 +543,22 @@ class GameEngine {
         this.startLevel();
     }
 
-    placeBlock(playerId, blockIndex) {
+    resolveLaneOriginX(block, lane) {
+        const lanes = GameConfig.placeableLanes || { left: 1, center: 2, right: 3 };
+        const laneCol = Number.isFinite(Number(lanes[lane]))
+            ? Number(lanes[lane])
+            : Number(lanes.center);
+        const anchorX = Number(block?.anchorX) || 0;
+        const cellXs = (block?.cells || []).map(cell => Number(cell[0]));
+        const width = cellXs.length
+            ? Math.max(...cellXs) - Math.min(...cellXs) + 1
+            : 1;
+        const maxOriginX = Math.max(0, GameConfig.towerGridWidth - width);
+
+        return Math.max(0, Math.min(maxOriginX, laneCol - anchorX));
+    }
+
+    placeBlock(playerId, blockIndex, lane = "center") {
         if (this.room.state !== "playing") {
             console.log("Cannot place block, level not active");
             return;
@@ -583,8 +598,9 @@ class GameEngine {
         const block = player.blocks.splice(blockIndex, 1)[0];
         const blockHeight = this.getBlockHeight(block);
         const previousHeight = this.room.currentHeight;
+        const originX = this.resolveLaneOriginX(block, lane);
         const placement = TowerStability.settleBlock(
-            this.room.towerBlocks || [], block, GameConfig.towerGridWidth
+            this.room.towerBlocks || [], block, originX
         );
         const projectedBlocks = [...(this.room.towerBlocks || []), {
             playerId: player.id, block, originX: placement.originX, originY: placement.originY
@@ -833,6 +849,7 @@ class GameEngine {
         this.room.level = nextLevel;
 
         if (opensImpact) {
+            this.awardImpactFillBonus(nextLevel);
             this.awardImpactPower();
             this.room.impactLevel = this.room.level;
             this.saveImpactState();
@@ -846,7 +863,8 @@ class GameEngine {
     cloneCells(cells) { return BlockSupply.cloneCells(this, cells); }
     getBlockHeight(block) { return BlockSupply.getBlockHeight(this, block); }
     getBlockCellCount(block) { return BlockSupply.getBlockCellCount(this, block); }
-    createBlock(blockSize, excludedShapeId = null) { return BlockSupply.createBlock(this, blockSize, excludedShapeId); }
+    pickWeightedShape(excludedShapeId = null) { return BlockSupply.pickWeightedShape(this, excludedShapeId); }
+    createBlock(shapeId = null, excludedShapeId = null) { return BlockSupply.createBlock(this, shapeId, excludedShapeId); }
     getRandomBlock() { return BlockSupply.getRandomBlock(this); }
     getBlocksPerPlayer() { return BlockSupply.getBlocksPerPlayer(this); }
     buildDrawPile() { return BlockSupply.buildDrawPile(this); }
@@ -864,9 +882,6 @@ class GameEngine {
     trimInventory(blocks) { return BlockSupply.trimInventory(this, blocks); }
     generateRefreshBlocks(currentBlocks) { return BlockSupply.generateRefreshBlocks(this, currentBlocks); }
     createRefreshBlock(currentBlock) { return BlockSupply.createRefreshBlock(this, currentBlock); }
-    createRandomUnlockedBlock(minBlockSize = 1) { return BlockSupply.createRandomUnlockedBlock(this, minBlockSize); }
-    getWeightedUnlockedBlockSize(minBlockSize = 1) { return BlockSupply.getWeightedUnlockedBlockSize(this, minBlockSize); }
-    isBlockSizeUnlocked(blockSize) { return BlockSupply.isBlockSizeUnlocked(this, blockSize); }
     isRefreshBlockSetUseful(blocks) { return BlockSupply.isRefreshBlockSetUseful(this, blocks); }
     scoreRefreshBlockSet(blocks) { return BlockSupply.scoreRefreshBlockSet(this, blocks); }
     prepareTeamCarryOverBlocks() { return BlockSupply.prepareTeamCarryOverBlocks(this); }
@@ -896,6 +911,7 @@ class GameEngine {
     restoreImpactScores() { return Impacts.restoreImpactScores(this); }
     restoreImpactPowers() { return Impacts.restoreImpactPowers(this); }
     awardImpactPower() { return Impacts.awardImpactPower(this); }
+    awardImpactFillBonus(blockedLevel) { return Impacts.awardImpactFillBonus(this, blockedLevel); }
     isImpactLevel(level) { return Impacts.isImpactLevel(this, level); }
     getImpactScoreRequirement() { return Impacts.getImpactScoreRequirement(this); }
     getImpactMinContributionShare() { return Impacts.getImpactMinContributionShare(this); }

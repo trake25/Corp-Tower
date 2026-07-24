@@ -148,11 +148,35 @@ A manually-operated physical machine (Linux Mint) acts as a standby for the whol
 
 Neither workflow has a `pull_request`/`pull_request_target` trigger, matching every other workflow in this (public) repo — required, since a self-hosted runner would otherwise let any external contributor's PR execute code on the physical machine. Only collaborators with repo write access can dispatch these.
 
-### Operational runbook (backup server)
+### Operational runbook (WS backup)
 
 1. **Bring it up:** dispatch `Server-Backup-Deploy.yml`, or run `~/corp-tower-server-backup/server-backup-up.sh` directly on the machine.
 2. **Check state (read-only, any time):** `~/corp-tower-server-backup/server-backup-status.sh`.
 3. **Stand down once K3s is healthy again:** dispatch `Server-Backup-Cleanup.yml` (`CLEANUP_SERVER_BACKUP`), then trigger `Server K3s Automated Master` (`fast_server_deploy`) so `ws.tod.galaxxigames.com` is confirmed current.
+
+## Web (HTML5) backup
+
+The same physical machine also backs up the GitHub-Pages-hosted web build ([build.md § Client HTML5 Pages](./build.md#client-html5-pages)), serving it at **`https://devplay.galaxxigames.com`** — a separate hostname from `https://play.tod.galaxxigames.com` (GitHub Pages' custom domain). Same class of reason as `devtod` vs `ws.tod` above, different underlying limit: Cloudflare's free Edge Certificate (Universal SSL) only covers the zone apex and *one* level of subdomain below it. `devtod`/`devplay` are one level deep and get automatic coverage; `play.tod` is two levels deep and would need a paid Advanced Certificate Manager add-on (Total TLS) to get Cloudflare edge-cert coverage if reused directly for the tunnel — confirmed the hard way (`ERR_SSL_VERSION_OR_CIPHER_MISMATCH`) before settling on the separate-hostname design. Full rationale → [decisions.md](./decisions.md#web-html5-backup-dedicated-hostname-not-shared-with-github-pages).
+
+Mechanism: the same Cloudflare Tunnel as the WS backup carries a second `ingress` hostname rule (`devplay.galaxxigames.com` → `http://localhost:8090`) — one tunnel, two backends, no second tunnel needed. Unlike the WS backup's server image, the web build isn't produced by a local Dockerfile — it's built on a GitHub-hosted runner (the same `fetch-private-assets` + `build-godot-web` composite actions as [Client HTML5 Pages](./build.md#client-html5-pages)) and shipped to the physical machine as a plain workflow artifact, then served from an `nginx:alpine` container (`corp-tower-web`, bound to `127.0.0.1:8090` only — `cloudflared` is its only intended caller).
+
+**Automatic policy coupling** (not a DNS necessity — `devplay` and `play.tod` can't collide the way a shared record could): `Client-HTML5-Undeploy.yml`'s `failover_to_backup` input (default on) deploys the web backup automatically after a successful soft/hard Pages undeploy; `Client-HTML5-Pages.yml`'s `stand_down_backup` input (default on) stands the web backup down automatically after a successful redeploy. Both are overridable per-run for a one-off that shouldn't touch the backup machine (e.g. it's offline).
+
+| Workflow | Trigger | Behavior |
+|---|---|---|
+| `Client-HTML5-Backup-Deploy.yml` | Manual `workflow_dispatch`, or reusable `workflow_call` (from `Client-HTML5-Undeploy.yml`'s failover) | `build` job (hosted runner): fetches private art, builds the Web export, uploads it as a plain artifact. `deploy-to-backup` job (self-hosted runner, label `backup`): downloads the artifact, calls `web-backup-up.sh` — refuses an empty/broken build (checks for `index.html` + a `.wasm` file), syncs it into a local content dir, (re)starts `corp-tower-web`, upserts the `devplay.` Cloudflare CNAME, and records the deployed commit SHA in `.env.backup` |
+| `Client-HTML5-Backup-Cleanup.yml` | Manual `workflow_dispatch`, requires `confirm_cleanup` = `CLEANUP_WEB_BACKUP`, or reusable `workflow_call` (from `Client-HTML5-Pages.yml`'s stand-down) | Runs on the same self-hosted runner; calls `web-backup-down.sh` — stops/removes `corp-tower-web`. Leaves the `devplay.` DNS record in place (idle tunnel, harmless), same as the WS backup does for `devtod.` |
+| `Client-HTML5-Set-Live-Host.yml` | Manual `workflow_dispatch` | Recommended entry point: pick `target: pages` or `target: backup` and it dispatches `Client-HTML5-Pages.yml` or `Client-HTML5-Undeploy.yml` (soft mode) for you, which already carry the automatic coupling above. `target: backup` requires typing `SWITCH_TO_BACKUP` (it takes GitHub Pages offline); `target: pages` doesn't, matching `Client-HTML5-Pages.yml`'s own no-confirmation dispatch |
+
+Reusable `workflow_call` invocations of `Client-HTML5-Backup-{Deploy,Cleanup}.yml` skip their manual-dispatch confirmation strings via an `invoked_via_call` input, declared only under `on.workflow_call.inputs` (defaulting to `true`) — `github.event_name` turned out not to be a reliable way to detect this. Full gotcha → [decisions.md](./decisions.md#nested-reusable-workflows-cant-detect-their-own-trigger-via-event-name).
+
+Scripts (`web-backup-{up,down,status}.sh`) live alongside the WS backup's scripts in `~/corp-tower-server-backup/` (see above), sharing `server-backup-common.sh`'s `upsert_cloudflare_cname`/`wait_for_cname`/`start_cloudflared_if_needed`/`stop_cloudflared_if_idle` helpers. `wait_for_cname` verifies a DNS cutover via the **Cloudflare API**, not `dig` — full reason → [decisions.md](./decisions.md#dns-cutover-verification-must-use-the-cloudflare-api-not-dig-for-proxied-records).
+
+### Operational runbook (web backup)
+
+1. **Bring it up:** dispatch `Client-HTML5-Set-Live-Host.yml` (`target: backup`, `confirm_backup: SWITCH_TO_BACKUP`) — recommended — or `Client-HTML5-Undeploy.yml` directly, or `Client-HTML5-Backup-Deploy.yml` directly, or run `web-backup-up.sh` on the machine with `CORP_TOWER_WEB_BUILD_DIR` pointed at an exported `build/web` directory.
+2. **Check state (read-only, any time):** `~/corp-tower-server-backup/web-backup-status.sh` — also reports how many commits behind (or ahead of) `origin/main` the currently-served build is.
+3. **Stand down once Pages is healthy again:** dispatch `Client-HTML5-Set-Live-Host.yml` (`target: pages`) — recommended — or `Client-HTML5-Pages.yml` directly, or `Client-HTML5-Backup-Cleanup.yml` directly (`CLEANUP_WEB_BACKUP`).
 
 ## Deprecated: Docker EC2 staging
 

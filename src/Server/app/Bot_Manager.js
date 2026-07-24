@@ -1,5 +1,7 @@
 const GameConfig =
     require("./Game_Config");
+const TowerStability =
+    require("./Tower_Stability");
 
 class BotManager {
 
@@ -138,10 +140,15 @@ class BotManager {
             }
 
             const action = this.chooseBotAction(bot, engine);
+            const lane = this.chooseBotLane(
+                engine,
+                bot.blocks[action.blockIndex]
+            );
 
             engine.placeBlock(
                 bot.id,
-                action.blockIndex
+                action.blockIndex,
+                lane
             );
 
             this.runBotLoop(
@@ -160,6 +167,41 @@ class BotManager {
         }
 
         return this.chooseCooperativeAction(bot, engine);
+    }
+
+    chooseBotLane(engine, block) {
+        if (!block) {
+            return "center";
+        }
+
+        const lanes = Object.keys(
+            GameConfig.placeableLanes || { left: 1, center: 2, right: 3 }
+        );
+        let best = null;
+
+        lanes.forEach(lane => {
+            const originX = engine.resolveLaneOriginX(block, lane);
+            const placement = TowerStability.settleBlock(
+                engine.room.towerBlocks || [],
+                block,
+                originX
+            );
+            const projected = [
+                ...(engine.room.towerBlocks || []),
+                {
+                    block: block,
+                    originX: placement.originX,
+                    originY: placement.originY
+                }
+            ];
+            const result = TowerStability.evaluate(projected, GameConfig);
+
+            if (!best || result.stability > best.stability) {
+                best = { lane: lane, stability: result.stability };
+            }
+        });
+
+        return best ? best.lane : "center";
     }
 
     chooseCooperativeAction(bot, engine) {

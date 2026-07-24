@@ -33,6 +33,7 @@ function evaluate(entries, config) {
             stability: 100,
             diagnostics: {
                 comOffset: 0,
+                laneImbalance: 0,
                 overhangPenalty: 0,
                 tiltScore: 0,
                 tiltAngleDeg: 0,
@@ -43,6 +44,7 @@ function evaluate(entries, config) {
     }
 
     const occupied = new Map();
+    const columnTop = new Map();
     let cellCount = 0;
     let comSum = 0;
     let groundMinX = Infinity;
@@ -53,6 +55,9 @@ function evaluate(entries, config) {
             occupied.set(key(cell.x, cell.y), true);
             comSum += cell.x;
             cellCount += 1;
+            if ((cell.y + 1) > (columnTop.get(cell.x) || 0)) {
+                columnTop.set(cell.x, cell.y + 1);
+            }
             if (cell.y === 0) {
                 groundMinX = Math.min(groundMinX, cell.x);
                 groundMaxX = Math.max(groundMaxX, cell.x);
@@ -70,6 +75,18 @@ function evaluate(entries, config) {
     const comX = comSum / cellCount;
     const comOffset = (comX - baseCenter) / baseHalfWidth;
 
+    let heightWeightedSum = 0;
+    let totalColumnHeight = 0;
+    for (const [x, top] of columnTop) {
+        heightWeightedSum += x * top;
+        totalColumnHeight += top;
+    }
+    const laneCentroid =
+        totalColumnHeight > 0 ? heightWeightedSum / totalColumnHeight : baseCenter;
+    const laneImbalanceWeight = config.towerLaneImbalanceWeight ?? 0.15;
+    const laneImbalance =
+        ((laneCentroid - baseCenter) / baseHalfWidth) * laneImbalanceWeight;
+
     const lastEntry = entries[entries.length - 1];
     const overhangWeight = config.towerOverhangWeight ?? 0.18;
     let overhangPenalty = 0;
@@ -81,7 +98,7 @@ function evaluate(entries, config) {
         }
     }
 
-    const rawScore = comOffset + overhangPenalty;
+    const rawScore = comOffset + laneImbalance + overhangPenalty;
     const collapseThreshold = config.towerCollapseTiltScore ?? 1.0;
     const clampCeiling = collapseThreshold * 1.6;
     const tiltScore = Math.max(-clampCeiling, Math.min(clampCeiling, rawScore));
@@ -100,7 +117,7 @@ function evaluate(entries, config) {
 
     return {
         stability,
-        diagnostics: { comOffset, overhangPenalty, tiltScore, tiltAngleDeg, leanDirection, collapsed }
+        diagnostics: { comOffset, laneImbalance, overhangPenalty, tiltScore, tiltAngleDeg, leanDirection, collapsed }
     };
 }
 

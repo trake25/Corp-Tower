@@ -51,60 +51,66 @@ function getBlockCellCount(engine, block) {
     return engine.getBlockHeight(block);
 }
 
-function createBlock(engine, blockSize, excludedShapeId = null) {
-    const variants =
-        GameConfig.blockShapeVariants[blockSize] ||
-        GameConfig.blockShapeVariants[1];
-    const availableVariants =
-        excludedShapeId && variants.length > 1
-            ? variants.filter(variant => variant.shapeId !== excludedShapeId)
-            : variants;
+function pickWeightedShape(engine, excludedShapeId = null) {
+    const shapes = GameConfig.brickShapes || [];
 
-    const variant =
-        availableVariants[
-            Math.floor(Math.random() * availableVariants.length)
-        ];
+    if (shapes.length === 0) {
+        return null;
+    }
 
-    const cells = engine.cloneCells(variant.cells);
+    const weights = GameConfig.brickWeights || {};
+    const weightedPool = [];
+
+    shapes.forEach(shape => {
+        if (
+            excludedShapeId &&
+            shapes.length > 1 &&
+            shape.shapeId === excludedShapeId
+        ) {
+            return;
+        }
+
+        const weight = Math.max(1, Number(weights[shape.shapeId]) || 1);
+
+        for (let i = 0; i < weight; i++) {
+            weightedPool.push(shape);
+        }
+    });
+
+    if (weightedPool.length === 0) {
+        return shapes[Math.floor(Math.random() * shapes.length)];
+    }
+
+    return weightedPool[Math.floor(Math.random() * weightedPool.length)];
+}
+
+function createBlock(engine, shapeId = null, excludedShapeId = null) {
+    const shapes = GameConfig.brickShapes || [];
+    let shape = shapeId
+        ? shapes.find(candidate => candidate.shapeId === shapeId)
+        : null;
+
+    if (!shape) {
+        shape = engine.pickWeightedShape(excludedShapeId);
+    }
+
+    if (!shape) {
+        return null;
+    }
+
+    const cells = engine.cloneCells(shape.cells);
 
     return {
         id: engine.createBlockId(),
-        shapeId: variant.shapeId,
+        shapeId: shape.shapeId,
         cells: cells,
+        anchorX: Number(shape.anchorX) || 0,
         height: engine.getBlockHeight({ cells: cells })
     };
 }
 
 function getRandomBlock(engine) {
-    const availableBlocks = {};
-
-    for (const block in GameConfig.blockWeights) {
-        const unlockLevel =
-            GameConfig.blockUnlockLevels[block] || 1;
-
-        if (engine.room.level >= unlockLevel) {
-            availableBlocks[block] = GameConfig.blockWeights[block];
-        }
-    }
-
-    const weightedPool = [];
-
-    for (const block in availableBlocks) {
-        const weight = availableBlocks[block];
-
-        for (let i = 0; i < weight; i++) {
-            weightedPool.push(Number(block));
-        }
-    }
-
-    if (weightedPool.length === 0) {
-        return engine.createBlock(1);
-    }
-
-    const randomIndex =
-        Math.floor(Math.random() * weightedPool.length);
-
-    return engine.createBlock(weightedPool[randomIndex]);
+    return engine.createBlock(null);
 }
 
 function getBlocksPerPlayer(engine) {
@@ -349,68 +355,10 @@ function generateRefreshBlocks(engine, currentBlocks) {
 }
 
 function createRefreshBlock(engine, currentBlock) {
-    const blockSize = engine.getBlockCellCount(currentBlock);
+    const currentShapeId =
+        typeof currentBlock === "number" ? null : currentBlock?.shapeId || null;
 
-    if (blockSize < 3) {
-        return engine.createRandomUnlockedBlock(3);
-    }
-
-    if (engine.isBlockSizeUnlocked(blockSize)) {
-        return engine.createBlock(
-            blockSize,
-            typeof currentBlock === "number"
-                ? null
-                : currentBlock?.shapeId || null
-        );
-    }
-
-    return engine.createRandomUnlockedBlock(3);
-}
-
-function createRandomUnlockedBlock(engine, minBlockSize = 1) {
-    const blockSize = engine.getWeightedUnlockedBlockSize(minBlockSize);
-
-    return engine.createBlock(blockSize);
-}
-
-function getWeightedUnlockedBlockSize(engine, minBlockSize = 1) {
-    const weightedPool = [];
-
-    for (const block in GameConfig.blockWeights) {
-        const blockSize = Number(block);
-
-        if (
-            blockSize < minBlockSize ||
-            !engine.isBlockSizeUnlocked(blockSize)
-        ) {
-            continue;
-        }
-
-        const weight = GameConfig.blockWeights[block] || 1;
-
-        for (let i = 0; i < weight; i++) {
-            weightedPool.push(blockSize);
-        }
-    }
-
-    if (weightedPool.length === 0 && minBlockSize > 1) {
-        return engine.getWeightedUnlockedBlockSize(1);
-    }
-
-    if (weightedPool.length === 0) {
-        return 1;
-    }
-
-    return weightedPool[Math.floor(Math.random() * weightedPool.length)];
-}
-
-function isBlockSizeUnlocked(engine, blockSize) {
-    const unlockLevel = GameConfig.blockUnlockLevels[blockSize] || 1;
-
-    return (
-        Boolean(GameConfig.blockShapeVariants[blockSize]) &&
-        engine.room.level >= unlockLevel
-    );
+    return engine.createBlock(null, currentShapeId);
 }
 
 function isRefreshBlockSetUseful(engine, blocks) {
@@ -477,6 +425,7 @@ module.exports = {
     cloneCells,
     getBlockHeight,
     getBlockCellCount,
+    pickWeightedShape,
     createBlock,
     getRandomBlock,
     getBlocksPerPlayer,
@@ -495,9 +444,6 @@ module.exports = {
     trimInventory,
     generateRefreshBlocks,
     createRefreshBlock,
-    createRandomUnlockedBlock,
-    getWeightedUnlockedBlockSize,
-    isBlockSizeUnlocked,
     isRefreshBlockSetUseful,
     scoreRefreshBlockSet,
     prepareTeamCarryOverBlocks

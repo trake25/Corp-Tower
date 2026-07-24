@@ -100,6 +100,44 @@ function awardImpactPower(engine) {
     });
 }
 
+function awardImpactFillBonus(engine, blockedLevel) {
+    const rate = Number(GameConfig.scoring?.impactFillBonusRate) || 0;
+
+    if (rate <= 0) {
+        return;
+    }
+
+    const status = engine.getImpactScoreStatus(blockedLevel);
+    const requirement = status.requiredBandScore;
+
+    if (requirement <= 0) {
+        return;
+    }
+
+    status.players.forEach(statusPlayer => {
+        const overshoot = Math.max(0, statusPlayer.bandScore - requirement);
+        const bonus = Math.round(overshoot * rate);
+
+        if (bonus <= 0) {
+            return;
+        }
+
+        const player = engine.room.players.find(p => p.id === statusPlayer.id);
+
+        if (!player) {
+            return;
+        }
+
+        player.score += bonus;
+        engine.queueScoreEvent("impact_fill_bonus", {
+            playerId: player.id,
+            points: bonus,
+            label: "Impact Bonus"
+        });
+        console.log(`${player.id} gained ${bonus} impact-fill bonus`);
+    });
+}
+
 function isImpactLevel(engine, level) {
     const interval = Math.max(1, Number(GameConfig.impactInterval) || 1);
 
@@ -298,6 +336,7 @@ module.exports = {
     restoreImpactScores,
     restoreImpactPowers,
     awardImpactPower,
+    awardImpactFillBonus,
     isImpactLevel,
     getImpactScoreRequirement,
     getImpactMinContributionShare,

@@ -5,6 +5,8 @@ const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 const BRICK_UNIT_SIZE := 34.0
+const GRID_WIDTH := 5
+const GRID_CENTER_COL := 2.0
 const TOP_PADDING := 14.0
 const BOTTOM_PADDING := 12.0
 const SCROLL_TRIGGER_RATIO := 0.7
@@ -96,7 +98,7 @@ func _draw() -> void:
 		for cell in cells:
 			var cell_x: int = _cell_x(cell)
 			var cell_y: int = _cell_y(cell)
-			var abs_x: float = base_x + (float(origin_x + cell_x) - 3.0) * unit - unit * 0.5
+			var abs_x: float = base_x + (float(origin_x + cell_x) - GRID_CENTER_COL) * unit - unit * 0.5
 			var y_units: int = base_height + int(block.get("height", 0)) - cell_y - 1
 			var abs_y: float = baseline - float(y_units + 1 - scroll_offset_units) * unit
 			var abs_rect: Rect2 = Rect2(Vector2(abs_x, abs_y), Vector2(unit - 2.0, unit - 2.0))

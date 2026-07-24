@@ -101,12 +101,12 @@ func handle_input(event: InputEvent) -> void:
 func tick() -> void:
 	update_placement_cooldown_overlays()
 
-func on_block_pressed(index: int) -> void:
+func on_block_pressed(index: int, lane := "center") -> void:
 	if !can_place_block(index):
 		return
 
 	last_placement_sent_at_ms = Time.get_ticks_msec()
-	network.place_block(index)
+	network.place_block(index, lane)
 
 func _on_inventory_card_gui_input(event: InputEvent, index: int) -> void:
 	if is_block_dragging:
@@ -251,11 +251,12 @@ func finish_block_drag(global_pos: Vector2) -> void:
 		is_pointer_in_tower_drop_zone(global_pos) and
 		can_place_block(slot_index)
 	)
+	var lane: String = lane_for_global_pos(global_pos)
 
 	cancel_block_drag()
 
 	if should_place:
-		on_block_pressed(slot_index)
+		on_block_pressed(slot_index, lane)
 
 func cancel_block_drag() -> void:
 	is_block_dragging = false
@@ -266,6 +267,27 @@ func cancel_block_drag() -> void:
 	if drag_preview != null:
 		drag_preview.visible = false
 		drag_preview.clear_block()
+
+func lane_for_global_pos(global_pos: Vector2) -> String:
+	var drop_zone: Control = tower_drop_zone if tower_drop_zone != null else tower_stack_fallback
+
+	if drop_zone == null:
+		return "center"
+
+	var rect: Rect2 = drop_zone.get_global_rect()
+
+	if rect.size.x <= 0.0:
+		return "center"
+
+	var ratio: float = clampf((global_pos.x - rect.position.x) / rect.size.x, 0.0, 0.999)
+
+	match int(ratio * 3.0):
+		0:
+			return "left"
+		2:
+			return "right"
+		_:
+			return "center"
 
 func is_pointer_in_tower_drop_zone(global_pos: Vector2) -> bool:
 	var drop_zone: Control = tower_drop_zone if tower_drop_zone != null else tower_stack_fallback

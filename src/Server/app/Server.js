@@ -81,7 +81,7 @@ async function handleMessage(player, message) {
             return;
         }
 
-        player.room.engine.placeBlock(player.id, data.blockIndex);
+        player.room.engine.placeBlock(player.id, data.blockIndex, data.lane);
         return;
     }
 
