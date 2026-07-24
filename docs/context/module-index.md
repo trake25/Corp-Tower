@@ -50,11 +50,11 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | Terraform Infrastructure | `infra/k3s/terraform`, `infra/eks/terraform` | Terraform roots | — | [deployment.md](./deployment.md#terraform-roots) |
 | Server K3s Stack | `infra/k3s/` | Active self-hosted K3s-on-EC2 infra | Terraform Infrastructure | [deployment.md](./deployment.md#k3s-topology) |
 | Server K3s Workflows | `.github/workflows/Server-K3s-*.yml` | Deploy/diagnose/clean up the K3s stack | Server K3s Stack | [deployment.md](./deployment.md#k3s-workflows) |
-| Server K3s Automated Master Workflow | `.github/workflows/Server-K3s-Automated-Master.yml` | Orchestrates the individual K3s workflows | Server K3s Workflows | [deployment.md](./deployment.md#k3s-workflows) |
+| Server K3s Automated Master Workflow | `.github/workflows/Server-K3s-Automated-Master.yml` | Orchestrates the individual K3s workflows; fast path falls back to the physical backup when K3s is down | Server K3s Workflows, Server Backup Workflows | [deployment.md](./deployment.md#k3s-workflows) |
 | Server EKS Stack | `infra/eks/` | Plan-only parallel managed-AWS infra | Terraform Infrastructure | [deployment.md](./deployment.md#eks-plan-only) |
 | Server EKS Workflow | `.github/workflows/Server-EKS-Infra-Plan.yml` | CI plan-only path for EKS | Server EKS Stack | [deployment.md](./deployment.md#eks-plan-only) |
 | Server Backup Workflows | `.github/workflows/Server-Backup-*.yml` | Deploy/clean up the manual physical backup server via a self-hosted runner | `~/corp-tower-server-backup/` (outside repo, on the physical machine) | [deployment.md](./deployment.md#backup-server-manual-physical-machine) |
-| Client HTML5 Backup Workflows | `.github/workflows/Client-HTML5-Backup-Deploy.yml`, `-Backup-Cleanup.yml`, `-Set-Live-Host.yml` | Build the Web export and deploy/stand down the physical backup's web server (`devplay.galaxxigames.com`) via the self-hosted runner; Set Live Host is a thin dispatcher choosing GitHub Pages vs the backup | Private Asset Pipeline, `~/corp-tower-server-backup/` (outside repo, on the physical machine) | [deployment.md](./deployment.md#web-html5-backup) |
+| Client HTML5 Backup Workflows | `.github/workflows/Client-HTML5-Backup-Deploy.yml`, `-Backup-Cleanup.yml`, `-Set-Live-Host.yml` | Build the Web export and deploy/stand down the physical backup's web server (`devplay.galaxxigames.com`) via the self-hosted runner; auto-deploys on client-side pushes; Set Live Host is the sole place that pairs it with GitHub Pages | Private Asset Pipeline, `~/corp-tower-server-backup/` (outside repo, on the physical machine) | [deployment.md](./deployment.md#web-html5-backup) |
 
 ## Global / cross-cutting docs
 
