@@ -141,20 +141,23 @@ test("resolveLaneOriginX anchors on the brick cell nearest the chosen lane's gui
     const verticalIBlock = { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]] };
     const horizontalIBlock = { shapeId: "I", cells: [[0, 0], [1, 0], [2, 0], [3, 0]] };
 
-    // width 3: leftmost cell anchors "left", rightmost anchors "right", middle anchors "center"
-    assert.equal(engine.resolveLaneOriginX(tBlock, "left"), 1);
+    // width 3: with guides only 1 column apart (3/4/5), the anchor cell for each
+    // lane lands exactly on that lane's guide, and a 3-wide brick spans all of
+    // 3-4-5 regardless of which lane is chosen -- all three collapse to the same origin
+    assert.equal(engine.resolveLaneOriginX(tBlock, "left"), 3);
     assert.equal(engine.resolveLaneOriginX(tBlock, "center"), 3);
-    assert.equal(engine.resolveLaneOriginX(tBlock, "right"), 5);
+    assert.equal(engine.resolveLaneOriginX(tBlock, "right"), 3);
 
     // width 1: single cell always lands exactly on the chosen lane's guide column
-    assert.equal(engine.resolveLaneOriginX(verticalIBlock, "left"), 1);
+    assert.equal(engine.resolveLaneOriginX(verticalIBlock, "left"), 3);
     assert.equal(engine.resolveLaneOriginX(verticalIBlock, "center"), 4);
-    assert.equal(engine.resolveLaneOriginX(verticalIBlock, "right"), 7);
+    assert.equal(engine.resolveLaneOriginX(verticalIBlock, "right"), 5);
 
-    // width 4 (the widest current brick): still three distinct placements, no clamping
-    assert.equal(engine.resolveLaneOriginX(horizontalIBlock, "left"), 1);
+    // width 4 (the widest current brick): left and center collapse together,
+    // only right stays distinct
+    assert.equal(engine.resolveLaneOriginX(horizontalIBlock, "left"), 3);
     assert.equal(engine.resolveLaneOriginX(horizontalIBlock, "center"), 3);
-    assert.equal(engine.resolveLaneOriginX(horizontalIBlock, "right"), 4);
+    assert.equal(engine.resolveLaneOriginX(horizontalIBlock, "right"), 2);
 });
 
 test("quick chat broadcasts a transient event and enforces the player cooldown", () => {

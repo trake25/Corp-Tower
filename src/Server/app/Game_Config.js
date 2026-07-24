@@ -30,7 +30,7 @@ const GameConfig = {
     impactScoreRequirement: 0,
     impactMinContributionShare: 0.30,
     towerGridWidth: 9,
-    placeableLanes: { left: 1, center: 4, right: 7 },
+    placeableLanes: { left: 3, center: 4, right: 5 },
     towerOverhangWeight: 0.15,
     towerLaneImbalanceWeight: 0.1,
     towerMaxTiltAngleDeg: 18,

@@ -16,7 +16,7 @@ const COLLAPSE_TILT_DEG := 70.0
 const TILT_EASE_SPEED := 6.0
 const DROP_DURATION := 0.28
 const DROP_HEIGHT_UNITS := 6.0
-const LANE_COLUMNS := {"left": 1, "center": 4, "right": 7}
+const LANE_COLUMNS := {"left": 3, "center": 4, "right": 5}
 
 signal scroll_offset_changed(pixels: float)
 
