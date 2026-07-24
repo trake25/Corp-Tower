@@ -12,23 +12,6 @@ on:
       - ".github/godot/export_presets.web.ci.cfg"
       - ".github/workflows/Client-HTML5-Backup-Deploy.yml"
 
-  workflow_call:
-    inputs:
-      art_version_override:
-        description: "Optional art bundle version (e.g. v2) to fetch instead of the pinned manifest. Skips sha256 verification — testing only, never for release."
-        required: false
-        default: ""
-        type: string
-    secrets:
-      R2_BUCKET:
-        required: true
-      R2_ACCOUNT_ID:
-        required: true
-      R2_ACCESS_KEY_ID:
-        required: true
-      R2_SECRET_ACCESS_KEY:
-        required: true
-
   workflow_dispatch:
     inputs:
       art_version_override:

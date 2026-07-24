@@ -55,7 +55,7 @@ Files: `.github/actions/fetch-private-assets/action.yml`, `src/Client/App/corp-t
 
 **Hosting choice:** GitHub Pages, not Cloudflare Pages — full rationale → [decisions.md](./decisions.md#github-pages-over-cloudflare-pages-for-html5). Consequence: the deployed build is public to anyone with the URL (no access control).
 
-**Physical backup:** the same physical machine that backs up `ws.tod.galaxxigames.com` also backs up this build, at a separate hostname (`devplay.galaxxigames.com`). Its deploy/cleanup workflows are fully independent of this one — no automatic coupling — and it also auto-deploys on its own push trigger for client-side changes; `Client-HTML5-Set-Live-Host.yml` is the only workflow that pairs the two together (for "make X the one live host" switch-overs). Full detail → [deployment.md § Web (HTML5) backup](./deployment.md#web-html5-backup).
+**Physical backup:** the same physical machine that backs up `ws.tod.galaxxigames.com` also backs up this build, at a separate hostname (`devplay.galaxxigames.com`). Its deploy/cleanup workflows are fully independent of this one — no automatic coupling, no orchestration workflow pairing them — and it also auto-deploys on its own push trigger for client-side changes; `play.tod.galaxxigames.com` and `devplay.galaxxigames.com` run simultaneously by design, confirmed working live. Full detail → [deployment.md § Web (HTML5) backup](./deployment.md#web-html5-backup).
 
 **Dependencies:** Godot Client App, Private Asset Pipeline, `.github/actions/build-godot-web`, `.github/actions/fetch-private-assets`.
 

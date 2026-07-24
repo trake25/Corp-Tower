@@ -1,19 +1,6 @@
 name: Client HTML5 Undeploy
 
 on:
-  workflow_call:
-    inputs:
-      mode:
-        description: "soft = replace with an offline page. hard = delete the site (404)."
-        required: false
-        default: "soft"
-        type: string
-      invoked_via_call:
-        description: "Internal marker — always true here. Lets the guard job tell a reusable workflow_call apart from a direct workflow_dispatch, since github.event_name reflects the top-level run's trigger even when nested, not this workflow's own invocation."
-        required: false
-        default: true
-        type: boolean
-
   workflow_dispatch:
     inputs:
       mode:
@@ -36,7 +23,6 @@ concurrency:
 
 jobs:
   guard:
-    if: ${{ inputs.invoked_via_call != true }}
     runs-on: ubuntu-24.04
     steps:
       - name: Verify confirmation
@@ -52,7 +38,7 @@ jobs:
 
   hard-undeploy:
     needs: guard
-    if: always() && (needs.guard.result == 'success' || needs.guard.result == 'skipped') && inputs.mode == 'hard'
+    if: needs.guard.result == 'success' && inputs.mode == 'hard'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -99,7 +85,7 @@ jobs:
 
   soft-undeploy:
     needs: guard
-    if: always() && (needs.guard.result == 'success' || needs.guard.result == 'skipped') && inputs.mode == 'soft'
+    if: needs.guard.result == 'success' && inputs.mode == 'soft'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
