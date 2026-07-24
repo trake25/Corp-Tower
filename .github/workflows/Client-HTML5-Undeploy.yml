@@ -133,6 +133,7 @@ jobs:
           </html>
           EOF
           touch build/offline/.nojekyll
+          echo "play.tod.galaxxigames.com" > build/offline/CNAME
 
       - name: Upload placeholder artifact
         uses: actions/upload-pages-artifact@v4

@@ -59,6 +59,9 @@ jobs:
       - name: Disable Jekyll
         run: touch build/web/.nojekyll
 
+      - name: Set custom domain
+        run: echo "play.tod.galaxxigames.com" > build/web/CNAME
+
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v4
         with:
