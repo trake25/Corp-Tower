@@ -6,7 +6,7 @@ Source of truth for game design: rules, scoring, balance, progression. Technical
 
 ## Core concept
 
-3-player real-time **selfish-cooperation** puzzle game. Players build one shared tower from server-assigned, fixed-orientation blocks while competing individually for level score / MVP. Team must reach target height together; individuals are scored separately.
+3-player real-time **selfish-cooperation** puzzle game. Players build one shared tower from server-assigned blocks (random shape, rotation, and lane-anchor cell) while competing individually for level score / MVP. Team must reach target height together; individuals are scored separately.
 
 ## Core game loop
 
@@ -30,11 +30,10 @@ Wire-level reconnect contract → [networking.md](./networking.md#reconnect). Se
 
 ## Block system
 
-- **Five fixed brick types only:** `I`, `O`, `L`, `T`, `Z` — all 4-cell tetrominoes, **fixed orientation, cannot be rotated**, and **all available from level 1** (no size-unlock ramp). Defined in `Game_Config.brickShapes`; drawn by weight (`brickWeights`). Shapes/heights: `I` (1×4, h4), `O` (2×2, h2), `L` (2×3, h3), `T` (3×2, h2, stem-down), `Z` (3×2, h2). Shape-id naming → [glossary.md](./glossary.md).
-- **Effective height** = the brick's fixed vertical footprint, not cell count. `I`=4, `L`=3, `O`/`T`/`Z`=2. Precision blocks = height ≤ 2 (`O`/`T`/`Z`).
-- Server sends each block as `{ id, shapeId, cells, anchorX, height }`. `anchorX` is the local cell column that aligns to the chosen placement lane (see [Placement lanes](#placement-lanes)).
-
-> **In progress (not yet implemented):** a design change to assign each brick a **random rotation** at generation (still not player-rotatable once dealt). Until shipped, bricks are the single fixed orientations above. See [decisions.md](./decisions.md#five-fixed-bricks--3-lane-placement-replace-the-size-ramp).
+- **Five fixed brick types only:** `I`, `O`, `L`, `T`, `Z` — all 4-cell tetrominoes, **all available from level 1** (no size-unlock ramp). Defined in `Game_Config.brickShapes` (canonical/unrotated cells only); drawn by weight (`brickWeights`). Shape-id naming → [glossary.md](./glossary.md).
+- **Random rotation at generation.** `Block_Supply.createBlock` picks a random rotation of the drawn shape (still not player-rotatable once dealt) — see [decisions.md](./decisions.md#random-rotation-9-column-lane-grid-and-per-instance-random-anchor). Effective height/width therefore varies by draw, not by shape: e.g. `I` is height 4 vertical or height 1 horizontal. Precision blocks = height ≤ 2.
+- **Effective height** = the drawn rotation's actual vertical footprint, not cell count.
+- Server sends each block as `{ id, shapeId, cells, anchorX, height }`. `cells` reflects the rotation actually drawn. `anchorX` is a **random column within that rotation's width, chosen once at creation** — not a fixed per-shape value — and is the local cell column that lands on whichever placement lane the player later picks (see [Placement lanes](#placement-lanes)).
 
 ### Inventory rules
 
@@ -114,13 +113,14 @@ Each catalog entry (`GameConfig.powerCatalog`) carries an `active` flag gating w
 
 ### Placement lanes
 
-- The shared tower is a **5-column authoritative grid** (`towerGridWidth` = 5). Players can aim at **three lanes** — left / center / right = columns 1 / 2 / 3 (`placeableLanes`). Columns 0 and 4 are **outer overflow only**, never directly selectable.
-- The chosen lane places the brick's `anchorX` cell on that column: `originX = laneColumn − anchorX`, clamped so the brick stays within columns 0–4. Consequence: 1-wide `I` has all three lane options; 2-wide `O`/`L` have two effective positions; 3-wide `T`/`Z` spill one cell into an outer column on the left/right lanes. Server-side resolution: `Game_Engine.resolveLaneOriginX()` → [backend.md § Game Engine](./backend.md#game-engine).
-- The brick then **falls to first contact per column** and may cantilever/overhang (e.g. a `T` placed centered balances on its single stem — the intended stability hook).
+- The shared tower is a **9-column authoritative grid** (`towerGridWidth` = 9). Players can aim at **three lanes** — left / center / right = columns 3 / 4 / 5 (`placeableLanes`), one column apart. Columns 0–2 and 6–8 are **outer overflow only**, never directly selectable.
+- The chosen lane places the brick's `anchorX` cell on that column: `originX = laneColumn − anchorX`, clamped so the brick stays within columns 0–8. `anchorX` is fixed per block instance (random at creation, see [Block system](#block-system)) — the same cell is used regardless of which lane is later picked, which is what keeps all three lanes' placements distinct for every brick width; see [decisions.md](./decisions.md#random-rotation-9-column-lane-grid-and-per-instance-random-anchor) for the design history (two alternate anchor/spacing schemes were tried and rejected first). Server-side resolution: `Game_Engine.resolveLaneOriginX()` → [backend.md § Game Engine](./backend.md#game-engine).
+- The brick then **falls to first contact per column** and may cantilever/overhang (e.g. a `T` resting off-center balances on its single stem — the intended stability hook).
+- **Anchor-cell indicator (client, placeholder art):** the inventory card and drag preview mark the brick's anchor column with a drawn placeholder smiley so the player can see which cell will land on the chosen lane's guide before dropping — no anchor-cell art asset exists yet. Full detail → [ui.md § Leaf components](./ui.md#leaf-components).
 
 ### Tower stability (design view)
 
-- Fixed-orientation bricks fall to ground or first contact on the 5-column grid.
+- Bricks fall to ground or first contact on the 9-column grid, in whichever rotation they were drawn.
 - Center-of-mass drift, **lane-height imbalance** (an uneven spread across the columns leans the tower toward the taller side), overhangs, and off-center supports reduce deterministic stability 100 → 0.
 - Warning/critical wobble feedback fires at tuned thresholds; stability hitting 0 collapses the tower and fails the level **before** a target-height completion can count.
 - Algorithm detail (pure grid physics) → [backend.md § Tower Stability](./backend.md#tower-stability).

@@ -53,7 +53,7 @@ Inventory cards use drag-and-drop, not tap-to-place:
 
 | Field | Meaning |
 |---|---|
-| `blocks[]` (inventory) | Server-assigned fixed-orientation bricks `{ id, shapeId, cells, anchorX, height }` (5 shapes `I`/`O`/`L`/`T`/`Z`). `anchorX` = the local cell column aligned to the chosen placement lane |
+| `blocks[]` (inventory) | Server-assigned bricks `{ id, shapeId, cells, anchorX, height }` (5 shapes `I`/`O`/`L`/`T`/`Z`, each dealt with a random rotation baked into `cells`/`height`). `anchorX` = the local cell column aligned to the chosen placement lane, chosen randomly per block at creation (not derived from `cells`) |
 | `activeInventorySlots` | Currently unlocked active hand slots |
 | `maxActiveBlocks` | Max active hand slots the UI/rules support |
 | `nextDrawBlock` | First block in the shared draw pile, or `null` when empty |
@@ -61,7 +61,7 @@ Inventory cards use drag-and-drop, not tap-to-place:
 | `cells` | `[x, y]` unit-coordinate array; used by the client for shape previews and tower rendering |
 | `height` | Vertical footprint derived from `cells` — not necessarily equal to cell count |
 | `towerBlocks[]` | Ordered placement history: `{ playerId, block, height, effectiveHeight, baseHeight }`, so clients can redraw the tower after a broadcast or reconnect |
-| `originX` / `originY` | Resolved structural coordinates (lane-derived `originX`, drop-settled `originY`) on the 5-column grid |
+| `originX` / `originY` | Resolved structural coordinates (lane-derived `originX`, drop-settled `originY`) on the 9-column grid |
 | `towerStability` / `towerStabilityDiagnostics` | Stability score + diagnostics `{ comOffset, laneImbalance, overhangPenalty, tiltScore, tiltAngleDeg, leanDirection, collapsed }` (see [backend.md § Tower Stability](./backend.md#tower-stability)) |
 | `impactScoreStatus` | Right-panel helper: next Impact level, ready-count inputs, per-player leaderboard score goals |
 
