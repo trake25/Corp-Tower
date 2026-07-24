@@ -1,13 +1,17 @@
 name: Client HTML5 Set Live Host
 
-# Picks which host serves https://play.tod.galaxxigames.com and stands the
-# other one down, since GitHub Pages and the physical backup are never meant
-# to both be live at once. This is a thin dispatcher over the existing
-# workflows — it adds no new deploy/undeploy logic of its own:
+# Picks which of the two web hosts is live and stands the other one down, as
+# a matter of policy — GitHub Pages (https://play.tod.galaxxigames.com) and
+# the physical backup (https://devplay.galaxxigames.com, a separate hostname
+# — see decisions.md: Cloudflare's free Edge Certificate coverage only
+# reaches one level of subdomain below the zone apex, and play.tod is two)
+# aren't meant to both be serving players at once. This is a thin dispatcher
+# over the existing workflows — it adds no new deploy/undeploy logic of its
+# own:
 #   target: pages   -> runs Client HTML5 Pages (which already stands the
-#                       backup down itself via its restore_from_backup step)
+#                       backup down itself via its stand_down_backup step)
 #   target: backup  -> runs Client HTML5 Undeploy in soft mode (which
-#                       already fails over to the backup itself via its
+#                       already deploys the backup itself via its
 #                       failover_to_backup step)
 # Both underlying workflows remain independently dispatchable exactly as
 # before — this workflow does not change their standalone behavior.
@@ -16,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: "Where play.tod.galaxxigames.com should serve the game from."
+        description: "pages = https://play.tod.galaxxigames.com. backup = https://devplay.galaxxigames.com."
         required: true
         type: choice
         options:
@@ -62,7 +66,7 @@ jobs:
     uses: ./.github/workflows/Client-HTML5-Pages.yml
     with:
       art_version_override: ${{ inputs.art_version_override }}
-      restore_from_backup: true
+      stand_down_backup: true
     secrets:
       R2_BUCKET: ${{ secrets.R2_BUCKET }}
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}

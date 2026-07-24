@@ -204,9 +204,7 @@ jobs:
       (needs.hard-undeploy.result == 'success' || needs.soft-undeploy.result == 'success')
     uses: ./.github/workflows/Client-HTML5-Backup-Deploy.yml
     with:
-      expected: undeploy
       art_version_override: ${{ inputs.art_version_override }}
-      invoked_via_call: true
     secrets:
       R2_BUCKET: ${{ secrets.R2_BUCKET }}
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}

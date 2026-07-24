@@ -8,8 +8,8 @@ on:
         required: false
         default: ""
         type: string
-      restore_from_backup:
-        description: "Also point play.tod.galaxxigames.com back at GitHub Pages if the physical backup machine is currently serving it."
+      stand_down_backup:
+        description: "Also stand down the physical backup machine's web server if it's currently running."
         required: false
         default: true
         type: boolean
@@ -30,8 +30,8 @@ on:
         required: false
         default: ""
         type: string
-      restore_from_backup:
-        description: "Also point play.tod.galaxxigames.com back at GitHub Pages if the physical backup machine is currently serving it."
+      stand_down_backup:
+        description: "Also stand down the physical backup machine's web server if it's currently running."
         required: true
         default: true
         type: boolean
@@ -111,9 +111,9 @@ jobs:
       - id: deploy
         uses: actions/deploy-pages@v4
 
-  restore-dns:
+  stand-down-backup:
     needs: deploy
-    if: always() && inputs.restore_from_backup && needs.deploy.result == 'success'
+    if: always() && inputs.stand_down_backup && needs.deploy.result == 'success'
     uses: ./.github/workflows/Client-HTML5-Backup-Cleanup.yml
     with:
       invoked_via_call: true

@@ -29,11 +29,12 @@ const GameConfig = {
     impactInterval: 3,
     impactScoreRequirement: 0,
     impactMinContributionShare: 0.30,
-    towerGridWidth: 7,
-    towerPlacementMode: "auto_center",
-    towerOverhangWeight: 0.18,
+    towerGridWidth: 5,
+    placeableLanes: { left: 1, center: 2, right: 3 },
+    towerOverhangWeight: 0.2,
+    towerLaneImbalanceWeight: 0.15,
     towerMaxTiltAngleDeg: 18,
-    towerCollapseTiltScore: 4.0,
+    towerCollapseTiltScore: 2.0,
     towerStabilityWarningThreshold: 60,
     towerStabilityCriticalThreshold: 30,
     towerStabilityFeedbackMode: "warnings_only",
@@ -47,60 +48,20 @@ const GameConfig = {
         refresh: { category: "Utility", title: "Refresh", active: true }
     },
 
-    blockUnlockLevels: {
-        1: 1,
-        2: 2,
-        3: 3,
-        4: 5,
-        5: 10,
-        6: 15
-    },
+    brickShapes: [
+        { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]], anchorX: 0 },
+        { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]], anchorX: 0 },
+        { shapeId: "L", cells: [[0, 0], [1, 0], [0, 1], [0, 2]], anchorX: 0 },
+        { shapeId: "T", cells: [[1, 0], [0, 1], [1, 1], [2, 1]], anchorX: 1 },
+        { shapeId: "Z", cells: [[1, 0], [2, 0], [0, 1], [1, 1]], anchorX: 1 }
+    ],
 
-    blockWeights: {
-        1: 3,
-        2: 3,
-        3: 2,
-        4: 2,
-        5: 1,
-        6: 1
-    },
-
-    blockShapeVariants: {
-        1: [
-            { shapeId: "I1", cells: [[0, 0]] }
-        ],
-        2: [
-            { shapeId: "I2V", cells: [[0, 0], [0, 1]] },
-            { shapeId: "I2H", cells: [[0, 0], [1, 0]] }
-        ],
-        3: [
-            { shapeId: "I3V", cells: [[0, 0], [0, 1], [0, 2]] },
-            { shapeId: "I3H", cells: [[0, 0], [1, 0], [2, 0]] },
-            { shapeId: "L3", cells: [[0, 0], [0, 1], [1, 1]] },
-            { shapeId: "J3", cells: [[1, 0], [1, 1], [0, 1]] }
-        ],
-        4: [
-            { shapeId: "I4V", cells: [[0, 0], [0, 1], [0, 2], [0, 3]] },
-            { shapeId: "I4H", cells: [[0, 0], [1, 0], [2, 0], [3, 0]] },
-            { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] },
-            { shapeId: "T", cells: [[0, 0], [1, 0], [2, 0], [1, 1]] },
-            { shapeId: "L", cells: [[0, 0], [0, 1], [0, 2], [1, 2]] },
-            { shapeId: "J", cells: [[1, 0], [1, 1], [1, 2], [0, 2]] },
-            { shapeId: "S", cells: [[1, 0], [2, 0], [0, 1], [1, 1]] },
-            { shapeId: "Z", cells: [[0, 0], [1, 0], [1, 1], [2, 1]] }
-        ],
-        5: [
-            { shapeId: "I5V", cells: [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]] },
-            { shapeId: "I5H", cells: [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]] },
-            { shapeId: "P", cells: [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2]] },
-            { shapeId: "U", cells: [[0, 0], [2, 0], [0, 1], [1, 1], [2, 1]] }
-        ],
-        6: [
-            { shapeId: "I6V", cells: [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5]] },
-            { shapeId: "I6H", cells: [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0]] },
-            { shapeId: "RECT6V", cells: [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]] },
-            { shapeId: "RECT6H", cells: [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]] }
-        ]
+    brickWeights: {
+        I: 1,
+        O: 3,
+        L: 2,
+        T: 2,
+        Z: 2
     },
 
     inventoryScaling: {
@@ -158,9 +119,10 @@ const GameConfig = {
 
     scoring: {
         placementScorePerHeight: 10,
-        finisherBonusPerLevel: 4,
-        precisionBonusPerLevel: 8,
-        teamExactBonusPerLevel: 6,
+        finisherBonusPerLevel: 0,
+        precisionBonusPerLevel: 20,
+        teamExactBonusPerLevel: 15,
+        impactFillBonusRate: 0.5,
         assistBonusPerLevel: 0,
         assistContributionThreshold: 0.25
     },

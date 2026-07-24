@@ -17,16 +17,14 @@ function topHeight(entries) {
 
 function cellsForEntries(entries) { return entries.flatMap(cellsFor); }
 
-function settleBlock(entries, block, width) {
+function settleBlock(entries, block, originX) {
     const cells = (block.cells || []).map(cell => ({ x: Number(cell[0]), y: Number(cell[1]) }));
-    const minX = Math.min(...cells.map(cell => cell.x));
-    const maxX = Math.max(...cells.map(cell => cell.x));
-    const originX = Math.floor((width - (maxX - minX + 1)) / 2) - minX;
+    const anchoredX = Math.round(Number(originX) || 0);
     const occupied = new Set(cellsForEntries(entries).map(cell => key(cell.x, cell.y)));
     let originY = topHeight(entries) + 8;
-    const collides = y => cells.some(cell => occupied.has(key(cell.x + originX, cell.y + y)));
+    const collides = y => cells.some(cell => occupied.has(key(cell.x + anchoredX, cell.y + y)));
     while (originY > 0 && !collides(originY - 1)) originY -= 1;
-    return { originX, originY };
+    return { originX: anchoredX, originY };
 }
 
 function evaluate(entries, config) {

@@ -35,7 +35,7 @@ jobs:
   cleanup-backup:
     needs: [guard]
     if: always() && (needs.guard.result == 'success' || needs.guard.result == 'skipped')
-    name: Restore play.tod.galaxxigames.com to GitHub Pages
+    name: Stand down the web (HTML5) backup
     runs-on: [self-hosted, backup]
     timeout-minutes: 10
 

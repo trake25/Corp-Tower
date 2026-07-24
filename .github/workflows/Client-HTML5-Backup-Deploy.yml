@@ -8,16 +8,6 @@ on:
         required: false
         default: ""
         type: string
-      expected:
-        description: "'undeploy' when called automatically after GitHub Pages was just undeployed (skips the healthy-site warning); 'manual' otherwise."
-        required: false
-        default: "manual"
-        type: string
-      invoked_via_call:
-        description: "Internal marker — always true here. Lets the guard job tell a reusable workflow_call apart from a direct workflow_dispatch, since github.event_name reflects the top-level run's trigger even when nested, not this workflow's own invocation."
-        required: false
-        default: true
-        type: boolean
     secrets:
       R2_BUCKET:
         required: true
@@ -35,34 +25,13 @@ on:
         required: false
         default: ""
         type: string
-      confirm:
-        description: "Type FAILOVER_WEB_BACKUP to confirm cutting play.tod.galaxxigames.com over to the backup machine."
-        required: true
-        default: ""
-        type: string
 
 concurrency:
   group: client-html5-web-backup
   cancel-in-progress: false
 
 jobs:
-  guard:
-    if: ${{ inputs.invoked_via_call != true }}
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Verify confirmation
-        env:
-          CONFIRM: ${{ inputs.confirm }}
-        run: |
-          set -euo pipefail
-          if [ "$CONFIRM" != "FAILOVER_WEB_BACKUP" ]; then
-            echo "::error::Confirmation failed. Type FAILOVER_WEB_BACKUP exactly to run this workflow directly."
-            exit 1
-          fi
-
   build:
-    needs: [guard]
-    if: always() && (needs.guard.result == 'success' || needs.guard.result == 'skipped')
     runs-on: ubuntu-24.04
 
     env:
@@ -107,6 +76,7 @@ jobs:
 
   deploy-to-backup:
     needs: build
+    if: always() && needs.build.result == 'success'
     runs-on: [self-hosted, backup]
     timeout-minutes: 15
 
@@ -122,4 +92,3 @@ jobs:
         env:
           CORP_TOWER_WEB_BUILD_DIR: ${{ github.workspace }}/build/web
           CORP_TOWER_WEB_BUILD_SHA: ${{ github.sha }}
-          CORP_TOWER_EXPECTED: ${{ inputs.expected || 'manual' }}
