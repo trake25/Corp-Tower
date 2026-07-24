@@ -154,12 +154,98 @@ jobs:
     uses: ./.github/workflows/Server-K3s-Infra-Plan.yml
     secrets: inherit
 
-  k3s-deploy-fast:
-    name: K3s Deploy Fast
+  check-k3s-status:
+    name: Check K3s Stack Status
     needs: classify-changes
     if: ${{ needs.classify-changes.outputs.run_k3s_deploy == 'true' && needs.classify-changes.outputs.fast_k3s_deploy == 'true' }}
+    runs-on: ubuntu-24.04
+    outputs:
+      k3s_up: ${{ steps.check.outputs.k3s_up }}
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-southeast-1
+
+      - name: Check for a running K3s control plane
+        id: check
+        run: |
+          set -euo pipefail
+          count="$(aws ec2 describe-instances \
+            --filters \
+              "Name=tag:Project,Values=corp-tower" \
+              "Name=tag:Environment,Values=k3s-lab" \
+              "Name=tag:Role,Values=k3s-control-plane" \
+              "Name=instance-state-name,Values=running" \
+            --query 'length(Reservations[].Instances[])' \
+            --output text)"
+
+          if [ "$count" = "1" ]; then
+            echo "k3s_up=true" >> "$GITHUB_OUTPUT"
+            echo "K3s control plane is up." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "k3s_up=false" >> "$GITHUB_OUTPUT"
+            echo "K3s control plane is not up (found $count running)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  check-backup-status:
+    name: Check Physical Backup Server Status
+    needs: [classify-changes, check-k3s-status]
+    if: |
+      always() &&
+      needs.classify-changes.outputs.run_k3s_deploy == 'true' &&
+      needs.classify-changes.outputs.fast_k3s_deploy == 'true' &&
+      needs.check-k3s-status.outputs.k3s_up != 'true'
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 5
+    outputs:
+      backup_up: ${{ steps.check.outputs.backup_up }}
+    steps:
+      - name: Check for a running backup server container
+        id: check
+        run: |
+          set -euo pipefail
+          if docker ps --filter "name=corp-tower-server" --filter "status=running" --format '{{.Names}}' | grep -q .; then
+            echo "backup_up=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "backup_up=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  k3s-deploy-fast:
+    name: K3s Deploy Fast
+    needs: [classify-changes, check-k3s-status]
+    if: ${{ needs.classify-changes.outputs.run_k3s_deploy == 'true' && needs.classify-changes.outputs.fast_k3s_deploy == 'true' && needs.check-k3s-status.outputs.k3s_up == 'true' }}
     uses: ./.github/workflows/Server-K3s-Deploy.yml
     secrets: inherit
+
+  backup-deploy-fast:
+    name: Backup Server Deploy (K3s Down Fallback)
+    needs: [classify-changes, check-k3s-status, check-backup-status]
+    if: |
+      always() &&
+      needs.classify-changes.outputs.run_k3s_deploy == 'true' &&
+      needs.classify-changes.outputs.fast_k3s_deploy == 'true' &&
+      needs.check-k3s-status.outputs.k3s_up != 'true' &&
+      needs.check-backup-status.outputs.backup_up == 'true'
+    uses: ./.github/workflows/Server-Backup-Deploy.yml
+
+  fast-deploy-unavailable:
+    name: Fast Deploy Target Unavailable
+    needs: [classify-changes, check-k3s-status, check-backup-status]
+    if: |
+      always() &&
+      needs.classify-changes.outputs.run_k3s_deploy == 'true' &&
+      needs.classify-changes.outputs.fast_k3s_deploy == 'true' &&
+      needs.check-k3s-status.outputs.k3s_up != 'true' &&
+      needs.check-backup-status.outputs.backup_up != 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fail loudly — no deploy target is up
+        run: |
+          echo "::error::Neither the K3s stack nor the physical backup server is up — nothing to fast-deploy to."
+          echo "Bring one up first: 'Server K3s Automated Master' (full_preflight) to restore K3s, or dispatch 'Server Backup Deploy' directly for the physical machine."
+          exit 1
 
   k3s-deploy-after-preflight:
     name: K3s Deploy After Preflight

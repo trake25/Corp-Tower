@@ -8,30 +8,11 @@ on:
         required: false
         default: "soft"
         type: string
-      failover_to_backup:
-        description: "Also fail play.tod.galaxxigames.com over to the physical backup machine."
-        required: false
-        default: true
-        type: boolean
-      art_version_override:
-        description: "Optional art bundle version (e.g. v2) for the backup failover build. Testing only."
-        required: false
-        default: ""
-        type: string
       invoked_via_call:
         description: "Internal marker — always true here. Lets the guard job tell a reusable workflow_call apart from a direct workflow_dispatch, since github.event_name reflects the top-level run's trigger even when nested, not this workflow's own invocation."
         required: false
         default: true
         type: boolean
-    secrets:
-      R2_BUCKET:
-        required: true
-      R2_ACCOUNT_ID:
-        required: true
-      R2_ACCESS_KEY_ID:
-        required: true
-      R2_SECRET_ACCESS_KEY:
-        required: true
 
   workflow_dispatch:
     inputs:
@@ -46,16 +27,6 @@ on:
       confirm:
         description: "Type UNDEPLOY to confirm. Anything else aborts."
         required: true
-        default: ""
-        type: string
-      failover_to_backup:
-        description: "Also fail play.tod.galaxxigames.com over to the physical backup machine."
-        required: true
-        default: true
-        type: boolean
-      art_version_override:
-        description: "Optional art bundle version (e.g. v2) for the backup failover build. Testing only."
-        required: false
         default: ""
         type: string
 
@@ -195,18 +166,3 @@ jobs:
             echo "The game has been replaced with an offline placeholder."
             echo "Re-run **Client HTML5 Pages** to restore the build."
           } >> "$GITHUB_STEP_SUMMARY"
-
-  failover-to-backup:
-    needs: [guard, hard-undeploy, soft-undeploy]
-    if: |
-      always() &&
-      inputs.failover_to_backup &&
-      (needs.hard-undeploy.result == 'success' || needs.soft-undeploy.result == 'success')
-    uses: ./.github/workflows/Client-HTML5-Backup-Deploy.yml
-    with:
-      art_version_override: ${{ inputs.art_version_override }}
-    secrets:
-      R2_BUCKET: ${{ secrets.R2_BUCKET }}
-      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

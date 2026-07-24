@@ -1,6 +1,17 @@
 name: Client HTML5 Backup Deploy
 
 on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "src/Client/**"
+      - ".github/actions/build-godot-web/**"
+      - ".github/actions/fetch-private-assets/**"
+      - ".github/godot/export_presets.web.ci.cfg"
+      - ".github/workflows/Client-HTML5-Backup-Deploy.yml"
+
   workflow_call:
     inputs:
       art_version_override:

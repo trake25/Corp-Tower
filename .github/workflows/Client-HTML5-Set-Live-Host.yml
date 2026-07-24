@@ -5,16 +5,16 @@ name: Client HTML5 Set Live Host
 # the physical backup (https://devplay.galaxxigames.com, a separate hostname
 # — see decisions.md: Cloudflare's free Edge Certificate coverage only
 # reaches one level of subdomain below the zone apex, and play.tod is two)
-# aren't meant to both be serving players at once. This is a thin dispatcher
-# over the existing workflows — it adds no new deploy/undeploy logic of its
-# own:
-#   target: pages   -> runs Client HTML5 Pages (which already stands the
-#                       backup down itself via its stand_down_backup step)
-#   target: backup  -> runs Client HTML5 Undeploy in soft mode (which
-#                       already deploys the backup itself via its
-#                       failover_to_backup step)
-# Both underlying workflows remain independently dispatchable exactly as
-# before — this workflow does not change their standalone behavior.
+# default to only one serving players at once. Client-HTML5-Pages.yml,
+# Client-HTML5-Undeploy.yml, Client-HTML5-Backup-Deploy.yml, and
+# Client-HTML5-Backup-Cleanup.yml are all fully independent workflows with no
+# coupling between them — either can run, or both can be live, at the same
+# time. This workflow is the only place the "only one live" policy is
+# enforced, by explicitly chaining the pair of calls itself:
+#   target: pages   -> runs Client HTML5 Pages, then stands the backup down
+#   target: backup  -> runs Client HTML5 Undeploy (soft), then deploys the backup
+# All four underlying workflows remain independently dispatchable exactly as
+# before, with no side effects on each other.
 
 on:
   workflow_dispatch:
@@ -66,12 +66,18 @@ jobs:
     uses: ./.github/workflows/Client-HTML5-Pages.yml
     with:
       art_version_override: ${{ inputs.art_version_override }}
-      stand_down_backup: true
     secrets:
       R2_BUCKET: ${{ secrets.R2_BUCKET }}
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+
+  stand-down-backup:
+    needs: to-pages
+    if: always() && needs.to-pages.result == 'success'
+    uses: ./.github/workflows/Client-HTML5-Backup-Cleanup.yml
+    with:
+      invoked_via_call: true
 
   to-backup:
     needs: guard-backup
@@ -83,9 +89,14 @@ jobs:
     uses: ./.github/workflows/Client-HTML5-Undeploy.yml
     with:
       mode: soft
-      failover_to_backup: true
-      art_version_override: ${{ inputs.art_version_override }}
       invoked_via_call: true
+
+  deploy-backup:
+    needs: to-backup
+    if: always() && needs.to-backup.result == 'success'
+    uses: ./.github/workflows/Client-HTML5-Backup-Deploy.yml
+    with:
+      art_version_override: ${{ inputs.art_version_override }}
     secrets:
       R2_BUCKET: ${{ secrets.R2_BUCKET }}
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}

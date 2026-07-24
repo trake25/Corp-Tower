@@ -2,6 +2,7 @@ name: Server Backup Deploy
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: server-backup-deploy

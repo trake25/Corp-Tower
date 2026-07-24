@@ -8,11 +8,6 @@ on:
         required: false
         default: ""
         type: string
-      stand_down_backup:
-        description: "Also stand down the physical backup machine's web server if it's currently running."
-        required: false
-        default: true
-        type: boolean
     secrets:
       R2_BUCKET:
         required: true
@@ -30,11 +25,6 @@ on:
         required: false
         default: ""
         type: string
-      stand_down_backup:
-        description: "Also stand down the physical backup machine's web server if it's currently running."
-        required: true
-        default: true
-        type: boolean
 
 permissions:
   contents: read
@@ -110,10 +100,3 @@ jobs:
     steps:
       - id: deploy
         uses: actions/deploy-pages@v4
-
-  stand-down-backup:
-    needs: deploy
-    if: always() && inputs.stand_down_backup && needs.deploy.result == 'success'
-    uses: ./.github/workflows/Client-HTML5-Backup-Cleanup.yml
-    with:
-      invoked_via_call: true
