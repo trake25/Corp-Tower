@@ -345,4 +345,3 @@ func update_game_state(data) -> void:
 
 func update_debug_config(config) -> void:
 	debug_panel.apply_config(config)
-

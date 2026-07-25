@@ -8,9 +8,11 @@ const SHAPE_BLOCK_FIXTURE := {"id": "b1", "shapeId": "L2", "cells": [[0, 0], [0,
 class NetworkStub:
 	var is_conn_estab := true
 	var placed: Array = []
+	var placed_columns: Array = []
 
 	func place_block(index: int, column: int = -1) -> void:
 		placed.append(index)
+		placed_columns.append(column)
 
 var harness
 var network_stub
@@ -64,6 +66,10 @@ func test_drag_release_inside_drop_zone_places_block() -> void:
 	inventory().handle_input(release)
 	assert_false(inventory().is_block_dragging, "Releasing the drag should end it.")
 	assert_eq(network_stub.placed, [0], "Releasing inside the drop zone should send the slot's place_block request.")
+	assert_between(
+		int(network_stub.placed_columns[0]), 4, 9,
+		"The resolved snap column must always be a placeable column."
+	)
 
 func test_drag_release_outside_drop_zone_cancels_without_sending() -> void:
 	enter_playing_state_with_block()

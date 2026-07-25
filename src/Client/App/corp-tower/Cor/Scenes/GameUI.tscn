@@ -682,12 +682,13 @@ theme_override_constants/separation = 4
 unique_name_in_owner = true
 visible = false
 z_index = 40
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(170, 170)
 anchors_preset = 0
-offset_right = 96.0
-offset_bottom = 96.0
+offset_right = 170.0
+offset_bottom = 170.0
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
+cell_size_override = 34.0
 
 [node name="ScorePopupLayer" type="Control" parent="." unique_id=981608802]
 unique_name_in_owner = true
@@ -1383,6 +1384,75 @@ alignment = 0
 text = "Ground Ease Speed"
 
 [node name="GroundEaseSpeedSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000028]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Placement" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=900000030]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PlacementRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement" unique_id=900000031]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="SnapRadiusButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000032]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Snap Radius"
+
+[node name="SnapRadiusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000033]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DragGripOffsetButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000034]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Drag Grip Lift"
+
+[node name="DragGripOffsetSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000035]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GhostAlphaButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000036]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Landing Ghost Opacity"
+
+[node name="GhostAlphaSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000037]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SnapDotRadiusButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000038]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Snap Dot Size"
+
+[node name="SnapDotRadiusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000039]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SnapTargetRadiusButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000040]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Snap Target Size"
+
+[node name="SnapTargetRadiusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000041]
 unique_name_in_owner = true
 layout_mode = 2
 

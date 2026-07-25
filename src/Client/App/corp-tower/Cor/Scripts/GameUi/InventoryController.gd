@@ -1,7 +1,24 @@
 extends Node
 
 const MAX_INVENTORY_SLOTS := 3
-const DRAG_PREVIEW_SIZE := Vector2(96, 96)
+const DRAG_PREVIEW_SIZE := Vector2(170, 170)
+# Fallback for the lift that keeps the dragged brick clear of the finger, used
+# only when TowerStack isn't available to supply its own brick-unit-relative
+# value. The lift is applied to the snap resolution too, so the docked ghost
+# lands where the lifted brick is pointing rather than where the thumb is.
+const DRAG_GRIP_OFFSET_FALLBACK := Vector2(0.0, -48.0)
+# TowerStack is an optional bound node, so placement has to keep working without
+# it. Column -1 is the same "let the server clamp it" value the pre-snap drag
+# code sent, so a missing tower view degrades to server-side resolution rather
+# than refusing to place.
+const UNRESOLVED_SNAP := {
+	"valid": true,
+	"snapped": false,
+	"column": -1,
+	"origin_y": 0,
+	"target_point": Vector2i.ZERO,
+	"matched_vertex": Vector2i.ZERO
+}
 const BlockPreviewScript = preload("res://Cor/Scripts/BlockPreview.gd")
 const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 const PointerEventsScript = preload("res://Cor/Scripts/GameUi/PointerEvents.gd")
@@ -30,7 +47,7 @@ var last_placement_sent_at_ms: int = 0
 var is_block_dragging: bool = false
 var drag_slot_index: int = -1
 var drag_pointer_id: int = PointerEventsScript.POINTER_MOUSE
-var drag_target_column: int = -1
+var drag_snap: Dictionary = {}
 var last_draw_pile_count: int = 0
 var last_next_draw_block: Variant = null
 
@@ -94,6 +111,23 @@ func setup(players_ref, match_state_ref, tuning_ref, network_ref, popovers_ref) 
 				"set_preview_mode",
 				BlockPreviewScript.PreviewMode.FLOATING_DRAG
 			)
+
+func _tower_brick_unit_size() -> float:
+	if tower_stack_fallback == null:
+		return 0.0
+
+	var unit_size: Variant = tower_stack_fallback.get("brick_unit_size")
+
+	if typeof(unit_size) != TYPE_FLOAT and typeof(unit_size) != TYPE_INT:
+		return 0.0
+
+	return float(unit_size)
+
+func _drag_grip_offset() -> Vector2:
+	if tower_stack_fallback == null or !tower_stack_fallback.has_method("drag_grip_offset"):
+		return DRAG_GRIP_OFFSET_FALLBACK
+
+	return tower_stack_fallback.call("drag_grip_offset")
 
 func handle_input(event: InputEvent) -> void:
 	if is_block_dragging:
@@ -219,10 +253,16 @@ func begin_block_drag(index: int, global_pos: Vector2, pointer_id: int) -> void:
 	popovers.close_active()
 
 	var block: Dictionary = inventory_slot_blocks[index]
+	var local_color: Color = players_ctx.local_color()
 	is_block_dragging = true
 	drag_slot_index = index
 	drag_pointer_id = pointer_id
-	drag_preview.cell_color = players_ctx.local_color()
+	drag_snap = {}
+	drag_preview.cell_color = local_color
+
+	var unit_size: float = _tower_brick_unit_size()
+	if unit_size > 0.0:
+		drag_preview.cell_size_override = unit_size
 
 	if drag_preview.has_method("set_preview_mode"):
 		drag_preview.call(
@@ -233,41 +273,75 @@ func begin_block_drag(index: int, global_pos: Vector2, pointer_id: int) -> void:
 	drag_preview.set_block(block)
 	drag_preview.visible = true
 	drag_preview.z_index = 40
+
+	if tower_stack_fallback != null and tower_stack_fallback.has_method("begin_snap_drag"):
+		tower_stack_fallback.call("begin_snap_drag", block, local_color)
+
 	update_block_drag(global_pos)
 
 func update_block_drag(global_pos: Vector2) -> void:
 	if drag_preview == null or !is_block_dragging:
 		return
 
-	drag_preview.global_position = global_pos - drag_preview.size * 0.5
+	var ghost_pos: Vector2 = global_pos + _drag_grip_offset()
+	drag_preview.global_position = ghost_pos - drag_preview.size * 0.5
 	update_tower_drop_zone_highlight(global_pos)
-	drag_target_column = _update_snap_preview(true, global_pos)
+	drag_snap = _resolve_snap(ghost_pos)
 
-# Resolves the nearest valid target column for the currently dragged brick and
-# toggles TowerStack's snap-point overlay. Always recomputes the column when
-# cells are available, regardless of `active`, so the final call on release
-# (active=false, to also clear the overlay) still returns the real answer.
-func _update_snap_preview(active: bool, global_pos: Vector2) -> int:
-	if tower_stack_fallback == null or !tower_stack_fallback.has_method("update_snap_preview"):
-		return drag_target_column
+	var docked: bool = (
+		_can_dock() and is_pointer_in_tower_drop_zone(global_pos) and _is_snap_valid()
+	)
+	drag_preview.visible = !docked
+
+	var matched_vertex: Vector2i = BlockPreviewScript.NO_MATCHED_VERTEX
+	if bool(drag_snap.get("snapped", false)):
+		matched_vertex = drag_snap.get("matched_vertex", matched_vertex)
+
+	if drag_preview.has_method("set_matched_vertex"):
+		drag_preview.call("set_matched_vertex", matched_vertex)
+
+	if tower_stack_fallback == null:
+		return
+
+	if docked and tower_stack_fallback.has_method("set_snap_state"):
+		tower_stack_fallback.call("set_snap_state", drag_snap)
+	elif !docked and tower_stack_fallback.has_method("clear_snap_preview"):
+		tower_stack_fallback.call("clear_snap_preview")
+
+# Pairs the dragged brick's own corners against the tower's snap points and
+# returns the full resolution (target column, settled landing row, matched
+# point/vertex) -- not just a column, so the ghost can dock exactly where the
+# brick will come to rest.
+func _resolve_snap(ghost_global_pos: Vector2) -> Dictionary:
+	if tower_stack_fallback == null or !tower_stack_fallback.has_method("resolve_snap"):
+		return UNRESOLVED_SNAP.duplicate()
 
 	var cells: Array = []
 	if drag_slot_index >= 0 and drag_slot_index < inventory_slot_blocks.size():
 		cells = inventory_slot_blocks[drag_slot_index].get("cells", [])
 
-	return int(tower_stack_fallback.call("update_snap_preview", active, cells, global_pos))
+	return tower_stack_fallback.call("resolve_snap", cells, ghost_global_pos)
+
+func _is_snap_valid() -> bool:
+	return bool(drag_snap.get("valid", false))
+
+func _can_dock() -> bool:
+	return tower_stack_fallback != null and tower_stack_fallback.has_method("set_snap_state")
 
 func finish_block_drag(global_pos: Vector2) -> void:
 	if !is_block_dragging:
 		return
 
 	var slot_index: int = drag_slot_index
+	drag_snap = _resolve_snap(global_pos + _drag_grip_offset())
+
 	var should_place: bool = (
 		slot_index >= 0 and
+		_is_snap_valid() and
 		is_pointer_in_tower_drop_zone(global_pos) and
 		can_place_block(slot_index)
 	)
-	var column: int = _update_snap_preview(false, global_pos)
+	var column: int = int(drag_snap.get("column", -1))
 
 	cancel_block_drag()
 
@@ -278,14 +352,18 @@ func cancel_block_drag() -> void:
 	is_block_dragging = false
 	drag_slot_index = -1
 	drag_pointer_id = PointerEventsScript.POINTER_MOUSE
+	drag_snap = {}
 	reset_tower_drop_zone_highlight()
 
-	if tower_stack_fallback != null and tower_stack_fallback.has_method("clear_snap_preview"):
-		tower_stack_fallback.call("clear_snap_preview")
+	if tower_stack_fallback != null and tower_stack_fallback.has_method("end_snap_drag"):
+		tower_stack_fallback.call("end_snap_drag")
 
 	if drag_preview != null:
 		drag_preview.visible = false
 		drag_preview.clear_block()
+
+		if drag_preview.has_method("clear_matched_vertex"):
+			drag_preview.call("clear_matched_vertex")
 
 func is_pointer_in_tower_drop_zone(global_pos: Vector2) -> bool:
 	var drop_zone: Control = tower_drop_zone if tower_drop_zone != null else tower_stack_fallback

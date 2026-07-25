@@ -5,7 +5,9 @@ const BOT_STRATEGY_COOPERATIVE := "cooperative"
 const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
 const TOWER_FEEDBACK_MODES := ["warnings_only", "meter_only", "live_preview"]
 const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Meter Only", "Live Preview"]
-const DEBUG_CATEGORY_NAMES := ["Bots", "Round", "UI", "Supply", "Scoring", "Tower", "Power", "Parallax"]
+const DEBUG_CATEGORY_NAMES := [
+	"Bots", "Round", "UI", "Supply", "Scoring", "Tower", "Power", "Parallax", "Placement"
+]
 
 const PARALLAX_TARGET_TOWER := "tower"
 const PARALLAX_TARGET_SKY := "sky"
@@ -78,6 +80,37 @@ const PARALLAX_ROWS := [
 		"tooltip": "How snappily the ground platform catches up whenever the scroll target changes. Higher = tight, immediate follow. Lower = laggy trail.",
 	},
 ]
+
+const PLACEMENT_ROWS := [
+	{
+		"key": "SnapRadius", "target": PARALLAX_TARGET_TOWER, "property": "snap_radius_units",
+		"label": "Snap Radius", "min": 0.5, "max": 6.0, "step": 0.1, "decimals": 1, "suffix": " bricks",
+		"tooltip": "How close a dragged brick's corner has to get to a snap point before it locks on. Higher = very forgiving, the brick jumps to points from far away. Lower = you have to aim, and drags far from the tower fall back to plain column aiming.",
+	},
+	{
+		"key": "DragGripOffset", "target": PARALLAX_TARGET_TOWER, "property": "drag_grip_offset_units",
+		"label": "Drag Grip Lift", "min": 0.0, "max": 4.0, "step": 0.1, "decimals": 1, "suffix": " bricks",
+		"tooltip": "How far above the finger the dragged brick floats, so the thumb doesn't cover it. Higher = brick sits well clear of the hand but feels detached. 0 = brick sits right under the finger and gets hidden by it on a phone.",
+	},
+	{
+		"key": "GhostAlpha", "target": PARALLAX_TARGET_TOWER, "property": "ghost_alpha",
+		"label": "Landing Ghost Opacity", "min": 0.0, "max": 100.0, "step": 5.0, "percent": true,
+		"tooltip": "How solid the preview of the brick's landing spot looks. Higher = reads as an almost-placed brick. Lower = a faint hint that's easier to see the tower through.",
+	},
+	{
+		"key": "SnapDotRadius", "target": PARALLAX_TARGET_TOWER, "property": "snap_dot_radius",
+		"label": "Snap Dot Size", "min": 1.0, "max": 8.0, "step": 0.5, "decimals": 1, "suffix": "px",
+		"tooltip": "Size of the small rings marking every available snap point while dragging. Bigger = easier to see on a phone but busier over the tower.",
+	},
+	{
+		"key": "SnapTargetRadius", "target": PARALLAX_TARGET_TOWER, "property": "snap_target_radius",
+		"label": "Snap Target Size", "min": 4.0, "max": 18.0, "step": 0.5, "decimals": 1, "suffix": "px",
+		"tooltip": "Size of the highlight ring around the point the brick is currently locked onto. Bigger = the chosen target stands out further from its neighbours.",
+	},
+]
+
+static func tunable_rows() -> Array:
+	return PARALLAX_ROWS + PLACEMENT_ROWS
 
 var tuning
 var network
@@ -174,13 +207,14 @@ func bind_nodes(binder) -> void:
 		"Tower": binder.optional_node("Tower") as Control,
 		"Power": binder.optional_node("Power") as Control,
 		"Parallax": binder.optional_node("Parallax") as Control,
+		"Placement": binder.optional_node("Placement") as Control,
 	}
 	parallax_targets = {
 		PARALLAX_TARGET_TOWER: binder.optional_node("TowerStack"),
 		PARALLAX_TARGET_SKY: binder.optional_node("BgArt"),
 		PARALLAX_TARGET_GROUND: binder.optional_node("PlatformArt"),
 	}
-	for row in PARALLAX_ROWS:
+	for row in tunable_rows():
 		parallax_buttons[row.key] = binder.optional_node(row.key + "Button") as Button
 		parallax_sliders[row.key] = binder.optional_node(row.key + "Slider") as HSlider
 	reset_debug_button = binder.optional_node("ResetDebugButton") as Button
@@ -346,7 +380,7 @@ func on_category_selected(index: int) -> void:
 			panel.visible = (category_name == selected_name)
 
 func setup_parallax_controls() -> void:
-	for row in PARALLAX_ROWS:
+	for row in tunable_rows():
 		var target_node = parallax_targets.get(row.target)
 		var slider: HSlider = parallax_sliders.get(row.key)
 		var button: Button = parallax_buttons.get(row.key)

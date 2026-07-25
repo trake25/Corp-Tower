@@ -17,17 +17,21 @@ const FLOATING_DRAG_SHADOW_OFFSET := Vector2(0.0, 4.0)
 const FLOATING_DRAG_MIN_CELL_SIZE := 14.0
 const PREVIEW_GAP := 6.0
 
-# Hollow corner-point placeholders marking the dragged ghost's own snap
-# points (the filled-dot counterparts, marking the platform/placed bricks,
-# are drawn by TowerStack).
-const SNAP_DOT_HOLLOW_COLOR := Color(1.0, 0.0, 0.0, 0.7)
+# Hollow rings mark the dragged ghost's own snap points; the one currently
+# paired with a tower point is filled instead. The counterpart rings on the
+# platform and placed bricks are drawn by TowerStack.
+const SNAP_DOT_COLOR := Color(1.0, 1.0, 1.0, 0.6)
 const SNAP_DOT_RADIUS := 4.0
+const NO_MATCHED_VERTEX := Vector2i(-9999, -9999)
 
 var cells: Array = []
 var shape_id: String = ""
 var is_available: bool = false
 var cell_color: Color = DEFAULT_CELL_COLOR
 var preview_mode: PreviewMode = PreviewMode.INVENTORY
+var matched_vertex: Vector2i = NO_MATCHED_VERTEX
+
+@export var cell_size_override: float = 0.0
 
 func _ready() -> void:
 	material = BlockDataScript.brick_shader_material()
@@ -47,6 +51,16 @@ func clear_block() -> void:
 func set_preview_mode(mode: PreviewMode) -> void:
 	preview_mode = mode
 	queue_redraw()
+
+func set_matched_vertex(vertex: Vector2i) -> void:
+	if matched_vertex == vertex:
+		return
+
+	matched_vertex = vertex
+	queue_redraw()
+
+func clear_matched_vertex() -> void:
+	set_matched_vertex(NO_MATCHED_VERTEX)
 
 func _draw() -> void:
 	if cells.is_empty():
@@ -70,12 +84,10 @@ func _draw_brick(texture: Texture2D, color: Color, offset: Vector2, draw_snap_do
 	var columns: int = bounds.max_x - bounds.min_x + 1
 	var rows: int = bounds.max_y - bounds.min_y + 1
 	var available_size: Vector2 = size - Vector2(PREVIEW_GAP, PREVIEW_GAP) * 2.0
-	var cell_size: float = minf(
+	var cell_size: float = _resolve_cell_size(maxf(FLOATING_DRAG_MIN_CELL_SIZE, minf(
 		available_size.x / float(columns),
 		available_size.y / float(rows)
-	)
-
-	cell_size = maxf(FLOATING_DRAG_MIN_CELL_SIZE, cell_size)
+	)))
 
 	var rotation_steps: int = BlockDataScript.detect_rotation_steps(shape_id, cells)
 	var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(BlockDataScript.BRICK_SHAPES.get(shape_id, cells))
@@ -132,12 +144,10 @@ func _draw_floating_drag_fallback() -> void:
 	var rows: int = bounds.max_y - bounds.min_y + 1
 	var gap: float = 5.0
 	var available_size: Vector2 = size - Vector2(gap * 2.0, gap * 2.0)
-	var cell_size: float = minf(
+	var cell_size: float = _resolve_cell_size(maxf(FLOATING_DRAG_MIN_CELL_SIZE, minf(
 		available_size.x / float(columns),
 		available_size.y / float(rows)
-	)
-
-	cell_size = maxf(FLOATING_DRAG_MIN_CELL_SIZE, cell_size - gap)
+	) - gap), gap)
 
 	var total_size: Vector2 = Vector2(
 		float(columns) * cell_size + float(columns - 1) * gap,
@@ -224,7 +234,23 @@ func _draw_corner_dots(bounds: Dictionary, origin: Vector2, cell_size: float, ga
 				continue
 
 			drawn[lattice_point] = true
-			draw_arc(local_corners[lattice_point], SNAP_DOT_RADIUS, 0.0, TAU, 16, SNAP_DOT_HOLLOW_COLOR, 1.5, true)
+
+			var at: Vector2 = local_corners[lattice_point]
+
+			if lattice_point == matched_vertex:
+				draw_circle(at, SNAP_DOT_RADIUS, Color(cell_color.r, cell_color.g, cell_color.b, 0.95))
+				draw_arc(at, SNAP_DOT_RADIUS + 3.0, 0.0, TAU, 20, SNAP_DOT_COLOR, 2.0, true)
+			else:
+				draw_arc(at, SNAP_DOT_RADIUS, 0.0, TAU, 16, SNAP_DOT_COLOR, 1.5, true)
+
+# A non-zero override pins the drawn cell pitch to the tower's own brick unit
+# size, so the floating drag ghost is already at tower scale and does not
+# visibly resize the moment it docks onto the grid.
+func _resolve_cell_size(auto_size: float, gap: float = 0.0) -> float:
+	if cell_size_override <= 0.0:
+		return auto_size
+
+	return maxf(1.0, cell_size_override - gap)
 
 func _get_cell_bounds() -> Dictionary:
 	return BlockDataScript.cell_bounds(cells)
