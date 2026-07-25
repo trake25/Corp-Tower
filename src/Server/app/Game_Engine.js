@@ -43,6 +43,7 @@ class GameEngine {
 
         const scoreEvents = this.consumeScoreEvents();
         const quickChatEvents = this.consumeQuickChatEvents();
+        const placeableColumns = this.getPlaceableColumnRange();
         const gameState = {
             type: "game_state",
             state: this.room.state,
@@ -57,6 +58,8 @@ class GameEngine {
             drawPileCount: (this.room.drawPile || []).length,
             nextDrawBlock: this.getNextDrawBlock(),
             towerBlocks: this.room.towerBlocks || [],
+            placeableColumnMin: placeableColumns.min,
+            placeableColumnMax: placeableColumns.max,
             towerStability: this.room.towerStability ?? 100,
             towerStabilityDiagnostics: this.room.towerStabilityDiagnostics || {},
             sideQuest: this.room.sideQuest || null,
@@ -543,25 +546,86 @@ class GameEngine {
         this.startLevel();
     }
 
+    getSupplyPackingEfficiency() {
+        const cellsPerBrick = Math.max(1, this.getAverageBrickCellCount());
+        const brickHeight = Math.max(0.1, this.getAverageBrickHeight());
+        const siteWidth = this.getSiteWidthForHeight(this.room?.targetHeight);
+        const ratio = Math.max(
+            0.1,
+            Number(GameConfig.supplyEffectiveWidthRatio) || 0.1
+        );
+        const effectiveWidth = Math.max(1, siteWidth * ratio + 0.5);
+
+        return Math.max(
+            0.05,
+            Math.min(1, cellsPerBrick / (brickHeight * effectiveWidth))
+        );
+    }
+
+    getSiteWidthForHeight(targetHeight) {
+        const gridWidth = Math.max(1, Number(GameConfig.towerGridWidth) || 1);
+        const slenderness = Math.max(
+            0.1,
+            Number(GameConfig.towerSiteSlendernessTarget) || 0.1
+        );
+        const minWidth = Math.max(1, Number(GameConfig.towerSiteWidthMin) || 1);
+        const maxWidth = Math.min(
+            gridWidth,
+            Math.max(minWidth, Number(GameConfig.towerSiteWidthMax) || minWidth)
+        );
+        const required = Math.ceil(
+            Math.max(0, Number(targetHeight) || 0) / slenderness
+        );
+        const evenWidth = Math.ceil(required / 2) * 2;
+        const clamped = Math.max(minWidth, Math.min(maxWidth, evenWidth));
+
+        // The site is centered on the grid, so an odd width would sit half a
+        // column off-center. Debug tuning can set odd bounds, so re-even here
+        // rather than trusting the clamp.
+        return Math.max(2, clamped - (clamped % 2));
+    }
+
+    getPlaceableColumnRange() {
+        const targetHeight = this.room?.targetHeight;
+
+        if (!Number.isFinite(Number(targetHeight))) {
+            return {
+                min: GameConfig.placeableColumnMin,
+                max: GameConfig.placeableColumnMax
+            };
+        }
+
+        const gridWidth = Math.max(1, Number(GameConfig.towerGridWidth) || 1);
+        const width = this.getSiteWidthForHeight(targetHeight);
+        const min = Math.max(0, Math.round((gridWidth - width) / 2));
+
+        return { min, max: Math.min(gridWidth - 1, min + width - 1) };
+    }
+
     getPlaceableOriginRange(block) {
         const cellXs = (block?.cells || []).map(cell => Number(cell[0]));
         const width = cellXs.length
             ? Math.max(...cellXs) - Math.min(...cellXs) + 1
             : 1;
-        const min = GameConfig.placeableColumnMin;
-        const max = GameConfig.placeableColumnMax - width + 1;
+        const site = this.getPlaceableColumnRange();
+        const min = site.min;
+        const max = site.max - width + 1;
 
         return { min, max: Math.max(min, max) };
     }
 
     resolveColumnOriginX(block, column) {
         const { min, max } = this.getPlaceableOriginRange(block);
-        const requested = Number.isFinite(Number(column)) ? Number(column) : min;
+        const numeric = Number(column);
+        const requested =
+            column === null || column === undefined || !Number.isFinite(numeric)
+                ? min
+                : numeric;
 
         return Math.max(min, Math.min(max, Math.round(requested)));
     }
 
-    placeBlock(playerId, blockIndex, column = GameConfig.placeableColumnMin) {
+    placeBlock(playerId, blockIndex, column = null) {
         if (this.room.state !== "playing") {
             console.log("Cannot place block, level not active");
             return;
@@ -601,6 +665,8 @@ class GameEngine {
         const block = player.blocks.splice(blockIndex, 1)[0];
         const blockHeight = this.getBlockHeight(block);
         const previousHeight = this.room.currentHeight;
+        const stabilityBefore = this.room.towerStability ?? 100;
+        const structureBefore = this.room.towerStabilityDiagnostics || {};
         const originX = this.resolveColumnOriginX(block, column);
         const placement = TowerStability.settleBlock(
             this.room.towerBlocks || [], block, originX
@@ -630,13 +696,17 @@ class GameEngine {
         });
         this.refillPlayerBlock(player);
 
-        this.addPlacementScore(player, block, effectiveHeight);
+        this.addPlacementScore(player, block, effectiveHeight, stabilityBefore);
 
         this.tryCompleteSideQuest(player, block, this.room.currentHeight === this.room.targetHeight);
 
         console.log(`${player.id} placed block (${blockHeight})`);
 
         this.recalculateTowerStability();
+
+        this.addReinforceScore(
+            player, structureBefore, this.room.towerStabilityDiagnostics || {}
+        );
 
         if (this.room.towerStability <= 0) {
             this.failLevel("tower_collapsed");
@@ -871,6 +941,8 @@ class GameEngine {
     getRandomBlock() { return BlockSupply.getRandomBlock(this); }
     getBlocksPerPlayer() { return BlockSupply.getBlocksPerPlayer(this); }
     buildDrawPile() { return BlockSupply.buildDrawPile(this); }
+    getAverageBrickHeight() { return BlockSupply.getAverageBrickHeight(this); }
+    getAverageBrickCellCount() { return BlockSupply.getAverageBrickCellCount(this); }
     getGeneratedDrawPileBlockCount() { return BlockSupply.getGeneratedDrawPileBlockCount(this); }
     generateDrawPileBlocks(blockCount) { return BlockSupply.generateDrawPileBlocks(this, blockCount); }
     generateSolvableOpeningHandBlocks() { return BlockSupply.generateSolvableOpeningHandBlocks(this); }
@@ -897,7 +969,9 @@ class GameEngine {
     getPlayerBonusBreakdown(player) { return Scoring.getPlayerBonusBreakdown(this, player); }
     buildLevelSummary(options) { return Scoring.buildLevelSummary(this, options); }
     recordScoreBreakdown(player, key, points) { return Scoring.recordScoreBreakdown(this, player, key, points); }
-    addPlacementScore(player, block, effectiveHeight) { return Scoring.addPlacementScore(this, player, block, effectiveHeight); }
+    addPlacementScore(player, block, effectiveHeight, stabilityBefore) { return Scoring.addPlacementScore(this, player, block, effectiveHeight, stabilityBefore); }
+    addReinforceScore(player, before, after) { return Scoring.addReinforceScore(this, player, before, after); }
+    getPlacementStabilityMultiplier(stabilityBefore) { return Scoring.getPlacementStabilityMultiplier(this, stabilityBefore); }
     awardCompletionBonuses(finisher, exactFinish) { return Scoring.awardCompletionBonuses(this, finisher, exactFinish); }
     addBonusScore(player, points, label) { return Scoring.addBonusScore(this, player, points, label); }
     getBonusScoreEventType(label) { return Scoring.getBonusScoreEventType(this, label); }

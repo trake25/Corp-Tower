@@ -142,7 +142,7 @@ func get_score_popup_fade_duration_seconds(
 		0.01,
 		total_duration_seconds - intro_duration_seconds
 	)
-	if event_type != "placement":
+	if event_type != "placement" and event_type != "reinforce":
 		var finish_hold_seconds: float = minf(
 			available_duration_seconds * FINISH_SCORE_POPUP_MIN_HOLD_RATIO,
 			0.5
@@ -181,6 +181,8 @@ func get_score_event_text(event: Dictionary, _players: Array) -> String:
 	match event_type:
 		"placement":
 			return "+" + str(points)
+		"reinforce":
+			return "REINFORCE +" + str(points)
 		"finisher_bonus":
 			return "FINISH +" + str(points)
 		"precision_bonus":
@@ -318,6 +320,7 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 
 	var y_offsets: Dictionary = {
 		"placement": 0.58,
+		"reinforce": 0.64,
 		"finisher_bonus": 0.5,
 		"precision_bonus": 0.44,
 		"team_exact_bonus": 0.38,
@@ -331,7 +334,7 @@ func get_score_event_popup_duration_seconds(event: Dictionary) -> float:
 	var event_type: String = str(event.get("type", ""))
 	var duration_ms: int = tuning.finish_score_popup_duration_ms
 
-	if event_type == "placement":
+	if event_type == "placement" or event_type == "reinforce":
 		duration_ms = tuning.placement_score_popup_duration_ms
 
 	return max(0.1, float(duration_ms) / 1000.0)

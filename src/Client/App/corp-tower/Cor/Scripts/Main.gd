@@ -1,6 +1,7 @@
 extends Control
 
 const UiNodeBinderScript = preload("res://Cor/Scripts/GameUi/UiNodeBinder.gd")
+const SnapGridScript = preload("res://Cor/Scripts/GameUi/SnapGrid.gd")
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
 const DebugPanelControllerScript = preload("res://Cor/Scripts/GameUi/DebugPanelController.gd")
 const PlayerContextScript = preload("res://Cor/Scripts/GameUi/PlayerContext.gd")
@@ -291,6 +292,11 @@ func update_game_state(data) -> void:
 	if str(data.get("towerStabilityFeedbackMode", "warnings_only")) == "meter_only":
 		top_bar.tower_status_label.text += " | Stability " + str(int(data.get("towerStability", 100))) + "%"
 	top_bar.set_tower_progress(current_height, target_height)
+	if data.has("placeableColumnMin") and data.has("placeableColumnMax"):
+		SnapGridScript.set_placeable_range(
+			int(data.get("placeableColumnMin", 4)),
+			int(data.get("placeableColumnMax", 9))
+		)
 	tower_stack.set_tower(
 		data.get("towerBlocks", []), current_height, target_height,
 		int(data.get("towerStability", 100)),

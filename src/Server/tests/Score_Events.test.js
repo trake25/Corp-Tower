@@ -163,6 +163,129 @@ test("getPlaceableOriginRange narrows as block width grows, keeping the full foo
     assert.deepEqual(engine.getPlaceableOriginRange(horizontalIBlock), { min: 4, max: 6 });
 });
 
+test("site width scales with target height, staying centered on the 14-column grid", () => {
+    const { engine } = createPlayingEngine(1, 8);
+
+    // A short target keeps the minimum 6-wide site; taller targets widen it so a
+    // tall tower gets a proportionally broader base to stand on.
+    assert.equal(engine.getSiteWidthForHeight(8), 6);
+    assert.deepEqual(engine.getPlaceableColumnRange(), { min: 4, max: 9 });
+
+    assert.ok(engine.getSiteWidthForHeight(30) > engine.getSiteWidthForHeight(8));
+    assert.equal(engine.getSiteWidthForHeight(1000), GameConfig.towerSiteWidthMax);
+
+    // every derived site stays centered, so the tower still renders mid-screen
+    [4, 8, 20, 30, 60].forEach(targetHeight => {
+        engine.room.targetHeight = targetHeight;
+        const range = engine.getPlaceableColumnRange();
+
+        assert.equal(
+            range.min + range.max,
+            GameConfig.towerGridWidth - 1,
+            `site for target ${targetHeight} is off-center`
+        );
+    });
+});
+
+test("placeable origin range follows the level's site, not a fixed 4-9 span", () => {
+    const { engine } = createPlayingEngine(1, 8);
+    const oBlock = { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
+
+    const narrow = engine.getPlaceableOriginRange(oBlock);
+
+    engine.room.targetHeight = 40;
+    const wide = engine.getPlaceableOriginRange(oBlock);
+
+    assert.ok(wide.min < narrow.min);
+    assert.ok(wide.max > narrow.max);
+    assert.equal(engine.resolveColumnOriginX(oBlock, wide.min - 1), wide.min);
+    assert.equal(engine.resolveColumnOriginX(oBlock, wide.max + 1), wide.max);
+});
+
+test("a slender spire collapses on integrity even when perfectly symmetrical", () => {
+    const entries = [];
+    const oBlock = { cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
+
+    for (let i = 0; i < 3; i++) {
+        const placement = TowerStability.settleBlock(entries, oBlock, 6);
+        entries.push({ block: oBlock, ...placement });
+    }
+
+    const short = TowerStability.evaluate(entries, GameConfig);
+
+    assert.equal(short.diagnostics.tiltScore, 0);
+    assert.equal(short.diagnostics.collapsed, false);
+
+    for (let i = 0; i < 12; i++) {
+        const placement = TowerStability.settleBlock(entries, oBlock, 6);
+        entries.push({ block: oBlock, ...placement });
+    }
+
+    const tall = TowerStability.evaluate(entries, GameConfig);
+
+    // zero lean the whole way up -- only the new slenderness term can fail this
+    assert.equal(tall.diagnostics.tiltScore, 0);
+    assert.equal(tall.diagnostics.integrity, 0);
+    assert.equal(tall.diagnostics.collapsed, true);
+    assert.equal(tall.stability, 0);
+});
+
+test("placement score scales with the stability the placer inherited", () => {
+    const { engine } = createPlayingEngine(1, 10);
+
+    GameConfig.scoring.placementStabilityFloor = 0.5;
+
+    const full = engine.getPlacementStabilityMultiplier(100);
+    const half = engine.getPlacementStabilityMultiplier(50);
+    const none = engine.getPlacementStabilityMultiplier(0);
+
+    assert.equal(full, 1);
+    assert.equal(half, 0.75);
+    assert.equal(none, 0.5);
+
+    engine.room.players[0].blocks = [createBlock(2)];
+    engine.room.towerStability = 0;
+    engine.placeBlock("P1", 0);
+
+    // 2 height x level 1 x 10 per height x 0.5 floor multiplier
+    assert.equal(engine.room.players[0].levelScore, 10);
+});
+
+test("reinforce pays for widening a slender tower's base", () => {
+    const { engine } = createPlayingEngine(1, 40);
+    const before = { integrity: 40, tiltScore: 0.8 };
+    const player = engine.room.players[0];
+
+    GameConfig.scoring.reinforceScorePerIntegrity = 1;
+    GameConfig.scoring.reinforceScorePerLean = 20;
+
+    const gained = engine.addReinforceScore(
+        player, before, { integrity: 60, tiltScore: 0.3 }
+    );
+
+    // +20 integrity x 1 and +0.5 lean correction x 20, at level 1
+    assert.equal(gained, 30);
+    assert.equal(player.scoreBreakdown.reinforce, 30);
+
+    // a placement that makes the tower worse pays nothing
+    assert.equal(
+        engine.addReinforceScore(player, before, { integrity: 10, tiltScore: 1.5 }),
+        0
+    );
+});
+
+test("an empty tower's first placement earns no phantom reinforce", () => {
+    const { engine } = createPlayingEngine(1, 10);
+
+    engine.room.players[0].blocks = [createBlock(2)];
+    engine.placeBlock("P1", 0);
+
+    assert.equal(
+        Number(engine.room.players[0].scoreBreakdown.reinforce || 0),
+        0
+    );
+});
+
 test("createBlock no longer assigns an anchorX field", () => {
     const { engine } = createPlayingEngine(1, 8);
     const block = engine.createBlock("O");

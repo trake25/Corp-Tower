@@ -11,6 +11,8 @@ function cellsFor(entry) {
 
 function key(x, y) { return `${x},${y}`; }
 
+function clamp01(value) { return Math.max(0, Math.min(1, value)); }
+
 function topHeight(entries) {
     return cellsForEntries(entries).reduce((top, cell) => Math.max(top, cell.y + 1), 0);
 }
@@ -38,6 +40,9 @@ function evaluate(entries, config) {
                 tiltScore: 0,
                 tiltAngleDeg: 0,
                 leanDirection: "center",
+                integrity: 100,
+                slenderness: 0,
+                supportRatio: 1,
                 collapsed: false
             }
         };
@@ -106,10 +111,38 @@ function evaluate(entries, config) {
     const maxTiltDeg = config.towerMaxTiltAngleDeg ?? 24;
     const tiltAngleDeg = Math.max(-maxTiltDeg, Math.min(maxTiltDeg, tiltScore * maxTiltDeg));
 
-    const collapsed = Math.abs(tiltScore) >= collapseThreshold;
-    const stability = collapsed
-        ? 0
-        : Math.round((1 - Math.min(1, Math.abs(tiltScore) / collapseThreshold)) * 100);
+    const height = topHeight(entries);
+    const groundWidth = Math.max(1, groundMaxX - groundMinX + 1);
+    const slenderness = height / groundWidth;
+    const slendernessSafe = config.towerSlendernessSafe ?? 2.5;
+    const slendernessMax = config.towerSlendernessMax ?? 6.0;
+    const slendernessMinHeight = Math.max(1, config.towerSlendernessMinHeight ?? 6);
+    const slendernessSpan = Math.max(0.0001, slendernessMax - slendernessSafe);
+    const slendernessPenalty =
+        clamp01((slenderness - slendernessSafe) / slendernessSpan) *
+        Math.min(1, height / slendernessMinHeight);
+
+    let unsupportedCells = 0;
+    for (const entry of entries) {
+        for (const cell of cellsFor(entry)) {
+            if (cell.y !== 0 && !occupied.has(key(cell.x, cell.y - 1))) {
+                unsupportedCells += 1;
+            }
+        }
+    }
+    const supportDeficit = cellCount > 0 ? unsupportedCells / cellCount : 0;
+    const supportDeficitMax = Math.max(0.0001, config.towerSupportDeficitMax ?? 0.35);
+    const supportPenalty = clamp01(supportDeficit / supportDeficitMax);
+
+    const integrity = Math.round(
+        (1 - clamp01(slendernessPenalty + supportPenalty)) * 100
+    );
+
+    const leanStability = Math.round(
+        (1 - Math.min(1, Math.abs(tiltScore) / collapseThreshold)) * 100
+    );
+    const collapsed = Math.abs(tiltScore) >= collapseThreshold || integrity <= 0;
+    const stability = collapsed ? 0 : Math.min(leanStability, integrity);
 
     let leanDirection = "center";
     if (tiltScore > 0.05) leanDirection = "right";
@@ -117,7 +150,18 @@ function evaluate(entries, config) {
 
     return {
         stability,
-        diagnostics: { comOffset, laneImbalance, overhangPenalty, tiltScore, tiltAngleDeg, leanDirection, collapsed }
+        diagnostics: {
+            comOffset,
+            laneImbalance,
+            overhangPenalty,
+            tiltScore,
+            tiltAngleDeg,
+            leanDirection,
+            integrity,
+            slenderness,
+            supportRatio: 1 - supportDeficit,
+            collapsed
+        }
     };
 }
 

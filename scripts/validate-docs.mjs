@@ -6,7 +6,7 @@
 //                         stack/dependency drift, oversized docs.
 // Also prints metrics (file count, lines per doc, links checked) for token budgeting.
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 
 const ROOT = resolve(process.argv[2] || '.');
 const CTX = join(ROOT, 'docs/context');
@@ -27,7 +27,10 @@ const files = readdirSync(CTX).filter(f => f.endsWith('.md'));
 const anchors = {};
 for (const f of files) {
   const seen = new Map(), set = new Set();
-  for (const line of readFileSync(join(CTX, f), 'utf8').split('\n')) {
+  // Split on \r?\n: a lone \r left on the line is a JS line terminator, so `.`
+  // in the heading regex below won't consume it and `$` never matches -- on a
+  // CRLF checkout that silently yields zero anchors and every #link reads dead.
+  for (const line of readFileSync(join(CTX, f), 'utf8').split(/\r?\n/)) {
     const m = /^#{1,6}\s+(.*)$/.exec(line);
     if (!m) continue;
     let s = slug(m[1]);
@@ -55,8 +58,12 @@ for (const f of files) {
     let tgt = f;
     if (pathPart) {
       const abs = resolve(CTX, pathPart);
-      const base = abs.split('/').pop();
-      if (abs.startsWith(CTX + '/') && base.endsWith('.md')) {
+      // `resolve()` returns backslash paths on Windows, so both the separator
+      // split and the prefix test must be platform-aware -- otherwise every
+      // link with a path part falls through to the else branch and `continue`s,
+      // skipping its anchor check and its orphan-tracking registration.
+      const base = abs.split(/[\\/]/).pop();
+      if (abs.startsWith(CTX + sep) && base.endsWith('.md')) {
         if (!files.includes(base)) { errors.push(`${f}: link to missing doc '${pathPart}'`); continue; }
         tgt = base; referenced.add(base);
       } else { if (!existsSync(abs)) errors.push(`${f}: link to missing file '${pathPart}'`); continue; }

@@ -4,9 +4,28 @@ const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 
 const GRID_WIDTH := 14
 const GRID_CENTER_COL := 6.5
-const PLACEABLE_COLUMN_MIN := 4
-const PLACEABLE_COLUMN_MAX := 9
+const DEFAULT_PLACEABLE_COLUMN_MIN := 4
+const DEFAULT_PLACEABLE_COLUMN_MAX := 9
 const SETTLE_SPAWN_MARGIN := 8
+
+# The placeable span is per-level: the server derives it from the level's target
+# height and sends it in game_state, so a taller target gets a wider build site.
+# Held as static state because it is genuinely global for the whole level -- the
+# alternative, threading it through every static function below, is far more
+# churn for the same value.
+static var placeable_column_min: int = DEFAULT_PLACEABLE_COLUMN_MIN
+static var placeable_column_max: int = DEFAULT_PLACEABLE_COLUMN_MAX
+
+static func set_placeable_range(min_column: int, max_column: int) -> void:
+	if min_column < 0 or max_column < min_column or max_column > GRID_WIDTH - 1:
+		return
+
+	placeable_column_min = min_column
+	placeable_column_max = max_column
+
+static func reset_placeable_range() -> void:
+	placeable_column_min = DEFAULT_PLACEABLE_COLUMN_MIN
+	placeable_column_max = DEFAULT_PLACEABLE_COLUMN_MAX
 
 # All positions here are *lattice* coordinates, not cell-center coordinates:
 # x is a column boundary index (column c spans x = c to c + 1) and y is a
@@ -91,21 +110,21 @@ static func settle_origin_y(tower_blocks: Array, cells: Array, origin_x: int) ->
 # outer columns.
 static func origin_range(cells: Array) -> Vector2i:
 	if cells.is_empty():
-		return Vector2i(PLACEABLE_COLUMN_MIN, PLACEABLE_COLUMN_MIN)
+		return Vector2i(placeable_column_min, placeable_column_min)
 
 	var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
 	var width: int = bounds.max_x - bounds.min_x + 1
 
 	return Vector2i(
-		PLACEABLE_COLUMN_MIN,
-		maxi(PLACEABLE_COLUMN_MIN, PLACEABLE_COLUMN_MAX - width + 1)
+		placeable_column_min,
+		maxi(placeable_column_min, placeable_column_max - width + 1)
 	)
 
 static func tower_snap_points(tower_blocks: Array) -> Array:
 	var seen: Dictionary = {}
 	var points: Array = []
 
-	for column in range(PLACEABLE_COLUMN_MIN, PLACEABLE_COLUMN_MAX + 2):
+	for column in range(placeable_column_min, placeable_column_max + 2):
 		var platform_point := Vector2i(column, 0)
 		seen[platform_point] = true
 		points.append(platform_point)
@@ -123,7 +142,7 @@ static func tower_snap_points(tower_blocks: Array) -> Array:
 			if seen.has(point):
 				continue
 
-			if point.x < PLACEABLE_COLUMN_MIN or point.x > PLACEABLE_COLUMN_MAX + 1:
+			if point.x < placeable_column_min or point.x > placeable_column_max + 1:
 				continue
 
 			seen[point] = true
@@ -183,7 +202,7 @@ static func resolve(
 		return {
 			"valid": false,
 			"snapped": false,
-			"column": PLACEABLE_COLUMN_MIN,
+			"column": placeable_column_min,
 			"origin_y": 0,
 			"target_point": Vector2i.ZERO,
 			"matched_vertex": Vector2i.ZERO

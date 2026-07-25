@@ -174,19 +174,62 @@ function buildDrawPile(engine) {
     );
 }
 
+function getAverageBrickHeight(engine) {
+    const shapes = GameConfig.brickShapes || [];
+    let weightedHeight = 0;
+    let totalWeight = 0;
+
+    shapes.forEach(shape => {
+        const weight = Number(GameConfig.brickWeights?.[shape.shapeId] ?? 1);
+        const rotations = getRotations(shape.cells);
+        const rotationHeight = rotations.reduce((total, cells) => {
+            return total + engine.getBlockHeight({ cells: cells });
+        }, 0);
+
+        weightedHeight += weight * (rotationHeight / rotations.length);
+        totalWeight += weight;
+    });
+
+    return totalWeight > 0 ? weightedHeight / totalWeight : 1;
+}
+
+function getAverageBrickCellCount(engine) {
+    const shapes = GameConfig.brickShapes || [];
+    let weightedCells = 0;
+    let totalWeight = 0;
+
+    shapes.forEach(shape => {
+        const weight = Number(GameConfig.brickWeights?.[shape.shapeId] ?? 1);
+
+        weightedCells += weight * (shape.cells || []).length;
+        totalWeight += weight;
+    });
+
+    return totalWeight > 0 ? weightedCells / totalWeight : 1;
+}
+
 function getGeneratedDrawPileBlockCount(engine) {
-    let generatedBlockCount = 0;
+    const averageBrickHeight = Math.max(1, engine.getAverageBrickHeight());
+    const requiredBrickHeight = Math.ceil(
+        engine.room.targetHeight / engine.getSupplyPackingEfficiency()
+    );
+    const bandCenter =
+        (GameConfig.levelSupplyMinSurplus + GameConfig.levelSupplyMaxSurplus) / 2;
+    const openingHandHeight =
+        engine.room.players.length *
+        engine.getBlocksPerPlayer() *
+        averageBrickHeight;
+    const carryOverHeight =
+        engine.getTotalBlockHeight(engine.room.teamCarryOverBlocks || []);
+    const shortfall =
+        requiredBrickHeight + bandCenter - openingHandHeight - carryOverHeight;
 
-    for (const level in GameConfig.generatedDrawPileScaling || {}) {
-        if (engine.room.level >= Number(level)) {
-            generatedBlockCount =
-                GameConfig.generatedDrawPileScaling[level];
-        }
-    }
-
-    return Math.min(
-        generatedBlockCount,
-        GameConfig.maxGeneratedDrawPileBlocks
+    return Math.max(
+        0,
+        Math.min(
+            Math.ceil(shortfall / averageBrickHeight),
+            GameConfig.maxGeneratedDrawPileBlocks
+        )
     );
 }
 
@@ -235,10 +278,13 @@ function generateSolvableOpeningHandBlocks(engine) {
 
 function isLevelBlockSupplyValid(engine, blocks, minimumOpeningBlocks) {
     const targetHeight = engine.room.targetHeight;
+    const requiredBrickHeight = Math.ceil(
+        targetHeight / engine.getSupplyPackingEfficiency()
+    );
     const minTotalHeight =
-        targetHeight + GameConfig.levelSupplyMinSurplus;
+        requiredBrickHeight + GameConfig.levelSupplyMinSurplus;
     const maxTotalHeight =
-        targetHeight + GameConfig.levelSupplyMaxSurplus;
+        requiredBrickHeight + GameConfig.levelSupplyMaxSurplus;
     const totalHeight = engine.getTotalBlockHeight(blocks);
 
     return (
@@ -463,6 +509,8 @@ module.exports = {
     getRandomBlock,
     getBlocksPerPlayer,
     buildDrawPile,
+    getAverageBrickHeight,
+    getAverageBrickCellCount,
     getGeneratedDrawPileBlockCount,
     generateDrawPileBlocks,
     generateSolvableOpeningHandBlocks,

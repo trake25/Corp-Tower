@@ -63,6 +63,7 @@ function getPlayerBonusBreakdown(engine, player) {
 
     return {
         placement: Number(breakdown.placement || 0),
+        reinforce: Number(breakdown.reinforce || 0),
         finisher: Number(breakdown.finisher || 0),
         precision: Number(breakdown.precision || 0),
         teamExact: Number(breakdown.team || 0),
@@ -118,13 +119,26 @@ function recordScoreBreakdown(engine, player, key, points) {
         Number(player.scoreBreakdown[key] || 0) + Number(points || 0);
 }
 
-function addPlacementScore(engine, player, block, effectiveHeight) {
+function getPlacementStabilityMultiplier(engine, stabilityBefore) {
+    const floor = Math.max(
+        0,
+        Math.min(1, Number(GameConfig.scoring.placementStabilityFloor) ?? 1)
+    );
+    const stability = Math.max(0, Math.min(100, Number(stabilityBefore ?? 100)));
+
+    return floor + (1 - floor) * (stability / 100);
+}
+
+function addPlacementScore(engine, player, block, effectiveHeight, stabilityBefore) {
     const scorePerHeight =
         Number(GameConfig.scoring.placementScorePerHeight) || 1;
+    const multiplier =
+        engine.getPlacementStabilityMultiplier(stabilityBefore);
     const points = Math.round(
         effectiveHeight *
             engine.room.level *
-            scorePerHeight
+            scorePerHeight *
+            multiplier
     );
 
     player.levelScore += points;
@@ -136,11 +150,50 @@ function addPlacementScore(engine, player, block, effectiveHeight) {
         meta: {
             effectiveHeight: effectiveHeight,
             blockHeight: engine.getBlockHeight(block),
+            stabilityMultiplier: multiplier,
             block: block
         }
     });
 
     console.log(`${player.id} gained ${points} score`);
+    return points;
+}
+
+function addReinforceScore(engine, player, before, after) {
+    const integrityGain = Math.max(
+        0,
+        Number(after?.integrity ?? 100) - Number(before?.integrity ?? 100)
+    );
+    const leanGain = Math.max(
+        0,
+        Math.abs(Number(before?.tiltScore ?? 0)) -
+            Math.abs(Number(after?.tiltScore ?? 0))
+    );
+    const perIntegrity =
+        Number(GameConfig.scoring.reinforceScorePerIntegrity) || 0;
+    const perLean = Number(GameConfig.scoring.reinforceScorePerLean) || 0;
+    const points = Math.round(
+        (integrityGain * perIntegrity + leanGain * perLean) *
+            engine.room.level
+    );
+
+    if (points <= 0) {
+        return 0;
+    }
+
+    player.levelScore += points;
+    engine.recordScoreBreakdown(player, "reinforce", points);
+    engine.queueScoreEvent("reinforce", {
+        playerId: player.id,
+        points: points,
+        label: "Reinforce",
+        meta: {
+            integrityGain: integrityGain,
+            leanGain: leanGain
+        }
+    });
+
+    console.log(`${player.id} gained ${points} reinforce score`);
     return points;
 }
 
@@ -253,6 +306,8 @@ module.exports = {
     buildLevelSummary,
     recordScoreBreakdown,
     addPlacementScore,
+    addReinforceScore,
+    getPlacementStabilityMultiplier,
     awardCompletionBonuses,
     addBonusScore,
     getBonusScoreEventType,

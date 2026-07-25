@@ -169,12 +169,16 @@ class BotManager {
         return this.chooseCooperativeAction(bot, engine);
     }
 
-    chooseBotColumn(engine, block) {
+    chooseBotColumn(engine, block, strategy = GameConfig.debugBotStrategy) {
         if (!block) {
-            return GameConfig.placeableColumnMin;
+            return engine.getPlaceableColumnRange().min;
         }
 
         const { min, max } = engine.getPlaceableOriginRange(block);
+        const greedy = strategy === "mvp_greedy";
+        const previousHeight = TowerStability.topHeight(
+            engine.room.towerBlocks || []
+        );
         let best = null;
 
         for (let column = min; column <= max; column++) {
@@ -193,13 +197,29 @@ class BotManager {
                 }
             ];
             const result = TowerStability.evaluate(projected, GameConfig);
+            const heightGain = Math.max(
+                0,
+                TowerStability.topHeight(projected) - previousHeight
+            );
 
-            if (!best || result.stability > best.stability) {
-                best = { column: column, stability: result.stability };
+            if (result.stability <= 0) {
+                continue;
+            }
+
+            const safe =
+                greedy ||
+                result.stability >= GameConfig.towerStabilityWarningThreshold;
+            const score =
+                (safe ? 1 : 0) * 1000000 +
+                heightGain * 1000 +
+                result.stability;
+
+            if (!best || score > best.score) {
+                best = { column: column, score: score };
             }
         }
 
-        return best ? best.column : GameConfig.placeableColumnMin;
+        return best ? best.column : min;
     }
 
     chooseCooperativeAction(bot, engine) {

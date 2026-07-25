@@ -1037,6 +1037,15 @@ text = "Refresh Useful Height: 0"
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="SupplyEffectiveWidthLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=3311000201]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Supply Effective Width: 50%"
+
+[node name="SupplyEffectiveWidthSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=3311000202]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="Scoring" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=1598351355]
 layout_mode = 1
 anchors_preset = 15
@@ -1113,6 +1122,33 @@ text = "Assist Threshold: 0%"
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="PlacementStabilityFloorLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000301]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Placement Stability Floor: 50%"
+
+[node name="PlacementStabilityFloorSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000302]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ReinforceIntegrityLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000303]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reinforce / Integrity: 1"
+
+[node name="ReinforceIntegritySlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000304]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ReinforceLeanLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000305]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reinforce / Lean: 20"
+
+[node name="ReinforceLeanSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000306]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="Tower" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=1828240395]
 layout_mode = 1
 anchors_preset = 15
@@ -1177,6 +1213,69 @@ layout_mode = 2
 text = "Stability Feedback"
 
 [node name="TowerFeedbackModeButton" type="OptionButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1040232117]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerSlendernessSafeLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000101]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Slenderness Safe: 2.5"
+
+[node name="TowerSlendernessSafeSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000102]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerSlendernessMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000103]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Slenderness Max: 6.0"
+
+[node name="TowerSlendernessMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000104]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerSlendernessMinHeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000105]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Slenderness Min Height: 6"
+
+[node name="TowerSlendernessMinHeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000106]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerSupportDeficitLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000107]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Support Deficit Max: 35%"
+
+[node name="TowerSupportDeficitSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000108]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerSiteSlendernessLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000109]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Site Slenderness Target: 2.75"
+
+[node name="TowerSiteSlendernessSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000110]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerSiteWidthMinLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000111]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Site Width Min: 6"
+
+[node name="TowerSiteWidthMinSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000112]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerSiteWidthMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000113]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Site Width Max: 12"
+
+[node name="TowerSiteWidthMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000114]
 unique_name_in_owner = true
 layout_mode = 2
 

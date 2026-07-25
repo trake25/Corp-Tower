@@ -7,8 +7,6 @@ const SnapGridScript = preload("res://Cor/Scripts/GameUi/SnapGrid.gd")
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 const GRID_CENTER_COL := SnapGridScript.GRID_CENTER_COL
-const PLACEABLE_COLUMN_MIN := SnapGridScript.PLACEABLE_COLUMN_MIN
-const PLACEABLE_COLUMN_MAX := SnapGridScript.PLACEABLE_COLUMN_MAX
 
 const SNAP_DOT_COLOR := Color(1.0, 1.0, 1.0, 0.5)
 const SNAP_TARGET_HALO_ALPHA := 0.85
@@ -365,10 +363,10 @@ func _draw_placeable_band(
 	top_units: float
 ) -> void:
 	var left: float = _lattice_to_local(
-		Vector2(float(PLACEABLE_COLUMN_MIN), 0.0), unit, base_x, baseline, scroll_offset_units
+		Vector2(float(SnapGridScript.placeable_column_min), 0.0), unit, base_x, baseline, scroll_offset_units
 	).x
 	var right: float = _lattice_to_local(
-		Vector2(float(PLACEABLE_COLUMN_MAX + 1), 0.0), unit, base_x, baseline, scroll_offset_units
+		Vector2(float(SnapGridScript.placeable_column_max + 1), 0.0), unit, base_x, baseline, scroll_offset_units
 	).x
 	var bottom: float = minf(
 		_height_to_pixel_y(0.0, unit, baseline, scroll_offset_units), size.y
@@ -401,7 +399,7 @@ func _draw_drag_ghost(
 	if drag_cells.is_empty():
 		return
 
-	var column: int = int(active_snap.get("column", PLACEABLE_COLUMN_MIN))
+	var column: int = int(active_snap.get("column", SnapGridScript.placeable_column_min))
 	var origin_y: int = int(active_snap.get("origin_y", 0))
 	var box: Rect2 = _footprint_box(
 		column, origin_y, drag_cells, unit, base_x, baseline, scroll_offset_units

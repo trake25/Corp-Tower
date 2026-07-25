@@ -1,6 +1,9 @@
 const GameEngine = require("../app/Game_Engine");
 const TowerStability = require("../app/Tower_Stability");
 const GameConfig = require("../app/Game_Config");
+const BotManager = require("../app/Bot_Manager");
+
+const STRATEGIES = ["cooperative", "mvp_greedy"];
 
 const DEFAULT_LEVELS = 20;
 const DEFAULT_RUNS = 1000;
@@ -40,7 +43,7 @@ function withMutedConsole(callback) {
     }
 }
 
-function chooseSmartPlacement(engine) {
+function chooseSmartPlacement(engine, strategy) {
     const remainingHeight =
         engine.room.targetHeight - engine.room.currentHeight;
     const candidates = [];
@@ -67,6 +70,10 @@ function chooseSmartPlacement(engine) {
         return exact;
     }
 
+    if (strategy === "mvp_greedy") {
+        return candidates.sort((a, b) => b.height - a.height)[0];
+    }
+
     const nonOverkill = candidates.filter(candidate => {
         return candidate.height <= remainingHeight;
     });
@@ -84,52 +91,44 @@ function chooseSmartPlacement(engine) {
     return candidates.sort((a, b) => a.height - b.height)[0];
 }
 
-function chooseStablestColumn(engine, block) {
-    const { min, max } = engine.getPlaceableOriginRange(block);
-    let best = null;
-
-    for (let column = min; column <= max; column++) {
-        const originX = engine.resolveColumnOriginX(block, column);
-        const placement = TowerStability.settleBlock(
-            engine.room.towerBlocks || [], block, originX
-        );
-        const projected = [...(engine.room.towerBlocks || []), {
-            block, originX: placement.originX, originY: placement.originY
-        }];
-        const result = TowerStability.evaluate(projected, GameConfig);
-
-        if (!best || result.stability > best.stability) {
-            best = { column, stability: result.stability };
-        }
-    }
-
-    return best ? best.column : GameConfig.placeableColumnMin;
+function chooseStablestColumn(engine, block, strategy) {
+    return BotManager.chooseBotColumn(engine, block, strategy);
 }
 
-function simulateSmartPlay(engine) {
+function simulateSmartPlay(engine, strategy) {
     let placements = 0;
     let finisher = null;
     let finishingBlock = null;
+    let brickHeightPlaced = 0;
+
+    const outcome = extra => ({
+        completed: false,
+        exact: false,
+        overbuild: 0,
+        collapsed: false,
+        placements: placements,
+        brickHeightPlaced: brickHeightPlaced,
+        efficiency:
+            brickHeightPlaced > 0
+                ? engine.room.currentHeight / brickHeightPlaced
+                : 0,
+        ...getScoreSummary(engine),
+        ...extra
+    });
 
     while (engine.room.currentHeight < engine.room.targetHeight) {
-        const placement = chooseSmartPlacement(engine);
+        const placement = chooseSmartPlacement(engine, strategy);
 
         if (!placement) {
-            const scoreSummary = getScoreSummary(engine);
-
-            return {
-                completed: false,
-                exact: false,
-                overbuild: 0,
-                placements: placements,
-                ...scoreSummary
-            };
+            return outcome({});
         }
 
         const block = placement.player.blocks.splice(placement.blockIndex, 1)[0];
         const blockHeight = engine.getBlockHeight(block);
         const previousHeight = engine.room.currentHeight;
-        const column = chooseStablestColumn(engine, block);
+        const stabilityBefore = engine.room.towerStability ?? 100;
+        const structureBefore = engine.room.towerStabilityDiagnostics || {};
+        const column = chooseStablestColumn(engine, block, strategy);
         const placementPosition = TowerStability.settleBlock(
             engine.room.towerBlocks || [], block, engine.resolveColumnOriginX(block, column)
         );
@@ -144,13 +143,20 @@ function simulateSmartPlay(engine) {
 
         placement.player.contributedHeight += effectiveHeight;
         engine.room.currentHeight = newHeight;
+        brickHeightPlaced += blockHeight;
         engine.room.towerBlocks.push({ playerId: placement.player.id, block, ...placementPosition });
-        const structure = TowerStability.evaluate(engine.room.towerBlocks, require("../app/Game_Config"));
+        const structure = TowerStability.evaluate(engine.room.towerBlocks, GameConfig);
         engine.room.towerStability = structure.stability;
+        engine.room.towerStabilityDiagnostics = structure.diagnostics;
         if (structure.stability <= 0) {
-            return { completed: false, collapsed: true, placements: placements + 1, ...getScoreSummary(engine) };
+            return outcome({ collapsed: true, placements: placements + 1 });
         }
-        engine.addPlacementScore(placement.player, block, effectiveHeight);
+        engine.addPlacementScore(
+            placement.player, block, effectiveHeight, stabilityBefore
+        );
+        engine.addReinforceScore(
+            placement.player, structureBefore, structure.diagnostics
+        );
         placements += 1;
         finisher = placement.player;
         finishingBlock = block;
@@ -162,17 +168,12 @@ function simulateSmartPlay(engine) {
     engine.awardCompletionBonuses(finisher, exact);
     engine.addLevelScoreToLeaderboard();
 
-    const scoreSummary = getScoreSummary(engine);
-
-    return {
+    return outcome({
         completed: true,
         exact: exact,
         overbuild: Math.max(0, engine.room.currentHeight - engine.room.targetHeight),
-        placements: placements,
-        collapsed: false,
-        stability: engine.room.towerStability || 100,
-        ...scoreSummary
-    };
+        stability: engine.room.towerStability || 100
+    });
 }
 
 function getScoreSummary(engine) {
@@ -188,7 +189,7 @@ function getScoreSummary(engine) {
     };
 }
 
-function runLevel(level, runs) {
+function runLevel(level, runs, strategy = "cooperative") {
     const stats = {
         targetHeight: 0,
         averagePileBlocks: 0,
@@ -197,6 +198,9 @@ function runLevel(level, runs) {
         exactPossible: 0,
         smartCompleted: 0,
         smartExact: 0,
+        collapsed: 0,
+        siteWidth: 0,
+        averageEfficiency: 0,
         averageOverbuild: 0,
         averagePlacements: 0,
         averageTeamLevelScore: 0,
@@ -212,7 +216,7 @@ function runLevel(level, runs) {
         ];
         const drawPileAfterDeal = engine.room.drawPile.length;
         const totalHeight = engine.getTotalBlockHeight(allBlocks);
-        const result = withMutedConsole(() => simulateSmartPlay(engine));
+        const result = withMutedConsole(() => simulateSmartPlay(engine, strategy));
 
         stats.targetHeight = engine.room.targetHeight;
         stats.averagePileBlocks += allBlocks.length;
@@ -224,6 +228,9 @@ function runLevel(level, runs) {
         ) ? 1 : 0;
         stats.smartCompleted += result.completed ? 1 : 0;
         stats.smartExact += result.exact ? 1 : 0;
+        stats.collapsed += result.collapsed ? 1 : 0;
+        stats.siteWidth = engine.getSiteWidthForHeight(engine.room.targetHeight);
+        stats.averageEfficiency += result.efficiency;
         stats.averageOverbuild += result.overbuild;
         stats.averagePlacements += result.placements;
         stats.averageTeamLevelScore += result.teamLevelScore;
@@ -233,6 +240,7 @@ function runLevel(level, runs) {
 
     return {
         level: level,
+        strategy: strategy,
         targetHeight: stats.targetHeight,
         averagePileBlocks: stats.averagePileBlocks / runs,
         averageDrawPileAfterDeal: stats.averageDrawPileAfterDeal / runs,
@@ -240,6 +248,9 @@ function runLevel(level, runs) {
         exactPossibleRate: stats.exactPossible / runs,
         smartCompletionRate: stats.smartCompleted / runs,
         smartExactRate: stats.smartExact / runs,
+        collapseRate: stats.collapsed / runs,
+        siteWidth: stats.siteWidth,
+        averageEfficiency: stats.averageEfficiency / runs,
         averageOverbuild: stats.averageOverbuild / runs,
         averagePlacements: stats.averagePlacements / runs,
         averageTeamLevelScore: stats.averageTeamLevelScore / runs,
@@ -256,13 +267,17 @@ function printResults(results) {
     console.log(
         [
             "level",
+            "strategy",
             "target",
+            "site",
+            "efficiency",
             "avgBlocks",
             "avgDrawAfterDeal",
             "avgHeight",
             "exactPossible",
             "smartComplete",
             "smartExact",
+            "collapse",
             "avgOverbuild",
             "avgPlacements",
             "avgTeamScore",
@@ -275,13 +290,17 @@ function printResults(results) {
         console.log(
             [
                 result.level,
+                result.strategy,
                 result.targetHeight,
+                result.siteWidth,
+                result.averageEfficiency.toFixed(3),
                 result.averagePileBlocks.toFixed(1),
                 result.averageDrawPileAfterDeal.toFixed(1),
                 result.averageTotalHeight.toFixed(1),
                 percent(result.exactPossibleRate),
                 percent(result.smartCompletionRate),
                 percent(result.smartExactRate),
+                percent(result.collapseRate),
                 result.averageOverbuild.toFixed(2),
                 result.averagePlacements.toFixed(1),
                 result.averageTeamLevelScore.toFixed(1),
@@ -297,8 +316,10 @@ function main() {
     const runs = Number(process.argv[3]) || DEFAULT_RUNS;
     const results = [];
 
-    for (let level = 1; level <= levels; level++) {
-        results.push(runLevel(level, runs));
+    for (const strategy of STRATEGIES) {
+        for (let level = 1; level <= levels; level++) {
+            results.push(runLevel(level, runs, strategy));
+        }
     }
 
     printResults(results);

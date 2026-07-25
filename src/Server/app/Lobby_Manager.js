@@ -29,12 +29,23 @@ const DEFAULT_DEBUG_CONFIG = {
     towerOverhangWeight: GameConfig.towerOverhangWeight,
     towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
     towerCollapseTiltScore: GameConfig.towerCollapseTiltScore,
+    towerSlendernessSafe: GameConfig.towerSlendernessSafe,
+    towerSlendernessMax: GameConfig.towerSlendernessMax,
+    towerSlendernessMinHeight: GameConfig.towerSlendernessMinHeight,
+    towerSupportDeficitMax: GameConfig.towerSupportDeficitMax,
+    towerSiteSlendernessTarget: GameConfig.towerSiteSlendernessTarget,
+    towerSiteWidthMin: GameConfig.towerSiteWidthMin,
+    towerSiteWidthMax: GameConfig.towerSiteWidthMax,
+    supplyEffectiveWidthRatio: GameConfig.supplyEffectiveWidthRatio,
     towerStabilityWarningThreshold: GameConfig.towerStabilityWarningThreshold,
     towerStabilityCriticalThreshold: GameConfig.towerStabilityCriticalThreshold,
     powerUnlockLevel: GameConfig.powerUnlockLevel,
     powerMaxSlots: GameConfig.powerMaxSlots,
     powerActivationCooldownMs: GameConfig.powerActivationCooldownMs,
     placementScorePerHeight: GameConfig.scoring.placementScorePerHeight,
+    placementStabilityFloor: GameConfig.scoring.placementStabilityFloor,
+    reinforceScorePerIntegrity: GameConfig.scoring.reinforceScorePerIntegrity,
+    reinforceScorePerLean: GameConfig.scoring.reinforceScorePerLean,
     finisherBonusPerLevel: GameConfig.scoring.finisherBonusPerLevel,
     precisionBonusPerLevel: GameConfig.scoring.precisionBonusPerLevel,
     teamExactBonusPerLevel: GameConfig.scoring.teamExactBonusPerLevel,
@@ -454,6 +465,14 @@ class LobbyManager {
             towerOverhangWeight: GameConfig.towerOverhangWeight,
             towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
             towerCollapseTiltScore: GameConfig.towerCollapseTiltScore,
+            towerSlendernessSafe: GameConfig.towerSlendernessSafe,
+            towerSlendernessMax: GameConfig.towerSlendernessMax,
+            towerSlendernessMinHeight: GameConfig.towerSlendernessMinHeight,
+            towerSupportDeficitMax: GameConfig.towerSupportDeficitMax,
+            towerSiteSlendernessTarget: GameConfig.towerSiteSlendernessTarget,
+            towerSiteWidthMin: GameConfig.towerSiteWidthMin,
+            towerSiteWidthMax: GameConfig.towerSiteWidthMax,
+            supplyEffectiveWidthRatio: GameConfig.supplyEffectiveWidthRatio,
             towerStabilityWarningThreshold:
                 GameConfig.towerStabilityWarningThreshold,
             towerStabilityCriticalThreshold:
@@ -462,6 +481,10 @@ class LobbyManager {
             powerMaxSlots: GameConfig.powerMaxSlots,
             powerActivationCooldownMs: GameConfig.powerActivationCooldownMs,
             placementScorePerHeight: GameConfig.scoring.placementScorePerHeight,
+            placementStabilityFloor: GameConfig.scoring.placementStabilityFloor,
+            reinforceScorePerIntegrity:
+                GameConfig.scoring.reinforceScorePerIntegrity,
+            reinforceScorePerLean: GameConfig.scoring.reinforceScorePerLean,
             finisherBonusPerLevel: GameConfig.scoring.finisherBonusPerLevel,
             precisionBonusPerLevel: GameConfig.scoring.precisionBonusPerLevel,
             teamExactBonusPerLevel: GameConfig.scoring.teamExactBonusPerLevel,
@@ -508,6 +531,19 @@ class LobbyManager {
         GameConfig.towerOverhangWeight = DEFAULT_DEBUG_CONFIG.towerOverhangWeight;
         GameConfig.towerMaxTiltAngleDeg = DEFAULT_DEBUG_CONFIG.towerMaxTiltAngleDeg;
         GameConfig.towerCollapseTiltScore = DEFAULT_DEBUG_CONFIG.towerCollapseTiltScore;
+        GameConfig.towerSlendernessSafe =
+            DEFAULT_DEBUG_CONFIG.towerSlendernessSafe;
+        GameConfig.towerSlendernessMax = DEFAULT_DEBUG_CONFIG.towerSlendernessMax;
+        GameConfig.towerSlendernessMinHeight =
+            DEFAULT_DEBUG_CONFIG.towerSlendernessMinHeight;
+        GameConfig.towerSupportDeficitMax =
+            DEFAULT_DEBUG_CONFIG.towerSupportDeficitMax;
+        GameConfig.towerSiteSlendernessTarget =
+            DEFAULT_DEBUG_CONFIG.towerSiteSlendernessTarget;
+        GameConfig.towerSiteWidthMin = DEFAULT_DEBUG_CONFIG.towerSiteWidthMin;
+        GameConfig.towerSiteWidthMax = DEFAULT_DEBUG_CONFIG.towerSiteWidthMax;
+        GameConfig.supplyEffectiveWidthRatio =
+            DEFAULT_DEBUG_CONFIG.supplyEffectiveWidthRatio;
         GameConfig.towerStabilityWarningThreshold =
             DEFAULT_DEBUG_CONFIG.towerStabilityWarningThreshold;
         GameConfig.towerStabilityCriticalThreshold =
@@ -518,6 +554,12 @@ class LobbyManager {
             DEFAULT_DEBUG_CONFIG.powerActivationCooldownMs;
         GameConfig.scoring.placementScorePerHeight =
             DEFAULT_DEBUG_CONFIG.placementScorePerHeight;
+        GameConfig.scoring.placementStabilityFloor =
+            DEFAULT_DEBUG_CONFIG.placementStabilityFloor;
+        GameConfig.scoring.reinforceScorePerIntegrity =
+            DEFAULT_DEBUG_CONFIG.reinforceScorePerIntegrity;
+        GameConfig.scoring.reinforceScorePerLean =
+            DEFAULT_DEBUG_CONFIG.reinforceScorePerLean;
         GameConfig.scoring.finisherBonusPerLevel =
             DEFAULT_DEBUG_CONFIG.finisherBonusPerLevel;
         GameConfig.scoring.precisionBonusPerLevel =
@@ -657,7 +699,19 @@ class LobbyManager {
             refreshMinUsefulBlockHeight: setGameInt("refreshMinUsefulBlockHeight", 1, 6),
             towerOverhangWeight: setGameNumber("towerOverhangWeight", 0, 1),
             towerMaxTiltAngleDeg: setGameInt("towerMaxTiltAngleDeg", 5, 60),
-            towerCollapseTiltScore: setGameNumber("towerCollapseTiltScore", 0.3, 3),
+            towerCollapseTiltScore: setGameNumber("towerCollapseTiltScore", 0.3, 8),
+            towerSlendernessSafe: setGameNumber("towerSlendernessSafe", 0.5, 10),
+            towerSlendernessMax: setGameNumber("towerSlendernessMax", 1, 20),
+            towerSlendernessMinHeight:
+                setGameInt("towerSlendernessMinHeight", 1, 30),
+            towerSupportDeficitMax:
+                setGameNumber("towerSupportDeficitMax", 0.05, 1),
+            towerSiteSlendernessTarget:
+                setGameNumber("towerSiteSlendernessTarget", 1, 8),
+            towerSiteWidthMin: setGameInt("towerSiteWidthMin", 2, 14),
+            towerSiteWidthMax: setGameInt("towerSiteWidthMax", 2, 14),
+            supplyEffectiveWidthRatio:
+                setGameNumber("supplyEffectiveWidthRatio", 0.1, 2),
             towerStabilityWarningThreshold:
                 setGameInt("towerStabilityWarningThreshold", 0, 100),
             towerStabilityCriticalThreshold:
@@ -667,6 +721,12 @@ class LobbyManager {
             powerActivationCooldownMs:
                 setGameInt("powerActivationCooldownMs", 0, 30000),
             placementScorePerHeight: setScoringInt("placementScorePerHeight", 1, 25),
+            placementStabilityFloor:
+                setScoringNumber("placementStabilityFloor", 0, 1),
+            reinforceScorePerIntegrity:
+                setScoringNumber("reinforceScorePerIntegrity", 0, 25),
+            reinforceScorePerLean:
+                setScoringNumber("reinforceScorePerLean", 0, 200),
             finisherBonusPerLevel: setScoringInt("finisherBonusPerLevel", 0, 25),
             precisionBonusPerLevel: setScoringInt("precisionBonusPerLevel", 0, 25),
             teamExactBonusPerLevel: setScoringInt("teamExactBonusPerLevel", 0, 25),
