@@ -36,7 +36,7 @@ Every new connection triggers a `debug_config` broadcast to all connected real p
 | Message | Validation |
 |---|---|
 | `reconnect` | Token/player id may resume a room; otherwise server creates a new session and queues the player |
-| `place_block` | Valid room, player, state, cooldown, inventory, block index; `lane` = `left`/`center`/`right` (defaults to `center` if absent/invalid). Server maps lane → grid `originX` via `resolveLaneOriginX` |
+| `place_block` | Valid room, player, state, cooldown, inventory, block index; `column` = integer target origin column (defaults to `placeableColumnMin` if absent/invalid). Server maps column → grid `originX` via `resolveColumnOriginX`, clamped to the brick's valid placeable range (`getPlaceableOriginRange`) |
 | `activate_power` | Valid room, player, held item at `slot`, shared activation cooldown. **No target field** — effect applies to every player in the room, caster included. There is no separate refresh message; refresh is `activate_power` with a `refresh` item, and rerolls every player's blocks unconditionally |
 | `send_quick_chat` | Valid active room, template slot `0..2`, server-authoritative per-player cooldown |
 | `update_config` | Key allowlist, value ranges, bot-delay min/max, bot-count clamp, bot-strategy allowlist, tower-stability feedback-mode allowlist, `resetDebugConfig` default-restore action — exact clamp ranges in [backend.md § Lobby Manager](./backend.md#lobby-manager) |
@@ -45,15 +45,15 @@ Every new connection triggers a `debug_config` broadcast to all connected real p
 
 Inventory cards use drag-and-drop, not tap-to-place:
 - Drag starts only on active slots with blocks, while match state is `playing` and the local placement cooldown has elapsed. Locked/empty slots and blocked server states don't start a drag.
-- Release inside `TowerDropZone` sends `place_block` with the brick's inventory index **and a `lane`**. The lane comes from the release x-position within the drop zone, split into thirds → `left`/`center`/`right` (`InventoryController.lane_for_global_pos`). Release elsewhere cancels locally with no server message.
-- Only the x→lane bucket is meaningful; exact pointer y/geometry is visual only. The server still owns the final grid `originX`/`originY` (drop-to-contact).
+- On every drag move, `InventoryController` asks `TowerStack.update_snap_preview(active, cells, global_pos)` for the nearest valid target column — the brick's corner nearest the cursor snaps to the nearest of the platform's 7 fixed points, clamped so the full footprint stays within the placeable column range (mirrors the server's `getPlaceableOriginRange` exactly). Release inside `TowerDropZone` sends `place_block` with the brick's inventory index **and that resolved `column`**. Release elsewhere cancels locally with no server message.
+- Only the resolved column is meaningful; exact pointer y/geometry is visual only. The server still owns the final grid `originX`/`originY` (drop-to-contact), re-clamping the client's column authoritatively.
 - `game_state`/`debug_config` stay backward-compatible; drag behavior layers local cooldown timing (from `placementCooldown`) on top of existing authoritative fields.
 
 ## Block & tower payloads
 
 | Field | Meaning |
 |---|---|
-| `blocks[]` (inventory) | Server-assigned bricks `{ id, shapeId, cells, anchorX, height }` (5 shapes `I`/`O`/`L`/`T`/`Z`, each dealt with a random rotation baked into `cells`/`height`). `anchorX` = the local cell column aligned to the chosen placement lane, chosen randomly per block at creation (not derived from `cells`) |
+| `blocks[]` (inventory) | Server-assigned bricks `{ id, shapeId, cells, height }` (5 shapes `I`/`O`/`L`/`T`/`Z`, each dealt with a random rotation baked into `cells`/`height`). No per-block anchor cell — the client resolves its target column directly from `cells`' own geometry |
 | `activeInventorySlots` | Currently unlocked active hand slots |
 | `maxActiveBlocks` | Max active hand slots the UI/rules support |
 | `nextDrawBlock` | First block in the shared draw pile, or `null` when empty |
@@ -61,7 +61,7 @@ Inventory cards use drag-and-drop, not tap-to-place:
 | `cells` | `[x, y]` unit-coordinate array; used by the client for shape previews and tower rendering |
 | `height` | Vertical footprint derived from `cells` — not necessarily equal to cell count |
 | `towerBlocks[]` | Ordered placement history: `{ playerId, block, height, effectiveHeight, baseHeight }`, so clients can redraw the tower after a broadcast or reconnect |
-| `originX` / `originY` | Resolved structural coordinates (lane-derived `originX`, drop-settled `originY`) on the 9-column grid |
+| `originX` / `originY` | Resolved structural coordinates (column-derived `originX`, drop-settled `originY`) on the 14-column grid (placement confined to columns 4–9) |
 | `towerStability` / `towerStabilityDiagnostics` | Stability score + diagnostics `{ comOffset, laneImbalance, overhangPenalty, tiltScore, tiltAngleDeg, leanDirection, collapsed }` (see [backend.md § Tower Stability](./backend.md#tower-stability)) |
 | `impactScoreStatus` | Right-panel helper: next Impact level, ready-count inputs, per-player leaderboard score goals |
 
@@ -107,7 +107,7 @@ Room snapshots include `impactScores`, `impactPowers`, `drawPile`, `teamCarryOve
 
 `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` — the client's only connection to the server, registered as an autoload singleton.
 
-- **Methods:** `connect_server(is_auto_reconnect := false, is_failover_retry := false)`, `disconnect_server()`, `toggle_connection()`, `place_block(block_index)`, `send_quick_chat(slot)`, `activate_power(slot)`, `update_config(key, value)`.
+- **Methods:** `connect_server(is_auto_reconnect := false, is_failover_retry := false)`, `disconnect_server()`, `toggle_connection()`, `place_block(block_index, column := -1)`, `send_quick_chat(slot)`, `activate_power(slot)`, `update_config(key, value)`.
 - **Signals:** `status_changed(text)`, `room_joined(data)`, `room_closed(data)`, `game_state_updated(data)`, `client_status(status)`, `debug_config_updated(config)`.
 - **State (read directly by [Main UI Controller](./ui.md#main-ui-controller) in places, not only via signals):** `is_conn_estab: bool`, `player_id: String`.
 - **Primary/backup failover:** every fresh connect (`is_auto_reconnect` and `is_failover_retry` both false) starts at `SERVER_URL` (primary). `WebSocketPeer` has no built-in connect timeout, so a manual one is enforced: a connection stuck in `STATE_CONNECTING` past `CONNECT_TIMEOUT_SECONDS` (`5.0`) is force-closed via `ws.close()`, which flows into the normal `STATE_CLOSED` handling. If that closure happened before the socket ever reached `STATE_OPEN`, and the backup hasn't been tried yet this connect cycle (`tried_failover`), NetworkManager retries once against `FAILOVER_SERVER_URL` (`connect_server(false, true)`), emitting `"Primary server unreachable, trying backup..."`. Once failed over, in-game auto-reconnects (real `is_auto_reconnect` retries) keep targeting the backup rather than flipping back to primary — a fresh manual connect (`toggle_connection()`) is what resets to primary again.

@@ -2,11 +2,11 @@
 
 Source of truth for game design: rules, scoring, balance, progression. Technical implementation of these systems → [backend.md](./backend.md). Wire contract → [networking.md](./networking.md). Doc ownership: update this file for design/rules/scoring/balance/progression/debug-tuning-semantics/bot-behavior changes; see [coding-conventions.md](./coding-conventions.md) for the full doc-ownership map.
 
-> ⚠️ The 5-brick / 3-lane overhaul is implemented but **balance tuning is ongoing** — high-level completion is still low in the greedy simulator. Verify stability weights, the target-height curve, and scoring rates against current values before trusting them (see [decisions.md](./decisions.md#five-fixed-bricks--3-lane-placement-replace-the-size-ramp)).
+> ⚠️ The 5-brick / corner-snap column-placement overhaul is implemented but **balance tuning is ongoing** — high-level completion is still low in the greedy simulator, and the narrower 6-of-14 placeable footprint hasn't been re-tuned since the switch away from lanes. Verify stability weights, the target-height curve, and scoring rates against current values before trusting them (see [decisions.md](./decisions.md#14-column-corner-snap-placement-replaces-lanes-and-anchors)).
 
 ## Core concept
 
-3-player real-time **selfish-cooperation** puzzle game. Players build one shared tower from server-assigned blocks (random shape, rotation, and lane-anchor cell) while competing individually for level score / MVP. Team must reach target height together; individuals are scored separately.
+3-player real-time **selfish-cooperation** puzzle game. Players build one shared tower from server-assigned blocks (random shape and rotation) while competing individually for level score / MVP. Team must reach target height together; individuals are scored separately.
 
 ## Core game loop
 
@@ -18,7 +18,7 @@ Source of truth for game design: rules, scoring, balance, progression. Technical
 6. Level ends on target height reached or a failure condition.
 7. Score, save unused blocks into next draw pile, advance level.
 
-Placement: players drag a brick from an inventory card onto the shared tower and release over one of **three lanes — left / center / right** (see [Placement lanes](#placement-lanes)); the release x-position picks the lane (client UX detail → [networking.md § Client Placement UI](./networking.md#client-placement-ui)).
+Placement: players drag a brick from an inventory card onto the shared tower; its nearest corner snaps to the nearest of 7 fixed points spanning the **placeable column range** (see [Placement columns](#placement-columns)) — release sends the resolved column (client UX detail → [networking.md § Client Placement UI](./networking.md#client-placement-ui)).
 
 ## Reconnect and shared room continuity (design rule)
 
@@ -33,7 +33,7 @@ Wire-level reconnect contract → [networking.md](./networking.md#reconnect). Se
 - **Five fixed brick types only:** `I`, `O`, `L`, `T`, `Z` — all 4-cell tetrominoes, **all available from level 1** (no size-unlock ramp). Defined in `Game_Config.brickShapes` (canonical/unrotated cells only); drawn by weight (`brickWeights`). Shape-id naming → [glossary.md](./glossary.md).
 - **Random rotation at generation.** `Block_Supply.createBlock` picks a random rotation of the drawn shape (still not player-rotatable once dealt) — see [decisions.md](./decisions.md#random-rotation-9-column-lane-grid-and-per-instance-random-anchor). Effective height/width therefore varies by draw, not by shape: e.g. `I` is height 4 vertical or height 1 horizontal. Precision blocks = height ≤ 2.
 - **Effective height** = the drawn rotation's actual vertical footprint, not cell count.
-- Server sends each block as `{ id, shapeId, cells, anchorX, height }`. `cells` reflects the rotation actually drawn. `anchorX` is a **random column within that rotation's width, chosen once at creation** — not a fixed per-shape value — and is the local cell column that lands on whichever placement lane the player later picks (see [Placement lanes](#placement-lanes)).
+- Server sends each block as `{ id, shapeId, cells, height }`. `cells` reflects the rotation actually drawn. There is no per-block anchor cell — the client resolves a target column directly from the brick's own geometry (see [Placement columns](#placement-columns)).
 
 ### Inventory rules
 
@@ -111,16 +111,17 @@ Each catalog entry (`GameConfig.powerCatalog`) carries an `active` flag gating w
 - Overbuilding is allowed; excess height is wasted. Exact height triggers precision-bonus rewards.
 - Client renders the tower from authoritative server placement history (`towerBlocks`) when available.
 
-### Placement lanes
+### Placement columns
 
-- The shared tower is a **9-column authoritative grid** (`towerGridWidth` = 9). Players can aim at **three lanes** — left / center / right = columns 3 / 4 / 5 (`placeableLanes`), one column apart. Columns 0–2 and 6–8 are **outer overflow only**, never directly selectable.
-- The chosen lane places the brick's `anchorX` cell on that column: `originX = laneColumn − anchorX`, clamped so the brick stays within columns 0–8. `anchorX` is fixed per block instance (random at creation, see [Block system](#block-system)) — the same cell is used regardless of which lane is later picked, which is what keeps all three lanes' placements distinct for every brick width; see [decisions.md](./decisions.md#random-rotation-9-column-lane-grid-and-per-instance-random-anchor) for the design history (two alternate anchor/spacing schemes were tried and rejected first). Server-side resolution: `Game_Engine.resolveLaneOriginX()` → [backend.md § Game Engine](./backend.md#game-engine).
+- The shared tower is a **14-column authoritative grid** (`towerGridWidth` = 14). Only columns **4–9 are placeable** (`placeableColumnMin`/`placeableColumnMax`) — columns 0–3 and 10–13 are permanently unplaceable, a hard exclusion with **no overflow/spillover** (unlike the retired lane system). Replaces the earlier 9-column/3-lane grid — see [decisions.md](./decisions.md#14-column-corner-snap-placement-replaces-lanes-and-anchors).
+- **Corner-snap placement.** The platform exposes **7 fixed snap points**, one at each column boundary spanning the placeable range (i.e. the boundaries of columns 4–9). While dragging, whichever corner of the brick is nearest the cursor snaps to the nearest of those points — clamped so the brick's full footprint stays within columns 4–9 — resolving the integer `column` sent to the server. Server-side resolution/clamp: `Game_Engine.resolveColumnOriginX()`/`getPlaceableOriginRange()` → [backend.md § Game Engine](./backend.md#game-engine). There is no per-block anchor cell anymore — the brick's own geometry determines where it lands, not a randomly-chosen internal cell.
 - The brick then **falls to first contact per column** and may cantilever/overhang (e.g. a `T` resting off-center balances on its single stem — the intended stability hook).
-- **Anchor-cell indicator (client, placeholder art):** the inventory card and drag preview mark the brick's anchor column with a drawn placeholder smiley so the player can see which cell will land on the chosen lane's guide before dropping — no anchor-cell art asset exists yet. Full detail → [ui.md § Leaf components](./ui.md#leaf-components).
+- **Snap-point indicators (client, placeholder art):** while dragging, filled red dots mark the true outline corners — not bounding-box corners, which for `L`/`T`/`Z` would include phantom points the brick doesn't occupy — of the platform and every already-placed brick; hollow red dots mark the dragged ghost's own outline corners. No real snap-point art asset exists yet. Full detail → [ui.md § Leaf components](./ui.md#leaf-components).
+- **Spawn/drop animation.** On release, the brick appears at a computed spawn height — platform top + current tower height (global peak) + 2× the brick's own height — and animates falling to its server-resolved resting position, replacing the old fixed-distance fall. Full detail → [ui.md § Leaf components](./ui.md#leaf-components).
 
 ### Tower stability (design view)
 
-- Bricks fall to ground or first contact on the 9-column grid, in whichever rotation they were drawn.
+- Bricks fall to ground or first contact on the 14-column grid (placement confined to columns 4–9), in whichever rotation they were drawn.
 - Center-of-mass drift, **lane-height imbalance** (an uneven spread across the columns leans the tower toward the taller side), overhangs, and off-center supports reduce deterministic stability 100 → 0.
 - Warning/critical wobble feedback fires at tuned thresholds; stability hitting 0 collapses the tower and fails the level **before** a target-height completion can count.
 - Algorithm detail (pure grid physics) → [backend.md § Tower Stability](./backend.md#tower-stability).
@@ -171,7 +172,7 @@ Overhauled to reward **helping fill the Impact** and **reaching target height, e
 | System | Curve |
 |---|---|
 | Target height | See Tower System above |
-| Block complexity | All 5 bricks (`I`/`O`/`L`/`T`/`Z`) available from L1 — no size-unlock ramp; difficulty comes from target height, timer, stability sensitivity, and lane play |
+| Block complexity | All 5 bricks (`I`/`O`/`L`/`T`/`Z`) available from L1 — no size-unlock ramp; difficulty comes from target height, timer, stability sensitivity, and column placement |
 | Inventory capacity | 1 slot @L1, 2 @L2, 3 @L4 |
 | Impacts | Every 3 levels |
 

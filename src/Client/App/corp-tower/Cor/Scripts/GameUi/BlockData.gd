@@ -81,6 +81,31 @@ static func cell_bounds(cells: Array) -> Dictionary:
 
 	return {"min_x": min_x, "min_y": min_y, "max_x": max_x, "max_y": max_y}
 
+# True outline vertices of a polyomino, in lattice (cell-corner) coordinates --
+# the actual points where the shape's silhouette turns, not just the 4
+# corners of its bounding box (which for L/T/Z include phantom points that
+# aren't part of the brick at all). A lattice point belongs to the outline
+# iff an odd number of the up-to-4 cells touching it are occupied; none of
+# this game's 5 tetromino shapes touch only diagonally, so 2 always means a
+# straight edge (not a vertex) and this simple parity rule is exact.
+static func outline_corners(cells: Array) -> Array:
+	var counts: Dictionary = {}
+
+	for cell in cells:
+		var x: int = _cell_x(cell)
+		var y: int = _cell_y(cell)
+
+		for corner in [Vector2i(x, y), Vector2i(x + 1, y), Vector2i(x, y + 1), Vector2i(x + 1, y + 1)]:
+			counts[corner] = counts.get(corner, 0) + 1
+
+	var corners: Array = []
+
+	for corner in counts:
+		if counts[corner] % 2 == 1:
+			corners.append(corner)
+
+	return corners
+
 static func brick_texture(shape_id: String) -> Texture2D:
 	if not BRICK_TEXTURE_PATHS.has(shape_id):
 		return null

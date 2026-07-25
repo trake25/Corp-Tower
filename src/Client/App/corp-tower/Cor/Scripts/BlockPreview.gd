@@ -187,28 +187,44 @@ func _draw_cells(
 		if border_width > 0.0:
 			draw_rect(rect, border_color, false, border_width)
 
-# Draws a hollow dot at each of the four corners of the brick's overall
-# footprint -- the ghost's own snap points, which the player aligns against
-# the filled dots TowerStack draws on the platform/placed bricks.
+# Draws a hollow dot at each true outline vertex of the brick's own shape --
+# not its bounding box, which for L/T/Z would put dots on empty corners the
+# brick doesn't actually occupy. These are the ghost's own snap points, which
+# the player aligns against the filled dots TowerStack draws on the
+# platform/placed bricks.
+#
+# Cells can be drawn with a visible `gap` between them (the fallback path),
+# so a lattice vertex shared by two cells doesn't have one exact pixel
+# position -- each cell's own rect corner differs by the gap. We derive every
+# candidate corner from its actual source cell's rect (same math as
+# `_draw_cells`) and only draw each lattice vertex once.
 func _draw_corner_dots(bounds: Dictionary, origin: Vector2, cell_size: float, gap: float) -> void:
 	if !is_available or cells.is_empty():
 		return
 
-	var columns: int = bounds.max_x - bounds.min_x + 1
-	var rows: int = bounds.max_y - bounds.min_y + 1
-	var box_size: Vector2 = Vector2(
-		float(columns) * cell_size + float(columns - 1) * gap,
-		float(rows) * cell_size + float(rows - 1) * gap
-	)
-	var corners: Array = [
-		origin,
-		origin + Vector2(box_size.x, 0.0),
-		origin + Vector2(0.0, box_size.y),
-		origin + box_size
-	]
+	var outline: Array = BlockDataScript.outline_corners(cells)
+	var drawn: Dictionary = {}
 
-	for corner in corners:
-		draw_arc(corner, SNAP_DOT_RADIUS, 0.0, TAU, 16, SNAP_DOT_HOLLOW_COLOR, 1.5, true)
+	for cell in cells:
+		var cx: int = _cell_x(cell)
+		var cy: int = _cell_y(cell)
+		var cell_origin: Vector2 = origin + Vector2(
+			float(cx - bounds.min_x) * (cell_size + gap),
+			float(bounds.max_y - cy) * (cell_size + gap)
+		)
+		var local_corners: Dictionary = {
+			Vector2i(cx, cy + 1): cell_origin,
+			Vector2i(cx + 1, cy + 1): cell_origin + Vector2(cell_size, 0.0),
+			Vector2i(cx, cy): cell_origin + Vector2(0.0, cell_size),
+			Vector2i(cx + 1, cy): cell_origin + Vector2(cell_size, cell_size)
+		}
+
+		for lattice_point in local_corners:
+			if drawn.has(lattice_point) or !(lattice_point in outline):
+				continue
+
+			drawn[lattice_point] = true
+			draw_arc(local_corners[lattice_point], SNAP_DOT_RADIUS, 0.0, TAU, 16, SNAP_DOT_HOLLOW_COLOR, 1.5, true)
 
 func _get_cell_bounds() -> Dictionary:
 	return BlockDataScript.cell_bounds(cells)

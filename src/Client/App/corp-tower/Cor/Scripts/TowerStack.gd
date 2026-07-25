@@ -194,7 +194,7 @@ func _draw() -> void:
 	if tower_blocks.is_empty():
 		_draw_fallback_stack()
 		if snap_preview_active:
-			_draw_snap_points(unit, base_x, baseline)
+			_draw_snap_points(unit, base_x, baseline, Vector2.ZERO)
 		return
 
 	var scroll_offset_units: int = _scroll_offset_units(unit)
@@ -240,7 +240,7 @@ func _draw() -> void:
 		draw_primitive(points, colors, BlockDataScript.brick_quad_uvs(), texture)
 
 	if snap_preview_active:
-		_draw_snap_points(unit, base_x, baseline)
+		_draw_snap_points(unit, base_x, baseline, pivot)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -267,17 +267,34 @@ func _footprint_box(origin_x: int, origin_y: int, cells: Array, unit: float, bas
 func _height_to_pixel_y(height_units: float, unit: float, baseline: float, scroll_offset_units: int) -> float:
 	return baseline - (height_units - float(scroll_offset_units)) * unit
 
+# Pixel position of each true outline vertex of a footprint resting at
+# (origin_x, origin_y) -- not its bounding box, which for L/T/Z would include
+# phantom corners the brick doesn't actually occupy. `cells` uses the same
+# raw (unflipped) y convention as `origin_y`/height math throughout this file.
+func _outline_corner_points(origin_x: int, origin_y: int, cells: Array, unit: float, base_x: float, baseline: float, scroll_offset_units: int) -> Array:
+	var points: Array = []
+
+	for corner in BlockDataScript.outline_corners(cells):
+		var pixel_x: float = base_x + (float(origin_x + corner.x) - GRID_CENTER_COL - 0.5) * unit
+		var pixel_y: float = _height_to_pixel_y(float(origin_y + corner.y), unit, baseline, scroll_offset_units)
+		points.append(Vector2(pixel_x, pixel_y))
+
+	return points
+
 # Filled dots mark corner snap points on the platform and existing placed
 # bricks -- fixed docking references drawn at their real, already-known
 # geometry. The dragged ghost's own (hollow) corner dots are drawn separately
 # by BlockPreview, since they follow the floating drag preview, not the tower.
-func _draw_snap_points(unit: float, base_x: float, baseline: float) -> void:
+# `pivot` must match whatever `draw_set_transform` is currently active (the
+# tilt pivot when tower_blocks is non-empty, Vector2.ZERO when it's untransformed)
+# since draw calls made under a transform are automatically offset by it.
+func _draw_snap_points(unit: float, base_x: float, baseline: float, pivot: Vector2) -> void:
 	var scroll_offset_units: int = _scroll_offset_units(unit)
 	var platform_y: float = _height_to_pixel_y(0.0, unit, baseline, scroll_offset_units)
 
 	for column in range(PLACEABLE_COLUMN_MIN, PLACEABLE_COLUMN_MAX + 2):
 		var point_x: float = base_x + (float(column) - 0.5 - GRID_CENTER_COL) * unit
-		draw_circle(Vector2(point_x, platform_y), SNAP_DOT_RADIUS, SNAP_DOT_FILL_COLOR)
+		draw_circle(Vector2(point_x, platform_y) - pivot, SNAP_DOT_RADIUS, SNAP_DOT_FILL_COLOR)
 
 	for i in range(tower_blocks.size()):
 		var entry: Dictionary = tower_blocks[i]
@@ -285,16 +302,9 @@ func _draw_snap_points(unit: float, base_x: float, baseline: float) -> void:
 		var cells: Array = block.get("cells", [])
 		var origin_x: int = int(entry.get("originX", 0))
 		var origin_y: int = int(entry.get("originY", entry.get("baseHeight", 0)))
-		var box_rect: Rect2 = _footprint_box(origin_x, origin_y, cells, unit, base_x, baseline, scroll_offset_units)
-		var corners: Array = [
-			box_rect.position,
-			box_rect.position + Vector2(box_rect.size.x, 0.0),
-			box_rect.position + Vector2(0.0, box_rect.size.y),
-			box_rect.position + box_rect.size
-		]
 
-		for corner in corners:
-			draw_circle(corner, SNAP_DOT_RADIUS, SNAP_DOT_FILL_COLOR)
+		for point in _outline_corner_points(origin_x, origin_y, cells, unit, base_x, baseline, scroll_offset_units):
+			draw_circle(point - pivot, SNAP_DOT_RADIUS, SNAP_DOT_FILL_COLOR)
 
 func _draw_fallback_block(center: Vector2, box_size: Vector2, color: Color) -> void:
 	var rect: Rect2 = Rect2(center - box_size * 0.5, box_size).grow(-1.0)
