@@ -5,20 +5,21 @@ const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
-const BRICK_UNIT_SIZE := 34.0
 const BRICK_GAP := 2.0
 const GRID_WIDTH := 9
 const GRID_CENTER_COL := 4.0
-const TOP_PADDING := 14.0
-const BOTTOM_PADDING := 12.0
-const SCROLL_START_RATIO := 0.7
-const SCROLL_EASE_POWER := 3.0
-const TOP_INDICATOR_CLEARANCE_UNITS := 1
-const COLLAPSE_TILT_DEG := 70.0
-const TILT_EASE_SPEED := 6.0
-const DROP_DURATION := 0.28
-const DROP_HEIGHT_UNITS := 6.0
 const LANE_COLUMNS := {"left": 3, "center": 4, "right": 5}
+
+@export var brick_unit_size: float = 34.0
+@export var top_padding: float = 14.0
+@export var bottom_padding: float = 12.0
+@export var scroll_start_ratio: float = 0.7
+@export var scroll_ease_power: float = 3.0
+@export var top_indicator_clearance_units: int = 1
+@export var collapse_tilt_deg: float = 70.0
+@export var tilt_ease_speed: float = 6.0
+@export var drop_duration: float = 0.28
+@export var drop_height_units: float = 6.0
 
 signal scroll_offset_changed(pixels: float)
 
@@ -55,11 +56,15 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 
 	if tower_collapsed:
 		var lean_sign: float = 1.0 if reported_tilt >= 0.0 else -1.0
-		tower_tilt_deg = lean_sign * COLLAPSE_TILT_DEG
+		tower_tilt_deg = lean_sign * collapse_tilt_deg
 	else:
 		tower_tilt_deg = reported_tilt
 
 	_maybe_start_drop_animation()
+	_update_scroll_offset()
+	queue_redraw()
+
+func refresh_visuals() -> void:
 	_update_scroll_offset()
 	queue_redraw()
 
@@ -95,11 +100,11 @@ func _process(delta: float) -> void:
 	var needs_redraw: bool = false
 
 	if absf(displayed_tilt_deg - tower_tilt_deg) > 0.01:
-		displayed_tilt_deg = lerpf(displayed_tilt_deg, tower_tilt_deg, minf(1.0, TILT_EASE_SPEED * delta))
+		displayed_tilt_deg = lerpf(displayed_tilt_deg, tower_tilt_deg, minf(1.0, tilt_ease_speed * delta))
 		needs_redraw = true
 
 	if _drop_anim_id != "":
-		_drop_anim_t += delta / DROP_DURATION
+		_drop_anim_t += delta / drop_duration
 		if _drop_anim_t >= 1.0:
 			_drop_anim_t = 1.0
 			_drop_anim_id = ""
@@ -134,7 +139,7 @@ func _update_scroll_offset() -> void:
 func _draw() -> void:
 	var unit: float = _unit_size()
 	var base_x: float = size.x * 0.5
-	var baseline: float = size.y - BOTTOM_PADDING
+	var baseline: float = size.y - bottom_padding
 
 	if lane_guides_active:
 		_draw_lane_guides(unit, base_x, baseline)
@@ -160,7 +165,7 @@ func _draw() -> void:
 
 		var drop_offset: float = 0.0
 		if _drop_anim_id != "" and _entry_block_id(entry) == _drop_anim_id:
-			drop_offset = (1.0 - _drop_ease(_drop_anim_t)) * DROP_HEIGHT_UNITS
+			drop_offset = (1.0 - _drop_ease(_drop_anim_t)) * drop_height_units
 
 		var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
 		var width_units: int = bounds.max_x - bounds.min_x + 1
@@ -201,7 +206,7 @@ func _draw() -> void:
 		_draw_fallback_stack()
 
 func _draw_lane_guides(unit: float, base_x: float, baseline: float) -> void:
-	var top_y: float = TOP_PADDING
+	var top_y: float = top_padding
 	var band_height: float = maxf(0.0, baseline - top_y)
 
 	for lane_name in LANE_COLUMNS:
@@ -227,7 +232,7 @@ func _draw_fallback_stack() -> void:
 	var unit: float = _unit_size()
 	var width: float = clamp(size.x * 0.24, unit * 1.5, unit * 3.5)
 	var x: float = (size.x - width) * 0.5
-	var baseline: float = size.y - BOTTOM_PADDING
+	var baseline: float = size.y - bottom_padding
 	var scroll_offset_units: int = _scroll_offset_units(unit)
 
 	for y in range(current_height):
@@ -243,12 +248,12 @@ func _draw_fallback_stack() -> void:
 		draw_rect(rect, GRID_COLOR, false, 1.0)
 
 func _unit_size() -> float:
-	return BRICK_UNIT_SIZE
+	return brick_unit_size
 
 func _scroll_offset_units(unit: float) -> int:
 	var visible_units: int = _visible_unit_capacity(unit)
-	var start_units: int = max(1, int(floor(float(visible_units) * SCROLL_START_RATIO)))
-	var flush_units: int = max(start_units, visible_units - TOP_INDICATOR_CLEARANCE_UNITS)
+	var start_units: int = max(1, int(floor(float(visible_units) * scroll_start_ratio)))
+	var flush_units: int = max(start_units, visible_units - top_indicator_clearance_units)
 	var focus_height: int = max(current_height, 1)
 
 	if target_height > 0:
@@ -261,12 +266,12 @@ func _scroll_offset_units(unit: float) -> int:
 	if target_height > start_units:
 		linear_t = clampf(float(focus_height - start_units) / float(target_height - start_units), 0.0, 1.0)
 
-	var ramp_t: float = pow(linear_t, SCROLL_EASE_POWER)
+	var ramp_t: float = pow(linear_t, scroll_ease_power)
 	var top_row: float = lerpf(float(start_units), float(flush_units), ramp_t)
 	return int(round(float(focus_height) - top_row))
 
 func _visible_unit_capacity(unit: float) -> int:
-	var available_height: float = max(1.0, size.y - TOP_PADDING - BOTTOM_PADDING)
+	var available_height: float = max(1.0, size.y - top_padding - bottom_padding)
 	return max(1, int(floor(available_height / unit)))
 
 func _is_rect_visible(rect: Rect2) -> bool:

@@ -5,6 +5,84 @@ const BOT_STRATEGY_COOPERATIVE := "cooperative"
 const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
 const TOWER_FEEDBACK_MODES := ["warnings_only", "meter_only", "live_preview"]
 const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Meter Only", "Live Preview"]
+const DEBUG_CATEGORY_NAMES := ["Bots", "Round", "UI", "Supply", "Scoring", "Tower", "Power", "Parallax"]
+
+const PARALLAX_TARGET_TOWER := "tower"
+const PARALLAX_TARGET_SKY := "sky"
+const PARALLAX_TARGET_GROUND := "ground"
+
+const PARALLAX_ROWS := [
+	{
+		"key": "ScrollStartRatio", "target": PARALLAX_TARGET_TOWER, "property": "scroll_start_ratio",
+		"label": "Scroll Start Ratio", "min": 0.0, "max": 100.0, "step": 5.0, "percent": true,
+		"tooltip": "How full the screen has to feel before the camera starts panning at all. Lower = camera starts helping earlier (shorter towers). Higher = camera waits longer before it starts helping.",
+	},
+	{
+		"key": "ScrollEasePower", "target": PARALLAX_TARGET_TOWER, "property": "scroll_ease_power",
+		"label": "Scroll Ease Power", "min": 1.0, "max": 6.0, "step": 0.5, "decimals": 1,
+		"tooltip": "The \"holding back\" curve. Higher = camera stays almost still for most of the climb and only rushes to the bar in the last few bricks. Lower toward 1 = a steady, even approach the whole way.",
+	},
+	{
+		"key": "TopIndicatorClearance", "target": PARALLAX_TARGET_TOWER, "property": "top_indicator_clearance_units",
+		"label": "Top Indicator Clearance", "min": 0.0, "max": 4.0, "step": 1.0, "is_int": true, "suffix": " bricks",
+		"tooltip": "How much daylight is left between the top brick and the bar at a perfect finish. Bigger = more visible gap at 100%. 0 = try to touch it exactly.",
+	},
+	{
+		"key": "BrickUnitSize", "target": PARALLAX_TARGET_TOWER, "property": "brick_unit_size",
+		"label": "Brick Unit Size", "min": 20.0, "max": 48.0, "step": 1.0, "is_int": true, "suffix": "px",
+		"tooltip": "Physical size of a brick on screen. Bigger bricks = fewer visible at once, chunkier/bolder tower; also changes how many bricks fit before scrolling is needed at all.",
+	},
+	{
+		"key": "DropDuration", "target": PARALLAX_TARGET_TOWER, "property": "drop_duration",
+		"label": "Drop Duration", "min": 0.05, "max": 1.0, "step": 0.05, "decimals": 2, "suffix": " sec",
+		"tooltip": "How long a freshly placed brick takes to animate down into its slot. Longer = floatier, more weighty landing. Shorter = snappier, more immediate.",
+	},
+	{
+		"key": "DropHeightUnits", "target": PARALLAX_TARGET_TOWER, "property": "drop_height_units",
+		"label": "Drop Height", "min": 0.0, "max": 12.0, "step": 1.0, "is_int": true, "suffix": " bricks",
+		"tooltip": "How far above its resting spot a new brick starts falling from. Higher = more dramatic drop-in. Lower = subtle settle.",
+	},
+	{
+		"key": "TiltEaseSpeed", "target": PARALLAX_TARGET_TOWER, "property": "tilt_ease_speed",
+		"label": "Tilt Ease Speed", "min": 1.0, "max": 15.0, "step": 0.5, "decimals": 1,
+		"tooltip": "How quickly the tower's lean animation catches up to the server's actual tilt reading. Higher = tower reacts to instability sharply/immediately. Lower = a slower, more organic sway.",
+	},
+	{
+		"key": "CollapseTiltDeg", "target": PARALLAX_TARGET_TOWER, "property": "collapse_tilt_deg",
+		"label": "Collapse Tilt", "min": 10.0, "max": 90.0, "step": 5.0, "is_int": true, "suffix": "°",
+		"tooltip": "How far over the tower visually keels when it actually collapses — a pure \"sell the failure\" flourish, doesn't affect live play.",
+	},
+	{
+		"key": "TopPadding", "target": PARALLAX_TARGET_TOWER, "property": "top_padding",
+		"label": "Top Padding", "min": 0.0, "max": 40.0, "step": 2.0, "is_int": true, "suffix": "px",
+		"tooltip": "Small reserved margin at the very top of the tower's drawing area — mostly invisible headroom, rarely worth touching.",
+	},
+	{
+		"key": "BottomPadding", "target": PARALLAX_TARGET_TOWER, "property": "bottom_padding",
+		"label": "Bottom Padding", "min": 0.0, "max": 40.0, "step": 2.0, "is_int": true, "suffix": "px",
+		"tooltip": "Small reserved margin at the bottom of the tower's drawing area, above the ground line.",
+	},
+	{
+		"key": "SkyParallaxRatio", "target": PARALLAX_TARGET_SKY, "property": "parallax_ratio",
+		"label": "Sky Parallax Ratio", "min": 0.0, "max": 100.0, "step": 5.0, "percent": true,
+		"tooltip": "How fast the sky moves relative to the tower's own scroll. Lower = feels farther away/slower (distant sky). Higher = feels closer/faster.",
+	},
+	{
+		"key": "SkyEaseSpeed", "target": PARALLAX_TARGET_SKY, "property": "ease_speed",
+		"label": "Sky Ease Speed", "min": 1.0, "max": 10.0, "step": 0.5, "decimals": 1,
+		"tooltip": "How snappily the sky catches up whenever the scroll target changes. Higher = tight, immediate follow. Lower = a laggy, dreamy trail.",
+	},
+	{
+		"key": "GroundParallaxRatio", "target": PARALLAX_TARGET_GROUND, "property": "parallax_ratio",
+		"label": "Ground Parallax Ratio", "min": 0.0, "max": 200.0, "step": 5.0, "percent": true,
+		"tooltip": "How fast the ground platform moves relative to the tower's own scroll. Higher = feels closer/faster (keeps the ground glued to the tower's base instead of lagging behind as it recedes).",
+	},
+	{
+		"key": "GroundEaseSpeed", "target": PARALLAX_TARGET_GROUND, "property": "ease_speed",
+		"label": "Ground Ease Speed", "min": 1.0, "max": 10.0, "step": 0.5, "decimals": 1,
+		"tooltip": "How snappily the ground platform catches up whenever the scroll target changes. Higher = tight, immediate follow. Lower = laggy trail.",
+	},
+]
 
 var tuning
 var network
@@ -12,9 +90,15 @@ var is_syncing_debug_config: bool = false
 
 var debug_overlay: Control
 var debug_dim_layer: Control
+var debug_tooltip: Control
 var reset_debug_button: Button
 var restart_level_button: Button
 var close_debug_button: Button
+var category_dropdown: OptionButton
+var category_panels: Dictionary = {}
+var parallax_targets: Dictionary = {}
+var parallax_buttons: Dictionary = {}
+var parallax_sliders: Dictionary = {}
 var bots_toggle: CheckButton
 var bot_strategy_button: OptionButton
 var bot_count_label: Label
@@ -84,6 +168,26 @@ var power_cooldown_slider: HSlider
 func bind_nodes(binder) -> void:
 	debug_overlay = binder.optional_node("DebugOverlay") as Control
 	debug_dim_layer = binder.optional_node("DebugDimLayer") as Control
+	debug_tooltip = binder.optional_node("DebugTooltip") as Control
+	category_dropdown = binder.optional_node("DebugCategoryDropdown") as OptionButton
+	category_panels = {
+		"Bots": binder.optional_node("Bots") as Control,
+		"Round": binder.optional_node("Round") as Control,
+		"UI": binder.optional_node("UI") as Control,
+		"Supply": binder.optional_node("Supply") as Control,
+		"Scoring": binder.optional_node("Scoring") as Control,
+		"Tower": binder.optional_node("Tower") as Control,
+		"Power": binder.optional_node("Power") as Control,
+		"Parallax": binder.optional_node("Parallax") as Control,
+	}
+	parallax_targets = {
+		PARALLAX_TARGET_TOWER: binder.optional_node("TowerStack"),
+		PARALLAX_TARGET_SKY: binder.optional_node("BgArt"),
+		PARALLAX_TARGET_GROUND: binder.optional_node("PlatformArt"),
+	}
+	for row in PARALLAX_ROWS:
+		parallax_buttons[row.key] = binder.optional_node(row.key + "Button") as Button
+		parallax_sliders[row.key] = binder.optional_node(row.key + "Slider") as HSlider
 	reset_debug_button = binder.optional_node("ResetDebugButton") as Button
 	restart_level_button = binder.optional_node("RestartLevelButton") as Button
 	close_debug_button = binder.optional_node("CloseDebugButton") as Button
@@ -220,7 +324,88 @@ func setup(tuning_ref, network_ref) -> void:
 			tower_feedback_mode_button.add_item(TOWER_FEEDBACK_MODE_TITLES[i], i)
 		tower_feedback_mode_button.item_selected.connect(on_tower_feedback_mode_selected)
 
+	setup_category_dropdown()
+	setup_parallax_controls()
 	update_debug_labels()
+
+func setup_category_dropdown() -> void:
+	if category_dropdown == null:
+		return
+
+	category_dropdown.clear()
+	for i in range(DEBUG_CATEGORY_NAMES.size()):
+		category_dropdown.add_item(DEBUG_CATEGORY_NAMES[i], i)
+
+	category_dropdown.item_selected.connect(on_category_selected)
+	category_dropdown.select(0)
+	on_category_selected(0)
+
+func on_category_selected(index: int) -> void:
+	if index < 0 or index >= DEBUG_CATEGORY_NAMES.size():
+		return
+
+	var selected_name: String = DEBUG_CATEGORY_NAMES[index]
+	for category_name in category_panels:
+		var panel: Control = category_panels[category_name]
+		if panel != null:
+			panel.visible = (category_name == selected_name)
+
+func setup_parallax_controls() -> void:
+	for row in PARALLAX_ROWS:
+		var target_node = parallax_targets.get(row.target)
+		var slider: HSlider = parallax_sliders.get(row.key)
+		var button: Button = parallax_buttons.get(row.key)
+
+		if target_node == null or slider == null:
+			continue
+
+		var raw_value: float = float(target_node.get(row.property))
+		var display_value: float = raw_value * 100.0 if row.get("percent", false) else raw_value
+
+		slider.min_value = row.min
+		slider.max_value = row.max
+		slider.step = row.step
+		slider.set_value_no_signal(display_value)
+		slider.value_changed.connect(func(value): on_parallax_slider_changed(row, value))
+		update_parallax_button_text(row, display_value)
+
+		if button != null:
+			button.pressed.connect(func(): open_debug_tooltip(row.label, row.tooltip))
+
+func on_parallax_slider_changed(row: Dictionary, value: float) -> void:
+	var target_node = parallax_targets.get(row.target)
+	if target_node == null:
+		return
+
+	var applied_value: float = value / 100.0 if row.get("percent", false) else value
+	if row.get("is_int", false):
+		applied_value = round(applied_value)
+
+	target_node.set(row.property, applied_value)
+	if target_node.has_method("refresh_visuals"):
+		target_node.call("refresh_visuals")
+
+	update_parallax_button_text(row, value)
+
+func update_parallax_button_text(row: Dictionary, display_value: float) -> void:
+	var button: Button = parallax_buttons.get(row.key)
+	if button == null:
+		return
+
+	var decimals: int = int(row.get("decimals", 0))
+	var formatted: String
+	if decimals > 0:
+		formatted = ("%." + str(decimals) + "f") % display_value
+	else:
+		formatted = str(int(round(display_value)))
+
+	var suffix: String = "%" if row.get("percent", false) else str(row.get("suffix", ""))
+
+	button.text = "%s: %s%s  ⓘ" % [row.label, formatted, suffix]
+
+func open_debug_tooltip(title: String, body: String) -> void:
+	if debug_tooltip != null and debug_tooltip.has_method("open"):
+		debug_tooltip.call("open", title, body)
 
 func configure_slider(slider: HSlider, min_value: float, max_value: float, step: float, callback: Callable) -> void:
 	if slider == null:
@@ -262,6 +447,9 @@ func set_open(open: bool) -> void:
 		debug_overlay.call("set_open", open)
 	else:
 		debug_overlay.visible = open
+
+	if not open and debug_tooltip != null and debug_tooltip.has_method("close"):
+		debug_tooltip.call("close")
 
 func is_open() -> bool:
 	return debug_overlay != null and debug_overlay.visible
