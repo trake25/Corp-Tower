@@ -12,6 +12,7 @@ const GRID_CENTER_COL := 4.0
 const TOP_PADDING := 14.0
 const BOTTOM_PADDING := 12.0
 const SCROLL_START_RATIO := 0.7
+const SCROLL_EASE_POWER := 3.0
 const TOP_INDICATOR_CLEARANCE_UNITS := 1
 const COLLAPSE_TILT_DEG := 70.0
 const TILT_EASE_SPEED := 6.0
@@ -256,10 +257,11 @@ func _scroll_offset_units(unit: float) -> int:
 	if focus_height <= start_units:
 		return 0
 
-	var ramp_t: float = 1.0
+	var linear_t: float = 1.0
 	if target_height > start_units:
-		ramp_t = clampf(float(focus_height - start_units) / float(target_height - start_units), 0.0, 1.0)
+		linear_t = clampf(float(focus_height - start_units) / float(target_height - start_units), 0.0, 1.0)
 
+	var ramp_t: float = pow(linear_t, SCROLL_EASE_POWER)
 	var top_row: float = lerpf(float(start_units), float(flush_units), ramp_t)
 	return int(round(float(focus_height) - top_row))
 
