@@ -37,6 +37,7 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | Impact Bar | `Cor/Scripts/ImpactBar.gd` | Per-player Impact-progress fill bar | none | [ui.md](./ui.md#leaf-components) |
 | Cooldown Overlay | `Cor/Scripts/CooldownOverlay.gd` | Radial per-card cooldown indicator | none | [ui.md](./ui.md#leaf-components) |
 | Debug Overlay | `Cor/Scripts/DebugOverlay.gd` | Debug panel show/hide shell | none | [ui.md](./ui.md#leaf-components) |
+| Debug Tooltip | `Cor/Scripts/DebugTooltip.gd` | Tap-to-open, dimmed, tap-outside-to-close info card for debug-menu rows | none | [ui.md](./ui.md#leaf-components) |
 | Player Colors | `Cor/Scripts/PlayerColors.gd` | player_id → color utility | none | [ui.md](./ui.md#leaf-components) |
 | Godot Client Tests | `Tests/CiSmokeTest.gd`, `Tests/Gut/*` | Smoke test + GUT coverage | Godot Client App, NetworkManager, Main UI Controller, Player Colors | [testing.md](./testing.md#godot-client-tests) |
 
