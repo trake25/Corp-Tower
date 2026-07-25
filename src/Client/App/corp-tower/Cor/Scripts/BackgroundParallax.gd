@@ -2,6 +2,7 @@ extends TextureRect
 
 @export var parallax_ratio: float = 0.4
 @export var ease_speed: float = 4.0
+@export var instant: bool = false
 
 var target_offset: float = 0.0
 var displayed_offset: float = 0.0
@@ -12,6 +13,9 @@ func _ready() -> void:
 
 func set_scroll_pixels(pixels: float) -> void:
 	target_offset = pixels * parallax_ratio
+	if instant:
+		displayed_offset = target_offset
+		position.y = _base_position_y + displayed_offset
 
 func _process(delta: float) -> void:
 	if absf(displayed_offset - target_offset) <= 0.01:
