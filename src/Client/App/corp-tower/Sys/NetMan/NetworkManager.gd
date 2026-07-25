@@ -80,14 +80,14 @@ func toggle_connection():
 	else:
 		connect_server()
 
-func place_block(block_index, lane := "center"):
+func place_block(block_index, column := -1):
 	if not is_conn_estab:
 		return
 
 	var data = {
 		"type": "place_block",
 		"blockIndex": block_index,
-		"lane": lane
+		"column": column
 	}
 
 	ws.send_text(JSON.stringify(data))

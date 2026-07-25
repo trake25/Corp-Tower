@@ -38,11 +38,6 @@ const PARALLAX_ROWS := [
 		"tooltip": "How long a freshly placed brick takes to animate down into its slot. Longer = floatier, more weighty landing. Shorter = snappier, more immediate.",
 	},
 	{
-		"key": "DropHeightUnits", "target": PARALLAX_TARGET_TOWER, "property": "drop_height_units",
-		"label": "Drop Height", "min": 0.0, "max": 12.0, "step": 1.0, "is_int": true, "suffix": " bricks",
-		"tooltip": "How far above its resting spot a new brick starts falling from. Higher = more dramatic drop-in. Lower = subtle settle.",
-	},
-	{
 		"key": "TiltEaseSpeed", "target": PARALLAX_TARGET_TOWER, "property": "tilt_ease_speed",
 		"label": "Tilt Ease Speed", "min": 1.0, "max": 15.0, "step": 0.5, "decimals": 1,
 		"tooltip": "How quickly the tower's lean animation catches up to the server's actual tilt reading. Higher = tower reacts to instability sharply/immediately. Lower = a slower, more organic sway.",

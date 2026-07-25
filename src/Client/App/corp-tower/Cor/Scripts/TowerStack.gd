@@ -6,9 +6,12 @@ const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 const BRICK_GAP := 2.0
-const GRID_WIDTH := 9
-const GRID_CENTER_COL := 4.0
-const LANE_COLUMNS := {"left": 3, "center": 4, "right": 5}
+const GRID_WIDTH := 14
+const GRID_CENTER_COL := 6.5
+const PLACEABLE_COLUMN_MIN := 4
+const PLACEABLE_COLUMN_MAX := 9
+const SNAP_DOT_FILL_COLOR := Color(1.0, 0.0, 0.0, 1.0)
+const SNAP_DOT_RADIUS := 4.0
 
 @export var brick_unit_size: float = 34.0
 @export var top_padding: float = 14.0
@@ -19,7 +22,6 @@ const LANE_COLUMNS := {"left": 3, "center": 4, "right": 5}
 @export var collapse_tilt_deg: float = 70.0
 @export var tilt_ease_speed: float = 6.0
 @export var drop_duration: float = 0.28
-@export var drop_height_units: float = 6.0
 
 signal scroll_offset_changed(pixels: float)
 
@@ -32,10 +34,10 @@ var tower_tilt_deg: float = 0.0
 var displayed_tilt_deg: float = 0.0
 var tower_collapsed: bool = false
 var _last_scroll_pixels: float = 0.0
-var lane_guides_active: bool = false
-var active_lane: String = ""
+var snap_preview_active: bool = false
 var _drop_anim_id: String = ""
 var _drop_anim_t: float = 0.0
+var _drop_fall_units: float = 0.0
 var _prev_block_count: int = 0
 
 func _ready() -> void:
@@ -46,6 +48,7 @@ func _notification(what: int) -> void:
 		queue_redraw()
 
 func set_tower(blocks: Array, new_current_height: int, new_target_height: int, new_stability: int = 100, diagnostics: Dictionary = {}) -> void:
+	var previous_global_height: int = current_height
 	tower_blocks = blocks
 	current_height = max(0, new_current_height)
 	target_height = max(0, new_target_height)
@@ -60,7 +63,7 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	else:
 		tower_tilt_deg = reported_tilt
 
-	_maybe_start_drop_animation()
+	_maybe_start_drop_animation(previous_global_height)
 	_update_scroll_offset()
 	queue_redraw()
 
@@ -68,23 +71,70 @@ func refresh_visuals() -> void:
 	_update_scroll_offset()
 	queue_redraw()
 
-func set_lane_guides(active: bool, lane: String = "") -> void:
-	if lane_guides_active == active and active_lane == lane:
-		return
-	lane_guides_active = active
-	active_lane = lane
+# Called by InventoryController on every drag-move (active=true) and once more
+# on release/cancel (active=false). Resolves which column the dragged brick's
+# nearest corner would snap to -- the winning candidate's closer edge (left or
+# right boundary) to the cursor's mapped column position is "the corner that
+# snapped" -- and toggles the filled-dot overlay on the platform/placed bricks.
+func update_snap_preview(active: bool, cells: Array, global_pos: Vector2) -> int:
+	snap_preview_active = active
 	queue_redraw()
 
-func _maybe_start_drop_animation() -> void:
+	if cells.is_empty():
+		return PLACEABLE_COLUMN_MIN
+
+	var unit: float = _unit_size()
+	var base_x: float = size.x * 0.5
+	var local_pos: Vector2 = get_global_transform().affine_inverse() * global_pos
+	var cursor_col_frac: float = (local_pos.x - base_x) / unit + GRID_CENTER_COL
+	var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+	var width: int = bounds.max_x - bounds.min_x + 1
+	var min_origin: int = PLACEABLE_COLUMN_MIN
+	var max_origin: int = maxi(min_origin, PLACEABLE_COLUMN_MAX - width + 1)
+
+	var best_origin: int = min_origin
+	var best_distance: float = INF
+
+	for origin_x in range(min_origin, max_origin + 1):
+		var left_edge: float = float(origin_x) - 0.5
+		var right_edge: float = float(origin_x + width) - 0.5
+		var distance: float = minf(absf(cursor_col_frac - left_edge), absf(cursor_col_frac - right_edge))
+
+		if distance < best_distance:
+			best_distance = distance
+			best_origin = origin_x
+
+	return best_origin
+
+func clear_snap_preview() -> void:
+	snap_preview_active = false
+	queue_redraw()
+
+func _maybe_start_drop_animation(previous_global_height: int) -> void:
 	var new_count: int = tower_blocks.size()
 
 	if new_count == _prev_block_count + 1 and new_count > 0:
-		_drop_anim_id = _entry_block_id(tower_blocks[new_count - 1])
+		var entry: Dictionary = tower_blocks[new_count - 1]
+		_drop_anim_id = _entry_block_id(entry)
 		_drop_anim_t = 0.0
+		_drop_fall_units = _compute_drop_fall_units(entry, previous_global_height)
 	elif new_count != _prev_block_count:
 		_drop_anim_id = ""
 
 	_prev_block_count = new_count
+
+# spawn = platform top (row 0's bottom edge, height 0) + current tower height
+# + 2x the dropped brick's own height, all in the same row/height units the
+# rest of this file already uses for origin_y/box_top math.
+func _compute_drop_fall_units(entry: Dictionary, previous_global_height: int) -> float:
+	var block: Dictionary = _normalize_block_entry(entry)
+	var block_height: int = int(block.get("height", 0))
+	var bounds: Dictionary = BlockDataScript.cell_bounds(block.get("cells", []))
+	var origin_y: int = int(entry.get("originY", entry.get("baseHeight", 0)))
+	var landed_top_edge: int = origin_y + bounds.max_y + 1
+	var spawn_top_edge: float = float(previous_global_height) + 2.0 * float(block_height)
+
+	return maxf(0.0, spawn_top_edge - float(landed_top_edge))
 
 func _entry_block_id(entry: Dictionary) -> String:
 	var block: Variant = entry.get("block", {})
@@ -141,11 +191,10 @@ func _draw() -> void:
 	var base_x: float = size.x * 0.5
 	var baseline: float = size.y - bottom_padding
 
-	if lane_guides_active:
-		_draw_lane_guides(unit, base_x, baseline)
-
 	if tower_blocks.is_empty():
 		_draw_fallback_stack()
+		if snap_preview_active:
+			_draw_snap_points(unit, base_x, baseline)
 		return
 
 	var scroll_offset_units: int = _scroll_offset_units(unit)
@@ -165,19 +214,9 @@ func _draw() -> void:
 
 		var drop_offset: float = 0.0
 		if _drop_anim_id != "" and _entry_block_id(entry) == _drop_anim_id:
-			drop_offset = (1.0 - _drop_ease(_drop_anim_t)) * drop_height_units
+			drop_offset = (1.0 - _drop_ease(_drop_anim_t)) * _drop_fall_units
 
-		var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
-		var width_units: int = bounds.max_x - bounds.min_x + 1
-		var height_units: int = bounds.max_y - bounds.min_y + 1
-		var y_max_units: int = base_height + bounds.max_y
-
-		var box_left: float = base_x + (float(origin_x + bounds.min_x) - GRID_CENTER_COL) * unit - unit * 0.5
-		var box_top: float = baseline - (float(y_max_units + 1 - scroll_offset_units) + drop_offset) * unit
-		var box_rect: Rect2 = Rect2(
-			Vector2(box_left, box_top),
-			Vector2(float(width_units) * unit, float(height_units) * unit)
-		)
+		var box_rect: Rect2 = _footprint_box(origin_x, base_height, cells, unit, base_x, baseline, scroll_offset_units, drop_offset)
 
 		if !_is_rect_visible(box_rect):
 			continue
@@ -200,25 +239,62 @@ func _draw() -> void:
 
 		draw_primitive(points, colors, BlockDataScript.brick_quad_uvs(), texture)
 
+	if snap_preview_active:
+		_draw_snap_points(unit, base_x, baseline)
+
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	if current_height > tower_units:
 		_draw_fallback_stack()
 
-func _draw_lane_guides(unit: float, base_x: float, baseline: float) -> void:
-	var top_y: float = top_padding
-	var band_height: float = maxf(0.0, baseline - top_y)
+# Computes the on-screen box for a footprint resting at (origin_x, origin_y)
+# in grid units -- shared by the main render loop and the snap-point overlay
+# so both use the exact same pixel<->grid transform.
+func _footprint_box(origin_x: int, origin_y: int, cells: Array, unit: float, base_x: float, baseline: float, scroll_offset_units: int, drop_offset: float = 0.0) -> Rect2:
+	var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+	var width_units: int = bounds.max_x - bounds.min_x + 1
+	var height_units: int = bounds.max_y - bounds.min_y + 1
+	var y_max_units: int = origin_y + bounds.max_y
 
-	for lane_name in LANE_COLUMNS:
-		var lane_column: int = LANE_COLUMNS[lane_name]
-		var band_x: float = base_x + (float(lane_column) - GRID_CENTER_COL) * unit - unit * 0.5
-		var is_active: bool = (lane_name == active_lane)
-		var fill: Color = Color(1.0, 1.0, 1.0, 0.16 if is_active else 0.05)
-		var border: Color = Color(1.0, 1.0, 1.0, 0.55 if is_active else 0.16)
-		var band: Rect2 = Rect2(Vector2(band_x, top_y), Vector2(unit, band_height))
+	var box_left: float = base_x + (float(origin_x + bounds.min_x) - GRID_CENTER_COL) * unit - unit * 0.5
+	var box_top: float = baseline - (float(y_max_units + 1 - scroll_offset_units) + drop_offset) * unit
 
-		draw_rect(band, fill, true)
-		draw_rect(band, border, false, 2.0 if is_active else 1.0)
+	return Rect2(
+		Vector2(box_left, box_top),
+		Vector2(float(width_units) * unit, float(height_units) * unit)
+	)
+
+func _height_to_pixel_y(height_units: float, unit: float, baseline: float, scroll_offset_units: int) -> float:
+	return baseline - (height_units - float(scroll_offset_units)) * unit
+
+# Filled dots mark corner snap points on the platform and existing placed
+# bricks -- fixed docking references drawn at their real, already-known
+# geometry. The dragged ghost's own (hollow) corner dots are drawn separately
+# by BlockPreview, since they follow the floating drag preview, not the tower.
+func _draw_snap_points(unit: float, base_x: float, baseline: float) -> void:
+	var scroll_offset_units: int = _scroll_offset_units(unit)
+	var platform_y: float = _height_to_pixel_y(0.0, unit, baseline, scroll_offset_units)
+
+	for column in range(PLACEABLE_COLUMN_MIN, PLACEABLE_COLUMN_MAX + 2):
+		var point_x: float = base_x + (float(column) - 0.5 - GRID_CENTER_COL) * unit
+		draw_circle(Vector2(point_x, platform_y), SNAP_DOT_RADIUS, SNAP_DOT_FILL_COLOR)
+
+	for i in range(tower_blocks.size()):
+		var entry: Dictionary = tower_blocks[i]
+		var block: Dictionary = _normalize_block_entry(entry)
+		var cells: Array = block.get("cells", [])
+		var origin_x: int = int(entry.get("originX", 0))
+		var origin_y: int = int(entry.get("originY", entry.get("baseHeight", 0)))
+		var box_rect: Rect2 = _footprint_box(origin_x, origin_y, cells, unit, base_x, baseline, scroll_offset_units)
+		var corners: Array = [
+			box_rect.position,
+			box_rect.position + Vector2(box_rect.size.x, 0.0),
+			box_rect.position + Vector2(0.0, box_rect.size.y),
+			box_rect.position + box_rect.size
+		]
+
+		for corner in corners:
+			draw_circle(corner, SNAP_DOT_RADIUS, SNAP_DOT_FILL_COLOR)
 
 func _draw_fallback_block(center: Vector2, box_size: Vector2, color: Color) -> void:
 	var rect: Rect2 = Rect2(center - box_size * 0.5, box_size).grow(-1.0)

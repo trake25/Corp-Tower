@@ -140,7 +140,7 @@ class BotManager {
             }
 
             const action = this.chooseBotAction(bot, engine);
-            const lane = this.chooseBotLane(
+            const column = this.chooseBotColumn(
                 engine,
                 bot.blocks[action.blockIndex]
             );
@@ -148,7 +148,7 @@ class BotManager {
             engine.placeBlock(
                 bot.id,
                 action.blockIndex,
-                lane
+                column
             );
 
             this.runBotLoop(
@@ -169,18 +169,16 @@ class BotManager {
         return this.chooseCooperativeAction(bot, engine);
     }
 
-    chooseBotLane(engine, block) {
+    chooseBotColumn(engine, block) {
         if (!block) {
-            return "center";
+            return GameConfig.placeableColumnMin;
         }
 
-        const lanes = Object.keys(
-            GameConfig.placeableLanes || { left: 3, center: 4, right: 5 }
-        );
+        const { min, max } = engine.getPlaceableOriginRange(block);
         let best = null;
 
-        lanes.forEach(lane => {
-            const originX = engine.resolveLaneOriginX(block, lane);
+        for (let column = min; column <= max; column++) {
+            const originX = engine.resolveColumnOriginX(block, column);
             const placement = TowerStability.settleBlock(
                 engine.room.towerBlocks || [],
                 block,
@@ -197,11 +195,11 @@ class BotManager {
             const result = TowerStability.evaluate(projected, GameConfig);
 
             if (!best || result.stability > best.stability) {
-                best = { lane: lane, stability: result.stability };
+                best = { column: column, stability: result.stability };
             }
-        });
+        }
 
-        return best ? best.lane : "center";
+        return best ? best.column : GameConfig.placeableColumnMin;
     }
 
     chooseCooperativeAction(bot, engine) {

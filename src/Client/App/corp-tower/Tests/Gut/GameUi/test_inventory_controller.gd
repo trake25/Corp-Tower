@@ -9,7 +9,7 @@ class NetworkStub:
 	var is_conn_estab := true
 	var placed: Array = []
 
-	func place_block(index: int) -> void:
+	func place_block(index: int, column: int = -1) -> void:
 		placed.append(index)
 
 var harness

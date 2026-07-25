@@ -135,42 +135,39 @@ test("a Z block placed at a lane origin settles with an unsupported overhang", (
     assert.ok(result.stability < 100);
 });
 
-test("resolveLaneOriginX places the block's anchor cell on the chosen lane's guide", () => {
+test("resolveColumnOriginX clamps the requested column to the block's valid placeable range", () => {
     const { engine } = createPlayingEngine(1, 8);
-    const tBlock = { shapeId: "T", cells: [[1, 0], [0, 1], [1, 1], [2, 1]], anchorX: 1 };
-    const verticalIBlock = { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]], anchorX: 0 };
+    const tBlock = { shapeId: "T", cells: [[1, 0], [0, 1], [1, 1], [2, 1]] };
+    const verticalIBlock = { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]] };
 
-    assert.equal(engine.resolveLaneOriginX(tBlock, "left"), 2);
-    assert.equal(engine.resolveLaneOriginX(tBlock, "center"), 3);
-    assert.equal(engine.resolveLaneOriginX(tBlock, "right"), 4);
-    assert.equal(engine.resolveLaneOriginX(verticalIBlock, "left"), 3);
-    assert.equal(engine.resolveLaneOriginX(verticalIBlock, "center"), 4);
-    assert.equal(engine.resolveLaneOriginX(verticalIBlock, "right"), 5);
+    // T is 3 cells wide -> valid origins are columns 4..7 on the 4-9 placeable range
+    assert.equal(engine.resolveColumnOriginX(tBlock, 4), 4);
+    assert.equal(engine.resolveColumnOriginX(tBlock, 7), 7);
+    assert.equal(engine.resolveColumnOriginX(tBlock, 2), 4);
+    assert.equal(engine.resolveColumnOriginX(tBlock, 9), 7);
+
+    // vertical I is 1 cell wide -> valid origins span the full 4..9 range
+    assert.equal(engine.resolveColumnOriginX(verticalIBlock, 4), 4);
+    assert.equal(engine.resolveColumnOriginX(verticalIBlock, 9), 9);
+    assert.equal(engine.resolveColumnOriginX(verticalIBlock, 12), 9);
 });
 
-test("a brick's randomly chosen anchor cell determines which columns it occupies in a lane", () => {
+test("getPlaceableOriginRange narrows as block width grows, keeping the full footprint within columns 4-9", () => {
     const { engine } = createPlayingEngine(1, 8);
-    const oCells = [[0, 0], [1, 0], [0, 1], [1, 1]];
-    const anchorOnLeftCell = { shapeId: "O", cells: oCells, anchorX: 0 };
-    const anchorOnRightCell = { shapeId: "O", cells: oCells, anchorX: 1 };
+    const oBlock = { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
+    const horizontalIBlock = { shapeId: "I", cells: [[0, 0], [1, 0], [2, 0], [3, 0]] };
 
-    // anchor on the leftmost cell: L lane -> columns 3,4
-    assert.equal(engine.resolveLaneOriginX(anchorOnLeftCell, "left"), 3);
-    // anchor on the rightmost cell: L lane -> columns 2,3
-    assert.equal(engine.resolveLaneOriginX(anchorOnRightCell, "left"), 2);
+    // O is 2 wide -> rightmost valid origin is 8 (occupies columns 8,9)
+    assert.deepEqual(engine.getPlaceableOriginRange(oBlock), { min: 4, max: 8 });
+    // horizontal I is 4 wide -> rightmost valid origin is 6 (occupies columns 6-9)
+    assert.deepEqual(engine.getPlaceableOriginRange(horizontalIBlock), { min: 4, max: 6 });
 });
 
-test("createBlock assigns a random anchor cell within the brick's width", () => {
+test("createBlock no longer assigns an anchorX field", () => {
     const { engine } = createPlayingEngine(1, 8);
-    const anchors = new Set();
+    const block = engine.createBlock("O");
 
-    for (let i = 0; i < 200; i++) {
-        anchors.add(engine.createBlock("O").anchorX);
-    }
-
-    // O is 2 cells wide (columns 0-1); over many draws the anchor should land on both
-    assert.equal(anchors.has(0), true);
-    assert.equal(anchors.has(1), true);
+    assert.equal(Object.prototype.hasOwnProperty.call(block, "anchorX"), false);
 });
 
 test("quick chat broadcasts a transient event and enforces the player cooldown", () => {

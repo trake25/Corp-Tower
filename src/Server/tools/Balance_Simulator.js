@@ -84,14 +84,12 @@ function chooseSmartPlacement(engine) {
     return candidates.sort((a, b) => a.height - b.height)[0];
 }
 
-function chooseStablestLane(engine, block) {
-    const lanes = Object.keys(
-        GameConfig.placeableLanes || { left: 3, center: 4, right: 5 }
-    );
+function chooseStablestColumn(engine, block) {
+    const { min, max } = engine.getPlaceableOriginRange(block);
     let best = null;
 
-    lanes.forEach(lane => {
-        const originX = engine.resolveLaneOriginX(block, lane);
+    for (let column = min; column <= max; column++) {
+        const originX = engine.resolveColumnOriginX(block, column);
         const placement = TowerStability.settleBlock(
             engine.room.towerBlocks || [], block, originX
         );
@@ -101,11 +99,11 @@ function chooseStablestLane(engine, block) {
         const result = TowerStability.evaluate(projected, GameConfig);
 
         if (!best || result.stability > best.stability) {
-            best = { lane, stability: result.stability };
+            best = { column, stability: result.stability };
         }
-    });
+    }
 
-    return best ? best.lane : "center";
+    return best ? best.column : GameConfig.placeableColumnMin;
 }
 
 function simulateSmartPlay(engine) {
@@ -131,9 +129,9 @@ function simulateSmartPlay(engine) {
         const block = placement.player.blocks.splice(placement.blockIndex, 1)[0];
         const blockHeight = engine.getBlockHeight(block);
         const previousHeight = engine.room.currentHeight;
-        const lane = chooseStablestLane(engine, block);
+        const column = chooseStablestColumn(engine, block);
         const placementPosition = TowerStability.settleBlock(
-            engine.room.towerBlocks || [], block, engine.resolveLaneOriginX(block, lane)
+            engine.room.towerBlocks || [], block, engine.resolveColumnOriginX(block, column)
         );
         const projected = [...(engine.room.towerBlocks || []), {
             playerId: placement.player.id, block, ...placementPosition

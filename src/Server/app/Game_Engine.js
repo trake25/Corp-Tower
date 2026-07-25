@@ -543,22 +543,25 @@ class GameEngine {
         this.startLevel();
     }
 
-    resolveLaneOriginX(block, lane) {
-        const lanes = GameConfig.placeableLanes || { left: 3, center: 4, right: 5 };
-        const laneCol = Number.isFinite(Number(lanes[lane]))
-            ? Number(lanes[lane])
-            : Number(lanes.center);
-        const anchorX = Number(block?.anchorX) || 0;
+    getPlaceableOriginRange(block) {
         const cellXs = (block?.cells || []).map(cell => Number(cell[0]));
         const width = cellXs.length
             ? Math.max(...cellXs) - Math.min(...cellXs) + 1
             : 1;
-        const maxOriginX = Math.max(0, GameConfig.towerGridWidth - width);
+        const min = GameConfig.placeableColumnMin;
+        const max = GameConfig.placeableColumnMax - width + 1;
 
-        return Math.max(0, Math.min(maxOriginX, laneCol - anchorX));
+        return { min, max: Math.max(min, max) };
     }
 
-    placeBlock(playerId, blockIndex, lane = "center") {
+    resolveColumnOriginX(block, column) {
+        const { min, max } = this.getPlaceableOriginRange(block);
+        const requested = Number.isFinite(Number(column)) ? Number(column) : min;
+
+        return Math.max(min, Math.min(max, Math.round(requested)));
+    }
+
+    placeBlock(playerId, blockIndex, column = GameConfig.placeableColumnMin) {
         if (this.room.state !== "playing") {
             console.log("Cannot place block, level not active");
             return;
@@ -598,7 +601,7 @@ class GameEngine {
         const block = player.blocks.splice(blockIndex, 1)[0];
         const blockHeight = this.getBlockHeight(block);
         const previousHeight = this.room.currentHeight;
-        const originX = this.resolveLaneOriginX(block, lane);
+        const originX = this.resolveColumnOriginX(block, column);
         const placement = TowerStability.settleBlock(
             this.room.towerBlocks || [], block, originX
         );
