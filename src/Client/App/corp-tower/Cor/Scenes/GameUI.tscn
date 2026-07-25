@@ -92,68 +92,6 @@ offset_right = 342.0
 offset_bottom = 731.0
 theme_type_variation = &"TowerFillPanel"
 
-[node name="TopIndicatorRow" type="Control" parent="PlayField" unique_id=1135729857]
-layout_mode = 0
-offset_left = 8.0
-offset_top = 128.0
-offset_right = 404.0
-offset_bottom = 164.0
-mouse_filter = 2
-
-[node name="TopIndicatorFrame" type="Panel" parent="PlayField/TopIndicatorRow" unique_id=831164527]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = 4.0
-offset_bottom = -4.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_type_variation = &"TopBarFramePanel"
-
-[node name="TopIndicatorTrack" type="Panel" parent="PlayField/TopIndicatorRow/TopIndicatorFrame" unique_id=1712004411]
-clip_children = 2
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 2.0
-offset_top = 2.0
-offset_right = -2.0
-offset_bottom = -2.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_type_variation = &"TopBarTrackPanel"
-
-[node name="TopIndicatorFill" type="TextureRect" parent="PlayField/TopIndicatorRow/TopIndicatorFrame/TopIndicatorTrack" unique_id=1316656720]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 9
-anchor_right = 0.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = SubResource("GradientTexture2D_TopBarFill")
-expand_mode = 1
-stretch_mode = 0
-
-[node name="TopIndicatorLabel" type="Label" parent="PlayField/TopIndicatorRow" unique_id=778896618]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_font_sizes/font_size = 16
-text = "TOP"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="TowerStack" type="Control" parent="PlayField" unique_id=1556131207]
 unique_name_in_owner = true
 anchors_preset = 0
@@ -257,6 +195,68 @@ offset_bottom = 36.0
 theme_override_colors/font_color = Color(0.06, 0.06, 0.06, 1)
 theme_override_font_sizes/font_size = 20
 text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TopIndicatorRow" type="Control" parent="PlayField" unique_id=1135729857]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 128.0
+offset_right = 404.0
+offset_bottom = 164.0
+mouse_filter = 2
+
+[node name="TopIndicatorFrame" type="Panel" parent="PlayField/TopIndicatorRow" unique_id=831164527]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"TopBarFramePanel"
+
+[node name="TopIndicatorTrack" type="Panel" parent="PlayField/TopIndicatorRow/TopIndicatorFrame" unique_id=1712004411]
+clip_children = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"TopBarTrackPanel"
+
+[node name="TopIndicatorFill" type="TextureRect" parent="PlayField/TopIndicatorRow/TopIndicatorFrame/TopIndicatorTrack" unique_id=1316656720]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 9
+anchor_right = 0.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_TopBarFill")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="TopIndicatorLabel" type="Label" parent="PlayField/TopIndicatorRow" unique_id=778896618]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 16
+text = "TOP"
 horizontal_alignment = 1
 vertical_alignment = 1
 
