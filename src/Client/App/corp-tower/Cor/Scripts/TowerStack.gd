@@ -11,7 +11,7 @@ const GRID_WIDTH := 9
 const GRID_CENTER_COL := 4.0
 const TOP_PADDING := 14.0
 const BOTTOM_PADDING := 12.0
-const SCROLL_TRIGGER_RATIO := 0.7
+const TOP_INDICATOR_CLEARANCE_UNITS := 2
 const COLLAPSE_TILT_DEG := 70.0
 const TILT_EASE_SPEED := 6.0
 const DROP_DURATION := 0.28
@@ -245,8 +245,11 @@ func _unit_size() -> float:
 
 func _scroll_offset_units(unit: float) -> int:
 	var visible_units: int = _visible_unit_capacity(unit)
-	var trigger_units: int = max(1, int(floor(float(visible_units) * SCROLL_TRIGGER_RATIO)))
+	var trigger_units: int = max(1, visible_units - TOP_INDICATOR_CLEARANCE_UNITS)
 	var focus_height: int = max(current_height, 1)
+
+	if target_height > 0:
+		focus_height = min(focus_height, target_height)
 
 	if focus_height <= trigger_units:
 		return 0
