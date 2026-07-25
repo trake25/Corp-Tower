@@ -6,7 +6,6 @@ const SnapGridScript = preload("res://Cor/Scripts/GameUi/SnapGrid.gd")
 
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
-const BRICK_GAP := 2.0
 const GRID_CENTER_COL := SnapGridScript.GRID_CENTER_COL
 const PLACEABLE_COLUMN_MIN := SnapGridScript.PLACEABLE_COLUMN_MIN
 const PLACEABLE_COLUMN_MAX := SnapGridScript.PLACEABLE_COLUMN_MAX
@@ -292,8 +291,8 @@ func _draw() -> void:
 		var rotation_steps: int = BlockDataScript.detect_rotation_steps(shape_id, cells)
 		var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(BlockDataScript.BRICK_SHAPES[shape_id])
 		var canonical_size: Vector2 = Vector2(
-			float(canonical_bounds.max_x - canonical_bounds.min_x + 1) * unit - BRICK_GAP,
-			float(canonical_bounds.max_y - canonical_bounds.min_y + 1) * unit - BRICK_GAP
+			float(canonical_bounds.max_x - canonical_bounds.min_x + 1) * unit,
+			float(canonical_bounds.max_y - canonical_bounds.min_y + 1) * unit
 		)
 		var points: PackedVector2Array = BlockDataScript.brick_quad_points(center, canonical_size, rotation_steps)
 		var colors := PackedColorArray([color, color, color, color])
@@ -419,8 +418,8 @@ func _draw_drag_ghost(
 			BlockDataScript.BRICK_SHAPES[drag_shape_id]
 		)
 		var canonical_size: Vector2 = Vector2(
-			float(canonical_bounds.max_x - canonical_bounds.min_x + 1) * unit - BRICK_GAP,
-			float(canonical_bounds.max_y - canonical_bounds.min_y + 1) * unit - BRICK_GAP
+			float(canonical_bounds.max_x - canonical_bounds.min_x + 1) * unit,
+			float(canonical_bounds.max_y - canonical_bounds.min_y + 1) * unit
 		)
 		var points: PackedVector2Array = BlockDataScript.brick_quad_points(
 			center, canonical_size, rotation_steps
@@ -466,7 +465,7 @@ func _draw_snap_points(
 			draw_arc(local, snap_dot_radius, 0.0, TAU, 16, SNAP_DOT_COLOR, 1.5, true)
 
 func _draw_fallback_block(center: Vector2, box_size: Vector2, color: Color) -> void:
-	var rect: Rect2 = Rect2(center - box_size * 0.5, box_size).grow(-1.0)
+	var rect: Rect2 = Rect2(center - box_size * 0.5, box_size)
 	draw_rect(rect, color, true)
 	draw_rect(rect, GRID_COLOR, false, 1.5)
 
@@ -483,7 +482,7 @@ func _draw_fallback_stack() -> void:
 	for y in range(current_height):
 		var rect: Rect2 = Rect2(
 			Vector2(x, baseline - float(y + 1 - scroll_offset_units) * unit),
-			Vector2(width, unit - 2.0)
+			Vector2(width, unit)
 		)
 
 		if !_is_rect_visible(rect):

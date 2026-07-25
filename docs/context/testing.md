@@ -36,9 +36,11 @@ Scope: everything that verifies or tunes behavior — server contract tests, the
 
 ## Godot Client Tests
 
-Files: `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`, `Tests/Gut/test_player_colors.gd`. Run headlessly through vendored GUT (`addons/gut`), invoked by [Client Android Internal Workflow](./build.md#client-android-internal-workflow) before a signed export.
+Files: `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`, `Tests/Gut/test_player_colors.gd`, `Tests/Gut/GameUi/*`. Run headlessly through vendored GUT (`addons/gut`), invoked by [Client Android Internal Workflow](./build.md#client-android-internal-workflow) before a signed export.
 
 **Covers:** loads application scripts under `Cor`/`Sys` (catches load-time/syntax errors before CI's build step); verifies the main scene + `NetworkManager` autoload wiring; verifies [Game UI Scene](./ui.md#game-ui-scene) loads/instantiates with every node Main UI Controller requires present; verifies [Player Colors](./ui.md#leaf-components) behavior through GUT.
+
+**`Tests/Gut/GameUi/test_snap_grid.gd`** is the one piece of genuinely behavioral placement coverage: `SnapGrid` is node-free, so it is exercised directly with no scene mount. It pins the gravity settle against hand-computed stacking/cantilever cases (the mirror of server `Tower_Stability.settleBlock` — if that server function changes, this suite is what should fail), the snap-point set (7 platform points, placed-brick corners deduped, unplaceable columns excluded), `origin_range` clamping, true-outline-vertex selection for `T`, the snap-vs-fallback threshold, and the invariant that **no resolved column ever lets a footprint leave columns 4–9**. `test_inventory_controller.gd` additionally asserts the column actually handed to `place_block` lands in that range.
 
 **Depends on:** Godot Client App, NetworkManager, Main UI Controller, Game UI Scene, Player Colors. External: GUT, vendored under `addons/gut`.
 
@@ -56,4 +58,5 @@ Files: `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`, `Tests/Gut/test_player_
 
 - `checkFailCondition()`'s `all_blocks_used` branch and `setupSideQuest()`/quest completion have no direct test — worth adding before a larger refactor of the Power side-quest flow.
 - Multi-worker matchmaking (queue draining + cross-pod room handoff) now has regression coverage — see [Server Matchmaking Queue Tests](#server-matchmaking-queue-tests). Reconnect and gateway routing across pods more broadly still have no integration tests — planned future work (see [decisions.md](./decisions.md#no-persistent-leaderboard-yet)).
-- Most client UI components (Main UI Controller, NetworkManager, Block Preview, Tower Stack, Cooldown Overlay, Debug Overlay) have structural coverage only, not behavioral.
+- Most client UI components (Main UI Controller, NetworkManager, Block Preview, Tower Stack, Cooldown Overlay, Debug Overlay) have structural coverage only, not behavioral. Placement is the exception — its math lives in the node-free `SnapGrid` and is covered by `test_snap_grid.gd`.
+- **`TowerStack`'s drawing and drag-state handling remain untested**, and that gap is not theoretical: the bug where `clear_snap_preview()` wiped the drag state on the first move (leaving no ghost at all) passed every unit test and was only caught by rendering the play field to PNG. Verify placement visuals by running the client, not by the suite alone.
