@@ -1228,18 +1228,18 @@ layout_mode = 2
 [node name="TowerSlendernessMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000103]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Slenderness Max: 6.0"
+text = "Slenderness Max: 8.0"
 
 [node name="TowerSlendernessMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000104]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerSlendernessMinHeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000105]
+[node name="TowerStabilityMinHeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000105]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Slenderness Min Height: 6"
+text = "Stability Min Height: 6"
 
-[node name="TowerSlendernessMinHeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000106]
+[node name="TowerStabilityMinHeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000106]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -1255,7 +1255,7 @@ layout_mode = 2
 [node name="TowerSiteSlendernessLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000109]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Site Slenderness Target: 2.75"
+text = "Site Slenderness Target: 2.0"
 
 [node name="TowerSiteSlendernessSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000110]
 unique_name_in_owner = true
@@ -1273,7 +1273,7 @@ layout_mode = 2
 [node name="TowerSiteWidthMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000113]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Site Width Max: 12"
+text = "Site Width Max: 8"
 
 [node name="TowerSiteWidthMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000114]
 unique_name_in_owner = true

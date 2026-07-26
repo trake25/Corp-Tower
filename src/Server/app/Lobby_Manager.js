@@ -31,7 +31,7 @@ const DEFAULT_DEBUG_CONFIG = {
     towerCollapseTiltScore: GameConfig.towerCollapseTiltScore,
     towerSlendernessSafe: GameConfig.towerSlendernessSafe,
     towerSlendernessMax: GameConfig.towerSlendernessMax,
-    towerSlendernessMinHeight: GameConfig.towerSlendernessMinHeight,
+    towerStabilityMinHeight: GameConfig.towerStabilityMinHeight,
     towerSupportDeficitMax: GameConfig.towerSupportDeficitMax,
     towerSiteSlendernessTarget: GameConfig.towerSiteSlendernessTarget,
     towerSiteWidthMin: GameConfig.towerSiteWidthMin,
@@ -467,7 +467,7 @@ class LobbyManager {
             towerCollapseTiltScore: GameConfig.towerCollapseTiltScore,
             towerSlendernessSafe: GameConfig.towerSlendernessSafe,
             towerSlendernessMax: GameConfig.towerSlendernessMax,
-            towerSlendernessMinHeight: GameConfig.towerSlendernessMinHeight,
+            towerStabilityMinHeight: GameConfig.towerStabilityMinHeight,
             towerSupportDeficitMax: GameConfig.towerSupportDeficitMax,
             towerSiteSlendernessTarget: GameConfig.towerSiteSlendernessTarget,
             towerSiteWidthMin: GameConfig.towerSiteWidthMin,
@@ -534,8 +534,8 @@ class LobbyManager {
         GameConfig.towerSlendernessSafe =
             DEFAULT_DEBUG_CONFIG.towerSlendernessSafe;
         GameConfig.towerSlendernessMax = DEFAULT_DEBUG_CONFIG.towerSlendernessMax;
-        GameConfig.towerSlendernessMinHeight =
-            DEFAULT_DEBUG_CONFIG.towerSlendernessMinHeight;
+        GameConfig.towerStabilityMinHeight =
+            DEFAULT_DEBUG_CONFIG.towerStabilityMinHeight;
         GameConfig.towerSupportDeficitMax =
             DEFAULT_DEBUG_CONFIG.towerSupportDeficitMax;
         GameConfig.towerSiteSlendernessTarget =
@@ -702,14 +702,14 @@ class LobbyManager {
             towerCollapseTiltScore: setGameNumber("towerCollapseTiltScore", 0.3, 8),
             towerSlendernessSafe: setGameNumber("towerSlendernessSafe", 0.5, 10),
             towerSlendernessMax: setGameNumber("towerSlendernessMax", 1, 20),
-            towerSlendernessMinHeight:
-                setGameInt("towerSlendernessMinHeight", 1, 30),
+            towerStabilityMinHeight:
+                setGameInt("towerStabilityMinHeight", 1, 30),
             towerSupportDeficitMax:
                 setGameNumber("towerSupportDeficitMax", 0.05, 1),
             towerSiteSlendernessTarget:
                 setGameNumber("towerSiteSlendernessTarget", 1, 8),
-            towerSiteWidthMin: setGameInt("towerSiteWidthMin", 2, 14),
-            towerSiteWidthMax: setGameInt("towerSiteWidthMax", 2, 14),
+            towerSiteWidthMin: setGameInt("towerSiteWidthMin", 2, 8),
+            towerSiteWidthMax: setGameInt("towerSiteWidthMax", 2, 8),
             supplyEffectiveWidthRatio:
                 setGameNumber("supplyEffectiveWidthRatio", 0.1, 2),
             towerStabilityWarningThreshold:

@@ -289,6 +289,7 @@ class GameEngine {
     }
 
     grantDefaultPowers() {
+        if (!GameConfig.powerGuaranteedBaseline) return;
         if (this.room.level < GameConfig.powerUnlockLevel) return;
         this.room.players.forEach(player => {
             const hasRefresh = (player.powerInventory || []).some(item => item.id === "refresh");

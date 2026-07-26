@@ -185,8 +185,8 @@ var tower_slenderness_safe_label: Label
 var tower_slenderness_safe_slider: HSlider
 var tower_slenderness_max_label: Label
 var tower_slenderness_max_slider: HSlider
-var tower_slenderness_min_height_label: Label
-var tower_slenderness_min_height_slider: HSlider
+var tower_stability_min_height_label: Label
+var tower_stability_min_height_slider: HSlider
 var tower_support_deficit_label: Label
 var tower_support_deficit_slider: HSlider
 var tower_site_slenderness_label: Label
@@ -300,8 +300,8 @@ func bind_nodes(binder) -> void:
 	tower_slenderness_safe_slider = binder.optional_node("TowerSlendernessSafeSlider") as HSlider
 	tower_slenderness_max_label = binder.optional_node("TowerSlendernessMaxLabel") as Label
 	tower_slenderness_max_slider = binder.optional_node("TowerSlendernessMaxSlider") as HSlider
-	tower_slenderness_min_height_label = binder.optional_node("TowerSlendernessMinHeightLabel") as Label
-	tower_slenderness_min_height_slider = binder.optional_node("TowerSlendernessMinHeightSlider") as HSlider
+	tower_stability_min_height_label = binder.optional_node("TowerStabilityMinHeightLabel") as Label
+	tower_stability_min_height_slider = binder.optional_node("TowerStabilityMinHeightSlider") as HSlider
 	tower_support_deficit_label = binder.optional_node("TowerSupportDeficitLabel") as Label
 	tower_support_deficit_slider = binder.optional_node("TowerSupportDeficitSlider") as HSlider
 	tower_site_slenderness_label = binder.optional_node("TowerSiteSlendernessLabel") as Label
@@ -387,11 +387,11 @@ func setup(tuning_ref, network_ref) -> void:
 	configure_slider(tower_collapse_threshold_slider, 0.3, 8.0, 0.1, func(value): send_debug_float("towerCollapseTiltScore", value))
 	configure_slider(tower_slenderness_safe_slider, 0.5, 10.0, 0.25, func(value): send_debug_float("towerSlendernessSafe", value))
 	configure_slider(tower_slenderness_max_slider, 1.0, 20.0, 0.5, func(value): send_debug_float("towerSlendernessMax", value))
-	configure_slider(tower_slenderness_min_height_slider, 1, 30, 1, func(value): send_debug_int("towerSlendernessMinHeight", value))
+	configure_slider(tower_stability_min_height_slider, 1, 30, 1, func(value): send_debug_int("towerStabilityMinHeight", value))
 	configure_slider(tower_support_deficit_slider, 5, 100, 5, func(value): send_debug_float("towerSupportDeficitMax", value / 100.0))
 	configure_slider(tower_site_slenderness_slider, 1.0, 8.0, 0.25, func(value): send_debug_float("towerSiteSlendernessTarget", value))
-	configure_slider(tower_site_width_min_slider, 2, 14, 2, func(value): send_debug_int("towerSiteWidthMin", value))
-	configure_slider(tower_site_width_max_slider, 2, 14, 2, func(value): send_debug_int("towerSiteWidthMax", value))
+	configure_slider(tower_site_width_min_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMin", value))
+	configure_slider(tower_site_width_max_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMax", value))
 	configure_slider(supply_effective_width_slider, 10, 200, 5, func(value): send_debug_float("supplyEffectiveWidthRatio", value / 100.0))
 	configure_slider(placement_stability_floor_slider, 0, 100, 5, func(value): send_debug_float("placementStabilityFloor", value / 100.0))
 	configure_slider(reinforce_integrity_slider, 0, 25, 1, func(value): send_debug_float("reinforceScorePerIntegrity", value))
@@ -670,8 +670,8 @@ func apply_config(config) -> void:
 		float(config.get("towerSlendernessMax", 6.0))
 	)
 	set_slider_no_signal(
-		tower_slenderness_min_height_slider,
-		float(config.get("towerSlendernessMinHeight", 6))
+		tower_stability_min_height_slider,
+		float(config.get("towerStabilityMinHeight", 6))
 	)
 	set_slider_no_signal(
 		tower_support_deficit_slider,
@@ -820,8 +820,8 @@ func update_debug_labels() -> void:
 		"Slenderness Max: " + ("%.2f" % get_slider_value(tower_slenderness_max_slider, 6.0))
 	)
 	set_debug_label_text(
-		tower_slenderness_min_height_label,
-		"Slenderness Min Height: " + str(int(get_slider_value(tower_slenderness_min_height_slider, 6)))
+		tower_stability_min_height_label,
+		"Stability Min Height: " + str(int(get_slider_value(tower_stability_min_height_slider, 6)))
 	)
 	set_debug_label_text(
 		tower_support_deficit_label,
@@ -837,7 +837,7 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		tower_site_width_max_label,
-		"Site Width Max: " + str(int(get_slider_value(tower_site_width_max_slider, 12)))
+		"Site Width Max: " + str(int(get_slider_value(tower_site_width_max_slider, 8)))
 	)
 	set_debug_label_text(
 		impact_score_label,

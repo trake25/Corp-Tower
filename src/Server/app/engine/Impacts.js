@@ -76,6 +76,10 @@ function restoreImpactPowers(engine) {
 }
 
 function awardImpactPower(engine) {
+    if (!GameConfig.powerImpactMvpReward) {
+        return;
+    }
+
     const winner = engine.room.players.reduce((best, player) => {
         return !best || Number(player.score || 0) > Number(best.score || 0)
             ? player

@@ -43,18 +43,39 @@ function withMutedConsole(callback) {
     }
 }
 
-function chooseSmartPlacement(engine, strategy) {
+// Each player is independently rate-limited by placementCooldown, so the room
+// naturally interleaves rather than letting whoever holds the best brick place
+// over and over. Modelling that matters for more than pacing: it is what spreads
+// contribution across the three players, which is exactly what the Impact gate
+// measures.
+function nextPlayerToAct(engine, clock) {
+    let next = null;
+
+    engine.room.players.forEach(player => {
+        if (!player.blocks || player.blocks.length === 0) {
+            return;
+        }
+
+        const readyAt = Math.max(clock, Number(player.simReadyAt || 0));
+
+        if (!next || readyAt < next.readyAt) {
+            next = { player: player, readyAt: readyAt };
+        }
+    });
+
+    return next;
+}
+
+function chooseSmartPlacement(engine, strategy, actor) {
     const remainingHeight =
         engine.room.targetHeight - engine.room.currentHeight;
     const candidates = [];
 
-    engine.room.players.forEach(player => {
-        (player.blocks || []).forEach((block, blockIndex) => {
-            candidates.push({
-                player: player,
-                blockIndex: blockIndex,
-                height: engine.getBlockHeight(block)
-            });
+    (actor.blocks || []).forEach((block, blockIndex) => {
+        candidates.push({
+            player: actor,
+            blockIndex: blockIndex,
+            height: engine.getBlockHeight(block)
         });
     });
 
@@ -116,12 +137,34 @@ function simulateSmartPlay(engine, strategy) {
         ...extra
     });
 
+    const cooldown = Math.max(0, Number(GameConfig.placementCooldown) || 0);
+    const timeLimit = Math.max(1, Number(GameConfig.levelTimeLimitMs) || 1);
+    let clock = 0;
+
+    engine.room.players.forEach(player => {
+        player.simReadyAt = 0;
+    });
+
     while (engine.room.currentHeight < engine.room.targetHeight) {
-        const placement = chooseSmartPlacement(engine, strategy);
+        const actor = nextPlayerToAct(engine, clock);
+
+        if (!actor) {
+            return outcome({});
+        }
+
+        clock = actor.readyAt;
+
+        if (clock >= timeLimit) {
+            return outcome({ timedOut: true });
+        }
+
+        const placement = chooseSmartPlacement(engine, strategy, actor.player);
 
         if (!placement) {
             return outcome({});
         }
+
+        actor.player.simReadyAt = clock + cooldown;
 
         const block = placement.player.blocks.splice(placement.blockIndex, 1)[0];
         const blockHeight = engine.getBlockHeight(block);
@@ -185,8 +228,22 @@ function getScoreSummary(engine) {
     return {
         teamLevelScore: totalScore,
         mvpLevelScore: mvpScore,
-        scoreSpread: mvpScore - minScore
+        scoreSpread: mvpScore - minScore,
+        gateMet: meetsImpactGate(engine, scores)
     };
+}
+
+// With an Impact every level, "did all three players clear their share?" is the
+// gate that actually decides whether the team advances, so it is the number
+// worth tuning against -- a level can complete and still roll the team back.
+function meetsImpactGate(engine, scores) {
+    const required =
+        engine.getImpactMinContributionShare() *
+        engine.room.targetHeight *
+        engine.room.level *
+        (Number(GameConfig.scoring.placementScorePerHeight) || 1);
+
+    return scores.every(score => score >= required);
 }
 
 function runLevel(level, runs, strategy = "cooperative") {
@@ -199,6 +256,8 @@ function runLevel(level, runs, strategy = "cooperative") {
         smartCompleted: 0,
         smartExact: 0,
         collapsed: 0,
+        timedOut: 0,
+        gateMet: 0,
         siteWidth: 0,
         averageEfficiency: 0,
         averageOverbuild: 0,
@@ -229,6 +288,8 @@ function runLevel(level, runs, strategy = "cooperative") {
         stats.smartCompleted += result.completed ? 1 : 0;
         stats.smartExact += result.exact ? 1 : 0;
         stats.collapsed += result.collapsed ? 1 : 0;
+        stats.timedOut += result.timedOut ? 1 : 0;
+        stats.gateMet += (result.completed && result.gateMet) ? 1 : 0;
         stats.siteWidth = engine.getSiteWidthForHeight(engine.room.targetHeight);
         stats.averageEfficiency += result.efficiency;
         stats.averageOverbuild += result.overbuild;
@@ -249,6 +310,8 @@ function runLevel(level, runs, strategy = "cooperative") {
         smartCompletionRate: stats.smartCompleted / runs,
         smartExactRate: stats.smartExact / runs,
         collapseRate: stats.collapsed / runs,
+        timeoutRate: stats.timedOut / runs,
+        gateMetRate: stats.gateMet / runs,
         siteWidth: stats.siteWidth,
         averageEfficiency: stats.averageEfficiency / runs,
         averageOverbuild: stats.averageOverbuild / runs,
@@ -278,6 +341,8 @@ function printResults(results) {
             "smartComplete",
             "smartExact",
             "collapse",
+            "timeout",
+            "gatePassed",
             "avgOverbuild",
             "avgPlacements",
             "avgTeamScore",
@@ -301,6 +366,8 @@ function printResults(results) {
                 percent(result.smartCompletionRate),
                 percent(result.smartExactRate),
                 percent(result.collapseRate),
+                percent(result.timeoutRate),
+                percent(result.gateMetRate),
                 result.averageOverbuild.toFixed(2),
                 result.averagePlacements.toFixed(1),
                 result.averageTeamLevelScore.toFixed(1),

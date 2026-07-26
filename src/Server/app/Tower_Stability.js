@@ -76,7 +76,10 @@ function evaluate(entries, config) {
     }
 
     const baseCenter = (groundMinX + groundMaxX) / 2;
-    const baseHalfWidth = Math.max((groundMaxX - groundMinX) / 2, 0.5);
+    const baseHalfWidth = Math.max(
+        (groundMaxX - groundMinX) / 2,
+        config.towerBaseHalfWidthFloor ?? 1.0
+    );
     const comX = comSum / cellCount;
     const comOffset = (comX - baseCenter) / baseHalfWidth;
 
@@ -103,7 +106,16 @@ function evaluate(entries, config) {
         }
     }
 
-    const rawScore = comOffset + laneImbalance + overhangPenalty;
+    const height = topHeight(entries);
+
+    // A stubby tower physically cannot topple, and with only a handful of cells
+    // placed every ratio below swings wildly -- a lone T resting on its stem
+    // reads as 50% unsupported. Every penalty term is therefore scaled in as the
+    // tower grows, so the opening bricks are always safe.
+    const stabilityMinHeight = Math.max(1, config.towerStabilityMinHeight ?? 6);
+    const maturity = Math.min(1, height / stabilityMinHeight);
+
+    const rawScore = (comOffset + laneImbalance + overhangPenalty) * maturity;
     const collapseThreshold = config.towerCollapseTiltScore ?? 1.0;
     const clampCeiling = collapseThreshold * 1.6;
     const tiltScore = Math.max(-clampCeiling, Math.min(clampCeiling, rawScore));
@@ -111,16 +123,13 @@ function evaluate(entries, config) {
     const maxTiltDeg = config.towerMaxTiltAngleDeg ?? 24;
     const tiltAngleDeg = Math.max(-maxTiltDeg, Math.min(maxTiltDeg, tiltScore * maxTiltDeg));
 
-    const height = topHeight(entries);
     const groundWidth = Math.max(1, groundMaxX - groundMinX + 1);
     const slenderness = height / groundWidth;
     const slendernessSafe = config.towerSlendernessSafe ?? 2.5;
     const slendernessMax = config.towerSlendernessMax ?? 6.0;
-    const slendernessMinHeight = Math.max(1, config.towerSlendernessMinHeight ?? 6);
     const slendernessSpan = Math.max(0.0001, slendernessMax - slendernessSafe);
     const slendernessPenalty =
-        clamp01((slenderness - slendernessSafe) / slendernessSpan) *
-        Math.min(1, height / slendernessMinHeight);
+        clamp01((slenderness - slendernessSafe) / slendernessSpan) * maturity;
 
     let unsupportedCells = 0;
     for (const entry of entries) {
@@ -132,7 +141,7 @@ function evaluate(entries, config) {
     }
     const supportDeficit = cellCount > 0 ? unsupportedCells / cellCount : 0;
     const supportDeficitMax = Math.max(0.0001, config.towerSupportDeficitMax ?? 0.35);
-    const supportPenalty = clamp01(supportDeficit / supportDeficitMax);
+    const supportPenalty = clamp01(supportDeficit / supportDeficitMax) * maturity;
 
     const integrity = Math.round(
         (1 - clamp01(slendernessPenalty + supportPenalty)) * 100

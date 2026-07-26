@@ -496,6 +496,13 @@ func _scroll_offset_units(unit: float) -> int:
 	var visible_units: int = _visible_unit_capacity(unit)
 	var start_units: int = max(1, int(floor(float(visible_units) * scroll_start_ratio)))
 	var flush_units: int = max(start_units, visible_units - top_indicator_clearance_units)
+
+	# A target that already fits under the Top Indicator needs no camera move at
+	# all -- panning a tower that was never going off-screen just drags the
+	# ground away from under it for no reason.
+	if target_height > 0 and target_height <= flush_units:
+		return 0
+
 	var focus_height: int = max(current_height, 1)
 
 	if target_height > 0:
