@@ -56,11 +56,15 @@ func update_score_lines(players: Array) -> void:
 			player_rail_box.add_child(entry)
 			player_rail_entries[player_id] = entry
 
+		var displayed_total: int = int(player.get("score", 0))
+		if match_state.current_match_state == "playing":
+			displayed_total += int(player.get("levelScore", 0))
+
 		entry.get_parent().move_child(entry, i)
 		entry.call(
 			"set_entry",
 			players_ctx.rail_name(player_id),
-			int(player.get("score", 0)) + int(player.get("levelScore", 0)),
+			displayed_total,
 			i,
 			players_ctx.avatar_id(player_id)
 		)

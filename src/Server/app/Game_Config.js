@@ -39,12 +39,12 @@ const GameConfig = {
     placeableColumnMin: 2,
     placeableColumnMax: 5,
     towerSiteSlendernessTarget: 6.75,
-    towerSiteWidthMin: 4,
+    towerSiteWidthMin: 6, // from level 1-28
     // Hard viewport ceiling, not a taste call: TowerStack is 272px wide at a
     // fixed 34px brick, so only grid columns 3-10 are ever on screen. A wider
     // site would place bricks the player can never see.
-    towerSiteWidthMax: 8,   // cap limit 8
-    towerMaxTiltAngleDeg: 18,   //18
+    towerSiteWidthMax: 8,   // cap limit 8 from level 29-99
+    towerMaxTiltAngleDeg: 10,   //18
     towerStabilityDifficulty: 95,   // 0 forgiving, 100 harsh, 90 default, 95 tuned
     towerStabilityPressure: {
         floor: 0.25,

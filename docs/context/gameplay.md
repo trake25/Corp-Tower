@@ -208,5 +208,4 @@ QA/local-test helpers only — not production AI. They fill rooms only when a re
 Not yet exposed: `brickWeights`, `inventoryScaling`, target-height curve bands, per-shape generation pools, `debugBotStabilityTolerance`, and the `towerStabilityAnchors`/`towerStabilityPressure` sets the stability dial interpolates.
 
 - **Exact-finish runs high** (~55–80% simulated), so "PERFECT BUILD" fires often. Lower via supply surplus or `minPrecisionBlocksPerLevel` if it should feel rarer.
-- **Site-width scaling is near-inert** at current values — level 1 already targets 16, so the derived width sits at the 8-column cap for essentially all play. It only breathes again if the tower viewport widens or bricks shrink.
 - **The front-loaded pool** can make a slow start mathematically uncatchable; worth confirming that reads as urgency, not unfairness. **Per-shape pools and fail-condition pressure** remain untouched levers for later difficulty shaping.
