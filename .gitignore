@@ -18,8 +18,8 @@ infra/eks/terraform/eks-lab.tfvars
 *.docx.bak
 *.exe
 /.cursor
+.claude/
 CLAUDE.md
-TOD20260719-01
 plan/
 task/
 reference/
