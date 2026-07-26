@@ -26,7 +26,7 @@ const EMOJI_TEXTURE_PATHS := {
 
 const DEFAULT_EMOJI_MOOD := "neutral"
 const DEFAULT_MOOD_THRESHOLD := 3
-const STABILITY_DELTA_KEY := "stabilityDelta"
+const BALANCE_DELTA_KEY := "balanceDelta"
 
 static var _texture_cache: Dictionary = {}
 static var _emoji_cache: Dictionary = {}
@@ -126,11 +126,11 @@ static func brick_texture(shape_id: String) -> Texture2D:
 
 	return _texture_cache[shape_id]
 
-# The server stamps each brick's stability delta once, at placement; the
-# threshold comparison happens here, every frame, against the live debug value.
-# Splitting it that way is what makes the knob tunable: a brick's delta is a
-# fixed historical fact, but dragging the threshold restyles the whole standing
-# tower immediately instead of only affecting bricks placed afterwards.
+# The server stamps each brick's balance delta once, at placement; the threshold
+# comparison happens here, every frame, against the live debug value. Splitting it
+# that way is what makes the knob tunable: a brick's delta is a fixed historical
+# fact, but dragging the threshold restyles the whole standing tower immediately
+# instead of only affecting bricks placed afterwards.
 static func emoji_mood_for_delta(delta: int, threshold: int) -> String:
 	var band: int = maxi(1, threshold)
 

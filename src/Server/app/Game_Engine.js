@@ -707,8 +707,11 @@ class GameEngine {
 
         this.recalculateTowerStability();
 
-        placedEntry.stabilityDelta =
-            (this.room.towerStability ?? 100) - stabilityBefore;
+        placedEntry.balanceDelta = TowerStability.balanceDelta(
+            structureBefore,
+            this.room.towerStabilityDiagnostics || {},
+            this.resolveStabilityConfig()
+        );
 
         this.addReinforceScore(
             player, structureBefore, this.room.towerStabilityDiagnostics || {}

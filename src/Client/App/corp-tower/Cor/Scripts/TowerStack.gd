@@ -346,11 +346,11 @@ func _draw_block_emoji(
 	# pre-emoji build or a room hydrated from an older snapshot). A neutral face
 	# is indistinguishable from a real "barely moved" verdict, which makes a
 	# missing field look like a working feature that ignores its own tuning.
-	if not entry.has(BlockDataScript.STABILITY_DELTA_KEY):
+	if not entry.has(BlockDataScript.BALANCE_DELTA_KEY):
 		return
 
 	var mood: String = BlockDataScript.emoji_mood_for_delta(
-		int(entry.get(BlockDataScript.STABILITY_DELTA_KEY, 0)), mood_threshold
+		int(entry.get(BlockDataScript.BALANCE_DELTA_KEY, 0)), mood_threshold
 	)
 	var texture: Texture2D = BlockDataScript.emoji_texture(mood)
 

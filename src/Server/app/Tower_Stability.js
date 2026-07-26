@@ -175,4 +175,37 @@ function evaluate(entries, config) {
     };
 }
 
-module.exports = { cellsFor, topHeight, settleBlock, evaluate };
+function structuralLean(diagnostics) {
+    const d = diagnostics || {};
+    return (Number(d.comOffset) || 0) + (Number(d.laneImbalance) || 0);
+}
+
+// How far one placement moved the tower back toward centre, in points of the
+// collapse budget. Positive = straighter, negative = more lopsided.
+//
+// Deliberately NOT the change in `stability`: that score is min(lean, integrity)
+// and decays with height on its own, so a flawlessly centred brick still reads
+// as a loss, and a lean correction is masked whenever integrity is the lower
+// axis. This reads only the persistent structural lean, which comes out of
+// evaluate() before the maturity ramp is applied -- that is what keeps it free
+// of the height drift.
+//
+// overhangPenalty is deliberately excluded even though it is already isolated to
+// the placed brick: a dangling brick puts its mass off-centre, so comOffset
+// already charges for it, and subtracting it again both double-counts and adds a
+// one-sided negative bias (over half of all placements carry some overhang, so
+// it made ordinary placements frown).
+function balanceDelta(before, after, config) {
+    const collapse = Math.max(
+        0.0001, Number((config || {}).towerCollapseTiltScore) || 1
+    );
+    const leanBefore = Math.abs(structuralLean(before));
+    const leanAfter = Math.abs(structuralLean(after));
+    const points = ((leanBefore - leanAfter) / collapse) * 100;
+
+    return Math.max(-100, Math.min(100, Math.round(points)));
+}
+
+module.exports = {
+    cellsFor, topHeight, settleBlock, evaluate, structuralLean, balanceDelta
+};

@@ -702,7 +702,109 @@ test("the brick mood threshold is exposed and clamped in debug config", async ()
     assert.equal(lobbyManager.getDebugConfig().towerStabilityMoodThreshold, 8);
 });
 
-test("a placed brick carries the stability delta it caused", () => {
+// The bug this pins: a perfectly centred brick used to read as a loss, and the
+// loss grew with height and level, because the stability score is
+// min(lean, integrity) and sags on its own as the tower matures.
+test("a centred placement scores a zero balance delta at every height", () => {
+    const config = fixedStabilityConfig();
+    const centred = [];
+    let previous = TowerStability.evaluate(centred, config);
+
+    for (let i = 0; i < 6; i++) {
+        const block = { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
+        const settled = TowerStability.settleBlock(centred, block, 2);
+        centred.push({ playerId: "P1", block, ...settled });
+
+        const current = TowerStability.evaluate(centred, config);
+
+        assert.equal(
+            TowerStability.balanceDelta(
+                previous.diagnostics, current.diagnostics, config
+            ),
+            0,
+            `centred brick ${i + 1} should not move the balance`
+        );
+
+        previous = current;
+    }
+
+    // The old signal is what a designer would otherwise have been reading: it
+    // drifts down even though nothing about the tower's balance changed.
+    assert.ok(
+        previous.stability < 100,
+        "the stability score itself does sag on a flawless centred stack"
+    );
+});
+
+test("straightening a lean scores positive and worsening it scores negative", () => {
+    const config = fixedStabilityConfig();
+    const stack = (spec) => {
+        const entries = [];
+        for (const column of spec) {
+            const block = { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
+            entries.push({
+                playerId: "P1",
+                block,
+                ...TowerStability.settleBlock(entries, block, column)
+            });
+        }
+        return entries;
+    };
+    const deltaFor = (entries, column) => {
+        const before = TowerStability.evaluate(entries, config);
+        const block = { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
+        const settled = TowerStability.settleBlock(entries, block, column);
+        const after = TowerStability.evaluate(
+            [...entries, { playerId: "P1", block, ...settled }], config
+        );
+        return TowerStability.balanceDelta(
+            before.diagnostics, after.diagnostics, config
+        );
+    };
+
+    // Wide base spanning columns 2-5, then two bricks stacked out to the right.
+    const leaningRight = stack([2, 4, 4, 4]);
+
+    assert.ok(
+        deltaFor(leaningRight, 2) > 0,
+        "a brick on the light side should score positive"
+    );
+    assert.ok(
+        deltaFor(leaningRight, 4) < 0,
+        "a brick on the heavy side should score negative"
+    );
+
+    // Mirrored, so the sign follows the correction and not a fixed direction.
+    const leaningLeft = stack([2, 4, 2, 2]);
+
+    assert.ok(
+        deltaFor(leaningLeft, 4) > 0,
+        "correcting a left lean should also score positive"
+    );
+    assert.ok(
+        deltaFor(leaningLeft, 2) < 0,
+        "worsening a left lean should also score negative"
+    );
+});
+
+test("balance delta clamps and tolerates missing diagnostics", () => {
+    const config = fixedStabilityConfig({ towerCollapseTiltScore: 0.01 });
+
+    assert.equal(TowerStability.balanceDelta({}, {}, config), 0);
+    assert.equal(TowerStability.balanceDelta({}, {}, {}), 0);
+    assert.equal(
+        TowerStability.balanceDelta({ comOffset: 5 }, { comOffset: 0 }, config),
+        100,
+        "an enormous correction should clamp at +100"
+    );
+    assert.equal(
+        TowerStability.balanceDelta({ comOffset: 0 }, { comOffset: 5 }, config),
+        -100,
+        "an enormous worsening should clamp at -100"
+    );
+});
+
+test("a placed brick carries the balance delta it caused", () => {
     useFixedGrid();
     const { engine, messages } = createPlayingEngine(1, 8);
 
@@ -712,24 +814,24 @@ test("a placed brick carries the stability delta it caused", () => {
     // the level nor trip the not-enough-height fail check.
     engine.room.players[2].blocks = [createBlock(4, "B3")];
 
-    // Stubbing the recalculation is what makes the delta a fixed number instead
-    // of one that moves whenever the stability anchors are retuned -- the
-    // physics have their own tests. It still catches a stamp written before the
-    // recalculation rather than after, since that would read a delta of 0.
-    engine.recalculateTowerStability = () => {
-        engine.room.towerStability = 95;
-    };
-
-    engine.room.towerStability = 30;
     engine.placeBlock("P1", 0);
     engine.placeBlock("P2", 0);
 
-    assert.equal(engine.room.towerBlocks[0].stabilityDelta, 65);
-    assert.equal(engine.room.towerBlocks[1].stabilityDelta, 0);
+    for (const entry of engine.room.towerBlocks) {
+        assert.equal(
+            typeof entry.balanceDelta, "number", "every placed brick is stamped"
+        );
+    }
 
     // The client classifies the face from this delta on every frame, so it must
     // ride every rebroadcast -- not just the one right after the placement.
     const broadcast = latestMessage(messages);
-    assert.equal(broadcast.towerBlocks[0].stabilityDelta, 65);
-    assert.equal(broadcast.towerBlocks[1].stabilityDelta, 0);
+    assert.equal(
+        broadcast.towerBlocks[0].balanceDelta,
+        engine.room.towerBlocks[0].balanceDelta
+    );
+    assert.equal(
+        broadcast.towerBlocks[1].balanceDelta,
+        engine.room.towerBlocks[1].balanceDelta
+    );
 });

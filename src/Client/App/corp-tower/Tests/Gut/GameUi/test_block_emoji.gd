@@ -110,6 +110,13 @@ func test_delta_classifies_against_the_threshold_in_both_directions() -> void:
 	assert_eq(BlockData.emoji_mood_for_delta(-5, 5), "negative", "A delta at -threshold is negative.")
 	assert_eq(BlockData.emoji_mood_for_delta(-100, 5), "negative", "A collapse is negative.")
 
+func test_the_balance_delta_key_matches_the_server_field() -> void:
+	assert_eq(
+		BlockData.BALANCE_DELTA_KEY,
+		"balanceDelta",
+		"The key must match Game_Engine's stamped field, or every brick loses its face."
+	)
+
 # The knob's whole point is that one delta reads differently at different
 # thresholds -- that is what lets a designer sweep it and watch the tower change.
 func test_the_same_delta_reclassifies_as_the_threshold_moves() -> void:
