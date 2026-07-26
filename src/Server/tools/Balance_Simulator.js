@@ -8,6 +8,9 @@ const STRATEGIES = ["cooperative", "mvp_greedy"];
 const DEFAULT_LEVELS = 20;
 const DEFAULT_RUNS = 1000;
 
+const SWEEP_DIFFICULTIES = [0, 25, 50, 75, 100];
+const SWEEP_LEVEL_STEP = 5;
+
 function createPlayers() {
     return [
         { id: "P1", score: 0 },
@@ -102,6 +105,21 @@ function simulateSmartPlay(engine, strategy) {
     let finishingBlock = null;
     let brickHeightPlaced = 0;
 
+    // Sampled at every placement, not just at the end. The binary collapse rate
+    // alone cannot tell a well-tuned stability config from one whose thresholds
+    // are unreachable -- both read 0%. These are what the difficulty sweep
+    // reads to decide which anchor to move.
+    const telemetry = {
+        samples: 0,
+        stabilitySum: 0,
+        minStability: 100,
+        integritySum: 0,
+        leanSum: 0,
+        siteUsageSum: 0,
+        supportDeficitSum: 0,
+        integrityBinding: 0
+    };
+
     const outcome = extra => ({
         completed: false,
         exact: false,
@@ -113,9 +131,32 @@ function simulateSmartPlay(engine, strategy) {
             brickHeightPlaced > 0
                 ? engine.room.currentHeight / brickHeightPlaced
                 : 0,
+        telemetry: telemetry,
         ...getScoreSummary(engine),
         ...extra
     });
+
+    const sampleStability = (structure, stabilityConfig) => {
+        const d = structure.diagnostics || {};
+        const collapseThreshold = Math.max(
+            0.0001, Number(stabilityConfig.towerCollapseTiltScore) || 0.0001
+        );
+        const lean = Math.round(
+            (1 - Math.min(1, Math.abs(Number(d.tiltScore) || 0) / collapseThreshold)) * 100
+        );
+        const integrity = Number(d.integrity ?? 100);
+
+        telemetry.samples += 1;
+        telemetry.stabilitySum += structure.stability;
+        telemetry.minStability = Math.min(telemetry.minStability, structure.stability);
+        telemetry.integritySum += integrity;
+        telemetry.leanSum += lean;
+        telemetry.siteUsageSum += Number(d.slenderness) || 0;
+        telemetry.supportDeficitSum += 1 - (Number(d.supportRatio) ?? 1);
+        if (integrity < lean) {
+            telemetry.integrityBinding += 1;
+        }
+    };
 
     const cooldown = Math.max(0, Number(GameConfig.placementCooldown) || 0);
     const timeLimit = Math.max(1, Number(GameConfig.levelTimeLimitMs) || 1);
@@ -174,9 +215,11 @@ function simulateSmartPlay(engine, strategy) {
         engine.room.currentHeight = newHeight;
         brickHeightPlaced += blockHeight;
         engine.room.towerBlocks.push({ playerId: placement.player.id, block, ...placementPosition });
-        const structure = TowerStability.evaluate(engine.room.towerBlocks, GameConfig);
+        const stabilityConfig = engine.resolveStabilityConfig();
+        const structure = TowerStability.evaluate(engine.room.towerBlocks, stabilityConfig);
         engine.room.towerStability = structure.stability;
         engine.room.towerStabilityDiagnostics = structure.diagnostics;
+        sampleStability(structure, stabilityConfig);
         if (structure.stability <= 0) {
             return outcome({ collapsed: true, placements: placements + 1 });
         }
@@ -250,7 +293,15 @@ function runLevel(level, runs, strategy = "cooperative") {
         averagePlacements: 0,
         averageTeamLevelScore: 0,
         averageMvpLevelScore: 0,
-        averageScoreSpread: 0
+        averageScoreSpread: 0,
+        samples: 0,
+        stabilitySum: 0,
+        minStability: 100,
+        integritySum: 0,
+        leanSum: 0,
+        siteUsageSum: 0,
+        supportDeficitSum: 0,
+        integrityBinding: 0
     };
 
     for (let i = 0; i < runs; i++) {
@@ -283,11 +334,33 @@ function runLevel(level, runs, strategy = "cooperative") {
         stats.averageTeamLevelScore += result.teamLevelScore;
         stats.averageMvpLevelScore += result.mvpLevelScore;
         stats.averageScoreSpread += result.scoreSpread;
+
+        const t = result.telemetry;
+        stats.samples += t.samples;
+        stats.stabilitySum += t.stabilitySum;
+        stats.integritySum += t.integritySum;
+        stats.leanSum += t.leanSum;
+        stats.siteUsageSum += t.siteUsageSum;
+        stats.supportDeficitSum += t.supportDeficitSum;
+        stats.integrityBinding += t.integrityBinding;
+        if (t.samples > 0) {
+            stats.minStability = Math.min(stats.minStability, t.minStability);
+        }
     }
+
+    const perSample = sum => (stats.samples > 0 ? sum / stats.samples : 0);
 
     return {
         level: level,
         strategy: strategy,
+        difficulty: Number(GameConfig.towerStabilityDifficulty) || 0,
+        averageStability: perSample(stats.stabilitySum),
+        minStability: stats.minStability,
+        averageIntegrity: perSample(stats.integritySum),
+        averageLean: perSample(stats.leanSum),
+        averageSiteUsage: perSample(stats.siteUsageSum),
+        averageSupportDeficit: perSample(stats.supportDeficitSum),
+        integrityBindingRate: perSample(stats.integrityBinding),
         targetHeight: stats.targetHeight,
         averagePileBlocks: stats.averagePileBlocks / runs,
         averageDrawPileAfterDeal: stats.averageDrawPileAfterDeal / runs,
@@ -364,9 +437,89 @@ function printResults(results) {
     });
 }
 
+// The stability-calibration view: everything you need to place towerStabilityDifficulty
+// and, when a criterion misses, which anchor is responsible. avgSiteUsage is the
+// slenderness input (1.0 = whole plot used), integrityBinding says which axis is
+// actually deciding the score.
+function printStabilityResults(results) {
+    console.log(
+        [
+            "difficulty",
+            "level",
+            "strategy",
+            "target",
+            "collapse",
+            "smartComplete",
+            "gatePassed",
+            "avgStability",
+            "minStability",
+            "avgIntegrity",
+            "avgLean",
+            "avgSiteUsage",
+            "avgSupportDeficit",
+            "integrityBinding",
+            "avgTeamScore",
+            "avgMvpScore"
+        ].join(",")
+    );
+
+    results.forEach(result => {
+        console.log(
+            [
+                result.difficulty,
+                result.level,
+                result.strategy,
+                result.targetHeight,
+                percent(result.collapseRate),
+                percent(result.smartCompletionRate),
+                percent(result.gateMetRate),
+                result.averageStability.toFixed(1),
+                result.minStability,
+                result.averageIntegrity.toFixed(1),
+                result.averageLean.toFixed(1),
+                result.averageSiteUsage.toFixed(2),
+                result.averageSupportDeficit.toFixed(3),
+                percent(result.integrityBindingRate),
+                result.averageTeamLevelScore.toFixed(1),
+                result.averageMvpLevelScore.toFixed(1)
+            ].join(",")
+        );
+    });
+}
+
+function runSweep(levels, runs, difficulties, levelStep) {
+    const original = GameConfig.towerStabilityDifficulty;
+    const results = [];
+
+    try {
+        for (const difficulty of difficulties) {
+            GameConfig.towerStabilityDifficulty = difficulty;
+
+            for (const strategy of STRATEGIES) {
+                for (let level = 1; level <= levels; level += levelStep) {
+                    results.push(runLevel(level, runs, strategy));
+                }
+            }
+        }
+    } finally {
+        GameConfig.towerStabilityDifficulty = original;
+    }
+
+    return results;
+}
+
 function main() {
-    const levels = Number(process.argv[2]) || DEFAULT_LEVELS;
-    const runs = Number(process.argv[3]) || DEFAULT_RUNS;
+    const sweep = process.argv[2] === "sweep";
+    const levels = Number(process.argv[sweep ? 3 : 2]) || DEFAULT_LEVELS;
+    const runs = Number(process.argv[sweep ? 4 : 3]) || DEFAULT_RUNS;
+
+    if (sweep) {
+        printStabilityResults(
+            runSweep(levels, runs, SWEEP_DIFFICULTIES, SWEEP_LEVEL_STEP)
+        );
+        return;
+    }
+
     const results = [];
 
     for (const strategy of STRATEGIES) {
@@ -383,5 +536,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-    runLevel
+    runLevel,
+    runSweep
 };

@@ -1183,14 +1183,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="TowerOverhangWeightLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1165131622]
+[node name="TowerStabilityDifficultyLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000121]
 unique_name_in_owner = true
 layout_mode = 2
 flat = true
 alignment = 0
-text = "Overhang Weight: 18%"
+text = "Stability Difficulty: 90"
 
-[node name="TowerOverhangWeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=960593163]
+[node name="TowerStabilityDifficultySlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000122]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -1202,17 +1202,6 @@ alignment = 0
 text = "Max Tilt Angle: 24°"
 
 [node name="TowerMaxTiltSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=716228579]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="TowerCollapseThresholdLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1166976525]
-unique_name_in_owner = true
-layout_mode = 2
-flat = true
-alignment = 0
-text = "Collapse Threshold: 1.00"
-
-[node name="TowerCollapseThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=10150772]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -1244,50 +1233,6 @@ layout_mode = 2
 text = "Stability Feedback"
 
 [node name="TowerFeedbackModeButton" type="OptionButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1040232117]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="TowerSlendernessSafeLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000101]
-unique_name_in_owner = true
-layout_mode = 2
-flat = true
-alignment = 0
-text = "Slenderness Safe: 2.5"
-
-[node name="TowerSlendernessSafeSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000102]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="TowerSlendernessMaxLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000103]
-unique_name_in_owner = true
-layout_mode = 2
-flat = true
-alignment = 0
-text = "Slenderness Max: 8.0"
-
-[node name="TowerSlendernessMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000104]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="TowerStabilityMinHeightLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000105]
-unique_name_in_owner = true
-layout_mode = 2
-flat = true
-alignment = 0
-text = "Stability Min Height: 6"
-
-[node name="TowerStabilityMinHeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000106]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="TowerSupportDeficitLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000107]
-unique_name_in_owner = true
-layout_mode = 2
-flat = true
-alignment = 0
-text = "Support Deficit Max: 35%"
-
-[node name="TowerSupportDeficitSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000108]
 unique_name_in_owner = true
 layout_mode = 2
 

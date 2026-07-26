@@ -124,7 +124,8 @@ function evaluate(entries, config) {
     const tiltAngleDeg = Math.max(-maxTiltDeg, Math.min(maxTiltDeg, tiltScore * maxTiltDeg));
 
     const groundWidth = Math.max(1, groundMaxX - groundMinX + 1);
-    const slenderness = height / groundWidth;
+    const siteWidth = Math.max(1, Number(config.towerSiteWidth) || groundWidth);
+    const slenderness = siteWidth / groundWidth;
     const slendernessSafe = config.towerSlendernessSafe ?? 2.5;
     const slendernessMax = config.towerSlendernessMax ?? 6.0;
     const slendernessSpan = Math.max(0.0001, slendernessMax - slendernessSafe);

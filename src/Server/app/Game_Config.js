@@ -44,15 +44,33 @@ const GameConfig = {
     // fixed 34px brick, so only grid columns 3-10 are ever on screen. A wider
     // site would place bricks the player can never see.
     towerSiteWidthMax: 8,   // cap limit 8
-    towerOverhangWeight: 0,  //0.15
-    towerLaneImbalanceWeight: 0.1,
     towerMaxTiltAngleDeg: 18,   //18
-    towerCollapseTiltScore: 6.0,
-    towerSlendernessSafe: 7.5,
-    towerSlendernessMax: 12.0,
-    towerStabilityMinHeight: 12,
-    towerBaseHalfWidthFloor: 4.0,
-    towerSupportDeficitMax: 0.70,
+    towerStabilityDifficulty: 90,
+    towerStabilityPressure: {
+        floor: 0.25,
+        fullPressureLevel: 30
+    },
+    towerStabilityAnchors: {
+        forgiving: {
+            towerOverhangWeight: 0.02,
+            towerLaneImbalanceWeight: 0.03,
+            towerCollapseTiltScore: 4.00,
+            towerSlendernessSafe: 3.20,
+            towerSlendernessMax: 8.00,
+            towerSupportDeficitMax: 0.95,
+            towerStabilityMinHeight: 18
+        },
+        harsh: {
+            towerOverhangWeight: 0.34,
+            towerLaneImbalanceWeight: 0.30,
+            towerCollapseTiltScore: 0.90,
+            towerSlendernessSafe: 1.10,
+            towerSlendernessMax: 1.95,
+            towerSupportDeficitMax: 0.22,
+            towerStabilityMinHeight: 10
+        }
+    },
+    towerBaseHalfWidthFloor: 1.0,
     towerStabilityWarningThreshold: 60,
     towerStabilityCriticalThreshold: 30,
     towerStabilityFeedbackMode: "warnings_only",

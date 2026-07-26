@@ -29,6 +29,25 @@ function useFixedGrid({ gridWidth = 14, widthMin = 6, widthMax = 6 } = {}) {
     GameConfig.towerSiteWidthMax = widthMax;
     GameConfig.towerSiteSlendernessTarget = 2.75;
 }
+
+// The live stability constants are derived per level from towerStabilityDifficulty,
+// so tests that assert concrete stability numbers pin their own resolved set the
+// same way useFixedGrid pins the grid.
+function fixedStabilityConfig(overrides = {}) {
+    return {
+        towerSiteWidth: 6,
+        towerBaseHalfWidthFloor: 1.0,
+        towerMaxTiltAngleDeg: 24,
+        towerOverhangWeight: 0.18,
+        towerLaneImbalanceWeight: 0.15,
+        towerCollapseTiltScore: 1.0,
+        towerSlendernessSafe: 1.2,
+        towerSlendernessMax: 2.5,
+        towerSupportDeficitMax: 0.35,
+        towerStabilityMinHeight: 6,
+        ...overrides
+    };
+}
 const originalScoringConfig = { ...GameConfig.scoring };
 const activeEngines = new Set();
 
@@ -147,7 +166,9 @@ test("a Z block placed at a lane origin settles with an unsupported overhang", (
     const block = { cells: [[0, 0], [1, 0], [1, 1], [2, 1]] };
     const first = { block: createBlock(1), originX: 3, originY: 0 };
     const settled = TowerStability.settleBlock([first], block, 2);
-    const result = TowerStability.evaluate([first, { block, ...settled }], GameConfig);
+    const result = TowerStability.evaluate(
+        [first, { block, ...settled }], fixedStabilityConfig({ towerStabilityMinHeight: 1 })
+    );
     assert.equal(settled.originX, 2);
     assert.equal(settled.originY, 1);
     assert.ok(result.stability < 100);
@@ -227,13 +248,20 @@ test("placeable origin range follows the level's site, not a fixed 4-9 span", ()
 test("a slender spire collapses on integrity even when perfectly symmetrical", () => {
     const entries = [];
     const oBlock = { cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
+    // A 2-wide stack on a 6-wide site: site usage 3.0, past the pinned Max of 2.5.
+    // The maturity floor sits above the short tower's height so the ramp is still
+    // protecting it there, which is what makes the short-vs-tall contrast the point.
+    const config = fixedStabilityConfig({
+        towerSiteWidth: 6,
+        towerStabilityMinHeight: 20
+    });
 
     for (let i = 0; i < 3; i++) {
         const placement = TowerStability.settleBlock(entries, oBlock, 6);
         entries.push({ block: oBlock, ...placement });
     }
 
-    const short = TowerStability.evaluate(entries, GameConfig);
+    const short = TowerStability.evaluate(entries, config);
 
     assert.equal(short.diagnostics.tiltScore, 0);
     assert.equal(short.diagnostics.collapsed, false);
@@ -243,13 +271,57 @@ test("a slender spire collapses on integrity even when perfectly symmetrical", (
         entries.push({ block: oBlock, ...placement });
     }
 
-    const tall = TowerStability.evaluate(entries, GameConfig);
+    const tall = TowerStability.evaluate(entries, config);
 
-    // zero lean the whole way up -- only the new slenderness term can fail this
+    // zero lean the whole way up -- only the slenderness term can fail this
     assert.equal(tall.diagnostics.tiltScore, 0);
     assert.equal(tall.diagnostics.integrity, 0);
     assert.equal(tall.diagnostics.collapsed, true);
     assert.equal(tall.stability, 0);
+});
+
+test("the same tower is less stable at a high level than at level 1", () => {
+    const entries = [];
+    const oBlock = { cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
+    const { engine } = createPlayingEngine(1, 10);
+
+    for (let i = 0; i < 6; i++) {
+        const placement = TowerStability.settleBlock(entries, oBlock, 3);
+        entries.push({ block: oBlock, ...placement });
+    }
+
+    const early = TowerStability.evaluate(entries, engine.resolveStabilityConfig(1));
+    const late = TowerStability.evaluate(entries, engine.resolveStabilityConfig(40));
+
+    assert.ok(
+        late.stability < early.stability,
+        `expected level 40 to be harsher than level 1, got ${late.stability} vs ${early.stability}`
+    );
+});
+
+test("stability difficulty 0 leaves the same tower unpenalised", () => {
+    const entries = [];
+    const oBlock = { cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
+    const { engine } = createPlayingEngine(1, 10);
+    const original = GameConfig.towerStabilityDifficulty;
+
+    for (let i = 0; i < 6; i++) {
+        const placement = TowerStability.settleBlock(entries, oBlock, 3);
+        entries.push({ block: oBlock, ...placement });
+    }
+
+    try {
+        GameConfig.towerStabilityDifficulty = 0;
+        const off = TowerStability.evaluate(entries, engine.resolveStabilityConfig(40));
+
+        GameConfig.towerStabilityDifficulty = 100;
+        const on = TowerStability.evaluate(entries, engine.resolveStabilityConfig(40));
+
+        assert.ok(off.stability > on.stability);
+        assert.equal(off.diagnostics.collapsed, false);
+    } finally {
+        GameConfig.towerStabilityDifficulty = original;
+    }
 });
 
 test("placement score scales with the stability the placer inherited", () => {
@@ -524,6 +596,38 @@ test("tower stability thresholds are exposed and clamped in debug config", async
     await lobbyManager.updateDebugConfig("towerStabilityCriticalThreshold", 30);
     assert.equal(lobbyManager.getDebugConfig().towerStabilityWarningThreshold, 60);
     assert.equal(lobbyManager.getDebugConfig().towerStabilityCriticalThreshold, 30);
+});
+
+test("stability difficulty is the only exposed stability tunable", async () => {
+    const lobbyManager = new LobbyManager();
+    const original = GameConfig.towerStabilityDifficulty;
+
+    try {
+        await lobbyManager.updateDebugConfig("towerStabilityDifficulty", 250);
+        assert.equal(GameConfig.towerStabilityDifficulty, 100);
+
+        await lobbyManager.updateDebugConfig("towerStabilityDifficulty", -40);
+        assert.equal(GameConfig.towerStabilityDifficulty, 0);
+
+        await lobbyManager.updateDebugConfig("towerStabilityDifficulty", 65);
+        assert.equal(lobbyManager.getDebugConfig().towerStabilityDifficulty, 65);
+
+        // The raw physics constants are derived now, so a stale client sending
+        // them must be rejected rather than silently desyncing from the dial.
+        for (const key of [
+            "towerOverhangWeight",
+            "towerCollapseTiltScore",
+            "towerSlendernessSafe",
+            "towerSlendernessMax",
+            "towerSupportDeficitMax",
+            "towerStabilityMinHeight"
+        ]) {
+            assert.equal(await lobbyManager.updateDebugConfig(key, 1), false, key);
+            assert.equal(GameConfig[key], undefined, key);
+        }
+    } finally {
+        GameConfig.towerStabilityDifficulty = original;
+    }
 });
 
 test("rollback restores power inventory from impact snapshot", () => {

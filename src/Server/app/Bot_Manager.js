@@ -186,6 +186,7 @@ class BotManager {
             engine.room.towerBlocks || []
         );
         const options = [];
+        const stabilityConfig = engine.resolveStabilityConfig();
 
         for (let column = min; column <= max; column++) {
             const originX = engine.resolveColumnOriginX(block, column);
@@ -202,7 +203,7 @@ class BotManager {
                     originY: placement.originY
                 }
             ];
-            const result = TowerStability.evaluate(projected, GameConfig);
+            const result = TowerStability.evaluate(projected, stabilityConfig);
             const heightGain = Math.max(
                 0,
                 TowerStability.topHeight(projected) - previousHeight

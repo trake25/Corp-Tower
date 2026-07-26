@@ -14,37 +14,17 @@ const DEBUG_CATEGORY_NAMES := [
 # tables; these categories are hand-wired, so they live here instead.
 const DEBUG_TOOLTIPS := {
 	# --- Tower -------------------------------------------------------------
-	"TowerOverhangWeightLabel": {
-		"title": "Overhang Weight",
-		"body": "How much one unsupported cell in the brick you just placed adds to lean.\n\nlean += (distance from base centre / base half-width) x weight, per unsupported cell.\n\nHigher = a bad placement feels bad instantly. 0 = overhang is free.",
+	"TowerStabilityDifficultyLabel": {
+		"title": "Stability Difficulty",
+		"body": "The single dial for how punishing the tower is. Everything else — overhang weight, collapse threshold, slenderness band, support tolerance, the maturity ramp — is derived from it.\n\npressure = (this / 100) x (0.25 + 0.75 x min(1, level / 30))\n\nThreat also ramps with LEVEL, so the same setting is gentle early and dangerous late: at 90, level 1 sits near 87% stability and never collapses, while level 30+ punishes a careless column hard.\n\n0 = stability effectively off (score multiplier only). 90 = shipping default. 100 = brutal, greedy play fails the Impact gate.",
 	},
 	"TowerMaxTiltLabel": {
 		"title": "Max Tilt Angle",
-		"body": "Visual only. The lean in degrees drawn when tilt score reaches 1.0. Does not change when the tower collapses — that is Collapse Threshold.\n\nHigher = drama. Lower = subtle.",
-	},
-	"TowerCollapseThresholdLabel": {
-		"title": "Collapse Threshold",
-		"body": "The |tilt score| at which the tower falls and the level fails.\n\n1.0 = physically \"centre of mass left the base\". Higher = forgiving, the tower leans a long way before dying. Lower = hair-trigger.",
-	},
-	"TowerSlendernessSafeLabel": {
-		"title": "Slenderness Safe",
-		"body": "Height-to-base-width ratio you can reach with NO integrity penalty.\n\nslenderness = tower height / ground footprint width.\n\nSafe 2.5 means a 6-wide base is free up to height 15. Raise to allow thinner towers.",
-	},
-	"TowerSlendernessMaxLabel": {
-		"title": "Slenderness Max",
-		"body": "The ratio at which the slenderness penalty alone reaches 100% (integrity 0, collapse).\n\npenalty = (slenderness - Safe) / (Max - Safe)\n\nWiden the Safe..Max gap for a gentler ramp; narrow it for a cliff.",
-	},
-	"TowerStabilityMinHeightLabel": {
-		"title": "Stability Min Height",
-		"body": "Below this height ALL penalties (lean, slenderness, support) are scaled down toward zero.\n\nmaturity = min(1, height / this)\n\nStops the first few bricks from tilting or collapsing. Raise if early placements still feel twitchy.",
-	},
-	"TowerSupportDeficitLabel": {
-		"title": "Support Deficit Max",
-		"body": "The share of unsupported cells (nothing directly beneath, not on the ground) at which the support penalty hits 100%.\n\ndeficit = unsupported cells / all cells, measured over the whole tower.\n\nHigher = cantilevers and bridges are tolerated.",
+		"body": "Visual only. The lean in degrees drawn when tilt score reaches 1.0. Does not change when the tower collapses — that is derived from Stability Difficulty.\n\nHigher = drama. Lower = subtle.",
 	},
 	"TowerSiteSlendernessLabel": {
 		"title": "Site Slenderness Target",
-		"body": "Sets how wide the buildable site is for a given target height.\n\nsite width = even round-up(target height / this), clamped to Site Width Min..Max.\n\nLower = wider site, easier. Set near Slenderness Safe to make a full-width finish penalty-free.",
+		"body": "Sets how wide the buildable site is for a given target height.\n\nsite width = even round-up(target height / this), clamped to Site Width Min..Max.\n\nLower = wider site, easier. The site is also what slenderness is measured against — building on the full site width is always penalty-free, so widening the site widens the safe zone too.",
 	},
 	"TowerSiteWidthMinLabel": {
 		"title": "Site Width Min",
@@ -313,20 +293,10 @@ var assist_bonus_label: Control
 var assist_bonus_slider: HSlider
 var assist_threshold_label: Control
 var assist_threshold_slider: HSlider
-var tower_overhang_weight_label: Control
-var tower_overhang_weight_slider: HSlider
+var tower_stability_difficulty_label: Control
+var tower_stability_difficulty_slider: HSlider
 var tower_max_tilt_label: Control
 var tower_max_tilt_slider: HSlider
-var tower_collapse_threshold_label: Control
-var tower_collapse_threshold_slider: HSlider
-var tower_slenderness_safe_label: Control
-var tower_slenderness_safe_slider: HSlider
-var tower_slenderness_max_label: Control
-var tower_slenderness_max_slider: HSlider
-var tower_stability_min_height_label: Control
-var tower_stability_min_height_slider: HSlider
-var tower_support_deficit_label: Control
-var tower_support_deficit_slider: HSlider
 var tower_site_slenderness_label: Control
 var tower_site_slenderness_slider: HSlider
 var tower_site_width_min_label: Control
@@ -433,20 +403,10 @@ func bind_nodes(binder) -> void:
 	assist_bonus_slider = binder.optional_node("AssistBonusSlider") as HSlider
 	assist_threshold_label = bind_tooltip_row(binder, "AssistThresholdLabel")
 	assist_threshold_slider = binder.optional_node("AssistThresholdSlider") as HSlider
-	tower_overhang_weight_label = bind_tooltip_row(binder, "TowerOverhangWeightLabel")
-	tower_overhang_weight_slider = binder.optional_node("TowerOverhangWeightSlider") as HSlider
+	tower_stability_difficulty_label = bind_tooltip_row(binder, "TowerStabilityDifficultyLabel")
+	tower_stability_difficulty_slider = binder.optional_node("TowerStabilityDifficultySlider") as HSlider
 	tower_max_tilt_label = bind_tooltip_row(binder, "TowerMaxTiltLabel")
 	tower_max_tilt_slider = binder.optional_node("TowerMaxTiltSlider") as HSlider
-	tower_collapse_threshold_label = bind_tooltip_row(binder, "TowerCollapseThresholdLabel")
-	tower_collapse_threshold_slider = binder.optional_node("TowerCollapseThresholdSlider") as HSlider
-	tower_slenderness_safe_label = bind_tooltip_row(binder, "TowerSlendernessSafeLabel")
-	tower_slenderness_safe_slider = binder.optional_node("TowerSlendernessSafeSlider") as HSlider
-	tower_slenderness_max_label = bind_tooltip_row(binder, "TowerSlendernessMaxLabel")
-	tower_slenderness_max_slider = binder.optional_node("TowerSlendernessMaxSlider") as HSlider
-	tower_stability_min_height_label = bind_tooltip_row(binder, "TowerStabilityMinHeightLabel")
-	tower_stability_min_height_slider = binder.optional_node("TowerStabilityMinHeightSlider") as HSlider
-	tower_support_deficit_label = bind_tooltip_row(binder, "TowerSupportDeficitLabel")
-	tower_support_deficit_slider = binder.optional_node("TowerSupportDeficitSlider") as HSlider
 	tower_site_slenderness_label = bind_tooltip_row(binder, "TowerSiteSlendernessLabel")
 	tower_site_slenderness_slider = binder.optional_node("TowerSiteSlendernessSlider") as HSlider
 	tower_site_width_min_label = bind_tooltip_row(binder, "TowerSiteWidthMinLabel")
@@ -527,13 +487,8 @@ func setup(tuning_ref, network_ref) -> void:
 	configure_slider(team_exact_bonus_slider, 0, 25, 1, func(value): send_debug_int("teamExactBonusPerLevel", value))
 	configure_slider(assist_bonus_slider, 0, 25, 1, func(value): send_debug_int("assistBonusPerLevel", value))
 	configure_slider(assist_threshold_slider, 0, 100, 5, func(value): send_debug_float("assistContributionThreshold", value / 100.0))
-	configure_slider(tower_overhang_weight_slider, 0, 100, 5, func(value): send_debug_float("towerOverhangWeight", value / 100.0))
+	configure_slider(tower_stability_difficulty_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityDifficulty", value))
 	configure_slider(tower_max_tilt_slider, 5, 60, 1, func(value): send_debug_int("towerMaxTiltAngleDeg", value))
-	configure_slider(tower_collapse_threshold_slider, 0.3, 8.0, 0.1, func(value): send_debug_float("towerCollapseTiltScore", value))
-	configure_slider(tower_slenderness_safe_slider, 0.5, 10.0, 0.25, func(value): send_debug_float("towerSlendernessSafe", value))
-	configure_slider(tower_slenderness_max_slider, 1.0, 20.0, 0.5, func(value): send_debug_float("towerSlendernessMax", value))
-	configure_slider(tower_stability_min_height_slider, 1, 30, 1, func(value): send_debug_int("towerStabilityMinHeight", value))
-	configure_slider(tower_support_deficit_slider, 5, 100, 5, func(value): send_debug_float("towerSupportDeficitMax", value / 100.0))
 	configure_slider(tower_site_slenderness_slider, 1.0, 8.0, 0.25, func(value): send_debug_float("towerSiteSlendernessTarget", value))
 	configure_slider(tower_site_width_min_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMin", value))
 	configure_slider(tower_site_width_max_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMax", value))
@@ -823,30 +778,10 @@ func apply_config(config) -> void:
 		float(config.get("assistContributionThreshold", 0.25)) * 100.0
 	)
 	set_slider_no_signal(
-		tower_overhang_weight_slider,
-		float(config.get("towerOverhangWeight", 0.18)) * 100.0
+		tower_stability_difficulty_slider,
+		float(config.get("towerStabilityDifficulty", 90))
 	)
 	set_slider_no_signal(tower_max_tilt_slider, float(config.get("towerMaxTiltAngleDeg", 24)))
-	set_slider_no_signal(
-		tower_collapse_threshold_slider,
-		float(config.get("towerCollapseTiltScore", 1.0))
-	)
-	set_slider_no_signal(
-		tower_slenderness_safe_slider,
-		float(config.get("towerSlendernessSafe", 2.5))
-	)
-	set_slider_no_signal(
-		tower_slenderness_max_slider,
-		float(config.get("towerSlendernessMax", 6.0))
-	)
-	set_slider_no_signal(
-		tower_stability_min_height_slider,
-		float(config.get("towerStabilityMinHeight", 6))
-	)
-	set_slider_no_signal(
-		tower_support_deficit_slider,
-		float(config.get("towerSupportDeficitMax", 0.35)) * 100.0
-	)
 	set_slider_no_signal(
 		tower_site_slenderness_slider,
 		float(config.get("towerSiteSlendernessTarget", 2.75))
@@ -982,22 +917,6 @@ func update_debug_labels() -> void:
 		"Reinforce / Lean: " + str(int(get_slider_value(reinforce_lean_slider, 20)))
 	)
 	set_debug_label_text(
-		tower_slenderness_safe_label,
-		"Slenderness Safe: " + ("%.2f" % get_slider_value(tower_slenderness_safe_slider, 2.5))
-	)
-	set_debug_label_text(
-		tower_slenderness_max_label,
-		"Slenderness Max: " + ("%.2f" % get_slider_value(tower_slenderness_max_slider, 6.0))
-	)
-	set_debug_label_text(
-		tower_stability_min_height_label,
-		"Stability Min Height: " + str(int(get_slider_value(tower_stability_min_height_slider, 6)))
-	)
-	set_debug_label_text(
-		tower_support_deficit_label,
-		"Support Deficit Max: " + str(int(get_slider_value(tower_support_deficit_slider, 35))) + "%"
-	)
-	set_debug_label_text(
 		tower_site_slenderness_label,
 		"Site Slenderness Target: " + ("%.2f" % get_slider_value(tower_site_slenderness_slider, 2.75))
 	)
@@ -1043,16 +962,12 @@ func update_debug_labels() -> void:
 		"Assist Threshold: " + str(int(get_slider_value(assist_threshold_slider, 25))) + "%"
 	)
 	set_debug_label_text(
-		tower_overhang_weight_label,
-		"Overhang Weight: " + str(int(get_slider_value(tower_overhang_weight_slider, 18))) + "%"
+		tower_stability_difficulty_label,
+		"Stability Difficulty: " + str(int(get_slider_value(tower_stability_difficulty_slider, 90)))
 	)
 	set_debug_label_text(
 		tower_max_tilt_label,
 		"Max Tilt Angle: " + str(int(get_slider_value(tower_max_tilt_slider, 24))) + "°"
-	)
-	set_debug_label_text(
-		tower_collapse_threshold_label,
-		"Collapse Threshold: " + ("%.2f" % get_slider_value(tower_collapse_threshold_slider, 1.0))
 	)
 	set_debug_label_text(
 		tower_warning_threshold_label,

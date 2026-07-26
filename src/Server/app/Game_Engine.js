@@ -724,8 +724,48 @@ class GameEngine {
         this.broadcastGameState();
     }
 
+    getStabilityPressure(level) {
+        const difficulty = Math.max(
+            0,
+            Math.min(100, Number(GameConfig.towerStabilityDifficulty) || 0)
+        );
+        const curve = GameConfig.towerStabilityPressure || {};
+        const floor = Math.max(0, Math.min(1, Number(curve.floor) || 0));
+        const fullLevel = Math.max(1, Number(curve.fullPressureLevel) || 1);
+        const resolvedLevel = Math.max(
+            1,
+            Number(level ?? this.room?.level) || 1
+        );
+        const levelRamp = Math.min(1, resolvedLevel / fullLevel);
+
+        return (difficulty / 100) * (floor + (1 - floor) * levelRamp);
+    }
+
+    resolveStabilityConfig(level) {
+        const anchors = GameConfig.towerStabilityAnchors || {};
+        const forgiving = anchors.forgiving || {};
+        const harsh = anchors.harsh || {};
+        const pressure = this.getStabilityPressure(level);
+        const resolved = {
+            towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
+            towerBaseHalfWidthFloor: GameConfig.towerBaseHalfWidthFloor,
+            towerSiteWidth: this.getSiteWidthForHeight(this.room?.targetHeight),
+            towerStabilityPressureApplied: pressure
+        };
+
+        for (const key of Object.keys(forgiving)) {
+            const from = Number(forgiving[key]);
+            const to = Number(harsh[key] ?? forgiving[key]);
+            resolved[key] = from + (to - from) * pressure;
+        }
+
+        return resolved;
+    }
+
     recalculateTowerStability() {
-        const result = TowerStability.evaluate(this.room.towerBlocks || [], GameConfig);
+        const result = TowerStability.evaluate(
+            this.room.towerBlocks || [], this.resolveStabilityConfig()
+        );
         const previous = this.room.towerStability ?? 100;
         this.room.towerStability = result.stability;
         this.room.towerStabilityDiagnostics = result.diagnostics;

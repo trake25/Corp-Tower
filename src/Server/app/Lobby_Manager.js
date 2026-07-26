@@ -27,13 +27,8 @@ const DEFAULT_DEBUG_CONFIG = {
     minPrecisionBlocksPerLevel: GameConfig.minPrecisionBlocksPerLevel,
     maxTeamCarryOverBlocks: GameConfig.maxTeamCarryOverBlocks,
     refreshMinUsefulBlockHeight: GameConfig.refreshMinUsefulBlockHeight,
-    towerOverhangWeight: GameConfig.towerOverhangWeight,
+    towerStabilityDifficulty: GameConfig.towerStabilityDifficulty,
     towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
-    towerCollapseTiltScore: GameConfig.towerCollapseTiltScore,
-    towerSlendernessSafe: GameConfig.towerSlendernessSafe,
-    towerSlendernessMax: GameConfig.towerSlendernessMax,
-    towerStabilityMinHeight: GameConfig.towerStabilityMinHeight,
-    towerSupportDeficitMax: GameConfig.towerSupportDeficitMax,
     towerSiteSlendernessTarget: GameConfig.towerSiteSlendernessTarget,
     towerSiteWidthMin: GameConfig.towerSiteWidthMin,
     towerSiteWidthMax: GameConfig.towerSiteWidthMax,
@@ -464,13 +459,8 @@ class LobbyManager {
             minPrecisionBlocksPerLevel: GameConfig.minPrecisionBlocksPerLevel,
             maxTeamCarryOverBlocks: GameConfig.maxTeamCarryOverBlocks,
             refreshMinUsefulBlockHeight: GameConfig.refreshMinUsefulBlockHeight,
-            towerOverhangWeight: GameConfig.towerOverhangWeight,
+            towerStabilityDifficulty: GameConfig.towerStabilityDifficulty,
             towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
-            towerCollapseTiltScore: GameConfig.towerCollapseTiltScore,
-            towerSlendernessSafe: GameConfig.towerSlendernessSafe,
-            towerSlendernessMax: GameConfig.towerSlendernessMax,
-            towerStabilityMinHeight: GameConfig.towerStabilityMinHeight,
-            towerSupportDeficitMax: GameConfig.towerSupportDeficitMax,
             towerSiteSlendernessTarget: GameConfig.towerSiteSlendernessTarget,
             towerSiteWidthMin: GameConfig.towerSiteWidthMin,
             towerSiteWidthMax: GameConfig.towerSiteWidthMax,
@@ -531,16 +521,9 @@ class LobbyManager {
             DEFAULT_DEBUG_CONFIG.maxTeamCarryOverBlocks;
         GameConfig.refreshMinUsefulBlockHeight =
             DEFAULT_DEBUG_CONFIG.refreshMinUsefulBlockHeight;
-        GameConfig.towerOverhangWeight = DEFAULT_DEBUG_CONFIG.towerOverhangWeight;
+        GameConfig.towerStabilityDifficulty =
+            DEFAULT_DEBUG_CONFIG.towerStabilityDifficulty;
         GameConfig.towerMaxTiltAngleDeg = DEFAULT_DEBUG_CONFIG.towerMaxTiltAngleDeg;
-        GameConfig.towerCollapseTiltScore = DEFAULT_DEBUG_CONFIG.towerCollapseTiltScore;
-        GameConfig.towerSlendernessSafe =
-            DEFAULT_DEBUG_CONFIG.towerSlendernessSafe;
-        GameConfig.towerSlendernessMax = DEFAULT_DEBUG_CONFIG.towerSlendernessMax;
-        GameConfig.towerStabilityMinHeight =
-            DEFAULT_DEBUG_CONFIG.towerStabilityMinHeight;
-        GameConfig.towerSupportDeficitMax =
-            DEFAULT_DEBUG_CONFIG.towerSupportDeficitMax;
         GameConfig.towerSiteSlendernessTarget =
             DEFAULT_DEBUG_CONFIG.towerSiteSlendernessTarget;
         GameConfig.towerSiteWidthMin = DEFAULT_DEBUG_CONFIG.towerSiteWidthMin;
@@ -701,15 +684,9 @@ class LobbyManager {
             minPrecisionBlocksPerLevel: setGameInt("minPrecisionBlocksPerLevel", 0, 9),
             maxTeamCarryOverBlocks: setGameInt("maxTeamCarryOverBlocks", 0, 12),
             refreshMinUsefulBlockHeight: setGameInt("refreshMinUsefulBlockHeight", 1, 6),
-            towerOverhangWeight: setGameNumber("towerOverhangWeight", 0, 1),
+            towerStabilityDifficulty:
+                setGameInt("towerStabilityDifficulty", 0, 100),
             towerMaxTiltAngleDeg: setGameInt("towerMaxTiltAngleDeg", 5, 60),
-            towerCollapseTiltScore: setGameNumber("towerCollapseTiltScore", 0.3, 8),
-            towerSlendernessSafe: setGameNumber("towerSlendernessSafe", 0.5, 10),
-            towerSlendernessMax: setGameNumber("towerSlendernessMax", 1, 20),
-            towerStabilityMinHeight:
-                setGameInt("towerStabilityMinHeight", 1, 30),
-            towerSupportDeficitMax:
-                setGameNumber("towerSupportDeficitMax", 0.05, 1),
             towerSiteSlendernessTarget:
                 setGameNumber("towerSiteSlendernessTarget", 1, 8),
             towerSiteWidthMin: setGameInt("towerSiteWidthMin", 2, 8),
