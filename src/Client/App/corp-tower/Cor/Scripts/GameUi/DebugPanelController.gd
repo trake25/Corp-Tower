@@ -370,6 +370,7 @@ func bind_nodes(binder) -> void:
 		"UI": binder.optional_node("UI") as Control,
 		"Supply": binder.optional_node("Supply") as Control,
 		"Scoring": binder.optional_node("Scoring") as Control,
+		"Impact": binder.optional_node("Impact") as Control,
 		"Tower": binder.optional_node("Tower") as Control,
 		"Power": binder.optional_node("Power") as Control,
 		"Parallax": binder.optional_node("Parallax") as Control,
