@@ -60,7 +60,8 @@ Inventory cards use drag-and-drop, not tap-to-place:
 | `drawPileCount` | Remaining shared pile size, including `nextDrawBlock` |
 | `cells` | `[x, y]` unit-coordinate array; used by the client for shape previews and tower rendering |
 | `height` | Vertical footprint derived from `cells` — not necessarily equal to cell count |
-| `towerBlocks[]` | Ordered placement history: `{ playerId, block, height, effectiveHeight, baseHeight }`, so clients can redraw the tower after a broadcast or reconnect |
+| `towerBlocks[]` | Ordered placement history: `{ playerId, block, height, effectiveHeight, baseHeight, balanceDelta }`, so clients can redraw the tower after a broadcast or reconnect |
+| `balanceDelta` | Per-brick, stamped once at placement and never recomputed: how far that placement moved the tower toward centre (see [backend.md § Tower Stability](./backend.md#tower-stability)). The client maps it to a brick face; an entry **without** the field draws no face at all, which is how a pre-feature server or snapshot is meant to look |
 | `originX` / `originY` | Resolved structural coordinates (column-derived `originX`, drop-settled `originY`) on the `towerGridWidth` grid, confined to the level's placeable site |
 | `towerGridWidth` | Authoritative grid width. **The client derives its render centre from this** — a hardcoded centre draws the whole tower off-centre the moment the grid is retuned |
 | `placeableColumnMin` / `placeableColumnMax` | The level's buildable site, derived server-side from target height (→ [gameplay.md § Placement columns](./gameplay.md#placement-columns)). Sent every tick; the client feeds them to `SnapGrid.set_placeable_range` so snap points, origin ranges and the placeable band all follow |
