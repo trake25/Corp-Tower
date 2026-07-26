@@ -283,7 +283,7 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 	var x: float = layer_size.x * 0.5
 
 	if lane_count > 1:
-		x = lerpf(layer_size.x * 0.22, layer_size.x * 0.78, float(lane_index) / float(lane_count - 1))
+		x = lerpf(layer_size.x * 0.16, layer_size.x * 0.84, float(lane_index) / float(lane_count - 1))
 
 	var y_offsets: Dictionary = {
 		"placement": 0.58,
