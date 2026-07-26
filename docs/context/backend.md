@@ -89,7 +89,7 @@ Sizing against raw target height instead assumed bricks stack perfectly vertical
 
 **`checkFailCondition` deliberately does *not* apply the efficiency factor** — it exists to detect genuinely impossible states, so it needs the true upper bound (a brick *can* contribute its full height if stacked). Applying efficiency there failed levels while a winning move still existed.
 
-**Notes:** blocks are `{ id, shapeId, cells, height }` objects (`height` derived from the rotated `cells`' vertical span, so it varies 1–4 by draw — not a fixed per-shape number); no per-block anchor field exists anymore — the retired `getRandomAnchorX` used to assign one, see [decisions.md](./decisions.md#placement-design-lineage-superseded); legacy numeric blocks are still read as plain height values. All 5 bricks are available from level 1 (no size unlock). `createRefreshBlock` rerolls a brick to a **different random shape** (excludes the current `shapeId`); since every brick is 4 cells, refresh no longer changes cell-count. Team carry-over: precision-first (height ≤ 2 kept), discarded entirely on level failure — Game Engine never calls `prepareTeamCarryOverBlocks` on the failure path. Refresh generation never touches the draw pile; there's no cooldown/lockout gating *when* a refresh can happen anymore beyond the shared Power activation cooldown.
+**Notes:** blocks are `{ id, shapeId, cells, height }` objects (`height` derived from the rotated `cells`' vertical span, so it varies 1–4 by draw — not a fixed per-shape number); no per-block anchor field of any kind exists ([decisions.md](./decisions.md#placement-design-lineage-superseded)); legacy numeric blocks are still read as plain height values. All 5 bricks are available from level 1 (no size unlock). `createRefreshBlock` rerolls a brick to a **different random shape** (excludes the current `shapeId`); since every brick is 4 cells, refresh no longer changes cell-count. Team carry-over: precision-first (height ≤ 2 kept), discarded entirely on level failure — Game Engine never calls `prepareTeamCarryOverBlocks` on the failure path. Refresh generation never touches the draw pile; there's no cooldown/lockout gating *when* a refresh can happen anymore beyond the shared Power activation cooldown.
 
 ## Scoring
 
@@ -109,7 +109,6 @@ Sizing against raw target height instead assumed bricks stack perfectly vertical
 - An empty tower has no `integrity` field, so `addReinforceScore` defaults a missing before/after integrity to **100**, not 0 — otherwise the first brick of every level would pay a full phantom Reinforce.
 - `getPlayerBonusBreakdown` gained a `reinforce` key. The server sends it inside `lastLevelSummary.players[].bonusBreakdown`; no client currently renders that payload.
 - Bonuses use multipliers from Game Config; a zero-value bonus emits no score event.
-- `awardRefreshToken` (used to grant MVP/exact-finish token rewards from `completeLevel()`) is gone along with the refresh token economy.
 
 ## Impacts
 
@@ -124,7 +123,7 @@ Sizing against raw target height instead assumed bricks stack perfectly vertical
 
 **Depends on:** Game Config (direct `require`); Game Engine via facade for lifecycle calls; Scoring via facade for score-event/summary calls.
 
-**Notes:** `awardImpactFillBonus(blockedLevel)` runs from `nextLevel()` when a band's Impact opens **and** the gate is met, before `awardImpactPower()`/`saveImpactState()` — so the bonus is baked into the snapshot and survives rollback. It pays each player `round(overshoot × scoring.impactFillBonusRate)` where `overshoot = max(0, bandScore − requiredBandScore)`, straight into `player.score`, and queues an `impact_fill_bonus` score event; skipped entirely when the band requirement is 0. The event survives the transition because `startLevel()` now **preserves** any already-queued `pendingScoreEvents` (`= pendingScoreEvents || []`) instead of clearing them, so the fill-bonus popups reach the Impact level's first broadcast (same pattern as `awardImpactPower`'s power events). `rollbackToImpact()` calls `engine.startLevel()` directly at the end — the room re-enters `starting` for the Impact level in the same call, not on a separate timer tick. `clonePowerInventory` used to live here but moved onto the Game Engine facade directly (pure Power data, no Impact semantics; it always ignored the `engine` argument it took).
+**Notes:** `awardImpactFillBonus(blockedLevel)` runs from `nextLevel()` when a band's Impact opens **and** the gate is met, before `awardImpactPower()`/`saveImpactState()` — so the bonus is baked into the snapshot and survives rollback. It pays each player `round(overshoot × scoring.impactFillBonusRate)` where `overshoot = max(0, bandScore − requiredBandScore)`, straight into `player.score`, and queues an `impact_fill_bonus` score event; skipped entirely when the band requirement is 0. The event survives the transition because `startLevel()` **preserves** any already-queued `pendingScoreEvents` (`= pendingScoreEvents || []`) instead of clearing them, so the fill-bonus popups reach the Impact level's first broadcast (same pattern as `awardImpactPower`'s power events). `rollbackToImpact()` calls `engine.startLevel()` directly at the end — the room re-enters `starting` for the Impact level in the same call, not on a separate timer tick. `clonePowerInventory` lives on the Game Engine facade, not here (pure Power data, no Impact semantics).
 
 ## Tower Stability
 
@@ -144,7 +143,7 @@ Sizing against raw target height instead assumed bricks stack perfectly vertical
 - **Every penalty is scaled by a maturity ramp** (`min(1, height / towerStabilityMinHeight)`). Without it the ratios are degenerate at small tower sizes — a single `T` on its stem is literally 50% unsupported and collapsed the level on the opening brick.
 - This module takes only already-resolved `originX`/cells and numeric config weights — it has no built-in assumption of lane count, grid width, or site width, so both the lane→column redesign and the later per-level site-width work needed **zero changes to the settle path**.
 - Called from Game Engine: `settleBlock()` at placement time, `evaluate()` inside `recalculateTowerStability()` after every placement. Game Engine (not this file) compares the result against the warning/critical thresholds.
-- Tuning-knob rationale lives in [Game Config](#game-config) — previously duplicated across this file, `Game_Config.js`, and `Lobby_Manager.js`.
+- Tuning-knob rationale lives in [Game Config](#game-config) only — never restated here, in `Game_Config.js`, or in `Lobby_Manager.js`.
 - Guards against dividing by an empty base (no cells at `y === 0`), even though the first block placed should always settle on the floor.
 
 ## Bot Manager

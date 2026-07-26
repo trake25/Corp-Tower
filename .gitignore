@@ -19,7 +19,6 @@ infra/eks/terraform/eks-lab.tfvars
 *.exe
 /.cursor
 CLAUDE.md
-.claude/commands/
 TOD20260719-01
 plan/
 task/

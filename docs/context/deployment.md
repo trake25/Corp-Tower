@@ -41,7 +41,7 @@ Workflows create the shared S3 backend bucket if missing, via `.github/actions/t
 
 ## Caddy gateway ACME cert persistence (R2)
 
-EC2-GW's root volume is ephemeral, so a destroyed/recreated gateway used to lose Caddy's automatic-HTTPS state and request a brand-new Let's Encrypt cert every time — see [decisions.md](./decisions.md#caddy-gateway-acme-cert-cache-persisted-to-r2) for the rate-limit incident this caused. `configure_caddy.yml` (`infra/k3s/ansible/roles/gateway/tasks/`) now round-trips the `corp-tower-k3s-caddy-data` Docker volume through R2 bucket `corp-tower-gateway-state`:
+EC2-GW's root volume is ephemeral, so a destroyed/recreated gateway carries no Caddy automatic-HTTPS state of its own — see [decisions.md](./decisions.md#caddy-gateway-acme-cert-cache-persisted-to-r2) for the Let's Encrypt rate-limit incident that caused. `configure_caddy.yml` (`infra/k3s/ansible/roles/gateway/tasks/`) round-trips the `corp-tower-k3s-caddy-data` Docker volume through R2 bucket `corp-tower-gateway-state`:
 
 - **Restore** (before Caddy starts): `Server-K3s-Deploy.yml`'s `Restore Caddy gateway state from R2` step downloads the archive (no-ops if none exists yet) and `scp`s it to EC2-GW; Ansible extracts it into the volume.
 - **Liveness check**: after start, Ansible waits 3s and asserts the container is still running, capturing `docker logs` and failing loudly if not — replaces a prior silent failure mode where a crashed Caddy container wasn't caught until the public WSS smoke test timed out 5 minutes later.

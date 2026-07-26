@@ -20,7 +20,7 @@ Read this first, then load **only** the docs the task needs (see Task router). T
 - Server is authoritative; the client never computes final gameplay outcomes.
 - **No explanatory comments in source** — context goes in the matching `docs/context/*.md`. Sole exception: `SAFETY EXCEPTION` credential/security comments.
 - **One owning doc per concept** (see Task router / [coding-conventions.md](./coding-conventions.md)). Edit that doc, never a duplicate.
-- **Docs change only when the user runs `/update-docs`**, after the goal is confirmed reached — never speculatively.
+- **Docs change only when the user runs `/update-docs`** (after the goal is confirmed reached — never speculatively) **or `/compact-docs`**. Edits replace prose rather than append to it: these docs describe the system as it is now, not how it got here.
 - Read source only when a doc is insufficient; then read only the needed section, not whole files.
 - Do **not** commit / push / pull / compare with remote unless explicitly instructed.
 
