@@ -688,7 +688,7 @@ class LobbyManager {
                 setGameInt("towerStabilityDifficulty", 0, 100),
             towerMaxTiltAngleDeg: setGameInt("towerMaxTiltAngleDeg", 5, 60),
             towerSiteSlendernessTarget:
-                setGameNumber("towerSiteSlendernessTarget", 1, 8),
+                setGameNumber("towerSiteSlendernessTarget", 1, 12),
             towerSiteWidthMin: setGameInt("towerSiteWidthMin", 2, 8),
             towerSiteWidthMax: setGameInt("towerSiteWidthMax", 2, 8),
             supplyEffectiveWidthRatio:

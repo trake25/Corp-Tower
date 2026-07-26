@@ -24,7 +24,7 @@ const DEBUG_TOOLTIPS := {
 	},
 	"TowerSiteSlendernessLabel": {
 		"title": "Site Slenderness Target",
-		"body": "Sets how wide the buildable site is for a given target height.\n\nsite width = even round-up(target height / this), clamped to Site Width Min..Max.\n\nLower = wider site, easier. The site is also what slenderness is measured against — building on the full site width is always penalty-free, so widening the site widens the safe zone too.",
+		"body": "Sets how wide the buildable site is for a given target height.\n\nsite width = even round-up(target height / this), clamped to Site Width Min..Max.\n\nAt 6.75 the site runs 4 columns on levels 1-7, 6 on levels 8-28, then 8 from level 29 — landing at full width just as stability pressure peaks at level 30. Below 4.0 level 1 starts at 6 instead of 4.\n\nLower = wider site, easier. The site is also what slenderness is measured against — building on the full site width is always penalty-free, so widening the site widens the safe zone too.",
 	},
 	"TowerSiteWidthMinLabel": {
 		"title": "Site Width Min",
@@ -489,7 +489,7 @@ func setup(tuning_ref, network_ref) -> void:
 	configure_slider(assist_threshold_slider, 0, 100, 5, func(value): send_debug_float("assistContributionThreshold", value / 100.0))
 	configure_slider(tower_stability_difficulty_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityDifficulty", value))
 	configure_slider(tower_max_tilt_slider, 5, 60, 1, func(value): send_debug_int("towerMaxTiltAngleDeg", value))
-	configure_slider(tower_site_slenderness_slider, 1.0, 8.0, 0.25, func(value): send_debug_float("towerSiteSlendernessTarget", value))
+	configure_slider(tower_site_slenderness_slider, 1.0, 12.0, 0.25, func(value): send_debug_float("towerSiteSlendernessTarget", value))
 	configure_slider(tower_site_width_min_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMin", value))
 	configure_slider(tower_site_width_max_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMax", value))
 	configure_slider(supply_effective_width_slider, 10, 200, 5, func(value): send_debug_float("supplyEffectiveWidthRatio", value / 100.0))
@@ -784,15 +784,15 @@ func apply_config(config) -> void:
 	set_slider_no_signal(tower_max_tilt_slider, float(config.get("towerMaxTiltAngleDeg", 24)))
 	set_slider_no_signal(
 		tower_site_slenderness_slider,
-		float(config.get("towerSiteSlendernessTarget", 2.75))
+		float(config.get("towerSiteSlendernessTarget", 6.75))
 	)
 	set_slider_no_signal(
 		tower_site_width_min_slider,
-		float(config.get("towerSiteWidthMin", 6))
+		float(config.get("towerSiteWidthMin", 4))
 	)
 	set_slider_no_signal(
 		tower_site_width_max_slider,
-		float(config.get("towerSiteWidthMax", 12))
+		float(config.get("towerSiteWidthMax", 8))
 	)
 	set_slider_no_signal(
 		supply_effective_width_slider,
@@ -918,11 +918,11 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		tower_site_slenderness_label,
-		"Site Slenderness Target: " + ("%.2f" % get_slider_value(tower_site_slenderness_slider, 2.75))
+		"Site Slenderness Target: " + ("%.2f" % get_slider_value(tower_site_slenderness_slider, 6.75))
 	)
 	set_debug_label_text(
 		tower_site_width_min_label,
-		"Site Width Min: " + str(int(get_slider_value(tower_site_width_min_slider, 6)))
+		"Site Width Min: " + str(int(get_slider_value(tower_site_width_min_slider, 4)))
 	)
 	set_debug_label_text(
 		tower_site_width_max_label,

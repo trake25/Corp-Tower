@@ -36,10 +36,10 @@ const GameConfig = {
     // below their share without failing the whole team.
     impactMinContributionShare: 0.30,
     towerGridWidth: 8, //14 SnapGrid.gd previous values const GRID_WIDTH := 14 const GRID_CENTER_COL := 6.5
-    placeableColumnMin: 3,
-    placeableColumnMax: 9,
-    towerSiteSlendernessTarget: 2,
-    towerSiteWidthMin: 6,
+    placeableColumnMin: 2,
+    placeableColumnMax: 5,
+    towerSiteSlendernessTarget: 6.75,
+    towerSiteWidthMin: 4,
     // Hard viewport ceiling, not a taste call: TowerStack is 272px wide at a
     // fixed 34px brick, so only grid columns 3-10 are ever on screen. A wider
     // site would place bricks the player can never see.
