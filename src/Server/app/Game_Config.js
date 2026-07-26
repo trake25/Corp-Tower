@@ -2,7 +2,7 @@ const GameConfig = {
 
     maxLevel: 99,
     debugStartLevel: 1,
-    placementCooldown: 2000,    // testing phase at 500ms, 2-3 secs during release
+    placementCooldown: 1000,    // testing phase at 500ms, 1 during release
     quickChatCooldownMs: 3000,
     quickChatTemplates: [
         "Place Block!",
@@ -20,13 +20,13 @@ const GameConfig = {
         { minLevel: 16, maxLevel: 40, baseLevel: 15, baseHeight: 35, heightPerLevel: 0.4 },
         { minLevel: 41, maxLevel: 99, baseLevel: 40, baseHeight: 45, heightPerLevel: 0.15 }
     ],
-    startDelayMs: 2000, // testing 0.5, release 2
-    levelTimeLimitMs: 60000,    // testing 120, release 60 (for tuning)
+    startDelayMs: 1500, // testing 0.5, release 2
+    levelTimeLimitMs: 30000,    // testing 120, release 30 (for tuning)
     nextLevelDelayMs: 1000, // testing 0.5, release 1
     failRestartDelayMs: 1000, // testing 0.5, release 1
     placementScorePopupDurationMs: 2000,
     finishScorePopupDurationMs: 2000,
-    levelSummaryDelayMs: 2000,  // testing 2, release 3
+    levelSummaryDelayMs: 2500,  // testing 2, release 3
     impactInterval: 2,
     impactScoreRequirement: 0,
     // With an Impact every level this is the core loop: each player must earn
@@ -135,11 +135,11 @@ const GameConfig = {
         assistContributionThreshold: 0.25
     },
 
-    debugBotsEnabled: true,    //testing true, release false
+    debugBotsEnabled: false,    //testing true, release false
 
     debugBotCount: 2,
 
-    debugBotDelayMin: 2000,
+    debugBotDelayMin: 1500,
 
     debugBotDelayMax: 6000,
 
