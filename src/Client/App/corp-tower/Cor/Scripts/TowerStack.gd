@@ -3,6 +3,12 @@ extends Control
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 const SnapGridScript = preload("res://Cor/Scripts/GameUi/SnapGrid.gd")
+const CollapseSimScript = preload("res://Cor/Scripts/GameUi/CollapseSim.gd")
+
+const COLLAPSE_NONE := 0
+const COLLAPSE_LEAN := 1
+const COLLAPSE_FALL := 2
+const COLLAPSE_SETTLED := 3
 
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
@@ -21,7 +27,22 @@ const GHOST_OUTLINE_COLOR := Color(1.0, 1.0, 1.0, 0.7)
 @export var scroll_start_ratio: float = 0.7
 @export var scroll_ease_power: float = 3.0
 @export var top_indicator_clearance_units: int = 1
-@export var collapse_tilt_deg: float = 70.0
+@export var collapse_tilt_deg: float = 34.0
+@export var collapse_lean_seconds: float = 0.25
+@export var collapse_gravity_units: float = 42.0
+@export var collapse_lean_push_units: float = 6.0
+@export var collapse_lateral_spread_units: float = 2.2
+@export var collapse_drop_kick_units: float = 1.5
+@export var collapse_spin_max_deg: float = 260.0
+@export var collapse_air_drag: float = 0.55
+@export var collapse_restitution: float = 0.24
+@export var collapse_floor_friction: float = 0.5
+@export var collapse_bounce_min_units: float = 3.0
+@export var collapse_max_bounces: int = 1
+@export var collapse_flatten_seconds: float = 0.28
+@export var collapse_pile_layers: int = 2
+@export var collapse_pile_layer_units: float = 0.55
+@export var collapse_span_ratio: float = 0.82
 @export var tilt_ease_speed: float = 6.0
 @export var drop_duration: float = 0.28
 @export var snap_radius_units: float = 2.2
@@ -52,6 +73,9 @@ var _drop_anim_t: float = 0.0
 var _drop_fall_units: float = 0.0
 var _prev_block_count: int = 0
 var mood_threshold: int = BlockDataScript.DEFAULT_MOOD_THRESHOLD
+var _collapse_phase: int = COLLAPSE_NONE
+var _collapse_lean_elapsed: float = 0.0
+var _collapse_sim = null
 
 func _ready() -> void:
 	material = BlockDataScript.brick_shader_material()
@@ -73,8 +97,13 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	if tower_collapsed:
 		var lean_sign: float = 1.0 if reported_tilt >= 0.0 else -1.0
 		tower_tilt_deg = lean_sign * collapse_tilt_deg
+
+		if _collapse_phase == COLLAPSE_NONE:
+			_collapse_phase = COLLAPSE_LEAN
+			_collapse_lean_elapsed = 0.0
 	else:
 		tower_tilt_deg = reported_tilt
+		_reset_collapse()
 
 	_maybe_start_drop_animation(previous_global_height)
 	_update_scroll_offset()
@@ -232,6 +261,17 @@ func _process(delta: float) -> void:
 			_drop_anim_id = ""
 		needs_redraw = true
 
+	if _collapse_phase == COLLAPSE_LEAN:
+		_collapse_lean_elapsed += delta
+		if _collapse_lean_elapsed >= collapse_lean_seconds:
+			_begin_collapse()
+		needs_redraw = true
+	elif _collapse_phase == COLLAPSE_FALL and _collapse_sim != null:
+		_collapse_sim.step(delta)
+		if _collapse_sim.is_settled():
+			_collapse_phase = COLLAPSE_SETTLED
+		needs_redraw = true
+
 	if needs_redraw:
 		queue_redraw()
 
@@ -245,8 +285,190 @@ func clear_tower() -> void:
 	target_height = 0
 	_prev_block_count = 0
 	_drop_anim_id = ""
+	tower_collapsed = false
+	_reset_collapse()
 	_update_scroll_offset()
 	queue_redraw()
+
+func _reset_collapse() -> void:
+	_collapse_phase = COLLAPSE_NONE
+	_collapse_lean_elapsed = 0.0
+	_collapse_sim = null
+
+func _begin_collapse() -> void:
+	var unit: float = _unit_size()
+	var base_x: float = size.x * 0.5
+	var baseline: float = size.y - bottom_padding
+	var scroll_px: float = float(_scroll_offset_units(unit)) * unit
+	var pivot: Vector2 = _tilt_pivot()
+	var lean_rad: float = deg_to_rad(displayed_tilt_deg)
+	var top_units: float = maxf(1.0, float(SnapGridScript.top_height(tower_blocks)))
+	var seeds: Array = []
+
+	for entry_value in tower_blocks:
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+
+		var seed_data: Dictionary = _build_collapse_seed(
+			entry_value, unit, base_x, baseline, scroll_px, pivot, lean_rad, top_units
+		)
+
+		if !seed_data.is_empty():
+			seeds.append(seed_data)
+
+	if seeds.is_empty():
+		_collapse_phase = COLLAPSE_SETTLED
+		return
+
+	var span_half_width: float = size.x * clampf(collapse_span_ratio, 0.1, 1.0) * 0.5
+
+	_collapse_sim = CollapseSimScript.new()
+	_collapse_sim.begin(seeds, {
+		"seed": _collapse_seed(),
+		"gravity": collapse_gravity_units * unit,
+		"lean_sign": 1.0 if displayed_tilt_deg >= 0.0 else -1.0,
+		"lean_push": collapse_lean_push_units * unit,
+		"lateral_spread": collapse_lateral_spread_units * unit,
+		"drop_kick": collapse_drop_kick_units * unit,
+		"spin_max": deg_to_rad(collapse_spin_max_deg),
+		"air_drag": collapse_air_drag,
+		"restitution": collapse_restitution,
+		"floor_friction": collapse_floor_friction,
+		"bounce_min_speed": collapse_bounce_min_units * unit,
+		"max_bounces": collapse_max_bounces,
+		"flatten_seconds": collapse_flatten_seconds,
+		"floor_y": baseline,
+		"span_center": base_x,
+		"span_half_width": span_half_width,
+		"bucket_width": unit,
+		"pile_max_layers": collapse_pile_layers,
+		"pile_layer_height": collapse_pile_layer_units * unit
+	})
+	_collapse_phase = COLLAPSE_FALL
+
+func _build_collapse_seed(
+	entry: Dictionary,
+	unit: float,
+	base_x: float,
+	baseline: float,
+	scroll_px: float,
+	pivot: Vector2,
+	lean_rad: float,
+	top_units: float
+) -> Dictionary:
+	var block: Dictionary = _normalize_block_entry(entry)
+	var cells: Array = block.get("cells", [])
+
+	if cells.is_empty():
+		return {}
+
+	var shape_id: String = str(block.get("shapeId", ""))
+	var origin_x: int = int(entry.get("originX", 0))
+	var origin_y: int = int(entry.get("originY", entry.get("baseHeight", 0)))
+	var box: Rect2 = _footprint_box(origin_x, origin_y, cells, unit, base_x, baseline, 0)
+	var center: Vector2 = box.position + box.size * 0.5
+	var leaned: Vector2 = pivot + (center + Vector2(0.0, scroll_px) - pivot).rotated(lean_rad)
+	var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+	var center_units: float = float(origin_y) + (float(bounds.min_y) + float(bounds.max_y) + 1.0) * 0.5
+	var texture: Texture2D = BlockDataScript.brick_texture(shape_id)
+	var quad_size: Vector2 = box.size
+	var rotation_steps: int = 0
+
+	if texture != null:
+		rotation_steps = BlockDataScript.detect_rotation_steps(shape_id, cells)
+		var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(
+			BlockDataScript.BRICK_SHAPES[shape_id]
+		)
+		quad_size = Vector2(
+			float(canonical_bounds.max_x - canonical_bounds.min_x + 1) * unit,
+			float(canonical_bounds.max_y - canonical_bounds.min_y + 1) * unit
+		)
+
+	var emoji_texture: Texture2D = null
+	var emoji_offset: Vector2 = Vector2.ZERO
+
+	if entry.has(BlockDataScript.BALANCE_DELTA_KEY):
+		var mood: String = BlockDataScript.emoji_mood_for_delta(
+			int(entry.get(BlockDataScript.BALANCE_DELTA_KEY, 0)), mood_threshold
+		)
+		emoji_texture = BlockDataScript.emoji_texture(mood)
+
+		var anchor: Vector2 = BlockDataScript.emoji_anchor(cells)
+		emoji_offset = _lattice_to_local(
+			Vector2(float(origin_x) + anchor.x, float(origin_y) + anchor.y),
+			unit,
+			base_x,
+			baseline,
+			0
+		) - center
+
+	return {
+		"pos": leaned - Vector2(0.0, scroll_px),
+		"angle": lean_rad,
+		"height_ratio": clampf(center_units / top_units, 0.0, 1.0),
+		"footprint": box.size,
+		"quad_size": quad_size,
+		"rotation_steps": rotation_steps,
+		"texture": texture,
+		"color": _player_color(entry),
+		"emoji_texture": emoji_texture,
+		"emoji_offset": emoji_offset
+	}
+
+func _collapse_seed() -> int:
+	var key: String = ""
+
+	for entry_value in tower_blocks:
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+
+		key += _entry_block_id(entry_value) + "|"
+
+	return key.hash()
+
+func _draw_debris(unit: float) -> void:
+	if _collapse_sim == null:
+		return
+
+	var scroll_px: float = float(_scroll_offset_units(unit)) * unit
+	var uvs: PackedVector2Array = BlockDataScript.brick_quad_uvs()
+	var emoji_size: Vector2 = Vector2.ONE * unit * emoji_unit_scale
+
+	for piece_value in _collapse_sim.pieces:
+		var piece: Dictionary = piece_value
+		var screen_pos: Vector2 = piece.pos + Vector2(0.0, scroll_px)
+		var radius: float = float(piece.half_extent) * 1.5
+
+		if !_is_rect_visible(
+			Rect2(screen_pos - Vector2(radius, radius), Vector2(radius * 2.0, radius * 2.0))
+		):
+			continue
+
+		var color: Color = piece.color
+		var texture: Texture2D = piece.texture
+
+		draw_set_transform(screen_pos, float(piece.angle), Vector2.ONE)
+
+		if texture == null:
+			_draw_fallback_block(Vector2.ZERO, piece.footprint, color)
+		else:
+			draw_primitive(
+				BlockDataScript.brick_quad_points(
+					Vector2.ZERO, piece.quad_size, int(piece.rotation_steps)
+				),
+				PackedColorArray([color, color, color, color]),
+				uvs,
+				texture
+			)
+
+		var emoji_texture: Texture2D = piece.emoji_texture
+
+		if emoji_texture != null:
+			draw_texture_rect(
+				emoji_texture, Rect2(piece.emoji_offset - emoji_size * 0.5, emoji_size), false
+			)
+
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _update_scroll_offset() -> void:
 	var unit: float = _unit_size()
@@ -262,6 +484,10 @@ func _draw() -> void:
 	var unit: float = _unit_size()
 	var base_x: float = size.x * 0.5
 	var baseline: float = size.y - bottom_padding
+
+	if _collapse_phase == COLLAPSE_FALL or _collapse_phase == COLLAPSE_SETTLED:
+		_draw_debris(unit)
+		return
 
 	if tower_blocks.is_empty():
 		_draw_fallback_stack()
