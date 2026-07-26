@@ -15,7 +15,20 @@ const originalGameConfig = {
     ,powerLifetime: GameConfig.powerLifetime
     ,towerStabilityWarningThreshold: GameConfig.towerStabilityWarningThreshold
     ,towerStabilityCriticalThreshold: GameConfig.towerStabilityCriticalThreshold
+    ,towerGridWidth: GameConfig.towerGridWidth
+    ,towerSiteWidthMin: GameConfig.towerSiteWidthMin
+    ,towerSiteWidthMax: GameConfig.towerSiteWidthMax
+    ,towerSiteSlendernessTarget: GameConfig.towerSiteSlendernessTarget
 };
+
+// Placement geometry is designer-tunable, so these tests pin the grid they
+// assert against instead of inheriting whatever Game_Config currently ships.
+function useFixedGrid({ gridWidth = 14, widthMin = 6, widthMax = 6 } = {}) {
+    GameConfig.towerGridWidth = gridWidth;
+    GameConfig.towerSiteWidthMin = widthMin;
+    GameConfig.towerSiteWidthMax = widthMax;
+    GameConfig.towerSiteSlendernessTarget = 2.75;
+}
 const originalScoringConfig = { ...GameConfig.scoring };
 const activeEngines = new Set();
 
@@ -36,6 +49,11 @@ afterEach(() => {
         originalGameConfig.towerStabilityWarningThreshold;
     GameConfig.towerStabilityCriticalThreshold =
         originalGameConfig.towerStabilityCriticalThreshold;
+    GameConfig.towerGridWidth = originalGameConfig.towerGridWidth;
+    GameConfig.towerSiteWidthMin = originalGameConfig.towerSiteWidthMin;
+    GameConfig.towerSiteWidthMax = originalGameConfig.towerSiteWidthMax;
+    GameConfig.towerSiteSlendernessTarget =
+        originalGameConfig.towerSiteSlendernessTarget;
     GameConfig.scoring = { ...originalScoringConfig };
 });
 
@@ -136,6 +154,7 @@ test("a Z block placed at a lane origin settles with an unsupported overhang", (
 });
 
 test("resolveColumnOriginX clamps the requested column to the block's valid placeable range", () => {
+    useFixedGrid();
     const { engine } = createPlayingEngine(1, 8);
     const tBlock = { shapeId: "T", cells: [[1, 0], [0, 1], [1, 1], [2, 1]] };
     const verticalIBlock = { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]] };
@@ -153,6 +172,7 @@ test("resolveColumnOriginX clamps the requested column to the block's valid plac
 });
 
 test("getPlaceableOriginRange narrows as block width grows, keeping the full footprint within columns 4-9", () => {
+    useFixedGrid();
     const { engine } = createPlayingEngine(1, 8);
     const oBlock = { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
     const horizontalIBlock = { shapeId: "I", cells: [[0, 0], [1, 0], [2, 0], [3, 0]] };
@@ -164,6 +184,7 @@ test("getPlaceableOriginRange narrows as block width grows, keeping the full foo
 });
 
 test("site width scales with target height, staying centered on the 14-column grid", () => {
+    useFixedGrid({ widthMin: 6, widthMax: 12 });
     const { engine } = createPlayingEngine(1, 8);
 
     // A short target keeps the minimum 6-wide site; taller targets widen it so a
@@ -188,6 +209,7 @@ test("site width scales with target height, staying centered on the 14-column gr
 });
 
 test("placeable origin range follows the level's site, not a fixed 4-9 span", () => {
+    useFixedGrid({ widthMin: 6, widthMax: 12 });
     const { engine } = createPlayingEngine(1, 8);
     const oBlock = { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
 

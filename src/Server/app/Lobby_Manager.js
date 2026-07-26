@@ -20,6 +20,8 @@ const DEFAULT_DEBUG_CONFIG = {
     levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
     impactScoreRequirement: GameConfig.impactScoreRequirement,
     impactMinContributionShare: GameConfig.impactMinContributionShare,
+    impactInterval: GameConfig.impactInterval,
+    impactFillBonusRate: GameConfig.scoring.impactFillBonusRate,
     targetHeightMultiplier: GameConfig.targetHeightMultiplier,
     levelSupplyMinSurplus: GameConfig.levelSupplyMinSurplus,
     levelSupplyMaxSurplus: GameConfig.levelSupplyMaxSurplus,
@@ -456,6 +458,8 @@ class LobbyManager {
             impactScoreRequirement: GameConfig.impactScoreRequirement,
             impactMinContributionShare:
                 GameConfig.impactMinContributionShare,
+            impactInterval: GameConfig.impactInterval,
+            impactFillBonusRate: GameConfig.scoring.impactFillBonusRate,
             targetHeightMultiplier: GameConfig.targetHeightMultiplier,
             levelSupplyMinSurplus: GameConfig.levelSupplyMinSurplus,
             levelSupplyMaxSurplus: GameConfig.levelSupplyMaxSurplus,
@@ -516,6 +520,9 @@ class LobbyManager {
             DEFAULT_DEBUG_CONFIG.impactScoreRequirement;
         GameConfig.impactMinContributionShare =
             DEFAULT_DEBUG_CONFIG.impactMinContributionShare;
+        GameConfig.impactInterval = DEFAULT_DEBUG_CONFIG.impactInterval;
+        GameConfig.scoring.impactFillBonusRate =
+            DEFAULT_DEBUG_CONFIG.impactFillBonusRate;
         GameConfig.targetHeightMultiplier =
             DEFAULT_DEBUG_CONFIG.targetHeightMultiplier;
         GameConfig.levelSupplyMinSurplus =
@@ -691,6 +698,9 @@ class LobbyManager {
                 setGameInt("impactScoreRequirement", 0, 1000000),
             impactMinContributionShare:
                 setGameNumber("impactMinContributionShare", 0, 1),
+            impactInterval: setGameInt("impactInterval", 1, 10),
+            impactFillBonusRate:
+                setScoringNumber("impactFillBonusRate", 0, 2),
             targetHeightMultiplier: setGameInt("targetHeightMultiplier", 1, 20),
             levelSupplyMinSurplus: setGameInt("levelSupplyMinSurplus", 0, 20),
             levelSupplyMaxSurplus: setGameInt("levelSupplyMaxSurplus", 0, 30),

@@ -36,7 +36,7 @@ Every new connection triggers a `debug_config` broadcast to all connected real p
 | Message | Validation |
 |---|---|
 | `reconnect` | Token/player id may resume a room; otherwise server creates a new session and queues the player |
-| `place_block` | Valid room, player, state, cooldown, inventory, block index; `column` = integer target origin column (defaults to `placeableColumnMin` if absent/invalid). Server maps column → grid `originX` via `resolveColumnOriginX`, clamped to the brick's valid placeable range (`getPlaceableOriginRange`) |
+| `place_block` | Valid room, player, state, cooldown, inventory, block index; `column` = integer target origin column (an absent/invalid column falls back to the level's site minimum). Server maps column → grid `originX` via `resolveColumnOriginX`, clamped to the brick's valid placeable range (`getPlaceableOriginRange`) for **that level's site** |
 | `activate_power` | Valid room, player, held item at `slot`, shared activation cooldown. **No target field** — effect applies to every player in the room, caster included. There is no separate refresh message; refresh is `activate_power` with a `refresh` item, and rerolls every player's blocks unconditionally |
 | `send_quick_chat` | Valid active room, template slot `0..2`, server-authoritative per-player cooldown |
 | `update_config` | Key allowlist, value ranges, bot-delay min/max, bot-count clamp, bot-strategy allowlist, tower-stability feedback-mode allowlist, `resetDebugConfig` default-restore action — exact clamp ranges in [backend.md § Lobby Manager](./backend.md#lobby-manager) |
@@ -61,8 +61,10 @@ Inventory cards use drag-and-drop, not tap-to-place:
 | `cells` | `[x, y]` unit-coordinate array; used by the client for shape previews and tower rendering |
 | `height` | Vertical footprint derived from `cells` — not necessarily equal to cell count |
 | `towerBlocks[]` | Ordered placement history: `{ playerId, block, height, effectiveHeight, baseHeight }`, so clients can redraw the tower after a broadcast or reconnect |
-| `originX` / `originY` | Resolved structural coordinates (column-derived `originX`, drop-settled `originY`) on the 14-column grid (placement confined to columns 4–9) |
-| `towerStability` / `towerStabilityDiagnostics` | Stability score + diagnostics `{ comOffset, laneImbalance, overhangPenalty, tiltScore, tiltAngleDeg, leanDirection, collapsed }` (see [backend.md § Tower Stability](./backend.md#tower-stability)) |
+| `originX` / `originY` | Resolved structural coordinates (column-derived `originX`, drop-settled `originY`) on the `towerGridWidth` grid, confined to the level's placeable site |
+| `towerGridWidth` | Authoritative grid width. **The client derives its render centre from this** — a hardcoded centre draws the whole tower off-centre the moment the grid is retuned |
+| `placeableColumnMin` / `placeableColumnMax` | The level's buildable site, derived server-side from target height (→ [gameplay.md § Placement columns](./gameplay.md#placement-columns)). Sent every tick; the client feeds them to `SnapGrid.set_placeable_range` so snap points, origin ranges and the placeable band all follow |
+| `towerStability` / `towerStabilityDiagnostics` | Stability score + diagnostics `{ comOffset, laneImbalance, overhangPenalty, tiltScore, tiltAngleDeg, leanDirection, integrity, slenderness, supportRatio, collapsed }` (see [backend.md § Tower Stability](./backend.md#tower-stability)) |
 | `impactScoreStatus` | Right-panel helper: next Impact level, ready-count inputs, per-player leaderboard score goals |
 
 Legacy numeric block values are still tolerated by the Godot client as vertical fallback blocks. Redis persists structural fields (`originX`/`originY` etc.) so a recovered room reproduces the same tower structure.
@@ -71,12 +73,12 @@ Legacy numeric block values are still tolerated by the Godot client as vertical 
 
 | Field | Meaning |
 |---|---|
-| `scoreEvents[]` | Transient, broadcast-only. Each: stable `id`, `type`, `level`, optional `playerId`/`points`/`label`/`displayOnly`/`meta`. Types: `placement`, `precision_bonus`, `team_exact_bonus`, `impact_fill_bonus`, `exact_finish`, `overbuild_finish`, `mvp` (plus `finisher_bonus`/`assist_bonus` only if those multipliers are re-enabled — both default 0, so no event) |
+| `scoreEvents[]` | Transient, broadcast-only. Each: stable `id`, `type`, `level`, optional `playerId`/`points`/`label`/`displayOnly`/`meta`. Types: `placement`, `reinforce`, `precision_bonus`, `team_exact_bonus`, `impact_fill_bonus`, `exact_finish`, `overbuild_finish`, `mvp`, `tower_warning`, `tower_critical` (plus `finisher_bonus`/`assist_bonus` only if those multipliers are re-enabled — both default 0, so no event) |
 | `quickChatEvents[]` | Transient, broadcast-only: `id`, `playerId`, template `slot`, display `text`, `createdAt`. Never persisted or replayed after reconnect |
 | `lastLevelSummary` | `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, `players[]` (per-player: id, bot flag, level score, previous/final total, contributed height, MVP flag, bonus breakdown). Impact failures also include `impactScoreStatus` |
 
 - Clients track seen event ids per level and never infer scoring UI from aggregate score diffs.
-- Placement events use `placementScorePopupDurationMs`; MVP/Perfect-Fit/Impact/bonus events use `finishScorePopupDurationMs` (both = total popup lifetime incl. fade-out).
+- Placement **and `reinforce`** events use `placementScorePopupDurationMs` (reinforce fires alongside a placement, so it shares its timing); MVP/Perfect-Fit/Impact/bonus events use `finishScorePopupDurationMs` (both = total popup lifetime incl. fade-out).
 - Level summaries queue until the current score-popup batch fades, then stay visible for `levelSummaryDelayMs`.
 - Completed summaries bank level score into final totals; failed summaries keep previous == final totals.
 

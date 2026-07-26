@@ -6,7 +6,7 @@ const SnapGridScript = preload("res://Cor/Scripts/GameUi/SnapGrid.gd")
 
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
-const GRID_CENTER_COL := SnapGridScript.GRID_CENTER_COL
+
 
 const SNAP_DOT_COLOR := Color(1.0, 1.0, 1.0, 0.5)
 const SNAP_TARGET_HALO_ALPHA := 0.85
@@ -139,7 +139,7 @@ func local_to_grid(local: Vector2) -> Vector2:
 	var untilted: Vector2 = _untilt(local)
 
 	return Vector2(
-		(untilted.x - size.x * 0.5) / unit + GRID_CENTER_COL + 0.5,
+		(untilted.x - size.x * 0.5) / unit + SnapGridScript.grid_center_col() + 0.5,
 		((size.y - bottom_padding) - untilted.y) / unit + float(_scroll_offset_units(unit))
 	)
 
@@ -150,7 +150,7 @@ func _lattice_to_local(
 	lattice: Vector2, unit: float, base_x: float, baseline: float, scroll_offset_units: int
 ) -> Vector2:
 	return Vector2(
-		base_x + (lattice.x - GRID_CENTER_COL - 0.5) * unit,
+		base_x + (lattice.x - SnapGridScript.grid_center_col() - 0.5) * unit,
 		baseline - (lattice.y - float(scroll_offset_units)) * unit
 	)
 

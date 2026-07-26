@@ -140,6 +140,12 @@ class BotManager {
             }
 
             const action = this.chooseBotAction(bot, engine);
+
+            if (action && action.type === "wait") {
+                this.runBotLoop(bot, engine, level);
+                return;
+            }
+
             const column = this.chooseBotColumn(
                 engine,
                 bot.blocks[action.blockIndex]
@@ -161,8 +167,8 @@ class BotManager {
 
     }
 
-    chooseBotAction(bot, engine) {
-        if (GameConfig.debugBotStrategy === "mvp_greedy") {
+    chooseBotAction(bot, engine, strategy = GameConfig.debugBotStrategy) {
+        if (strategy === "mvp_greedy") {
             return this.chooseMvpGreedyAction(bot, engine);
         }
 
@@ -179,7 +185,7 @@ class BotManager {
         const previousHeight = TowerStability.topHeight(
             engine.room.towerBlocks || []
         );
-        let best = null;
+        const options = [];
 
         for (let column = min; column <= max; column++) {
             const originX = engine.resolveColumnOriginX(block, column);
@@ -206,20 +212,79 @@ class BotManager {
                 continue;
             }
 
-            const safe =
-                greedy ||
-                result.stability >= GameConfig.towerStabilityWarningThreshold;
-            const score =
-                (safe ? 1 : 0) * 1000000 +
-                heightGain * 1000 +
-                result.stability;
-
-            if (!best || score > best.score) {
-                best = { column: column, score: score };
-            }
+            options.push({
+                column: column,
+                stability: result.stability,
+                heightGain: heightGain
+            });
         }
 
-        return best ? best.column : min;
+        if (options.length === 0) {
+            return min;
+        }
+
+        // Gate cooperative play on how much stability the *best available*
+        // column offers rather than a fixed threshold: an absolute cut-off stops
+        // discriminating entirely once the stability config is tuned forgiving
+        // enough that every column reads healthy.
+        const bestStability = options.reduce((top, option) => {
+            return Math.max(top, option.stability);
+        }, 0);
+        const tolerance = Math.max(
+            0,
+            Number(GameConfig.debugBotStabilityTolerance) || 0
+        );
+        const allowed = greedy
+            ? options
+            : options.filter(option => {
+                return option.stability >= bestStability - tolerance;
+            });
+
+        return allowed.reduce((best, option) => {
+            if (!best) {
+                return option;
+            }
+
+            if (option.heightGain !== best.heightGain) {
+                return option.heightGain > best.heightGain ? option : best;
+            }
+
+            return option.stability > best.stability ? option : best;
+        }, null).column;
+    }
+
+    // True when this bot has already banked its own Impact share for the level
+    // while a teammate is still short of theirs. Under an Impact-every-level
+    // setup, continuing to claim height there is what fails the whole team, so a
+    // cooperative bot yields and a greedy one deliberately does not.
+    hasClearedShareWhileTeammateShort(bot, engine) {
+        const status = engine.getImpactScoreStatus();
+
+        if (!status || status.requiredBandScore <= 0) {
+            return false;
+        }
+
+        // getImpactScoreStatus reads banked `score`, which only absorbs
+        // `levelScore` once the level completes -- mid-level every player would
+        // otherwise read as short. Add the live level score the same way the
+        // client's Impact bar does.
+        const liveBandScore = player => {
+            const banked = Number(
+                status.players.find(entry => entry.id === player.id)?.bandScore || 0
+            );
+
+            return banked + Number(player.levelScore || 0);
+        };
+        const required = Number(status.requiredBandScore);
+        const self = engine.room.players.find(player => player.id === bot.id);
+
+        if (!self || liveBandScore(self) < required) {
+            return false;
+        }
+
+        return engine.room.players.some(player => {
+            return player.id !== bot.id && liveBandScore(player) < required;
+        });
     }
 
     chooseCooperativeAction(bot, engine) {
@@ -248,13 +313,24 @@ class BotManager {
             }))
             .filter(candidate => candidate.height > 0);
 
+        const yieldHeight = this.hasClearedShareWhileTeammateShort(bot, engine);
+
+        // Already banked its own share while a teammate is short: the height
+        // left in this level is worth more to them than to this bot, and under
+        // an Impact-every-level rule their shortfall fails the whole team. Hold
+        // the turn rather than consume it. The teammate who is short can never
+        // take this branch, so the room cannot deadlock.
+        if (yieldHeight && remainingHeight > 0) {
+            return { type: "wait" };
+        }
+
         const nonOverkill = candidates.filter(candidate => {
             return candidate.height <= remainingHeight;
         });
 
         if (nonOverkill.length > 0) {
             const sorted = nonOverkill.sort((a, b) => {
-                if (remainingHeight <= 3) {
+                if (yieldHeight || remainingHeight <= 3) {
                     return a.height - b.height;
                 }
 

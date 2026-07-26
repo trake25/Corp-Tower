@@ -185,4 +185,4 @@ Scripts (`web-backup-{up,down,status}.sh`) live alongside the WS backup's script
 
 ## Deprecated: Docker EC2 staging
 
-Removed — see [decisions.md](./decisions.md#docker-ec2-staging-removed-in-favor-of-k3s).
+Removed — see [decisions.md](./decisions.md#removed-systems-stale-references-you-may-still-hit).

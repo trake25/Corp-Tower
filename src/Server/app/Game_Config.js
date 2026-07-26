@@ -2,8 +2,8 @@ const GameConfig = {
 
     maxLevel: 99,
     debugStartLevel: 1,
-    placementCooldown: 1500,
-    quickChatCooldownMs: 6000,
+    placementCooldown: 500,    // testing phase at 500ms, 2-3 secs during release
+    quickChatCooldownMs: 3000,
     quickChatTemplates: [
         "Place Block!",
         "Sorry!",
@@ -20,13 +20,13 @@ const GameConfig = {
         { minLevel: 16, maxLevel: 40, baseLevel: 15, baseHeight: 35, heightPerLevel: 0.4 },
         { minLevel: 41, maxLevel: 99, baseLevel: 40, baseHeight: 45, heightPerLevel: 0.15 }
     ],
-    startDelayMs: 3000,
-    levelTimeLimitMs: 30000,
-    nextLevelDelayMs: 3000,
-    failRestartDelayMs: 3000,
+    startDelayMs: 500, // testing 0.5, release 2
+    levelTimeLimitMs: 120000,    // testing 120, release 30 (for tuning)
+    nextLevelDelayMs: 500, // testing 0.5, release 2
+    failRestartDelayMs: 500, // testing 0.5, release 2
     placementScorePopupDurationMs: 3000,
     finishScorePopupDurationMs: 3000,
-    levelSummaryDelayMs: 3000,
+    levelSummaryDelayMs: 1000,  // testing 1, release 3
     impactInterval: 1,
     impactScoreRequirement: 0,
     // With an Impact every level this is the core loop: each player must earn
@@ -35,24 +35,24 @@ const GameConfig = {
     // level is worth real score, not so much that one player can starve another
     // below their share without failing the whole team.
     impactMinContributionShare: 0.25,
-    towerGridWidth: 14,
-    placeableColumnMin: 4,
+    towerGridWidth: 8, //14 SnapGrid.gd previous values const GRID_WIDTH := 14 const GRID_CENTER_COL := 6.5
+    placeableColumnMin: 3,
     placeableColumnMax: 9,
     towerSiteSlendernessTarget: 2,
     towerSiteWidthMin: 6,
     // Hard viewport ceiling, not a taste call: TowerStack is 272px wide at a
     // fixed 34px brick, so only grid columns 3-10 are ever on screen. A wider
     // site would place bricks the player can never see.
-    towerSiteWidthMax: 8,
-    towerOverhangWeight: 0.15,
+    towerSiteWidthMax: 8,   // cap limit 8
+    towerOverhangWeight: 0,  //0.15
     towerLaneImbalanceWeight: 0.1,
-    towerMaxTiltAngleDeg: 18,
-    towerCollapseTiltScore: 4.0,
-    towerSlendernessSafe: 2.5,
-    towerSlendernessMax: 8.0,
-    towerStabilityMinHeight: 6,
-    towerBaseHalfWidthFloor: 1.0,
-    towerSupportDeficitMax: 0.35,
+    towerMaxTiltAngleDeg: 18,   //18
+    towerCollapseTiltScore: 6.0,
+    towerSlendernessSafe: 7.5,
+    towerSlendernessMax: 12.0,
+    towerStabilityMinHeight: 12,
+    towerBaseHalfWidthFloor: 4.0,
+    towerSupportDeficitMax: 0.70,
     towerStabilityWarningThreshold: 60,
     towerStabilityCriticalThreshold: 30,
     towerStabilityFeedbackMode: "warnings_only",
@@ -118,7 +118,7 @@ const GameConfig = {
         assistContributionThreshold: 0.25
     },
 
-    debugBotsEnabled: false,
+    debugBotsEnabled: true,    //testing true, release false
 
     debugBotCount: 2,
 
@@ -127,6 +127,11 @@ const GameConfig = {
     debugBotDelayMax: 5000,
 
     debugBotStrategy: "mvp_greedy",
+
+    // How many stability points a cooperative bot will give up to gain height.
+    // Measured against the best column available for that brick, so it keeps
+    // discriminating no matter how forgiving the stability config is tuned.
+    debugBotStabilityTolerance: 5,
 
 };
 

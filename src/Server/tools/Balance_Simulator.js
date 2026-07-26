@@ -66,50 +66,30 @@ function nextPlayerToAct(engine, clock) {
     return next;
 }
 
+// Delegates to the shipped bot brain rather than keeping a parallel copy, so
+// what the simulator measures is what a real room actually plays.
 function chooseSmartPlacement(engine, strategy, actor) {
-    const remainingHeight =
-        engine.room.targetHeight - engine.room.currentHeight;
-    const candidates = [];
-
-    (actor.blocks || []).forEach((block, blockIndex) => {
-        candidates.push({
-            player: actor,
-            blockIndex: blockIndex,
-            height: engine.getBlockHeight(block)
-        });
-    });
-
-    if (candidates.length === 0) {
+    if (!actor.blocks || actor.blocks.length === 0) {
         return null;
     }
 
-    const exact = candidates.find(candidate => {
-        return candidate.height === remainingHeight;
-    });
+    const action = BotManager.chooseBotAction(actor, engine, strategy);
 
-    if (exact) {
-        return exact;
+    if (action && action.type === "wait") {
+        return { waiting: true, player: actor };
     }
 
-    if (strategy === "mvp_greedy") {
-        return candidates.sort((a, b) => b.height - a.height)[0];
+    const blockIndex = Number(action?.blockIndex ?? 0);
+
+    if (!actor.blocks[blockIndex]) {
+        return null;
     }
 
-    const nonOverkill = candidates.filter(candidate => {
-        return candidate.height <= remainingHeight;
-    });
-
-    if (nonOverkill.length > 0) {
-        return nonOverkill.sort((a, b) => {
-            if (remainingHeight <= 3) {
-                return a.height - b.height;
-            }
-
-            return b.height - a.height;
-        })[0];
-    }
-
-    return candidates.sort((a, b) => a.height - b.height)[0];
+    return {
+        player: actor,
+        blockIndex: blockIndex,
+        height: engine.getBlockHeight(actor.blocks[blockIndex])
+    };
 }
 
 function chooseStablestColumn(engine, block, strategy) {
@@ -165,6 +145,12 @@ function simulateSmartPlay(engine, strategy) {
         }
 
         actor.player.simReadyAt = clock + cooldown;
+
+        // A yielding bot burns its turn without placing, so the teammate who is
+        // short of their share gets the height instead.
+        if (placement.waiting) {
+            continue;
+        }
 
         const block = placement.player.blocks.splice(placement.blockIndex, 1)[0];
         const blockHeight = engine.getBlockHeight(block);

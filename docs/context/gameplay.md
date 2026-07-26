@@ -1,243 +1,247 @@
 # Gameplay
 
-Source of truth for game design: rules, scoring, balance, progression. Technical implementation of these systems → [backend.md](./backend.md). Wire contract → [networking.md](./networking.md). Doc ownership: update this file for design/rules/scoring/balance/progression/debug-tuning-semantics/bot-behavior changes; see [coding-conventions.md](./coding-conventions.md) for the full doc-ownership map.
+Source of truth for game design: rules, scoring, balance, progression. Technical implementation → [backend.md](./backend.md). Wire contract → [networking.md](./networking.md). Doc ownership: update this file for design/rules/scoring/balance/progression/debug-tuning-semantics/bot-behavior changes; see [coding-conventions.md](./coding-conventions.md).
 
-> ⚠️ The 5-brick / corner-snap column-placement overhaul is implemented but **balance tuning is ongoing** — high-level completion is still low in the greedy simulator, and the narrower 6-of-14 placeable footprint hasn't been re-tuned since the switch away from lanes. Verify stability weights, the target-height curve, and scoring rates against current values before trusting them (see [decisions.md](./decisions.md#14-column-corner-snap-placement-replaces-lanes-and-anchors)).
+> ⚠️ **Live tuning in progress.** Numbers below are the design's reference values. `Game_Config.js` currently carries hand-tuned playtest values that deliberately differ (a more forgiving stability set, a long `levelTimeLimitMs`, short cooldowns). **This doc is what each knob means; `Game_Config.js` is its current value.**
 
 ## Core concept
 
-3-player real-time **selfish-cooperation** puzzle game. Players build one shared tower from server-assigned blocks (random shape and rotation) while competing individually for level score / MVP. Team must reach target height together; individuals are scored separately.
+3-player real-time **selfish-cooperation** puzzle. Players build one shared tower from server-assigned bricks (random shape and rotation) while competing individually for level score / MVP. The team must reach target height together; individuals are scored separately.
+
+**The tension in one line:** the scorable height per level is exactly `targetHeight` — a finite pool you race teammates for — but every player must personally clear a minimum share of it or the whole team rolls back.
 
 ## Core game loop
 
-1. Queue 3 players into a room.
-2. Assign blocks; start level after a configurable delay (default `startDelayMs` = 2s).
-3. Players place blocks in real time; placement order = input timing (first to act goes first).
-4. Placing a block refills that player's hand from the shared draw pile, if one is available.
-5. Per-player anti-spam cooldown after each placement (default `placementCooldown` = 2s).
-6. Level ends on target height reached or a failure condition.
-7. Score, save unused blocks into next draw pile, advance level.
+Queue 3 players → assign bricks → start after `startDelayMs` → players place in real time (order = input timing; each placement refills that player's hand from the shared pile and starts their `placementCooldown`) → level ends on target height or a failure condition → score, bank, carry unused bricks forward, advance.
 
-Placement: players drag a brick from an inventory card onto the shared tower; its nearest corner snaps to the nearest snap point on the platform or on an already-placed brick, within the **placeable column range** (see [Placement columns](#placement-columns)) — release sends the resolved column (client UX detail → [networking.md § Client Placement UI](./networking.md#client-placement-ui)).
+Placement: drag a brick from an inventory card onto the tower; its nearest corner snaps to the nearest snap point within the level's [placeable site](#placement-columns), and release sends the resolved column.
 
 ## Reconnect and shared room continuity (design rule)
 
 - Each player gets a persistent server-issued player id + reconnect token.
-- Reconnecting within the TTL (**default 60s**, `RECONNECT_TTL_SECONDS`) resumes the same player slot in the same room — routing is transparent; any healthy worker can recover the session from shared Redis state.
-- If the TTL expires while no real players remain connected, the room is destroyed (not continued with bots).
+- Reconnecting within the TTL (**default 60s**, `RECONNECT_TTL_SECONDS`) resumes the same slot in the same room; any healthy worker can recover the session from shared Redis state.
+- If the TTL expires with no real players connected, the room is destroyed (not continued with bots).
 
-Wire-level reconnect contract → [networking.md](./networking.md#reconnect). Server implementation → [backend.md § Lobby Manager](./backend.md#lobby-manager).
+Wire contract → [networking.md](./networking.md#reconnect). Implementation → [backend.md § Lobby Manager](./backend.md#lobby-manager).
 
 ## Block system
 
-- **Five fixed brick types only:** `I`, `O`, `L`, `T`, `Z` — all 4-cell tetrominoes, **all available from level 1** (no size-unlock ramp). Defined in `Game_Config.brickShapes` (canonical/unrotated cells only); drawn by weight (`brickWeights`). Shape-id naming → [glossary.md](./glossary.md).
-- **Random rotation at generation.** `Block_Supply.createBlock` picks a random rotation of the drawn shape (still not player-rotatable once dealt) — see [decisions.md](./decisions.md#random-rotation-9-column-lane-grid-and-per-instance-random-anchor). Effective height/width therefore varies by draw, not by shape: e.g. `I` is height 4 vertical or height 1 horizontal. Precision blocks = height ≤ 2.
-- **Effective height** = the drawn rotation's actual vertical footprint, not cell count.
-- Server sends each block as `{ id, shapeId, cells, height }`. `cells` reflects the rotation actually drawn. There is no per-block anchor cell — the client resolves a target column directly from the brick's own geometry (see [Placement columns](#placement-columns)).
+- **Five fixed brick types:** `I`, `O`, `L`, `T`, `Z` — all 4-cell tetrominoes, **all available from level 1** (no unlock ramp). Defined in `Game_Config.brickShapes` (canonical/unrotated cells); drawn by `brickWeights`.
+- **Random rotation at generation**, not player-rotatable once dealt. Effective height/width therefore varies by draw, not by shape: `I` is height 4 vertical or height 1 horizontal.
+- **Effective height** = the drawn rotation's vertical footprint, not cell count. **Precision brick** = height ≤ 2.
+- Server sends `{ id, shapeId, cells, height }`; `cells` reflects the rotation drawn. No per-block anchor cell — the brick's own geometry determines where it lands.
 
 ### Inventory rules
 
 | Level | Active hand slots |
 |---|---|
-| 1 | 1 |
-| 2 | 2 |
-| 4+ | 3 (max) |
+| 1–2 | 2 |
+| 3+ | 3 (`maxActiveBlocks`) |
 
-- Max 3 active blocks per player (`maxActiveBlocks`). The old 4th carry-over slot has been removed.
-- Empty slots refill from the shared draw pile after placement, while the pile has blocks.
-- The next shared draw block is visible to all players; whoever places next receives it.
+Empty slots refill from the shared pile after placement. The next shared draw brick is visible to all; whoever places next receives it.
 
 ### Draw pile & team carry-over
 
-- Each level gets a fresh, server-owned shared draw pile = unused **team carry-over** blocks + level-scaled **generated reserve** blocks, shuffled before the level starts.
-- Level 1 starts with an empty pile; levels 1–3 get no generated reserve.
+Each level gets a fresh shared pile = **team carry-over** + a **generated reserve**, shuffled before start. The reserve is **derived, not tabled**, so it self-corrects when `brickWeights`, target height, or site width change (capped at `maxGeneratedDrawPileBlocks`):
 
-| Level range | Generated reserve blocks |
-|---|---|
-| 1–3 | 0 |
-| 4–6 | 1 |
-| 7–9 | 2 |
-| 10–12 | 3 |
-| … (+1 every 3 levels) | … |
-| 97 | 32 (cap) |
+```
+requiredBrickHeight = ceil(targetHeight / packingEfficiency)
+reserve = ceil((requiredBrickHeight + bandCentre − openingHandHeight − carryOverHeight) / avgBrickHeight)
+```
 
-- Newly generated **opening-hand** blocks fill active slots directly (they don't pass through the draw pile).
-- On level completion: unused hand blocks + remaining pile blocks become the next team carry-over pool. Up to 3 kept, smaller/precision blocks prioritized. **On level failure, carry-over is discarded** during Impact rollback.
+Opening-hand bricks fill slots directly without passing through the pile. On completion, unused hand + pile bricks become the next carry-over (up to `maxTeamCarryOverBlocks`, precision-first). **On failure, carry-over is discarded.**
 
 ## Power system
 
-- Unlocks at level 4 by default (`powerUnlockLevel`). Up to 3 Power inventory slots per player (`powerMaxSlots`).
-- One shared side quest per eligible level. Currently fixed to "first to make the exact-finishing placement" (`setupSideQuest()`). The block-size starter variant ("first to place a 4/5/6-cell block") is disabled — its completion check (`tryCompleteSideQuest()`) still exists but is unreachable, since no quest of that type is generated right now.
-- Unused items persist across levels within a match (up to slot cap); cleared when the match closes.
-- Snapshotted at each completed Impact. On rollback, items earned after that snapshot are removed and inventory is restored to the snapshot — this prevents farming items via repeated failed Impact-band attempts. `powerLifetime`: `impact` = restore on rollback (default); `match` = keep earned items across rollback (debug/legacy only).
+- Unlocks at **level 1** (`powerUnlockLevel`) — Power and the side quest are both live from the opening level. Up to `powerMaxSlots` per player.
+- One shared side quest per level, currently fixed to "first to make the exact-finishing placement". A block-size variant exists in code but is never generated.
+- Items persist across levels within a match, snapshotted at each completed Impact and restored on rollback so they can't be farmed by repeated failed attempts (`powerLifetime: impact`).
 
 ### Acquisition paths
 
-| Path | When | Grants | Condition |
+**Refresh is quest-only.** Two flags gate the other paths and both default **off**:
+
+| Path | Gate | Grants |
+|---|---|---|
+| Side quest completion | always on | Refresh, to the first eligible player |
+| Guaranteed baseline | `powerGuaranteedBaseline` (**false**) | Refresh at every level start |
+| Impact-MVP reward | `powerImpactMvpReward` (**false**) | Random `active` catalog entry to the top scorer |
+
+Flipping either flag on restores that path with no code change. With Impacts now every level, the Impact-MVP path would grant a Refresh *every* level — which is why it is off rather than merely rare.
+
+### Activation and effects
+
+Tap the Power icon → tap a held item. Instant, **no target selection**; every activation affects all players including the caster. `powerActivationCooldownMs` between activations, blocked in the final 3s of a level. A toast naming the effect is the only feedback.
+
+Each `powerCatalog` entry carries an `active` flag gating whether `awardImpactPower()` can grant it. Only **Refresh** is active; the other two stay fully defined (including their `activatePower()` branches) so re-enabling is a one-line flip — see [decisions.md](./decisions.md#score-cap--copy-score-disabled-via-powercatalog-active-flag).
+
+| Effect | Category | What it does | Active |
 |---|---|---|---|
-| Guaranteed baseline | Start of any level, incl. restarts/rollback | Refresh | Only if not already held and a slot is free — no quest/luck required |
-| Side quest completion | First eligible player to complete the level's side quest | Refresh (hardcoded) | Slot free |
-| Impact-MVP reward | After a completed Impact | Random from the catalog's **active** entries only (currently just Refresh — see Effects catalog) | Highest total scorer; slot free |
-
-### Activation
-
-Tap the Power icon → tap a held item. Instant, **no target selection** — every activation affects **all players in the room, caster included**. Cooldown `powerActivationCooldownMs` = 3s; cannot activate in the final 3 seconds of a level. Feedback is a toast naming the effect (e.g. "All players inventory refreshed") — this is the *only* activation feedback; a legacy 4-second caster-color rail-tint cue has been removed.
-
-### Effects catalog
-
-Each catalog entry (`GameConfig.powerCatalog`) carries an `active` flag gating whether `awardImpactPower()` can ever grant it. Only **Refresh** is currently active — Score Cap and Copy Score stay fully defined (title/category/activation effect all intact in `Game_Engine.js`'s `activatePower()`) but `active: false`, so they're never granted and never appear in a player's Power list. Re-enabling either is a one-line flip of its `active` flag in [Game Config](./backend.md#game-config); see [decisions.md](./decisions.md#score-cap--copy-score-disabled-via-powercatalog-active-flag).
-
-| Effect | Category | Effect | Obtainable via | Active |
-|---|---|---|---|---|
-| **Score Cap** | Offensive | Sets every player's total score exactly to their own next Impact score requirement, whether previously above or below it | Impact-MVP reward only | No — disabled for now |
-| **Copy Score** | Defensive | Sets every player's total score to the caster's; updates their Impact snapshot/baseline to the copied score | Impact-MVP reward only | No — disabled for now |
-| **Refresh** | Utility | Immediately rerolls every player's hand. No token/use-count economy — activation *is* the effect | All three paths above | Yes |
-
-**Refresh reroll rules:** blocks below size 3 reroll into an unlocked size-3+ block when possible; blocks size 3+ keep their size but reroll shape/orientation; generation is aware of each player's own remaining height and tries to include at least one block useful for it.
+| **Refresh** | Utility | Rerolls every player's hand. No token economy — activation *is* the effect. Bricks below size 3 reroll into size-3+ where possible; larger bricks keep size but reroll shape/orientation, targeting each player's remaining height | **Yes** |
+| **Score Cap** | Offensive | Sets every player's total to their own next Impact requirement, up or down | No |
+| **Copy Score** | Defensive | Sets every player's total to the caster's, updating their Impact baseline | No |
 
 ## Tower system
 
-- Target height follows a level-band curve, scaled by `targetHeightMultiplier` (debug tuning; default 3 = unchanged curve).
+Target height follows a level-band curve, scaled by `targetHeightMultiplier` (default 3 = unchanged).
 
-| Levels | Target height curve |
+**Level 1's target is 16 by design, not taste.** 16 is exactly how many 34px brick rows fit the tower viewport beneath the Top Indicator, so the opening level plays on one screen with no parallax. Every level above it overflows and scrolls.
+
+| Levels | Target height |
 |---|---|
-| 1 | 3 |
-| 2 | 6 |
-| 3 | 8 |
-| 4–12 | ramps quickly |
-| 13–31 | ~+3 height every 4 levels |
-| 32+ | ~+1 height every 2 levels |
+| 1 | 16 (exact screen fit) |
+| 2–6 | +2 / level → 26 |
+| 7–15 | +1 / level → 35 |
+| 16–40 | +0.4 / level → 45 |
+| 41+ | +0.15 / level |
 
-- Overbuilding is allowed; excess height is wasted. Exact height triggers precision-bonus rewards.
-- Client renders the tower from authoritative server placement history (`towerBlocks`) when available.
+Overbuilding is allowed but wastes the excess and forfeits the exact-finish bonuses. The client renders from authoritative `towerBlocks`.
 
 ### Placement columns
 
-- The shared tower is a **14-column authoritative grid** (`towerGridWidth` = 14). Only columns **4–9 are placeable** (`placeableColumnMin`/`placeableColumnMax`) — columns 0–3 and 10–13 are permanently unplaceable, a hard exclusion with **no overflow/spillover** (unlike the retired lane system). Replaces the earlier 9-column/3-lane grid — see [decisions.md](./decisions.md#14-column-corner-snap-placement-replaces-lanes-and-anchors).
-- **Point-based snap placement.** Snap points are the **7 fixed platform points** (one per column boundary spanning columns 4–9) **plus every true outline corner of every already-placed brick**, so the tower grows its own docking targets as it is built. While dragging, the game pairs each corner of the held brick against each of those points and takes the closest pair, rejecting any pairing whose footprint would leave columns 4–9 — that pairing resolves the integer `column` sent to the server. Past a snap radius (default 2.2 bricks) it falls back to plain nearest-column aiming, so a drag over open sky still places. Server-side resolution/clamp: `Game_Engine.resolveColumnOriginX()`/`getPlaceableOriginRange()` → [backend.md § Game Engine](./backend.md#game-engine). There is no per-block anchor cell — the brick's own geometry determines where it lands.
-- **Snapping picks the column only; the brick still falls to first contact** and may cantilever/overhang (e.g. a `T` resting off-center balances on its single stem — the intended stability hook). A brick can never hang in mid-air against a tower's side, and the client previews the exact landing row by mirroring the server's settle — see [decisions.md](./decisions.md#point-based-snap-resolution-and-the-docked-landing-ghost).
-- **Drag feedback (client, placeholder art):** the held brick is lifted clear of the finger and, once over the tower, **docks to its actual landing position** at tower scale, so the player sees exactly where it will come to rest before releasing. Light rings mark every available snap point; the point the brick is currently locked onto is enlarged and filled in the player's colour, and a translucent band marks the placeable columns. Snap points use true outline corners — not bounding-box corners, which for `L`/`T`/`Z` would include phantom points the brick doesn't occupy. No real snap-point art asset exists yet. Full detail → [ui.md § Leaf components](./ui.md#leaf-components).
-- **Spawn/drop animation.** On release, the brick appears at a computed spawn height — platform top + current tower height (global peak) + 2× the brick's own height — and animates falling to its server-resolved resting position, replacing the old fixed-distance fall. Full detail → [ui.md § Leaf components](./ui.md#leaf-components).
+The tower is a grid `towerGridWidth` columns wide. The **placeable site is derived per level from target height**, so taller targets get a proportionally wider base and the height curve and footprint cannot drift apart:
+
+```
+siteWidth = evenRoundUp(targetHeight / towerSiteSlendernessTarget)
+            clamped to towerSiteWidthMin .. towerSiteWidthMax
+min = round((towerGridWidth − siteWidth) / 2)      # always centred
+max = min + siteWidth − 1
+```
+
+- Width is forced **even** so the site stays exactly centred. `placeableColumnMin`/`Max` in `Game_Config` are only the fallback used before a target height exists; the resolved pair is broadcast every tick.
+- **`towerSiteWidthMax` has a hard ceiling of 8 set by the viewport, not by taste** — only 8 grid columns are ever on screen, so a wider site places bricks the player can never see ([decisions.md](./decisions.md#buildable-site-width-scales-with-target-height)).
+- Placement is a **hard exclusion**: a brick's entire footprint must fit the site, with no overflow.
+- **Point-based snapping.** Snap points are the platform's column boundaries (`siteWidth + 1`) plus every true outline corner of every placed brick, so the tower grows its own docking targets. Each corner of the held brick is paired against each point and the closest valid pair wins; past `snap_radius_units` it falls back to nearest-column aiming so a drag over open sky still resolves.
+- **Snapping picks the column only — the brick still falls to first contact** and may cantilever (a `T` balancing on its stem is the intended stability hook). Bricks never hang in mid-air; the client previews the exact landing row by mirroring the server's settle.
+- Drag feedback, the docked landing ghost, and the spawn/drop animation are client presentation → [ui.md § Leaf components](./ui.md#leaf-components).
 
 ### Tower stability (design view)
 
-- Bricks fall to ground or first contact on the 14-column grid (placement confined to columns 4–9), in whichever rotation they were drawn.
-- Center-of-mass drift, **lane-height imbalance** (an uneven spread across the columns leans the tower toward the taller side), overhangs, and off-center supports reduce deterministic stability 100 → 0.
-- Warning/critical wobble feedback fires at tuned thresholds; stability hitting 0 collapses the tower and fails the level **before** a target-height completion can count.
-- Algorithm detail (pure grid physics) → [backend.md § Tower Stability](./backend.md#tower-stability).
+Stability has **two independent axes**; reported `towerStability` is the lower of the two, so either can fail a level alone.
 
-## Timer
+| Axis | Measures | Drives |
+|---|---|---|
+| **Lean** (signed) | CoM drift + column-height imbalance + the just-placed brick's overhang | Visual tilt; collapses at `towerCollapseTiltScore` |
+| **Integrity** (0–100) | **Slenderness** (height vs. ground width) + **support deficit** (unsupported cells across the whole tower) | Collapses at 0 |
 
-Default level time limit: 30s, tunable via `levelTimeLimitMs`. Public gameplay UI does not expose debug controls.
+```
+slendernessPenalty = clamp01((height / groundWidth − Safe) / (Max − Safe))
+supportPenalty     = clamp01((unsupported cells / all cells) / towerSupportDeficitMax)
+integrity          = round(100 × (1 − clamp01(slendernessPenalty + supportPenalty)))
+```
 
-## Quick chat
+- **Why Integrity exists:** Lean measures only *asymmetry* normalised by the tower's own base, so a symmetric 2-wide, 40-tall needle scored a perfect 100. Slenderness is what makes a spire actually unstable ([decisions.md](./decisions.md#two-axis-stability-lean--integrity-replaces-the-single-tilt-scalar)).
+- **Maturity ramp.** Every penalty scales by `min(1, height / towerStabilityMinHeight)`. A stubby tower can't topple, and with few cells placed the ratios swing wildly — without it a lone `T` on its stem reads 50% unsupported and collapses the level on the first brick.
+- **Repairability is asymmetric.** Widening the base or straightening a lean improves Integrity directly; support deficit only recovers by *dilution*, since bricks drop to first contact and a void can never be filled from above. This is what [Reinforce](#scoring-system) pays for.
+- Warning/critical feedback fires at tuned thresholds; stability hitting 0 collapses the tower and fails the level **before** a height completion can count.
 
-3 fixed slots per player: `Place Block!`, `Sorry!`, `Hello!`. Visible to all room participants; server-authoritative per-player cooldown, default 6s. Templates/cooldown are config-driven so future text/emoticons can replace defaults without changing gameplay contracts.
+Algorithm → [backend.md § Tower Stability](./backend.md#tower-stability).
 
-## Failure conditions
+## Timer, quick chat, failure conditions
 
-- Time runs out before target height reached.
-- All hand blocks + shared draw pile exhausted before target reached.
-- Remaining possible height can't reach target **and** no player holds a Refresh item that could still rescue the level.
-- At an Impact boundary: any player whose score gained since the last Impact is below the band-relative requirement fails the Impact and rolls the team back.
+Level time limit `levelTimeLimitMs` (design reference 30s). Quick chat is 3 fixed slots per player (`Place Block!`, `Sorry!`, `Hello!`), server-authoritative per-player cooldown, config-driven so text can change without touching gameplay contracts.
+
+A level fails when: time runs out; hands + pile are exhausted below target; remaining possible height can't reach target **and** nobody holds a Refresh that could rescue it; or any player is below their contribution requirement at an Impact.
 
 ## Scoring system
 
-Overhauled to reward **helping fill the Impact** and **reaching target height, especially exact finish**. Overbuild finishing earns no finish bonus at all.
+**The selfish-cooperation engine.** The scorable height per level is exactly `targetHeight` — finite and contested, which is the selfish pressure. Two mechanisms make cooperating individually rational at the right moments: your placement pays less on a wobbling tower, and fixing the tower pays directly.
 
 | Component | Formula |
 |---|---|
-| Contribution Score (per placement) | `effective_height × level × placementScorePerHeight` (default `10`) — the core "helped reach target / fill the Impact" earning; also what the Impact contribution gate measures |
-| Precision Bonus (exact finish only, finisher) | `level × precisionBonusPerLevel` (default `20`) |
-| Team Exact Bonus (exact finish, all players) | `level × teamExactBonusPerLevel` (default `15`) |
-| Impact-Fill Bonus (at each passed Impact) | `round(band_overshoot × impactFillBonusRate)` (default rate `0.5`), where `band_overshoot = max(0, player band score − required band score)` — rewards carrying the band. Only when the gate requirement > 0. Added to leaderboard total and baked into the Impact snapshot |
-| Finisher Bonus | Removed (`finisherBonusPerLevel = 0`) — overbuild finish earns nothing beyond banked contribution |
-| Assist Bonus | Disabled by default (`assistBonusPerLevel = 0`) |
+| Contribution (per placement) | `effective_height × level × placementScorePerHeight` (default `10`) **× stability multiplier** — the core earner, and what the Impact gate measures |
+| Stability multiplier | `placementStabilityFloor + (1 − floor) × stabilityBefore/100` (floor `0.5`). Uses the stability the placer **inherited**, so it rewards fixing-then-claiming instead of paying you for your own overhang |
+| Reinforce (per placement) | `round((integrity_gain × reinforceScorePerIntegrity + lean_correction × reinforceScorePerLean) × level)` (defaults `1` / `20`), `lean_correction = max(0, |lean_before| − |lean_after|)`. Sized to be *competitive with*, not dominant over, a good height claim |
+| Precision Bonus (exact finish, finisher) | `level × precisionBonusPerLevel` (default `20`) |
+| Team Exact Bonus (exact finish, everyone) | `level × teamExactBonusPerLevel` (default `15`) |
+| Impact-Fill Bonus (at each passed Impact) | `round(max(0, band_score − required) × impactFillBonusRate)` (default `0.5`) — the reward for carrying a level |
+| Finisher Bonus | `0` — overbuild finishing earns nothing beyond banked contribution |
+| Assist Bonus | `0` (disabled) |
 
-- MVP = highest level score for that level.
-- Leaderboard score is snapshotted at each Impact and restored on rollback (prevents farming via repeated failed attempts).
-- `impactMinContributionShare`: required per-player share of expected placement score for the Impact band. Default `30%`; `0` disables the gate. `impactScoreRequirement` is a hidden legacy flat floor, set only by old tooling.
+- **Reinforce counts toward the Impact gate** — helping means building *or* stabilising.
+- The pool is **front-loaded**: `effective_height` is capped by the height still missing, so late placements are worth little and a slow start may be uncatchable. Deliberate urgency.
+- MVP = highest level score that level (display-only). Leaderboard score is snapshotted at each Impact and restored on rollback.
+
+**The Impact gate.** `required = impactMinContributionShare × targetHeight × level × placementScorePerHeight`, per player, with `impactScoreRequirement` as an optional flat floor (`max` of the two). Default share **25%**; `0` disables.
+
+> **The share is bounded by arithmetic, not taste.** Three players × the share is how much of the pool must split near-evenly. Above ~30% no natural distribution reaches it and the gate becomes effectively unreachable. 25% leaves a 25% contested margin.
 
 ### Scoring feedback UX
 
-- Placement score: `+points` popup in the placing player's color, duration `placementScorePopupDurationMs`.
-- Exact finish: distinct "PERFECT FIT" callout, then precision/team bonus feedback.
-- Overbuild finish: target-reached message + wasted-height amount; no exact-finish celebration.
-- MVP callout is display-only (no extra score); team total isn't shown to players.
-- Level summary appears after the score-popup batch fades: result, team level score, MVP, finisher (if any), per-player level score, final total, contributed height, bonus breakdown.
-- Failed summaries show level score but don't bank it to the leaderboard.
+`+points` popup per placement in the player's colour, with `REINFORCE +n` alongside it. Exact finish gets a distinct "PERFECT FIT" callout then precision/team feedback; overbuild gets a target-reached message plus wasted height and no celebration. The level summary appears once the popup batch fades (result, team score, MVP, finisher, per-player score, contributed height). Failed summaries show level score but never bank it.
 
 ## Progression
 
 | System | Curve |
 |---|---|
-| Target height | See Tower System above |
-| Block complexity | All 5 bricks (`I`/`O`/`L`/`T`/`Z`) available from L1 — no size-unlock ramp; difficulty comes from target height, timer, stability sensitivity, and column placement |
-| Inventory capacity | 1 slot @L1, 2 @L2, 3 @L4 |
-| Impacts | Every 3 levels |
+| Target height | See [Tower system](#tower-system) |
+| Site width | Derived from target height — see [Placement columns](#placement-columns) |
+| Brick complexity | All 5 bricks from L1; difficulty comes from height, timer, stability and site width — not unlocks |
+| Inventory | 2 slots @L1, 3 @L3 |
+| Power / side quest | Unlocked from L1 |
+| Impacts | **Every level** (`impactInterval` = 1) |
 
-- Failing a level rolls back to the last completed Impact level.
-- Opening hands are generated with solvability constraints — random supply shouldn't make a level impossible before player decisions happen.
+**Every level is an Impact.** Each player must clear their share to advance, so filling the Impact bar *is* the per-level objective. Rollback correspondingly returns to the level just played rather than up to three levels back — that gentler failure is what makes a per-level gate viable at all.
 
-## Leaderboard
+Opening hands carry solvability constraints, so random supply can't make a level impossible before player decisions happen.
 
-Highest level reached; MVP scores; optional stats (finisher count, exact-finish rate).
+**Leaderboard:** highest level reached, MVP scores, optional stats. No durable storage yet — see [decisions.md](./decisions.md#no-persistent-leaderboard-yet).
 
-## Design pillars
-
-**Simplicity** (no rotation, limited inventory) · **Tension** (real-time placement, timer pressure) · **Fairness** (no pay-to-win) · **Replayability** (random blocks, skill-based progression).
+**Design pillars:** Simplicity (no rotation, limited inventory) · Tension (real-time placement, timer pressure) · Fairness (no pay-to-win) · Replayability (random bricks, skill-based progression).
 
 ## Debug menu and live tuning
 
-Purpose: expose selected [Game Config](./backend.md#game-config) variables to designers/QA without code changes or restarts. Server validates and applies every change, then broadcasts `debug_config` to all real clients (validation rules and exact clamp ranges → [backend.md § Lobby Manager](./backend.md#lobby-manager)). Client debug controls live in a tabbed overlay (Bots / Round / UI / Supply / Scoring / Tower / Power tabs) with a Reset action that restores exposed tunables to `Game_Config.js` defaults, and a header Restart action that restarts the active room at its current level (score preserved) and closes the overlay.
+Exposes [Game Config](./backend.md#game-config) variables to designers/QA without code changes or restarts. The server validates and clamps every change then broadcasts `debug_config` (rules → [backend.md § Lobby Manager](./backend.md#lobby-manager)). The overlay is dropdown-navigated (Bots / Round / UI / Supply / Scoring / Impact / Tower / Power / Parallax / Placement), with Reset (restore `Game_Config.js` defaults) and Restart (restart the room at its current level, score preserved).
+
+**Per-variable explainers.** In Supply, Scoring, Impact, Tower, Parallax and Placement, each row's *name is a tappable button* opening a short description including the knob's formula. Implementation → [ui.md](./ui.md#main-ui-controller).
 
 ### Currently exposed variables
 
-| Variable | Description |
+Every row below is tunable live from the debug menu, and **each carries its own in-app explainer with its formula** — tap the row's name. This list is the *surface*; the tooltips and `Game_Config.js` are the detail.
+
+| Group | Keys |
 |---|---|
-| `debugBotsEnabled` | Enables/disables debug bots globally |
-| `debugBotCount` | Bot slots allowed per room (0–2) |
-| `debugBotStrategy` | `cooperative` or `mvp_greedy` |
-| `debugStartLevel` | Starts new rooms at a selected level; restarts active debug rooms at that level |
-| `debugBotDelayMin` / `debugBotDelayMax` | Bot action delay range (ms); max never less than min |
-| `placementCooldown` | Anti-spam delay between placements (ms) |
-| `levelTimeLimitMs` | Level timer duration (ms) |
-| `startDelayMs` | Countdown before level becomes playable (ms) |
-| `placementScorePopupDurationMs` | Placement popup lifetime incl. fade-out (500–10000 ms, default 3000) |
-| `finishScorePopupDurationMs` | MVP/Perfect-Fit/bonus popup lifetime incl. fade-out (500–10000 ms, default 3000) |
-| `levelSummaryDelayMs` | Level summary visible duration before next level/rollback (1000–10000 ms, default 3000) |
-| `impactMinContributionShare` | Required per-player expected-score share for the Impact band; default 30%, `0` disables |
-| `targetHeightMultiplier` | Debug scale on the target-height curve; default 3 = unchanged |
-| `levelSupplyMinSurplus` / `levelSupplyMaxSurplus` | Generated total-height surplus bounds above target |
-| `minPrecisionBlocksPerLevel` | Minimum height-1/2 blocks required in solvable supply |
-| `maxTeamCarryOverBlocks` | Max unused team blocks carried into next completed level |
-| `refreshMinUsefulBlockHeight` | Minimum useful generated refresh height when remaining height allows it |
-| `towerOverhangWeight` | Weight of one unsupported cell in the just-placed block vs. a full column-width of CoM drift — tune before `towerCollapseTiltScore` |
-| `towerMaxTiltAngleDeg` | Visual lean cap in degrees, reached when tilt score hits ±1.0 |
-| `towerCollapseTiltScore` | `|tiltScore|` at/above which the tower collapses (`1.0` = physical "CoM left the base") |
-| `towerStabilityWarningThreshold` / `towerStabilityCriticalThreshold` | Stability % (0–100) gating warning/critical feedback; critical clamped to never exceed warning |
-| `powerUnlockLevel` | Level the Power system unlocks |
-| `powerMaxSlots` | Per-player Power inventory cap |
-| `powerActivationCooldownMs` | Cooldown between a player's Power activations |
-| `placementScorePerHeight` | Placement score scale (effective height × level × this) |
-| `finisherBonusPerLevel` / `precisionBonusPerLevel` / `teamExactBonusPerLevel` / `assistBonusPerLevel` | Bonus multipliers per level; `0` disables that bonus |
-| `assistContributionThreshold` | Minimum contribution share required for assist bonus when enabled |
+| **Bots** | `debugBotsEnabled`, `debugBotCount` (0–2), `debugBotStrategy`, `debugBotDelayMin`/`Max`, `debugStartLevel` |
+| **Round** | `placementCooldown`, `levelTimeLimitMs`, `startDelayMs`, `targetHeightMultiplier` |
+| **UI** | `placementScorePopupDurationMs`, `finishScorePopupDurationMs`, `levelSummaryDelayMs` |
+| **Impact** | `impactInterval`, `impactMinContributionShare`, `impactScoreRequirement`, `impactFillBonusRate` |
+| **Supply** | `levelSupplyMinSurplus`/`MaxSurplus`, `supplyEffectiveWidthRatio`, `minPrecisionBlocksPerLevel`, `maxTeamCarryOverBlocks`, `refreshMinUsefulBlockHeight` |
+| **Tower — lean** | `towerOverhangWeight`, `towerMaxTiltAngleDeg`, `towerCollapseTiltScore`, `towerBaseHalfWidthFloor` |
+| **Tower — integrity** | `towerSlendernessSafe`/`Max`, `towerSupportDeficitMax`, `towerStabilityMinHeight` (maturity ramp, applies to **both** axes) |
+| **Tower — site** | `towerSiteSlendernessTarget`, `towerSiteWidthMin`/`Max` (max hard-capped at 8 by the viewport) |
+| **Tower — feedback** | `towerStabilityWarningThreshold`/`CriticalThreshold` (display only; critical clamped below warning) |
+| **Power** | `powerUnlockLevel`, `powerMaxSlots`, `powerActivationCooldownMs` |
+| **Scoring** | `placementScorePerHeight`, `placementStabilityFloor`, `reinforceScorePerIntegrity`/`PerLean`, `precisionBonusPerLevel`, `teamExactBonusPerLevel`, `finisherBonusPerLevel`, `assistBonusPerLevel`, `assistContributionThreshold` |
+| **Parallax / Placement** | Client-local rendering and snap-feel values — no server round-trip. See [ui.md](./ui.md#main-ui-controller) |
+
+The three most load-bearing knobs, if you only touch a few: `towerSiteSlendernessTarget` (reshapes the whole aspect ratio), `impactMinContributionShare` (the per-level gate), and `placementStabilityFloor` (how hard stability couples to score).
 
 ### Bot behavior
 
-Bots are QA/local-test helpers only — not production AI. They fill rooms only when at least one real player is waiting, stop when `debugBotsEnabled` is false, and never hold or activate Power items (no bot refresh behavior; they always just place).
+QA/local-test helpers only — not production AI. They fill rooms only when a real player is waiting, stop when `debugBotsEnabled` is false, and never hold or activate Power items.
 
-| Strategy | Behavior |
-|---|---|
-| **Cooperative** | Exact-finishing block when available; near target, smallest block that doesn't overbuild; otherwise the highest useful block |
-| **MVP-greedy** | Exact-finishing block when available; otherwise highest effective-height contribution, even if it overbuilds |
+| Strategy | Brick choice | Column choice | Yields? |
+|---|---|---|---|
+| **Cooperative** | Exact-finisher when available; smallest non-overbuilding brick near target; otherwise highest useful | Best height gain among columns within `debugBotStabilityTolerance` of the **best available** stability | **Yes** |
+| **MVP-greedy** | Exact-finisher when available; otherwise highest contribution even if it overbuilds | Best height gain among any non-collapsing column | No |
 
-Scheduling/lifecycle mechanics → [backend.md § Bot Manager](./backend.md#bot-manager).
+- **The column gate is relative, not absolute** — measured against the best column for that brick, so it keeps discriminating however forgiving the stability config is tuned.
+- **Yielding is the cooperative act that matters under a per-level Impact.** A bot that has banked its own share returns a `wait` action instead of placing, leaving the height and its score for a teammate whose shortfall would fail everyone. A bot that is short can never take that branch, so a room can't deadlock.
+- **Divergence depends on stability being able to punish.** Where collapse is effectively impossible, greedy has no downside and the two converge — correctly, since there is no risk to be averse to. Tuned so stability bites, cooperative wins completion and gate-pass while greedy wins individual score.
 
-### Future debug variables (planned)
+Scheduling → [backend.md § Bot Manager](./backend.md#bot-manager).
 
-`blockWeights`, `blockUnlockLevels`, `inventoryScaling`, `impactInterval`, target-height curve bands, per-shape generation pools. Recalibration candidates: per-level shape pools, guaranteed minimum available height, target curve by level band, fail-condition pressure. Context → [decisions.md § Shape-block system invalidated old balance assumptions](./decisions.md#shape-block-system-invalidated-old-balance-assumptions).
+### Future debug variables and open tuning questions
+
+Not yet exposed: `brickWeights`, `inventoryScaling`, target-height curve bands, per-shape generation pools, `debugBotStabilityTolerance`.
+
+Open questions, roughly by priority:
+
+- **Exact-finish runs high** (~55–80% simulated), so "PERFECT BUILD" fires often. Lower via supply surplus or `minPrecisionBlocksPerLevel` if it should feel rarer.
+- **Site-width scaling is near-inert** at current values — level 1 already targets 16, so the derived width sits at the 8-column cap for essentially all play. It only breathes again if the tower viewport widens or bricks shrink.
+- **The front-loaded pool** can make a slow start mathematically uncatchable. Worth confirming that reads as urgency, not unfairness.
+- **Per-shape pools and fail-condition pressure** remain untouched levers for later difficulty shaping.
 
 ### Shipping requirement
 
-Debug Menu must be disabled behind a build flag, QA account permission, or server-side admin authorization before public release — currently **not** gated. See [decisions.md](./decisions.md#debug-menu--debug-config-not-yet-gated).
+The Debug Menu must be gated behind a build flag, QA permission, or server-side admin auth before public release — currently **not** gated. See [decisions.md](./decisions.md#debug-menu--debug-config-not-yet-gated).

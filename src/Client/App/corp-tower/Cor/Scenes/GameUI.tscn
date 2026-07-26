@@ -992,54 +992,66 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="LevelSupplyMinLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=631111006]
+[node name="LevelSupplyMinLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=631111006]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Supply Min Surplus: 0"
 
 [node name="LevelSupplyMinSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=486544706]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="LevelSupplyMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=637280422]
+[node name="LevelSupplyMaxLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=637280422]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Supply Max Surplus: 0"
 
 [node name="LevelSupplyMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=1629212750]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MinPrecisionBlocksLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=245163706]
+[node name="MinPrecisionBlocksLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=245163706]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Precision Blocks: 0"
 
 [node name="MinPrecisionBlocksSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=1246278065]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MaxTeamCarryOverLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=1635849830]
+[node name="MaxTeamCarryOverLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=1635849830]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Carry-Over Blocks: 0"
 
 [node name="MaxTeamCarryOverSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=1088790391]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="RefreshMinUsefulHeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=573564990]
+[node name="RefreshMinUsefulHeightLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=573564990]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Refresh Useful Height: 0"
 
 [node name="RefreshMinUsefulHeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=487856901]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="SupplyEffectiveWidthLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=3311000201]
+[node name="SupplyEffectiveWidthLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=3311000201]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Supply Effective Width: 50%"
 
 [node name="SupplyEffectiveWidthSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=3311000202]
@@ -1059,90 +1071,99 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="ImpactScoreLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=595048624]
+[node name="PlacementScoreLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=352407178]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Impact Share: 30%"
-
-[node name="ImpactScoreSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1818947184]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="PlacementScoreLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=352407178]
-unique_name_in_owner = true
-layout_mode = 2
+flat = true
+alignment = 0
 text = "Placement Score/Height: 0"
 
 [node name="PlacementScoreSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1024438532]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="FinisherBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=139808929]
+[node name="FinisherBonusLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=139808929]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Finisher Bonus/Level: 0"
 
 [node name="FinisherBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1807352692]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PrecisionBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1710362908]
+[node name="PrecisionBonusLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1710362908]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Precision Bonus/Level: 8"
 
 [node name="PrecisionBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1462440336]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TeamExactBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=2039693562]
+[node name="TeamExactBonusLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=2039693562]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Team Exact Bonus/Level: 6"
 
 [node name="TeamExactBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1929465846]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="AssistBonusLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1213208760]
+[node name="AssistBonusLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1213208760]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Assist Bonus/Level: Off"
 
 [node name="AssistBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=798699984]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="AssistThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1469810237]
+[node name="AssistThresholdLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1469810237]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Assist Threshold: 0%"
 
 [node name="AssistThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1297854840]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PlacementStabilityFloorLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000301]
+[node name="PlacementStabilityFloorLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000301]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Placement Stability Floor: 50%"
 
 [node name="PlacementStabilityFloorSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000302]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ReinforceIntegrityLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000303]
+[node name="ReinforceIntegrityLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000303]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Reinforce / Integrity: 1"
 
 [node name="ReinforceIntegritySlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000304]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ReinforceLeanLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000305]
+[node name="ReinforceLeanLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000305]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Reinforce / Lean: 20"
 
 [node name="ReinforceLeanSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000306]
@@ -1162,45 +1183,55 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="TowerOverhangWeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1165131622]
+[node name="TowerOverhangWeightLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1165131622]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Overhang Weight: 18%"
 
 [node name="TowerOverhangWeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=960593163]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerMaxTiltLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=899188429]
+[node name="TowerMaxTiltLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=899188429]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Max Tilt Angle: 24°"
 
 [node name="TowerMaxTiltSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=716228579]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerCollapseThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1166976525]
+[node name="TowerCollapseThresholdLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1166976525]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Collapse Threshold: 1.00"
 
 [node name="TowerCollapseThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=10150772]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerWarningThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1461938673]
+[node name="TowerWarningThresholdLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1461938673]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Warning Threshold: 60%"
 
 [node name="TowerWarningThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=810871450]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerCriticalThresholdLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1295051467]
+[node name="TowerCriticalThresholdLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1295051467]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Critical Threshold: 30%"
 
 [node name="TowerCriticalThresholdSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1282531320]
@@ -1216,66 +1247,136 @@ text = "Stability Feedback"
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerSlendernessSafeLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000101]
+[node name="TowerSlendernessSafeLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000101]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Slenderness Safe: 2.5"
 
 [node name="TowerSlendernessSafeSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000102]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerSlendernessMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000103]
+[node name="TowerSlendernessMaxLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000103]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Slenderness Max: 8.0"
 
 [node name="TowerSlendernessMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000104]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerStabilityMinHeightLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000105]
+[node name="TowerStabilityMinHeightLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000105]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Stability Min Height: 6"
 
 [node name="TowerStabilityMinHeightSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000106]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerSupportDeficitLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000107]
+[node name="TowerSupportDeficitLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000107]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Support Deficit Max: 35%"
 
 [node name="TowerSupportDeficitSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000108]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerSiteSlendernessLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000109]
+[node name="TowerSiteSlendernessLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000109]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Site Slenderness Target: 2.0"
 
 [node name="TowerSiteSlendernessSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000110]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerSiteWidthMinLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000111]
+[node name="TowerSiteWidthMinLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000111]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Site Width Min: 6"
 
 [node name="TowerSiteWidthMinSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000112]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TowerSiteWidthMaxLabel" type="Label" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000113]
+[node name="TowerSiteWidthMaxLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000113]
 unique_name_in_owner = true
 layout_mode = 2
+flat = true
+alignment = 0
 text = "Site Width Max: 8"
 
 [node name="TowerSiteWidthMaxSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000114]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Impact" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=3311000401]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ImpactRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact" unique_id=3311000402]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ImpactScoreLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=595048624]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Impact Share: 30%"
+
+[node name="ImpactScoreSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=1818947184]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ImpactIntervalLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000403]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Impact Interval: 1"
+
+[node name="ImpactIntervalSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000404]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ImpactScoreFloorLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000407]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Impact Flat Floor: 0"
+
+[node name="ImpactScoreFloorSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000408]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ImpactFillBonusLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000409]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Impact Fill Bonus Rate: 50%"
+
+[node name="ImpactFillBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000410]
 unique_name_in_owner = true
 layout_mode = 2
 

@@ -2,11 +2,25 @@ extends RefCounted
 
 const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 
-const GRID_WIDTH := 14
-const GRID_CENTER_COL := 6.5
+const DEFAULT_GRID_WIDTH := 14
 const DEFAULT_PLACEABLE_COLUMN_MIN := 4
 const DEFAULT_PLACEABLE_COLUMN_MAX := 9
 const SETTLE_SPAWN_MARGIN := 8
+
+# Grid width is server-owned (Game_Config.towerGridWidth) and arrives in
+# game_state. The drawn tower is centred on the grid, so the centre column has to
+# be derived from it -- a hardcoded centre silently shifts the whole tower
+# sideways the moment the grid is retuned.
+static var grid_width: int = DEFAULT_GRID_WIDTH
+
+static func grid_center_col() -> float:
+	return (float(grid_width) - 1.0) * 0.5
+
+static func set_grid_width(width: int) -> void:
+	if width < 1:
+		return
+
+	grid_width = width
 
 # The placeable span is per-level: the server derives it from the level's target
 # height and sends it in game_state, so a taller target gets a wider build site.
@@ -17,13 +31,14 @@ static var placeable_column_min: int = DEFAULT_PLACEABLE_COLUMN_MIN
 static var placeable_column_max: int = DEFAULT_PLACEABLE_COLUMN_MAX
 
 static func set_placeable_range(min_column: int, max_column: int) -> void:
-	if min_column < 0 or max_column < min_column or max_column > GRID_WIDTH - 1:
+	if min_column < 0 or max_column < min_column or max_column > grid_width - 1:
 		return
 
 	placeable_column_min = min_column
 	placeable_column_max = max_column
 
 static func reset_placeable_range() -> void:
+	grid_width = DEFAULT_GRID_WIDTH
 	placeable_column_min = DEFAULT_PLACEABLE_COLUMN_MIN
 	placeable_column_max = DEFAULT_PLACEABLE_COLUMN_MAX
 

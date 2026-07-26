@@ -12,11 +12,11 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | Block Supply | `src/Server/app/engine/Block_Supply.js` | Block creation, draw pile, opening hands, refresh generation | Game Config, Game Engine (facade) | [backend.md](./backend.md#block-supply) |
 | Scoring | `src/Server/app/engine/Scoring.js` | Score events, bonuses, leaderboard banking, MVP, summaries | Game Config, Block Supply (indirect) | [backend.md](./backend.md#scoring) |
 | Impacts | `src/Server/app/engine/Impacts.js` | Impact snapshots, rollback, score gate | Game Config, Game Engine (facade), Scoring (facade) | [backend.md](./backend.md#impacts) |
-| Tower Stability | `src/Server/app/Tower_Stability.js` | Pure grid-settling and stability scoring | none | [backend.md](./backend.md#tower-stability) |
-| Bot Manager | `src/Server/app/Bot_Manager.js` | Debug bot action scheduler | Game Config, Game Engine | [backend.md](./backend.md#bot-manager) |
+| Tower Stability | `src/Server/app/Tower_Stability.js` | Pure grid-settling and two-axis (Lean + Integrity) stability scoring | none | [backend.md](./backend.md#tower-stability) |
+| Bot Manager | `src/Server/app/Bot_Manager.js` | Debug bot action scheduler and per-strategy placement policy | Game Config, Game Engine | [backend.md](./backend.md#bot-manager) |
 | Game Config | `src/Server/app/Game_Config.js` | Central tuning/config object | none | [backend.md](./backend.md#game-config) |
 | Redis State | `src/Server/app/Redis_State.js` | Shared-state adapter, in-memory fallback | `redis` (npm) | [backend.md](./backend.md#redis-state) |
-| Balance Simulator | `src/Server/tools/Balance_Simulator.js` | Offline balance-sampling CLI (not shipped) | Game Engine, Game Config, Tower Stability | [testing.md](./testing.md#balance-simulator) |
+| Balance Simulator | `src/Server/tools/Balance_Simulator.js` | Offline balance-sampling CLI, cooldown-clocked, runs both bot strategies (not shipped) | Game Engine, Game Config, Bot Manager, Tower Stability | [testing.md](./testing.md#balance-simulator) |
 | Server Score Events Tests | `src/Server/tests/Score_Events.test.js` | Score/summary contract tests (not shipped) | Game Engine, Game Config, Lobby Manager, Tower Stability | [testing.md](./testing.md#server-score-events-tests) |
 | Server Matchmaking Queue Tests | `src/Server/tests/Matchmaking_Queue.test.js` | Multi-pod matchmaking race/handoff regression test (not shipped) | Lobby Manager, Redis State (via a fake shared-cluster stateStore double) | [testing.md](./testing.md#server-matchmaking-queue-tests) |
 | Server Container Image | `src/Server/Dockerfile` | Packages `src/Server/app` for deploy | Server Entry (runtime) | [build.md](./build.md#server-container-image) |

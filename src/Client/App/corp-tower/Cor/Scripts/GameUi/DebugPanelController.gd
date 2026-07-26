@@ -6,8 +6,146 @@ const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
 const TOWER_FEEDBACK_MODES := ["warnings_only", "meter_only", "live_preview"]
 const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Meter Only", "Live Preview"]
 const DEBUG_CATEGORY_NAMES := [
-	"Bots", "Round", "UI", "Supply", "Scoring", "Tower", "Power", "Parallax", "Placement"
+	"Bots", "Round", "UI", "Supply", "Scoring", "Impact", "Tower", "Power", "Parallax", "Placement"
 ]
+
+# Per-variable explainers for the server-backed categories, keyed by the row's
+# name-button node. Parallax/Placement carry their own copy inside their row
+# tables; these categories are hand-wired, so they live here instead.
+const DEBUG_TOOLTIPS := {
+	# --- Tower -------------------------------------------------------------
+	"TowerOverhangWeightLabel": {
+		"title": "Overhang Weight",
+		"body": "How much one unsupported cell in the brick you just placed adds to lean.\n\nlean += (distance from base centre / base half-width) x weight, per unsupported cell.\n\nHigher = a bad placement feels bad instantly. 0 = overhang is free.",
+	},
+	"TowerMaxTiltLabel": {
+		"title": "Max Tilt Angle",
+		"body": "Visual only. The lean in degrees drawn when tilt score reaches 1.0. Does not change when the tower collapses — that is Collapse Threshold.\n\nHigher = drama. Lower = subtle.",
+	},
+	"TowerCollapseThresholdLabel": {
+		"title": "Collapse Threshold",
+		"body": "The |tilt score| at which the tower falls and the level fails.\n\n1.0 = physically \"centre of mass left the base\". Higher = forgiving, the tower leans a long way before dying. Lower = hair-trigger.",
+	},
+	"TowerSlendernessSafeLabel": {
+		"title": "Slenderness Safe",
+		"body": "Height-to-base-width ratio you can reach with NO integrity penalty.\n\nslenderness = tower height / ground footprint width.\n\nSafe 2.5 means a 6-wide base is free up to height 15. Raise to allow thinner towers.",
+	},
+	"TowerSlendernessMaxLabel": {
+		"title": "Slenderness Max",
+		"body": "The ratio at which the slenderness penalty alone reaches 100% (integrity 0, collapse).\n\npenalty = (slenderness - Safe) / (Max - Safe)\n\nWiden the Safe..Max gap for a gentler ramp; narrow it for a cliff.",
+	},
+	"TowerStabilityMinHeightLabel": {
+		"title": "Stability Min Height",
+		"body": "Below this height ALL penalties (lean, slenderness, support) are scaled down toward zero.\n\nmaturity = min(1, height / this)\n\nStops the first few bricks from tilting or collapsing. Raise if early placements still feel twitchy.",
+	},
+	"TowerSupportDeficitLabel": {
+		"title": "Support Deficit Max",
+		"body": "The share of unsupported cells (nothing directly beneath, not on the ground) at which the support penalty hits 100%.\n\ndeficit = unsupported cells / all cells, measured over the whole tower.\n\nHigher = cantilevers and bridges are tolerated.",
+	},
+	"TowerSiteSlendernessLabel": {
+		"title": "Site Slenderness Target",
+		"body": "Sets how wide the buildable site is for a given target height.\n\nsite width = even round-up(target height / this), clamped to Site Width Min..Max.\n\nLower = wider site, easier. Set near Slenderness Safe to make a full-width finish penalty-free.",
+	},
+	"TowerSiteWidthMinLabel": {
+		"title": "Site Width Min",
+		"body": "Narrowest the buildable site may get, in columns. Floors the formula above.",
+	},
+	"TowerSiteWidthMaxLabel": {
+		"title": "Site Width Max",
+		"body": "Widest the buildable site may get, in columns.\n\nHard ceiling is 8: the tower viewport is 272px at a 34px brick, so columns outside that are drawn off-screen and the player never sees those bricks.",
+	},
+	"TowerWarningThresholdLabel": {
+		"title": "Warning Threshold",
+		"body": "Stability % at or below which the \"Tower Wobbling\" cue fires. Display only — no gameplay effect.",
+	},
+	"TowerCriticalThresholdLabel": {
+		"title": "Critical Threshold",
+		"body": "Stability % at or below which the \"Tower Critical\" cue fires. Display only, and clamped to never exceed Warning.",
+	},
+	"TowerFeedbackModeLabel": {
+		"title": "Stability Feedback",
+		"body": "How stability is surfaced: warning popups only, a numeric meter, or a live preview. Presentation only.",
+	},
+	# --- Impact ------------------------------------------------------------
+	"ImpactIntervalLabel": {
+		"title": "Impact Interval",
+		"body": "How many levels between Impacts. 1 = every level must be banked to advance, and a failure replays only that level.\n\nLarger = longer runs between checkpoints, so a rollback costs more.",
+	},
+	"ImpactScoreLabel": {
+		"title": "Min Contribution Share",
+		"body": "The share of a level's expected placement score EACH player must personally earn to advance.\n\nrequired = share x target height x level x Placement Score/Height\n\nWith 3 players, share x 3 is how much of the pool must be split evenly — above ~0.30 the gate becomes nearly impossible. 0 disables it.",
+	},
+	"ImpactScoreFloorLabel": {
+		"title": "Impact Flat Floor",
+		"body": "Legacy absolute score floor per player, applied alongside the share.\n\nrequirement = max(this, share-derived requirement)\n\nLeave at 0 unless you specifically want a fixed number rather than a percentage.",
+	},
+	"ImpactFillBonusLabel": {
+		"title": "Impact Fill Bonus Rate",
+		"body": "Pays each player for clearing their share by more than the minimum.\n\nbonus = round(max(0, band score - required) x rate)\n\nThis is the selfish reward for carrying a level. Higher = hogging pays more; 0 = no reward for exceeding your share.",
+	},
+	# --- Supply ------------------------------------------------------------
+	"LevelSupplyMinLabel": {
+		"title": "Supply Min Surplus",
+		"body": "Lowest total brick height a level may be dealt, above the amount needed.\n\nrequired = ceil(target height / packing efficiency), then this is added.\n\nRaise to guarantee slack; too low and levels run out of bricks.",
+	},
+	"LevelSupplyMaxLabel": {
+		"title": "Supply Max Surplus",
+		"body": "Highest total brick height above the requirement. Widens the accepted band so the generator can find a valid hand.\n\nHigher = more spare bricks, more overbuild and easier exact finishes.",
+	},
+	"MinPrecisionBlocksLabel": {
+		"title": "Min Precision Bricks",
+		"body": "How many height-1 or height-2 bricks a level's supply must contain. These are what let a team land an exact finish rather than overbuilding.\n\nRaise if Perfect Build feels luck-based.",
+	},
+	"MaxTeamCarryOverLabel": {
+		"title": "Team Carry-Over",
+		"body": "How many unused bricks survive into the next level, smallest first. Discarded entirely when a level fails.\n\nHigher = leftover precision bricks bank up between levels.",
+	},
+	"RefreshMinUsefulHeightLabel": {
+		"title": "Refresh Useful Height",
+		"body": "Minimum brick height a Refresh tries to hand you when the team's remaining height allows it, so a reroll is not wasted on tiny bricks.",
+	},
+	"SupplyEffectiveWidthLabel": {
+		"title": "Supply Effective Width",
+		"body": "How much of the site a tower is assumed to actually occupy when sizing supply.\n\nefficiency = cells per brick / (avg brick height x (site width x this + 0.5))\n\nLower = assumes a narrow tower, deals fewer bricks. Raise if levels run dry.",
+	},
+	# --- Scoring -----------------------------------------------------------
+	"PlacementScoreLabel": {
+		"title": "Placement Score / Height",
+		"body": "The core earner, paid per unit of height your brick actually added.\n\npoints = effective height x level x this x stability multiplier\n\nEffective height is capped by the height still missing, so late placements pay less.",
+	},
+	"PlacementStabilityFloorLabel": {
+		"title": "Placement Stability Floor",
+		"body": "The multiplier on placement score when the tower is at 0 stability.\n\nmultiplier = floor + (1 - floor) x (stability before your placement / 100)\n\n0.5 = a wobbling tower halves your take. 1.0 = stability does not affect scoring at all.",
+	},
+	"ReinforceIntegrityLabel": {
+		"title": "Reinforce / Integrity",
+		"body": "Paid when your placement raises the tower's integrity — widening the base or reducing unsupported cells.\n\npoints += integrity gained x this x level\n\nThis is the reward for fixing the tower instead of racing. Raise to make repair competitive with grabbing height.",
+	},
+	"ReinforceLeanLabel": {
+		"title": "Reinforce / Lean",
+		"body": "Paid when your placement straightens a leaning tower.\n\npoints += (|lean before| - |lean after|) x this x level\n\nLean is roughly 0..collapse threshold, so this multiplier is large relative to the integrity one.",
+	},
+	"FinisherBonusLabel": {
+		"title": "Finisher Bonus / Level",
+		"body": "Flat reward to whoever places the final brick, exact or not.\n\npoints = level x this\n\nDefault 0 on purpose: overbuilding to steal the finish should earn nothing.",
+	},
+	"PrecisionBonusLabel": {
+		"title": "Precision Bonus / Level",
+		"body": "Paid only to the player who finishes the tower at EXACTLY the target height.\n\npoints = level x this\n\nThe main individual prize for a Perfect Build.",
+	},
+	"TeamExactBonusLabel": {
+		"title": "Team Exact Bonus / Level",
+		"body": "Paid to EVERY player on an exact finish.\n\npoints = level x this\n\nThe cooperative counterweight to the Precision bonus, and a big help toward each player's Impact share.",
+	},
+	"AssistBonusLabel": {
+		"title": "Assist Bonus / Level",
+		"body": "Optional reward for players who cleared the assist threshold but did not finish.\n\npoints = level x this\n\nDisabled at 0 by default.",
+	},
+	"AssistThresholdLabel": {
+		"title": "Assist Threshold",
+		"body": "Minimum contribution share needed to qualify for the Assist bonus. Only matters when Assist Bonus is above 0.",
+	},
+}
 
 const PARALLAX_TARGET_TOWER := "tower"
 const PARALLAX_TARGET_SKY := "sky"
@@ -151,61 +289,67 @@ var level_summary_delay_label: Label
 var level_summary_delay_slider: HSlider
 var target_multiplier_label: Label
 var target_multiplier_slider: HSlider
-var level_supply_min_label: Label
+var level_supply_min_label: Control
 var level_supply_min_slider: HSlider
-var level_supply_max_label: Label
+var level_supply_max_label: Control
 var level_supply_max_slider: HSlider
-var min_precision_blocks_label: Label
+var min_precision_blocks_label: Control
 var min_precision_blocks_slider: HSlider
-var max_team_carry_over_label: Label
+var max_team_carry_over_label: Control
 var max_team_carry_over_slider: HSlider
-var refresh_min_useful_height_label: Label
+var refresh_min_useful_height_label: Control
 var refresh_min_useful_height_slider: HSlider
-var placement_score_label: Label
+var placement_score_label: Control
 var placement_score_slider: HSlider
-var impact_score_label: Label
+var impact_score_label: Control
 var impact_score_slider: HSlider
-var finisher_bonus_label: Label
+var impact_interval_label: Control
+var impact_interval_slider: HSlider
+var impact_score_floor_label: Control
+var impact_score_floor_slider: HSlider
+var impact_fill_bonus_label: Control
+var impact_fill_bonus_slider: HSlider
+var finisher_bonus_label: Control
 var finisher_bonus_slider: HSlider
-var precision_bonus_label: Label
+var precision_bonus_label: Control
 var precision_bonus_slider: HSlider
-var team_exact_bonus_label: Label
+var team_exact_bonus_label: Control
 var team_exact_bonus_slider: HSlider
-var assist_bonus_label: Label
+var assist_bonus_label: Control
 var assist_bonus_slider: HSlider
-var assist_threshold_label: Label
+var assist_threshold_label: Control
 var assist_threshold_slider: HSlider
-var tower_overhang_weight_label: Label
+var tower_overhang_weight_label: Control
 var tower_overhang_weight_slider: HSlider
-var tower_max_tilt_label: Label
+var tower_max_tilt_label: Control
 var tower_max_tilt_slider: HSlider
-var tower_collapse_threshold_label: Label
+var tower_collapse_threshold_label: Control
 var tower_collapse_threshold_slider: HSlider
-var tower_slenderness_safe_label: Label
+var tower_slenderness_safe_label: Control
 var tower_slenderness_safe_slider: HSlider
-var tower_slenderness_max_label: Label
+var tower_slenderness_max_label: Control
 var tower_slenderness_max_slider: HSlider
-var tower_stability_min_height_label: Label
+var tower_stability_min_height_label: Control
 var tower_stability_min_height_slider: HSlider
-var tower_support_deficit_label: Label
+var tower_support_deficit_label: Control
 var tower_support_deficit_slider: HSlider
-var tower_site_slenderness_label: Label
+var tower_site_slenderness_label: Control
 var tower_site_slenderness_slider: HSlider
-var tower_site_width_min_label: Label
+var tower_site_width_min_label: Control
 var tower_site_width_min_slider: HSlider
-var tower_site_width_max_label: Label
+var tower_site_width_max_label: Control
 var tower_site_width_max_slider: HSlider
-var supply_effective_width_label: Label
+var supply_effective_width_label: Control
 var supply_effective_width_slider: HSlider
-var placement_stability_floor_label: Label
+var placement_stability_floor_label: Control
 var placement_stability_floor_slider: HSlider
-var reinforce_integrity_label: Label
+var reinforce_integrity_label: Control
 var reinforce_integrity_slider: HSlider
-var reinforce_lean_label: Label
+var reinforce_lean_label: Control
 var reinforce_lean_slider: HSlider
-var tower_warning_threshold_label: Label
+var tower_warning_threshold_label: Control
 var tower_warning_threshold_slider: HSlider
-var tower_critical_threshold_label: Label
+var tower_critical_threshold_label: Control
 var tower_critical_threshold_slider: HSlider
 var tower_feedback_mode_button: OptionButton
 var power_unlock_level_label: Label
@@ -266,61 +410,67 @@ func bind_nodes(binder) -> void:
 	level_summary_delay_slider = binder.optional_node("LevelSummaryDelaySlider") as HSlider
 	target_multiplier_label = binder.optional_node("TargetMultiplierLabel") as Label
 	target_multiplier_slider = binder.optional_node("TargetMultiplierSlider") as HSlider
-	level_supply_min_label = binder.optional_node("LevelSupplyMinLabel") as Label
+	level_supply_min_label = bind_tooltip_row(binder, "LevelSupplyMinLabel")
 	level_supply_min_slider = binder.optional_node("LevelSupplyMinSlider") as HSlider
-	level_supply_max_label = binder.optional_node("LevelSupplyMaxLabel") as Label
+	level_supply_max_label = bind_tooltip_row(binder, "LevelSupplyMaxLabel")
 	level_supply_max_slider = binder.optional_node("LevelSupplyMaxSlider") as HSlider
-	min_precision_blocks_label = binder.optional_node("MinPrecisionBlocksLabel") as Label
+	min_precision_blocks_label = bind_tooltip_row(binder, "MinPrecisionBlocksLabel")
 	min_precision_blocks_slider = binder.optional_node("MinPrecisionBlocksSlider") as HSlider
-	max_team_carry_over_label = binder.optional_node("MaxTeamCarryOverLabel") as Label
+	max_team_carry_over_label = bind_tooltip_row(binder, "MaxTeamCarryOverLabel")
 	max_team_carry_over_slider = binder.optional_node("MaxTeamCarryOverSlider") as HSlider
-	refresh_min_useful_height_label = binder.optional_node("RefreshMinUsefulHeightLabel") as Label
+	refresh_min_useful_height_label = bind_tooltip_row(binder, "RefreshMinUsefulHeightLabel")
 	refresh_min_useful_height_slider = binder.optional_node("RefreshMinUsefulHeightSlider") as HSlider
-	placement_score_label = binder.optional_node("PlacementScoreLabel") as Label
+	placement_score_label = bind_tooltip_row(binder, "PlacementScoreLabel")
 	placement_score_slider = binder.optional_node("PlacementScoreSlider") as HSlider
-	impact_score_label = binder.optional_node("ImpactScoreLabel") as Label
+	impact_score_label = bind_tooltip_row(binder, "ImpactScoreLabel")
 	impact_score_slider = binder.optional_node("ImpactScoreSlider") as HSlider
-	finisher_bonus_label = binder.optional_node("FinisherBonusLabel") as Label
+	impact_interval_label = bind_tooltip_row(binder, "ImpactIntervalLabel")
+	impact_interval_slider = binder.optional_node("ImpactIntervalSlider") as HSlider
+	impact_score_floor_label = bind_tooltip_row(binder, "ImpactScoreFloorLabel")
+	impact_score_floor_slider = binder.optional_node("ImpactScoreFloorSlider") as HSlider
+	impact_fill_bonus_label = bind_tooltip_row(binder, "ImpactFillBonusLabel")
+	impact_fill_bonus_slider = binder.optional_node("ImpactFillBonusSlider") as HSlider
+	finisher_bonus_label = bind_tooltip_row(binder, "FinisherBonusLabel")
 	finisher_bonus_slider = binder.optional_node("FinisherBonusSlider") as HSlider
-	precision_bonus_label = binder.optional_node("PrecisionBonusLabel") as Label
+	precision_bonus_label = bind_tooltip_row(binder, "PrecisionBonusLabel")
 	precision_bonus_slider = binder.optional_node("PrecisionBonusSlider") as HSlider
-	team_exact_bonus_label = binder.optional_node("TeamExactBonusLabel") as Label
+	team_exact_bonus_label = bind_tooltip_row(binder, "TeamExactBonusLabel")
 	team_exact_bonus_slider = binder.optional_node("TeamExactBonusSlider") as HSlider
-	assist_bonus_label = binder.optional_node("AssistBonusLabel") as Label
+	assist_bonus_label = bind_tooltip_row(binder, "AssistBonusLabel")
 	assist_bonus_slider = binder.optional_node("AssistBonusSlider") as HSlider
-	assist_threshold_label = binder.optional_node("AssistThresholdLabel") as Label
+	assist_threshold_label = bind_tooltip_row(binder, "AssistThresholdLabel")
 	assist_threshold_slider = binder.optional_node("AssistThresholdSlider") as HSlider
-	tower_overhang_weight_label = binder.optional_node("TowerOverhangWeightLabel") as Label
+	tower_overhang_weight_label = bind_tooltip_row(binder, "TowerOverhangWeightLabel")
 	tower_overhang_weight_slider = binder.optional_node("TowerOverhangWeightSlider") as HSlider
-	tower_max_tilt_label = binder.optional_node("TowerMaxTiltLabel") as Label
+	tower_max_tilt_label = bind_tooltip_row(binder, "TowerMaxTiltLabel")
 	tower_max_tilt_slider = binder.optional_node("TowerMaxTiltSlider") as HSlider
-	tower_collapse_threshold_label = binder.optional_node("TowerCollapseThresholdLabel") as Label
+	tower_collapse_threshold_label = bind_tooltip_row(binder, "TowerCollapseThresholdLabel")
 	tower_collapse_threshold_slider = binder.optional_node("TowerCollapseThresholdSlider") as HSlider
-	tower_slenderness_safe_label = binder.optional_node("TowerSlendernessSafeLabel") as Label
+	tower_slenderness_safe_label = bind_tooltip_row(binder, "TowerSlendernessSafeLabel")
 	tower_slenderness_safe_slider = binder.optional_node("TowerSlendernessSafeSlider") as HSlider
-	tower_slenderness_max_label = binder.optional_node("TowerSlendernessMaxLabel") as Label
+	tower_slenderness_max_label = bind_tooltip_row(binder, "TowerSlendernessMaxLabel")
 	tower_slenderness_max_slider = binder.optional_node("TowerSlendernessMaxSlider") as HSlider
-	tower_stability_min_height_label = binder.optional_node("TowerStabilityMinHeightLabel") as Label
+	tower_stability_min_height_label = bind_tooltip_row(binder, "TowerStabilityMinHeightLabel")
 	tower_stability_min_height_slider = binder.optional_node("TowerStabilityMinHeightSlider") as HSlider
-	tower_support_deficit_label = binder.optional_node("TowerSupportDeficitLabel") as Label
+	tower_support_deficit_label = bind_tooltip_row(binder, "TowerSupportDeficitLabel")
 	tower_support_deficit_slider = binder.optional_node("TowerSupportDeficitSlider") as HSlider
-	tower_site_slenderness_label = binder.optional_node("TowerSiteSlendernessLabel") as Label
+	tower_site_slenderness_label = bind_tooltip_row(binder, "TowerSiteSlendernessLabel")
 	tower_site_slenderness_slider = binder.optional_node("TowerSiteSlendernessSlider") as HSlider
-	tower_site_width_min_label = binder.optional_node("TowerSiteWidthMinLabel") as Label
+	tower_site_width_min_label = bind_tooltip_row(binder, "TowerSiteWidthMinLabel")
 	tower_site_width_min_slider = binder.optional_node("TowerSiteWidthMinSlider") as HSlider
-	tower_site_width_max_label = binder.optional_node("TowerSiteWidthMaxLabel") as Label
+	tower_site_width_max_label = bind_tooltip_row(binder, "TowerSiteWidthMaxLabel")
 	tower_site_width_max_slider = binder.optional_node("TowerSiteWidthMaxSlider") as HSlider
-	supply_effective_width_label = binder.optional_node("SupplyEffectiveWidthLabel") as Label
+	supply_effective_width_label = bind_tooltip_row(binder, "SupplyEffectiveWidthLabel")
 	supply_effective_width_slider = binder.optional_node("SupplyEffectiveWidthSlider") as HSlider
-	placement_stability_floor_label = binder.optional_node("PlacementStabilityFloorLabel") as Label
+	placement_stability_floor_label = bind_tooltip_row(binder, "PlacementStabilityFloorLabel")
 	placement_stability_floor_slider = binder.optional_node("PlacementStabilityFloorSlider") as HSlider
-	reinforce_integrity_label = binder.optional_node("ReinforceIntegrityLabel") as Label
+	reinforce_integrity_label = bind_tooltip_row(binder, "ReinforceIntegrityLabel")
 	reinforce_integrity_slider = binder.optional_node("ReinforceIntegritySlider") as HSlider
-	reinforce_lean_label = binder.optional_node("ReinforceLeanLabel") as Label
+	reinforce_lean_label = bind_tooltip_row(binder, "ReinforceLeanLabel")
 	reinforce_lean_slider = binder.optional_node("ReinforceLeanSlider") as HSlider
-	tower_warning_threshold_label = binder.optional_node("TowerWarningThresholdLabel") as Label
+	tower_warning_threshold_label = bind_tooltip_row(binder, "TowerWarningThresholdLabel")
 	tower_warning_threshold_slider = binder.optional_node("TowerWarningThresholdSlider") as HSlider
-	tower_critical_threshold_label = binder.optional_node("TowerCriticalThresholdLabel") as Label
+	tower_critical_threshold_label = bind_tooltip_row(binder, "TowerCriticalThresholdLabel")
 	tower_critical_threshold_slider = binder.optional_node("TowerCriticalThresholdSlider") as HSlider
 	tower_feedback_mode_button = binder.optional_node("TowerFeedbackModeButton") as OptionButton
 	power_unlock_level_label = binder.optional_node("PowerUnlockLevelLabel") as Label
@@ -377,6 +527,9 @@ func setup(tuning_ref, network_ref) -> void:
 	configure_slider(refresh_min_useful_height_slider, 1, 6, 1, func(value): send_debug_int("refreshMinUsefulBlockHeight", value))
 	configure_slider(placement_score_slider, 1, 25, 1, func(value): send_debug_int("placementScorePerHeight", value))
 	configure_slider(impact_score_slider, 0, 50, 5, func(value): send_debug_float("impactMinContributionShare", value / 100.0))
+	configure_slider(impact_interval_slider, 1, 10, 1, func(value): send_debug_int("impactInterval", value))
+	configure_slider(impact_score_floor_slider, 0, 5000, 50, func(value): send_debug_int("impactScoreRequirement", value))
+	configure_slider(impact_fill_bonus_slider, 0, 200, 5, func(value): send_debug_float("impactFillBonusRate", value / 100.0))
 	configure_slider(finisher_bonus_slider, 0, 25, 1, func(value): send_debug_int("finisherBonusPerLevel", value))
 	configure_slider(precision_bonus_slider, 0, 25, 1, func(value): send_debug_int("precisionBonusPerLevel", value))
 	configure_slider(team_exact_bonus_slider, 0, 25, 1, func(value): send_debug_int("teamExactBonusPerLevel", value))
@@ -510,9 +663,26 @@ func get_slider_value(slider: HSlider, fallback: float = 0.0) -> float:
 
 	return slider.value
 
-func set_debug_label_text(label: Label, text: String) -> void:
+# Row names are Buttons in the tooltip-bearing categories and plain Labels
+# elsewhere; both carry `text`, so this stays type-agnostic rather than forcing
+# every category to convert at once.
+func set_debug_label_text(label: Control, text: String) -> void:
 	if label != null:
-		label.text = text
+		label.set("text", text)
+
+# Binds a row's name control and, when it is a tappable Button with a registered
+# explainer, wires the tap to the shared debug tooltip.
+func bind_tooltip_row(row_binder, node_name: String) -> Control:
+	var node: Control = row_binder.optional_node(node_name) as Control
+
+	if node == null or not DEBUG_TOOLTIPS.has(node_name):
+		return node
+
+	if node.has_signal("pressed"):
+		var info: Dictionary = DEBUG_TOOLTIPS[node_name]
+		node.connect("pressed", func(): open_debug_tooltip(info.title, info.body))
+
+	return node
 
 func toggle() -> void:
 	if debug_overlay == null:
@@ -640,6 +810,18 @@ func apply_config(config) -> void:
 	set_slider_no_signal(max_team_carry_over_slider, float(config.get("maxTeamCarryOverBlocks", 3)))
 	set_slider_no_signal(refresh_min_useful_height_slider, float(config.get("refreshMinUsefulBlockHeight", 2)))
 	set_slider_no_signal(placement_score_slider, float(config.get("placementScorePerHeight", 10)))
+	set_slider_no_signal(
+		impact_interval_slider,
+		float(config.get("impactInterval", 1))
+	)
+	set_slider_no_signal(
+		impact_score_floor_slider,
+		float(config.get("impactScoreRequirement", 0))
+	)
+	set_slider_no_signal(
+		impact_fill_bonus_slider,
+		float(config.get("impactFillBonusRate", 0.5)) * 100.0
+	)
 	set_slider_no_signal(
 		impact_score_slider,
 		float(config.get("impactMinContributionShare", 0.30)) * 100.0
@@ -841,7 +1023,19 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		impact_score_label,
-		"Impact Share: " + str(int(get_slider_value(impact_score_slider, 30))) + "%"
+		"Min Contribution Share: " + str(int(get_slider_value(impact_score_slider, 25))) + "%"
+	)
+	set_debug_label_text(
+		impact_interval_label,
+		"Impact Interval: " + str(int(get_slider_value(impact_interval_slider, 1))) + " level(s)"
+	)
+	set_debug_label_text(
+		impact_score_floor_label,
+		"Impact Flat Floor: " + str(int(get_slider_value(impact_score_floor_slider, 0)))
+	)
+	set_debug_label_text(
+		impact_fill_bonus_label,
+		"Impact Fill Bonus Rate: " + str(int(get_slider_value(impact_fill_bonus_slider, 50))) + "%"
 	)
 	set_debug_label_text(
 		finisher_bonus_label,

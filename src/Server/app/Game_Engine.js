@@ -58,6 +58,7 @@ class GameEngine {
             drawPileCount: (this.room.drawPile || []).length,
             nextDrawBlock: this.getNextDrawBlock(),
             towerBlocks: this.room.towerBlocks || [],
+            towerGridWidth: Math.max(1, Number(GameConfig.towerGridWidth) || 1),
             placeableColumnMin: placeableColumns.min,
             placeableColumnMax: placeableColumns.max,
             towerStability: this.room.towerStability ?? 100,
