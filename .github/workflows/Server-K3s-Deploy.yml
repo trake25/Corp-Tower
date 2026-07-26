@@ -302,6 +302,7 @@ jobs:
           EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_GATEWAY_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_GATEWAY_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ""
           AWS_DEFAULT_REGION: auto
           AWS_REQUEST_CHECKSUM_CALCULATION: when_required
           AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
@@ -312,6 +313,9 @@ jobs:
           # this step holds R2 credentials in env, and the downloaded archive
           # holds the gateway's ACME account key + TLS private key. Never add
           # `set -x` here, and never widen the umask/permissions below.
+          # AWS_SESSION_TOKEN is cleared above: configure-aws-credentials sets
+          # it via GITHUB_ENV for the whole job, and R2 rejects requests that
+          # carry an STS session token alongside static R2 keys.
           set -euo pipefail
           umask 077
 
@@ -375,6 +379,7 @@ jobs:
           EC2_PORT: ${{ secrets.EC2_STAGING_PORT || 22 }}
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_GATEWAY_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_GATEWAY_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ""
           AWS_DEFAULT_REGION: auto
           AWS_REQUEST_CHECKSUM_CALCULATION: when_required
           AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
@@ -385,6 +390,9 @@ jobs:
           # this step holds R2 credentials in env, and the fetched archive
           # holds the gateway's ACME account key + TLS private key. Never add
           # `set -x` here, and never widen the umask/permissions below.
+          # AWS_SESSION_TOKEN is cleared above: configure-aws-credentials sets
+          # it via GITHUB_ENV for the whole job, and R2 rejects requests that
+          # carry an STS session token alongside static R2 keys.
           set -euo pipefail
           umask 077
 
