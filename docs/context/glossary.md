@@ -16,9 +16,10 @@ Scope: project-specific terms. If a chat log, branch name, or old PR uses a term
 |---|---|
 | **Impact** | A score-gated checkpoint occurring **every level** (`impactInterval` = 1). Each player must meet a minimum score-contribution share to pass; failing rolls the team back to the last completed Impact — with an interval of 1 that is the level just played. |
 | **Impact band** | The group of levels between two Impacts — currently a single level. |
-| **Lean** | The signed stability axis: CoM drift + column-height imbalance + the just-placed brick's overhang. Drives the visual tilt and collapses at `towerCollapseTiltScore`. |
+| **Lean** | The signed stability axis: CoM drift + column-height imbalance + the just-placed brick's overhang. Drives the visual tilt and collapses at the resolved collapse-tilt score, where `1.0` means the centre of mass left the base. |
 | **Integrity** | The unsigned 0–100 stability axis: slenderness + support deficit. Collapses at 0. Added because Lean measures only asymmetry, so a symmetric spire read as perfectly stable — see [decisions.md](./decisions.md#two-axis-stability-lean--integrity-replaces-the-single-tilt-scalar). |
-| **Slenderness** | Tower height ÷ ground-footprint width. Penalty-free up to `towerSlendernessSafe`, reaching integrity 0 at `towerSlendernessMax`. |
+| **Slenderness** (site usage) | The level's site width ÷ the tower's ground-footprint width — `1.0` means the base spans the whole buildable site. Penalty-free up to the resolved Safe value, reaching integrity 0 at Max. Height is deliberately absent; the Maturity ramp below supplies it. |
+| **Stability difficulty** | `towerStabilityDifficulty`, 0–100 — the only stability tunable. Combined with a level ramp it yields a `pressure` scalar that interpolates every stability constant between the forgiving and harsh anchor sets. See [decisions.md](./decisions.md#tower-stability-is-one-derived-dial-scaled-by-level). |
 | **Support deficit** | Share of cells across the whole tower with nothing directly beneath them and not on the ground. Only recovers by dilution — gravity means a void can never be filled from above. |
 | **Maturity ramp** | `min(1, height / towerStabilityMinHeight)`, multiplied into every stability penalty so a stubby tower can't topple and small-tower ratios don't swing wildly. |
 | **Reinforce** | Score paid for a placement that raises Integrity or corrects Lean — the cooperative earner, as against the contested height claim. Emits a `reinforce` score event. |

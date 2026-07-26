@@ -2,7 +2,7 @@ const GameConfig = {
 
     maxLevel: 99,
     debugStartLevel: 1,
-    placementCooldown: 500,    // testing phase at 500ms, 2-3 secs during release
+    placementCooldown: 2000,    // testing phase at 500ms, 2-3 secs during release
     quickChatCooldownMs: 3000,
     quickChatTemplates: [
         "Place Block!",
@@ -20,10 +20,10 @@ const GameConfig = {
         { minLevel: 16, maxLevel: 40, baseLevel: 15, baseHeight: 35, heightPerLevel: 0.4 },
         { minLevel: 41, maxLevel: 99, baseLevel: 40, baseHeight: 45, heightPerLevel: 0.15 }
     ],
-    startDelayMs: 500, // testing 0.5, release 2
-    levelTimeLimitMs: 120000,    // testing 120, release 30 (for tuning)
-    nextLevelDelayMs: 500, // testing 0.5, release 2
-    failRestartDelayMs: 500, // testing 0.5, release 1
+    startDelayMs: 2000, // testing 0.5, release 2
+    levelTimeLimitMs: 60000,    // testing 120, release 60 (for tuning)
+    nextLevelDelayMs: 1000, // testing 0.5, release 1
+    failRestartDelayMs: 1000, // testing 0.5, release 1
     placementScorePopupDurationMs: 2000,
     finishScorePopupDurationMs: 2000,
     levelSummaryDelayMs: 2000,  // testing 2, release 3
@@ -34,7 +34,7 @@ const GameConfig = {
     // players x 0.25 leaves a 25% contested margin -- enough that carrying the
     // level is worth real score, not so much that one player can starve another
     // below their share without failing the whole team.
-    impactMinContributionShare: 0.25,
+    impactMinContributionShare: 0.30,
     towerGridWidth: 8, //14 SnapGrid.gd previous values const GRID_WIDTH := 14 const GRID_CENTER_COL := 6.5
     placeableColumnMin: 3,
     placeableColumnMax: 9,
@@ -45,7 +45,7 @@ const GameConfig = {
     // site would place bricks the player can never see.
     towerSiteWidthMax: 8,   // cap limit 8
     towerMaxTiltAngleDeg: 18,   //18
-    towerStabilityDifficulty: 90,
+    towerStabilityDifficulty: 95,   // 0 forgiving, 100 harsh, 90 default, 95 tuned
     towerStabilityPressure: {
         floor: 0.25,
         fullPressureLevel: 30
@@ -139,9 +139,9 @@ const GameConfig = {
 
     debugBotCount: 2,
 
-    debugBotDelayMin: 1000,
+    debugBotDelayMin: 2000,
 
-    debugBotDelayMax: 5000,
+    debugBotDelayMax: 6000,
 
     debugBotStrategy: "mvp_greedy",
 

@@ -104,16 +104,21 @@ Stability has **two independent axes**; reported `towerStability` is the lower o
 
 | Axis | Measures | Drives |
 |---|---|---|
-| **Lean** (signed) | CoM drift + column-height imbalance + the just-placed brick's overhang | Visual tilt; collapses at `towerCollapseTiltScore` |
-| **Integrity** (0–100) | **Slenderness** (height vs. ground width) + **support deficit** (unsupported cells across the whole tower) | Collapses at 0 |
+| **Lean** (signed) | CoM drift + column-height imbalance + the just-placed brick's overhang | Visual tilt; collapses at the resolved collapse-tilt score |
+| **Integrity** (0–100) | **Site usage** (base span vs. the buildable site) + **support deficit** (unsupported cells across the whole tower) | Collapses at 0 |
 
 ```
-slendernessPenalty = clamp01((height / groundWidth − Safe) / (Max − Safe))
-supportPenalty     = clamp01((unsupported cells / all cells) / towerSupportDeficitMax)
+siteUsage          = siteWidth / groundWidth        # 1.0 = whole site used, 2.0 = half of it
+slendernessPenalty = clamp01((siteUsage − Safe) / (Max − Safe))
+supportPenalty     = clamp01((unsupported cells / all cells) / supportDeficitMax)
 integrity          = round(100 × (1 − clamp01(slendernessPenalty + supportPenalty)))
+
+pressure           = (towerStabilityDifficulty / 100) × (floor + (1 − floor) × min(1, level / fullPressureLevel))
 ```
 
-- **Maturity ramp.** Every penalty scales by `min(1, height / towerStabilityMinHeight)`. A stubby tower can't topple, and with few cells placed the ratios swing wildly — without it a lone `T` on its stem reads 50% unsupported and collapses the level on the first brick.
+**`towerStabilityDifficulty` (0–100) is the only stability tunable.** `pressure` interpolates every constant above between the **forgiving** and **harsh** anchor sets in `towerStabilityAnchors`, so threat also ramps with level ([decisions.md](./decisions.md#tower-stability-is-one-derived-dial-scaled-by-level)). `0` leaves stability inert — score multiplier only, no collapse; the default **90** holds levels 1–5 to score pressure alone and makes collapse a genuine threat past level ~25.
+
+- **Maturity ramp.** Every penalty scales by `min(1, height / towerStabilityMinHeight)`, itself derived from pressure. Without it the opening brick is lethal — a single narrow brick on the ground is the worst site usage a tower can register.
 - **Repairability is asymmetric.** Widening the base or straightening a lean improves Integrity directly; support deficit only recovers by *dilution*, since bricks drop to first contact and a void can never be filled from above. This is what [Reinforce](#scoring-system) pays for.
 - Warning/critical feedback fires at tuned thresholds; stability hitting 0 collapses the tower and fails the level **before** a height completion can count.
 
@@ -177,15 +182,14 @@ Every row below is tunable live, and **each carries its own in-app explainer wit
 | **UI** | `placementScorePopupDurationMs`, `finishScorePopupDurationMs`, `levelSummaryDelayMs` |
 | **Impact** | `impactInterval`, `impactMinContributionShare`, `impactScoreRequirement` |
 | **Supply** | `levelSupplyMinSurplus`/`MaxSurplus`, `supplyEffectiveWidthRatio`, `minPrecisionBlocksPerLevel`, `maxTeamCarryOverBlocks`, `refreshMinUsefulBlockHeight` |
-| **Tower — lean** | `towerOverhangWeight`, `towerMaxTiltAngleDeg`, `towerCollapseTiltScore`, `towerBaseHalfWidthFloor` |
-| **Tower — integrity** | `towerSlendernessSafe`/`Max`, `towerSupportDeficitMax`, `towerStabilityMinHeight` (maturity ramp, applies to **both** axes) |
+| **Tower — stability** | `towerStabilityDifficulty` (the single dial; the physics constants are derived, not exposed), `towerMaxTiltAngleDeg` (visual only) |
 | **Tower — site** | `towerSiteSlendernessTarget`, `towerSiteWidthMin`/`Max` (max hard-capped at 8 by the viewport) |
 | **Tower — feedback** | `towerStabilityWarningThreshold`/`CriticalThreshold` (display only; critical clamped below warning) |
 | **Power** | `powerUnlockLevel`, `powerMaxSlots`, `powerActivationCooldownMs` |
 | **Scoring** | `placementScorePerHeight`, `placementStabilityFloor`, `reinforceScorePerIntegrity`/`PerLean`, `precisionBonusPerLevel`, `teamExactBonusPerLevel`, `finisherBonusPerLevel`, `assistBonusPerLevel`, `assistContributionThreshold` |
 | **Parallax / Placement** | Client-local rendering and snap-feel values — no server round-trip. See [ui.md](./ui.md#main-ui-controller) |
 
-The three most load-bearing knobs, if you only touch a few: `towerSiteSlendernessTarget` (reshapes the whole aspect ratio), `impactMinContributionShare` (the per-level gate), and `placementStabilityFloor` (how hard stability couples to score).
+The three most load-bearing knobs, if you only touch a few: `towerStabilityDifficulty` (all of stability), `impactMinContributionShare` (the per-level gate), and `towerSiteSlendernessTarget` (reshapes the whole aspect ratio, and with it the site usage stability is measured against).
 
 ### Bot behavior
 
@@ -201,7 +205,7 @@ QA/local-test helpers only — not production AI. They fill rooms only when a re
 
 ### Future debug variables and open tuning questions
 
-Not yet exposed: `brickWeights`, `inventoryScaling`, target-height curve bands, per-shape generation pools, `debugBotStabilityTolerance`.
+Not yet exposed: `brickWeights`, `inventoryScaling`, target-height curve bands, per-shape generation pools, `debugBotStabilityTolerance`, and the `towerStabilityAnchors`/`towerStabilityPressure` sets the stability dial interpolates.
 
 - **Exact-finish runs high** (~55–80% simulated), so "PERFECT BUILD" fires often. Lower via supply surplus or `minPrecisionBlocksPerLevel` if it should feel rarer.
 - **Site-width scaling is near-inert** at current values — level 1 already targets 16, so the derived width sits at the 8-column cap for essentially all play. It only breathes again if the tower viewport widens or bricks shrink.
