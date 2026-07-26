@@ -35,6 +35,7 @@ const DEFAULT_DEBUG_CONFIG = {
     supplyEffectiveWidthRatio: GameConfig.supplyEffectiveWidthRatio,
     towerStabilityWarningThreshold: GameConfig.towerStabilityWarningThreshold,
     towerStabilityCriticalThreshold: GameConfig.towerStabilityCriticalThreshold,
+    towerStabilityMoodThreshold: GameConfig.towerStabilityMoodThreshold,
     powerUnlockLevel: GameConfig.powerUnlockLevel,
     powerMaxSlots: GameConfig.powerMaxSlots,
     powerActivationCooldownMs: GameConfig.powerActivationCooldownMs,
@@ -469,6 +470,8 @@ class LobbyManager {
                 GameConfig.towerStabilityWarningThreshold,
             towerStabilityCriticalThreshold:
                 GameConfig.towerStabilityCriticalThreshold,
+            towerStabilityMoodThreshold:
+                GameConfig.towerStabilityMoodThreshold,
             powerUnlockLevel: GameConfig.powerUnlockLevel,
             powerMaxSlots: GameConfig.powerMaxSlots,
             powerActivationCooldownMs: GameConfig.powerActivationCooldownMs,
@@ -534,6 +537,8 @@ class LobbyManager {
             DEFAULT_DEBUG_CONFIG.towerStabilityWarningThreshold;
         GameConfig.towerStabilityCriticalThreshold =
             DEFAULT_DEBUG_CONFIG.towerStabilityCriticalThreshold;
+        GameConfig.towerStabilityMoodThreshold =
+            DEFAULT_DEBUG_CONFIG.towerStabilityMoodThreshold;
         GameConfig.powerUnlockLevel = DEFAULT_DEBUG_CONFIG.powerUnlockLevel;
         GameConfig.powerMaxSlots = DEFAULT_DEBUG_CONFIG.powerMaxSlots;
         GameConfig.powerActivationCooldownMs =
@@ -697,6 +702,8 @@ class LobbyManager {
                 setGameInt("towerStabilityWarningThreshold", 0, 100),
             towerStabilityCriticalThreshold:
                 setGameInt("towerStabilityCriticalThreshold", 0, 100),
+            towerStabilityMoodThreshold:
+                setGameInt("towerStabilityMoodThreshold", 1, 50),
             powerUnlockLevel: setGameInt("powerUnlockLevel", 1, GameConfig.maxLevel),
             powerMaxSlots: setGameInt("powerMaxSlots", 1, 6),
             powerActivationCooldownMs:

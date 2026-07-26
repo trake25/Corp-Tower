@@ -2,6 +2,7 @@ extends Control
 
 const UiNodeBinderScript = preload("res://Cor/Scripts/GameUi/UiNodeBinder.gd")
 const SnapGridScript = preload("res://Cor/Scripts/GameUi/SnapGrid.gd")
+const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
 const DebugPanelControllerScript = preload("res://Cor/Scripts/GameUi/DebugPanelController.gd")
 const PlayerContextScript = preload("res://Cor/Scripts/GameUi/PlayerContext.gd")
@@ -353,3 +354,8 @@ func update_game_state(data) -> void:
 
 func update_debug_config(config) -> void:
 	debug_panel.apply_config(config)
+
+	if tower_stack != null and tower_stack.has_method("set_mood_threshold"):
+		tower_stack.set_mood_threshold(
+			int(config.get("towerStabilityMoodThreshold", BlockDataScript.DEFAULT_MOOD_THRESHOLD))
+		)

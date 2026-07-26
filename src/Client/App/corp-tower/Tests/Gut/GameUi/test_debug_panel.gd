@@ -16,7 +16,8 @@ const CONFIG_FIXTURE := {
 	"finishScorePopupDurationMs": 5000,
 	"levelSummaryDelayMs": 6000,
 	"targetHeightMultiplier": 5,
-	"towerStabilityFeedbackMode": "meter_only"
+	"towerStabilityFeedbackMode": "meter_only",
+	"towerStabilityMoodThreshold": 12
 }
 
 var harness
@@ -54,6 +55,67 @@ func test_apply_config_updates_popup_and_summary_durations() -> void:
 func test_apply_config_leaves_sync_guard_released() -> void:
 	harness.main.update_debug_config(CONFIG_FIXTURE)
 	assert_false(bool(harness.main.get("is_syncing_debug_config")) if harness.main.get("is_syncing_debug_config") != null else false, "The sync guard must release after applying a config.")
+
+func test_brick_mood_threshold_row_syncs_from_the_config() -> void:
+	harness.main.update_debug_config(CONFIG_FIXTURE)
+	assert_eq(
+		(harness.find("TowerMoodThresholdSlider") as HSlider).value,
+		12.0,
+		"The brick mood threshold slider should sync from the config payload."
+	)
+	assert_eq(
+		(harness.find("TowerMoodThresholdLabel") as Button).text,
+		"Brick Mood Threshold: ±12",
+		"The brick mood threshold label should reflect the synced slider value."
+	)
+
+# A .tscn declares parents before children, so a row node authored outside its
+# category container silently disappears from the panel with only a warning at
+# instantiation. Assert the placement, not just that the node resolves.
+func test_brick_mood_threshold_row_lives_in_the_tower_category() -> void:
+	var label: Node = harness.find("TowerMoodThresholdLabel")
+	var slider: Node = harness.find("TowerMoodThresholdSlider")
+	var rows: Node = harness.find("TowerRows")
+
+	assert_eq(label.get_parent(), rows, "The mood threshold label belongs to the Tower category rows.")
+	assert_eq(slider.get_parent(), rows, "The mood threshold slider belongs to the Tower category rows.")
+	assert_eq(
+		rows.get_parent().name,
+		StringName("Tower"),
+		"TowerRows should sit under the Tower category panel."
+	)
+	assert_gt(
+		label.get_index(),
+		harness.find("TowerCriticalThresholdSlider").get_index(),
+		"The mood threshold row should follow the other display-only feedback rows."
+	)
+
+func test_brick_mood_threshold_row_falls_back_to_its_default() -> void:
+	harness.main.update_debug_config({})
+	assert_eq(
+		(harness.find("TowerMoodThresholdSlider") as HSlider).value,
+		3.0,
+		"A missing brick mood threshold should fall back to its default."
+	)
+
+# The row can sync perfectly and still do nothing if the value never reaches the
+# renderer that draws the faces -- which is exactly how the knob looked dead.
+func test_mood_threshold_reaches_the_tower_renderer() -> void:
+	var tower_stack: Node = harness.find("TowerStack")
+
+	harness.main.update_debug_config(CONFIG_FIXTURE)
+	assert_eq(
+		int(tower_stack.get("mood_threshold")),
+		12,
+		"A debug_config broadcast should push the mood threshold onto TowerStack."
+	)
+
+	harness.main.update_debug_config({})
+	assert_eq(
+		int(tower_stack.get("mood_threshold")),
+		3,
+		"A missing mood threshold should fall back to the shared default."
+	)
 
 func test_toggle_debug_overlay_flips_visibility() -> void:
 	var overlay: Control = harness.find("DebugOverlay") as Control

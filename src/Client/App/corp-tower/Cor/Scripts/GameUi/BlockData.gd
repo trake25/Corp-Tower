@@ -18,7 +18,18 @@ const BRICK_TEXTURE_PATHS := {
 
 const BRICK_SHADER_PATH := "res://Cor/Shaders/BrickShade.gdshader"
 
+const EMOJI_TEXTURE_PATHS := {
+	"positive": "res://Cor/Art/Static/emoji-smiley.png",
+	"negative": "res://Cor/Art/Static/emoji-worried.png",
+	"neutral": "res://Cor/Art/Static/emoji-disbelief.png"
+}
+
+const DEFAULT_EMOJI_MOOD := "neutral"
+const DEFAULT_MOOD_THRESHOLD := 3
+const STABILITY_DELTA_KEY := "stabilityDelta"
+
 static var _texture_cache: Dictionary = {}
+static var _emoji_cache: Dictionary = {}
 static var _shader: Shader = null
 
 static func normalize_block(raw_block, index: int) -> Dictionary:
@@ -114,6 +125,67 @@ static func brick_texture(shape_id: String) -> Texture2D:
 		_texture_cache[shape_id] = load(BRICK_TEXTURE_PATHS[shape_id])
 
 	return _texture_cache[shape_id]
+
+# The server stamps each brick's stability delta once, at placement; the
+# threshold comparison happens here, every frame, against the live debug value.
+# Splitting it that way is what makes the knob tunable: a brick's delta is a
+# fixed historical fact, but dragging the threshold restyles the whole standing
+# tower immediately instead of only affecting bricks placed afterwards.
+static func emoji_mood_for_delta(delta: int, threshold: int) -> String:
+	var band: int = maxi(1, threshold)
+
+	if delta >= band:
+		return "positive"
+
+	if delta <= -band:
+		return "negative"
+
+	return "neutral"
+
+static func emoji_texture(mood: String) -> Texture2D:
+	var resolved: String = mood if EMOJI_TEXTURE_PATHS.has(mood) else DEFAULT_EMOJI_MOOD
+
+	if not _emoji_cache.has(resolved):
+		_emoji_cache[resolved] = load(EMOJI_TEXTURE_PATHS[resolved])
+
+	return _emoji_cache[resolved]
+
+# Where the face sits on a brick, in lattice units relative to the brick's own
+# origin. Uses the centroid of the occupied cells rather than the bounding-box
+# centre, whose middle is empty space for L/T/Z, then pulls it onto the nearest
+# occupied cell centre so the face is never straddling a seam between two cells.
+# All cells tied for nearest are averaged, which is what keeps a symmetric brick
+# (O, I, Z) centred on its own middle instead of jumping into one arbitrary
+# quadrant. Reproduces the hand-placed positions in Art/Guide/guide-brick-emoji
+# for all 5 shapes.
+static func emoji_anchor(cells: Array) -> Vector2:
+	if cells.is_empty():
+		return Vector2.ZERO
+
+	var centers: Array[Vector2] = []
+	var centroid := Vector2.ZERO
+
+	for cell in cells:
+		var center := Vector2(float(_cell_x(cell)) + 0.5, float(_cell_y(cell)) + 0.5)
+		centers.append(center)
+		centroid += center
+
+	centroid /= float(centers.size())
+
+	var nearest_distance: float = INF
+
+	for center in centers:
+		nearest_distance = minf(nearest_distance, centroid.distance_squared_to(center))
+
+	var anchor := Vector2.ZERO
+	var tied: int = 0
+
+	for center in centers:
+		if centroid.distance_squared_to(center) <= nearest_distance + 0.0001:
+			anchor += center
+			tied += 1
+
+	return anchor / float(tied)
 
 static func brick_shader_material() -> ShaderMaterial:
 	if _shader == null:

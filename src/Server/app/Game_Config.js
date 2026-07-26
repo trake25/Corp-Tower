@@ -73,6 +73,7 @@ const GameConfig = {
     towerBaseHalfWidthFloor: 1.0,
     towerStabilityWarningThreshold: 75,
     towerStabilityCriticalThreshold: 45,
+    towerStabilityMoodThreshold: 3,
     towerStabilityFeedbackMode: "warnings_only",
     powerUnlockLevel: 1,
     powerMaxSlots: 3,

@@ -687,7 +687,7 @@ class GameEngine {
         player.contributedHeight += effectiveHeight;
         this.room.currentHeight = newHeight;
         this.room.towerBlocks = this.room.towerBlocks || [];
-        this.room.towerBlocks.push({
+        const placedEntry = {
             playerId: player.id,
             block: block,
             height: blockHeight,
@@ -695,7 +695,8 @@ class GameEngine {
             baseHeight: placement.originY,
             originX: placement.originX,
             originY: placement.originY
-        });
+        };
+        this.room.towerBlocks.push(placedEntry);
         this.refillPlayerBlock(player);
 
         this.addPlacementScore(player, block, effectiveHeight, stabilityBefore);
@@ -705,6 +706,9 @@ class GameEngine {
         console.log(`${player.id} placed block (${blockHeight})`);
 
         this.recalculateTowerStability();
+
+        placedEntry.stabilityDelta =
+            (this.room.towerStability ?? 100) - stabilityBefore;
 
         this.addReinforceScore(
             player, structureBefore, this.room.towerStabilityDiagnostics || {}

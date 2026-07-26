@@ -42,6 +42,10 @@ const DEBUG_TOOLTIPS := {
 		"title": "Critical Threshold",
 		"body": "Stability % at or below which the \"Tower Critical\" cue fires. Display only, and clamped to never exceed Warning.",
 	},
+	"TowerMoodThresholdLabel": {
+		"title": "Brick Mood Threshold",
+		"body": "How many stability points a placement must move before the brick's face reacts.\n\ndelta = stability after - stability the placer inherited\n\ndelta >= this = smiley, delta <= -this = worried, anything in between = disbelief. Display only, no gameplay effect.\n\nEach brick's delta is fixed at placement, but this compares against it live — dragging the slider restyles the whole standing tower immediately.\n\nMeasured mix across levels 1-30: at 1 roughly 33/62/6 smiley/worried/disbelief, at 3 about 22/40/39, at 10 about 5/10/85. Placements lose stability far more often than they gain it, so worried always outnumbers smiley.\n\nBricks with no face at all mean the server is older than this feature and is not sending a delta.",
+	},
 	"TowerFeedbackModeLabel": {
 		"title": "Stability Feedback",
 		"body": "How stability is surfaced: warning popups only, a numeric meter, or a live preview. Presentation only.",
@@ -315,6 +319,8 @@ var tower_warning_threshold_label: Control
 var tower_warning_threshold_slider: HSlider
 var tower_critical_threshold_label: Control
 var tower_critical_threshold_slider: HSlider
+var tower_mood_threshold_label: Control
+var tower_mood_threshold_slider: HSlider
 var tower_feedback_mode_button: OptionButton
 var power_unlock_level_label: Label
 var power_unlock_level_slider: HSlider
@@ -425,6 +431,8 @@ func bind_nodes(binder) -> void:
 	tower_warning_threshold_slider = binder.optional_node("TowerWarningThresholdSlider") as HSlider
 	tower_critical_threshold_label = bind_tooltip_row(binder, "TowerCriticalThresholdLabel")
 	tower_critical_threshold_slider = binder.optional_node("TowerCriticalThresholdSlider") as HSlider
+	tower_mood_threshold_label = bind_tooltip_row(binder, "TowerMoodThresholdLabel")
+	tower_mood_threshold_slider = binder.optional_node("TowerMoodThresholdSlider") as HSlider
 	tower_feedback_mode_button = binder.optional_node("TowerFeedbackModeButton") as OptionButton
 	power_unlock_level_label = binder.optional_node("PowerUnlockLevelLabel") as Label
 	power_unlock_level_slider = binder.optional_node("PowerUnlockLevelSlider") as HSlider
@@ -498,6 +506,7 @@ func setup(tuning_ref, network_ref) -> void:
 	configure_slider(reinforce_lean_slider, 0, 200, 5, func(value): send_debug_float("reinforceScorePerLean", value))
 	configure_slider(tower_warning_threshold_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityWarningThreshold", value))
 	configure_slider(tower_critical_threshold_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityCriticalThreshold", value))
+	configure_slider(tower_mood_threshold_slider, 1, 50, 1, func(value): send_debug_int("towerStabilityMoodThreshold", value))
 	configure_slider(power_unlock_level_slider, 1, 20, 1, func(value): send_debug_int("powerUnlockLevel", value))
 	configure_slider(power_max_slots_slider, 1, 6, 1, func(value): send_debug_int("powerMaxSlots", value))
 	configure_slider(power_cooldown_slider, 0, 30000, 500, func(value): send_debug_int("powerActivationCooldownMs", value))
@@ -818,6 +827,10 @@ func apply_config(config) -> void:
 		tower_critical_threshold_slider,
 		float(config.get("towerStabilityCriticalThreshold", 30))
 	)
+	set_slider_no_signal(
+		tower_mood_threshold_slider,
+		float(config.get("towerStabilityMoodThreshold", 3))
+	)
 	if tower_feedback_mode_button != null:
 		var feedback_mode: String = str(config.get("towerStabilityFeedbackMode", TOWER_FEEDBACK_MODES[0]))
 		var feedback_mode_index: int = TOWER_FEEDBACK_MODES.find(feedback_mode)
@@ -976,6 +989,10 @@ func update_debug_labels() -> void:
 	set_debug_label_text(
 		tower_critical_threshold_label,
 		"Critical Threshold: " + str(int(get_slider_value(tower_critical_threshold_slider, 30))) + "%"
+	)
+	set_debug_label_text(
+		tower_mood_threshold_label,
+		"Brick Mood Threshold: ±" + str(int(get_slider_value(tower_mood_threshold_slider, 3)))
 	)
 	set_debug_label_text(
 		power_unlock_level_label,

@@ -15,6 +15,7 @@ const originalGameConfig = {
     ,powerLifetime: GameConfig.powerLifetime
     ,towerStabilityWarningThreshold: GameConfig.towerStabilityWarningThreshold
     ,towerStabilityCriticalThreshold: GameConfig.towerStabilityCriticalThreshold
+    ,towerStabilityMoodThreshold: GameConfig.towerStabilityMoodThreshold
     ,towerGridWidth: GameConfig.towerGridWidth
     ,towerSiteWidthMin: GameConfig.towerSiteWidthMin
     ,towerSiteWidthMax: GameConfig.towerSiteWidthMax
@@ -68,6 +69,8 @@ afterEach(() => {
         originalGameConfig.towerStabilityWarningThreshold;
     GameConfig.towerStabilityCriticalThreshold =
         originalGameConfig.towerStabilityCriticalThreshold;
+    GameConfig.towerStabilityMoodThreshold =
+        originalGameConfig.towerStabilityMoodThreshold;
     GameConfig.towerGridWidth = originalGameConfig.towerGridWidth;
     GameConfig.towerSiteWidthMin = originalGameConfig.towerSiteWidthMin;
     GameConfig.towerSiteWidthMax = originalGameConfig.towerSiteWidthMax;
@@ -682,4 +685,51 @@ test("saveImpactPowers captures each player's current inventory", () => {
         { id: "copy_score", earnedLevel: 5 }
     ]);
     assert.deepEqual(engine.room.impactPowers.P3, []);
+});
+
+test("the brick mood threshold is exposed and clamped in debug config", async () => {
+    const lobbyManager = new LobbyManager();
+
+    await lobbyManager.updateDebugConfig("towerStabilityMoodThreshold", 900);
+    assert.equal(GameConfig.towerStabilityMoodThreshold, 50);
+
+    // Floored at 1, not 0: a 0 threshold would classify every placement as both
+    // a rise and a fall, so no brick could ever wear the neutral face.
+    await lobbyManager.updateDebugConfig("towerStabilityMoodThreshold", 0);
+    assert.equal(GameConfig.towerStabilityMoodThreshold, 1);
+
+    await lobbyManager.updateDebugConfig("towerStabilityMoodThreshold", 8);
+    assert.equal(lobbyManager.getDebugConfig().towerStabilityMoodThreshold, 8);
+});
+
+test("a placed brick carries the stability delta it caused", () => {
+    useFixedGrid();
+    const { engine, messages } = createPlayingEngine(1, 8);
+
+    engine.room.players[0].blocks = [createBlock(2)];
+    engine.room.players[1].blocks = [createBlock(2, "B2")];
+    // Enough height left in hand that the two placements below neither finish
+    // the level nor trip the not-enough-height fail check.
+    engine.room.players[2].blocks = [createBlock(4, "B3")];
+
+    // Stubbing the recalculation is what makes the delta a fixed number instead
+    // of one that moves whenever the stability anchors are retuned -- the
+    // physics have their own tests. It still catches a stamp written before the
+    // recalculation rather than after, since that would read a delta of 0.
+    engine.recalculateTowerStability = () => {
+        engine.room.towerStability = 95;
+    };
+
+    engine.room.towerStability = 30;
+    engine.placeBlock("P1", 0);
+    engine.placeBlock("P2", 0);
+
+    assert.equal(engine.room.towerBlocks[0].stabilityDelta, 65);
+    assert.equal(engine.room.towerBlocks[1].stabilityDelta, 0);
+
+    // The client classifies the face from this delta on every frame, so it must
+    // ride every rebroadcast -- not just the one right after the placement.
+    const broadcast = latestMessage(messages);
+    assert.equal(broadcast.towerBlocks[0].stabilityDelta, 65);
+    assert.equal(broadcast.towerBlocks[1].stabilityDelta, 0);
 });

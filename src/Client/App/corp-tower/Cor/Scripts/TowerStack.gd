@@ -29,6 +29,7 @@ const GHOST_OUTLINE_COLOR := Color(1.0, 1.0, 1.0, 0.7)
 @export var snap_target_radius: float = 8.5
 @export var ghost_alpha: float = 0.45
 @export var drag_grip_offset_units: float = 1.4
+@export var emoji_unit_scale: float = 1.1
 
 signal scroll_offset_changed(pixels: float)
 
@@ -50,6 +51,7 @@ var _drop_anim_id: String = ""
 var _drop_anim_t: float = 0.0
 var _drop_fall_units: float = 0.0
 var _prev_block_count: int = 0
+var mood_threshold: int = BlockDataScript.DEFAULT_MOOD_THRESHOLD
 
 func _ready() -> void:
 	material = BlockDataScript.brick_shader_material()
@@ -80,6 +82,17 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 
 func refresh_visuals() -> void:
 	_update_scroll_offset()
+	queue_redraw()
+
+# Driven by debug_config, so moving the slider repaints every standing brick's
+# face on the next frame.
+func set_mood_threshold(value: int) -> void:
+	var resolved: int = maxi(1, value)
+
+	if resolved == mood_threshold:
+		return
+
+	mood_threshold = resolved
 	queue_redraw()
 
 # Expressed in brick units rather than pixels so the lift that keeps the finger
@@ -284,18 +297,21 @@ func _draw() -> void:
 
 		if texture == null:
 			_draw_fallback_block(center, box_rect.size, color)
-			continue
+		else:
+			var rotation_steps: int = BlockDataScript.detect_rotation_steps(shape_id, cells)
+			var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(BlockDataScript.BRICK_SHAPES[shape_id])
+			var canonical_size: Vector2 = Vector2(
+				float(canonical_bounds.max_x - canonical_bounds.min_x + 1) * unit,
+				float(canonical_bounds.max_y - canonical_bounds.min_y + 1) * unit
+			)
+			var points: PackedVector2Array = BlockDataScript.brick_quad_points(center, canonical_size, rotation_steps)
+			var colors := PackedColorArray([color, color, color, color])
 
-		var rotation_steps: int = BlockDataScript.detect_rotation_steps(shape_id, cells)
-		var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(BlockDataScript.BRICK_SHAPES[shape_id])
-		var canonical_size: Vector2 = Vector2(
-			float(canonical_bounds.max_x - canonical_bounds.min_x + 1) * unit,
-			float(canonical_bounds.max_y - canonical_bounds.min_y + 1) * unit
+			draw_primitive(points, colors, BlockDataScript.brick_quad_uvs(), texture)
+
+		_draw_block_emoji(
+			entry, cells, origin_x, base_height, unit, base_x, baseline, scroll_offset_units, drop_offset, pivot
 		)
-		var points: PackedVector2Array = BlockDataScript.brick_quad_points(center, canonical_size, rotation_steps)
-		var colors := PackedColorArray([color, color, color, color])
-
-		draw_primitive(points, colors, BlockDataScript.brick_quad_uvs(), texture)
 
 	_draw_snap_layer(unit, base_x, baseline, pivot)
 
@@ -303,6 +319,55 @@ func _draw() -> void:
 
 	if current_height > tower_units:
 		_draw_fallback_stack()
+
+# The server stamps the mood on the entry at placement time, so a brick's face
+# is fixed for the rest of the level and survives a rebroadcast or reconnect.
+# Drawn inside the same transform block as the brick it belongs to, so it
+# inherits the tower's lean and scroll; the face itself is never rotated to
+# match the brick texture's rotation, since an upside-down smile reads as a
+# frown. Only placed bricks get one -- the drag ghost and the inventory/team
+# previews have no stability outcome yet.
+func _draw_block_emoji(
+	entry: Dictionary,
+	cells: Array,
+	origin_x: int,
+	origin_y: int,
+	unit: float,
+	base_x: float,
+	baseline: float,
+	scroll_offset_units: int,
+	drop_offset: float,
+	pivot: Vector2
+) -> void:
+	if cells.is_empty():
+		return
+
+	# No face at all rather than a neutral one when the server sent no delta (a
+	# pre-emoji build or a room hydrated from an older snapshot). A neutral face
+	# is indistinguishable from a real "barely moved" verdict, which makes a
+	# missing field look like a working feature that ignores its own tuning.
+	if not entry.has(BlockDataScript.STABILITY_DELTA_KEY):
+		return
+
+	var mood: String = BlockDataScript.emoji_mood_for_delta(
+		int(entry.get(BlockDataScript.STABILITY_DELTA_KEY, 0)), mood_threshold
+	)
+	var texture: Texture2D = BlockDataScript.emoji_texture(mood)
+
+	if texture == null:
+		return
+
+	var anchor: Vector2 = BlockDataScript.emoji_anchor(cells)
+	var center: Vector2 = _lattice_to_local(
+		Vector2(float(origin_x) + anchor.x, float(origin_y) + anchor.y + drop_offset),
+		unit,
+		base_x,
+		baseline,
+		scroll_offset_units
+	) - pivot
+	var box_size: Vector2 = Vector2.ONE * unit * emoji_unit_scale
+
+	draw_texture_rect(texture, Rect2(center - box_size * 0.5, box_size), false)
 
 # Computes the on-screen box for a footprint resting at (origin_x, origin_y)
 # in grid units -- shared by the main render loop and the snap-point overlay
