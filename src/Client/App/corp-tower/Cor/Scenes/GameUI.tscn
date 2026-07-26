@@ -1369,17 +1369,6 @@ text = "Impact Flat Floor: 0"
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ImpactFillBonusLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000409]
-unique_name_in_owner = true
-layout_mode = 2
-flat = true
-alignment = 0
-text = "Impact Fill Bonus Rate: 50%"
-
-[node name="ImpactFillBonusSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000410]
-unique_name_in_owner = true
-layout_mode = 2
-
 [node name="Power" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=703822891]
 layout_mode = 1
 anchors_preset = 15

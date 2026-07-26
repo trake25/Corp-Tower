@@ -569,28 +569,3 @@ test("saveImpactPowers captures each player's current inventory", () => {
     ]);
     assert.deepEqual(engine.room.impactPowers.P3, []);
 });
-
-test("impact-fill bonus rewards band contribution above the requirement", () => {
-    GameConfig.impactMinContributionShare = 0.3;
-    GameConfig.scoring.impactFillBonusRate = 0.5;
-    const { engine } = createPlayingEngine(3, 8);
-
-    engine.room.impactLevel = 1;
-    engine.room.impactScores = { P1: 0, P2: 0, P3: 0 };
-    engine.room.players[0].score = 1000;
-    engine.room.players[1].score = 0;
-    engine.room.players[2].score = 0;
-    engine.room.pendingScoreEvents = [];
-
-    const before = engine.room.players[0].score;
-    engine.awardImpactFillBonus(4);
-
-    assert.ok(engine.room.players[0].score > before);
-    assert.equal(engine.room.players[1].score, 0);
-
-    const event = engine.room.pendingScoreEvents.find(pendingEvent => {
-        return pendingEvent.type === "impact_fill_bonus" && pendingEvent.playerId === "P1";
-    });
-    assert.ok(event);
-    assert.ok(event.points > 0);
-});

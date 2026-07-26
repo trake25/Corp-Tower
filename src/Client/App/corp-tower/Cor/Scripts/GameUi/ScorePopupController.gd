@@ -35,7 +35,8 @@ func process_score_events(raw_events: Variant, players: Array) -> float:
 			continue
 
 		var event: Dictionary = event_value
-		if str(event.get("type", "")) == "team_total":
+		var raw_event_type: String = str(event.get("type", ""))
+		if raw_event_type == "team_total" or raw_event_type == "exact_finish" or raw_event_type == "overbuild_finish":
 			continue
 
 		var event_id: String = str(event.get("id", ""))
@@ -191,10 +192,6 @@ func get_score_event_text(event: Dictionary, _players: Array) -> String:
 			return "TEAM +" + str(points)
 		"assist_bonus":
 			return "ASSIST +" + str(points)
-		"exact_finish":
-			return "PERFECT FIT"
-		"overbuild_finish":
-			return "TARGET REACHED +" + str(get_event_overbuild_height(event))
 		"mvp":
 			return "MVP " + players_ctx.display_name(player_id) + " +" + str(points)
 		"impact_failed":
@@ -206,23 +203,12 @@ func get_score_event_text(event: Dictionary, _players: Array) -> String:
 
 	return str(event.get("label", "")).strip_edges()
 
-func get_event_overbuild_height(event: Dictionary) -> int:
-	var meta: Variant = event.get("meta", {})
-
-	if typeof(meta) == TYPE_DICTIONARY:
-		return int(meta.get("overbuildHeight", event.get("points", 0)))
-
-	return int(event.get("points", 0))
-
 func get_score_event_color(event: Dictionary) -> Color:
 	var event_type: String = str(event.get("type", ""))
 	var player_id: String = str(event.get("playerId", ""))
 
 	if player_id != "" and players_ctx.color_map.has(player_id):
 		return players_ctx.color_map[player_id]
-
-	if event_type == "exact_finish":
-		return Color(1.0, 0.84, 0.26, 1.0)
 
 	if event_type == "team_exact_bonus":
 		return Color(0.42, 0.84, 1.0, 1.0)
@@ -237,36 +223,21 @@ func get_score_event_color(event: Dictionary) -> Color:
 
 func is_emphasis_score_event(event_type: String) -> bool:
 	return (
-		event_type == "exact_finish" or
 		event_type == "mvp" or
 		event_type == "impact_failed"
 	)
 
 func get_score_popup_size(event_type: String) -> Vector2:
-	if event_type == "exact_finish":
-		return Vector2(240, 54)
-
 	if event_type == "power_activated":
 		return Vector2(300, 36)
 
-	if (
-		event_type == "mvp" or
-		event_type == "overbuild_finish" or
-		event_type == "impact_failed"
-	):
+	if event_type == "mvp" or event_type == "impact_failed":
 		return Vector2(220, 48)
 
 	return Vector2(128, 38)
 
 func get_score_popup_font_size(event_type: String) -> int:
-	if event_type == "exact_finish":
-		return 24
-
-	if (
-		event_type == "mvp" or
-		event_type == "overbuild_finish" or
-		event_type == "impact_failed"
-	):
+	if event_type == "mvp" or event_type == "impact_failed":
 		return 20
 
 	return 16
@@ -299,11 +270,7 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 	if event_type == "power_activated":
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.816)
 
-	if (
-		event_type == "exact_finish" or
-		event_type == "overbuild_finish" or
-		event_type == "impact_failed"
-	):
+	if event_type == "impact_failed":
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.4)
 
 	var player_id: String = str(event.get("playerId", ""))

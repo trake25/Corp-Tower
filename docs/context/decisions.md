@@ -10,6 +10,7 @@ Scope: why things are built the way they are — rationale, tradeoffs, rejected 
 - **Refresh token economy** — gone. Refresh is purely the effect of activating a held `refresh` Power item: no token count, no per-level cap, and it rerolls **every** player's hand.
 - **UI skin switching** — gone. **Rejected:** two swappable skins (`DefaultSkin`/`Figma_SkinV1`) with a runtime picker → every scene edit had to be made twice. [Game UI Scene](./ui.md#game-ui-scene) is the one gameplay UI; no `ProjectSettings` skin preference or picker group exists.
 - **Docker EC2 staging** — the EC2-1/2/3 workflows, Terraform and Ansible are fully removed; the K3s lab (`infra/k3s`) is the active stack → [deployment.md](./deployment.md).
+- **Exact-finish/overbuild score popup** — gone. The `exact_finish`/`overbuild_finish` `scoreEvents[]` types still arrive on the wire (`displayOnly`), but `ScorePopupController` drops them before building a popup; the Top Indicator ([ui.md](./ui.md#main-ui-controller)) already shows exact/overbuild state live, so the level-end callout was redundant.
 
 ## PointerTriggerRouter removed → native per-trigger signals
 **Now:** each popover trigger wires its own native `.pressed` signal ([coding-conventions.md](./coding-conventions.md#client-gameui-module-family-pattern)). **Rejected:** a shared `_input()` hit-test router (`PointerTriggerRouter`) → it existed only because a popover's full-screen `OutsideCatcher` (a later sibling than the triggers) wins normal GUI hit-testing while a popover is open, and it never fixed the tap bug blamed on it.

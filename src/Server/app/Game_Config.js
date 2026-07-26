@@ -23,11 +23,11 @@ const GameConfig = {
     startDelayMs: 500, // testing 0.5, release 2
     levelTimeLimitMs: 120000,    // testing 120, release 30 (for tuning)
     nextLevelDelayMs: 500, // testing 0.5, release 2
-    failRestartDelayMs: 500, // testing 0.5, release 2
-    placementScorePopupDurationMs: 3000,
-    finishScorePopupDurationMs: 3000,
-    levelSummaryDelayMs: 1000,  // testing 1, release 3
-    impactInterval: 1,
+    failRestartDelayMs: 500, // testing 0.5, release 1
+    placementScorePopupDurationMs: 2000,
+    finishScorePopupDurationMs: 2000,
+    levelSummaryDelayMs: 2000,  // testing 2, release 3
+    impactInterval: 2,
     impactScoreRequirement: 0,
     // With an Impact every level this is the core loop: each player must earn
     // this share of the level's expected placement score to advance. Three
@@ -113,7 +113,6 @@ const GameConfig = {
         finisherBonusPerLevel: 0,
         precisionBonusPerLevel: 20,
         teamExactBonusPerLevel: 15,
-        impactFillBonusRate: 0.5,
         assistBonusPerLevel: 0,
         assistContributionThreshold: 0.25
     },

@@ -924,7 +924,6 @@ class GameEngine {
         this.room.level = nextLevel;
 
         if (opensImpact) {
-            this.awardImpactFillBonus(nextLevel);
             this.awardImpactPower();
             this.room.impactLevel = this.room.level;
             this.saveImpactState();
@@ -990,7 +989,6 @@ class GameEngine {
     restoreImpactScores() { return Impacts.restoreImpactScores(this); }
     restoreImpactPowers() { return Impacts.restoreImpactPowers(this); }
     awardImpactPower() { return Impacts.awardImpactPower(this); }
-    awardImpactFillBonus(blockedLevel) { return Impacts.awardImpactFillBonus(this, blockedLevel); }
     isImpactLevel(level) { return Impacts.isImpactLevel(this, level); }
     getImpactScoreRequirement() { return Impacts.getImpactScoreRequirement(this); }
     getImpactMinContributionShare() { return Impacts.getImpactMinContributionShare(this); }

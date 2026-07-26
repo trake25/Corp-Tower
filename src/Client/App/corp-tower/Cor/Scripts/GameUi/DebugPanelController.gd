@@ -79,10 +79,6 @@ const DEBUG_TOOLTIPS := {
 		"title": "Impact Flat Floor",
 		"body": "Legacy absolute score floor per player, applied alongside the share.\n\nrequirement = max(this, share-derived requirement)\n\nLeave at 0 unless you specifically want a fixed number rather than a percentage.",
 	},
-	"ImpactFillBonusLabel": {
-		"title": "Impact Fill Bonus Rate",
-		"body": "Pays each player for clearing their share by more than the minimum.\n\nbonus = round(max(0, band score - required) x rate)\n\nThis is the selfish reward for carrying a level. Higher = hogging pays more; 0 = no reward for exceeding your share.",
-	},
 	# --- Supply ------------------------------------------------------------
 	"LevelSupplyMinLabel": {
 		"title": "Supply Min Surplus",
@@ -307,8 +303,6 @@ var impact_interval_label: Control
 var impact_interval_slider: HSlider
 var impact_score_floor_label: Control
 var impact_score_floor_slider: HSlider
-var impact_fill_bonus_label: Control
-var impact_fill_bonus_slider: HSlider
 var finisher_bonus_label: Control
 var finisher_bonus_slider: HSlider
 var precision_bonus_label: Control
@@ -429,8 +423,6 @@ func bind_nodes(binder) -> void:
 	impact_interval_slider = binder.optional_node("ImpactIntervalSlider") as HSlider
 	impact_score_floor_label = bind_tooltip_row(binder, "ImpactScoreFloorLabel")
 	impact_score_floor_slider = binder.optional_node("ImpactScoreFloorSlider") as HSlider
-	impact_fill_bonus_label = bind_tooltip_row(binder, "ImpactFillBonusLabel")
-	impact_fill_bonus_slider = binder.optional_node("ImpactFillBonusSlider") as HSlider
 	finisher_bonus_label = bind_tooltip_row(binder, "FinisherBonusLabel")
 	finisher_bonus_slider = binder.optional_node("FinisherBonusSlider") as HSlider
 	precision_bonus_label = bind_tooltip_row(binder, "PrecisionBonusLabel")
@@ -530,7 +522,6 @@ func setup(tuning_ref, network_ref) -> void:
 	configure_slider(impact_score_slider, 0, 50, 5, func(value): send_debug_float("impactMinContributionShare", value / 100.0))
 	configure_slider(impact_interval_slider, 1, 10, 1, func(value): send_debug_int("impactInterval", value))
 	configure_slider(impact_score_floor_slider, 0, 5000, 50, func(value): send_debug_int("impactScoreRequirement", value))
-	configure_slider(impact_fill_bonus_slider, 0, 200, 5, func(value): send_debug_float("impactFillBonusRate", value / 100.0))
 	configure_slider(finisher_bonus_slider, 0, 25, 1, func(value): send_debug_int("finisherBonusPerLevel", value))
 	configure_slider(precision_bonus_slider, 0, 25, 1, func(value): send_debug_int("precisionBonusPerLevel", value))
 	configure_slider(team_exact_bonus_slider, 0, 25, 1, func(value): send_debug_int("teamExactBonusPerLevel", value))
@@ -820,10 +811,6 @@ func apply_config(config) -> void:
 		float(config.get("impactScoreRequirement", 0))
 	)
 	set_slider_no_signal(
-		impact_fill_bonus_slider,
-		float(config.get("impactFillBonusRate", 0.5)) * 100.0
-	)
-	set_slider_no_signal(
 		impact_score_slider,
 		float(config.get("impactMinContributionShare", 0.30)) * 100.0
 	)
@@ -1033,10 +1020,6 @@ func update_debug_labels() -> void:
 	set_debug_label_text(
 		impact_score_floor_label,
 		"Impact Flat Floor: " + str(int(get_slider_value(impact_score_floor_slider, 0)))
-	)
-	set_debug_label_text(
-		impact_fill_bonus_label,
-		"Impact Fill Bonus Rate: " + str(int(get_slider_value(impact_fill_bonus_slider, 50))) + "%"
 	)
 	set_debug_label_text(
 		finisher_bonus_label,

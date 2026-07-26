@@ -73,12 +73,12 @@ Legacy numeric block values are still tolerated by the Godot client as vertical 
 
 | Field | Meaning |
 |---|---|
-| `scoreEvents[]` | Transient, broadcast-only. Each: stable `id`, `type`, `level`, optional `playerId`/`points`/`label`/`displayOnly`/`meta`. Types: `placement`, `reinforce`, `precision_bonus`, `team_exact_bonus`, `impact_fill_bonus`, `exact_finish`, `overbuild_finish`, `mvp`, `tower_warning`, `tower_critical` (plus `finisher_bonus`/`assist_bonus` only if those multipliers are re-enabled — both default 0, so no event) |
+| `scoreEvents[]` | Transient, broadcast-only. Each: stable `id`, `type`, `level`, optional `playerId`/`points`/`label`/`displayOnly`/`meta`. Types: `placement`, `reinforce`, `precision_bonus`, `team_exact_bonus`, `exact_finish`, `overbuild_finish`, `mvp`, `tower_warning`, `tower_critical` (plus `finisher_bonus`/`assist_bonus` only if those multipliers are re-enabled — both default 0, so no event). **`exact_finish`/`overbuild_finish` are sent but never rendered** — `ScorePopupController` drops them before building a popup, since the Top Indicator already shows exact/overbuild state live |
 | `quickChatEvents[]` | Transient, broadcast-only: `id`, `playerId`, template `slot`, display `text`, `createdAt`. Never persisted or replayed after reconnect |
 | `lastLevelSummary` | `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, `players[]` (per-player: id, bot flag, level score, previous/final total, contributed height, MVP flag, bonus breakdown). Impact failures also include `impactScoreStatus` |
 
 - Clients track seen event ids per level and never infer scoring UI from aggregate score diffs.
-- Placement **and `reinforce`** events use `placementScorePopupDurationMs` (reinforce fires alongside a placement, so it shares its timing); MVP/Perfect-Fit/Impact/bonus events use `finishScorePopupDurationMs` (both = total popup lifetime incl. fade-out).
+- Placement **and `reinforce`** events use `placementScorePopupDurationMs` (reinforce fires alongside a placement, so it shares its timing); MVP/Impact/bonus events use `finishScorePopupDurationMs` (both = total popup lifetime incl. fade-out).
 - Level summaries queue until the current score-popup batch fades, then stay visible for `levelSummaryDelayMs`.
 - Completed summaries bank level score into final totals; failed summaries keep previous == final totals.
 

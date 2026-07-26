@@ -134,7 +134,6 @@ Level time limit `levelTimeLimitMs` (design reference 30s). Quick chat is 3 fixe
 | Reinforce (per placement) | `round((integrity_gain × reinforceScorePerIntegrity + lean_correction × reinforceScorePerLean) × level)` (defaults `1` / `20`), `lean_correction = max(0, |lean_before| − |lean_after|)`. Sized to be *competitive with*, not dominant over, a good height claim |
 | Precision Bonus (exact finish, finisher) | `level × precisionBonusPerLevel` (default `20`) |
 | Team Exact Bonus (exact finish, everyone) | `level × teamExactBonusPerLevel` (default `15`) |
-| Impact-Fill Bonus (at each passed Impact) | `round(max(0, band_score − required) × impactFillBonusRate)` (default `0.5`) — the reward for carrying a level |
 | Finisher Bonus | `0` — overbuild finishing earns nothing beyond banked contribution |
 | Assist Bonus | `0` (disabled) |
 
@@ -144,7 +143,7 @@ Level time limit `levelTimeLimitMs` (design reference 30s). Quick chat is 3 fixe
 
 **The Impact gate.** `required = impactMinContributionShare × targetHeight × level × placementScorePerHeight`, per player, with `impactScoreRequirement` as an optional flat floor (`max` of the two). Default share **25%**; `0` disables. The share is bounded by arithmetic, not taste — three players × the share is how much of the pool must split near-evenly, and above ~30% no natural distribution reaches it.
 
-**Feedback UX.** `+points` popup per placement in the player's colour, with `REINFORCE +n` alongside it. Exact finish gets a distinct "PERFECT FIT" callout then precision/team feedback; overbuild gets a target-reached message plus wasted height and no celebration. The level summary appears once the popup batch fades (result, team score, MVP, finisher, per-player score, contributed height). Failed summaries show level score but never bank it.
+**Feedback UX.** `+points` popup per placement in the player's colour, with `REINFORCE +n` alongside it, then precision/team bonus popups. Exact-finish/overbuild state has no popup or level-end score-event callout of its own — the Top Indicator ([ui.md](./ui.md#main-ui-controller)) already shows it live during play. The level summary appears once the popup batch fades (result, team score, MVP, finisher, per-player score, contributed height). Failed summaries show level score but never bank it.
 
 ## Progression
 
@@ -176,7 +175,7 @@ Every row below is tunable live, and **each carries its own in-app explainer wit
 | **Bots** | `debugBotsEnabled`, `debugBotCount` (0–2), `debugBotStrategy`, `debugBotDelayMin`/`Max`, `debugStartLevel` |
 | **Round** | `placementCooldown`, `levelTimeLimitMs`, `startDelayMs`, `targetHeightMultiplier` |
 | **UI** | `placementScorePopupDurationMs`, `finishScorePopupDurationMs`, `levelSummaryDelayMs` |
-| **Impact** | `impactInterval`, `impactMinContributionShare`, `impactScoreRequirement`, `impactFillBonusRate` |
+| **Impact** | `impactInterval`, `impactMinContributionShare`, `impactScoreRequirement` |
 | **Supply** | `levelSupplyMinSurplus`/`MaxSurplus`, `supplyEffectiveWidthRatio`, `minPrecisionBlocksPerLevel`, `maxTeamCarryOverBlocks`, `refreshMinUsefulBlockHeight` |
 | **Tower — lean** | `towerOverhangWeight`, `towerMaxTiltAngleDeg`, `towerCollapseTiltScore`, `towerBaseHalfWidthFloor` |
 | **Tower — integrity** | `towerSlendernessSafe`/`Max`, `towerSupportDeficitMax`, `towerStabilityMinHeight` (maturity ramp, applies to **both** axes) |

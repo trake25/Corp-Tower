@@ -45,7 +45,6 @@ Scope: project-specific terms. If a chat log, branch name, or old PR uses a term
 | **Landing ghost** | The translucent copy of the dragged brick that Tower Stack draws at its resolved landing position (snapped column + gravity-settled row) while the pointer is over the tower. Shows the exact final resting place before release; the brick is hidden from the finger-following preview while docked. |
 | **Snap radius** | How close a brick corner must come to a snap point to lock on (`snap_radius_units`, default 2.2 bricks). Beyond it, placement falls back to plain nearest-column aiming so a drag over open sky still resolves. Debug-tunable in the **Placement** category. |
 | **Grip lift** | How far above the finger the dragged brick floats (`drag_grip_offset_units`, default 1.4 bricks) so a thumb never covers the brick or the target point. Stored in brick units so it scales with `brick_unit_size`. |
-| **Impact-fill bonus** | Score awarded at each passed Impact, `round(band_overshoot × impactFillBonusRate)`, rewarding a player whose band contribution exceeded the minimum requirement. |
 | **`towerBlocks`** | Ordered authoritative placement history broadcast to clients; source of truth for tower rendering. |
 | **Level states** | `waiting` → `starting` → `playing` → `finished` \| `failed` → (next level or Impact rollback) → … → `game_completed` \| `closed`. |
 
