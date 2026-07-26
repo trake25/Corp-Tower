@@ -56,3 +56,5 @@ Now update src/Client/App/corp-tower/Cor/art-manifest.json:
 
 Then commit the manifest. The art version is pinned to that commit.
 EOF
+
+read -p "Press Enter to exit..."

@@ -144,12 +144,22 @@ function eventTypes(message) {
 }
 
 test("placement emits one placement score event", () => {
+    useFixedGrid();
     const { engine, messages } = createPlayingEngine(1, 5);
+    const originalDifficulty = GameConfig.towerStabilityDifficulty;
 
     engine.room.players[0].blocks = [createBlock(2)];
     engine.room.players[1].blocks = [createBlock(3, "B2")];
 
-    engine.placeBlock("P1", 0);
+    try {
+        // A lone narrow block trips the tilt/support-deficit warning under the
+        // live tuned stability curve; zero difficulty isolates this test to
+        // just the scoring event it's actually asserting on.
+        GameConfig.towerStabilityDifficulty = 0;
+        engine.placeBlock("P1", 0);
+    } finally {
+        GameConfig.towerStabilityDifficulty = originalDifficulty;
+    }
 
     const message = messageWithScoreEvents(messages);
     assert.deepEqual(eventTypes(message), ["placement"]);

@@ -62,3 +62,5 @@ validate_pairing "$ART_DIR"
 
 info "extracted $GOT_COUNT files to Cor/Art/"
 echo "Done — art $VERSION is in place."
+
+read -p "Press Enter to exit..."
