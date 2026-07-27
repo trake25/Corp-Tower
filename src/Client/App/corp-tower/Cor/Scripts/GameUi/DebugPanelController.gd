@@ -24,7 +24,7 @@ const DEBUG_TOOLTIPS := {
 	},
 	"TowerSiteSlendernessLabel": {
 		"title": "Site Slenderness Target",
-		"body": "Sets how wide the buildable site is for a given target height.\n\nsite width = even round-up(target height / this), clamped to Site Width Min..Max.\n\nAt 6.75 the site runs 4 columns on levels 1-7, 6 on levels 8-28, then 8 from level 29 — landing at full width just as stability pressure peaks at level 30. Below 4.0 level 1 starts at 6 instead of 4.\n\nLower = wider site, easier. The site is also what slenderness is measured against — building on the full site width is always penalty-free, so widening the site widens the safe zone too.",
+		"body": "Sets how wide the buildable site is for a given target height.\n\nsite width = even round-up(target height / this), clamped to Site Width Min..Max.\n\nAt 6.75 the site runs 6 columns on levels 1-28 (the Site Width Min floor), then 8 from level 29 — landing at full width just as stability pressure peaks at level 30.\n\nLower = wider site, easier. The site is also what slenderness is measured against — building on the full site width is always penalty-free, so widening the site widens the safe zone too.",
 	},
 	"TowerSiteWidthMinLabel": {
 		"title": "Site Width Min",
