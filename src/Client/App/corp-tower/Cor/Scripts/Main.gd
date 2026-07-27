@@ -16,6 +16,11 @@ const QuickChatControllerScript = preload("res://Cor/Scripts/GameUi/QuickChatCon
 const PowerControllerScript = preload("res://Cor/Scripts/GameUi/PowerController.gd")
 const InventoryControllerScript = preload("res://Cor/Scripts/GameUi/InventoryController.gd")
 const TopBarControllerScript = preload("res://Cor/Scripts/GameUi/TopBarController.gd")
+const TutorialControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialController.gd")
+const TutorialMenuControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialMenuController.gd")
+
+signal tutorial_requested(lesson_id: StringName)
+signal tutorial_exited
 
 @onready var ui_root: Control = self
 
@@ -33,6 +38,8 @@ var chat
 var power
 var inventory
 var top_bar
+var tutorial
+var tutorial_menu
 
 var status_label: Label
 var player_label: Label
@@ -67,19 +74,34 @@ func _ready() -> void:
 	add_child(inventory)
 	top_bar = TopBarControllerScript.new()
 	add_child(top_bar)
+	tutorial = TutorialControllerScript.new()
+	add_child(tutorial)
+	tutorial_menu = TutorialMenuControllerScript.new()
+	add_child(tutorial_menu)
 
 	if !prepare_ui():
 		return
 
-	inventory.setup(players_ctx, match_state, tuning, NetworkManager, popovers)
+	inventory.setup(players_ctx, match_state, tuning, NetworkManager, popovers, tutorial)
 	top_bar.setup(match_state)
-	debug_panel.setup(tuning, NetworkManager)
+	debug_panel.setup(tuning, NetworkManager, request_tutorial)
 	score_popups.setup(players_ctx, match_state, tuning)
 	summary.setup(players_ctx, match_state, tuning)
 	roster.setup(players_ctx, match_state)
 	quest.setup(players_ctx, match_state, popovers, should_block_popovers)
-	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_popovers)
-	power.setup(NetworkManager, popovers, score_popups, should_block_popovers)
+	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_popovers, tutorial.on_chat_sent)
+	power.setup(NetworkManager, popovers, score_popups, should_block_popovers, tutorial.on_power_activated)
+	tutorial.setup({
+		"tower_stack": tower_stack,
+		"inventory": inventory,
+		"top_bar": top_bar,
+		"roster": roster,
+		"quest": quest,
+		"power": power,
+		"score_popups": score_popups,
+		"players_ctx": players_ctx
+	})
+	tutorial_menu.setup(tutorial, _on_tutorial_menu_exit)
 	setup_popover_controls()
 
 	if tower_stack.has_signal("scroll_offset_changed"):
@@ -93,7 +115,7 @@ func _ready() -> void:
 # a tap open a popover while the debug panel or the level-summary overlay is
 # covering the screen. Passed into each controller's setup().
 func should_block_popovers() -> bool:
-	return debug_panel.is_open() or summary.is_overlay_visible()
+	return debug_panel.is_open() or summary.is_overlay_visible() or tutorial.blocks_popovers()
 
 func prepare_ui() -> bool:
 	bind_ui_nodes()
@@ -124,6 +146,8 @@ func bind_ui_nodes() -> void:
 	quest.bind_nodes(binder)
 	chat.bind_nodes(binder)
 	power.bind_nodes(binder)
+	tutorial.bind_nodes(binder)
+	tutorial_menu.bind_nodes(binder)
 	missing_required_nodes = binder.missing
 
 func setup_popover_controls() -> void:
@@ -243,7 +267,28 @@ func update_room_closed(data) -> void:
 	summary.last_level_summary_key = ""
 	match_state.current_level = 0
 
+func start_tutorial(lesson_id: StringName = &"") -> void:
+	match_state.tutorial_mode = true
+
+	if lesson_id == &"":
+		tutorial_menu.show_menu()
+	else:
+		tutorial_menu.hide_menu()
+		tutorial.start_lesson(lesson_id)
+
+func request_tutorial(lesson_id: StringName = &"") -> void:
+	tutorial_requested.emit(lesson_id)
+
+func _on_tutorial_menu_exit() -> void:
+	tutorial.teardown()
+	match_state.tutorial_mode = false
+	match_state.tutorial_lesson = &""
+	tutorial_exited.emit()
+
 func update_game_state(data) -> void:
+	if match_state.tutorial_mode:
+		return
+
 	var state: String = str(data.get("state", "playing"))
 	match_state.current_match_state = state
 

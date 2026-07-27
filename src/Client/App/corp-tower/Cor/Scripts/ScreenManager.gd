@@ -15,6 +15,7 @@ const DEBUG_BUTTON_HIDDEN_HOST := "play.tod.galaxxigames.com"
 
 var current_overlay: Node = null
 var play_instance: Node = null
+var tutorial_active := false
 var debug_button_dragging := false
 var debug_button_pointer_id := DRAG_POINTER_NONE
 var debug_button_drag_distance := 0.0
@@ -44,13 +45,38 @@ func _on_room_joined(_data) -> void:
 	update_debug_button_availability()
 
 func _on_room_closed(_data) -> void:
+	if tutorial_active:
+		return
 	show_join_screen()
 
 func show_join_screen() -> void:
 	_teardown_play_instance()
 	var screen := JoinScreenScene.instantiate()
 	screen.find_match_requested.connect(_on_find_match_requested)
+	screen.tutorial_requested.connect(_on_join_screen_tutorial_requested)
 	_set_overlay(screen)
+
+func _on_join_screen_tutorial_requested() -> void:
+	start_tutorial(&"")
+
+func start_tutorial(lesson_id: StringName = &"") -> void:
+	tutorial_active = true
+
+	if NetworkManager.is_conn_estab:
+		NetworkManager.disconnect_server()
+
+	_ensure_play_instance()
+	_clear_overlay()
+
+	if play_instance != null and is_instance_valid(play_instance) and play_instance.has_method("start_tutorial"):
+		play_instance.call("start_tutorial", lesson_id)
+
+func _on_play_instance_tutorial_requested(lesson_id) -> void:
+	start_tutorial(lesson_id)
+
+func _on_play_instance_tutorial_exited() -> void:
+	tutorial_active = false
+	show_join_screen()
 
 func show_find_match_screen() -> void:
 	_ensure_play_instance()
@@ -74,6 +100,12 @@ func _ensure_play_instance() -> void:
 
 	play_instance = PlayScreenScene.instantiate()
 	screen_container.add_child(play_instance)
+
+	if play_instance.has_signal("tutorial_requested"):
+		play_instance.connect("tutorial_requested", _on_play_instance_tutorial_requested)
+	if play_instance.has_signal("tutorial_exited"):
+		play_instance.connect("tutorial_exited", _on_play_instance_tutorial_exited)
+
 	update_debug_button_availability()
 
 func _teardown_play_instance() -> void:

@@ -28,6 +28,7 @@ var match_state
 var tuning
 var network
 var popovers
+var tutorial
 var inventory_buttons: Array = []
 var cooldown_overlays: Array = []
 var block_previews: Array = []
@@ -85,12 +86,13 @@ func bind_nodes(binder) -> void:
 	for button in inventory_buttons:
 		cooldown_overlays.append(button.get_node_or_null("CooldownOverlay") as Control)
 
-func setup(players_ref, match_state_ref, tuning_ref, network_ref, popovers_ref) -> void:
+func setup(players_ref, match_state_ref, tuning_ref, network_ref, popovers_ref, tutorial_ref = null) -> void:
 	players_ctx = players_ref
 	match_state = match_state_ref
 	tuning = tuning_ref
 	network = network_ref
 	popovers = popovers_ref
+	tutorial = tutorial_ref
 
 	for preview in block_previews:
 		preview.cell_color = players_ctx.local_color()
@@ -141,6 +143,11 @@ func on_block_pressed(index: int, column: int = -1) -> void:
 		return
 
 	last_placement_sent_at_ms = Time.get_ticks_msec()
+
+	if match_state.tutorial_mode and tutorial != null:
+		tutorial.on_tutorial_place(index, column)
+		return
+
 	network.place_block(index, column)
 
 func _on_inventory_card_gui_input(event: InputEvent, index: int) -> void:
@@ -220,11 +227,12 @@ func can_place_block(index: int) -> bool:
 	return is_placement_input_allowed()
 
 func is_placement_input_allowed() -> bool:
-	if !network.is_conn_estab:
-		return false
+	if !match_state.tutorial_mode:
+		if !network.is_conn_estab:
+			return false
 
-	if match_state.current_match_state != "playing":
-		return false
+		if match_state.current_match_state != "playing":
+			return false
 
 	if is_block_dragging:
 		return true

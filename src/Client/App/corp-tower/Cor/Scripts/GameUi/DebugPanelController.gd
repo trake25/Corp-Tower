@@ -328,6 +328,8 @@ var power_max_slots_label: Label
 var power_max_slots_slider: HSlider
 var power_cooldown_label: Label
 var power_cooldown_slider: HSlider
+var tutorial_launch_button: Button
+var on_tutorial_requested: Callable = Callable()
 
 func bind_nodes(binder) -> void:
 	debug_overlay = binder.optional_node("DebugOverlay") as Control
@@ -379,6 +381,7 @@ func bind_nodes(binder) -> void:
 	finish_popup_duration_slider = binder.optional_node("FinishPopupDurationSlider") as HSlider
 	level_summary_delay_label = binder.optional_node("LevelSummaryDelayLabel") as Label
 	level_summary_delay_slider = binder.optional_node("LevelSummaryDelaySlider") as HSlider
+	tutorial_launch_button = binder.optional_node("TutorialLaunchButton") as Button
 	target_multiplier_label = binder.optional_node("TargetMultiplierLabel") as Label
 	target_multiplier_slider = binder.optional_node("TargetMultiplierSlider") as HSlider
 	level_supply_min_label = bind_tooltip_row(binder, "LevelSupplyMinLabel")
@@ -441,15 +444,19 @@ func bind_nodes(binder) -> void:
 	power_cooldown_label = binder.optional_node("PowerCooldownLabel") as Label
 	power_cooldown_slider = binder.optional_node("PowerCooldownSlider") as HSlider
 
-func setup(tuning_ref, network_ref) -> void:
+func setup(tuning_ref, network_ref, on_tutorial_requested_ref: Callable = Callable()) -> void:
 	tuning = tuning_ref
 	network = network_ref
+	on_tutorial_requested = on_tutorial_requested_ref
 
 	if debug_overlay != null:
 		set_open(false)
 
 	if close_debug_button != null:
 		close_debug_button.pressed.connect(func(): set_open(false))
+
+	if tutorial_launch_button != null:
+		tutorial_launch_button.pressed.connect(_on_tutorial_launch_pressed)
 
 	if reset_debug_button != null:
 		reset_debug_button.pressed.connect(on_reset_debug_pressed)
@@ -679,6 +686,11 @@ func on_reset_debug_pressed() -> void:
 func on_restart_level_pressed() -> void:
 	network.update_config("restartLevel", true)
 	set_open(false)
+
+func _on_tutorial_launch_pressed() -> void:
+	set_open(false)
+	if on_tutorial_requested.is_valid():
+		on_tutorial_requested.call()
 
 func on_bot_strategy_selected(index: int) -> void:
 	if is_syncing_debug_config:

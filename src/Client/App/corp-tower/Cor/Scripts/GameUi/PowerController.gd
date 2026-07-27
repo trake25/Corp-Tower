@@ -8,6 +8,7 @@ var power_popover: Control
 var power_trigger: TextureButton
 var last_power_inventory: Array = []
 var seen_power_event_ids: Dictionary = {}
+var tutorial_action_hook: Callable = Callable()
 
 func bind_nodes(binder) -> void:
 	power_trigger = binder.optional_node("PowerTrigger") as TextureButton
@@ -15,11 +16,15 @@ func bind_nodes(binder) -> void:
 	if power_trigger != null:
 		power_trigger.pressed.connect(open_power_popover)
 
-func setup(network_ref, popovers_ref, score_popups_ref, popover_blocked_ref: Callable = Callable()) -> void:
+func setup(
+	network_ref, popovers_ref, score_popups_ref,
+	popover_blocked_ref: Callable = Callable(), tutorial_action_hook_ref: Callable = Callable()
+) -> void:
 	network = network_ref
 	popovers = popovers_ref
 	score_popups = score_popups_ref
 	popover_blocked = popover_blocked_ref
+	tutorial_action_hook = tutorial_action_hook_ref
 
 func open_power_popover() -> void:
 	if popover_blocked.is_valid() and bool(popover_blocked.call()):
@@ -47,6 +52,8 @@ func open_power_popover() -> void:
 				get_power_row_label(power_id),
 				func():
 					network.activate_power(index)
+					if tutorial_action_hook.is_valid():
+						tutorial_action_hook.call({"type": "activate_power", "index": index, "powerId": power_id})
 					popovers.close_active()
 			)
 

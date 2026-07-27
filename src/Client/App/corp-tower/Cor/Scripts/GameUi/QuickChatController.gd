@@ -15,6 +15,7 @@ var quick_chat_templates: Array = []
 var quick_chat_cooldown_ms: int = 6000
 var last_quick_chat_sent_at_ms: int = 0
 var seen_quick_chat_event_ids: Dictionary = {}
+var tutorial_action_hook: Callable = Callable()
 
 func bind_nodes(binder) -> void:
 	quick_chat_trigger = binder.optional_node("QuickChatTrigger") as TextureButton
@@ -22,18 +23,28 @@ func bind_nodes(binder) -> void:
 	if quick_chat_trigger != null:
 		quick_chat_trigger.pressed.connect(open_quick_chat_popover)
 
-func setup(match_state_ref, network_ref, popovers_ref, roster_ref, score_popups_ref, popover_blocked_ref: Callable = Callable()) -> void:
+func setup(
+	match_state_ref, network_ref, popovers_ref, roster_ref, score_popups_ref,
+	popover_blocked_ref: Callable = Callable(), tutorial_action_hook_ref: Callable = Callable()
+) -> void:
 	match_state = match_state_ref
 	network = network_ref
 	popovers = popovers_ref
 	roster = roster_ref
 	score_popups = score_popups_ref
 	popover_blocked = popover_blocked_ref
+	tutorial_action_hook = tutorial_action_hook_ref
 
 func on_quick_chat_pressed(slot: int) -> void:
-	if !network.is_conn_estab or match_state.current_match_state != "playing":
-		return
 	if slot < 0 or slot >= quick_chat_templates.size():
+		return
+
+	if match_state.tutorial_mode:
+		if tutorial_action_hook.is_valid():
+			tutorial_action_hook.call({"type": "send_chat", "slot": slot})
+		return
+
+	if !network.is_conn_estab or match_state.current_match_state != "playing":
 		return
 	if Time.get_ticks_msec() - last_quick_chat_sent_at_ms < quick_chat_cooldown_ms:
 		return
