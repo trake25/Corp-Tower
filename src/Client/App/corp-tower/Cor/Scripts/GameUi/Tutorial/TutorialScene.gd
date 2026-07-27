@@ -35,6 +35,7 @@ var placeable_max: int = 6
 var grid_width: int = 8
 var quick_chat_templates: Array = []
 var quick_chat_cooldown_ms: int = 3000
+var power_refresh_hand: Array = []
 
 var _original_get_local_id: Callable = Callable()
 var _get_local_id_overridden: bool = false
@@ -78,6 +79,7 @@ func load_seed(seed: Dictionary) -> void:
 	grid_width = int(seed.get("grid_width", 8))
 	quick_chat_templates = (seed.get("quick_chat_templates", []) as Array).duplicate(true)
 	quick_chat_cooldown_ms = int(seed.get("quick_chat_cooldown_ms", 3000))
+	power_refresh_hand = (seed.get("power_refresh_hand", []) as Array).duplicate(true)
 
 	SnapGridScript.set_grid_width(grid_width)
 	SnapGridScript.set_placeable_range(placeable_min, placeable_max)
@@ -152,6 +154,21 @@ func apply_placement(index: int, column: int) -> Dictionary:
 	var origin_y: int = SnapGridScript.settle_origin_y(tower_blocks, cells, resolved_column)
 	var balance_delta: int = int(block.get("scriptedBalanceDelta", 0))
 
+	# TowerStack's visible lean comes entirely from diagnostics.tiltAngleDeg --
+	# it is a separate channel from the per-brick balanceDelta that only drives
+	# the brick's own face, so a lesson demonstrating lean must script this too
+	# or the tower never visibly tilts no matter what is placed.
+	if block.has("scriptedTiltAngleDeg"):
+		var tilt: float = float(block.get("scriptedTiltAngleDeg", 0.0))
+		diagnostics = diagnostics.duplicate(true)
+		diagnostics["tiltAngleDeg"] = tilt
+		diagnostics["leanDirection"] = str(block.get(
+			"scriptedLeanDirection",
+			"center" if is_zero_approx(tilt) else ("right" if tilt > 0.0 else "left")
+		))
+		if block.has("scriptedStability"):
+			stability = int(block.get("scriptedStability", stability))
+
 	tower_blocks.append({
 		"block": {
 			"id": str(block.get("id", "")),
@@ -207,3 +224,23 @@ func apply_script(script: Dictionary) -> void:
 		"set_tower":
 			tower_blocks = (script.get("tower_blocks", tower_blocks) as Array).duplicate(true)
 			push_state()
+		"refresh_hand":
+			# Real Refresh is a server-driven inventory redeal; tutorial mode has
+			# no server, so this stands in with a seeded replacement hand plus
+			# the same toast PowerController.process_power_events would show.
+			if !power_refresh_hand.is_empty():
+				hand = power_refresh_hand.duplicate(true)
+				hand_pool = []
+				push_state()
+			if score_popups != null:
+				score_popups.show_score_event_popup(
+					{"type": "power_activated", "label": "All players inventory refreshed"},
+					players,
+					3.0
+				)
+		"quick_chat":
+			# Real quick chat renders via a server-echoed quickChatEvents entry;
+			# tutorial mode has no server round-trip, so show the bubble directly.
+			var slot: int = int(script.get("slot", -1))
+			if chat != null and slot >= 0 and slot < quick_chat_templates.size():
+				chat.show_quick_chat_bubble(LOCAL_PLAYER_ID, str(quick_chat_templates[slot]), 3.0)

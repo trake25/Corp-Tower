@@ -154,9 +154,13 @@ func on_tutorial_place(index: int, column: int) -> void:
 	})
 
 func on_power_activated(action: Dictionary) -> void:
+	if scene != null and str(action.get("powerId", "")) == "refresh":
+		scene.apply_script({"type": "refresh_hand"})
 	_dispatch_action(action)
 
 func on_chat_sent(action: Dictionary) -> void:
+	if scene != null:
+		scene.apply_script({"type": "quick_chat", "slot": action.get("slot", -1)})
 	_dispatch_action(action)
 
 func advance() -> void:
@@ -214,7 +218,10 @@ func _enter_step(index: int) -> void:
 	if back_button != null:
 		back_button.disabled = index <= 0
 	if next_button != null:
-		next_button.visible = gate == TutorialGatesScript.INFO
+		# observe steps get a manual way to move on too -- the timer is a
+		# fallback so nobody is stuck, not the only way to proceed.
+		next_button.visible = gate == TutorialGatesScript.INFO or gate == TutorialGatesScript.OBSERVE
+		next_button.text = "Continue" if gate == TutorialGatesScript.OBSERVE else "Next"
 
 	observe_timer.stop()
 	if gate == TutorialGatesScript.OBSERVE:

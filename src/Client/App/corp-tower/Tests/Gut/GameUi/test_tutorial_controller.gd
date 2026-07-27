@@ -103,6 +103,54 @@ func test_info_gate_only_advances_via_next_not_incidental_actions() -> void:
 	tutorial().advance()
 	assert_eq(tutorial().current_step_index, 1, "Only the Next button should advance an info-gated step.")
 
+func test_stability_lesson_placement_tilts_the_tower() -> void:
+	await tutorial().start_lesson(&"stability")
+	var tower_stack: Node = harness.find("TowerStack")
+	assert_almost_eq(float(tower_stack.get("tower_tilt_deg")), 0.0, 0.01, "The seeded tower should start untilted.")
+
+	tutorial().on_tutorial_place(0, 1)
+
+	assert_almost_eq(
+		float(tower_stack.get("tower_tilt_deg")), 8.0, 0.01,
+		"Placing the first scripted brick must visibly tilt the tower, not just react the brick's own face."
+	)
+
+func test_observe_gate_shows_a_manual_continue_button() -> void:
+	await tutorial().start_lesson(&"collapse")
+	assert_true(tutorial().next_button.visible, "An observe-gated step must offer a manual way to continue, not only a timer.")
+	assert_eq(tutorial().next_button.text, "Continue", "The manual button should read Continue for an observe step.")
+
+	tutorial().advance()
+	assert_false(tutorial().is_active(), "Manually continuing past collapse's only step should end the lesson.")
+
+func test_activating_refresh_swaps_the_hand_and_shows_a_toast() -> void:
+	await tutorial().start_lesson(&"quest_power")
+	var popup_layer: Control = harness.find("ScorePopupLayer") as Control
+	var before_count: int = popup_layer.get_child_count()
+
+	tutorial().on_power_activated({"type": "activate_power", "index": 0, "powerId": "refresh"})
+
+	assert_gt(popup_layer.get_child_count(), before_count, "Activating Refresh should show a toast popup.")
+
+	var hand_ids: Array = []
+	for block in harness.main.inventory.inventory_slot_blocks:
+		if typeof(block) == TYPE_DICTIONARY and block.has("id"):
+			hand_ids.append(block.id)
+
+	assert_true(
+		hand_ids.has("tut-quest-power-refreshed-1"),
+		"Refresh should visibly swap the hand to the seeded refreshed bricks."
+	)
+
+func test_sending_quick_chat_shows_a_bubble() -> void:
+	await tutorial().start_lesson(&"pressure")
+	var popup_layer: Control = harness.find("ScorePopupLayer") as Control
+	var before_count: int = popup_layer.get_child_count()
+
+	tutorial().on_chat_sent({"type": "send_chat", "slot": 0})
+
+	assert_gt(popup_layer.get_child_count(), before_count, "Sending a quick chat template should show a bubble.")
+
 func test_tutorial_mode_place_routes_to_tutorial_and_skips_network() -> void:
 	var inventory = harness.main.inventory
 	var network_stub := NetworkStub.new()

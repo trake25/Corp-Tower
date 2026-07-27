@@ -44,6 +44,13 @@ static func _scored_brick(id: String, shape_id: String, points: int, event_type:
 	block["scriptedEventType"] = event_type
 	return block
 
+# Drives the tower's visible lean for this placement -- balanceDelta only
+# reacts the brick's own face, it never moves TowerStack's tilt on its own.
+static func _tilting_brick(id: String, shape_id: String, balance_delta: int, tilt_deg: float) -> Dictionary:
+	var block: Dictionary = _brick(id, shape_id, balance_delta)
+	block["scriptedTiltAngleDeg"] = tilt_deg
+	return block
+
 # A single-column filler stack used to seed a partially-built tower without
 # hand-authoring every entry. Stacks O bricks (height 2) up from row 0;
 # `total_height` should stay even since no odd-height shape is substituted.
@@ -210,8 +217,8 @@ static func _catalog() -> Array:
 			"seed": _base_seed({
 				"tower_blocks": _filler_tower(6, 3),
 				"hand": [
-					_brick("tut-stability-1", "L", -5),
-					_brick("tut-stability-2", "L", 5)
+					_tilting_brick("tut-stability-1", "L", -5, 8.0),
+					_tilting_brick("tut-stability-2", "L", 5, 0.0)
 				]
 			}),
 			"steps": [
@@ -375,7 +382,11 @@ static func _catalog() -> Array:
 				"power_inventory": [{"id": "refresh"}],
 				"hand": [_brick("tut-quest-power-1", "L")],
 				"draw_pile_count": 5,
-				"next_draw_block": _brick("tut-quest-power-next", "T")
+				"next_draw_block": _brick("tut-quest-power-next", "T"),
+				"power_refresh_hand": [
+					_brick("tut-quest-power-refreshed-1", "O"),
+					_brick("tut-quest-power-refreshed-2", "Z")
+				]
 			}),
 			"steps": [
 				{
