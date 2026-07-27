@@ -157,15 +157,31 @@ func apply_placement(index: int, column: int) -> Dictionary:
 	# TowerStack's visible lean comes entirely from diagnostics.tiltAngleDeg --
 	# it is a separate channel from the per-brick balanceDelta that only drives
 	# the brick's own face, so a lesson demonstrating lean must script this too
-	# or the tower never visibly tilts no matter what is placed.
+	# or the tower never visibly tilts no matter what is placed. The scripted
+	# value is a magnitude only: direction is derived from which side of the
+	# site the brick actually landed on, so dropping it left of centre always
+	# leans left and right of centre always leans right, instead of a fixed
+	# direction that ignores where the player actually dropped it.
 	if block.has("scriptedTiltAngleDeg"):
-		var tilt: float = float(block.get("scriptedTiltAngleDeg", 0.0))
+		var magnitude: float = absf(float(block.get("scriptedTiltAngleDeg", 0.0)))
+		var tilt: float = 0.0
+		var lean_direction: String = "center"
+
+		if !is_zero_approx(magnitude):
+			var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+			var footprint_center: float = float(resolved_column) + (float(bounds.min_x) + float(bounds.max_x) + 1.0) * 0.5
+			var site_center: float = (float(placeable_min) + float(placeable_max) + 1.0) * 0.5
+
+			if footprint_center > site_center:
+				lean_direction = "right"
+				tilt = magnitude
+			elif footprint_center < site_center:
+				lean_direction = "left"
+				tilt = -magnitude
+
 		diagnostics = diagnostics.duplicate(true)
 		diagnostics["tiltAngleDeg"] = tilt
-		diagnostics["leanDirection"] = str(block.get(
-			"scriptedLeanDirection",
-			"center" if is_zero_approx(tilt) else ("right" if tilt > 0.0 else "left")
-		))
+		diagnostics["leanDirection"] = lean_direction
 		if block.has("scriptedStability"):
 			stability = int(block.get("scriptedStability", stability))
 

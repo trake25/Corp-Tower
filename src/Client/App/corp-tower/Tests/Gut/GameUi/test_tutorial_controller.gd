@@ -103,16 +103,27 @@ func test_info_gate_only_advances_via_next_not_incidental_actions() -> void:
 	tutorial().advance()
 	assert_eq(tutorial().current_step_index, 1, "Only the Next button should advance an info-gated step.")
 
-func test_stability_lesson_placement_tilts_the_tower() -> void:
+func test_stability_lesson_tilt_direction_follows_the_actual_drop_column() -> void:
 	await tutorial().start_lesson(&"stability")
 	var tower_stack: Node = harness.find("TowerStack")
 	assert_almost_eq(float(tower_stack.get("tower_tilt_deg")), 0.0, 0.01, "The seeded tower should start untilted.")
 
+	# Site is columns 1..6 (site_center 4.0); an "L" brick (width 2) at column 1
+	# lands left of centre.
 	tutorial().on_tutorial_place(0, 1)
+	assert_almost_eq(
+		float(tower_stack.get("tower_tilt_deg")), -8.0, 0.01,
+		"Dropping the brick left of centre must lean the tower left (negative), not a fixed direction."
+	)
 
+	await tutorial().start_lesson(&"stability")
+	tower_stack = harness.find("TowerStack")
+
+	# Column 5 is the brick's rightmost valid origin on this site -- lands right of centre.
+	tutorial().on_tutorial_place(0, 5)
 	assert_almost_eq(
 		float(tower_stack.get("tower_tilt_deg")), 8.0, 0.01,
-		"Placing the first scripted brick must visibly tilt the tower, not just react the brick's own face."
+		"Dropping the same brick right of centre must lean the tower right (positive)."
 	)
 
 func test_observe_gate_shows_a_manual_continue_button() -> void:

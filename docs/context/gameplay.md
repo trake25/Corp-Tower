@@ -12,7 +12,7 @@ Source of truth for game design: rules, scoring, balance, progression. Technical
 
 ## Core game loop
 
-Queue 3 players → assign bricks → start after `startDelayMs` → players place in real time (order = input timing; each placement refills that player's hand from the shared pile and starts their `placementCooldown`) → level ends on target height or a failure condition → score, bank, carry unused bricks forward, advance. Placement itself: drag a brick from an inventory card onto the tower; its nearest corner snaps to the nearest snap point within the level's [placeable site](#placement-columns), and release sends the resolved column.
+Queue 3 players → assign bricks → start after `startDelayMs` → players place in real time (order = input timing; each placement refills that player's hand from the shared pile and starts their `placementCooldown`) → level ends on target height or a failure condition → score, bank, carry unused bricks forward, advance. Placement itself: drag a brick from an inventory card onto the tower; its nearest corner snaps to the nearest snap point within the level's [placeable site](#placement-columns), and release sends the resolved column. First-time players are onboarded separately, offline, through the client-only Tutorial (coach-marks over the real HUD, no server involvement) → [ui.md § Tutorial](./ui.md#tutorial).
 
 ## Reconnect and shared room continuity (design rule)
 

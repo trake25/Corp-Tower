@@ -176,7 +176,7 @@ static func _catalog() -> Array:
 					"title": "Drag it onto the site",
 					"body": "Press and hold a brick, drag it over the tower, then release. While dragging, the placeable band and the nearest corner snap points light up -- release and the brick docks on the highlighted point, then falls to first contact.",
 					"target": &"PlayField",
-					"card": "center",
+					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK
 				}
 			]
@@ -195,7 +195,7 @@ static func _catalog() -> Array:
 					"title": "Snapping only picks the column",
 					"body": "A snap point fixes which column your brick lands in. Drop it anywhere over the site -- it always falls until it hits something.",
 					"target": &"PlayField",
-					"card": "center",
+					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
 					"gate_arg": null
 				},
@@ -227,7 +227,7 @@ static func _catalog() -> Array:
 					"title": "Lean vs. Integrity",
 					"body": "Lean is side-to-side asymmetry -- you can see it as a visible tilt. Integrity is site usage and support underneath. Place this one off to the side and watch the brick's face.",
 					"target": &"PlayField",
-					"card": "center",
+					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
 					"gate_arg": null
 				},
@@ -236,7 +236,7 @@ static func _catalog() -> Array:
 					"title": "Straighten it back up",
 					"body": "Now place one that pulls the tower back toward centre -- a smiley face means you improved the lean.",
 					"target": &"PlayField",
-					"card": "center",
+					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
 					"gate_arg": null
 				}
@@ -282,7 +282,7 @@ static func _catalog() -> Array:
 					"title": "Contribution = height x level x 10",
 					"body": "Placing height scores Contribution, scaled by the level and by the tower's stability at the moment you placed. Try one.",
 					"target": &"PlayField",
-					"card": "center",
+					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK
 				},
 				{
@@ -314,7 +314,7 @@ static func _catalog() -> Array:
 					"title": "Land it exactly",
 					"body": "This brick finishes the tower at exactly 16. An exact finish pays the finisher a Precision bonus and pays EVERY player a Team Exact bonus -- overbuilding past the target forfeits both.",
 					"target": &"PlayField",
-					"card": "center",
+					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
 					"gate_arg": null
 				}
@@ -410,7 +410,7 @@ static func _catalog() -> Array:
 					"title": "Activate Refresh",
 					"body": "Tap Refresh in the popup to activate it. Power effects are room-wide -- everyone feels it, including you.",
 					"target": &"PlayField",
-					"card": "center",
+					"card": "above",
 					"gate": TutorialGatesScript.ACTIVATE_POWER
 				}
 			]
@@ -450,7 +450,7 @@ static func _catalog() -> Array:
 					"title": "Send one",
 					"body": "Tap a template in the popup to send it -- everyone in the room sees it appear over your rail entry.",
 					"target": &"PlayField",
-					"card": "center",
+					"card": "above",
 					"gate": TutorialGatesScript.SEND_CHAT
 				}
 			]
