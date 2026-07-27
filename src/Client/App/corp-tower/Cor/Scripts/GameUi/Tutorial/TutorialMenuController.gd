@@ -6,12 +6,14 @@ var tutorial
 var on_exit: Callable = Callable()
 
 var menu_root: Control
+var menu_dim: Control
 var list_box: VBoxContainer
 var start_button: Button
 var exit_button: Button
 
 func bind_nodes(binder) -> void:
 	menu_root = binder.optional_node("TutorialMenu") as Control
+	menu_dim = binder.optional_node("TutorialMenuDim") as Control
 	list_box = binder.optional_node("TutorialMenuList") as VBoxContainer
 	start_button = binder.optional_node("TutorialMenuStartButton") as Button
 	exit_button = binder.optional_node("TutorialMenuExitButton") as Button
@@ -22,6 +24,8 @@ func setup(tutorial_ref, on_exit_ref: Callable = Callable()) -> void:
 
 	if menu_root != null:
 		menu_root.visible = false
+	if menu_dim != null:
+		menu_dim.visible = false
 	if start_button != null:
 		start_button.pressed.connect(_on_start_pressed)
 	if exit_button != null:
@@ -34,6 +38,8 @@ func show_menu() -> void:
 		return
 
 	_rebuild_rows()
+	if menu_dim != null:
+		menu_dim.visible = true
 	menu_root.visible = true
 	menu_root.modulate.a = 0.0
 	var tween: Tween = create_tween()
@@ -42,6 +48,8 @@ func show_menu() -> void:
 func hide_menu() -> void:
 	if menu_root != null:
 		menu_root.visible = false
+	if menu_dim != null:
+		menu_dim.visible = false
 
 func is_menu_visible() -> bool:
 	return menu_root != null and menu_root.visible

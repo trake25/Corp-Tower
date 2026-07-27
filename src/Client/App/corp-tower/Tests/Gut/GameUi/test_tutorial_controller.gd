@@ -34,12 +34,12 @@ func tutorial():
 	return harness.main.tutorial
 
 func test_start_lesson_enters_the_first_step() -> void:
-	tutorial().start_lesson(&"basics")
+	await tutorial().start_lesson(&"basics")
 	assert_true(tutorial().is_active(), "Starting a lesson should make the tutorial active.")
 	assert_eq(tutorial().current_step_index, 0, "A freshly started lesson must begin at step 0.")
 
 func test_back_is_disabled_on_step_zero_and_enabled_after() -> void:
-	tutorial().start_lesson(&"basics")
+	await tutorial().start_lesson(&"basics")
 	assert_true(tutorial().back_button.disabled, "Back must be disabled on the first step.")
 
 	tutorial().advance()
@@ -50,22 +50,24 @@ func test_back_is_disabled_on_step_zero_and_enabled_after() -> void:
 	assert_eq(tutorial().current_step_index, 0, "back() should return to the previous step.")
 	assert_true(tutorial().back_button.disabled, "Back must be disabled again once back at step 0.")
 
+# 'placement' is a single action-gated step now (one physical drag-and-drop),
+# so this needs a lesson with a second step to actually observe an advance.
 func test_skip_step_advances_without_satisfying_the_gate() -> void:
-	tutorial().start_lesson(&"placement")
-	assert_eq(tutorial().current_step_index, 0, "placement should start at its first step.")
+	await tutorial().start_lesson(&"gravity")
+	assert_eq(tutorial().current_step_index, 0, "gravity should start at its first step.")
 
 	tutorial().skip_step()
 	assert_eq(tutorial().current_step_index, 1, "Skip step must advance even though no placement gate fired.")
 
 func test_skip_lesson_ends_the_lesson_and_marks_it_complete() -> void:
-	tutorial().start_lesson(&"placement")
+	await tutorial().start_lesson(&"placement")
 	tutorial().skip_lesson()
 
 	assert_false(tutorial().is_active(), "Skipping a lesson must end it.")
 	assert_true(tutorial().progress.is_complete(&"placement"), "Skipping a lesson must not strand it as permanently incomplete.")
 
 func test_last_step_finishes_and_marks_the_lesson_complete() -> void:
-	tutorial().start_lesson(&"basics")
+	await tutorial().start_lesson(&"basics")
 	var step_count: int = tutorial().current_lesson.get("steps", []).size()
 
 	for i in range(step_count):
@@ -77,16 +79,29 @@ func test_last_step_finishes_and_marks_the_lesson_complete() -> void:
 
 func test_blocks_popovers_true_mid_lesson() -> void:
 	assert_false(harness.main.should_block_popovers(), "Popovers must not be blocked before any lesson starts.")
-	tutorial().start_lesson(&"basics")
+	await tutorial().start_lesson(&"basics")
 	assert_true(tutorial().blocks_popovers(), "An info-gated step must keep blocking unrelated popovers.")
 	assert_true(harness.main.should_block_popovers(), "Main's shared guard must reflect the tutorial's block state.")
 
 func test_exit_button_ends_lesson_without_marking_it_complete() -> void:
-	tutorial().start_lesson(&"placement")
+	await tutorial().start_lesson(&"placement")
 	tutorial()._on_exit_pressed()
 
 	assert_false(tutorial().is_active(), "The exit button must end the active lesson.")
 	assert_false(tutorial().progress.is_complete(&"placement"), "Exiting mid-lesson must leave it incomplete.")
+
+func test_info_gate_only_advances_via_next_not_incidental_actions() -> void:
+	await tutorial().start_lesson(&"basics")
+	assert_eq(tutorial().current_step_index, 0, "basics should start at its first (info) step.")
+
+	tutorial().on_power_activated({"type": "activate_power", "index": 0})
+	assert_eq(
+		tutorial().current_step_index, 0,
+		"An unrelated dispatched action must not silently satisfy an info gate."
+	)
+
+	tutorial().advance()
+	assert_eq(tutorial().current_step_index, 1, "Only the Next button should advance an info-gated step.")
 
 func test_tutorial_mode_place_routes_to_tutorial_and_skips_network() -> void:
 	var inventory = harness.main.inventory

@@ -98,6 +98,7 @@ func _ready() -> void:
 		"roster": roster,
 		"quest": quest,
 		"power": power,
+		"chat": chat,
 		"score_popups": score_popups,
 		"players_ctx": players_ctx
 	})
@@ -115,7 +116,12 @@ func _ready() -> void:
 # a tap open a popover while the debug panel or the level-summary overlay is
 # covering the screen. Passed into each controller's setup().
 func should_block_popovers() -> bool:
-	return debug_panel.is_open() or summary.is_overlay_visible() or tutorial.blocks_popovers()
+	return (
+		debug_panel.is_open()
+		or summary.is_overlay_visible()
+		or tutorial.blocks_popovers()
+		or tutorial_menu.is_menu_visible()
+	)
 
 func prepare_ui() -> bool:
 	bind_ui_nodes()

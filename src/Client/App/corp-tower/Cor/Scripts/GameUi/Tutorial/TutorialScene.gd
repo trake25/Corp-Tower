@@ -11,6 +11,7 @@ var top_bar
 var roster
 var quest
 var power
+var chat
 var score_popups
 var players_ctx
 
@@ -32,13 +33,15 @@ var seconds_remaining: int = 30
 var placeable_min: int = 1
 var placeable_max: int = 6
 var grid_width: int = 8
+var quick_chat_templates: Array = []
+var quick_chat_cooldown_ms: int = 3000
 
 var _original_get_local_id: Callable = Callable()
 var _get_local_id_overridden: bool = false
 
 func setup(
 	tower_stack_ref, inventory_ref, top_bar_ref, roster_ref,
-	quest_ref, power_ref, score_popups_ref, players_ctx_ref
+	quest_ref, power_ref, chat_ref, score_popups_ref, players_ctx_ref
 ) -> void:
 	tower_stack = tower_stack_ref
 	inventory = inventory_ref
@@ -46,6 +49,7 @@ func setup(
 	roster = roster_ref
 	quest = quest_ref
 	power = power_ref
+	chat = chat_ref
 	score_popups = score_popups_ref
 	players_ctx = players_ctx_ref
 
@@ -72,6 +76,8 @@ func load_seed(seed: Dictionary) -> void:
 	placeable_min = int(seed.get("placeable_min", 1))
 	placeable_max = int(seed.get("placeable_max", 6))
 	grid_width = int(seed.get("grid_width", 8))
+	quick_chat_templates = (seed.get("quick_chat_templates", []) as Array).duplicate(true)
+	quick_chat_cooldown_ms = int(seed.get("quick_chat_cooldown_ms", 3000))
 
 	SnapGridScript.set_grid_width(grid_width)
 	SnapGridScript.set_placeable_range(placeable_min, placeable_max)
@@ -120,6 +126,10 @@ func push_state() -> void:
 
 	if power != null:
 		power.last_power_inventory = power_inventory
+
+	if chat != null:
+		chat.quick_chat_templates = quick_chat_templates
+		chat.quick_chat_cooldown_ms = quick_chat_cooldown_ms
 
 # Mirrors the live placement path: settle the row with the same SnapGrid mirror
 # the drag preview already used, append the entry, refill the emptied slot from

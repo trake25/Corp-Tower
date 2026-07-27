@@ -23,6 +23,7 @@ const DEFAULTS := {
 	"level_time_limit_ms": 30000,
 	"impact_min_contribution_share": 0.30,
 	"impact_requirement_score": 48,
+	"impact_interval": 2,
 	"stability_pressure": 0.26,
 	"power_unlock_level": 1,
 }
@@ -93,7 +94,9 @@ static func _base_seed(overrides: Dictionary = {}) -> Dictionary:
 		"next_draw_block": null,
 		"side_quest": {},
 		"power_inventory": [],
-		"impact_status": {}
+		"impact_status": {},
+		"quick_chat_templates": ["Place Block!", "Sorry!", "Hello!"],
+		"quick_chat_cooldown_ms": 3000
 	}
 
 	for key in overrides:
@@ -158,25 +161,16 @@ static func _catalog() -> Array:
 			"title": "Placing a brick",
 			"blurb": "Drag, snap, and drop onto the site.",
 			"seed": _base_seed({
-				"hand": [_brick("tut-place-1", "O"), _brick("tut-place-2", "I")]
+				"hand": [_brick("tut-place-1", "O")]
 			}),
 			"steps": [
 				{
-					"id": &"drag_start",
-					"title": "Drag a brick",
-					"body": "Press and hold a brick, then drag it toward the tower.",
-					"target": &"PlaceBlockButton1",
-					"card": "above",
+					"id": &"drag_and_drop",
+					"title": "Drag it onto the site",
+					"body": "Press and hold a brick, drag it over the tower, then release. While dragging, the placeable band and the nearest corner snap points light up -- release and the brick docks on the highlighted point, then falls to first contact.",
+					"target": &"PlayField",
+					"card": "center",
 					"gate": TutorialGatesScript.PLACE_BLOCK
-				},
-				{
-					"id": &"drop",
-					"title": "Release to drop it",
-					"body": "While dragging, the placeable band and the nearest corner snap points light up. Release inside the site and the brick docks on the highlighted point, then falls to first contact.",
-					"target": &"TowerDropZone",
-					"card": "auto",
-					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
-					"gate_arg": null
 				}
 			]
 		},
@@ -193,8 +187,8 @@ static func _catalog() -> Array:
 					"id": &"column_only",
 					"title": "Snapping only picks the column",
 					"body": "A snap point fixes which column your brick lands in. Drop it anywhere over the site -- it always falls until it hits something.",
-					"target": &"TowerStack",
-					"card": "auto",
+					"target": &"PlayField",
+					"card": "center",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
 					"gate_arg": null
 				},
@@ -205,7 +199,7 @@ static func _catalog() -> Array:
 					"target": &"TowerStack",
 					"card": "auto",
 					"gate": TutorialGatesScript.OBSERVE,
-					"observe_seconds": 1.2
+					"observe_seconds": 3.5
 				}
 			]
 		},
@@ -225,8 +219,8 @@ static func _catalog() -> Array:
 					"id": &"off_center",
 					"title": "Lean vs. Integrity",
 					"body": "Lean is side-to-side asymmetry -- you can see it as a visible tilt. Integrity is site usage and support underneath. Place this one off to the side and watch the brick's face.",
-					"target": &"TowerStack",
-					"card": "auto",
+					"target": &"PlayField",
+					"card": "center",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
 					"gate_arg": null
 				},
@@ -234,8 +228,8 @@ static func _catalog() -> Array:
 					"id": &"straighten",
 					"title": "Straighten it back up",
 					"body": "Now place one that pulls the tower back toward centre -- a smiley face means you improved the lean.",
-					"target": &"TowerStack",
-					"card": "auto",
+					"target": &"PlayField",
+					"card": "center",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
 					"gate_arg": null
 				}
@@ -258,7 +252,7 @@ static func _catalog() -> Array:
 					"target": &"TowerStack",
 					"card": "center",
 					"gate": TutorialGatesScript.OBSERVE,
-					"observe_seconds": 2.0,
+					"observe_seconds": 5.5,
 					"on_enter": {
 						"type": "set_diagnostics",
 						"stability": 0,
@@ -280,8 +274,8 @@ static func _catalog() -> Array:
 					"id": &"contribution",
 					"title": "Contribution = height x level x 10",
 					"body": "Placing height scores Contribution, scaled by the level and by the tower's stability at the moment you placed. Try one.",
-					"target": &"TowerStack",
-					"card": "auto",
+					"target": &"PlayField",
+					"card": "center",
 					"gate": TutorialGatesScript.PLACE_BLOCK
 				},
 				{
@@ -312,8 +306,8 @@ static func _catalog() -> Array:
 					"id": &"finish_exact",
 					"title": "Land it exactly",
 					"body": "This brick finishes the tower at exactly 16. An exact finish pays the finisher a Precision bonus and pays EVERY player a Team Exact bonus -- overbuilding past the target forfeits both.",
-					"target": &"TopIndicatorRow",
-					"card": "below",
+					"target": &"PlayField",
+					"card": "center",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
 					"gate_arg": null
 				}
@@ -322,7 +316,7 @@ static func _catalog() -> Array:
 		{
 			"id": &"impact",
 			"title": "Impact",
-			"blurb": "Every level is a personal contribution gate for the whole team.",
+			"blurb": "Every 2 levels, the whole team's contribution is checked.",
 			"seed": _base_seed({
 				"impact_status": {
 					"requiredBandScore": DEFAULTS.impact_requirement_score,
@@ -337,16 +331,16 @@ static func _catalog() -> Array:
 			"steps": [
 				{
 					"id": &"every_level",
-					"title": "Every level is an Impact",
-					"body": "Every level gates on Impact: each player must personally clear their own share of the score, not just the team total.",
+					"title": "Every 2 levels is an Impact",
+					"body": "Every 2nd level gates on Impact: each player must personally clear their own share of the score banked since the last one, not just the team total.",
 					"target": &"ImpactPill",
 					"card": "below",
 					"gate": TutorialGatesScript.INFO
 				},
 				{
 					"id": &"your_share",
-					"title": "Your share, at Level 1",
-					"body": "At Level 1 that's 48 points each. Fall short and the WHOLE team rolls back to replay the level -- not just you.",
+					"title": "Your share, by Level 2",
+					"body": "At Level 1's pace that's 48 points each by the time the Impact check lands. Fall short and the WHOLE team rolls back to replay the band -- not just you.",
 					"target": &"PlayerRailBox",
 					"card": "auto",
 					"gate": TutorialGatesScript.INFO
@@ -378,7 +372,10 @@ static func _catalog() -> Array:
 			"blurb": "A side quest can earn a room-wide Power item.",
 			"seed": _base_seed({
 				"side_quest": {"label": "Land 2 exact finishes", "claimedBy": ""},
-				"power_inventory": [{"id": "refresh"}]
+				"power_inventory": [{"id": "refresh"}],
+				"hand": [_brick("tut-quest-power-1", "L")],
+				"draw_pile_count": 5,
+				"next_draw_block": _brick("tut-quest-power-next", "T")
 			}),
 			"steps": [
 				{
@@ -400,9 +397,9 @@ static func _catalog() -> Array:
 				{
 					"id": &"activate_power",
 					"title": "Activate Refresh",
-					"body": "Tap Refresh to activate it. Power effects are room-wide -- everyone feels it, including you.",
-					"target": &"PowerTrigger",
-					"card": "above",
+					"body": "Tap Refresh in the popup to activate it. Power effects are room-wide -- everyone feels it, including you.",
+					"target": &"PlayField",
+					"card": "center",
 					"gate": TutorialGatesScript.ACTIVATE_POWER
 				}
 			]
@@ -436,6 +433,14 @@ static func _catalog() -> Array:
 					"target": &"QuickChatTrigger",
 					"card": "above",
 					"gate": TutorialGatesScript.OPEN_CHAT
+				},
+				{
+					"id": &"send_message",
+					"title": "Send one",
+					"body": "Tap a template in the popup to send it -- everyone in the room sees it appear over your rail entry.",
+					"target": &"PlayField",
+					"card": "center",
+					"gate": TutorialGatesScript.SEND_CHAT
 				}
 			]
 		}

@@ -9,7 +9,7 @@ const TutorialProgressScript = preload("res://Cor/Scripts/GameUi/Tutorial/Tutori
 # reason (finished, skipped, or exited early), so the menu knows to reappear.
 signal lesson_ended(lesson_id: StringName, completed: bool)
 
-const OBSERVE_DEFAULT_SECONDS := 1.6
+const OBSERVE_DEFAULT_SECONDS := 3.0
 const FADE_SECONDS := 0.16
 const CARD_TARGET_GAP := 10.0
 const CARD_MARGIN := 8.0
@@ -72,7 +72,7 @@ func setup(deps: Dictionary) -> void:
 	scene = TutorialSceneScript.new()
 	scene.setup(
 		deps.get("tower_stack"), deps.get("inventory"), deps.get("top_bar"),
-		deps.get("roster"), deps.get("quest"), deps.get("power"),
+		deps.get("roster"), deps.get("quest"), deps.get("power"), deps.get("chat"),
 		deps.get("score_popups"), deps.get("players_ctx")
 	)
 
@@ -125,6 +125,18 @@ func start_lesson(lesson_id: StringName) -> void:
 	active = true
 	scene.load_seed(lesson.get("seed", {}))
 	_show_overlay()
+
+	# A lesson can start the same frame a brand-new GameUI instance was just
+	# added to the tree (fresh app launch, or Debug Menu -> How to Play), before
+	# its containers (ActionRow, etc.) have completed a layout pass -- spotlighting
+	# immediately can read a stale/degenerate get_global_rect() for the target.
+	# Two frames matches GameUiHarness's own settle wait.
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	if !active or current_lesson.get("id", &"") != lesson_id:
+		return
+
 	_go_to_step(0)
 
 func teardown() -> void:
@@ -225,6 +237,13 @@ func _dispatch_action(action: Dictionary) -> void:
 
 	var step: Dictionary = steps[current_step_index]
 	var gate: StringName = step.get("gate", TutorialGatesScript.INFO)
+
+	# info only ever advances via the Next button (advance()) -- is_satisfied
+	# would otherwise report true for *any* dispatched action (a stray
+	# placement, an incidental popover open, ...) and silently skip the step.
+	if gate == TutorialGatesScript.INFO:
+		return
+
 	var gate_arg: Variant = step.get("gate_arg", null)
 
 	if TutorialGatesScript.is_satisfied(gate, gate_arg, action):
@@ -326,14 +345,24 @@ func _set_rect(rect_node: Control, pos: Vector2, size: Vector2) -> void:
 	rect_node.position = pos
 	rect_node.size = size
 
+func _card_size() -> Vector2:
+	# Mirrors PopoverPanel.get_card_size(): the design size set as
+	# custom_minimum_size wins for typical copy, and only genuinely oversized
+	# content grows past it. A pure get_combined_minimum_size() read is what
+	# PopoverPanel's own card sizing rejected -- a wrapping label's minimum
+	# size depends on a width the label may not have been laid out with yet,
+	# which is what pushed the card off-screen on a fresh instantiation.
+	var min_size: Vector2 = card.get_combined_minimum_size()
+	return Vector2(
+		maxf(min_size.x, card.custom_minimum_size.x),
+		maxf(min_size.y, card.custom_minimum_size.y)
+	)
+
 func _position_card(local_rect: Rect2, card_mode: String) -> void:
 	if card == null or overlay == null:
 		return
 
-	# TutorialCard is a free-floating PanelContainer, not managed by an outer
-	# container, so nothing else ever drives its size -- it must be sized from
-	# its own content here, every reposition, since step copy length varies.
-	card.size = card.get_combined_minimum_size()
+	card.size = _card_size()
 	var card_size: Vector2 = card.size
 	var bounds: Vector2 = overlay.size
 	var resolved_mode: String = card_mode
