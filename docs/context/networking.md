@@ -100,7 +100,7 @@ Room snapshots include `impactScores`, `impactPowers`, `drawPile`, `teamCarryOve
 
 - Starts the WebSocket server on `PORT` (default `3000`).
 - Accepts the initial `reconnect` handshake, creates/resumes the session, adds the player to [Lobby Manager](./backend.md#lobby-manager).
-- Routes `update_config`, `place_block`, `send_quick_chat`, `activate_power` to the player's room's [Game Engine](./backend.md#game-engine).
+- Routes `update_config` to [Lobby Manager](./backend.md#lobby-manager)'s debug-config coordinator; routes `place_block`/`send_quick_chat`/`activate_power` through Lobby Manager's `dispatchRoomAction`, which runs the player's room's [Game Engine](./backend.md#game-engine) locally if this pod owns the room, or forwards the action to whichever pod does.
 - On socket close: removes the player through Lobby Manager (reconnect TTL handling continues there, so a brief disconnect doesn't end the room).
 - JSON parse failures on incoming messages are logged and ignored, not treated as connection-fatal.
 
