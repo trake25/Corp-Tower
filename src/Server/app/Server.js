@@ -81,7 +81,11 @@ async function handleMessage(player, message) {
             return;
         }
 
-        player.room.engine.placeBlock(player.id, data.blockIndex, data.column);
+        await lobbyManager.dispatchRoomAction(player, {
+            type: "place_block",
+            blockIndex: data.blockIndex,
+            column: data.column
+        });
         return;
     }
 
@@ -91,12 +95,18 @@ async function handleMessage(player, message) {
             return;
         }
 
-        player.room.engine.queueQuickChat(player, data.slot);
+        await lobbyManager.dispatchRoomAction(player, {
+            type: "send_quick_chat",
+            slot: data.slot
+        });
         return;
     }
 
     if (data.type === "activate_power" && player.room) {
-        player.room.engine.activatePower(player.id, data.slot);
+        await lobbyManager.dispatchRoomAction(player, {
+            type: "activate_power",
+            slot: data.slot
+        });
     }
 }
 

@@ -144,6 +144,8 @@ function createSharedFakeCluster() {
             },
             async publishRoom() {},
             async subscribeToRoom() {},
+            async publishRoomAction() {},
+            async subscribeToRoomActions() {},
             async publishPlayerAssignment(playerId, roomId) {
                 await tick();
                 shared.assignmentSubscribers.forEach(subscriber => {

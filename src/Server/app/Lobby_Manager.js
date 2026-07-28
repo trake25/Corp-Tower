@@ -1070,6 +1070,71 @@ class LobbyManager {
                 }
             });
         });
+
+        await this.stateStore.subscribeToRoomActions(roomId, message => {
+            if (message.sourcePodId === this.stateStore.getPodId()) {
+                return;
+            }
+
+            const room =
+                this.rooms.find(activeRoom => activeRoom.id === roomId);
+
+            if (!room || !this.isRoomOwner(room)) {
+                return;
+            }
+
+            this.runRoomAction(room, message.playerId, message.action);
+        });
+    }
+
+    isRoomOwner(room) {
+        return room.ownerPodId === this.stateStore.getPodId();
+    }
+
+    // A player's live socket can be handled by a pod that didn't form their
+    // room (see the cross-pod room handoff note above). Only the pod that
+    // owns the room's lease runs its authoritative engine/timers, so an
+    // action received on any other pod is forwarded there instead of being
+    // run against that pod's frozen, hydrate-time-only room snapshot.
+    async dispatchRoomAction(player, action) {
+        const room = player.room;
+
+        if (!room) {
+            return;
+        }
+
+        if (this.isRoomOwner(room)) {
+            this.runRoomAction(room, player.id, action);
+            return;
+        }
+
+        await this.stateStore.publishRoomAction(room.id, {
+            playerId: player.id,
+            action
+        });
+    }
+
+    runRoomAction(room, playerId, action) {
+        switch (action.type) {
+            case "place_block":
+                room.engine.placeBlock(playerId, action.blockIndex, action.column);
+                return;
+
+            case "activate_power":
+                room.engine.activatePower(playerId, action.slot);
+                return;
+
+            case "send_quick_chat": {
+                const player =
+                    room.players.find(candidate => candidate.id === playerId);
+
+                if (player) {
+                    room.engine.queueQuickChat(player, action.slot);
+                }
+
+                return;
+            }
+        }
     }
 }
 

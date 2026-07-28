@@ -481,6 +481,30 @@ class RedisState {
         });
     }
 
+    async publishRoomAction(roomId, payload) {
+        if (!this.enabled) {
+            return;
+        }
+
+        await this.publisher.publish(
+            `room:${roomId}:actions`,
+            JSON.stringify({
+                ...payload,
+                sourcePodId: POD_ID
+            })
+        );
+    }
+
+    async subscribeToRoomActions(roomId, handler) {
+        if (!this.enabled || !roomId) {
+            return;
+        }
+
+        await this.subscriber.subscribe(`room:${roomId}:actions`, raw => {
+            handler(JSON.parse(raw));
+        });
+    }
+
     async publishPlayerAssignment(playerId, roomId) {
         if (!this.enabled) {
             return;
