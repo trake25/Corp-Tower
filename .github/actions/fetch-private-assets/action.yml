@@ -80,6 +80,12 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.access-key-id }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.secret-access-key }}
+        # SAFETY EXCEPTION to the no-source-comments convention (Summary.md):
+        # a caller workflow (e.g. K3s-Deploy-Web-Server.yml) may set a
+        # job-level AWS_REGION for its own AWS/Terraform calls. AWS_REGION
+        # takes precedence over AWS_DEFAULT_REGION, so it must be pinned to
+        # 'auto' here too or it leaks in and R2 rejects the AWS region name.
+        AWS_REGION: auto
         AWS_DEFAULT_REGION: auto
         AWS_REQUEST_CHECKSUM_CALCULATION: when_required
         AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
