@@ -1,0 +1,33 @@
+name: K3s Cleanup Playtod
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_cleanup:
+        description: "Type CLEANUP_WSPLAYTOD to remove the wsplaytod game server (Deployment+Service) from corp-tower-prod. The namespace and any web server there are left untouched."
+        required: true
+        type: string
+
+jobs:
+  guard:
+    name: Check Cleanup Confirmation
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm_cleanup }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRM" != "CLEANUP_WSPLAYTOD" ]; then
+            echo "::error::confirm_cleanup must be exactly CLEANUP_WSPLAYTOD."
+            exit 1
+          fi
+
+  cleanup:
+    name: Cleanup wsplaytod
+    needs: guard
+    if: needs.guard.result == 'success'
+    uses: ./.github/workflows/K3s-Cleanup-Game-Server.yml
+    with:
+      target: wsplaytod
+    secrets: inherit

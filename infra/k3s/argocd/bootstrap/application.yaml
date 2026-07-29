@@ -7,9 +7,9 @@ spec:
   project: corp-tower-lab
   source:
     repoURL: https://github.com/trake25/Corp-Tower.git
-    targetRevision: codex/k3s-lab-stack-argocd-readiness
-    path: infra/k3s/apps/corp-tower/overlays/lab
+    targetRevision: main
+    path: infra/k3s/apps/corp-tower/overlays/prod
   destination:
     server: https://kubernetes.default.svc
-    namespace: corp-tower
+    namespace: corp-tower-prod
   syncPolicy: {}

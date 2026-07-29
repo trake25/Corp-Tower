@@ -1,0 +1,18 @@
+name: Backup Deploy All Game Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-devwstod1:
+    name: Deploy devwstod1
+    uses: ./.github/workflows/Backup-Deploy-Game-Server.yml
+    with:
+      target: devwstod1
+
+  deploy-devwstod2:
+    name: Deploy devwstod2
+    needs: deploy-devwstod1
+    uses: ./.github/workflows/Backup-Deploy-Game-Server.yml
+    with:
+      target: devwstod2

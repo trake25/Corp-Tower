@@ -47,17 +47,15 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 
 | Module | File | Purpose | Depends on | Full detail |
 |---|---|---|---|---|
-| Client Android Internal Workflow | `.github/workflows/Client-Android-Internal.yml` | Build/test/sign internal Android build | Godot Client App, Private Asset Pipeline | [build.md](./build.md#client-android-internal-workflow) |
+| Android Deploy wsplaytod Workflow | `.github/workflows/Android-Deploy-wsplaytod.yml` | Build/test/sign internal Android build, endpoint wsplaytod | Godot Client App, Private Asset Pipeline | [build.md](./build.md#android-deploy-wsplaytod-workflow) |
 | Client HTML5 Pages | `.github/workflows/Client-HTML5-Pages.yml` (+`-Undeploy.yml`) | Build/export/deploy Web build to GitHub Pages | Godot Client App, Private Asset Pipeline | [build.md](./build.md#client-html5-pages) |
 | Private Asset Pipeline | `.github/actions/fetch-private-assets/`, `scripts/art-*.sh` | Injects production art from private R2 at build time | R2 bucket `corp-tower-assets` | [build.md](./build.md#private-asset-pipeline) |
 | Terraform Infrastructure | `infra/k3s/terraform`, `infra/eks/terraform` | Terraform roots | — | [deployment.md](./deployment.md#terraform-roots) |
 | Server K3s Stack | `infra/k3s/` | Active self-hosted K3s-on-EC2 infra | Terraform Infrastructure | [deployment.md](./deployment.md#k3s-topology) |
-| Server K3s Workflows | `.github/workflows/Server-K3s-*.yml` | Deploy/diagnose/clean up the K3s stack | Server K3s Stack | [deployment.md](./deployment.md#k3s-workflows) |
-| Server K3s Automated Master Workflow | `.github/workflows/Server-K3s-Automated-Master.yml` | Orchestrates the individual K3s workflows; fast path falls back to the physical backup when K3s is down | Server K3s Workflows, Server Backup Workflows | [deployment.md](./deployment.md#k3s-workflows) |
+| Server K3s Workflows | `.github/workflows/K3s-*.yml` | Deploy/clean up/diagnose the K3s stack — prod (wsplaytod/playtod) and test (wstodtest/todtest), each its own namespace — manual trigger only | Server K3s Stack | [deployment.md](./deployment.md#k3s-workflows) |
 | Server EKS Stack | `infra/eks/` | Plan-only parallel managed-AWS infra | Terraform Infrastructure | [deployment.md](./deployment.md#eks-plan-only) |
 | Server EKS Workflow | `.github/workflows/Server-EKS-Infra-Plan.yml` | CI plan-only path for EKS | Server EKS Stack | [deployment.md](./deployment.md#eks-plan-only) |
-| Server Backup Workflows | `.github/workflows/Server-Backup-*.yml` | Deploy/clean up the manual physical backup server via a self-hosted runner | `~/corp-tower-server-backup/` (outside repo, on the physical machine) | [deployment.md](./deployment.md#backup-server-manual-physical-machine) |
-| Client HTML5 Backup Workflows | `.github/workflows/Client-HTML5-Backup-Deploy.yml`, `-Backup-Cleanup.yml` | Build the Web export and deploy/stand down the physical backup's web server (`devplay.galaxxigames.com`) via the self-hosted runner; auto-deploys on client-side pushes; fully independent of GitHub Pages — both run live simultaneously | Private Asset Pipeline, `~/corp-tower-server-backup/` (outside repo, on the physical machine) | [deployment.md](./deployment.md#web-html5-backup) |
+| Backup Workflows | `.github/workflows/Backup-*.yml` | Diagnose/deploy/clean up four dev instances on the physical backup machine — two game servers (devwstod1/2) and two web servers (devtod1/2) — via a self-hosted runner; devwstod1/devtod1 auto-deploy on push | `scripts/backup/` (in-repo), Private Asset Pipeline (web), machine-local `.env.backup` | [deployment.md](./deployment.md#backup-physical-machine-4-dev-instances) |
 
 ## Global / cross-cutting docs
 

@@ -28,3 +28,12 @@ reference/
 # Private art asset pipeline — R2 credentials for local dev.
 # The assets themselves are ignored in src/Client/App/corp-tower/.gitignore
 .env.art
+
+# Physical backup machine credentials — see scripts/backup/.env.backup.example.
+# The filled-in copy belongs outside the repo checkout; ignored here only as
+# a safety net if one ever ends up inside it.
+.env.backup
+scripts/backup/.env.backup
+
+# CI-downloaded web build artifact staged as the docker/web Docker build context
+docker/web/web/

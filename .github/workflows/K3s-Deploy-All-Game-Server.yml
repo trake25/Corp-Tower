@@ -1,0 +1,23 @@
+name: K3s Deploy All Game Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # Both targets share one EC2-GW gateway (one Caddy container, one R2 ACME
+  # archive key) - deploying them in parallel would race on that shared
+  # state, so wstodtest deliberately waits for wsplaytod to finish.
+  deploy-wsplaytod:
+    name: Deploy wsplaytod
+    uses: ./.github/workflows/K3s-Deploy-Game-Server.yml
+    with:
+      target: wsplaytod
+    secrets: inherit
+
+  deploy-wstodtest:
+    name: Deploy wstodtest
+    needs: deploy-wsplaytod
+    uses: ./.github/workflows/K3s-Deploy-Game-Server.yml
+    with:
+      target: wstodtest
+    secrets: inherit

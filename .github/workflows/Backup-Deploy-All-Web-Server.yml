@@ -1,0 +1,28 @@
+name: Backup Deploy All Web Server
+
+on:
+  workflow_dispatch:
+    inputs:
+      art_version_override:
+        description: "Optional art bundle version (e.g. v2) to fetch instead of the pinned manifest. Skips sha256 verification — testing only, never for release."
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  deploy-devtod1:
+    name: Deploy devtod1
+    uses: ./.github/workflows/Backup-Deploy-Web-Server.yml
+    with:
+      target: devtod1
+      art_version_override: ${{ inputs.art_version_override }}
+    secrets: inherit
+
+  deploy-devtod2:
+    name: Deploy devtod2
+    needs: deploy-devtod1
+    uses: ./.github/workflows/Backup-Deploy-Web-Server.yml
+    with:
+      target: devtod2
+      art_version_override: ${{ inputs.art_version_override }}
+    secrets: inherit

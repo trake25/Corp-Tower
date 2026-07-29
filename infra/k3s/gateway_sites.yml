@@ -1,0 +1,5 @@
+gateway_sites:
+  - { domain: wsplaytod.galaxxigames.com, nodeport: 30300 }
+  - { domain: wstodtest.galaxxigames.com, nodeport: 30301 }
+  - { domain: playtod.galaxxigames.com,   nodeport: 30310 }
+  - { domain: todtest.galaxxigames.com,   nodeport: 30311 }

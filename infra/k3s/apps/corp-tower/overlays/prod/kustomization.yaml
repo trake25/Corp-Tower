@@ -1,4 +1,4 @@
-namespace: corp-tower
+namespace: corp-tower-prod
 
 resources:
   - namespace.yaml

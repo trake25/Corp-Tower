@@ -1,0 +1,39 @@
+name: Backup Cleanup All Web Server
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_cleanup:
+        description: "Type CLEANUP_ALL_DEVTOD to confirm."
+        required: true
+        type: string
+
+jobs:
+  guard:
+    name: Check Cleanup Confirmation
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm_cleanup }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRM" != "CLEANUP_ALL_DEVTOD" ]; then
+            echo "::error::confirm_cleanup must be exactly CLEANUP_ALL_DEVTOD."
+            exit 1
+          fi
+
+  cleanup-devtod1:
+    name: Cleanup devtod1
+    needs: guard
+    if: needs.guard.result == 'success'
+    uses: ./.github/workflows/Backup-Cleanup-Web-Server.yml
+    with:
+      target: devtod1
+
+  cleanup-devtod2:
+    name: Cleanup devtod2
+    needs: cleanup-devtod1
+    uses: ./.github/workflows/Backup-Cleanup-Web-Server.yml
+    with:
+      target: devtod2

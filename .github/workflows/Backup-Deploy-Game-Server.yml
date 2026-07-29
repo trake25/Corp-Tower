@@ -1,0 +1,40 @@
+name: Backup Deploy Game Server (core)
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: "Dev game server instance to deploy: devwstod1 or devwstod2."
+        required: true
+        type: string
+
+concurrency:
+  group: backup-server-${{ inputs.target }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-backup:
+    name: Deploy Corp Tower Server To Backup Machine
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Resolve instance number
+        run: |
+          set -euo pipefail
+          case "${{ inputs.target }}" in
+            devwstod1) echo "INSTANCE=1" >> "$GITHUB_ENV" ;;
+            devwstod2) echo "INSTANCE=2" >> "$GITHUB_ENV" ;;
+            *)
+              echo "::error::Unknown target '${{ inputs.target }}'. Expected devwstod1 or devwstod2."
+              exit 1
+              ;;
+          esac
+
+      - name: Run backup server up
+        run: "scripts/backup/backup-server-up.sh $INSTANCE"
+        env:
+          CORP_TOWER_REPO_ROOT: ${{ github.workspace }}

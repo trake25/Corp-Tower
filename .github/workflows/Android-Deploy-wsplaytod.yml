@@ -1,4 +1,4 @@
-name: Client Android Internal
+name: Android Deploy wsplaytod
 
 on:
   workflow_dispatch:
@@ -25,7 +25,7 @@ on:
         type: string
 
 concurrency:
-  group: client-android-internal
+  group: android-deploy-wsplaytod
   cancel-in-progress: false
 
 jobs:
@@ -55,6 +55,13 @@ jobs:
           access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
           secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           version-override: ${{ inputs.art_version_override }}
+
+      - name: Write client endpoint config
+        env:
+          CORP_TOWER_WS_PRIMARY: wss://wsplaytod.galaxxigames.com
+          CORP_TOWER_WS_FAILOVER: ""
+          CORP_TOWER_DEBUG_UI: "true"
+        run: scripts/write-endpoint-config.sh
 
       - name: Authenticate to Google Play Developer API
         id: google-play-auth

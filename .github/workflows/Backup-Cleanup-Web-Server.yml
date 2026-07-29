@@ -1,0 +1,38 @@
+name: Backup Cleanup Web Server (core)
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: "Dev web server instance to stand down: devtod1 or devtod2."
+        required: true
+        type: string
+
+concurrency:
+  group: backup-web-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  cleanup-backup:
+    name: Stand Down The Web (HTML5) Backup Instance
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Resolve instance number
+        run: |
+          set -euo pipefail
+          case "${{ inputs.target }}" in
+            devtod1) echo "INSTANCE=1" >> "$GITHUB_ENV" ;;
+            devtod2) echo "INSTANCE=2" >> "$GITHUB_ENV" ;;
+            *)
+              echo "::error::Unknown target '${{ inputs.target }}'. Expected devtod1 or devtod2."
+              exit 1
+              ;;
+          esac
+
+      - name: Run web backup down
+        run: "scripts/backup/backup-web-down.sh $INSTANCE"

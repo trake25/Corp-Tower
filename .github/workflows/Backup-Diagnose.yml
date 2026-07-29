@@ -1,0 +1,35 @@
+name: Backup Diagnose
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    name: Diagnose Physical Backup Machine
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Game server devwstod1
+        run: scripts/backup/backup-server-status.sh 1
+
+      - name: Game server devwstod2
+        run: scripts/backup/backup-server-status.sh 2
+
+      - name: Web server devtod1
+        run: scripts/backup/backup-web-status.sh 1
+
+      - name: Web server devtod2
+        run: scripts/backup/backup-web-status.sh 2
+
+      - name: cloudflared service and tunnel
+        run: |
+          set -euo pipefail
+          export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+          echo "--- cloudflared user service ---"
+          systemctl --user status cloudflared --no-pager 2>/dev/null || echo "inactive or not installed"
+          echo "--- cloudflared tunnel list ---"
+          cloudflared tunnel list 2>/dev/null || echo "cloudflared tunnel list failed (not logged in, or cloudflared not installed)"

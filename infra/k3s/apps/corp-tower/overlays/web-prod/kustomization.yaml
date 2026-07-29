@@ -1,0 +1,10 @@
+namespace: corp-tower-prod
+
+resources:
+  - namespace.yaml
+  - ../../web-base
+
+images:
+  - name: corp-tower-web
+    newName: corp-tower-web
+    newTag: lab-placeholder

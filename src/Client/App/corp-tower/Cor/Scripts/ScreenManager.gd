@@ -8,7 +8,6 @@ const DEBUG_BUTTON_DRAG_THRESHOLD := 6.0
 const DEBUG_BUTTON_MARGIN := 12.0
 const DRAG_POINTER_MOUSE := -1
 const DRAG_POINTER_NONE := -2
-const DEBUG_BUTTON_HIDDEN_HOST := "play.tod.galaxxigames.com"
 
 @onready var screen_container: Control = $ScreenContainer
 @onready var debug_button: Button = $DebugButton
@@ -25,15 +24,9 @@ func _ready() -> void:
 	NetworkManager.room_closed.connect(_on_room_closed)
 	NetworkManager.status_changed.connect(_on_status_changed)
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
-	debug_button.visible = !_is_debug_button_hidden_host()
+	debug_button.visible = EndpointConfig.DEBUG_UI_ENABLED
 	reset_debug_button_position()
 	show_join_screen()
-
-func _is_debug_button_hidden_host() -> bool:
-	if not OS.has_feature("web"):
-		return false
-	var hostname: String = JavaScriptBridge.eval("window.location.hostname", true)
-	return hostname == DEBUG_BUTTON_HIDDEN_HOST
 
 func _on_status_changed(_text: String) -> void:
 	update_debug_button_availability()

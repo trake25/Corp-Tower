@@ -29,21 +29,22 @@ Workflows create the shared S3 backend bucket if missing, via `.github/actions/t
 - **`EC2-K3S-A1` / `EC2-K3S-A2`** — private K3s agents, default `t3.micro` (2 agents by default).
 - VPC CIDR defaults to `10.60.0.0/16` — chosen to avoid K3s's default pod CIDR (`10.42.0.0/16`) and service CIDR (`10.43.0.0/16`).
 - Public subnet: EC2-GW. Private subnet: K3s control plane + agents, default route via EC2-GW's primary network interface.
-- Security groups: public `22/80/443` only on EC2-GW; private K3s API, kubelet, Flannel VXLAN, SSH, and NodePort traffic scoped to lab security groups.
+- Security groups: public `22/80/443` only on EC2-GW; private K3s API, kubelet, Flannel VXLAN, SSH, and NodePort traffic (`30300`–`30311`) scoped to lab security groups.
 - Traefik and ServiceLB are disabled — public traffic stays on EC2-GW Caddy.
-- `ws.tod.galaxxigames.com` currently points at the K3s gateway via Cloudflare DNS.
+- Four hostnames point at the K3s gateway via Cloudflare DNS — `wsplaytod.galaxxigames.com`/`wstodtest.galaxxigames.com` (game servers) and `playtod.galaxxigames.com`/`todtest.galaxxigames.com` (web servers) — enumerated in `infra/k3s/gateway_sites.yml`, the single source both the Caddy config and the DNS upsert render from.
 
 ## K3s runtime
 
-- Namespace `corp-tower`. In-cluster Redis `ClusterIP` service `redis:6379`. Server deployment: 2 replicas, `REDIS_URL=redis://redis:6379`. Fixed NodePort `30300/tcp`. EC2-GW Caddy reverse-proxies `ws.tod.galaxxigames.com` → private K3s node IPs on `30300`.
-- `ecr-pull` image-pull secret is refreshed by the deploy workflow, reusing the same ECR repository secret as the old Docker staging path.
-- `Server-K3s-Deploy.yml` generates an **uncommitted** `overlays/runtime` Kustomize overlay on top of the committed `overlays/lab` at deploy time, to inject the real ECR image tag — the committed `lab-placeholder` tag in `overlays/lab` is never what actually runs.
+- Two isolated namespaces, `corp-tower-prod` and `corp-tower-test`, each with its own in-cluster Redis (`ClusterIP` service `redis:6379`, namespace-local DNS) and its own `corp-tower-server`/`corp-tower-web` Deployments (1 replica each, `REDIS_URL=redis://redis:6379` for the server). Fixed NodePorts: `30300` prod game (wsplaytod) · `30301` test game (wstodtest) · `30310` prod web (playtod) · `30311` test web (todtest). EC2-GW Caddy reverse-proxies each `gateway_sites.yml` hostname to its matching NodePort.
+- `ecr-pull` is namespace-scoped and refreshed by whichever deploy workflow owns that namespace — imagePullSecrets don't cross namespaces, so prod and test each carry their own copy from the same ECR repository.
+- Kustomize base `apps/corp-tower/base` (game server + Redis) and `web-base` (web server) are shared; `overlays/{prod,test,web-prod,web-test}` layer namespace + NodePort per target. Each K3s deploy workflow generates an **uncommitted** `overlays/runtime` (game) or `overlays/runtime-web` (web) overlay at deploy time to inject the real ECR image tag — the committed `lab-placeholder` tag in the base is never what actually runs.
+- Every K3s deploy renders **all four** Caddy site blocks and upserts **all four** DNS records, regardless of which single target is being deployed — the gateway is one shared Caddy container, so a prod-only deploy must never orphan test's route or vice versa.
 
 ## Caddy gateway ACME cert persistence (R2)
 
 EC2-GW's root volume is ephemeral, so a destroyed/recreated gateway carries no Caddy automatic-HTTPS state of its own — see [decisions.md](./decisions.md#caddy-gateway-acme-cert-cache-persisted-to-r2) for the Let's Encrypt rate-limit incident that caused. `configure_caddy.yml` (`infra/k3s/ansible/roles/gateway/tasks/`) round-trips the `corp-tower-k3s-caddy-data` Docker volume through R2 bucket `corp-tower-gateway-state`:
 
-- **Restore** (before Caddy starts): `Server-K3s-Deploy.yml`'s `Restore Caddy gateway state from R2` step downloads the archive (no-ops if none exists yet) and `scp`s it to EC2-GW; Ansible extracts it into the volume.
+- **Restore** (before Caddy starts): the K3s deploy workflow's `Restore Caddy gateway state from R2` step downloads the archive (no-ops if none exists yet) and `scp`s it to EC2-GW; Ansible extracts it into the volume.
 - **Liveness check**: after start, Ansible waits 3s and asserts the container is still running, capturing `docker logs` and failing loudly if not — replaces a prior silent failure mode where a crashed Caddy container wasn't caught until the public WSS smoke test timed out 5 minutes later.
 - **Persist** (after the liveness check passes): Ansible re-archives the volume; the `Persist Caddy gateway state to R2` step `scp`s it back and uploads it.
 - On smoke-test failure regardless of cause, `Dump Caddy gateway logs on smoke test failure` SSHes to EC2-GW and dumps `docker ps`/`docker logs` into the CI log.
@@ -54,52 +55,45 @@ The archive holds the gateway's live ACME account key and TLS private key: both 
 
 ## K3s workflows
 
-| Workflow | Trigger | Behavior |
-|---|---|---|
-| `Server-K3s-Automated-Master.yml` | Auto (push to `main`/`master` on watched paths) or manual | Orchestrates the others — see modes below. Fast path only: checks the K3s control plane is actually running before deploying to it, and falls back to `Server-Backup-Deploy.yml` if K3s is down but the physical backup is up |
-| `Server-K3s-Infra-Plan.yml` | Reusable / manual | Plans the K3s Terraform root; intentionally allows create/delete actions to be reviewed (e.g. weekend recreate after weekday cleanup) |
-| `Server-K3s-Infra-Apply.yml` | Manual, requires `APPLY_SERVER_K3S` | Plans first and **hard-fails if the plan contains any delete/replace action** — run Cleanup's `terraform_destroy` first if a plan would replace/delete resources |
-| `Server-K3s-Deploy.yml` | Reusable / manual | Tests server code → builds/pushes Docker image → installs/configures K3s via EC2-GW bastion/NAT (restoring/persisting Caddy's ACME cert cache to R2 around the Ansible run) → refreshes `ecr-pull` → applies the Kustomize overlay → validates nodes/Redis/replicas/Caddy/public WSS |
-| `Server-K3s-Diagnostics.yml` | Reusable / manual | Inspects tagged lab AWS resources, verifies Cloudflare DNS ownership, probes SSH through the bastion |
-| `Server-K3s-Cleanup.yml` | Manual, requires `confirm_cleanup` | `runtime_only` (needs `CLEANUP_SERVER_K3S`) removes K3s/Caddy artifacts; `terraform_destroy` (needs `DESTROY_SERVER_K3S`) removes all AWS resources in `infra/k3s/terraform` |
+All manual `workflow_dispatch` only — K3s has no automated/push-triggered path (that exists only for the physical backup's `devwstod1`/`devtod1` instances — see [Backup](#backup-physical-machine-4-dev-instances)).
 
-K3s Deploy, Diagnostics, and Infra Plan are all reusable workflow calls, so the Automated Master can orchestrate them. Argo CD is prepared in manifests only — no K3s workflow installs or exposes it.
-
-### Automated Master modes
-
-| Manual mode | Runs |
+| Workflow | Behavior |
 |---|---|
-| `full_preflight` | Diagnostics → Infra Plan → K3s Deploy |
-| `fast_server_deploy` | K3s Deploy directly |
-| `infra_plan_only` | Infra Plan only |
+| `K3s-Infra-Plan.yml` | Reusable / manual. Plans the K3s Terraform root; intentionally allows create/delete actions to be reviewed |
+| `K3s-Infra-Apply.yml` | Manual, requires `APPLY_K3S`. Plans first and **hard-fails if the plan contains any delete/replace action** — run `K3s Cleanup All Game Server`'s `terraform_destroy` first if a plan would replace/delete resources |
+| `K3s-Infra-Diagnose.yml` | Reusable / manual. Inspects tagged lab AWS resources, verifies all four Cloudflare DNS records resolve to the gateway, probes SSH through the bastion |
+| `K3s-Deploy-Game-Server.yml` | Reusable core, `target: wsplaytod\|wstodtest`. Tests server code, builds/pushes one shared Docker image tagged by commit SHA, installs/configures K3s via EC2-GW bastion/NAT (restoring/persisting Caddy's ACME cache to R2, rendering all four Caddy sites, upserting all four DNS records), refreshes `ecr-pull` in the target namespace, applies that target's Kustomize overlay, validates nodes/Redis/replica/Caddy/public WSS |
+| `K3s-Deploy-wsplaytod.yml` / `-wstodtest.yml` / `-All-Game-Server.yml` | Manual wrappers around the core above, for prod / test / both — `All` runs them sequentially, since both share one Caddy gateway and R2 ACME cache |
+| `K3s-Deploy-Web-Server.yml` | Reusable core, `target: playtod\|todtest`. Builds the Web export (debug UI disabled), pushes an `nginx:alpine` image tagged `web-<target>-<sha>`, same K3s plumbing as the game-server core, HTTPS smoke test |
+| `K3s-Deploy-playtod.yml` / `-todtest.yml` / `-All-Web-Server.yml` | Manual wrappers, mirroring the game-server ones |
+| `K3s-Cleanup-Game-Server.yml` / `K3s-Cleanup-Web-Server.yml` | Reusable cores. Delete only that workload's Deployment+Service by name in the target namespace — **never** the namespace itself, since each prod/test namespace hosts both a game and a web server |
+| `K3s-Cleanup-Playtod.yml` / `-TodTest.yml` / `-All-Game-Server.yml` | Manual wrappers for the game-server cleanup core, each behind a typed confirmation. `All Game Server`'s `terraform_destroy` mode (`DESTROY_K3S`) is the only workflow that tears down the whole shared cluster |
+| `K3s-Cleanup-Web-playtod.yml` / `-Web-todtest.yml` / `-All-Web-Server.yml` | Manual wrappers for the web-server cleanup core |
 
-Automatic push-path routing (to `main`/`master`): server (`src/Server/**`) or Kustomize app (`infra/k3s/apps/**`) changes → fast deploy path; Ansible changes → diagnostics before deploy; Terraform changes → infra plan only (via the reusable Infra-Plan call; **the plan is not auto-rejected here even with delete/replace actions** — that gate lives only in `Infra-Apply.yml`, which this workflow never calls); K3s workflow file changes → diagnostics + infra plan. Concurrency group `server-k3s-automated-master-<ref>` **queues** overlapping runs (`cancel-in-progress: false`), unlike `Server-K3s-Deploy.yml`'s own group.
-
-**Fast path deploy-target routing:** only the fast path (`fast_k3s_deploy == true`) is affected — `full_preflight`/Ansible/Terraform paths always target K3s directly, since they're explicitly about fixing K3s itself. For the fast path, `check-k3s-status` queries AWS (`describe-instances`, tag `Role=k3s-control-plane`, `Environment=k3s-lab`, `running`) for exactly one running control-plane instance. If found, `k3s-deploy-fast` runs as before. If not, `check-backup-status` (runs only in this branch, so a healthy K3s never depends on the physical machine's runner being online) checks the physical backup's `corp-tower-server` Docker container via `docker ps` on the self-hosted (`backup`-labeled) runner; if it's up, `backup-deploy-fast` calls `Server-Backup-Deploy.yml` (now also a `workflow_call`, not just `workflow_dispatch`) instead. If neither K3s nor the backup is up, `fast-deploy-unavailable` fails the run with an explicit error rather than the previous opaque failure inside `generate_k3s_inventory.py` (which raised on zero/wrong-count AWS instances).
+Argo CD is prepared in manifests only — no K3s workflow installs or exposes it.
 
 ## Operational runbook
 
-1. **First-time / cold start:** `Server K3s Infra Plan` → `Server K3s Infra Apply` (`APPLY_SERVER_K3S`) → `Server K3s Automated Master` with `full_preflight`.
-2. **Ordinary server/image update, lab already healthy:** `Server K3s Automated Master` with `fast_server_deploy` (or just push — watched paths trigger it automatically).
-3. **AWS/SSH/DNS/cluster reachability looks off:** `Server K3s Diagnostics`.
-4. **Returning to a clean runtime state:** `Server K3s Cleanup` (`runtime_only`), or `terraform_destroy` (`DESTROY_SERVER_K3S`) to remove all K3s AWS resources.
-
-Use manual `fast_server_deploy` when you don't want to wait for a push-triggered run. Use manual `full_preflight` after infra restarts, Ansible changes, workflow changes, or any uncertainty about current lab health.
+1. **First-time / cold start:** `K3s Infra Plan` → `K3s Infra Apply` (`APPLY_K3S`) → `K3s Deploy All Game Server` → `K3s Deploy All Web Server`.
+2. **Ordinary update, lab already healthy:** dispatch the specific target's Deploy workflow (e.g. `K3s Deploy wsplaytod`), or the `All Game/Web Server` variant for both prod and test at once.
+3. **AWS/SSH/DNS/cluster reachability looks off:** `K3s Infra Diagnose`.
+4. **Returning to a clean runtime state:** the matching `K3s Cleanup *` workflow (per-target, runtime-scoped), or `K3s Cleanup All Game Server`'s `terraform_destroy` (`DESTROY_K3S`) to remove all K3s AWS resources.
 
 ### Operational checks (what "healthy" means)
 
-Terraform `fmt`/`validate` · server `npm test` · K3s Ansible syntax check · all K3s nodes Ready · Redis deployment Ready · two server replicas Ready · `ecr-pull` secret present in `corp-tower` · EC2-GW Caddy validates, reloads, and is confirmed still running (liveness-checked with `docker logs` captured on failure) · Cloudflare DNS resolves to the K3s gateway public IP · WebSocket smoke connects to `wss://ws.tod.galaxxigames.com`.
+Terraform `fmt`/`validate` · server `npm test` · K3s Ansible syntax check · all K3s nodes Ready · Redis deployment Ready · the target's server/web replica Ready · `ecr-pull` secret present in the target namespace · EC2-GW Caddy validates, reloads, and is confirmed still running (liveness-checked with `docker logs` captured on failure) · Cloudflare DNS resolves to the K3s gateway public IP for all four hostnames · WebSocket (game) or HTTPS (web) smoke connects to the target's own hostname.
 
 ### Observability commands
 
 ```bash
-# Cluster state
-kubectl -n corp-tower get pods -o wide
-kubectl -n corp-tower get all -o wide
+# Cluster state (substitute corp-tower-test for the test environment)
+kubectl -n corp-tower-prod get pods -o wide
+kubectl -n corp-tower-prod get all -o wide
 kubectl get nodes -o wide
 
-# Live game server logs
-kubectl -n corp-tower logs deploy/corp-tower-server --all-containers --tail=200 -f
+# Live game/web server logs
+kubectl -n corp-tower-prod logs deploy/corp-tower-server --all-containers --tail=200 -f
+kubectl -n corp-tower-prod logs deploy/corp-tower-web --all-containers --tail=200 -f
 
 # Scheduling / image-pull / restart / readiness issues
 kubectl get events -A --sort-by=.lastTimestamp
@@ -113,7 +107,7 @@ On EC2-GW: `sudo docker logs -f corp-tower-k3s-caddy` (public gateway traffic/pr
 
 ## Argo CD readiness
 
-Not installed by the first K3s rollout. Bootstrap manifests: `infra/k3s/argocd/bootstrap`. When enabled, Argo CD stays private — bastion + `kubectl port-forward` only. First sync is manual; automated prune/self-heal waits until one manual sync + a rollback test succeed. Private repos need a persistent repo-read credential (`GITHUB_TOKEN` is not suitable long-term). **Known bug — fix before enabling:** `application.yaml`'s `spec.source.targetRevision` is pinned to an already-merged feature branch instead of `main`. Full rationale → [decisions.md](./decisions.md#argo-cd-prepared-but-not-enabled).
+Not installed by the first K3s rollout. Bootstrap manifests: `infra/k3s/argocd/bootstrap` — `AppProject` destinations cover both `corp-tower-prod` and `corp-tower-test`; the one `Application` resource tracks `overlays/prod` on `main`. When enabled, Argo CD stays private — bastion + `kubectl port-forward` only. First sync is manual; automated prune/self-heal waits until one manual sync + a rollback test succeed. Private repos need a persistent repo-read credential (`GITHUB_TOKEN` is not suitable long-term). Full rationale → [decisions.md](./decisions.md#argo-cd-prepared-but-not-enabled).
 
 ## Required secrets (infra scope)
 
@@ -125,7 +119,7 @@ Not installed by the first K3s rollout. Bootstrap manifests: `infra/k3s/argocd/b
 | `EC2_STAGING_USER` | SSH user for EC2-GW/K3s nodes |
 | `EC2_STAGING_SSH_KEY` | SSH private key |
 | `EC2_STAGING_SSH_PUBLIC_KEY` | *(optional)* Preferred for Terraform key-pair creation; if empty, K3s infra workflows derive the public key from `EC2_STAGING_SSH_KEY` |
-| `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ZONE_ID` | DNS updates for `ws.tod.galaxxigames.com` |
+| `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ZONE_ID` | DNS updates for the four `infra/k3s/gateway_sites.yml` hostnames |
 | `EC2_STAGING_PORT`, `STAGING_SSH_CIDR`, `STAGING_GAME_PORT_CIDR` | *(optional)* |
 | `R2_GATEWAY_BUCKET`, `R2_GATEWAY_ACCESS_KEY_ID`, `R2_GATEWAY_SECRET_ACCESS_KEY` | Caddy ACME cert cache persistence to R2 bucket `corp-tower-gateway-state` (reuses `R2_ACCOUNT_ID` from [build.md](./build.md#required-secrets-client--art-scope)); repo secrets (not environment-scoped), so `deploy-k3s`'s `environment: staging` job can still see them — steps no-op if unset |
 
@@ -137,51 +131,33 @@ K3s workflows reuse the existing GitHub `staging` Environment rather than duplic
 
 **`Server-EKS-Infra-Plan.yml`:** manual `workflow_dispatch` or reusable `workflow_call`. Configures AWS via OIDC, ensures the shared S3 backend bucket exists, runs `init`/`fmt -check`/`validate`/`plan`, shows the full no-color plan in workflow logs. Does not apply infrastructure.
 
-## Backup server (manual, physical machine)
+## Backup (physical machine, 4 dev instances)
 
-A manually-operated physical machine (Linux Mint) acts as a standby for the whole K3s stack, for when it's destroyed or unusable (e.g. the Caddy/Let's Encrypt cert rate limit — see [decisions.md](./decisions.md#caddy-gateway-acme-cert-cache-persisted-to-r2)). It's an entirely separate path, not a K3s node: one Docker container running the unmodified `src/Server/Dockerfile` image, no Redis (`Redis_State.js`'s single-instance in-memory mode is used deliberately), exposed at `wss://devtod.galaxxigames.com` via a Cloudflare Tunnel (`cloudflared`) rather than Caddy — Cloudflare terminates TLS at its edge with its own certificate, so this path never touches Let's Encrypt. `ws.tod.galaxxigames.com` and `devtod.galaxxigames.com` are separate DNS names/records that never fight each other; only one is meant to be actively used at a time, decided manually. Client-side automatic failover between the two → [networking.md § NetworkManager](./networking.md#networkmanager). Full rationale for the separate hostname and the out-of-repo automation → [decisions.md](./decisions.md#backup-server-separate-hostname-and-out-of-repo-automation).
+A manually-operated physical machine (Linux Mint) runs four containers behind one Cloudflare Tunnel, entirely independent of K3s and of GitHub Pages: two dev game servers (`devwstod1`/`devwstod2`, `wss://`, loopback ports 3001/3002) and two dev web servers (`devtod1`/`devtod2`, `https://`, loopback ports 8091/8092, `nginx:alpine`). Game servers run the unmodified `src/Server/Dockerfile` image with no Redis (`Redis_State.js`'s single-instance in-memory mode). Every hostname is one level below the zone apex, inside Cloudflare's free Universal SSL depth limit for a proxied Tunnel record — full rationale → [decisions.md](./decisions.md#physical-backup-four-dev-instances-one-shared-tunnel).
 
-**Where the automation actually lives:** `~/corp-tower-server-backup/` on the physical machine itself — deliberately **outside** the git repo (it holds live Cloudflare credentials in a gitignored-equivalent `.env.backup`, and `actions/checkout`'s clean step would wipe anything gitignored *inside* the repo checkout on every CI run anyway). Only the two workflow files below live in the repo, and they contain no secrets — they call the external scripts by absolute path (`$HOME/corp-tower-server-backup/server-backup-{up,down}.sh`) on the self-hosted runner.
+**Script logic is tracked in the repo**, `scripts/backup/` — `backup-server-{up,down,status}.sh` and `backup-web-{up,down,status}.sh`, each taking an instance argument (`1` or `2`). Only credentials and per-run state stay off the repo, in `$CORP_TOWER_BACKUP_STATE_DIR` (default `~/corp-tower-server-backup`, kept out-of-repo because `actions/checkout`'s clean step would otherwise wipe it every CI run): `.env.backup` (indexed schema — `WS1_DOMAIN`/`WS1_PORT` … `WEB2_BUILD_SHA`; template `scripts/backup/.env.backup.example`), `web-content-1/`, `web-content-2/`, and the Cloudflare Tunnel's own config/credentials. `stop_cloudflared_if_idle` (`backup-common.sh`) only stops the shared tunnel once **all four** containers are down, so tearing one down never cuts off the other three.
 
-| Workflow | Trigger | Behavior |
-|---|---|---|
-| `Server-Backup-Deploy.yml` | Manual `workflow_dispatch`, or reusable `workflow_call` (from `Server-K3s-Automated-Master.yml`'s fast-path fallback when K3s is down but this backup is up — see [K3s workflows](#k3s-workflows)) | Runs on self-hosted runner (label `backup`); calls `server-backup-up.sh` — builds the server image, runs the container, starts `cloudflared` (user-level systemd service), upserts the `devtod.` Cloudflare CNAME, verifies the container logs, and self-updates `CORP_TOWER_IMAGE_TAG` in `.env.backup` to the deployed commit |
-| `Server-Backup-Cleanup.yml` | Manual `workflow_dispatch`, requires `confirm_cleanup` = `CLEANUP_SERVER_BACKUP` | Runs on the same self-hosted runner; calls `server-backup-down.sh` — stops/removes the container and stops `cloudflared`. Leaves the `devtod.` DNS record in place (idle tunnel, harmless) |
-
-Neither workflow has a `pull_request`/`pull_request_target` trigger, matching every other workflow in this (public) repo — required, since a self-hosted runner would otherwise let any external contributor's PR execute code on the physical machine. Only collaborators with repo write access can dispatch these.
-
-### Operational runbook (WS backup)
-
-1. **Bring it up:** dispatch `Server-Backup-Deploy.yml`, or run `~/corp-tower-server-backup/server-backup-up.sh` directly on the machine.
-2. **Check state (read-only, any time):** `~/corp-tower-server-backup/server-backup-status.sh`.
-3. **Stand down once K3s is healthy again:** dispatch `Server-Backup-Cleanup.yml` (`CLEANUP_SERVER_BACKUP`), then trigger `Server K3s Automated Master` (`fast_server_deploy`) so `ws.tod.galaxxigames.com` is confirmed current.
-
-## Web (HTML5) backup
-
-The same physical machine also backs up the GitHub-Pages-hosted web build ([build.md § Client HTML5 Pages](./build.md#client-html5-pages)), serving it at **`https://devplay.galaxxigames.com`** — a separate hostname from `https://play.tod.galaxxigames.com` (GitHub Pages' custom domain). Same class of reason as `devtod` vs `ws.tod` above, different underlying limit: Cloudflare's free Edge Certificate (Universal SSL) only covers the zone apex and *one* level of subdomain below it. `devtod`/`devplay` are one level deep and get automatic coverage; `play.tod` is two levels deep and would need a paid Advanced Certificate Manager add-on (Total TLS) to get Cloudflare edge-cert coverage if reused directly for the tunnel — confirmed the hard way (`ERR_SSL_VERSION_OR_CIPHER_MISMATCH`) before settling on the separate-hostname design. Full rationale → [decisions.md](./decisions.md#web-html5-backup-dedicated-hostname-not-shared-with-github-pages).
-
-Mechanism: the same Cloudflare Tunnel as the WS backup carries a second `ingress` hostname rule (`devplay.galaxxigames.com` → `http://localhost:8090`) — one tunnel, two backends, no second tunnel needed. Unlike the WS backup's server image, the web build isn't produced by a local Dockerfile — it's built on a GitHub-hosted runner (the same `fetch-private-assets` + `build-godot-web` composite actions as [Client HTML5 Pages](./build.md#client-html5-pages)) and shipped to the physical machine as a plain workflow artifact, then served from an `nginx:alpine` container (`corp-tower-web`, bound to `127.0.0.1:8090` only — `cloudflared` is its only intended caller).
-
-**No coupling between Pages and the web backup:** `Client-HTML5-Pages.yml`, `Client-HTML5-Undeploy.yml`, `Client-HTML5-Backup-Deploy.yml`, and `Client-HTML5-Backup-Cleanup.yml` are fully independent — none of them touches another as a side effect, so `play.tod.galaxxigames.com` and `devplay.galaxxigames.com` are both live simultaneously by design; there is no "only one live" policy to enforce. Confirmed working live. Full rationale → [decisions.md](./decisions.md#web-html5-backup-dedicated-hostname-not-shared-with-github-pages).
-
-**Auto-deploy on client push:** `Client-HTML5-Backup-Deploy.yml` also triggers on push to `main`/`master` for `src/Client/**`, the `build-godot-web`/`fetch-private-assets` composite actions, `.github/godot/export_presets.web.ci.cfg`, and its own workflow file — so the backup's served build stays current with the latest client code independent of whether it's the currently-live host. `web-backup-status.sh`'s "commits behind/ahead of `origin/main`" report reflects this.
-
-**Auto-deploy guard rail (`push` trigger only):** a `check-web-backup-status` job runs before `build`, checking `docker ps` for the running `corp-tower-web` container on the self-hosted `backup` runner. If it's not running (stood down via `Client-HTML5-Backup-Cleanup.yml`), `build`/`deploy-to-backup` are skipped — a routine client push doesn't silently bring the backup back up. Only gates `push`; manual `workflow_dispatch` always runs. Full rationale → [decisions.md](./decisions.md#auto-deploy-guard-rails-check-live-status-not-a-stored-flag).
+Client endpoint config for `devtod1`/`devtod2` is written by `scripts/write-endpoint-config.sh` before each build — each instance points its `PRIMARY` at its own game instance and `FAILOVER` at the other (`devwstod1`↔`devwstod2`), with the debug UI enabled.
 
 | Workflow | Trigger | Behavior |
 |---|---|---|
-| `Client-HTML5-Backup-Deploy.yml` | Push to `main`/`master` on client-side paths (see above), or manual `workflow_dispatch` | `check-web-backup-status` job (self-hosted `backup` runner, gates `push` only): skips the rest of the run if `corp-tower-web` isn't currently running. `build` job (hosted runner): fetches private art, builds the Web export, uploads it as a plain artifact. `deploy-to-backup` job (self-hosted runner, label `backup`): downloads the artifact, calls `web-backup-up.sh` — refuses an empty/broken build (checks for `index.html` + a `.wasm` file), syncs it into a local content dir, (re)starts `corp-tower-web`, upserts the `devplay.` Cloudflare CNAME, and records the deployed commit SHA in `.env.backup` |
-| `Client-HTML5-Backup-Cleanup.yml` | Manual `workflow_dispatch`, requires `confirm_cleanup` = `CLEANUP_WEB_BACKUP` | Runs on the same self-hosted runner; calls `web-backup-down.sh` — stops/removes `corp-tower-web`. Leaves the `devplay.` DNS record in place (idle tunnel, harmless), same as the WS backup does for `devtod.` |
+| `Backup-Diagnose.yml` | Manual | Runs all four `*-status.sh` scripts plus `cloudflared` service/tunnel state |
+| `Backup-Deploy-Game-Server.yml` / `Backup-Cleanup-Game-Server.yml` | Reusable cores, `target: devwstod1\|devwstod2` | Up/down via the matching `backup-server-*.sh <instance>` |
+| `Backup-Deploy-devwstod1.yml` | **Auto** (push to `src/Server/**`) or manual | Guarded: skips if `corp-tower-server-1` isn't currently running, so a routine push never silently un-stands-down the instance |
+| `Backup-Deploy-devwstod2.yml` / `Backup-Deploy-All-Game-Server.yml` | Manual only | `devwstod2` has no push trigger — only `devwstod1` does |
+| `Backup-Cleanup-devwstod1.yml` / `-devwstod2.yml` / `-All-Game-Server.yml` | Manual, typed confirmation | Stop the container(s); DNS record(s) left in place pointing at the idle tunnel |
+| `Backup-Deploy-Web-Server.yml` / `Backup-Cleanup-Web-Server.yml` | Reusable cores, `target: devtod1\|devtod2` | Build the Web export (`fetch-private-assets` + `build-godot-web`), deploy via `backup-web-*.sh <instance>` |
+| `Backup-Deploy-devtod1.yml` | **Auto** (push to `src/Client/**` and related build inputs) or manual | Same guard pattern as `devwstod1`, checking `corp-tower-web-1` |
+| `Backup-Deploy-devtod2.yml` / `Backup-Deploy-All-Web-Server.yml` | Manual only | `devtod2` has no push trigger |
+| `Backup-Cleanup-devtod1.yml` / `-devtod2.yml` / `-All-Web-Server.yml` | Manual, typed confirmation | |
 
-Both workflows are `workflow_dispatch`-only now — the `workflow_call` triggers and `invoked_via_call` confirmation-skip inputs they carried for `Client-HTML5-Set-Live-Host.yml` were removed along with that workflow. Why that mechanism existed in the first place → [decisions.md](./decisions.md#nested-reusable-workflows-cant-detect-their-own-trigger-via-event-name) (historical).
+None of these workflows has a `pull_request`/`pull_request_target` trigger, matching every other workflow in this (public) repo — required, since a self-hosted runner would otherwise let any external contributor's PR execute code on the physical machine. Only collaborators with repo write access can dispatch these.
 
-Scripts (`web-backup-{up,down,status}.sh`) live alongside the WS backup's scripts in `~/corp-tower-server-backup/` (see above), sharing `server-backup-common.sh`'s `upsert_cloudflare_cname`/`wait_for_cname`/`start_cloudflared_if_needed`/`stop_cloudflared_if_idle` helpers. `wait_for_cname` verifies a DNS cutover via the **Cloudflare API**, not `dig` — full reason → [decisions.md](./decisions.md#dns-cutover-verification-must-use-the-cloudflare-api-not-dig-for-proxied-records).
+### Operational runbook (backup)
 
-### Operational runbook (web backup)
-
-1. **Bring it up:** dispatch `Client-HTML5-Backup-Deploy.yml`, or run `web-backup-up.sh` on the machine with `CORP_TOWER_WEB_BUILD_DIR` pointed at an exported `build/web` directory. Independent of Pages — no need to touch `Client-HTML5-Pages.yml`/`Client-HTML5-Undeploy.yml` either way.
-2. **Check state (read-only, any time):** `~/corp-tower-server-backup/web-backup-status.sh` — also reports how many commits behind (or ahead of) `origin/main` the currently-served build is.
-3. **Stand down when no longer needed:** dispatch `Client-HTML5-Backup-Cleanup.yml` (`CLEANUP_WEB_BACKUP`). Not required for Pages's health — the two hosts don't depend on each other.
+1. **Bring an instance up:** dispatch its `Backup Deploy *` workflow (or the matching `scripts/backup/backup-{server,web}-up.sh <instance>` directly on the machine).
+2. **Check state (read-only, any time):** `Backup Diagnose`, or `scripts/backup/backup-{server,web}-status.sh <instance>` on the machine.
+3. **Stand down:** dispatch the matching `Backup Cleanup *` workflow with its typed confirmation.
 
 ## Deprecated: Docker EC2 staging
 

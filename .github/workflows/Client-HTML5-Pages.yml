@@ -102,6 +102,13 @@ jobs:
           secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           version-override: ${{ inputs.art_version_override }}
 
+      - name: Write client endpoint config
+        env:
+          CORP_TOWER_WS_PRIMARY: wss://wsplaytod.galaxxigames.com
+          CORP_TOWER_WS_FAILOVER: ""
+          CORP_TOWER_DEBUG_UI: "false"
+        run: scripts/write-endpoint-config.sh
+
       - name: Build web export
         uses: ./.github/actions/build-godot-web
         with:

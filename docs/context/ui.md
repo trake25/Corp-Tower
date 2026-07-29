@@ -11,13 +11,13 @@ Project root. Android-first client; connects through [NetworkManager](./networki
 - `project.godot` autoloads NetworkManager as a singleton.
 - Display contract: 412×917 portrait design size, `canvas_items` stretch mode, per-platform stretch aspect — `expand` by default (Android fills any phone aspect), overridden to `keep` for web (`window/stretch/aspect.web`) so the browser pillarboxes to 412:917 instead of widening the viewport.
 - `Main.tscn` is the app root, owning [Screen Manager](#screen-manager). It swaps between join screen, find-match screen, and the instanced [Game UI Scene](#game-ui-scene) — there is no single statically-instanced UI root scene.
-- Android export config lives in the gitignored local `export_presets.cfg`; CI uses a non-secret preset (see [build.md](./build.md#client-android-internal-workflow)).
+- Android export config lives in the gitignored local `export_presets.cfg`; CI uses a non-secret preset (see [build.md](./build.md#android-deploy-wsplaytod-workflow)).
 - Current release target is **Android only**; web/Windows/iOS are future, not active.
 
 **Gotchas:**
 - `window/handheld/orientation` must be the Godot 4 integer `1` (`SCREEN_PORTRAIT`), not a Godot 3–style string — a string silently coerces to `0` (landscape) with **no warning**. This is what shipped every Android build in forced landscape until corrected; check this first if orientation ever regresses, since the string form *looks* correct.
 - `expand` vs `keep` produce genuinely different viewport sizes, not just different letterboxing — under `expand` the viewport grows past 412×917 to match window aspect; under `keep` it stays exactly 412×917. They coincide only when the run window is already 412×917, which is why the **editor looks identical under either setting and cannot validate web layout**. Verify web layout from a deployed build ([build.md](./build.md#client-html5-pages)).
-- Debug tuning is a floating overlay ([Debug Overlay](#leaf-components)) toggled by a single global draggable button owned by Screen Manager — hidden on web builds only when `window.location.hostname` is the production Pages host (`play.tod.galaxxigames.com`); visible everywhere else (Android, editor, `devplay.galaxxigames.com` backup), where it is only disabled, not hidden, until a room connects. See [decisions.md](./decisions.md#debug-menu--debug-config-not-yet-gated). Category navigation is a dropdown (`DebugCategoryDropdown`), not tabs — see [decisions.md](./decisions.md#debug-menu-category-navigation-switched-from-tabs-to-a-dropdown).
+- Debug tuning is a floating overlay ([Debug Overlay](#leaf-components)) toggled by a single global draggable button owned by Screen Manager — visibility is a build-time flag (`EndpointConfig.DEBUG_UI_ENABLED`, see [build.md § Client endpoint config](./build.md#client-endpoint-config)), off for the K3s web builds (`playtod`/`todtest`) and on everywhere else (Android, editor, the physical backup's dev builds); where visible, it is further disabled (not hidden) until a room connects. See [decisions.md](./decisions.md#debug-menu-build-flag). Category navigation is a dropdown (`DebugCategoryDropdown`), not tabs — see [decisions.md](./decisions.md#debug-menu-category-navigation-switched-from-tabs-to-a-dropdown).
 
 ## Screen Manager
 
@@ -25,13 +25,13 @@ Project root. Android-first client; connects through [NetworkManager](./networki
 
 - Swaps join screen / find-match screen / live [Game UI Scene](#game-ui-scene) inside `ScreenContainer`, responding to the child screens' `find_match_requested`/`cancel_requested` and NetworkManager's `room_joined`/`room_closed`.
 - Instantiates `PlayScreenScene` once per joined room, frees it on room close — not kept resident.
-- Owns one floating, draggable debug button above whichever screen is active. Distinguishes tap vs. drag via `DEBUG_BUTTON_DRAG_THRESHOLD`. Visibility is set once in `_ready()` via `_is_debug_button_hidden_host()` (`OS.has_feature("web")` + `JavaScriptBridge.eval("window.location.hostname")` against `DEBUG_BUTTON_HIDDEN_HOST`); where visible, it is further gated (enabled) only when a live play instance exists with a `toggle_debug_overlay()` method **and** `NetworkManager.is_conn_estab` is true.
+- Owns one floating, draggable debug button above whichever screen is active. Distinguishes tap vs. drag via `DEBUG_BUTTON_DRAG_THRESHOLD`. Visibility is set once in `_ready()` from `EndpointConfig.DEBUG_UI_ENABLED`; where visible, it is further gated (enabled) only when a live play instance exists with a `toggle_debug_overlay()` method **and** `NetworkManager.is_conn_estab` is true.
 
 **Interface:** `show_join_screen()`, `show_find_match_screen()`, `reset_debug_button_position()` (snaps to top-right; called on `_ready()` and on room join — not after a manual drag, so a player's drag persists until the next room join), `_on_debug_button_tapped()` (calls `play_instance.call("toggle_debug_overlay")` via duck typing — no static dependency on Main UI Controller).
 
 **Depends on:** NetworkManager (`room_joined`, `room_closed`, `status_changed`, `is_conn_estab`); Main UI Controller (duck-typed call only); the join/find-match scenes (thin — they only emit their request/cancel signal and mirror `status_changed` into a label; not separately documented).
 
-**Notes:** debug button's default spot moved bottom-right → top-right to avoid the join/find-match screens' primary action buttons. It's intentionally ungated by any build flag (pre-release requirement to fix: [decisions.md](./decisions.md#debug-menu--debug-config-not-yet-gated)).
+**Notes:** debug button's default spot moved bottom-right → top-right to avoid the join/find-match screens' primary action buttons. Gated by a build flag (`EndpointConfig.DEBUG_UI_ENABLED`) — UI-only; the server still has no auth check on `update_config`/`resetDebugConfig` (see [decisions.md](./decisions.md#debug-menu-build-flag)).
 
 ## Main UI Controller
 
@@ -97,7 +97,7 @@ Project root. Android-first client; connects through [NetworkManager](./networki
 
 **`DebugCategoryPanels/Impact`** holds the Impact tunables (`ImpactInterval`, `ImpactScore` — the contribution share, moved here out of Scoring — `ImpactScoreFloor`). **A `.tscn` declares parents before children**, so these row nodes must appear *after* the `Impact`/`ImpactRows` containers in file order; moving a row between categories without moving its node block produces a `Parent path … has vanished` warning at instantiation and the row silently disappears.
 
-**Landmine — `godot --editor --quit` re-saves this file and silently drops authored overrides.** The import/parse step ([build.md](./build.md#client-android-internal-workflow) runs it in CI) rewrote ~500 lines: reordered `ext_resource` blocks, injected `uid=`, converted `layout_mode = 0` to `anchors_preset = 0`, dropped `stretch_mode = 0` — and deleted the three [Popover Panel](#popover-panel) `Card` `custom_minimum_size` overrides, collapsing every card to 99px and failing `test_popover_layout_baseline.gd`. Edit `.tscn`/`.tres` by hand or from the real editor; never run `--editor --quit` to generate a `.uid` or check a scene parses. If it has run, `git checkout` the scene and re-apply intended edits.
+**Landmine — `godot --editor --quit` re-saves this file and silently drops authored overrides.** The import/parse step ([build.md](./build.md#android-deploy-wsplaytod-workflow) runs it in CI) rewrote ~500 lines: reordered `ext_resource` blocks, injected `uid=`, converted `layout_mode = 0` to `anchors_preset = 0`, dropped `stretch_mode = 0` — and deleted the three [Popover Panel](#popover-panel) `Card` `custom_minimum_size` overrides, collapsing every card to 99px and failing `test_popover_layout_baseline.gd`. Edit `.tscn`/`.tres` by hand or from the real editor; never run `--editor --quit` to generate a `.uid` or check a scene parses. If it has run, `git checkout` the scene and re-apply intended edits.
 
 **Notes:**
 - Formerly one of two swappable "skins" — see [decisions.md](./decisions.md#removed-systems-stale-references-you-may-still-hit). No `ProjectSettings` skin preference or skin-picker group exists anymore.

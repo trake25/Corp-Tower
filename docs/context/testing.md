@@ -4,7 +4,7 @@ Scope: everything that verifies or tunes behavior — server contract tests, the
 
 ## Server Score Events Tests
 
-`src/Server/tests/Score_Events.test.js` — CI/test-only, **not** shipped in the Docker image. Runs via `npm test` (Node's built-in test runner, no separate framework), or directly: `node --test tests/Score_Events.test.js` from `src/Server`. **33 tests, all passing.** Called by [Server K3s Deploy](./deployment.md#k3s-workflows) before a server image build/deploy.
+`src/Server/tests/Score_Events.test.js` — CI/test-only, **not** shipped in the Docker image. Runs via `npm test` (Node's built-in test runner, no separate framework), or directly: `node --test tests/Score_Events.test.js` from `src/Server`. **33 tests, all passing.** Called by the [K3s Deploy workflows](./deployment.md#k3s-workflows) before a server image build/deploy.
 
 **Covers:** `balanceDelta` — that a centred brick scores exactly 0 at every height *while* the raw stability score is asserted to sag over the same stack (the pair is the regression guard; see [decisions.md](./decisions.md#brick-faces-read-a-lean-only-balance-delta-not-the-stability-score)), that the sign follows the correction in both lean directions, and its ±100 clamp; placement score events; exact-finish (precision + team bonus) and overbuild (no finish bonus) behavior; **column→`originX` clamping** and **placeable-range narrowing by width**; **per-level site width** (scales with target height, stays centred on the grid at every width, clamps at `towerSiteWidthMax`) and that a brick's origin range follows the level's site rather than a fixed span; **the slenderness regression** — a symmetric 2-wide spire must reach `integrity 0`/`collapsed` with `tiltScore` still exactly 0, which a single tilt scalar cannot detect; **the stability dial** — the same tower scores lower at level 40 than at level 1, difficulty `0` leaves it uncollapsed, difficulty is clamped 0–100, and the derived physics keys are rejected as unknown; **stability multiplier** on placement score; **Reinforce** payout for integrity/lean gains, that a worsening placement pays 0, and that an empty tower's first brick earns no phantom Reinforce; confirms `createBlock` no longer assigns an `anchorX` field; level-summary banking for failed levels; debug-config clamping; quick-chat event/cooldown contracts; refresh generation; activating a held `refresh` item, and holding one defers the not-enough-height fail check; Impact Power-inventory snapshot/rollback behavior.
 
@@ -46,7 +46,7 @@ Scope: everything that verifies or tunes behavior — server contract tests, the
 
 ## Godot Client Tests
 
-Files: `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`, `Tests/Gut/test_player_colors.gd`, `Tests/Gut/GameUi/*`. Run headlessly through vendored GUT (`addons/gut`), invoked by [Client Android Internal Workflow](./build.md#client-android-internal-workflow) before a signed export.
+Files: `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`, `Tests/Gut/test_player_colors.gd`, `Tests/Gut/GameUi/*`. Run headlessly through vendored GUT (`addons/gut`), invoked by [Android Deploy wsplaytod Workflow](./build.md#android-deploy-wsplaytod-workflow) before a signed export.
 
 **Covers:** loads application scripts under `Cor`/`Sys` (catches load-time/syntax errors before CI's build step); verifies the main scene + `NetworkManager` autoload wiring; verifies [Game UI Scene](./ui.md#game-ui-scene) loads/instantiates with every node Main UI Controller requires present; verifies [Player Colors](./ui.md#leaf-components) behavior through GUT.
 
@@ -64,9 +64,9 @@ Files: `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`, `Tests/Gut/test_player_
 
 | Workflow | Runs | Blocking? |
 |---|---|---|
-| Client Android Internal | `CiSmokeTest.gd`, required GUT tests | Yes — before signed export |
+| Android Deploy wsplaytod | `CiSmokeTest.gd`, required GUT tests | Yes — before signed export |
 | Client HTML5 Pages | (build/export only — no test gate beyond the build itself) | — |
-| Server K3s Deploy | `npm test` (syntax checks + `Score_Events.test.js` + `Matchmaking_Queue.test.js`) | Yes — before image build/push |
+| K3s Deploy (game server) | `npm test` (syntax checks + `Score_Events.test.js` + `Matchmaking_Queue.test.js`) | Yes — before image build/push |
 
 ## Known coverage gaps
 

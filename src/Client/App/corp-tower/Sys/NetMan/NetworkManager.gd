@@ -21,8 +21,8 @@ const PROFILE_ID_FILE := "user://corp_tower_profile_id.save"
 const AUTO_RECONNECT_DELAY_SECONDS := 1.0
 const AUTO_RECONNECT_MAX_ATTEMPTS := 8
 const CONNECT_TIMEOUT_SECONDS := 5.0
-const SERVER_URL := "wss://ws.tod.galaxxigames.com"
-const FAILOVER_SERVER_URL := "wss://devtod.galaxxigames.com"
+const SERVER_URL := EndpointConfig.PRIMARY
+const FAILOVER_SERVER_URL := EndpointConfig.FAILOVER
 
 signal status_changed(text)
 signal room_joined(data)
@@ -61,7 +61,7 @@ func connect_server(is_auto_reconnect := false, is_failover_retry := false):
 		is_connecting = false
 		if is_auto_reconnect:
 			schedule_auto_reconnect()
-		elif not tried_failover:
+		elif not tried_failover and FAILOVER_SERVER_URL != "":
 			tried_failover = true
 			current_url = FAILOVER_SERVER_URL
 			connect_server(false, true)
@@ -250,7 +250,7 @@ func _process(delta: float) -> void:
 			if is_conn_estab or is_connecting:
 				if auto_reconnect_enabled and not manual_disconnect_requested:
 					schedule_auto_reconnect()
-				elif is_connecting and not is_conn_estab and not tried_failover and not manual_disconnect_requested:
+				elif is_connecting and not is_conn_estab and not tried_failover and not manual_disconnect_requested and FAILOVER_SERVER_URL != "":
 					tried_failover = true
 					current_url = FAILOVER_SERVER_URL
 					is_connecting = false

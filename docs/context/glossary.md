@@ -56,10 +56,10 @@ Scope: project-specific terms. If a chat log, branch name, or old PR uses a term
 |---|---|
 | **EC2-GW** | Public EC2 instance: SSH bastion, Caddy WSS gateway, Cloudflare DNS updater, NAT instance for the K3s lab VPC. |
 | **K3s lab** | The active, self-hosted K3s-on-EC2 stack (Terraform root `infra/k3s`, state key `k3s-lab/terraform.tfstate`). |
-| **NodePort 30300** | Fixed port the Corp Tower server Service exposes inside K3s; EC2-GW Caddy proxies to it. |
-| **`ws.tod.galaxxigames.com`** | The one public WebSocket endpoint, Cloudflare-DNS-managed, currently pointed at the K3s gateway. |
+| **NodePorts 30300/30301/30310/30311** | Fixed ports the Corp Tower Services expose inside K3s — prod/test game server, prod/test web server respectively; EC2-GW Caddy proxies each `gateway_sites.yml` hostname to its own NodePort. |
+| **`gateway_sites.yml`** | `infra/k3s/gateway_sites.yml` — the single list of `{domain, nodeport}` pairs (`wsplaytod`/`wstodtest` game, `playtod`/`todtest` web) that both the Caddy gateway template and the Cloudflare DNS upsert render from. Every K3s deploy renders all four, regardless of which one target it deploys. |
 | **ECR** | AWS Elastic Container Registry; stores the server's Docker image, tagged by commit SHA. |
-| **Kustomize `overlays/lab` vs `overlays/runtime`** | `overlays/lab` is committed with a placeholder image tag; `Server-K3s-Deploy.yml` generates the uncommitted `overlays/runtime` at deploy time with the real ECR tag. |
+| **Kustomize `overlays/{prod,test,web-prod,web-test}` vs `overlays/runtime`** | The four committed overlays carry a placeholder image tag; each K3s deploy workflow generates an uncommitted `overlays/runtime` (game) or `overlays/runtime-web` (web) at deploy time with the real ECR tag. |
 | **R2** | Cloudflare R2 object storage; private bucket `corp-tower-assets` holds production art bundles. |
 
 ## Tuning-knob shorthand

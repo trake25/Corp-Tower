@@ -1,0 +1,33 @@
+name: K3s Cleanup TodTest
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_cleanup:
+        description: "Type CLEANUP_WSTODTEST to remove the wstodtest game server (Deployment+Service) from corp-tower-test. The namespace and any web server there are left untouched."
+        required: true
+        type: string
+
+jobs:
+  guard:
+    name: Check Cleanup Confirmation
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm_cleanup }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRM" != "CLEANUP_WSTODTEST" ]; then
+            echo "::error::confirm_cleanup must be exactly CLEANUP_WSTODTEST."
+            exit 1
+          fi
+
+  cleanup:
+    name: Cleanup wstodtest
+    needs: guard
+    if: needs.guard.result == 'success'
+    uses: ./.github/workflows/K3s-Cleanup-Game-Server.yml
+    with:
+      target: wstodtest
+    secrets: inherit

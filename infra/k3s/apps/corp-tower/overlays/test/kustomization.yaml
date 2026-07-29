@@ -1,0 +1,19 @@
+namespace: corp-tower-test
+
+resources:
+  - namespace.yaml
+  - ../../base
+
+images:
+  - name: corp-tower-server
+    newName: corp-tower-server
+    newTag: lab-placeholder
+
+patches:
+  - target:
+      kind: Service
+      name: corp-tower-server
+    patch: |-
+      - op: replace
+        path: /spec/ports/0/nodePort
+        value: 30301

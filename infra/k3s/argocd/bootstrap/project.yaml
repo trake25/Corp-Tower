@@ -8,7 +8,9 @@ spec:
   sourceRepos:
     - https://github.com/trake25/Corp-Tower.git
   destinations:
-    - namespace: corp-tower
+    - namespace: corp-tower-prod
+      server: https://kubernetes.default.svc
+    - namespace: corp-tower-test
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: ""

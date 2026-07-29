@@ -1,0 +1,23 @@
+name: K3s Deploy All Web Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # Both targets share one EC2-GW gateway (one Caddy container, one R2 ACME
+  # archive key) - deploying them in parallel would race on that shared
+  # state, so todtest deliberately waits for playtod to finish.
+  deploy-playtod:
+    name: Deploy playtod
+    uses: ./.github/workflows/K3s-Deploy-Web-Server.yml
+    with:
+      target: playtod
+    secrets: inherit
+
+  deploy-todtest:
+    name: Deploy todtest
+    needs: deploy-playtod
+    uses: ./.github/workflows/K3s-Deploy-Web-Server.yml
+    with:
+      target: todtest
+    secrets: inherit

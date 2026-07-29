@@ -1,10 +1,10 @@
-name: Server K3s Cleanup
+name: K3s Cleanup All Game Server
 
 on:
   workflow_dispatch:
     inputs:
       cleanup_mode:
-        description: "Runtime cleanup uninstalls Server K3s/Caddy artifacts. Terraform destroy removes AWS resources managed by infra/k3s/terraform."
+        description: "Runtime cleanup uninstalls K3s/Caddy on every node (affects both wsplaytod/wstodtest game servers and any playtod/todtest web servers). Terraform destroy removes AWS resources managed by infra/k3s/terraform."
         required: true
         default: runtime_only
         type: choice
@@ -12,7 +12,7 @@ on:
           - runtime_only
           - terraform_destroy
       confirm_cleanup:
-        description: "Type CLEANUP_SERVER_K3S for runtime cleanup or DESTROY_SERVER_K3S for terraform_destroy."
+        description: "Type CLEANUP_K3S for runtime cleanup or DESTROY_K3S for terraform_destroy."
         required: true
         type: string
 
@@ -40,8 +40,8 @@ jobs:
     steps:
       - name: Check cleanup confirmation
         run: |
-          if [ "${{ inputs.confirm_cleanup }}" != "CLEANUP_SERVER_K3S" ]; then
-            echo "confirm_cleanup must be exactly CLEANUP_SERVER_K3S for runtime cleanup."
+          if [ "${{ inputs.confirm_cleanup }}" != "CLEANUP_K3S" ]; then
+            echo "confirm_cleanup must be exactly CLEANUP_K3S for runtime cleanup."
             exit 1
           fi
 
@@ -164,8 +164,8 @@ jobs:
 
       - name: Check destroy confirmation
         run: |
-          if [ "${{ inputs.confirm_cleanup }}" != "DESTROY_SERVER_K3S" ]; then
-            echo "confirm_cleanup must be exactly DESTROY_SERVER_K3S for terraform_destroy."
+          if [ "${{ inputs.confirm_cleanup }}" != "DESTROY_K3S" ]; then
+            echo "confirm_cleanup must be exactly DESTROY_K3S for terraform_destroy."
             exit 1
           fi
 

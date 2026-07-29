@@ -36,9 +36,9 @@ variable "game_port_cidr" {
 }
 
 variable "gateway_domain" {
-  description = "Public DNS name for the K3s lab WSS gateway."
+  description = "Primary public DNS name for the K3s lab WSS gateway, used only for the informational learning_gateway_websocket_url output. The gateway itself serves every hostname in infra/k3s/gateway_sites.yml."
   type        = string
-  default     = "ws.tod.galaxxigames.com"
+  default     = "wsplaytod.galaxxigames.com"
 }
 
 variable "ecr_repository_name" {

@@ -86,9 +86,9 @@ resource "aws_security_group" "k3s_nodes" {
   }
 
   ingress {
-    description     = "Corp Tower NodePort from EC2-GW Caddy"
+    description     = "Corp Tower NodePorts from EC2-GW Caddy (prod/test game + web servers)"
     from_port       = 30300
-    to_port         = 30300
+    to_port         = 30311
     protocol        = "tcp"
     security_groups = [aws_security_group.gateway.id]
   }

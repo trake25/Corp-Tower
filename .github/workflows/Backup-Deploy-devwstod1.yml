@@ -1,0 +1,42 @@
+name: Backup Deploy devwstod1
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "src/Server/**"
+      - ".github/workflows/Backup-Deploy-devwstod1.yml"
+
+  workflow_dispatch:
+
+jobs:
+  check-devwstod1-status:
+    name: Check devwstod1 Status
+    if: github.event_name == 'push'
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 5
+    outputs:
+      devwstod1_up: ${{ steps.check.outputs.devwstod1_up }}
+    steps:
+      - name: Check for a running devwstod1 container
+        id: check
+        run: |
+          set -euo pipefail
+          if docker ps --filter "name=corp-tower-server-1" --filter "status=running" --format '{{.Names}}' | grep -q .; then
+            echo "devwstod1_up=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "devwstod1_up=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::corp-tower-server-1 is not running on the backup machine (stood down) — skipping auto-deploy. Dispatch this workflow manually to redeploy."
+          fi
+
+  deploy:
+    name: Deploy devwstod1
+    needs: check-devwstod1-status
+    if: |
+      always() &&
+      (needs.check-devwstod1-status.result == 'skipped' || needs.check-devwstod1-status.outputs.devwstod1_up == 'true')
+    uses: ./.github/workflows/Backup-Deploy-Game-Server.yml
+    with:
+      target: devwstod1

@@ -1,4 +1,4 @@
-name: Server K3s Infra Plan
+name: K3s Infra Plan
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ env:
 
 jobs:
   plan:
-    name: Plan Server K3s Infrastructure
+    name: Plan K3s Infrastructure
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment: staging

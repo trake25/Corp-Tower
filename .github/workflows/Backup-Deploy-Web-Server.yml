@@ -1,19 +1,12 @@
-name: Client HTML5 Backup Deploy
+name: Backup Deploy Web Server (core)
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - "src/Client/**"
-      - ".github/actions/build-godot-web/**"
-      - ".github/actions/fetch-private-assets/**"
-      - ".github/godot/export_presets.web.ci.cfg"
-      - ".github/workflows/Client-HTML5-Backup-Deploy.yml"
-
-  workflow_dispatch:
+  workflow_call:
     inputs:
+      target:
+        description: "Dev web server instance to deploy: devtod1 or devtod2."
+        required: true
+        type: string
       art_version_override:
         description: "Optional art bundle version (e.g. v2) to fetch instead of the pinned manifest. Skips sha256 verification — testing only, never for release."
         required: false
@@ -21,34 +14,41 @@ on:
         type: string
 
 concurrency:
-  group: client-html5-web-backup
-  cancel-in-progress: false
+  group: backup-web-${{ inputs.target }}
+  cancel-in-progress: true
 
 jobs:
-  check-web-backup-status:
-    name: Check Web Backup Status
-    if: github.event_name == 'push'
-    runs-on: [self-hosted, backup]
-    timeout-minutes: 5
+  resolve-target:
+    name: Resolve Target Instance
+    runs-on: ubuntu-24.04
     outputs:
-      backup_web_up: ${{ steps.check.outputs.backup_web_up }}
+      instance: ${{ steps.resolve.outputs.instance }}
+      ws_primary: ${{ steps.resolve.outputs.ws_primary }}
+      ws_failover: ${{ steps.resolve.outputs.ws_failover }}
     steps:
-      - name: Check for a running web backup container
-        id: check
+      - name: Resolve
+        id: resolve
         run: |
           set -euo pipefail
-          if docker ps --filter "name=corp-tower-web" --filter "status=running" --format '{{.Names}}' | grep -q .; then
-            echo "backup_web_up=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "backup_web_up=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::corp-tower-web is not running on the backup machine (stood down) — skipping auto-deploy. Dispatch this workflow manually to redeploy."
-          fi
+          case "${{ inputs.target }}" in
+            devtod1)
+              echo "instance=1" >> "$GITHUB_OUTPUT"
+              echo "ws_primary=wss://devwstod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              echo "ws_failover=wss://devwstod2.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              ;;
+            devtod2)
+              echo "instance=2" >> "$GITHUB_OUTPUT"
+              echo "ws_primary=wss://devwstod2.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              echo "ws_failover=wss://devwstod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Unknown target '${{ inputs.target }}'. Expected devtod1 or devtod2."
+              exit 1
+              ;;
+          esac
 
   build:
-    needs: check-web-backup-status
-    if: |
-      always() &&
-      (needs.check-web-backup-status.result == 'skipped' || needs.check-web-backup-status.outputs.backup_web_up == 'true')
+    needs: resolve-target
     runs-on: ubuntu-24.04
 
     env:
@@ -71,6 +71,13 @@ jobs:
           secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           version-override: ${{ inputs.art_version_override }}
 
+      - name: Write client endpoint config
+        env:
+          CORP_TOWER_WS_PRIMARY: ${{ needs.resolve-target.outputs.ws_primary }}
+          CORP_TOWER_WS_FAILOVER: ${{ needs.resolve-target.outputs.ws_failover }}
+          CORP_TOWER_DEBUG_UI: "true"
+        run: scripts/write-endpoint-config.sh
+
       - name: Build web export
         uses: ./.github/actions/build-godot-web
         with:
@@ -83,29 +90,31 @@ jobs:
       - name: Upload web build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: web-build
+          name: web-build-${{ inputs.target }}
           path: build/web
-          retention-days: 7
+          retention-days: 1
 
       - name: Remove private assets from runner
         if: always()
         run: rm -rf "$GODOT_PROJECT_PATH/Cor/Art"
 
   deploy-to-backup:
-    needs: build
-    if: always() && needs.build.result == 'success'
+    needs: [resolve-target, build]
     runs-on: [self-hosted, backup]
     timeout-minutes: 15
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
       - name: Download web build artifact
         uses: actions/download-artifact@v4
         with:
-          name: web-build
+          name: web-build-${{ inputs.target }}
           path: build/web
 
       - name: Deploy to backup machine
-        run: "$HOME/corp-tower-server-backup/web-backup-up.sh"
+        run: "scripts/backup/backup-web-up.sh ${{ needs.resolve-target.outputs.instance }}"
         env:
           CORP_TOWER_WEB_BUILD_DIR: ${{ github.workspace }}/build/web
           CORP_TOWER_WEB_BUILD_SHA: ${{ github.sha }}
