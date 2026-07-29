@@ -112,9 +112,9 @@
     group: root
     mode: "0600"
     content: |
-      CLOUDFLARE_RECORD_NAMES={{ gateway_sites | map(attribute='domain') | join(' ') }}
-      CLOUDFLARE_ZONE_ID={{ lookup('ansible.builtin.env', 'CLOUDFLARE_ZONE_ID') }}
-      CLOUDFLARE_API_TOKEN={{ lookup('ansible.builtin.env', 'CLOUDFLARE_API_TOKEN') }}
+      CLOUDFLARE_RECORD_NAMES="{{ gateway_sites | map(attribute='domain') | join(' ') }}"
+      CLOUDFLARE_ZONE_ID="{{ lookup('ansible.builtin.env', 'CLOUDFLARE_ZONE_ID') }}"
+      CLOUDFLARE_API_TOKEN="{{ lookup('ansible.builtin.env', 'CLOUDFLARE_API_TOKEN') }}"
   become: true
   no_log: true
 
