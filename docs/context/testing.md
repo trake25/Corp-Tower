@@ -65,7 +65,6 @@ Files: `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`, `Tests/Gut/test_player_
 | Workflow | Runs | Blocking? |
 |---|---|---|
 | Android Deploy wsplaytod | `CiSmokeTest.gd`, required GUT tests | Yes — before signed export |
-| Client HTML5 Pages | (build/export only — no test gate beyond the build itself) | — |
 | K3s Deploy (game server) | `npm test` (syntax checks + `Score_Events.test.js` + `Matchmaking_Queue.test.js`) | Yes — before image build/push |
 
 ## Known coverage gaps

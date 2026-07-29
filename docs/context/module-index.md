@@ -48,7 +48,6 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | Module | File | Purpose | Depends on | Full detail |
 |---|---|---|---|---|
 | Android Deploy wsplaytod Workflow | `.github/workflows/Android-Deploy-wsplaytod.yml` | Build/test/sign internal Android build, endpoint wsplaytod | Godot Client App, Private Asset Pipeline | [build.md](./build.md#android-deploy-wsplaytod-workflow) |
-| Client HTML5 Pages | `.github/workflows/Client-HTML5-Pages.yml` (+`-Undeploy.yml`) | Build/export/deploy Web build to GitHub Pages | Godot Client App, Private Asset Pipeline | [build.md](./build.md#client-html5-pages) |
 | Private Asset Pipeline | `.github/actions/fetch-private-assets/`, `scripts/art-*.sh` | Injects production art from private R2 at build time | R2 bucket `corp-tower-assets` | [build.md](./build.md#private-asset-pipeline) |
 | Terraform Infrastructure | `infra/k3s/terraform`, `infra/eks/terraform` | Terraform roots | — | [deployment.md](./deployment.md#terraform-roots) |
 | Server K3s Stack | `infra/k3s/` | Active self-hosted K3s-on-EC2 infra | Terraform Infrastructure | [deployment.md](./deployment.md#k3s-topology) |

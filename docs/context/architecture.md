@@ -82,7 +82,6 @@ flowchart LR
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/` | UI module family (services + view controllers) | [ui.md](./ui.md#main-ui-controller) |
 | `src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn` | The one gameplay UI scene | [ui.md](./ui.md#game-ui-scene) |
 | `.github/workflows/Android-Deploy-wsplaytod.yml` | Android internal build/upload, endpoint wsplaytod | [build.md](./build.md#android-deploy-wsplaytod-workflow) |
-| `.github/workflows/Client-HTML5-Pages.yml` (+ `-Undeploy.yml`) | Web export deploy to GitHub Pages | [build.md](./build.md#client-html5-pages) |
 | `.github/actions/fetch-private-assets/` | Pulls production art from R2 | [build.md](./build.md#private-asset-pipeline) |
 | `.github/workflows/K3s-*.yml` | K3s deploy/cleanup/infra for prod (wsplaytod/playtod) + test (wstodtest/todtest) | [deployment.md](./deployment.md#k3s-workflows) |
 | `.github/workflows/Backup-*.yml` | Physical-backup deploy/cleanup/diagnose for 4 dev instances | [deployment.md](./deployment.md#backup-physical-machine-4-dev-instances) |
