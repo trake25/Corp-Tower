@@ -221,11 +221,24 @@
   become: true
 
 - name: Enable and run Cloudflare boot updater
-  ansible.builtin.shell: |
-    set -euo pipefail
-    sudo systemctl daemon-reload
-    sudo systemctl enable corp-tower-k3s-cloudflare-update.service
-    sudo systemctl restart corp-tower-k3s-cloudflare-update.service
-  args:
-    executable: /bin/bash
-  changed_when: true
+  block:
+    - name: Enable and start Cloudflare boot updater service
+      ansible.builtin.shell: |
+        set -euo pipefail
+        sudo systemctl daemon-reload
+        sudo systemctl enable corp-tower-k3s-cloudflare-update.service
+        sudo systemctl restart corp-tower-k3s-cloudflare-update.service
+      args:
+        executable: /bin/bash
+      changed_when: true
+  rescue:
+    - name: Capture Cloudflare boot updater logs for diagnosis
+      ansible.builtin.command: >
+        sudo journalctl -xeu corp-tower-k3s-cloudflare-update.service --no-pager -n 200
+      register: cloudflare_updater_logs
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with Cloudflare boot updater logs
+      ansible.builtin.fail:
+        msg: "corp-tower-k3s-cloudflare-update.service failed to start. Logs:\n{{ cloudflare_updater_logs.stdout }}"
