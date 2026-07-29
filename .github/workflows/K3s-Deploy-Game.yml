@@ -1,7 +1,17 @@
-name: K3s Deploy All Game Server
+name: K3s Deploy Game Server
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Game server environment to deploy."
+        required: true
+        default: wsplaytod
+        type: choice
+        options:
+          - wsplaytod
+          - wstodtest
+          - all
 
 jobs:
   # Both targets share one EC2-GW gateway (one Caddy container, one R2 ACME
@@ -9,6 +19,7 @@ jobs:
   # state, so wstodtest deliberately waits for wsplaytod to finish.
   deploy-wsplaytod:
     name: Deploy wsplaytod
+    if: inputs.target == 'wsplaytod' || inputs.target == 'all'
     uses: ./.github/workflows/K3s-Deploy-Game-Server.yml
     with:
       target: wsplaytod
@@ -17,6 +28,10 @@ jobs:
   deploy-wstodtest:
     name: Deploy wstodtest
     needs: deploy-wsplaytod
+    if: |
+      always() &&
+      (inputs.target == 'wstodtest' || inputs.target == 'all') &&
+      (needs.deploy-wsplaytod.result == 'success' || needs.deploy-wsplaytod.result == 'skipped')
     uses: ./.github/workflows/K3s-Deploy-Game-Server.yml
     with:
       target: wstodtest

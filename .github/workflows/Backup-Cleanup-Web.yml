@@ -1,0 +1,60 @@
+name: Backup Cleanup Web Server
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Backup web instance to clean up."
+        required: true
+        default: devtod1
+        type: choice
+        options:
+          - devtod1
+          - devtod2
+          - all
+      confirm_cleanup:
+        description: "Type CLEANUP_DEVTOD1, CLEANUP_DEVTOD2, or CLEANUP_ALL_DEVTOD to match the target chosen above."
+        required: true
+        type: string
+
+jobs:
+  guard:
+    name: Check Cleanup Confirmation
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify confirmation matches target
+        env:
+          TARGET: ${{ inputs.target }}
+          CONFIRM: ${{ inputs.confirm_cleanup }}
+        run: |
+          set -euo pipefail
+          case "$TARGET" in
+            devtod1) expected="CLEANUP_DEVTOD1" ;;
+            devtod2) expected="CLEANUP_DEVTOD2" ;;
+            all) expected="CLEANUP_ALL_DEVTOD" ;;
+            *) echo "::error::Unknown target $TARGET"; exit 1 ;;
+          esac
+          if [ "$CONFIRM" != "$expected" ]; then
+            echo "::error::confirm_cleanup must be exactly $expected for target $TARGET."
+            exit 1
+          fi
+
+  cleanup-devtod1:
+    name: Cleanup devtod1
+    needs: guard
+    if: needs.guard.result == 'success' && (inputs.target == 'devtod1' || inputs.target == 'all')
+    uses: ./.github/workflows/Backup-Cleanup-Web-Server.yml
+    with:
+      target: devtod1
+
+  cleanup-devtod2:
+    name: Cleanup devtod2
+    needs: [guard, cleanup-devtod1]
+    if: |
+      always() &&
+      needs.guard.result == 'success' &&
+      (inputs.target == 'devtod2' || inputs.target == 'all') &&
+      (needs.cleanup-devtod1.result == 'success' || needs.cleanup-devtod1.result == 'skipped')
+    uses: ./.github/workflows/Backup-Cleanup-Web-Server.yml
+    with:
+      target: devtod2

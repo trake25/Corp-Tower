@@ -1,0 +1,66 @@
+name: K3s Cleanup Web Server
+
+# Deletes only the web server's own Deployment/Service by name in the
+# target namespace - never the namespace itself, since corp-tower-prod and
+# corp-tower-test also host that environment's game server.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Web server environment to clean up."
+        required: true
+        default: playtod
+        type: choice
+        options:
+          - playtod
+          - todtest
+          - all
+      confirm_cleanup:
+        description: "Type CLEANUP_PLAYTOD, CLEANUP_TODTEST, or CLEANUP_WEB to match the target chosen above."
+        required: true
+        type: string
+
+jobs:
+  guard:
+    name: Check Cleanup Confirmation
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify confirmation matches target
+        env:
+          TARGET: ${{ inputs.target }}
+          CONFIRM: ${{ inputs.confirm_cleanup }}
+        run: |
+          set -euo pipefail
+          case "$TARGET" in
+            playtod) expected="CLEANUP_PLAYTOD" ;;
+            todtest) expected="CLEANUP_TODTEST" ;;
+            all) expected="CLEANUP_WEB" ;;
+            *) echo "::error::Unknown target $TARGET"; exit 1 ;;
+          esac
+          if [ "$CONFIRM" != "$expected" ]; then
+            echo "::error::confirm_cleanup must be exactly $expected for target $TARGET."
+            exit 1
+          fi
+
+  cleanup-playtod:
+    name: Cleanup playtod
+    needs: guard
+    if: needs.guard.result == 'success' && (inputs.target == 'playtod' || inputs.target == 'all')
+    uses: ./.github/workflows/K3s-Cleanup-Web-Server.yml
+    with:
+      target: playtod
+    secrets: inherit
+
+  cleanup-todtest:
+    name: Cleanup todtest
+    needs: [guard, cleanup-playtod]
+    if: |
+      always() &&
+      needs.guard.result == 'success' &&
+      (inputs.target == 'todtest' || inputs.target == 'all') &&
+      (needs.cleanup-playtod.result == 'success' || needs.cleanup-playtod.result == 'skipped')
+    uses: ./.github/workflows/K3s-Cleanup-Web-Server.yml
+    with:
+      target: todtest
+    secrets: inherit

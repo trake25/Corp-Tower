@@ -1,7 +1,17 @@
-name: K3s Deploy All Web Server
+name: K3s Deploy Web Server
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Web server environment to deploy."
+        required: true
+        default: playtod
+        type: choice
+        options:
+          - playtod
+          - todtest
+          - all
 
 jobs:
   # Both targets share one EC2-GW gateway (one Caddy container, one R2 ACME
@@ -9,6 +19,7 @@ jobs:
   # state, so todtest deliberately waits for playtod to finish.
   deploy-playtod:
     name: Deploy playtod
+    if: inputs.target == 'playtod' || inputs.target == 'all'
     uses: ./.github/workflows/K3s-Deploy-Web-Server.yml
     with:
       target: playtod
@@ -17,6 +28,10 @@ jobs:
   deploy-todtest:
     name: Deploy todtest
     needs: deploy-playtod
+    if: |
+      always() &&
+      (inputs.target == 'todtest' || inputs.target == 'all') &&
+      (needs.deploy-playtod.result == 'success' || needs.deploy-playtod.result == 'skipped')
     uses: ./.github/workflows/K3s-Deploy-Web-Server.yml
     with:
       target: todtest

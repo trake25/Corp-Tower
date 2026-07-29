@@ -1,0 +1,66 @@
+name: K3s Cleanup Game Server
+
+# Deletes only the game server's own Deployment/Service by name in the
+# target namespace - never the namespace itself, since corp-tower-prod and
+# corp-tower-test also host that environment's web server.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Game server environment to clean up."
+        required: true
+        default: wsplaytod
+        type: choice
+        options:
+          - wsplaytod
+          - wstodtest
+          - all
+      confirm_cleanup:
+        description: "Type CLEANUP_WSPLAYTOD, CLEANUP_WSTODTEST, or CLEANUP_ALL_GAME to match the target chosen above."
+        required: true
+        type: string
+
+jobs:
+  guard:
+    name: Check Cleanup Confirmation
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify confirmation matches target
+        env:
+          TARGET: ${{ inputs.target }}
+          CONFIRM: ${{ inputs.confirm_cleanup }}
+        run: |
+          set -euo pipefail
+          case "$TARGET" in
+            wsplaytod) expected="CLEANUP_WSPLAYTOD" ;;
+            wstodtest) expected="CLEANUP_WSTODTEST" ;;
+            all) expected="CLEANUP_ALL_GAME" ;;
+            *) echo "::error::Unknown target $TARGET"; exit 1 ;;
+          esac
+          if [ "$CONFIRM" != "$expected" ]; then
+            echo "::error::confirm_cleanup must be exactly $expected for target $TARGET."
+            exit 1
+          fi
+
+  cleanup-wsplaytod:
+    name: Cleanup wsplaytod
+    needs: guard
+    if: needs.guard.result == 'success' && (inputs.target == 'wsplaytod' || inputs.target == 'all')
+    uses: ./.github/workflows/K3s-Cleanup-Game-Server.yml
+    with:
+      target: wsplaytod
+    secrets: inherit
+
+  cleanup-wstodtest:
+    name: Cleanup wstodtest
+    needs: [guard, cleanup-wsplaytod]
+    if: |
+      always() &&
+      needs.guard.result == 'success' &&
+      (inputs.target == 'wstodtest' || inputs.target == 'all') &&
+      (needs.cleanup-wsplaytod.result == 'success' || needs.cleanup-wsplaytod.result == 'skipped')
+    uses: ./.github/workflows/K3s-Cleanup-Game-Server.yml
+    with:
+      target: wstodtest
+    secrets: inherit
