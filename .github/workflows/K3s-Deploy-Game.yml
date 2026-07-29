@@ -13,6 +13,10 @@ on:
           - wstodtest
           - all
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   # Both targets share one EC2-GW gateway (one Caddy container, one R2 ACME
   # archive key) - deploying them in parallel would race on that shared

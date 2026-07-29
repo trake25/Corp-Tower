@@ -63,21 +63,21 @@ All manual `workflow_dispatch` only — K3s has no automated/push-triggered path
 | `K3s-Infra-Apply.yml` | Manual, requires `APPLY_K3S`. Plans first and **hard-fails if the plan contains any delete/replace action** — run `K3s Cleanup All Game Server`'s `terraform_destroy` first if a plan would replace/delete resources |
 | `K3s-Infra-Diagnose.yml` | Reusable / manual. Inspects tagged lab AWS resources, verifies all four Cloudflare DNS records resolve to the gateway, probes SSH through the bastion |
 | `K3s-Deploy-Game-Server.yml` | Reusable core, `target: wsplaytod\|wstodtest`. Tests server code, builds/pushes one shared Docker image tagged by commit SHA, installs/configures K3s via EC2-GW bastion/NAT (restoring/persisting Caddy's ACME cache to R2, rendering all four Caddy sites, upserting all four DNS records), refreshes `ecr-pull` in the target namespace, applies that target's Kustomize overlay, validates nodes/Redis/replica/Caddy/public WSS |
-| `K3s-Deploy-wsplaytod.yml` / `-wstodtest.yml` / `-All-Game-Server.yml` | Manual wrappers around the core above, for prod / test / both — `All` runs them sequentially, since both share one Caddy gateway and R2 ACME cache |
+| `K3s-Deploy-Game.yml` | Manual dispatcher around the core above, `target` choice `wsplaytod\|wstodtest\|all` — `all` runs both sequentially, since they share one Caddy gateway and R2 ACME cache |
 | `K3s-Deploy-Web-Server.yml` | Reusable core, `target: playtod\|todtest`. Builds the Web export (debug UI disabled), pushes an `nginx:alpine` image tagged `web-<target>-<sha>`, same K3s plumbing as the game-server core, HTTPS smoke test |
-| `K3s-Deploy-playtod.yml` / `-todtest.yml` / `-All-Web-Server.yml` | Manual wrappers, mirroring the game-server ones |
+| `K3s-Deploy-Web.yml` | Manual dispatcher, mirroring `K3s-Deploy-Game.yml` — `target` choice `playtod\|todtest\|all` |
 | `K3s-Cleanup-Game-Server.yml` / `K3s-Cleanup-Web-Server.yml` | Reusable cores. Delete only that workload's Deployment+Service by name in the target namespace — **never** the namespace itself, since each prod/test namespace hosts both a game and a web server |
-| `K3s-Cleanup-Playtod.yml` / `-TodTest.yml` / `-All-Game-Server.yml` | Manual wrappers for the game-server cleanup core, each behind a typed confirmation. `All Game Server`'s `terraform_destroy` mode (`DESTROY_K3S`) is the only workflow that tears down the whole shared cluster |
-| `K3s-Cleanup-Web-playtod.yml` / `-Web-todtest.yml` / `-All-Web-Server.yml` | Manual wrappers for the web-server cleanup core |
+| `K3s-Cleanup-Game.yml` / `K3s-Cleanup-Web.yml` | Manual dispatchers for the cleanup cores above, `target` choice `wsplaytod\|wstodtest\|all` (game) or `playtod\|todtest\|all` (web) — each behind a typed confirmation matching the chosen target |
+| `K3s-Cleanup-All-Game-Server.yml` | Manual, `cleanup_mode` choice `runtime_only` (uninstalls K3s/Caddy on every node) or `terraform_destroy` (`DESTROY_K3S`) — the only workflow that tears down the whole shared cluster's AWS resources |
 
 Argo CD is prepared in manifests only — no K3s workflow installs or exposes it.
 
 ## Operational runbook
 
-1. **First-time / cold start:** `K3s Infra Plan` → `K3s Infra Apply` (`APPLY_K3S`) → `K3s Deploy All Game Server` → `K3s Deploy All Web Server`.
-2. **Ordinary update, lab already healthy:** dispatch the specific target's Deploy workflow (e.g. `K3s Deploy wsplaytod`), or the `All Game/Web Server` variant for both prod and test at once.
+1. **First-time / cold start:** `K3s Infra Plan` → `K3s Infra Apply` (`APPLY_K3S`) → `K3s Deploy Game Server` (`target: all`) → `K3s Deploy Web Server` (`target: all`).
+2. **Ordinary update, lab already healthy:** dispatch `K3s Deploy Game Server` / `K3s Deploy Web Server` with `target` set to the specific environment (e.g. `wsplaytod`), or `all` for both prod and test at once.
 3. **AWS/SSH/DNS/cluster reachability looks off:** `K3s Infra Diagnose`.
-4. **Returning to a clean runtime state:** the matching `K3s Cleanup *` workflow (per-target, runtime-scoped), or `K3s Cleanup All Game Server`'s `terraform_destroy` (`DESTROY_K3S`) to remove all K3s AWS resources.
+4. **Returning to a clean runtime state:** `K3s Cleanup Game Server` / `K3s Cleanup Web Server` with `target` set to the environment to remove (per-target, runtime-scoped), or `K3s Cleanup All Game Server`'s `terraform_destroy` (`DESTROY_K3S`) to remove all K3s AWS resources.
 
 ### Operational checks (what "healthy" means)
 
@@ -143,13 +143,11 @@ Client endpoint config for `devtod1`/`devtod2` is written by `scripts/write-endp
 |---|---|---|
 | `Backup-Diagnose.yml` | Manual | Runs all four `*-status.sh` scripts plus `cloudflared` service/tunnel state |
 | `Backup-Deploy-Game-Server.yml` / `Backup-Cleanup-Game-Server.yml` | Reusable cores, `target: devwstod1\|devwstod2` | Up/down via the matching `backup-server-*.sh <instance>` |
-| `Backup-Deploy-devwstod1.yml` | **Auto** (push to `src/Server/**`) or manual | Guarded: skips if `corp-tower-server-1` isn't currently running, so a routine push never silently un-stands-down the instance |
-| `Backup-Deploy-devwstod2.yml` / `Backup-Deploy-All-Game-Server.yml` | Manual only | `devwstod2` has no push trigger — only `devwstod1` does |
-| `Backup-Cleanup-devwstod1.yml` / `-devwstod2.yml` / `-All-Game-Server.yml` | Manual, typed confirmation | Stop the container(s); DNS record(s) left in place pointing at the idle tunnel |
+| `Backup-Deploy-Game.yml` | **Auto** (push to `src/Server/**`, always targets `devwstod1`) or manual (`target` choice `devwstod1\|devwstod2\|all`) | Push events are guarded: skipped if `corp-tower-server-1` isn't currently running, so a routine push never silently un-stands-down the instance |
+| `Backup-Cleanup-Game.yml` | Manual, `target` choice `devwstod1\|devwstod2\|all`, typed confirmation matching the chosen target | Stop the container(s); DNS record(s) left in place pointing at the idle tunnel |
 | `Backup-Deploy-Web-Server.yml` / `Backup-Cleanup-Web-Server.yml` | Reusable cores, `target: devtod1\|devtod2` | Build the Web export (`fetch-private-assets` + `build-godot-web`), deploy via `backup-web-*.sh <instance>` |
-| `Backup-Deploy-devtod1.yml` | **Auto** (push to `src/Client/**` and related build inputs) or manual | Same guard pattern as `devwstod1`, checking `corp-tower-web-1` |
-| `Backup-Deploy-devtod2.yml` / `Backup-Deploy-All-Web-Server.yml` | Manual only | `devtod2` has no push trigger |
-| `Backup-Cleanup-devtod1.yml` / `-devtod2.yml` / `-All-Web-Server.yml` | Manual, typed confirmation | |
+| `Backup-Deploy-Web.yml` | **Auto** (push to `src/Client/**` and related build inputs, always targets `devtod1`) or manual (`target` choice `devtod1\|devtod2\|all`) | Same guard pattern as the game-server one, checking `corp-tower-web-1` |
+| `Backup-Cleanup-Web.yml` | Manual, `target` choice `devtod1\|devtod2\|all`, typed confirmation matching the chosen target | |
 
 None of these workflows has a `pull_request`/`pull_request_target` trigger, matching every other workflow in this (public) repo — required, since a self-hosted runner would otherwise let any external contributor's PR execute code on the physical machine. Only collaborators with repo write access can dispatch these.
 
