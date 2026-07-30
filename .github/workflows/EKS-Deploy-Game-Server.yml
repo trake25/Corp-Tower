@@ -172,21 +172,29 @@ jobs:
             | jq -r '.result[0].id // empty'
           )"
 
-          if [ -z "$existing_record_id" ]; then
-            echo "::error::No CNAME record for ${GAME_DOMAIN} exists yet. Create it once (M-6) before the first deploy."
-            exit 1
+          if [ -n "$existing_record_id" ]; then
+            cloudflare_response="$(
+              curl -fsS \
+                --connect-timeout 5 \
+                --max-time 15 \
+                -X PATCH \
+                -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+                -H "Content-Type: application/json" \
+                "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${existing_record_id}" \
+                --data "$(jq -n --arg dns "${ALB_DNS_NAME}" '{content:$dns}')"
+            )"
+          else
+            cloudflare_response="$(
+              curl -fsS \
+                --connect-timeout 5 \
+                --max-time 15 \
+                -X POST \
+                -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+                -H "Content-Type: application/json" \
+                "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+                --data "$(jq -n --arg name "${GAME_DOMAIN}" --arg dns "${ALB_DNS_NAME}" '{type:"CNAME",name:$name,content:$dns,ttl:60,proxied:false}')"
+            )"
           fi
-
-          cloudflare_response="$(
-            curl -fsS \
-              --connect-timeout 5 \
-              --max-time 15 \
-              -X PATCH \
-              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-              -H "Content-Type: application/json" \
-              "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${existing_record_id}" \
-              --data "$(jq -n --arg dns "${ALB_DNS_NAME}" '{content:$dns}')"
-          )"
 
           cloudflare_success="$(printf '%s\n' "$cloudflare_response" | jq -r '.success')"
           if [ "$cloudflare_success" != "true" ]; then

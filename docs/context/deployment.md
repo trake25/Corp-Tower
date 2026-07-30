@@ -141,13 +141,13 @@ Own dedicated hostnames — `wstodplay.galaxxigames.com` (game), `todplay.galaxx
 | `EKS-Infra-Apply.yml` / `EKS-Infra-Destroy.yml` | Typed `APPLY_EKS` / `DESTROY_EKS`; destroy also fails if any `Stack=server-eks`-tagged resource survives |
 | `EKS-Infra-Auto-Destroy.yml` | Scheduled ~18:00 UTC daily, no-ops if no cluster exists — the control that actually acts, since AWS Budgets alerts lag 8-24h |
 | `EKS-Shared-Infra-Apply.yml` | One-time apply of the persistent ACM/Cloudflare root |
-| `EKS-Deploy-Game-Server.yml` / `EKS-Deploy-Web-Server.yml` / `EKS-Deploy-All.yml` | Test → build → push ECR → `aws eks update-kubeconfig` → `kubectl apply` → Cloudflare CNAME content update (record must already exist; no delete/create) → WSS/HTTPS smoke test. Game deploy additionally asserts `REDIS_URL` reached the pod as `rediss://`, ElastiCache `CurrConnections` is non-zero, and an idle WebSocket survives past 60s |
+| `EKS-Deploy-Game-Server.yml` / `EKS-Deploy-Web-Server.yml` / `EKS-Deploy-All.yml` | Test → build → push ECR → `aws eks update-kubeconfig` → `kubectl apply` → Cloudflare CNAME upsert (PATCH if the record exists, POST to create it otherwise — mirrors the K3s DNS step) → WSS/HTTPS smoke test. Game deploy additionally asserts `REDIS_URL` reached the pod as `rediss://`, ElastiCache `CurrConnections` is non-zero, and an idle WebSocket survives past 60s |
 | `EKS-Cleanup-Game-Server.yml` / `EKS-Cleanup-Web-Server.yml` | Delete that workload's Deployment+Service by name; namespace and cluster stay up |
 | `EKS-Infra-Diagnose.yml` | Nodes, ALB target-group health, DNS, Redis reachability |
 
 No bastion, SSH, Ansible, or Caddy on this path: the ALB terminates TLS directly and `aws eks update-kubeconfig` replaces K3s's bastion-tunnel kubeconfig dance.
 
-**One-time manual setup, before the first apply (cannot be done by any workflow):** expand `AWS_ROLE_ARN`'s IAM permissions for EKS/ElastiCache/ELB/NAT/OIDC (CI cannot grant itself permissions); create AWS Budgets alerts at $20/$40/$50; resolve an operator IAM role ARN (not an assumed-role ARN) into the `EKS_OPERATOR_PRINCIPAL_ARN` secret, which grants `kubectl` cluster-admin via an EKS access entry; run `EKS-Shared-Infra-Apply.yml` once; create the two Cloudflare CNAME records once (`wstodplay`, `todplay` → the ALB DNS name, `proxied:false`) — deploys only update their content thereafter.
+**One-time manual setup, before the first apply (cannot be done by any workflow):** expand `AWS_ROLE_ARN`'s IAM permissions for EKS/ElastiCache/ELB/NAT/OIDC (CI cannot grant itself permissions); create AWS Budgets alerts at $20/$40/$50; resolve an operator IAM role ARN (not an assumed-role ARN) into the `EKS_OPERATOR_PRINCIPAL_ARN` secret, which grants `kubectl` cluster-admin via an EKS access entry; run `EKS-Shared-Infra-Apply.yml` once. The two Cloudflare CNAMEs (`wstodplay`, `todplay`) need no manual creation — the deploy workflows create them on first use, same as K3s's DNS step.
 
 ## Backup (physical machine, 4 dev instances)
 
