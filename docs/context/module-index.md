@@ -52,8 +52,8 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | Terraform Infrastructure | `infra/k3s/terraform`, `infra/eks/terraform` | Terraform roots | — | [deployment.md](./deployment.md#terraform-roots) |
 | Server K3s Stack | `infra/k3s/` | Active self-hosted K3s-on-EC2 infra | Terraform Infrastructure | [deployment.md](./deployment.md#k3s-topology) |
 | Server K3s Workflows | `.github/workflows/K3s-*.yml` | Deploy/clean up/diagnose the K3s stack — prod (wsplaytod/playtod) and test (wstodtest/todtest), each its own namespace — manual trigger only | Server K3s Stack | [deployment.md](./deployment.md#k3s-workflows) |
-| Server EKS Stack | `infra/eks/` | Plan-only parallel managed-AWS infra | Terraform Infrastructure | [deployment.md](./deployment.md#eks-plan-only) |
-| Server EKS Workflow | `.github/workflows/Server-EKS-Infra-Plan.yml` | CI plan-only path for EKS | Server EKS Stack | [deployment.md](./deployment.md#eks-plan-only) |
+| Server EKS Stack | `infra/eks/` | Session-scoped parallel managed-AWS infra (Terraform + Kustomize apps), brought up per validation session | Terraform Infrastructure | [deployment.md](./deployment.md#eks-session-scoped-validation-stack) |
+| Server EKS Workflows | `.github/workflows/EKS-*.yml` | Infra plan/apply/destroy/nightly-auto-destroy, deploy/cleanup/diagnose for the session-scoped EKS stack — prod only (wstodplay/todplay) | Server EKS Stack | [deployment.md](./deployment.md#eks-session-scoped-validation-stack) |
 | Backup Workflows | `.github/workflows/Backup-*.yml` | Diagnose/deploy/clean up four dev instances on the physical backup machine — two game servers (devwstod1/2) and two web servers (devtod1/2) — via a self-hosted runner; devwstod1/devtod1 auto-deploy on push | `scripts/backup/` (in-repo), Private Asset Pipeline (web), machine-local `.env.backup` | [deployment.md](./deployment.md#backup-physical-machine-4-dev-instances) |
 
 ## Global / cross-cutting docs
@@ -66,7 +66,7 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | [networking.md](./networking.md) | WebSocket wire protocol: message contracts, payloads, adapters |
 | [backend.md](./backend.md) | Server module behavior (engine facade + delegation pattern) |
 | [ui.md](./ui.md) | Godot client: Main orchestrator, GameUi family, scenes, popovers |
-| [deployment.md](./deployment.md) | K3s (active) + EKS (plan-only) infra, runbook, secrets |
+| [deployment.md](./deployment.md) | K3s (active) + EKS (session-scoped) infra, runbook, secrets |
 | [build.md](./build.md) | Android/HTML5 build workflows, private R2 art pipeline |
 | [testing.md](./testing.md) | Server/client tests, balance simulator, CI gates, coverage gaps |
 | [decisions.md](./decisions.md) | Why things are built the way they are; rejected alternatives; known gaps |

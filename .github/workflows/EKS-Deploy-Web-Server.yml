@@ -1,0 +1,298 @@
+name: EKS Deploy Web Server (core)
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: "Web server environment to deploy: todplay (prod; eks-test is committed, not deployed)."
+        required: true
+        type: string
+
+concurrency:
+  group: eks-deploy-web-server-${{ inputs.target }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  CLUSTER_NAME: corp-tower-eks-lab
+  GODOT_VERSION: "4.6.2"
+  GODOT_STATUS: "stable"
+  GODOT_PROJECT_PATH: "src/Client/App/corp-tower"
+
+jobs:
+  resolve-target:
+    name: Resolve Target Environment
+    runs-on: ubuntu-24.04
+    outputs:
+      namespace: ${{ steps.resolve.outputs.namespace }}
+      overlay: ${{ steps.resolve.outputs.overlay }}
+      domain: ${{ steps.resolve.outputs.domain }}
+      ws_primary: ${{ steps.resolve.outputs.ws_primary }}
+    steps:
+      - name: Resolve
+        id: resolve
+        run: |
+          set -euo pipefail
+          case "${{ inputs.target }}" in
+            todplay)
+              echo "namespace=corp-tower-prod" >> "$GITHUB_OUTPUT"
+              echo "overlay=eks-prod/web" >> "$GITHUB_OUTPUT"
+              echo "domain=todplay.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              echo "ws_primary=wss://wstodplay.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Unknown target '${{ inputs.target }}'. Only todplay is deployed (eks-test overlays are committed, not deployed)."
+              exit 1
+              ;;
+          esac
+
+  build:
+    name: Build Web Export
+    needs: resolve-target
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Fetch private art assets
+        uses: ./.github/actions/fetch-private-assets
+        with:
+          manifest-path: src/Client/App/corp-tower/Cor/art-manifest.json
+          dest-path: src/Client/App/corp-tower/Cor/Art
+          bucket: ${{ secrets.R2_BUCKET }}
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+
+      - name: Write client endpoint config
+        env:
+          CORP_TOWER_WS_PRIMARY: ${{ needs.resolve-target.outputs.ws_primary }}
+          CORP_TOWER_WS_FAILOVER: ""
+          CORP_TOWER_DEBUG_UI: "false"
+        run: scripts/write-endpoint-config.sh
+
+      - name: Build web export
+        uses: ./.github/actions/build-godot-web
+        with:
+          godot-version: ${{ env.GODOT_VERSION }}
+          godot-status: ${{ env.GODOT_STATUS }}
+          project-path: ${{ env.GODOT_PROJECT_PATH }}
+          output-dir: ${{ github.workspace }}/build/web
+          preset-config: .github/godot/export_presets.web.ci.cfg
+
+      - name: Upload web build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-${{ inputs.target }}
+          path: build/web
+          retention-days: 1
+
+      - name: Remove private assets from runner
+        if: always()
+        run: rm -rf "$GODOT_PROJECT_PATH/Cor/Art"
+
+  push:
+    name: Build And Push Web Image To ECR
+    needs: [resolve-target, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download web build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build-${{ inputs.target }}
+          path: docker/web/web
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push web Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: docker/web
+          file: docker/web/Dockerfile
+          push: true
+          tags: ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:web-${{ inputs.target }}-${{ github.sha }}
+
+  deploy-eks:
+    name: Deploy Web Server To EKS
+    needs: [resolve-target, push]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: staging
+    env:
+      NAMESPACE: ${{ needs.resolve-target.outputs.namespace }}
+      OVERLAY: ${{ needs.resolve-target.outputs.overlay }}
+      WEB_DOMAIN: ${{ needs.resolve-target.outputs.domain }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup AWS credentials and Terraform
+        uses: ./.github/actions/aws-terraform-setup
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Read EKS Terraform outputs
+        working-directory: infra/eks/terraform
+        env:
+          TF_VAR_aws_region: ap-southeast-1
+          TF_VAR_environment: eks-lab
+          TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+          TF_VAR_operator_principal_arn: ${{ secrets.EKS_OPERATOR_PRINCIPAL_ARN }}
+        run: |
+          set -euo pipefail
+          terraform init -input=false
+          echo "ALB_DNS_NAME=$(terraform output -raw alb_dns_name)" >> "$GITHUB_ENV"
+
+      - name: Update Cloudflare CNAME content
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ZONE_ID:-}" ]; then
+            echo "::error::Missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ZONE_ID staging environment secret."
+            exit 1
+          fi
+
+          existing_record_id="$(
+            curl -fsS \
+              --connect-timeout 5 \
+              --max-time 15 \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --get "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+              --data-urlencode "type=CNAME" \
+              --data-urlencode "name=${WEB_DOMAIN}" \
+            | jq -r '.result[0].id // empty'
+          )"
+
+          if [ -z "$existing_record_id" ]; then
+            echo "::error::No CNAME record for ${WEB_DOMAIN} exists yet. Create it once (M-6) before the first deploy."
+            exit 1
+          fi
+
+          cloudflare_response="$(
+            curl -fsS \
+              --connect-timeout 5 \
+              --max-time 15 \
+              -X PATCH \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${existing_record_id}" \
+              --data "$(jq -n --arg dns "${ALB_DNS_NAME}" '{content:$dns}')"
+          )"
+
+          cloudflare_success="$(printf '%s\n' "$cloudflare_response" | jq -r '.success')"
+          if [ "$cloudflare_success" != "true" ]; then
+            echo "::error::Cloudflare DNS update failed for ${WEB_DOMAIN}: ${cloudflare_response}"
+            exit 1
+          fi
+
+          alb_ips="$(getent ahostsv4 "$ALB_DNS_NAME" | awk '{ print $1 }' | sort -u)"
+
+          resolved_ip=""
+          for attempt in $(seq 1 30); do
+            resolved_ip="$(getent ahostsv4 "$WEB_DOMAIN" | awk '{ print $1; exit }' || true)"
+            if printf '%s\n' "$alb_ips" | grep -qx "$resolved_ip"; then
+              break
+            fi
+            echo "Waiting for ${WEB_DOMAIN} to resolve through its CNAME to ${ALB_DNS_NAME}; current: ${resolved_ip:-none} (attempt ${attempt}/30)."
+            sleep 2
+          done
+
+          if ! printf '%s\n' "$alb_ips" | grep -qx "$resolved_ip"; then
+            echo "::error::${WEB_DOMAIN} did not resolve to ${ALB_DNS_NAME} (${alb_ips}) after Cloudflare DNS update."
+            exit 1
+          fi
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME"
+
+      - name: Refresh ECR image pull secret
+        run: |
+          set -euo pipefail
+
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          ECR_PASSWORD="$(aws ecr get-login-password --region "$AWS_REGION")"
+
+          kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n "$NAMESPACE" create secret docker-registry ecr-pull \
+            --docker-server="$ECR_REGISTRY" \
+            --docker-username=AWS \
+            --docker-password="$ECR_PASSWORD" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          echo "ECR_REGISTRY=$ECR_REGISTRY" >> "$GITHUB_ENV"
+
+      - name: Apply Corp Tower Web Kustomize overlay
+        env:
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          set -euo pipefail
+
+          TEMP_APP_ROOT="$RUNNER_TEMP/corp-tower-eks/apps"
+          RUNTIME_OVERLAY="$TEMP_APP_ROOT/corp-tower/overlays/runtime-web"
+          mkdir -p "$TEMP_APP_ROOT" "$RUNTIME_OVERLAY"
+          cp -R "$GITHUB_WORKSPACE/infra/eks/apps/corp-tower" "$TEMP_APP_ROOT/"
+
+          cat > "$RUNTIME_OVERLAY/kustomization.yaml" <<EOF
+          resources:
+            - ../${OVERLAY}
+          images:
+            - name: corp-tower-web
+              newName: ${ECR_REGISTRY}/${ECR_REPOSITORY}
+              newTag: web-${{ inputs.target }}-${GITHUB_SHA}
+          EOF
+
+          kubectl apply -k "$RUNTIME_OVERLAY"
+          kubectl -n "$NAMESPACE" rollout status deployment/corp-tower-web --timeout=180s
+          kubectl -n "$NAMESPACE" get all -o wide
+
+      - name: Smoke test public web build
+        run: |
+          set -euo pipefail
+
+          URL="https://${WEB_DOMAIN}/"
+
+          for attempt in $(seq 1 30); do
+            status="$(curl -sS -o /dev/null -w '%{http_code}' "$URL" || true)"
+            if [ "$status" = "200" ]; then
+              echo "Web smoke connected to ${URL} (HTTP $status)."
+              exit 0
+            fi
+            echo "Waiting for public web build through the ALB (attempt ${attempt}/30, last status: ${status:-none})."
+            sleep 10
+          done
+
+          echo "::error::Web smoke could not reach ${URL} with HTTP 200."
+          exit 1

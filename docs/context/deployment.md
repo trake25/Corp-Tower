@@ -4,12 +4,12 @@ Scope: infrastructure, runtime topology, and operational runbooks. Build/CI that
 
 ## Overview
 
-Two parallel Terraform paths exist. **Only K3s is active** and carries live staging traffic; EKS is plan-only.
+Two parallel Terraform paths exist. **K3s is active** and carries live staging traffic; **EKS is session-scoped** — apply-ready, brought up for a validation session (hours) and torn down after, never continuously running.
 
 | Path | Status |
 |---|---|
 | K3s (`infra/k3s`) | **Active** — live staging |
-| EKS (`infra/eks`) | Plan-only, not applied ([why](./decisions.md#eks-kept-plan-only)) |
+| EKS (`infra/eks`) | Session-scoped validation stack, not always-on ([why](./decisions.md#eks-kept-session-scoped-not-always-on)) |
 
 Region for both: `ap-southeast-1`.
 
@@ -18,9 +18,10 @@ Region for both: `ap-southeast-1`.
 | Root | State key | Resource tag |
 |---|---|---|
 | `infra/k3s/terraform` | `k3s-lab/terraform.tfstate` | `Environment=k3s-lab` |
-| `infra/eks/terraform` | `eks-lab/terraform.tfstate` | stack `server-eks` |
+| `infra/eks/terraform` | `eks-lab/terraform.tfstate` | stack `server-eks`, destroyed every session |
+| `infra/eks/terraform-shared` | `eks-shared/terraform.tfstate` | stack `server-eks-shared`, persistent — ACM wildcard cert + Cloudflare DNS validation, applied once, never destroyed |
 
-Workflows create the shared S3 backend bucket if missing, via `.github/actions/terraform-backend-bootstrap`. AWS/Terraform CLI setup, SSH-key resolution, and the init/fmt/validate/plan sequence are shared through `.github/actions/aws-terraform-setup`, `resolve-ssh-key`, and `terraform-validate-plan` — used by K3s Plan/Apply/Cleanup and EKS Plan alike. EKS's Terraform reuses the existing ECR repository as a data source rather than creating a new one.
+Workflows create the shared S3 backend bucket if missing, via `.github/actions/terraform-backend-bootstrap`. AWS/Terraform CLI setup and the init/fmt/validate/plan sequence are shared through `.github/actions/aws-terraform-setup` and `terraform-validate-plan` — used by K3s Plan/Apply/Cleanup and every EKS Terraform workflow alike (K3s Plan/Apply/Cleanup additionally use `resolve-ssh-key`, which EKS has no need for). EKS's Terraform reuses the existing ECR repository as a data source rather than creating a new one.
 
 ## K3s topology
 
@@ -113,23 +114,40 @@ Not installed by the first K3s rollout. Bootstrap manifests: `infra/k3s/argocd/b
 
 | Secret | Used for |
 |---|---|
-| `AWS_ROLE_ARN` | GitHub OIDC → AWS for Terraform/K3s workflows |
+| `AWS_ROLE_ARN` | GitHub OIDC → AWS for Terraform/K3s/EKS workflows — EKS needs the expanded `CorpTowerEksLab` policy attached once, manually (see [EKS manual setup](#eks-session-scoped-validation-stack)) |
 | `ECR_REPOSITORY` | Server image push/pull |
 | `EC2_STAGING_HOST` | EC2 staging host reference |
 | `EC2_STAGING_USER` | SSH user for EC2-GW/K3s nodes |
 | `EC2_STAGING_SSH_KEY` | SSH private key |
 | `EC2_STAGING_SSH_PUBLIC_KEY` | *(optional)* Preferred for Terraform key-pair creation; if empty, K3s infra workflows derive the public key from `EC2_STAGING_SSH_KEY` |
-| `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ZONE_ID` | DNS updates for the four `infra/k3s/gateway_sites.yml` hostnames |
+| `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ZONE_ID` | DNS updates for the four `infra/k3s/gateway_sites.yml` hostnames, the EKS ACM validation record, and the two EKS CNAMEs (`wstodplay`, `todplay`) |
+| `EKS_OPERATOR_PRINCIPAL_ARN` | IAM role ARN (not assumed-role form) granted cluster-admin via an EKS access entry, so `kubectl` works from an operator's laptop |
 | `EC2_STAGING_PORT`, `STAGING_SSH_CIDR`, `STAGING_GAME_PORT_CIDR` | *(optional)* |
 | `R2_GATEWAY_BUCKET`, `R2_GATEWAY_ACCESS_KEY_ID`, `R2_GATEWAY_SECRET_ACCESS_KEY` | Caddy ACME cert cache persistence to R2 bucket `corp-tower-gateway-state` (reuses `R2_ACCOUNT_ID` from [build.md](./build.md#required-secrets-client--art-scope)); repo secrets (not environment-scoped), so `deploy-k3s`'s `environment: staging` job can still see them — steps no-op if unset |
 
 K3s workflows reuse the existing GitHub `staging` Environment rather than duplicating secret names — except the `R2_GATEWAY_*` trio and `R2_ACCOUNT_ID`, which are repo secrets shared with the art pipeline, not environment-scoped. Client/Android/art secrets are scoped separately — see [build.md](./build.md#required-secrets-client--art-scope).
 
-## EKS (plan-only)
+## EKS (session-scoped validation stack)
 
-`infra/eks/terraform` — parallel managed-AWS path, **plan workflow only, no apply**. Planned topology: EKS cluster + managed node group running server pods in private subnets; internet-facing NLB exposing WebSocket traffic on `443/tcp`; NLB subnet mappings reserving Elastic IPs for stable public ingress; ElastiCache Redis replacing Docker/in-cluster Redis. Constraints and why it's not applied yet → [decisions.md](./decisions.md#eks-kept-plan-only).
+Own dedicated hostnames — `wstodplay.galaxxigames.com` (game), `todplay.galaxxigames.com` (web) — so a session never touches K3s's four live records. Only the prod pair is deployed; `eks-test` overlays are committed but not wired to any workflow. Apply-ready but not always-on → [decisions.md](./decisions.md#eks-kept-session-scoped-not-always-on).
 
-**`Server-EKS-Infra-Plan.yml`:** manual `workflow_dispatch` or reusable `workflow_call`. Configures AWS via OIDC, ensures the shared S3 backend bucket exists, runs `init`/`fmt -check`/`validate`/`plan`, shows the full no-color plan in workflow logs. Does not apply infrastructure.
+**Topology:** Cloudflare CNAME → ALB `:443` (HTTPS, ACM wildcard `*.galaxxigames.com`, host-based routing, `idle_timeout=300`) → two target groups (`target_type=instance` on the existing NodePorts — 30300 game, 30310 web — registered via `aws_autoscaling_attachment`, no Load Balancer Controller) → managed node group (2× `t3.small`, private subnets, NAT egress, dedicated node security group) → `corp-tower-server`/`corp-tower-web` pods → ElastiCache Redis over `rediss://`. Game target group health matcher is `426` (`ws` answers a plain `GET /` with Upgrade Required); web is `200`. No in-cluster Redis on EKS — ElastiCache replaces it entirely; K3s keeps its own.
+
+**Kubernetes:** `infra/eks/apps/corp-tower/{base,web-base}` mirror the K3s bases minus the Redis manifests; `overlays/{eks-prod,eks-test}/{game,web}` mirror K3s's namespace/NodePort split (`corp-tower-prod`/`corp-tower-test`, NodePorts 30300/30301 game, 30310/30311 web).
+
+| Workflow | Behavior |
+|---|---|
+| `EKS-Infra-Plan.yml` | Plan only (renamed from `Server-EKS-Infra-Plan.yml`) |
+| `EKS-Infra-Apply.yml` / `EKS-Infra-Destroy.yml` | Typed `APPLY_EKS` / `DESTROY_EKS`; destroy also fails if any `Stack=server-eks`-tagged resource survives |
+| `EKS-Infra-Auto-Destroy.yml` | Scheduled ~18:00 UTC daily, no-ops if no cluster exists — the control that actually acts, since AWS Budgets alerts lag 8-24h |
+| `EKS-Shared-Infra-Apply.yml` | One-time apply of the persistent ACM/Cloudflare root |
+| `EKS-Deploy-Game-Server.yml` / `EKS-Deploy-Web-Server.yml` / `EKS-Deploy-All.yml` | Test → build → push ECR → `aws eks update-kubeconfig` → `kubectl apply` → Cloudflare CNAME content update (record must already exist; no delete/create) → WSS/HTTPS smoke test. Game deploy additionally asserts `REDIS_URL` reached the pod as `rediss://`, ElastiCache `CurrConnections` is non-zero, and an idle WebSocket survives past 60s |
+| `EKS-Cleanup-Game-Server.yml` / `EKS-Cleanup-Web-Server.yml` | Delete that workload's Deployment+Service by name; namespace and cluster stay up |
+| `EKS-Infra-Diagnose.yml` | Nodes, ALB target-group health, DNS, Redis reachability |
+
+No bastion, SSH, Ansible, or Caddy on this path: the ALB terminates TLS directly and `aws eks update-kubeconfig` replaces K3s's bastion-tunnel kubeconfig dance.
+
+**One-time manual setup, before the first apply (cannot be done by any workflow):** expand `AWS_ROLE_ARN`'s IAM permissions for EKS/ElastiCache/ELB/NAT/OIDC (CI cannot grant itself permissions); create AWS Budgets alerts at $20/$40/$50; resolve an operator IAM role ARN (not an assumed-role ARN) into the `EKS_OPERATOR_PRINCIPAL_ARN` secret, which grants `kubectl` cluster-admin via an EKS access entry; run `EKS-Shared-Infra-Apply.yml` once; create the two Cloudflare CNAME records once (`wstodplay`, `todplay` → the ALB DNS name, `proxied:false`) — deploys only update their content thereafter.
 
 ## Backup (physical machine, 4 dev instances)
 

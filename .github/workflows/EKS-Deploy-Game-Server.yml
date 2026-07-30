@@ -1,0 +1,395 @@
+name: EKS Deploy Game Server (core)
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: "Game server environment to deploy: wstodplay (prod; eks-test is committed, not deployed)."
+        required: true
+        type: string
+
+concurrency:
+  group: eks-deploy-game-server-${{ inputs.target }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  CLUSTER_NAME: corp-tower-eks-lab
+
+jobs:
+  test-server:
+    name: Test Server On GitHub VM
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: src/Server
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.14.1"
+          cache: npm
+          cache-dependency-path: src/Server/package-lock.json
+
+      - name: Install server dependencies
+        run: npm ci
+
+      - name: Run server tests
+        run: npm test
+
+  build-and-push:
+    name: Build And Push Docker Image To ECR
+    runs-on: ubuntu-24.04
+    needs: test-server
+    if: ${{ needs.test-server.result == 'success' }}
+    timeout-minutes: 15
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: src/Server
+          file: src/Server/Dockerfile
+          push: true
+          tags: ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Record pushed image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
+          echo "Docker image pushed: $IMAGE_URI" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-eks:
+    name: Deploy Corp Tower To EKS
+    runs-on: ubuntu-24.04
+    needs: build-and-push
+    if: ${{ needs.build-and-push.result == 'success' }}
+    timeout-minutes: 30
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Resolve target environment
+        run: |
+          set -euo pipefail
+          case "${{ inputs.target }}" in
+            wstodplay)
+              echo "NAMESPACE=corp-tower-prod" >> "$GITHUB_ENV"
+              echo "OVERLAY=eks-prod/game" >> "$GITHUB_ENV"
+              echo "GAME_DOMAIN=wstodplay.galaxxigames.com" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "::error::Unknown target '${{ inputs.target }}'. Only wstodplay is deployed (eks-test overlays are committed, not deployed)."
+              exit 1
+              ;;
+          esac
+
+      - name: Setup AWS credentials and Terraform
+        uses: ./.github/actions/aws-terraform-setup
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Setup Node.js for WebSocket smoke test
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.14.1"
+
+      - name: Read EKS Terraform outputs
+        working-directory: infra/eks/terraform
+        env:
+          TF_VAR_aws_region: ap-southeast-1
+          TF_VAR_environment: eks-lab
+          TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+          TF_VAR_operator_principal_arn: ${{ secrets.EKS_OPERATOR_PRINCIPAL_ARN }}
+        run: |
+          set -euo pipefail
+          terraform init -input=false
+          {
+            echo "ALB_DNS_NAME=$(terraform output -raw alb_dns_name)"
+            echo "REDIS_URL=$(terraform output -raw redis_url)"
+          } >> "$GITHUB_ENV"
+
+      - name: Update Cloudflare CNAME content
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ZONE_ID:-}" ]; then
+            echo "::error::Missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ZONE_ID staging environment secret."
+            exit 1
+          fi
+
+          existing_record_id="$(
+            curl -fsS \
+              --connect-timeout 5 \
+              --max-time 15 \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --get "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+              --data-urlencode "type=CNAME" \
+              --data-urlencode "name=${GAME_DOMAIN}" \
+            | jq -r '.result[0].id // empty'
+          )"
+
+          if [ -z "$existing_record_id" ]; then
+            echo "::error::No CNAME record for ${GAME_DOMAIN} exists yet. Create it once (M-6) before the first deploy."
+            exit 1
+          fi
+
+          cloudflare_response="$(
+            curl -fsS \
+              --connect-timeout 5 \
+              --max-time 15 \
+              -X PATCH \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${existing_record_id}" \
+              --data "$(jq -n --arg dns "${ALB_DNS_NAME}" '{content:$dns}')"
+          )"
+
+          cloudflare_success="$(printf '%s\n' "$cloudflare_response" | jq -r '.success')"
+          if [ "$cloudflare_success" != "true" ]; then
+            echo "::error::Cloudflare DNS update failed for ${GAME_DOMAIN}: ${cloudflare_response}"
+            exit 1
+          fi
+
+          alb_ips="$(getent ahostsv4 "$ALB_DNS_NAME" | awk '{ print $1 }' | sort -u)"
+
+          resolved_ip=""
+          for attempt in $(seq 1 30); do
+            resolved_ip="$(getent ahostsv4 "$GAME_DOMAIN" | awk '{ print $1; exit }' || true)"
+            if printf '%s\n' "$alb_ips" | grep -qx "$resolved_ip"; then
+              break
+            fi
+            echo "Waiting for ${GAME_DOMAIN} to resolve through its CNAME to ${ALB_DNS_NAME}; current: ${resolved_ip:-none} (attempt ${attempt}/30)."
+            sleep 2
+          done
+
+          if ! printf '%s\n' "$alb_ips" | grep -qx "$resolved_ip"; then
+            echo "::error::${GAME_DOMAIN} did not resolve to ${ALB_DNS_NAME} (${alb_ips}) after Cloudflare DNS update."
+            exit 1
+          fi
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME"
+
+      - name: Refresh ECR image pull secret
+        env:
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          set -euo pipefail
+
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          ECR_PASSWORD="$(aws ecr get-login-password --region "$AWS_REGION")"
+
+          kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n "$NAMESPACE" create secret docker-registry ecr-pull \
+            --docker-server="$ECR_REGISTRY" \
+            --docker-username=AWS \
+            --docker-password="$ECR_PASSWORD" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          {
+            echo "ECR_REGISTRY=$ECR_REGISTRY"
+            echo "IMAGE_URI=${ECR_REGISTRY}/${ECR_REPOSITORY}:${GITHUB_SHA}"
+          } >> "$GITHUB_ENV"
+
+      - name: Apply Corp Tower Kustomize overlay
+        run: |
+          set -euo pipefail
+
+          TEMP_APP_ROOT="$RUNNER_TEMP/corp-tower-eks/apps"
+          RUNTIME_OVERLAY="$TEMP_APP_ROOT/corp-tower/overlays/runtime"
+          mkdir -p "$TEMP_APP_ROOT" "$RUNTIME_OVERLAY"
+          cp -R "$GITHUB_WORKSPACE/infra/eks/apps/corp-tower" "$TEMP_APP_ROOT/"
+
+          cat > "$RUNTIME_OVERLAY/kustomization.yaml" <<EOF
+          resources:
+            - ../${OVERLAY}
+          images:
+            - name: corp-tower-server
+              newName: ${ECR_REGISTRY}/${ECR_REPOSITORY}
+              newTag: ${GITHUB_SHA}
+          patches:
+            - patch: |-
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+                  name: corp-tower-server
+                spec:
+                  template:
+                    spec:
+                      containers:
+                        - name: corp-tower-server
+                          env:
+                            - name: REDIS_URL
+                              value: ${REDIS_URL}
+          EOF
+
+          kubectl apply -k "$RUNTIME_OVERLAY"
+          kubectl -n "$NAMESPACE" rollout status deployment/corp-tower-server --timeout=240s
+          kubectl get nodes -o wide
+          kubectl -n "$NAMESPACE" get all -o wide
+
+      - name: Assert Redis wiring reached the pod
+        run: |
+          set -euo pipefail
+          kubectl -n "$NAMESPACE" exec deploy/corp-tower-server -- printenv REDIS_URL | grep -q '^rediss://'
+
+      - name: Assert ElastiCache sees connections
+        env:
+          TF_VAR_aws_region: ap-southeast-1
+          TF_VAR_environment: eks-lab
+          TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+          TF_VAR_operator_principal_arn: ${{ secrets.EKS_OPERATOR_PRINCIPAL_ARN }}
+        working-directory: infra/eks/terraform
+        run: |
+          set -euo pipefail
+          CLUSTER_ID="$(terraform output -raw cluster_name)-redis-001"
+
+          for attempt in $(seq 1 12); do
+            CONNECTIONS="$(
+              aws cloudwatch get-metric-statistics --namespace AWS/ElastiCache \
+                --metric-name CurrConnections --statistics Maximum --period 300 \
+                --dimensions Name=CacheClusterId,Value="$CLUSTER_ID" \
+                --start-time "$(date -u -d '10 min ago' +%FT%TZ)" --end-time "$(date -u +%FT%TZ)" \
+                --query 'Datapoints[0].Maximum' --output text
+            )"
+
+            if [ "$CONNECTIONS" != "None" ] && [ -n "$CONNECTIONS" ]; then
+              echo "ElastiCache ${CLUSTER_ID} sees ${CONNECTIONS} connections."
+              break
+            fi
+
+            echo "Waiting for ElastiCache connection metrics (attempt ${attempt}/12)."
+            sleep 15
+          done
+
+          if [ "$CONNECTIONS" = "None" ] || [ -z "$CONNECTIONS" ]; then
+            echo "::error::No CurrConnections metric for ${CLUSTER_ID}. A Running pod is not evidence Redis is connected."
+            exit 1
+          fi
+
+      - name: Smoke test public WebSocket
+        run: |
+          set -euo pipefail
+
+          WS_URL="wss://${GAME_DOMAIN}"
+
+          for attempt in $(seq 1 30); do
+            if WS_URL="$WS_URL" node - <<'NODE'
+          const url = process.env.WS_URL;
+          const timeout = setTimeout(() => {
+            console.error(`Timed out connecting to ${url}`);
+            process.exit(1);
+          }, 5000);
+
+          const socket = new WebSocket(url);
+          socket.addEventListener("open", () => {
+            clearTimeout(timeout);
+            socket.close();
+            process.exit(0);
+          });
+          socket.addEventListener("error", (event) => {
+            clearTimeout(timeout);
+            console.error(`WebSocket error for ${url}`);
+            process.exit(1);
+          });
+          NODE
+            then
+              echo "WebSocket smoke connected to ${WS_URL}."
+              break
+            fi
+
+            if [ "$attempt" -eq 30 ]; then
+              echo "::error::WebSocket smoke could not connect to ${WS_URL}."
+              exit 1
+            fi
+
+            echo "Waiting for public WebSocket through the ALB (attempt ${attempt}/30)."
+            sleep 10
+          done
+
+      - name: Hold an idle WebSocket connection past 60s
+        run: |
+          set -euo pipefail
+
+          WS_URL="wss://${GAME_DOMAIN}" node - <<'NODE'
+          const url = process.env.WS_URL;
+          const socket = new WebSocket(url);
+          const openTimeout = setTimeout(() => {
+            console.error(`Timed out connecting to ${url}`);
+            process.exit(1);
+          }, 5000);
+
+          socket.addEventListener("open", () => {
+            clearTimeout(openTimeout);
+            const holdMs = 65000;
+            const start = Date.now();
+
+            socket.addEventListener("close", (event) => {
+              const elapsed = Date.now() - start;
+              if (elapsed < holdMs) {
+                console.error(`Connection closed after ${elapsed}ms (code ${event.code}), before the ${holdMs}ms idle_timeout window.`);
+                process.exit(1);
+              }
+            });
+
+            setTimeout(() => {
+              if (socket.readyState !== WebSocket.OPEN) {
+                console.error(`Socket not open after ${holdMs}ms idle hold.`);
+                process.exit(1);
+              }
+              console.log(`Idle WebSocket survived ${holdMs}ms; ALB idle_timeout is in effect.`);
+              socket.close();
+              process.exit(0);
+            }, holdMs);
+          });
+
+          socket.addEventListener("error", () => {
+            console.error(`WebSocket error for ${url}`);
+            process.exit(1);
+          });
+          NODE

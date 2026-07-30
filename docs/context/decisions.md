@@ -58,9 +58,11 @@ Scope: why things are built the way they are — rationale, tradeoffs, rejected 
 **Rejected:** polling `dig +short $name CNAME` after an upsert → Cloudflare **never exposes a literal CNAME to public resolvers for a proxied (orange-cloud) record**, resolving the hostname straight to its own anycast A/AAAA addresses instead, so the query is always empty and the wait loop always timed out and `die`d.
 **Consequence:** the API reflects a write immediately, so the retry loop is a small safety margin against a transient read, not a propagation wait.
 
-## EKS kept plan-only
-**Now:** `infra/eks` is Terraform **plan only**, deliberately not applied.
-**Why:** managed AWS resources in this path may exceed free-tier expectations, so plan output and cost need review before any apply/deploy workflow is added; and the NLB target group has no pod/node registration mechanism (no Load Balancer Controller or IRSA OIDC provider in this Terraform root), so applying it wouldn't produce working ingress regardless of cost.
+## EKS kept session-scoped, not always-on
+**Now:** `infra/eks` Terraform is apply-ready (`EKS-Infra-Apply`/`EKS-Infra-Destroy`/nightly `EKS-Infra-Auto-Destroy` exist), but nothing runs it continuously — bring the stack up for a session (hours), tear it down after. First apply also needs one-time manual setup: an expanded `AWS_ROLE_ARN` IAM grant (CI cannot grant itself permissions), the persistent `infra/eks/terraform-shared` ACM/Cloudflare root, an operator IAM ARN for cluster-admin access, and AWS Budgets alerts.
+**Why:** the control plane, NAT Gateway, ALB, and ElastiCache have no free tier — every hour of existence spends real credits, so an always-on or auto-applying stack is an uncontrolled cost lever the nightly auto-destroy is built to prevent.
+**Rejected:** an AWS Load Balancer Controller + IRSA + `TargetGroupBinding` for target registration → adds a Helm install and IRSA wiring this validation phase doesn't need; `target_type=instance` NodePorts registered via `aws_autoscaling_attachment` reuse the same NodePort numbers K3s already standardizes on, with zero extra controllers.
+**Consequence:** every session pays ~15min apply / ~14min destroy in AWS-side latency (control plane + node group create/delete) that no workflow change can shorten.
 
 ## Argo CD prepared but not enabled
 **Now:** bootstrap manifests exist (`infra/k3s/argocd/bootstrap`), covering both `corp-tower-prod`/`corp-tower-test`; nothing installs or applies them.

@@ -1,0 +1,23 @@
+name: EKS Deploy All
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-game:
+    name: Deploy wstodplay
+    uses: ./.github/workflows/EKS-Deploy-Game-Server.yml
+    with:
+      target: wstodplay
+    secrets: inherit
+
+  deploy-web:
+    name: Deploy todplay
+    uses: ./.github/workflows/EKS-Deploy-Web-Server.yml
+    with:
+      target: todplay
+    secrets: inherit

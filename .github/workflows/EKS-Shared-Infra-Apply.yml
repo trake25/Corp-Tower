@@ -1,0 +1,68 @@
+name: EKS Shared Infra Apply
+
+# One-time, persistent root (infra/eks/terraform-shared): the ACM wildcard
+# certificate and its Cloudflare DNS validation record. Never destroyed by
+# any session workflow - the EKS session root reads the result via
+# data "aws_acm_certificate", so re-running this is only needed if the
+# certificate itself must be reissued.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_apply:
+        description: "Type APPLY_EKS_SHARED to apply the persistent ACM/Cloudflare root."
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  TF_VAR_aws_region: ap-southeast-1
+  TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+  TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+jobs:
+  apply:
+    name: Apply Persistent EKS ACM/Cloudflare Root
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: staging
+    defaults:
+      run:
+        working-directory: infra/eks/terraform-shared
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check apply confirmation
+        run: |
+          if [ "${{ inputs.confirm_apply }}" != "APPLY_EKS_SHARED" ]; then
+            echo "confirm_apply must be exactly APPLY_EKS_SHARED."
+            exit 1
+          fi
+
+      - name: Setup AWS credentials and Terraform
+        uses: ./.github/actions/aws-terraform-setup
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure Terraform backend bucket exists
+        uses: ./.github/actions/terraform-backend-bootstrap
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform validate and plan
+        uses: ./.github/actions/terraform-validate-plan
+        with:
+          working-directory: infra/eks/terraform-shared
+
+      - name: Terraform apply
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Show Terraform outputs
+        run: terraform output

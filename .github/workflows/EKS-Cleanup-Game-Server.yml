@@ -1,0 +1,63 @@
+name: EKS Cleanup Game Server (core)
+
+# corp-tower-prod also hosts the web server (EKS-Cleanup-Web-Server.yml), so
+# this deletes only the game server's own Deployment/Service by name - never
+# the namespace itself, and the cluster stays up.
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: "Game server environment to clean up: wstodplay."
+        required: true
+        type: string
+
+concurrency:
+  group: eks-cleanup-game-server-${{ inputs.target }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  CLUSTER_NAME: corp-tower-eks-lab
+
+jobs:
+  cleanup-game:
+    name: Delete Corp Tower Game Server Resources
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: staging
+
+    steps:
+      - name: Resolve target environment
+        run: |
+          set -euo pipefail
+          case "${{ inputs.target }}" in
+            wstodplay) echo "NAMESPACE=corp-tower-prod" >> "$GITHUB_ENV" ;;
+            *)
+              echo "::error::Unknown target '${{ inputs.target }}'. Expected wstodplay."
+              exit 1
+              ;;
+          esac
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME"
+
+      - name: Delete Corp Tower game server resources
+        run: |
+          set -euo pipefail
+          kubectl -n "$NAMESPACE" delete deployment corp-tower-server --ignore-not-found=true --wait=true --timeout=120s
+          kubectl -n "$NAMESPACE" delete service corp-tower-server --ignore-not-found=true
+          echo "Game server resources removed from $NAMESPACE (namespace, cluster, and web server, if any, left untouched)."

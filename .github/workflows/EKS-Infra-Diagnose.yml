@@ -1,0 +1,118 @@
+name: EKS Infra Diagnose
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  CLUSTER_NAME: corp-tower-eks-lab
+
+jobs:
+  diagnostics:
+    name: Diagnose EKS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup AWS credentials and Terraform
+        uses: ./.github/actions/aws-terraform-setup
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Read EKS Terraform outputs
+        working-directory: infra/eks/terraform
+        env:
+          TF_VAR_aws_region: ap-southeast-1
+          TF_VAR_environment: eks-lab
+          TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+          TF_VAR_operator_principal_arn: ${{ secrets.EKS_OPERATOR_PRINCIPAL_ARN }}
+        run: |
+          set -euo pipefail
+
+          if ! terraform init -input=false; then
+            echo "::warning::No EKS Terraform state to read; is the session stack up?"
+            echo "STACK_UP=false" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          {
+            echo "STACK_UP=true"
+            echo "ALB_DNS_NAME=$(terraform output -raw alb_dns_name)"
+            echo "GAME_TG_ARN=$(terraform output -raw game_target_group_arn)"
+            echo "WEB_TG_ARN=$(terraform output -raw web_target_group_arn)"
+            echo "REDIS_CLUSTER_ID=$(terraform output -raw cluster_name)-redis-001"
+          } >> "$GITHUB_ENV"
+
+      - name: Show EKS nodes
+        if: env.STACK_UP == 'true'
+        run: |
+          set -euo pipefail
+          aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME"
+          kubectl get nodes -o wide
+          kubectl get pods -A -o wide
+
+      - name: Show ALB target group health
+        if: env.STACK_UP == 'true'
+        run: |
+          set -euo pipefail
+
+          echo "::group::Game target group (wstodplay, port 30300)"
+          aws elbv2 describe-target-health --target-group-arn "$GAME_TG_ARN" \
+            --query 'TargetHealthDescriptions[].{Target:Target.Id,Port:Target.Port,State:TargetHealth.State,Reason:TargetHealth.Reason}' \
+            --output table
+          echo "::endgroup::"
+
+          echo "::group::Web target group (todplay, port 30310)"
+          aws elbv2 describe-target-health --target-group-arn "$WEB_TG_ARN" \
+            --query 'TargetHealthDescriptions[].{Target:Target.Id,Port:Target.Port,State:TargetHealth.State,Reason:TargetHealth.Reason}' \
+            --output table
+          echo "::endgroup::"
+
+      - name: Verify Cloudflare DNS points at the EKS ALB
+        if: env.STACK_UP == 'true'
+        run: |
+          set -euo pipefail
+
+          alb_ips="$(getent ahostsv4 "$ALB_DNS_NAME" | awk '{ print $1 }' | sort -u)"
+
+          for GAME_DOMAIN in wstodplay.galaxxigames.com todplay.galaxxigames.com; do
+            resolved_ip="$(getent ahostsv4 "$GAME_DOMAIN" | awk '{ print $1; exit }' || true)"
+            if printf '%s\n' "$alb_ips" | grep -qx "$resolved_ip"; then
+              echo "${GAME_DOMAIN} resolves to the EKS ALB (${resolved_ip})."
+            else
+              echo "::error::${GAME_DOMAIN} resolves to ${resolved_ip:-none}, expected one of: ${alb_ips}."
+              exit 1
+            fi
+          done
+
+      - name: Check ElastiCache Redis reachability
+        if: env.STACK_UP == 'true'
+        run: |
+          set -euo pipefail
+
+          echo "::group::ElastiCache replication group status"
+          aws elasticache describe-replication-groups \
+            --query "ReplicationGroups[?ReplicationGroupId==\`${REDIS_CLUSTER_ID%-001}\`].{Id:ReplicationGroupId,Status:Status,Endpoint:NodeGroups[0].PrimaryEndpoint.Address}" \
+            --output table
+          echo "::endgroup::"
+
+          echo "::group::CurrConnections (last 10 min)"
+          aws cloudwatch get-metric-statistics --namespace AWS/ElastiCache \
+            --metric-name CurrConnections --statistics Maximum --period 300 \
+            --dimensions Name=CacheClusterId,Value="$REDIS_CLUSTER_ID" \
+            --start-time "$(date -u -d '10 min ago' +%FT%TZ)" --end-time "$(date -u +%FT%TZ)" \
+            --output table
+          echo "::endgroup::"

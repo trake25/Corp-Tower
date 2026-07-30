@@ -1,4 +1,4 @@
-name: Server EKS Infra Plan
+name: EKS Infra Plan
 
 on:
   workflow_dispatch:
@@ -13,10 +13,11 @@ env:
   TF_VAR_aws_region: ap-southeast-1
   TF_VAR_environment: eks-lab
   TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+  TF_VAR_operator_principal_arn: ${{ secrets.EKS_OPERATOR_PRINCIPAL_ARN }}
 
 jobs:
   plan:
-    name: Plan Server EKS Infrastructure
+    name: Plan EKS Infrastructure
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment: staging

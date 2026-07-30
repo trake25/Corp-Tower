@@ -1,0 +1,63 @@
+name: EKS Infra Apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_apply:
+        description: "Type APPLY_EKS to apply the reviewed EKS infrastructure plan."
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  TF_VAR_aws_region: ap-southeast-1
+  TF_VAR_environment: eks-lab
+  TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+  TF_VAR_operator_principal_arn: ${{ secrets.EKS_OPERATOR_PRINCIPAL_ARN }}
+
+jobs:
+  apply:
+    name: Apply EKS Infrastructure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: staging
+    defaults:
+      run:
+        working-directory: infra/eks/terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check apply confirmation
+        run: |
+          if [ "${{ inputs.confirm_apply }}" != "APPLY_EKS" ]; then
+            echo "confirm_apply must be exactly APPLY_EKS."
+            exit 1
+          fi
+
+      - name: Setup AWS credentials and Terraform
+        uses: ./.github/actions/aws-terraform-setup
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure Terraform backend bucket exists
+        uses: ./.github/actions/terraform-backend-bootstrap
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform validate and plan before apply
+        uses: ./.github/actions/terraform-validate-plan
+        with:
+          working-directory: infra/eks/terraform
+
+      - name: Terraform apply
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Show Terraform outputs
+        run: terraform output

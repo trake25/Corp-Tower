@@ -1,0 +1,79 @@
+name: EKS Infra Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_destroy:
+        description: "Type DESTROY_EKS to tear down the EKS session stack."
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  TF_VAR_aws_region: ap-southeast-1
+  TF_VAR_environment: eks-lab
+  TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+  TF_VAR_operator_principal_arn: ${{ secrets.EKS_OPERATOR_PRINCIPAL_ARN }}
+
+jobs:
+  destroy:
+    name: Destroy EKS Infrastructure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: staging
+    defaults:
+      run:
+        working-directory: infra/eks/terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check destroy confirmation
+        run: |
+          if [ "${{ inputs.confirm_destroy }}" != "DESTROY_EKS" ]; then
+            echo "confirm_destroy must be exactly DESTROY_EKS."
+            exit 1
+          fi
+
+      - name: Setup AWS credentials and Terraform
+        uses: ./.github/actions/aws-terraform-setup
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure Terraform backend bucket exists
+        uses: ./.github/actions/terraform-backend-bootstrap
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform destroy
+        run: terraform destroy -input=false -auto-approve
+
+      - name: Check for orphaned billable resources
+        working-directory: .
+        run: |
+          set -euo pipefail
+
+          RESOURCES_JSON="$(
+            aws resourcegroupstaggingapi get-resources \
+              --tag-filters Key=Stack,Values=server-eks \
+              --output json
+          )"
+
+          ORPHAN_COUNT="$(printf '%s' "$RESOURCES_JSON" | jq '.ResourceTagMappingList | length')"
+
+          if [ "$ORPHAN_COUNT" -gt 0 ]; then
+            echo "::error::${ORPHAN_COUNT} resource(s) tagged Stack=server-eks still exist after destroy (M-8)."
+            printf '%s' "$RESOURCES_JSON" | jq -r '.ResourceTagMappingList[].ResourceARN'
+            exit 1
+          fi
+
+          echo "No resources tagged Stack=server-eks remain. Destroy is clean."

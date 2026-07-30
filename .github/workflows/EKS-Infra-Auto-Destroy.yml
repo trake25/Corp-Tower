@@ -1,0 +1,89 @@
+name: EKS Infra Auto Destroy
+
+# Scheduled dead-man's switch: no-ops when no session cluster exists, and is
+# the only budget control that acts rather than notifies (AWS Budgets alerts
+# lag 8-24h and cannot stop spend by themselves).
+
+on:
+  schedule:
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+  TF_VAR_aws_region: ap-southeast-1
+  TF_VAR_environment: eks-lab
+  TF_VAR_ecr_repository_name: ${{ secrets.ECR_REPOSITORY }}
+  TF_VAR_operator_principal_arn: ${{ secrets.EKS_OPERATOR_PRINCIPAL_ARN }}
+
+jobs:
+  auto-destroy:
+    name: Auto Destroy EKS Infrastructure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: staging
+    defaults:
+      run:
+        working-directory: infra/eks/terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup AWS credentials and Terraform
+        uses: ./.github/actions/aws-terraform-setup
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Check whether an EKS session stack exists
+        id: check
+        run: |
+          set -euo pipefail
+
+          if aws eks describe-cluster --name "corp-tower-${TF_VAR_environment}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "No corp-tower-${TF_VAR_environment} cluster found; nothing to destroy."
+          fi
+
+      - name: Ensure Terraform backend bucket exists
+        if: steps.check.outputs.exists == 'true'
+        uses: ./.github/actions/terraform-backend-bootstrap
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform init
+        if: steps.check.outputs.exists == 'true'
+        run: terraform init -input=false
+
+      - name: Terraform destroy
+        if: steps.check.outputs.exists == 'true'
+        run: terraform destroy -input=false -auto-approve
+
+      - name: Check for orphaned billable resources
+        if: steps.check.outputs.exists == 'true'
+        working-directory: .
+        run: |
+          set -euo pipefail
+
+          RESOURCES_JSON="$(
+            aws resourcegroupstaggingapi get-resources \
+              --tag-filters Key=Stack,Values=server-eks \
+              --output json
+          )"
+
+          ORPHAN_COUNT="$(printf '%s' "$RESOURCES_JSON" | jq '.ResourceTagMappingList | length')"
+
+          if [ "$ORPHAN_COUNT" -gt 0 ]; then
+            echo "::error::${ORPHAN_COUNT} resource(s) tagged Stack=server-eks still exist after auto-destroy (M-8)."
+            printf '%s' "$RESOURCES_JSON" | jq -r '.ResourceTagMappingList[].ResourceARN'
+            exit 1
+          fi
+
+          echo "No resources tagged Stack=server-eks remain. Auto-destroy is clean."

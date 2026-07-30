@@ -41,9 +41,20 @@ variable "game_port_cidr" {
 }
 
 variable "kubernetes_version" {
-  description = "EKS control plane version."
+  description = "EKS control plane version. Must stay in AWS standard support (checked against the EKS version calendar at apply time) - extended support bills the control plane at 6x."
   type        = string
-  default     = "1.32"
+  default     = "1.34"
+}
+
+variable "eks_cluster_log_types" {
+  description = "EKS control-plane log types to enable. Empty by default - CloudWatch log ingestion is usage-billed and the log group has no expiry unless Terraform-owned. Set to [\"api\"] for one debugging session; a retention_in_days=1 log group is created automatically when non-empty."
+  type        = list(string)
+  default     = []
+}
+
+variable "operator_principal_arn" {
+  description = "IAM role/user ARN (not an assumed-role ARN) granted cluster-admin via an EKS access entry, so kubectl works from an operator's laptop."
+  type        = string
 }
 
 variable "node_instance_types" {

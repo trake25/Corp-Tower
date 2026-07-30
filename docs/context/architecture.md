@@ -12,7 +12,7 @@ Scope: system shape, tech stack, runtime/message flow, repo layout. Per-module d
 | Server | Node.js, `ws`, Redis (`redis` npm package, optional) |
 | Shared state | Redis (multi-worker matchmaking/room/reconnect state) |
 | Infra (active) | Terraform, K3s on EC2, Docker, Caddy |
-| Infra (plan-only) | Terraform, EKS, NLB, ElastiCache |
+| Infra (session-scoped) | Terraform, EKS, ALB, ElastiCache |
 | CI/CD | GitHub Actions |
 | Public endpoints | Prod `wsplaytod`/test `wstodtest` on K3s (Cloudflare DNS); dev `devwstod1`/`devwstod2` on the physical backup (Cloudflare Tunnel) — build-time injected, see [networking.md](./networking.md#connection) |
 
@@ -51,7 +51,7 @@ flowchart LR
 
 ## Runtime flow
 
-1. Client connects to its build-configured endpoint (prod `wsplaytod`/test `wstodtest` on K3s, or a dev instance on the physical backup — see [networking.md § Connection](./networking.md#connection)). On K3s, EC2-GW Caddy terminates WSS/HTTPS for every hostname in `infra/k3s/gateway_sites.yml` and reverse-proxies each to private K3s node IPs on that hostname's own NodePort. In the plan-only EKS path, an internet-facing NLB with Elastic IPs would replace EC2-GW Caddy.
+1. Client connects to its build-configured endpoint (prod `wsplaytod`/test `wstodtest` on K3s, or a dev instance on the physical backup — see [networking.md § Connection](./networking.md#connection)). On K3s, EC2-GW Caddy terminates WSS/HTTPS for every hostname in `infra/k3s/gateway_sites.yml` and reverse-proxies each to private K3s node IPs on that hostname's own NodePort. On the session-scoped EKS stack (own hostnames `wstodplay`/`todplay`, brought up on demand), an ALB with ACM TLS and host-based routing replaces EC2-GW Caddy.
 2. **Server Entry** accepts the connection and the first `reconnect` message, then hands the player to **Lobby Manager**.
 3. **Lobby Manager** queues the player, creates/resumes a 3-participant room (filling with debug bots if enabled), and starts a **Game Engine** instance for that room.
 4. **Game Engine** owns authoritative per-room gameplay — level lifecycle, timers, placement validation, Power system — delegating block supply, scoring, and Impact (checkpoint) logic to its `engine/` submodules, and grid/tilt physics to **Tower Stability** (a pure function).
@@ -85,9 +85,9 @@ flowchart LR
 | `.github/actions/fetch-private-assets/` | Pulls production art from R2 | [build.md](./build.md#private-asset-pipeline) |
 | `.github/workflows/K3s-*.yml` | K3s deploy/cleanup/infra for prod (wsplaytod/playtod) + test (wstodtest/todtest) | [deployment.md](./deployment.md#k3s-workflows) |
 | `.github/workflows/Backup-*.yml` | Physical-backup deploy/cleanup/diagnose for 4 dev instances | [deployment.md](./deployment.md#backup-physical-machine-4-dev-instances) |
-| `.github/workflows/Server-EKS-Infra-Plan.yml` | Plan-only EKS path | [deployment.md](./deployment.md#eks-plan-only) |
+| `.github/workflows/EKS-*.yml` | Session-scoped EKS path (infra plan/apply/destroy, deploy, cleanup, diagnose) | [deployment.md](./deployment.md#eks-session-scoped-validation-stack) |
 | `infra/k3s/` | Active K3s Terraform, Ansible, Kustomize, Argo bootstrap | [deployment.md](./deployment.md#k3s-topology) |
-| `infra/eks/` | Plan-only EKS Terraform | [deployment.md](./deployment.md#eks-plan-only) |
+| `infra/eks/` | Session-scoped EKS Terraform + Kustomize apps | [deployment.md](./deployment.md#eks-session-scoped-validation-stack) |
 
 ## Subsystem boundaries
 
@@ -99,5 +99,5 @@ flowchart LR
 ## Current environment status
 
 - **K3s** (`infra/k3s`): active, live staging traffic.
-- **EKS** (`infra/eks`): Terraform plan-only, not applied. See [deployment.md](./deployment.md#eks-plan-only).
+- **EKS** (`infra/eks`): apply-ready, session-scoped — brought up for a session and torn down after, never continuously running. See [deployment.md](./deployment.md#eks-session-scoped-validation-stack).
 - Docker EC2 staging (EC2-1/2/3 + Ansible) has been fully removed; K3s superseded it.

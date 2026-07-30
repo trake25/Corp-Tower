@@ -6,15 +6,15 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    tls = {
-      source  = "hashicorp/tls"
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
       version = "~> 4.0"
     }
   }
 
   backend "s3" {
     bucket       = "corp-tower-tfstate-ap-southeast-1"
-    key          = "eks-lab/terraform.tfstate"
+    key          = "eks-shared/terraform.tfstate"
     region       = "ap-southeast-1"
     encrypt      = true
     use_lockfile = true
@@ -27,10 +27,13 @@ provider "aws" {
   default_tags {
     tags = {
       Project     = "corp-tower"
-      Environment = var.environment
-      Stack       = "server-eks"
+      Environment = "eks-shared"
+      Stack       = "server-eks-shared"
       ManagedBy   = "terraform"
     }
   }
 }
 
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}

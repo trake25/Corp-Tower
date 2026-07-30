@@ -13,24 +13,24 @@ output "cluster_endpoint" {
   value       = aws_eks_cluster.main.endpoint
 }
 
-output "nlb_dns_name" {
-  description = "Internet-facing NLB DNS name for game traffic."
-  value       = aws_lb.game.dns_name
-}
-
-output "nlb_elastic_ips" {
-  description = "Elastic IPs attached to the internet-facing NLB."
-  value       = aws_eip.nlb[*].public_ip
+output "alb_dns_name" {
+  description = "Internet-facing ALB DNS name; the two Cloudflare CNAMEs (wstodplay, todplay) point their content here each session."
+  value       = aws_lb.main.dns_name
 }
 
 output "game_target_group_arn" {
-  description = "Target group for the future Kubernetes service/controller integration."
+  description = "ALB target group for corp-tower-server's NodePort (30300)."
   value       = aws_lb_target_group.game.arn
 }
 
-output "redis_primary_endpoint" {
-  description = "ElastiCache Redis primary endpoint."
-  value       = aws_elasticache_replication_group.redis.primary_endpoint_address
+output "web_target_group_arn" {
+  description = "ALB target group for corp-tower-web's NodePort (30310)."
+  value       = aws_lb_target_group.web.arn
+}
+
+output "redis_url" {
+  description = "TLS Redis URL for the EKS game server deployment (rediss://, ElastiCache in-transit encryption)."
+  value       = "rediss://${aws_elasticache_replication_group.redis.primary_endpoint_address}:6379"
 }
 
 output "ecr_repository_name" {
@@ -40,5 +40,5 @@ output "ecr_repository_name" {
 
 output "server_eks_note" {
   description = "Parallel Server EKS topology note."
-  value       = "EKS replaces private K3s EC2 nodes, NLB with Elastic IPs replaces EC2-GW Caddy, and ElastiCache replaces Docker Redis."
+  value       = "EKS replaces private K3s EC2 nodes, an ALB with host-based routing replaces EC2-GW Caddy, and ElastiCache over TLS replaces in-cluster Redis."
 }
