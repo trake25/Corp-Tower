@@ -1,0 +1,58 @@
+name: EKS Force Unlock
+
+# Clears a stuck Terraform state lock left behind by a cancelled/crashed
+# Plan/Apply/Destroy run (S3-native locking has no automatic expiry). Only
+# use this when you're certain no other run is actually still in progress -
+# the Lock Info block in the failing run's error output names the holder.
+
+on:
+  workflow_dispatch:
+    inputs:
+      lock_id:
+        description: "Lock ID from the failing run's 'Error acquiring the state lock' message."
+        required: true
+        type: string
+      confirm_unlock:
+        description: "Type FORCE_UNLOCK_EKS to confirm no other run holds this lock legitimately."
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+
+jobs:
+  force-unlock:
+    name: Force Unlock EKS Terraform State
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: staging
+    defaults:
+      run:
+        working-directory: infra/eks/terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check unlock confirmation
+        run: |
+          if [ "${{ inputs.confirm_unlock }}" != "FORCE_UNLOCK_EKS" ]; then
+            echo "confirm_unlock must be exactly FORCE_UNLOCK_EKS."
+            exit 1
+          fi
+
+      - name: Setup AWS credentials and Terraform
+        uses: ./.github/actions/aws-terraform-setup
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Force unlock state
+        run: terraform force-unlock -force "${{ inputs.lock_id }}"
