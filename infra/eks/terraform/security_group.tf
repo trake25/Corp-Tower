@@ -52,6 +52,24 @@ resource "aws_vpc_security_group_egress_rule" "nodes_outbound" {
   cidr_ipv4         = "0.0.0.0/0"
 }
 
+resource "aws_vpc_security_group_ingress_rule" "cluster_from_nodes" {
+  security_group_id            = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+  description                  = "Node kubelet to EKS control plane API (required for nodes to join)"
+  from_port                    = 443
+  to_port                      = 443
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.nodes.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "nodes_from_cluster" {
+  security_group_id            = aws_security_group.nodes.id
+  description                  = "EKS control plane to kubelet (logs, exec, webhooks, metrics-server)"
+  from_port                    = 1025
+  to_port                      = 65535
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+}
+
 resource "aws_security_group" "redis" {
   name        = "${local.cluster_name}-redis"
   description = "ElastiCache Redis access from EKS worker nodes."
