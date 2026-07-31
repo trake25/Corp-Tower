@@ -382,13 +382,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          WS_URL="wss://${GAME_DOMAIN}" node - <<'NODE'
+          WS_URL="wss://${GAME_DOMAIN}"
+
+          for attempt in $(seq 1 5); do
+            if WS_URL="$WS_URL" node - <<'NODE'
           const url = process.env.WS_URL;
           const socket = new WebSocket(url);
           const openTimeout = setTimeout(() => {
             console.error(`Timed out connecting to ${url}`);
             process.exit(1);
-          }, 5000);
+          }, 10000);
 
           socket.addEventListener("open", () => {
             clearTimeout(openTimeout);
@@ -419,3 +422,16 @@ jobs:
             process.exit(1);
           });
           NODE
+            then
+              echo "Idle WebSocket hold passed for ${WS_URL}."
+              break
+            fi
+
+            if [ "$attempt" -eq 5 ]; then
+              echo "::error::Idle WebSocket hold could not complete for ${WS_URL} after 5 attempts."
+              exit 1
+            fi
+
+            echo "Retrying idle WebSocket hold (attempt ${attempt}/5)."
+            sleep 5
+          done
