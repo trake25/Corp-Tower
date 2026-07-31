@@ -41,9 +41,9 @@ variable "game_port_cidr" {
 }
 
 variable "kubernetes_version" {
-  description = "EKS control plane version. Must stay in AWS standard support (checked against the EKS version calendar at apply time) - extended support bills the control plane at 6x."
+  description = "EKS control plane version. Must stay in AWS standard support (checked against the EKS version calendar at apply time) - extended support bills the control plane at 6x. 1.36 chosen over 1.34 for longer standard-support runway (Aug 2027 vs Dec 2026) at identical cost."
   type        = string
-  default     = "1.34"
+  default     = "1.36"
 }
 
 variable "eks_cluster_log_types" {
