@@ -53,6 +53,7 @@ resource "aws_eks_node_group" "server" {
     version = aws_launch_template.node.latest_version
   }
 
+  ami_type       = "AL2023_x86_64_STANDARD"
   instance_types = var.node_instance_types
 
   scaling_config {
