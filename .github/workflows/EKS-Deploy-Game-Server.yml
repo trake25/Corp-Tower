@@ -245,6 +245,8 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Apply Corp Tower Kustomize overlay
+        env:
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
         run: |
           set -euo pipefail
 
