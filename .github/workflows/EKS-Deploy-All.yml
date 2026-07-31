@@ -2,6 +2,16 @@ name: EKS Deploy All
 
 on:
   workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Which server(s) to deploy."
+        required: true
+        type: choice
+        options:
+          - All
+          - Game only
+          - Web only
+        default: All
 
 permissions:
   id-token: write
@@ -10,6 +20,7 @@ permissions:
 jobs:
   deploy-game:
     name: Deploy wstodplay
+    if: ${{ inputs.deploy_target == 'All' || inputs.deploy_target == 'Game only' }}
     uses: ./.github/workflows/EKS-Deploy-Game-Server.yml
     with:
       target: wstodplay
@@ -17,6 +28,7 @@ jobs:
 
   deploy-web:
     name: Deploy todplay
+    if: ${{ inputs.deploy_target == 'All' || inputs.deploy_target == 'Web only' }}
     uses: ./.github/workflows/EKS-Deploy-Web-Server.yml
     with:
       target: todplay

@@ -279,9 +279,25 @@ jobs:
           EOF
 
           kubectl apply -k "$RUNTIME_OVERLAY"
+
+          set +e
           kubectl -n "$NAMESPACE" rollout status deployment/corp-tower-server --timeout=240s
+          ROLLOUT_STATUS=$?
+          set -e
+
+          echo "--- Nodes ---"
           kubectl get nodes -o wide
+          echo "--- Namespace resources ---"
           kubectl -n "$NAMESPACE" get all -o wide
+          echo "--- Pod describe ---"
+          kubectl -n "$NAMESPACE" describe pods -l app.kubernetes.io/name=corp-tower-server
+          echo "--- Pod logs ---"
+          kubectl -n "$NAMESPACE" logs -l app.kubernetes.io/name=corp-tower-server --all-containers --tail=200 --prefix || true
+
+          if [ "$ROLLOUT_STATUS" -ne 0 ]; then
+            echo "::error::Deployment rollout did not become ready; see pod describe/logs above."
+            exit "$ROLLOUT_STATUS"
+          fi
 
       - name: Assert Redis wiring reached the pod
         run: |
