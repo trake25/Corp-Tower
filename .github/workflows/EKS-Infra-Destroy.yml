@@ -62,18 +62,36 @@ jobs:
         run: |
           set -euo pipefail
 
-          RESOURCES_JSON="$(
-            aws resourcegroupstaggingapi get-resources \
-              --tag-filters Key=Stack,Values=server-eks \
-              --output json
-          )"
+          # NAT Gateway deletion is asynchronous (lingers in "deleting" for a
+          # few minutes) and the Resource Groups Tagging API itself has its
+          # own eventual-consistency lag on top of that, so a resource can
+          # briefly still be reported here even after terraform destroy has
+          # already succeeded. Poll instead of failing on the first read.
+          ATTEMPTS=6
+          SLEEP_SECONDS=30
 
-          ORPHAN_COUNT="$(printf '%s' "$RESOURCES_JSON" | jq '.ResourceTagMappingList | length')"
+          for i in $(seq 1 "$ATTEMPTS"); do
+            RESOURCES_JSON="$(
+              aws resourcegroupstaggingapi get-resources \
+                --tag-filters Key=Stack,Values=server-eks \
+                --output json
+            )"
 
-          if [ "$ORPHAN_COUNT" -gt 0 ]; then
-            echo "::error::${ORPHAN_COUNT} resource(s) tagged Stack=server-eks still exist after destroy (M-8)."
+            ORPHAN_COUNT="$(printf '%s' "$RESOURCES_JSON" | jq '.ResourceTagMappingList | length')"
+
+            if [ "$ORPHAN_COUNT" -eq 0 ]; then
+              echo "No resources tagged Stack=server-eks remain. Destroy is clean."
+              exit 0
+            fi
+
+            echo "Attempt ${i}/${ATTEMPTS}: ${ORPHAN_COUNT} resource(s) tagged Stack=server-eks still visible, rechecking in ${SLEEP_SECONDS}s..."
             printf '%s' "$RESOURCES_JSON" | jq -r '.ResourceTagMappingList[].ResourceARN'
-            exit 1
-          fi
 
-          echo "No resources tagged Stack=server-eks remain. Destroy is clean."
+            if [ "$i" -lt "$ATTEMPTS" ]; then
+              sleep "$SLEEP_SECONDS"
+            fi
+          done
+
+          echo "::error::${ORPHAN_COUNT} resource(s) tagged Stack=server-eks still exist after destroy (M-8)."
+          printf '%s' "$RESOURCES_JSON" | jq -r '.ResourceTagMappingList[].ResourceARN'
+          exit 1
