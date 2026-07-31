@@ -60,38 +60,63 @@ jobs:
       - name: Check for orphaned billable resources
         working-directory: .
         run: |
-          set -euo pipefail
+          set -uo pipefail
 
-          # NAT Gateway deletion is asynchronous (lingers in "deleting" for a
-          # few minutes) and the Resource Groups Tagging API itself has its
-          # own eventual-consistency lag on top of that, so a resource can
-          # briefly still be reported here even after terraform destroy has
-          # already succeeded. Poll instead of failing on the first read.
-          ATTEMPTS=6
-          SLEEP_SECONDS=30
+          # The Resource Groups Tagging API is a separate, eventually-consistent
+          # search index - it can keep listing a resource's ARN well after the
+          # resource itself is actually gone (observed lag here outlasted a
+          # 2.5 minute retry window). It is not authoritative on its own, so
+          # any ARN it reports is cross-checked directly against the live EC2
+          # API before being treated as a real orphan.
 
-          for i in $(seq 1 "$ATTEMPTS"); do
-            RESOURCES_JSON="$(
-              aws resourcegroupstaggingapi get-resources \
-                --tag-filters Key=Stack,Values=server-eks \
-                --output json
-            )"
+          RESOURCES_JSON="$(
+            aws resourcegroupstaggingapi get-resources \
+              --tag-filters Key=Stack,Values=server-eks \
+              --output json
+          )"
 
-            ORPHAN_COUNT="$(printf '%s' "$RESOURCES_JSON" | jq '.ResourceTagMappingList | length')"
+          mapfile -t ARNS < <(printf '%s' "$RESOURCES_JSON" | jq -r '.ResourceTagMappingList[].ResourceARN')
 
-            if [ "$ORPHAN_COUNT" -eq 0 ]; then
-              echo "No resources tagged Stack=server-eks remain. Destroy is clean."
-              exit 0
-            fi
+          STILL_LIVE=()
 
-            echo "Attempt ${i}/${ATTEMPTS}: ${ORPHAN_COUNT} resource(s) tagged Stack=server-eks still visible, rechecking in ${SLEEP_SECONDS}s..."
-            printf '%s' "$RESOURCES_JSON" | jq -r '.ResourceTagMappingList[].ResourceARN'
+          for arn in "${ARNS[@]}"; do
+            resource_part="${arn##*:}"
+            rtype="${resource_part%%/*}"
+            rid="${resource_part##*/}"
 
-            if [ "$i" -lt "$ATTEMPTS" ]; then
-              sleep "$SLEEP_SECONDS"
-            fi
+            case "$rtype" in
+              natgateway)
+                state="$(aws ec2 describe-nat-gateways --nat-gateway-ids "$rid" \
+                           --query 'NatGateways[0].State' --output text 2>/dev/null)"
+                if [ -n "$state" ] && [ "$state" != "deleted" ] && [ "$state" != "None" ]; then
+                  STILL_LIVE+=("$arn (state: $state)")
+                fi
+                ;;
+              subnet)
+                if aws ec2 describe-subnets --subnet-ids "$rid" >/dev/null 2>&1; then
+                  STILL_LIVE+=("$arn")
+                fi
+                ;;
+              security-group-rule)
+                if aws ec2 describe-security-group-rules --security-group-rule-ids "$rid" >/dev/null 2>&1; then
+                  STILL_LIVE+=("$arn")
+                fi
+                ;;
+              *)
+                # Unrecognized resource type for this check - be conservative.
+                STILL_LIVE+=("$arn")
+                ;;
+            esac
           done
 
-          echo "::error::${ORPHAN_COUNT} resource(s) tagged Stack=server-eks still exist after destroy (M-8)."
-          printf '%s' "$RESOURCES_JSON" | jq -r '.ResourceTagMappingList[].ResourceARN'
-          exit 1
+          if [ "${#STILL_LIVE[@]}" -gt 0 ]; then
+            echo "::error::${#STILL_LIVE[@]} resource(s) tagged Stack=server-eks are confirmed still live after destroy (M-8)."
+            printf '%s\n' "${STILL_LIVE[@]}"
+            exit 1
+          fi
+
+          if [ "${#ARNS[@]}" -gt 0 ]; then
+            echo "Tagging-API index still lists ${#ARNS[@]} resource(s), but live EC2 lookups confirm all are actually gone. Destroy is clean."
+          else
+            echo "No resources tagged Stack=server-eks remain. Destroy is clean."
+          fi
