@@ -50,9 +50,31 @@ jobs:
               ;;
           esac
 
+  verify-infra:
+    name: Verify Infra Matches Last Apply
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup AWS credentials
+        uses: ./.github/actions/aws-terraform-setup
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          setup-terraform: "false"
+
+      - name: Fail fast on unapplied infra changes
+        uses: ./.github/actions/eks-infra-drift-check
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+
   build:
     name: Build Web Export
-    needs: resolve-target
+    needs: [resolve-target, verify-infra]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 

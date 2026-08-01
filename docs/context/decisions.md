@@ -3,8 +3,7 @@
 Scope: why things are built the way they are — rationale, tradeoffs, rejected alternatives, known constraints. Not a bug tracker, and **not a changelog**: entries state the rule as it stands now, and a reversed decision is rewritten down to its surviving lesson rather than given an addendum. Entry shape (Now / Why / Rejected / Consequence) is defined once in [coding-conventions.md](./coding-conventions.md#decisionsmd-entry-shape).
 
 ## Politics → Power, Checkpoint → Impact rename
-**Now:** both systems carry their production UI names across every wire field, config key and Redis-persisted field — not just docs and code identifiers.
-**Consequence:** deploy client and server together; a room in flight during that deploy will not restore its Impact/Power state from an old-shaped Redis snapshot.
+**Now:** both systems carry their production UI names across every wire field, config key and Redis-persisted field — not just docs and code identifiers. **Consequence:** deploy client and server together; a room in flight during that deploy will not restore its Impact/Power state from an old-shaped Redis snapshot.
 
 ## Removed systems (stale references you may still hit)
 - **Refresh token economy** — gone. Refresh is purely the effect of activating a held `refresh` Power item: no token count, no per-level cap, and it rerolls **every** player's hand.
@@ -22,8 +21,7 @@ Scope: why things are built the way they are — rationale, tradeoffs, rejected 
 **Landmine:** labels on a white card need an explicit dark `font_color` override — the shared `CardMetaLabel` theme variation defines none and falls through to a near-white default, invisible on `WhiteCardPanel`.
 
 ## Tower Stability must stay a pure function
-**Now:** `Tower_Stability.js`'s `settleBlock()`/`evaluate()` are pure, deterministic functions of the `entries` array — no history, randomness or hidden state. **Why:** the [Balance Simulator](./testing.md#balance-simulator) re-runs `evaluate()` thousands of times and needs reproducible results, and the client re-derives the same tilt from a `game_state` snapshot after reconnecting rather than replaying placement history.
-**Consequence:** any change to this module must preserve determinism.
+**Now:** `Tower_Stability.js`'s `settleBlock()`/`evaluate()` are pure, deterministic functions of the `entries` array — no history, randomness or hidden state. **Why:** the [Balance Simulator](./testing.md#balance-simulator) re-runs `evaluate()` thousands of times and needs reproducible results, and the client re-derives the same tilt from a `game_state` snapshot after reconnecting rather than replaying placement history. **Consequence:** any change to this module must preserve determinism.
 
 ## Private Asset Pipeline credential split
 **Now:** CI holds an **Object Read only** R2 token (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` secrets) and cannot publish or delete art; only local dev holds an **Object Read & Write** token (gitignored `.env.art`), so publishing (`art-push.sh`) is local and manual by design. **Why:** Cloudflare's R2 S3-compatible endpoint doesn't accept GitHub OIDC federation (unlike the AWS Terraform workflows, which do use OIDC), so this path needs static credentials and the read/write split is the mitigation.
@@ -76,27 +74,29 @@ Scope: why things are built the way they are — rationale, tradeoffs, rejected 
 **Rejected:** a bare retry loop against the tagging API alone → observed lag outlasted a 2.5-minute/5-attempt retry window with the same stale ARNs on every attempt, so it was never going to clear on its own.
 **Consequence:** any future orphan-resource check needs the same live cross-verification, or it will false-fail a clean destroy.
 
+## EKS deploy workflows fail fast on infra code the last Infra Apply never ran
+**Now:** `EKS-Infra-Apply` records the applied `infra/eks/terraform` git tree hash to `eks-lab/applied-infra-tree.txt` in the state bucket; both EKS deploy cores run a `verify-infra` job (`.github/actions/eks-infra-drift-check`) that hard-fails before any build job on a tree mismatch, and warns without failing when no marker exists.
+**Why:** deploy workflows run no Terraform, so a committed-and-pushed infra fix is inert until an Infra Apply runs on that commit — nothing else surfaces the gap.
+**Rejected:** trusting "the fix is on `main`" → the nodes-SG self-referencing rule sat committed but unapplied while repeated `EKS Deploy All` runs failed on the exact symptom it fixes.
+**Consequence:** any change under `infra/eks/terraform` needs an `EKS Infra Apply` before the next deploy passes; deleting the S3 marker downgrades the guard to a warning, not a pass.
+
 ## Argo CD prepared but not enabled
-**Now:** bootstrap manifests exist (`infra/k3s/argocd/bootstrap`), covering both `corp-tower-prod`/`corp-tower-test`; nothing installs or applies them.
-**Why:** enablement waits on install → one manual sync → a passing rollback test, and only then automated prune/self-heal. `GITHUB_TOKEN` is not a suitable long-lived Argo CD repo credential for private repos; a persistent repo-read credential is needed instead.
+**Now:** bootstrap manifests exist (`infra/k3s/argocd/bootstrap`), covering both `corp-tower-prod`/`corp-tower-test`; nothing installs or applies them. **Why:** enablement waits on install → one manual sync → a passing rollback test, and only then automated prune/self-heal; `GITHUB_TOKEN` is not a suitable long-lived Argo CD repo credential for private repos — a persistent repo-read credential is needed instead.
 
 ## Debug menu build flag
 **Now:** `EndpointConfig.DEBUG_UI_ENABLED`, written by `scripts/write-endpoint-config.sh` per build, gates the debug button's visibility (`ScreenManager._ready()`). Off for the two K3s web builds (`playtod`/`todtest`); on for Android, the editor, and the physical backup's dev builds.
-**Why:** a real build-time flag generalizes across every platform and environment tier, unlike the prior hostname-sniff stopgap.
-**Rejected:** keeping the `window.location.hostname` check → only worked on web, and only for the one Pages host it was written against; every new web hostname would need its own carve-out.
+**Rejected:** a `window.location.hostname` sniff → only worked on web, and only for the one Pages host it was written against; a real build-time flag generalizes across every platform and environment tier.
 **Consequence:** still UI-only — client JS is inspectable, and server-side `update_config`/`resetDebugConfig` still have no admin/auth check beyond existing message validation. Full gating needs server-side authorization too, before public release.
 
 ## Debug menu category navigation switched from tabs to a dropdown
-**Now:** a plain `Control` holds the category `ScrollContainer`s stacked full-rect, with a `DebugCategoryDropdown` `OptionButton` toggling `.visible` on exactly one at a time. Only the outer navigation chrome changed — every category's rows and their `configure_slider()`/`apply_config()` wiring are untouched.
-**Rejected:** the `TabContainer` header row, and shrinking or wrapping its labels → visibly cramped at 8 categories, where a dropdown scales to arbitrarily many with zero added header space. Debug categories were expected to keep growing, and have (10 now).
+**Now:** a plain `Control` holds the category `ScrollContainer`s stacked full-rect, with a `DebugCategoryDropdown` `OptionButton` toggling `.visible` on exactly one at a time — every category's rows and their `configure_slider()`/`apply_config()` wiring untouched. **Rejected:** the `TabContainer` header row, and shrinking or wrapping its labels → visibly cramped at 8 categories, where a dropdown scales to arbitrarily many with zero added header space; categories were expected to keep growing, and have (10 now).
 
 ## Debug Tooltip: a purpose-built dimmed popup, not a reuse of Popover Panel
 **Now:** `DebugTooltip.gd` mirrors [Popover Panel](./ui.md#popover-panel)'s outside-tap/grace-period shape (`OUTSIDE_TAP_GRACE_MS`) but adds a semi-transparent `ColorRect` dim layer, keeping the two components' behavior contracts independent. **Why:** debug rows' calibration variables (`scroll_start_ratio`, `scroll_ease_power`, …) aren't self-explanatory from a slider, and a modal explainer over an already-modal debug panel reads correctly dimmed — while the Chat/Power/Quest popovers are anchored corner cards over live game content, where dimming would be wrong.
 **Rejected:** adding a dim option to the shared `PopoverPanel.gd`/`.tscn` → risks behavior changes to the three existing popovers.
 
 ## No persistent leaderboard yet
-**Now:** Redis holds active-session state (matchmaking/reconnect/room snapshots) only; durable leaderboard/player-stat storage and structured logging are future technical work.
-**Also untested at integration level:** reconnect and gateway routing across pods, beyond the matchmaking queue regression tests ([testing.md](./testing.md#server-matchmaking-queue-tests)).
+**Now:** Redis holds active-session state (matchmaking/reconnect/room snapshots) only; durable leaderboard/player-stat storage and structured logging are future technical work. **Also untested at integration level:** reconnect and gateway routing across pods, beyond the matchmaking queue regression tests ([testing.md](./testing.md#server-matchmaking-queue-tests)).
 
 ## Matchmaking queue lost-update and cross-pod room gaps
 Three independent multi-pod gaps in the same mechanism — two players joining from the same network at nearly the same moment (plus a third from elsewhere) could end up unable to reach or act in the room, depending on which pod formed it and which pod holds each socket. Identity is `playerId`/`reconnectToken`-based, never IP-based, so the cause was never there. Coverage (items 1–2) → [testing.md](./testing.md#server-matchmaking-queue-tests).

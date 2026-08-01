@@ -46,11 +46,33 @@ jobs:
       - name: Run server tests
         run: npm test
 
+  verify-infra:
+    name: Verify Infra Matches Last Apply
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup AWS credentials
+        uses: ./.github/actions/aws-terraform-setup
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          setup-terraform: "false"
+
+      - name: Fail fast on unapplied infra changes
+        uses: ./.github/actions/eks-infra-drift-check
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+
   build-and-push:
     name: Build And Push Docker Image To ECR
     runs-on: ubuntu-24.04
-    needs: test-server
-    if: ${{ needs.test-server.result == 'success' }}
+    needs: [test-server, verify-infra]
+    if: ${{ needs.test-server.result == 'success' && needs.verify-infra.result == 'success' }}
     timeout-minutes: 15
     environment: staging
 

@@ -1,0 +1,39 @@
+name: EKS Infra Drift Check
+description: >-
+  Fail fast when the checked-out infra/eks/terraform tree differs from the
+  tree recorded by the last successful EKS Infra Apply. Deploy workflows run
+  no Terraform, so a pushed infra change is inert until an Infra Apply runs.
+  Warns (does not fail) when no marker has been recorded yet.
+
+inputs:
+  aws-region:
+    description: AWS region of the shared Terraform state bucket.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Compare infra tree against last applied marker
+      shell: bash
+      env:
+        AWS_REGION: ${{ inputs.aws-region }}
+      run: |
+        set -euo pipefail
+        MARKER_URI="s3://corp-tower-tfstate-${AWS_REGION}/eks-lab/applied-infra-tree.txt"
+        CHECKED_OUT="$(git rev-parse "HEAD:infra/eks/terraform")"
+
+        if ! MARKER="$(aws s3 cp "$MARKER_URI" - 2>/dev/null)"; then
+          echo "::warning::No applied-infra marker at ${MARKER_URI}; cannot verify infra/eks/terraform matches the last EKS Infra Apply. The next EKS Infra Apply records it."
+          exit 0
+        fi
+
+        APPLIED_TREE="$(printf '%s\n' "$MARKER" | head -n 1)"
+
+        if [ "$CHECKED_OUT" != "$APPLIED_TREE" ]; then
+          echo "Checked-out infra/eks/terraform tree: ${CHECKED_OUT}"
+          printf 'Last EKS Infra Apply marker:\n%s\n' "$MARKER"
+          echo "::error::infra/eks/terraform at this commit differs from what the last EKS Infra Apply applied. Deploy workflows run no Terraform - dispatch EKS Infra Apply (APPLY_EKS) first, then re-run this deploy."
+          exit 1
+        fi
+
+        echo "infra/eks/terraform tree ${CHECKED_OUT} matches the last EKS Infra Apply."

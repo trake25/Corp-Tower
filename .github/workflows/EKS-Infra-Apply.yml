@@ -59,5 +59,13 @@ jobs:
       - name: Terraform apply
         run: terraform apply -input=false -auto-approve tfplan
 
+      - name: Record applied infra tree
+        run: |
+          set -euo pipefail
+          TREE="$(git rev-parse "HEAD:infra/eks/terraform")"
+          printf '%s\ncommit=%s\napplied_at=%s\n' "$TREE" "$GITHUB_SHA" "$(date -u +%FT%TZ)" \
+            | aws s3 cp - "s3://corp-tower-tfstate-${AWS_REGION}/eks-lab/applied-infra-tree.txt"
+          echo "Recorded applied infra tree ${TREE} (commit ${GITHUB_SHA})." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Show Terraform outputs
         run: terraform output
