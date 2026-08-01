@@ -51,6 +51,12 @@ spec:
               value: "180"
             - name: REDIS_CONNECT_RETRY_DELAY_MS
               value: "2000"
+          startupProbe:
+            tcpSocket:
+              port: websocket
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            failureThreshold: 40
           readinessProbe:
             tcpSocket:
               port: websocket
