@@ -52,6 +52,13 @@ resource "aws_vpc_security_group_egress_rule" "nodes_outbound" {
   cidr_ipv4         = "0.0.0.0/0"
 }
 
+resource "aws_vpc_security_group_ingress_rule" "nodes_from_nodes" {
+  security_group_id            = aws_security_group.nodes.id
+  description                  = "Node-to-node and cross-node pod-to-pod traffic (CoreDNS, VPC CNI)"
+  ip_protocol                  = "-1"
+  referenced_security_group_id = aws_security_group.nodes.id
+}
+
 resource "aws_vpc_security_group_ingress_rule" "cluster_from_nodes" {
   security_group_id            = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
   description                  = "Node kubelet to EKS control plane API (required for nodes to join)"
