@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: corp-tower-web-maintenance
+  labels:
+    app.kubernetes.io/name: corp-tower-web
+    app.kubernetes.io/part-of: corp-tower
+data:
+  index.html: |
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <title>Corp Tower</title>
+      </head>
+      <body style="margin:0;display:flex;min-height:100vh;align-items:center;justify-content:center;font-family:sans-serif;background:#111;color:#eee;">
+        <div style="text-align:center;">
+          <h1>Corp Tower is offline for maintenance</h1>
+          <p>Please check back shortly.</p>
+        </div>
+      </body>
+    </html>

@@ -1,0 +1,14 @@
+namespace: corp-tower-test
+
+resources:
+  - namespace.yaml
+  - ../../web-maintenance-base
+
+patches:
+  - target:
+      kind: Service
+      name: corp-tower-web
+    patch: |-
+      - op: replace
+        path: /spec/ports/0/nodePort
+        value: 30311

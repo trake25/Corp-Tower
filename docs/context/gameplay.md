@@ -184,7 +184,7 @@ Every row below is tunable live, and **each carries its own in-app explainer wit
 | **Supply** | `levelSupplyMinSurplus`/`MaxSurplus`, `supplyEffectiveWidthRatio`, `minPrecisionBlocksPerLevel`, `maxTeamCarryOverBlocks`, `refreshMinUsefulBlockHeight` |
 | **Tower — stability** | `towerStabilityDifficulty` (the single dial; the physics constants are derived, not exposed), `towerMaxTiltAngleDeg` (visual only) |
 | **Tower — site** | `towerSiteSlendernessTarget`, `towerSiteWidthMin`/`Max` (max hard-capped at 8 by the viewport) |
-| **Tower — feedback** | `towerStabilityWarningThreshold`/`CriticalThreshold` (display only; critical clamped below warning), `towerStabilityMoodThreshold` (display only; 1–50, default 3 — the brick-face band, see [ui.md](./ui.md#leaf-components)) |
+| **Tower — feedback** | `towerStabilityWarningThreshold`/`CriticalThreshold` (display only; critical clamped below warning), `towerStabilityMoodThreshold` (display only; 1–50, default 2 — the brick-face band, see [ui.md](./ui.md#leaf-components)) |
 | **Power** | `powerUnlockLevel`, `powerMaxSlots`, `powerActivationCooldownMs` |
 | **Scoring** | `placementScorePerHeight`, `placementStabilityFloor`, `reinforceScorePerIntegrity`/`PerLean`, `precisionBonusPerLevel`, `teamExactBonusPerLevel`, `finisherBonusPerLevel`, `assistBonusPerLevel`, `assistContributionThreshold` |
 | **Parallax / Placement** | Client-local rendering and snap-feel values — no server round-trip. See [ui.md](./ui.md#main-ui-controller) |

@@ -64,21 +64,21 @@ All manual `workflow_dispatch` only — K3s has no automated/push-triggered path
 | `K3s-Infra-Apply.yml` | Manual, requires `APPLY_K3S`. Plans first and **hard-fails if the plan contains any delete/replace action** — run `K3s Cleanup All Game Server`'s `terraform_destroy` first if a plan would replace/delete resources |
 | `K3s-Infra-Diagnose.yml` | Reusable / manual. Inspects tagged lab AWS resources, verifies all four Cloudflare DNS records resolve to the gateway, probes SSH through the bastion |
 | `K3s-Deploy-Game-Server.yml` | Reusable core, `target: wsplaytod\|wstodtest`. Tests server code, builds/pushes one shared Docker image tagged by commit SHA, installs/configures K3s via EC2-GW bastion/NAT (restoring/persisting Caddy's ACME cache to R2, rendering all four Caddy sites, upserting all four DNS records), refreshes `ecr-pull` in the target namespace, applies that target's Kustomize overlay, validates nodes/Redis/replica/Caddy/public WSS |
-| `K3s-Deploy-Game.yml` | Manual dispatcher around the core above, `target` choice `wsplaytod\|wstodtest\|all` — `all` runs both sequentially, since they share one Caddy gateway and R2 ACME cache |
 | `K3s-Deploy-Web-Server.yml` | Reusable core, `target: playtod\|todtest`. Builds the Web export (debug UI disabled), pushes an `nginx:alpine` image tagged `web-<target>-<sha>`, same K3s plumbing as the game-server core, HTTPS smoke test |
-| `K3s-Deploy-Web.yml` | Manual dispatcher, mirroring `K3s-Deploy-Game.yml` — `target` choice `playtod\|todtest\|all` |
-| `K3s-Cleanup-Game-Server.yml` / `K3s-Cleanup-Web-Server.yml` | Reusable cores. Delete only that workload's Deployment+Service by name in the target namespace — **never** the namespace itself, since each prod/test namespace hosts both a game and a web server |
-| `K3s-Cleanup-Game.yml` / `K3s-Cleanup-Web.yml` | Manual dispatchers for the cleanup cores above, `target` choice `wsplaytod\|wstodtest\|all` (game) or `playtod\|todtest\|all` (web) — each behind a typed confirmation matching the chosen target |
+| `K3s-Deploy-All.yml` | Manual dispatcher over both cores, `deploy_target` choice `All\|Game only\|Web only` crossed with `environment` choice `prod\|test\|all`. Always runs game-prod → game-test → web-prod → web-test in that order regardless of selection (skipping unselected combinations), since all four share one Caddy gateway and R2 ACME cache |
+| `K3s-Cleanup-Game-Server.yml` | Reusable core, `target: wsplaytod\|wstodtest`. Deletes only the game server's Deployment/Service and its namespace-local Redis by name — **never** the namespace itself, since each prod/test namespace also hosts that environment's web server |
+| `K3s-Cleanup-Web-Server.yml` | Reusable core, `target: playtod\|todtest`. Soft cleanup: `kubectl apply -k`'s a `web-maintenance-{prod,test}` overlay that swaps the web Deployment's image to `nginx:alpine` serving an offline/maintenance placeholder — the Deployment, Service, and DNS record are never deleted, so a normal redeploy's `kubectl apply` of the real overlay cleanly overwrites the placeholder |
+| `K3s-Cleanup-All.yml` | Manual dispatcher over both cores, `cleanup_target` choice `All\|Game only\|Web only` crossed with `environment` choice `prod\|test\|all`, gated by a typed `confirm_cleanup` phrase specific to the chosen combination (printed to the run summary) |
 | `K3s-Cleanup-All-Game-Server.yml` | Manual, `cleanup_mode` choice `runtime_only` (uninstalls K3s/Caddy on every node) or `terraform_destroy` (`DESTROY_K3S`) — the only workflow that tears down the whole shared cluster's AWS resources |
 
 Argo CD is prepared in manifests only — no K3s workflow installs or exposes it.
 
 ## Operational runbook
 
-1. **First-time / cold start:** `K3s Infra Plan` → `K3s Infra Apply` (`APPLY_K3S`) → `K3s Deploy Game Server` (`target: all`) → `K3s Deploy Web Server` (`target: all`).
-2. **Ordinary update, lab already healthy:** dispatch `K3s Deploy Game Server` / `K3s Deploy Web Server` with `target` set to the specific environment (e.g. `wsplaytod`), or `all` for both prod and test at once.
+1. **First-time / cold start:** `K3s Infra Plan` → `K3s Infra Apply` (`APPLY_K3S`) → `K3s Deploy All` (`deploy_target: All`, `environment: all`).
+2. **Ordinary update, lab already healthy:** dispatch `K3s Deploy All` with `deploy_target`/`environment` narrowed to the server(s) and environment(s) that need it (e.g. `Game only` + `prod`).
 3. **AWS/SSH/DNS/cluster reachability looks off:** `K3s Infra Diagnose`.
-4. **Returning to a clean runtime state:** `K3s Cleanup Game Server` / `K3s Cleanup Web Server` with `target` set to the environment to remove (per-target, runtime-scoped), or `K3s Cleanup All Game Server`'s `terraform_destroy` (`DESTROY_K3S`) to remove all K3s AWS resources.
+4. **Returning to a clean runtime state:** `K3s Cleanup All` with `cleanup_target`/`environment` set to what to clean up (game deletes its Deployment/Service; web instead sets the offline/maintenance placeholder), gated by its typed `confirm_cleanup` phrase — or `K3s Cleanup All Game Server`'s `terraform_destroy` (`DESTROY_K3S`) to remove all K3s AWS resources.
 
 ### Operational checks (what "healthy" means)
 
@@ -144,7 +144,9 @@ Own dedicated hostnames — `wstodplay.galaxxigames.com` (game), `todplay.galaxx
 | `EKS-Shared-Infra-Apply.yml` | One-time apply of the persistent ACM/Cloudflare root |
 | `EKS-Deploy-Game-Server.yml` / `EKS-Deploy-Web-Server.yml` | A `verify-infra` job fails the run before any build when `infra/eks/terraform` differs from the tree the last `EKS Infra Apply` recorded (warn-only if no marker) → [decisions.md](./decisions.md#eks-deploy-workflows-fail-fast-on-infra-code-the-last-infra-apply-never-ran). Then test → build → push ECR → `aws eks update-kubeconfig` → `kubectl apply` → Cloudflare CNAME upsert (PATCH if the record exists, POST to create it otherwise — mirrors the K3s DNS step) → WSS/HTTPS smoke test. Game deploy additionally asserts `REDIS_URL` reached the pod as `rediss://`, ElastiCache `CurrConnections` is non-zero, and an idle WebSocket survives past 60s |
 | `EKS-Deploy-All.yml` | Manual dispatcher, `deploy_target` choice `All\|Game only\|Web only`, runs the two cores above accordingly |
-| `EKS-Cleanup-Game-Server.yml` / `EKS-Cleanup-Web-Server.yml` | Delete that workload's Deployment+Service by name; namespace and cluster stay up |
+| `EKS-Cleanup-Game-Server.yml` | Deletes the game server's Deployment+Service by name; namespace and cluster stay up |
+| `EKS-Cleanup-Web-Server.yml` | Soft cleanup: `kubectl apply -k`'s an `eks-prod/web-maintenance` overlay that swaps the web Deployment's image to `nginx:alpine` serving an offline/maintenance placeholder, instead of deleting it |
+| `EKS-Cleanup-All.yml` | Manual dispatcher, `cleanup_target` choice `All\|Game only\|Web only`, runs the two cores above accordingly |
 | `EKS-Infra-Diagnose.yml` | Nodes, ALB target-group health, DNS, Redis reachability |
 
 No bastion, SSH, Ansible, or Caddy on this path: the ALB terminates TLS directly and `aws eks update-kubeconfig` replaces K3s's bastion-tunnel kubeconfig dance.

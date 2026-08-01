@@ -1,8 +1,10 @@
 name: K3s Cleanup Web Server (core)
 
+# Soft cleanup: swaps the web server's running content for an offline/
+# maintenance placeholder instead of deleting it, so the Service and public
+# DNS record keep answering. The Deployment and Service are left running;
 # corp-tower-prod/corp-tower-test also host that environment's game server
-# (K3s-Cleanup-Game-Server.yml), so this deletes only the web server's own
-# Deployment/Service by name - never the namespace itself.
+# (K3s-Cleanup-Game-Server.yml), which is untouched here.
 
 on:
   workflow_call:
@@ -25,7 +27,7 @@ env:
 
 jobs:
   cleanup-web:
-    name: Delete Corp Tower Web Server Resources
+    name: Set Corp Tower Web Server To Maintenance
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment: staging
@@ -38,8 +40,14 @@ jobs:
         run: |
           set -euo pipefail
           case "${{ inputs.target }}" in
-            playtod) echo "NAMESPACE=corp-tower-prod" >> "$GITHUB_ENV" ;;
-            todtest) echo "NAMESPACE=corp-tower-test" >> "$GITHUB_ENV" ;;
+            playtod)
+              echo "NAMESPACE=corp-tower-prod" >> "$GITHUB_ENV"
+              echo "OVERLAY=web-maintenance-prod" >> "$GITHUB_ENV"
+              ;;
+            todtest)
+              echo "NAMESPACE=corp-tower-test" >> "$GITHUB_ENV"
+              echo "OVERLAY=web-maintenance-test" >> "$GITHUB_ENV"
+              ;;
             *)
               echo "::error::Unknown target '${{ inputs.target }}'. Expected playtod or todtest."
               exit 1
@@ -168,9 +176,9 @@ jobs:
           chmod 600 "$KUBECONFIG_PATH"
           echo "KUBECONFIG=$KUBECONFIG_PATH" >> "$GITHUB_ENV"
 
-      - name: Delete Corp Tower web server resources
+      - name: Set Corp Tower web server to maintenance placeholder
         run: |
           set -euo pipefail
-          kubectl -n "$NAMESPACE" delete deployment corp-tower-web --ignore-not-found=true --wait=true --timeout=120s
-          kubectl -n "$NAMESPACE" delete service corp-tower-web --ignore-not-found=true
-          echo "Web server resources removed from $NAMESPACE (namespace and game server, if any, left untouched)."
+          kubectl apply -k "$GITHUB_WORKSPACE/infra/k3s/apps/corp-tower/overlays/$OVERLAY"
+          kubectl -n "$NAMESPACE" rollout status deployment/corp-tower-web --timeout=120s
+          echo "Web server in $NAMESPACE now serves the offline/maintenance placeholder (Deployment and Service left running; game server, if any, left untouched)."

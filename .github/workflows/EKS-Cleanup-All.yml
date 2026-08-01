@@ -1,0 +1,35 @@
+name: EKS Cleanup All
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup_target:
+        description: "Which server(s) to clean up. Game deletes the game server's Deployment/Service; Web replaces the running web server with an offline/maintenance placeholder instead of deleting it."
+        required: true
+        type: choice
+        options:
+          - All
+          - Game only
+          - Web only
+        default: All
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  cleanup-game:
+    name: Cleanup wstodplay
+    if: ${{ inputs.cleanup_target == 'All' || inputs.cleanup_target == 'Game only' }}
+    uses: ./.github/workflows/EKS-Cleanup-Game-Server.yml
+    with:
+      target: wstodplay
+    secrets: inherit
+
+  cleanup-web:
+    name: Cleanup todplay
+    if: ${{ inputs.cleanup_target == 'All' || inputs.cleanup_target == 'Web only' }}
+    uses: ./.github/workflows/EKS-Cleanup-Web-Server.yml
+    with:
+      target: todplay
+    secrets: inherit
