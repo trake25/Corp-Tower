@@ -136,7 +136,7 @@ const GameConfig = {
         assistContributionThreshold: 0.25
     },
 
-    debugBotsEnabled: false,    //testing true, release false
+    debugBotsEnabled: process.env.CORP_TOWER_BOTS_ENABLED === "true",    //testing true, release false
 
     debugBotCount: 2,
 

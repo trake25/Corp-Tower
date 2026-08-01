@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       target:
-        description: "Dev web server instance to stand down: devtod1 or devtod2."
+        description: "Dev web server instance to stand down: devtod1, devtod2, or toddemo."
         required: true
         type: string
 
@@ -28,8 +28,9 @@ jobs:
           case "${{ inputs.target }}" in
             devtod1) echo "INSTANCE=1" >> "$GITHUB_ENV" ;;
             devtod2) echo "INSTANCE=2" >> "$GITHUB_ENV" ;;
+            toddemo) echo "INSTANCE=3" >> "$GITHUB_ENV" ;;
             *)
-              echo "::error::Unknown target '${{ inputs.target }}'. Expected devtod1 or devtod2."
+              echo "::error::Unknown target '${{ inputs.target }}'. Expected devtod1, devtod2, or toddemo."
               exit 1
               ;;
           esac

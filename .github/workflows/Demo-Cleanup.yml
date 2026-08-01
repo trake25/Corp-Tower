@@ -1,0 +1,67 @@
+name: Demo Cleanup
+
+# Manual only. DNS records are left in place pointing at the idle tunnel
+# either way - only stop_cloudflared_if_idle (backup-common.sh) tears down
+# the shared Cloudflare Tunnel, and only once all six containers are down,
+# so cleaning up the demo never cuts off devwstod1/devwstod2/devtod1/devtod2.
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup_target:
+        description: "Which server(s) to clean up."
+        required: true
+        type: choice
+        options:
+          - All
+          - Game only
+          - Web only
+        default: All
+      confirm_cleanup:
+        description: "Type the confirmation phrase matching cleanup_target (see the workflow run summary if unsure)."
+        required: true
+        type: string
+
+jobs:
+  guard:
+    name: Check Cleanup Confirmation
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify confirmation matches target
+        env:
+          TARGET: ${{ inputs.cleanup_target }}
+          CONFIRM: ${{ inputs.confirm_cleanup }}
+        run: |
+          set -euo pipefail
+          case "$TARGET" in
+            "Game only") expected="CLEANUP_WSTODDEMO" ;;
+            "Web only") expected="CLEANUP_TODDEMO" ;;
+            "All") expected="CLEANUP_ALL_DEMO" ;;
+            *)
+              echo "::error::Unknown cleanup_target=$TARGET"
+              exit 1
+              ;;
+          esac
+
+          echo "Required confirm_cleanup phrase: $expected" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$CONFIRM" != "$expected" ]; then
+            echo "::error::confirm_cleanup must be exactly $expected for cleanup_target=$TARGET."
+            exit 1
+          fi
+
+  cleanup-wstoddemo:
+    name: Cleanup wstoddemo
+    needs: guard
+    if: inputs.cleanup_target != 'Web only'
+    uses: ./.github/workflows/Backup-Cleanup-Game-Server.yml
+    with:
+      target: wstoddemo
+
+  cleanup-toddemo:
+    name: Cleanup toddemo
+    needs: guard
+    if: inputs.cleanup_target != 'Game only'
+    uses: ./.github/workflows/Backup-Cleanup-Web-Server.yml
+    with:
+      target: toddemo

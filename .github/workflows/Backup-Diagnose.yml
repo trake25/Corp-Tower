@@ -25,6 +25,12 @@ jobs:
       - name: Web server devtod2
         run: scripts/backup/backup-web-status.sh 2
 
+      - name: Game server wstoddemo
+        run: scripts/backup/backup-server-status.sh 3
+
+      - name: Web server toddemo
+        run: scripts/backup/backup-web-status.sh 3
+
       - name: cloudflared service and tunnel
         run: |
           set -euo pipefail

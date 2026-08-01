@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       target:
-        description: "Dev web server instance to deploy: devtod1 or devtod2."
+        description: "Dev web server instance to deploy: devtod1, devtod2, or toddemo."
         required: true
         type: string
       art_version_override:
@@ -25,6 +25,8 @@ jobs:
       instance: ${{ steps.resolve.outputs.instance }}
       ws_primary: ${{ steps.resolve.outputs.ws_primary }}
       ws_failover: ${{ steps.resolve.outputs.ws_failover }}
+      debug_ui: ${{ steps.resolve.outputs.debug_ui }}
+      demo_mode: ${{ steps.resolve.outputs.demo_mode }}
     steps:
       - name: Resolve
         id: resolve
@@ -35,14 +37,25 @@ jobs:
               echo "instance=1" >> "$GITHUB_OUTPUT"
               echo "ws_primary=wss://devwstod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
               echo "ws_failover=wss://devwstod2.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              echo "debug_ui=true" >> "$GITHUB_OUTPUT"
+              echo "demo_mode=false" >> "$GITHUB_OUTPUT"
               ;;
             devtod2)
               echo "instance=2" >> "$GITHUB_OUTPUT"
               echo "ws_primary=wss://devwstod2.galaxxigames.com" >> "$GITHUB_OUTPUT"
               echo "ws_failover=wss://devwstod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              echo "debug_ui=true" >> "$GITHUB_OUTPUT"
+              echo "demo_mode=false" >> "$GITHUB_OUTPUT"
+              ;;
+            toddemo)
+              echo "instance=3" >> "$GITHUB_OUTPUT"
+              echo "ws_primary=wss://wstoddemo.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              echo "ws_failover=wss://devwstod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              echo "debug_ui=false" >> "$GITHUB_OUTPUT"
+              echo "demo_mode=true" >> "$GITHUB_OUTPUT"
               ;;
             *)
-              echo "::error::Unknown target '${{ inputs.target }}'. Expected devtod1 or devtod2."
+              echo "::error::Unknown target '${{ inputs.target }}'. Expected devtod1, devtod2, or toddemo."
               exit 1
               ;;
           esac
@@ -75,7 +88,8 @@ jobs:
         env:
           CORP_TOWER_WS_PRIMARY: ${{ needs.resolve-target.outputs.ws_primary }}
           CORP_TOWER_WS_FAILOVER: ${{ needs.resolve-target.outputs.ws_failover }}
-          CORP_TOWER_DEBUG_UI: "true"
+          CORP_TOWER_DEBUG_UI: ${{ needs.resolve-target.outputs.debug_ui }}
+          CORP_TOWER_DEMO_MODE: ${{ needs.resolve-target.outputs.demo_mode }}
         run: scripts/write-endpoint-config.sh
 
       - name: Build web export

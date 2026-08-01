@@ -40,8 +40,8 @@ load_env() {
 }
 
 # Loads env and requires WS<n>_DOMAIN / WS<n>_PORT for the given game server
-# instance (1 or 2). Values are read via indirect expansion so one function
-# serves both instances instead of near-duplicate copies.
+# instance (1, 2, or 3). Values are read via indirect expansion so one
+# function serves every instance instead of near-duplicate copies.
 load_ws_env() {
   load_env
   local n="$1" domain_var port_var domain_val port_val
@@ -54,7 +54,7 @@ load_ws_env() {
 }
 
 # Loads env and requires WEB<n>_DOMAIN / WEB<n>_PORT for the given web server
-# instance (1 or 2).
+# instance (1, 2, or 3).
 load_web_env() {
   load_env
   local n="$1" domain_var port_var domain_val port_val
@@ -148,10 +148,10 @@ wait_for_cname() {
   die "$name's DNS record content is '${seen:-<none>}', expected '$expected_target' — check Cloudflare dashboard"
 }
 
-# All four backup containers (corp-tower-server-1/2, corp-tower-web-1/2)
+# All six backup containers (corp-tower-server-1/2/3, corp-tower-web-1/2/3)
 # share one cloudflared user service. Starting is always safe/idempotent;
-# stopping must only happen when none of the four is still running, so
-# tearing one down doesn't cut the tunnel out from under the other three.
+# stopping must only happen when none of the six is still running, so
+# tearing one down doesn't cut the tunnel out from under the others.
 start_cloudflared_if_needed() {
   export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
   if systemctl --user is-active --quiet cloudflared; then
@@ -164,7 +164,7 @@ start_cloudflared_if_needed() {
 
 stop_cloudflared_if_idle() {
   export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-  for name in corp-tower-server-1 corp-tower-server-2 corp-tower-web-1 corp-tower-web-2; do
+  for name in corp-tower-server-1 corp-tower-server-2 corp-tower-server-3 corp-tower-web-1 corp-tower-web-2 corp-tower-web-3; do
     if docker ps --filter "name=${name}" --filter "status=running" --format '{{.Names}}' 2>/dev/null | grep -q .; then
       info "Leaving cloudflared running — ${name} is still active"
       return 0

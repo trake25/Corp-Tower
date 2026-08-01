@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       target:
-        description: "Dev game server instance to deploy: devwstod1 or devwstod2."
+        description: "Dev game server instance to deploy: devwstod1, devwstod2, or wstoddemo."
         required: true
         type: string
 
@@ -28,8 +28,9 @@ jobs:
           case "${{ inputs.target }}" in
             devwstod1) echo "INSTANCE=1" >> "$GITHUB_ENV" ;;
             devwstod2) echo "INSTANCE=2" >> "$GITHUB_ENV" ;;
+            wstoddemo) echo "INSTANCE=3" >> "$GITHUB_ENV" ;;
             *)
-              echo "::error::Unknown target '${{ inputs.target }}'. Expected devwstod1 or devwstod2."
+              echo "::error::Unknown target '${{ inputs.target }}'. Expected devwstod1, devwstod2, or wstoddemo."
               exit 1
               ;;
           esac

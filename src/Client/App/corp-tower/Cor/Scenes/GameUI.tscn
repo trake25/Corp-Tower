@@ -133,6 +133,24 @@ texture_normal = ExtResource("10_menu")
 ignore_texture_size = true
 stretch_mode = 5
 
+[node name="DemoModeLabel" type="Label" parent="PlayField" unique_id=1310221500]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 6.0
+offset_top = 2.0
+offset_right = 406.0
+offset_bottom = 40.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 11
+text = "Demo build — your teammates are bots. The real game is 3 human players."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
 [node name="RoundTimeBadge" type="Control" parent="PlayField" unique_id=1351152604]
 layout_mode = 0
 offset_left = 110.5

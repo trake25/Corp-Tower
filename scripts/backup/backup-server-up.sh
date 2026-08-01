@@ -5,10 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/backup-common.sh"
 
-INSTANCE="${1:?usage: backup-server-up.sh <1|2>}"
+INSTANCE="${1:?usage: backup-server-up.sh <1|2|3>}"
 case "$INSTANCE" in
-  1|2) ;;
-  *) die "instance must be 1 or 2, got '$INSTANCE'" ;;
+  1|2|3) ;;
+  *) die "instance must be 1, 2, or 3, got '$INSTANCE'" ;;
 esac
 
 require_cmd docker cloudflared git curl jq
@@ -42,10 +42,15 @@ docker build -t "$IMAGE_TAG" -f "$REPO_ROOT/src/Server/Dockerfile" "$REPO_ROOT/s
 
 docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 info "Starting $CONTAINER_NAME on 127.0.0.1:$PORT (no REDIS_URL — single-instance in-memory mode)"
+BOTS_ARGS=()
+if [ "$INSTANCE" = "3" ]; then
+  BOTS_ARGS=(-e CORP_TOWER_BOTS_ENABLED=true)
+fi
 docker run -d \
   --name "$CONTAINER_NAME" \
   --restart unless-stopped \
   -p "127.0.0.1:${PORT}:3000" \
+  "${BOTS_ARGS[@]}" \
   "$IMAGE_TAG"
 
 start_cloudflared_if_needed

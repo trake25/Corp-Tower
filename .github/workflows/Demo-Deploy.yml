@@ -1,0 +1,46 @@
+name: Demo Deploy
+
+# Manual-only, deliberately off the push-triggered path Backup-Deploy-All.yml
+# carries. wstoddemo/toddemo are always-on, so a routine push must never
+# redeploy the link on a résumé — see plan/corp-tower-demo-instance-plan.md
+# Decision 4. Redeploy this dispatcher only after verifying, then record the
+# deployed SHA as the pinned known-good.
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Which server(s) to deploy."
+        required: true
+        type: choice
+        options:
+          - All
+          - Game only
+          - Web only
+        default: All
+      art_version_override:
+        description: "Optional art bundle version (e.g. v2) to fetch instead of the pinned manifest. Skips sha256 verification — testing only, never for release. Ignored for game-only deploys."
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  deploy-wstoddemo:
+    name: Deploy wstoddemo
+    if: inputs.deploy_target != 'Web only'
+    uses: ./.github/workflows/Backup-Deploy-Game-Server.yml
+    with:
+      target: wstoddemo
+
+  deploy-toddemo:
+    name: Deploy toddemo
+    needs: deploy-wstoddemo
+    if: |
+      always() &&
+      inputs.deploy_target != 'Game only' &&
+      (needs.deploy-wstoddemo.result == 'success' || needs.deploy-wstoddemo.result == 'skipped')
+    uses: ./.github/workflows/Backup-Deploy-Web-Server.yml
+    with:
+      target: toddemo
+      art_version_override: ${{ inputs.art_version_override }}
+    secrets: inherit

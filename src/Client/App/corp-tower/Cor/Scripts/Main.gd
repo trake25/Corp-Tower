@@ -49,6 +49,7 @@ var tower_stack: Control
 var connect_button: Button
 var background_parallax: Control
 var platform_parallax: Control
+var demo_mode_label: Label
 
 func _ready() -> void:
 	tuning = UiTuningScript.new()
@@ -81,6 +82,8 @@ func _ready() -> void:
 
 	if !prepare_ui():
 		return
+
+	demo_mode_label.visible = EndpointConfig.DEMO_MODE_ENABLED
 
 	inventory.setup(players_ctx, match_state, tuning, NetworkManager, popovers, tutorial)
 	top_bar.setup(match_state)
@@ -142,6 +145,7 @@ func bind_ui_nodes() -> void:
 	connect_button = binder.require_node("ConnectButton") as Button
 	background_parallax = binder.require_node("BgArt") as Control
 	platform_parallax = binder.require_node("PlatformArt") as Control
+	demo_mode_label = binder.require_node("DemoModeLabel") as Label
 
 	top_bar.bind_nodes(binder)
 	inventory.bind_nodes(binder)

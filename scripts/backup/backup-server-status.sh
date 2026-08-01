@@ -5,10 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/backup-common.sh"
 
-INSTANCE="${1:?usage: backup-server-status.sh <1|2>}"
+INSTANCE="${1:?usage: backup-server-status.sh <1|2|3>}"
 case "$INSTANCE" in
-  1|2) ;;
-  *) die "instance must be 1 or 2, got '$INSTANCE'" ;;
+  1|2|3) ;;
+  *) die "instance must be 1, 2, or 3, got '$INSTANCE'" ;;
 esac
 
 CONTAINER_NAME="corp-tower-server-${INSTANCE}"
