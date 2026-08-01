@@ -226,18 +226,23 @@ jobs:
 
           alb_ips="$(getent ahostsv4 "$ALB_DNS_NAME" | awk '{ print $1 }' | sort -u)"
 
+          if [ -z "$alb_ips" ]; then
+            echo "::error::${ALB_DNS_NAME} (the ALB's own DNS name) did not resolve to any IPs, so ${GAME_DOMAIN} can never be verified against it. Check the Terraform output / ALB provisioning state instead of retrying."
+            exit 1
+          fi
+
           resolved_ip=""
-          for attempt in $(seq 1 30); do
+          for attempt in $(seq 1 60); do
             resolved_ip="$(getent ahostsv4 "$GAME_DOMAIN" | awk '{ print $1; exit }' || true)"
             if printf '%s\n' "$alb_ips" | grep -qx "$resolved_ip"; then
               break
             fi
-            echo "Waiting for ${GAME_DOMAIN} to resolve through its CNAME to ${ALB_DNS_NAME}; current: ${resolved_ip:-none} (attempt ${attempt}/30)."
-            sleep 2
+            echo "Waiting for ${GAME_DOMAIN} to resolve through its CNAME to ${ALB_DNS_NAME}; current: ${resolved_ip:-none} (attempt ${attempt}/60)."
+            sleep 5
           done
 
           if ! printf '%s\n' "$alb_ips" | grep -qx "$resolved_ip"; then
-            echo "::error::${GAME_DOMAIN} did not resolve to ${ALB_DNS_NAME} (${alb_ips}) after Cloudflare DNS update."
+            echo "::error::${GAME_DOMAIN} did not resolve to ${ALB_DNS_NAME} (${alb_ips}) after Cloudflare DNS update (waited 5 minutes)."
             exit 1
           fi
 
