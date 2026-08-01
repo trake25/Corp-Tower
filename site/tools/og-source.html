@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OG image source — 1200x630</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #2b2f36;
+      }
+
+      .card {
+        width: 1200px;
+        height: 630px;
+        background: #08090c;
+        color: #eef1f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        padding: 72px 80px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card::after {
+        content: "";
+        position: absolute;
+        right: -180px;
+        top: -180px;
+        width: 620px;
+        height: 620px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(79, 214, 164, 0.16), transparent 65%);
+      }
+
+      .grid {
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+      }
+
+      .top,
+      .bottom {
+        position: relative;
+        z-index: 1;
+      }
+
+      .eyebrow {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 21px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #4fd6a4;
+        margin: 0 0 34px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        background: #4fd6a4;
+        box-shadow: 0 0 0 7px rgba(79, 214, 164, 0.14);
+      }
+
+      h1 {
+        font-size: 76px;
+        line-height: 1.05;
+        letter-spacing: -0.038em;
+        font-weight: 700;
+        margin: 0 0 28px;
+        max-width: 17ch;
+      }
+
+      .sub {
+        font-size: 27px;
+        line-height: 1.45;
+        color: #949cab;
+        margin: 0;
+        max-width: 40ch;
+      }
+
+      .bottom {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 40px;
+        border-top: 1px solid #21262f;
+        padding-top: 30px;
+      }
+
+      .name {
+        font-size: 27px;
+        font-weight: 650;
+        margin: 0 0 8px;
+      }
+
+      .role {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 19px;
+        color: #6b7280;
+        margin: 0;
+      }
+
+      .stats {
+        display: flex;
+        gap: 48px;
+      }
+
+      .stat-value {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 42px;
+        font-weight: 600;
+        letter-spacing: -0.04em;
+        color: #4fd6a4;
+        line-height: 1;
+      }
+
+      .stat-label {
+        font-size: 16px;
+        color: #6b7280;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Screenshot this element at exactly 1200x630 and save it as site/public/og.png.
+
+      Chrome: open this file, DevTools (F12) -> Ctrl+Shift+M (device toolbar) ->
+      set 1200 x 630, zoom 100% -> ⋮ menu -> "Capture screenshot".
+      Then move the file to site/public/og.png and redeploy.
+    -->
+    <div class="card">
+      <div class="grid"></div>
+
+      <div class="top">
+        <p class="eyebrow"><span class="dot"></span> Cloud · DevOps · Platform · AI Automation</p>
+        <h1>I run production alone — so I automate the team I don't have.</h1>
+        <p class="sub">
+          A live 3-player multiplayer game across three environments. Six decisions, the
+          alternatives rejected, and the code that proves each one.
+        </p>
+      </div>
+
+      <div class="bottom">
+        <div>
+          <p class="name">Enrique de la Peña</p>
+          <p class="role">enportfolio.galaxxigames.com</p>
+        </div>
+        <div class="stats">
+          <div>
+            <div class="stat-value">3</div>
+            <div class="stat-label">environments</div>
+          </div>
+          <div>
+            <div class="stat-value">34</div>
+            <div class="stat-label">CI workflows</div>
+          </div>
+          <div>
+            <div class="stat-value">1</div>
+            <div class="stat-label">engineer</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

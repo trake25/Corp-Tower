@@ -1,19 +1,59 @@
 ---
-interface Props {
-  role: string;
-  plain: string;
-  tags: string[];
+// Everything in <summary> is phrasing or heading content on purpose: <details>
+// only permits those there, and a card whose collapsed state is a <div> of
+// <p>s is invalid HTML that happens to render.
+interface CardLink {
+  label: string;
+  href: string;
 }
 
-const { role, plain, tags } = Astro.props;
+interface Props {
+  role: string;
+  headline: string;
+  plain: string;
+  metric: string;
+  metricLabel: string;
+  tags: string[];
+  links: CardLink[];
+}
+
+const { role, headline, plain, metric, metricLabel, tags, links } = Astro.props;
 ---
 
 <details class="card" data-tags={tags.join(",")}>
   <summary>
-    <span class="role-tag">{role}</span>
+    <span class="card-head">
+      <span class="role-tag">{role}</span>
+      <span class="metric">
+        <span class="metric-value">{metric}</span>
+        <span class="metric-label">{metricLabel}</span>
+      </span>
+    </span>
+    <h3 class="headline">{headline}</h3>
+    <span class="plain">{plain}</span>
+    <span class="toggle-hint">
+      <span class="toggle-open">Read the reasoning</span>
+      <span class="toggle-close">Collapse</span>
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+        <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </span>
   </summary>
-  <p class="plain">{plain}</p>
+
   <div class="expanded">
     <slot />
+
+    {links.length > 0 && (
+      <div class="proof-links">
+        <span class="proof-links-label">In the repo</span>
+        <ul>
+          {links.map((link) => (
+            <li>
+              <a href={link.href} target="_blank" rel="noopener noreferrer">{link.label}</a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
   </div>
 </details>

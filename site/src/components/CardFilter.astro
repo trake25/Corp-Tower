@@ -1,21 +1,29 @@
 ---
 interface Props {
   tags: string[];
+  total: number;
 }
 
-const { tags } = Astro.props;
+const { tags, total } = Astro.props;
 ---
 
-<div class="filter" role="group" aria-label="Filter cards by role">
-  <button type="button" data-filter="all" aria-pressed="true">All</button>
-  {tags.map((tag) => (
-    <button type="button" data-filter={tag} aria-pressed="false">{tag}</button>
-  ))}
+<div class="filter-bar">
+  <div class="filter" role="group" aria-label="Filter decisions by discipline">
+    <button type="button" data-filter="all" aria-pressed="true">All</button>
+    {tags.map((tag) => (
+      <button type="button" data-filter={tag} aria-pressed="false">{tag}</button>
+    ))}
+  </div>
+  <p class="filter-count" role="status" aria-live="polite" data-total={total}>
+    Showing all {total} decisions
+  </p>
 </div>
 
 <script>
   const filterEl = document.querySelector<HTMLElement>(".filter");
+  const countEl = document.querySelector<HTMLElement>(".filter-count");
   const cards = Array.from(document.querySelectorAll<HTMLElement>(".card"));
+  const total = Number(countEl?.dataset.total ?? cards.length);
 
   filterEl?.addEventListener("click", (event) => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-filter]");
@@ -27,10 +35,19 @@ const { tags } = Astro.props;
       b.setAttribute("aria-pressed", String(b === button));
     });
 
+    let shown = 0;
     for (const card of cards) {
       const cardTags = (card.dataset.tags ?? "").split(",");
       const show = selected === "all" || cardTags.includes(selected);
       card.hidden = !show;
+      if (show) shown += 1;
+    }
+
+    if (countEl) {
+      countEl.textContent =
+        selected === "all"
+          ? `Showing all ${total} decisions`
+          : `Showing ${shown} of ${total} — ${selected}`;
     }
   });
 </script>

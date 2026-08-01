@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { profile } from "../data/profile";
 
 interface Props {
   title: string;
@@ -8,10 +9,36 @@ interface Props {
 
 const { title, description } = Astro.props;
 
+const canonical = new URL(Astro.url.pathname, profile.site).href;
+const ogImage = new URL("/og.png", profile.site).href;
+
 // Filled in once the Cloudflare Web Analytics site token exists (see
 // site/README.md's one-time setup) — until then the script simply isn't
 // rendered, so there's no broken/empty beacon tag in the shipped HTML.
 const analyticsToken = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN as string | undefined;
+
+const personSchema = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: profile.name,
+  alternateName: profile.shortName,
+  url: profile.site,
+  email: `mailto:${profile.email}`,
+  jobTitle: "Cloud, DevOps & Platform Engineer",
+  description,
+  sameAs: [profile.github, profile.linkedin].filter(Boolean),
+  knowsAbout: [
+    "Terraform",
+    "Kubernetes",
+    "Amazon Web Services",
+    "CI/CD",
+    "Docker",
+    "Node.js",
+    "Redis",
+    "Infrastructure as Code",
+    "AI agent workflows",
+  ],
+};
 ---
 
 <!doctype html>
@@ -21,7 +48,29 @@ const analyticsToken = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN as string | und
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="author" content={profile.name} />
+    <meta name="theme-color" content="#08090c" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fbfbfc" media="(prefers-color-scheme: light)" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={profile.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${profile.name} — ${profile.title}`} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(personSchema)} />
+
     {analyticsToken && (
       <script
         is:inline
@@ -32,6 +81,7 @@ const analyticsToken = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN as string | und
     )}
   </head>
   <body>
+    <a class="skip-link" href="#decisions">Skip to the decisions</a>
     <slot />
   </body>
 </html>

@@ -4,9 +4,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import TopologyDiagram from "../components/TopologyDiagram.astro";
 import CardFilter from "../components/CardFilter.astro";
 import Card from "../components/Card.astro";
+import { profile, stats } from "../data/profile";
 
 const cardEntries = (await getCollection("cards")).sort((a, b) => a.data.order - b.data.order);
-const uniqueTags = [...new Set(cardEntries.flatMap((entry) => entry.data.tags))];
+const uniqueTags = [...new Set(cardEntries.flatMap((entry) => entry.data.tags))].sort();
 
 const rendered = await Promise.all(
   cardEntries.map(async (entry) => ({ entry, Content: (await entry.render()).Content }))
@@ -14,52 +15,190 @@ const rendered = await Promise.all(
 ---
 
 <BaseLayout
-  title="Corp Tower — Engineering Portfolio"
-  description="A 3-player real-time tower-building game, and the engineering decisions behind it — cloud, DevOps, QA, backend, frontend, and AI, each with a plain-English summary and the reasoning underneath."
+  title={`${profile.name} — Cloud, DevOps & AI Automation Engineer`}
+  description="I design, build and operate a live 3-player multiplayer game across three environments, alone — and automate the team I don't have. Six engineering decisions, the alternatives I rejected, and the code that proves each one."
 >
+  <header class="site-header">
+    <a class="wordmark" href="/">
+      <span class="wordmark-mark" aria-hidden="true"></span>
+      {profile.name}
+    </a>
+    <nav aria-label="Primary">
+      <a href="#decisions">Decisions</a>
+      <a href="#work">Work with me</a>
+      <a href={profile.repo} target="_blank" rel="noopener noreferrer">Code</a>
+      <a class="nav-cta" href="#contact">Contact</a>
+    </nav>
+  </header>
+
   <main>
-    <section class="hub">
-      <h1>One project, six ways to read the engineering.</h1>
-      <p class="intro">
-        Corp Tower is a 3-player real-time tower-building game. Every card below
-        answers one question — <em>why this way, and not the other way</em> —
-        from a different role's point of view. Every language here is one I can
-        read fluently: Node.js on the server, GDScript in the client. When a
-        coding agent can't solve something, I have to be able to take over —
-        that's a deliberate choice against picking whatever's fastest to
-        generate.
+    <section class="hero">
+      <p class="eyebrow">{profile.title}</p>
+      <h1>
+        I run production alone — so I automate<br class="hero-break" />
+        the team I don't have.
+      </h1>
+      <p class="lede">
+        <strong>Corp Tower</strong> is a live 3-player real-time multiplayer game: a Godot
+        client, an authoritative Node.js server, Redis-backed shared state, deployed to
+        K3s, EKS and a physical backup machine from 34 CI workflows. I designed it, built
+        it, and operate it — infrastructure, backend, client, release pipeline and all.
       </p>
-      <p class="stack-line">
-        Node.js · GDScript / Godot · Redis · Terraform · K3s · EKS · GitHub Actions · Cloudflare
+      <p class="lede">
+        Every card below is one decision, the alternative I rejected, and a link to the
+        code that proves it. Not a list of technologies — the reasoning underneath them.
       </p>
 
-      <div class="diagram-wrap">
-        <TopologyDiagram />
-      </div>
+      <dl class="stats">
+        {stats.map((stat) => (
+          <div class="stat">
+            <dt>
+              <span class="stat-value">{stat.value}</span>
+              <span class="stat-label">{stat.label}</span>
+            </dt>
+            <dd>{stat.sub}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <p class="stack-line">
+        Terraform · Kubernetes (K3s / EKS) · AWS · Docker · GitHub Actions · Cloudflare ·
+        Node.js · Redis · GDScript / Godot · Ansible
+      </p>
 
       <div class="ctas">
-        <a class="cta primary" href="https://toddemo.galaxxigames.com" target="_blank" rel="noopener noreferrer">
-          Play it
+        <a class="cta primary" href={profile.demo} target="_blank" rel="noopener noreferrer">
+          Play the live demo
         </a>
-        <span class="cta secondary" aria-disabled="true">Watch the cluster — coming soon</span>
+        <a class="cta secondary" href={profile.repo} target="_blank" rel="noopener noreferrer">
+          Read the source
+        </a>
+        <a class="cta ghost" href="#decisions">Skip to the decisions</a>
       </div>
       <p class="disclosure">
-        The demo fills empty seats with bots so a lone visitor still gets a full round. The real game is three human players.
+        The demo fills empty seats with bots so a lone visitor still gets a full round.
+        The real game is three human players.
       </p>
     </section>
 
-    <CardFilter tags={uniqueTags} />
+    <section class="diagram-section" aria-labelledby="topology-heading">
+      <h2 id="topology-heading" class="section-title">
+        <span class="section-index">01</span> One image, three environments
+      </h2>
+      <p class="section-intro">
+        The same container runs in all three. What differs is only what has to differ —
+        and each difference below was a decision with a rejected alternative.
+      </p>
+      <div class="diagram-wrap">
+        <TopologyDiagram />
+      </div>
+      <p class="scroll-hint">Scroll the diagram sideways →</p>
+      <p class="figure-caption">
+        Production and test on always-on K3s. A session-scoped EKS stack for
+        production-grade validation, destroyed nightly. Dev and the public demo on one
+        Linux box behind a Cloudflare Tunnel.
+      </p>
+    </section>
 
-    <div class="cards">
-      {rendered.map(({ entry, Content }) => (
-        <Card role={entry.data.role} plain={entry.data.plain} tags={entry.data.tags}>
-          <Content />
-        </Card>
-      ))}
-    </div>
+    <section id="decisions" aria-labelledby="decisions-heading">
+      <h2 id="decisions-heading" class="section-title">
+        <span class="section-index">02</span> Six decisions, and what I rejected
+      </h2>
+      <p class="section-intro">
+        Each card opens with the plain-English version. Expand it for the engineering
+        rationale and the links into the repo.
+      </p>
+
+      <CardFilter tags={uniqueTags} total={cardEntries.length} />
+
+      <div class="cards">
+        {rendered.map(({ entry, Content }) => (
+          <Card
+            role={entry.data.role}
+            headline={entry.data.headline}
+            plain={entry.data.plain}
+            metric={entry.data.metric}
+            metricLabel={entry.data.metricLabel}
+            tags={entry.data.tags}
+            links={entry.data.links}
+          >
+            <Content />
+          </Card>
+        ))}
+      </div>
+    </section>
+
+    <section id="work" aria-labelledby="work-heading">
+      <h2 id="work-heading" class="section-title">
+        <span class="section-index">03</span> Work with me
+      </h2>
+      <div class="services">
+        <article class="service">
+          <h3>Cloud &amp; platform engineering</h3>
+          <p>
+            Terraform roots, Kubernetes on EC2 or EKS, private networking, TLS and DNS,
+            cost bounded by design rather than by an alert that arrives a day late.
+          </p>
+        </article>
+        <article class="service">
+          <h3>Delivery automation &amp; guardrails</h3>
+          <p>
+            Release pipelines that verify their own output, drift checks that fail before
+            a build starts, and destructive operations that require a typed confirmation
+            naming the exact target.
+          </p>
+        </article>
+        <article class="service">
+          <h3>AI-assisted delivery, done properly</h3>
+          <p>
+            Agents in the implementer's seat with written acceptance criteria, a rejection
+            path, and CI gates cleared before a human looks. Plus the retrieval layer that
+            lets an agent work in your codebase without re-reading it every session.
+          </p>
+        </article>
+      </div>
+
+      <div class="how-i-work">
+        <h3>How I work with coding agents</h3>
+        <p>
+          I treat an agent the way an organisation treats a contractor: the requirement is
+          written down first, the work is tested against it, and it comes back with
+          specifics until nothing is outstanding. Every language in this repository is one
+          I read fluently — Node.js on the server, GDScript in the client — because when
+          the agent stalls, the work has to continue. That's a deliberate constraint, not
+          an accident of what was fastest to generate.
+        </p>
+      </div>
+    </section>
+
+    <section id="contact" aria-labelledby="contact-heading">
+      <h2 id="contact-heading" class="section-title">
+        <span class="section-index">04</span> Get in touch
+      </h2>
+      {profile.availability && <p class="availability">{profile.availability}</p>}
+      <div class="contact-links">
+        <a class="cta primary" href={`mailto:${profile.email}`}>{profile.email}</a>
+        {profile.linkedin && (
+          <a class="cta secondary" href={profile.linkedin} target="_blank" rel="noopener noreferrer">
+            LinkedIn
+          </a>
+        )}
+        <a class="cta secondary" href={profile.github} target="_blank" rel="noopener noreferrer">
+          GitHub
+        </a>
+      </div>
+    </section>
   </main>
 
   <footer>
-    <p>Source: this repo. Every claim above links back to the code and CI that back it up.</p>
+    <p>
+      <strong>{profile.name}</strong> — {profile.title}
+      {profile.location && <> · {profile.location}</>}
+    </p>
+    <p>
+      Every claim on this page links to the file, workflow or test that backs it, in
+      <a href={profile.repo} target="_blank" rel="noopener noreferrer">the public repository</a>.
+      This site is a static Astro build deployed to Cloudflare Workers on every push.
+    </p>
   </footer>
 </BaseLayout>

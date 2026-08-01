@@ -1,14 +1,23 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { profile } from "../data/profile";
 ---
 
-<BaseLayout title="Not found — Corp Tower Portfolio" description="Page not found.">
+<BaseLayout title={`Not found — ${profile.name}`} description="Page not found.">
   <main>
-    <section class="hub">
-      <h1>Page not found</h1>
-      <p class="intro">
-        That page doesn't exist. Head back to the <a href="/">case-study cards</a>.
+    <section class="hero">
+      <p class="eyebrow">404</p>
+      <h1>That page doesn't exist.</h1>
+      <p class="lede">
+        Nothing here. The engineering decisions, the live demo and the source are all
+        one link away.
       </p>
+      <div class="ctas">
+        <a class="cta primary" href="/">Back to the decisions</a>
+        <a class="cta secondary" href={profile.repo} target="_blank" rel="noopener noreferrer">
+          Read the source
+        </a>
+      </div>
     </section>
   </main>
 </BaseLayout>

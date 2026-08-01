@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Preview — portfolio redesign</title>
+    <!-- Links the real stylesheet, so this preview can't drift from what ships.
+         Markup is a hand-copy of the Astro output: hero, diagram, all six card
+         headers, one card expanded, services, contact, footer.
+         Not in public/ — never deployed. Delete once npm run dev is available. -->
+    <link rel="stylesheet" href="../src/styles/global.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="#"
+        ><span class="wordmark-mark" aria-hidden="true"></span>Enrique de la Peña</a
+      >
+      <nav aria-label="Primary">
+        <a href="#decisions">Decisions</a>
+        <a href="#work">Work with me</a>
+        <a href="#">Code</a>
+        <a class="nav-cta" href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow">Cloud · DevOps · Platform · AI Automation</p>
+        <h1>I run production alone — so I automate<br class="hero-break" /> the team I don't have.</h1>
+        <p class="lede">
+          <strong>Corp Tower</strong> is a live 3-player real-time multiplayer game: a Godot
+          client, an authoritative Node.js server, Redis-backed shared state, deployed to K3s,
+          EKS and a physical backup machine from 34 CI workflows. I designed it, built it, and
+          operate it — infrastructure, backend, client, release pipeline and all.
+        </p>
+        <p class="lede">
+          Every card below is one decision, the alternative I rejected, and a link to the code
+          that proves it. Not a list of technologies — the reasoning underneath them.
+        </p>
+
+        <dl class="stats">
+          <div class="stat">
+            <dt><span class="stat-value">3</span><span class="stat-label">environments</span></dt>
+            <dd>one container image</dd>
+          </div>
+          <div class="stat">
+            <dt><span class="stat-value">34</span><span class="stat-label">CI/CD workflows</span></dt>
+            <dd>no manual deploy steps</dd>
+          </div>
+          <div class="stat">
+            <dt><span class="stat-value">1</span><span class="stat-label">engineer</span></dt>
+            <dd>design, build, operate</dd>
+          </div>
+          <div class="stat">
+            <dt><span class="stat-value">$0</span><span class="stat-label">idle cloud spend</span></dt>
+            <dd>validation stack auto-destroys</dd>
+          </div>
+        </dl>
+
+        <p class="stack-line">
+          Terraform · Kubernetes (K3s / EKS) · AWS · Docker · GitHub Actions · Cloudflare ·
+          Node.js · Redis · GDScript / Godot · Ansible
+        </p>
+
+        <div class="ctas">
+          <a class="cta primary" href="#">Play the live demo</a>
+          <a class="cta secondary" href="#">Read the source</a>
+          <a class="cta ghost" href="#decisions">Skip to the decisions</a>
+        </div>
+        <p class="disclosure">
+          The demo fills empty seats with bots so a lone visitor still gets a full round. The
+          real game is three human players.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="section-title"><span class="section-index">01</span> One image, three environments</h2>
+        <p class="section-intro">
+          The same container runs in all three. What differs is only what has to differ — and
+          each difference below was a decision with a rejected alternative.
+        </p>
+        <div class="diagram-wrap">
+          <svg class="topology" viewBox="0 0 820 400" role="img" xmlns="http://www.w3.org/2000/svg" fill="none">
+            <title>Corp Tower deployment topology</title>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path class="arrow-head" d="M0,0 L10,5 L0,10 z" stroke="none" />
+              </marker>
+            </defs>
+            <rect class="node" x="16" y="164" width="148" height="72" rx="10" />
+            <text class="label" x="90" y="194" text-anchor="middle">Player</text>
+            <text class="sub" x="90" y="212" text-anchor="middle">Godot client</text>
+            <text class="sub" x="90" y="226" text-anchor="middle">Android / Web</text>
+            <path class="link" d="M164,190 C 210,190 210,58 264,58" marker-end="url(#arrow)" />
+            <path class="link" d="M164,200 L 264,200" marker-end="url(#arrow)" />
+            <path class="link" d="M164,210 C 210,210 210,342 264,342" marker-end="url(#arrow)" />
+            <text class="wire" x="205" y="120" text-anchor="middle">wss://</text>
+            <rect class="node" x="264" y="18" width="270" height="80" rx="10" />
+            <text class="label" x="278" y="42">K3s — production + test</text>
+            <text class="sub" x="278" y="60">EC2, Caddy gateway, always on</text>
+            <text class="sub" x="278" y="76">Redis: in-cluster</text>
+            <rect class="node ephemeral" x="264" y="160" width="270" height="80" rx="10" />
+            <text class="label" x="278" y="184">EKS — validation</text>
+            <text class="sub" x="278" y="202">ALB, managed nodes, session-scoped</text>
+            <text class="sub" x="278" y="218">Redis: ElastiCache (rediss://)</text>
+            <rect class="node" x="264" y="302" width="270" height="80" rx="10" />
+            <text class="label" x="278" y="326">Physical backup — dev + demo</text>
+            <text class="sub" x="278" y="344">Cloudflare Tunnel, always on</text>
+            <text class="sub" x="278" y="360">Redis: none (in-memory)</text>
+            <path class="bracket" d="M552,30 L568,30 L568,370 L552,370" />
+            <text class="wire accent" x="580" y="205" transform="rotate(90 580 205)" text-anchor="middle">same container image, every environment</text>
+          </svg>
+        </div>
+        <p class="scroll-hint">Scroll the diagram sideways →</p>
+        <p class="figure-caption">
+          Production and test on always-on K3s. A session-scoped EKS stack for production-grade
+          validation, destroyed nightly. Dev and the public demo on one Linux box behind a
+          Cloudflare Tunnel.
+        </p>
+      </section>
+
+      <section id="decisions">
+        <h2 class="section-title"><span class="section-index">02</span> Six decisions, and what I rejected</h2>
+        <p class="section-intro">
+          Each card opens with the plain-English version. Expand it for the engineering
+          rationale and the links into the repo.
+        </p>
+
+        <div class="filter-bar">
+          <div class="filter" role="group" aria-label="Filter decisions by discipline">
+            <button type="button" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" data-filter="AI" aria-pressed="false">AI</button>
+            <button type="button" data-filter="Backend" aria-pressed="false">Backend</button>
+            <button type="button" data-filter="Cloud" aria-pressed="false">Cloud</button>
+            <button type="button" data-filter="DevOps" aria-pressed="false">DevOps</button>
+            <button type="button" data-filter="Frontend" aria-pressed="false">Frontend</button>
+            <button type="button" data-filter="QA" aria-pressed="false">QA</button>
+          </div>
+          <p class="filter-count" data-total="6">Showing all 6 decisions</p>
+        </div>
+
+        <div class="cards">
+          <details class="card" data-tags="Cloud" open>
+            <summary>
+              <span class="card-head">
+                <span class="role-tag">Cloud</span>
+                <span class="metric"><span class="metric-value">3</span><span class="metric-label">environments, one image</span></span>
+              </span>
+              <h3 class="headline">Buy environment parity where it changes behavior. Skip it where it only costs money.</h3>
+              <span class="plain">The game runs on two completely different foundations — a production-grade cloud stack, and a single Linux box at home serving the demo you just played. Same container image, deliberately different infrastructure, and the reason why is the whole point.</span>
+              <span class="toggle-hint">
+                <span class="toggle-open">Read the reasoning</span>
+                <span class="toggle-close">Collapse</span>
+                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </span>
+            </summary>
+            <div class="expanded">
+              <h3>Decision</h3>
+              <p>Production on EKS: ALB with an ACM wildcard, target groups bound to node ports via the autoscaling group, managed nodes in private subnets, ElastiCache over <code>rediss://</code>. Dev and demo on one Linux box behind a Cloudflare Tunnel — no load balancer, no NAT, no managed cache. Identical container image, ports, and manifests.</p>
+              <h3>Instead of</h3>
+              <p><strong>One topology for both.</strong> An always-on cloud dev cluster costs money every month for an audience of one and still isn't production; running production the home way puts one machine between the game and the internet. Also rejected: the AWS Load Balancer Controller — binding target groups straight to the ASG removes a component to install, upgrade, and grant IAM, in exchange for static node ports. Worth it at two services.</p>
+              <h3>Why it matters</h3>
+              <p>For the operator, a permanent environment at zero marginal cost and a production-grade one only while it's in use. For the player, a link that's always up.</p>
+              <h3>Proof</h3>
+              <ul>
+                <li>Health matcher <code>426</code>, because <code>ws</code> answers a plain <code>GET /</code> with Upgrade Required.</li>
+                <li>The node security group carries its own control-plane and self-referencing rules via a launch template that opts out of EKS's default wiring.</li>
+                <li>Auto-destroy at 18:00 UTC daily <em>because AWS Budgets alerts lag 8–24h</em> — the alarm can't be the control.</li>
+                <li>Gateway TLS state externalised to R2 after ephemeral disks re-requested certificates until Let's Encrypt's rate limit stopped it.</li>
+              </ul>
+              <div class="proof-links">
+                <span class="proof-links-label">In the repo</span>
+                <ul>
+                  <li><a href="#">EKS Terraform root</a></li>
+                  <li><a href="#">K3s Terraform root</a></li>
+                  <li><a href="#">Nightly auto-destroy</a></li>
+                  <li><a href="#">deployment.md</a></li>
+                </ul>
+              </div>
+            </div>
+          </details>
+
+          <details class="card" data-tags="DevOps">
+            <summary>
+              <span class="card-head">
+                <span class="role-tag">DevOps</span>
+                <span class="metric"><span class="metric-value">34</span><span class="metric-label">CI/CD workflows, no manual deploys</span></span>
+              </span>
+              <h3 class="headline">I encoded the three teammates I don't have as CI jobs.</h3>
+              <span class="plain">I run every environment of this project alone. So I built the parts of a team that isn't there — the person who does releases, the person who checks before you break something, and the person who remembers the steps.</span>
+              <span class="toggle-hint"><span class="toggle-open">Read the reasoning</span><span class="toggle-close">Collapse</span><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            </summary>
+            <div class="expanded"><p>(full reasoning renders here — see src/content/cards/devops.md)</p></div>
+          </details>
+
+          <details class="card" data-tags="QA,AI">
+            <summary>
+              <span class="card-head">
+                <span class="role-tag">QA</span>
+                <span class="metric"><span class="metric-value">0</span><span class="metric-label">self-certified merges</span></span>
+              </span>
+              <h3 class="headline">The implementer never signs off on their own work — and that stays true when the implementer is a model.</h3>
+              <span class="plain">I work with a coding agent the way a QA engineer works with a developer. I define what "done" means before work starts, it builds, I test and send it back with specifics, and we loop until nothing is outstanding. Only then does the documentation get updated.</span>
+              <span class="toggle-hint"><span class="toggle-open">Read the reasoning</span><span class="toggle-close">Collapse</span><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            </summary>
+            <div class="expanded"><p>(full reasoning renders here — see src/content/cards/qa.md)</p></div>
+          </details>
+
+          <details class="card" data-tags="Backend">
+            <summary>
+              <span class="card-head">
+                <span class="role-tag">Backend</span>
+                <span class="metric"><span class="metric-value">Any pod</span><span class="metric-label">recovers any room</span></span>
+              </span>
+              <h3 class="headline">The server decides everything; the phone only draws the result.</h3>
+              <span class="plain">That's what lets someone lose signal on the bus, come back, and still be in the same game — served by a different worker than the one that started it.</span>
+              <span class="toggle-hint"><span class="toggle-open">Read the reasoning</span><span class="toggle-close">Collapse</span><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            </summary>
+            <div class="expanded"><p>(full reasoning renders here — see src/content/cards/backend.md)</p></div>
+          </details>
+
+          <details class="card" data-tags="Frontend">
+            <summary>
+              <span class="card-head">
+                <span class="role-tag">Frontend</span>
+                <span class="metric"><span class="metric-value">19</span><span class="metric-label">scene-free tests</span></span>
+              </span>
+              <h3 class="headline">Rules out of the renderer, so the part that has to be correct is testable in seconds.</h3>
+              <span class="plain">The game's logic is kept completely separate from its graphics. Placement, anchors and the collapse simulation can be checked without ever opening the game.</span>
+              <span class="toggle-hint"><span class="toggle-open">Read the reasoning</span><span class="toggle-close">Collapse</span><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            </summary>
+            <div class="expanded"><p>(full reasoning renders here — see src/content/cards/frontend.md)</p></div>
+          </details>
+
+          <details class="card" data-tags="AI">
+            <summary>
+              <span class="card-head">
+                <span class="role-tag">AI</span>
+                <span class="metric"><span class="metric-value">13</span><span class="metric-label">routed docs, 0 repo-wide searches</span></span>
+              </span>
+              <h3 class="headline">A router beats a vector store at 1.6k lines. Retrieval here is a curation problem, not a search problem.</h3>
+              <span class="plain">I built a small, hand-written knowledge system so an AI agent can work on this codebase without re-reading it every time. It's deliberately simple — the industry-standard version would cost more and explain less at this size.</span>
+              <span class="toggle-hint"><span class="toggle-open">Read the reasoning</span><span class="toggle-close">Collapse</span><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            </summary>
+            <div class="expanded"><p>(full reasoning renders here — see src/content/cards/ai.md)</p></div>
+          </details>
+        </div>
+      </section>
+
+      <section id="work">
+        <h2 class="section-title"><span class="section-index">03</span> Work with me</h2>
+        <div class="services">
+          <article class="service">
+            <h3>Cloud &amp; platform engineering</h3>
+            <p>Terraform roots, Kubernetes on EC2 or EKS, private networking, TLS and DNS, cost bounded by design rather than by an alert that arrives a day late.</p>
+          </article>
+          <article class="service">
+            <h3>Delivery automation &amp; guardrails</h3>
+            <p>Release pipelines that verify their own output, drift checks that fail before a build starts, and destructive operations that require a typed confirmation naming the exact target.</p>
+          </article>
+          <article class="service">
+            <h3>AI-assisted delivery, done properly</h3>
+            <p>Agents in the implementer's seat with written acceptance criteria, a rejection path, and CI gates cleared before a human looks. Plus the retrieval layer that lets an agent work in your codebase without re-reading it every session.</p>
+          </article>
+        </div>
+        <div class="how-i-work">
+          <h3>How I work with coding agents</h3>
+          <p>I treat an agent the way an organisation treats a contractor: the requirement is written down first, the work is tested against it, and it comes back with specifics until nothing is outstanding. Every language in this repository is one I read fluently — Node.js on the server, GDScript in the client — because when the agent stalls, the work has to continue. That's a deliberate constraint, not an accident of what was fastest to generate.</p>
+        </div>
+      </section>
+
+      <section id="contact">
+        <h2 class="section-title"><span class="section-index">04</span> Get in touch</h2>
+        <p class="availability">Open to platform / DevOps roles, and to contract work automating delivery pipelines and agent-assisted workflows.</p>
+        <div class="contact-links">
+          <a class="cta primary" href="#">enriquedelapenajr@gmail.com</a>
+          <a class="cta secondary" href="#">GitHub</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p><strong>Enrique de la Peña</strong> — Cloud · DevOps · Platform · AI Automation</p>
+      <p>Every claim on this page links to the file, workflow or test that backs it, in <a href="#">the public repository</a>. This site is a static Astro build deployed to Cloudflare Workers on every push.</p>
+    </footer>
+
+    <script>
+      const filterEl = document.querySelector(".filter");
+      const countEl = document.querySelector(".filter-count");
+      const cards = Array.from(document.querySelectorAll(".card"));
+      const total = Number(countEl.dataset.total);
+      filterEl.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-filter]");
+        if (!button) return;
+        const selected = button.dataset.filter;
+        filterEl.querySelectorAll("button[data-filter]").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+        let shown = 0;
+        for (const card of cards) {
+          const show = selected === "all" || (card.dataset.tags || "").split(",").includes(selected);
+          card.hidden = !show;
+          if (show) shown += 1;
+        }
+        countEl.textContent = selected === "all" ? `Showing all ${total} decisions` : `Showing ${shown} of ${total} — ${selected}`;
+      });
+    </script>
+  </body>
+</html>
