@@ -61,15 +61,15 @@ All manual `workflow_dispatch` only — K3s has no automated/push-triggered path
 | Workflow | Behavior |
 |---|---|
 | `K3s-Infra-Plan.yml` | Reusable / manual. Plans the K3s Terraform root; intentionally allows create/delete actions to be reviewed |
-| `K3s-Infra-Apply.yml` | Manual, requires `APPLY_K3S`. Plans first and **hard-fails if the plan contains any delete/replace action** — run `K3s Cleanup All Game Server`'s `terraform_destroy` first if a plan would replace/delete resources |
+| `K3s-Infra-Apply.yml` | Manual, requires `APPLY_K3S`. Plans first and **hard-fails if the plan contains any delete/replace action** — run `K3s Infra Destroy`'s `terraform_destroy` first if a plan would replace/delete resources |
 | `K3s-Infra-Diagnose.yml` | Reusable / manual. Inspects tagged lab AWS resources, verifies all four Cloudflare DNS records resolve to the gateway, probes SSH through the bastion |
+| `K3s-Infra-Destroy.yml` | Manual, `cleanup_mode` choice `runtime_only` (uninstalls K3s/Caddy on every node — affects both game and web) or `terraform_destroy` (`DESTROY_K3S`) — the only workflow that tears down the whole shared cluster's AWS resources; distinct from `K3s-Cleanup-All.yml` below, which only touches Deployments/Services inside the still-running cluster |
 | `K3s-Deploy-Game-Server.yml` | Reusable core, `target: wsplaytod\|wstodtest`. Tests server code, builds/pushes one shared Docker image tagged by commit SHA, installs/configures K3s via EC2-GW bastion/NAT (restoring/persisting Caddy's ACME cache to R2, rendering all four Caddy sites, upserting all four DNS records), refreshes `ecr-pull` in the target namespace, applies that target's Kustomize overlay, validates nodes/Redis/replica/Caddy/public WSS |
 | `K3s-Deploy-Web-Server.yml` | Reusable core, `target: playtod\|todtest`. Builds the Web export (debug UI disabled), pushes an `nginx:alpine` image tagged `web-<target>-<sha>`, same K3s plumbing as the game-server core, HTTPS smoke test |
 | `K3s-Deploy-All.yml` | Manual dispatcher over both cores, `deploy_target` choice `All\|Game only\|Web only` crossed with `environment` choice `prod\|test\|all`. Always runs game-prod → game-test → web-prod → web-test in that order regardless of selection (skipping unselected combinations), since all four share one Caddy gateway and R2 ACME cache |
 | `K3s-Cleanup-Game-Server.yml` | Reusable core, `target: wsplaytod\|wstodtest`. Deletes only the game server's Deployment/Service and its namespace-local Redis by name — **never** the namespace itself, since each prod/test namespace also hosts that environment's web server |
 | `K3s-Cleanup-Web-Server.yml` | Reusable core, `target: playtod\|todtest`. Soft cleanup: `kubectl apply -k`'s a `web-maintenance-{prod,test}` overlay that swaps the web Deployment's image to `nginx:alpine` serving an offline/maintenance placeholder — the Deployment, Service, and DNS record are never deleted, so a normal redeploy's `kubectl apply` of the real overlay cleanly overwrites the placeholder |
 | `K3s-Cleanup-All.yml` | Manual dispatcher over both cores, `cleanup_target` choice `All\|Game only\|Web only` crossed with `environment` choice `prod\|test\|all`, gated by a typed `confirm_cleanup` phrase specific to the chosen combination (printed to the run summary) |
-| `K3s-Cleanup-All-Game-Server.yml` | Manual, `cleanup_mode` choice `runtime_only` (uninstalls K3s/Caddy on every node) or `terraform_destroy` (`DESTROY_K3S`) — the only workflow that tears down the whole shared cluster's AWS resources |
 
 Argo CD is prepared in manifests only — no K3s workflow installs or exposes it.
 
@@ -78,7 +78,7 @@ Argo CD is prepared in manifests only — no K3s workflow installs or exposes it
 1. **First-time / cold start:** `K3s Infra Plan` → `K3s Infra Apply` (`APPLY_K3S`) → `K3s Deploy All` (`deploy_target: All`, `environment: all`).
 2. **Ordinary update, lab already healthy:** dispatch `K3s Deploy All` with `deploy_target`/`environment` narrowed to the server(s) and environment(s) that need it (e.g. `Game only` + `prod`).
 3. **AWS/SSH/DNS/cluster reachability looks off:** `K3s Infra Diagnose`.
-4. **Returning to a clean runtime state:** `K3s Cleanup All` with `cleanup_target`/`environment` set to what to clean up (game deletes its Deployment/Service; web instead sets the offline/maintenance placeholder), gated by its typed `confirm_cleanup` phrase — or `K3s Cleanup All Game Server`'s `terraform_destroy` (`DESTROY_K3S`) to remove all K3s AWS resources.
+4. **Returning to a clean runtime state:** `K3s Cleanup All` with `cleanup_target`/`environment` set to what to clean up (game deletes its Deployment/Service; web instead sets the offline/maintenance placeholder), gated by its typed `confirm_cleanup` phrase — or `K3s Infra Destroy`'s `terraform_destroy` (`DESTROY_K3S`) to remove all K3s AWS resources.
 
 ### Operational checks (what "healthy" means)
 
@@ -165,19 +165,17 @@ Client endpoint config for `devtod1`/`devtod2` is written by `scripts/write-endp
 |---|---|---|
 | `Backup-Diagnose.yml` | Manual | Runs all four `*-status.sh` scripts plus `cloudflared` service/tunnel state |
 | `Backup-Deploy-Game-Server.yml` / `Backup-Cleanup-Game-Server.yml` | Reusable cores, `target: devwstod1\|devwstod2` | Up/down via the matching `backup-server-*.sh <instance>` |
-| `Backup-Deploy-Game.yml` | **Auto** (push to `src/Server/**`, always targets `devwstod1`) or manual (`target` choice `devwstod1\|devwstod2\|all`) | Push events are guarded: skipped if `corp-tower-server-1` isn't currently running, so a routine push never silently un-stands-down the instance |
-| `Backup-Cleanup-Game.yml` | Manual, `target` choice `devwstod1\|devwstod2\|all`, typed confirmation matching the chosen target | Stop the container(s); DNS record(s) left in place pointing at the idle tunnel |
 | `Backup-Deploy-Web-Server.yml` / `Backup-Cleanup-Web-Server.yml` | Reusable cores, `target: devtod1\|devtod2` | Build the Web export (`fetch-private-assets` + `build-godot-web`), deploy via `backup-web-*.sh <instance>` |
-| `Backup-Deploy-Web.yml` | **Auto** (push to `src/Client/**` and related build inputs, always targets `devtod1`) or manual (`target` choice `devtod1\|devtod2\|all`) | Same guard pattern as the game-server one, checking `corp-tower-web-1` |
-| `Backup-Cleanup-Web.yml` | Manual, `target` choice `devtod1\|devtod2\|all`, typed confirmation matching the chosen target | |
+| `Backup-Deploy-All.yml` | **Auto** (push to `src/Server/**` and/or the client/build-input paths below) or manual (`deploy_target` choice `All\|Game only\|Web only` × `instance` choice `1\|2\|all`) | On push, diffs `github.event.before`..`github.sha` to deploy only the service(s) whose paths actually changed, always targeting instance 1 for that service, each guarded: skipped if that instance's container isn't currently running, so a routine push never silently un-stands-down it. Manual dispatch ignores the changed-paths check and runs `deploy_target`/`instance` directly, unguarded |
+| `Backup-Cleanup-All.yml` | Manual, `cleanup_target` choice `All\|Game only\|Web only` × `instance` choice `1\|2\|all`, gated by a typed `confirm_cleanup` phrase specific to the chosen combination (printed to the run summary) | Stop/stand-down the container(s); DNS record(s) left in place pointing at the idle tunnel |
 
 None of these workflows has a `pull_request`/`pull_request_target` trigger, matching every other workflow in this (public) repo — required, since a self-hosted runner would otherwise let any external contributor's PR execute code on the physical machine. Only collaborators with repo write access can dispatch these.
 
 ### Operational runbook (backup)
 
-1. **Bring an instance up:** dispatch its `Backup Deploy *` workflow (or the matching `scripts/backup/backup-{server,web}-up.sh <instance>` directly on the machine).
+1. **Bring an instance up:** dispatch `Backup Deploy All` with `deploy_target`/`instance` narrowed to what's needed (or the matching `scripts/backup/backup-{server,web}-up.sh <instance>` directly on the machine).
 2. **Check state (read-only, any time):** `Backup Diagnose`, or `scripts/backup/backup-{server,web}-status.sh <instance>` on the machine.
-3. **Stand down:** dispatch the matching `Backup Cleanup *` workflow with its typed confirmation.
+3. **Stand down:** dispatch `Backup Cleanup All` with its typed `confirm_cleanup` phrase.
 
 ## Deprecated: Docker EC2 staging
 

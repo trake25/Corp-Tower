@@ -77,7 +77,7 @@ jobs:
           )"
 
           if [ -n "$DESTRUCTIVE_CHANGES" ]; then
-            echo "::error::Plan includes delete or replace actions. Use K3s Cleanup All Game Server with terraform_destroy for intentional teardown."
+            echo "::error::Plan includes delete or replace actions. Use K3s Infra Destroy with terraform_destroy for intentional teardown."
             printf '%s\n' "$DESTRUCTIVE_CHANGES"
             exit 1
           fi

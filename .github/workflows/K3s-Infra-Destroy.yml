@@ -1,10 +1,10 @@
-name: K3s Cleanup All Game Server
+name: K3s Infra Destroy
 
 on:
   workflow_dispatch:
     inputs:
       cleanup_mode:
-        description: "Runtime cleanup uninstalls K3s/Caddy on every node (affects both wsplaytod/wstodtest game servers and any playtod/todtest web servers). Terraform destroy removes AWS resources managed by infra/k3s/terraform."
+        description: "Runtime cleanup uninstalls K3s/Caddy on every node (affects both wsplaytod/wstodtest game servers and any playtod/todtest web servers, not just game despite this workflow living in the infra family). Terraform destroy removes AWS resources managed by infra/k3s/terraform."
         required: true
         default: runtime_only
         type: choice

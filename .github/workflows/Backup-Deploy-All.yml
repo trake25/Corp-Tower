@@ -1,0 +1,229 @@
+name: Backup Deploy All
+
+# Push events deploy only the service(s) whose paths actually changed in
+# that push (game on src/Server/** changes, web on the client/build-input
+# paths below), always targeting instance 1 for that service - resolved by
+# diffing github.event.before..github.sha, since the top-level path filter
+# below is a union and only tells us the workflow should run at all, not
+# which side changed. Manual dispatch instead uses deploy_target/instance
+# directly and skips the changed-paths check.
+#
+# Auto-deploy on push is guarded per instance: skipped if that instance's
+# container isn't currently running, so a routine push never silently
+# un-stands-down a stood-down instance.
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "src/Server/**"
+      - "src/Client/**"
+      - ".github/actions/build-godot-web/**"
+      - ".github/actions/fetch-private-assets/**"
+      - ".github/godot/export_presets.web.ci.cfg"
+      - "scripts/write-endpoint-config.sh"
+      - ".github/workflows/Backup-Deploy-All.yml"
+
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Which server(s) to deploy. Ignored on push - push events deploy only the service(s) whose paths changed."
+        required: true
+        type: choice
+        options:
+          - All
+          - Game only
+          - Web only
+        default: All
+      instance:
+        description: "Which backup instance(s) to deploy. Ignored on push - push events always target instance 1."
+        required: true
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - all
+        default: "1"
+      art_version_override:
+        description: "Optional art bundle version (e.g. v2) to fetch instead of the pinned manifest. Skips sha256 verification — testing only, never for release. Ignored for game-only deploys."
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  resolve:
+    name: Resolve Deploy Plan
+    runs-on: ubuntu-24.04
+    outputs:
+      deploy_game: ${{ steps.resolve.outputs.deploy_game }}
+      deploy_web: ${{ steps.resolve.outputs.deploy_web }}
+      game_target: ${{ steps.resolve.outputs.game_target }}
+      web_target: ${{ steps.resolve.outputs.web_target }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve
+        id: resolve
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+            EMPTY_TREE="4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+            BEFORE="${{ github.event.before }}"
+            if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              BEFORE="$EMPTY_TREE"
+            fi
+
+            CHANGED="$(git diff --name-only "$BEFORE" "${{ github.sha }}")"
+            echo "Changed files:"
+            printf '%s\n' "$CHANGED"
+
+            if printf '%s\n' "$CHANGED" | grep -q '^src/Server/'; then
+              echo "deploy_game=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "deploy_game=false" >> "$GITHUB_OUTPUT"
+            fi
+            echo "game_target=devwstod1" >> "$GITHUB_OUTPUT"
+
+            if printf '%s\n' "$CHANGED" | grep -qE '^(src/Client/|\.github/actions/build-godot-web/|\.github/actions/fetch-private-assets/|\.github/godot/export_presets\.web\.ci\.cfg|scripts/write-endpoint-config\.sh)'; then
+              echo "deploy_web=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "deploy_web=false" >> "$GITHUB_OUTPUT"
+            fi
+            echo "web_target=devtod1" >> "$GITHUB_OUTPUT"
+          else
+            case "${{ inputs.deploy_target }}" in
+              All)
+                echo "deploy_game=true" >> "$GITHUB_OUTPUT"
+                echo "deploy_web=true" >> "$GITHUB_OUTPUT"
+                ;;
+              "Game only")
+                echo "deploy_game=true" >> "$GITHUB_OUTPUT"
+                echo "deploy_web=false" >> "$GITHUB_OUTPUT"
+                ;;
+              "Web only")
+                echo "deploy_game=false" >> "$GITHUB_OUTPUT"
+                echo "deploy_web=true" >> "$GITHUB_OUTPUT"
+                ;;
+              *)
+                echo "::error::Unknown deploy_target '${{ inputs.deploy_target }}'."
+                exit 1
+                ;;
+            esac
+
+            case "${{ inputs.instance }}" in
+              "1")
+                echo "game_target=devwstod1" >> "$GITHUB_OUTPUT"
+                echo "web_target=devtod1" >> "$GITHUB_OUTPUT"
+                ;;
+              "2")
+                echo "game_target=devwstod2" >> "$GITHUB_OUTPUT"
+                echo "web_target=devtod2" >> "$GITHUB_OUTPUT"
+                ;;
+              all)
+                echo "game_target=all" >> "$GITHUB_OUTPUT"
+                echo "web_target=all" >> "$GITHUB_OUTPUT"
+                ;;
+              *)
+                echo "::error::Unknown instance '${{ inputs.instance }}'."
+                exit 1
+                ;;
+            esac
+          fi
+
+  check-devwstod1-status:
+    name: Check devwstod1 Status
+    needs: resolve
+    if: github.event_name == 'push' && needs.resolve.outputs.deploy_game == 'true'
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 5
+    outputs:
+      devwstod1_up: ${{ steps.check.outputs.devwstod1_up }}
+    steps:
+      - name: Check for a running devwstod1 container
+        id: check
+        run: |
+          set -euo pipefail
+          if docker ps --filter "name=corp-tower-server-1" --filter "status=running" --format '{{.Names}}' | grep -q .; then
+            echo "devwstod1_up=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "devwstod1_up=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::corp-tower-server-1 is not running on the backup machine (stood down) — skipping auto-deploy. Dispatch this workflow manually to redeploy."
+          fi
+
+  check-devtod1-status:
+    name: Check devtod1 Status
+    needs: resolve
+    if: github.event_name == 'push' && needs.resolve.outputs.deploy_web == 'true'
+    runs-on: [self-hosted, backup]
+    timeout-minutes: 5
+    outputs:
+      devtod1_up: ${{ steps.check.outputs.devtod1_up }}
+    steps:
+      - name: Check for a running devtod1 container
+        id: check
+        run: |
+          set -euo pipefail
+          if docker ps --filter "name=corp-tower-web-1" --filter "status=running" --format '{{.Names}}' | grep -q .; then
+            echo "devtod1_up=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "devtod1_up=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::corp-tower-web-1 is not running on the backup machine (stood down) — skipping auto-deploy. Dispatch this workflow manually to redeploy."
+          fi
+
+  deploy-devwstod1:
+    name: Deploy devwstod1
+    needs: [resolve, check-devwstod1-status]
+    if: |
+      always() &&
+      needs.resolve.outputs.deploy_game == 'true' &&
+      (needs.resolve.outputs.game_target == 'devwstod1' || needs.resolve.outputs.game_target == 'all') &&
+      (needs.check-devwstod1-status.result == 'skipped' || needs.check-devwstod1-status.outputs.devwstod1_up == 'true')
+    uses: ./.github/workflows/Backup-Deploy-Game-Server.yml
+    with:
+      target: devwstod1
+
+  deploy-devwstod2:
+    name: Deploy devwstod2
+    needs: [resolve, deploy-devwstod1]
+    if: |
+      always() &&
+      needs.resolve.outputs.deploy_game == 'true' &&
+      (needs.resolve.outputs.game_target == 'devwstod2' || needs.resolve.outputs.game_target == 'all') &&
+      (needs.deploy-devwstod1.result == 'success' || needs.deploy-devwstod1.result == 'skipped')
+    uses: ./.github/workflows/Backup-Deploy-Game-Server.yml
+    with:
+      target: devwstod2
+
+  deploy-devtod1:
+    name: Deploy devtod1
+    needs: [resolve, check-devtod1-status]
+    if: |
+      always() &&
+      needs.resolve.outputs.deploy_web == 'true' &&
+      (needs.resolve.outputs.web_target == 'devtod1' || needs.resolve.outputs.web_target == 'all') &&
+      (needs.check-devtod1-status.result == 'skipped' || needs.check-devtod1-status.outputs.devtod1_up == 'true')
+    uses: ./.github/workflows/Backup-Deploy-Web-Server.yml
+    with:
+      target: devtod1
+      art_version_override: ${{ inputs.art_version_override }}
+    secrets: inherit
+
+  deploy-devtod2:
+    name: Deploy devtod2
+    needs: [resolve, deploy-devtod1]
+    if: |
+      always() &&
+      needs.resolve.outputs.deploy_web == 'true' &&
+      (needs.resolve.outputs.web_target == 'devtod2' || needs.resolve.outputs.web_target == 'all') &&
+      (needs.deploy-devtod1.result == 'success' || needs.deploy-devtod1.result == 'skipped')
+    uses: ./.github/workflows/Backup-Deploy-Web-Server.yml
+    with:
+      target: devtod2
+      art_version_override: ${{ inputs.art_version_override }}
+    secrets: inherit
