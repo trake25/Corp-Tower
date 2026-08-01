@@ -1,9 +1,11 @@
-name: Site Deploy (Cloudflare Pages)
+name: Site Deploy (Cloudflare Workers)
 
-# Builds and deploys the portfolio site at enportfolio.galaxxigames.com.
-# Independent of every game deploy path (K3s/EKS/Backup) - path-filtered to
-# site/** only, and uses its own Cloudflare token scoped to Pages:Edit,
-# never the Zone.DNS-Edit token the game's DNS updates use.
+# Builds and deploys the portfolio site at enportfolio.galaxxigames.com as a
+# Workers Static Assets site (Cloudflare retired the standalone Pages
+# creation flow - see site/wrangler.jsonc). Independent of every game deploy
+# path (K3s/EKS/Backup) - path-filtered to site/** only, and uses its own
+# Cloudflare token scoped to Workers Scripts:Edit, never the Zone.DNS-Edit
+# token the game's DNS updates use.
 
 on:
   push:
@@ -12,11 +14,11 @@ on:
       - master
     paths:
       - "site/**"
-      - ".github/workflows/Site-Deploy-Pages.yml"
+      - ".github/workflows/Site-Deploy-Workers.yml"
   workflow_dispatch:
 
 concurrency:
-  group: site-deploy-pages
+  group: site-deploy-workers
   cancel-in-progress: true
 
 jobs:
@@ -46,11 +48,10 @@ jobs:
           PUBLIC_CF_ANALYTICS_TOKEN: ${{ secrets.CF_ANALYTICS_TOKEN }}
         run: npm run build
 
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}
+          apiToken: ${{ secrets.CLOUDFLARE_WORKERS_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: corp-tower-portfolio
-          directory: site/dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          workingDirectory: site
+          command: deploy
