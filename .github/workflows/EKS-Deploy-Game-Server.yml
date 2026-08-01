@@ -281,7 +281,7 @@ jobs:
           kubectl apply -k "$RUNTIME_OVERLAY"
 
           set +e
-          kubectl -n "$NAMESPACE" rollout status deployment/corp-tower-server --timeout=240s
+          kubectl -n "$NAMESPACE" rollout status deployment/corp-tower-server --timeout=300s
           ROLLOUT_STATUS=$?
           set -e
 
