@@ -57,6 +57,15 @@ Astro static build → Cloudflare Workers Static Assets (`wrangler.jsonc`,
 builds and runs `wrangler deploy` on every push to `site/**`. No server-side
 logic, no bindings — a plain static site.
 
+**Maintenance mode.** `.github/workflows/Site-Cleanup-Workers.yml`
+(`workflow_dispatch` only) deploys `site/maintenance/index.html` in place of
+the built site — same Worker, same custom domain, no DNS or Worker deletion,
+mirroring the K3s web server's soft-cleanup pattern
+([deployment.md](../docs/context/deployment.md)). It overwrites `site/dist`
+with just the placeholder and runs the same `wrangler deploy`. A normal push
+to `site/**` (or a manual `Site Deploy (Cloudflare Workers)` dispatch)
+rebuilds the real site and cleanly overwrites the placeholder again.
+
 ## Where things live
 
 | Change | File |
@@ -124,28 +133,6 @@ recovery (e.g. standing the project up again under a new Cloudflare
 account) — don't re-run them against the live project.
 
 1. **Create the Worker.** Dashboard → Workers & Pages → **Create
-<<<<<<< Updated upstream
-   Application** → **Upload assets** (Cloudflare retired the standalone
-   Pages project flow). Build first (`npm run build`) and upload
-   **`site/dist`** — never `site/` itself or `src/`. Name it
-   `corp-tower-portfolio` to match `"name"` in `wrangler.jsonc`. This first
-   upload only exists to create the Worker; every push after that redeploys
-   it via CI.
-2. **Add the custom domain.** Worker → Settings → Domains & Routes → Add →
-   Custom Domain → `enportfolio.galaxxigames.com`. Provisions DNS
-   automatically since `galaxxigames.com` is already a Cloudflare zone.
-3. **`CLOUDFLARE_WORKERS_API_TOKEN`** — API token scoped to `Account >
-   Workers Scripts > Edit` only (dashboard's built-in "Edit Cloudflare
-   Workers" template). Deliberately **separate** from the game's
-   `CLOUDFLARE_API_TOKEN` (`Zone.DNS Edit`, used for K3s/EKS DNS) — a
-   compromise of one token shouldn't reach the other's blast radius.
-4. **`CLOUDFLARE_ACCOUNT_ID`** — dashboard right sidebar on almost any page,
-   or `wrangler whoami`.
-5. **`CF_ANALYTICS_TOKEN`** — Dashboard → Analytics & Logs → Web Analytics →
-   Add a site → `enportfolio.galaxxigames.com` → beacon token. If this
-   secret is ever unset, the build simply omits the analytics script tag —
-   no broken beacon call ships either way (`src/layouts/BaseLayout.astro`).
-=======
    Application** → **Upload assets**. When it asks for a folder, build first
    (`npm run build`, from this directory) and upload **`site/dist`** — never
    `site/` itself or `src/`. When it asks for a name, use
@@ -194,4 +181,3 @@ no network call.
   exists.
 - Cross-browser/breakpoint QA (Phase 4) needs the site actually deployed
   first — can't be verified from a static build alone.
->>>>>>> Stashed changes

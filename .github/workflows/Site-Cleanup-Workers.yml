@@ -1,0 +1,42 @@
+name: Site Cleanup (Cloudflare Workers)
+
+# Soft cleanup: deploys an offline/maintenance placeholder to the portfolio
+# Worker instead of deleting it, so enportfolio.galaxxigames.com and the
+# Worker's custom domain binding keep answering. The Worker and custom
+# domain are never removed. A normal push to site/** (or a manual dispatch
+# of Site-Deploy-Workers.yml) rebuilds the real Astro site into site/dist
+# and cleanly overwrites the placeholder on the next deploy.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: site-deploy-workers
+  cancel-in-progress: true
+
+jobs:
+  deploy-maintenance:
+    name: Deploy Maintenance Placeholder
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Generate maintenance placeholder into site/dist
+        working-directory: site
+        run: |
+          set -euo pipefail
+          rm -rf dist
+          mkdir -p dist
+          cp maintenance/index.html dist/index.html
+          cp maintenance/index.html dist/404.html
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_WORKERS_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: site
+          command: deploy
