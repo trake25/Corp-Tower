@@ -1,11 +1,61 @@
 # Corp Tower Portfolio Site
 
-Astro static site for `enportfolio.galaxxigames.com` — see
-`plan/corp-tower-portfolio-plan-v2.md` for the design brief. Six role-tagged
-case-study cards over the Corp Tower project, each with a plain-English
-collapsed summary and an expanded engineering rationale (`src/content/cards/`,
-one file per card — adding a role or card is a content change, not a layout
-change).
+Astro static site, deployed to Cloudflare Workers (Static Assets), live at
+**`https://enportfolio.galaxxigames.com`**. Six role-tagged case-study cards
+over the Corp Tower project — Cloud, DevOps, QA, Backend, Frontend, AI — each
+with a plain-English collapsed summary and an expanded engineering
+rationale.
+
+**Source of truth for intent/rationale:** `plan/corp-tower-portfolio-plan-v2.md`
+(the site as a whole) and `plan/corp-tower-demo-instance-plan.md` (the
+`toddemo`/`wstoddemo` backend the "Play it" button links to). This README
+covers orientation and mechanics only — read the plan docs for *why*, not
+here, to avoid two copies of the same reasoning drifting apart.
+
+**This directory is intentionally outside `docs/context/`** — that KB's
+scope is the game system (client/server/infra), not the marketing site
+around it. This README is this directory's own entry point instead.
+
+## Status — still v1
+
+| Phase (from the plan) | State |
+|---|---|
+| 0 — Ship the shell | **Done.** Domain resolves, push redeploys via CI, confirmed working, no known functional/UI issues. |
+| 1 — Demo instance (`toddemo`) | **Done.** Live, playable, bots disclosed. |
+| 2 — Copy | **Cards are in place but not final.** Content and overall UI look need a refinement pass — planned for a separate session, not blocking. |
+| 3 — Evidence | **Diagram done, recording pending.** The hand-authored SVG topology diagram is live on the hub. The EKS lifecycle recording (apply → deploy → smoke tests → play a round → destroy) is still unrecorded — manual OBS/FFmpeg work, planned for a separate session. The "Watch the cluster" CTA is a disabled placeholder until that clip exists. |
+| 4 — QA | **Confirmed working**, no known functional/UI issues as of the last check. Formal breakpoint/cross-browser sweep hasn't been separately logged. |
+
+**Open naming question:** the project's dev name is "Corp Tower"; the
+production name is undecided, with **TOD** as the leading candidate. Nothing
+has been renamed yet. If/when it's decided, three files carry the "Corp
+Tower" branding and need one pass together: `src/layouts/BaseLayout.astro`
+(`<title>`/meta description), `src/pages/index.astro` (`<h1>`/intro), and
+`src/components/TopologyDiagram.astro` (SVG `<title>`/`<desc>`).
+
+## Content map — where to edit what
+
+| What | File |
+|---|---|
+| Hook line, intro paragraph, stack line, CTA text, bot-disclosure line | `src/pages/index.astro` |
+| The six cards (plain summary + Decision/Instead of/For/Proof) | `src/content/cards/*.md` — one file per role (`cloud.md`, `devops.md`, `qa.md`, `backend.md`, `frontend.md`, `ai.md`). Adding a role or card is a content change, not a layout change — the filter/grid derive from whatever's in this directory. |
+| Topology diagram labels/text | `src/components/TopologyDiagram.astro` — raw SVG, labels are plain `<text>` elements |
+| Page title, meta description, favicon, analytics script | `src/layouts/BaseLayout.astro` |
+| 404 page copy | `src/pages/404.astro` |
+| Colors/spacing/fonts | `src/styles/global.css` |
+| Deploy target / assets directory | `wrangler.jsonc` |
+
+For AI-assisted refinement (Phase 2), `src/content/cards/*.md` is the
+highest-value target — that's where the plan's own rule lives: *if a
+collapsed summary contains a term you'd have to look up, it isn't finished.*
+After any edit: `cd site && npm run build` to catch errors before pushing.
+
+## Stack and deploy
+
+Astro static build → Cloudflare Workers Static Assets (`wrangler.jsonc`,
+`assets.directory: ./dist`). `.github/workflows/Site-Deploy-Workers.yml`
+builds and runs `wrangler deploy` on every push to `site/**`. No server-side
+logic, no bindings — a plain static site.
 
 ## Local development
 
@@ -30,60 +80,36 @@ npm run preview  # serve the built dist/ locally
 ```
 
 `npm run build` runs `astro check` first — it fails the build on a type
-error, same as CI.
+error, same as CI. You can also validate the Workers config without
+deploying: `npx wrangler deploy --dry-run` (after `npm run build`) — reads
+the assets directory and reports what it would upload with no network call.
 
-## One-time manual setup (cannot be done by any workflow)
+## One-time Cloudflare setup — already done, kept for reference
 
-Deployed as a **Workers Static Assets** site (`wrangler.jsonc`), not the
-retired standalone Pages project flow — Cloudflare's dashboard now creates
-these under Workers & Pages → **Create Application → Upload assets**.
-`.github/workflows/Site-Deploy-Workers.yml` builds on every push to
-`site/**` and runs `wrangler deploy`, but it can't create the Cloudflare side
-of that pipeline for itself — same reason EKS's ACM/IAM setup is manual (see
-`docs/context/deployment.md`). Do this once:
+The Worker (`corp-tower-portfolio`), its custom domain
+(`enportfolio.galaxxigames.com`), and the three GitHub secrets below are
+already created and working. These steps are kept here only for disaster
+recovery (e.g. standing the project up again under a new Cloudflare
+account) — don't re-run them against the live project.
 
 1. **Create the Worker.** Dashboard → Workers & Pages → **Create
-   Application** → **Upload assets**. When it asks for a folder, build first
-   (`npm run build`, from this directory) and upload **`site/dist`** — never
-   `site/` itself or `src/`. When it asks for a name, use
-   `corp-tower-portfolio` to match `"name"` in `wrangler.jsonc`, or update
-   `wrangler.jsonc` if you name it differently. This first upload only
-   exists to create the Worker; every push after that redeploys it via CI,
-   which reads the same `wrangler.jsonc`.
-2. **Add the custom domain.** On the Worker → Settings → Domains & Routes →
-   Add → Custom Domain → `enportfolio.galaxxigames.com`. Since
-   `galaxxigames.com` is already a Cloudflare zone, this provisions the DNS
-   automatically — no manual record needed.
-3. **Create a Cloudflare API token scoped to `Account > Workers Scripts >
-   Edit` only** (the dashboard has a built-in "Edit Cloudflare Workers"
-   template — start from that rather than a custom scope). Use a token
-   **separate from** the existing `CLOUDFLARE_API_TOKEN` secret (that one is
-   scoped to `Zone.DNS Edit` for the game's K3s/EKS DNS records) — same
-   reasoning as the physical backup machine using its own token: a
-   compromise of one shouldn't reach the other's blast radius. Save it as
-   the GitHub repo secret `CLOUDFLARE_WORKERS_API_TOKEN`.
-4. **Find the Cloudflare Account ID** (dashboard right sidebar on almost any
-   page, or `wrangler whoami`). Save it as the GitHub repo secret
-   `CLOUDFLARE_ACCOUNT_ID`.
-5. **Cloudflare Web Analytics (optional but planned).** Dashboard → Analytics
-   & Logs → Web Analytics → Add a site → `enportfolio.galaxxigames.com` →
-   copy the beacon token. Save it as the GitHub repo secret
-   `CF_ANALYTICS_TOKEN`. Until this secret exists, the build simply omits the
-   analytics script tag — no broken beacon call ships either way
-   (`src/layouts/BaseLayout.astro`).
-6. **First CI deploy.** Push to `main` (or dispatch `Site Deploy (Cloudflare
-   Workers)` manually) and confirm the run succeeds, then confirm
-   `https://enportfolio.galaxxigames.com` resolves and serves the hub page.
-
-You can also validate the config locally at any point without deploying:
-`npx wrangler deploy --dry-run` (from this directory, after `npm run
-build`) — reads the assets directory and reports what it would upload with
-no network call.
-
-## What's not here yet
-
-- The "Watch the cluster" CTA is a disabled placeholder until the EKS
-  recording lands (Phase 3 of the portfolio plan) — R2-hosted clip, lazy
-  loaded, per the plan's Site and analytics section.
-- Cross-browser/breakpoint QA (Phase 4) needs the site actually deployed
-  first — can't be verified from a static build alone.
+   Application** → **Upload assets** (Cloudflare retired the standalone
+   Pages project flow). Build first (`npm run build`) and upload
+   **`site/dist`** — never `site/` itself or `src/`. Name it
+   `corp-tower-portfolio` to match `"name"` in `wrangler.jsonc`. This first
+   upload only exists to create the Worker; every push after that redeploys
+   it via CI.
+2. **Add the custom domain.** Worker → Settings → Domains & Routes → Add →
+   Custom Domain → `enportfolio.galaxxigames.com`. Provisions DNS
+   automatically since `galaxxigames.com` is already a Cloudflare zone.
+3. **`CLOUDFLARE_WORKERS_API_TOKEN`** — API token scoped to `Account >
+   Workers Scripts > Edit` only (dashboard's built-in "Edit Cloudflare
+   Workers" template). Deliberately **separate** from the game's
+   `CLOUDFLARE_API_TOKEN` (`Zone.DNS Edit`, used for K3s/EKS DNS) — a
+   compromise of one token shouldn't reach the other's blast radius.
+4. **`CLOUDFLARE_ACCOUNT_ID`** — dashboard right sidebar on almost any page,
+   or `wrangler whoami`.
+5. **`CF_ANALYTICS_TOKEN`** — Dashboard → Analytics & Logs → Web Analytics →
+   Add a site → `enportfolio.galaxxigames.com` → beacon token. If this
+   secret is ever unset, the build simply omits the analytics script tag —
+   no broken beacon call ships either way (`src/layouts/BaseLayout.astro`).
