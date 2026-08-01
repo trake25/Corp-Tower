@@ -193,7 +193,7 @@ The three most load-bearing knobs, if you only touch a few: `towerStabilityDiffi
 
 ### Bot behavior
 
-QA/local-test helpers only — not production AI. They fill rooms only when a real player is waiting, stop when `debugBotsEnabled` is false, and never hold or activate Power items. Scheduling → [backend.md § Bot Manager](./backend.md#bot-manager); why the two strategies are shaped this way → [decisions.md](./decisions.md#bot-strategies-differ-by-risk-appetite-not-competence).
+QA/local-test helpers only — not production AI. They fill rooms only when a real player is waiting, stop when `debugBotsEnabled` is false, and never hold or activate Power items. `debugBotsEnabled` defaults to `false` but is overridable at process start via `CORP_TOWER_BOTS_ENABLED` — the physical backup's public demo instance sets it, since that build ships without the debug menu (see [deployment.md § Backup](./deployment.md#backup-physical-machine)). Scheduling → [backend.md § Bot Manager](./backend.md#bot-manager); why the two strategies are shaped this way → [decisions.md](./decisions.md#bot-strategies-differ-by-risk-appetite-not-competence).
 
 | Strategy | Brick choice | Column choice | Yields? |
 |---|---|---|---|

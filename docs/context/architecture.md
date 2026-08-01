@@ -14,7 +14,7 @@ Scope: system shape, tech stack, runtime/message flow, repo layout. Per-module d
 | Infra (active) | Terraform, K3s on EC2, Docker, Caddy |
 | Infra (session-scoped) | Terraform, EKS, ALB, ElastiCache |
 | CI/CD | GitHub Actions |
-| Public endpoints | Prod `wsplaytod`/test `wstodtest` on K3s (Cloudflare DNS); dev `devwstod1`/`devwstod2` on the physical backup (Cloudflare Tunnel) — build-time injected, see [networking.md](./networking.md#connection) |
+| Public endpoints | Prod `wsplaytod`/test `wstodtest` on K3s (Cloudflare DNS); dev `devwstod1`/`devwstod2` and the always-on public demo `wstoddemo` on the physical backup (Cloudflare Tunnel) — build-time injected, see [networking.md](./networking.md#connection) |
 
 ```mermaid
 flowchart LR
@@ -84,7 +84,7 @@ flowchart LR
 | `.github/workflows/Android-Deploy-wsplaytod.yml` | Android internal build/upload, endpoint wsplaytod | [build.md](./build.md#android-deploy-wsplaytod-workflow) |
 | `.github/actions/fetch-private-assets/` | Pulls production art from R2 | [build.md](./build.md#private-asset-pipeline) |
 | `.github/workflows/K3s-*.yml` | K3s deploy/cleanup/infra for prod (wsplaytod/playtod) + test (wstodtest/todtest) | [deployment.md](./deployment.md#k3s-workflows) |
-| `.github/workflows/Backup-*.yml` | Physical-backup deploy/cleanup/diagnose for 4 dev instances | [deployment.md](./deployment.md#backup-physical-machine-4-dev-instances) |
+| `.github/workflows/Backup-*.yml` / `Demo-*.yml` | Physical-backup deploy/cleanup/diagnose for 2 dev instances plus the always-on public demo (instance 3) | [deployment.md](./deployment.md#backup-physical-machine) |
 | `.github/workflows/EKS-*.yml` | Session-scoped EKS path (infra plan/apply/destroy, deploy, cleanup, diagnose) | [deployment.md](./deployment.md#eks-session-scoped-validation-stack) |
 | `infra/k3s/` | Active K3s Terraform, Ansible, Kustomize, Argo bootstrap | [deployment.md](./deployment.md#k3s-topology) |
 | `infra/eks/` | Session-scoped EKS Terraform + Kustomize apps | [deployment.md](./deployment.md#eks-session-scoped-validation-stack) |

@@ -56,7 +56,7 @@ The archive holds the gateway's live ACME account key and TLS private key: both 
 
 ## K3s workflows
 
-All manual `workflow_dispatch` only — K3s has no automated/push-triggered path (that exists only for the physical backup's `devwstod1`/`devtod1` instances — see [Backup](#backup-physical-machine-4-dev-instances)).
+All manual `workflow_dispatch` only — K3s has no automated/push-triggered path (that exists only for the physical backup's `devwstod1`/`devtod1` instances — see [Backup](#backup-physical-machine)).
 
 | Workflow | Behavior |
 |---|---|
@@ -153,29 +153,33 @@ No bastion, SSH, Ansible, or Caddy on this path: the ALB terminates TLS directly
 
 **One-time manual setup, before the first apply (cannot be done by any workflow):** expand `AWS_ROLE_ARN`'s IAM permissions for EKS/ElastiCache/ELB/NAT/OIDC (CI cannot grant itself permissions); create AWS Budgets alerts at $20/$40/$50; resolve an operator IAM role ARN (not an assumed-role ARN) into the `EKS_OPERATOR_PRINCIPAL_ARN` secret, which grants `kubectl` cluster-admin via an EKS access entry; run `EKS-Shared-Infra-Apply.yml` once. The two Cloudflare CNAMEs (`wstodplay`, `todplay`) need no manual creation — the deploy workflows create them on first use, same as K3s's DNS step.
 
-## Backup (physical machine, 4 dev instances)
+## Backup (physical machine)
 
-A manually-operated physical machine (Linux Mint) runs four containers behind one Cloudflare Tunnel, entirely independent of K3s: two dev game servers (`devwstod1`/`devwstod2`, `wss://`, loopback ports 3001/3002) and two dev web servers (`devtod1`/`devtod2`, `https://`, loopback ports 8091/8092, `nginx:alpine`). Game servers run the unmodified `src/Server/Dockerfile` image with no Redis (`Redis_State.js`'s single-instance in-memory mode). Every hostname is one level below the zone apex, inside Cloudflare's free Universal SSL depth limit for a proxied Tunnel record — full rationale → [decisions.md](./decisions.md#physical-backup-four-dev-instances-one-shared-tunnel).
+A manually-operated physical machine (Linux Mint) runs six containers behind one shared Cloudflare Tunnel, entirely independent of K3s: two dev game servers (`devwstod1`/`devwstod2`, `wss://`, loopback ports 3001/3002), two dev web servers (`devtod1`/`devtod2`, `https://`, loopback ports 8091/8092, `nginx:alpine`), and one always-on public demo pair — `wstoddemo`/`toddemo`, instance index **3**, loopback ports 3003/8093. Game servers run the unmodified `src/Server/Dockerfile` image with no Redis (`Redis_State.js`'s single-instance in-memory mode). Every hostname is one level below the zone apex, inside Cloudflare's free Universal SSL depth limit for a proxied Tunnel record — full rationale → [decisions.md](./decisions.md#physical-backup-dev-instances-and-demo-one-shared-tunnel).
 
-**Script logic is tracked in the repo**, `scripts/backup/` — `backup-server-{up,down,status}.sh` and `backup-web-{up,down,status}.sh`, each taking an instance argument (`1` or `2`). Only credentials and per-run state stay off the repo, in `$CORP_TOWER_BACKUP_STATE_DIR` (default `~/corp-tower-server-backup`, kept out-of-repo because `actions/checkout`'s clean step would otherwise wipe it every CI run): `.env.backup` (indexed schema — `WS1_DOMAIN`/`WS1_PORT` … `WEB2_BUILD_SHA`; template `scripts/backup/.env.backup.example`), `web-content-1/`, `web-content-2/`, and the Cloudflare Tunnel's own config/credentials. `stop_cloudflared_if_idle` (`backup-common.sh`) only stops the shared tunnel once **all four** containers are down, so tearing one down never cuts off the other three.
+**The demo differs from the dev instances in four ways**, all resolved from the instance index: `CORP_TOWER_BOTS_ENABLED=true` (server fills every seat — [gameplay.md § Bot behavior](./gameplay.md#bot-behavior)), `CORP_TOWER_DEBUG_UI=false`, `CORP_TOWER_DEMO_MODE=true` (the client's bots-disclosure label — [ui.md](./ui.md#godot-client-app-shell)), and its own deploy/cleanup dispatchers (`Demo-Deploy.yml`/`Demo-Cleanup.yml`) that carry no push trigger, so a routine push can never redeploy it.
 
-Client endpoint config for `devtod1`/`devtod2` is written by `scripts/write-endpoint-config.sh` before each build — each instance points its `PRIMARY` at its own game instance and `FAILOVER` at the other (`devwstod1`↔`devwstod2`), with the debug UI enabled.
+**Script logic is tracked in the repo**, `scripts/backup/` — `backup-server-{up,down,status}.sh` and `backup-web-{up,down,status}.sh`, each taking an instance argument (`1`, `2`, or `3`). Only credentials and per-run state stay off the repo, in `$CORP_TOWER_BACKUP_STATE_DIR` (default `~/corp-tower-server-backup`, kept out-of-repo because `actions/checkout`'s clean step would otherwise wipe it every CI run): `.env.backup` (indexed schema — `WS1_DOMAIN`/`WS1_PORT` … `WEB3_BUILD_SHA`; template `scripts/backup/.env.backup.example`), `web-content-1/`, `web-content-2/`, and the Cloudflare Tunnel's own config/credentials. `stop_cloudflared_if_idle` (`backup-common.sh`) only stops the shared tunnel once **all six** containers are down — with the demo always running, this now means the tunnel effectively never stops on its own.
+
+Client endpoint config for `devtod1`/`devtod2` is written by `scripts/write-endpoint-config.sh` before each build — each instance points its `PRIMARY` at its own game instance and `FAILOVER` at the other (`devwstod1`↔`devwstod2`), with the debug UI enabled. `toddemo` instead points `PRIMARY` at `wstoddemo` and `FAILOVER` at `devwstod1` — free resilience only when instance 1 happens to be up, not a guarantee.
 
 | Workflow | Trigger | Behavior |
 |---|---|---|
-| `Backup-Diagnose.yml` | Manual | Runs all four `*-status.sh` scripts plus `cloudflared` service/tunnel state |
-| `Backup-Deploy-Game-Server.yml` / `Backup-Cleanup-Game-Server.yml` | Reusable cores, `target: devwstod1\|devwstod2` | Up/down via the matching `backup-server-*.sh <instance>` |
-| `Backup-Deploy-Web-Server.yml` / `Backup-Cleanup-Web-Server.yml` | Reusable cores, `target: devtod1\|devtod2` | Build the Web export (`fetch-private-assets` + `build-godot-web`), deploy via `backup-web-*.sh <instance>` |
-| `Backup-Deploy-All.yml` | **Auto** (push to `src/Server/**` and/or the client/build-input paths below) or manual (`deploy_target` choice `All\|Game only\|Web only` × `instance` choice `1\|2\|all`) | On push, diffs `github.event.before`..`github.sha` to deploy only the service(s) whose paths actually changed, always targeting instance 1 for that service, each guarded: skipped if that instance's container isn't currently running, so a routine push never silently un-stands-down it. Manual dispatch ignores the changed-paths check and runs `deploy_target`/`instance` directly, unguarded |
+| `Backup-Diagnose.yml` | Manual | Runs all six `*-status.sh` scripts plus `cloudflared` service/tunnel state |
+| `Backup-Deploy-Game-Server.yml` / `Backup-Cleanup-Game-Server.yml` | Reusable cores, `target: devwstod1\|devwstod2\|wstoddemo` | Up/down via the matching `backup-server-*.sh <instance>` |
+| `Backup-Deploy-Web-Server.yml` / `Backup-Cleanup-Web-Server.yml` | Reusable cores, `target: devtod1\|devtod2\|toddemo` | Build the Web export (`fetch-private-assets` + `build-godot-web`), deploy via `backup-web-*.sh <instance>`; resolves `debug_ui`/`demo_mode` from the target name |
+| `Backup-Deploy-All.yml` | **Auto** (push to `src/Server/**` and/or the client/build-input paths below) or manual (`deploy_target` choice `All\|Game only\|Web only` × `instance` choice `1\|2\|all`) | On push, diffs `github.event.before`..`github.sha` to deploy only the service(s) whose paths actually changed, always targeting instance 1 for that service, each guarded: skipped if that instance's container isn't currently running, so a routine push never silently un-stands-down it. Manual dispatch ignores the changed-paths check and runs `deploy_target`/`instance` directly, unguarded. Instance `3` is deliberately not a choice here — see `Demo-Deploy.yml` below |
 | `Backup-Cleanup-All.yml` | Manual, `cleanup_target` choice `All\|Game only\|Web only` × `instance` choice `1\|2\|all`, gated by a typed `confirm_cleanup` phrase specific to the chosen combination (printed to the run summary) | Stop/stand-down the container(s); DNS record(s) left in place pointing at the idle tunnel |
+| `Demo-Deploy.yml` / `Demo-Cleanup.yml` | Manual only, no push trigger. `deploy_target`/`cleanup_target` choice `All\|Game only\|Web only`; cleanup gated by a typed `confirm_cleanup` phrase | Deploy/stand down `wstoddemo`/`toddemo` specifically — kept structurally off the push path since the demo is meant to stay up unattended |
 
 None of these workflows has a `pull_request`/`pull_request_target` trigger, matching every other workflow in this (public) repo — required, since a self-hosted runner would otherwise let any external contributor's PR execute code on the physical machine. Only collaborators with repo write access can dispatch these.
 
 ### Operational runbook (backup)
 
-1. **Bring an instance up:** dispatch `Backup Deploy All` with `deploy_target`/`instance` narrowed to what's needed (or the matching `scripts/backup/backup-{server,web}-up.sh <instance>` directly on the machine).
-2. **Check state (read-only, any time):** `Backup Diagnose`, or `scripts/backup/backup-{server,web}-status.sh <instance>` on the machine.
-3. **Stand down:** dispatch `Backup Cleanup All` with its typed `confirm_cleanup` phrase.
+1. **Bring a dev instance up:** dispatch `Backup Deploy All` with `deploy_target`/`instance` narrowed to what's needed (or the matching `scripts/backup/backup-{server,web}-up.sh <instance>` directly on the machine).
+2. **Redeploy the demo:** dispatch `Demo Deploy` with `deploy_target` narrowed to what's needed — `Backup Deploy All` doesn't reach instance 3.
+3. **Check state (read-only, any time):** `Backup Diagnose`, or `scripts/backup/backup-{server,web}-status.sh <instance>` on the machine.
+4. **Stand down a dev instance:** dispatch `Backup Cleanup All` with its typed `confirm_cleanup` phrase. **Stand down the demo:** dispatch `Demo Cleanup` with its own typed phrase.
 
 ## Deprecated: Docker EC2 staging
 
