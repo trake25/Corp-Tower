@@ -1,0 +1,36 @@
+---
+interface Props {
+  tags: string[];
+}
+
+const { tags } = Astro.props;
+---
+
+<div class="filter" role="group" aria-label="Filter cards by role">
+  <button type="button" data-filter="all" aria-pressed="true">All</button>
+  {tags.map((tag) => (
+    <button type="button" data-filter={tag} aria-pressed="false">{tag}</button>
+  ))}
+</div>
+
+<script>
+  const filterEl = document.querySelector<HTMLElement>(".filter");
+  const cards = Array.from(document.querySelectorAll<HTMLElement>(".card"));
+
+  filterEl?.addEventListener("click", (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-filter]");
+    if (!button) return;
+
+    const selected = button.dataset.filter ?? "all";
+
+    filterEl.querySelectorAll<HTMLButtonElement>("button[data-filter]").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b === button));
+    });
+
+    for (const card of cards) {
+      const cardTags = (card.dataset.tags ?? "").split(",");
+      const show = selected === "all" || cardTags.includes(selected);
+      card.hidden = !show;
+    }
+  });
+</script>

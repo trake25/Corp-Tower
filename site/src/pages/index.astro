@@ -1,0 +1,65 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import TopologyDiagram from "../components/TopologyDiagram.astro";
+import CardFilter from "../components/CardFilter.astro";
+import Card from "../components/Card.astro";
+
+const cardEntries = (await getCollection("cards")).sort((a, b) => a.data.order - b.data.order);
+const uniqueTags = [...new Set(cardEntries.flatMap((entry) => entry.data.tags))];
+
+const rendered = await Promise.all(
+  cardEntries.map(async (entry) => ({ entry, Content: (await entry.render()).Content }))
+);
+---
+
+<BaseLayout
+  title="Corp Tower — Engineering Portfolio"
+  description="A 3-player real-time tower-building game, and the engineering decisions behind it — cloud, DevOps, QA, backend, frontend, and AI, each with a plain-English summary and the reasoning underneath."
+>
+  <main>
+    <section class="hub">
+      <h1>One project, six ways to read the engineering.</h1>
+      <p class="intro">
+        Corp Tower is a 3-player real-time tower-building game. Every card below
+        answers one question — <em>why this way, and not the other way</em> —
+        from a different role's point of view. Every language here is one I can
+        read fluently: Node.js on the server, GDScript in the client. When a
+        coding agent can't solve something, I have to be able to take over —
+        that's a deliberate choice against picking whatever's fastest to
+        generate.
+      </p>
+      <p class="stack-line">
+        Node.js · GDScript / Godot · Redis · Terraform · K3s · EKS · GitHub Actions · Cloudflare
+      </p>
+
+      <div class="diagram-wrap">
+        <TopologyDiagram />
+      </div>
+
+      <div class="ctas">
+        <a class="cta primary" href="https://toddemo.galaxxigames.com" target="_blank" rel="noopener noreferrer">
+          Play it
+        </a>
+        <span class="cta secondary" aria-disabled="true">Watch the cluster — coming soon</span>
+      </div>
+      <p class="disclosure">
+        The demo fills empty seats with bots so a lone visitor still gets a full round. The real game is three human players.
+      </p>
+    </section>
+
+    <CardFilter tags={uniqueTags} />
+
+    <div class="cards">
+      {rendered.map(({ entry, Content }) => (
+        <Card role={entry.data.role} plain={entry.data.plain} tags={entry.data.tags}>
+          <Content />
+        </Card>
+      ))}
+    </div>
+  </main>
+
+  <footer>
+    <p>Source: this repo. Every claim above links back to the code and CI that back it up.</p>
+  </footer>
+</BaseLayout>

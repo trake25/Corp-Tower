@@ -38,8 +38,7 @@ scripts/backup/.env.backup
 # CI-downloaded web build artifact staged as the docker/web Docker build context
 docker/web/web/
 
-# Portfolio site (Astro)
-site/
+# Portfolio site (Astro) — build artifacts only, source is tracked
 site/node_modules/
 site/dist/
 site/.astro/

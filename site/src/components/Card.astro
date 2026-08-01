@@ -1,0 +1,19 @@
+---
+interface Props {
+  role: string;
+  plain: string;
+  tags: string[];
+}
+
+const { role, plain, tags } = Astro.props;
+---
+
+<details class="card" data-tags={tags.join(",")}>
+  <summary>
+    <span class="role-tag">{role}</span>
+  </summary>
+  <p class="plain">{plain}</p>
+  <div class="expanded">
+    <slot />
+  </div>
+</details>
