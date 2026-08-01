@@ -110,6 +110,7 @@ Neither shape is added to `GameUI.tscn` directly — each declares the nodes it 
 
 - Prefer GitHub Actions for Terraform validation/planning over local manual Terraform runs.
 - Shared composite actions (`terraform-backend-bootstrap`, `aws-terraform-setup`, `resolve-ssh-key`, `terraform-validate-plan`) back every Terraform workflow (K3s Plan/Apply/Cleanup, EKS Plan) — extend those rather than re-implementing per workflow.
+- A step-scoped `env:` value doesn't carry to later steps — only `$GITHUB_ENV` does. A later step that reads a secret-derived variable another step already resolved needs its own `env:` block (or the earlier step must persist it to `$GITHUB_ENV`), or `set -u` scripts fail with an unbound-variable error.
 
 ## Formatting conventions used across these docs
 

@@ -64,6 +64,18 @@ Scope: why things are built the way they are — rationale, tradeoffs, rejected 
 **Rejected:** an AWS Load Balancer Controller + IRSA + `TargetGroupBinding` for target registration → adds a Helm install and IRSA wiring this validation phase doesn't need; `target_type=instance` NodePorts registered via `aws_autoscaling_attachment` reuse the same NodePort numbers K3s already standardizes on, with zero extra controllers.
 **Consequence:** every session pays ~15min apply / ~14min destroy in AWS-side latency (control plane + node group create/delete) that no workflow change can shorten.
 
+## EKS node security group must carry its own control-plane and self-referencing rules
+**Now:** the node launch template sets `vpc_security_group_ids` to a single custom `nodes` SG (`infra/eks/terraform/security_group.tf`), so three ingress rules exist explicitly: node→control-plane (443) and control-plane→node (1025-65535) against `aws_eks_cluster.main.vpc_config[0].cluster_security_group_id`, plus a self-referencing all-traffic rule on `nodes` itself.
+**Why:** specifying any custom SG on the launch template replaces, not extends, EKS's default automatic node↔control-plane and node↔node SG wiring — opting out is silent, with no error at apply time.
+**Rejected:** relying on the default reciprocal trust → node group creation hangs then fails with no diagnostic pointing at the SG; the self-referencing rule specifically is easy to miss because its absence still lets the cluster come up — it only drops cross-node pod traffic (CoreDNS replicas, cross-node service routing), surfacing as intermittent `getaddrinfo EAI_AGAIN`/connection-timeout on whichever pod's DNS query lands on the other node.
+**Consequence:** any future custom node SG (new node group, different launch template) must re-add all three rules; there's no way to inherit them.
+
+## EKS Infra Destroy verifies orphans against live EC2, not the tagging API alone
+**Now:** the post-destroy orphan check (`EKS-Infra-Destroy.yml`) cross-verifies every ARN the Resource Groups Tagging API still lists against a direct `describe-*` call for that resource type before failing the run.
+**Why:** the tagging API is a separate, eventually-consistent search index that can keep listing a resource's ARN for minutes after the resource is actually deleted — worse for NAT Gateways, which linger in a `deleting` state before fully gone.
+**Rejected:** a bare retry loop against the tagging API alone → observed lag outlasted a 2.5-minute/5-attempt retry window with the same stale ARNs on every attempt, so it was never going to clear on its own.
+**Consequence:** any future orphan-resource check needs the same live cross-verification, or it will false-fail a clean destroy.
+
 ## Argo CD prepared but not enabled
 **Now:** bootstrap manifests exist (`infra/k3s/argocd/bootstrap`), covering both `corp-tower-prod`/`corp-tower-test`; nothing installs or applies them.
 **Why:** enablement waits on install → one manual sync → a passing rollback test, and only then automated prune/self-heal. `GITHUB_TOKEN` is not a suitable long-lived Argo CD repo credential for private repos; a persistent repo-read credential is needed instead.

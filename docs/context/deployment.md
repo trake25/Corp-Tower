@@ -131,17 +131,19 @@ K3s workflows reuse the existing GitHub `staging` Environment rather than duplic
 
 Own dedicated hostnames — `wstodplay.galaxxigames.com` (game), `todplay.galaxxigames.com` (web) — so a session never touches K3s's four live records. Only the prod pair is deployed; `eks-test` overlays are committed but not wired to any workflow. Apply-ready but not always-on → [decisions.md](./decisions.md#eks-kept-session-scoped-not-always-on).
 
-**Topology:** Cloudflare CNAME → ALB `:443` (HTTPS, ACM wildcard `*.galaxxigames.com`, host-based routing, `idle_timeout=300`) → two target groups (`target_type=instance` on the existing NodePorts — 30300 game, 30310 web — registered via `aws_autoscaling_attachment`, no Load Balancer Controller) → managed node group (2× `t3.small`, private subnets, NAT egress, dedicated node security group) → `corp-tower-server`/`corp-tower-web` pods → ElastiCache Redis over `rediss://`. Game target group health matcher is `426` (`ws` answers a plain `GET /` with Upgrade Required); web is `200`. No in-cluster Redis on EKS — ElastiCache replaces it entirely; K3s keeps its own.
+**Topology:** Cloudflare CNAME → ALB `:443` (HTTPS, ACM wildcard `*.galaxxigames.com`, host-based routing, `idle_timeout=300`) → two target groups (`target_type=instance` on the existing NodePorts — 30300 game, 30310 web — registered via `aws_autoscaling_attachment`, no Load Balancer Controller) → managed node group (2× `t3.small`, private subnets, NAT egress, dedicated node security group whose launch template opts it out of EKS's default SG wiring — see [decisions.md](./decisions.md#eks-node-security-group-must-carry-its-own-control-plane-and-self-referencing-rules)) → `corp-tower-server`/`corp-tower-web` pods → ElastiCache Redis over `rediss://`. Game target group health matcher is `426` (`ws` answers a plain `GET /` with Upgrade Required); web is `200`. No in-cluster Redis on EKS — ElastiCache replaces it entirely; K3s keeps its own.
 
 **Kubernetes:** `infra/eks/apps/corp-tower/{base,web-base}` mirror the K3s bases minus the Redis manifests; `overlays/{eks-prod,eks-test}/{game,web}` mirror K3s's namespace/NodePort split (`corp-tower-prod`/`corp-tower-test`, NodePorts 30300/30301 game, 30310/30311 web).
 
 | Workflow | Behavior |
 |---|---|
 | `EKS-Infra-Plan.yml` | Plan only (renamed from `Server-EKS-Infra-Plan.yml`) |
-| `EKS-Infra-Apply.yml` / `EKS-Infra-Destroy.yml` | Typed `APPLY_EKS` / `DESTROY_EKS`; destroy also fails if any `Stack=server-eks`-tagged resource survives |
+| `EKS-Infra-Apply.yml` / `EKS-Infra-Destroy.yml` | Typed `APPLY_EKS` / `DESTROY_EKS`; destroy also fails if any `Stack=server-eks`-tagged resource is still live, cross-verified against the actual EC2 API rather than trusting the tagging API alone → [decisions.md](./decisions.md#eks-infra-destroy-verifies-orphans-against-live-ec2-not-the-tagging-api-alone) |
+| `EKS-Force-Unlock.yml` | Manual, clears a stuck Terraform S3-native state lock (no auto-expiry) left by a cancelled/crashed run, using the Lock ID from that run's error output |
 | `EKS-Infra-Auto-Destroy.yml` | Scheduled ~18:00 UTC daily, no-ops if no cluster exists — the control that actually acts, since AWS Budgets alerts lag 8-24h |
 | `EKS-Shared-Infra-Apply.yml` | One-time apply of the persistent ACM/Cloudflare root |
-| `EKS-Deploy-Game-Server.yml` / `EKS-Deploy-Web-Server.yml` / `EKS-Deploy-All.yml` | Test → build → push ECR → `aws eks update-kubeconfig` → `kubectl apply` → Cloudflare CNAME upsert (PATCH if the record exists, POST to create it otherwise — mirrors the K3s DNS step) → WSS/HTTPS smoke test. Game deploy additionally asserts `REDIS_URL` reached the pod as `rediss://`, ElastiCache `CurrConnections` is non-zero, and an idle WebSocket survives past 60s |
+| `EKS-Deploy-Game-Server.yml` / `EKS-Deploy-Web-Server.yml` | Test → build → push ECR → `aws eks update-kubeconfig` → `kubectl apply` → Cloudflare CNAME upsert (PATCH if the record exists, POST to create it otherwise — mirrors the K3s DNS step) → WSS/HTTPS smoke test. Game deploy additionally asserts `REDIS_URL` reached the pod as `rediss://`, ElastiCache `CurrConnections` is non-zero, and an idle WebSocket survives past 60s |
+| `EKS-Deploy-All.yml` | Manual dispatcher, `deploy_target` choice `All\|Game only\|Web only`, runs the two cores above accordingly |
 | `EKS-Cleanup-Game-Server.yml` / `EKS-Cleanup-Web-Server.yml` | Delete that workload's Deployment+Service by name; namespace and cluster stay up |
 | `EKS-Infra-Diagnose.yml` | Nodes, ALB target-group health, DNS, Redis reachability |
 
