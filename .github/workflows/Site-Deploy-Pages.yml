@@ -1,0 +1,56 @@
+name: Site Deploy (Cloudflare Pages)
+
+# Builds and deploys the portfolio site at enportfolio.galaxxigames.com.
+# Independent of every game deploy path (K3s/EKS/Backup) - path-filtered to
+# site/** only, and uses its own Cloudflare token scoped to Pages:Edit,
+# never the Zone.DNS-Edit token the game's DNS updates use.
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "site/**"
+      - ".github/workflows/Site-Deploy-Pages.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: site-deploy-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build And Deploy Portfolio Site
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install dependencies
+        working-directory: site
+        run: npm ci
+
+      - name: Build site
+        working-directory: site
+        env:
+          PUBLIC_CF_ANALYTICS_TOKEN: ${{ secrets.CF_ANALYTICS_TOKEN }}
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: corp-tower-portfolio
+          directory: site/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
