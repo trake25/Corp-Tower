@@ -75,7 +75,12 @@ const flowId = `flow-${role.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
           <div class="detail-list">
             {details.map((detail) => (
               <section class="detail" data-detail-target={detail.id}>
-                <h4>{detail.title}</h4>
+                <h4>
+                  <button class="detail-jump" type="button">
+                    {detail.title}
+                    <span class="detail-jump-hint" aria-hidden="true">↑ diagram</span>
+                  </button>
+                </h4>
                 <p>{detail.body}</p>
               </section>
             ))}
@@ -106,9 +111,11 @@ const flowId = `flow-${role.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
   const cards = document.querySelectorAll<HTMLDetailsElement>(".card");
 
+  // Both halves highlight, so both have to be cleared together — otherwise a
+  // reset leaves a diagram step lit with nothing selected below it.
   const clearActive = (card: HTMLElement) => {
-    for (const target of card.querySelectorAll<HTMLElement>("[data-detail-target]")) {
-      target.classList.remove("is-active");
+    for (const marked of card.querySelectorAll<HTMLElement>(".is-active")) {
+      marked.classList.remove("is-active");
     }
   };
 
@@ -122,10 +129,35 @@ const flowId = `flow-${role.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
   for (const card of cards) {
     const toggle = card.querySelector<HTMLButtonElement>(".flow-toggle");
+    const diagram = card.querySelector<HTMLElement>(".card-diagram");
 
     toggle?.addEventListener("click", () => {
       setFlow(card, toggle.getAttribute("aria-expanded") !== "true");
     });
+
+    // The trip back: clicking a written step returns to the diagram and lights
+    // up the step it came from, so the two halves stay tied together.
+    for (const detail of card.querySelectorAll<HTMLElement>("[data-detail-target]")) {
+      const jumpToDiagram = () => {
+        if (!diagram) return;
+
+        for (const spot of card.querySelectorAll<HTMLElement>("[data-detail]")) {
+          spot.classList.toggle("is-active", spot.dataset.detail === detail.dataset.detailTarget);
+        }
+
+        diagram.scrollIntoView({ block: "center", behavior: motionOk ? "smooth" : "auto" });
+      };
+
+      detail.querySelector<HTMLButtonElement>(".detail-jump")?.addEventListener("click", jumpToDiagram);
+
+      // The whole block is clickable for convenience, but not while the reader
+      // is selecting text out of it — a drag-select ends in a click too.
+      detail.addEventListener("click", (event) => {
+        if ((event.target as HTMLElement).closest(".detail-jump")) return;
+        if ((window.getSelection()?.toString() ?? "").length > 0) return;
+        jumpToDiagram();
+      });
+    }
 
     for (const hotspot of card.querySelectorAll<HTMLElement>("[data-detail]")) {
       const reveal = (event: Event) => {

@@ -726,13 +726,48 @@ main > section:first-child {
   scroll-margin-block: 6rem;
 }
 
+.detail {
+  cursor: pointer;
+}
+
 .detail h4 {
+  margin: 0 0 0.4rem;
+}
+
+/* Looks like the heading it replaces; it is a real button so the trip back to
+   the diagram works without a pointer. */
+.detail-jump {
+  font: inherit;
   font-size: var(--step-0);
   font-weight: 650;
   letter-spacing: -0.01em;
   line-height: 1.3;
-  margin: 0 0 0.4rem;
+  text-align: left;
   color: var(--fg);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.detail-jump-hint {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--fg-faint);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.detail:hover .detail-jump-hint,
+.detail-jump:focus-visible .detail-jump-hint {
+  opacity: 1;
+  color: var(--accent);
 }
 
 .expanded .detail p {
@@ -746,8 +781,26 @@ main > section:first-child {
   background: var(--surface-hover);
 }
 
-.detail.is-active h4 {
+.detail.is-active .detail-jump {
   color: var(--accent);
+}
+
+/* The diagram step you came back from. */
+.hotspot.is-active .node {
+  stroke: var(--accent);
+  fill: var(--surface-hover);
+}
+
+.hotspot.is-active .label {
+  fill: var(--accent);
+}
+
+.hotspot.is-active .link {
+  stroke: var(--accent);
+}
+
+.hotspot.is-active .wire {
+  fill: var(--accent);
 }
 
 .expanded p,
@@ -802,6 +855,7 @@ main > section:first-child {
 .card-diagram {
   display: block;
   margin: 1.3rem 0 0;
+  scroll-margin-block: 5rem;
 }
 
 .card-diagram-scroll {

@@ -64,11 +64,19 @@ the card's `details` frontmatter. `Card.astro`'s script pairs them, reveals
 with no `details` has a non-clickable diagram and shows its write-up directly,
 which is the current state of the five unconverted cards.
 
-Because the diagram is only reachable by opening a card, and a mouse user might
-not realise the steps are clickable, there is a `.reveal-all` fallback button
-under the diagram that opens the whole write-up at once. It hides itself once
-the flow is open. Do not remove it without replacing the affordance — it is also
-the non-pointer route into that content.
+**The trip works both ways.** Clicking a written step jumps back to the diagram
+and lights up the step it came from, so the two halves stay tied together. The
+step title is a real `<button>` (`.detail-jump`) so that route works without a
+pointer; the whole block is clickable too, guarded against firing when the
+reader is selecting text out of it.
+
+Both halves share the `is-active` class and are cleared together — collapsing
+the flow or changing the filter must never leave a diagram step lit with nothing
+selected below it.
+
+Under the diagram, `.flow-toggle` opens and closes the whole write-up in both
+directions. Do not remove it without replacing the affordance — it is also the
+non-pointer route into that content for anyone who does not tab into the diagram.
 
 **Filtering is by `role`**, in the order set by `ROLE_ORDER` in
 `src/pages/index.astro` — not alphabetical, and not by the tool chips. A role in
