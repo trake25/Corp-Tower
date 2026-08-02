@@ -1,8 +1,13 @@
 ---
-// Everything in <summary> is phrasing content on purpose: <summary> only
-// permits phrasing or heading content, so the tool chips and the diagram are
-// built from <span>s made block-level in CSS. A <figure> or <div> in here is
-// invalid HTML that happens to render.
+// Three states, not two:
+//   1. Vignette  — collapsed tile: role chip + summary title only.
+//   2. Open      — short description, tools & tech, and the clickable diagram.
+//   3. Flow open — click a diagram step and the step-by-step explanations plus
+//                  the longer write-up appear, scrolled to the step you clicked.
+//
+// `links` is intentionally not rendered — the "In the repo" block was removed.
+// The data is kept in the card frontmatter so it can be brought back without
+// re-collecting two dozen URLs.
 interface CardLink {
   label: string;
   href: string;
@@ -18,103 +23,112 @@ interface Props {
   role: string;
   headline: string;
   plain: string;
-  metric: string;
-  metricLabel: string;
   tools: string[];
   details: CardDetail[];
-  links: CardLink[];
+  links?: CardLink[];
 }
 
-const { role, headline, plain, metric, metricLabel, tools, details, links } = Astro.props;
+const { role, headline, plain, tools, details } = Astro.props;
+const hasFlow = details.length > 0;
 ---
 
 <details class="card" data-role={role}>
   <summary>
-    <span class="card-head">
+    <span class="vignette">
       <span class="role-tag">{role}</span>
-      <span class="metric">
-        <span class="metric-value">{metric}</span>
-        <span class="metric-label">{metricLabel}</span>
+      <h3 class="headline">{headline}</h3>
+      <span class="toggle-hint">
+        <span class="toggle-open">Open</span>
+        <span class="toggle-close">Close</span>
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+          <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
       </span>
-    </span>
-    <h3 class="headline">{headline}</h3>
-    <span class="plain">{plain}</span>
-
-    {tools.length > 0 && (
-      <span class="card-tools">
-        <span class="card-tools-label">Tools &amp; tech</span>
-        {tools.map((tool) => <span class="tool">{tool}</span>)}
-      </span>
-    )}
-
-    <slot name="diagram" />
-
-    <span class="toggle-hint">
-      <span class="toggle-open">Read the details</span>
-      <span class="toggle-close">Collapse</span>
-      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
-        <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
     </span>
   </summary>
 
   <div class="expanded">
-    {details.length > 0 && (
-      <div class="detail-list">
-        {details.map((detail) => (
-          <section class="detail" data-detail-target={detail.id}>
-            <h4>{detail.title}</h4>
-            <p>{detail.body}</p>
-          </section>
-        ))}
-      </div>
+    <p class="plain">{plain}</p>
+
+    {tools.length > 0 && (
+      <p class="card-tools">
+        <span class="card-tools-label">Tools &amp; tech</span>
+        {tools.map((tool) => <span class="tool">{tool}</span>)}
+      </p>
     )}
 
-    <slot />
+    <slot name="diagram" />
 
-    {links.length > 0 && (
-      <div class="proof-links">
-        <span class="proof-links-label">In the repo</span>
-        <ul>
-          {links.map((link) => (
-            <li>
-              <a href={link.href} target="_blank" rel="noopener noreferrer">{link.label}</a>
-            </li>
-          ))}
-        </ul>
+    {hasFlow ? (
+      <>
+        <button class="reveal-all" type="button">
+          Or read all {details.length} steps
+        </button>
+
+        <div class="flow-details" hidden>
+          <div class="detail-list">
+            {details.map((detail) => (
+              <section class="detail" data-detail-target={detail.id}>
+                <h4>{detail.title}</h4>
+                <p>{detail.body}</p>
+              </section>
+            ))}
+          </div>
+          <div class="flow-body">
+            <slot />
+          </div>
+        </div>
+      </>
+    ) : (
+      <div class="flow-body">
+        <slot />
       </div>
     )}
   </div>
 </details>
 
 <script>
-  // Diagram hotspots live inside <summary>, where any click would normally just
-  // toggle the card. So the default is suppressed and the card is forced open
-  // instead of toggled — clicking a step should never be able to close the card
-  // you are trying to read.
+  // Diagram steps reveal the write-up rather than navigating anywhere: the flow
+  // details start hidden, the first click on any step (or on the fallback
+  // button) opens them, and the step you clicked is highlighted and scrolled to.
   const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   for (const card of document.querySelectorAll<HTMLDetailsElement>(".card")) {
+    const flow = card.querySelector<HTMLElement>(".flow-details");
+    if (!flow) continue;
+
     const targets = card.querySelectorAll<HTMLElement>("[data-detail-target]");
+    const revealAll = card.querySelector<HTMLButtonElement>(".reveal-all");
 
-    const reveal = (event: Event, hotspot: HTMLElement) => {
-      event.preventDefault();
-      event.stopPropagation();
-      card.open = true;
-
-      const wanted = hotspot.dataset.detail;
-      const target = card.querySelector<HTMLElement>(`[data-detail-target="${wanted}"]`);
-      if (!target) return;
-
-      for (const other of targets) other.classList.remove("is-active");
-      target.classList.add("is-active");
-      target.scrollIntoView({ block: "center", behavior: motionOk ? "smooth" : "auto" });
+    const clearActive = () => {
+      for (const target of targets) target.classList.remove("is-active");
     };
 
+    revealAll?.addEventListener("click", () => {
+      flow.hidden = false;
+      revealAll.hidden = true;
+      clearActive();
+    });
+
     for (const hotspot of card.querySelectorAll<HTMLElement>("[data-detail]")) {
-      hotspot.addEventListener("click", (event) => reveal(event, hotspot));
+      const reveal = (event: Event) => {
+        event.preventDefault();
+        flow.hidden = false;
+        if (revealAll) revealAll.hidden = true;
+
+        const target = card.querySelector<HTMLElement>(
+          `[data-detail-target="${hotspot.dataset.detail}"]`
+        );
+        if (!target) return;
+
+        clearActive();
+        target.classList.add("is-active");
+        target.scrollIntoView({ block: "center", behavior: motionOk ? "smooth" : "auto" });
+      };
+
+      hotspot.addEventListener("click", reveal);
       hotspot.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") reveal(event, hotspot);
+        if (event.key === "Enter" || event.key === " ") reveal(event);
       });
     }
   }

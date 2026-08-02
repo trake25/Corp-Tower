@@ -284,53 +284,6 @@ main > section:first-child {
   font-weight: 650;
 }
 
-/* --- Stats --------------------------------------------------------------- */
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  margin: 2.5rem 0;
-}
-
-.stat {
-  background: var(--surface);
-  padding: 1.25rem 1.35rem;
-}
-
-.stat dt {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.stat-value {
-  font-family: var(--font-mono);
-  font-size: var(--step-3);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  color: var(--accent);
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: var(--step--1);
-  font-weight: 600;
-  color: var(--fg);
-}
-
-.stat dd {
-  margin: 0.45rem 0 0;
-  font-size: var(--step--1);
-  color: var(--fg-faint);
-  line-height: 1.4;
-}
-
 /* --- Stack + CTAs -------------------------------------------------------- */
 
 .stack-line {
@@ -508,8 +461,12 @@ main > section:first-child {
 
 /* --- Cards --------------------------------------------------------------- */
 
+/* Closed cards tile as vignettes; an open one takes the full row so its diagram
+   has the width it needs. */
 .cards {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: start;
   gap: 1rem;
 }
 
@@ -530,6 +487,7 @@ main > section:first-child {
 }
 
 .card[open] {
+  grid-column: 1 / -1;
   border-color: var(--accent-dim);
   background: var(--surface);
 }
@@ -538,20 +496,30 @@ main > section:first-child {
   cursor: pointer;
   list-style: none;
   display: block;
-  padding: 1.5rem 1.6rem;
+  padding: 1.4rem 1.5rem;
 }
 
 .card summary::-webkit-details-marker {
   display: none;
 }
 
-.card-head {
+.vignette {
   display: flex;
-  align-items: center;
-  width: 100%;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.9rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.85rem;
+  min-height: 8.5rem;
+}
+
+.card[open] .vignette {
+  min-height: 0;
+  gap: 0.7rem;
+}
+
+/* The title is the vignette's whole payload, so it grows to fill the tile and
+   pushes the open/close hint to the bottom edge — every tile lines up. */
+.vignette .headline {
+  flex: 1;
 }
 
 .role-tag {
@@ -569,40 +537,17 @@ main > section:first-child {
   flex-shrink: 0;
 }
 
-.metric {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  text-align: right;
-  min-width: 0;
-}
-
-.metric-value {
-  font-family: var(--font-mono);
-  font-size: var(--step-1);
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  color: var(--fg);
-  line-height: 1;
-}
-
-.metric-label {
-  font-size: 0.78rem;
-  color: var(--fg-faint);
-  line-height: 1.3;
-}
-
 .card .headline {
   font-size: var(--step-1);
   font-weight: 650;
   letter-spacing: -0.015em;
-  margin: 0 0 0.7rem;
+  line-height: 1.25;
+  margin: 0;
   max-width: 46ch;
 }
 
 .card .plain {
-  display: block;
-  margin: 0;
+  margin: 0 0 1.2rem;
   font-weight: 400;
   color: var(--fg-muted);
   max-width: var(--measure);
@@ -615,7 +560,7 @@ main > section:first-child {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 1.1rem;
+  margin: 0 0 1.4rem;
 }
 
 .card-tools-label {
@@ -642,7 +587,6 @@ main > section:first-child {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 0.9rem;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.08em;
@@ -677,7 +621,37 @@ main > section:first-child {
 /* --- Expanded card body -------------------------------------------------- */
 
 .expanded {
-  padding: 0 1.6rem 1.75rem;
+  padding: 0 1.5rem 1.75rem;
+  animation: reveal 0.28s ease both;
+}
+
+/* Fallback route into the write-up for anyone who doesn't realise the diagram
+   is clickable. It hides itself once the flow is open. */
+.reveal-all {
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-bottom: 1px dashed var(--border-strong);
+  color: var(--fg-muted);
+  padding: 0 0 0.15rem;
+  margin-top: 0.3rem;
+}
+
+.reveal-all:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.flow-details[hidden] {
+  display: none;
+}
+
+.flow-details {
+  margin-top: 1.75rem;
   animation: reveal 0.28s ease both;
 }
 
@@ -692,21 +666,26 @@ main > section:first-child {
   margin-top: 0;
 }
 
-.expanded h3,
-.expanded > h4 {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--fg-faint);
-  margin: 2rem 0 0.7rem;
-  padding-top: 1.25rem;
+/* The longer write-up (Decision / Instead of / Why it matters / Proof, or the
+   QA card's plain-language equivalents). Compact on purpose — it sits under the
+   step details, so it is the third thing you read, not the first. */
+.flow-body {
+  padding-top: 1.4rem;
   border-top: 1px solid var(--border);
 }
 
-.expanded h3:first-of-type,
-.expanded > h4:first-of-type {
+.flow-body h3,
+.flow-body h4 {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin: 1.5rem 0 0.5rem;
+}
+
+.flow-body > :first-child {
   margin-top: 0;
 }
 
@@ -737,7 +716,7 @@ main > section:first-child {
   color: var(--fg);
 }
 
-.detail p {
+.expanded .detail p {
   margin: 0;
   color: var(--fg-muted);
   max-width: var(--measure);
@@ -886,65 +865,6 @@ main > section:first-child {
 
 .topology .spend-low {
   stroke-width: 1.5;
-}
-
-/* --- Proof links --------------------------------------------------------- */
-
-.proof-links {
-  margin-top: 2rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--border);
-}
-
-.proof-links-label {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--fg-faint);
-  margin-bottom: 0.75rem;
-}
-
-.proof-links ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.proof-links li {
-  padding: 0;
-  max-width: none;
-}
-
-.proof-links li::before {
-  display: none;
-}
-
-.proof-links a {
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  color: var(--fg-muted);
-  text-decoration: none;
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.35rem 0.7rem;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-.proof-links a::before {
-  content: "↗ ";
-  color: var(--accent);
-}
-
-.proof-links a:hover {
-  color: var(--fg);
-  border-color: var(--accent);
 }
 
 /* --- Services ------------------------------------------------------------ */
@@ -1099,16 +1019,6 @@ footer {
 
   .expanded {
     padding: 0 1.25rem 1.5rem;
-  }
-
-  .card-head {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-
-  .metric {
-    text-align: left;
   }
 
   .card-diagram-scroll {

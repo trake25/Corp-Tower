@@ -5,7 +5,7 @@ import CardFilter from "../components/CardFilter.astro";
 import Card from "../components/Card.astro";
 import CloudTargetsDiagram from "../components/diagrams/CloudTargetsDiagram.astro";
 import QaLoopDiagram from "../components/diagrams/QaLoopDiagram.astro";
-import { profile, stats } from "../data/profile";
+import { profile } from "../data/profile";
 
 // One showcase diagram per skill, keyed by the card's `role`. A role with no
 // entry here simply renders without one, so adding the remaining diagrams is a
@@ -15,10 +15,9 @@ const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
   QA: QaLoopDiagram,
 };
 
-// Filter buttons follow this order, not the cards' display order — AI leads
-// because it leads the job title. A role present in the cards but missing here
-// is appended rather than dropped.
-const ROLE_ORDER = ["AI", "Cloud", "DevOps", "QA", "Backend", "Frontend"];
+// Filter buttons follow this order, not the cards' display order. A role present
+// in the cards but missing here is appended rather than dropped.
+const ROLE_ORDER = ["QA", "AI", "Cloud", "DevOps", "Backend", "Frontend"];
 
 const cardEntries = (await getCollection("cards")).sort((a, b) => a.data.order - b.data.order);
 const presentRoles = [...new Set(cardEntries.map((entry) => entry.data.role))];
@@ -59,32 +58,22 @@ const rendered = await Promise.all(
         quality and cost efficiency are what I bring.
       </h1>
       <p class="lede">
-        <strong>{profile.project} ({profile.projectShort})</strong> is a real-time
-        multiplayer game I'm building: you stack pieces on a shared tower, and you need the
-        other players to keep it standing while you're trying to out-score them. The server
-        decides everything, so nobody can cheat by editing their own copy. It's
-        <strong>still in development</strong> — but there's a playable demo running right
-        now, on Android and in your browser.
+        <strong>{profile.project} ({profile.projectShort})</strong> is a real-time,
+        server-authoritative multiplayer game, currently in development. It's a
+        selfish-cooperative social game: players have to cooperate to build a tower and
+        complete each level, while still trying to outscore one another. The demo runs in
+        the browser today, with an Android build in an internal testing track and more
+        platforms to follow. I design, orchestrate, build, quality-assure and run it end to
+        end: the servers and infrastructure it runs on, the game logic, the UI integration
+        into the client, and the pipeline that ships all of it. Coding agents do a lot of
+        the implementing; I hold the requirement, the review and the sign-off.
       </p>
       <p class="lede">
-        This page isn't a finished-product pitch. It's the engineering behind the parts
-        that already work: how it gets deployed, how it gets tested, how a release reaches
-        a real app store, and how I use coding agents to do the building while I hold the
-        requirement, the checking and the sign-off. One card per skill, each with the piece
-        of {profile.projectShort} that proves it.
+        Underneath: a Godot client, a server that holds the only authoritative copy of the
+        game, and three deployment targets built from one container image — EKS for
+        production-grade infrastructure, a K3s box as the lab, and a machine at home as the
+        cost-efficient development target.
       </p>
-
-      <dl class="stats">
-        {stats.map((stat) => (
-          <div class="stat">
-            <dt>
-              <span class="stat-value">{stat.value}</span>
-              <span class="stat-label">{stat.label}</span>
-            </dt>
-            <dd>{stat.sub}</dd>
-          </div>
-        ))}
-      </dl>
 
       <p class="stack-line">
         Claude · Codex · Cursor · Git / GitHub · Linux · Terraform ·
@@ -114,7 +103,8 @@ const rendered = await Promise.all(
         <span class="section-index">01</span> Skills highlights
       </h2>
       <p class="section-intro">
-        Check how skills were demonstrated by opening the cards.
+        Check how skills were demonstrated by opening a card. Inside, click any step in
+        the diagram to jump straight to what that part of the flow actually does.
       </p>
 
       <CardFilter roles={roles} total={cardEntries.length} />
@@ -127,8 +117,6 @@ const rendered = await Promise.all(
               role={entry.data.role}
               headline={entry.data.headline}
               plain={entry.data.plain}
-              metric={entry.data.metric}
-              metricLabel={entry.data.metricLabel}
               tools={entry.data.tools}
               details={entry.data.details}
               links={entry.data.links}

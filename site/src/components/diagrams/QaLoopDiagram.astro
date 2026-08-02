@@ -2,20 +2,18 @@
 // The QA skill's showcase, and the reference implementation every other skill
 // diagram should follow.
 //
-// Three rules it establishes:
-//   1. It renders inside <summary>, so every wrapper is a <span>. A <figure> is
-//      flow content and would be invalid there.
-//   2. Each step is a `.hotspot` group carrying `data-detail`, which must match
+// Two rules it establishes:
+//   1. Each step is a `.hotspot` group carrying `data-detail`, which must match
 //      an `id` in the card's `details` frontmatter. Card.astro's script pairs
-//      them: click a step, the card opens on that step's explanation.
-//   3. It shares the `.topology` classes with every other diagram so they read
+//      them: click a step and the flow write-up opens, scrolled to that step.
+//   2. It shares the `.topology` classes with every other diagram so they read
 //      as one visual language and track the theme.
 //
 // Source facts: src/content/cards/qa.md, docs/context/testing.md.
 ---
 
-<span class="card-diagram">
-  <span class="card-diagram-scroll">
+<figure class="card-diagram">
+  <div class="card-diagram-scroll">
     <svg
       class="topology"
       viewBox="0 0 820 300"
@@ -93,8 +91,8 @@
       <text class="wire" x="15" y="254">the same rule an engineering team runs on — it does not</text>
       <text class="wire" x="15" y="270">stop applying because the builder is a machine</text>
     </svg>
-  </span>
-  <span class="card-diagram-caption">
+  </div>
+  <figcaption class="card-diagram-caption">
     Click any step to read what it means.
-  </span>
-</span>
+  </figcaption>
+</figure>

@@ -3,8 +3,6 @@ role: "Cloud"
 order: 1
 headline: "Pay for production-grade infrastructure where it changes behaviour. Refuse to pay for it anywhere else."
 plain: "The game runs on three different foundations: a production-grade AWS stack, a small cluster I keep as a lab, and one Linux box at home that serves the demo you just played. Same container image on all three — what's different between them is the whole point."
-metric: "Per session"
-metricLabel: "how long production exists"
 tools:
   - "Terraform"
   - "AWS (EKS, EC2, ElastiCache)"

@@ -29,41 +29,55 @@ means changing `src/content/cards/cloud.md`, its diagram in
 
 The cards section is **Skills highlights** (`#skills`), one card per skill.
 **`src/content/cards/qa.md` is the approved reference**; the other five follow
-it as their content gets rewritten. The shape:
+it as their content gets rewritten.
 
-| Part | Where it comes from | Shown |
+**A card has three states, not two:**
+
+1. **Vignette** — collapsed tile. Role chip and summary title only. Cards tile
+   into a responsive grid in this state.
+2. **Open** — short description, Tools & tech chips, and the clickable diagram.
+   An open card sets `grid-column: 1 / -1` so it takes the full row and the
+   diagram gets the width it needs.
+3. **Flow open** — clicking any diagram step reveals the step-by-step
+   explanations plus the longer write-up, scrolled to the step you clicked.
+
+| Part | Frontmatter | Appears in state |
 |---|---|---|
-| Role chip | `role` | collapsed |
-| Headline (summary title) | `headline` | collapsed |
-| Short description | `plain` | collapsed |
-| Metric | `metric` / `metricLabel` | collapsed |
-| Tools & tech chips | `tools` | collapsed |
-| Diagram | the component registered for that `role` | collapsed |
-| Step-by-step explanations | `details[]` | expanded |
-| Longer reasoning | the markdown body | expanded |
-| Repo links | `links[]` | expanded |
+| Role chip | `role` | 1 |
+| Summary title | `headline` | 1 |
+| Short description | `plain` | 2 |
+| Tools & tech chips | `tools` | 2 |
+| Diagram | the component registered for that `role` | 2 |
+| Step explanations | `details[]` | 3 |
+| Longer write-up | the markdown body | 3 |
 
-**The diagram lives in the collapsed card, not the expanded one.** That is why
-every wrapper in a diagram component is a `<span>`: `<summary>` accepts only
-phrasing or heading content, so a `<figure>` or `<div>` in there is invalid HTML
-that happens to render.
+**`links[]` is deliberately not rendered.** The "In the repo" block was removed
+from the card. The data is still in the frontmatter and still validated by the
+schema, kept so two dozen curated URLs don't have to be re-collected if it comes
+back. `Card.astro` says so at the top — if you decide it is never returning,
+delete the field from `config.ts` and all six cards together.
 
-**Clicking a diagram step opens the card on that step.** Each hotspot is a
+**Clicking a diagram step opens the write-up.** Each hotspot is a
 `<g class="hotspot" data-detail="…">` whose `data-detail` must match an `id` in
-the card's `details` frontmatter. `Card.astro`'s script pairs them, and it forces
-`open = true` rather than toggling — clicking a step must never be able to close
-the card you are trying to read. A card with no `details` simply has a
-non-clickable diagram.
+the card's `details` frontmatter. `Card.astro`'s script pairs them, reveals
+`.flow-details`, highlights the matching `.detail` and scrolls to it. A card
+with no `details` has a non-clickable diagram and shows its write-up directly,
+which is the current state of the five unconverted cards.
 
-Known trade-off: the hotspots are interactive elements inside `<summary>`, which
-is itself interactive. That nesting is deliberate here; it is mitigated with
-`role="button"`, `tabindex="0"`, an `aria-label` per step, and an Enter/Space
-handler, so the steps are reachable without a mouse.
+Because the diagram is only reachable by opening a card, and a mouse user might
+not realise the steps are clickable, there is a `.reveal-all` fallback button
+under the diagram that opens the whole write-up at once. It hides itself once
+the flow is open. Do not remove it without replacing the affordance — it is also
+the non-pointer route into that content.
 
 **Filtering is by `role`**, in the order set by `ROLE_ORDER` in
-`src/pages/index.astro` (AI first, matching the job title) — not alphabetical,
-and not by the tool chips. A role in the cards but missing from `ROLE_ORDER` is
-appended rather than dropped.
+`src/pages/index.astro` — not alphabetical, and not by the tool chips. A role in
+the cards but missing from `ROLE_ORDER` is appended rather than dropped.
+
+**There is no stat strip and no per-card metric.** Both were removed: the hero
+strip duplicated what the cards already prove, and the per-card metric competed
+with the summary title for the same glance. `profile.ts` no longer exports
+`stats`, and `metric`/`metricLabel` are gone from the schema.
 
 ### Registering a diagram
 
@@ -92,6 +106,8 @@ one page from fighting each other:
   the QA one is the reject-and-loop cycle, the Cloud one plots spend over a week
   so bar thickness reads as cost rate. If it only restates the headline, it is
   not earning its space.
+- **Every step that has a `details[]` entry needs a `.hotspot` group**, and vice
+  versa. A mismatch fails silently: the click does nothing.
 - There is no longer a standalone topology section. It was removed in favour of
   per-skill diagrams; `TopologyDiagram.astro` is deleted and lives in git
   history if the old three-target drawing is ever wanted back.
@@ -112,7 +128,7 @@ around it. This README is this directory's own entry point instead.
 |---|---|
 | 0 — Ship the shell | **Done.** Domain resolves, push redeploys via CI, confirmed working, no known functional/UI issues. |
 | 1 — Demo instance (`toddemo`) | **Done.** Live, playable, bots disclosed. |
-| 2 — Copy | **QA card approved; five to go.** Done: renamed to TOD, job title AI-Automation-first, section renamed to Skills highlights, the three targets reframed (EKS production / K3s lab / backup dev+demo), the stat strip rewritten from inventory counts to outcomes, the hero reframed around a game *in development with a playable demo* rather than a finished product, and `qa.md` rewritten in plain language to the approved card shape. **Still open:** `cloud.md`, `devops.md`, `backend.md`, `frontend.md` and `ai.md` still use the old Decision/Instead of/Why it matters/Proof body and have no `details[]`; en-GB/en-US spelling is mixed within single files. |
+| 2 — Copy | **QA card approved; five to go.** Cards now open as vignettes → open → flow. Done: renamed to TOD, job title AI-Automation-first, section renamed to Skills highlights, the three targets reframed (EKS production / K3s lab / backup dev+demo), the stat strip rewritten from inventory counts to outcomes, the hero reframed around a game *in development with a playable demo* rather than a finished product, and `qa.md` rewritten in plain language to the approved card shape. **Still open:** `cloud.md`, `devops.md`, `backend.md`, `frontend.md` and `ai.md` still use the old Decision/Instead of/Why it matters/Proof body and have no `details[]`; en-GB/en-US spelling is mixed within single files. |
 | 3 — Evidence | **2 of 6 diagrams done, recording pending.** `CloudTargetsDiagram` and `QaLoopDiagram` are live inside their cards; DevOps, Backend, Frontend and AI still have none. The EKS lifecycle recording (apply → deploy → smoke tests → play a round → destroy) is still unrecorded — manual OBS/FFmpeg work, planned for a separate session. |
 | 4 — QA | **Confirmed working**, no known functional/UI issues as of the last check. Formal breakpoint/cross-browser sweep hasn't been separately logged. |
 
@@ -129,7 +145,7 @@ the card links point into it. Nothing on the site hardcodes either name except
 | Name, job title, project name, OG-image strings | `src/data/profile.json` — read by both the site and `tools/generate-og.mjs`, which is why it's JSON and not TypeScript |
 | Hook line, intro paragraph, stack line, CTA text, demo-disclosure line | `src/pages/index.astro` |
 | The six cards | `src/content/cards/*.md` — one file per role (`cloud.md`, `devops.md`, `qa.md`, `backend.md`, `frontend.md`, `ai.md`). Adding a role or card is a content change, not a layout change — the filter and grid derive from whatever's in this directory. See the card anatomy above. |
-| A card's tool chips | that card's `tools` — what the skill was actually built with, shown collapsed. These are receipts, not filters; filtering is by `role`. |
+| A card's tool chips | that card's `tools` — what the skill was actually built with. These are receipts, not filters; filtering is by `role`. |
 | A card's step-by-step explanations | that card's `details[]` — each `id` must match a `data-detail` hotspot in the card's diagram |
 | Filter button order | `ROLE_ORDER` in `src/pages/index.astro` |
 | A skill's showcase diagram | `src/components/diagrams/<Skill>Diagram.astro` — raw SVG, labels are plain `<text>` elements. Register it in the `diagrams` map in `src/pages/index.astro`. |

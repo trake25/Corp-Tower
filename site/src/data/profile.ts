@@ -22,22 +22,3 @@ export const profile = {
     "Open to platform / DevOps roles, and to contract work automating delivery pipelines and agent-assisted workflows.",
 } as const;
 
-// Each tile states an outcome, not an inventory count — the raw number lives
-// in the sub-line where it belongs as evidence.
-export const stats = [
-  {
-    value: "$0",
-    label: "idle cloud spend",
-    sub: "the production stack exists only while it is in use",
-  },
-  {
-    value: "0",
-    label: "manual deploy steps",
-    sub: "34 workflows own every path to every target",
-  },
-  {
-    value: "1",
-    label: "image, 3 targets",
-    sub: "production, lab and dev run the identical build",
-  },
-] as const;

@@ -3,8 +3,6 @@ role: "QA"
 order: 3
 headline: "Whoever builds it is the worst person to judge it"
 plain: "I work with an AI coding agent the way a tester works with a developer. I write down what \"finished\" means before it starts, it builds, I check it and send it back with specifics, and we go around again until nothing is left over. The write-up comes last."
-metric: "0"
-metricLabel: "work approved by whoever built it"
 tools:
   - "GitHub Actions"
   - "Node.js test runner"

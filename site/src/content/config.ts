@@ -7,8 +7,6 @@ const cards = defineCollection({
     order: z.number(),
     headline: z.string(),
     plain: z.string(),
-    metric: z.string(),
-    metricLabel: z.string(),
     tools: z.array(z.string()).default([]),
     // One entry per clickable element in the card's diagram. `id` must match the
     // `data-detail` on the diagram hotspot — that pairing is what turns a click
