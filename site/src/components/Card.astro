@@ -31,6 +31,9 @@ const { role, headline, plain, metric, metricLabel, tags, links } = Astro.props;
     </span>
     <h3 class="headline">{headline}</h3>
     <span class="plain">{plain}</span>
+    <span class="card-topics">
+      {tags.map((tag) => <span class="topic">{tag}</span>)}
+    </span>
     <span class="toggle-hint">
       <span class="toggle-open">Read the reasoning</span>
       <span class="toggle-close">Collapse</span>

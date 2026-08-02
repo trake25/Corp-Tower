@@ -2,9 +2,23 @@
 
 Astro static site, deployed to Cloudflare Workers (Static Assets), live at
 **`https://enportfolio.galaxxigames.com`**. Six role-tagged case-study cards
-over the Corp Tower project — Cloud, DevOps, QA, Backend, Frontend, AI — each
-with a plain-English collapsed summary and an expanded engineering
-rationale.
+over the project — Cloud, DevOps, QA, Backend, Frontend, AI — each with a
+plain-English collapsed summary and an expanded engineering rationale.
+
+**The project is called _Top or Drop_ (TOD) on this site.** The repository
+still carries the working name `Corp-Tower`, and deliberately keeps it: every
+`links[].href` in the cards points at real files under that name. The site-side
+name lives in `src/data/profile.json` (`project` / `projectShort`) and is
+referenced everywhere else, so a future rename is one edit. The footer states
+the mismatch explicitly so a visitor clicking through to GitHub isn't confused.
+
+**The three deployment targets are not presented as equals**, and the copy
+depends on that framing: **EKS** is the production-grade target, **K3s** is the
+lab where things get tested and learned, and the **physical backup machine** is
+the cost-efficient development target — which also serves the public demo, so
+the hero discloses that its latency isn't production's. Changing that framing
+means changing `src/content/cards/cloud.md`, `TopologyDiagram.astro`, the
+hero ledes and the figure caption together.
 
 **Source of truth for intent/rationale:** `plan/corp-tower-portfolio-plan-v2.md`
 (the site as a whole) and `plan/corp-tower-demo-instance-plan.md` (the
@@ -22,23 +36,24 @@ around it. This README is this directory's own entry point instead.
 |---|---|
 | 0 — Ship the shell | **Done.** Domain resolves, push redeploys via CI, confirmed working, no known functional/UI issues. |
 | 1 — Demo instance (`toddemo`) | **Done.** Live, playable, bots disclosed. |
-| 2 — Copy | **Cards are in place but not final.** Content and overall UI look need a refinement pass — planned for a separate session, not blocking. |
+| 2 — Copy | **Partly refined.** One pass done: renamed to TOD, job title reordered to AI-Automation-first, "Decisions" renamed to "Trade-offs" throughout, the three targets reframed (EKS production / K3s lab / backup dev+demo), the stat strip rewritten from inventory counts to outcomes, the Cloud card rewritten, and the filter retagged onto cross-cutting topics. **Still open:** the remaining five card bodies, the `ai.md` card has no Proof section, `qa.md`'s fourth heading is a sentence where the others are one word, and en-GB/en-US spelling is mixed within single files. |
 | 3 — Evidence | **Diagram done, recording pending.** The hand-authored SVG topology diagram is live on the hub. The EKS lifecycle recording (apply → deploy → smoke tests → play a round → destroy) is still unrecorded — manual OBS/FFmpeg work, planned for a separate session. The "Watch the cluster" CTA is a disabled placeholder until that clip exists. |
 | 4 — QA | **Confirmed working**, no known functional/UI issues as of the last check. Formal breakpoint/cross-browser sweep hasn't been separately logged. |
 
-**Open naming question:** the project's dev name is "Corp Tower"; the
-production name is undecided, with **TOD** as the leading candidate. Nothing
-has been renamed yet. If/when it's decided, three files carry the "Corp
-Tower" branding and need one pass together: `src/layouts/BaseLayout.astro`
-(`<title>`/meta description), `src/pages/index.astro` (`<h1>`/intro), and
-`src/components/TopologyDiagram.astro` (SVG `<title>`/`<desc>`).
+**Naming — settled for the site, not for the repo.** The site says *Top or
+Drop (TOD)* everywhere, sourced from `src/data/profile.json`. The repository,
+its paths and its workflows are still `Corp-Tower` and are not being renamed:
+the card links point into it. Nothing on the site hardcodes either name except
+`profile.json` and `profile.ts`'s `repo`.
 
 ## Content map — where to edit what
 
 | What | File |
 |---|---|
-| Hook line, intro paragraph, stack line, CTA text, bot-disclosure line | `src/pages/index.astro` |
-| The six cards (plain summary + Decision/Instead of/For/Proof) | `src/content/cards/*.md` — one file per role (`cloud.md`, `devops.md`, `qa.md`, `backend.md`, `frontend.md`, `ai.md`). Adding a role or card is a content change, not a layout change — the filter/grid derive from whatever's in this directory. |
+| Name, job title, project name, OG-image strings | `src/data/profile.json` — read by both the site and `tools/generate-og.mjs`, which is why it's JSON and not TypeScript |
+| Hook line, intro paragraph, stack line, CTA text, demo-disclosure line | `src/pages/index.astro` |
+| The six cards (plain summary + Decision/Instead of/Why it matters/Proof) | `src/content/cards/*.md` — one file per role (`cloud.md`, `devops.md`, `qa.md`, `backend.md`, `frontend.md`, `ai.md`). Adding a role or card is a content change, not a layout change — the filter/grid derive from whatever's in this directory. |
+| Which topics a card is filed under | that card's `tags`. **These are cross-cutting topics, not the card's role** — `AWS`, `Kubernetes`, `CI/CD`, `Testing`, `Multiplayer`, `AI agents`, each shared by 2–3 cards. A tag only one card carries makes a filter button that returns one result, which is what this bar looked like before and why it was retagged. The visible role chip comes from `role`, not from `tags`. |
 | Topology diagram labels/text | `src/components/TopologyDiagram.astro` — raw SVG, labels are plain `<text>` elements |
 | Page title, meta description, favicon, analytics script | `src/layouts/BaseLayout.astro` |
 | 404 page copy | `src/pages/404.astro` |
@@ -83,19 +98,30 @@ content schema at build time — `astro check` fails on a malformed one, but it
 cannot tell you a valid URL 404s. Re-check them after moving files in the main
 repo.
 
-## Social preview image (one manual step)
+## Social preview image — generated, no manual step
 
-`src/layouts/BaseLayout.astro` points `og:image` at `/og.png`. That file is
-generated by hand from `tools/og-source.html`, which is deliberately **not** in
-`public/` so it never ships:
+`src/layouts/BaseLayout.astro` points `og:image` at `/og.png`: the 1200×630
+card LinkedIn, Slack, WhatsApp and X show when someone pastes a link.
+`tools/generate-og.mjs` draws it with `sharp` from the same
+`src/data/profile.json` the site reads, and runs automatically as npm's
+`prebuild` hook — so `npm run build` (and therefore CI) always ships a current
+image, and it can't drift from the site's own copy. `npm run og` regenerates it
+alone.
 
-1. Open `tools/og-source.html` in Chrome.
-2. DevTools (F12) → device toolbar (Ctrl+Shift+M) → set **1200 × 630**, zoom 100%.
-3. ⋮ menu → **Capture screenshot**.
-4. Save it as `public/og.png` and redeploy.
+`public/og.png` is **gitignored**: it's a build output, not a source file.
 
-Until `public/og.png` exists, links shared to LinkedIn, Slack or X render
-without a preview card.
+Two things to know if you edit the generator:
+
+- **Name real font families, never the CSS generics.** Fonts resolve through
+  fontconfig here, not a browser. Asking for `sans-serif` returned a *monospace*
+  face on Windows. The `SANS`/`MONO` stacks name Arial/Helvetica for Windows and
+  DejaVu/Liberation for the Ubuntu runner.
+- **Keep text left-aligned with slack on the longest line.** Windows and CI pick
+  different faces with different metrics; left alignment means a wider face
+  shifts nothing instead of breaking a centred layout.
+
+`tools/og-source.html` is the older hand-screenshot source and is no longer part
+of any workflow.
 
 ## Local development
 
@@ -172,7 +198,6 @@ no network call.
 
 ## What's not here yet
 
-- `public/og.png` — see the social preview step above. One screenshot.
 - `profile.linkedin` is `null` in `src/data/profile.ts`, so the LinkedIn
   button doesn't render. Set it to the profile URL to turn it on.
 - The EKS cluster recording (Phase 3 of the portfolio plan) — R2-hosted clip,

@@ -15,8 +15,8 @@ const rendered = await Promise.all(
 ---
 
 <BaseLayout
-  title={`${profile.name} — Cloud, DevOps & AI Automation Engineer`}
-  description="I design, build and operate a live 3-player multiplayer game across three environments, alone — and automate the team I don't have. Six engineering decisions, the alternatives I rejected, and the code that proves each one."
+  title={`${profile.name} — ${profile.jobTitle}`}
+  description={`I design, build and operate ${profile.project}, a live 3-player multiplayer game, alone — and automate the team I don't have. Six engineering trade-offs, the option I turned down each time, and the code that proves it.`}
 >
   <header class="site-header">
     <a class="wordmark" href="/">
@@ -24,29 +24,32 @@ const rendered = await Promise.all(
       {profile.name}
     </a>
     <nav aria-label="Primary">
-      <a href="#decisions">Decisions</a>
+      <a href="#tradeoffs">Trade-offs</a>
       <a href="#work">Work with me</a>
       <a href={profile.repo} target="_blank" rel="noopener noreferrer">Code</a>
       <a class="nav-cta" href="#contact">Contact</a>
     </nav>
   </header>
 
-  <main>
+  <main id="main">
     <section class="hero">
       <p class="eyebrow">{profile.title}</p>
       <h1>
-        I run production alone — so I automate<br class="hero-break" />
-        the team I don't have.
+        I automate the team I don't have —<br class="hero-break" />
+        so I can run production alone.
       </h1>
       <p class="lede">
-        <strong>Corp Tower</strong> is a live 3-player real-time multiplayer game: a Godot
-        client, an authoritative Node.js server, Redis-backed shared state, deployed to
-        K3s, EKS and a physical backup machine from 34 CI workflows. I designed it, built
-        it, and operate it — infrastructure, backend, client, release pipeline and all.
+        <strong>{profile.project} ({profile.projectShort})</strong> is a live three-player
+        game people play over the internet, on Android and in the browser. I designed it,
+        built it and operate it end to end — the servers it runs on, the game logic, the
+        client, and the pipeline that ships all of it. Coding agents do a lot of the
+        implementing; I hold the requirement, the review and the sign-off.
       </p>
       <p class="lede">
-        Every card below is one decision, the alternative I rejected, and a link to the
-        code that proves it. Not a list of technologies — the reasoning underneath them.
+        Underneath: a Godot client, a server that holds the only authoritative copy of the
+        game, and three deployment targets built from one container image — EKS for
+        production-grade infrastructure, a K3s box as the lab, and a machine at home as the
+        cost-efficient development target.
       </p>
 
       <dl class="stats">
@@ -62,7 +65,7 @@ const rendered = await Promise.all(
       </dl>
 
       <p class="stack-line">
-        Terraform · Kubernetes (K3s / EKS) · AWS · Docker · GitHub Actions · Cloudflare ·
+        Terraform · Kubernetes (EKS / K3s) · AWS · Docker · GitHub Actions · Cloudflare ·
         Node.js · Redis · GDScript / Godot · Ansible
       </p>
 
@@ -73,40 +76,51 @@ const rendered = await Promise.all(
         <a class="cta secondary" href={profile.repo} target="_blank" rel="noopener noreferrer">
           Read the source
         </a>
-        <a class="cta ghost" href="#decisions">Skip to the decisions</a>
+        <a class="cta ghost" href="#tradeoffs">Skip to the trade-offs</a>
       </div>
       <p class="disclosure">
-        The demo fills empty seats with bots so a lone visitor still gets a full round.
-        The real game is three human players.
+        Two things to know before you click. The demo fills empty seats with bots so a lone
+        visitor still gets a full round — the real game is three human players. And it is
+        served from the machine at home, not from EKS, because that box is the
+        cost-efficient target rather than the production-grade one: expect higher latency
+        than the production stack would give you. That trade is deliberate, and it's the
+        first trade-off below.
       </p>
     </section>
 
     <section class="diagram-section" aria-labelledby="topology-heading">
       <h2 id="topology-heading" class="section-title">
-        <span class="section-index">01</span> One image, three environments
+        <span class="section-index">01</span> One image, three targets
       </h2>
       <p class="section-intro">
-        The same container runs in all three. What differs is only what has to differ —
-        and each difference below was a decision with a rejected alternative.
+        The same container image runs in all three. What differs is only what has to
+        differ — and each of those differences was a decision with a rejected
+        alternative.
       </p>
       <div class="diagram-wrap">
         <TopologyDiagram />
       </div>
       <p class="scroll-hint">Scroll the diagram sideways →</p>
       <p class="figure-caption">
-        Production and test on always-on K3s. A session-scoped EKS stack for
-        production-grade validation, destroyed nightly. Dev and the public demo on one
-        Linux box behind a Cloudflare Tunnel.
+        <strong>EKS is the production-grade target</strong> — load balancer, managed nodes
+        in private subnets, managed Redis — stood up for a session and destroyed after it,
+        so it costs nothing while nobody is using it. <strong>K3s on one EC2 instance is
+        the lab</strong>, where changes get tested and where I learn the parts I haven't
+        run before. <strong>One Linux box at home is the cost-efficient development
+        target</strong>, behind a Cloudflare Tunnel with no managed services at all — and
+        it's what serves the public demo.
       </p>
     </section>
 
-    <section id="decisions" aria-labelledby="decisions-heading">
-      <h2 id="decisions-heading" class="section-title">
-        <span class="section-index">02</span> Six decisions, and what I rejected
+    <section id="tradeoffs" aria-labelledby="tradeoffs-heading">
+      <h2 id="tradeoffs-heading" class="section-title">
+        <span class="section-index">02</span> Six trade-offs, and what I turned down
       </h2>
       <p class="section-intro">
-        Each card opens with the plain-English version. Expand it for the engineering
-        rationale and the links into the repo.
+        Every card is one trade-off: what I chose, the option I rejected, and a link to the
+        code that proves it — not a list of technologies, the reasoning underneath them.
+        Each opens with the plain-English version; expand it for the engineering rationale.
+        The topics cut across all six — filter to see where one concern keeps showing up.
       </p>
 
       <CardFilter tags={uniqueTags} total={cardEntries.length} />
@@ -197,8 +211,9 @@ const rendered = await Promise.all(
     </p>
     <p>
       Every claim on this page links to the file, workflow or test that backs it, in
-      <a href={profile.repo} target="_blank" rel="noopener noreferrer">the public repository</a>.
-      This site is a static Astro build deployed to Cloudflare Workers on every push.
+      <a href={profile.repo} target="_blank" rel="noopener noreferrer">the public repository</a>
+      — which still carries the project's working name, Corp Tower. This site is a static
+      Astro build deployed to Cloudflare Workers on every push.
     </p>
   </footer>
 </BaseLayout>
