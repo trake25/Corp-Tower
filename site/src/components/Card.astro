@@ -89,13 +89,19 @@ const cardId = `card-${roleSlug}`;
                   <a
                     class="detail-evidence"
                     href={detail.evidence.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target={detail.evidence.href.includes("#card-") ? undefined : "_blank"}
+                    rel={detail.evidence.href.includes("#card-") ? undefined : "noopener noreferrer"}
                   >
                     {detail.evidence.label}
-                    <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
-                      <path d="M3.5 8.5 L8.5 3.5 M8.5 3.5 H4.9 M8.5 3.5 V7.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
+                    {detail.evidence.href.includes("#card-") ? (
+                      <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
+                        <path d="M2.5 6 H9.5 M6 2.5 L9.5 6 L6 9.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
+                        <path d="M3.5 8.5 L8.5 3.5 M8.5 3.5 H4.9 M8.5 3.5 V7.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    )}
                   </a>
                 )}
               </section>
@@ -209,4 +215,25 @@ const cardId = `card-${roleSlug}`;
       setFlow(card, false);
     }
   });
+
+  for (const link of document.querySelectorAll<HTMLElement>('a[href*="#card-"]')) {
+    link.addEventListener("click", (event) => {
+      const hrefAttr = link.getAttribute("href");
+      if (!hrefAttr) return;
+
+      const hash = new URL(hrefAttr, document.baseURI).hash;
+      const targetCard = document.querySelector<HTMLDetailsElement>(hash);
+      if (!targetCard) return;
+
+      event.preventDefault();
+
+      const filterButton = document.querySelector<HTMLButtonElement>(
+        `.filter button[data-filter="${targetCard.dataset.role}"]`
+      );
+      filterButton?.click();
+
+      targetCard.open = true;
+      targetCard.scrollIntoView({ block: "start", behavior: motionOk ? "smooth" : "auto" });
+    });
+  }
 </script>

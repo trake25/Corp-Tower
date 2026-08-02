@@ -961,6 +961,24 @@ main > section:first-child {
   stroke-dasharray: 5 4;
 }
 
+.topology .card-jump {
+  cursor: pointer;
+}
+
+.card-jump:focus-visible {
+  outline: none;
+}
+
+.card-jump:hover .link,
+.card-jump:focus-visible .link {
+  stroke: var(--accent);
+}
+
+.card-jump:hover .wire,
+.card-jump:focus-visible .wire {
+  fill: var(--accent);
+}
+
 /* Spend tracks: the dashed rule is the elapsed week, the solid bar is time the
    target actually costs money, and its thickness is the rate. */
 .topology .track {

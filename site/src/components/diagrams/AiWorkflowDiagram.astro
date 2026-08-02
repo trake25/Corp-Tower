@@ -10,25 +10,25 @@
     >
       <title id="ai-workflow-title">What happens before a coding agent writes a line</title>
       <desc id="ai-workflow-desc">
-        Five steps and a sub-step, then a hand-off. One: initial prompting —
-        research, breaking an oversized task into phases, and discussing
-        guardrails and security, usually with a free-tier sub-agent rather
-        than the coding agent. Two: prompt refining — the draft is cut down
-        to only the words, phrases, constraints and context the task needs,
-        which costs fewer tokens and produces fewer clarifying questions
-        later. Three: the orchestrator matches the task to a model and an
-        effort level — low for a small task, high for a hard or
-        high-consequence one, on purpose. Four: for medium or large work, a
-        planning phase runs on a higher model at high to ultra effort; the
-        refined prompt and the retrieved context docs are fed to the coding
-        agent, which can ask the orchestrator for clarification. Step four
-        point one, simplified RAG, sits inside planning: an indexed router
-        retrieves only the documents the task needs and loads any AI skill
-        the task calls for on demand. Five: the orchestrator reviews the
-        plan as the specification, refines or approves it, and stays aware
-        of context window, hallucination risk and token usage while doing
-        it. From there the flow hands off to the QA card's loop —
-        implementation, testing and fixes.
+        Six steps, then a hand-off. One: initial prompting — research,
+        breaking an oversized task into phases, and discussing guardrails and
+        security, usually with a free-tier sub-agent rather than the coding
+        agent. Two: prompt refining — the draft is cut down to only the
+        words, phrases, constraints and context the task needs, which costs
+        fewer tokens and produces fewer clarifying questions later. Three:
+        the orchestrator matches the task to a model and an effort level —
+        low for a small task, high for a hard or high-consequence one, on
+        purpose. Four: for medium or large work, a planning phase runs on a
+        higher model at high to ultra effort; the refined prompt and the
+        retrieved context docs are fed to the coding agent, which can ask
+        the orchestrator for clarification. Five: simplified
+        retrieval-augmented generation — an indexed router retrieves only
+        the documents the task needs and loads any AI skill the task calls
+        for on demand. Six: the orchestrator reviews the plan as the
+        specification, refines or approves it, and stays aware of context
+        window, hallucination risk and token usage while doing it. From
+        there the flow hands off to the QA card's loop — implementation,
+        testing and fixes.
       </desc>
 
       <defs>
@@ -73,28 +73,30 @@
 
       <path class="link" d="M559,272 L533,272" marker-end="url(#ai-arrow)" />
 
-      <g class="hotspot" data-detail="rag" role="button" tabindex="0" aria-label="Step 4 point 1, simplified RAG — open the explanation">
+      <g class="hotspot" data-detail="rag" role="button" tabindex="0" aria-label="Step 5, simplified retrieval-augmented generation — open the explanation">
         <rect class="node" x="287" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="301" y="254">4.1 · Simplified RAG</text>
+        <text class="label" x="301" y="254">5 · Simplified RAG</text>
         <text class="sub" x="301" y="272">router retrieves the docs</text>
         <text class="sub" x="301" y="288">skills load on demand</text>
       </g>
 
       <path class="link" d="M287,272 L261,272" marker-end="url(#ai-arrow)" />
 
-      <g class="hotspot" data-detail="review" role="button" tabindex="0" aria-label="Step 5, orchestrator review and approval — open the explanation">
+      <g class="hotspot" data-detail="review" role="button" tabindex="0" aria-label="Step 6, orchestrator review and approval — open the explanation">
         <rect class="node" x="15" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="29" y="254">5 · Review and approve</text>
+        <text class="label" x="29" y="254">6 · Review and approve</text>
         <text class="sub" x="29" y="272">plan becomes the spec</text>
         <text class="sub" x="29" y="288">orchestrator signs off</text>
       </g>
 
-      <path class="link" d="M138,314 L138,338" marker-end="url(#ai-arrow)" />
-      <text class="wire accent" x="150" y="332">hands off to</text>
-      <text class="wire accent" x="150" y="346">the QA cycle from here</text>
+      <a class="card-jump" href="#card-qa" aria-label="Continue to the QA card, where this hands off">
+        <path class="link" d="M138,314 L138,338" marker-end="url(#ai-arrow)" />
+        <text class="wire" x="150" y="332">hands off to</text>
+        <text class="wire" x="150" y="346">the QA cycle from here</text>
+      </a>
 
-      <text class="wire accent" x="15" y="368">1.6k lines across 13 documents</text>
-      <text class="wire" x="15" y="384">a common task loads the entry doc plus 1–2 more — zero repo-wide search.</text>
+      <text class="wire accent" x="15" y="368">This is a trained skill, not a checklist</text>
+      <text class="wire" x="15" y="384">prompt and context engineering, reading how a model behaves — every task sharpens it</text>
     </svg>
   </div>
   <figcaption class="card-diagram-caption">
