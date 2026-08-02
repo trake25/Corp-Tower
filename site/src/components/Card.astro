@@ -32,10 +32,12 @@ interface Props {
 
 const { role, headline, plain, tools, details, hasBody } = Astro.props;
 const hasFlow = details.length > 0;
-const flowId = `flow-${role.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+const roleSlug = role.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+const flowId = `flow-${roleSlug}`;
+const cardId = `card-${roleSlug}`;
 ---
 
-<details class="card" data-role={role}>
+<details class="card" id={cardId} data-role={role}>
   <summary>
     <span class="vignette">
       <span class="role-tag">{role}</span>

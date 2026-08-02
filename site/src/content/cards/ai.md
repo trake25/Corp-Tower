@@ -1,48 +1,51 @@
 ---
 role: "AI"
 order: 6
-headline: "A router beats a vector store at 1.6k lines. Retrieval here is a curation problem, not a search problem."
-plain: "I run an AI coding agent the way I'd run any contractor with system access: the task is classified before it starts — what kind of work it is, and how much model and effort it actually needs — then handed only the one or two documents it needs to do it, planned into phases, and kept inside a stated token budget. Some material never crosses into the agent's context at all; that boundary is a design decision, not an afterthought. The steps below are that pipeline."
+headline: "Most people can't tell a small task from a hard one, so they pay full price for both"
+plain: "Before a coding agent writes a line, the task is research: what the goal actually is, where the guardrails sit, and which model and effort level it genuinely needs. I do that thinking with a cheaper assistant first, cut the prompt down to only what the goal requires, and hand the coding agent a short brief plus the exact documents it needs — never the whole repository. Nothing gets built until I've read the plan and approved it. The steps below are that groundwork."
 tools:
   - "Claude Code"
+  - "Codex"
+  - "Cursor"
+  - "ChatGPT"
   - "MCP tool servers"
-  - "Markdown"
   - "Git"
 details:
-  - id: classify
-    title: "1 · Classify the task, route the model"
-    body: "Before anything else, the task decides its own path: what kind of problem it is, and how much model and effort actually proving the answer is worth. A quick lookup gets a fast, cheap pass; a decision with real consequences gets a slower, more careful one. That triage happens before a single document loads."
+  - id: research
+    title: "1 · Initial prompting"
+    body: "The task starts as research, not code — usually worked through with a free-tier sub-agent (ChatGPT, Claude), not the coding agent. An oversized ask gets broken into a goal with smaller phases here, and guardrails, edge cases and security get decided before anything is planned, not after. It ends with a first draft of the prompt."
     evidence:
-      label: "The table that routes a task to its context"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/index.md#task-router"
-  - id: context
-    title: "2 · Contextualize — RAC, not RAG"
-    body: "A hand-written router table names the one or two documents a task actually needs, tiered so a common task loads the entry document plus one or two more and runs zero repo-wide searches. That's retrieval as curation rather than retrieval as search — no embeddings, no vector store, no similarity match quietly returning the wrong file."
+      label: "A guardrail decided at design time, not after"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#private-asset-pipeline-credential-split"
+  - id: refine
+    title: "2 · Prompt refining"
+    body: "Once the task is understood, that draft gets cut — through an AI skill, not by hand — to the words, phrases, constraints and context the goal actually needs. Shorter costs fewer tokens, reads clearer, and means fewer clarifying questions once planning starts."
+    evidence:
+      label: "The budget that forces this kind of cut"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/coding-conventions.md#the-one-rule-that-governs-every-doc-edit"
+  - id: route
+    title: "3 · Model and effort, matched to the task"
+    body: "There's no artifact for this one — it's a skill built by doing it wrong enough times to feel it: prompt engineering, context engineering, learning how a model responds to what it's fed. Most people can't tell a small task from a hard one, so they pay full price upfront regardless. A skilled orchestrator can tell the difference, and that's what keeps both quality and cost in check."
+  - id: plan
+    title: "4 · Planning phase"
+    body: "Skipped for anything straightforward — planning a trivial change is its own waste. For medium or large work, especially anything touching a security guardrail, this runs on a higher model at high-to-ultra effort. The refined prompt and the context docs go to the coding agent, and the plan is built from both — it can still come back and ask the orchestrator for direction rather than guess."
+    evidence:
+      label: "The phase list a plan actually follows"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/coding-conventions.md#update-procedure-update-docs-diff-driven--never-a-full-rebuild"
+  - id: rag
+    title: "4.1 · Simplified RAG"
+    body: "Inside planning, the coding agent doesn't read the repository — it retrieves. An indexed router names the specific documents the task needs and loads only those, and loads any AI skill the task calls for, on demand. This is the retrieval layer the rest of this card is describing, in miniature."
     evidence:
       label: "Load least, escalate only if needed"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/index.md#retrieval-load-least-escalate-only-if-needed"
-  - id: plan
-    title: "3 · Plan: goals, phases, delegation"
-    body: "Multi-step work gets broken into a short, ordered list of phases before any file changes — scope the diff cheaply, decide whether it's even worth an edit, route it to the one document that owns it, edit, validate, report. An independent, read-only piece of work — a wide search, an isolated investigation — goes to a separate sub-agent instead of running in the main session, so exploring doesn't fill up the context that's doing the actual work."
+  - id: review
+    title: "5 · Orchestrator review and approval"
+    body: "The plan is now the specification — what's about to change, in exact terms. I read it, refine it, or approve it; only approval starts implementation. This is also the checkpoint for context window, hallucination risk and token usage, the things that quietly cost the most — which is why steps 1 and 2 exist."
     evidence:
-      label: "The phase list a doc update follows"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/coding-conventions.md#update-procedure-update-docs-diff-driven--never-a-full-rebuild"
-  - id: scope
-    title: "4 · Scope the prompt to a budget"
-    body: "A typical change is expected to touch two to fifteen lines across every document combined; going past thirty in one document is treated as a sign the session is being transcribed rather than the system being documented. That budget forces the instruction itself to stay small — cut to the exact thing that changed, not a summary of the whole session. The same discipline is what keeps prompts to an agent scoped rather than open-ended."
-    evidence:
-      label: "The line budget a doc edit is held to"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/coding-conventions.md#the-one-rule-that-governs-every-doc-edit"
-  - id: security
-    title: "5 · What crosses the boundary, and what doesn't"
-    body: "Some material never leaves the session that's allowed to touch it. The art pipeline's CI credential is Object-Read-only and cannot publish or delete — only local dev holds the Object-Read-and-Write token, kept out of the repo, so publishing is manual by design. The same split governs what a sub-agent, an API call or an MCP tool gets handed for any task: read access to do the job, not standing write access to whatever it touches."
-    evidence:
-      label: "The credential split behind the art pipeline"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#private-asset-pipeline-credential-split"
-  - id: close
-    title: "6 · Ship, validate, compact — then the loop closes"
-    body: "Once the goal is confirmed reached, not before, the docs are updated as a replacement of prose rather than an addition to it, then checked by a script that fails the run on a broken link or a document over its line budget. A separate, occasional pass compacts the whole knowledge base so entropy doesn't quietly collect in documents a routine change never opens. That compacted state is what the next task's step one reads."
-    evidence:
-      label: "The checks a doc edit has to pass"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/coding-conventions.md#validation-and-budgets"
+      label: "The context budget this step is protecting"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/index.md#token-discipline"
 ---
+
+#### Local LLMs, once the hardware exists
+
+Everything above assumes a Cloud LLM, in both roles: the sub-agent doing research and the coding agent doing the work. That's a cost and a dependency, not a permanent design choice. Once local hardware can run a model capable enough for this pipeline, step 4.1 — the router and the retrieval it drives — is the first candidate to move: offline, no per-token cost, no round trip. The documents stay the source of truth either way; the router table becomes something pointed at a local model instead of an API, not something rewritten.

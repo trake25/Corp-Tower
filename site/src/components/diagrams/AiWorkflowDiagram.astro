@@ -2,27 +2,33 @@
   <div class="card-diagram-scroll">
     <svg
       class="topology"
-      viewBox="0 0 820 390"
+      viewBox="0 0 820 400"
       role="img"
       aria-labelledby="ai-workflow-title ai-workflow-desc"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
     >
-      <title id="ai-workflow-title">How a task is routed, scoped and closed back into context</title>
+      <title id="ai-workflow-title">What happens before a coding agent writes a line</title>
       <desc id="ai-workflow-desc">
-        A six-step loop. One: the task is classified, which decides which model
-        and how much effort it gets before any document loads. Two: a
-        hand-written router names the one or two documents the task actually
-        needs — contextualization as curation rather than search. Three: the
-        work is planned into a short ordered list of phases, with independent
-        read-only work sent to a separate sub-agent instead of running in the
-        main session. Four: the instruction itself is scoped to a small,
-        budgeted change rather than a summary of the whole session. Five: a
-        boundary decides what data crosses into the agent or a tool and what
-        stays orchestrator-only, the same way a credential can be scoped to
-        read without write. Six: once the goal is confirmed, documentation is
-        updated, validated and periodically compacted — and that compacted
-        state is what the next task's step one reads.
+        Five steps and a sub-step, then a hand-off. One: initial prompting —
+        research, breaking an oversized task into phases, and discussing
+        guardrails and security, usually with a free-tier sub-agent rather
+        than the coding agent. Two: prompt refining — the draft is cut down
+        to only the words, phrases, constraints and context the task needs,
+        which costs fewer tokens and produces fewer clarifying questions
+        later. Three: the orchestrator matches the task to a model and an
+        effort level — low for a small task, high for a hard or
+        high-consequence one, on purpose. Four: for medium or large work, a
+        planning phase runs on a higher model at high to ultra effort; the
+        refined prompt and the retrieved context docs are fed to the coding
+        agent, which can ask the orchestrator for clarification. Step four
+        point one, simplified RAG, sits inside planning: an indexed router
+        retrieves only the documents the task needs and loads any AI skill
+        the task calls for on demand. Five: the orchestrator reviews the
+        plan as the specification, refines or approves it, and stays aware
+        of context window, hallucination risk and token usage while doing
+        it. From there the flow hands off to the QA card's loop —
+        implementation, testing and fixes.
       </desc>
 
       <defs>
@@ -31,65 +37,64 @@
         </marker>
       </defs>
 
-      <g class="hotspot" data-detail="classify" role="button" tabindex="0" aria-label="Step 1, classify the task and route the model — open the explanation">
+      <g class="hotspot" data-detail="research" role="button" tabindex="0" aria-label="Step 1, initial prompting — open the explanation">
         <rect class="node" x="15" y="40" width="246" height="84" rx="10" />
-        <text class="label" x="29" y="64">1 · Classify &amp; route</text>
-        <text class="sub" x="29" y="82">task type decides model</text>
-        <text class="sub" x="29" y="98">and effort, before docs load</text>
+        <text class="label" x="29" y="64">1 · Initial prompting</text>
+        <text class="sub" x="29" y="82">research, scope into phases</text>
+        <text class="sub" x="29" y="98">guardrails &amp; security first</text>
       </g>
 
       <path class="link" d="M261,82 L287,82" marker-end="url(#ai-arrow)" />
 
-      <g class="hotspot" data-detail="context" role="button" tabindex="0" aria-label="Step 2, contextualize through the router — open the explanation">
+      <g class="hotspot" data-detail="refine" role="button" tabindex="0" aria-label="Step 2, prompt refining — open the explanation">
         <rect class="node" x="287" y="40" width="246" height="84" rx="10" />
-        <text class="label" x="301" y="64">2 · Contextualize (RAC)</text>
-        <text class="sub" x="301" y="82">router names 1–2 docs</text>
-        <text class="sub" x="301" y="98">zero repo-wide searches</text>
+        <text class="label" x="301" y="64">2 · Prompt refining</text>
+        <text class="sub" x="301" y="82">cut to only what's needed</text>
+        <text class="sub" x="301" y="98">fewer tokens, fewer questions</text>
       </g>
 
       <path class="link" d="M533,82 L559,82" marker-end="url(#ai-arrow)" />
 
-      <g class="hotspot" data-detail="plan" role="button" tabindex="0" aria-label="Step 3, plan goals and phases, delegate to sub-agents — open the explanation">
+      <g class="hotspot" data-detail="route" role="button" tabindex="0" aria-label="Step 3, model and effort matched to the task — open the explanation">
         <rect class="node" x="559" y="40" width="246" height="84" rx="10" />
-        <text class="label" x="573" y="64">3 · Plan &amp; delegate</text>
-        <text class="sub" x="573" y="82">phases before file changes</text>
-        <text class="sub" x="573" y="98">read-only work → sub-agent</text>
+        <text class="label" x="573" y="64">3 · Model and effort</text>
+        <text class="sub" x="573" y="82">match model tier to task</text>
+        <text class="sub" x="573" y="98">complexity, not habit</text>
       </g>
 
       <path class="link" d="M682,124 L682,230" marker-end="url(#ai-arrow)" />
 
-      <g class="hotspot" data-detail="scope" role="button" tabindex="0" aria-label="Step 4, scope the prompt to a token budget — open the explanation">
+      <g class="hotspot" data-detail="plan" role="button" tabindex="0" aria-label="Step 4, planning phase — open the explanation">
         <rect class="node" x="559" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="573" y="254">4 · Scope the prompt</text>
-        <text class="sub" x="573" y="272">small, budgeted diff</text>
-        <text class="sub" x="573" y="288">2–15 net lines typical</text>
+        <text class="label" x="573" y="254">4 · Planning phase</text>
+        <text class="sub" x="573" y="272">medium/large tasks only</text>
+        <text class="sub" x="573" y="288">high effort when it counts</text>
       </g>
 
       <path class="link" d="M559,272 L533,272" marker-end="url(#ai-arrow)" />
 
-      <g class="hotspot" data-detail="security" role="button" tabindex="0" aria-label="Step 5, what crosses the boundary and what stays orchestrator-only — open the explanation">
+      <g class="hotspot" data-detail="rag" role="button" tabindex="0" aria-label="Step 4 point 1, simplified RAG — open the explanation">
         <rect class="node" x="287" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="301" y="254">5 · Security boundary</text>
-        <text class="sub" x="301" y="272">read access to do the task</text>
-        <text class="sub" x="301" y="288">not standing write access</text>
+        <text class="label" x="301" y="254">4.1 · Simplified RAG</text>
+        <text class="sub" x="301" y="272">router retrieves the docs</text>
+        <text class="sub" x="301" y="288">skills load on demand</text>
       </g>
 
       <path class="link" d="M287,272 L261,272" marker-end="url(#ai-arrow)" />
 
-      <g class="hotspot" data-detail="close" role="button" tabindex="0" aria-label="Step 6, ship, validate and compact — open the explanation">
+      <g class="hotspot" data-detail="review" role="button" tabindex="0" aria-label="Step 5, orchestrator review and approval — open the explanation">
         <rect class="node" x="15" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="29" y="254">6 · Ship, validate, compact</text>
-        <text class="sub" x="29" y="272">docs replace prose, checked</text>
-        <text class="sub" x="29" y="288">compacted for the next task</text>
+        <text class="label" x="29" y="254">5 · Review and approve</text>
+        <text class="sub" x="29" y="272">plan becomes the spec</text>
+        <text class="sub" x="29" y="288">orchestrator signs off</text>
       </g>
 
-      <path class="link ephemeral-link" d="M138,230 L138,124" marker-end="url(#ai-arrow)" />
-      <text class="wire accent" x="150" y="182">feeds the next</text>
-      <text class="wire accent" x="150" y="196">task's step 1</text>
+      <path class="link" d="M138,314 L138,338" marker-end="url(#ai-arrow)" />
+      <text class="wire accent" x="150" y="332">hands off to</text>
+      <text class="wire accent" x="150" y="346">the QA cycle from here</text>
 
-      <text class="wire accent" x="15" y="340">1.6k lines across 13 documents</text>
-      <text class="wire" x="15" y="358">a common task reads the entry doc plus 1–2 more —</text>
-      <text class="wire" x="15" y="374">a stated cost per task, not a hope the context window absorbs it.</text>
+      <text class="wire accent" x="15" y="368">1.6k lines across 13 documents</text>
+      <text class="wire" x="15" y="384">a common task loads the entry doc plus 1–2 more — zero repo-wide search.</text>
     </svg>
   </div>
   <figcaption class="card-diagram-caption">

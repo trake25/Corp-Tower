@@ -13,6 +13,9 @@ details:
   - id: spec
     title: "1 · Specification and expected results, first"
     body: "Before any planning or building starts, I write down what the feature has to do and the exact results I expect to see once it exists. Everything after this point gets measured against that list."
+    evidence:
+      label: "How that specification gets built in the first place"
+      href: "https://enportfolio.galaxxigames.com/#card-ai"
   - id: build
     title: "2 · The agent plans and builds"
     body: "The coding agent takes the specification and does the planning — with my input where it is needed — the implementation, and the fixes that come back to it from step 5. That is the whole of its job. It does not get to decide whether the result is acceptable — that judgement belongs to whoever wrote the expected results, and keeping those two roles apart is the entire point of the loop."
