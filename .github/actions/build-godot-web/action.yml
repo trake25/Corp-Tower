@@ -89,6 +89,10 @@ runs:
         mkdir -p "$OUTPUT_DIR"
         godot --headless --path "$PROJECT_PATH" --export-release "Web" "$OUTPUT_DIR/index.html"
         test -f "$OUTPUT_DIR/index.html" || { echo "::error::Web export produced no index.html"; exit 1; }
+        find "$OUTPUT_DIR" -maxdepth 1 -name '*.wasm' -print -quit | grep -q . \
+          || { echo "::error::Web export produced no .wasm file"; exit 1; }
+        find "$OUTPUT_DIR" -maxdepth 1 -name '*.pck' -print -quit | grep -q . \
+          || { echo "::error::Web export produced no .pck file"; exit 1; }
 
     - name: Report export file sizes
       id: size-report
