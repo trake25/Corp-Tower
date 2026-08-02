@@ -38,10 +38,18 @@ GitHub secrets — `CLOUDFLARE_WORKERS_API_TOKEN` (Account → Workers Scripts �
 Edit) and `CLOUDFLARE_ACCOUNT_ID` — and is path-filtered so it never fires on a
 `site/**` or game change.
 
-Validate locally without deploying, from this directory:
+**The workflow pins `wranglerVersion` explicitly, and must keep doing so.**
+`site/` gets its version from `npm ci` reading its own `package-lock.json`;
+with no `package.json` here, `wrangler-action` instead falls back to its own
+hardcoded default (`3.90.0`) — which predates assets-only Workers and fails the
+deploy with `Missing entry-point: ... or the "main" config field`. That error
+means the wrangler version, not a problem with `wrangler.jsonc`.
+
+Validate locally without deploying, from this directory — **pin the same
+version**, or you'll test against a wrangler CI isn't using:
 
 ```bash
-npx wrangler deploy --dry-run
+npx wrangler@4.118.0 deploy --dry-run
 ```
 
 ## One-time Cloudflare setup — required before the first deploy lands

@@ -37,4 +37,9 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_WORKERS_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: site-root
+          # Required: with no package.json here, wrangler-action falls back to
+          # its own default (3.90.0), which predates assets-only Workers and
+          # fails with "Missing entry-point". Matches the version site/'s
+          # package-lock.json resolves to.
+          wranglerVersion: "4.118.0"
           command: deploy
