@@ -6,10 +6,5 @@
   "project": "Top or Drop",
   "projectShort": "TOD",
   "site": "https://enportfolio.galaxxigames.com",
-  "ogTagline": "A real-time multiplayer game I design, build, QA and operate end to end.",
-  "ogStats": [
-    "$0 idle cloud spend",
-    "0 manual deploy steps",
-    "1 image, 3 targets"
-  ]
+  "ogTagline": "A real-time multiplayer game in development, with a playable demo — and the engineering behind what already works."
 }

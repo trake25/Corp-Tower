@@ -1,10 +1,17 @@
 ---
-// Everything in <summary> is phrasing or heading content on purpose: <details>
-// only permits those there, and a card whose collapsed state is a <div> of
-// <p>s is invalid HTML that happens to render.
+// Everything in <summary> is phrasing content on purpose: <summary> only
+// permits phrasing or heading content, so the tool chips and the diagram are
+// built from <span>s made block-level in CSS. A <figure> or <div> in here is
+// invalid HTML that happens to render.
 interface CardLink {
   label: string;
   href: string;
+}
+
+interface CardDetail {
+  id: string;
+  title: string;
+  body: string;
 }
 
 interface Props {
@@ -13,14 +20,15 @@ interface Props {
   plain: string;
   metric: string;
   metricLabel: string;
-  tags: string[];
+  tools: string[];
+  details: CardDetail[];
   links: CardLink[];
 }
 
-const { role, headline, plain, metric, metricLabel, tags, links } = Astro.props;
+const { role, headline, plain, metric, metricLabel, tools, details, links } = Astro.props;
 ---
 
-<details class="card" data-tags={tags.join(",")}>
+<details class="card" data-role={role}>
   <summary>
     <span class="card-head">
       <span class="role-tag">{role}</span>
@@ -31,11 +39,18 @@ const { role, headline, plain, metric, metricLabel, tags, links } = Astro.props;
     </span>
     <h3 class="headline">{headline}</h3>
     <span class="plain">{plain}</span>
-    <span class="card-topics">
-      {tags.map((tag) => <span class="topic">{tag}</span>)}
-    </span>
+
+    {tools.length > 0 && (
+      <span class="card-tools">
+        <span class="card-tools-label">Tools &amp; tech</span>
+        {tools.map((tool) => <span class="tool">{tool}</span>)}
+      </span>
+    )}
+
+    <slot name="diagram" />
+
     <span class="toggle-hint">
-      <span class="toggle-open">Read the reasoning</span>
+      <span class="toggle-open">Read the details</span>
       <span class="toggle-close">Collapse</span>
       <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
         <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -44,7 +59,17 @@ const { role, headline, plain, metric, metricLabel, tags, links } = Astro.props;
   </summary>
 
   <div class="expanded">
-    <slot name="diagram" />
+    {details.length > 0 && (
+      <div class="detail-list">
+        {details.map((detail) => (
+          <section class="detail" data-detail-target={detail.id}>
+            <h4>{detail.title}</h4>
+            <p>{detail.body}</p>
+          </section>
+        ))}
+      </div>
+    )}
+
     <slot />
 
     {links.length > 0 && (
@@ -61,3 +86,36 @@ const { role, headline, plain, metric, metricLabel, tags, links } = Astro.props;
     )}
   </div>
 </details>
+
+<script>
+  // Diagram hotspots live inside <summary>, where any click would normally just
+  // toggle the card. So the default is suppressed and the card is forced open
+  // instead of toggled — clicking a step should never be able to close the card
+  // you are trying to read.
+  const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  for (const card of document.querySelectorAll<HTMLDetailsElement>(".card")) {
+    const targets = card.querySelectorAll<HTMLElement>("[data-detail-target]");
+
+    const reveal = (event: Event, hotspot: HTMLElement) => {
+      event.preventDefault();
+      event.stopPropagation();
+      card.open = true;
+
+      const wanted = hotspot.dataset.detail;
+      const target = card.querySelector<HTMLElement>(`[data-detail-target="${wanted}"]`);
+      if (!target) return;
+
+      for (const other of targets) other.classList.remove("is-active");
+      target.classList.add("is-active");
+      target.scrollIntoView({ block: "center", behavior: motionOk ? "smooth" : "auto" });
+    };
+
+    for (const hotspot of card.querySelectorAll<HTMLElement>("[data-detail]")) {
+      hotspot.addEventListener("click", (event) => reveal(event, hotspot));
+      hotspot.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") reveal(event, hotspot);
+      });
+    }
+  }
+</script>

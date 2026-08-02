@@ -1,15 +1,21 @@
 ---
-// The QA skill's showcase. Hand-authored, and sharing the `.topology` classes
-// with every other skill diagram on purpose, so they read as one visual
-// language and all track the site theme.
-// Source facts: src/content/cards/qa.md, docs/context/testing.md.
+// The QA skill's showcase, and the reference implementation every other skill
+// diagram should follow.
 //
-// Marker and aria ids are namespaced (`qa-`) because several diagrams render on
-// the same page and duplicate ids would silently point at the wrong element.
+// Three rules it establishes:
+//   1. It renders inside <summary>, so every wrapper is a <span>. A <figure> is
+//      flow content and would be invalid there.
+//   2. Each step is a `.hotspot` group carrying `data-detail`, which must match
+//      an `id` in the card's `details` frontmatter. Card.astro's script pairs
+//      them: click a step, the card opens on that step's explanation.
+//   3. It shares the `.topology` classes with every other diagram so they read
+//      as one visual language and track the theme.
+//
+// Source facts: src/content/cards/qa.md, docs/context/testing.md.
 ---
 
-<figure class="card-diagram">
-  <div class="card-diagram-scroll">
+<span class="card-diagram">
+  <span class="card-diagram-scroll">
     <svg
       class="topology"
       viewBox="0 0 820 300"
@@ -18,16 +24,15 @@
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
     >
-      <title id="qa-loop-title">The QA-to-implementer loop</title>
+      <title id="qa-loop-title">How work gets checked before it counts as finished</title>
       <desc id="qa-loop-desc">
-        A four-step cycle. One: the requirement, a definition of done written
-        before any work starts. Two: the agent implements, in the implementer's
-        seat and never the reviewer's. Three: CI gates act as automated
-        acceptance criteria and are cleared first. Four: I verify the work
-        against the requirement. Failing work is rejected with specifics and
-        returns to step two, looping until nothing is outstanding. Only once the
-        goal is confirmed reached does step five run, updating the
-        documentation.
+        A five-step cycle. One: write down what finished means, before any work
+        starts. Two: the coding agent builds it, and only builds it. Three:
+        automated checks run first, so failures bounce back before a human looks.
+        Four: I check the result against what was written in step one, and
+        anything that does not match goes back with specifics and returns to step
+        two. Five: only once the goal is actually reached does the written
+        documentation get updated.
       </desc>
 
       <defs>
@@ -36,58 +41,60 @@
         </marker>
       </defs>
 
-      <!-- rejection loop, drawn above the row so it never crosses the flow -->
+      <!-- the return leg, drawn above the row so it never crosses the flow -->
       <path class="link ephemeral-link" d="M716,76 L716,46 L308,46 L308,76" marker-end="url(#qa-arrow)" />
-      <text class="wire" x="512" y="38" text-anchor="middle">rejected — with specifics, and it loops until nothing is outstanding</text>
+      <text class="wire" x="512" y="38" text-anchor="middle">sent back with specifics — and round it goes again</text>
 
-      <!-- 1. Requirement -->
-      <rect class="node" x="15" y="76" width="178" height="80" rx="10" />
-      <text class="label" x="29" y="100">1 · Requirement</text>
-      <text class="sub" x="29" y="118">Definition of done, written</text>
-      <text class="sub" x="29" y="134">before any work starts</text>
+      <g class="hotspot" data-detail="requirement" role="button" tabindex="0" aria-label="Step 1, write down what finished means — open the explanation">
+        <rect class="node" x="15" y="76" width="178" height="80" rx="10" />
+        <text class="label" x="29" y="100">1 · Write it down</text>
+        <text class="sub" x="29" y="118">what finished means,</text>
+        <text class="sub" x="29" y="134">before anything starts</text>
+      </g>
 
       <path class="link" d="M195,116 L217,116" marker-end="url(#qa-arrow)" />
 
-      <!-- 2. Agent implements -->
-      <rect class="node" x="219" y="76" width="178" height="80" rx="10" />
-      <text class="label" x="233" y="100">2 · Agent implements</text>
-      <text class="sub" x="233" y="118">in the implementer's seat</text>
-      <text class="sub" x="233" y="134">— never the reviewer's</text>
+      <g class="hotspot" data-detail="implement" role="button" tabindex="0" aria-label="Step 2, the agent builds it — open the explanation">
+        <rect class="node" x="219" y="76" width="178" height="80" rx="10" />
+        <text class="label" x="233" y="100">2 · Agent builds</text>
+        <text class="sub" x="233" y="118">it builds, and that is</text>
+        <text class="sub" x="233" y="134">the whole of its job</text>
+      </g>
 
       <path class="link" d="M399,116 L421,116" marker-end="url(#qa-arrow)" />
 
-      <!-- 3. CI gates -->
-      <rect class="node" x="423" y="76" width="178" height="80" rx="10" />
-      <text class="label" x="437" y="100">3 · CI gates</text>
-      <text class="sub" x="437" y="118">automated acceptance</text>
-      <text class="sub" x="437" y="134">criteria, cleared first</text>
+      <g class="hotspot" data-detail="gates" role="button" tabindex="0" aria-label="Step 3, the machine checks first — open the explanation">
+        <rect class="node" x="423" y="76" width="178" height="80" rx="10" />
+        <text class="label" x="437" y="100">3 · Machine checks</text>
+        <text class="sub" x="437" y="118">builds, tests, and what</text>
+        <text class="sub" x="437" y="134">changed — before I look</text>
+      </g>
 
       <path class="link" d="M603,116 L625,116" marker-end="url(#qa-arrow)" />
 
-      <!-- 4. I verify -->
-      <rect class="node" x="627" y="76" width="178" height="80" rx="10" />
-      <text class="label" x="641" y="100">4 · I verify</text>
-      <text class="sub" x="641" y="118">against the requirement,</text>
-      <text class="sub" x="641" y="134">not against how it feels</text>
+      <g class="hotspot" data-detail="verify" role="button" tabindex="0" aria-label="Step 4, then I check it — open the explanation">
+        <rect class="node" x="627" y="76" width="178" height="80" rx="10" />
+        <text class="label" x="641" y="100">4 · Then I check</text>
+        <text class="sub" x="641" y="118">against what step one</text>
+        <text class="sub" x="641" y="134">said, not how it looks</text>
+      </g>
 
-      <!-- accept path -->
       <path class="link" d="M716,156 L716,206" marker-end="url(#qa-arrow)" />
-      <text class="wire accent" x="726" y="186">accepted</text>
+      <text class="wire accent" x="726" y="186">it matches</text>
 
-      <!-- 5. Docs -->
-      <rect class="node" x="627" y="206" width="178" height="70" rx="10" />
-      <text class="label" x="641" y="230">5 · Docs updated</text>
-      <text class="sub" x="641" y="248">only once the goal is</text>
-      <text class="sub" x="641" y="264">confirmed reached</text>
+      <g class="hotspot" data-detail="docs" role="button" tabindex="0" aria-label="Step 5, write it up last — open the explanation">
+        <rect class="node" x="627" y="206" width="178" height="70" rx="10" />
+        <text class="label" x="641" y="230">5 · Write it up</text>
+        <text class="sub" x="641" y="248">last, once it is really</text>
+        <text class="sub" x="641" y="264">done — never before</text>
+      </g>
 
-      <text class="wire accent" x="15" y="234">0 self-certified merges</text>
-      <text class="wire" x="15" y="254">the implementer never judges their own work — and that</text>
-      <text class="wire" x="15" y="270">stays true when the implementer is a language model</text>
+      <text class="wire accent" x="15" y="234">nothing is approved by whoever built it</text>
+      <text class="wire" x="15" y="254">the same rule an engineering team runs on — it does not</text>
+      <text class="wire" x="15" y="270">stop applying because the builder is a machine</text>
     </svg>
-  </div>
-  <figcaption>
-    The loop runs the same whether the implementer is a person or a model. Step 3 is the
-    part that scales: CI gates are the acceptance criteria a human would otherwise check
-    by hand, so step 4 only ever looks at work that already passes.
-  </figcaption>
-</figure>
+  </span>
+  <span class="card-diagram-caption">
+    Click any step to read what it means.
+  </span>
+</span>

@@ -608,20 +608,30 @@ main > section:first-child {
   max-width: var(--measure);
 }
 
-/* The topics a card sits under. Deliberately quieter than .role-tag: the role
-   says what the card is, these say which filter buttons will pull it back. */
-.card-topics {
+/* What the skill was actually built with. Quieter than .role-tag on purpose:
+   the role says what the card is, these are the receipts. */
+.card-tools {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.4rem;
-  margin-top: 1rem;
+  margin-top: 1.1rem;
 }
 
-.card-topics .topic {
+.card-tools-label {
   font-family: var(--font-mono);
   font-size: 0.68rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--fg-faint);
+  margin-right: 0.2rem;
+}
+
+.card-tools .tool {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
   background: var(--bg-alt);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -682,7 +692,8 @@ main > section:first-child {
   margin-top: 0;
 }
 
-.expanded h3 {
+.expanded h3,
+.expanded > h4 {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
@@ -694,8 +705,51 @@ main > section:first-child {
   border-top: 1px solid var(--border);
 }
 
-.expanded h3:first-of-type {
+.expanded h3:first-of-type,
+.expanded > h4:first-of-type {
   margin-top: 0;
+}
+
+/* --- Step-by-step details, paired with the diagram ----------------------- */
+
+.detail-list {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+}
+
+.detail {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.15rem;
+  background: var(--bg-alt);
+  transition: border-color 0.2s ease, background 0.2s ease;
+  scroll-margin-block: 6rem;
+}
+
+.detail h4 {
+  font-size: var(--step-0);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  margin: 0 0 0.4rem;
+  color: var(--fg);
+}
+
+.detail p {
+  margin: 0;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.detail.is-active {
+  border-left-color: var(--accent);
+  background: var(--surface-hover);
+}
+
+.detail.is-active h4 {
+  color: var(--accent);
 }
 
 .expanded p,
@@ -743,13 +797,17 @@ main > section:first-child {
   font-style: italic;
 }
 
-/* --- Per-skill showcase diagram ------------------------------------------ */
+/* --- Per-skill showcase diagram ------------------------------------------
+   Lives inside <summary>, so every wrapper is a <span> made block-level here.
+   -------------------------------------------------------------------------- */
 
 .card-diagram {
-  margin: 0 0 1.75rem;
+  display: block;
+  margin: 1.3rem 0 0;
 }
 
 .card-diagram-scroll {
+  display: block;
   background: var(--bg-alt);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -765,11 +823,38 @@ main > section:first-child {
   min-width: 640px;
 }
 
-.card-diagram figcaption {
+.card-diagram-caption {
+  display: block;
   font-size: var(--step--1);
   color: var(--fg-faint);
   max-width: var(--measure);
-  margin: 0.85rem 0 0;
+  margin: 0.7rem 0 0;
+}
+
+/* Clickable diagram steps. The affordance has to survive being inside a
+   <summary> that is itself clickable, so it is a visible state change rather
+   than just a cursor. */
+.hotspot {
+  cursor: pointer;
+}
+
+.hotspot .node {
+  transition: stroke 0.15s ease, fill 0.15s ease;
+}
+
+.hotspot:hover .node,
+.hotspot:focus-visible .node {
+  stroke: var(--accent);
+  fill: var(--surface-hover);
+}
+
+.hotspot:focus-visible {
+  outline: none;
+}
+
+.hotspot:hover .label,
+.hotspot:focus-visible .label {
+  fill: var(--accent);
 }
 
 /* The rejection path is a return leg, not part of the forward flow — dashed so
@@ -932,13 +1017,56 @@ footer {
   font-size: var(--step--1);
 }
 
-footer p {
-  margin: 0 0 0.6rem;
+.footer-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  padding-bottom: 1.4rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.footer-id {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.footer-id strong {
+  color: var(--fg);
+  font-size: var(--step-0);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.3rem;
+}
+
+.footer-nav a {
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+
+.footer-nav a:hover {
+  color: var(--accent);
+}
+
+.footer-note,
+.footer-meta {
+  margin: 0 0 0.5rem;
   max-width: var(--measure);
 }
 
-footer strong {
-  color: var(--fg-muted);
+.footer-meta {
+  color: var(--fg-faint);
+  opacity: 0.85;
+  margin-bottom: 0;
 }
 
 /* --- Responsive ---------------------------------------------------------- */

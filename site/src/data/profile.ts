@@ -40,9 +40,4 @@ export const stats = [
     label: "image, 3 targets",
     sub: "production, lab and dev run the identical build",
   },
-  {
-    value: "1",
-    label: "engineer, end to end",
-    sub: "infrastructure, backend, client and release",
-  },
 ] as const;

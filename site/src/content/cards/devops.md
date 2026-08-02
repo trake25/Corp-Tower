@@ -1,11 +1,17 @@
 ---
 role: "DevOps"
 order: 2
-tags: ["CI/CD", "AWS", "Kubernetes"]
 headline: "I encoded the three teammates I don't have as CI jobs."
 plain: "I run every environment of this project alone. So I built the parts of a team that isn't there — the person who does releases, the person who checks before you break something, and the person who remembers the steps."
 metric: "34"
 metricLabel: "CI/CD workflows, no manual deploys"
+tools:
+  - "GitHub Actions"
+  - "Terraform"
+  - "Ansible"
+  - "Docker"
+  - "Google Play API"
+  - "Cloudflare API"
 links:
   - label: "Android release pipeline"
     href: "https://github.com/trake25/Corp-Tower/blob/main/.github/workflows/Android-Deploy-wsplaytod.yml"

@@ -5,15 +5,20 @@ const cards = defineCollection({
   schema: z.object({
     role: z.string(),
     order: z.number(),
-    tags: z.array(z.string()),
     headline: z.string(),
     plain: z.string(),
     metric: z.string(),
     metricLabel: z.string(),
+    tools: z.array(z.string()).default([]),
+    // One entry per clickable element in the card's diagram. `id` must match the
+    // `data-detail` on the diagram hotspot — that pairing is what turns a click
+    // on a diagram step into the matching explanation opening below it.
+    details: z
+      .array(z.object({ id: z.string(), title: z.string(), body: z.string() }))
+      .default([]),
     links: z
       .array(z.object({ label: z.string(), href: z.string().url() }))
       .default([]),
-    proofDone: z.boolean().default(true),
   }),
 });
 

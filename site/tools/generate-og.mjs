@@ -27,7 +27,7 @@ const profile = JSON.parse(
   await readFile(resolve(root, "src/data/profile.json"), "utf8")
 );
 
-const required = ["name", "title", "project", "projectShort", "site", "ogTagline", "ogStats"];
+const required = ["name", "title", "project", "projectShort", "site", "ogTagline"];
 const missing = required.filter((key) => !profile[key]);
 if (missing.length > 0) {
   throw new Error(`profile.json is missing required OG field(s): ${missing.join(", ")}`);
@@ -51,8 +51,24 @@ const fit = (text, maxWidth, maxSize, ratio) =>
   Math.min(maxSize, Math.floor(maxWidth / Math.max(1, text.length * ratio)));
 
 const CONTENT_WIDTH = 1040;
-const nameSize = fit(profile.name, CONTENT_WIDTH, 80, 0.66);
-const taglineSize = fit(profile.ogTagline, CONTENT_WIDTH, 33, 0.52);
+const nameSize = fit(profile.name, CONTENT_WIDTH, 84, 0.66);
+
+// The tagline is the only long line left on the card, so it gets two lines to
+// work with rather than being shrunk to nothing. Split on the last space before
+// the halfway mark so the two lines come out roughly even.
+const wrap = (text, maxChars) => {
+  if (text.length <= maxChars) return [text];
+  const cut = text.lastIndexOf(" ", Math.ceil(text.length / 2) + 8);
+  return cut === -1 ? [text] : [text.slice(0, cut), text.slice(cut + 1)];
+};
+
+const taglineLines = wrap(profile.ogTagline, 58);
+const taglineSize = fit(
+  taglineLines.reduce((longest, line) => (line.length > longest.length ? line : longest), ""),
+  CONTENT_WIDTH,
+  32,
+  0.52
+);
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
@@ -69,23 +85,16 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" v
   <rect x="80" y="84" width="22" height="22" rx="4" fill="#4fd6a4" />
   <text x="122" y="103" fill="#4fd6a4" font-family="${MONO}" font-size="23" font-weight="600" letter-spacing="3.4">${esc(profile.title.toUpperCase())}</text>
 
-  <text x="80" y="238" fill="#eef1f5" font-family="${SANS}" font-size="${nameSize}" font-weight="700" letter-spacing="-1.5">${esc(profile.name)}</text>
+  <text x="80" y="262" fill="#eef1f5" font-family="${SANS}" font-size="${nameSize}" font-weight="700" letter-spacing="-1.5">${esc(profile.name)}</text>
 
-  <text x="80" y="312" fill="#eef1f5" font-family="${SANS}" font-size="30" font-weight="600">${esc(profile.project)} (${esc(profile.projectShort)})</text>
-  <text x="80" y="356" fill="#949cab" font-family="${SANS}" font-size="${taglineSize}">${esc(profile.ogTagline)}</text>
-
-  <rect x="80" y="432" width="1040" height="1" fill="#21262f" />
-
-  ${profile.ogStats
-    .map((stat, index) => {
-      const [value, ...rest] = String(stat).split(" ");
-      const x = 80 + index * 350;
-      return `<text x="${x}" y="502" fill="#4fd6a4" font-family="${MONO}" font-size="36" font-weight="600">${esc(value)}</text>
-  <text x="${x}" y="538" fill="#6b7280" font-family="${SANS}" font-size="23">${esc(rest.join(" "))}</text>`;
-    })
+  <text x="80" y="336" fill="#eef1f5" font-family="${SANS}" font-size="30" font-weight="600">${esc(profile.project)} (${esc(profile.projectShort)})</text>
+  ${taglineLines
+    .map((line, index) => `<text x="80" y="${384 + index * 42}" fill="#949cab" font-family="${SANS}" font-size="${taglineSize}">${esc(line)}</text>`)
     .join("\n  ")}
 
-  <text x="80" y="594" fill="#6b7280" font-family="${MONO}" font-size="22" letter-spacing="0.6">${esc(host)}</text>
+  <rect x="80" y="508" width="1040" height="1" fill="#21262f" />
+
+  <text x="80" y="556" fill="#6b7280" font-family="${MONO}" font-size="22" letter-spacing="0.6">${esc(host)}</text>
 </svg>`;
 
 mkdirSync(resolve(root, "public"), { recursive: true });

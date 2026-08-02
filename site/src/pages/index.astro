@@ -15,8 +15,19 @@ const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
   QA: QaLoopDiagram,
 };
 
+// Filter buttons follow this order, not the cards' display order — AI leads
+// because it leads the job title. A role present in the cards but missing here
+// is appended rather than dropped.
+const ROLE_ORDER = ["AI", "Cloud", "DevOps", "QA", "Backend", "Frontend"];
+
 const cardEntries = (await getCollection("cards")).sort((a, b) => a.data.order - b.data.order);
-const uniqueTags = [...new Set(cardEntries.flatMap((entry) => entry.data.tags))].sort();
+const presentRoles = [...new Set(cardEntries.map((entry) => entry.data.role))];
+const roles = [
+  ...ROLE_ORDER.filter((role) => presentRoles.includes(role)),
+  ...presentRoles.filter((role) => !ROLE_ORDER.includes(role)),
+];
+
+const year = new Date().getFullYear();
 
 const rendered = await Promise.all(
   cardEntries.map(async (entry) => ({ entry, Content: (await entry.render()).Content }))
@@ -44,24 +55,23 @@ const rendered = await Promise.all(
     <section class="hero">
       <p class="eyebrow">{profile.title}</p>
       <h1>
-        I automate the team I don't have —<br class="hero-break" />
-        so I can run production alone, at minimum cost.
+        In a world of automation,<br class="hero-break" />
+        quality and cost efficiency are what I bring.
       </h1>
       <p class="lede">
-        <strong>{profile.project} ({profile.projectShort})</strong> is a real-time,
-        server-authoritative multiplayer game built on selfish-cooperative tension — you
-        need the others to keep the tower up, and you need to beat them. It runs on Android
-        and in the browser today, with more platforms to follow. I designed, orchestrated,
-        built, quality-assured and now operate it end to end: the servers it runs on, the
-        game logic, the UI integration in the client, and the pipeline that ships all of
-        it. Coding agents do a lot of the implementing; I hold the requirement, the review
-        and the sign-off.
+        <strong>{profile.project} ({profile.projectShort})</strong> is a real-time
+        multiplayer game I'm building: you stack pieces on a shared tower, and you need the
+        other players to keep it standing while you're trying to out-score them. The server
+        decides everything, so nobody can cheat by editing their own copy. It's
+        <strong>still in development</strong> — but there's a playable demo running right
+        now, on Android and in your browser.
       </p>
       <p class="lede">
-        Underneath: a Godot client, a server that holds the only authoritative copy of the
-        game, and three deployment targets built from one container image — EKS for
-        production-grade infrastructure, a K3s box as the lab, and a machine at home as the
-        cost-efficient development target.
+        This page isn't a finished-product pitch. It's the engineering behind the parts
+        that already work: how it gets deployed, how it gets tested, how a release reaches
+        a real app store, and how I use coding agents to do the building while I hold the
+        requirement, the checking and the sign-off. One card per skill, each with the piece
+        of {profile.projectShort} that proves it.
       </p>
 
       <dl class="stats">
@@ -104,14 +114,10 @@ const rendered = await Promise.all(
         <span class="section-index">01</span> Skills highlights
       </h2>
       <p class="section-intro">
-        One card per skill. Each opens with the plain-English version, then shows how that
-        skill is actually built here — a diagram of the thing itself, the alternative I
-        rejected, and links to the code that proves it. Not a list of technologies, the
-        reasoning underneath them. The topics cut across all six — filter to see where one
-        concern keeps showing up.
+        Check how skills were demonstrated by opening the cards.
       </p>
 
-      <CardFilter tags={uniqueTags} total={cardEntries.length} />
+      <CardFilter roles={roles} total={cardEntries.length} />
 
       <div class="cards">
         {rendered.map(({ entry, Content }) => {
@@ -123,7 +129,8 @@ const rendered = await Promise.all(
               plain={entry.data.plain}
               metric={entry.data.metric}
               metricLabel={entry.data.metricLabel}
-              tags={entry.data.tags}
+              tools={entry.data.tools}
+              details={entry.data.details}
               links={entry.data.links}
             >
               {Diagram && <Diagram slot="diagram" />}
@@ -197,15 +204,26 @@ const rendered = await Promise.all(
   </main>
 
   <footer>
-    <p>
-      <strong>{profile.name}</strong> — {profile.title}
-      {profile.location && <> · {profile.location}</>}
+    <div class="footer-top">
+      <p class="footer-id">
+        <strong>{profile.name}</strong>
+        <span>{profile.title}{profile.location && ` · ${profile.location}`}</span>
+      </p>
+      <nav class="footer-nav" aria-label="Footer">
+        <a href="#skills">Skills</a>
+        <a href="#work">Work with me</a>
+        <a href="#contact">Contact</a>
+        <a href={profile.demo} target="_blank" rel="noopener noreferrer">Play the demo</a>
+        <a href={profile.repo} target="_blank" rel="noopener noreferrer">Source</a>
+      </nav>
+    </div>
+    <p class="footer-note">
+      Every claim on this page links to the file, workflow or test that backs it. The
+      repository still carries the project's working name, Corp&nbsp;Tower.
     </p>
-    <p>
-      Every claim on this page links to the file, workflow or test that backs it, in
-      <a href={profile.repo} target="_blank" rel="noopener noreferrer">the public repository</a>
-      — which still carries the project's working name, Corp Tower. This site is a static
-      Astro build deployed to Cloudflare Workers on every push.
+    <p class="footer-meta">
+      © {year} {profile.name} · Static Astro build, redeployed to Cloudflare Workers on
+      every push.
     </p>
   </footer>
 </BaseLayout>

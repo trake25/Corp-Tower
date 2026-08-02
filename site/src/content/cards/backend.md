@@ -1,11 +1,15 @@
 ---
 role: "Backend"
 order: 4
-tags: ["Multiplayer", "Testing"]
 headline: "The server decides everything; the phone only draws the result."
 plain: "That's what lets someone lose signal on the bus, come back, and still be in the same game — served by a different worker than the one that started it."
 metric: "Any pod"
 metricLabel: "recovers any room"
+tools:
+  - "Node.js"
+  - "Redis"
+  - "WebSocket (ws)"
+  - "Kubernetes"
 links:
   - label: "Lobby_Manager.js — matchmaking & rooms"
     href: "https://github.com/trake25/Corp-Tower/blob/main/src/Server/app/Lobby_Manager.js"

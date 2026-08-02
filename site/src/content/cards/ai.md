@@ -1,11 +1,14 @@
 ---
 role: "AI"
 order: 6
-tags: ["AI agents"]
 headline: "A router beats a vector store at 1.6k lines. Retrieval here is a curation problem, not a search problem."
 plain: "I built a small, hand-written knowledge system so an AI agent can work on this codebase without re-reading it every time. It's deliberately simple — the industry-standard version would cost more and explain less at this size."
 metric: "13"
 metricLabel: "routed docs, 0 repo-wide searches"
+tools:
+  - "Claude Code"
+  - "Markdown"
+  - "Git"
 links:
   - label: "index.md — the router itself"
     href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/index.md"
