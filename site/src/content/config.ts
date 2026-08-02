@@ -12,7 +12,18 @@ const cards = defineCollection({
     // `data-detail` on the diagram hotspot — that pairing is what turns a click
     // on a diagram step into the matching explanation opening below it.
     details: z
-      .array(z.object({ id: z.string(), title: z.string(), body: z.string() }))
+      .array(
+        z.object({
+          id: z.string(),
+          title: z.string(),
+          body: z.string(),
+          // The one artefact that proves this step. Per-step rather than a
+          // bucket at the bottom of the card: a link is far stronger sitting
+          // next to the claim it backs. The schema checks the URL is well
+          // formed — it cannot check the anchor still resolves.
+          evidence: z.object({ label: z.string(), href: z.string().url() }).optional(),
+        })
+      )
       .default([]),
     links: z
       .array(z.object({ label: z.string(), href: z.string().url() }))

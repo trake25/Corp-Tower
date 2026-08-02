@@ -17,6 +17,7 @@ interface CardDetail {
   id: string;
   title: string;
   body: string;
+  evidence?: { label: string; href: string };
 }
 
 interface Props {
@@ -82,6 +83,16 @@ const flowId = `flow-${role.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
                   </button>
                 </h4>
                 <p>{detail.body}</p>
+                {detail.evidence && (
+                  <a
+                    class="detail-evidence"
+                    href={detail.evidence.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {detail.evidence.label}
+                  </a>
+                )}
               </section>
             ))}
           </div>
@@ -153,7 +164,10 @@ const flowId = `flow-${role.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
       // The whole block is clickable for convenience, but not while the reader
       // is selecting text out of it — a drag-select ends in a click too.
       detail.addEventListener("click", (event) => {
-        if ((event.target as HTMLElement).closest(".detail-jump")) return;
+        const target = event.target as HTMLElement;
+        // The jump button handles itself; the evidence link must be allowed to
+        // navigate rather than being swallowed by the block-level jump.
+        if (target.closest(".detail-jump") || target.closest("a")) return;
         if ((window.getSelection()?.toString() ?? "").length > 0) return;
         jumpToDiagram();
       });

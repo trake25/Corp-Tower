@@ -364,6 +364,13 @@ main > section:first-child {
   fill: var(--bg-alt);
 }
 
+.topology .ephemeral-node {
+  stroke: var(--accent-dim);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  fill: var(--bg-alt);
+}
+
 .topology .ephemeral {
   stroke: var(--accent-dim);
   stroke-dasharray: 5 4;
@@ -779,6 +786,29 @@ main > section:first-child {
 .detail.is-active {
   border-left-color: var(--accent);
   background: var(--surface-hover);
+}
+
+/* The artefact backing this step. Understated — it is a receipt, not a CTA. */
+.detail-evidence {
+  display: inline-block;
+  margin-top: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--fg-muted);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border-strong);
+  padding-bottom: 0.1rem;
+}
+
+.detail-evidence::before {
+  content: "97 ";
+  color: var(--accent);
+}
+
+.detail-evidence:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .detail.is-active .detail-jump {

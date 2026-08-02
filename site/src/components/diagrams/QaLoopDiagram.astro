@@ -6,12 +6,14 @@
 //   1. Each step is a `.hotspot` group carrying `data-detail`, which must match
 //      an `id` in the card's `details` frontmatter. Card.astro's script pairs
 //      them: click a step and the flow write-up opens, scrolled to that step.
+//      Clicking the written step comes back here and lights the box up again.
 //   2. It shares the `.topology` classes with every other diagram so they read
 //      as one visual language and track the theme.
 //
-// The return leg is a hotspot too — how a rejected fix is scoped is a real step
-// in this process, not a connector. It needs an explicit transparent hit area
-// because a stroked path is only clickable on the stroke itself.
+// Step 5 sits on the return leg as a box of its own rather than a caption: the
+// two "fix" words in this flow mean different things, and the split has to be
+// legible. Step 5 is writing the instruction; step 2 is the agent carrying it
+// out. Same word, different job, different box.
 //
 // Source facts: src/content/cards/qa.md, docs/context/testing.md.
 ---
@@ -20,7 +22,7 @@
   <div class="card-diagram-scroll">
     <svg
       class="topology"
-      viewBox="0 0 820 300"
+      viewBox="0 0 820 375"
       role="img"
       aria-labelledby="qa-loop-title qa-loop-desc"
       xmlns="http://www.w3.org/2000/svg"
@@ -30,13 +32,15 @@
       <desc id="qa-loop-desc">
         A six-step cycle. One: the feature specification and the expected results
         are written before any planning or building starts. Two: the coding agent
-        plans and builds it. Three: scripted automated tests run before a human
-        looks at anything. Four: I test the output by hand and compare it against
-        the expected results. Five: anything that does not match goes back to the
-        agent as a list of narrowly scoped fixes, with the session context kept concise so
-        it cannot hallucinate, and the cycle returns to step two. Six: once every
+        plans, builds, and applies the fixes that come back to it. Three:
+        scripted automated tests run before a human looks at anything. Four: I
+        test the output by hand and compare it against the expected results.
+        Five: anything that does not match is written up as a specific, scoped
+        fix instruction, with the session context kept concise so the agent
+        cannot hallucinate, and the cycle returns to step two. Six: once every
         expected result is met, the documentation is updated and then compacted
-        to a context budget.
+        to a context budget — and that compacted documentation is what the next
+        task, and the agent working it, reads as its context.
       </desc>
 
       <defs>
@@ -45,60 +49,66 @@
         </marker>
       </defs>
 
-      <!-- the return leg, drawn above the row so it never crosses the flow -->
-      <g class="hotspot" data-detail="feedback" role="button" tabindex="0" aria-label="Step 5, fixes go back specific and small — open the explanation">
-        <rect x="296" y="24" width="436" height="38" fill="transparent" />
-        <path class="link ephemeral-link" d="M716,76 L716,46 L308,46 L308,76" marker-end="url(#qa-arrow)" />
-        <text class="wire" x="512" y="38" text-anchor="middle">5 · Lists of specific fix · context kept concise so it can't invent</text>
+      <!-- return leg: step 5 is a step, so it gets a box like the rest -->
+      <path class="link ephemeral-link" d="M716,118 L716,50 L641,50" marker-end="url(#qa-arrow)" />
+      <path class="link ephemeral-link" d="M385,50 L308,50 L308,118" marker-end="url(#qa-arrow)" />
+
+      <g class="hotspot" data-detail="feedback" role="button" tabindex="0" aria-label="Step 5, the fix instruction — open the explanation">
+        <rect class="node ephemeral-node" x="387" y="22" width="250" height="56" rx="10" />
+        <text class="label" x="401" y="46">5 · Fix instruction</text>
+        <text class="sub" x="401" y="64">what to fix · context kept concise</text>
       </g>
 
       <g class="hotspot" data-detail="spec" role="button" tabindex="0" aria-label="Step 1, specification and expected results first — open the explanation">
-        <rect class="node" x="15" y="76" width="178" height="80" rx="10" />
-        <text class="label" x="29" y="100">1 · Spec first</text>
-        <text class="sub" x="29" y="118">what it must do, and the</text>
-        <text class="sub" x="29" y="134">results I expect to see</text>
+        <rect class="node" x="15" y="118" width="178" height="80" rx="10" />
+        <text class="label" x="29" y="142">1 · Spec first</text>
+        <text class="sub" x="29" y="160">what it must do, and the</text>
+        <text class="sub" x="29" y="176">results I expect to see</text>
       </g>
 
-      <path class="link" d="M195,116 L217,116" marker-end="url(#qa-arrow)" />
+      <path class="link" d="M195,158 L217,158" marker-end="url(#qa-arrow)" />
 
-      <g class="hotspot" data-detail="build" role="button" tabindex="0" aria-label="Step 2, the agent plans and builds — open the explanation">
-        <rect class="node" x="219" y="76" width="178" height="80" rx="10" />
-        <text class="label" x="233" y="100">2 · Agent builds</text>
-        <text class="sub" x="233" y="118">planning and building,</text>
-        <text class="sub" x="233" y="134">and fixing</text>
+      <g class="hotspot" data-detail="build" role="button" tabindex="0" aria-label="Step 2, the agent plans, builds and fixes — open the explanation">
+        <rect class="node" x="219" y="118" width="178" height="80" rx="10" />
+        <text class="label" x="233" y="142">2 · Agent builds</text>
+        <text class="sub" x="233" y="160">planning, building and</text>
+        <text class="sub" x="233" y="176">fixing what comes back</text>
       </g>
 
-      <path class="link" d="M399,116 L421,116" marker-end="url(#qa-arrow)" />
+      <path class="link" d="M399,158 L421,158" marker-end="url(#qa-arrow)" />
 
       <g class="hotspot" data-detail="tests" role="button" tabindex="0" aria-label="Step 3, automated tests run before I look — open the explanation">
-        <rect class="node" x="423" y="76" width="178" height="80" rx="10" />
-        <text class="label" x="437" y="100">3 · Automated tests</text>
-        <text class="sub" x="437" y="118">scripted checks run before</text>
-        <text class="sub" x="437" y="134">I look at anything</text>
+        <rect class="node" x="423" y="118" width="178" height="80" rx="10" />
+        <text class="label" x="437" y="142">3 · Automated tests</text>
+        <text class="sub" x="437" y="160">scripted checks run before</text>
+        <text class="sub" x="437" y="176">I look at anything</text>
       </g>
 
-      <path class="link" d="M603,116 L625,116" marker-end="url(#qa-arrow)" />
+      <path class="link" d="M603,158 L625,158" marker-end="url(#qa-arrow)" />
 
-      <g class="hotspot" data-detail="manual" role="button" tabindex="0" aria-label="Step 4, Manual Testing — open the explanation">
-        <rect class="node" x="627" y="76" width="178" height="80" rx="10" />
-        <text class="label" x="641" y="100">4 · Manual Testing</text>
-        <text class="sub" x="641" y="118">actual output against the</text>
-        <text class="sub" x="641" y="134">expected results</text>
+      <g class="hotspot" data-detail="manual" role="button" tabindex="0" aria-label="Step 4, manual testing — open the explanation">
+        <rect class="node" x="627" y="118" width="178" height="80" rx="10" />
+        <text class="label" x="641" y="142">4 · Manual testing</text>
+        <text class="sub" x="641" y="160">actual output against the</text>
+        <text class="sub" x="641" y="176">expected results</text>
       </g>
 
-      <path class="link" d="M716,156 L716,206" marker-end="url(#qa-arrow)" />
-      <text class="wire accent" x="726" y="186">all results met</text>
+      <path class="link" d="M716,198 L716,248" marker-end="url(#qa-arrow)" />
+      <text class="wire accent" x="726" y="228">all results met</text>
 
       <g class="hotspot" data-detail="docs" role="button" tabindex="0" aria-label="Step 6, documentation updated then compacted — open the explanation">
-        <rect class="node" x="627" y="206" width="178" height="70" rx="10" />
-        <text class="label" x="641" y="230">6 · Docs updated</text>
-        <text class="sub" x="641" y="248">then compacted to a</text>
-        <text class="sub" x="641" y="264">context budget</text>
+        <rect class="node" x="627" y="248" width="178" height="70" rx="10" />
+        <text class="label" x="641" y="272">6 · Docs updated</text>
+        <text class="sub" x="641" y="290">then compacted — 13 docs,</text>
+        <text class="sub" x="641" y="306">1–2 read per task</text>
       </g>
 
-      <text class="wire accent" x="15" y="234">Nothing is approved by whoever built it</text>
-      <text class="wire" x="15" y="254">the same rule an engineering team runs on — it does not</text>
-      <text class="wire" x="15" y="270">stop applying because the builder is a machine</text>
+      <path class="link ephemeral-link" d="M627,283 L104,283 L104,200" marker-end="url(#qa-arrow)" />
+      <text class="wire accent" x="366" y="276" text-anchor="middle">read as context at the start of the next task</text>
+
+      <text class="wire accent" x="15" y="330">Nothing is approved by whoever built it</text>
+      <text class="wire" x="15" y="350">the same rule an engineering team runs on — it does not</text>
+      <text class="wire" x="15" y="366">stop applying because the builder is a machine</text>
     </svg>
   </div>
   <figcaption class="card-diagram-caption">

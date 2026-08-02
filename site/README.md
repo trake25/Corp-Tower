@@ -49,7 +49,17 @@ it as their content gets rewritten.
 | Tools & tech chips | `tools` | 2 |
 | Diagram | the component registered for that `role` | 2 |
 | Step explanations | `details[]` | 3 |
+| Per-step evidence link | `details[].evidence` | 3 |
 | Longer write-up | the markdown body | 3 |
+
+**Evidence is per-step, not a bucket.** Each `details[]` entry may carry one
+`evidence: { label, href }` pointing at the single artefact that proves that
+step — the CI gates table, the known-coverage-gaps list, the regression test
+that was run against the broken code first. A link sitting next to the claim it
+backs is worth more than a pile at the bottom of the card. Labels are written in
+plain English, not filenames. The schema validates the URL is well formed; it
+cannot tell you the heading anchor still resolves, so re-check them after any
+`/compact-docs` run that might rename a section.
 
 **`links[]` is deliberately not rendered.** The "In the repo" block was removed
 from the card. The data is still in the frontmatter and still validated by the
