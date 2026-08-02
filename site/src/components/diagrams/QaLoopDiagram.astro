@@ -9,6 +9,10 @@
 //   2. It shares the `.topology` classes with every other diagram so they read
 //      as one visual language and track the theme.
 //
+// The return leg is a hotspot too — how a rejected fix is scoped is a real step
+// in this process, not a connector. It needs an explicit transparent hit area
+// because a stroked path is only clickable on the stroke itself.
+//
 // Source facts: src/content/cards/qa.md, docs/context/testing.md.
 ---
 
@@ -24,13 +28,15 @@
     >
       <title id="qa-loop-title">How work gets checked before it counts as finished</title>
       <desc id="qa-loop-desc">
-        A five-step cycle. One: write down what finished means, before any work
-        starts. Two: the coding agent builds it, and only builds it. Three:
-        automated checks run first, so failures bounce back before a human looks.
-        Four: I check the result against what was written in step one, and
-        anything that does not match goes back with specifics and returns to step
-        two. Five: only once the goal is actually reached does the written
-        documentation get updated.
+        A six-step cycle. One: the feature specification and the expected results
+        are written before any planning or building starts. Two: the coding agent
+        plans and builds it. Three: scripted automated tests run before a human
+        looks at anything. Four: I test the output by hand and compare it against
+        the expected results. Five: anything that does not match goes back to the
+        agent as one narrowly scoped fix, with the session context kept small so
+        it cannot hallucinate, and the cycle returns to step two. Six: once every
+        expected result is met, the documentation is updated and then compacted
+        to a context budget.
       </desc>
 
       <defs>
@@ -40,54 +46,57 @@
       </defs>
 
       <!-- the return leg, drawn above the row so it never crosses the flow -->
-      <path class="link ephemeral-link" d="M716,76 L716,46 L308,46 L308,76" marker-end="url(#qa-arrow)" />
-      <text class="wire" x="512" y="38" text-anchor="middle">sent back with specifics — and round it goes again</text>
+      <g class="hotspot" data-detail="feedback" role="button" tabindex="0" aria-label="Step 5, fixes go back specific and small — open the explanation">
+        <rect x="296" y="24" width="436" height="38" fill="transparent" />
+        <path class="link ephemeral-link" d="M716,76 L716,46 L308,46 L308,76" marker-end="url(#qa-arrow)" />
+        <text class="wire" x="512" y="38" text-anchor="middle">5 · Lists of specific fix · context kept concise so it can't invent</text>
+      </g>
 
-      <g class="hotspot" data-detail="requirement" role="button" tabindex="0" aria-label="Step 1, write down what finished means — open the explanation">
+      <g class="hotspot" data-detail="spec" role="button" tabindex="0" aria-label="Step 1, specification and expected results first — open the explanation">
         <rect class="node" x="15" y="76" width="178" height="80" rx="10" />
-        <text class="label" x="29" y="100">1 · Write it down</text>
-        <text class="sub" x="29" y="118">what finished means,</text>
-        <text class="sub" x="29" y="134">before anything starts</text>
+        <text class="label" x="29" y="100">1 · Spec first</text>
+        <text class="sub" x="29" y="118">what it must do, and the</text>
+        <text class="sub" x="29" y="134">results I expect to see</text>
       </g>
 
       <path class="link" d="M195,116 L217,116" marker-end="url(#qa-arrow)" />
 
-      <g class="hotspot" data-detail="implement" role="button" tabindex="0" aria-label="Step 2, the agent builds it — open the explanation">
+      <g class="hotspot" data-detail="build" role="button" tabindex="0" aria-label="Step 2, the agent plans and builds — open the explanation">
         <rect class="node" x="219" y="76" width="178" height="80" rx="10" />
         <text class="label" x="233" y="100">2 · Agent builds</text>
-        <text class="sub" x="233" y="118">it builds, and that is</text>
-        <text class="sub" x="233" y="134">the whole of its job</text>
+        <text class="sub" x="233" y="118">planning and building,</text>
+        <text class="sub" x="233" y="134">and fixing</text>
       </g>
 
       <path class="link" d="M399,116 L421,116" marker-end="url(#qa-arrow)" />
 
-      <g class="hotspot" data-detail="gates" role="button" tabindex="0" aria-label="Step 3, the machine checks first — open the explanation">
+      <g class="hotspot" data-detail="tests" role="button" tabindex="0" aria-label="Step 3, automated tests run before I look — open the explanation">
         <rect class="node" x="423" y="76" width="178" height="80" rx="10" />
-        <text class="label" x="437" y="100">3 · Machine checks</text>
-        <text class="sub" x="437" y="118">builds, tests, and what</text>
-        <text class="sub" x="437" y="134">changed — before I look</text>
+        <text class="label" x="437" y="100">3 · Automated tests</text>
+        <text class="sub" x="437" y="118">scripted checks run before</text>
+        <text class="sub" x="437" y="134">I look at anything</text>
       </g>
 
       <path class="link" d="M603,116 L625,116" marker-end="url(#qa-arrow)" />
 
-      <g class="hotspot" data-detail="verify" role="button" tabindex="0" aria-label="Step 4, then I check it — open the explanation">
+      <g class="hotspot" data-detail="manual" role="button" tabindex="0" aria-label="Step 4, Manual Testing — open the explanation">
         <rect class="node" x="627" y="76" width="178" height="80" rx="10" />
-        <text class="label" x="641" y="100">4 · Then I check</text>
-        <text class="sub" x="641" y="118">against what step one</text>
-        <text class="sub" x="641" y="134">said, not how it looks</text>
+        <text class="label" x="641" y="100">4 · I test by hand</text>
+        <text class="sub" x="641" y="118">actual output against the</text>
+        <text class="sub" x="641" y="134">expected results</text>
       </g>
 
       <path class="link" d="M716,156 L716,206" marker-end="url(#qa-arrow)" />
-      <text class="wire accent" x="726" y="186">it matches</text>
+      <text class="wire accent" x="726" y="186">all results met</text>
 
-      <g class="hotspot" data-detail="docs" role="button" tabindex="0" aria-label="Step 5, write it up last — open the explanation">
+      <g class="hotspot" data-detail="docs" role="button" tabindex="0" aria-label="Step 6, documentation updated then compacted — open the explanation">
         <rect class="node" x="627" y="206" width="178" height="70" rx="10" />
-        <text class="label" x="641" y="230">5 · Write it up</text>
-        <text class="sub" x="641" y="248">last, once it is really</text>
-        <text class="sub" x="641" y="264">done — never before</text>
+        <text class="label" x="641" y="230">6 · Docs updated</text>
+        <text class="sub" x="641" y="248">then compacted to a</text>
+        <text class="sub" x="641" y="264">context budget</text>
       </g>
 
-      <text class="wire accent" x="15" y="234">nothing is approved by whoever built it</text>
+      <text class="wire accent" x="15" y="234">Nothing is approved by whoever built it</text>
       <text class="wire" x="15" y="254">the same rule an engineering team runs on — it does not</text>
       <text class="wire" x="15" y="270">stop applying because the builder is a machine</text>
     </svg>

@@ -2,8 +2,8 @@
 // Three states, not two:
 //   1. Vignette  — collapsed tile: role chip + summary title only.
 //   2. Open      — short description, tools & tech, and the clickable diagram.
-//   3. Flow open — click a diagram step and the step-by-step explanations plus
-//                  the longer write-up appear, scrolled to the step you clicked.
+//   3. Flow open — click a diagram step (or the toggle) and the step-by-step
+//                  explanations appear, scrolled to the step you clicked.
 //
 // `links` is intentionally not rendered — the "In the repo" block was removed.
 // The data is kept in the card frontmatter so it can be brought back without
@@ -25,11 +25,13 @@ interface Props {
   plain: string;
   tools: string[];
   details: CardDetail[];
+  hasBody: boolean;
   links?: CardLink[];
 }
 
-const { role, headline, plain, tools, details } = Astro.props;
+const { role, headline, plain, tools, details, hasBody } = Astro.props;
 const hasFlow = details.length > 0;
+const flowId = `flow-${role.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 ---
 
 <details class="card" data-role={role}>
@@ -61,11 +63,15 @@ const hasFlow = details.length > 0;
 
     {hasFlow ? (
       <>
-        <button class="reveal-all" type="button">
-          Or read all {details.length} steps
+        <button class="flow-toggle" type="button" aria-expanded="false" aria-controls={flowId}>
+          <span class="flow-toggle-show">Show all {details.length} steps</span>
+          <span class="flow-toggle-hide">Hide the steps</span>
+          <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">
+            <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
         </button>
 
-        <div class="flow-details" hidden>
+        <div class="flow-details" id={flowId} hidden>
           <div class="detail-list">
             {details.map((detail) => (
               <section class="detail" data-detail-target={detail.id}>
@@ -74,54 +80,64 @@ const hasFlow = details.length > 0;
               </section>
             ))}
           </div>
-          <div class="flow-body">
-            <slot />
-          </div>
+          {hasBody && (
+            <div class="flow-body">
+              <slot />
+            </div>
+          )}
         </div>
       </>
     ) : (
-      <div class="flow-body">
-        <slot />
-      </div>
+      hasBody && (
+        <div class="flow-body">
+          <slot />
+        </div>
+      )
     )}
   </div>
 </details>
 
 <script>
   // Diagram steps reveal the write-up rather than navigating anywhere: the flow
-  // details start hidden, the first click on any step (or on the fallback
-  // button) opens them, and the step you clicked is highlighted and scrolled to.
+  // details start hidden, clicking any step (or the toggle) opens them, and the
+  // step you clicked is highlighted and scrolled to. The toggle stays available
+  // in both directions so an opened flow can be put away again.
   const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  for (const card of document.querySelectorAll<HTMLDetailsElement>(".card")) {
+  const cards = document.querySelectorAll<HTMLDetailsElement>(".card");
+
+  const clearActive = (card: HTMLElement) => {
+    for (const target of card.querySelectorAll<HTMLElement>("[data-detail-target]")) {
+      target.classList.remove("is-active");
+    }
+  };
+
+  const setFlow = (card: HTMLElement, open: boolean) => {
     const flow = card.querySelector<HTMLElement>(".flow-details");
-    if (!flow) continue;
+    const toggle = card.querySelector<HTMLButtonElement>(".flow-toggle");
+    if (flow) flow.hidden = !open;
+    toggle?.setAttribute("aria-expanded", String(open));
+    if (!open) clearActive(card);
+  };
 
-    const targets = card.querySelectorAll<HTMLElement>("[data-detail-target]");
-    const revealAll = card.querySelector<HTMLButtonElement>(".reveal-all");
+  for (const card of cards) {
+    const toggle = card.querySelector<HTMLButtonElement>(".flow-toggle");
 
-    const clearActive = () => {
-      for (const target of targets) target.classList.remove("is-active");
-    };
-
-    revealAll?.addEventListener("click", () => {
-      flow.hidden = false;
-      revealAll.hidden = true;
-      clearActive();
+    toggle?.addEventListener("click", () => {
+      setFlow(card, toggle.getAttribute("aria-expanded") !== "true");
     });
 
     for (const hotspot of card.querySelectorAll<HTMLElement>("[data-detail]")) {
       const reveal = (event: Event) => {
         event.preventDefault();
-        flow.hidden = false;
-        if (revealAll) revealAll.hidden = true;
+        setFlow(card, true);
 
         const target = card.querySelector<HTMLElement>(
           `[data-detail-target="${hotspot.dataset.detail}"]`
         );
         if (!target) return;
 
-        clearActive();
+        clearActive(card);
         target.classList.add("is-active");
         target.scrollIntoView({ block: "center", behavior: motionOk ? "smooth" : "auto" });
       };
@@ -132,4 +148,14 @@ const hasFlow = details.length > 0;
       });
     }
   }
+
+  // Changing the filter puts every card back to a vignette — otherwise a card
+  // left open and scrolled mid-flow stays that way behind a filter that no
+  // longer includes it.
+  document.addEventListener("cards:reset", () => {
+    for (const card of cards) {
+      card.open = false;
+      setFlow(card, false);
+    }
+  });
 </script>

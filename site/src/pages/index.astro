@@ -119,6 +119,7 @@ const rendered = await Promise.all(
               plain={entry.data.plain}
               tools={entry.data.tools}
               details={entry.data.details}
+              hasBody={entry.body.trim().length > 0}
               links={entry.data.links}
             >
               {Diagram && <Diagram slot="diagram" />}

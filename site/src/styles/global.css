@@ -625,25 +625,44 @@ main > section:first-child {
   animation: reveal 0.28s ease both;
 }
 
-/* Fallback route into the write-up for anyone who doesn't realise the diagram
-   is clickable. It hides itself once the flow is open. */
-.reveal-all {
+/* Opens and closes the whole write-up. Stays available in both directions, and
+   doubles as the route in for anyone who doesn't realise the diagram steps are
+   clickable — including anyone not using a pointer. */
+.flow-toggle {
   font: inherit;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.06em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   cursor: pointer;
   background: none;
-  border: 0;
-  border-bottom: 1px dashed var(--border-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
   color: var(--fg-muted);
-  padding: 0 0 0.15rem;
-  margin-top: 0.3rem;
+  padding: 0.4rem 0.9rem;
+  margin-top: 0.5rem;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
-.reveal-all:hover {
+.flow-toggle:hover {
   color: var(--accent);
-  border-bottom-color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.flow-toggle svg {
+  transition: transform 0.2s ease;
+}
+
+.flow-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.flow-toggle[aria-expanded="false"] .flow-toggle-hide,
+.flow-toggle[aria-expanded="true"] .flow-toggle-show {
+  display: none;
 }
 
 .flow-details[hidden] {
@@ -833,6 +852,18 @@ main > section:first-child {
 
 .hotspot:hover .label,
 .hotspot:focus-visible .label {
+  fill: var(--accent);
+}
+
+/* The return leg is a hotspot with no .node to light up, so its own marks
+   carry the hover state instead. */
+.hotspot:hover .link,
+.hotspot:focus-visible .link {
+  stroke: var(--accent);
+}
+
+.hotspot:hover .wire,
+.hotspot:focus-visible .wire {
   fill: var(--accent);
 }
 

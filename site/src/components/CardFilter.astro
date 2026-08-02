@@ -31,6 +31,10 @@ const { roles, total } = Astro.props;
 
     const selected = button.dataset.filter ?? "all";
 
+    // Card.astro owns the open/flow state, so ask it to reset rather than
+    // reaching into its internals from here.
+    document.dispatchEvent(new CustomEvent("cards:reset"));
+
     filterEl.querySelectorAll<HTMLButtonElement>("button[data-filter]").forEach((b) => {
       b.setAttribute("aria-pressed", String(b === button));
     });
