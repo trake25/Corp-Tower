@@ -1,0 +1,90 @@
+---
+// The Cloud skill's showcase. Deliberately not a topology: the card's argument
+// is about *what each target buys and what it costs to keep*, so the right-hand
+// panel plots spend over a week and bar thickness encodes cost rate. Total ink
+// per row is roughly the total bill — which is the whole point of destroying
+// the production stack between sessions.
+// Source facts: src/content/cards/cloud.md, docs/context/deployment.md.
+---
+
+<figure class="card-diagram">
+  <div class="card-diagram-scroll">
+    <svg
+      class="topology"
+      viewBox="0 0 820 330"
+      role="img"
+      aria-labelledby="cloud-targets-title cloud-targets-desc"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+    >
+      <title id="cloud-targets-title">Three deployment targets and what each one costs to keep</title>
+      <desc id="cloud-targets-desc">
+        One container image feeds three deliberately unequal targets. EKS is the
+        production-grade one — application load balancer, managed nodes in
+        private subnets, managed Redis — and it buys proof that the design
+        survives real infrastructure; it exists only for the length of a session
+        and is destroyed after, so it costs nothing for most of any given week.
+        K3s on a single always-on EC2 instance is the lab, and buys somewhere to
+        break things that is not production, at the cost of one small instance
+        running continuously. A physical backup machine behind a Cloudflare
+        Tunnel runs no managed services and buys a permanently available link at
+        no marginal cost, because the hardware is already owned.
+      </desc>
+
+      <defs>
+        <marker id="cloud-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="arrow-head" d="M0,0 L10,5 L0,10 z" stroke="none" />
+        </marker>
+      </defs>
+
+      <!-- the one shared artefact -->
+      <rect class="node" x="8" y="132" width="132" height="76" rx="10" />
+      <text class="label" x="22" y="158">One image</text>
+      <text class="sub" x="22" y="176">identical ports</text>
+      <text class="sub" x="22" y="192">and manifests</text>
+
+      <path class="link" d="M140,152 C 162,152 158,70 178,70" marker-end="url(#cloud-arrow)" />
+      <path class="link" d="M140,172 L 178,174" marker-end="url(#cloud-arrow)" />
+      <path class="link" d="M140,192 C 162,192 158,278 178,278" marker-end="url(#cloud-arrow)" />
+
+      <!-- EKS -->
+      <rect class="node ephemeral" x="180" y="30" width="300" height="80" rx="10" />
+      <text class="label" x="194" y="56">EKS — production grade</text>
+      <text class="sub" x="194" y="74">ALB · managed nodes · private subnets</text>
+      <text class="sub" x="194" y="90">Buys: proof it survives real infrastructure</text>
+
+      <!-- K3s -->
+      <rect class="node" x="180" y="134" width="300" height="80" rx="10" />
+      <text class="label" x="194" y="160">K3s — lab</text>
+      <text class="sub" x="194" y="178">Single EC2 · Caddy · in-cluster Redis</text>
+      <text class="sub" x="194" y="194">Buys: somewhere to break things safely</text>
+
+      <!-- Physical backup -->
+      <rect class="node" x="180" y="238" width="300" height="80" rx="10" />
+      <text class="label" x="194" y="264">Backup machine — dev + demo</text>
+      <text class="sub" x="194" y="282">Cloudflare Tunnel · no managed services</text>
+      <text class="sub" x="194" y="298">Buys: a permanent link, no marginal cost</text>
+
+      <!-- spend over a week: thickness is cost rate, length is uptime -->
+      <text class="wire" x="510" y="20">spend across a typical week →</text>
+
+      <path class="track" d="M510,64 L812,64" />
+      <path class="spend spend-high" d="M566,64 L626,64" />
+      <text class="wire accent" x="510" y="86">$0 idle — destroyed after each session</text>
+
+      <path class="track" d="M510,168 L812,168" />
+      <path class="spend spend-mid" d="M510,168 L812,168" />
+      <text class="wire" x="510" y="190">always on — one small EC2</text>
+
+      <path class="track" d="M510,272 L812,272" />
+      <path class="spend spend-low" d="M510,272 L812,272" />
+      <text class="wire" x="510" y="294">always on — hardware already owned</text>
+    </svg>
+  </div>
+  <figcaption>
+    Bar thickness is cost rate, bar length is uptime — so the ink in each row is roughly
+    its share of the bill. The production-grade target is the expensive one and the one
+    that exists for the smallest fraction of the week; that is the trade, not an accident
+    of scheduling.
+  </figcaption>
+</figure>

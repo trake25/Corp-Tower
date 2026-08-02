@@ -4,16 +4,16 @@ import { profile } from "../data/profile";
 ---
 
 <BaseLayout title={`Not found — ${profile.name}`} description="Page not found.">
-  <main>
+  <main id="main">
     <section class="hero">
       <p class="eyebrow">404</p>
       <h1>That page doesn't exist.</h1>
       <p class="lede">
-        Nothing here. The engineering decisions, the live demo and the source are all
+        Nothing here. The skills, the live demo and the source are all
         one link away.
       </p>
       <div class="ctas">
-        <a class="cta primary" href="/">Back to the decisions</a>
+        <a class="cta primary" href="/">Back to the skills</a>
         <a class="cta secondary" href={profile.repo} target="_blank" rel="noopener noreferrer">
           Read the source
         </a>

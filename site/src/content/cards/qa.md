@@ -1,7 +1,7 @@
 ---
 role: "QA"
 order: 3
-tags: ["QA", "AI"]
+tags: ["Testing", "CI/CD", "AI agents"]
 headline: "The implementer never signs off on their own work — and that stays true when the implementer is a model."
 plain: "I work with a coding agent the way a QA engineer works with a developer. I define what \"done\" means before work starts, it builds, I test and send it back with specifics, and we loop until nothing is outstanding. Only then does the documentation get updated."
 metric: "0"

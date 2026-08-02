@@ -24,7 +24,7 @@ const personSchema = {
   alternateName: profile.shortName,
   url: profile.site,
   email: `mailto:${profile.email}`,
-  jobTitle: "Cloud, DevOps & Platform Engineer",
+  jobTitle: profile.jobTitle,
   description,
   sameAs: [profile.github, profile.linkedin].filter(Boolean),
   knowsAbout: [
@@ -81,7 +81,7 @@ const personSchema = {
     )}
   </head>
   <body>
-    <a class="skip-link" href="#decisions">Skip to the decisions</a>
+    <a class="skip-link" href="#main">Skip to content</a>
     <slot />
   </body>
 </html>

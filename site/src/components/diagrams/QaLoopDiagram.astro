@@ -1,0 +1,93 @@
+---
+// The QA skill's showcase. Hand-authored, and sharing the `.topology` classes
+// with every other skill diagram on purpose, so they read as one visual
+// language and all track the site theme.
+// Source facts: src/content/cards/qa.md, docs/context/testing.md.
+//
+// Marker and aria ids are namespaced (`qa-`) because several diagrams render on
+// the same page and duplicate ids would silently point at the wrong element.
+---
+
+<figure class="card-diagram">
+  <div class="card-diagram-scroll">
+    <svg
+      class="topology"
+      viewBox="0 0 820 300"
+      role="img"
+      aria-labelledby="qa-loop-title qa-loop-desc"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+    >
+      <title id="qa-loop-title">The QA-to-implementer loop</title>
+      <desc id="qa-loop-desc">
+        A four-step cycle. One: the requirement, a definition of done written
+        before any work starts. Two: the agent implements, in the implementer's
+        seat and never the reviewer's. Three: CI gates act as automated
+        acceptance criteria and are cleared first. Four: I verify the work
+        against the requirement. Failing work is rejected with specifics and
+        returns to step two, looping until nothing is outstanding. Only once the
+        goal is confirmed reached does step five run, updating the
+        documentation.
+      </desc>
+
+      <defs>
+        <marker id="qa-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="arrow-head" d="M0,0 L10,5 L0,10 z" stroke="none" />
+        </marker>
+      </defs>
+
+      <!-- rejection loop, drawn above the row so it never crosses the flow -->
+      <path class="link ephemeral-link" d="M716,76 L716,46 L308,46 L308,76" marker-end="url(#qa-arrow)" />
+      <text class="wire" x="512" y="38" text-anchor="middle">rejected — with specifics, and it loops until nothing is outstanding</text>
+
+      <!-- 1. Requirement -->
+      <rect class="node" x="15" y="76" width="178" height="80" rx="10" />
+      <text class="label" x="29" y="100">1 · Requirement</text>
+      <text class="sub" x="29" y="118">Definition of done, written</text>
+      <text class="sub" x="29" y="134">before any work starts</text>
+
+      <path class="link" d="M195,116 L217,116" marker-end="url(#qa-arrow)" />
+
+      <!-- 2. Agent implements -->
+      <rect class="node" x="219" y="76" width="178" height="80" rx="10" />
+      <text class="label" x="233" y="100">2 · Agent implements</text>
+      <text class="sub" x="233" y="118">in the implementer's seat</text>
+      <text class="sub" x="233" y="134">— never the reviewer's</text>
+
+      <path class="link" d="M399,116 L421,116" marker-end="url(#qa-arrow)" />
+
+      <!-- 3. CI gates -->
+      <rect class="node" x="423" y="76" width="178" height="80" rx="10" />
+      <text class="label" x="437" y="100">3 · CI gates</text>
+      <text class="sub" x="437" y="118">automated acceptance</text>
+      <text class="sub" x="437" y="134">criteria, cleared first</text>
+
+      <path class="link" d="M603,116 L625,116" marker-end="url(#qa-arrow)" />
+
+      <!-- 4. I verify -->
+      <rect class="node" x="627" y="76" width="178" height="80" rx="10" />
+      <text class="label" x="641" y="100">4 · I verify</text>
+      <text class="sub" x="641" y="118">against the requirement,</text>
+      <text class="sub" x="641" y="134">not against how it feels</text>
+
+      <!-- accept path -->
+      <path class="link" d="M716,156 L716,206" marker-end="url(#qa-arrow)" />
+      <text class="wire accent" x="726" y="186">accepted</text>
+
+      <!-- 5. Docs -->
+      <rect class="node" x="627" y="206" width="178" height="70" rx="10" />
+      <text class="label" x="641" y="230">5 · Docs updated</text>
+      <text class="sub" x="641" y="248">only once the goal is</text>
+      <text class="sub" x="641" y="264">confirmed reached</text>
+
+      <text class="wire accent" x="15" y="234">0 self-certified merges</text>
+      <text class="wire" x="15" y="254">the implementer never judges their own work — and that</text>
+      <text class="wire" x="15" y="270">stays true when the implementer is a language model</text>
+    </svg>
+  </div>
+  <figcaption>
+    The loop runs the same whether the implementer is a person or a model. Step 3 is the
+    part that scales: CI gates are the acceptance criteria a human would otherwise check
+    by hand, so step 4 only ever looks at work that already passes.
+  </figcaption>
+</figure>
