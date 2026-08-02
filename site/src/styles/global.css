@@ -400,24 +400,10 @@ main > section:first-child {
   margin: 0;
 }
 
-/* --- Diagram ------------------------------------------------------------- */
-
-.diagram-wrap {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem 1.25rem;
-  overflow-x: auto;
-  color: var(--fg-muted);
-  -webkit-overflow-scrolling: touch;
-}
-
-.diagram-wrap svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  min-width: 620px;
-}
+/* --- Diagrams ------------------------------------------------------------
+   Shared visual language for every per-skill showcase. The container styles
+   live under .card-diagram further down; these are the marks themselves.
+   -------------------------------------------------------------------------- */
 
 .topology .node {
   stroke: var(--border-strong);
@@ -467,23 +453,6 @@ main > section:first-child {
 
 .topology .wire.accent {
   fill: var(--accent);
-}
-
-.figure-caption {
-  font-size: var(--step--1);
-  color: var(--fg-faint);
-  max-width: var(--measure);
-  margin: 0.9rem 0 0;
-}
-
-.scroll-hint {
-  display: none;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--fg-faint);
-  margin: 0.6rem 0 0;
 }
 
 /* --- Filter -------------------------------------------------------------- */
@@ -774,6 +743,66 @@ main > section:first-child {
   font-style: italic;
 }
 
+/* --- Per-skill showcase diagram ------------------------------------------ */
+
+.card-diagram {
+  margin: 0 0 1.75rem;
+}
+
+.card-diagram-scroll {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.card-diagram-scroll svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 640px;
+}
+
+.card-diagram figcaption {
+  font-size: var(--step--1);
+  color: var(--fg-faint);
+  max-width: var(--measure);
+  margin: 0.85rem 0 0;
+}
+
+/* The rejection path is a return leg, not part of the forward flow — dashed so
+   the happy path reads first. */
+.topology .ephemeral-link {
+  stroke-dasharray: 5 4;
+}
+
+/* Spend tracks: the dashed rule is the elapsed week, the solid bar is time the
+   target actually costs money, and its thickness is the rate. */
+.topology .track {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.topology .spend {
+  stroke: var(--accent);
+  stroke-linecap: round;
+}
+
+.topology .spend-high {
+  stroke-width: 7;
+}
+
+.topology .spend-mid {
+  stroke-width: 3.5;
+}
+
+.topology .spend-low {
+  stroke-width: 1.5;
+}
+
 /* --- Proof links --------------------------------------------------------- */
 
 .proof-links {
@@ -954,8 +983,8 @@ footer strong {
     text-align: left;
   }
 
-  .scroll-hint {
-    display: block;
+  .card-diagram-scroll {
+    padding: 1rem 0.75rem;
   }
 }
 

@@ -8,14 +8,14 @@ const { tags, total } = Astro.props;
 ---
 
 <div class="filter-bar">
-  <div class="filter" role="group" aria-label="Filter trade-offs by topic">
+  <div class="filter" role="group" aria-label="Filter skills by topic">
     <button type="button" data-filter="all" aria-pressed="true">All</button>
     {tags.map((tag) => (
       <button type="button" data-filter={tag} aria-pressed="false">{tag}</button>
     ))}
   </div>
   <p class="filter-count" role="status" aria-live="polite" data-total={total}>
-    Showing all {total} trade-offs
+    Showing all {total} skills
   </p>
 </div>
 
@@ -46,7 +46,7 @@ const { tags, total } = Astro.props;
     if (countEl) {
       countEl.textContent =
         selected === "all"
-          ? `Showing all ${total} trade-offs`
+          ? `Showing all ${total} skills`
           : `Showing ${shown} of ${total} — ${selected}`;
     }
   });

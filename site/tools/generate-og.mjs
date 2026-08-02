@@ -41,6 +41,19 @@ const host = profile.site.replace(/^https?:\/\//, "").replace(/\/$/, "");
 const SANS = "Arial, Helvetica, &apos;DejaVu Sans&apos;, &apos;Liberation Sans&apos;, sans-serif";
 const MONO = "Consolas, &apos;DejaVu Sans Mono&apos;, &apos;Liberation Mono&apos;, monospace";
 
+// There is no text measurement available here — libvips lays the SVG out, and
+// this script has already produced the string by then. So width is estimated
+// from character count and shrunk to fit rather than allowed to run off the
+// canvas: a longer name or tagline in profile.json gets a smaller size instead
+// of a clipped one. `ratio` is average glyph width as a fraction of font size;
+// uppercase and bold run wider, hence the different values at the call sites.
+const fit = (text, maxWidth, maxSize, ratio) =>
+  Math.min(maxSize, Math.floor(maxWidth / Math.max(1, text.length * ratio)));
+
+const CONTENT_WIDTH = 1040;
+const nameSize = fit(profile.name, CONTENT_WIDTH, 80, 0.66);
+const taglineSize = fit(profile.ogTagline, CONTENT_WIDTH, 33, 0.52);
+
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <radialGradient id="glow" cx="0.12" cy="0.06" r="0.9">
@@ -56,10 +69,10 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" v
   <rect x="80" y="84" width="22" height="22" rx="4" fill="#4fd6a4" />
   <text x="122" y="103" fill="#4fd6a4" font-family="${MONO}" font-size="23" font-weight="600" letter-spacing="3.4">${esc(profile.title.toUpperCase())}</text>
 
-  <text x="80" y="238" fill="#eef1f5" font-family="${SANS}" font-size="80" font-weight="700" letter-spacing="-2">${esc(profile.name)}</text>
+  <text x="80" y="238" fill="#eef1f5" font-family="${SANS}" font-size="${nameSize}" font-weight="700" letter-spacing="-1.5">${esc(profile.name)}</text>
 
-  <text x="80" y="312" fill="#949cab" font-family="${SANS}" font-size="33">${esc(profile.project)} (${esc(profile.projectShort)})</text>
-  <text x="80" y="358" fill="#949cab" font-family="${SANS}" font-size="33">${esc(profile.ogTagline)}</text>
+  <text x="80" y="312" fill="#eef1f5" font-family="${SANS}" font-size="30" font-weight="600">${esc(profile.project)} (${esc(profile.projectShort)})</text>
+  <text x="80" y="356" fill="#949cab" font-family="${SANS}" font-size="${taglineSize}">${esc(profile.ogTagline)}</text>
 
   <rect x="80" y="432" width="1040" height="1" fill="#21262f" />
 

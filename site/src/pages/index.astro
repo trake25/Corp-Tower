@@ -1,10 +1,19 @@
 ---
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import TopologyDiagram from "../components/TopologyDiagram.astro";
 import CardFilter from "../components/CardFilter.astro";
 import Card from "../components/Card.astro";
+import CloudTargetsDiagram from "../components/diagrams/CloudTargetsDiagram.astro";
+import QaLoopDiagram from "../components/diagrams/QaLoopDiagram.astro";
 import { profile, stats } from "../data/profile";
+
+// One showcase diagram per skill, keyed by the card's `role`. A role with no
+// entry here simply renders without one, so adding the remaining diagrams is a
+// one-line change per skill.
+const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
+  Cloud: CloudTargetsDiagram,
+  QA: QaLoopDiagram,
+};
 
 const cardEntries = (await getCollection("cards")).sort((a, b) => a.data.order - b.data.order);
 const uniqueTags = [...new Set(cardEntries.flatMap((entry) => entry.data.tags))].sort();
@@ -16,7 +25,7 @@ const rendered = await Promise.all(
 
 <BaseLayout
   title={`${profile.name} — ${profile.jobTitle}`}
-  description={`I design, build and operate ${profile.project}, a live 3-player multiplayer game, alone — and automate the team I don't have. Six engineering trade-offs, the option I turned down each time, and the code that proves it.`}
+  description={`I design, build, QA and operate ${profile.project} (${profile.projectShort}), a real-time multiplayer game on Android and browser, end to end. Six skills, each with the code that proves it.`}
 >
   <header class="site-header">
     <a class="wordmark" href="/">
@@ -24,7 +33,7 @@ const rendered = await Promise.all(
       {profile.name}
     </a>
     <nav aria-label="Primary">
-      <a href="#tradeoffs">Trade-offs</a>
+      <a href="#skills">Skills</a>
       <a href="#work">Work with me</a>
       <a href={profile.repo} target="_blank" rel="noopener noreferrer">Code</a>
       <a class="nav-cta" href="#contact">Contact</a>
@@ -36,14 +45,17 @@ const rendered = await Promise.all(
       <p class="eyebrow">{profile.title}</p>
       <h1>
         I automate the team I don't have —<br class="hero-break" />
-        so I can run production alone.
+        so I can run production alone, at minimum cost.
       </h1>
       <p class="lede">
-        <strong>{profile.project} ({profile.projectShort})</strong> is a live three-player
-        game people play over the internet, on Android and in the browser. I designed it,
-        built it and operate it end to end — the servers it runs on, the game logic, the
-        client, and the pipeline that ships all of it. Coding agents do a lot of the
-        implementing; I hold the requirement, the review and the sign-off.
+        <strong>{profile.project} ({profile.projectShort})</strong> is a real-time,
+        server-authoritative multiplayer game built on selfish-cooperative tension — you
+        need the others to keep the tower up, and you need to beat them. It runs on Android
+        and in the browser today, with more platforms to follow. I designed, orchestrated,
+        built, quality-assured and now operate it end to end: the servers it runs on, the
+        game logic, the UI integration in the client, and the pipeline that ships all of
+        it. Coding agents do a lot of the implementing; I hold the requirement, the review
+        and the sign-off.
       </p>
       <p class="lede">
         Underneath: a Godot client, a server that holds the only authoritative copy of the
@@ -65,86 +77,66 @@ const rendered = await Promise.all(
       </dl>
 
       <p class="stack-line">
-        Terraform · Kubernetes (EKS / K3s) · AWS · Docker · GitHub Actions · Cloudflare ·
-        Node.js · Redis · GDScript / Godot · Ansible
+        Claude · Codex · Cursor · Git / GitHub · Linux · Terraform ·
+        Kubernetes (EKS / K3s) · AWS · Docker · GitHub Actions · Cloudflare ·
+        Node.js · Redis · Godot / GDScript · Ansible · Google (Cloud / Play / APIs)
       </p>
 
       <div class="ctas">
         <a class="cta primary" href={profile.demo} target="_blank" rel="noopener noreferrer">
-          Play the live demo
+          Play Demo
         </a>
         <a class="cta secondary" href={profile.repo} target="_blank" rel="noopener noreferrer">
           Read the source
         </a>
-        <a class="cta ghost" href="#tradeoffs">Skip to the trade-offs</a>
+        <a class="cta ghost" href="#skills">Skip to the skills</a>
       </div>
       <p class="disclosure">
-        Two things to know before you click. The demo fills empty seats with bots so a lone
-        visitor still gets a full round — the real game is three human players. And it is
-        served from the machine at home, not from EKS, because that box is the
-        cost-efficient target rather than the production-grade one: expect higher latency
-        than the production stack would give you. That trade is deliberate, and it's the
-        first trade-off below.
+        The demo fills empty seats with bots so a lone visitor still gets a full round —
+        the real game is three human players. It is served from the development
+        environment to keep costs down, so expect higher latency than the production stack
+        would give you. The game is still in development, and things will change.
       </p>
     </section>
 
-    <section class="diagram-section" aria-labelledby="topology-heading">
-      <h2 id="topology-heading" class="section-title">
-        <span class="section-index">01</span> One image, three targets
+    <section id="skills" aria-labelledby="skills-heading">
+      <h2 id="skills-heading" class="section-title">
+        <span class="section-index">01</span> Skills highlights
       </h2>
       <p class="section-intro">
-        The same container image runs in all three. What differs is only what has to
-        differ — and each of those differences was a decision with a rejected
-        alternative.
-      </p>
-      <div class="diagram-wrap">
-        <TopologyDiagram />
-      </div>
-      <p class="scroll-hint">Scroll the diagram sideways →</p>
-      <p class="figure-caption">
-        <strong>EKS is the production-grade target</strong> — load balancer, managed nodes
-        in private subnets, managed Redis — stood up for a session and destroyed after it,
-        so it costs nothing while nobody is using it. <strong>K3s on one EC2 instance is
-        the lab</strong>, where changes get tested and where I learn the parts I haven't
-        run before. <strong>One Linux box at home is the cost-efficient development
-        target</strong>, behind a Cloudflare Tunnel with no managed services at all — and
-        it's what serves the public demo.
-      </p>
-    </section>
-
-    <section id="tradeoffs" aria-labelledby="tradeoffs-heading">
-      <h2 id="tradeoffs-heading" class="section-title">
-        <span class="section-index">02</span> Six trade-offs, and what I turned down
-      </h2>
-      <p class="section-intro">
-        Every card is one trade-off: what I chose, the option I rejected, and a link to the
-        code that proves it — not a list of technologies, the reasoning underneath them.
-        Each opens with the plain-English version; expand it for the engineering rationale.
-        The topics cut across all six — filter to see where one concern keeps showing up.
+        One card per skill. Each opens with the plain-English version, then shows how that
+        skill is actually built here — a diagram of the thing itself, the alternative I
+        rejected, and links to the code that proves it. Not a list of technologies, the
+        reasoning underneath them. The topics cut across all six — filter to see where one
+        concern keeps showing up.
       </p>
 
       <CardFilter tags={uniqueTags} total={cardEntries.length} />
 
       <div class="cards">
-        {rendered.map(({ entry, Content }) => (
-          <Card
-            role={entry.data.role}
-            headline={entry.data.headline}
-            plain={entry.data.plain}
-            metric={entry.data.metric}
-            metricLabel={entry.data.metricLabel}
-            tags={entry.data.tags}
-            links={entry.data.links}
-          >
-            <Content />
-          </Card>
-        ))}
+        {rendered.map(({ entry, Content }) => {
+          const Diagram = diagrams[entry.data.role];
+          return (
+            <Card
+              role={entry.data.role}
+              headline={entry.data.headline}
+              plain={entry.data.plain}
+              metric={entry.data.metric}
+              metricLabel={entry.data.metricLabel}
+              tags={entry.data.tags}
+              links={entry.data.links}
+            >
+              {Diagram && <Diagram slot="diagram" />}
+              <Content />
+            </Card>
+          );
+        })}
       </div>
     </section>
 
     <section id="work" aria-labelledby="work-heading">
       <h2 id="work-heading" class="section-title">
-        <span class="section-index">03</span> Work with me
+        <span class="section-index">02</span> Work with me
       </h2>
       <div class="services">
         <article class="service">
@@ -187,7 +179,7 @@ const rendered = await Promise.all(
 
     <section id="contact" aria-labelledby="contact-heading">
       <h2 id="contact-heading" class="section-title">
-        <span class="section-index">04</span> Get in touch
+        <span class="section-index">03</span> Get in touch
       </h2>
       {profile.availability && <p class="availability">{profile.availability}</p>}
       <div class="contact-links">

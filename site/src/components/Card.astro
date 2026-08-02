@@ -44,6 +44,7 @@ const { role, headline, plain, metric, metricLabel, tags, links } = Astro.props;
   </summary>
 
   <div class="expanded">
+    <slot name="diagram" />
     <slot />
 
     {links.length > 0 && (

@@ -17,8 +17,40 @@ depends on that framing: **EKS** is the production-grade target, **K3s** is the
 lab where things get tested and learned, and the **physical backup machine** is
 the cost-efficient development target — which also serves the public demo, so
 the hero discloses that its latency isn't production's. Changing that framing
-means changing `src/content/cards/cloud.md`, `TopologyDiagram.astro`, the
-hero ledes and the figure caption together.
+means changing `src/content/cards/cloud.md`, its diagram in
+`src/components/diagrams/`, and the hero ledes together.
+
+## Skills highlights and their diagrams
+
+The cards section is **Skills highlights** (`#skills`). Each card is one skill
+and gets its own hand-authored SVG showcase, mounted through a named `diagram`
+slot on `Card.astro` and wired up by role in `src/pages/index.astro`:
+
+```ts
+const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
+  Cloud: CloudTargetsDiagram,
+  QA: QaLoopDiagram,
+};
+```
+
+A role absent from that map renders without a diagram, so adding one is a new
+file in `src/components/diagrams/` plus a line here. Rules that keep six SVGs on
+one page from fighting each other:
+
+- **Reuse the `.topology` classes** (`.node`, `.link`, `.label`, `.sub`,
+  `.wire`, `.arrow-head`, `.ephemeral`) rather than styling a diagram inline.
+  That is what makes them read as one visual language and track the theme in
+  both colour schemes.
+- **Namespace every `id`.** Markers and `aria-labelledby` targets are
+  document-global; two diagrams both defining `id="arrow"` silently resolve to
+  the wrong one. Prefix with the skill (`qa-arrow`, `cloud-arrow`).
+- **A diagram is not a decoration.** Each one draws the card's actual argument —
+  the QA one is the reject-and-loop cycle, the Cloud one plots spend over a week
+  so bar thickness reads as cost rate. If it only restates the headline, it is
+  not earning its space.
+- There is no longer a standalone topology section. It was removed in favour of
+  per-skill diagrams; `TopologyDiagram.astro` is deleted and lives in git
+  history if the old three-target drawing is ever wanted back.
 
 **Source of truth for intent/rationale:** `plan/corp-tower-portfolio-plan-v2.md`
 (the site as a whole) and `plan/corp-tower-demo-instance-plan.md` (the
@@ -37,7 +69,7 @@ around it. This README is this directory's own entry point instead.
 | 0 — Ship the shell | **Done.** Domain resolves, push redeploys via CI, confirmed working, no known functional/UI issues. |
 | 1 — Demo instance (`toddemo`) | **Done.** Live, playable, bots disclosed. |
 | 2 — Copy | **Partly refined.** One pass done: renamed to TOD, job title reordered to AI-Automation-first, "Decisions" renamed to "Trade-offs" throughout, the three targets reframed (EKS production / K3s lab / backup dev+demo), the stat strip rewritten from inventory counts to outcomes, the Cloud card rewritten, and the filter retagged onto cross-cutting topics. **Still open:** the remaining five card bodies, the `ai.md` card has no Proof section, `qa.md`'s fourth heading is a sentence where the others are one word, and en-GB/en-US spelling is mixed within single files. |
-| 3 — Evidence | **Diagram done, recording pending.** The hand-authored SVG topology diagram is live on the hub. The EKS lifecycle recording (apply → deploy → smoke tests → play a round → destroy) is still unrecorded — manual OBS/FFmpeg work, planned for a separate session. The "Watch the cluster" CTA is a disabled placeholder until that clip exists. |
+| 3 — Evidence | **2 of 6 diagrams done, recording pending.** `CloudTargetsDiagram` and `QaLoopDiagram` are live inside their cards; DevOps, Backend, Frontend and AI still have none. The EKS lifecycle recording (apply → deploy → smoke tests → play a round → destroy) is still unrecorded — manual OBS/FFmpeg work, planned for a separate session. |
 | 4 — QA | **Confirmed working**, no known functional/UI issues as of the last check. Formal breakpoint/cross-browser sweep hasn't been separately logged. |
 
 **Naming — settled for the site, not for the repo.** The site says *Top or
@@ -54,7 +86,7 @@ the card links point into it. Nothing on the site hardcodes either name except
 | Hook line, intro paragraph, stack line, CTA text, demo-disclosure line | `src/pages/index.astro` |
 | The six cards (plain summary + Decision/Instead of/Why it matters/Proof) | `src/content/cards/*.md` — one file per role (`cloud.md`, `devops.md`, `qa.md`, `backend.md`, `frontend.md`, `ai.md`). Adding a role or card is a content change, not a layout change — the filter/grid derive from whatever's in this directory. |
 | Which topics a card is filed under | that card's `tags`. **These are cross-cutting topics, not the card's role** — `AWS`, `Kubernetes`, `CI/CD`, `Testing`, `Multiplayer`, `AI agents`, each shared by 2–3 cards. A tag only one card carries makes a filter button that returns one result, which is what this bar looked like before and why it was retagged. The visible role chip comes from `role`, not from `tags`. |
-| Topology diagram labels/text | `src/components/TopologyDiagram.astro` — raw SVG, labels are plain `<text>` elements |
+| A skill's showcase diagram | `src/components/diagrams/<Skill>Diagram.astro` — raw SVG, labels are plain `<text>` elements. Register it in the `diagrams` map in `src/pages/index.astro`. |
 | Page title, meta description, favicon, analytics script | `src/layouts/BaseLayout.astro` |
 | 404 page copy | `src/pages/404.astro` |
 | Colors/spacing/fonts | `src/styles/global.css` |
