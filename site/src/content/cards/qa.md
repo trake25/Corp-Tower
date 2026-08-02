@@ -8,7 +8,7 @@ tools:
   - "Node.js test runner"
   - "GUT (Godot tests)"
   - "Claude Code"
-  - "Written specs - Markdowns"
+  - "Markdowns"
 details:
   - id: spec
     title: "1 · Specification and expected results, first"
@@ -43,11 +43,4 @@ details:
     evidence:
       label: "The context budget, written down"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/index.md#token-discipline"
-links:
-  - label: "testing.md — gates & known gaps"
-    href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/testing.md"
-  - label: "Multi-pod regression test"
-    href: "https://github.com/trake25/Corp-Tower/blob/main/src/Server/tests/Matchmaking_Queue.test.js"
-  - label: "decisions.md — rejected options"
-    href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md"
 ---

@@ -25,6 +25,10 @@ const cards = defineCollection({
         })
       )
       .default([]),
+    // Staging only, and not rendered anywhere. Cards not yet converted to
+    // per-step `evidence` keep their collected URLs here so they survive the
+    // rewrite. `qa.md` has none left — it is fully converted. Delete this field
+    // and the `links` prop on Card.astro once the last card is converted.
     links: z
       .array(z.object({ label: z.string(), href: z.string().url() }))
       .default([]),

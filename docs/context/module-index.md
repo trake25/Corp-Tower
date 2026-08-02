@@ -51,10 +51,10 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | Android Deploy wsplaytod Workflow | `.github/workflows/Android-Deploy-wsplaytod.yml` | Build/test/sign internal Android build, endpoint wsplaytod | Godot Client App, Private Asset Pipeline | [build.md](./build.md#android-deploy-wsplaytod-workflow) |
 | Private Asset Pipeline | `.github/actions/fetch-private-assets/`, `scripts/art-*.sh` | Injects production art from private R2 at build time | R2 bucket `corp-tower-assets` | [build.md](./build.md#private-asset-pipeline) |
 | Terraform Infrastructure | `infra/k3s/terraform`, `infra/eks/terraform` | Terraform roots | — | [deployment.md](./deployment.md#terraform-roots) |
-| Server K3s Stack | `infra/k3s/` | Active self-hosted K3s-on-EC2 infra | Terraform Infrastructure | [deployment.md](./deployment.md#k3s-topology) |
-| Server K3s Workflows | `.github/workflows/K3s-*.yml` | Deploy/clean up/diagnose the K3s stack — prod (wsplaytod/playtod) and test (wstodtest/todtest), each its own namespace — manual trigger only | Server K3s Stack | [deployment.md](./deployment.md#k3s-workflows) |
-| Server EKS Stack | `infra/eks/` | Session-scoped parallel managed-AWS infra (Terraform + Kustomize apps), brought up per validation session | Terraform Infrastructure | [deployment.md](./deployment.md#eks-session-scoped-validation-stack) |
-| Server EKS Workflows | `.github/workflows/EKS-*.yml` | Infra plan/apply/destroy/nightly-auto-destroy, deploy/cleanup/diagnose for the session-scoped EKS stack — prod only (wstodplay/todplay) | Server EKS Stack | [deployment.md](./deployment.md#eks-session-scoped-validation-stack) |
+| Server K3s Stack | `infra/k3s/` | Lab self-hosted K3s-on-EC2 infra | Terraform Infrastructure | [deployment.md](./deployment.md#k3s-topology) |
+| Server K3s Workflows | `.github/workflows/K3s-*.yml` | Deploy/clean up/diagnose the K3s lab stack — prod (wsplaytod/playtod) and test (wstodtest/todtest) namespaces — manual trigger only | Server K3s Stack | [deployment.md](./deployment.md#k3s-workflows) |
+| Server EKS Stack | `infra/eks/` | Production-grade parallel managed-AWS infra (Terraform + Kustomize apps), fully implemented, deployed on demand | Terraform Infrastructure | [deployment.md](./deployment.md#eks-production-grade-target) |
+| Server EKS Workflows | `.github/workflows/EKS-*.yml` | Infra plan/apply/destroy/nightly-auto-destroy, deploy/cleanup/diagnose for the production-grade EKS stack — prod only (wstodplay/todplay) | Server EKS Stack | [deployment.md](./deployment.md#eks-production-grade-target) |
 | Backup Workflows | `.github/workflows/Backup-*.yml` | Diagnose/deploy/clean up the two dev instances on the physical backup machine — two game servers (devwstod1/2) and two web servers (devtod1/2) — via a self-hosted runner; devwstod1/devtod1 auto-deploy on push | `scripts/backup/` (in-repo), Private Asset Pipeline (web), machine-local `.env.backup` | [deployment.md](./deployment.md#backup-physical-machine) |
 | Demo Workflows | `.github/workflows/Demo-*.yml` | Manual-only deploy/cleanup for the physical backup's always-on public demo pair (instance 3, wstoddemo/toddemo) — no push trigger | `scripts/backup/` (in-repo), Private Asset Pipeline (web), machine-local `.env.backup` | [deployment.md](./deployment.md#backup-physical-machine) |
 
@@ -68,7 +68,7 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | [networking.md](./networking.md) | WebSocket wire protocol: message contracts, payloads, adapters |
 | [backend.md](./backend.md) | Server module behavior (engine facade + delegation pattern) |
 | [ui.md](./ui.md) | Godot client: Main orchestrator, GameUi family, scenes, popovers |
-| [deployment.md](./deployment.md) | K3s (active) + EKS (session-scoped) infra, runbook, secrets |
+| [deployment.md](./deployment.md) | EKS (production-grade target) + K3s (lab) infra, runbook, secrets |
 | [build.md](./build.md) | Android/HTML5 build workflows, private R2 art pipeline |
 | [testing.md](./testing.md) | Server/client tests, balance simulator, CI gates, coverage gaps |
 | [decisions.md](./decisions.md) | Why things are built the way they are; rejected alternatives; known gaps |

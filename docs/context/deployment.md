@@ -4,12 +4,12 @@ Scope: infrastructure, runtime topology, and operational runbooks. Build/CI that
 
 ## Overview
 
-Two parallel Terraform paths exist. **K3s is active** and carries live staging traffic; **EKS is session-scoped** — apply-ready, brought up for a validation session (hours) and torn down after, never continuously running.
+Two parallel Terraform paths exist. **EKS is the production-grade target** — fully implemented, deployed on demand (hours) and torn down after purely for cost control. **K3s is the lab** — where infra changes are tried and learned before they reach EKS.
 
 | Path | Status |
 |---|---|
-| K3s (`infra/k3s`) | **Active** — live staging |
-| EKS (`infra/eks`) | Session-scoped validation stack, not always-on ([why](./decisions.md#eks-kept-session-scoped-not-always-on)) |
+| EKS (`infra/eks`) | **Production-grade target** — fully implemented, deploy-on-demand ([why not always-on](./decisions.md#eks-kept-session-scoped-not-always-on)) |
+| K3s (`infra/k3s`) | The lab |
 
 Region for both: `ap-southeast-1`.
 
@@ -114,7 +114,7 @@ Not installed by the first K3s rollout. Bootstrap manifests: `infra/k3s/argocd/b
 
 | Secret | Used for |
 |---|---|
-| `AWS_ROLE_ARN` | GitHub OIDC → AWS for Terraform/K3s/EKS workflows — EKS needs the expanded `CorpTowerEksLab` policy attached once, manually (see [EKS manual setup](#eks-session-scoped-validation-stack)) |
+| `AWS_ROLE_ARN` | GitHub OIDC → AWS for Terraform/K3s/EKS workflows — EKS needs the expanded `CorpTowerEksLab` policy attached once, manually (see [EKS manual setup](#eks-production-grade-target)) |
 | `ECR_REPOSITORY` | Server image push/pull |
 | `EC2_STAGING_HOST` | EC2 staging host reference |
 | `EC2_STAGING_USER` | SSH user for EC2-GW/K3s nodes |
@@ -127,9 +127,9 @@ Not installed by the first K3s rollout. Bootstrap manifests: `infra/k3s/argocd/b
 
 K3s workflows reuse the existing GitHub `staging` Environment rather than duplicating secret names — except the `R2_GATEWAY_*` trio and `R2_ACCOUNT_ID`, which are repo secrets shared with the art pipeline, not environment-scoped. Client/Android/art secrets are scoped separately — see [build.md](./build.md#required-secrets-client--art-scope).
 
-## EKS (session-scoped validation stack)
+## EKS (production-grade target)
 
-Own dedicated hostnames — `wstodplay.galaxxigames.com` (game), `todplay.galaxxigames.com` (web) — so a session never touches K3s's four live records. Only the prod pair is deployed; `eks-test` overlays are committed but not wired to any workflow. Apply-ready but not always-on → [decisions.md](./decisions.md#eks-kept-session-scoped-not-always-on).
+Own dedicated hostnames — `wstodplay.galaxxigames.com` (game), `todplay.galaxxigames.com` (web) — so a deploy never touches K3s's four records. Only the prod pair is deployed; `eks-test` overlays are committed but not wired to any workflow. Fully implemented, deployed on demand rather than left always-on → [decisions.md](./decisions.md#eks-kept-session-scoped-not-always-on).
 
 **Topology:** Cloudflare CNAME → ALB `:443` (HTTPS, ACM wildcard `*.galaxxigames.com`, host-based routing, `idle_timeout=300`) → two target groups (`target_type=instance` on the existing NodePorts — 30300 game, 30310 web — registered via `aws_autoscaling_attachment`, no Load Balancer Controller) → managed node group (2× `t3.small`, private subnets, NAT egress, dedicated node security group whose launch template opts it out of EKS's default SG wiring — see [decisions.md](./decisions.md#eks-node-security-group-must-carry-its-own-control-plane-and-self-referencing-rules)) → `corp-tower-server`/`corp-tower-web` pods → ElastiCache Redis over `rediss://`. Game target group health matcher is `426` (`ws` answers a plain `GET /` with Upgrade Required); web is `200`. No in-cluster Redis on EKS — ElastiCache replaces it entirely; K3s keeps its own.
 

@@ -11,7 +11,7 @@ Read this first, then load **only** the docs the task needs (see Task router). T
 | Client | Godot `4.6.2.stable`, GDScript, `WebSocketPeer` |
 | Server | Node.js, `ws`, `redis` — entry `src/Server/app/Server.js` |
 | Shared state | Redis (multi-worker matchmaking / room / reconnect) |
-| Infra | Terraform · K3s-on-EC2 (active) · EKS (plan-only) · Docker · Caddy |
+| Infra | Terraform · EKS (production-grade target, deploy-on-demand — fully implemented) · K3s-on-EC2 (lab) · Docker · Caddy |
 | CI/CD | GitHub Actions |
 | Endpoint | Build-time injected per target — prod `wsplaytod.galaxxigames.com`, test `wstodtest.galaxxigames.com`, dev `devwstod1`/`devwstod2.galaxxigames.com` (physical backup) — see [networking.md](./networking.md#connection) |
 
@@ -44,6 +44,7 @@ Read this first, then load **only** the docs the task needs (see Task router). T
 | "Which file does X?" | [module-index.md](./module-index.md) | — |
 | Terms / renames / tuning shorthand | [glossary.md](./glossary.md) | — |
 | System shape / runtime flow / repo layout | [architecture.md](./architecture.md) | — |
+| Portfolio site (`site/`) or apex placeholder (`site-root/`) — separate Cloudflare Workers deploys, no game code | [site/README.md](../../site/README.md) / [site-root/README.md](../../site-root/README.md) | everything else in this KB |
 
 Every domain doc states its scope on line 1. Full doc catalog → [module-index.md](./module-index.md).
 

@@ -790,7 +790,9 @@ main > section:first-child {
 
 /* The artefact backing this step. Understated — it is a receipt, not a CTA. */
 .detail-evidence {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   margin-top: 0.7rem;
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -801,9 +803,11 @@ main > section:first-child {
   padding-bottom: 0.1rem;
 }
 
-.detail-evidence::before {
-  content: "97 ";
+/* Inline SVG rather than a glyph or a CSS escape: it renders identically on
+   every platform, and cannot turn into tofu on a font missing the arrow. */
+.detail-evidence svg {
   color: var(--accent);
+  flex-shrink: 0;
 }
 
 .detail-evidence:hover {

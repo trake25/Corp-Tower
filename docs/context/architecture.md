@@ -11,8 +11,8 @@ Scope: system shape, tech stack, runtime/message flow, repo layout. Per-module d
 | Client | Godot `4.6.2.stable`, GDScript, `WebSocketPeer` |
 | Server | Node.js, `ws`, Redis (`redis` npm package, optional) |
 | Shared state | Redis (multi-worker matchmaking/room/reconnect state) |
-| Infra (active) | Terraform, K3s on EC2, Docker, Caddy |
-| Infra (session-scoped) | Terraform, EKS, ALB, ElastiCache |
+| Infra (production-grade target, deploy-on-demand) | Terraform, EKS, ALB, ElastiCache |
+| Infra (lab) | Terraform, K3s on EC2, Docker, Caddy |
 | CI/CD | GitHub Actions |
 | Public endpoints | Prod `wsplaytod`/test `wstodtest` on K3s (Cloudflare DNS); dev `devwstod1`/`devwstod2` and the always-on public demo `wstoddemo` on the physical backup (Cloudflare Tunnel) — build-time injected, see [networking.md](./networking.md#connection) |
 
@@ -85,9 +85,11 @@ flowchart LR
 | `.github/actions/fetch-private-assets/` | Pulls production art from R2 | [build.md](./build.md#private-asset-pipeline) |
 | `.github/workflows/K3s-*.yml` | K3s deploy/cleanup/infra for prod (wsplaytod/playtod) + test (wstodtest/todtest) | [deployment.md](./deployment.md#k3s-workflows) |
 | `.github/workflows/Backup-*.yml` / `Demo-*.yml` | Physical-backup deploy/cleanup/diagnose for 2 dev instances plus the always-on public demo (instance 3) | [deployment.md](./deployment.md#backup-physical-machine) |
-| `.github/workflows/EKS-*.yml` | Session-scoped EKS path (infra plan/apply/destroy, deploy, cleanup, diagnose) | [deployment.md](./deployment.md#eks-session-scoped-validation-stack) |
+| `.github/workflows/EKS-*.yml` | Production-grade EKS path (infra plan/apply/destroy, deploy, cleanup, diagnose) | [deployment.md](./deployment.md#eks-production-grade-target) |
 | `infra/k3s/` | Active K3s Terraform, Ansible, Kustomize, Argo bootstrap | [deployment.md](./deployment.md#k3s-topology) |
-| `infra/eks/` | Session-scoped EKS Terraform + Kustomize apps | [deployment.md](./deployment.md#eks-session-scoped-validation-stack) |
+| `infra/eks/` | Production-grade EKS Terraform + Kustomize apps | [deployment.md](./deployment.md#eks-production-grade-target) |
+| `site/` | Astro portfolio site, deployed to its own Cloudflare Worker (own CI, own conventions) — no game code, out of this KB's scope | [site/README.md](../../site/README.md) |
+| `site-root/` | Zone-apex placeholder page, separate Worker (own CI) | [site-root/README.md](../../site-root/README.md) |
 
 ## Subsystem boundaries
 
@@ -98,6 +100,7 @@ flowchart LR
 
 ## Current environment status
 
-- **K3s** (`infra/k3s`): active, live staging traffic.
-- **EKS** (`infra/eks`): apply-ready, session-scoped — brought up for a session and torn down after, never continuously running. See [deployment.md](./deployment.md#eks-session-scoped-validation-stack).
+- **EKS** (`infra/eks`): the production-grade target — fully implemented, deployed on demand and torn down after (cost control, not incompleteness). See [deployment.md](./deployment.md#eks-production-grade-target).
+- **K3s** (`infra/k3s`): the lab — where infra changes are tried and learned before they reach EKS.
+- The physical backup machine ([deployment.md § Backup](./deployment.md#backup-physical-machine)) is the development environment — dev instances plus the always-on public demo.
 - Docker EC2 staging (EC2-1/2/3 + Ansible) has been fully removed; K3s superseded it.
