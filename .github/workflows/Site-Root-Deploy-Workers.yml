@@ -1,0 +1,40 @@
+name: Site Root Deploy (Cloudflare Workers)
+
+# Deploys the apex placeholder at galaxxigames.com (and www) as its own
+# Workers Static Assets site, separate from the portfolio Worker at
+# enportfolio.galaxxigames.com (Site-Deploy-Workers.yml). No build step -
+# site-root/public is hand-authored static HTML, uploaded as-is. Reuses the
+# same Workers-Scripts-scoped Cloudflare token as the portfolio deploy, never
+# the Zone.DNS-Edit token the game's DNS updates use.
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "site-root/**"
+      - ".github/workflows/Site-Root-Deploy-Workers.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: site-root-deploy-workers
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy Root Placeholder
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_WORKERS_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: site-root
+          command: deploy

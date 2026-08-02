@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Galaxxi Games — Site under construction</title>
+    <meta
+      name="description"
+      content="galaxxigames.com is under construction. The portfolio and the playable demo are live on their own subdomains."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        color-scheme: dark light;
+
+        --bg: #08090c;
+        --surface: #11141b;
+        --fg: #eef1f5;
+        --fg-muted: #949cab;
+        --fg-faint: #6b7280;
+        --border: #21262f;
+        --border-strong: #2f3742;
+        --accent: #4fd6a4;
+        --accent-fg: #04120c;
+        --accent-glow: rgba(79, 214, 164, 0.14);
+
+        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+          "Liberation Mono", monospace;
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #fbfbfc;
+          --surface: #ffffff;
+          --fg: #14171c;
+          --fg-muted: #4f5866;
+          --fg-faint: #767f8c;
+          --border: #e2e6eb;
+          --border-strong: #cdd4dc;
+          --accent: #0e7a58;
+          --accent-fg: #ffffff;
+          --accent-glow: rgba(14, 122, 88, 0.1);
+        }
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1.5rem;
+        background: var(--bg);
+        background-image: radial-gradient(
+          70ch 45ch at 50% 0%,
+          var(--accent-glow),
+          transparent 70%
+        );
+        color: var(--fg);
+        font-family: var(--font-sans);
+        line-height: 1.6;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      main {
+        width: 100%;
+        max-width: 34rem;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--fg-muted);
+      }
+
+      .brand svg {
+        width: 1.6rem;
+        height: 1.6rem;
+        flex: none;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 2rem 0 0.75rem;
+        padding: 0.3rem 0.7rem;
+        border: 1px solid var(--border-strong);
+        border-radius: 999px;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--fg-muted);
+      }
+
+      .status::before {
+        content: "";
+        width: 0.45rem;
+        height: 0.45rem;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: clamp(1.9rem, 1.4rem + 2.2vw, 2.8rem);
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+
+      p {
+        margin: 0 0 1rem;
+        color: var(--fg-muted);
+      }
+
+      ul {
+        margin: 1.75rem 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      a.card {
+        display: block;
+        padding: 0.9rem 1.1rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface);
+        color: var(--fg);
+        text-decoration: none;
+        transition: border-color 0.15s ease, transform 0.15s ease;
+      }
+
+      a.card:hover,
+      a.card:focus-visible {
+        border-color: var(--accent);
+        transform: translateY(-1px);
+      }
+
+      a.card span {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--fg-muted);
+      }
+
+      a.card strong {
+        font-weight: 600;
+      }
+
+      a.card strong::after {
+        content: " \2192";
+        color: var(--accent);
+      }
+
+      footer {
+        margin-top: 2.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border);
+        font-size: 0.85rem;
+        color: var(--fg-faint);
+      }
+
+      footer a {
+        color: var(--fg-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="brand">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="6" fill="#0b0d10" />
+          <rect x="9" y="20" width="14" height="6" fill="#5ec2a6" />
+          <rect x="11" y="13" width="10" height="6" fill="#5ec2a6" opacity="0.85" />
+          <rect x="13" y="6" width="6" height="6" fill="#5ec2a6" opacity="0.7" />
+        </svg>
+        Galaxxi Games
+      </p>
+
+      <p class="status">Under construction</p>
+
+      <h1>The main site is still being built.</h1>
+
+      <p>
+        <strong>galaxxigames.com</strong> is the front door for everything hosted
+        on this domain. The landing page itself isn't finished yet — but the
+        projects behind it are already running on their own subdomains.
+      </p>
+
+      <ul>
+        <li>
+          <a class="card" href="https://enportfolio.galaxxigames.com">
+            <strong>Engineering portfolio</strong>
+            <span>Please see the engineering portfolio for more details.</span>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="https://toddemo.galaxxigames.com">
+            <strong>Play the Top or Drop demo</strong>
+            <span>Live Demo build. Empty seats are filled by bots.</span>
+          </a>
+        </li>
+      </ul>
+
+      <footer>
+        Stay tuned and come back soon!
+      </footer>
+    </main>
+  </body>
+</html>
