@@ -1,34 +1,48 @@
 ---
-// The Cloud skill's showcase. Deliberately not a topology: the card's argument
-// is about *what each target buys and what it costs to keep*, so the right-hand
-// panel plots spend over a week and bar thickness encodes cost rate. Total ink
-// per row is roughly the total bill — which is the whole point of destroying
-// the production stack between sessions.
-// Source facts: src/content/cards/cloud.md, docs/context/deployment.md.
+// The Cloud skill's showcase: a 7-step engineering-process pipeline —
+// business objectives through infrastructure automation — not a comparison
+// of the three deployment targets. EKS/K3s/backup still appear, but as
+// evidence inside steps 3 and 5, the same way QA's bug report is evidence
+// inside a step rather than the card's organizing structure.
+//
+// Coordinates are deliberately reused, not invented: row 1 is QA's row-1
+// geometry (178-wide boxes), row 2 is AI's row-2 geometry (246-wide boxes),
+// snaking right at the same drop point AI uses. Same visual language, same
+// text budget (see docs — 178w ≈ 22/26 chars, 246w ≈ 30/36 chars).
+// Source facts: src/content/cards/cloud.md, docs/context/deployment.md,
+// docs/context/decisions.md.
 ---
 
 <figure class="card-diagram">
   <div class="card-diagram-scroll">
     <svg
       class="topology"
-      viewBox="0 0 820 330"
+      viewBox="0 0 820 400"
       role="img"
-      aria-labelledby="cloud-targets-title cloud-targets-desc"
+      aria-labelledby="cloud-pipeline-title cloud-pipeline-desc"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
     >
-      <title id="cloud-targets-title">Three deployment targets and what each one costs to keep</title>
-      <desc id="cloud-targets-desc">
-        One container image feeds three deliberately unequal targets. EKS is the
-        production-grade one — application load balancer, managed nodes in
-        private subnets, managed Redis — and it buys proof that the design
-        survives real infrastructure; it exists only for the length of a session
-        and is destroyed after, so it costs nothing for most of any given week.
-        K3s on a single always-on EC2 instance is the lab, and buys somewhere to
-        break things that is not production, at the cost of one small instance
-        running continuously. A physical backup machine behind a Cloudflare
-        Tunnel runs no managed services and buys a permanently available link at
-        no marginal cost, because the hardware is already owned.
+      <title id="cloud-pipeline-title">Seven steps from business objectives to automated infrastructure</title>
+      <desc id="cloud-pipeline-desc">
+        One: business and technical objectives, set before any Terraform —
+        cost ceilings and a session-scoped production target, because a
+        control plane, load balancer and managed cache have no AWS free tier.
+        Two: cloud foundation — OIDC-assumed roles instead of long-lived AWS
+        keys, and the same least-privilege credential split enforced outside
+        AWS entirely. Three: platform environments — EKS, K3s and the
+        physical backup each get their own network and DNS, never sharing a
+        record. Four: operational guardrails — a nightly auto-destroy is the
+        real cost control, since AWS Budgets alerts lag hours; TLS state
+        survives a destroyed gateway instead of re-requesting certificates
+        into a rate limit. Five: platform resources — a managed cache where
+        the design has to prove it survives one, self-hosted Redis where it
+        doesn't. Six: platform validation — a silent AWS default caught in
+        review before it shipped, not after. Seven: infrastructure
+        automation — modular Terraform roots split by lifecycle, shared CI
+        actions, and a deploy gate that fails fast when committed infra code
+        was never actually applied. From there the flow hands off to the
+        DevOps card's release pipeline.
       </desc>
 
       <defs>
@@ -37,54 +51,78 @@
         </marker>
       </defs>
 
-      <!-- the one shared artefact -->
-      <rect class="node" x="8" y="132" width="132" height="76" rx="10" />
-      <text class="label" x="22" y="158">One image</text>
-      <text class="sub" x="22" y="176">identical ports</text>
-      <text class="sub" x="22" y="192">and manifests</text>
+      <g class="hotspot" data-detail="objectives" role="button" tabindex="0" aria-label="Step 1, business and technical objectives — open the explanation">
+        <rect class="node" x="15" y="40" width="178" height="84" rx="10" />
+        <text class="label" x="29" y="64">1 · Objectives</text>
+        <text class="sub" x="29" y="82">no free tier, no open bill</text>
+        <text class="sub" x="29" y="98">session-scoped by design</text>
+      </g>
 
-      <path class="link" d="M140,152 C 162,152 158,70 178,70" marker-end="url(#cloud-arrow)" />
-      <path class="link" d="M140,172 L 178,174" marker-end="url(#cloud-arrow)" />
-      <path class="link" d="M140,192 C 162,192 158,278 178,278" marker-end="url(#cloud-arrow)" />
+      <path class="link" d="M193,82 L219,82" marker-end="url(#cloud-arrow)" />
 
-      <!-- EKS -->
-      <rect class="node ephemeral" x="180" y="30" width="300" height="80" rx="10" />
-      <text class="label" x="194" y="56">EKS — production grade</text>
-      <text class="sub" x="194" y="74">ALB · managed nodes · private subnets</text>
-      <text class="sub" x="194" y="90">Buys: proof it survives real infrastructure</text>
+      <g class="hotspot" data-detail="foundation" role="button" tabindex="0" aria-label="Step 2, cloud foundation — open the explanation">
+        <rect class="node" x="219" y="40" width="178" height="84" rx="10" />
+        <text class="label" x="233" y="64">2 · Foundation</text>
+        <text class="sub" x="233" y="82">OIDC roles, not static keys</text>
+        <text class="sub" x="233" y="98">least privilege by policy</text>
+      </g>
 
-      <!-- K3s -->
-      <rect class="node" x="180" y="134" width="300" height="80" rx="10" />
-      <text class="label" x="194" y="160">K3s — lab</text>
-      <text class="sub" x="194" y="178">Single EC2 · Caddy · in-cluster Redis</text>
-      <text class="sub" x="194" y="194">Buys: somewhere to break things safely</text>
+      <path class="link" d="M397,82 L423,82" marker-end="url(#cloud-arrow)" />
 
-      <!-- Physical backup -->
-      <rect class="node" x="180" y="238" width="300" height="80" rx="10" />
-      <text class="label" x="194" y="264">Backup machine — dev + demo</text>
-      <text class="sub" x="194" y="282">Cloudflare Tunnel · no managed services</text>
-      <text class="sub" x="194" y="298">Buys: a permanent link, no marginal cost</text>
+      <g class="hotspot" data-detail="environments" role="button" tabindex="0" aria-label="Step 3, platform environments — open the explanation">
+        <rect class="node" x="423" y="40" width="178" height="84" rx="10" />
+        <text class="label" x="437" y="64">3 · Environments</text>
+        <text class="sub" x="437" y="82">three networks, one image</text>
+        <text class="sub" x="437" y="98">isolated DNS per target</text>
+      </g>
 
-      <!-- spend over a week: thickness is cost rate, length is uptime -->
-      <text class="wire" x="510" y="20">spend across a typical week →</text>
+      <path class="link" d="M601,82 L627,82" marker-end="url(#cloud-arrow)" />
 
-      <path class="track" d="M510,64 L812,64" />
-      <path class="spend spend-high" d="M566,64 L626,64" />
-      <text class="wire accent" x="510" y="86">$0 idle — destroyed after each session</text>
+      <g class="hotspot" data-detail="guardrails" role="button" tabindex="0" aria-label="Step 4, operational guardrails — open the explanation">
+        <rect class="node" x="627" y="40" width="178" height="84" rx="10" />
+        <text class="label" x="641" y="64">4 · Guardrails</text>
+        <text class="sub" x="641" y="82">auto-destroy, not an alert</text>
+        <text class="sub" x="641" y="98">TLS state survives destroy</text>
+      </g>
 
-      <path class="track" d="M510,168 L812,168" />
-      <path class="spend spend-mid" d="M510,168 L812,168" />
-      <text class="wire" x="510" y="190">always on — one small EC2</text>
+      <path class="link" d="M716,124 L716,230" marker-end="url(#cloud-arrow)" />
 
-      <path class="track" d="M510,272 L812,272" />
-      <path class="spend spend-low" d="M510,272 L812,272" />
-      <text class="wire" x="510" y="294">always on — hardware already owned</text>
+      <g class="hotspot" data-detail="resources" role="button" tabindex="0" aria-label="Step 5, platform resources — open the explanation">
+        <rect class="node" x="559" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="573" y="254">5 · Platform resources</text>
+        <text class="sub" x="573" y="272">managed cache earns its cost</text>
+        <text class="sub" x="573" y="288">self-hosted where it doesn't</text>
+      </g>
+
+      <path class="link" d="M559,272 L533,272" marker-end="url(#cloud-arrow)" />
+
+      <g class="hotspot" data-detail="validation" role="button" tabindex="0" aria-label="Step 6, platform validation — open the explanation">
+        <rect class="node" x="287" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="301" y="254">6 · Platform validation</text>
+        <text class="sub" x="301" y="272">a silent AWS default</text>
+        <text class="sub" x="301" y="288">caught in review, not after</text>
+      </g>
+
+      <path class="link" d="M287,272 L261,272" marker-end="url(#cloud-arrow)" />
+
+      <g class="hotspot" data-detail="automation" role="button" tabindex="0" aria-label="Step 7, infrastructure automation — open the explanation">
+        <rect class="node" x="15" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="29" y="254">7 · Infrastructure automation</text>
+        <text class="sub" x="29" y="272">modular Terraform, shared CI</text>
+        <text class="sub" x="29" y="288">committed isn't applied</text>
+      </g>
+
+      <a class="card-jump" href="#card-devops" aria-label="Continue to the DevOps card, where this becomes a deploy pipeline">
+        <path class="link" d="M138,314 L138,338" marker-end="url(#cloud-arrow)" />
+        <text class="wire" x="150" y="332">ready for DevOps CI/CD</text>
+        <text class="wire" x="150" y="346">&amp; application deployment</text>
+      </a>
+
+      <text class="wire accent" x="15" y="368">AI compared costs and drafted the trade-off tables</text>
+      <text class="wire" x="15" y="384">which one shipped, and which one didn't, was never its call</text>
     </svg>
   </div>
   <figcaption class="card-diagram-caption">
-    Bar thickness is cost rate, bar length is uptime — so the ink in each row is roughly
-    its share of the bill. The production-grade target is the expensive one and the one
-    that exists for the smallest fraction of the week; that is the trade, not an accident
-    of scheduling.
+    Click any step to read what it means.
   </figcaption>
 </figure>
