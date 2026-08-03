@@ -16,6 +16,7 @@ interface CardLink {
 interface CardDetail {
   id: string;
   title: string;
+  keywords?: string[];
   body: string;
   evidence?: { label: string; href: string };
 }
@@ -84,6 +85,11 @@ const cardId = `card-${roleSlug}`;
                     <span class="detail-jump-hint" aria-hidden="true">↑ diagram</span>
                   </button>
                 </h4>
+                {detail.keywords && detail.keywords.length > 0 && (
+                  <p class="detail-keywords">
+                    {detail.keywords.map((keyword) => <span class="keyword">{keyword}</span>)}
+                  </p>
+                )}
                 <p>{detail.body}</p>
                 {detail.evidence && (
                   <a

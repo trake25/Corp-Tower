@@ -783,6 +783,34 @@ main > section:first-child {
   max-width: var(--measure);
 }
 
+/* The industry term for what the step does, sitting between the plain-English
+   title and the plain-English body — so the vocabulary a reader is scanning for
+   is on the page without the prose having to carry it. Quieter than
+   .card-tools .tool: those are the card's receipts, these are a label. */
+.expanded .detail p.detail-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.6rem;
+  max-width: none;
+}
+
+.detail-keywords .keyword {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.16rem 0.55rem;
+}
+
+.detail.is-active .keyword {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+
 .detail.is-active {
   border-left-color: var(--accent);
   background: var(--surface-hover);

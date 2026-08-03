@@ -49,8 +49,17 @@ it as their content gets rewritten.
 | Tools & tech chips | `tools` | 2 |
 | Diagram | the component registered for that `role` | 2 |
 | Step explanations | `details[]` | 3 |
+| Per-step discipline chips | `details[].keywords` | 3 |
 | Per-step evidence link | `details[].evidence` | 3 |
 | Longer write-up | the markdown body | 3 |
+
+**Keywords are the named discipline, not a tag cloud.** A `details[]` entry may
+carry `keywords: [...]` — the industry terms for what that step actually is
+(`IAM & OIDC`, `Capacity & Scaling`), rendered as chips between the step's
+plain-English title and its plain-English body. They exist so the vocabulary a
+reader is scanning for is on the page without the prose having to carry it; the
+body must still read without them. `cloud.md` is the reference. Optional
+per-step — a step with none renders nothing.
 
 **Evidence is per-step, not a bucket.** Each `details[]` entry may carry one
 `evidence: { label, href }` pointing at the single artefact that proves that
@@ -121,9 +130,10 @@ one page from fighting each other:
   document-global; two diagrams both defining `id="arrow"` silently resolve to
   the wrong one. Prefix with the skill (`qa-arrow`, `cloud-arrow`).
 - **A diagram is not a decoration.** Each one draws the card's actual argument —
-  the QA one is the reject-and-loop cycle, the Cloud one plots spend over a week
-  so bar thickness reads as cost rate. If it only restates the headline, it is
-  not earning its space.
+  the QA one is the reject-and-loop cycle, the Cloud one is five decisions
+  converging into one reviewed plan before anything gets built, which is why it
+  is the one diagram that isn't a left-to-right chain. If it only restates the
+  headline, it is not earning its space.
 - **Every step that has a `details[]` entry needs a `.hotspot` group**, and vice
   versa. A mismatch fails silently: the click does nothing.
 - There is no longer a standalone topology section. It was removed in favour of

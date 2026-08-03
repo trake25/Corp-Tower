@@ -1,54 +1,57 @@
 ---
-// The Cloud skill's showcase: a 7-step engineering-process pipeline —
-// what has to be true through building it so it repeats — not a comparison
-// of deployment targets. Production (EKS) and the physical backup machine
-// still appear, as evidence inside steps 3 and 5, the same way QA's bug
-// report is evidence inside a step rather than the card's organizing
-// structure. K3s gets one clause, deliberately: it's a lab, not one of the
-// two things a player's traffic actually touches, so it isn't a pillar here.
+// The Cloud skill's showcase. It draws the card's actual argument, which is an
+// order of work, not a comparison of deployment targets: steps 1-5 are five
+// written decisions that exist only on paper, they converge into one brief
+// (step 6) that is read before a single resource is provisioned, and only then
+// does step 7 build it as code and prove it by deploying it.
+//
+// That convergence is why this is not the left-to-right snake the QA and AI
+// diagrams use. Five parallel decisions feeding one gate is the claim; a chain
+// would say they happen in sequence and that the build follows automatically,
+// which is the opposite of what step 6 is for. EKS and the machine already paid
+// for appear as evidence inside steps 3 and 5, the same way QA's bug report is
+// evidence inside a step rather than the card's organizing structure.
 //
 // Box text stays plain-English on purpose — this is the one place a
-// non-technical reader has to follow the shape of the argument without
-// AWS vocabulary. The technical specifics (OIDC, ElastiCache, security
-// groups, Terraform) live one layer down, in the card's `details[].body`.
+// non-technical reader has to follow the shape of the argument without AWS
+// vocabulary. The named disciplines live one layer down in the card's
+// `details[].keywords`, and the technical specifics (OIDC, ElastiCache,
+// security groups, Terraform) in `details[].body`.
 //
-// Coordinates are deliberately reused, not invented: row 1 is QA's row-1
-// geometry (178-wide boxes), row 2 is AI's row-2 geometry (246-wide boxes),
-// snaking right at the same drop point AI uses. Same visual language, same
-// text budget (178w ≈ 22/26 chars, 246w ≈ 30/36 chars).
-// Source facts: src/content/cards/cloud.md, docs/context/deployment.md,
-// docs/context/decisions.md.
+// Text budget at these widths: 286w ≈ 33 label chars / 42 sub chars,
+// 340w ≈ 40 / 51. Source facts: src/content/cards/cloud.md,
+// docs/context/deployment.md, docs/context/decisions.md.
 ---
 
 <figure class="card-diagram">
   <div class="card-diagram-scroll">
     <svg
       class="topology"
-      viewBox="0 0 820 400"
+      viewBox="0 0 780 450"
       role="img"
       aria-labelledby="cloud-pipeline-title cloud-pipeline-desc"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
     >
-      <title id="cloud-pipeline-title">Seven steps from a real requirement to infrastructure that runs itself</title>
+      <title id="cloud-pipeline-title">Five decisions settled on paper, combined into one plan, then built as code</title>
       <desc id="cloud-pipeline-desc">
-        Seven steps, in order. One: decide what has to be true before any
-        server exists — a real cost limit, and exactly when the expensive
-        setup actually needs to exist. Two: decide who's allowed to touch it,
-        using access that proves itself each time and can expire, not a
-        saved password. Three: build it in two genuinely different places —
-        a full production setup, and a physical machine at home that serves
-        the real demo — kept completely separate. There's also a small
-        always-on lab where changes get tried first, but it never serves a
-        player directly. Four: make it shut itself off on a schedule,
-        because a spending alert can arrive too late to matter. Five: only
-        pay for the expensive pieces where the size of the job actually
-        calls for them. Six: get a second, human look before trusting it —
-        that's what caught an AWS default that quietly changes behaviour
-        without ever raising an error. Seven: build it so it repeats itself
-        exactly, with a check that stops a deploy if the infrastructure
-        that's supposed to be running was never actually applied. From
-        there, it's ready for the DevOps card's release pipeline.
+        Five decisions are settled before any infrastructure exists. One: what
+        the platform has to deliver, and the monthly ceiling it may not cross.
+        Two: which identities exist, what each may touch, and for how long —
+        access that expires with the job rather than a saved password. Three:
+        the target environments — production, staging and development — each
+        with its own networking and its own reason to exist. Four: the limits
+        every resource has to obey, enforced by something that acts rather
+        than something that only notifies. Five: capacity and cost decided as
+        one question, worked against the ceiling from step one. Those five
+        combine into step six: a single brief the implementing agent plans the
+        build from, and a plan I read before a single resource is provisioned
+        — which is what caught an AWS default that quietly changes behaviour
+        without ever raising an error. Only then, step seven: all of it
+        written as code so it can be destroyed and rebuilt from one source,
+        and proven by deploying it, with a check that stops the deploy if the
+        last infrastructure apply never ran. From there, it's ready for the
+        DevOps card's release pipeline.
       </desc>
 
       <defs>
@@ -57,75 +60,74 @@
         </marker>
       </defs>
 
-      <g class="hotspot" data-detail="objectives" role="button" tabindex="0" aria-label="Step 1, what must be true before any server exists — open the explanation">
-        <rect class="node" x="15" y="40" width="178" height="84" rx="10" />
-        <text class="label" x="29" y="64">1 · What must be true</text>
-        <text class="sub" x="29" y="82">a cost limit, set first</text>
-        <text class="sub" x="29" y="98">before any server exists</text>
+      <g class="hotspot" data-detail="objectives" role="button" tabindex="0" aria-label="Step 1, the requirements before anything is designed — open the explanation">
+        <rect class="node" x="15" y="14" width="286" height="56" rx="10" />
+        <text class="label" x="29" y="38">1 · The requirements</text>
+        <text class="sub" x="29" y="56">what it must deliver, what it may cost</text>
       </g>
 
-      <path class="link" d="M193,82 L219,82" marker-end="url(#cloud-arrow)" />
-
-      <g class="hotspot" data-detail="foundation" role="button" tabindex="0" aria-label="Step 2, who's allowed to touch it — open the explanation">
-        <rect class="node" x="219" y="40" width="178" height="84" rx="10" />
-        <text class="label" x="233" y="64">2 · Who's allowed in</text>
-        <text class="sub" x="233" y="82">no shared passwords</text>
-        <text class="sub" x="233" y="98">access that can expire</text>
+      <g class="hotspot" data-detail="foundation" role="button" tabindex="0" aria-label="Step 2, who has access and for how long — open the explanation">
+        <rect class="node" x="15" y="82" width="286" height="56" rx="10" />
+        <text class="label" x="29" y="106">2 · Who has access</text>
+        <text class="sub" x="29" y="124">each identity, and for how long</text>
       </g>
 
-      <path class="link" d="M397,82 L423,82" marker-end="url(#cloud-arrow)" />
-
-      <g class="hotspot" data-detail="environments" role="button" tabindex="0" aria-label="Step 3, where it actually runs — open the explanation">
-        <rect class="node" x="423" y="40" width="178" height="84" rx="10" />
-        <text class="label" x="437" y="64">3 · Where it runs</text>
-        <text class="sub" x="437" y="82">one built for production</text>
-        <text class="sub" x="437" y="98">one already paid for</text>
+      <g class="hotspot" data-detail="environments" role="button" tabindex="0" aria-label="Step 3, the target environments and what each is for — open the explanation">
+        <rect class="node" x="15" y="150" width="286" height="56" rx="10" />
+        <text class="label" x="29" y="174">3 · The environments</text>
+        <text class="sub" x="29" y="192">production, staging, development</text>
       </g>
 
-      <path class="link" d="M601,82 L627,82" marker-end="url(#cloud-arrow)" />
-
-      <g class="hotspot" data-detail="guardrails" role="button" tabindex="0" aria-label="Step 4, it shuts itself off on schedule — open the explanation">
-        <rect class="node" x="627" y="40" width="178" height="84" rx="10" />
-        <text class="label" x="641" y="64">4 · Shuts itself off</text>
-        <text class="sub" x="641" y="82">on a set schedule</text>
-        <text class="sub" x="641" y="98">not waiting on an alert</text>
+      <g class="hotspot" data-detail="guardrails" role="button" tabindex="0" aria-label="Step 4, the limits every resource has to obey — open the explanation">
+        <rect class="node" x="15" y="218" width="286" height="56" rx="10" />
+        <text class="label" x="29" y="242">4 · The limits</text>
+        <text class="sub" x="29" y="260">rules it obeys, not things remembered</text>
       </g>
 
-      <path class="link" d="M716,124 L716,230" marker-end="url(#cloud-arrow)" />
-
-      <g class="hotspot" data-detail="resources" role="button" tabindex="0" aria-label="Step 5, only paying for what the job needs — open the explanation">
-        <rect class="node" x="559" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="573" y="254">5 · Pay only when needed</text>
-        <text class="sub" x="573" y="272">a bigger machine, sometimes</text>
-        <text class="sub" x="573" y="288">a smaller one, always on</text>
+      <g class="hotspot" data-detail="resources" role="button" tabindex="0" aria-label="Step 5, capacity and cost decided together — open the explanation">
+        <rect class="node" x="15" y="286" width="286" height="56" rx="10" />
+        <text class="label" x="29" y="310">5 · Capacity and cost</text>
+        <text class="sub" x="29" y="328">sized and priced as one question</text>
       </g>
 
-      <path class="link" d="M559,272 L533,272" marker-end="url(#cloud-arrow)" />
+      <!-- five decisions on one bus: step 3's leg is the merge, so the bundle
+           leaves as a single arrow rather than five racing into one box -->
+      <path class="link" d="M301,42 L340,42" />
+      <path class="link" d="M301,110 L340,110" />
+      <path class="link" d="M301,246 L340,246" />
+      <path class="link" d="M301,314 L340,314" />
+      <path class="link" d="M340,42 L340,314" />
+      <path class="link" d="M301,178 L400,178" marker-end="url(#cloud-arrow)" />
 
-      <g class="hotspot" data-detail="validation" role="button" tabindex="0" aria-label="Step 6, checked before it's trusted — open the explanation">
-        <rect class="node" x="287" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="301" y="254">6 · Checked before trusted</text>
-        <text class="sub" x="301" y="272">a hidden default, caught early</text>
-        <text class="sub" x="301" y="288">before anyone relied on it</text>
+      <text class="wire accent" x="15" y="362">steps 1–5 are written decisions — nothing is built yet</text>
+
+      <g class="hotspot" data-detail="validation" role="button" tabindex="0" aria-label="Step 6, steps one to five combined into one plan — open the explanation">
+        <rect class="node" x="400" y="126" width="340" height="104" rx="10" />
+        <text class="label" x="414" y="152">6 · Five decisions, one plan</text>
+        <text class="sub" x="414" y="174">combined into one brief</text>
+        <text class="sub" x="414" y="192">the agent plans the build from it</text>
+        <text class="sub" x="414" y="210">I read it before anything is provisioned</text>
       </g>
 
-      <path class="link" d="M287,272 L261,272" marker-end="url(#cloud-arrow)" />
+      <path class="link" d="M570,230 L570,262" marker-end="url(#cloud-arrow)" />
+      <text class="wire accent" x="583" y="250">approval is its own step</text>
 
-      <g class="hotspot" data-detail="automation" role="button" tabindex="0" aria-label="Step 7, built so it repeats itself — open the explanation">
-        <rect class="node" x="15" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="29" y="254">7 · Built to repeat itself</text>
-        <text class="sub" x="29" y="272">one recipe, every time</text>
-        <text class="sub" x="29" y="288">no manual steps to forget</text>
+      <g class="hotspot" data-detail="automation" role="button" tabindex="0" aria-label="Step 7, built as code then tested by deploying it — open the explanation">
+        <rect class="node" x="400" y="262" width="340" height="104" rx="10" />
+        <text class="label" x="414" y="288">7 · Built as code, then deployed</text>
+        <text class="sub" x="414" y="310">one source, rebuilt from scratch</text>
+        <text class="sub" x="414" y="328">the deploy is the test</text>
+        <text class="sub" x="414" y="346">it stops if the last fix never ran</text>
       </g>
 
       <a class="card-jump" href="#card-devops" aria-label="Continue to the DevOps card, where this becomes a deploy pipeline">
-        <path class="link" d="M138,314 L138,338" marker-end="url(#cloud-arrow)" />
-        <text class="wire" x="150" y="332">ready for DevOps CI/CD</text>
-        <text class="wire" x="150" y="346">&amp; application deployment</text>
+        <path class="link" d="M570,366 L570,392" marker-end="url(#cloud-arrow)" />
+        <text class="wire" x="582" y="386">ready for DevOps CI/CD</text>
+        <text class="wire" x="582" y="400">&amp; application deployment</text>
       </a>
 
-      <text class="wire accent" x="15" y="368">AI compared costs and drafted the trade-off tables</text>
-      <text class="wire" x="15" y="384">which one shipped, and which one didn't, was never its call</text>
+      <text class="wire accent" x="15" y="424">An assistant compared the options, modelled the costs and drafted the Terraform</text>
+      <text class="wire" x="15" y="440">accepting or rejecting what came back needs someone holding both the business and the technical requirement</text>
     </svg>
   </div>
   <figcaption class="card-diagram-caption">

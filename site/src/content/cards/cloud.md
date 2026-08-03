@@ -1,57 +1,85 @@
 ---
 role: "Cloud"
 order: 1
-headline: "Most teams either run everything like it's production, or run production like a hobby project. Knowing which is which is the actual engineering."
-plain: "The game runs on two real foundations: a full production-grade AWS stack that only exists when someone's actually playing on it, and one physical machine at home that costs nothing extra and quietly serves the demo you're playing right now. Same container image on both — what's different is what each one is for, and what it costs to keep running."
+headline: "Knowing what it has to do, and what it's allowed to cost, is the whole job."
+plain: "The requirements, the cost ceiling and the guardrails are settled before any infrastructure exists — each one is expensive to add later, and a platform sized for the wrong target is a rebuild rather than a fix. An assistant runs the analysis at every step: options compared, costs modelled, Terraform drafted. That only works because someone holding both the business and the technical requirement is there to accept or reject what comes back. The steps below are that order of work."
 tools:
   - "Terraform"
   - "AWS (EKS, EC2, ElastiCache)"
   - "Kubernetes"
-  - "K3s"
   - "Docker"
   - "GitHub Actions"
   - "Cloudflare Tunnel"
+  - "Claude Code"
 details:
   - id: objectives
-    title: "1 · What must be true, before any server exists"
-    body: "Before any server existed, the real question was financial: what should this cost, and when does it actually need to be running at full strength? A production setup — load balancer, managed cache, servers that never sleep — has no free tier, so leaving one on all the time is an open-ended bill for a game that's still being built. The decision was to make the expensive version exist only for as long as someone is actually playing on it."
+    title: "1 · The requirements, before anything is designed"
+    keywords:
+      - "Business Deliverables"
+      - "Technical Requirements"
+      - "AI-Assisted Discovery"
+    body: "Before any design exists I write down what the platform has to deliver and what it is allowed to cost: concurrent players, a latency budget, what happens when a node dies, and the monthly ceiling none of it may cross. Everything after this point is measured against that list. Here, the list is what ruled out an always-on production cluster — a game still in development needs a demo anyone can reach, not a load balancer billing by the hour. An assistant produced the cost comparisons. What went on the list was mine."
     evidence:
-      label: "Why the expensive version only runs when someone's playing"
+      label: "The cost decision, written down before anything was built"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#eks-kept-session-scoped-not-always-on"
   - id: foundation
-    title: "2 · Who's allowed to touch it"
-    body: "Before writing any Terraform, the next question was who — and what — gets to touch this. Nobody holds a permanent AWS password: the automation proves who it is each time through a one-time identity check (OIDC) rather than a saved key, and a person's own control over the live servers comes from their own identity, not a shared file anyone could copy. That same rule — never hand out more access than the moment needs — turned out to matter just as much for the game's art files as it does for AWS."
+    title: "2 · Who has access, and for how long"
+    keywords:
+      - "Credentials"
+      - "IAM & OIDC"
+      - "Secrets Management"
+    body: "Next, every identity the platform needs, decided before any is handed out: which IAM roles exist, what each may touch, where secrets live, and what the pipeline may do with the tokens it is given. Nothing holds a standing credential — CI proves its identity per run through OIDC and gets access that expires with the job. No credential is wider or longer-lived than the task in front of it, which is why the private art pipeline splits its tokens the same way. An assistant drafts the policies. Scope is what I read line by line."
     evidence:
       label: "The same rule, applied to something that isn't even AWS"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#private-asset-pipeline-credential-split"
   - id: environments
-    title: "3 · Where it actually runs"
-    body: "The two places this runs couldn't be more different, on purpose. One is the full AWS setup, built to prove the game holds up on real production infrastructure. The other is a physical machine at home, serving the exact demo you can play right now — no data centre, no monthly server bill, just hardware that was already sitting there. There's also a small always-on lab where changes get tried first, but it never serves a player directly. Keeping the home setup safe took its own decision: everything routes through a private tunnel (a Cloudflare Tunnel) instead of opening a port on the machine itself."
+    title: "3 · The target environments, and what each is for"
+    keywords:
+      - "Environment Strategy"
+      - "Network Architecture"
+      - "Resource Isolation"
+    body: "Production, staging and development are designed as three separate targets, with their own networking, their own isolation, and their own reason to exist. Production-grade infrastructure is only production-grade where that is the requirement: here that means EKS for the sessions that genuinely need it, while staging and development are carried by a Linux machine already paid for, kept apart from each other and reaching the internet through one outbound tunnel rather than an open port. The environment a change is proven in is never the environment a player is sitting in."
     evidence:
-      label: "How a machine at home safely serves a public demo"
+      label: "How a machine already paid for carries the development phase"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#physical-backup-dev-instances-and-demo-one-shared-tunnel"
   - id: guardrails
-    title: "4 · It shuts itself off, on schedule"
-    body: "AWS Budgets, the built-in spending alert, sounds reassuring — but it can lag up to a day to actually fire, too slow to be the thing stopping the spending. So the real guardrail isn't a warning, it's an action: a scheduled job that shuts the expensive setup down every night, whether anyone remembers to or not. And when it shuts down, it checks its own work against the real infrastructure directly, not just a label that might be lying about what's still running."
+    title: "4 · The limits every resource has to obey"
+    keywords:
+      - "Security Baselines"
+      - "Compliance Constraints"
+      - "Cost Control"
+    body: "Encryption, tagging, monitoring, backup, quotas and budgets are settled as rules the platform obeys, not things somebody remembers. What separates a rule from a wish is enforcement: AWS Budgets can take most of a day to fire, a report rather than a brake, so the real control is a scheduled teardown that runs whether or not I think of it — and one that checks what is left against live EC2, because a resource that slipped its tag is exactly the one still charging. A guardrail that only notifies has not stopped anything."
     evidence:
-      label: "Checking the shutdown actually worked, not just trusting a label"
+      label: "Why the teardown checks live EC2 instead of trusting a tag"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#eks-infra-destroy-verifies-orphans-against-live-ec2-not-the-tagging-api-alone"
   - id: resources
-    title: "5 · Only paying for what the job needs"
-    body: "Once it's decided what has to run and when, the next question is how big. The production setup gets real, managed pieces — a managed cache (AWS's ElastiCache, reached only over an encrypted connection) and servers spread across more than one part of the network — because the whole point is proving the design survives infrastructure it doesn't fully control. It also skips one extra piece entirely: no separate controller software just to connect the load balancer, since simpler wiring does the same job at this size."
+    title: "5 · Capacity and cost, decided together"
+    keywords:
+      - "Resource Management"
+      - "Capacity & Scaling"
+      - "Budget Forecasting"
+    body: "Sizing and price are one question, not two. Instance families, cache tier, how many availability zones, what happens at ten times the load and what that adds to the monthly bill — all of it worked against the ceiling from step one, before anything is selected. That is what buys encrypted ElastiCache and nodes across more than one zone, and why a separate load-balancer controller was left out: at this size the simpler wiring does the same job. An assistant models the growth curves. Whether the platform is allowed to grow that way is a business answer."
     evidence:
-      label: "What the production setup actually buys, piece by piece"
+      label: "What production buys, piece by piece"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/deployment.md#eks-production-grade-target"
   - id: validation
-    title: "6 · Checked before it's trusted"
-    body: "Even a working setup gets a second look before it's trusted. One AWS default very nearly slipped through: attaching a custom security group — the setting that controls what's allowed to talk to what — quietly changes behaviour the moment you customise it, without ever throwing an error. The cluster can look perfectly healthy while that gap is open; it only shows up later, as small, hard-to-explain connection glitches. Catching it meant reviewing the design by hand, not just watching a plan approve cleanly."
+    title: "6 · Steps one to five, combined into one plan"
+    keywords:
+      - "Consolidated Brief"
+      - "Implementation Plan"
+      - "Final Review"
+    body: "Nothing has been built yet. What exists is five written decisions — requirements, access, environments, guardrails, and sizing with its price — combined here into one brief refined to what the implementing agent needs. It plans the build from that; I read the plan before a single resource is provisioned. That is where one AWS default nearly went through: a custom security group on EKS nodes stops EKS contributing the rules it would otherwise add — no error, a healthy-looking cluster, intermittent failures much later. The plan was valid. The design was wrong. A confident plan and a correct one read identically, which is why approval is its own step."
     evidence:
       label: "The default that looks fine until it isn't"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#eks-node-security-group-must-carry-its-own-control-plane-and-self-referencing-rules"
   - id: automation
-    title: "7 · Built so it repeats itself"
-    body: "None of this stays correct by accident — the infrastructure is written as code (Terraform) so it can be rebuilt exactly, every time, with no manual step left for someone to forget. So a fix that's written down doesn't count as real until it's actually been applied: if the infrastructure code and what's actually running fall out of sync, the deploy stops itself before it can build on top of a fix nobody actually turned on."
+    title: "7 · Built as code, then tested by deploying it"
+    keywords:
+      - "Infrastructure as Code"
+      - "Deployment Testing"
+      - "Repeatability"
+    body: "All of it is Terraform, so the platform can be destroyed and rebuilt from one source with no step left in anybody's head. Code on its own is not proof, so the deploy is the test: it stops before installing anything if the last infrastructure apply never ran, rather than building on top of a fix that exists only in a file. The agent wrote most of the modules; that gate was a requirement I set. Infrastructure that has never been rebuilt from its own code is not repeatable — it is only working."
     evidence:
-      label: "The safeguard against a fix that was written but never applied"
+      label: "The check that catches a fix nobody applied"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#eks-deploy-workflows-fail-fast-on-infra-code-the-last-infra-apply-never-ran"
 ---

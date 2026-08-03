@@ -16,6 +16,10 @@ const cards = defineCollection({
         z.object({
           id: z.string(),
           title: z.string(),
+          // The named disciplines this step exercises. Rendered as chips under
+          // the step title so the industry term is present for a reader (or a
+          // search) scanning for it, while the body stays in plain English.
+          keywords: z.array(z.string()).default([]),
           body: z.string(),
           // The one artefact that proves this step. Per-step rather than a
           // bucket at the bottom of the card: a link is far stronger sitting
