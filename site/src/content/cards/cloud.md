@@ -1,8 +1,8 @@
 ---
 role: "Cloud"
 order: 1
-headline: "Pay for production-grade infrastructure where it changes behaviour. Refuse to pay for it anywhere else."
-plain: "The game runs on three different foundations: a production-grade AWS stack, a small cluster I keep as a lab, and one Linux box at home that serves the demo you just played. Same container image on all three — what's different between them is the whole point."
+headline: "Most teams either run everything like it's production, or run production like a hobby project. Knowing which is which is the actual engineering."
+plain: "The game runs on two real foundations: a full production-grade AWS stack that only exists when someone's actually playing on it, and one physical machine at home that costs nothing extra and quietly serves the demo you're playing right now. Same container image on both — what's different is what each one is for, and what it costs to keep running."
 tools:
   - "Terraform"
   - "AWS (EKS, EC2, ElastiCache)"
@@ -13,45 +13,45 @@ tools:
   - "Cloudflare Tunnel"
 details:
   - id: objectives
-    title: "1 · Business and technical objectives, before any Terraform"
-    body: "The production target had to answer to a number, not a feeling. A control plane, NAT gateway, load balancer and managed cache have no AWS free tier, so leaving one running is an open-ended bill — the actual requirement became session-scoped: production-grade for the length of a play session, gone after. AWS Budgets alerts at $20/$40/$50 back that up, but they are not the control (see step 4)."
+    title: "1 · What must be true, before any server exists"
+    body: "Before any server existed, the real question was financial: what should this cost, and when does it actually need to be running at full strength? A production setup — load balancer, managed cache, servers that never sleep — has no free tier, so leaving one on all the time is an open-ended bill for a game that's still being built. The decision was to make the expensive version exist only for as long as someone is actually playing on it."
     evidence:
-      label: "Why the production target is session-scoped, not always-on"
+      label: "Why the expensive version only runs when someone's playing"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#eks-kept-session-scoped-not-always-on"
   - id: foundation
-    title: "2 · Identity before infrastructure"
-    body: "Nothing in either Terraform root holds a long-lived AWS key — CI assumes AWS_ROLE_ARN through GitHub's own OIDC provider, and an operator's kubectl access comes from an EKS access entry bound to their own IAM role, not a shared kubeconfig. The same discipline shows up outside AWS entirely: the art pipeline's R2 credentials are split so CI only ever holds a read-only token and can neither publish nor delete, while the read-write token needed to actually publish stays local and manual. Least privilege isn't a slogan here — it's a policy applied consistently across two unrelated cloud providers."
+    title: "2 · Who's allowed to touch it"
+    body: "Before writing any Terraform, the next question was who — and what — gets to touch this. Nobody holds a permanent AWS password: the automation proves who it is each time through a one-time identity check (OIDC) rather than a saved key, and a person's own control over the live servers comes from their own identity, not a shared file anyone could copy. That same rule — never hand out more access than the moment needs — turned out to matter just as much for the game's art files as it does for AWS."
     evidence:
-      label: "The same least-privilege split, enforced outside AWS too"
+      label: "The same rule, applied to something that isn't even AWS"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#private-asset-pipeline-credential-split"
   - id: environments
-    title: "3 · Three environments, three networks"
-    body: "EKS, K3s and the physical backup aren't the same environment at different sizes — each owns its own network and its own DNS. K3s's VPC even has to dodge itself: its CIDR is chosen specifically to avoid colliding with the pod and service ranges K3s hands out internally. EKS gets its own hostnames so a production deploy can never touch K3s's four DNS records, and the backup machine is a different network entirely, reachable only through a tunnel."
+    title: "3 · Where it actually runs"
+    body: "The two places this runs couldn't be more different, on purpose. One is the full AWS setup, built to prove the game holds up on real production infrastructure. The other is a physical machine at home, serving the exact demo you can play right now — no data centre, no monthly server bill, just hardware that was already sitting there. There's also a small always-on lab where changes get tried first, but it never serves a player directly. Keeping the home setup safe took its own decision: everything routes through a private tunnel (a Cloudflare Tunnel) instead of opening a port on the machine itself."
     evidence:
-      label: "A VPC CIDR chosen to avoid colliding with the cluster's own network"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/deployment.md#k3s-topology"
+      label: "How a machine at home safely serves a public demo"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#physical-backup-dev-instances-and-demo-one-shared-tunnel"
   - id: guardrails
-    title: "4 · Guardrails that fail closed, not alerts that fail open"
-    body: "An AWS Budgets alert lags 8 to 24 hours — useless as the thing that actually stops spend, so the real guardrail is a scheduled workflow that destroys the EKS stack every night regardless. The same discipline applies to state, not just cost: the gateway's TLS certificates used to get re-requested from Let's Encrypt on every rebuild, because the box holding them was ephemeral — enough rebuilds in a week hit Let's Encrypt's rate limit and took the public demo down. The fix externalises that state instead of hoping the box survives."
+    title: "4 · It shuts itself off, on schedule"
+    body: "AWS Budgets, the built-in spending alert, sounds reassuring — but it can lag up to a day to actually fire, too slow to be the thing stopping the spending. So the real guardrail isn't a warning, it's an action: a scheduled job that shuts the expensive setup down every night, whether anyone remembers to or not. And when it shuts down, it checks its own work against the real infrastructure directly, not just a label that might be lying about what's still running."
     evidence:
-      label: "The rate-limit incident that forced TLS state out of the box"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#caddy-gateway-acme-cert-cache-persisted-to-r2"
+      label: "Checking the shutdown actually worked, not just trusting a label"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#eks-infra-destroy-verifies-orphans-against-live-ec2-not-the-tagging-api-alone"
   - id: resources
-    title: "5 · Sizing the service, not the label"
-    body: "Production and lab buy different things on purpose. EKS pays for ElastiCache over rediss:// and two managed nodes in private subnets, because a production-grade target has to prove the design survives a managed dependency it doesn't control. K3s runs its own in-cluster Redis per namespace on a single small instance, because at lab scale a managed cache is money for nothing. The load balancer skips a controller entirely — target groups bind straight to the autoscaling group's existing node ports, one fewer thing to install, upgrade and grant IAM to, for exactly two services."
+    title: "5 · Only paying for what the job needs"
+    body: "Once it's decided what has to run and when, the next question is how big. The production setup gets real, managed pieces — a managed cache (AWS's ElastiCache, reached only over an encrypted connection) and servers spread across more than one part of the network — because the whole point is proving the design survives infrastructure it doesn't fully control. It also skips one extra piece entirely: no separate controller software just to connect the load balancer, since simpler wiring does the same job at this size."
     evidence:
-      label: "What EKS actually provisions, and why K3s doesn't"
+      label: "What the production setup actually buys, piece by piece"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/deployment.md#eks-production-grade-target"
   - id: validation
-    title: "6 · Reviewed before it's trusted"
-    body: "Attaching a custom security group to the node launch template silently opts the cluster out of EKS's default node-to-control-plane wiring — nothing errors at apply time, and the cluster can even come up looking healthy while cross-node pod traffic quietly breaks. That only surfaces in review, not in a plan diff, which is why the fix is three explicit ingress rules and a comment for whoever adds the next node group."
+    title: "6 · Checked before it's trusted"
+    body: "Even a working setup gets a second look before it's trusted. One AWS default very nearly slipped through: attaching a custom security group — the setting that controls what's allowed to talk to what — quietly changes behaviour the moment you customise it, without ever throwing an error. The cluster can look perfectly healthy while that gap is open; it only shows up later, as small, hard-to-explain connection glitches. Catching it meant reviewing the design by hand, not just watching a plan approve cleanly."
     evidence:
-      label: "A silent AWS default, caught before it shipped"
+      label: "The default that looks fine until it isn't"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#eks-node-security-group-must-carry-its-own-control-plane-and-self-referencing-rules"
   - id: automation
-    title: "7 · Infrastructure as code, not infrastructure as intent"
-    body: "Terraform is split by lifecycle, not convenience: a persistent shared root for the ACM certificate and DNS validation, applied once and never touched again, and a session-scoped root for everything that gets destroyed nightly. Both reuse the same composite GitHub Actions for backend bootstrap, plan and validate, so K3s and EKS never drift into two different apply procedures. And a committed fix isn't a shipped fix until it's actually applied — deploy workflows now hard-fail before any build if the infra code on disk doesn't match what the last apply actually ran."
+    title: "7 · Built so it repeats itself"
+    body: "None of this stays correct by accident — the infrastructure is written as code (Terraform) so it can be rebuilt exactly, every time, with no manual step left for someone to forget. So a fix that's written down doesn't count as real until it's actually been applied: if the infrastructure code and what's actually running fall out of sync, the deploy stops itself before it can build on top of a fix nobody actually turned on."
     evidence:
-      label: "Committed doesn't mean applied"
+      label: "The safeguard against a fix that was written but never applied"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#eks-deploy-workflows-fail-fast-on-infra-code-the-last-infra-apply-never-ran"
 ---
