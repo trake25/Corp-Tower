@@ -8,31 +8,41 @@ tools:
   - "Redis"
   - "WebSocket (ws)"
   - "Kubernetes"
-links:
-  - label: "Lobby_Manager.js — matchmaking & rooms"
-    href: "https://github.com/trake25/Corp-Tower/blob/main/src/Server/app/Lobby_Manager.js"
-  - label: "Tower_Stability.js — pure scoring"
-    href: "https://github.com/trake25/Corp-Tower/blob/main/src/Server/app/Tower_Stability.js"
-  - label: "Redis_State.js — shared state"
-    href: "https://github.com/trake25/Corp-Tower/blob/main/src/Server/app/Redis_State.js"
-  - label: "backend.md"
-    href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/backend.md"
+details:
+  - id: objectives
+    title: "1 · The same math, every time"
+    body: "Before this code was trusted, one rule was set and never relaxed: the tower-stability math cannot depend on anything except what's on the tower right now — no history, no memory of earlier turns, no randomness. That's what lets the exact same calculation be re-run thousands of times offline to tune the game, and re-derived instantly on reconnect instead of replayed step by step."
+    evidence:
+      label: "The rule that makes the same tower always grade the same way"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#tower-stability-must-stay-a-pure-function"
+  - id: architecture
+    title: "2 · One entrance, not five"
+    body: "The gameplay rules aren't one big file — they're split into focused pieces for scoring, supply, and bonus logic. But nothing outside is allowed to reach into any of those pieces directly: every call, even between two of those pieces, goes back through one shared entry point. That's what keeps 'who's allowed to touch what' answerable in one sentence instead of traced through the whole codebase."
+    evidence:
+      label: "Why every piece talks through one door, including to each other"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/coding-conventions.md#server-engine-module-delegation-pattern"
+  - id: core_service
+    title: "3 · A room follows its player"
+    body: "A room isn't tied to the machine that created it. If the player who's actually connected is being answered by a different machine than the one running that room's game logic, the room hands that player off — quietly, automatically — so their signal always reaches whoever they're actually talking to. The player never has to know, or care, which machine that is."
+    evidence:
+      label: "The hand-off that lets a room follow its own player"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/backend.md#lobby-manager"
+  - id: performance
+    title: "4 · No two writes collide"
+    body: "Under light load, two machines picking players off the same waiting list one at a time never actually collide. Under real load, they can — and when they did, the fix couldn't be 'read the list, then rewrite it,' because two machines can both read the same list before either writes back, and one of them's change quietly disappears. The fix takes exactly what it needs in a single, indivisible step instead."
+    evidence:
+      label: "The exact kind of collision that only shows up under real concurrency"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#matchmaking-queue-lost-update-and-cross-pod-room-gaps"
+  - id: validation
+    title: "5 · Proven to fail first, then proven fixed"
+    body: "A fix like that doesn't get trusted just because it reads correctly. The regression test built for it does something stricter: it forces two machines to actually interleave their reads and writes the way real network timing would, runs the same scenario against the old, broken logic first to confirm it actually fails there, and only then checks it against the fix."
+    evidence:
+      label: "Proven to fail on the old code before it was trusted on the new one"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/testing.md#server-matchmaking-queue-tests"
+  - id: production_readiness
+    title: "6 · Said out loud, not hidden"
+    body: "Not everything gets built just because it could be. Long-term player history and a real leaderboard aren't there yet — only the state a live match actually needs is kept, and that's said plainly rather than implied by silence. What's missing is on the record as future work, not something a future session has to rediscover the hard way."
+    evidence:
+      label: "What this backend deliberately doesn't do yet, written down"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#no-persistent-leaderboard-yet"
 ---
-
-### Decision
-
-Server-authoritative, with room state in Redis so any worker can serve any player and any pod can recover a room it didn't create. Node.js, because I read it fluently.
-
-### Instead of
-
-**Host-authoritative** — cheaper, common in small multiplayer, and it loses twice here. The host's disconnect ends everyone's game, on a title played by three people on mobile. And the design is a scoreboard with selfish-cooperation tension, so client-computed scoring makes the whole design decorative. Also rejected: sticky sessions pinning a room to one pod, which turns any restart into a lost room.
-
-### Why it matters
-
-Reconnect inside the TTL resumes the same slot in the same room, rebuilt by whichever worker answers. The player never learns which pod they were on, which is the point.
-
-### Proof
-
-- Room formation is serialized by a Redis lock while enqueueing is deliberately left unlocked — that's the actual race window, and locking it would cost throughput for nothing.
-- Players whose room was formed by another pod are handed to the pod holding their live socket.
-- Stability is a pure function, so the engine, the bots, and the offline balance simulator grade a tower with identical math.

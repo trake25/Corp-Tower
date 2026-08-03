@@ -1,0 +1,117 @@
+---
+// The DevOps skill's showcase: a 6-step release pipeline, AI-assisted the
+// same way Cloud is — the orchestrator compares trade-offs and drafts the
+// gates, a human decides which ones are allowed to block a release.
+// Backend and Frontend instead use the QA junior-implements/senior-reviews
+// framing; DevOps and Cloud don't, since there's no separate "build" step
+// for an orchestrator to hand off to here.
+//
+// Box text stays plain-English, same rule as Cloud's diagram — the
+// technical specifics (OIDC-free access checks, hash verification, signing
+// keys, Argo CD) live one layer down in `details[].body`.
+//
+// Coordinates reused verbatim from AiWorkflowDiagram.astro: this is also a
+// linear 6-step pipeline, so the same 3x2 snake geometry (246-wide boxes,
+// viewBox 820x400) applies without modification.
+// Source facts: src/content/cards/devops.md, docs/context/build.md,
+// docs/context/testing.md, docs/context/decisions.md,
+// docs/context/coding-conventions.md.
+---
+
+<figure class="card-diagram">
+  <div class="card-diagram-scroll">
+    <svg
+      class="topology"
+      viewBox="0 0 820 400"
+      role="img"
+      aria-labelledby="devops-pipeline-title devops-pipeline-desc"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+    >
+      <title id="devops-pipeline-title">Six steps from a release requirement to automation that's earned trust</title>
+      <desc id="devops-pipeline-desc">
+        Six steps, in order. One: nothing that's already running gets
+        touched by surprise — an automatic deploy checks whether its target
+        is actually live right now, not a saved status flag. Two: since
+        this is one person directing an AI coding agent rather than a
+        multi-reviewer repository, what actually gets governed is whether
+        the written record still matches what's true, through a fixed,
+        script-checked procedure. Three: nothing ships unverified — every
+        art-integrity check fails the build closed rather than shipping
+        with something missing. Four: getting a release out is one ordered
+        sequence — resolve the version number from the store itself, unlock
+        the signing key, build, sign, and push to a limited internal
+        testing track first. Five: a release is proven against specific,
+        named checks, not a general impression, and which checks are
+        actually allowed to block it is written down as a fixed table.
+        Six: full automation is built and ready, but switching it on is
+        earned — a live install, a manual sync, and a deliberate rollback
+        test have to succeed first, not assumed.
+      </desc>
+
+      <defs>
+        <marker id="devops-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="arrow-head" d="M0,0 L10,5 L0,10 z" stroke="none" />
+        </marker>
+      </defs>
+
+      <g class="hotspot" data-detail="objectives" role="button" tabindex="0" aria-label="Step 1, don't touch what's already running — open the explanation">
+        <rect class="node" x="15" y="40" width="246" height="84" rx="10" />
+        <text class="label" x="29" y="64">1 · Don't touch what's running</text>
+        <text class="sub" x="29" y="82">checks what's live right now</text>
+        <text class="sub" x="29" y="98">not a saved status flag</text>
+      </g>
+
+      <path class="link" d="M261,82 L287,82" marker-end="url(#devops-arrow)" />
+
+      <g class="hotspot" data-detail="source_control" role="button" tabindex="0" aria-label="Step 2, keeping the record honest — open the explanation">
+        <rect class="node" x="287" y="40" width="246" height="84" rx="10" />
+        <text class="label" x="301" y="64">2 · Keeping the record honest</text>
+        <text class="sub" x="301" y="82">changes get reviewed too</text>
+        <text class="sub" x="301" y="98">even what's just written down</text>
+      </g>
+
+      <path class="link" d="M533,82 L559,82" marker-end="url(#devops-arrow)" />
+
+      <g class="hotspot" data-detail="ci" role="button" tabindex="0" aria-label="Step 3, nothing ships unverified — open the explanation">
+        <rect class="node" x="559" y="40" width="246" height="84" rx="10" />
+        <text class="label" x="573" y="64">3 · Nothing ships unverified</text>
+        <text class="sub" x="573" y="82">every check fails closed</text>
+        <text class="sub" x="573" y="98">hash, count, and contents</text>
+      </g>
+
+      <path class="link" d="M682,124 L682,230" marker-end="url(#devops-arrow)" />
+
+      <g class="hotspot" data-detail="orchestration" role="button" tabindex="0" aria-label="Step 4, getting it out safely — open the explanation">
+        <rect class="node" x="559" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="573" y="254">4 · Getting it out, safely</text>
+        <text class="sub" x="573" y="272">version, sign, then release</text>
+        <text class="sub" x="573" y="288">to a limited group first</text>
+      </g>
+
+      <path class="link" d="M559,272 L533,272" marker-end="url(#devops-arrow)" />
+
+      <g class="hotspot" data-detail="validation" role="button" tabindex="0" aria-label="Step 5, proven not assumed — open the explanation">
+        <rect class="node" x="287" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="301" y="254">5 · Proven, not assumed</text>
+        <text class="sub" x="301" y="272">named checks, not a feeling</text>
+        <text class="sub" x="301" y="288">block the release if they fail</text>
+      </g>
+
+      <path class="link" d="M287,272 L261,272" marker-end="url(#devops-arrow)" />
+
+      <g class="hotspot" data-detail="automation" role="button" tabindex="0" aria-label="Step 6, earning full automation — open the explanation">
+        <rect class="node" x="15" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="29" y="254">6 · Earning full automation</text>
+        <text class="sub" x="29" y="272">ready, but not switched on</text>
+        <text class="sub" x="29" y="288">trust comes before the switch</text>
+      </g>
+
+      <text class="wire accent" x="15" y="368">AI drafted the pipeline's failure-mode comparisons</text>
+      <text class="wire" x="15" y="384">deciding which checks were allowed to block a release was never its call</text>
+    </svg>
+  </div>
+  <figcaption class="card-diagram-caption">
+    Click any step to read what it means.
+  </figcaption>
+</figure>

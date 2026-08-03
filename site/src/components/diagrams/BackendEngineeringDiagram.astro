@@ -1,0 +1,113 @@
+---
+// The Backend skill's showcase: a 6-step engineering pipeline, framed the
+// way QA is — the coding agent is the junior who implements, the
+// orchestrator is the senior who reviews and proves it. Not Cloud/DevOps's
+// AI-compares-trade-offs framing: there's no trade-off comparison here,
+// there's a fix and a test that has to fail on the old code first.
+//
+// Box text stays plain-English, same rule as every diagram since Cloud's
+// revision — technical specifics (Redis, atomic ops, the engine facade)
+// live one layer down in `details[].body`.
+//
+// Coordinates reused verbatim from AiWorkflowDiagram.astro: a linear 6-step
+// pipeline, so the same 3x2 snake geometry (246-wide boxes, viewBox
+// 820x400) applies without modification.
+// Source facts: src/content/cards/backend.md, docs/context/backend.md,
+// docs/context/decisions.md, docs/context/testing.md,
+// docs/context/coding-conventions.md.
+---
+
+<figure class="card-diagram">
+  <div class="card-diagram-scroll">
+    <svg
+      class="topology"
+      viewBox="0 0 820 400"
+      role="img"
+      aria-labelledby="backend-pipeline-title backend-pipeline-desc"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+    >
+      <title id="backend-pipeline-title">Six steps from a hard requirement to an admitted gap</title>
+      <desc id="backend-pipeline-desc">
+        Six steps, in order. One: the tower-stability math is required to
+        depend on nothing but the tower's current state — no history, no
+        randomness — so it always grades the same tower the same way. Two:
+        gameplay rules are split into focused pieces, but every call between
+        them still goes back through one shared entry point. Three: a room
+        follows its own player automatically if a different machine ends up
+        answering their connection. Four: two machines picking players off
+        the same waiting list can collide under real load, so the fix takes
+        exactly what it needs in one indivisible step rather than reading
+        then rewriting. Five: that fix is proven by a test that first runs
+        the same scenario against the old, broken logic to confirm it
+        actually fails there, then checks it against the fix. Six: what
+        isn't built yet — a real persistent leaderboard — is stated
+        plainly as future work, not left for someone else to discover.
+      </desc>
+
+      <defs>
+        <marker id="backend-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="arrow-head" d="M0,0 L10,5 L0,10 z" stroke="none" />
+        </marker>
+      </defs>
+
+      <g class="hotspot" data-detail="objectives" role="button" tabindex="0" aria-label="Step 1, the same math every time — open the explanation">
+        <rect class="node" x="15" y="40" width="246" height="84" rx="10" />
+        <text class="label" x="29" y="64">1 · The same math, every time</text>
+        <text class="sub" x="29" y="82">no history, no randomness</text>
+        <text class="sub" x="29" y="98">so every checker agrees</text>
+      </g>
+
+      <path class="link" d="M261,82 L287,82" marker-end="url(#backend-arrow)" />
+
+      <g class="hotspot" data-detail="architecture" role="button" tabindex="0" aria-label="Step 2, one entrance not five — open the explanation">
+        <rect class="node" x="287" y="40" width="246" height="84" rx="10" />
+        <text class="label" x="301" y="64">2 · One entrance, not five</text>
+        <text class="sub" x="301" y="82">every call goes through it</text>
+        <text class="sub" x="301" y="98">even between two pieces</text>
+      </g>
+
+      <path class="link" d="M533,82 L559,82" marker-end="url(#backend-arrow)" />
+
+      <g class="hotspot" data-detail="core_service" role="button" tabindex="0" aria-label="Step 3, a room follows its player — open the explanation">
+        <rect class="node" x="559" y="40" width="246" height="84" rx="10" />
+        <text class="label" x="573" y="64">3 · A room follows its player</text>
+        <text class="sub" x="573" y="82">even to a different machine</text>
+        <text class="sub" x="573" y="98">the player never notices</text>
+      </g>
+
+      <path class="link" d="M682,124 L682,230" marker-end="url(#backend-arrow)" />
+
+      <g class="hotspot" data-detail="performance" role="button" tabindex="0" aria-label="Step 4, no two writes collide — open the explanation">
+        <rect class="node" x="559" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="573" y="254">4 · No two writes collide</text>
+        <text class="sub" x="573" y="272">even under real concurrency</text>
+        <text class="sub" x="573" y="288">not just in easy tests</text>
+      </g>
+
+      <path class="link" d="M559,272 L533,272" marker-end="url(#backend-arrow)" />
+
+      <g class="hotspot" data-detail="validation" role="button" tabindex="0" aria-label="Step 5, proven to fail first then proven fixed — open the explanation">
+        <rect class="node" x="287" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="301" y="254">5 · Proven to fail, then fixed</text>
+        <text class="sub" x="301" y="272">the old code, run first</text>
+        <text class="sub" x="301" y="288">then checked that it fails</text>
+      </g>
+
+      <path class="link" d="M287,272 L261,272" marker-end="url(#backend-arrow)" />
+
+      <g class="hotspot" data-detail="production_readiness" role="button" tabindex="0" aria-label="Step 6, said out loud not hidden — open the explanation">
+        <rect class="node" x="15" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="29" y="254">6 · Said out loud, not hidden</text>
+        <text class="sub" x="29" y="272">what's not built yet</text>
+        <text class="sub" x="29" y="288">and why that's fine for now</text>
+      </g>
+
+      <text class="wire accent" x="15" y="368">The agent wrote the atomic fix</text>
+      <text class="wire" x="15" y="384">proving it worked meant running the old, broken code through the same test first</text>
+    </svg>
+  </div>
+  <figcaption class="card-diagram-caption">
+    Click any step to read what it means.
+  </figcaption>
+</figure>

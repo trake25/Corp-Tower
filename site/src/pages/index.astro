@@ -6,6 +6,9 @@ import Card from "../components/Card.astro";
 import CloudTargetsDiagram from "../components/diagrams/CloudTargetsDiagram.astro";
 import QaLoopDiagram from "../components/diagrams/QaLoopDiagram.astro";
 import AiWorkflowDiagram from "../components/diagrams/AiWorkflowDiagram.astro";
+import DevOpsPipelineDiagram from "../components/diagrams/DevOpsPipelineDiagram.astro";
+import BackendEngineeringDiagram from "../components/diagrams/BackendEngineeringDiagram.astro";
+import FrontendEngineeringDiagram from "../components/diagrams/FrontendEngineeringDiagram.astro";
 import { profile } from "../data/profile";
 
 // One showcase diagram per skill, keyed by the card's `role`. A role with no
@@ -15,6 +18,9 @@ const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
   Cloud: CloudTargetsDiagram,
   QA: QaLoopDiagram,
   AI: AiWorkflowDiagram,
+  DevOps: DevOpsPipelineDiagram,
+  Backend: BackendEngineeringDiagram,
+  Frontend: FrontendEngineeringDiagram,
 };
 
 // Filter buttons follow this order, not the cards' display order. A role present

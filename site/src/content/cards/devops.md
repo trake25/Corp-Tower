@@ -5,41 +5,46 @@ headline: "I encoded the three teammates I don't have as CI jobs."
 plain: "I run every environment of this project alone. So I built the parts of a team that isn't there — the person who does releases, the person who checks before you break something, and the person who remembers the steps."
 tools:
   - "GitHub Actions"
-  - "Terraform"
-  - "Ansible"
+  - "Composite Actions"
+  - "Godot Export (GUT)"
+  - "Google Play Publisher API"
+  - "Cloudflare R2"
   - "Docker"
-  - "Google Play API"
-  - "Cloudflare API"
-links:
-  - label: "Android release pipeline"
-    href: "https://github.com/trake25/Corp-Tower/blob/main/.github/workflows/Android-Deploy-wsplaytod.yml"
-  - label: "Guarded Terraform apply"
-    href: "https://github.com/trake25/Corp-Tower/blob/main/.github/workflows/EKS-Infra-Apply.yml"
-  - label: "Drift check action"
-    href: "https://github.com/trake25/Corp-Tower/blob/main/.github/actions/eks-infra-drift-check/action.yml"
-  - label: "All workflows"
-    href: "https://github.com/trake25/Corp-Tower/tree/main/.github/workflows"
+details:
+  - id: objectives
+    title: "1 · Don't touch what's already running"
+    body: "Before any pipeline was built, the rule was: nothing that's already running gets touched by surprise. A routine code push shouldn't silently restart something that was deliberately turned off — so every automatic deploy checks whether its target is actually live right now, not whether a saved status flag says it should be. A flag can lie about what's actually running; the real, current state can't."
+    evidence:
+      label: "The rule that stops a routine push from undoing a deliberate shutdown"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#auto-deploy-guard-rails-check-live-status-not-a-stored-flag"
+  - id: source_control
+    title: "2 · Keeping the record honest"
+    body: "This isn't a multi-branch, multi-reviewer repo — it's one person directing an AI coding agent, so the thing that actually needs governing isn't code review, it's whether the written record of the system still matches what's true. Changes to that record follow their own fixed procedure: what's worth writing down, what gets deleted because it's no longer true, and a one-line receipt of exactly what changed and why — checked by a script before it's accepted, the same way a pull request would be checked."
+    evidence:
+      label: "The procedure that reviews changes to the truth, not just the code"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/coding-conventions.md#documentation-maintenance"
+  - id: ci
+    title: "3 · Nothing ships unverified"
+    body: "Every build depends on art that never touches the public repository, which means the build has to prove that art arrived correctly before doing anything else with it: downloaded, hash-checked, unpacked, file-counted, and checked for specific files that must exist. Every single one of those checks fails the build outright rather than shipping with something missing or wrong."
+    evidence:
+      label: "Every art check fails the build closed, not open"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/build.md#private-asset-pipeline"
+  - id: orchestration
+    title: "4 · Getting it out, safely"
+    body: "Getting a release out is one long, ordered sequence, not a single button: figure out the next version number by asking the store itself what's already published, unlock the signing key from a secret store, build and sign the release, then push it to a limited internal testing track — never straight to everyone. The keys and credentials involved are pulled in only for that one step and never written anywhere else."
+    evidence:
+      label: "The version number the pipeline never has to guess"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/build.md#android-deploy-wsplaytod-workflow"
+  - id: validation
+    title: "5 · Proven, not assumed"
+    body: "A release doesn't reach a real device until it clears specific, named checks — not a general 'looks fine' judgement. Scripted tests run and block the pipeline if they fail, before a single signed build is exported. Which checks are actually allowed to stop a release, and which are advisory, is written down as a fixed table, not decided case-by-case in the moment."
+    evidence:
+      label: "The exact list of checks that are allowed to block a release"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/testing.md#ci-test-gates"
+  - id: automation
+    title: "6 · Earning full automation"
+    body: "Full delivery automation — the kind where a merged change deploys itself with no one pressing a button — is built and ready to switch on. It isn't switched on yet. Automating a deploy earns that trust only after a live install, one fully manual sync, and one deliberate rollback test all succeed — automating the step before that trust exists just means the same mistake happens faster."
+    evidence:
+      label: "Automation that's ready, deliberately not yet turned on"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#argo-cd-prepared-but-not-enabled"
 ---
-
-### Decision
-
-Encode three absent roles as CI jobs rather than as discipline.
-
-- **The release engineer.** One workflow takes Android from source to store: verified art, version code resolved from the live Play API, signed build, five artifact checks, upload, then a read-back to confirm the store lists what was just sent.
-- **The reviewer.** Nothing destructive runs unchallenged. A deploy fails **before any build** if infra code differs from what was last applied. An apply hard-fails if the plan contains any delete or replace. A destroy cross-checks leftovers against the live EC2 API. Cleanup needs a typed phrase naming the exact target.
-- **The runbook.** Reusable cores with thin dispatchers; shared composite actions for auth, Terraform setup, art fetch, and web build; deploy-time generated manifests so nobody hand-edits an image tag; diagnose workflows that answer "is it healthy" without SSH.
-
-### Instead of
-
-**The two normal answers.** Copy-pasted per-target workflows are fastest to write and drift until prod and test differ for reasons nobody remembers. One monolithic workflow with conditionals is unreadable and makes deploying a single target risky. Also rejected: trusting stored status flags and the AWS tagging API — both are checked against live state instead, because both have lied.
-
-### Why it matters
-
-Automation removes what's repetitive; guardrails remove what's irreversible. Automating a daily task saves time. Automating a *rare* one — like a release — prevents an error that would otherwise reach users, because infrequency means muscle memory never forms.
-
-### Proof
-
-- Version codes derived by reading every existing track rather than incrementing a counter.
-- Art verified download → hash → extract → file count → sentinel files, each failing the build closed, with the hash-skipping override marked never-for-release in the workflow itself.
-- Push-triggered deploys skip an instance whose container isn't running, so a routine commit can't silently restart something that was deliberately taken down.
-- DNS cutover verified through the Cloudflare API rather than `dig`, because a proxied record never exposes a literal CNAME — the obvious check would report every success as a failure.

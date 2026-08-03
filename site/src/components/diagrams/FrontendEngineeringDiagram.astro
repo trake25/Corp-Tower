@@ -1,0 +1,117 @@
+---
+// The Frontend skill's showcase: a 6-step engineering pipeline, framed the
+// way QA is — the coding agent is the junior who implements, the
+// orchestrator is the senior who reviews. Not Cloud/DevOps's
+// AI-compares-trade-offs framing: the closing line here is a concrete
+// catch (a screenshot finding a bug the test suite missed), the same
+// device QA's own diagram already uses.
+//
+// Box text stays plain-English, same rule as every diagram since Cloud's
+// revision — technical specifics (scene-free classes, seeded collapse,
+// parallax scroll) live one layer down in `details[].body`.
+//
+// Coordinates reused verbatim from AiWorkflowDiagram.astro: a linear 6-step
+// pipeline, so the same 3x2 snake geometry (246-wide boxes, viewBox
+// 820x400) applies without modification.
+// Source facts: src/content/cards/frontend.md, docs/context/ui.md,
+// docs/context/decisions.md, docs/context/testing.md,
+// docs/context/coding-conventions.md.
+---
+
+<figure class="card-diagram">
+  <div class="card-diagram-scroll">
+    <svg
+      class="topology"
+      viewBox="0 0 820 400"
+      role="img"
+      aria-labelledby="frontend-pipeline-title frontend-pipeline-desc"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+    >
+      <title id="frontend-pipeline-title">Six steps from a rendering rule to an admitted blind spot</title>
+      <desc id="frontend-pipeline-desc">
+        Six steps, in order. One: the client's whole job is to render
+        whatever the server says is true and send player actions — it
+        never calculates a final gameplay outcome itself. Two: what used
+        to be one very large file is now a slim conductor delegating to
+        small, focused pieces, each owning its own on-screen elements and
+        state. Three: the piece that draws the tower only draws what the
+        server already decided, including a collapse that's seeded
+        identically so every player's screen shows the same outcome. Four:
+        bricks stay a fixed size and the camera scrolls instead, since
+        resizing every brick every frame would be real, repeated work for
+        no visual benefit. Five: the riskiest placement math is pulled out
+        into a plain class with no scene dependency, so nineteen tests can
+        check it in seconds without opening the game. Six: passing every
+        test still isn't the same as looking right — a bug that broke the
+        on-screen drag preview passed every test and was only caught by
+        rendering the actual screen and looking at it, which is now a
+        stated, required step of its own.
+      </desc>
+
+      <defs>
+        <marker id="frontend-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="arrow-head" d="M0,0 L10,5 L0,10 z" stroke="none" />
+        </marker>
+      </defs>
+
+      <g class="hotspot" data-detail="objectives" role="button" tabindex="0" aria-label="Step 1, the screen never decides — open the explanation">
+        <rect class="node" x="15" y="40" width="246" height="84" rx="10" />
+        <text class="label" x="29" y="64">1 · The screen never decides</text>
+        <text class="sub" x="29" y="82">it only shows what the</text>
+        <text class="sub" x="29" y="98">server already decided</text>
+      </g>
+
+      <path class="link" d="M261,82 L287,82" marker-end="url(#frontend-arrow)" />
+
+      <g class="hotspot" data-detail="architecture" role="button" tabindex="0" aria-label="Step 2, small pieces one conductor — open the explanation">
+        <rect class="node" x="287" y="40" width="246" height="84" rx="10" />
+        <text class="label" x="301" y="64">2 · Small pieces, not one file</text>
+        <text class="sub" x="301" y="82">each piece owns one job</text>
+        <text class="sub" x="301" y="98">nothing grows back into one file</text>
+      </g>
+
+      <path class="link" d="M533,82 L559,82" marker-end="url(#frontend-arrow)" />
+
+      <g class="hotspot" data-detail="implementation" role="button" tabindex="0" aria-label="Step 3, the tower draws what happened — open the explanation">
+        <rect class="node" x="559" y="40" width="246" height="84" rx="10" />
+        <text class="label" x="573" y="64">3 · Drawing, not deciding</text>
+        <text class="sub" x="573" y="82">not what it thinks happened</text>
+        <text class="sub" x="573" y="98">the same on every screen</text>
+      </g>
+
+      <path class="link" d="M682,124 L682,230" marker-end="url(#frontend-arrow)" />
+
+      <g class="hotspot" data-detail="optimization" role="button" tabindex="0" aria-label="Step 4, the camera moves not the bricks — open the explanation">
+        <rect class="node" x="559" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="573" y="254">4 · The camera moves instead</text>
+        <text class="sub" x="573" y="272">bricks never resize to fit</text>
+        <text class="sub" x="573" y="288">the view scrolls instead</text>
+      </g>
+
+      <path class="link" d="M559,272 L533,272" marker-end="url(#frontend-arrow)" />
+
+      <g class="hotspot" data-detail="validation" role="button" tabindex="0" aria-label="Step 5, checked without opening the game — open the explanation">
+        <rect class="node" x="287" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="301" y="254">5 · Checked without playing</text>
+        <text class="sub" x="301" y="272">in seconds, not minutes</text>
+        <text class="sub" x="301" y="288">the highest-risk math first</text>
+      </g>
+
+      <path class="link" d="M287,272 L261,272" marker-end="url(#frontend-arrow)" />
+
+      <g class="hotspot" data-detail="readiness" role="button" tabindex="0" aria-label="Step 6, what the tests can't see admitted — open the explanation">
+        <rect class="node" x="15" y="230" width="246" height="84" rx="10" />
+        <text class="label" x="29" y="254">6 · What the tests can't see</text>
+        <text class="sub" x="29" y="272">some bugs only show on screen</text>
+        <text class="sub" x="29" y="288">so the screen still gets checked</text>
+      </g>
+
+      <text class="wire accent" x="15" y="368">The agent wrote the renderer</text>
+      <text class="wire" x="15" y="384">a screenshot, not the test suite, is what caught the bug the tests missed</text>
+    </svg>
+  </div>
+  <figcaption class="card-diagram-caption">
+    Click any step to read what it means.
+  </figcaption>
+</figure>
