@@ -1,52 +1,78 @@
 ---
-// The DevOps skill's showcase: a 6-step release pipeline, AI-assisted the
-// same way Cloud is — the orchestrator compares trade-offs and drafts the
-// gates, a human decides which ones are allowed to block a release.
-// Backend and Frontend instead use the QA junior-implements/senior-reviews
-// framing; DevOps and Cloud don't, since there's no separate "build" step
-// for an orchestrator to hand off to here.
+// The DevOps skill's showcase. Deliberately the only diagram on the page with
+// this silhouette: Cloud converges (many decisions into one platform), AI runs
+// a snake, QA runs a loop. DevOps is the exact inverse of Cloud — one artifact
+// out to many destinations — so it fans. Same visual vocabulary as Cloud,
+// opposite direction, which makes the two read as a deliberate pair rather than
+// two attempts at the same picture. CloudTargetsDiagram jumps out to
+// `#card-devops`; the two links above step 1 close that loop from this side.
 //
-// Box text stays plain-English, same rule as Cloud's diagram — the
-// technical specifics (OIDC-free access checks, hash verification, signing
-// keys, Argo CD) live one layer down in `details[].body`.
+// Four hotspots, because Card.astro binds clickable regions to `details[].id`
+// in src/content/cards/devops.md — plan, build, ship, operate. Keep them in
+// lockstep or the click-to-reveal wiring silently does nothing.
 //
-// Coordinates reused verbatim from AiWorkflowDiagram.astro: this is also a
-// linear 6-step pipeline, so the same 3x2 snake geometry (246-wide boxes,
-// viewBox 820x400) applies without modification.
+// The geometry is the argument, not decoration:
+//   · step 2 is drawn as the trunk every branch leaves from, because that is
+//     literally what shared composite actions are — one body of pipeline code
+//     serving five destinations.
+//   · step 3 is the five destination chips themselves. All five carry
+//     data-detail="ship", so clicking any one lights all five: shipping is one
+//     step with five endpoints, not five steps.
+//   · the dashed vertical is the clearance gate. Three branches cross it; the
+//     two development branches pass below where it ends. That makes the card's
+//     headline readable as geometry, with no caption doing the work.
+//   · the low sweep back into step 4 is the drain: five out, one back. Not a
+//     loop — QA owns the loop, and operations isn't a return to planning.
+//
+// Five destinations, not a 3x3 grid: game server and web client each go to
+// production and development, Android goes to one place (a Play Console
+// internal testing track). A grid would force a fudged or empty Android cell;
+// an uneven fan draws the real shape honestly.
+//
+// The three workflows ride inside the trunk rather than as lines — three
+// workflows across five destinations is fifteen paths, i.e. spaghetti.
+//
+// Box text stays plain-English, same rule as Cloud's diagram. Named
+// disciplines live one layer down in `details[].keywords`; the specifics
+// (hash verification, signing keys, store version resolution, Argo CD) in
+// `details[].body` and the card's trailing note.
+//
+// Text budget: 230w ≈ 26 label chars / 33 sub chars; 190w ≈ 21 / 27;
+// 225w chips ≈ 25 label chars; 340w ≈ 39 / 50.
 // Source facts: src/content/cards/devops.md, docs/context/build.md,
-// docs/context/testing.md, docs/context/decisions.md,
-// docs/context/coding-conventions.md.
+// docs/context/testing.md, docs/context/decisions.md.
 ---
 
 <figure class="card-diagram">
   <div class="card-diagram-scroll">
     <svg
       class="topology"
-      viewBox="0 0 820 400"
+      viewBox="0 0 820 520"
       role="img"
       aria-labelledby="devops-pipeline-title devops-pipeline-desc"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
     >
-      <title id="devops-pipeline-title">Six steps from a release requirement to automation that's earned trust</title>
+      <title id="devops-pipeline-title">One pipeline, five destinations, and a gate only development skips</title>
       <desc id="devops-pipeline-desc">
-        Six steps, in order. One: nothing that's already running gets
-        touched by surprise — an automatic deploy checks whether its target
-        is actually live right now, not a saved status flag. Two: since
-        this is one person directing an AI coding agent rather than a
-        multi-reviewer repository, what actually gets governed is whether
-        the written record still matches what's true, through a fixed,
-        script-checked procedure. Three: nothing ships unverified — every
-        art-integrity check fails the build closed rather than shipping
-        with something missing. Four: getting a release out is one ordered
-        sequence — resolve the version number from the store itself, unlock
-        the signing key, build, sign, and push to a limited internal
-        testing track first. Five: a release is proven against specific,
-        named checks, not a general impression, and which checks are
-        actually allowed to block it is written down as a fixed table.
-        Six: full automation is built and ready, but switching it on is
-        earned — a live install, a manual sync, and a deliberate rollback
-        test have to succeed first, not assumed.
+        One pipeline fanning out to five destinations, fed by the Cloud and AI
+        cards. Step one, on the left: planning names the five destinations
+        before anything is written — the game server and the web client each in
+        production and in development, and the Android build in a limited Play
+        Console internal testing track — and decides in the same breath how
+        much trust each one gets. Step two is the trunk in the middle: a single
+        body of shared pipeline code that every destination calls, so a fix
+        lands once, with the private art checks failing the build closed rather
+        than shipping something missing, and carrying all three workflows —
+        deploy, clean up, and diagnose. Step three is the five destinations on
+        the right, reached by five branches leaving that one trunk. A dashed
+        vertical clearance gate sits between them: the two production branches
+        and the Android branch cross it, while the two development branches
+        pass below where it ends, because development is the only destination
+        allowed to start a deploy from a push. Step four, at the bottom left,
+        is what comes back from a live destination: diagnose, which reads what
+        is actually running right now rather than what a stored flag claims,
+        and clean up, pointed at one destination on demand.
       </desc>
 
       <defs>
@@ -55,60 +81,91 @@
         </marker>
       </defs>
 
-      <g class="hotspot" data-detail="objectives" role="button" tabindex="0" aria-label="Step 1, don't touch what's already running — open the explanation">
-        <rect class="node" x="15" y="40" width="246" height="84" rx="10" />
-        <text class="label" x="29" y="64">1 · Don't touch what's running</text>
-        <text class="sub" x="29" y="82">checks what's live right now</text>
-        <text class="sub" x="29" y="98">not a saved status flag</text>
+      <!-- inbound: this card is the other two combined, so it says so and links
+           back rather than pretending the pipeline starts from nothing -->
+      <a class="card-jump" href="#card-cloud" aria-label="Back to the Cloud card, where the environments and guardrails are decided">
+        <text class="wire accent" x="15" y="86">environments and guardrails from Cloud</text>
+      </a>
+      <a class="card-jump" href="#card-ai" aria-label="Back to the AI card, where the brief and the review loop come from">
+        <text class="wire" x="15" y="102">the brief and the review loop from AI</text>
+      </a>
+      <path class="link" d="M100,110 L100,137" marker-end="url(#devops-arrow)" />
+
+      <g class="hotspot" data-detail="plan" role="button" tabindex="0" aria-label="Step 1, what ships where and how much trust each gets — open the explanation">
+        <rect class="node" x="15" y="137" width="230" height="104" rx="10" />
+        <text class="label" x="29" y="163">1 · What ships where</text>
+        <text class="sub" x="29" y="185">five destinations</text>
+        <text class="sub" x="29" y="203">production and development</text>
+        <text class="sub" x="29" y="221">and the trust each one gets</text>
       </g>
 
-      <path class="link" d="M261,82 L287,82" marker-end="url(#devops-arrow)" />
+      <path class="link" d="M245,189 L285,189" marker-end="url(#devops-arrow)" />
 
-      <g class="hotspot" data-detail="source_control" role="button" tabindex="0" aria-label="Step 2, keeping the record honest — open the explanation">
-        <rect class="node" x="287" y="40" width="246" height="84" rx="10" />
-        <text class="label" x="301" y="64">2 · Keeping the record honest</text>
-        <text class="sub" x="301" y="82">changes get reviewed too</text>
-        <text class="sub" x="301" y="98">even what's just written down</text>
+      <!-- step 2 as the trunk: one body of code, five branches leave from it -->
+      <g class="hotspot" data-detail="build" role="button" tabindex="0" aria-label="Step 2, one pipeline written by the agent — open the explanation">
+        <rect class="node" x="285" y="58" width="190" height="262" rx="10" />
+        <text class="label" x="299" y="156">2 · One pipeline</text>
+        <text class="sub" x="299" y="178">shared actions, one fix</text>
+        <text class="sub" x="299" y="196">art verified, fails closed</text>
+        <text class="sub" x="299" y="214">deploy, clean up, diagnose</text>
       </g>
 
-      <path class="link" d="M533,82 L559,82" marker-end="url(#devops-arrow)" />
+      <text class="wire accent" x="390" y="26">a clearance gate</text>
+      <text class="wire" x="390" y="42">three branches cross it</text>
 
-      <g class="hotspot" data-detail="ci" role="button" tabindex="0" aria-label="Step 3, nothing ships unverified — open the explanation">
-        <rect class="node" x="559" y="40" width="246" height="84" rx="10" />
-        <text class="label" x="573" y="64">3 · Nothing ships unverified</text>
-        <text class="sub" x="573" y="82">every check fails closed</text>
-        <text class="sub" x="573" y="98">hash, count, and contents</text>
+      <!-- the gate stops short on purpose: development routes under its end -->
+      <path class="link" d="M550,52 L550,214" stroke-dasharray="5 5" />
+      <text class="wire" x="478" y="222">development passes below</text>
+
+      <text class="label" x="580" y="44">3 · Where it lands</text>
+
+      <path class="link" d="M475,189 C515,189 545,78 580,78" marker-end="url(#devops-arrow)" />
+      <path class="link" d="M475,189 C515,189 545,130 580,130" marker-end="url(#devops-arrow)" />
+      <path class="link" d="M475,189 C515,189 545,182 580,182" marker-end="url(#devops-arrow)" />
+      <path class="link" d="M475,189 C515,189 545,248 580,248" marker-end="url(#devops-arrow)" />
+      <path class="link" d="M475,189 C515,189 545,300 580,300" marker-end="url(#devops-arrow)" />
+
+      <!-- all five chips share data-detail="ship": one step, five endpoints -->
+      <g class="hotspot" data-detail="ship" role="button" tabindex="0" aria-label="Step 3, the game server in production — open the explanation">
+        <rect class="node" x="580" y="58" width="225" height="40" rx="10" />
+        <text class="label" x="594" y="84">Game server · production</text>
       </g>
 
-      <path class="link" d="M682,124 L682,230" marker-end="url(#devops-arrow)" />
-
-      <g class="hotspot" data-detail="orchestration" role="button" tabindex="0" aria-label="Step 4, getting it out safely — open the explanation">
-        <rect class="node" x="559" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="573" y="254">4 · Getting it out, safely</text>
-        <text class="sub" x="573" y="272">version, sign, then release</text>
-        <text class="sub" x="573" y="288">to a limited group first</text>
+      <g class="hotspot" data-detail="ship" role="button" tabindex="0" aria-label="Step 3, the web client in production — open the explanation">
+        <rect class="node" x="580" y="110" width="225" height="40" rx="10" />
+        <text class="label" x="594" y="136">Web client · production</text>
       </g>
 
-      <path class="link" d="M559,272 L533,272" marker-end="url(#devops-arrow)" />
-
-      <g class="hotspot" data-detail="validation" role="button" tabindex="0" aria-label="Step 5, proven not assumed — open the explanation">
-        <rect class="node" x="287" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="301" y="254">5 · Proven, not assumed</text>
-        <text class="sub" x="301" y="272">named checks, not a feeling</text>
-        <text class="sub" x="301" y="288">block the release if they fail</text>
+      <g class="hotspot" data-detail="ship" role="button" tabindex="0" aria-label="Step 3, the Android build in the Play Console internal testing track — open the explanation">
+        <rect class="node" x="580" y="162" width="225" height="40" rx="10" />
+        <text class="label" x="594" y="188">Android · internal track</text>
       </g>
 
-      <path class="link" d="M287,272 L261,272" marker-end="url(#devops-arrow)" />
-
-      <g class="hotspot" data-detail="automation" role="button" tabindex="0" aria-label="Step 6, earning full automation — open the explanation">
-        <rect class="node" x="15" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="29" y="254">6 · Earning full automation</text>
-        <text class="sub" x="29" y="272">ready, but not switched on</text>
-        <text class="sub" x="29" y="288">trust comes before the switch</text>
+      <g class="hotspot" data-detail="ship" role="button" tabindex="0" aria-label="Step 3, the game server in development — open the explanation">
+        <rect class="node" x="580" y="228" width="225" height="40" rx="10" />
+        <text class="label" x="594" y="254">Game server · development</text>
       </g>
 
-      <text class="wire accent" x="15" y="368">AI drafted the pipeline's failure-mode comparisons</text>
-      <text class="wire" x="15" y="384">deciding which checks were allowed to block a release was never its call</text>
+      <g class="hotspot" data-detail="ship" role="button" tabindex="0" aria-label="Step 3, the web client in development — open the explanation">
+        <rect class="node" x="580" y="280" width="225" height="40" rx="10" />
+        <text class="label" x="594" y="306">Web client · development</text>
+      </g>
+
+      <!-- the drain: five out, one back. Not a loop — operations doesn't
+           return to planning, it reads the destinations that are already live -->
+      <path class="link" d="M692,320 C692,392 520,412 355,412" marker-end="url(#devops-arrow)" />
+      <text class="wire accent" x="380" y="352">back from the live destinations</text>
+
+      <g class="hotspot" data-detail="operate" role="button" tabindex="0" aria-label="Step 4, operating it after it ships — open the explanation">
+        <rect class="node" x="15" y="360" width="340" height="104" rx="10" />
+        <text class="label" x="29" y="386">4 · Operating it after it ships</text>
+        <text class="sub" x="29" y="408">diagnose what is actually running</text>
+        <text class="sub" x="29" y="426">clean up one destination on demand</text>
+        <text class="sub" x="29" y="444">deploying was the easy part</text>
+      </g>
+
+      <text class="wire accent" x="15" y="492">only development is started by a push — everything else clears a gate first</text>
+      <text class="wire" x="15" y="508">an assistant wrote most of the workflow code; which checks may block a release was never its call</text>
     </svg>
   </div>
   <figcaption class="card-diagram-caption">

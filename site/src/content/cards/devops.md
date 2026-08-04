@@ -1,50 +1,59 @@
 ---
 role: "DevOps"
 order: 2
-headline: "I encoded the three teammates I don't have as CI jobs."
-plain: "I run every environment of this project alone. So I built the parts of a team that isn't there — the person who does releases, the person who checks before you break something, and the person who remembers the steps."
+headline: "Every destination runs the same pipeline. Only one is allowed to start it by itself."
+plain: "This card is the other two combined: the environments, identities and guardrails come from the Cloud work, the brief-and-review loop comes from the AI work, and what comes out is one pipeline with five destinations — the game server and the web client in production and in development, and the Android build in a Play Console internal testing track. Each destination gets the same three workflows: deploy it, clean it up, diagnose it when it misbehaves. A push to the repository deploys itself to development and nowhere else; everything past that clears a gate on security, timing and clearance first. The steps below are that build order."
 tools:
   - "GitHub Actions"
   - "Composite Actions"
+  - "Docker"
   - "Godot Export (GUT)"
   - "Google Play Publisher API"
   - "Cloudflare R2"
-  - "Docker"
+  - "Claude Code"
 details:
-  - id: objectives
-    title: "1 · Don't touch what's already running"
-    body: "Before any pipeline was built, the rule was: nothing that's already running gets touched by surprise. A routine code push shouldn't silently restart something that was deliberately turned off — so every automatic deploy checks whether its target is actually live right now, not whether a saved status flag says it should be. A flag can lie about what's actually running; the real, current state can't."
+  - id: plan
+    title: "1 · What ships where, and how much trust each gets"
+    keywords:
+      - "Destination Matrix"
+      - "Trust Allocation"
+      - "Gate Policy"
+    body: "Nothing gets written until the destinations do, and there are five of them rather than a vague every environment: the game server and the web client each in production and development, and the Android build in a limited internal testing track. Trust is allocated in the same breath as the list, because it is the same decision — development may deploy itself from a push, and nothing else may. What separates that from a preference is that the gates are written down before any pipeline exists: which checks stop a release, which are only advisory, and what a workflow has to clear on security, timing and clearance before it moves. A gate decided while you're waiting on a deploy isn't a gate."
     evidence:
-      label: "The rule that stops a routine push from undoing a deliberate shutdown"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#auto-deploy-guard-rails-check-live-status-not-a-stored-flag"
-  - id: source_control
-    title: "2 · Keeping the record honest"
-    body: "This isn't a multi-branch, multi-reviewer repo — it's one person directing an AI coding agent, so the thing that actually needs governing isn't code review, it's whether the written record of the system still matches what's true. Changes to that record follow their own fixed procedure: what's worth writing down, what gets deleted because it's no longer true, and a one-line receipt of exactly what changed and why — checked by a script before it's accepted, the same way a pull request would be checked."
-    evidence:
-      label: "The procedure that reviews changes to the truth, not just the code"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/coding-conventions.md#documentation-maintenance"
-  - id: ci
-    title: "3 · Nothing ships unverified"
-    body: "Every build depends on art that never touches the public repository, which means the build has to prove that art arrived correctly before doing anything else with it: downloaded, hash-checked, unpacked, file-counted, and checked for specific files that must exist. Every single one of those checks fails the build outright rather than shipping with something missing or wrong."
+      label: "The checks allowed to block a release, settled in advance"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/testing.md#ci-test-gates"
+  - id: build
+    title: "2 · One pipeline, written by the agent"
+    keywords:
+      - "Brief-Driven Implementation"
+      - "Shared Composite Actions"
+      - "Fail-Closed Checks"
+    body: "The plan goes to the coding agent the way any other task does — a short brief and the exact documents it needs, never the whole repository. What it builds is deliberately boring: one set of shared composite actions that every destination calls, so a fix lands once and the development path can't quietly drift away from the one that reaches players. That single trunk is also the only reason five destinations are maintainable by one person at all. What I read line by line is what the pipeline is trusted with — every build depends on art that never touches the public repository, so it has to prove that art arrived correctly before doing anything else with it: downloaded, hash-checked, unpacked, file-counted, and checked for specific files that must exist, with every one of those failing the build outright rather than shipping with something missing. The agent wrote the steps. Which of them fail closed was not its call."
     evidence:
       label: "Every art check fails the build closed, not open"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/build.md#private-asset-pipeline"
-  - id: orchestration
-    title: "4 · Getting it out, safely"
-    body: "Getting a release out is one long, ordered sequence, not a single button: figure out the next version number by asking the store itself what's already published, unlock the signing key from a secret store, build and sign the release, then push it to a limited internal testing track — never straight to everyone. The keys and credentials involved are pulled in only for that one step and never written anywhere else."
+  - id: ship
+    title: "3 · Shipped, and proven able to refuse"
+    keywords:
+      - "Deployment Verification"
+      - "Staged Rollout"
+      - "Negative Testing"
+    body: "A pipeline that has only ever been read is untested, so each one gets run for real — against development first, where a failure costs an afternoon rather than a player. The Android path is the longest sequence and the clearest one: ask the store itself what version is already published so the number is never guessed, unlock the signing key from a secret store for that one step, build, sign, then upload to a limited internal testing track rather than to everyone at once. Server and web deploys prove something different — the workflow stops before installing anything if the last infrastructure apply never ran, instead of deploying on top of a fix that exists only in a file. A green run only ever proves the happy path, so the run worth more is the one deliberately made to fail. Anyone can show a pipeline that deploys. The interesting question is whether it stops."
     evidence:
       label: "The version number the pipeline never has to guess"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/build.md#android-deploy-wsplaytod-workflow"
-  - id: validation
-    title: "5 · Proven, not assumed"
-    body: "A release doesn't reach a real device until it clears specific, named checks — not a general 'looks fine' judgement. Scripted tests run and block the pipeline if they fail, before a single signed build is exported. Which checks are actually allowed to stop a release, and which are advisory, is written down as a fixed table, not decided case-by-case in the moment."
+  - id: operate
+    title: "4 · Operating it after it ships"
+    keywords:
+      - "Diagnostics"
+      - "Targeted Cleanup"
+      - "Live-State Verification"
+    body: "Deploying is the easy part, which is why two of the three workflows exist for the days afterwards. Diagnose comes first because it's the one almost nobody builds: a workflow whose entire job is to answer what is actually running right now, read from the live system rather than from whatever a dashboard last recorded. That distinction is load-bearing — an automatic deploy checks the same way, which is what stops a routine push from restarting something that was deliberately turned off. Clean up is its companion, pointed at one destination on demand to take back what a run left behind — not the scheduled cost brake the platform already runs on its own. Shipping the deploy and calling that operations is how you discover, at the worst possible moment, that nothing you own can tell you what state you're in."
     evidence:
-      label: "The exact list of checks that are allowed to block a release"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/testing.md#ci-test-gates"
-  - id: automation
-    title: "6 · Earning full automation"
-    body: "Full delivery automation — the kind where a merged change deploys itself with no one pressing a button — is built and ready to switch on. It isn't switched on yet. Automating a deploy earns that trust only after a live install, one fully manual sync, and one deliberate rollback test all succeed — automating the step before that trust exists just means the same mistake happens faster."
-    evidence:
-      label: "Automation that's ready, deliberately not yet turned on"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#argo-cd-prepared-but-not-enabled"
+      label: "Why a deploy asks what is live instead of what a flag says"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#auto-deploy-guard-rails-check-live-status-not-a-stored-flag"
 ---
+
+#### Full auto-deploy, once it has been earned
+
+Development already deploys itself on a push. Extending that to production is built, ready, and [deliberately switched off](https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#argo-cd-prepared-but-not-enabled). Automating a deploy earns that switch after a live install, one fully manual sync, and one deliberate rollback test have all succeeded — not before, because automating the step ahead of that trust only means the same mistake happens faster. Nothing about the pipeline changes on the day it gets turned on. Only who is allowed to start it does.
