@@ -5,6 +5,10 @@ const cards = defineCollection({
   schema: z.object({
     role: z.string(),
     order: z.number(),
+    // Kept in the collection, kept out of the page. `index.astro` filters these
+    // out of `getCollection`, so the filter bar, the grid and the meta count all
+    // follow — setting it back to false is the only step to bring a card back.
+    hidden: z.boolean().default(false),
     headline: z.string(),
     plain: z.string(),
     tools: z.array(z.string()).default([]),

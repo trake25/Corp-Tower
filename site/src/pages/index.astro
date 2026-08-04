@@ -27,7 +27,12 @@ const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
 // in the cards but missing here is appended rather than dropped.
 const ROLE_ORDER = ["QA", "AI", "Cloud", "DevOps", "Backend", "Frontend"];
 
-const cardEntries = (await getCollection("cards")).sort((a, b) => a.data.order - b.data.order);
+// `hidden: true` cards stay in the collection and stay validated — they are just
+// not published. Everything downstream (filter bar, grid, meta description
+// count) derives from this list, so nothing else has to know they exist.
+const cardEntries = (await getCollection("cards", ({ data }) => !data.hidden)).sort(
+  (a, b) => a.data.order - b.data.order
+);
 const presentRoles = [...new Set(cardEntries.map((entry) => entry.data.role))];
 const roles = [
   ...ROLE_ORDER.filter((role) => presentRoles.includes(role)),
@@ -43,7 +48,7 @@ const rendered = await Promise.all(
 
 <BaseLayout
   title={`${profile.name} — ${profile.jobTitle}`}
-  description={`I design, build, QA and operate ${profile.project} (${profile.projectShort}), a real-time multiplayer game on Android and browser, end to end. Six skills, each with the code that proves it.`}
+  description={`I design, build, QA and operate ${profile.project} (${profile.projectShort}), a real-time multiplayer game on Android and browser, end to end. ${cardEntries.length} skills, each with the code that proves it.`}
 >
   <header class="site-header">
     <a class="wordmark" href="/">
@@ -52,7 +57,6 @@ const rendered = await Promise.all(
     </a>
     <nav aria-label="Primary">
       <a href="#skills">Skills</a>
-      <a href="#work">Work with me</a>
       <a href={profile.repo} target="_blank" rel="noopener noreferrer">Code</a>
       <a class="nav-cta" href="#contact">Contact</a>
     </nav>
@@ -84,8 +88,8 @@ const rendered = await Promise.all(
         <div>
           <dt>Deploys</dt>
           <dd>
-            One container image, three targets: EKS for production-grade, K3s as the lab,
-            a machine at home as the cheap dev target.
+            One container image, three environments: production on EKS, staging and
+            development on a machine already paid for.
           </dd>
         </div>
         <div>
@@ -147,16 +151,9 @@ const rendered = await Promise.all(
       </div>
     </section>
 
-    <section id="work" aria-labelledby="work-heading">
-      <h2 id="work-heading" class="section-title">
-        <span class="section-index">02</span> Work with me
-      </h2>
-      <p class="placeholder">In progress — services and engagement details go here.</p>
-    </section>
-
     <section id="contact" aria-labelledby="contact-heading">
       <h2 id="contact-heading" class="section-title">
-        <span class="section-index">03</span> Get in touch
+        <span class="section-index">02</span> Get in touch
       </h2>
       {profile.availability && <p class="availability">{profile.availability}</p>}
       <div class="contact-links">
@@ -164,6 +161,11 @@ const rendered = await Promise.all(
         {profile.linkedin && (
           <a class="cta secondary" href={profile.linkedin} target="_blank" rel="noopener noreferrer">
             LinkedIn
+          </a>
+        )}
+        {profile.indeed && (
+          <a class="cta secondary" href={profile.indeed} target="_blank" rel="noopener noreferrer">
+            Indeed
           </a>
         )}
         <a class="cta secondary" href={profile.github} target="_blank" rel="noopener noreferrer">
@@ -193,14 +195,6 @@ const rendered = await Promise.all(
 </BaseLayout>
 
 <style>
-  /* Placeholder copy for sections that aren't written yet. */
-  .placeholder {
-    font-size: 0.95rem;
-    opacity: 0.55;
-    font-style: italic;
-    max-width: 62ch;
-  }
-
   /* Hero spec list: replaces two long prose paragraphs with scannable rows. */
   .facts {
     margin: 1.5rem 0 0;

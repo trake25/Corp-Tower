@@ -1,6 +1,7 @@
 ---
 role: "Frontend"
 order: 5
+hidden: true
 headline: "Rules out of the renderer, so the part that has to be correct is testable in seconds."
 plain: "The game's logic is kept completely separate from its graphics. Placement, anchors and the collapse simulation can be checked without ever opening the game."
 tools:

@@ -16,9 +16,10 @@ export const profile = {
   github: "https://github.com/trake25",
   repo: "https://github.com/trake25/Corp-Tower",
   linkedin: null as string | null,
+  indeed: null as string | null,
   demo: "https://toddemo.galaxxigames.com",
   // Shown in the availability line. Set to null to hide the whole line.
   availability:
-    "Open to platform / DevOps roles, and to contract work automating delivery pipelines and agent-assisted workflows.",
+    "Open to Platform and DevOps roles, full-time or contract — agent-assisted workflows with minimal human intervention.",
 } as const;
 
