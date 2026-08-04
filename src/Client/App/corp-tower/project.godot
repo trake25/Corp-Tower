@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Corp-Tower"
+config/name="Top or Drop"
 config/version="0.0.1"
 run/main_scene="uid://c0po62b2x6ltb"
 config/features=PackedStringArray("4.6", "GL Compatibility")

@@ -1,4 +1,4 @@
-# Corp Tower — *Top or Drop*
+# Top or Drop
 
 A 3-player mobile puzzle game where you build one tower together and compete for
 the points while you do it. **In development, with a playable demo** — not a
@@ -62,5 +62,5 @@ deploy itself.
 - **Playable demo:** <https://toddemo.galaxxigames.com>
 - **How the codebase is documented:** [`docs/context/index.md`](docs/context/index.md)
 
-> The repo keeps the working name **Corp-Tower**; the game is presented as
-> **Top or Drop (TOD)**. Same project.
+> The game is called **Top or Drop (TOD)**. The repository keeps the working
+> name **Corp-Tower**. Same project.
