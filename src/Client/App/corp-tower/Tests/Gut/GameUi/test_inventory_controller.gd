@@ -9,10 +9,12 @@ class NetworkStub:
 	var is_conn_estab := true
 	var placed: Array = []
 	var placed_columns: Array = []
+	var placed_origins: Array = []
 
-	func place_block(index: int, column: int = -1) -> void:
+	func place_block(index: int, column: int = -1, origin_y: int = -1) -> void:
 		placed.append(index)
 		placed_columns.append(column)
+		placed_origins.append(origin_y)
 
 var harness
 var network_stub
@@ -98,6 +100,89 @@ func test_drag_start_closes_active_popover() -> void:
 	assert_true((harness.find("PowerPopover") as Control).visible, "The popover should open before the drag begins.")
 	inventory()._on_inventory_card_gui_input(HarnessScript.touch_press(harness.center_of("PlaceBlockButton1"), 0), 0)
 	assert_false((harness.find("PowerPopover") as Control).visible, "Starting a drag must dismiss any open popover.")
+
+func enter_parallel_placement() -> void:
+	enter_playing_state_with_block()
+	inventory().set_parallel_placement(true)
+
+func tap_card(index: int) -> void:
+	inventory()._on_inventory_card_gui_input(
+		HarnessScript.touch_press(harness.center_of("PlaceBlockButton" + str(index + 1)), 0), index
+	)
+	# Two taps inside the dedupe window are treated as one physical tap, which is
+	# exactly what a test firing them back to back would otherwise trip over.
+	inventory().last_tap_ms = 0
+
+# gui_input delivers touch positions in the drop zone's own space, so the tap is
+# built the same way here.
+func tap_tower(offset: Vector2 = Vector2.ZERO) -> void:
+	var drop_zone: Control = harness.find("TowerDropZone") as Control
+	var local: Vector2 = drop_zone.size * 0.5 + offset
+	inventory()._on_tower_drop_zone_gui_input(HarnessScript.touch_press(local, 0))
+	inventory().last_tap_ms = 0
+
+func test_parallel_tap_selects_the_card_and_shows_the_site() -> void:
+	enter_parallel_placement()
+	tap_card(0)
+
+	assert_eq(inventory().selected_slot_index, 0, "Tapping a placeable card must select it.")
+	assert_false(inventory().is_armed, "Selecting a brick must not aim it anywhere yet.")
+	assert_eq(network_stub.placed.size(), 0, "Selection alone must never reach the server.")
+
+func test_parallel_second_tap_on_the_same_spot_places_the_block() -> void:
+	enter_parallel_placement()
+	tap_card(0)
+	tap_tower()
+
+	assert_true(inventory().is_armed, "The first tap on the tower only arms the ghost.")
+	assert_eq(network_stub.placed.size(), 0, "An armed ghost is local -- nothing is sent yet.")
+
+	tap_tower()
+
+	assert_eq(network_stub.placed, [0], "Tapping the armed spot again must place the block.")
+	assert_between(
+		int(network_stub.placed_columns[0]), 4, 9,
+		"The confirmed column must still be a placeable column."
+	)
+	assert_eq(
+		int(network_stub.placed_origins[0]), int(inventory().armed_snap.get("origin_y", -1)),
+		"The placement must be sent with the exact row the player aimed at."
+	)
+	assert_eq(inventory().selected_slot_index, -1, "Placing clears the selection.")
+
+func test_parallel_tap_elsewhere_re_aims_instead_of_placing() -> void:
+	enter_parallel_placement()
+	tap_card(0)
+	tap_tower()
+	var first_snap: Dictionary = inventory().armed_snap.duplicate()
+	tap_tower(Vector2(-68.0, 0.0))
+
+	assert_eq(network_stub.placed.size(), 0, "A tap on a different spot must re-aim, never place.")
+	assert_true(inventory().is_armed, "Re-aiming keeps the ghost armed at the new spot.")
+	assert_ne(
+		inventory().armed_snap.get("column", -1), first_snap.get("column", -1),
+		"Aiming two columns across must move the armed placement."
+	)
+
+func test_parallel_tapping_the_selected_card_again_cancels() -> void:
+	enter_parallel_placement()
+	tap_card(0)
+	tap_card(0)
+
+	assert_eq(inventory().selected_slot_index, -1, "Tapping the selected card again deselects it.")
+
+	tap_tower()
+
+	assert_eq(network_stub.placed.size(), 0, "With nothing selected a tower tap must do nothing.")
+
+func test_parallel_mode_does_not_start_a_drag() -> void:
+	enter_parallel_placement()
+	tap_card(0)
+
+	assert_false(
+		inventory().is_block_dragging,
+		"The two input styles are exclusive -- a card tap must not also begin a drag."
+	)
 
 func test_block_data_normalizes_dictionary_and_legacy_forms() -> void:
 	var normalized: Dictionary = BlockDataScript.normalize_block(SHAPE_BLOCK_FIXTURE, 0)

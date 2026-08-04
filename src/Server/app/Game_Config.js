@@ -121,11 +121,16 @@ const GameConfig = {
     refreshGenerationAttempts: 100,
     refreshMinUsefulBlockHeight: 2,
 
+    accessibility: {
+        parallelPlacement: false
+    },
+
     scoring: {
         placementScorePerHeight: 10,
         placementStabilityFloor: 0.5,
         reinforceScorePerIntegrity: 1,
         reinforceScorePerLean: 20,
+        reinforceScorePerSupportedCell: 5,
         finisherBonusPerLevel: 0,
         precisionBonusPerLevel: 20,
         teamExactBonusPerLevel: 15,

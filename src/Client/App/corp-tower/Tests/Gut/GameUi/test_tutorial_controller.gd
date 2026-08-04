@@ -15,8 +15,8 @@ class NetworkStub:
 class TutorialPlaceStub:
 	var calls: Array = []
 
-	func on_tutorial_place(index: int, column: int) -> void:
-		calls.append([index, column])
+	func on_tutorial_place(index: int, column: int, origin_y: int = -1) -> void:
+		calls.append([index, column, origin_y])
 
 var harness
 
@@ -172,7 +172,10 @@ func test_tutorial_mode_place_routes_to_tutorial_and_skips_network() -> void:
 	harness.main.match_state.tutorial_mode = true
 	inventory.update_inventory_ui([SHAPE_BLOCK_FIXTURE], 3)
 
-	inventory.on_block_pressed(0, 3)
+	inventory.on_block_pressed(0, 3, 5)
 
-	assert_eq(tutorial_stub.calls, [[0, 3]], "Tutorial mode must route the placement to the tutorial hook.")
+	assert_eq(
+		tutorial_stub.calls, [[0, 3, 5]],
+		"Tutorial mode must route the placement, aimed row included, to the tutorial hook."
+	)
 	assert_eq(network_stub.placed.size(), 0, "Tutorial mode must never contact the real network layer.")

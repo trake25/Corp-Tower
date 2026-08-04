@@ -159,7 +159,7 @@ function addPlacementScore(engine, player, block, effectiveHeight, stabilityBefo
     return points;
 }
 
-function addReinforceScore(engine, player, before, after) {
+function addReinforceScore(engine, player, before, after, supportedCells = 0) {
     const integrityGain = Math.max(
         0,
         Number(after?.integrity ?? 100) - Number(before?.integrity ?? 100)
@@ -169,11 +169,16 @@ function addReinforceScore(engine, player, before, after) {
         Math.abs(Number(before?.tiltScore ?? 0)) -
             Math.abs(Number(after?.tiltScore ?? 0))
     );
+    const repairedCells = Math.max(0, Number(supportedCells) || 0);
     const perIntegrity =
         Number(GameConfig.scoring.reinforceScorePerIntegrity) || 0;
     const perLean = Number(GameConfig.scoring.reinforceScorePerLean) || 0;
+    const perSupportedCell =
+        Number(GameConfig.scoring.reinforceScorePerSupportedCell) || 0;
     const points = Math.round(
-        (integrityGain * perIntegrity + leanGain * perLean) *
+        (integrityGain * perIntegrity +
+            leanGain * perLean +
+            repairedCells * perSupportedCell) *
             engine.room.level
     );
 
@@ -189,7 +194,8 @@ function addReinforceScore(engine, player, before, after) {
         label: "Reinforce",
         meta: {
             integrityGain: integrityGain,
-            leanGain: leanGain
+            leanGain: leanGain,
+            supportedCells: repairedCells
         }
     });
 

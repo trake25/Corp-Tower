@@ -1117,7 +1117,9 @@ class LobbyManager {
     runRoomAction(room, playerId, action) {
         switch (action.type) {
             case "place_block":
-                room.engine.placeBlock(playerId, action.blockIndex, action.column);
+                room.engine.placeBlock(
+                    playerId, action.blockIndex, action.column, action.originY
+                );
                 return;
 
             case "activate_power":

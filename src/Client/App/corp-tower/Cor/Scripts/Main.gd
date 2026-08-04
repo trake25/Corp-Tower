@@ -4,6 +4,7 @@ const UiNodeBinderScript = preload("res://Cor/Scripts/GameUi/UiNodeBinder.gd")
 const SnapGridScript = preload("res://Cor/Scripts/GameUi/SnapGrid.gd")
 const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
+const AccessibilitySettingsScript = preload("res://Cor/Scripts/GameUi/AccessibilitySettings.gd")
 const DebugPanelControllerScript = preload("res://Cor/Scripts/GameUi/DebugPanelController.gd")
 const PlayerContextScript = preload("res://Cor/Scripts/GameUi/PlayerContext.gd")
 const MatchStateScript = preload("res://Cor/Scripts/GameUi/MatchState.gd")
@@ -26,6 +27,7 @@ signal tutorial_exited
 
 var missing_required_nodes: Array[String] = []
 var tuning
+var accessibility
 var debug_panel
 var players_ctx
 var match_state
@@ -53,6 +55,7 @@ var demo_mode_label: Label
 
 func _ready() -> void:
 	tuning = UiTuningScript.new()
+	accessibility = AccessibilitySettingsScript.new()
 	players_ctx = PlayerContextScript.new()
 	players_ctx.get_local_id = func(): return str(NetworkManager.player_id)
 	match_state = MatchStateScript.new()
@@ -85,9 +88,9 @@ func _ready() -> void:
 
 	demo_mode_label.visible = EndpointConfig.DEMO_MODE_ENABLED
 
-	inventory.setup(players_ctx, match_state, tuning, NetworkManager, popovers, tutorial)
+	inventory.setup(players_ctx, match_state, tuning, NetworkManager, popovers, tutorial, accessibility)
 	top_bar.setup(match_state)
-	debug_panel.setup(tuning, NetworkManager, request_tutorial)
+	debug_panel.setup(tuning, NetworkManager, request_tutorial, accessibility)
 	score_popups.setup(players_ctx, match_state, tuning)
 	summary.setup(players_ctx, match_state, tuning)
 	roster.setup(players_ctx, match_state)
@@ -112,8 +115,19 @@ func _ready() -> void:
 		tower_stack.connect("scroll_offset_changed", Callable(background_parallax, "set_scroll_pixels"))
 		tower_stack.connect("scroll_offset_changed", Callable(platform_parallax, "set_scroll_pixels"))
 
+	accessibility.changed.connect(apply_accessibility)
+	apply_accessibility()
+
 	reset_ui()
 	connect_network_signals()
+
+# The player's own choice and the room default both land here, so the input mode
+# follows whichever changed without either side knowing about the other.
+func apply_accessibility() -> void:
+	inventory.set_parallel_placement(
+		accessibility.is_enabled(AccessibilitySettingsScript.PARALLEL_PLACEMENT)
+	)
+	debug_panel.refresh_accessibility_row()
 
 # Same guard the old PointerTriggerRouter applied to every trigger: don't let
 # a tap open a popover while the debug panel or the level-summary overlay is
@@ -348,6 +362,8 @@ func update_game_state(data) -> void:
 	if str(data.get("towerStabilityFeedbackMode", "warnings_only")) == "meter_only":
 		top_bar.tower_status_label.text += " | Stability " + str(int(data.get("towerStability", 100))) + "%"
 	top_bar.set_tower_progress(current_height, target_height)
+	if data.has("accessibility"):
+		accessibility.apply_server_defaults(data.get("accessibility", {}))
 	if data.has("towerGridWidth"):
 		SnapGridScript.set_grid_width(int(data.get("towerGridWidth", 14)))
 	if data.has("placeableColumnMin") and data.has("placeableColumnMax"):
@@ -364,6 +380,7 @@ func update_game_state(data) -> void:
 		int(data.get("drawPileCount", 0)),
 		data.get("nextDrawBlock", null)
 	)
+	inventory.revalidate_armed_placement()
 
 	var _scores_text :String = ""
 	var my_blocks: Array = []

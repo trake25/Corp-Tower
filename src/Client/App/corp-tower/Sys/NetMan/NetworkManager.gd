@@ -80,7 +80,7 @@ func toggle_connection():
 	else:
 		connect_server()
 
-func place_block(block_index, column := -1):
+func place_block(block_index, column := -1, origin_y := -1):
 	if not is_conn_estab:
 		return
 
@@ -89,6 +89,9 @@ func place_block(block_index, column := -1):
 		"blockIndex": block_index,
 		"column": column
 	}
+
+	if origin_y >= 0:
+		data["originY"] = origin_y
 
 	ws.send_text(JSON.stringify(data))
 

@@ -61,6 +61,7 @@ class GameEngine {
             towerGridWidth: Math.max(1, Number(GameConfig.towerGridWidth) || 1),
             placeableColumnMin: placeableColumns.min,
             placeableColumnMax: placeableColumns.max,
+            accessibility: { ...(GameConfig.accessibility || {}) },
             towerStability: this.room.towerStability ?? 100,
             towerStabilityDiagnostics: this.room.towerStabilityDiagnostics || {},
             sideQuest: this.room.sideQuest || null,
@@ -627,7 +628,32 @@ class GameEngine {
         return Math.max(min, Math.min(max, Math.round(requested)));
     }
 
-    placeBlock(playerId, blockIndex, column = null) {
+    // A client that resolved a snap sends the exact row it aimed at, so the brick
+    // lands in a gap instead of spawning above the tower and falling to the first
+    // thing it meets. Anything else -- a bot, an unsnapped drag, or an origin that
+    // stopped being legal while the packet was in flight (a teammate can fill the
+    // target gap first) -- falls back to the gravity settle, so a placement is
+    // never lost to the race.
+    resolvePlacementOrigin(block, column, originY) {
+        const originX = this.resolveColumnOriginX(block, column);
+        // Number(null) is 0, which would read "no aimed row" as "aim at the
+        // platform" and quietly thread every bot's brick into the lowest gap it
+        // fits. Absent has to be checked before the numeric coercion.
+        const requested =
+            originY === null || originY === undefined ? NaN : Number(originY);
+
+        if (Number.isInteger(requested) && requested >= 0) {
+            if (TowerStability.isPlacementLegal(
+                this.room.towerBlocks || [], block, originX, requested
+            )) {
+                return { originX, originY: requested };
+            }
+        }
+
+        return TowerStability.settleBlock(this.room.towerBlocks || [], block, originX);
+    }
+
+    placeBlock(playerId, blockIndex, column = null, originY = null) {
         if (this.room.state !== "playing") {
             console.log("Cannot place block, level not active");
             return;
@@ -669,9 +695,9 @@ class GameEngine {
         const previousHeight = this.room.currentHeight;
         const stabilityBefore = this.room.towerStability ?? 100;
         const structureBefore = this.room.towerStabilityDiagnostics || {};
-        const originX = this.resolveColumnOriginX(block, column);
-        const placement = TowerStability.settleBlock(
-            this.room.towerBlocks || [], block, originX
+        const placement = this.resolvePlacementOrigin(block, column, originY);
+        const supportedCells = TowerStability.supportedCellsGained(
+            this.room.towerBlocks || [], block, placement.originX, placement.originY
         );
         const projectedBlocks = [...(this.room.towerBlocks || []), {
             playerId: player.id, block, originX: placement.originX, originY: placement.originY
@@ -714,7 +740,7 @@ class GameEngine {
         );
 
         this.addReinforceScore(
-            player, structureBefore, this.room.towerStabilityDiagnostics || {}
+            player, structureBefore, this.room.towerStabilityDiagnostics || {}, supportedCells
         );
 
         if (this.room.towerStability <= 0) {
@@ -1018,7 +1044,7 @@ class GameEngine {
     buildLevelSummary(options) { return Scoring.buildLevelSummary(this, options); }
     recordScoreBreakdown(player, key, points) { return Scoring.recordScoreBreakdown(this, player, key, points); }
     addPlacementScore(player, block, effectiveHeight, stabilityBefore) { return Scoring.addPlacementScore(this, player, block, effectiveHeight, stabilityBefore); }
-    addReinforceScore(player, before, after) { return Scoring.addReinforceScore(this, player, before, after); }
+    addReinforceScore(player, before, after, supportedCells = 0) { return Scoring.addReinforceScore(this, player, before, after, supportedCells); }
     getPlacementStabilityMultiplier(stabilityBefore) { return Scoring.getPlacementStabilityMultiplier(this, stabilityBefore); }
     awardCompletionBonuses(finisher, exactFinish) { return Scoring.awardCompletionBonuses(this, finisher, exactFinish); }
     addBonusScore(player, points, label) { return Scoring.addBonusScore(this, player, points, label); }

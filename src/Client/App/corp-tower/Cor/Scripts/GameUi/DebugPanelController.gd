@@ -1,6 +1,7 @@
 extends Node
 
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
+const AccessibilitySettingsScript = preload("res://Cor/Scripts/GameUi/AccessibilitySettings.gd")
 const BOT_STRATEGY_COOPERATIVE := "cooperative"
 const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
 const TOWER_FEEDBACK_MODES := ["warnings_only", "meter_only", "live_preview"]
@@ -329,6 +330,8 @@ var power_max_slots_slider: HSlider
 var power_cooldown_label: Label
 var power_cooldown_slider: HSlider
 var tutorial_launch_button: Button
+var parallel_placement_button: Button
+var accessibility
 var on_tutorial_requested: Callable = Callable()
 
 func bind_nodes(binder) -> void:
@@ -382,6 +385,7 @@ func bind_nodes(binder) -> void:
 	level_summary_delay_label = binder.optional_node("LevelSummaryDelayLabel") as Label
 	level_summary_delay_slider = binder.optional_node("LevelSummaryDelaySlider") as HSlider
 	tutorial_launch_button = binder.optional_node("TutorialLaunchButton") as Button
+	parallel_placement_button = binder.optional_node("ParallelPlacementButton") as Button
 	target_multiplier_label = binder.optional_node("TargetMultiplierLabel") as Label
 	target_multiplier_slider = binder.optional_node("TargetMultiplierSlider") as HSlider
 	level_supply_min_label = bind_tooltip_row(binder, "LevelSupplyMinLabel")
@@ -444,10 +448,16 @@ func bind_nodes(binder) -> void:
 	power_cooldown_label = binder.optional_node("PowerCooldownLabel") as Label
 	power_cooldown_slider = binder.optional_node("PowerCooldownSlider") as HSlider
 
-func setup(tuning_ref, network_ref, on_tutorial_requested_ref: Callable = Callable()) -> void:
+func setup(
+	tuning_ref,
+	network_ref,
+	on_tutorial_requested_ref: Callable = Callable(),
+	accessibility_ref = null
+) -> void:
 	tuning = tuning_ref
 	network = network_ref
 	on_tutorial_requested = on_tutorial_requested_ref
+	accessibility = accessibility_ref
 
 	if debug_overlay != null:
 		set_open(false)
@@ -457,6 +467,11 @@ func setup(tuning_ref, network_ref, on_tutorial_requested_ref: Callable = Callab
 
 	if tutorial_launch_button != null:
 		tutorial_launch_button.pressed.connect(_on_tutorial_launch_pressed)
+
+	if parallel_placement_button != null:
+		parallel_placement_button.pressed.connect(_on_parallel_placement_pressed)
+
+	refresh_accessibility_row()
 
 	if reset_debug_button != null:
 		reset_debug_button.pressed.connect(on_reset_debug_pressed)
@@ -691,6 +706,27 @@ func _on_tutorial_launch_pressed() -> void:
 	set_open(false)
 	if on_tutorial_requested.is_valid():
 		on_tutorial_requested.call()
+
+# Stand-in for the player-facing options menu: this writes a local override, so
+# one player can build by tap while the rest of the room drags. It deliberately
+# skips update_config -- the room default lives in Game_Config, but the choice
+# itself is per-player and never leaves this client.
+func _on_parallel_placement_pressed() -> void:
+	if accessibility == null:
+		return
+
+	accessibility.toggle(AccessibilitySettingsScript.PARALLEL_PLACEMENT)
+
+func refresh_accessibility_row() -> void:
+	if parallel_placement_button == null or accessibility == null:
+		return
+
+	var enabled: bool = accessibility.is_enabled(
+		AccessibilitySettingsScript.PARALLEL_PLACEMENT
+	)
+	parallel_placement_button.text = (
+		"Parallel Placement: ON" if enabled else "Parallel Placement: OFF"
+	)
 
 func on_bot_strategy_selected(index: int) -> void:
 	if is_syncing_debug_config:

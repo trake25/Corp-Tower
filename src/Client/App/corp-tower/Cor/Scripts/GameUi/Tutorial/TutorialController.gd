@@ -143,11 +143,11 @@ func teardown() -> void:
 	if scene != null:
 		scene.teardown()
 
-func on_tutorial_place(index: int, column: int) -> void:
+func on_tutorial_place(index: int, column: int, origin_y: int = -1) -> void:
 	if scene == null:
 		return
 
-	var result: Dictionary = scene.apply_placement(index, column)
+	var result: Dictionary = scene.apply_placement(index, column, origin_y)
 	_dispatch_action({
 		"type": TutorialGatesScript.PLACE_BLOCK,
 		"column": int(result.get("column", column))

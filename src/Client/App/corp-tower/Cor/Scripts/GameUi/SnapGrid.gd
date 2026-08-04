@@ -135,6 +135,55 @@ static func origin_range(cells: Array) -> Vector2i:
 		maxi(placeable_column_min, placeable_column_max - width + 1)
 	)
 
+# Mirror of server Tower_Stability.isPlacementLegal -- the rule a snapped origin
+# has to satisfy now that a brick lands where it was aimed instead of falling to
+# first contact: on or above the platform, overlapping nothing, and attached to
+# the platform or to some placed cell. Corner contact counts, because the snap
+# points are brick outline vertices and a diagonal attachment is exactly what a
+# legal snap produces; the stability model charges for how precarious it is.
+static func is_placement_legal(
+	tower_blocks: Array, cells: Array, origin_x: int, origin_y: int
+) -> bool:
+	return _is_legal(occupied_cells(tower_blocks), cells, origin_x, origin_y)
+
+static func _is_legal(
+	occupied: Dictionary, cells: Array, origin_x: int, origin_y: int
+) -> bool:
+	if cells.is_empty():
+		return false
+
+	var attached: bool = false
+
+	for cell in cells:
+		var placed := Vector2i(origin_x + cell_x(cell), origin_y + cell_y(cell))
+
+		if placed.y < 0:
+			return false
+
+		if occupied.has(placed):
+			return false
+
+		if attached:
+			continue
+
+		if placed.y == 0:
+			attached = true
+			continue
+
+		for dx in range(-1, 2):
+			for dy in range(-1, 2):
+				if dx == 0 and dy == 0:
+					continue
+
+				if occupied.has(placed + Vector2i(dx, dy)):
+					attached = true
+					break
+
+			if attached:
+				break
+
+	return attached
+
 static func tower_snap_points(tower_blocks: Array) -> Array:
 	var seen: Dictionary = {}
 	var points: Array = []
@@ -203,10 +252,11 @@ static func nearest_column(cells: Array, lattice_x: float) -> int:
 	return best_origin
 
 # Pairs every outline vertex of the dragged brick against every snap point on
-# the platform and the placed tower, and keeps the pairing whose two points are
-# closest in lattice space. That pairing fixes the target column; the landing
-# row still comes from the gravity settle, so the brick keeps falling to first
-# contact and overhangs stay possible.
+# the platform and the placed tower, and keeps the closest pairing that is
+# legally placeable. A pairing fixes the whole origin, not just the column: the
+# brick lands exactly where its corner met the point, so gaps inside the tower
+# are reachable and nothing spawns above the tower to fall in. Only a pointer
+# beyond the snap radius falls back to the gravity settle.
 static func resolve(
 	tower_blocks: Array,
 	cells: Array,
@@ -217,6 +267,7 @@ static func resolve(
 		return {
 			"valid": false,
 			"snapped": false,
+			"exact": false,
 			"column": placeable_column_min,
 			"origin_y": 0,
 			"target_point": Vector2i.ZERO,
@@ -226,9 +277,11 @@ static func resolve(
 	var range_x: Vector2i = origin_range(cells)
 	var centroid: Vector2 = footprint_centroid(cells)
 	var points: Array = tower_snap_points(tower_blocks)
+	var occupied: Dictionary = occupied_cells(tower_blocks)
 
 	var best_distance_sq: float = INF
 	var best_column: int = range_x.x
+	var best_origin_y: int = 0
 	var best_point := Vector2i.ZERO
 	var best_vertex := Vector2i.ZERO
 
@@ -243,23 +296,33 @@ static func resolve(
 
 			var distance_sq: float = vertex_position.distance_squared_to(Vector2(point))
 
-			if distance_sq < best_distance_sq:
-				best_distance_sq = distance_sq
-				best_column = column
-				best_point = point
-				best_vertex = vertex
+			# Legality is the expensive test, so it only runs for a candidate
+			# that already beats the best pairing found so far -- which also
+			# means an illegal near miss yields to the next-closest legal
+			# pairing instead of dropping the whole drag to the fallback.
+			if distance_sq >= best_distance_sq:
+				continue
+
+			var origin_y: int = point.y - vertex.y
+
+			if !_is_legal(occupied, cells, column, origin_y):
+				continue
+
+			best_distance_sq = distance_sq
+			best_column = column
+			best_origin_y = origin_y
+			best_point = point
+			best_vertex = vertex
 
 	if best_distance_sq <= snap_radius_units * snap_radius_units:
-		var settled_y: int = settle_origin_y(tower_blocks, cells, best_column)
-		var contact: Dictionary = contact_pair(points, cells, best_column, settled_y)
-
 		return {
 			"valid": true,
 			"snapped": true,
+			"exact": true,
 			"column": best_column,
-			"origin_y": settled_y,
-			"target_point": contact.get("point", best_point),
-			"matched_vertex": contact.get("vertex", best_vertex)
+			"origin_y": best_origin_y,
+			"target_point": best_point,
+			"matched_vertex": best_vertex
 		}
 
 	var fallback_column: int = nearest_column(cells, ghost_center.x)
@@ -267,33 +330,12 @@ static func resolve(
 	return {
 		"valid": true,
 		"snapped": false,
+		"exact": false,
 		"column": fallback_column,
 		"origin_y": settle_origin_y(tower_blocks, cells, fallback_column),
 		"target_point": Vector2i.ZERO,
 		"matched_vertex": Vector2i.ZERO
 	}
-
-# The pairing that decides the column is measured against the brick where the
-# player is holding it, but gravity can drop it short of that point. The
-# highlight has to mark the point the *settled* brick actually docks against,
-# or it points at a spot the brick never reaches.
-static func contact_pair(points: Array, cells: Array, origin_x: int, origin_y: int) -> Dictionary:
-	var best_distance_sq: float = INF
-	var best_point := Vector2i.ZERO
-	var best_vertex := Vector2i.ZERO
-
-	for vertex in ghost_snap_points(cells):
-		var landed := Vector2i(origin_x + vertex.x, origin_y + vertex.y)
-
-		for point in points:
-			var distance_sq: float = Vector2(landed).distance_squared_to(Vector2(point))
-
-			if distance_sq < best_distance_sq:
-				best_distance_sq = distance_sq
-				best_point = point
-				best_vertex = vertex
-
-	return {"point": best_point, "vertex": best_vertex, "distance_sq": best_distance_sq}
 
 static func _collides(occupied: Dictionary, cells: Array, origin_x: int, origin_y: int) -> bool:
 	for cell in cells:

@@ -84,7 +84,8 @@ async function handleMessage(player, message) {
         await lobbyManager.dispatchRoomAction(player, {
             type: "place_block",
             blockIndex: data.blockIndex,
-            column: data.column
+            column: data.column,
+            originY: data.originY
         });
         return;
     }

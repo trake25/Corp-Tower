@@ -835,3 +835,141 @@ test("a placed brick carries the balance delta it caused", () => {
         engine.room.towerBlocks[1].balanceDelta
     );
 });
+
+function createFlatBlock(width, id = "F1") {
+    return {
+        id: id,
+        shapeId: "I" + width + "H",
+        height: 1,
+        cells: Array.from({ length: width }, (_, x) => [x, 0])
+    };
+}
+
+// Two ground bricks with a one-cell void between them and a lid across the top:
+// the shape that was unreachable while every brick fell to the first thing under
+// it. P1 keeps a spare filler brick in hand for the placement under test.
+function buildTowerWithVoid(engine) {
+    engine.room.players[0].blocks = [
+        createBlock(1, "L1"), createBlock(1, "FILL"), createBlock(4, "S1")
+    ];
+    engine.room.players[1].blocks = [
+        createBlock(1, "R1"), createBlock(1, "R2"), createBlock(4, "S2")
+    ];
+    engine.room.players[2].blocks = [
+        createFlatBlock(3, "LID"), createBlock(1, "P3B"), createBlock(4, "S3")
+    ];
+
+    engine.placeBlock("P1", 0, 4);
+    engine.placeBlock("P2", 0, 6);
+    engine.placeBlock("P3", 0, 4);
+}
+
+test("an aimed placement lands in the gap instead of falling to the top", () => {
+    useFixedGrid();
+    const { engine } = createPlayingEngine(1, 12);
+
+    buildTowerWithVoid(engine);
+    engine.placeBlock("P1", 0, 5, 0);
+
+    const fill = engine.room.towerBlocks[engine.room.towerBlocks.length - 1];
+
+    assert.equal(fill.originX, 5);
+    assert.equal(fill.originY, 0, "the brick stays in the void it was aimed at");
+    assert.equal(fill.baseHeight, 0, "the settle mirror the client draws from agrees");
+});
+
+test("an origin that is no longer legal falls back to the gravity settle", () => {
+    useFixedGrid();
+    const { engine } = createPlayingEngine(1, 12);
+
+    buildTowerWithVoid(engine);
+    // Column 4 row 0 is occupied -- the race where a teammate filled the target
+    // gap first. The brick must still be placed, just settled.
+    engine.placeBlock("P2", 0, 4, 0);
+
+    const placed = engine.room.towerBlocks[engine.room.towerBlocks.length - 1];
+
+    assert.equal(placed.originX, 4);
+    assert.equal(placed.originY, 2, "it lands on top of the lid rather than inside a brick");
+});
+
+test("a placement with no aimed row still settles from above", () => {
+    useFixedGrid();
+    const { engine } = createPlayingEngine(1, 12);
+
+    buildTowerWithVoid(engine);
+    // What a bot sends: a column and nothing else.
+    engine.placeBlock("P3", 0, 5);
+
+    const placed = engine.room.towerBlocks[engine.room.towerBlocks.length - 1];
+
+    assert.equal(placed.originY, 2, "gravity still stops it on the lid, above the void");
+});
+
+test("reinforce pays for the cells a gap fill puts back on solid ground", () => {
+    useFixedGrid();
+    const { engine, messages } = createPlayingEngine(1, 12);
+
+    GameConfig.scoring.reinforceScorePerSupportedCell = 5;
+    GameConfig.scoring.reinforceScorePerIntegrity = 0;
+    GameConfig.scoring.reinforceScorePerLean = 0;
+
+    buildTowerWithVoid(engine);
+    engine.placeBlock("P1", 0, 5, 0);
+
+    const reinforce = latestMessage(messages).scoreEvents.find(
+        event => event.type === "reinforce"
+    );
+
+    assert.ok(reinforce, "filling a void is a repair and must emit a reinforce event");
+    assert.equal(
+        reinforce.meta.supportedCells, 1, "the lid cell above the void is now supported"
+    );
+    // 1 cell x 5 per cell x level 1, with the other two terms zeroed out
+    assert.equal(reinforce.points, 5);
+});
+
+test("stacking on top of the tower supports nothing and pays no repair", () => {
+    useFixedGrid();
+    const { engine } = createPlayingEngine(1, 12);
+
+    buildTowerWithVoid(engine);
+
+    assert.equal(
+        TowerStability.supportedCellsGained(
+            engine.room.towerBlocks, createBlock(1, "TOP"), 5, 2
+        ),
+        0
+    );
+});
+
+test("placement legality rejects overlaps, floaters and underground rows", () => {
+    const tower = [
+        { block: createFlatBlock(2, "A"), originX: 4, originY: 0 }
+    ];
+    const brick = createBlock(1, "B");
+
+    assert.equal(TowerStability.isPlacementLegal(tower, brick, 6, 0), true);
+    assert.equal(TowerStability.isPlacementLegal(tower, brick, 4, 1), true);
+    assert.equal(
+        TowerStability.isPlacementLegal(tower, brick, 6, 1), true,
+        "corner contact is attached enough -- stability charges for it, legality allows it"
+    );
+    assert.equal(TowerStability.isPlacementLegal(tower, brick, 4, 0), false);
+    assert.equal(TowerStability.isPlacementLegal(tower, brick, 9, 4), false);
+    assert.equal(TowerStability.isPlacementLegal(tower, brick, 4, -1), false);
+});
+
+test("game state carries the room's accessibility options", () => {
+    const { engine, messages } = createPlayingEngine(1, 8);
+
+    engine.broadcastGameState();
+
+    const state = latestMessage(messages);
+
+    assert.equal(typeof state.accessibility, "object");
+    assert.equal(
+        state.accessibility.parallelPlacement,
+        GameConfig.accessibility.parallelPlacement
+    );
+});

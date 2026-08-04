@@ -29,6 +29,87 @@ function settleBlock(entries, block, originX) {
     return { originX: anchoredX, originY };
 }
 
+function blockCells(block) {
+    return (block?.cells || []).map(cell => ({
+        x: Number(cell[0] ?? cell.x ?? 0),
+        y: Number(cell[1] ?? cell.y ?? 0)
+    }));
+}
+
+// The rule a client-chosen origin has to satisfy: on or above the platform, not
+// overlapping anything already placed, and attached to the platform or to some
+// existing cell. Corner contact counts -- the client's snap points are brick
+// outline vertices, so a diagonal attachment is exactly what a legal snap
+// produces. Nothing here judges whether the placement is *wise*; a brick hanging
+// off a corner is legal and gets charged for it by evaluate()'s support deficit
+// and overhang terms instead.
+function isPlacementLegal(entries, block, originX, originY) {
+    const cells = blockCells(block);
+
+    if (cells.length === 0 || !Number.isInteger(originX) || !Number.isInteger(originY)) {
+        return false;
+    }
+
+    if (cells.some(cell => cell.y + originY < 0)) {
+        return false;
+    }
+
+    const occupied = new Set(cellsForEntries(entries).map(cell => key(cell.x, cell.y)));
+    const placed = cells.map(cell => ({ x: cell.x + originX, y: cell.y + originY }));
+
+    if (placed.some(cell => occupied.has(key(cell.x, cell.y)))) {
+        return false;
+    }
+
+    return placed.some(cell => {
+        if (cell.y === 0) {
+            return true;
+        }
+
+        for (let dx = -1; dx <= 1; dx += 1) {
+            for (let dy = -1; dy <= 1; dy += 1) {
+                if (dx === 0 && dy === 0) {
+                    continue;
+                }
+
+                if (occupied.has(key(cell.x + dx, cell.y + dy))) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    });
+}
+
+// Cells of the standing tower that were hanging with nothing beneath them and
+// now rest directly on the incoming brick. This is the repair that only became
+// possible once bricks stopped spawning above the tower, so it is what Reinforce
+// pays for; integrity alone dilutes it away in a tall tower.
+function supportedCellsGained(entries, block, originX, originY) {
+    const cells = blockCells(block);
+
+    if (cells.length === 0) {
+        return 0;
+    }
+
+    const occupied = new Set(cellsForEntries(entries).map(cell => key(cell.x, cell.y)));
+    const placed = new Set(cells.map(cell => key(cell.x + originX, cell.y + originY)));
+    let gained = 0;
+
+    for (const cell of cellsForEntries(entries)) {
+        if (cell.y === 0 || occupied.has(key(cell.x, cell.y - 1))) {
+            continue;
+        }
+
+        if (placed.has(key(cell.x, cell.y - 1))) {
+            gained += 1;
+        }
+    }
+
+    return gained;
+}
+
 function evaluate(entries, config) {
     if (!entries || entries.length === 0) {
         return {
@@ -207,5 +288,6 @@ function balanceDelta(before, after, config) {
 }
 
 module.exports = {
-    cellsFor, topHeight, settleBlock, evaluate, structuralLean, balanceDelta
+    cellsFor, topHeight, settleBlock, isPlacementLegal, supportedCellsGained,
+    evaluate, structuralLean, balanceDelta
 };

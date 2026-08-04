@@ -20,6 +20,8 @@ const BAND_FILL_COLOR := Color(1.0, 1.0, 1.0, 0.11)
 const BAND_EDGE_COLOR := Color(1.0, 1.0, 1.0, 0.4)
 const BAND_HEADROOM_UNITS := 2.0
 const GHOST_OUTLINE_COLOR := Color(1.0, 1.0, 1.0, 0.7)
+const ARMED_GHOST_ALPHA_BOOST := 0.3
+const ARMED_PULSE_SPEED := 5.0
 
 @export var brick_unit_size: float = 34.0
 @export var top_padding: float = 14.0
@@ -71,6 +73,7 @@ var active_snap: Dictionary = {}
 var _drop_anim_id: String = ""
 var _drop_anim_t: float = 0.0
 var _drop_fall_units: float = 0.0
+var _armed_pulse_t: float = 0.0
 var _prev_block_count: int = 0
 var mood_threshold: int = BlockDataScript.DEFAULT_MOOD_THRESHOLD
 var _collapse_phase: int = COLLAPSE_NONE
@@ -146,9 +149,20 @@ func resolve_snap(cells: Array, ghost_global_pos: Vector2) -> Dictionary:
 		tower_blocks, cells, global_to_grid(ghost_global_pos), snap_radius_units
 	)
 
+func is_placement_still_legal(cells: Array, column: int, origin_y: int) -> bool:
+	return SnapGridScript.is_placement_legal(tower_blocks, cells, column, origin_y)
+
+# Three overlay states share this one entry point: a live drag/hover ghost, an
+# armed ghost the player has already aimed and only has to confirm, and a
+# brick-selected state (`show_ghost` false) that shows the build site and its
+# snap points before any spot has been picked.
 func set_snap_state(snap: Dictionary) -> void:
 	active_snap = snap
 	snap_preview_active = bool(snap.get("valid", false))
+
+	if !bool(snap.get("armed", false)):
+		_armed_pulse_t = 0.0
+
 	queue_redraw()
 
 # Hides the overlay without forgetting the brick being dragged -- the pointer
@@ -218,7 +232,10 @@ func _maybe_start_drop_animation(previous_global_height: int) -> void:
 		var entry: Dictionary = tower_blocks[new_count - 1]
 		_drop_anim_id = _entry_block_id(entry)
 		_drop_anim_t = 0.0
-		_drop_fall_units = _compute_drop_fall_units(entry, previous_global_height)
+		_drop_fall_units = minf(
+			_compute_drop_fall_units(entry, previous_global_height),
+			_drop_clearance_units(new_count - 1)
+		)
 	elif new_count != _prev_block_count:
 		_drop_anim_id = ""
 
@@ -236,6 +253,41 @@ func _compute_drop_fall_units(entry: Dictionary, previous_global_height: int) ->
 	var spawn_top_edge: float = float(previous_global_height) + 2.0 * float(block_height)
 
 	return maxf(0.0, spawn_top_edge - float(landed_top_edge))
+
+# Open sky above the brick, in grid units. A brick dropped on top of the tower
+# has an unbounded run-up and keeps the full spawn-height fall; one placed into a
+# gap has none and simply appears there, since animating it would drag it down
+# through the solid bricks it was threaded between.
+func _drop_clearance_units(entry_index: int) -> float:
+	if entry_index < 0 or entry_index >= tower_blocks.size():
+		return INF
+
+	var brick_top: Dictionary = {}
+
+	for cell in SnapGridScript.entry_cells(tower_blocks[entry_index]):
+		brick_top[cell.x] = maxi(int(brick_top.get(cell.x, -1)), cell.y)
+
+	if brick_top.is_empty():
+		return INF
+
+	var clearance: float = INF
+
+	for i in range(tower_blocks.size()):
+		if i == entry_index:
+			continue
+
+		for cell in SnapGridScript.entry_cells(tower_blocks[i]):
+			if !brick_top.has(cell.x):
+				continue
+
+			var top: int = brick_top[cell.x]
+
+			if cell.y <= top:
+				continue
+
+			clearance = minf(clearance, float(cell.y - top - 1))
+
+	return maxf(0.0, clearance)
 
 func _entry_block_id(entry: Dictionary) -> String:
 	var block: Variant = entry.get("block", {})
@@ -259,6 +311,10 @@ func _process(delta: float) -> void:
 		if _drop_anim_t >= 1.0:
 			_drop_anim_t = 1.0
 			_drop_anim_id = ""
+		needs_redraw = true
+
+	if snap_preview_active and bool(active_snap.get("armed", false)):
+		_armed_pulse_t = fmod(_armed_pulse_t + delta * ARMED_PULSE_SPEED, TAU)
 		needs_redraw = true
 
 	if _collapse_phase == COLLAPSE_LEAN:
@@ -629,7 +685,10 @@ func _draw_snap_layer(unit: float, base_x: float, baseline: float, pivot: Vector
 	var scroll_offset_units: int = _scroll_offset_units(unit)
 
 	_draw_placeable_band(unit, base_x, baseline, scroll_offset_units, pivot, _band_top_units())
-	_draw_drag_ghost(unit, base_x, baseline, scroll_offset_units, pivot)
+
+	if bool(active_snap.get("show_ghost", true)):
+		_draw_drag_ghost(unit, base_x, baseline, scroll_offset_units, pivot)
+
 	_draw_snap_points(unit, base_x, baseline, scroll_offset_units, pivot)
 
 # The band exists to show which columns are legal, so it only needs to cover the
@@ -695,7 +754,20 @@ func _draw_drag_ghost(
 	var box: Rect2 = _footprint_box(
 		column, origin_y, drag_cells, unit, base_x, baseline, scroll_offset_units
 	)
-	var fill: Color = Color(drag_color.r, drag_color.g, drag_color.b, ghost_alpha)
+	# An armed ghost is a placement waiting on one more tap, so it reads as more
+	# committed than a ghost that merely follows the pointer: denser fill, and an
+	# outline that pulses to say the next tap on it is the one that places it.
+	var armed: bool = bool(active_snap.get("armed", false))
+	var pulse: float = 0.5 + 0.5 * sin(_armed_pulse_t)
+	var alpha: float = minf(1.0, ghost_alpha + ARMED_GHOST_ALPHA_BOOST) if armed else ghost_alpha
+	var outline: Color = GHOST_OUTLINE_COLOR
+	var outline_width: float = 1.5
+
+	if armed:
+		outline = Color(1.0, 1.0, 1.0, 0.55 + 0.45 * pulse)
+		outline_width = 2.5
+
+	var fill: Color = Color(drag_color.r, drag_color.g, drag_color.b, alpha)
 	var texture: Texture2D = BlockDataScript.brick_texture(drag_shape_id)
 
 	if texture == null:
@@ -730,7 +802,7 @@ func _draw_drag_ghost(
 		)
 
 		draw_rect(
-			Rect2(cell_top_left - pivot, Vector2(unit, unit)), GHOST_OUTLINE_COLOR, false, 1.5
+			Rect2(cell_top_left - pivot, Vector2(unit, unit)), outline, false, outline_width
 		)
 
 # Drawn from SnapGrid's own point set, so every dot the player sees is a point
