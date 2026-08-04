@@ -127,6 +127,18 @@ const GameConfig = {
         parallelPlacement: false
     },
 
+    visualHooks: {
+        impactBeat: true,
+        screenShake: true,
+        impactBeatMinZoom: 0.3,
+        impactBeatZoomOutMs: 450,
+        impactBeatWaveMs: 550,
+        impactBeatHoldMs: 600,
+        impactBeatZoomInMs: 350,
+        screenShakeMs: 260,
+        screenShakeMagnitudeUnits: 0.22
+    },
+
     scoring: {
         placementScorePerHeight: 10,
         placementStabilityFloor: 0.5,

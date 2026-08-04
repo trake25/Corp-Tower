@@ -1091,3 +1091,57 @@ test("game state carries the room's accessibility options", () => {
         GameConfig.accessibility.parallelPlacement
     );
 });
+
+test("game state carries the room's visual hook config", () => {
+    const { engine, messages } = createPlayingEngine(1, 8);
+
+    engine.broadcastGameState();
+
+    const state = latestMessage(messages);
+
+    assert.equal(typeof state.visualHooks, "object");
+    assert.equal(state.visualHooks.impactBeat, GameConfig.visualHooks.impactBeat);
+    assert.equal(state.visualHooks.screenShake, GameConfig.visualHooks.screenShake);
+
+    // The durations ride game_state, never debug_config -- the debug menu only
+    // ever exposes the two toggles.
+    assert.equal(
+        state.visualHooks.impactBeatWaveMs,
+        GameConfig.visualHooks.impactBeatWaveMs
+    );
+    assert.equal(
+        state.visualHooks.screenShakeMagnitudeUnits,
+        GameConfig.visualHooks.screenShakeMagnitudeUnits
+    );
+});
+
+test("visual hook toggles round-trip through debug config and reset", async () => {
+    const lobbyManager = new LobbyManager();
+    const previousImpactBeat = GameConfig.visualHooks.impactBeat;
+    const previousScreenShake = GameConfig.visualHooks.screenShake;
+
+    try {
+        await lobbyManager.updateDebugConfig("visualHookImpactBeat", false);
+        await lobbyManager.updateDebugConfig("visualHookScreenShake", false);
+
+        assert.equal(GameConfig.visualHooks.impactBeat, false);
+        assert.equal(GameConfig.visualHooks.screenShake, false);
+        assert.equal(lobbyManager.getDebugConfig().visualHookImpactBeat, false);
+        assert.equal(lobbyManager.getDebugConfig().visualHookScreenShake, false);
+
+        lobbyManager.applyDefaultDebugConfig();
+
+        assert.equal(GameConfig.visualHooks.impactBeat, true);
+        assert.equal(GameConfig.visualHooks.screenShake, true);
+
+        // The durations are not debug keys -- an attempt to set one is rejected
+        // outright rather than silently ignored.
+        assert.equal(
+            await lobbyManager.updateDebugConfig("impactBeatWaveMs", 100),
+            false
+        );
+    } finally {
+        GameConfig.visualHooks.impactBeat = previousImpactBeat;
+        GameConfig.visualHooks.screenShake = previousScreenShake;
+    }
+});

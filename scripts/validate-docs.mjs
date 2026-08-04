@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Validates the docs/context knowledge base. Zero dependencies (Node stdlib only).
-//   node scripts/validate-docs.mjs [repoRoot]
+//   node scripts/validate-docs.mjs [repoRoot] [--quiet]
+// --quiet suppresses the per-doc table and status-marker list on a passing run (the
+//   /update-docs receipt only needs pass/fail); a failing run always prints in full.
 // HARD errors (exit 1): broken relative doc links, dead #anchors, plus over-budget
 //   and banned-phrase violations in docs that GREW in the working tree. Growth is
 //   blocked; compaction never is, so a doc already over budget can always be fixed.
@@ -11,7 +13,9 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-const ROOT = resolve(process.argv[2] || '.');
+const argv = process.argv.slice(2);
+const QUIET = argv.includes('--quiet');
+const ROOT = resolve(argv.find(a => !a.startsWith('-')) || '.');
 const CTX = join(ROOT, 'docs/context');
 const CLIENT = 'src/Client/App/corp-tower';
 const errors = [];
@@ -21,21 +25,21 @@ const warnings = [];
 // the KB's whole value is being loadable in full for a task without crowding it out.
 const DEFAULT_BUDGET = 110;
 const BUDGETS = {
-  'index.md': 80, 'coding-conventions.md': 140, 'testing.md': 90, 'glossary.md': 90,
+  'index.md': 80, 'coding-conventions.md': 80, 'testing.md': 90, 'glossary.md': 90,
   'module-index.md': 90, 'build.md': 100, 'architecture.md': 110, 'networking.md': 135,
   'ui.md': 175, 'deployment.md': 200, 'backend.md': 200, 'gameplay.md': 220,
-  'decisions.md': 190,
+  'decisions.md': 190, 'doc-maintenance.md': 80,
 };
 const TOTAL_BUDGET = 2400;
 const NET_GROWTH_WARN = 30;
 
 // Constructions that turn a description of the system into a story about it. Kept in
-// sync with coding-conventions.md's banned list; `Rejected:` lines are the sanctioned
-// way to preserve a failed alternative, so they're exempt -- as is coding-conventions.md
+// sync with doc-maintenance.md's banned list; `Rejected:` lines are the sanctioned
+// way to preserve a failed alternative, so they're exempt -- as is doc-maintenance.md
 // itself, which has to quote the list in order to define it.
 const BANNED = /\b(used to|previously|originally|the first attempt|was later|since removed|then deleted|reverted|earlier version|calibration passes|in this pass)\b/i;
 const BANNED_EXEMPT = /Rejected:/;
-const BANNED_SKIP_FILES = new Set(['coding-conventions.md']);
+const BANNED_SKIP_FILES = new Set(['doc-maintenance.md']);
 
 // Unresolved commitments that rot silently unless something surfaces them each run.
 const STATUS = /\b(not yet verified|known bug|not yet gated|planned future|TODO|TBD|FIXME)\b/i;
@@ -186,18 +190,26 @@ counts.sort((a, b) => b[1] - a[1]);
 const total = counts.reduce((s, [, n]) => s + n, 0);
 if (total > TOTAL_BUDGET) warnings.push(`KB total ${total} lines > ${TOTAL_BUDGET} — run /compact-docs`);
 
+// A passing --quiet run prints only the summary line; anything that failed still gets
+// the full report, since that is when the detail is what the reader needs.
+const terse = QUIET && !errors.length;
 console.log('=== docs/context validation ===');
 console.log(`files: ${files.length}   total lines: ${total} / ${TOTAL_BUDGET}   links checked: ${linkCount}`);
-console.log('lines per doc (budget, net change):');
-for (const [f, n] of counts) {
-  const b = BUDGETS[f] ?? DEFAULT_BUDGET, d = growth[f] || 0;
-  console.log(`  ${String(n).padStart(4)} / ${String(b).padEnd(4)} ${n > b ? '!' : ' '} ${d ? (d > 0 ? `+${d}` : d).toString().padStart(5) : '     '}  ${f}`);
+if (!terse) {
+  console.log('lines per doc (budget, net change):');
+  for (const [f, n] of counts) {
+    const b = BUDGETS[f] ?? DEFAULT_BUDGET, d = growth[f] || 0;
+    console.log(`  ${String(n).padStart(4)} / ${String(b).padEnd(4)} ${n > b ? '!' : ' '} ${d ? (d > 0 ? `+${d}` : d).toString().padStart(5) : '     '}  ${f}`);
+  }
 }
-if (statusMarkers.length) {
+if (statusMarkers.length && !terse) {
   console.log(`\nUNRESOLVED STATUS MARKERS (${statusMarkers.length}) — keep, resolve, or delete each:`);
   statusMarkers.forEach(s => console.log('  · ' + s));
 }
-if (warnings.length) { console.log(`\nWARNINGS (${warnings.length}):`); warnings.forEach(w => console.log('  ! ' + w)); }
+if (terse) {
+  if (warnings.length || statusMarkers.length)
+    console.log(`warnings: ${warnings.length}   status markers: ${statusMarkers.length}   (re-run without --quiet for detail)`);
+} else if (warnings.length) { console.log(`\nWARNINGS (${warnings.length}):`); warnings.forEach(w => console.log('  ! ' + w)); }
 if (errors.length) { console.log(`\nERRORS (${errors.length}):`); errors.forEach(e => console.log('  x ' + e)); }
 console.log(errors.length ? '\nFAIL' : '\nPASS');
 process.exit(errors.length ? 1 : 0);

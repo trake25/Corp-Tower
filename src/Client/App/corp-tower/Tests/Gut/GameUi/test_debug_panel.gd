@@ -17,7 +17,9 @@ const CONFIG_FIXTURE := {
 	"levelSummaryDelayMs": 6000,
 	"targetHeightMultiplier": 5,
 	"towerStabilityFeedbackMode": "meter_only",
-	"towerStabilityMoodThreshold": 12
+	"towerStabilityMoodThreshold": 12,
+	"visualHookImpactBeat": false,
+	"visualHookScreenShake": false
 }
 
 var harness
@@ -115,6 +117,49 @@ func test_mood_threshold_reaches_the_tower_renderer() -> void:
 		int(tower_stack.get("mood_threshold")),
 		3,
 		"A missing mood threshold should fall back to the shared default."
+	)
+
+func test_visual_hook_toggles_sync_from_the_config() -> void:
+	harness.main.update_debug_config(CONFIG_FIXTURE)
+	assert_false(
+		(harness.find("ImpactBeatToggle") as CheckButton).button_pressed,
+		"The Impact beat toggle should sync from the config payload."
+	)
+	assert_false(
+		(harness.find("ScreenShakeToggle") as CheckButton).button_pressed,
+		"The screen shake toggle should sync from the config payload."
+	)
+
+# Both hooks ship on, so a server too old to send the keys must not read as a
+# silent opt-out of the feature.
+func test_visual_hook_toggles_default_to_enabled() -> void:
+	harness.main.update_debug_config({})
+	assert_true(
+		(harness.find("ImpactBeatToggle") as CheckButton).button_pressed,
+		"A missing Impact beat flag should fall back to enabled."
+	)
+	assert_true(
+		(harness.find("ScreenShakeToggle") as CheckButton).button_pressed,
+		"A missing screen shake flag should fall back to enabled."
+	)
+
+func test_visual_hook_toggles_live_in_the_hooks_category() -> void:
+	var rows: Node = harness.find("HooksRows")
+
+	assert_eq(
+		harness.find("ImpactBeatToggle").get_parent(),
+		rows,
+		"The Impact beat toggle belongs to the Hooks category rows."
+	)
+	assert_eq(
+		harness.find("ScreenShakeToggle").get_parent(),
+		rows,
+		"The screen shake toggle belongs to the Hooks category rows."
+	)
+	assert_eq(
+		rows.get_parent().name,
+		StringName("Hooks"),
+		"HooksRows should sit under the Hooks category panel."
 	)
 
 func test_toggle_debug_overlay_flips_visibility() -> void:

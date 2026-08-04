@@ -13,70 +13,7 @@ Scope: patterns to follow when writing code or docs in this repo. Extracted once
 
 ## Documentation maintenance
 
-This section is the **single source of the `/update-docs` procedure**. `.claude/commands/update-docs.md` is a pointer to it and holds no steps of its own — so the procedure syncs to every machine by `git pull`, and stays out of session-start context until a task actually needs it.
-
-**Entry point:** [index.md](./index.md) is the always-load entry (system overview, working rules, task router, retrieval tiers, ignore map). It links out, never duplicates.
-
-### The one rule that governs every doc edit
-
-These docs are a **description of the system as it is now**, not a record of how it got here. Git holds the history; the KB holds the current state plus what a future session must not have to rediscover. Every `/update-docs` run therefore *replaces* prose — it never appends to it.
-
-**Retention test.** A sentence stays only if it is one of three things:
-
-1. **State** — current behavior, contract, number, term, or a file's role.
-2. **Rework guard** — an alternative that was tried and failed, stated *with its failure mode*, so a future session doesn't retry it.
-3. **Landmine** — a gotcha that bites the next person who edits that code.
-
-Anything else is deleted: chronology, ordering of attempts, who found what, how many passes it took, what a thing "used to" be. If the code no longer does X, no sentence saying it once did X survives.
-
-**Supersede-and-collapse.** When a decision is reversed, its entry is **not** given an addendum. Rewrite it down to the lesson that survives, or delete it outright. Losing the narrative is intended — `git log -p docs/context/` still has it.
-
-**Banned constructions** (rewrite, don't soften): *used to · previously · originally · the first attempt · was later · since removed · then deleted · reverted · earlier version · several calibration passes · this pass*. State the current rule instead; if a failure is worth keeping under the retention test, render it as a single `**Rejected:** <option> → <failure>` line. `validate-docs.mjs` flags these.
-
-**Net-line expectation.** A typical goal is 2–15 net lines across all docs. Adding more than 30 net lines to one doc means the session is being transcribed rather than the system documented — compress before finishing.
-
-### Update procedure (`/update-docs`, diff-driven — never a full rebuild)
-
-1. **Scope the diff cheaply.** One stat pass, not a full read:
-
-   ```
-   git status --porcelain
-   git diff --stat --ignore-all-space HEAD -- . ":(exclude)docs/context" ":(exclude)*.uid" ":(exclude)*.import" ":(exclude)*.tres"
-   ```
-
-   Then open `git diff -U2 -- <path>` **only** for paths whose owning doc is actually affected. Always read in full, regardless: `src/Server/app/Game_Config.js` and `src/Server/app/engine/**` — they encode numbers and contracts where a missed hunk becomes a wrong doc. Never re-read the repo.
-
-2. **Doc-worthy gate.** A change earns a doc edit only if it alters a **number, a wire contract, a rule, a file's role, a term, or a rationale a future session would otherwise re-litigate**. A pure refactor with none of those produces *no doc change* — say so, run validation, stop. Do not manufacture an entry to show work.
-
-3. **Route.** Map each doc-worthy path → [module-index.md](./module-index.md) row → its owning doc (ownership map above). Rationale → [decisions.md](./decisions.md); terms → [glossary.md](./glossary.md); message shapes → [networking.md](./networking.md); stack/rules → [index.md](./index.md).
-
-4. **Edit as replacement.** Apply the retention test to what you write *and* to what is already there. While a doc is open, scan **that doc only** for statements this diff just falsified and delete them — it is already in context, so this is free. Do not sweep docs you didn't otherwise need.
-
-5. **Validate.** `node scripts/validate-docs.mjs`; fix anything it flags as an error.
-
-6. **Receipt.** One line, e.g. `docs: gameplay.md, decisions.md (+4/−31) · validate PASS`. No delta report — `git diff` already has it. Commit only if explicitly instructed.
-
-Whole-KB compaction (dedupe across docs, collapse superseded entries, work the blacklist backlog) is **not** part of this procedure — it is the separate, user-run `/compact-docs`.
-
-### `decisions.md` entry shape
-
-Entries there decay into stories faster than anywhere else, so they take a fixed shape, ~12 lines max:
-
-```markdown
-## <the current rule, stated as a rule>
-**Now:** what the system does, one line.
-**Why:** the constraint that forces it.
-**Rejected:** <option> → <the failure that killed it>.
-**Consequence:** what breaks if this is changed.
-```
-
-A decision genuinely spanning several mechanisms may add prose after `Consequence:`, but the four labelled lines come first and each stays one line.
-
-### Validation and budgets
-
-`scripts/validate-docs.mjs` runs after any doc edit. Hard errors (exit 1): broken links, dead anchors, and — for any doc **changed in this run that grew past its line budget** — over-budget and banned-phrase violations. The same violations in a doc you shrank or didn't touch are warnings only, so compaction is never blocked and growth always is. It also lists unresolved status markers (`Not yet verified`, `Known bug`, `TODO`, …) each run for a keep/resolve/delete call.
-
-**Invariants:** exactly one owning doc per concept · every link and `#anchor` resolves · numeric defaults stated once and referenced · every doc within its budget · docs change only via `/update-docs` or `/compact-docs`.
+The `/update-docs` procedure, the retention test, the banned constructions, and the budget rules live in [doc-maintenance.md](./doc-maintenance.md) — loaded only by a run that is actually editing docs, so it never costs a coding session anything.
 
 ## Server: engine module delegation pattern
 

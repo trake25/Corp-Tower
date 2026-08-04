@@ -17,6 +17,8 @@ const QuickChatControllerScript = preload("res://Cor/Scripts/GameUi/QuickChatCon
 const PowerControllerScript = preload("res://Cor/Scripts/GameUi/PowerController.gd")
 const InventoryControllerScript = preload("res://Cor/Scripts/GameUi/InventoryController.gd")
 const TopBarControllerScript = preload("res://Cor/Scripts/GameUi/TopBarController.gd")
+const VisualHooksScript = preload("res://Cor/Scripts/GameUi/VisualHooks.gd")
+const VisualHooksControllerScript = preload("res://Cor/Scripts/GameUi/VisualHooksController.gd")
 const TutorialControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialController.gd")
 const TutorialMenuControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialMenuController.gd")
 
@@ -40,6 +42,8 @@ var chat
 var power
 var inventory
 var top_bar
+var visual_hooks
+var visual_fx
 var tutorial
 var tutorial_menu
 
@@ -78,6 +82,9 @@ func _ready() -> void:
 	add_child(inventory)
 	top_bar = TopBarControllerScript.new()
 	add_child(top_bar)
+	visual_hooks = VisualHooksScript.new()
+	visual_fx = VisualHooksControllerScript.new()
+	add_child(visual_fx)
 	tutorial = TutorialControllerScript.new()
 	add_child(tutorial)
 	tutorial_menu = TutorialMenuControllerScript.new()
@@ -94,6 +101,10 @@ func _ready() -> void:
 	score_popups.setup(players_ctx, match_state, tuning)
 	summary.setup(players_ctx, match_state, tuning)
 	roster.setup(players_ctx, match_state)
+	visual_fx.setup(tower_stack, roster, players_ctx, visual_hooks)
+
+	if tower_stack.has_method("set_visual_hooks"):
+		tower_stack.call("set_visual_hooks", visual_hooks)
 	quest.setup(players_ctx, match_state, popovers, should_block_popovers)
 	summary.quest_text_provider = quest.get_quest_summary_text
 	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_popovers, tutorial.on_chat_sent)
@@ -116,6 +127,9 @@ func _ready() -> void:
 		tower_stack.connect("scroll_offset_changed", Callable(background_parallax, "set_scroll_pixels"))
 		tower_stack.connect("scroll_offset_changed", Callable(platform_parallax, "set_scroll_pixels"))
 
+	if tower_stack.has_signal("camera_zoom_changed"):
+		tower_stack.connect("camera_zoom_changed", Callable(self, "apply_camera_zoom"))
+
 	accessibility.changed.connect(apply_accessibility)
 	apply_accessibility()
 
@@ -129,6 +143,16 @@ func apply_accessibility() -> void:
 		accessibility.is_enabled(AccessibilitySettingsScript.PARALLEL_PLACEMENT)
 	)
 	debug_panel.refresh_accessibility_row()
+
+# The tower shrinks around its own base, so the ground has to shrink around its
+# top edge or it detaches from the bricks resting on it -- the same failure the
+# platform parallax exists to prevent for the scroll axis.
+func apply_camera_zoom(zoom: float) -> void:
+	if platform_parallax == null:
+		return
+
+	platform_parallax.pivot_offset = Vector2(platform_parallax.size.x * 0.5, 0.0)
+	platform_parallax.scale = Vector2(zoom, zoom)
 
 # Same guard the old PointerTriggerRouter applied to every trigger: don't let
 # a tap open a popover while the debug panel or the level-summary overlay is
@@ -253,6 +277,7 @@ func update_room(data) -> void:
 	score_popups.seen_score_event_ids.clear()
 	summary.last_level_summary_key = ""
 	score_popups.clear_score_popups()
+	visual_fx.reset()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
 	quest.hide_freeze_banner()
@@ -289,6 +314,7 @@ func update_room_closed(data) -> void:
 	inventory.update_draw_pile_ui(0, null)
 	debug_panel.set_open(false)
 	score_popups.clear_score_popups()
+	visual_fx.reset()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
 	quest.hide_freeze_banner()
@@ -349,6 +375,7 @@ func update_game_state(data) -> void:
 		score_popups.clear_score_popups()
 		chat.seen_quick_chat_event_ids.clear()
 		power.seen_power_event_ids.clear()
+		visual_fx.reset()
 		summary.cancel_pending_level_summary()
 		if state != "finished" and state != "failed":
 			summary.hide_level_summary()
@@ -370,6 +397,8 @@ func update_game_state(data) -> void:
 	top_bar.set_tower_progress(current_height, target_height)
 	if data.has("accessibility"):
 		accessibility.apply_server_defaults(data.get("accessibility", {}))
+	if data.has("visualHooks"):
+		visual_hooks.apply(data.get("visualHooks", {}))
 	if data.has("towerGridWidth"):
 		SnapGridScript.set_grid_width(int(data.get("towerGridWidth", 14)))
 	if data.has("placeableColumnMin") and data.has("placeableColumnMax"):
@@ -424,7 +453,7 @@ func update_game_state(data) -> void:
 		summary.queue_level_summary_after_score_popups(
 			data.get("lastLevelSummary", {}),
 			state,
-			score_popup_wait_seconds
+			score_popup_wait_seconds + visual_fx.on_level_result(data, state)
 		)
 	else:
 		summary.cancel_pending_level_summary()

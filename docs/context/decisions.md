@@ -1,6 +1,6 @@
 # Decisions
 
-Scope: why things are built the way they are — rationale, tradeoffs, rejected alternatives, known constraints. Not a bug tracker, and **not a changelog**: entries state the rule as it stands now, and a reversed decision is rewritten down to its surviving lesson rather than given an addendum. Entry shape (Now / Why / Rejected / Consequence) is defined once in [coding-conventions.md](./coding-conventions.md#decisionsmd-entry-shape).
+Scope: why things are built the way they are — rationale, tradeoffs, rejected alternatives, known constraints. Not a bug tracker, and **not a changelog**: entries state the rule as it stands now, and a reversed decision is rewritten down to its surviving lesson rather than given an addendum. Entry shape (Now / Why / Rejected / Consequence) is defined once in [doc-maintenance.md](./doc-maintenance.md#decisionsmd-entry-shape).
 
 ## Politics → Power, Checkpoint → Impact rename
 **Now:** both systems carry their production UI names across every wire field, config key and Redis-persisted field — not just docs and code identifiers. **Consequence:** deploy client and server together; a room in flight during that deploy will not restore its Impact/Power state from an old-shaped Redis snapshot.

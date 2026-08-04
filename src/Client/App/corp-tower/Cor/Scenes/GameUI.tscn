@@ -1914,6 +1914,30 @@ text = "Snap Target Size"
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="Hooks" type="ScrollContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=900000060]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HooksRows" type="VBoxContainer" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks" unique_id=900000061]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="ImpactBeatToggle" type="CheckButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000062]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Impact Beat"
+
+[node name="ScreenShakeToggle" type="CheckButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000063]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Screen Shake"
+
 [node name="DebugTooltip" type="Control" parent="DebugLayer/DebugOverlay" unique_id=900001000]
 unique_name_in_owner = true
 visible = false

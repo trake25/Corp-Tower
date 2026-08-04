@@ -7,7 +7,8 @@ const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
 const TOWER_FEEDBACK_MODES := ["warnings_only", "meter_only", "live_preview"]
 const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Meter Only", "Live Preview"]
 const DEBUG_CATEGORY_NAMES := [
-	"Bots", "Round", "UI", "Supply", "Scoring", "Impact", "Tower", "Power", "Parallax", "Placement"
+	"Bots", "Round", "UI", "Supply", "Scoring", "Impact", "Tower", "Power", "Parallax", "Placement",
+	"Hooks"
 ]
 
 # Per-variable explainers for the server-backed categories, keyed by the row's
@@ -339,6 +340,8 @@ var power_replenish_share_label: Control
 var power_replenish_share_slider: HSlider
 var tutorial_launch_button: Button
 var parallel_placement_button: Button
+var impact_beat_toggle: CheckButton
+var screen_shake_toggle: CheckButton
 var accessibility
 var on_tutorial_requested: Callable = Callable()
 
@@ -358,6 +361,7 @@ func bind_nodes(binder) -> void:
 		"Power": binder.optional_node("Power") as Control,
 		"Parallax": binder.optional_node("Parallax") as Control,
 		"Placement": binder.optional_node("Placement") as Control,
+		"Hooks": binder.optional_node("Hooks") as Control,
 	}
 	parallax_targets = {
 		PARALLAX_TARGET_TOWER: binder.optional_node("TowerStack"),
@@ -371,6 +375,8 @@ func bind_nodes(binder) -> void:
 	restart_level_button = binder.optional_node("RestartLevelButton") as Button
 	close_debug_button = binder.optional_node("CloseDebugButton") as Button
 	bots_toggle = binder.optional_node("BotsToggle") as CheckButton
+	impact_beat_toggle = binder.optional_node("ImpactBeatToggle") as CheckButton
+	screen_shake_toggle = binder.optional_node("ScreenShakeToggle") as CheckButton
 	bot_strategy_button = binder.optional_node("BotStrategyButton") as OptionButton
 	bot_count_label = binder.optional_node("BotCountLabel") as Label
 	bot_count_slider = binder.optional_node("BotCountSlider") as HSlider
@@ -495,6 +501,12 @@ func setup(
 
 	if bots_toggle != null:
 		bots_toggle.toggled.connect(on_bots_toggle)
+
+	if impact_beat_toggle != null:
+		impact_beat_toggle.toggled.connect(on_impact_beat_toggle)
+
+	if screen_shake_toggle != null:
+		screen_shake_toggle.toggled.connect(on_screen_shake_toggle)
 
 	if bot_strategy_button != null:
 		bot_strategy_button.clear()
@@ -706,6 +718,16 @@ func on_bots_toggle(enabled: bool) -> void:
 		return
 	network.update_config("debugBotsEnabled", enabled)
 
+func on_impact_beat_toggle(enabled: bool) -> void:
+	if is_syncing_debug_config:
+		return
+	network.update_config("visualHookImpactBeat", enabled)
+
+func on_screen_shake_toggle(enabled: bool) -> void:
+	if is_syncing_debug_config:
+		return
+	network.update_config("visualHookScreenShake", enabled)
+
 func on_reset_debug_pressed() -> void:
 	network.update_config("resetDebugConfig", true)
 
@@ -789,6 +811,14 @@ func apply_config(config) -> void:
 	is_syncing_debug_config = true
 	tuning.placement_cooldown_ms = int(config.get("placementCooldown", tuning.placement_cooldown_ms))
 	bots_toggle.set_pressed_no_signal(bool(config.get("debugBotsEnabled", false)))
+	if impact_beat_toggle != null:
+		impact_beat_toggle.set_pressed_no_signal(
+			bool(config.get("visualHookImpactBeat", true))
+		)
+	if screen_shake_toggle != null:
+		screen_shake_toggle.set_pressed_no_signal(
+			bool(config.get("visualHookScreenShake", true))
+		)
 	if bot_strategy_button != null:
 		var strategy: String = str(config.get("debugBotStrategy", BOT_STRATEGY_COOPERATIVE))
 		var selected_strategy_index: int = 1 if strategy == BOT_STRATEGY_MVP_GREEDY else 0

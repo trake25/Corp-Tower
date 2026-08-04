@@ -48,7 +48,9 @@ const DEFAULT_DEBUG_CONFIG = {
     precisionBonusPerLevel: GameConfig.scoring.precisionBonusPerLevel,
     teamExactBonusPerLevel: GameConfig.scoring.teamExactBonusPerLevel,
     assistBonusPerLevel: GameConfig.scoring.assistBonusPerLevel,
-    assistContributionThreshold: GameConfig.scoring.assistContributionThreshold
+    assistContributionThreshold: GameConfig.scoring.assistContributionThreshold,
+    visualHookImpactBeat: GameConfig.visualHooks.impactBeat,
+    visualHookScreenShake: GameConfig.visualHooks.screenShake
 };
 
 class LobbyManager {
@@ -487,7 +489,9 @@ class LobbyManager {
             teamExactBonusPerLevel: GameConfig.scoring.teamExactBonusPerLevel,
             assistBonusPerLevel: GameConfig.scoring.assistBonusPerLevel,
             assistContributionThreshold:
-                GameConfig.scoring.assistContributionThreshold
+                GameConfig.scoring.assistContributionThreshold,
+            visualHookImpactBeat: GameConfig.visualHooks.impactBeat,
+            visualHookScreenShake: GameConfig.visualHooks.screenShake
         };
     }
 
@@ -565,6 +569,10 @@ class LobbyManager {
             DEFAULT_DEBUG_CONFIG.assistBonusPerLevel;
         GameConfig.scoring.assistContributionThreshold =
             DEFAULT_DEBUG_CONFIG.assistContributionThreshold;
+        GameConfig.visualHooks.impactBeat =
+            DEFAULT_DEBUG_CONFIG.visualHookImpactBeat;
+        GameConfig.visualHooks.screenShake =
+            DEFAULT_DEBUG_CONFIG.visualHookScreenShake;
     }
 
     async resetDebugConfigToDefaults() {
@@ -726,7 +734,13 @@ class LobbyManager {
             teamExactBonusPerLevel: setScoringInt("teamExactBonusPerLevel", 0, 25),
             assistBonusPerLevel: setScoringInt("assistBonusPerLevel", 0, 25),
             assistContributionThreshold:
-                setScoringNumber("assistContributionThreshold", 0, 1)
+                setScoringNumber("assistContributionThreshold", 0, 1),
+            visualHookImpactBeat: () => {
+                GameConfig.visualHooks.impactBeat = Boolean(value);
+            },
+            visualHookScreenShake: () => {
+                GameConfig.visualHooks.screenShake = Boolean(value);
+            }
         };
 
         if (!debugConfigSetters[key]) {

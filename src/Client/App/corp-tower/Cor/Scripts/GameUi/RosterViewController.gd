@@ -1,6 +1,9 @@
 extends Node
 
 const MAX_RAIL_PLAYERS := 3
+const IMPACT_FLASH_PULSES := 3
+const IMPACT_FLASH_MET_TINT := Color(1.5, 1.5, 1.5, 1.0)
+const IMPACT_FLASH_MISSED_TINT := Color(1.3, 0.5, 0.5, 1.0)
 const PlayerRailEntryScene = preload("res://Cor/Scenes/PlayerRailEntry.tscn")
 const ImpactBarScene = preload("res://Cor/Scenes/ImpactBar.tscn")
 
@@ -198,6 +201,32 @@ func update_impact_track(player_statuses: Array, _next_impact_level: int) -> voi
 
 	if impact_pill != null:
 		impact_pill.visible = true
+
+func flash_impact_bars(verdicts: Dictionary, duration_seconds: float) -> void:
+	if impact_bars.is_empty() or duration_seconds <= 0.0:
+		return
+
+	var half_pulse: float = maxf(
+		0.05, duration_seconds / float(IMPACT_FLASH_PULSES * 2)
+	)
+
+	for player_id in impact_bars.keys():
+		var bar: Control = impact_bars[player_id]
+
+		if bar == null or !is_instance_valid(bar):
+			continue
+
+		var met: bool = str(verdicts.get(player_id, "")) == "positive"
+		var tween: Tween = create_tween()
+
+		tween.set_loops(IMPACT_FLASH_PULSES)
+		tween.tween_property(
+			bar,
+			"modulate",
+			IMPACT_FLASH_MET_TINT if met else IMPACT_FLASH_MISSED_TINT,
+			half_pulse
+		)
+		tween.tween_property(bar, "modulate", Color.WHITE, half_pulse)
 
 func set_impact_status_visible(should_show: bool) -> void:
 	if impact_separator != null:

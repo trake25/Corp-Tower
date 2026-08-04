@@ -10,6 +10,18 @@ const COLLAPSE_LEAN := 1
 const COLLAPSE_FALL := 2
 const COLLAPSE_SETTLED := 3
 
+const BEAT_NONE := 0
+const BEAT_ZOOM_OUT := 1
+const BEAT_WAVE := 2
+const BEAT_HOLD := 3
+const BEAT_ZOOM_IN := 4
+
+const WAVE_POP_BAND_UNITS := 2.5
+const WAVE_POP_SCALE := 0.35
+const MIN_CAMERA_ZOOM := 0.05
+const VERDICT_POSITIVE := "positive"
+const VERDICT_NEGATIVE := "negative"
+
 const GRID_COLOR := Color(0.9, 0.95, 1.0, 0.9)
 const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 
@@ -55,6 +67,7 @@ const ARMED_PULSE_SPEED := 5.0
 @export var emoji_unit_scale: float = 1.1
 
 signal scroll_offset_changed(pixels: float)
+signal camera_zoom_changed(zoom: float)
 
 var tower_blocks: Array = []
 var current_height: int = 0
@@ -79,6 +92,19 @@ var mood_threshold: int = BlockDataScript.DEFAULT_MOOD_THRESHOLD
 var _collapse_phase: int = COLLAPSE_NONE
 var _collapse_lean_elapsed: float = 0.0
 var _collapse_sim = null
+var visual_hooks = null
+var _camera_zoom: float = 1.0
+var _beat_phase: int = BEAT_NONE
+var _beat_elapsed: float = 0.0
+var _beat_zoom_from: float = 1.0
+var _beat_zoom_target: float = 1.0
+var _wave_progress: float = -1.0
+var _wave_span_units: float = 0.0
+var _verdict_by_player: Dictionary = {}
+var _shake_duration: float = 0.0
+var _shake_elapsed: float = 0.0
+var _shake_magnitude_px: float = 0.0
+var _shake_offset: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	material = BlockDataScript.brick_shader_material()
@@ -126,6 +152,137 @@ func set_mood_threshold(value: int) -> void:
 
 	mood_threshold = resolved
 	queue_redraw()
+
+func set_visual_hooks(hooks) -> void:
+	visual_hooks = hooks
+
+# The pull-back is the zoom alone: every transform routes through _unit_size(),
+# and _scroll_offset_units()/_visible_unit_capacity() take that zoomed unit, so a
+# smaller brick grows the visible capacity and the scroll ramp resolves toward 0
+# on its own. Returns false when there is nothing to reveal, so the caller can
+# skip the wait it would otherwise add before the level summary.
+func play_impact_beat(verdicts: Dictionary) -> bool:
+	if visual_hooks == null or !visual_hooks.impact_beat_enabled:
+		return false
+
+	if tower_blocks.is_empty() or _collapse_phase != COLLAPSE_NONE:
+		return false
+
+	_verdict_by_player = verdicts.duplicate()
+	_wave_span_units = maxf(1.0, float(SnapGridScript.top_height(tower_blocks)))
+	_wave_progress = 0.0
+	_beat_phase = BEAT_ZOOM_OUT
+	_beat_elapsed = 0.0
+	_beat_zoom_from = _camera_zoom
+	_beat_zoom_target = _impact_beat_zoom()
+	queue_redraw()
+
+	return true
+
+func cancel_impact_beat() -> void:
+	if _beat_phase == BEAT_NONE and _wave_progress < 0.0 and is_equal_approx(_camera_zoom, 1.0):
+		return
+
+	_beat_phase = BEAT_NONE
+	_beat_elapsed = 0.0
+	_wave_progress = -1.0
+	_verdict_by_player = {}
+	_set_camera_zoom(1.0)
+	queue_redraw()
+
+# Magnitude is measured against the unzoomed brick so the shake keeps its screen
+# amplitude while the camera is pulled back.
+func shake(duration_ms: int, magnitude_units: float) -> void:
+	var duration: float = maxf(0.0, float(duration_ms) / 1000.0)
+
+	if duration <= 0.0 or magnitude_units <= 0.0:
+		return
+
+	_shake_duration = duration
+	_shake_elapsed = 0.0
+	_shake_magnitude_px = magnitude_units * brick_unit_size
+
+func _impact_beat_zoom() -> float:
+	var tower_units: float = float(
+		maxi(maxi(current_height, target_height), 1) + top_indicator_clearance_units
+	)
+	var available_height: float = maxf(1.0, size.y - top_padding - bottom_padding)
+	var fit_zoom: float = (available_height / brick_unit_size) / tower_units
+
+	return clampf(fit_zoom, visual_hooks.impact_beat_min_zoom, 1.0)
+
+func _set_camera_zoom(value: float) -> void:
+	var resolved: float = clampf(value, MIN_CAMERA_ZOOM, 1.0)
+
+	if is_equal_approx(resolved, _camera_zoom):
+		return
+
+	_camera_zoom = resolved
+	camera_zoom_changed.emit(_camera_zoom)
+	_update_scroll_offset()
+
+func _beat_ease(t: float) -> float:
+	var clamped: float = clampf(t, 0.0, 1.0)
+
+	return clamped * clamped * (3.0 - 2.0 * clamped)
+
+func _step_impact_beat(delta: float) -> void:
+	if visual_hooks == null:
+		cancel_impact_beat()
+		return
+
+	_beat_elapsed += delta
+
+	if _beat_phase == BEAT_ZOOM_OUT:
+		var zoom_out_seconds: float = maxf(0.001, float(visual_hooks.impact_beat_zoom_out_ms) / 1000.0)
+		var zoom_out_t: float = clampf(_beat_elapsed / zoom_out_seconds, 0.0, 1.0)
+
+		_set_camera_zoom(lerpf(_beat_zoom_from, _beat_zoom_target, _beat_ease(zoom_out_t)))
+
+		if zoom_out_t >= 1.0:
+			_beat_phase = BEAT_WAVE
+			_beat_elapsed = 0.0
+	elif _beat_phase == BEAT_WAVE:
+		var wave_seconds: float = maxf(0.001, float(visual_hooks.impact_beat_wave_ms) / 1000.0)
+		var wave_t: float = clampf(_beat_elapsed / wave_seconds, 0.0, 1.0)
+
+		_wave_progress = wave_t * (_wave_span_units + WAVE_POP_BAND_UNITS)
+
+		if wave_t >= 1.0:
+			_beat_phase = BEAT_HOLD
+			_beat_elapsed = 0.0
+	elif _beat_phase == BEAT_HOLD:
+		if _beat_elapsed >= float(visual_hooks.impact_beat_hold_ms) / 1000.0:
+			_beat_phase = BEAT_ZOOM_IN
+			_beat_elapsed = 0.0
+			_beat_zoom_from = _camera_zoom
+	elif _beat_phase == BEAT_ZOOM_IN:
+		var zoom_in_seconds: float = maxf(0.001, float(visual_hooks.impact_beat_zoom_in_ms) / 1000.0)
+		var zoom_in_t: float = clampf(_beat_elapsed / zoom_in_seconds, 0.0, 1.0)
+
+		_set_camera_zoom(lerpf(_beat_zoom_from, 1.0, _beat_ease(zoom_in_t)))
+
+		if zoom_in_t >= 1.0:
+			_beat_phase = BEAT_NONE
+			_beat_elapsed = 0.0
+			_wave_progress = -1.0
+			_verdict_by_player = {}
+
+func _step_shake(delta: float) -> void:
+	_shake_elapsed += delta
+
+	if _shake_elapsed >= _shake_duration:
+		_shake_duration = 0.0
+		_shake_elapsed = 0.0
+		_shake_offset = Vector2.ZERO
+		return
+
+	var decay: float = 1.0 - (_shake_elapsed / _shake_duration)
+	var amplitude: float = _shake_magnitude_px * decay * decay
+
+	_shake_offset = Vector2(
+		randf_range(-amplitude, amplitude), randf_range(-amplitude, amplitude)
+	)
 
 # Expressed in brick units rather than pixels so the lift that keeps the finger
 # off the brick scales with brick_unit_size instead of drifting out of
@@ -328,6 +485,14 @@ func _process(delta: float) -> void:
 			_collapse_phase = COLLAPSE_SETTLED
 		needs_redraw = true
 
+	if _beat_phase != BEAT_NONE:
+		_step_impact_beat(delta)
+		needs_redraw = true
+
+	if _shake_duration > 0.0:
+		_step_shake(delta)
+		needs_redraw = true
+
 	if needs_redraw:
 		queue_redraw()
 
@@ -343,6 +508,7 @@ func clear_tower() -> void:
 	_drop_anim_id = ""
 	tower_collapsed = false
 	_reset_collapse()
+	cancel_impact_beat()
 	_update_scroll_offset()
 	queue_redraw()
 
@@ -492,7 +658,7 @@ func _draw_debris(unit: float) -> void:
 
 	for piece_value in _collapse_sim.pieces:
 		var piece: Dictionary = piece_value
-		var screen_pos: Vector2 = piece.pos + Vector2(0.0, scroll_px)
+		var screen_pos: Vector2 = piece.pos + Vector2(0.0, scroll_px) + _shake_offset
 		var radius: float = float(piece.half_extent) * 1.5
 
 		if !_is_rect_visible(
@@ -538,8 +704,8 @@ func _update_scroll_offset() -> void:
 
 func _draw() -> void:
 	var unit: float = _unit_size()
-	var base_x: float = size.x * 0.5
-	var baseline: float = size.y - bottom_padding
+	var base_x: float = size.x * 0.5 + _shake_offset.x
+	var baseline: float = size.y - bottom_padding + _shake_offset.y
 
 	if _collapse_phase == COLLAPSE_FALL or _collapse_phase == COLLAPSE_SETTLED:
 		_draw_debris(unit)
@@ -624,20 +790,32 @@ func _draw_block_emoji(
 	if cells.is_empty():
 		return
 
-	# No face at all rather than a neutral one when the server sent no delta (a
-	# pre-emoji build or a room hydrated from an older snapshot). A neutral face
-	# is indistinguishable from a real "barely moved" verdict, which makes a
-	# missing field look like a working feature that ignores its own tuning.
-	if not entry.has(BlockDataScript.BALANCE_DELTA_KEY):
-		return
+	var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+	var brick_top_units: float = float(origin_y + int(bounds.max_y) + 1)
+	var verdict_mood: String = _verdict_mood_for(entry, brick_top_units)
+	var mood: String = verdict_mood
 
-	var mood: String = BlockDataScript.emoji_mood_for_delta(
-		int(entry.get(BlockDataScript.BALANCE_DELTA_KEY, 0)), mood_threshold
-	)
+	if mood == "":
+		# No face at all rather than a neutral one when the server sent no delta (a
+		# pre-emoji build or a room hydrated from an older snapshot). A neutral face
+		# is indistinguishable from a real "barely moved" verdict, which makes a
+		# missing field look like a working feature that ignores its own tuning.
+		if not entry.has(BlockDataScript.BALANCE_DELTA_KEY):
+			return
+
+		mood = BlockDataScript.emoji_mood_for_delta(
+			int(entry.get(BlockDataScript.BALANCE_DELTA_KEY, 0)), mood_threshold
+		)
+
 	var texture: Texture2D = BlockDataScript.emoji_texture(mood)
 
 	if texture == null:
 		return
+
+	var pop_scale: float = 1.0
+
+	if verdict_mood != "":
+		pop_scale += WAVE_POP_SCALE * _wave_pop_factor(brick_top_units)
 
 	var anchor: Vector2 = BlockDataScript.emoji_anchor(cells)
 	var center: Vector2 = _lattice_to_local(
@@ -647,9 +825,38 @@ func _draw_block_emoji(
 		baseline,
 		scroll_offset_units
 	) - pivot
-	var box_size: Vector2 = Vector2.ONE * unit * emoji_unit_scale
+	var box_size: Vector2 = Vector2.ONE * unit * emoji_unit_scale * pop_scale
 
 	draw_texture_rect(texture, Rect2(center - box_size * 0.5, box_size), false)
+
+# Empty string means "no verdict yet" -- the wave is inactive, has not reached
+# this brick, or the brick's placer has no Impact status this level, and the
+# brick keeps its own balance-delta face.
+func _verdict_mood_for(entry: Dictionary, brick_top_units: float) -> String:
+	if _wave_progress < 0.0 or _verdict_by_player.is_empty():
+		return ""
+
+	if brick_top_units > _wave_progress:
+		return ""
+
+	var player_id: String = str(entry.get("playerId", entry.get("player_id", "")))
+
+	if !_verdict_by_player.has(player_id):
+		return ""
+
+	return (
+		VERDICT_POSITIVE
+		if str(_verdict_by_player[player_id]) == VERDICT_POSITIVE
+		else VERDICT_NEGATIVE
+	)
+
+func _wave_pop_factor(brick_top_units: float) -> float:
+	var distance: float = _wave_progress - brick_top_units
+
+	if distance < 0.0 or distance > WAVE_POP_BAND_UNITS:
+		return 0.0
+
+	return sin((1.0 - distance / WAVE_POP_BAND_UNITS) * PI)
 
 # Computes the on-screen box for a footprint resting at (origin_x, origin_y)
 # in grid units -- shared by the main render loop and the snap-point overlay
@@ -853,7 +1060,7 @@ func _draw_fallback_stack() -> void:
 		draw_rect(rect, GRID_COLOR, false, 1.0)
 
 func _unit_size() -> float:
-	return brick_unit_size
+	return brick_unit_size * _camera_zoom
 
 func _scroll_offset_units(unit: float) -> int:
 	var visible_units: int = _visible_unit_capacity(unit)

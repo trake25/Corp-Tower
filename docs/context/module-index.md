@@ -73,5 +73,6 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | [build.md](./build.md) | Android/HTML5 build workflows, private R2 art pipeline |
 | [testing.md](./testing.md) | Server/client tests, balance simulator, CI gates, coverage gaps |
 | [decisions.md](./decisions.md) | Why things are built the way they are; rejected alternatives; known gaps |
-| [coding-conventions.md](./coding-conventions.md) | Patterns for writing code/docs; the doc-maintenance workflow |
+| [coding-conventions.md](./coding-conventions.md) | Patterns for writing code and docs |
+| [doc-maintenance.md](./doc-maintenance.md) | The `/update-docs` procedure, retention test, budgets — loaded only when editing docs |
 | [glossary.md](./glossary.md) | Project-specific terms and renamed systems |

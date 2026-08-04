@@ -62,6 +62,7 @@ class GameEngine {
             placeableColumnMin: placeableColumns.min,
             placeableColumnMax: placeableColumns.max,
             accessibility: { ...(GameConfig.accessibility || {}) },
+            visualHooks: { ...(GameConfig.visualHooks || {}) },
             towerStability: this.room.towerStability ?? 100,
             towerStabilityDiagnostics: this.room.towerStabilityDiagnostics || {},
             sideQuest: this.room.sideQuest || null,
