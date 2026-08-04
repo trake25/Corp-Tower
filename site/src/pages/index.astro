@@ -66,21 +66,43 @@ const rendered = await Promise.all(
         quality and cost efficiency are what I bring.
       </h1>
       <p class="lede">
-        <strong>{profile.project} ({profile.projectShort})</strong> is a real-time,
-        server-authoritative multiplayer game, currently in development. It's a
-        selfish-cooperative social game: players have to cooperate to build a tower and
-        complete each level, while still trying to outscore one another. The demo runs in
-        the browser today, with an Android build in an internal testing track and more
-        platforms to follow. I design, orchestrate, build, quality-assure and run it end to
-        end: the servers and infrastructure it runs on, the game logic, the UI integration
-        into the client, and the pipeline that ships all of it. Coding agents do a lot of
-        the implementing; I hold the requirement, the review and the sign-off.
+        <strong>{profile.project} ({profile.projectShort})</strong> is a real-time
+        multiplayer game where three players cooperate to build a tower — and still
+        compete to outscore each other. I design, build, quality-assure and operate all of
+        it: the game, the servers under it, and the pipeline that ships it.
       </p>
-      <p class="lede">
-        Underneath: a Godot client, a Node.js server, and three deployment targets built from one container image — EKS for
-        production-grade infrastructure, a K3s box as the lab, and a machine at home as the
-        cost-efficient development target.
-      </p>
+
+      <dl class="facts">
+        <div>
+          <dt>Stack</dt>
+          <dd>Godot client, server-authoritative Node.js and Redis backend.</dd>
+        </div>
+        <div>
+          <dt>Playable</dt>
+          <dd>In the browser today. Android build in an internal testing track.</dd>
+        </div>
+        <div>
+          <dt>Deploys</dt>
+          <dd>
+            One container image, three targets: EKS for production-grade, K3s as the lab,
+            a machine at home as the cheap dev target.
+          </dd>
+        </div>
+        <div>
+          <dt>Agents</dt>
+          <dd>They do the implementing. I hold the requirement, the review and the sign-off.</dd>
+        </div>
+      </dl>
+
+      <div class="ctas">
+        <a class="cta primary" href={profile.demo} target="_blank" rel="noopener noreferrer">
+          Play the demo
+        </a>
+        <a class="cta secondary" href={profile.repo} target="_blank" rel="noopener noreferrer">
+          Read the source
+        </a>
+        <a class="cta ghost" href="#skills">Skip to the skills</a>
+      </div>
 
       <p class="stack-line">
         Claude · Codex · Cursor · Git / GitHub · Linux · Terraform ·
@@ -88,21 +110,14 @@ const rendered = await Promise.all(
         Node.js · Redis · Godot / GDScript · Ansible · Google (Cloud / Play / APIs)
       </p>
 
-      <div class="ctas">
-        <a class="cta primary" href={profile.demo} target="_blank" rel="noopener noreferrer">
-          Play Demo
-        </a>
-        <a class="cta secondary" href={profile.repo} target="_blank" rel="noopener noreferrer">
-          Read the source
-        </a>
-        <a class="cta ghost" href="#skills">Skip to the skills</a>
-      </div>
-      <p class="disclosure">
-        The demo fills empty seats with bots so a lone visitor still gets a full round —
-        the real game is three human players. It is served from the development
-        environment to keep costs down, so expect higher latency than the production stack
-        would give you. The game is still in development, and things will change.
-      </p>
+      <details class="demo-notes">
+        <summary>Before you play: three things to know</summary>
+        <ul>
+          <li>Bots fill empty seats, so one visitor still gets a full round. The real game is three humans.</li>
+          <li>It runs from the dev environment to keep costs down, so latency is higher than production.</li>
+          <li>Still in development. Things will change.</li>
+        </ul>
+      </details>
     </section>
 
     <section id="skills" aria-labelledby="skills-heading">
@@ -110,8 +125,8 @@ const rendered = await Promise.all(
         <span class="section-index">01</span> Skills highlights
       </h2>
       <p class="section-intro">
-        Check how skills were demonstrated by opening a card. Inside, click any step in
-        the diagram to jump straight to what that part of the flow actually does.
+        Open a card for the proof. Inside, click any step in the diagram to jump straight
+        to the code that runs it.
       </p>
 
       <CardFilter roles={roles} total={cardEntries.length} />
@@ -145,24 +160,23 @@ const rendered = await Promise.all(
         <article class="service">
           <h3>Cloud &amp; platform engineering</h3>
           <p>
-            Terraform roots, Kubernetes on EC2 or EKS, private networking, TLS and DNS,
-            cost bounded by design rather than by an alert that arrives a day late.
+            Terraform-managed Kubernetes on EC2 or EKS, private networking, TLS and DNS.
+            Cost bounded by design, not by an alert that arrives a day late.
           </p>
         </article>
         <article class="service">
           <h3>Delivery automation &amp; guardrails</h3>
           <p>
-            Release pipelines that verify their own output, drift checks that fail before
-            a build starts, and destructive operations that require a typed confirmation
-            naming the exact target.
+            Pipelines that verify their own output, drift checks that fail before a build
+            starts, and destructive operations that demand a typed confirmation.
           </p>
         </article>
         <article class="service">
           <h3>AI-assisted delivery, done properly</h3>
           <p>
-            Agents in the implementer's seat with written acceptance criteria, a rejection
-            path, and CI gates cleared before a human looks. Plus the retrieval layer that
-            lets an agent work in your codebase without re-reading it every session.
+            Agents implementing against written acceptance criteria, with a rejection path
+            and CI gates cleared before a human looks — plus the retrieval layer that keeps
+            them oriented in your codebase.
           </p>
         </article>
       </div>
@@ -170,12 +184,11 @@ const rendered = await Promise.all(
       <div class="how-i-work">
         <h3>How I work with coding agents</h3>
         <p>
-          I treat an agent the way an organisation treats a contractor: the requirement is
-          written down first, the work is tested against it, and it comes back with
-          specifics until nothing is outstanding. Every language in this repository is one
-          I read fluently — Node.js on the server, GDScript in the client — because when
-          the agent stalls, the work has to continue. That's a deliberate constraint, not
-          an accident of what was fastest to generate.
+          I brief an agent the way you'd brief a contractor: requirement written down
+          first, work tested against it, sent back with specifics until nothing is
+          outstanding. I read every language in this repository fluently — Node.js on the
+          server, GDScript in the client — because when the agent stalls, the work still
+          has to move.
         </p>
       </div>
     </section>
@@ -214,8 +227,8 @@ const rendered = await Promise.all(
       </nav>
     </div>
     <p class="footer-note">
-      Every claim on this page links to the file, workflow or test that backs it. The
-      repository still carries the project's working name, Corp&nbsp;Tower.
+      Every claim here links to the file, workflow or test behind it. The repository still
+      carries the project's working name, Corp&nbsp;Tower.
     </p>
     <p class="footer-meta">
       © {year} {profile.name} · Static Astro build, redeployed to Cloudflare Workers on
@@ -223,3 +236,61 @@ const rendered = await Promise.all(
     </p>
   </footer>
 </BaseLayout>
+
+<style>
+  /* Hero spec list: replaces two long prose paragraphs with scannable rows. */
+  .facts {
+    margin: 1.5rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+    max-width: 62ch;
+  }
+
+  .facts > div {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 1rem;
+    align-items: baseline;
+  }
+
+  .facts dt {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  .facts dd {
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 34rem) {
+    .facts > div {
+      grid-template-columns: 1fr;
+      gap: 0.15rem;
+    }
+  }
+
+  /* Demo caveats: present for anyone who wants them, silent for everyone else. */
+  .demo-notes {
+    margin-top: 1.75rem;
+    max-width: 62ch;
+    font-size: 0.9rem;
+    opacity: 0.75;
+  }
+
+  .demo-notes summary {
+    cursor: pointer;
+    width: fit-content;
+  }
+
+  .demo-notes ul {
+    margin: 0.6rem 0 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.35rem;
+  }
+</style>
