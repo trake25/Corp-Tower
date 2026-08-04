@@ -128,9 +128,10 @@ const GameConfig = {
     scoring: {
         placementScorePerHeight: 10,
         placementStabilityFloor: 0.5,
-        reinforceScorePerIntegrity: 1,
+        reinforceScorePerIntegrity: 2,
         reinforceScorePerLean: 20,
         reinforceScorePerSupportedCell: 5,
+        reinforceScoreCapShare: 1,
         finisherBonusPerLevel: 0,
         precisionBonusPerLevel: 20,
         teamExactBonusPerLevel: 15,

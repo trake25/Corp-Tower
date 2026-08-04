@@ -370,9 +370,14 @@ test("reinforce pays for widening a slender tower's base", () => {
         player, before, { integrity: 60, tiltScore: 0.3 }
     );
 
-    // +20 integrity x 1 and +0.5 lean correction x 20, at level 1
-    assert.equal(gained, 30);
-    assert.equal(player.scoreBreakdown.reinforce, 30);
+    // +20 integrity x 1 and +0.5 lean correction x 20 is 30 raw, held to the
+    // repair ceiling: one average brick's height claim at this level.
+    const cap = Math.round(
+        engine.getAverageBrickHeight() * GameConfig.scoring.placementScorePerHeight
+    );
+
+    assert.equal(gained, cap);
+    assert.equal(player.scoreBreakdown.reinforce, cap);
 
     // a placement that makes the tower worse pays nothing
     assert.equal(
@@ -943,7 +948,7 @@ test("stacking on top of the tower supports nothing and pays no repair", () => {
     );
 });
 
-test("placement legality rejects overlaps, floaters and underground rows", () => {
+test("placement legality only judges the release row, not its support", () => {
     const tower = [
         { block: createFlatBlock(2, "A"), originX: 4, originY: 0 }
     ];
@@ -952,12 +957,56 @@ test("placement legality rejects overlaps, floaters and underground rows", () =>
     assert.equal(TowerStability.isPlacementLegal(tower, brick, 6, 0), true);
     assert.equal(TowerStability.isPlacementLegal(tower, brick, 4, 1), true);
     assert.equal(
-        TowerStability.isPlacementLegal(tower, brick, 6, 1), true,
-        "corner contact is attached enough -- stability charges for it, legality allows it"
+        TowerStability.isPlacementLegal(tower, brick, 9, 4), true,
+        "releasing into open air is legal -- gravity decides where it ends up"
     );
     assert.equal(TowerStability.isPlacementLegal(tower, brick, 4, 0), false);
-    assert.equal(TowerStability.isPlacementLegal(tower, brick, 9, 4), false);
     assert.equal(TowerStability.isPlacementLegal(tower, brick, 4, -1), false);
+});
+
+test("a brick released with nothing under it falls", () => {
+    useFixedGrid();
+    const { engine } = createPlayingEngine(1, 12);
+
+    buildTowerWithVoid(engine);
+    // Column 7 is empty ground; aiming four rows up in mid-air is legal, and the
+    // brick drops out of the sky rather than hanging there.
+    engine.placeBlock("P1", 0, 7, 4);
+
+    const placed = engine.room.towerBlocks[engine.room.towerBlocks.length - 1];
+
+    assert.equal(placed.originX, 7);
+    assert.equal(placed.originY, 0, "nothing holds it up, so it lands on the platform");
+});
+
+test("a repair can never out-earn an average height claim", () => {
+    const { engine } = createPlayingEngine(3, 40);
+    const player = engine.room.players[0];
+
+    GameConfig.scoring.reinforceScoreCapShare = 1;
+
+    const cap = Math.round(
+        engine.getAverageBrickHeight()
+            * GameConfig.scoring.placementScorePerHeight
+            * engine.room.level
+    );
+    const huge = engine.addReinforceScore(
+        player, { integrity: 0, tiltScore: 1.5 }, { integrity: 100, tiltScore: 0 }
+    );
+
+    assert.equal(huge, cap, "the ceiling scales with the level exactly as a claim does");
+
+    // Under the ceiling the terms still pay their raw sum, so ordinary repairs
+    // stay proportional to how much they actually fixed.
+    GameConfig.scoring.reinforceScorePerIntegrity = 2;
+    GameConfig.scoring.reinforceScorePerLean = 0;
+
+    const small = engine.addReinforceScore(
+        player, { integrity: 90, tiltScore: 0 }, { integrity: 93, tiltScore: 0 }
+    );
+
+    assert.equal(small, 18, "+3 integrity x 2 per point x level 3");
+    assert.ok(small < cap);
 });
 
 test("game state carries the room's accessibility options", () => {

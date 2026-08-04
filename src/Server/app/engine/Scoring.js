@@ -159,6 +159,25 @@ function addPlacementScore(engine, player, block, effectiveHeight, stabilityBefo
     return points;
 }
 
+// Repair and height are the two ways to earn, so they are priced against each
+// other rather than independently: one placement's repair can pay at most
+// `reinforceScoreCapShare` of what an average brick's height claim pays at this
+// level. At 1.0 a maximal repair equals an average claim -- worth choosing when
+// the tower is hurt, never worth farming, and it re-prices itself automatically
+// when the brick mix or placementScorePerHeight is retuned.
+function getReinforceScoreCap(engine) {
+    const share = Math.max(0, Number(GameConfig.scoring.reinforceScoreCapShare) || 0);
+
+    if (share <= 0) {
+        return Infinity;
+    }
+
+    const averageHeight = Math.max(1, Number(engine.getAverageBrickHeight()) || 1);
+    const scorePerHeight = Number(GameConfig.scoring.placementScorePerHeight) || 0;
+
+    return Math.round(share * averageHeight * scorePerHeight * engine.room.level);
+}
+
 function addReinforceScore(engine, player, before, after, supportedCells = 0) {
     const integrityGain = Math.max(
         0,
@@ -175,11 +194,14 @@ function addReinforceScore(engine, player, before, after, supportedCells = 0) {
     const perLean = Number(GameConfig.scoring.reinforceScorePerLean) || 0;
     const perSupportedCell =
         Number(GameConfig.scoring.reinforceScorePerSupportedCell) || 0;
-    const points = Math.round(
-        (integrityGain * perIntegrity +
-            leanGain * perLean +
-            repairedCells * perSupportedCell) *
-            engine.room.level
+    const points = Math.min(
+        getReinforceScoreCap(engine),
+        Math.round(
+            (integrityGain * perIntegrity +
+                leanGain * perLean +
+                repairedCells * perSupportedCell) *
+                engine.room.level
+        )
     );
 
     if (points <= 0) {

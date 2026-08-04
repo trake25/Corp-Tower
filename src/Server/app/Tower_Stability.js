@@ -19,11 +19,18 @@ function topHeight(entries) {
 
 function cellsForEntries(entries) { return entries.flatMap(cellsFor); }
 
-function settleBlock(entries, block, originX) {
+// Gravity. `fromY` is where the brick is released: omitted it spawns above the
+// tower and falls the whole way (a bot's column-only placement), given an aimed
+// row it falls from there instead -- which is what lets a brick be threaded into
+// a gap without letting it hang in mid-air once it is there.
+function settleBlock(entries, block, originX, fromY = null) {
     const cells = (block.cells || []).map(cell => ({ x: Number(cell[0]), y: Number(cell[1]) }));
     const anchoredX = Math.round(Number(originX) || 0);
     const occupied = new Set(cellsForEntries(entries).map(cell => key(cell.x, cell.y)));
-    let originY = topHeight(entries) + 8;
+    const released = fromY === null || fromY === undefined ? NaN : Number(fromY);
+    let originY = Number.isFinite(released)
+        ? Math.max(0, Math.round(released))
+        : topHeight(entries) + 8;
     const collides = y => cells.some(cell => occupied.has(key(cell.x + anchoredX, cell.y + y)));
     while (originY > 0 && !collides(originY - 1)) originY -= 1;
     return { originX: anchoredX, originY };
@@ -36,13 +43,10 @@ function blockCells(block) {
     }));
 }
 
-// The rule a client-chosen origin has to satisfy: on or above the platform, not
-// overlapping anything already placed, and attached to the platform or to some
-// existing cell. Corner contact counts -- the client's snap points are brick
-// outline vertices, so a diagonal attachment is exactly what a legal snap
-// produces. Nothing here judges whether the placement is *wise*; a brick hanging
-// off a corner is legal and gets charged for it by evaluate()'s support deficit
-// and overhang terms instead.
+// The rule a client-chosen release row has to satisfy: on or above the platform
+// and not inside anything already placed. Support is deliberately *not* checked
+// here -- an unsupported brick is not rejected, it falls (see settleBlock), so
+// aiming into thin air is a wasted placement rather than an illegal one.
 function isPlacementLegal(entries, block, originX, originY) {
     const cells = blockCells(block);
 
@@ -55,31 +59,8 @@ function isPlacementLegal(entries, block, originX, originY) {
     }
 
     const occupied = new Set(cellsForEntries(entries).map(cell => key(cell.x, cell.y)));
-    const placed = cells.map(cell => ({ x: cell.x + originX, y: cell.y + originY }));
 
-    if (placed.some(cell => occupied.has(key(cell.x, cell.y)))) {
-        return false;
-    }
-
-    return placed.some(cell => {
-        if (cell.y === 0) {
-            return true;
-        }
-
-        for (let dx = -1; dx <= 1; dx += 1) {
-            for (let dy = -1; dy <= 1; dy += 1) {
-                if (dx === 0 && dy === 0) {
-                    continue;
-                }
-
-                if (occupied.has(key(cell.x + dx, cell.y + dy))) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    });
+    return !cells.some(cell => occupied.has(key(cell.x + originX, cell.y + originY)));
 }
 
 // Cells of the standing tower that were hanging with nothing beneath them and

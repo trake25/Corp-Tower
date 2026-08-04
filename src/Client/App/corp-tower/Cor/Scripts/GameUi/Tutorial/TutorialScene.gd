@@ -133,10 +133,11 @@ func push_state() -> void:
 		chat.quick_chat_templates = quick_chat_templates
 		chat.quick_chat_cooldown_ms = quick_chat_cooldown_ms
 
-# Mirrors the live placement path: honour the aimed row when the client resolved
-# a snap (and it is still legal), otherwise settle it with the same SnapGrid
-# mirror the server uses, append the entry, refill the emptied slot from the
-# queued pool (as the server would deal a new card), and re-push state.
+# Mirrors the live placement path: release the brick at the aimed row when the
+# client resolved a snap (and it is still legal), otherwise above the tower, then
+# let the same SnapGrid gravity mirror the server uses decide where it comes to
+# rest, append the entry, refill the emptied slot from the queued pool (as the
+# server would deal a new card), and re-push state.
 func apply_placement(index: int, column: int, requested_origin_y: int = -1) -> Dictionary:
 	if index < 0 or index >= hand.size():
 		return {"column": column}
@@ -152,12 +153,16 @@ func apply_placement(index: int, column: int, requested_origin_y: int = -1) -> D
 	if resolved_column < placeable_min or resolved_column > placeable_max:
 		resolved_column = placeable_min
 
-	var origin_y: int = SnapGridScript.settle_origin_y(tower_blocks, cells, resolved_column)
+	var release_y: int = -1
 
 	if requested_origin_y >= 0 and SnapGridScript.is_placement_legal(
 		tower_blocks, cells, resolved_column, requested_origin_y
 	):
-		origin_y = requested_origin_y
+		release_y = requested_origin_y
+
+	var origin_y: int = SnapGridScript.settle_origin_y(
+		tower_blocks, cells, resolved_column, release_y
+	)
 	var balance_delta: int = int(block.get("scriptedBalanceDelta", 0))
 
 	# TowerStack's visible lean comes entirely from diagnostics.tiltAngleDeg --

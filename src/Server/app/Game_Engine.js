@@ -628,14 +628,15 @@ class GameEngine {
         return Math.max(min, Math.min(max, Math.round(requested)));
     }
 
-    // A client that resolved a snap sends the exact row it aimed at, so the brick
-    // lands in a gap instead of spawning above the tower and falling to the first
-    // thing it meets. Anything else -- a bot, an unsnapped drag, or an origin that
-    // stopped being legal while the packet was in flight (a teammate can fill the
-    // target gap first) -- falls back to the gravity settle, so a placement is
-    // never lost to the race.
+    // A client that resolved a snap sends the row it aimed at, and the brick is
+    // *released* there rather than above the tower -- so it can be threaded into
+    // a gap, and falls from that row if nothing holds it up. Anything else -- a
+    // bot, an unsnapped drag, or a row that stopped being legal while the packet
+    // was in flight (a teammate can fill the target gap first) -- is released
+    // above the tower as before, so a placement is never lost to the race.
     resolvePlacementOrigin(block, column, originY) {
         const originX = this.resolveColumnOriginX(block, column);
+        const entries = this.room.towerBlocks || [];
         // Number(null) is 0, which would read "no aimed row" as "aim at the
         // platform" and quietly thread every bot's brick into the lowest gap it
         // fits. Absent has to be checked before the numeric coercion.
@@ -643,14 +644,12 @@ class GameEngine {
             originY === null || originY === undefined ? NaN : Number(originY);
 
         if (Number.isInteger(requested) && requested >= 0) {
-            if (TowerStability.isPlacementLegal(
-                this.room.towerBlocks || [], block, originX, requested
-            )) {
-                return { originX, originY: requested };
+            if (TowerStability.isPlacementLegal(entries, block, originX, requested)) {
+                return TowerStability.settleBlock(entries, block, originX, requested);
             }
         }
 
-        return TowerStability.settleBlock(this.room.towerBlocks || [], block, originX);
+        return TowerStability.settleBlock(entries, block, originX);
     }
 
     placeBlock(playerId, blockIndex, column = null, originY = null) {

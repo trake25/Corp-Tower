@@ -87,25 +87,33 @@ func test_tower_snap_points_exclude_unplaceable_columns() -> void:
 			point.x, 4, 10, "No snap point may sit outside the placeable boundary span."
 		)
 
-func test_resolve_lands_the_brick_exactly_where_its_corner_snapped() -> void:
+func test_resolve_drops_a_brick_aimed_at_an_unsupported_corner() -> void:
 	var tower: Array = [entry(O_CELLS, 4, 0)]
 	var ghost_center := Vector2(7.0, 3.0)
 	var snap: Dictionary = SnapGridScript.resolve(tower, O_CELLS, ghost_center, 2.2)
 
 	assert_true(snap.valid, "A dragged brick with cells always resolves.")
 	assert_true(snap.snapped, "A ghost within the snap radius of a brick corner must snap.")
-	assert_true(snap.exact, "A snapped resolution places at the aimed origin, not by gravity.")
 	assert_eq(
 		snap.column, 6,
 		"Pairing the ghost's lower-left vertex with the stack's top-right corner yields column 6."
 	)
 	assert_eq(
-		snap.origin_y, 2,
-		"The brick stays at the row it snapped to instead of falling to the empty platform below."
+		snap.origin_y, 0,
+		"Column 6 is empty under the aim, so gravity takes the brick down to the platform."
 	)
 	assert_eq(
-		snap.target_point, Vector2i(6, 2),
-		"The highlighted point is the corner the brick actually docked against."
+		snap.target_point, Vector2i(6, 0),
+		"The highlight follows the brick down to the corner it really docks against."
+	)
+
+func test_resolve_keeps_a_supported_aim_where_it_was_aimed() -> void:
+	var tower: Array = [entry(O_CELLS, 4, 0), entry(O_CELLS, 6, 0)]
+	var snap: Dictionary = SnapGridScript.resolve(tower, O_CELLS, Vector2(7.0, 3.0), 2.2)
+
+	assert_eq(snap.column, 6, "The aim still resolves to column 6.")
+	assert_eq(
+		snap.origin_y, 2, "With a brick underneath it now, the same aim stays up at row 2."
 	)
 
 func test_resolve_always_pairs_the_matched_vertex_with_the_target_point() -> void:
@@ -118,7 +126,26 @@ func test_resolve_always_pairs_the_matched_vertex_with_the_target_point() -> voi
 	assert_true(snap.snapped, "A generous snap radius must lock on.")
 	assert_eq(
 		landed_vertex, snap.target_point,
-		"The highlighted point must be the point the placed brick's own corner reaches."
+		"The highlighted point must be the point the fallen brick's own corner reaches."
+	)
+
+func test_settle_origin_y_falls_from_the_row_it_was_released_at() -> void:
+	# A lid at row 2 with a void beneath it at rows 0-1 in column 5.
+	var tower: Array = [
+		entry([[0, 0], [0, 1]], 4, 0),
+		entry([[0, 0], [0, 1]], 6, 0),
+		entry([[0, 0], [1, 0], [2, 0]], 4, 2)
+	]
+
+	assert_eq(
+		SnapGridScript.settle_origin_y(tower, [[0, 0]], 5),
+		3,
+		"Released above the tower the brick can only ever land on the lid."
+	)
+	assert_eq(
+		SnapGridScript.settle_origin_y(tower, [[0, 0]], 5, 1),
+		0,
+		"Released inside the void it falls to the platform rather than hanging at row 1."
 	)
 
 func test_resolve_fills_a_gap_under_an_overhang() -> void:
@@ -146,7 +173,7 @@ func test_resolve_skips_an_overlapping_pairing_for_the_next_legal_one() -> void:
 		"A resolution may never drop the brick on top of a cell that is already occupied."
 	)
 
-func test_is_placement_legal_accepts_ground_stacked_and_corner_contact() -> void:
+func test_is_placement_legal_only_judges_the_release_row() -> void:
 	var tower: Array = [entry(O_CELLS, 4, 0)]
 
 	assert_true(
@@ -158,11 +185,11 @@ func test_is_placement_legal_accepts_ground_stacked_and_corner_contact() -> void
 		"A brick stacked squarely on the tower is legal."
 	)
 	assert_true(
-		SnapGridScript.is_placement_legal(tower, O_CELLS, 6, 2),
-		"Corner contact counts as attached -- stability charges for it, legality does not block it."
+		SnapGridScript.is_placement_legal(tower, O_CELLS, 8, 4),
+		"Releasing into open air is legal -- gravity, not the rule, decides where it ends up."
 	)
 
-func test_is_placement_legal_rejects_overlaps_floaters_and_underground() -> void:
+func test_is_placement_legal_rejects_overlaps_and_underground_rows() -> void:
 	var tower: Array = [entry(O_CELLS, 4, 0)]
 
 	assert_false(
@@ -170,12 +197,8 @@ func test_is_placement_legal_rejects_overlaps_floaters_and_underground() -> void
 		"A footprint overlapping a placed cell is never legal."
 	)
 	assert_false(
-		SnapGridScript.is_placement_legal(tower, O_CELLS, 8, 4),
-		"A brick touching nothing at all would hang in mid-air."
-	)
-	assert_false(
 		SnapGridScript.is_placement_legal(tower, O_CELLS, 4, -1),
-		"Nothing may be placed below the platform."
+		"Nothing may be released below the platform."
 	)
 
 func test_resolve_falls_back_to_the_nearest_column_beyond_the_snap_radius() -> void:
