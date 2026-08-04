@@ -12,7 +12,7 @@ Source of truth for game design: rules, scoring, balance, progression. Technical
 
 ## Core game loop
 
-Queue 3 players → assign bricks → start after `startDelayMs` → players place in real time (order = input timing; each placement refills that player's hand from the shared pile and starts their `placementCooldown`) → level ends on target height or a failure condition → score, bank, carry unused bricks forward, advance. Placement itself: drag a brick from an inventory card onto the tower; its nearest corner snaps to the nearest snap point within the level's [placeable site](#placement-columns), and release sends the resolved column. First-time players are onboarded separately, offline, through the client-only Tutorial (coach-marks over the real HUD, no server involvement) → [ui.md § Tutorial](./ui.md#tutorial).
+Queue 3 players → assign bricks → start after `startDelayMs` → players place in real time (order = input timing; each placement refills that player's hand from the shared pile and starts their `placementCooldown`) → level ends on target height or a failure condition → score, bank, carry unused bricks forward, advance. Placement itself: drag a brick from an inventory card onto the tower; its nearest corner snaps to the nearest snap point within the level's [placeable site](#placement-columns), and release sends the resolved column and release row. An accessibility option ([ui.md](./ui.md#main-ui-controller)) swaps the drag for tap-select → tap-aim → tap-confirm. First-time players are onboarded separately, offline, through the client-only Tutorial (coach-marks over the real HUD, no server involvement) → [ui.md § Tutorial](./ui.md#tutorial).
 
 ## Reconnect and shared room continuity (design rule)
 
@@ -47,21 +47,22 @@ Opening-hand bricks fill slots directly without passing through the pile. On com
 
 ### Acquisition paths
 
-**Refresh is quest-only.** Two flags gate the other paths and both default **off**; flipping either on restores that path with no code change. With Impacts every level, the Impact-MVP path would grant a Refresh *every* level — which is why it is off rather than merely rare.
+**Replenish is quest-only.** Two flags gate the other paths and both default **off**; flipping either on restores that path with no code change. With Impacts every level, the Impact-MVP path would grant one *every* level — which is why it is off rather than merely rare.
 
 | Path | Gate | Grants |
 |---|---|---|
-| Side quest completion | always on | Refresh, to the first eligible player |
-| Guaranteed baseline | `powerGuaranteedBaseline` (**false**) | Refresh at every level start |
+| Side quest completion | always on | Replenish, to the first eligible player |
+| Guaranteed baseline | `powerGuaranteedBaseline` (**false**) | Replenish at every level start |
 | Impact-MVP reward | `powerImpactMvpReward` (**false**) | Random `active` catalog entry to the top scorer |
 
 ### Activation and effects
 
-Tap the Power icon → tap a held item. Instant, **no target selection**; every activation affects all players including the caster. `powerActivationCooldownMs` between activations, blocked in the final 3s of a level. A toast naming the effect is the only feedback. Each `powerCatalog` entry carries an `active` flag gating whether `awardImpactPower()` can grant it — only **Refresh** is active, the other two stay fully defined so re-enabling is a one-line flip ([decisions.md](./decisions.md#score-cap--copy-score-disabled-via-powercatalog-active-flag)).
+Tap the Power icon → tap a held item. Instant, **no target selection**; every activation affects all players including the caster. `powerActivationCooldownMs` between activations, blocked in the final 3s of a level. A toast naming the effect is the only feedback. Each `powerCatalog` entry carries an `active` flag gating whether `awardImpactPower()` can grant it — only **Replenish** is active, the other three stay fully defined so re-enabling is a one-line flip ([decisions.md](./decisions.md#inactive-powers-stay-defined-behind-the-powercatalog-active-flag)).
 
 | Effect | Category | What it does | Active |
 |---|---|---|---|
-| **Refresh** | Utility | Rerolls every player's hand. No token economy — activation *is* the effect. Bricks below size 3 reroll into size-3+ where possible; larger bricks keep size but reroll shape/orientation, targeting each player's remaining height | **Yes** |
+| **Replenish** | Utility | Adds `max(1, round(powerReplenishPileShare × the level's starting draw-pile size))` fresh bricks to the shared pile — so it scales with target height, site width and brick weights instead of being a flat number. Appended, never shuffled in, so the "Next Draw" preview all three players read stays put. **The only power that can rescue a level short on supply:** holding one defers the not-enough-height failure | **Yes** |
+| **Refresh** | Utility | Rerolls every player's hand. Bricks below size 3 reroll into size-3+ where possible; larger bricks keep size but reroll shape/orientation, targeting each player's remaining height | No |
 | **Score Cap** | Offensive | Sets every player's total to their own next Impact requirement, up or down | No |
 | **Copy Score** | Defensive | Sets every player's total to the caster's, updating their Impact baseline | No |
 
@@ -96,7 +97,7 @@ max = min + siteWidth − 1
 - **`towerSiteWidthMax` has a hard ceiling of 8 set by the viewport, not by taste** — only 8 grid columns are ever on screen, so a wider site places bricks the player can never see ([decisions.md](./decisions.md#buildable-site-width-scales-with-target-height)).
 - Placement is a **hard exclusion**: a brick's entire footprint must fit the site, with no overflow.
 - **Point-based snapping.** Snap points are the platform's column boundaries (`siteWidth + 1`) plus every true outline corner of every placed brick, so the tower grows its own docking targets. Each corner of the held brick is paired against each point and the closest valid pair wins; past `snap_radius_units` it falls back to nearest-column aiming so a drag over open sky still resolves.
-- **Snapping picks the column only — the brick still falls to first contact** and may cantilever (a `T` balancing on its stem is the intended stability hook). Bricks never hang in mid-air; the client previews the exact landing row by mirroring the server's settle. Drag feedback, the docked landing ghost, and the spawn/drop animation are client presentation → [ui.md § Leaf components](./ui.md#leaf-components).
+- **Snapping picks the whole origin, and the brick is *released* there rather than dropped from above the tower** — so a gap inside the tower is reachable. **Gravity still applies from that row down:** a brick aimed with nothing under it falls, so mis-aiming wastes a placement rather than hanging a brick in mid-air. Overhangs survive (a `T` balancing on its stem is the intended stability hook). The client previews where the brick comes to rest by mirroring the server's gravity. Drag feedback, the docked landing ghost, and the drop animation are client presentation → [ui.md § Leaf components](./ui.md#leaf-components).
 
 ### Tower stability (design view)
 
@@ -119,14 +120,14 @@ pressure           = (towerStabilityDifficulty / 100) × (floor + (1 − floor) 
 **`towerStabilityDifficulty` (0–100) is the only stability tunable.** `pressure` interpolates every constant above between the **forgiving** and **harsh** anchor sets in `towerStabilityAnchors`, so threat also ramps with level ([decisions.md](./decisions.md#tower-stability-is-one-derived-dial-scaled-by-level)). `0` leaves stability inert — score multiplier only, no collapse; the default **90** holds levels 1–5 to score pressure alone and makes collapse a genuine threat past level ~25.
 
 - **Maturity ramp.** Every penalty scales by `min(1, height / towerStabilityMinHeight)`, itself derived from pressure. Without it the opening brick is lethal — a single narrow brick on the ground is the worst site usage a tower can register.
-- **Repairability is asymmetric.** Widening the base or straightening a lean improves Integrity directly; support deficit only recovers by *dilution*, since bricks drop to first contact and a void can never be filled from above. This is what [Reinforce](#scoring-system) pays for.
+- **Every term is repairable at its source.** Widening the base or straightening a lean improves Integrity directly, and support deficit is fixable too: a brick released into a void puts the cells above it back on solid ground instead of only diluting the ratio. This is what [Reinforce](#scoring-system) pays for.
 - Warning/critical feedback fires at tuned thresholds; stability hitting 0 collapses the tower and fails the level **before** a height completion can count.
 
 Algorithm → [backend.md § Tower Stability](./backend.md#tower-stability).
 
 ## Timer, quick chat, failure conditions
 
-Level time limit `levelTimeLimitMs` (design reference 30s). Quick chat is 3 fixed slots per player (`Place Block!`, `Sorry!`, `Hello!`), server-authoritative per-player cooldown, config-driven so text can change without touching gameplay contracts. A level fails when: time runs out; hands + pile are exhausted below target; remaining possible height can't reach target **and** nobody holds a Refresh that could rescue it; or any player is below their contribution requirement at an Impact.
+Level time limit `levelTimeLimitMs` (design reference 30s). Quick chat is 3 fixed slots per player (`Place Block!`, `Sorry!`, `Hello!`), server-authoritative per-player cooldown, config-driven so text can change without touching gameplay contracts. A level fails when: time runs out; hands + pile are exhausted below target; remaining possible height can't reach target **and** nobody holds a Replenish that could rescue it; or any player is below their contribution requirement at an Impact.
 
 ## Scoring system
 
@@ -136,7 +137,8 @@ Level time limit `levelTimeLimitMs` (design reference 30s). Quick chat is 3 fixe
 |---|---|
 | Contribution (per placement) | `effective_height × level × placementScorePerHeight` (default `10`) **× stability multiplier** — the core earner, and what the Impact gate measures |
 | Stability multiplier | `placementStabilityFloor + (1 − floor) × stabilityBefore/100` (floor `0.5`). Uses the stability the placer **inherited**, so it rewards fixing-then-claiming instead of paying you for your own overhang |
-| Reinforce (per placement) | `round((integrity_gain × reinforceScorePerIntegrity + lean_correction × reinforceScorePerLean) × level)` (defaults `1` / `20`), `lean_correction = max(0, |lean_before| − |lean_after|)`. Sized to be *competitive with*, not dominant over, a good height claim |
+| Reinforce (per placement) | `min(cap, round((integrity_gain × reinforceScorePerIntegrity + lean_correction × reinforceScorePerLean + supported_cells × reinforceScorePerSupportedCell) × level))`, `lean_correction = max(0, |lean_before| − |lean_after|)`, `supported_cells` = tower cells that were hanging and now rest on the placed brick |
+| Repair ceiling | `cap = reinforceScoreCapShare × avgBrickHeight × placementScorePerHeight × level`. **Repair and height are priced against each other, not independently:** at `1` a maximal repair equals an average height claim — worth choosing when the tower is hurt, never able to out-earn a good claim — and it re-prices itself when the brick mix or `placementScorePerHeight` changes. `0` removes the ceiling |
 | Precision Bonus (exact finish, finisher) | `level × precisionBonusPerLevel` (default `20`) |
 | Team Exact Bonus (exact finish, everyone) | `level × teamExactBonusPerLevel` (default `15`) |
 | Finisher Bonus | `0` — overbuild finishing earns nothing beyond banked contribution |
@@ -179,13 +181,13 @@ Every row below is tunable live, and **each carries its own in-app explainer wit
 |---|---|
 | **Bots** | `debugBotsEnabled`, `debugBotCount` (0–2), `debugBotStrategy`, `debugBotDelayMin`/`Max`, `debugStartLevel` |
 | **Round** | `placementCooldown`, `levelTimeLimitMs`, `startDelayMs`, `targetHeightMultiplier` |
-| **UI** | `placementScorePopupDurationMs`, `finishScorePopupDurationMs`, `levelSummaryDelayMs` |
+| **UI** | `placementScorePopupDurationMs`, `finishScorePopupDurationMs`, `levelSummaryDelayMs`; plus the Parallel Placement toggle, which is a **client-local per-player override** of `accessibility.parallelPlacement`, not a server round-trip |
 | **Impact** | `impactInterval`, `impactMinContributionShare`, `impactScoreRequirement` |
 | **Supply** | `levelSupplyMinSurplus`/`MaxSurplus`, `supplyEffectiveWidthRatio`, `minPrecisionBlocksPerLevel`, `maxTeamCarryOverBlocks`, `refreshMinUsefulBlockHeight` |
 | **Tower — stability** | `towerStabilityDifficulty` (the single dial; the physics constants are derived, not exposed), `towerMaxTiltAngleDeg` (visual only) |
 | **Tower — site** | `towerSiteSlendernessTarget`, `towerSiteWidthMin`/`Max` (max hard-capped at 8 by the viewport) |
 | **Tower — feedback** | `towerStabilityWarningThreshold`/`CriticalThreshold` (display only; critical clamped below warning), `towerStabilityMoodThreshold` (display only; 1–50, default 2 — the brick-face band, see [ui.md](./ui.md#leaf-components)) |
-| **Power** | `powerUnlockLevel`, `powerMaxSlots`, `powerActivationCooldownMs` |
+| **Power** | `powerUnlockLevel`, `powerMaxSlots`, `powerActivationCooldownMs`, `powerReplenishPileShare` (0–1, shown as a %) |
 | **Scoring** | `placementScorePerHeight`, `placementStabilityFloor`, `reinforceScorePerIntegrity`/`PerLean`, `precisionBonusPerLevel`, `teamExactBonusPerLevel`, `finisherBonusPerLevel`, `assistBonusPerLevel`, `assistContributionThreshold` |
 | **Parallax / Placement** | Client-local rendering and snap-feel values — no server round-trip. See [ui.md](./ui.md#main-ui-controller) |
 
@@ -205,7 +207,7 @@ QA/local-test helpers only — not production AI. They fill rooms only when a re
 
 ### Future debug variables and open tuning questions
 
-Not yet exposed: `brickWeights`, `inventoryScaling`, target-height curve bands, per-shape generation pools, `debugBotStabilityTolerance`, and the `towerStabilityAnchors`/`towerStabilityPressure` sets the stability dial interpolates.
+Not yet exposed: `brickWeights`, `inventoryScaling`, target-height curve bands, per-shape generation pools, `debugBotStabilityTolerance`, `reinforceScorePerSupportedCell`/`reinforceScoreCapShare`, and the `towerStabilityAnchors`/`towerStabilityPressure` sets the stability dial interpolates.
 
 - **Exact-finish runs high** (~55–80% simulated), so "PERFECT BUILD" fires often. Lower via supply surplus or `minPrecisionBlocksPerLevel` if it should feel rarer.
 - **The front-loaded pool** can make a slow start mathematically uncatchable; worth confirming that reads as urgency, not unfairness. **Per-shape pools and fail-condition pressure** remain untouched levers for later difficulty shaping.

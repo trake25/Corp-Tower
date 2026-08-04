@@ -8,7 +8,7 @@ Scope: project-specific terms. If a chat log, branch name, or old PR uses a term
 |---|---|---|
 | **Power** | Politics | The item/quest system: side quests, Power items, activation |
 | **Impact** | Checkpoint | The score-gate/rollback system, and the `Impacts.js` engine module (was `Checkpoints.js`) |
-| **Refresh** (Power item) | Free Refresh (`free_refresh`) | The item that rerolls hands; "free" dropped once the token-cap economy was removed |
+| **Replenish** (Power item) | Refresh / Free Refresh (`free_refresh`) | The granted power tops up the shared draw pile; Refresh (reroll every hand) stays defined but `active: false` |
 
 ## Gameplay terms
 
@@ -22,11 +22,11 @@ Scope: project-specific terms. If a chat log, branch name, or old PR uses a term
 | **Stability difficulty** | `towerStabilityDifficulty`, 0–100 — the only stability tunable. Combined with a level ramp it yields a `pressure` scalar that interpolates every stability constant between the forgiving and harsh anchor sets. See [decisions.md](./decisions.md#tower-stability-is-one-derived-dial-scaled-by-level). |
 | **Support deficit** | Share of cells across the whole tower with nothing directly beneath them and not on the ground. Only recovers by dilution — gravity means a void can never be filled from above. |
 | **Maturity ramp** | `min(1, height / towerStabilityMinHeight)`, multiplied into every stability penalty so a stubby tower can't topple and small-tower ratios don't swing wildly. |
-| **Reinforce** | Score paid for a placement that raises Integrity or corrects Lean — the cooperative earner, as against the contested height claim. Emits a `reinforce` score event. |
+| **Reinforce** | Score paid for a placement that raises Integrity, corrects Lean, or puts hanging cells back on solid ground — the cooperative earner, capped against the contested height claim. Emits a `reinforce` score event. |
 | **Balance delta / brick mood** | `balanceDelta` — how far one placement moved the tower toward centre, in points of the collapse budget; **lean only, not the change in stability**. Stamped per brick at placement, banded by `towerStabilityMoodThreshold` into the smiley / worried / disbelief face that brick wears for the level. Display only. See [decisions.md](./decisions.md#brick-faces-read-a-lean-only-balance-delta-not-the-stability-score). |
 | **Stability multiplier** | Scales placement score by the stability the placer *inherited*: `placementStabilityFloor + (1 − floor) × stabilityBefore/100`. Racing on a wobbling tower pays less. |
 | **Site / site width** | The buildable column span for a level, derived from its target height rather than fixed. Always even and centred on the grid; capped at 8 columns by the tower viewport. |
-| **Power** | Consumable room-wide-effect item (Score Cap, Copy Score, Refresh). Activating one affects every player in the room, caster included — there is no target selection. |
+| **Power** | Consumable room-wide-effect item (Replenish, Refresh, Score Cap, Copy Score). Activating one affects every player in the room, caster included — there is no target selection. |
 | **MVP** | Player with the highest level score for a given level. Display-only; awards no extra score. |
 | **Finisher** | The player whose placement completes the level (reaches or exceeds target height). |
 | **Exact finish / Precision** | Placement that lands the tower at *exactly* target height (no overbuild). Triggers Precision Bonus (finisher) and Team Bonus (whole team). |

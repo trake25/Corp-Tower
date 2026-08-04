@@ -88,6 +88,7 @@ flowchart LR
 | `.github/workflows/EKS-*.yml` | Production-grade EKS path (infra plan/apply/destroy, deploy, cleanup, diagnose) | [deployment.md](./deployment.md#eks-production-grade-target) |
 | `infra/k3s/` | Active K3s Terraform, Ansible, Kustomize, Argo bootstrap | [deployment.md](./deployment.md#k3s-topology) |
 | `infra/eks/` | Production-grade EKS Terraform + Kustomize apps | [deployment.md](./deployment.md#eks-production-grade-target) |
+| `README.md` | Repo-front project pitch for human readers — design intent in plain language, no contracts or numbers; not a KB doc and never a source of truth for one | — |
 | `site/` | Astro portfolio site, deployed to its own Cloudflare Worker (own CI, own conventions) — no game code, out of this KB's scope | [site/README.md](../../site/README.md) |
 | `site-root/` | Zone-apex placeholder page, separate Worker (own CI) | [site-root/README.md](../../site-root/README.md) |
 
