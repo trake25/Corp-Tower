@@ -69,15 +69,15 @@ Tap the Power icon → tap a held item. Instant, **no target selection**; every 
 
 Target height follows a level-band curve, scaled by `targetHeightMultiplier` (default 3 = unchanged).
 
-**Level 1's target is 16 by design, not taste.** 16 is exactly how many 34px brick rows fit the tower viewport beneath the Top Indicator, so the opening level plays on one screen with no parallax. Every level above it overflows and scrolls.
-
 | Levels | Target height |
 |---|---|
-| 1 | 16 (exact screen fit) |
-| 2–6 | +2 / level → 26 |
-| 7–15 | +1 / level → 35 |
-| 16–40 | +0.4 / level → 45 |
-| 41+ | +0.15 / level |
+| 1 | 30 |
+| 2–6 | +1.2 / level → 36 |
+| 7–16 | +0.6 / level → 42 |
+| 17–40 | +0.25 / level → 48 |
+| 41+ | +0.1 / level → 54 at L99 |
+
+**The opening target sets the ceiling, so the step decelerates.** A level's brick demand is `targetHeight / packingEfficiency`, and three players place roughly 15 bricks at level 1 rising to ~28 by level 30 before `levelTimeLimitMs` binds — starting at 30 spends most of that budget immediately, so each band's step is cut against the one before it to keep the top of the curve inside reach. **No level fits the tower viewport**, whose flush capacity is 16 brick rows, so every level scrolls ([ui.md](./ui.md#leaf-components)).
 
 Overbuilding is allowed but wastes the excess and forfeits the exact-finish bonuses. The client renders from authoritative `towerBlocks`.
 

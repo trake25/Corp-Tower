@@ -10,15 +10,12 @@ const GameConfig = {
         "Hello!"
     ],
     targetHeightMultiplier: 3,
-    // Level 1 is 16 -- the exact number of 34px brick rows that fit the tower
-    // viewport under the Top Indicator, so the opening level plays entirely on
-    // one screen with no parallax. Every level above it overflows and scrolls.
     targetHeightCurve: [
-        { minLevel: 1, maxLevel: 1, baseLevel: 1, baseHeight: 16, heightPerLevel: 0 },
-        { minLevel: 2, maxLevel: 6, baseLevel: 1, baseHeight: 16, heightPerLevel: 2 },
-        { minLevel: 7, maxLevel: 15, baseLevel: 6, baseHeight: 26, heightPerLevel: 1 },
-        { minLevel: 16, maxLevel: 40, baseLevel: 15, baseHeight: 35, heightPerLevel: 0.4 },
-        { minLevel: 41, maxLevel: 99, baseLevel: 40, baseHeight: 45, heightPerLevel: 0.15 }
+        { minLevel: 1, maxLevel: 1, baseLevel: 1, baseHeight: 30, heightPerLevel: 0 },
+        { minLevel: 2, maxLevel: 6, baseLevel: 1, baseHeight: 30, heightPerLevel: 1.2 },
+        { minLevel: 7, maxLevel: 16, baseLevel: 6, baseHeight: 36, heightPerLevel: 0.6 },
+        { minLevel: 17, maxLevel: 40, baseLevel: 16, baseHeight: 42, heightPerLevel: 0.25 },
+        { minLevel: 41, maxLevel: 99, baseLevel: 40, baseHeight: 48, heightPerLevel: 0.1 }
     ],
     startDelayMs: 1000, // testing 0.5, release 2
     levelTimeLimitMs: 30000,    // testing 120, release 30 (for tuning)
@@ -39,11 +36,11 @@ const GameConfig = {
     placeableColumnMin: 2,
     placeableColumnMax: 5,
     towerSiteSlendernessTarget: 6.75,
-    towerSiteWidthMin: 6, // from level 1-28
+    towerSiteWidthMin: 6,
     // Hard viewport ceiling, not a taste call: TowerStack is 272px wide at a
     // fixed 34px brick, so only grid columns 3-10 are ever on screen. A wider
     // site would place bricks the player can never see.
-    towerSiteWidthMax: 8,   // cap limit 8 from level 29-99
+    towerSiteWidthMax: 8,
     towerMaxTiltAngleDeg: 10,   //18
     towerStabilityDifficulty: 95,   // 0 forgiving, 100 harsh, 90 default, 95 tuned
     towerStabilityPressure: {
