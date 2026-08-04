@@ -95,6 +95,7 @@ func _ready() -> void:
 	summary.setup(players_ctx, match_state, tuning)
 	roster.setup(players_ctx, match_state)
 	quest.setup(players_ctx, match_state, popovers, should_block_popovers)
+	summary.quest_text_provider = quest.get_quest_summary_text
 	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_popovers, tutorial.on_chat_sent)
 	power.setup(NetworkManager, popovers, score_popups, should_block_popovers, tutorial.on_power_activated)
 	tutorial.setup({
@@ -199,6 +200,7 @@ func reset_ui() -> void:
 	score_popups.clear_score_popups()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
+	quest.hide_freeze_banner()
 	inventory.cancel_block_drag()
 	score_popups.seen_score_event_ids.clear()
 	summary.last_level_summary_key = ""
@@ -222,6 +224,7 @@ func _input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	inventory.tick()
 	top_bar.tick_round_timer()
+	quest.tick_freeze_banner()
 
 func on_connect_pressed() -> void:
 	NetworkManager.toggle_connection()
@@ -252,6 +255,7 @@ func update_room(data) -> void:
 	score_popups.clear_score_popups()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
+	quest.hide_freeze_banner()
 	top_bar.tower_status_label.text = "Match starting"
 	top_bar.set_tower_progress(0, int(data.get("targetHeight", 0)))
 	top_bar.set_top_indicator_progress(0, int(data.get("targetHeight", 0)))
@@ -287,6 +291,7 @@ func update_room_closed(data) -> void:
 	score_popups.clear_score_popups()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
+	quest.hide_freeze_banner()
 	score_popups.seen_score_event_ids.clear()
 	summary.last_level_summary_key = ""
 	match_state.current_level = 0
@@ -350,6 +355,7 @@ func update_game_state(data) -> void:
 
 	players_ctx.update_from_players(players)
 	quest.update_quest_chip(data.get("sideQuest", {}))
+	quest.update_freeze_banner(state, incoming_level, seconds_remaining, data.get("sideQuest", {}))
 	if tower_stack.has_method("set_player_color_map"):
 		tower_stack.call("set_player_color_map", players_ctx.color_map)
 

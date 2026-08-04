@@ -126,6 +126,12 @@ const DEBUG_TOOLTIPS := {
 		"title": "Assist Threshold",
 		"body": "Minimum contribution share needed to qualify for the Assist bonus. Only matters when Assist Bonus is above 0.",
 	},
+
+	# --- Power -------------------------------------------------------------
+	"PowerReplenishShareLabel": {
+		"title": "Replenish Share",
+		"body": "How many bricks the Replenish power adds to the shared draw pile.\n\nbricks = max(1, round(this x the level's STARTING draw pile size))\n\nThe starting pile is team carry-over plus the generated reserve, so this scales itself with target height, site width and brick weights instead of being a flat number. At 25% a level dealt 20 bricks replenishes 5.\n\nNew bricks are appended, never shuffled in — the \"Next Draw\" preview all three players can see stays put.\n\nReplenish is the side-quest reward and the only power that can rescue a level short on supply: holding one defers the not-enough-height failure.",
+	},
 }
 
 const PARALLAX_TARGET_TOWER := "tower"
@@ -329,6 +335,8 @@ var power_max_slots_label: Label
 var power_max_slots_slider: HSlider
 var power_cooldown_label: Label
 var power_cooldown_slider: HSlider
+var power_replenish_share_label: Control
+var power_replenish_share_slider: HSlider
 var tutorial_launch_button: Button
 var parallel_placement_button: Button
 var accessibility
@@ -447,6 +455,8 @@ func bind_nodes(binder) -> void:
 	power_max_slots_slider = binder.optional_node("PowerMaxSlotsSlider") as HSlider
 	power_cooldown_label = binder.optional_node("PowerCooldownLabel") as Label
 	power_cooldown_slider = binder.optional_node("PowerCooldownSlider") as HSlider
+	power_replenish_share_label = bind_tooltip_row(binder, "PowerReplenishShareLabel")
+	power_replenish_share_slider = binder.optional_node("PowerReplenishShareSlider") as HSlider
 
 func setup(
 	tuning_ref,
@@ -532,6 +542,7 @@ func setup(
 	configure_slider(power_unlock_level_slider, 1, 20, 1, func(value): send_debug_int("powerUnlockLevel", value))
 	configure_slider(power_max_slots_slider, 1, 6, 1, func(value): send_debug_int("powerMaxSlots", value))
 	configure_slider(power_cooldown_slider, 0, 30000, 500, func(value): send_debug_int("powerActivationCooldownMs", value))
+	configure_slider(power_replenish_share_slider, 0, 100, 5, func(value): send_debug_float("powerReplenishPileShare", value / 100.0))
 
 	if tower_feedback_mode_button != null:
 		tower_feedback_mode_button.clear()
@@ -886,6 +897,7 @@ func apply_config(config) -> void:
 	set_slider_no_signal(power_unlock_level_slider, float(config.get("powerUnlockLevel", 4)))
 	set_slider_no_signal(power_max_slots_slider, float(config.get("powerMaxSlots", 3)))
 	set_slider_no_signal(power_cooldown_slider, float(config.get("powerActivationCooldownMs", 3000)))
+	set_slider_no_signal(power_replenish_share_slider, float(config.get("powerReplenishPileShare", 0.25)) * 100.0)
 	update_debug_labels()
 	is_syncing_debug_config = false
 
@@ -1053,4 +1065,8 @@ func update_debug_labels() -> void:
 	set_debug_label_text(
 		power_cooldown_label,
 		"Power Cooldown: " + ("%.1f" % (get_slider_value(power_cooldown_slider, 3000) / 1000.0)) + " sec"
+	)
+	set_debug_label_text(
+		power_replenish_share_label,
+		"Replenish Share: " + str(int(get_slider_value(power_replenish_share_slider, 25))) + "%"
 	)

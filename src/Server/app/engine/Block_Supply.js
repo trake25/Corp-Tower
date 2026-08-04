@@ -168,6 +168,7 @@ function buildDrawPile(engine) {
         ...generatedDrawPileBlocks
     ]);
     engine.room.teamCarryOverBlocks = [];
+    engine.room.drawPileStartCount = engine.room.drawPile.length;
 
     console.log(
         `Level ${engine.room.level} draw pile: ${engine.room.drawPile.length} blocks`
@@ -433,6 +434,32 @@ function generateRefreshBlocks(engine, currentBlocks) {
     return bestBlocks;
 }
 
+function getReplenishBlockCount(engine) {
+    const share = Math.max(
+        0,
+        Math.min(1, Number(GameConfig.powerReplenishPileShare) || 0)
+    );
+    const pileSize =
+        Number(engine.room.drawPileStartCount) ||
+        (engine.room.drawPile || []).length;
+
+    return Math.max(1, Math.round(share * pileSize));
+}
+
+function generateReplenishBlocks(engine) {
+    const blockCount = engine.getReplenishBlockCount();
+
+    if (!engine.room.drawPile) {
+        engine.room.drawPile = [];
+    }
+
+    for (let i = 0; i < blockCount; i++) {
+        engine.room.drawPile.push(engine.getRandomBlock());
+    }
+
+    return blockCount;
+}
+
 function createRefreshBlock(engine, currentBlock) {
     const currentShapeId =
         typeof currentBlock === "number" ? null : currentBlock?.shapeId || null;
@@ -523,6 +550,8 @@ module.exports = {
     drawBlockFromPile,
     refillPlayerBlock,
     trimInventory,
+    getReplenishBlockCount,
+    generateReplenishBlocks,
     generateRefreshBlocks,
     createRefreshBlock,
     isRefreshBlockSetUseful,

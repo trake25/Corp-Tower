@@ -95,6 +95,7 @@ function buildLevelSummary(engine, options) {
         finisherId: options.finisher?.id || null,
         finishingBlock: options.finishingBlock || null,
         carriedBlockCount: Number(options.carriedBlockCount || 0),
+        sideQuest: engine.room.sideQuest || null,
         players: engine.room.players.map(player => {
             const previousTotalScore =
                 Number(previousTotalScores[player.id] || 0);

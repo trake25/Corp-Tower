@@ -62,6 +62,7 @@ function stripRuntimeRoom(room) {
             targetHeight: engineRoom.targetHeight || 0,
             currentHeight: engineRoom.currentHeight || 0,
             drawPile: engineRoom.drawPile || [],
+            drawPileStartCount: engineRoom.drawPileStartCount || 0,
             teamCarryOverBlocks: engineRoom.teamCarryOverBlocks || [],
             towerBlocks: engineRoom.towerBlocks || [],
             towerStability: engineRoom.towerStability ?? 100,

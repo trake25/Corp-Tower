@@ -76,15 +76,17 @@ const GameConfig = {
     powerMaxSlots: 3,
     powerActivationCooldownMs: 3000,
     powerLifetime: "impact",
-    // Refresh is quest-only: the guaranteed per-level grant and the Impact-MVP
+    // Replenish is quest-only: the guaranteed per-level grant and the Impact-MVP
     // draw are both off, so completing the side quest is the sole way to hold a
     // Power item.
     powerGuaranteedBaseline: false,
     powerImpactMvpReward: false,
+    powerReplenishPileShare: 0.25,
     powerCatalog: {
         score_cap: { category: "Offensive", title: "Score Cap", active: false },
         copy_score: { category: "Defensive", title: "Copy Score", active: false },
-        refresh: { category: "Utility", title: "Refresh", active: true }
+        refresh: { category: "Utility", title: "Refresh", active: false },
+        replenish: { category: "Utility", title: "Replenish", active: true }
     },
 
     brickShapes: [

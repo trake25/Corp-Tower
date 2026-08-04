@@ -13,6 +13,7 @@ const originalGameConfig = {
     levelSummaryDelayMs: GameConfig.levelSummaryDelayMs
     ,quickChatCooldownMs: GameConfig.quickChatCooldownMs
     ,powerLifetime: GameConfig.powerLifetime
+    ,powerReplenishPileShare: GameConfig.powerReplenishPileShare
     ,towerStabilityWarningThreshold: GameConfig.towerStabilityWarningThreshold
     ,towerStabilityCriticalThreshold: GameConfig.towerStabilityCriticalThreshold
     ,towerStabilityMoodThreshold: GameConfig.towerStabilityMoodThreshold
@@ -65,6 +66,8 @@ afterEach(() => {
     GameConfig.levelSummaryDelayMs = originalGameConfig.levelSummaryDelayMs;
     GameConfig.quickChatCooldownMs = originalGameConfig.quickChatCooldownMs;
     GameConfig.powerLifetime = originalGameConfig.powerLifetime;
+    GameConfig.powerReplenishPileShare =
+        originalGameConfig.powerReplenishPileShare;
     GameConfig.towerStabilityWarningThreshold =
         originalGameConfig.towerStabilityWarningThreshold;
     GameConfig.towerStabilityCriticalThreshold =
@@ -530,7 +533,7 @@ test("activating the refresh power item rerolls every player's blocks", () => {
     }
 });
 
-test("a held refresh power item defers the not-enough-height fail", () => {
+test("a held replenish power item defers the not-enough-height fail", () => {
     const { engine } = createPlayingEngine(10, 20);
     const player = engine.room.players[0];
 
@@ -543,13 +546,79 @@ test("a held refresh power item defers the not-enough-height fail", () => {
     });
     player.blocks = [createBlock(1, "B1")];
 
-    player.powerInventory = [{ id: "refresh", earnedLevel: 10 }];
+    player.powerInventory = [{ id: "replenish", earnedLevel: 10 }];
     engine.checkFailCondition();
     assert.equal(engine.room.state, "playing");
 
     player.powerInventory = [];
     engine.checkFailCondition();
     assert.equal(engine.room.state, "failed");
+});
+
+test("replenish adds a share of the level's starting draw pile", () => {
+    const { engine } = createPlayingEngine(10, 20);
+
+    engine.room.drawPile = Array.from({ length: 20 }, (_, i) => {
+        return createBlock(1, `P${i}`);
+    });
+    engine.room.drawPileStartCount = 20;
+
+    GameConfig.powerReplenishPileShare = 0.25;
+    assert.equal(engine.getReplenishBlockCount(), 5);
+
+    const nextDrawBefore = engine.getNextDrawBlock();
+    const added = engine.generateReplenishBlocks();
+
+    assert.equal(added, 5);
+    assert.equal(engine.room.drawPile.length, 25);
+    // Appended, never reshuffled: the previewed next draw must not move.
+    assert.equal(engine.getNextDrawBlock().id, nextDrawBefore.id);
+
+    GameConfig.powerReplenishPileShare = 0.5;
+    assert.equal(engine.getReplenishBlockCount(), 10);
+
+    GameConfig.powerReplenishPileShare = 0;
+    assert.equal(engine.getReplenishBlockCount(), 1);
+
+    GameConfig.powerReplenishPileShare = 0.25;
+});
+
+test("activating replenish grows the shared draw pile and reports the count", () => {
+    const { engine, messages } = createPlayingEngine(10, 20);
+    const caster = engine.room.players[0];
+
+    engine.room.endsAt = Date.now() + 60000;
+    engine.room.drawPile = Array.from({ length: 12 }, (_, i) => {
+        return createBlock(1, `P${i}`);
+    });
+    engine.room.drawPileStartCount = 12;
+    caster.powerInventory = [{ id: "replenish", earnedLevel: 10 }];
+    caster.lastPowerActivationTime = 0;
+
+    assert.equal(engine.activatePower(caster.id, 0), true);
+
+    assert.equal(caster.powerInventory.length, 0);
+    assert.equal(engine.room.drawPile.length, 15);
+
+    const event = messages
+        .flatMap(message => message.powerEvents || [])
+        .find(powerEvent => powerEvent.powerId === "replenish");
+
+    assert.ok(event, "a replenish power event should be broadcast");
+    assert.equal(event.meta.blocksAdded, 3);
+});
+
+test("the level summary carries the level's side quest", () => {
+    const { engine } = createPlayingEngine(10, 20);
+
+    engine.setupSideQuest();
+    engine.room.sideQuest.claimedBy = engine.room.players[1].id;
+
+    const summary = engine.buildLevelSummary({ result: "completed" });
+
+    assert.equal(summary.sideQuest.type, "exact_finish");
+    assert.equal(summary.sideQuest.rewardId, "replenish");
+    assert.equal(summary.sideQuest.claimedBy, engine.room.players[1].id);
 });
 
 test("failed level summary does not bank level score into final totals", () => {

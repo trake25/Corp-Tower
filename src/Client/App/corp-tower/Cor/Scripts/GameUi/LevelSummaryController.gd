@@ -8,7 +8,9 @@ var level_summary_title_label: Label
 var level_summary_result_label: Label
 var level_summary_team_label: Label
 var level_summary_mvp_label: Label
+var level_summary_quest_label: Label
 var level_summary_players_box: VBoxContainer
+var quest_text_provider: Callable = Callable()
 var last_level_summary_key: String = ""
 var pending_level_summary: Dictionary = {}
 var pending_level_summary_state: String = ""
@@ -33,6 +35,7 @@ func bind_nodes(binder) -> void:
 	level_summary_result_label = binder.require_node("LevelSummaryResultLabel") as Label
 	level_summary_team_label = binder.require_node("LevelSummaryTeamLabel") as Label
 	level_summary_mvp_label = binder.require_node("LevelSummaryMvpLabel") as Label
+	level_summary_quest_label = binder.optional_node("LevelSummaryQuestLabel") as Label
 	level_summary_players_box = binder.require_node("LevelSummaryPlayersBox") as VBoxContainer
 
 func setup(players_ref, match_state_ref, tuning_ref) -> void:
@@ -135,6 +138,7 @@ func show_level_summary(summary_value: Variant, state: String) -> void:
 	level_summary_team_label.visible = false
 	level_summary_team_label.text = ""
 	level_summary_mvp_label.text = get_level_summary_mvp_text(summary)
+	update_level_summary_quest_row(summary)
 
 	clear_children(level_summary_players_box)
 
@@ -272,6 +276,18 @@ func get_impact_failure_fallback_text(summary: Dictionary, blocked_level: int) -
 		return "Impact L" + str(blocked_level) + " failed"
 
 	return "Impact L" + str(blocked_level) + "\nGoals: " + ", ".join(failure_texts)
+
+func update_level_summary_quest_row(summary: Dictionary) -> void:
+	if level_summary_quest_label == null:
+		return
+
+	var quest_text: String = ""
+
+	if quest_text_provider.is_valid():
+		quest_text = str(quest_text_provider.call(summary.get("sideQuest", {})))
+
+	level_summary_quest_label.text = quest_text
+	level_summary_quest_label.visible = quest_text != ""
 
 func get_level_summary_mvp_text(summary: Dictionary) -> String:
 	var mvp_id: String = str(summary.get("mvpId", ""))

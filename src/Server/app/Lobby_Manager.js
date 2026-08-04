@@ -39,6 +39,7 @@ const DEFAULT_DEBUG_CONFIG = {
     powerUnlockLevel: GameConfig.powerUnlockLevel,
     powerMaxSlots: GameConfig.powerMaxSlots,
     powerActivationCooldownMs: GameConfig.powerActivationCooldownMs,
+    powerReplenishPileShare: GameConfig.powerReplenishPileShare,
     placementScorePerHeight: GameConfig.scoring.placementScorePerHeight,
     placementStabilityFloor: GameConfig.scoring.placementStabilityFloor,
     reinforceScorePerIntegrity: GameConfig.scoring.reinforceScorePerIntegrity,
@@ -475,6 +476,7 @@ class LobbyManager {
             powerUnlockLevel: GameConfig.powerUnlockLevel,
             powerMaxSlots: GameConfig.powerMaxSlots,
             powerActivationCooldownMs: GameConfig.powerActivationCooldownMs,
+            powerReplenishPileShare: GameConfig.powerReplenishPileShare,
             placementScorePerHeight: GameConfig.scoring.placementScorePerHeight,
             placementStabilityFloor: GameConfig.scoring.placementStabilityFloor,
             reinforceScorePerIntegrity:
@@ -543,6 +545,8 @@ class LobbyManager {
         GameConfig.powerMaxSlots = DEFAULT_DEBUG_CONFIG.powerMaxSlots;
         GameConfig.powerActivationCooldownMs =
             DEFAULT_DEBUG_CONFIG.powerActivationCooldownMs;
+        GameConfig.powerReplenishPileShare =
+            DEFAULT_DEBUG_CONFIG.powerReplenishPileShare;
         GameConfig.scoring.placementScorePerHeight =
             DEFAULT_DEBUG_CONFIG.placementScorePerHeight;
         GameConfig.scoring.placementStabilityFloor =
@@ -708,6 +712,8 @@ class LobbyManager {
             powerMaxSlots: setGameInt("powerMaxSlots", 1, 6),
             powerActivationCooldownMs:
                 setGameInt("powerActivationCooldownMs", 0, 30000),
+            powerReplenishPileShare:
+                setGameNumber("powerReplenishPileShare", 0, 1),
             placementScorePerHeight: setScoringInt("placementScorePerHeight", 1, 25),
             placementStabilityFloor:
                 setScoringNumber("placementStabilityFloor", 0, 1),
@@ -1035,6 +1041,7 @@ class LobbyManager {
                 targetHeight: snapshot.state.targetHeight,
                 currentHeight: snapshot.state.currentHeight,
                 drawPile: snapshot.state.drawPile || [],
+                drawPileStartCount: snapshot.state.drawPileStartCount || 0,
                 teamCarryOverBlocks: snapshot.state.teamCarryOverBlocks || [],
                 towerBlocks: snapshot.state.towerBlocks || [],
                 state: snapshot.state.state,

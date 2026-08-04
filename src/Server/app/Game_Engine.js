@@ -114,6 +114,7 @@ class GameEngine {
             targetHeight: this.getTargetHeightForLevel(startLevel),
             currentHeight: 0,
             drawPile: [],
+            drawPileStartCount: 0,
             teamCarryOverBlocks: [],
             towerBlocks: [],
             towerStability: 100,
@@ -160,6 +161,7 @@ class GameEngine {
             targetHeight: snapshot.state.targetHeight,
             currentHeight: snapshot.state.currentHeight,
             drawPile: snapshot.state.drawPile || [],
+            drawPileStartCount: snapshot.state.drawPileStartCount || 0,
             teamCarryOverBlocks: snapshot.state.teamCarryOverBlocks || [],
             towerBlocks: snapshot.state.towerBlocks || [],
             towerStability: snapshot.state.towerStability ?? 100,
@@ -287,16 +289,16 @@ class GameEngine {
     setupSideQuest() {
         if (this.room.level < GameConfig.powerUnlockLevel) { this.room.sideQuest = null; return; }
         const quest = { id: "exact_finish", type: "exact_finish", label: "First to finish exactly" };
-        this.room.sideQuest = { ...quest, claimedBy: null, rewardId: "refresh" };
+        this.room.sideQuest = { ...quest, claimedBy: null, rewardId: "replenish" };
     }
 
     grantDefaultPowers() {
         if (!GameConfig.powerGuaranteedBaseline) return;
         if (this.room.level < GameConfig.powerUnlockLevel) return;
         this.room.players.forEach(player => {
-            const hasRefresh = (player.powerInventory || []).some(item => item.id === "refresh");
-            if (!hasRefresh && player.powerInventory.length < GameConfig.powerMaxSlots) {
-                player.powerInventory.push({ id: "refresh", earnedLevel: this.room.level });
+            const hasReplenish = (player.powerInventory || []).some(item => item.id === "replenish");
+            if (!hasReplenish && player.powerInventory.length < GameConfig.powerMaxSlots) {
+                player.powerInventory.push({ id: "replenish", earnedLevel: this.room.level });
             }
         });
     }
@@ -336,7 +338,8 @@ class GameEngine {
                 target.scoreCapCasterId = null;
             }
         });
-        this.room.pendingPowerEvents.push({ id: `${this.room.level}:power:${Date.now()}`, type: "power_activated", playerId, powerId: item.id, label: GameConfig.powerCatalog[item.id].title });
+        const blocksAdded = item.id === "replenish" ? this.generateReplenishBlocks() : 0;
+        this.room.pendingPowerEvents.push({ id: `${this.room.level}:power:${Date.now()}`, type: "power_activated", playerId, powerId: item.id, label: GameConfig.powerCatalog[item.id].title, meta: { blocksAdded } });
         this.persistRoom(); this.broadcastGameState(); return true;
     }
 
@@ -849,16 +852,16 @@ class GameEngine {
 
         if (
             remainingPossibleHeight < neededHeight &&
-            !this.anyPlayerCanRefresh()
+            !this.anyPlayerCanRescueSupply()
         ) {
             this.failLevel("not_enough_height_remaining");
         }
     }
 
-    anyPlayerCanRefresh() {
+    anyPlayerCanRescueSupply() {
         return this.room.players.some(player => {
             return (player.powerInventory || []).some(item => {
-                return item && item.id === "refresh";
+                return item && item.id === "replenish";
             });
         });
     }
@@ -1028,6 +1031,8 @@ class GameEngine {
     drawBlockFromPile() { return BlockSupply.drawBlockFromPile(this); }
     refillPlayerBlock(player) { return BlockSupply.refillPlayerBlock(this, player); }
     trimInventory(blocks) { return BlockSupply.trimInventory(this, blocks); }
+    getReplenishBlockCount() { return BlockSupply.getReplenishBlockCount(this); }
+    generateReplenishBlocks() { return BlockSupply.generateReplenishBlocks(this); }
     generateRefreshBlocks(currentBlocks) { return BlockSupply.generateRefreshBlocks(this, currentBlocks); }
     createRefreshBlock(currentBlock) { return BlockSupply.createRefreshBlock(this, currentBlock); }
     isRefreshBlockSetUseful(blocks) { return BlockSupply.isRefreshBlockSetUseful(this, blocks); }

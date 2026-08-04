@@ -13,11 +13,29 @@ var quest_badge: TextureRect
 var quest_popover: Control
 var quest_seen_level: int = -1
 var last_side_quest: Dictionary = {}
+var freeze_overlay: Control
+var freeze_title_label: Label
+var freeze_quest_label: Label
+var freeze_reward_label: Label
+var freeze_deadline_ms: int = 0
+var freeze_shown_seconds: int = -1
+var freeze_level: int = 0
+
+const REWARD_LABELS := {
+	"replenish": "Replenish",
+	"refresh": "Refresh",
+	"score_cap": "Score Cap",
+	"copy_score": "Copy Score"
+}
 
 func bind_nodes(binder) -> void:
 	quest_chip = binder.optional_node("QuestChip") as TextureButton
 	quest_badge = binder.optional_node("QuestBadge") as TextureRect
 	quest_popover = binder.optional_node("QuestPopover") as Control
+	freeze_overlay = binder.optional_node("FreezeQuestOverlay") as Control
+	freeze_title_label = binder.optional_node("FreezeQuestTitleLabel") as Label
+	freeze_quest_label = binder.optional_node("FreezeQuestLabel") as Label
+	freeze_reward_label = binder.optional_node("FreezeQuestRewardLabel") as Label
 	if quest_chip != null:
 		quest_chip.pressed.connect(on_quest_chip_pressed)
 
@@ -49,6 +67,70 @@ func update_quest_chip(raw_side_quest: Variant) -> void:
 func get_quest_claimed_by(side_quest: Dictionary) -> String:
 	var claimed_by: Variant = side_quest.get("claimedBy", null)
 	return claimed_by if typeof(claimed_by) == TYPE_STRING else ""
+
+func get_reward_label(reward_id: String) -> String:
+	if REWARD_LABELS.has(reward_id):
+		return str(REWARD_LABELS[reward_id])
+
+	return reward_id.replace("_", " ").capitalize()
+
+func get_quest_summary_text(raw_side_quest: Variant) -> String:
+	var side_quest: Dictionary = raw_side_quest if typeof(raw_side_quest) == TYPE_DICTIONARY else {}
+	var label: String = str(side_quest.get("label", ""))
+
+	if label == "":
+		return ""
+
+	var lines: Array[String] = ["QUEST  " + label]
+	var claimed_by: String = get_quest_claimed_by(side_quest)
+
+	if claimed_by != "":
+		lines.append("Claimed by " + players_ctx.display_name(claimed_by))
+	else:
+		lines.append("Unclaimed | Reward: " + get_reward_label(str(side_quest.get("rewardId", ""))))
+
+	return "\n".join(lines)
+
+func update_freeze_banner(state: String, level: int, seconds_remaining: int, raw_side_quest: Variant) -> void:
+	if freeze_overlay == null:
+		return
+
+	var side_quest: Dictionary = raw_side_quest if typeof(raw_side_quest) == TYPE_DICTIONARY else {}
+	var label: String = str(side_quest.get("label", ""))
+
+	if state != "starting" or label == "":
+		freeze_overlay.visible = false
+		return
+
+	freeze_overlay.visible = true
+	freeze_level = level
+	freeze_deadline_ms = Time.get_ticks_msec() + maxi(0, seconds_remaining) * 1000
+	freeze_shown_seconds = -1
+	tick_freeze_banner()
+
+	if freeze_quest_label != null:
+		freeze_quest_label.text = label
+
+	if freeze_reward_label != null:
+		freeze_reward_label.text = "Reward: " + get_reward_label(str(side_quest.get("rewardId", "")))
+
+func tick_freeze_banner() -> void:
+	if freeze_overlay == null or !freeze_overlay.visible or freeze_title_label == null:
+		return
+
+	var remaining: int = maxi(0, int(ceil(
+		float(freeze_deadline_ms - Time.get_ticks_msec()) / 1000.0
+	)))
+
+	if remaining == freeze_shown_seconds:
+		return
+
+	freeze_shown_seconds = remaining
+	freeze_title_label.text = "LEVEL %d IN %d" % [freeze_level, remaining]
+
+func hide_freeze_banner() -> void:
+	if freeze_overlay != null:
+		freeze_overlay.visible = false
 
 func on_quest_chip_pressed() -> void:
 	if popover_blocked.is_valid() and bool(popover_blocked.call()):

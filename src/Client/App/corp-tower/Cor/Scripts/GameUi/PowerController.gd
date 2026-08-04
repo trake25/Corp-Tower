@@ -71,6 +71,9 @@ func position_power_popover_card() -> void:
 	))
 
 func get_power_row_label(power_id: String) -> String:
+	if power_id == "replenish":
+		return "Replenish team inventory"
+
 	if power_id == "refresh":
 		return "Refresh team inventory"
 
@@ -90,11 +93,25 @@ func process_power_events(raw_events: Variant, players: Array) -> void:
 
 		score_popups.show_score_event_popup({
 			"type": "power_activated",
-			"label": get_power_toast_text(str(event.get("powerId", "")), str(event.get("label", "Power")))
+			"label": get_power_toast_text(event)
 		}, players, 3.0)
 
-func get_power_toast_text(power_id: String, catalog_label: String) -> String:
+func get_power_toast_text(event: Dictionary) -> String:
+	var power_id: String = str(event.get("powerId", ""))
+
+	if power_id == "replenish":
+		var meta: Variant = event.get("meta", {})
+		var blocks_added: int = 0
+
+		if typeof(meta) == TYPE_DICTIONARY:
+			blocks_added = int(meta.get("blocksAdded", 0))
+
+		if blocks_added > 0:
+			return "Team inventory replenished +" + str(blocks_added) + " bricks"
+
+		return "Team inventory replenished"
+
 	if power_id == "refresh":
 		return "All players inventory refreshed"
 
-	return catalog_label + " activated for everyone"
+	return str(event.get("label", "Power")) + " activated for everyone"
