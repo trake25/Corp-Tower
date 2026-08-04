@@ -62,8 +62,8 @@ const rendered = await Promise.all(
     <section class="hero">
       <p class="eyebrow">{profile.title}</p>
       <h1>
-        Orchestrators control.<br class="hero-break" />
-        Agents accelerate.
+        Orchestrator controls,<br class="hero-break" />
+        agents accelerate.
       </h1>
       <p class="lede">
         <strong>{profile.project} ({profile.projectShort})</strong> is a real-time
@@ -119,8 +119,9 @@ const rendered = await Promise.all(
         <span class="section-index">01</span> Skills highlights
       </h2>
       <p class="section-intro">
-        Open a card for the proof. Inside, click any step in the diagram to jump straight
-        to the code that runs it.
+        Open a card to see how each orchestrator skill was demonstrated, process by
+        process. Inside, click any step in the diagram to jump straight to the code that
+        runs it.
       </p>
 
       <CardFilter roles={roles} total={cardEntries.length} />
@@ -150,41 +151,7 @@ const rendered = await Promise.all(
       <h2 id="work-heading" class="section-title">
         <span class="section-index">02</span> Work with me
       </h2>
-      <div class="services">
-        <article class="service">
-          <h3>Cloud &amp; platform engineering</h3>
-          <p>
-            Terraform-managed Kubernetes on EC2 or EKS, private networking, TLS and DNS.
-            Cost bounded by design, not by an alert that arrives a day late.
-          </p>
-        </article>
-        <article class="service">
-          <h3>Delivery automation &amp; guardrails</h3>
-          <p>
-            Pipelines that verify their own output, drift checks that fail before a build
-            starts, and destructive operations that demand a typed confirmation.
-          </p>
-        </article>
-        <article class="service">
-          <h3>AI-assisted delivery, done properly</h3>
-          <p>
-            Agents implementing against written acceptance criteria, with a rejection path
-            and CI gates cleared before a human looks — plus the retrieval layer that keeps
-            them oriented in your codebase.
-          </p>
-        </article>
-      </div>
-
-      <div class="how-i-work">
-        <h3>How I work with coding agents</h3>
-        <p>
-          I brief an agent the way you'd brief a contractor: requirement written down
-          first, work tested against it, sent back with specifics until nothing is
-          outstanding. I read every language in this repository fluently — Node.js on the
-          server, GDScript in the client — because when the agent stalls, the work still
-          has to move.
-        </p>
-      </div>
+      <p class="placeholder">In progress — services and engagement details go here.</p>
     </section>
 
     <section id="contact" aria-labelledby="contact-heading">
@@ -213,25 +180,27 @@ const rendered = await Promise.all(
         <span>{profile.title}{profile.location && ` · ${profile.location}`}</span>
       </p>
       <nav class="footer-nav" aria-label="Footer">
-        <a href="#skills">Skills</a>
-        <a href="#work">Work with me</a>
-        <a href="#contact">Contact</a>
-        <a href={profile.demo} target="_blank" rel="noopener noreferrer">Play the demo</a>
+        <a href={profile.demo} target="_blank" rel="noopener noreferrer">Demo</a>
         <a href={profile.repo} target="_blank" rel="noopener noreferrer">Source</a>
+        <a href="#contact">Contact</a>
       </nav>
     </div>
-    <p class="footer-note">
-      Every claim here links to the file, workflow or test behind it. The repository still
-      carries the project's working name, Corp&nbsp;Tower.
-    </p>
     <p class="footer-meta">
-      © {year} {profile.name} · Static Astro build, redeployed to Cloudflare Workers on
-      every push.
+      © {year} {profile.name} · The repository still carries the project's working name,
+      Corp&nbsp;Tower.
     </p>
   </footer>
 </BaseLayout>
 
 <style>
+  /* Placeholder copy for sections that aren't written yet. */
+  .placeholder {
+    font-size: 0.95rem;
+    opacity: 0.55;
+    font-style: italic;
+    max-width: 62ch;
+  }
+
   /* Hero spec list: replaces two long prose paragraphs with scannable rows. */
   .facts {
     margin: 1.5rem 0 0;
