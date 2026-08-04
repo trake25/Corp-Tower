@@ -169,7 +169,7 @@ Level time limit `levelTimeLimitMs` (design reference 30s). Quick chat is 3 fixe
 
 ## Debug menu and live tuning
 
-Exposes [Game Config](./backend.md#game-config) variables to designers/QA without code changes or restarts. The server validates and clamps every change then broadcasts `debug_config` (rules → [backend.md § Lobby Manager](./backend.md#lobby-manager)). The overlay is dropdown-navigated (Bots / Round / UI / Supply / Scoring / Impact / Tower / Power / Parallax / Placement), with Reset (restore `Game_Config.js` defaults) and Restart (restart the room at its current level, score preserved).
+Exposes [Game Config](./backend.md#game-config) variables to designers/QA without code changes or restarts. The server validates and clamps every change then broadcasts `debug_config` (rules → [backend.md § Lobby Manager](./backend.md#lobby-manager)). The overlay is dropdown-navigated (Bots / Round / UI / Supply / Scoring / Impact / Tower / Power / Parallax / Placement / Hooks), with Reset (restore `Game_Config.js` defaults) and Restart (restart the room at its current level, score preserved).
 
 **Shipping requirement:** the Debug Menu is gated by a client build flag (`EndpointConfig.DEBUG_UI_ENABLED`), but the server still accepts `update_config`/`resetDebugConfig` from any client — full gating needs server-side admin auth too, before public release. See [decisions.md](./decisions.md#debug-menu-build-flag).
 
@@ -190,6 +190,7 @@ Every row below is tunable live, and **each carries its own in-app explainer wit
 | **Power** | `powerUnlockLevel`, `powerMaxSlots`, `powerActivationCooldownMs`, `powerReplenishPileShare` (0–1, shown as a %) |
 | **Scoring** | `placementScorePerHeight`, `placementStabilityFloor`, `reinforceScorePerIntegrity`/`PerLean`, `precisionBonusPerLevel`, `teamExactBonusPerLevel`, `finisherBonusPerLevel`, `assistBonusPerLevel`, `assistContributionThreshold` |
 | **Parallax / Placement** | Client-local rendering and snap-feel values — no server round-trip. See [ui.md](./ui.md#main-ui-controller) |
+| **Hooks** | `visualHookImpactBeat`, `visualHookScreenShake` — kill switches only, one per [Impact Beat](./ui.md#leaf-components) effect. The beat's durations live in `Game_Config.visualHooks`, ride `game_state`, and are deliberately **not** tunable here |
 
 The three most load-bearing knobs, if you only touch a few: `towerStabilityDifficulty` (all of stability), `impactMinContributionShare` (the per-level gate), and `towerSiteSlendernessTarget` (reshapes the whole aspect ratio, and with it the site usage stability is measured against).
 
