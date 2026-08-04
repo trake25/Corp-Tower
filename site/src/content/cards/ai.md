@@ -13,24 +13,48 @@ tools:
 details:
   - id: research
     title: "1 · Initial prompting"
+    keywords:
+      - "Task Decomposition"
+      - "Guardrail Definition"
+      - "Sub-Agent Delegation"
     body: "The task starts as research, not code — usually worked through with a free-tier sub-agent (ChatGPT, Claude), not the coding agent. An oversized ask gets broken into a goal with smaller phases here, and guardrails, edge cases and security get decided before anything is planned, not after. It ends with a first draft of the prompt."
   - id: refine
     title: "2 · Prompt refining"
+    keywords:
+      - "Prompt Engineering"
+      - "Prompt Compression"
+      - "Token Efficiency"
     body: "Once the task is understood, that draft gets cut — through an AI skill, not by hand — to the words, phrases, constraints and context the goal actually needs. Shorter costs fewer tokens, reads clearer, and means fewer clarifying questions once planning starts."
   - id: route
     title: "3 · Model and effort, matched to the task"
+    keywords:
+      - "Model Selection"
+      - "Effort Routing"
+      - "Token Cost Control"
     body: "There's no artifact for this one — it's a skill built by doing it wrong enough times to feel it: prompt engineering, context engineering, learning how a model responds to what it's fed. Most people can't tell a small task from a hard one, so they pay full price upfront regardless. A skilled orchestrator can tell the difference, and that's what keeps both quality and cost in check."
   - id: plan
     title: "4 · Planning phase"
+    keywords:
+      - "Implementation Planning"
+      - "Effort Scaling"
+      - "Guardrail Review"
     body: "Skipped for anything straightforward — planning a trivial change is its own waste. For medium or large work, especially anything touching a security guardrail, this runs on a higher model at high-to-ultra effort. The refined prompt and the context docs go to the coding agent, and the plan is built from both — it can still come back and ask the orchestrator for direction rather than guess."
   - id: rag
     title: "5 · Simplified RAG"
+    keywords:
+      - "Retrieval-Augmented Generation"
+      - "Context Routing"
+      - "Selective Loading"
     body: "RAG is Retrieval-Augmented Generation: pulling in exactly the facts a model needs right before it answers, instead of expecting it to already know them. Inside planning, the coding agent doesn't read the repository — it retrieves. An indexed router names the documents the task needs and loads only those, and loads any AI skill the task calls for, on demand."
     evidence:
       label: "Load least, escalate only if needed"
       href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/index.md#retrieval-load-least-escalate-only-if-needed"
   - id: review
     title: "6 · Orchestrator review and approval"
+    keywords:
+      - "Human-in-the-Loop"
+      - "Plan Approval"
+      - "Hallucination Risk"
     body: "The plan is now the specification — what's about to change, in exact terms. I read it, refine it, or approve it; only approval starts implementation. This is also the checkpoint for context window, hallucination risk and token usage, the things that quietly cost the most — which is why steps 1 and 2 exist."
 ---
 

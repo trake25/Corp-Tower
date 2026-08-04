@@ -15,7 +15,7 @@ export const profile = {
   email: "enriquedelapenajr@gmail.com",
   github: "https://github.com/trake25",
   repo: "https://github.com/trake25/Corp-Tower",
-  linkedin: null as string | null,
+  linkedin: "https://www.linkedin.com/in/enrique-dela-pena-jr" as string | null,
   indeed: null as string | null,
   demo: "https://toddemo.galaxxigames.com",
   // Shown in the availability line. Set to null to hide the whole line.
