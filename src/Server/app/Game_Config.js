@@ -106,8 +106,7 @@ const GameConfig = {
     },
 
     inventoryScaling: {
-        1: 2,
-        3: 3
+        1: 3
     },
 
     maxActiveBlocks: 3,
