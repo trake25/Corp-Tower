@@ -1928,6 +1928,13 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
+[node name="HooksAboutButton" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000064]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "ⓘ About Hooks"
+
 [node name="ImpactBeatToggle" type="CheckButton" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000062]
 unique_name_in_owner = true
 layout_mode = 2
@@ -1937,6 +1944,61 @@ text = "Impact Beat"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Screen Shake"
+
+[node name="ImpactBeatZoomOutLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000065]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Zoom Out: 450 ms"
+
+[node name="ImpactBeatZoomOutSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000066]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ImpactBeatWaveLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000067]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Wave: 550 ms"
+
+[node name="ImpactBeatWaveSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000068]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ImpactBeatHoldLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000069]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Hold: 600 ms"
+
+[node name="ImpactBeatHoldSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000070]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ImpactBeatZoomInLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000071]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Zoom In: 350 ms"
+
+[node name="ImpactBeatZoomInSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000072]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ScreenShakeDurationLabel" type="Button" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000073]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Screen Shake Duration: 260 ms"
+
+[node name="ScreenShakeDurationSlider" type="HSlider" parent="DebugLayer/DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000074]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="DebugTooltip" type="Control" parent="DebugLayer/DebugOverlay" unique_id=900001000]
 unique_name_in_owner = true

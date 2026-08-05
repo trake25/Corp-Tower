@@ -1103,8 +1103,8 @@ test("game state carries the room's visual hook config", () => {
     assert.equal(state.visualHooks.impactBeat, GameConfig.visualHooks.impactBeat);
     assert.equal(state.visualHooks.screenShake, GameConfig.visualHooks.screenShake);
 
-    // The durations ride game_state, never debug_config -- the debug menu only
-    // ever exposes the two toggles.
+    // The durations ride game_state either way, whether or not the debug menu
+    // has ever touched them.
     assert.equal(
         state.visualHooks.impactBeatWaveMs,
         GameConfig.visualHooks.impactBeatWaveMs
@@ -1115,27 +1115,53 @@ test("game state carries the room's visual hook config", () => {
     );
 });
 
-test("visual hook toggles round-trip through debug config and reset", async () => {
+test("visual hook toggles and durations round-trip through debug config and reset", async () => {
     const lobbyManager = new LobbyManager();
     const previousImpactBeat = GameConfig.visualHooks.impactBeat;
     const previousScreenShake = GameConfig.visualHooks.screenShake;
+    const previousZoomOutMs = GameConfig.visualHooks.impactBeatZoomOutMs;
+    const previousWaveMs = GameConfig.visualHooks.impactBeatWaveMs;
+    const previousHoldMs = GameConfig.visualHooks.impactBeatHoldMs;
+    const previousZoomInMs = GameConfig.visualHooks.impactBeatZoomInMs;
+    const previousShakeMs = GameConfig.visualHooks.screenShakeMs;
 
     try {
         await lobbyManager.updateDebugConfig("visualHookImpactBeat", false);
         await lobbyManager.updateDebugConfig("visualHookScreenShake", false);
+        await lobbyManager.updateDebugConfig("visualHookZoomOutMs", 900);
+        await lobbyManager.updateDebugConfig("visualHookWaveMs", 900);
+        await lobbyManager.updateDebugConfig("visualHookHoldMs", 900);
+        await lobbyManager.updateDebugConfig("visualHookZoomInMs", 900);
+        await lobbyManager.updateDebugConfig("visualHookShakeMs", 900);
 
         assert.equal(GameConfig.visualHooks.impactBeat, false);
         assert.equal(GameConfig.visualHooks.screenShake, false);
+        assert.equal(GameConfig.visualHooks.impactBeatZoomOutMs, 900);
+        assert.equal(GameConfig.visualHooks.impactBeatWaveMs, 900);
+        assert.equal(GameConfig.visualHooks.impactBeatHoldMs, 900);
+        assert.equal(GameConfig.visualHooks.impactBeatZoomInMs, 900);
+        assert.equal(GameConfig.visualHooks.screenShakeMs, 900);
         assert.equal(lobbyManager.getDebugConfig().visualHookImpactBeat, false);
         assert.equal(lobbyManager.getDebugConfig().visualHookScreenShake, false);
+        assert.equal(lobbyManager.getDebugConfig().visualHookZoomOutMs, 900);
+        assert.equal(lobbyManager.getDebugConfig().visualHookShakeMs, 900);
+
+        // Out-of-range values clamp rather than being rejected.
+        await lobbyManager.updateDebugConfig("visualHookZoomOutMs", 50000);
+        assert.equal(GameConfig.visualHooks.impactBeatZoomOutMs, 2000);
 
         lobbyManager.applyDefaultDebugConfig();
 
         assert.equal(GameConfig.visualHooks.impactBeat, true);
         assert.equal(GameConfig.visualHooks.screenShake, true);
+        assert.equal(GameConfig.visualHooks.impactBeatZoomOutMs, previousZoomOutMs);
+        assert.equal(GameConfig.visualHooks.impactBeatWaveMs, previousWaveMs);
+        assert.equal(GameConfig.visualHooks.impactBeatHoldMs, previousHoldMs);
+        assert.equal(GameConfig.visualHooks.impactBeatZoomInMs, previousZoomInMs);
+        assert.equal(GameConfig.visualHooks.screenShakeMs, previousShakeMs);
 
-        // The durations are not debug keys -- an attempt to set one is rejected
-        // outright rather than silently ignored.
+        // A raw, un-prefixed key (e.g. matching the game_state field name
+        // rather than the debug_config one) stays unmapped and is rejected.
         assert.equal(
             await lobbyManager.updateDebugConfig("impactBeatWaveMs", 100),
             false
@@ -1143,5 +1169,10 @@ test("visual hook toggles round-trip through debug config and reset", async () =
     } finally {
         GameConfig.visualHooks.impactBeat = previousImpactBeat;
         GameConfig.visualHooks.screenShake = previousScreenShake;
+        GameConfig.visualHooks.impactBeatZoomOutMs = previousZoomOutMs;
+        GameConfig.visualHooks.impactBeatWaveMs = previousWaveMs;
+        GameConfig.visualHooks.impactBeatHoldMs = previousHoldMs;
+        GameConfig.visualHooks.impactBeatZoomInMs = previousZoomInMs;
+        GameConfig.visualHooks.screenShakeMs = previousShakeMs;
     }
 });

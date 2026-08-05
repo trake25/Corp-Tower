@@ -50,7 +50,12 @@ const DEFAULT_DEBUG_CONFIG = {
     assistBonusPerLevel: GameConfig.scoring.assistBonusPerLevel,
     assistContributionThreshold: GameConfig.scoring.assistContributionThreshold,
     visualHookImpactBeat: GameConfig.visualHooks.impactBeat,
-    visualHookScreenShake: GameConfig.visualHooks.screenShake
+    visualHookScreenShake: GameConfig.visualHooks.screenShake,
+    visualHookZoomOutMs: GameConfig.visualHooks.impactBeatZoomOutMs,
+    visualHookWaveMs: GameConfig.visualHooks.impactBeatWaveMs,
+    visualHookHoldMs: GameConfig.visualHooks.impactBeatHoldMs,
+    visualHookZoomInMs: GameConfig.visualHooks.impactBeatZoomInMs,
+    visualHookShakeMs: GameConfig.visualHooks.screenShakeMs
 };
 
 class LobbyManager {
@@ -491,7 +496,12 @@ class LobbyManager {
             assistContributionThreshold:
                 GameConfig.scoring.assistContributionThreshold,
             visualHookImpactBeat: GameConfig.visualHooks.impactBeat,
-            visualHookScreenShake: GameConfig.visualHooks.screenShake
+            visualHookScreenShake: GameConfig.visualHooks.screenShake,
+            visualHookZoomOutMs: GameConfig.visualHooks.impactBeatZoomOutMs,
+            visualHookWaveMs: GameConfig.visualHooks.impactBeatWaveMs,
+            visualHookHoldMs: GameConfig.visualHooks.impactBeatHoldMs,
+            visualHookZoomInMs: GameConfig.visualHooks.impactBeatZoomInMs,
+            visualHookShakeMs: GameConfig.visualHooks.screenShakeMs
         };
     }
 
@@ -573,6 +583,16 @@ class LobbyManager {
             DEFAULT_DEBUG_CONFIG.visualHookImpactBeat;
         GameConfig.visualHooks.screenShake =
             DEFAULT_DEBUG_CONFIG.visualHookScreenShake;
+        GameConfig.visualHooks.impactBeatZoomOutMs =
+            DEFAULT_DEBUG_CONFIG.visualHookZoomOutMs;
+        GameConfig.visualHooks.impactBeatWaveMs =
+            DEFAULT_DEBUG_CONFIG.visualHookWaveMs;
+        GameConfig.visualHooks.impactBeatHoldMs =
+            DEFAULT_DEBUG_CONFIG.visualHookHoldMs;
+        GameConfig.visualHooks.impactBeatZoomInMs =
+            DEFAULT_DEBUG_CONFIG.visualHookZoomInMs;
+        GameConfig.visualHooks.screenShakeMs =
+            DEFAULT_DEBUG_CONFIG.visualHookShakeMs;
     }
 
     async resetDebugConfigToDefaults() {
@@ -660,6 +680,13 @@ class LobbyManager {
                 maxValue
             );
         };
+        const setVisualHookInt = (configKey, minValue, maxValue) => () => {
+            GameConfig.visualHooks[configKey] = clampInt(
+                GameConfig.visualHooks[configKey],
+                minValue,
+                maxValue
+            );
+        };
         const debugConfigSetters = {
             debugBotsEnabled: () => {
                 GameConfig.debugBotsEnabled = Boolean(value);
@@ -740,7 +767,12 @@ class LobbyManager {
             },
             visualHookScreenShake: () => {
                 GameConfig.visualHooks.screenShake = Boolean(value);
-            }
+            },
+            visualHookZoomOutMs: setVisualHookInt("impactBeatZoomOutMs", 100, 2000),
+            visualHookWaveMs: setVisualHookInt("impactBeatWaveMs", 100, 2000),
+            visualHookHoldMs: setVisualHookInt("impactBeatHoldMs", 0, 3000),
+            visualHookZoomInMs: setVisualHookInt("impactBeatZoomInMs", 100, 2000),
+            visualHookShakeMs: setVisualHookInt("screenShakeMs", 0, 2000)
         };
 
         if (!debugConfigSetters[key]) {
