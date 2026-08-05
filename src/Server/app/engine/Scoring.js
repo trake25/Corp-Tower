@@ -337,6 +337,7 @@ module.exports = {
     addPlacementScore,
     addReinforceScore,
     getPlacementStabilityMultiplier,
+    getReinforceScoreCap,
     awardCompletionBonuses,
     addBonusScore,
     getBonusScoreEventType,

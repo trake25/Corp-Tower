@@ -209,13 +209,25 @@ function getAverageBrickCellCount(engine) {
     return totalWeight > 0 ? weightedCells / totalWeight : 1;
 }
 
+// The surplus window's upper edge: the debug-tunable flat levelSupplyMaxSurplus
+// plus a share of the level's required brick height. The flat amount alone is
+// missed almost every attempt once the required height (and the random draw's
+// variance around it) grows past the earliest levels.
+function getLevelSupplyMaxSurplus(requiredBrickHeight) {
+    const flat = Math.max(0, Number(GameConfig.levelSupplyMaxSurplus) || 0);
+    const share = Math.max(0, Number(GameConfig.levelSupplyMaxSurplusShare) || 0);
+
+    return flat + Math.ceil(requiredBrickHeight * share);
+}
+
 function getGeneratedDrawPileBlockCount(engine) {
     const averageBrickHeight = Math.max(1, engine.getAverageBrickHeight());
     const requiredBrickHeight = Math.ceil(
         engine.room.targetHeight / engine.getSupplyPackingEfficiency()
     );
+    const maxSurplus = getLevelSupplyMaxSurplus(requiredBrickHeight);
     const bandCenter =
-        (GameConfig.levelSupplyMinSurplus + GameConfig.levelSupplyMaxSurplus) / 2;
+        (GameConfig.levelSupplyMinSurplus + maxSurplus) / 2;
     const openingHandHeight =
         engine.room.players.length *
         engine.getBlocksPerPlayer() *
@@ -224,13 +236,17 @@ function getGeneratedDrawPileBlockCount(engine) {
         engine.getTotalBlockHeight(engine.room.teamCarryOverBlocks || []);
     const shortfall =
         requiredBrickHeight + bandCenter - openingHandHeight - carryOverHeight;
+    const desired = Math.ceil(shortfall / averageBrickHeight);
+
+    // Diagnostic only -- read by the Balance Simulator's `pileClipped` column
+    // (see testing.md § Balance Simulator) to tell "the reserve is small
+    // because the level doesn't need more" apart from "the reserve is small
+    // because maxGeneratedDrawPileBlocks cut it off".
+    engine.room.pileClipped = desired > GameConfig.maxGeneratedDrawPileBlocks;
 
     return Math.max(
         0,
-        Math.min(
-            Math.ceil(shortfall / averageBrickHeight),
-            GameConfig.maxGeneratedDrawPileBlocks
-        )
+        Math.min(desired, GameConfig.maxGeneratedDrawPileBlocks)
     );
 }
 
@@ -270,10 +286,14 @@ function generateSolvableOpeningHandBlocks(engine) {
                 openingHandBlockCount
             )
         ) {
+            // Diagnostic only -- read by the Balance Simulator's
+            // `supplyValidRate` column (see testing.md § Balance Simulator).
+            engine.room.lastOpeningHandValid = true;
             return newBlocks;
         }
     }
 
+    engine.room.lastOpeningHandValid = false;
     return fallbackBlocks;
 }
 
@@ -285,7 +305,7 @@ function isLevelBlockSupplyValid(engine, blocks, minimumOpeningBlocks) {
     const minTotalHeight =
         requiredBrickHeight + GameConfig.levelSupplyMinSurplus;
     const maxTotalHeight =
-        requiredBrickHeight + GameConfig.levelSupplyMaxSurplus;
+        requiredBrickHeight + getLevelSupplyMaxSurplus(requiredBrickHeight);
     const totalHeight = engine.getTotalBlockHeight(blocks);
 
     return (
@@ -373,6 +393,7 @@ function drawBlockFromPile(engine) {
 
 function refillPlayerBlock(engine, player) {
     const blocksPerPlayer = engine.getBlocksPerPlayer();
+    player.blocks = player.blocks || [];
 
     while (
         player.blocks.length < blocksPerPlayer &&

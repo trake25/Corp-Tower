@@ -113,10 +113,20 @@ const GameConfig = {
     maxActiveBlocks: 3,
 
     maxTeamCarryOverBlocks: 3,
-    maxGeneratedDrawPileBlocks: 32,
+    // The pile is a reserve, not a hand: at target ~84 with model efficiency
+    // 0.378 the derived reserve wants ~88 bricks, and 32 clipped it -- which
+    // silently broke the solvability guarantee below level ~15 (see
+    // plan/corp-tower-target-height-scaling-plan.md §1.3).
+    maxGeneratedDrawPileBlocks: 96,
     supplyEffectiveWidthRatio: 0.5,
     levelSupplyMinSurplus: 0,
     levelSupplyMaxSurplus: 6,
+    // Proportional slack added on top of the flat levelSupplyMaxSurplus above,
+    // scaled to the level's required brick height. A flat +6 against a total
+    // drawn from ~90 random bricks (sd ~10) is missed almost every attempt
+    // once required height grows past the earliest levels -- config-file-only
+    // for now, same treatment as reinforceScorePerSupportedCell.
+    levelSupplyMaxSurplusShare: 0.12,
     minPrecisionBlocksPerLevel: 3,
     openingHandGenerationAttempts: 1000,
 
@@ -167,6 +177,12 @@ const GameConfig = {
     // Measured against the best column available for that brick, so it keeps
     // discriminating no matter how forgiving the stability config is tuned.
     debugBotStabilityTolerance: 5,
+
+    // Cap on how many void-floor release rows a bot's placement search tries
+    // per decision, largest-void-first -- bounds the search by tower shape
+    // rather than tower height. See plan/corp-tower-target-height-scaling-
+    // plan.md §2.1/§2.4.
+    debugBotGapCandidates: 6,
 
 };
 

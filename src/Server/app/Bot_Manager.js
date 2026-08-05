@@ -141,20 +141,16 @@ class BotManager {
 
             const action = this.chooseBotAction(bot, engine);
 
-            if (action && action.type === "wait") {
+            if (action.type === "wait") {
                 this.runBotLoop(bot, engine, level);
                 return;
             }
 
-            const column = this.chooseBotColumn(
-                engine,
-                bot.blocks[action.blockIndex]
-            );
-
             engine.placeBlock(
                 bot.id,
                 action.blockIndex,
-                column
+                action.column,
+                action.originY
             );
 
             this.runBotLoop(
@@ -165,93 +161,6 @@ class BotManager {
 
         }, delay);
 
-    }
-
-    chooseBotAction(bot, engine, strategy = GameConfig.debugBotStrategy) {
-        if (strategy === "mvp_greedy") {
-            return this.chooseMvpGreedyAction(bot, engine);
-        }
-
-        return this.chooseCooperativeAction(bot, engine);
-    }
-
-    chooseBotColumn(engine, block, strategy = GameConfig.debugBotStrategy) {
-        if (!block) {
-            return engine.getPlaceableColumnRange().min;
-        }
-
-        const { min, max } = engine.getPlaceableOriginRange(block);
-        const greedy = strategy === "mvp_greedy";
-        const previousHeight = TowerStability.topHeight(
-            engine.room.towerBlocks || []
-        );
-        const options = [];
-        const stabilityConfig = engine.resolveStabilityConfig();
-
-        for (let column = min; column <= max; column++) {
-            const originX = engine.resolveColumnOriginX(block, column);
-            const placement = TowerStability.settleBlock(
-                engine.room.towerBlocks || [],
-                block,
-                originX
-            );
-            const projected = [
-                ...(engine.room.towerBlocks || []),
-                {
-                    block: block,
-                    originX: placement.originX,
-                    originY: placement.originY
-                }
-            ];
-            const result = TowerStability.evaluate(projected, stabilityConfig);
-            const heightGain = Math.max(
-                0,
-                TowerStability.topHeight(projected) - previousHeight
-            );
-
-            if (result.stability <= 0) {
-                continue;
-            }
-
-            options.push({
-                column: column,
-                stability: result.stability,
-                heightGain: heightGain
-            });
-        }
-
-        if (options.length === 0) {
-            return min;
-        }
-
-        // Gate cooperative play on how much stability the *best available*
-        // column offers rather than a fixed threshold: an absolute cut-off stops
-        // discriminating entirely once the stability config is tuned forgiving
-        // enough that every column reads healthy.
-        const bestStability = options.reduce((top, option) => {
-            return Math.max(top, option.stability);
-        }, 0);
-        const tolerance = Math.max(
-            0,
-            Number(GameConfig.debugBotStabilityTolerance) || 0
-        );
-        const allowed = greedy
-            ? options
-            : options.filter(option => {
-                return option.stability >= bestStability - tolerance;
-            });
-
-        return allowed.reduce((best, option) => {
-            if (!best) {
-                return option;
-            }
-
-            if (option.heightGain !== best.heightGain) {
-                return option.heightGain > best.heightGain ? option : best;
-            }
-
-            return option.stability > best.stability ? option : best;
-        }, null).column;
     }
 
     // True when this bot has already banked its own Impact share for the level
@@ -288,11 +197,278 @@ class BotManager {
         });
     }
 
-    chooseCooperativeAction(bot, engine) {
+    // Release-row candidates for one placement decision: `null` (drop from
+    // above, the pre-gap-targeting behavior) plus up to `debugBotGapCandidates`
+    // void floors, largest-void-first. A void is a run of empty cells in one
+    // column with an occupied cell sitting on top of it -- an open column top
+    // is not a void, it is already covered by the `null` candidate. Computed
+    // once per decision and tried against every column, rather than searched
+    // per column, so cost is bounded by tower shape rather than tower height.
+    getVoidReleaseRows(entries, min, max) {
+        const topHeight = TowerStability.topHeight(entries);
 
+        if (topHeight <= 1) {
+            return [null];
+        }
+
+        const occupiedByColumn = new Map();
+
+        entries.forEach(entry => {
+            TowerStability.cellsFor(entry).forEach(cell => {
+                if (!occupiedByColumn.has(cell.x)) {
+                    occupiedByColumn.set(cell.x, new Set());
+                }
+
+                occupiedByColumn.get(cell.x).add(cell.y);
+            });
+        });
+
+        // row -> largest void run found starting at that row, across columns.
+        const runsByRow = new Map();
+
+        for (let x = min; x <= max; x++) {
+            const occupiedRows = occupiedByColumn.get(x) || new Set();
+            let runStart = null;
+
+            for (let y = 0; y < topHeight; y++) {
+                const filled = occupiedRows.has(y);
+
+                if (!filled && runStart === null) {
+                    runStart = y;
+                    continue;
+                }
+
+                if (filled && runStart !== null) {
+                    const runLength = y - runStart;
+
+                    runsByRow.set(
+                        runStart,
+                        Math.max(runsByRow.get(runStart) || 0, runLength)
+                    );
+                    runStart = null;
+                }
+            }
+            // A run still open at topHeight has no lid -- it is the open top
+            // of that column, not a void, so it is deliberately dropped here.
+        }
+
+        const candidateCount = Math.max(
+            0, Number(GameConfig.debugBotGapCandidates) || 0
+        );
+        const ranked = [...runsByRow.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, candidateCount)
+            .map(([row]) => row);
+
+        return [null, ...ranked];
+    }
+
+    // Ranks a list of `{ points, heightGain, stability, ... }` candidates by
+    // strategy, preserving *risk appetite, not competence* -- see
+    // gameplay.md#bot-behavior. Used both to pick a placement for one brick and
+    // to pick a brick from a hand, so a cooperative bot is equally
+    // stability-averse at both stages.
+    rankByStrategy(candidates, strategy) {
+        if (!candidates || candidates.length === 0) {
+            return null;
+        }
+
+        if (strategy === "mvp_greedy") {
+            return candidates.reduce((best, candidate) => {
+                if (!best) {
+                    return candidate;
+                }
+
+                if (candidate.points !== best.points) {
+                    return candidate.points > best.points ? candidate : best;
+                }
+
+                if (candidate.heightGain !== best.heightGain) {
+                    return candidate.heightGain > best.heightGain ? candidate : best;
+                }
+
+                return candidate.stability > best.stability ? candidate : best;
+            }, null);
+        }
+
+        // Cooperative: gate on how much stability the *best available*
+        // candidate offers rather than a fixed threshold -- an absolute cutoff
+        // stops discriminating once the stability config is tuned forgiving
+        // enough that every candidate reads healthy.
+        const bestStability = candidates.reduce((top, candidate) => {
+            return Math.max(top, candidate.stability);
+        }, 0);
+        const tolerance = Math.max(
+            0, Number(GameConfig.debugBotStabilityTolerance) || 0
+        );
+        const allowed = candidates.filter(candidate => {
+            return candidate.stability >= bestStability - tolerance;
+        });
+
+        return allowed.reduce((best, candidate) => {
+            if (!best) {
+                return candidate;
+            }
+
+            if (candidate.points !== best.points) {
+                return candidate.points > best.points ? candidate : best;
+            }
+
+            return candidate.stability > best.stability ? candidate : best;
+        }, null);
+    }
+
+    // Chooses where to place one brick, searching every column crossed with
+    // every release-row candidate (drop-from-above plus up to
+    // debugBotGapCandidates void floors). Two-stage: a cheap proxy pass (no
+    // evaluate()) narrows to the top 8 candidates, then only those survivors
+    // pay for a full TowerStability.evaluate() and get scored with the engine's
+    // own placement/reinforce reward formulas -- so ranking reflects what the
+    // engine will actually pay, not a stand-in. Returns
+    // { column, originX, originY, heightGain, stability, points } or null if
+    // every candidate collapses the tower.
+    chooseBotPlacement(engine, block, strategy = GameConfig.debugBotStrategy) {
+        if (!block) {
+            return null;
+        }
+
+        const entries = engine.room.towerBlocks || [];
+        const { min, max } = engine.getPlaceableOriginRange(block);
+        const previousHeight = TowerStability.topHeight(entries);
+        const targetHeight = engine.room.targetHeight;
+        const currentHeight = engine.room.currentHeight;
+        const releaseRows = this.getVoidReleaseRows(entries, min, max);
+        const perHeight = Number(GameConfig.scoring.placementScorePerHeight) || 0;
+        const perSupportedCell =
+            Number(GameConfig.scoring.reinforceScorePerSupportedCell) || 0;
+
+        const seen = new Set();
+        const cheapCandidates = [];
+
+        for (let column = min; column <= max; column++) {
+            const originX = engine.resolveColumnOriginX(block, column);
+
+            for (const releaseRow of releaseRows) {
+                if (
+                    releaseRow !== null &&
+                    !TowerStability.isPlacementLegal(entries, block, originX, releaseRow)
+                ) {
+                    continue;
+                }
+
+                const placement = TowerStability.settleBlock(
+                    entries, block, originX, releaseRow
+                );
+                const dedupeKey = `${placement.originX},${placement.originY}`;
+
+                if (seen.has(dedupeKey)) {
+                    continue;
+                }
+
+                seen.add(dedupeKey);
+
+                const supportedCells = TowerStability.supportedCellsGained(
+                    entries, block, placement.originX, placement.originY
+                );
+                const projected = [
+                    ...entries,
+                    { block, originX: placement.originX, originY: placement.originY }
+                ];
+                const heightGain = Math.max(
+                    0, TowerStability.topHeight(projected) - previousHeight
+                );
+                const effectiveHeight = Math.max(
+                    0, Math.min(heightGain, targetHeight - currentHeight)
+                );
+                const proxy =
+                    effectiveHeight * perHeight +
+                    supportedCells * perSupportedCell;
+
+                cheapCandidates.push({
+                    column: column,
+                    originX: placement.originX,
+                    originY: placement.originY,
+                    heightGain: heightGain,
+                    effectiveHeight: effectiveHeight,
+                    supportedCells: supportedCells,
+                    proxy: proxy,
+                    projected: projected
+                });
+            }
+        }
+
+        if (cheapCandidates.length === 0) {
+            return null;
+        }
+
+        const survivors = cheapCandidates
+            .sort((a, b) => b.proxy - a.proxy)
+            .slice(0, 8);
+
+        const stabilityBefore = engine.room.towerStability ?? 100;
+        const structureBefore = engine.room.towerStabilityDiagnostics || {};
+        const stabilityConfig = engine.resolveStabilityConfig();
+        const placementMultiplier =
+            engine.getPlacementStabilityMultiplier(stabilityBefore);
+        const reinforceCap = engine.getReinforceScoreCap();
+        const level = engine.room.level;
+        const perIntegrity =
+            Number(GameConfig.scoring.reinforceScorePerIntegrity) || 0;
+        const perLean = Number(GameConfig.scoring.reinforceScorePerLean) || 0;
+
+        const scored = [];
+
+        for (const candidate of survivors) {
+            const result = TowerStability.evaluate(candidate.projected, stabilityConfig);
+
+            if (result.stability <= 0) {
+                continue;
+            }
+
+            const integrityGain = Math.max(
+                0,
+                Number(result.diagnostics.integrity ?? 100) -
+                    Number(structureBefore.integrity ?? 100)
+            );
+            const leanCorrection = Math.max(
+                0,
+                Math.abs(Number(structureBefore.tiltScore) || 0) -
+                    Math.abs(Number(result.diagnostics.tiltScore) || 0)
+            );
+            const placementPoints = Math.round(
+                candidate.effectiveHeight * level * perHeight * placementMultiplier
+            );
+            const reinforcePoints = Math.min(
+                reinforceCap,
+                Math.round(
+                    (integrityGain * perIntegrity +
+                        leanCorrection * perLean +
+                        candidate.supportedCells * perSupportedCell) *
+                    level
+                )
+            );
+
+            scored.push({
+                column: candidate.column,
+                originX: candidate.originX,
+                originY: candidate.originY,
+                heightGain: candidate.heightGain,
+                stability: result.stability,
+                points: placementPoints + reinforcePoints
+            });
+        }
+
+        return this.rankByStrategy(scored, strategy);
+    }
+
+    // Joins brick choice to placement choice: under gap targeting a 1-high
+    // brick can be worth more as a repair than a 4-high brick is as a claim, so
+    // brick and placement can no longer be picked independently. Evaluates the
+    // cross product of hand (<= 3 bricks) x best placement per brick and
+    // returns the best pair, after the cheap exact-finisher shortcut.
+    chooseBotAction(bot, engine, strategy = GameConfig.debugBotStrategy) {
         const remainingHeight = Math.max(
-            0,
-            engine.room.targetHeight - engine.room.currentHeight
+            0, engine.room.targetHeight - engine.room.currentHeight
         );
         const blocks = bot.blocks || [];
 
@@ -301,131 +477,70 @@ class BotManager {
         });
 
         if (exactIndex >= 0) {
-            return {
-                type: "place",
-                blockIndex: exactIndex
-            };
+            const placement = this.chooseBotPlacement(engine, blocks[exactIndex], strategy);
+
+            if (placement) {
+                return {
+                    type: "place",
+                    blockIndex: exactIndex,
+                    column: placement.column,
+                    originY: placement.originY
+                };
+            }
         }
 
-        const candidates = blocks
-            .map((block, index) => ({
-                index: index,
-                height: engine.getBlockHeight(block)
-            }))
-            .filter(candidate => candidate.height > 0);
+        const pairs = [];
 
-        const yieldHeight = this.hasClearedShareWhileTeammateShort(bot, engine);
+        blocks.forEach((block, index) => {
+            const placement = this.chooseBotPlacement(engine, block, strategy);
 
-        // Already banked its own share while a teammate is short: the height
-        // left in this level is worth more to them than to this bot, and under
-        // an Impact-every-level rule their shortfall fails the whole team. Hold
-        // the turn rather than consume it. The teammate who is short can never
-        // take this branch, so the room cannot deadlock.
-        if (yieldHeight && remainingHeight > 0) {
+            if (placement) {
+                pairs.push({ ...placement, blockIndex: index });
+            }
+        });
+
+        // Cooperative only: already banked its own share while a teammate is
+        // short, so the height left in this level is worth more to them than
+        // to this bot, and under an Impact-every-level rule their shortfall
+        // fails the whole team. A zero-height repair still leaves every point
+        // of contested height to the short teammate while doing something
+        // useful, so prefer the best one over holding the turn outright. The
+        // teammate who is short can never take this branch, so the room
+        // cannot deadlock.
+        if (
+            strategy !== "mvp_greedy" &&
+            remainingHeight > 0 &&
+            this.hasClearedShareWhileTeammateShort(bot, engine)
+        ) {
+            const repairs = pairs.filter(pair => {
+                return pair.heightGain === 0 && pair.points > 0;
+            });
+            const bestRepair = this.rankByStrategy(repairs, strategy);
+
+            if (bestRepair) {
+                return {
+                    type: "place",
+                    blockIndex: bestRepair.blockIndex,
+                    column: bestRepair.column,
+                    originY: bestRepair.originY
+                };
+            }
+
             return { type: "wait" };
         }
 
-        const nonOverkill = candidates.filter(candidate => {
-            return candidate.height <= remainingHeight;
-        });
+        const best = this.rankByStrategy(pairs, strategy);
 
-        if (nonOverkill.length > 0) {
-            const sorted = nonOverkill.sort((a, b) => {
-                if (yieldHeight || remainingHeight <= 3) {
-                    return a.height - b.height;
-                }
-
-                return b.height - a.height;
-            });
-
-            return {
-                type: "place",
-                blockIndex: sorted[0].index
-            };
+        if (!best) {
+            return { type: "wait" };
         }
-
-        const smallestOverkill = candidates.sort((a, b) => {
-            return a.height - b.height;
-        })[0];
 
         return {
             type: "place",
-            blockIndex: smallestOverkill ? smallestOverkill.index : 0
+            blockIndex: best.blockIndex,
+            column: best.column,
+            originY: best.originY
         };
-    }
-
-    chooseMvpGreedyAction(bot, engine) {
-
-        const remainingHeight = Math.max(
-            0,
-            engine.room.targetHeight - engine.room.currentHeight
-        );
-        const blocks = bot.blocks || [];
-        const candidates = this.getBlockCandidates(blocks, engine);
-
-        const exactIndex = candidates.find(candidate => {
-            return candidate.height === remainingHeight;
-        })?.index;
-
-        if (exactIndex !== undefined) {
-            return {
-                type: "place",
-                blockIndex: exactIndex
-            };
-        }
-
-        const usefulCandidates = candidates.filter(candidate => {
-            return candidate.effectiveHeight > 0;
-        });
-
-        if (usefulCandidates.length > 0) {
-            const bestCandidate = usefulCandidates.sort((a, b) => {
-                const scoreDiff = b.effectiveHeight - a.effectiveHeight;
-
-                if (scoreDiff !== 0) {
-                    return scoreDiff;
-                }
-
-                return b.height - a.height;
-            })[0];
-
-            return {
-                type: "place",
-                blockIndex: bestCandidate.index
-            };
-        }
-
-        const largestBlock = candidates.sort((a, b) => {
-            return b.height - a.height;
-        })[0];
-
-        return {
-            type: "place",
-            blockIndex: largestBlock ? largestBlock.index : 0
-        };
-    }
-
-    getBlockCandidates(blocks, engine) {
-
-        const remainingHeight = Math.max(
-            0,
-            engine.room.targetHeight - engine.room.currentHeight
-        );
-
-        return (blocks || [])
-            .map((block, index) => {
-                const height = engine.getBlockHeight(block);
-
-                return {
-                    index: index,
-                    height: height,
-                    effectiveHeight: Math.max(
-                        0,
-                        Math.min(height, remainingHeight)
-                    )
-                };
-            })
-            .filter(candidate => candidate.height > 0);
     }
 
 }

@@ -339,7 +339,11 @@ class GameEngine {
                 target.scoreCapCasterId = null;
             }
         });
-        const blocksAdded = item.id === "replenish" ? this.generateReplenishBlocks() : 0;
+        let blocksAdded = 0;
+        if (item.id === "replenish") {
+            blocksAdded = this.generateReplenishBlocks();
+            this.room.players.forEach(target => this.refillPlayerBlock(target));
+        }
         this.room.pendingPowerEvents.push({ id: `${this.room.level}:power:${Date.now()}`, type: "power_activated", playerId, powerId: item.id, label: GameConfig.powerCatalog[item.id].title, meta: { blocksAdded } });
         this.persistRoom(); this.broadcastGameState(); return true;
     }
@@ -1051,6 +1055,7 @@ class GameEngine {
     addPlacementScore(player, block, effectiveHeight, stabilityBefore) { return Scoring.addPlacementScore(this, player, block, effectiveHeight, stabilityBefore); }
     addReinforceScore(player, before, after, supportedCells = 0) { return Scoring.addReinforceScore(this, player, before, after, supportedCells); }
     getPlacementStabilityMultiplier(stabilityBefore) { return Scoring.getPlacementStabilityMultiplier(this, stabilityBefore); }
+    getReinforceScoreCap() { return Scoring.getReinforceScoreCap(this); }
     awardCompletionBonuses(finisher, exactFinish) { return Scoring.awardCompletionBonuses(this, finisher, exactFinish); }
     addBonusScore(player, points, label) { return Scoring.addBonusScore(this, player, points, label); }
     getBonusScoreEventType(label) { return Scoring.getBonusScoreEventType(this, label); }

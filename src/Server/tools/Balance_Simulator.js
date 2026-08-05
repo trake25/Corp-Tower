@@ -6,7 +6,11 @@ const BotManager = require("../app/Bot_Manager");
 const STRATEGIES = ["cooperative", "mvp_greedy"];
 
 const DEFAULT_LEVELS = 20;
-const DEFAULT_RUNS = 1000;
+// 1000 runs/level took ~20 minutes end to end, which made the tool
+// effectively unusable for iterative tuning; 100 is still enough samples to
+// read a rate to within a couple points. See plan/corp-tower-target-height-
+// scaling-plan.md §2.4.
+const DEFAULT_RUNS = 100;
 
 const SWEEP_DIFFICULTIES = [0, 25, 50, 75, 100];
 const SWEEP_LEVEL_STEP = 5;
@@ -104,6 +108,8 @@ function simulateSmartPlay(engine, strategy) {
     let finisher = null;
     let finishingBlock = null;
     let brickHeightPlaced = 0;
+    let gapPlacements = 0;
+    let supportedCellsTotal = 0;
 
     // Sampled at every placement, not just at the end. The binary collapse rate
     // alone cannot tell a well-tuned stability config from one whose thresholds
@@ -125,8 +131,12 @@ function simulateSmartPlay(engine, strategy) {
         exact: false,
         overbuild: 0,
         collapsed: false,
+        starved: false,
         placements: placements,
         brickHeightPlaced: brickHeightPlaced,
+        gapPlacements: gapPlacements,
+        supportedCells: supportedCellsTotal,
+        clockMs: clock,
         efficiency:
             brickHeightPlaced > 0
                 ? engine.room.currentHeight / brickHeightPlaced
@@ -170,7 +180,9 @@ function simulateSmartPlay(engine, strategy) {
         const actor = nextPlayerToAct(engine, clock);
 
         if (!actor) {
-            return outcome({});
+            // No player has a block left and the pile is dry -- a genuine
+            // supply starve, not a collapse or a timeout.
+            return outcome({ starved: true });
         }
 
         clock = actor.readyAt;
@@ -182,7 +194,7 @@ function simulateSmartPlay(engine, strategy) {
         const placement = chooseSmartPlacement(engine, strategy, actor.player);
 
         if (!placement) {
-            return outcome({});
+            return outcome({ starved: true });
         }
 
         actor.player.simReadyAt = clock + cooldown;
@@ -201,6 +213,12 @@ function simulateSmartPlay(engine, strategy) {
         const column = chooseStablestColumn(engine, block, strategy);
         const placementPosition = TowerStability.settleBlock(
             engine.room.towerBlocks || [], block, engine.resolveColumnOriginX(block, column)
+        );
+        const supportedCells = TowerStability.supportedCellsGained(
+            engine.room.towerBlocks || [],
+            block,
+            placementPosition.originX,
+            placementPosition.originY
         );
         const projected = [...(engine.room.towerBlocks || []), {
             playerId: placement.player.id, block, ...placementPosition
@@ -227,8 +245,12 @@ function simulateSmartPlay(engine, strategy) {
             placement.player, block, effectiveHeight, stabilityBefore
         );
         engine.addReinforceScore(
-            placement.player, structureBefore, structure.diagnostics
+            placement.player, structureBefore, structure.diagnostics, supportedCells
         );
+        if (supportedCells > 0) {
+            gapPlacements += 1;
+        }
+        supportedCellsTotal += supportedCells;
         placements += 1;
         finisher = placement.player;
         finishingBlock = block;
@@ -286,6 +308,7 @@ function runLevel(level, runs, strategy = "cooperative") {
         smartExact: 0,
         collapsed: 0,
         timedOut: 0,
+        starved: 0,
         gateMet: 0,
         siteWidth: 0,
         averageEfficiency: 0,
@@ -294,6 +317,13 @@ function runLevel(level, runs, strategy = "cooperative") {
         averageTeamLevelScore: 0,
         averageMvpLevelScore: 0,
         averageScoreSpread: 0,
+        requiredBrickHeight: 0,
+        modelEfficiency: 0,
+        pileClipped: 0,
+        supplyValid: 0,
+        averageGapPlacements: 0,
+        averageSupportedCells: 0,
+        averageClockUsedS: 0,
         samples: 0,
         stabilitySum: 0,
         minStability: 100,
@@ -326,6 +356,7 @@ function runLevel(level, runs, strategy = "cooperative") {
         stats.smartExact += result.exact ? 1 : 0;
         stats.collapsed += result.collapsed ? 1 : 0;
         stats.timedOut += result.timedOut ? 1 : 0;
+        stats.starved += result.starved ? 1 : 0;
         stats.gateMet += (result.completed && result.gateMet) ? 1 : 0;
         stats.siteWidth = engine.getSiteWidthForHeight(engine.room.targetHeight);
         stats.averageEfficiency += result.efficiency;
@@ -334,6 +365,20 @@ function runLevel(level, runs, strategy = "cooperative") {
         stats.averageTeamLevelScore += result.teamLevelScore;
         stats.averageMvpLevelScore += result.mvpLevelScore;
         stats.averageScoreSpread += result.scoreSpread;
+        stats.averageGapPlacements += result.gapPlacements;
+        stats.averageSupportedCells += result.supportedCells;
+        stats.averageClockUsedS += result.clockMs / 1000;
+
+        // Deterministic per level given a fixed target height/site (no team
+        // carry-over in a fresh simulated room), so these track walls, not
+        // run-to-run noise. supplyValid is the exception -- it depends on the
+        // random opening hand each run.
+        stats.requiredBrickHeight = Math.ceil(
+            engine.room.targetHeight / engine.getSupplyPackingEfficiency()
+        );
+        stats.modelEfficiency = engine.getSupplyPackingEfficiency();
+        stats.pileClipped += engine.room.pileClipped ? 1 : 0;
+        stats.supplyValid += engine.room.lastOpeningHandValid ? 1 : 0;
 
         const t = result.telemetry;
         stats.samples += t.samples;
@@ -365,11 +410,13 @@ function runLevel(level, runs, strategy = "cooperative") {
         averagePileBlocks: stats.averagePileBlocks / runs,
         averageDrawPileAfterDeal: stats.averageDrawPileAfterDeal / runs,
         averageTotalHeight: stats.averageTotalHeight / runs,
+        supplyHeight: stats.averageTotalHeight / runs,
         exactPossibleRate: stats.exactPossible / runs,
         smartCompletionRate: stats.smartCompleted / runs,
         smartExactRate: stats.smartExact / runs,
         collapseRate: stats.collapsed / runs,
         timeoutRate: stats.timedOut / runs,
+        starvedRate: stats.starved / runs,
         gateMetRate: stats.gateMet / runs,
         siteWidth: stats.siteWidth,
         averageEfficiency: stats.averageEfficiency / runs,
@@ -377,7 +424,14 @@ function runLevel(level, runs, strategy = "cooperative") {
         averagePlacements: stats.averagePlacements / runs,
         averageTeamLevelScore: stats.averageTeamLevelScore / runs,
         averageMvpLevelScore: stats.averageMvpLevelScore / runs,
-        averageScoreSpread: stats.averageScoreSpread / runs
+        averageScoreSpread: stats.averageScoreSpread / runs,
+        requiredBrickHeight: stats.requiredBrickHeight,
+        modelEfficiency: stats.modelEfficiency,
+        pileClippedRate: stats.pileClipped / runs,
+        supplyValidRate: stats.supplyValid / runs,
+        averageGapPlacements: stats.averageGapPlacements / runs,
+        averageSupportedCells: stats.averageSupportedCells / runs,
+        averageClockUsedS: stats.averageClockUsedS / runs
     };
 }
 
@@ -392,6 +446,11 @@ function printResults(results) {
             "strategy",
             "target",
             "site",
+            "supplyHeight",
+            "requiredBrickHeight",
+            "modelEfficiency",
+            "pileClipped",
+            "supplyValidRate",
             "efficiency",
             "avgBlocks",
             "avgDrawAfterDeal",
@@ -401,9 +460,13 @@ function printResults(results) {
             "smartExact",
             "collapse",
             "timeout",
+            "starved",
             "gatePassed",
             "avgOverbuild",
             "avgPlacements",
+            "clockUsedS",
+            "gapPlacements",
+            "supportedCells",
             "avgTeamScore",
             "avgMvpScore",
             "avgScoreSpread"
@@ -417,6 +480,11 @@ function printResults(results) {
                 result.strategy,
                 result.targetHeight,
                 result.siteWidth,
+                result.supplyHeight.toFixed(1),
+                result.requiredBrickHeight,
+                result.modelEfficiency.toFixed(3),
+                percent(result.pileClippedRate),
+                percent(result.supplyValidRate),
                 result.averageEfficiency.toFixed(3),
                 result.averagePileBlocks.toFixed(1),
                 result.averageDrawPileAfterDeal.toFixed(1),
@@ -426,9 +494,13 @@ function printResults(results) {
                 percent(result.smartExactRate),
                 percent(result.collapseRate),
                 percent(result.timeoutRate),
+                percent(result.starvedRate),
                 percent(result.gateMetRate),
                 result.averageOverbuild.toFixed(2),
                 result.averagePlacements.toFixed(1),
+                result.averageClockUsedS.toFixed(1),
+                result.averageGapPlacements.toFixed(2),
+                result.averageSupportedCells.toFixed(2),
                 result.averageTeamLevelScore.toFixed(1),
                 result.averageMvpLevelScore.toFixed(1),
                 result.averageScoreSpread.toFixed(1)
