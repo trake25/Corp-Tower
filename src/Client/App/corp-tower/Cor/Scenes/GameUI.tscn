@@ -107,10 +107,10 @@ script = ExtResource("3_towerstack")
 [node name="TowerDropZone" type="Control" parent="PlayField" unique_id=1969328060]
 unique_name_in_owner = true
 anchors_preset = 0
-offset_left = 70.0
+offset_left = 10.0
 offset_top = 111.0
 offset_right = 342.0
-offset_bottom = 731.0
+offset_bottom = 815.0
 mouse_filter = 2
 
 [node name="HamburgerCircle" type="Panel" parent="PlayField" unique_id=1310223001]
