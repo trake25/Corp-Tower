@@ -90,7 +90,7 @@ Room snapshots include `impactScores`, `impactPowers`, `drawPile`, `teamCarryOve
 
 - `impactScores` restores leaderboard totals during rollback, so reconnect/multi-worker recovery can't reintroduce score farming.
 - `impactPowers` restores Power inventory during rollback when `powerLifetime` is `impact` (default), for the same reason.
-- `drawPile`/`nextDrawBlock` are persisted so a reconnecting client sees the same shared refill queue.
+- `drawPile`/`nextDrawBlock` are persisted so a reconnecting client sees the same shared refill queue — but **only the first 16 pile bricks**, plus a `drawPileHiddenCount` the engine regenerates on hydrate; the pile scales with target height and a snapshot is written on every placement. Only the next draw is client-visible, so the regenerated tail is invisible → [backend.md § Redis State](./backend.md#redis-state).
 - Storage mechanics (Redis vs. in-memory fallback, lease ownership) → [backend.md § Redis State](./backend.md#redis-state).
 
 ---

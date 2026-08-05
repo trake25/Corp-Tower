@@ -10,15 +10,17 @@ const GameConfig = {
         "Hello!"
     ],
     targetHeightMultiplier: 3,
-    targetHeightCurve: [
-        { minLevel: 1, maxLevel: 1, baseLevel: 1, baseHeight: 30, heightPerLevel: 0 },
-        { minLevel: 2, maxLevel: 6, baseLevel: 1, baseHeight: 30, heightPerLevel: 1.2 },
-        { minLevel: 7, maxLevel: 16, baseLevel: 6, baseHeight: 36, heightPerLevel: 0.6 },
-        { minLevel: 17, maxLevel: 40, baseLevel: 16, baseHeight: 42, heightPerLevel: 0.25 },
-        { minLevel: 41, maxLevel: 99, baseLevel: 40, baseHeight: 48, heightPerLevel: 0.1 }
-    ],
+    targetHeightBase: 30,
+    targetHeightStepBase: 10,
+    targetHeightStepGrowth: 5,
+    targetHeightStepGrowthEvery: 3,
     startDelayMs: 1000, // testing 0.5, release 2
+    // Floor only. The real limit is derived per level from target height
+    // (Game_Engine.getLevelTimeLimitMs), so the clock cannot drift away from
+    // the curve; this value is what short early levels get instead.
     levelTimeLimitMs: 30000,    // testing 120, release 30 (for tuning)
+    levelTimePlannedEfficiency: 0.55,
+    levelTimeSlack: 2.0,
     nextLevelDelayMs: 1000, // testing 0.5, release 1
     failRestartDelayMs: 1000, // testing 0.5, release 1
     placementScorePopupDurationMs: 2000,
@@ -116,7 +118,11 @@ const GameConfig = {
     // 0.378 the derived reserve wants ~88 bricks, and 32 clipped it -- which
     // silently broke the solvability guarantee below level ~15 (see
     // plan/corp-tower-target-height-scaling-plan.md §1.3).
-    maxGeneratedDrawPileBlocks: 96,
+    // Sanity ceiling against a bad config, not a balance knob: the reserve is
+    // derived per level and target height is uncapped, so a value that binds
+    // starves the level outright. The Balance Simulator's pileClipped column
+    // reports if it ever does.
+    maxGeneratedDrawPileBlocks: 4096,
     supplyEffectiveWidthRatio: 0.5,
     levelSupplyMinSurplus: 0,
     levelSupplyMaxSurplus: 6,
@@ -126,6 +132,11 @@ const GameConfig = {
     // once required height grows past the earliest levels -- config-file-only
     // for now, same treatment as reinforceScorePerSupportedCell.
     levelSupplyMaxSurplusShare: 0.12,
+    // Share of the level's brick requirement the pile deliberately does not
+    // cover. One Replenish adds powerReplenishPileShare of the starting pile,
+    // so at 0.10 most levels finish unaided and Power is insurance against a
+    // bad draw rather than a mandatory cast.
+    levelSupplyPowerReserveShare: 0.10,
     minPrecisionBlocksPerLevel: 3,
     openingHandGenerationAttempts: 1000,
 

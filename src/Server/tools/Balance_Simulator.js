@@ -92,15 +92,16 @@ function chooseSmartPlacement(engine, strategy, actor) {
         return null;
     }
 
+    // The action now carries its own placement: brick choice and placement are
+    // decided together, because a brick threaded into a gap can be worth more
+    // as a repair than a taller brick is as a height claim.
     return {
         player: actor,
         blockIndex: blockIndex,
+        column: action?.column ?? null,
+        originY: action?.originY ?? null,
         height: engine.getBlockHeight(actor.blocks[blockIndex])
     };
-}
-
-function chooseStablestColumn(engine, block, strategy) {
-    return BotManager.chooseBotColumn(engine, block, strategy);
 }
 
 function simulateSmartPlay(engine, strategy) {
@@ -169,7 +170,10 @@ function simulateSmartPlay(engine, strategy) {
     };
 
     const cooldown = Math.max(0, Number(GameConfig.placementCooldown) || 0);
-    const timeLimit = Math.max(1, Number(GameConfig.levelTimeLimitMs) || 1);
+    // Derived per level from target height, not the flat config value -- that
+    // is only the floor now, and reading it directly would report every level
+    // past the earliest as a false timeout.
+    const timeLimit = Math.max(1, engine.getLevelTimeLimitMs());
     let clock = 0;
 
     engine.room.players.forEach(player => {
@@ -210,9 +214,11 @@ function simulateSmartPlay(engine, strategy) {
         const previousHeight = engine.room.currentHeight;
         const stabilityBefore = engine.room.towerStability ?? 100;
         const structureBefore = engine.room.towerStabilityDiagnostics || {};
-        const column = chooseStablestColumn(engine, block, strategy);
-        const placementPosition = TowerStability.settleBlock(
-            engine.room.towerBlocks || [], block, engine.resolveColumnOriginX(block, column)
+        // Same resolution path the server runs, so an aimed release row is
+        // honoured -- and silently falls back to a drop from above when it is
+        // absent or illegal -- exactly as it would in a real room.
+        const placementPosition = engine.resolvePlacementOrigin(
+            block, placement.column, placement.originY
         );
         const supportedCells = TowerStability.supportedCellsGained(
             engine.room.towerBlocks || [],

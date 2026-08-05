@@ -30,12 +30,14 @@ Wire contract → [networking.md](./networking.md#reconnect). Implementation →
 
 ### Draw pile & team carry-over
 
-Each level gets a fresh shared pile = **team carry-over** + a **generated reserve**, shuffled before start. The reserve is **derived, not tabled**, so it self-corrects when `brickWeights`, target height, or site width change (capped at `maxGeneratedDrawPileBlocks`):
+Each level gets a fresh shared pile = **team carry-over** + a **generated reserve**, shuffled before start. The reserve is **derived, not tabled**, so it self-corrects when `brickWeights`, target height, or site width change:
 
 ```
-requiredBrickHeight = ceil(targetHeight / packingEfficiency)
+requiredBrickHeight = ceil(targetHeight / packingEfficiency) × (1 − levelSupplyPowerReserveShare)
 reserve = ceil((requiredBrickHeight + bandCentre − openingHandHeight − carryOverHeight) / avgBrickHeight)
 ```
+
+**The pile deliberately covers only `1 − levelSupplyPowerReserveShare` of the requirement** (default **10%** uncovered). One Replenish adds `powerReplenishPileShare` (25%) of the starting pile, so most levels finish unaided and Power is insurance against a bad draw rather than a mandatory cast. `maxGeneratedDrawPileBlocks` is a sanity ceiling against a bad config, **not a balance knob** — target height is uncapped, so a value that binds starves the level outright.
 
 Opening-hand bricks fill slots directly without passing through the pile. On completion, unused hand + pile bricks become the next carry-over (up to `maxTeamCarryOverBlocks`, precision-first). **On failure, carry-over is discarded.**
 
@@ -68,17 +70,9 @@ Tap the Power icon → tap a held item. Instant, **no target selection**; every 
 
 ## Tower system
 
-Target height follows a level-band curve, scaled by `targetHeightMultiplier` (default 3 = unchanged).
+Target height grows by a step that itself grows, scaled by `targetHeightMultiplier` (default 3 = unchanged): `target(n) = target(n−1) + targetHeightStepBase + targetHeightStepGrowth × floor((n − 2) / targetHeightStepGrowthEvery)`, from `targetHeightBase`. At the defaults (base **30**, step **10**, growth **+5** every **3** levels): L1 30 · L5 75 · L10 165 · L15 300 · L20 475 · L25 690.
 
-| Levels | Target height |
-|---|---|
-| 1 | 30 |
-| 2–6 | +1.2 / level → 36 |
-| 7–16 | +0.6 / level → 42 |
-| 17–40 | +0.25 / level → 48 |
-| 41+ | +0.1 / level → 54 at L99 |
-
-**The opening target sets the ceiling, so the step decelerates.** A level's brick demand is `targetHeight / packingEfficiency`, and three players place roughly 15 bricks at level 1 rising to ~28 by level 30 before `levelTimeLimitMs` binds — starting at 30 spends most of that budget immediately, so each band's step is cut against the one before it to keep the top of the curve inside reach. **No level fits the tower viewport**, whose flush capacity is 16 brick rows, so every level scrolls ([ui.md](./ui.md#leaf-components)).
+**The curve is uncapped, and the level clock follows it** ([Timer](#timer-quick-chat-failure-conditions)) — height never flattens, so nothing bounds round length but the curve itself. Stability at that height is carried by players placing into gaps rather than by a height ceiling, and supply by the pile scaling with the target. **Rejected:** capping height at the timer ceiling (~84) → the cap lands near L30 and every later level is identical, trading the old curve's invisible progression (it decayed to +0.1/level and repeated its own target on half the levels past L7) for another. **Consequence:** a level can outlast `RECONNECT_TTL_SECONDS` (60s), so a dropped player no longer has the whole level to return. **No level fits the tower viewport**, whose flush capacity is 16 brick rows, so every level scrolls ([ui.md](./ui.md#leaf-components)); by L25 the tower is ~43 screens, well past what the scroll, Impact Beat zoom floor and collapse animation were authored for.
 
 Overbuilding is allowed but wastes the excess and forfeits the exact-finish bonuses. The client renders from authoritative `towerBlocks`.
 
@@ -127,7 +121,9 @@ Algorithm → [backend.md § Tower Stability](./backend.md#tower-stability).
 
 ## Timer, quick chat, failure conditions
 
-Level time limit `levelTimeLimitMs` (design reference 30s). Quick chat is 3 fixed slots per player (`Place Block!`, `Sorry!`, `Hello!`), server-authoritative per-player cooldown, config-driven so text can change without touching gameplay contracts. A level fails when: time runs out; hands + pile are exhausted below target; remaining possible height can't reach target **and** nobody holds a Replenish that could rescue it; or any player is below their contribution requirement at an Impact.
+**The level clock is derived from target height, not flat** — a curve growing in tens per level would outrun the time to build it. `limit = ceil(targetHeight / (avgBrickHeight × levelTimePlannedEfficiency) / players) × placementCooldown × levelTimeSlack`, floored at `levelTimeLimitMs` (30s). `levelTimePlannedEfficiency` (**0.55**) is what a human filling the site achieves — deliberately not the bots' ~0.9 spire rate, which is why bots never time out in the [Balance Simulator](./testing.md#balance-simulator); `levelTimeSlack` (**2.0**) covers think time. Rounds grow without bound (~30s at L1, ~86s at L10, ~356s at L25); `placementCooldown` is the dial to move if they run long, since throughput is `players / cooldown`.
+
+Quick chat is 3 fixed slots per player (`Place Block!`, `Sorry!`, `Hello!`), server-authoritative per-player cooldown, config-driven so text can change without touching gameplay contracts. A level fails when: time runs out; hands + pile are exhausted below target; remaining possible height can't reach target **and** nobody holds a Replenish that could rescue it; or any player is below their contribution requirement at an Impact.
 
 ## Scoring system
 
@@ -198,17 +194,19 @@ The three most load-bearing knobs, if you only touch a few: `towerStabilityDiffi
 
 QA/local-test helpers only — not production AI. They fill rooms only when a real player is waiting, stop when `debugBotsEnabled` is false, and never hold or activate Power items. `debugBotsEnabled` defaults to `false` but is overridable at process start via `CORP_TOWER_BOTS_ENABLED` — the physical backup's public demo instance sets it, since that build ships without the debug menu (see [deployment.md § Backup](./deployment.md#backup-physical-machine)). Scheduling → [backend.md § Bot Manager](./backend.md#bot-manager); why the two strategies are shaped this way → [decisions.md](./decisions.md#bot-strategies-differ-by-risk-appetite-not-competence).
 
-| Strategy | Brick choice | Column choice | Yields? |
-|---|---|---|---|
-| **Cooperative** | Exact-finisher when available; smallest non-overbuilding brick near target; otherwise highest useful | Best height gain among columns within `debugBotStabilityTolerance` of the **best available** stability | **Yes** |
-| **MVP-greedy** | Exact-finisher when available; otherwise highest contribution even if it overbuilds | Best height gain among any non-collapsing column | No |
+**Brick and placement are chosen together** — under gap targeting a 1-high brick can out-earn a 4-high one as a repair, so the two can't be picked independently. Candidates are ranked by the score the engine would actually pay (placement + Reinforce), never by height gain alone.
 
-- **The column gate is relative, not absolute** — measured against the best column for that brick, so it keeps discriminating however forgiving the stability config is tuned.
-- **Yielding is the cooperative act that matters under a per-level Impact.** A bot that has banked its own share returns a `wait` action instead of placing, leaving the height and its score for a teammate whose shortfall would fail everyone. A bot that is short can never take that branch, so a room can't deadlock.
+| Strategy | Brick + placement choice | Yields? |
+|---|---|---|
+| **Cooperative** | Exact-finisher first; otherwise the highest-scoring pair among placements within `debugBotStabilityTolerance` of the **best available** stability | **Yes** |
+| **MVP-greedy** | Exact-finisher first; otherwise the highest-scoring pair among any non-collapsing placement | No |
+
+- **The stability gate is relative, not absolute** — measured against the best placement for that brick, so it keeps discriminating however forgiving the stability config is tuned.
+- **Yielding is the cooperative act that matters under a per-level Impact.** A bot that has banked its own share prefers a **zero-height repair**, leaving every point of contested height to a teammate whose shortfall would fail everyone while still earning Reinforce (which counts toward the gate); it returns `wait` only when no repair exists. A bot that is short can never take that branch, so a room can't deadlock.
 
 ### Future debug variables and open tuning questions
 
-Not yet exposed: `brickWeights`, `inventoryScaling`, target-height curve bands, per-shape generation pools, `debugBotStabilityTolerance`, `reinforceScorePerSupportedCell`/`reinforceScoreCapShare`, and the `towerStabilityAnchors`/`towerStabilityPressure` sets the stability dial interpolates.
+Not yet exposed: `brickWeights`, `inventoryScaling`, the `targetHeightBase`/`Step*` curve knobs and the `levelTimePlannedEfficiency`/`levelTimeSlack` clock pair, per-shape generation pools, `debugBotStabilityTolerance`/`debugBotGapCandidates`, `reinforceScorePerSupportedCell`/`reinforceScoreCapShare`, and the `towerStabilityAnchors`/`towerStabilityPressure` sets the stability dial interpolates.
 
 - **Exact-finish runs high** (~55–80% simulated), so "PERFECT BUILD" fires often. Lower via supply surplus or `minPrecisionBlocksPerLevel` if it should feel rarer.
 - **The front-loaded pool** can make a slow start mathematically uncatchable; worth confirming that reads as urgency, not unfairness. **Per-shape pools and fail-condition pressure** remain untouched levers for later difficulty shaping.

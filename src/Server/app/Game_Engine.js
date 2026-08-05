@@ -163,6 +163,7 @@ class GameEngine {
             currentHeight: snapshot.state.currentHeight,
             drawPile: snapshot.state.drawPile || [],
             drawPileStartCount: snapshot.state.drawPileStartCount || 0,
+            levelDurationMs: snapshot.state.levelDurationMs || 0,
             teamCarryOverBlocks: snapshot.state.teamCarryOverBlocks || [],
             towerBlocks: snapshot.state.towerBlocks || [],
             towerStability: snapshot.state.towerStability ?? 100,
@@ -178,6 +179,16 @@ class GameEngine {
             sideQuest: snapshot.state.sideQuest || null,
             scoreEventSeq: 0
         };
+        // Redis_State persists only the head of the draw pile; the unseen
+        // reserve is regenerated here so the room resumes with a pile of the
+        // right size. These are fresh random bricks rather than the originals,
+        // which is invisible to players -- only the next draw is ever shown.
+        const hiddenCount = Math.max(0, Number(snapshot.state.drawPileHiddenCount) || 0);
+
+        if (hiddenCount > 0) {
+            this.room.drawPile.push(...this.generateDrawPileBlocks(hiddenCount));
+        }
+
         this.ensureImpactState();
         this.recalculateTowerStability();
 
@@ -387,7 +398,8 @@ class GameEngine {
         this.room.targetHeight =
             this.getTargetHeightForLevel(this.room.level);
         this.room.startsAt = Date.now() + GameConfig.startDelayMs;
-        this.room.endsAt = this.room.startsAt + GameConfig.levelTimeLimitMs;
+        this.room.levelDurationMs = this.getLevelTimeLimitMs();
+        this.room.endsAt = this.room.startsAt + this.room.levelDurationMs;
         this.room.lastLevelSummary = null;
         this.room.pendingScoreEvents = this.room.pendingScoreEvents || [];
         this.setupSideQuest();
@@ -426,7 +438,7 @@ class GameEngine {
 
         this.levelTimer = setTimeout(() => {
             this.failLevel("time_expired");
-        }, GameConfig.levelTimeLimitMs);
+        }, this.room.levelDurationMs || this.getLevelTimeLimitMs());
 
         this.tickTimer = setInterval(() => {
             this.broadcastGameState();
@@ -474,29 +486,84 @@ class GameEngine {
         BotManager.stopBots(this);
     }
 
-    getTargetHeightForLevel(level) {
-        const curve = GameConfig.targetHeightCurve || [];
-        const targetBand = curve.find(band => {
-            return (
-                level >= Number(band.minLevel) &&
-                level <= Number(band.maxLevel)
-            );
-        });
+    // Target height grows by a step that itself grows: +stepBase per level, and
+    // the step gains stepGrowth every stepGrowthEvery levels. Uncapped by
+    // design -- height never flattens, and the level's clock follows it via
+    // getLevelTimeLimitMs. The recurrence has no useful closed form, so the
+    // whole curve is built once and cached; every input is debug-tunable at
+    // runtime, so the cache key carries all of them.
+    buildTargetHeightCurve() {
+        const base = Math.max(1, Number(GameConfig.targetHeightBase) || 1);
+        const stepBase = Math.max(0, Number(GameConfig.targetHeightStepBase) || 0);
+        const stepGrowth = Math.max(0, Number(GameConfig.targetHeightStepGrowth) || 0);
+        const stepEvery = Math.max(1, Number(GameConfig.targetHeightStepGrowthEvery) || 1);
+        const scale = (Number(GameConfig.targetHeightMultiplier) || 3) / 3;
+        const maxLevel = Math.max(1, Number(GameConfig.maxLevel) || 1);
+        const cacheKey = [
+            base, stepBase, stepGrowth, stepEvery, scale, maxLevel
+        ].join(":");
 
-        if (!targetBand) {
-            return level * GameConfig.targetHeightMultiplier;
+        if (this.targetHeightCurveCache?.key === cacheKey) {
+            return this.targetHeightCurveCache.curve;
         }
 
-        const curveTarget = (
-            Number(targetBand.baseHeight) +
-            (level - Number(targetBand.baseLevel)) *
-                Number(targetBand.heightPerLevel)
-        );
+        const curve = [0, Math.max(1, Math.round(base * scale))];
+        let unscaled = base;
 
-        return Math.max(
-            1,
-            Math.round(curveTarget * (GameConfig.targetHeightMultiplier / 3))
+        for (let level = 2; level <= maxLevel; level++) {
+            const step = stepBase + stepGrowth * Math.floor((level - 2) / stepEvery);
+
+            unscaled += step;
+            curve[level] = Math.max(1, Math.round(unscaled * scale));
+        }
+
+        this.targetHeightCurveCache = { key: cacheKey, curve: curve };
+
+        return curve;
+    }
+
+    getTargetHeightForLevel(level) {
+        const curve = this.buildTargetHeightCurve();
+        const target = curve[this.clampLevel(level)];
+
+        if (!Number.isFinite(target)) {
+            return Math.max(1, level * GameConfig.targetHeightMultiplier);
+        }
+
+        return target;
+    }
+
+    // The level's clock is derived from its target height rather than flat, so
+    // a curve that grows in tens per level cannot outrun the time to build it.
+    // Sized off the placements a player filling the site actually needs -- not
+    // the bots' spire-building rate, which would grant far too little time --
+    // then divided across the room and padded by levelTimeSlack for think time
+    // and imperfect parallelism. GameConfig.levelTimeLimitMs is the floor.
+    getLevelTimeLimitMs(targetHeight) {
+        const floor = Math.max(1000, Number(GameConfig.levelTimeLimitMs) || 1000);
+        const height = Math.max(0, Number(
+            targetHeight ?? this.room?.targetHeight
+        ) || 0);
+
+        if (height <= 0) {
+            return floor;
+        }
+
+        const efficiency = Math.max(
+            0.05,
+            Math.min(1, Number(GameConfig.levelTimePlannedEfficiency) || 0.05)
         );
+        const slack = Math.max(1, Number(GameConfig.levelTimeSlack) || 1);
+        const cooldown = Math.max(1, Number(GameConfig.placementCooldown) || 1);
+        const players = Math.max(1, this.room?.players?.length || 1);
+        const heightPerPlacement = Math.max(
+            0.1,
+            this.getAverageBrickHeight() * efficiency
+        );
+        const placementsNeeded = Math.ceil(height / heightPerPlacement);
+        const derived = Math.ceil(placementsNeeded / players) * cooldown * slack;
+
+        return Math.max(floor, Math.round(derived));
     }
 
     getConfiguredStartLevel() {

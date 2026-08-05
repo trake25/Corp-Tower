@@ -220,11 +220,26 @@ function getLevelSupplyMaxSurplus(requiredBrickHeight) {
     return flat + Math.ceil(requiredBrickHeight * share);
 }
 
+// Brick height the level's own pile is built to carry. The full packing-aware
+// requirement minus the share deliberately left uncovered: that gap is what a
+// Replenish is for, so the pile is sized to finish most levels on its own and
+// leave Power as insurance against a bad draw rather than a mandatory cast.
+// Design meaning -> gameplay.md; one Replenish adds powerReplenishPileShare of
+// the starting pile, so the reserve share must stay well under it.
+function getSuppliedBrickHeight(engine, requiredBrickHeight) {
+    const reserveShare = Math.max(
+        0,
+        Math.min(0.9, Number(GameConfig.levelSupplyPowerReserveShare) || 0)
+    );
+
+    return Math.ceil(requiredBrickHeight * (1 - reserveShare));
+}
+
 function getGeneratedDrawPileBlockCount(engine) {
     const averageBrickHeight = Math.max(1, engine.getAverageBrickHeight());
-    const requiredBrickHeight = Math.ceil(
+    const requiredBrickHeight = getSuppliedBrickHeight(engine, Math.ceil(
         engine.room.targetHeight / engine.getSupplyPackingEfficiency()
-    );
+    ));
     const maxSurplus = getLevelSupplyMaxSurplus(requiredBrickHeight);
     const bandCenter =
         (GameConfig.levelSupplyMinSurplus + maxSurplus) / 2;
@@ -299,9 +314,9 @@ function generateSolvableOpeningHandBlocks(engine) {
 
 function isLevelBlockSupplyValid(engine, blocks, minimumOpeningBlocks) {
     const targetHeight = engine.room.targetHeight;
-    const requiredBrickHeight = Math.ceil(
+    const requiredBrickHeight = getSuppliedBrickHeight(engine, Math.ceil(
         targetHeight / engine.getSupplyPackingEfficiency()
-    );
+    ));
     const minTotalHeight =
         requiredBrickHeight + GameConfig.levelSupplyMinSurplus;
     const maxTotalHeight =
@@ -333,26 +348,40 @@ function countPrecisionBlocks(engine, blocks) {
     }).length;
 }
 
+// Subset-sum over the whole supply, run inside generateSolvableOpeningHandBlocks'
+// retry loop. Cost is O(blocks x targetHeight) per call, so at a 700-brick pile
+// and a 690 target a full scan is ~480k set operations x up to
+// openingHandGenerationAttempts -- seconds of blocked event loop per level start.
+// The target is almost always reachable long before the last brick, so returning
+// on first hit keeps it effectively O(targetHeight).
 function hasExactHeightCombination(engine, blocks, targetHeight) {
+    if (!(targetHeight > 0)) {
+        return true;
+    }
+
     const reachableHeights = new Set([0]);
 
-    (blocks || []).forEach(block => {
+    for (const block of blocks || []) {
         const blockHeight = engine.getBlockHeight(block);
-        const nextHeights = new Set(reachableHeights);
 
-        reachableHeights.forEach(height => {
+        if (blockHeight <= 0) {
+            continue;
+        }
+
+        for (const height of [...reachableHeights]) {
             const nextHeight = height + blockHeight;
 
-            if (nextHeight <= targetHeight) {
-                nextHeights.add(nextHeight);
+            if (nextHeight === targetHeight) {
+                return true;
             }
-        });
 
-        reachableHeights.clear();
-        nextHeights.forEach(height => reachableHeights.add(height));
-    });
+            if (nextHeight < targetHeight) {
+                reachableHeights.add(nextHeight);
+            }
+        }
+    }
 
-    return reachableHeights.has(targetHeight);
+    return false;
 }
 
 function shuffleBlocks(engine, blocks) {
