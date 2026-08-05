@@ -1,16 +1,31 @@
 #!/usr/bin/env node
-// Scopes a /update-docs run: which changed paths are doc-relevant, and which doc owns
-// each one. Zero dependencies (Node stdlib only).
-//   node scripts/docs-scope.mjs [repoRoot]
-// Replaces the manual `git diff --stat` + module-index.md lookup that step 1 of
-// docs/context/doc-maintenance.md used to require, so routing costs no context.
-// Emits a worklist grouped by owning doc, plus an UNMAPPED list -- a path in a new
-// area is reported loudly rather than silently dropped.
-import { resolve } from 'node:path';
+// Scopes a /update-docs run to ONE task. Zero dependencies (Node stdlib only).
+//   node scripts/docs-scope.mjs <path> [<path>...]   # the task's files (required)
+//   node scripts/docs-scope.mjs --range <sha>^..<sha> ...  # task already committed
+//   node scripts/docs-scope.mjs --from-git           # fall back to the whole working tree
+// The caller passes the paths it actually changed. Scoping from `git diff HEAD`
+// instead would sweep in every other in-flight change in the tree -- concurrent
+// agents, unrelated WIP -- and document work this task never did, so --from-git
+// is opt-in and prints a warning rather than being the default.
+// For each owning doc it also lists the sections that mention the changed files:
+// those are the only places this diff can have falsified prose, so step 4 reads
+// those ranges instead of the whole doc.
+import { readFileSync, existsSync } from 'node:fs';
+import { join, resolve, basename } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-const ROOT = resolve(process.argv.slice(2).find(a => !a.startsWith('-')) || '.');
-const git = args => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+const argv = process.argv.slice(2);
+const FROM_GIT = argv.includes('--from-git');
+// Docs are often written after the task is committed, in which case there is no
+// pending diff vs HEAD. --range takes any git range: `<sha>^..<sha>` is the diff
+// that one commit introduced; the default `HEAD` is the pending working tree.
+const rangeAt = argv.indexOf('--range');
+const RANGE = rangeAt === -1 ? 'HEAD' : argv[rangeAt + 1];
+if (rangeAt !== -1 && !RANGE) { console.error('--range needs a git range, e.g. --range HEAD~1..HEAD'); process.exit(2); }
+const ROOT = resolve(process.env.DOCS_SCOPE_ROOT || '.');
+const CTX = join(ROOT, 'docs/context');
+const CLIENT = 'src/Client/App/corp-tower/';
+const git = a => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
 // Ignore map from docs/context/index.md, plus paths outside this KB's scope.
 // site/ and site-root/ are separate Cloudflare Workers deploys with their own READMEs.
@@ -20,11 +35,10 @@ const IGNORE = [
   /(^|\/)package-lock\.json$/, /(^|\/)\.terraform\//, /\.tfstate/, /\.terraform\.lock\.hcl$/,
   /^plan\//, /^task\//, /^reference\//, /^docs\/context\//,
   /^src\/Client\/App\/corp-tower\/Cor\/Art\//,
-  /^site\//, /^site-root\//,
-  /^TOD/,
+  /^site\//, /^site-root\//, /^TOD/,
 ];
 
-// First match wins. `read` is the strategy docs-maintenance step 3 applies to the diff:
+// First match wins. `read` is the strategy doc-maintenance.md step 3 applies:
 //   full  -- read the file in full (it encodes numbers/contracts a hunk can hide)
 //   wide  -- git diff -U10, escalate to a full read only if a hunk stays ambiguous
 //   hunk  -- git diff -U2 is enough
@@ -54,63 +68,134 @@ const ROUTES = [
   [/^scripts\//,                                     ['testing.md'],                'hunk'],
 ];
 
-// Collect changed paths: tracked edits vs HEAD, plus untracked files (a new module is
-// the most doc-worthy change there is, and --numstat alone never reports it).
-// --numstat, not --stat: --stat elides long paths to `.../TowerStack.gd`.
-const changed = new Map();
-const add = (path, adds, dels, status) => {
-  if (!path || IGNORE.some(re => re.test(path))) return;
-  changed.set(path, { adds, dels, status });
-};
-for (const line of git(['diff', '--numstat', '--ignore-all-space', 'HEAD']).split(/\r?\n/)) {
-  const [a, d, p] = line.split('\t');
-  if (!p) continue;
-  add(p, a === '-' ? 'bin' : Number(a), d === '-' ? 'bin' : Number(d), 'M');
-}
-for (const line of git(['status', '--porcelain', '--untracked-files=all']).split(/\r?\n/)) {
-  if (!line.startsWith('?? ')) continue;
-  const p = line.slice(3).replace(/^"|"$/g, '');
-  let n = 0;
-  try { n = git(['--no-pager', 'diff', '--no-index', '--numstat', '/dev/null', p]).split('\t')[0]; } catch (e) {
-    n = (e.stdout || '').split('\t')[0]; // --no-index exits 1 when files differ, which is always here
-  }
-  add(p, Number(n) || 0, 0, 'new');
+// --- collect the task's paths -------------------------------------------------
+const given = argv.filter((a, i) => !a.startsWith('-') && !(rangeAt !== -1 && i === rangeAt + 1));
+if (!given.length && !FROM_GIT) {
+  console.error(`usage: node scripts/docs-scope.mjs <path> [<path>...]
+
+Pass the paths this task changed -- the caller knows them; the working tree does
+not (it also holds every other agent's in-flight work). Use --from-git only when
+you are certain the whole tree belongs to this one task.`);
+  process.exit(2);
 }
 
-const route = p => ROUTES.find(([re]) => re.test(p));
+const paths = new Set();
+if (given.length) {
+  for (const p of given) paths.add(p.replace(/^\.\//, ''));
+} else {
+  console.log('! --from-git: scoping to the ENTIRE working tree, including any');
+  console.log('! concurrent work. Pass explicit paths unless the tree is all one task.\n');
+  for (const line of git(['diff', '--name-only', '--ignore-all-space', RANGE]).split(/\r?\n/))
+    if (line) paths.add(line);
+  for (const line of git(['status', '--porcelain', '--untracked-files=all']).split(/\r?\n/))
+    if (line.startsWith('?? ')) paths.add(line.slice(3).replace(/^"|"$/g, ''));
+}
+
+const dropped = [];
+const scoped = [];
+for (const p of [...paths].sort()) {
+  if (IGNORE.some(re => re.test(p))) { dropped.push(p); continue; }
+  scoped.push(p);
+}
+
+if (!scoped.length) {
+  console.log('no doc-relevant paths in scope — nothing to document.');
+  if (dropped.length) console.log(`(${dropped.length} ignored by the ignore map)`);
+  process.exit(0);
+}
+
+// Per-path churn. A tracked path with no diff vs RANGE is not "new" -- it is
+// unchanged, which usually means the task was already committed (retry with
+// --range <sha>^..<sha>) or the caller passed a path it did not actually touch.
+const churn = {};
+try {
+  for (const line of git(['diff', '--numstat', '--ignore-all-space', RANGE, '--', ...scoped]).split(/\r?\n/)) {
+    const [a, d, p] = line.split('\t');
+    if (p) churn[p] = `+${a}/-${d}`;
+  }
+} catch { /* every path may be untracked */ }
+const tracked = p => { try { git(['ls-files', '--error-unmatch', p]); return true; } catch { return false; } };
+let stale = 0;
+for (const p of scoped) {
+  if (churn[p]) continue;
+  if (!existsSync(join(ROOT, p))) churn[p] = 'deleted';
+  else if (!tracked(p)) churn[p] = 'new';
+  else { churn[p] = `no diff vs ${RANGE}`; stale++; }
+}
+
+// --- route --------------------------------------------------------------------
 const byDoc = new Map();
 const unmapped = [];
-for (const [path, meta] of [...changed].sort()) {
-  const r = route(path);
+for (const path of scoped) {
+  const r = ROUTES.find(([re]) => re.test(path));
   if (!r) { unmapped.push(path); continue; }
   const [, docs, read] = r;
   for (const doc of docs) {
     if (!byDoc.has(doc)) byDoc.set(doc, []);
-    byDoc.get(doc).push({ path, ...meta, read });
+    byDoc.get(doc).push({ path, read });
   }
 }
 
-if (!changed.size) {
-  console.log('no doc-relevant changes vs HEAD — nothing to scope.');
-  process.exit(0);
+// --- falsification targets ----------------------------------------------------
+// A doc section can only have been falsified by this diff if it mentions one of
+// the changed files. Find those sections so step 4 reads ranges, not whole docs.
+const needles = p => [basename(p), p, p.startsWith(CLIENT) ? p.slice(CLIENT.length) : null].filter(Boolean);
+function targets(doc, paths) {
+  const file = join(CTX, doc);
+  if (!existsSync(file)) return [];
+  const lines = readFileSync(file, 'utf8').split(/\r?\n/);
+  const heads = [];
+  lines.forEach((l, i) => { const m = /^(#{1,4})\s+(.*)$/.exec(l); if (m) heads.push({ line: i + 1, text: m[2] }); });
+  const all = [...new Set(paths.flatMap(needles))];
+  const hit = new Map();
+  lines.forEach((l, i) => {
+    const found = all.filter(n => l.includes(n));
+    if (!found.length) return;
+    const h = [...heads].reverse().find(x => x.line <= i + 1) || { line: 1, text: '(top of file)' };
+    const end = heads.find(x => x.line > h.line)?.line - 1 ?? lines.length;
+    const key = h.line;
+    if (!hit.has(key)) hit.set(key, { ...h, end, why: new Set() });
+    found.forEach(n => hit.get(key).why.add(n));
+  });
+  return [...hit.values()].sort((a, b) => a.line - b.line);
 }
 
-// Primary doc = the one owning the most changed paths. Step 4 of doc-maintenance.md
-// reads that one in full and the rest sectionally, so name it here rather than making
-// the caller infer it.
+// Section outline, so a new entry can be placed without opening the doc.
+function outline(doc) {
+  const file = join(CTX, doc);
+  if (!existsSync(file)) return [];
+  const out = [];
+  readFileSync(file, 'utf8').split(/\r?\n/).forEach((l, i) => {
+    const m = /^(#{2})\s+(.*)$/.exec(l);
+    if (m) out.push(`${i + 1}  ${m[2]}`);
+  });
+  return out;
+}
+
+// --- report -------------------------------------------------------------------
 const order = [...byDoc].sort((a, b) => b[1].length - a[1].length);
-console.log(`=== /update-docs scope: ${changed.size} changed path(s) → ${byDoc.size} candidate doc(s) ===`);
+console.log(`=== /update-docs scope: ${scoped.length} path(s) → ${byDoc.size} candidate doc(s) ===`);
 for (const [doc, items] of order) {
-  console.log(`\n${doc}  (${items.length})`);
-  for (const { path, adds, dels, status, read } of items)
-    console.log(`  ${status === 'new' ? '+new ' : '  M  '} +${adds}/-${dels}  [${read}]  ${path}`);
+  console.log(`\n${doc}`);
+  for (const { path, read } of items)
+    console.log(`   changed  ${churn[path].padEnd(10)} [${read}]  ${path}`);
+  const t = targets(doc, items.map(i => i.path));
+  if (t.length) {
+    console.log(`   read only these ranges (the only prose this diff can falsify):`);
+    for (const s of t)
+      console.log(`     ${doc}:${s.line}-${s.end}  ${s.text}  ← mentions ${[...s.why].join(', ')}`);
+  } else {
+    console.log(`   no section mentions these files — a new entry, not a rewrite.`);
+    console.log(`   sections (pick an insertion point; do not read the doc):`);
+    outline(doc).forEach(s => console.log(`     ${doc}:${s}`));
+  }
 }
 if (unmapped.length) {
   console.log(`\nUNMAPPED (${unmapped.length}) — route by hand, then add a rule to ROUTES:`);
   unmapped.forEach(p => console.log('  ? ' + p));
 }
-if (order.length) {
-  console.log(`\nprimary doc (read in full): ${order[0][0]}`);
-  if (order.length > 1) console.log(`secondary (read sectionally): ${order.slice(1).map(([d]) => d).join(', ')}`);
-}
+if (dropped.length) console.log(`\nignored (${dropped.length}): ${dropped.join(', ')}`);
+if (stale) console.log(`\n! ${stale} path(s) have no diff vs ${RANGE}. If the task is already
+! committed, re-run with --range <sha>^..<sha> naming the commit it landed in
+! (find it with: git log --oneline -- <path>).`);
 console.log('\nNext: apply the doc-worthy gate BEFORE opening any of these.');

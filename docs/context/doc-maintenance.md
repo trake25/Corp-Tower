@@ -24,22 +24,24 @@ Anything else is deleted: chronology, ordering of attempts, who found what, how 
 
 ## Update procedure (`/update-docs`, diff-driven — never a full rebuild)
 
-Runs in an isolated agent launched by `.claude/commands/update-docs.md`, from a change brief describing the confirmed goal. The brief carries intent, rejected alternatives, and renamed terms — things a diff cannot show. The diff is the authority on everything else; where the two disagree, the code wins.
+Run by the session that made the change, not a subagent: it already holds the diff, the intent, and the alternatives that were rejected — none of which a cold agent could recover, and the ones it could it would pay to re-read. Within the task's paths the diff is the authority; where the code and your recollection disagree, the code wins.
 
 **The order matters: the gate comes before any file is opened.** Steps 1–2 cost almost nothing, and most runs that should stop, stop there.
 
-1. **Scope.** `node scripts/docs-scope.mjs`. It lists every changed path grouped by owning doc, marks new files, applies the ignore map, and names the primary doc. Its `UNMAPPED` list is routed by hand — then add a rule to its `ROUTES` table so the next run is automatic. This replaces reading [module-index.md](./module-index.md) for routing.
+1. **Scope — to this task, not to the tree.** `node scripts/docs-scope.mjs <the paths you changed for this goal>`. The working tree is **not** the scope: it also holds other agents' in-flight work and unrelated WIP, and documenting that is how a run ends up rewriting docs for work this task never did. If the task is already committed, add `--range <sha>^..<sha>`. `--from-git` scopes to the whole tree and is correct only when you know the tree is all one task.
+
+   The script groups paths by owning doc, applies the ignore map, and prints the read strategy per path — this replaces reading [module-index.md](./module-index.md) for routing. Route any `UNMAPPED` path by hand, then add a rule to its `ROUTES` table so the next run is automatic.
 
 2. **Doc-worthy gate — apply before reading anything.** A change earns a doc edit only if it alters a **number, a wire contract, a rule, a file's role, a term, or a rationale a future session would otherwise re-litigate**. A pure refactor with none of those produces *no doc change* — say so, run validation, stop. Do not manufacture an entry to show work. Judge from the scope output and the brief; open a diff only where the gate is genuinely unclear.
 
-3. **Read the diff, narrowly.** Only for paths that survived the gate, using the strategy `docs-scope.mjs` prints per path:
+3. **Read the diff only where you don't already hold it.** You made these edits this session, so for most paths the change is already in context — re-reading it is pure waste. Read only where your recollection is thin, the file was also touched by something else, or the strategy says `full`. When you do read, use what `docs-scope.mjs` prints per path:
    - `full` — read the file in full (`Game_Config.js`: it encodes the numbers, and a missed hunk becomes a wrong doc).
    - `wide` — `git diff -U10 -- <path>`; escalate to a full read of that one module only if a hunk's contract stays ambiguous.
    - `hunk` — `git diff -U2 -- <path>`.
 
    An untouched file cannot have changed, so nothing is read "regardless". Never re-read the repo.
 
-4. **Edit as replacement.** Apply the retention test to what you write *and* to what is already there. Read the **primary** doc in full and scan it for statements this diff just falsified — it is already in context, so this is free. For secondary docs, locate the owning entry with `grep -n '^#\{2,3\} '` and read only that range with `offset`/`limit`. Do not sweep docs you didn't otherwise need. Rationale → [decisions.md](./decisions.md); terms → [glossary.md](./glossary.md); message shapes → [networking.md](./networking.md); stack/rules → [index.md](./index.md).
+4. **Edit as replacement.** Apply the retention test to what you write *and* to what is already there. Read **only the line ranges `docs-scope.mjs` printed** — those are the sections that mention the changed files, so they are the only prose this diff can have falsified. Read them with `offset`/`limit`; **never read a doc in full to change a few lines.** A doc with no printed ranges is getting a new entry, not a rewrite: the script prints that doc's section outline with line numbers — choose the insertion point from it and write there without opening the file. Rationale → [decisions.md](./decisions.md); terms → [glossary.md](./glossary.md); message shapes → [networking.md](./networking.md); stack/rules → [index.md](./index.md).
 
 5. **Validate.** `node scripts/validate-docs.mjs --quiet`; fix anything it reports as an error, re-running without `--quiet` for the detail.
 

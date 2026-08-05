@@ -886,7 +886,7 @@ func apply_config(config) -> void:
 	)
 	set_slider_no_signal(
 		tower_site_width_min_slider,
-		float(config.get("towerSiteWidthMin", 4))
+		float(config.get("towerSiteWidthMin", 8))
 	)
 	set_slider_no_signal(
 		tower_site_width_max_slider,

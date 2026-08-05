@@ -36,7 +36,7 @@ const GameConfig = {
     placeableColumnMin: 2,
     placeableColumnMax: 5,
     towerSiteSlendernessTarget: 6.75,
-    towerSiteWidthMin: 6,
+    towerSiteWidthMin: 8,
     // Hard viewport ceiling, not a taste call: TowerStack is 272px wide at a
     // fixed 34px brick, so only grid columns 3-10 are ever on screen. A wider
     // site would place bricks the player can never see.
