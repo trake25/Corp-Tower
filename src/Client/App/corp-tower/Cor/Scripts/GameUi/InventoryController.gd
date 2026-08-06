@@ -18,7 +18,8 @@ const UNRESOLVED_SNAP := {
 	"column": -1,
 	"origin_y": 0,
 	"target_point": Vector2i.ZERO,
-	"matched_vertex": Vector2i.ZERO
+	"matched_vertex": Vector2i.ZERO,
+	"aim_point": Vector2i.ZERO
 }
 # Only the build site and its snap points -- the state a selected-but-not-yet-
 # aimed brick is in, before the player has picked a spot for it.

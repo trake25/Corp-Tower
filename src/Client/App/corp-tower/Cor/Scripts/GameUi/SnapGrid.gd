@@ -256,7 +256,8 @@ static func resolve(
 			"column": placeable_column_min,
 			"origin_y": 0,
 			"target_point": Vector2i.ZERO,
-			"matched_vertex": Vector2i.ZERO
+			"matched_vertex": Vector2i.ZERO,
+			"aim_point": Vector2i.ZERO
 		}
 
 	var range_x: Vector2i = origin_range(cells)
@@ -310,7 +311,14 @@ static func resolve(
 			"column": best_column,
 			"origin_y": settled_y,
 			"target_point": contact.get("point", best_point),
-			"matched_vertex": contact.get("vertex", best_vertex)
+			"matched_vertex": contact.get("vertex", best_vertex),
+			# The point actually aimed at, before gravity carries the brick any
+			# further down -- distinct from target_point (the post-fall contact)
+			# whenever the aim lands on an overhang with nothing under it, so the
+			# UI can confirm "this spot is a real target" even though the brick
+			# will keep falling past it. Equal to target_point when the aim was
+			# already the resting spot.
+			"aim_point": best_point
 		}
 
 	var fallback_column: int = nearest_column(cells, ghost_center.x)
@@ -322,7 +330,8 @@ static func resolve(
 		"column": fallback_column,
 		"origin_y": settle_origin_y(tower_blocks, cells, fallback_column),
 		"target_point": Vector2i.ZERO,
-		"matched_vertex": Vector2i.ZERO
+		"matched_vertex": Vector2i.ZERO,
+		"aim_point": Vector2i.ZERO
 	}
 
 # The pairing that decides where the brick is released is measured against the

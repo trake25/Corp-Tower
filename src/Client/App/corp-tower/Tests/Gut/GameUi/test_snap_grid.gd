@@ -268,3 +268,37 @@ func test_resolve_uses_true_outline_vertices_for_a_t_brick() -> void:
 func test_resolve_rejects_an_empty_block() -> void:
 	var snap: Dictionary = SnapGridScript.resolve([], [], Vector2(7.0, 1.0), 2.2)
 	assert_false(snap.valid, "An empty block cannot resolve to a placement.")
+
+# A J-shaped brick (foot at the bottom) with an L-shaped brick resting above it
+# (foot at the top, overhanging an open column). Aiming an O under that
+# overhanging foot has nothing supporting it in the open column, so it must
+# still fall all the way down to rest on the J's foot -- but the resolver
+# should recognize the aim as a real target (aim_point) even though gravity
+# carries it past that point to where it actually lands (target_point).
+func test_resolve_exposes_the_aim_point_separately_from_where_gravity_lands_it() -> void:
+	SnapGridScript.set_placeable_range(0, 5)
+
+	var j_entry := entry([[1, 0], [0, 0], [1, 1], [1, 2]], 1, 0)
+	var seven_entry := entry([[1, 2], [0, 2], [1, 1], [1, 0]], 1, 3)
+	var tower_blocks := [j_entry, seven_entry]
+
+	var under_the_foot: Dictionary = SnapGridScript.resolve(tower_blocks, O_CELLS, Vector2(1.0, 4.0), 2.2)
+	assert_true(under_the_foot.valid, "Aiming under the overhang must still resolve to a placement.")
+	assert_eq(under_the_foot.column, 0, "The O settles in the open column.")
+	assert_eq(under_the_foot.origin_y, 1, "Gravity carries it down to rest on the J's foot.")
+	assert_eq(
+		under_the_foot.aim_point, Vector2i(2, 3),
+		"The aim point is the overhang corner actually targeted, not where it lands."
+	)
+	assert_ne(
+		under_the_foot.aim_point, under_the_foot.target_point,
+		"Aim and landing spot differ whenever the aim was over open air."
+	)
+
+	var above_the_j_foot: Dictionary = SnapGridScript.resolve(tower_blocks, O_CELLS, Vector2(1.0, 1.0), 2.2)
+	assert_eq(above_the_j_foot.column, 0, "Aiming directly above the J's foot resolves to the same column.")
+	assert_eq(above_the_j_foot.origin_y, 1, "...and the same resting row as aiming under the overhang.")
+	assert_eq(
+		above_the_j_foot.aim_point, above_the_j_foot.target_point,
+		"Aiming at an already-supported spot means the aim point is the landing spot."
+	)

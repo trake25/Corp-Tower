@@ -27,6 +27,7 @@ const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 
 const SNAP_DOT_COLOR := Color(1.0, 1.0, 1.0, 0.5)
 const SNAP_TARGET_HALO_ALPHA := 0.85
+const AIM_POINT_RING_ALPHA := 0.65
 const BAND_FILL_COLOR := Color(1.0, 1.0, 1.0, 0.11)
 const BAND_EDGE_COLOR := Color(1.0, 1.0, 1.0, 0.4)
 const BAND_HEADROOM_UNITS := 2.0
@@ -1009,7 +1010,13 @@ func _draw_snap_points(
 ) -> void:
 	var snapped: bool = bool(active_snap.get("snapped", false))
 	var target_point: Vector2i = active_snap.get("target_point", Vector2i.ZERO)
+	var aim_point: Vector2i = active_snap.get("aim_point", Vector2i.ZERO)
 	var halo: Color = Color(drag_color.r, drag_color.g, drag_color.b, SNAP_TARGET_HALO_ALPHA)
+	var aim_ring: Color = Color(drag_color.r, drag_color.g, drag_color.b, AIM_POINT_RING_ALPHA)
+	# The aim point only earns its own marker when it differs from where the
+	# brick actually settles -- otherwise it would just draw a second ring on
+	# top of the landing halo.
+	var show_aim_ring: bool = snapped and aim_point != target_point
 
 	for point in SnapGridScript.tower_snap_points(tower_blocks):
 		var local: Vector2 = _lattice_to_local(
@@ -1019,6 +1026,11 @@ func _draw_snap_points(
 		if snapped and point == target_point:
 			draw_arc(local, snap_target_radius, 0.0, TAU, 24, halo, 2.5, true)
 			draw_circle(local, snap_dot_radius + 1.0, halo)
+		elif show_aim_ring and point == aim_point:
+			# Hollow, not filled -- reads as "recognized target you're aiming
+			# at" rather than "this is where it will land" (the filled halo
+			# above), since gravity is still going to carry the brick further.
+			draw_arc(local, snap_target_radius, 0.0, TAU, 24, aim_ring, 2.0, true)
 		else:
 			draw_arc(local, snap_dot_radius, 0.0, TAU, 16, SNAP_DOT_COLOR, 1.5, true)
 
