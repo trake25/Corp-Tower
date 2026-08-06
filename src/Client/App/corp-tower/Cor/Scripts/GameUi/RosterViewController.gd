@@ -2,7 +2,10 @@ extends Node
 
 const MAX_RAIL_PLAYERS := 3
 const IMPACT_FLASH_PULSES := 3
-const IMPACT_FLASH_MET_TINT := Color(1.5, 1.5, 1.5, 1.0)
+# Scaled from the shipped gold accent Color(1, 0.702, 0.055) -- GameUITheme.tres's
+# TopBarFrameAchievedPanel border and the "Safe" level badge -- so a met Impact
+# reads with the same gold the rest of the UI already uses for "safe"/achieved.
+const IMPACT_FLASH_MET_TINT := Color(1.6, 1.123, 0.088, 1.0)
 const IMPACT_FLASH_MISSED_TINT := Color(1.3, 0.5, 0.5, 1.0)
 const PlayerRailEntryScene = preload("res://Cor/Scenes/PlayerRailEntry.tscn")
 const ImpactBarScene = preload("res://Cor/Scenes/ImpactBar.tscn")

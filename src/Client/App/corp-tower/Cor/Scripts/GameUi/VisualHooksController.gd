@@ -17,7 +17,12 @@ func setup(tower_stack_ref: Control, roster_ref, players_ctx_ref, hooks_ref) -> 
 
 func reset() -> void:
 	last_beat_key = ""
+	end_beat()
 
+# Called when the level summary it is standing in for closes -- the beat has
+# no timed end of its own once it reaches BEAT_HOLD, so this is the only way
+# the camera returns to normal play framing.
+func end_beat() -> void:
 	if tower_stack != null and tower_stack.has_method("cancel_impact_beat"):
 		tower_stack.call("cancel_impact_beat")
 

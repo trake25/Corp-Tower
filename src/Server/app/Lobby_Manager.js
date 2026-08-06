@@ -54,7 +54,6 @@ const DEFAULT_DEBUG_CONFIG = {
     visualHookZoomOutMs: GameConfig.visualHooks.impactBeatZoomOutMs,
     visualHookWaveMs: GameConfig.visualHooks.impactBeatWaveMs,
     visualHookHoldMs: GameConfig.visualHooks.impactBeatHoldMs,
-    visualHookZoomInMs: GameConfig.visualHooks.impactBeatZoomInMs,
     visualHookShakeMs: GameConfig.visualHooks.screenShakeMs
 };
 
@@ -500,7 +499,6 @@ class LobbyManager {
             visualHookZoomOutMs: GameConfig.visualHooks.impactBeatZoomOutMs,
             visualHookWaveMs: GameConfig.visualHooks.impactBeatWaveMs,
             visualHookHoldMs: GameConfig.visualHooks.impactBeatHoldMs,
-            visualHookZoomInMs: GameConfig.visualHooks.impactBeatZoomInMs,
             visualHookShakeMs: GameConfig.visualHooks.screenShakeMs
         };
     }
@@ -589,8 +587,6 @@ class LobbyManager {
             DEFAULT_DEBUG_CONFIG.visualHookWaveMs;
         GameConfig.visualHooks.impactBeatHoldMs =
             DEFAULT_DEBUG_CONFIG.visualHookHoldMs;
-        GameConfig.visualHooks.impactBeatZoomInMs =
-            DEFAULT_DEBUG_CONFIG.visualHookZoomInMs;
         GameConfig.visualHooks.screenShakeMs =
             DEFAULT_DEBUG_CONFIG.visualHookShakeMs;
     }
@@ -771,7 +767,6 @@ class LobbyManager {
             visualHookZoomOutMs: setVisualHookInt("impactBeatZoomOutMs", 100, 2000),
             visualHookWaveMs: setVisualHookInt("impactBeatWaveMs", 100, 2000),
             visualHookHoldMs: setVisualHookInt("impactBeatHoldMs", 0, 3000),
-            visualHookZoomInMs: setVisualHookInt("impactBeatZoomInMs", 100, 2000),
             visualHookShakeMs: setVisualHookInt("screenShakeMs", 0, 2000)
         };
 

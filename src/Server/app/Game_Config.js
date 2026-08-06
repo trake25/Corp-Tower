@@ -151,10 +151,9 @@ const GameConfig = {
         impactBeat: true,
         screenShake: true,
         impactBeatMinZoom: 0.3,
-        impactBeatZoomOutMs: 450,
-        impactBeatWaveMs: 550,
+        impactBeatZoomOutMs: 900,
+        impactBeatWaveMs: 1100,
         impactBeatHoldMs: 600,
-        impactBeatZoomInMs: 350,
         screenShakeMs: 260,
         screenShakeMagnitudeUnits: 0.22
     },

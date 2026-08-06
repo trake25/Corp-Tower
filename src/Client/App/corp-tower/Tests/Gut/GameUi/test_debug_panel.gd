@@ -23,7 +23,6 @@ const CONFIG_FIXTURE := {
 	"visualHookZoomOutMs": 500,
 	"visualHookWaveMs": 300,
 	"visualHookHoldMs": 200,
-	"visualHookZoomInMs": 150,
 	"visualHookShakeMs": 340
 }
 
@@ -172,17 +171,15 @@ func test_visual_hook_durations_sync_from_the_config() -> void:
 	assert_eq((harness.find("ImpactBeatZoomOutSlider") as HSlider).value, 500.0, "The zoom-out slider should sync from the config payload.")
 	assert_eq((harness.find("ImpactBeatWaveSlider") as HSlider).value, 300.0, "The wave slider should sync from the config payload.")
 	assert_eq((harness.find("ImpactBeatHoldSlider") as HSlider).value, 200.0, "The hold slider should sync from the config payload.")
-	assert_eq((harness.find("ImpactBeatZoomInSlider") as HSlider).value, 150.0, "The zoom-in slider should sync from the config payload.")
 	assert_eq((harness.find("ScreenShakeDurationSlider") as HSlider).value, 340.0, "The screen shake duration slider should sync from the config payload.")
 	assert_eq((harness.find("ImpactBeatZoomOutLabel") as Button).text, "Zoom Out: 500 ms", "The zoom-out label should reflect the synced slider value.")
 	assert_eq((harness.find("ScreenShakeDurationLabel") as Button).text, "Screen Shake Duration: 340 ms", "The screen shake duration label should reflect the synced slider value.")
 
 func test_visual_hook_durations_fall_back_to_their_defaults() -> void:
 	harness.main.update_debug_config({})
-	assert_eq((harness.find("ImpactBeatZoomOutSlider") as HSlider).value, 450.0, "A missing zoom-out duration should fall back to its default.")
-	assert_eq((harness.find("ImpactBeatWaveSlider") as HSlider).value, 550.0, "A missing wave duration should fall back to its default.")
+	assert_eq((harness.find("ImpactBeatZoomOutSlider") as HSlider).value, 900.0, "A missing zoom-out duration should fall back to its default.")
+	assert_eq((harness.find("ImpactBeatWaveSlider") as HSlider).value, 1100.0, "A missing wave duration should fall back to its default.")
 	assert_eq((harness.find("ImpactBeatHoldSlider") as HSlider).value, 600.0, "A missing hold duration should fall back to its default.")
-	assert_eq((harness.find("ImpactBeatZoomInSlider") as HSlider).value, 350.0, "A missing zoom-in duration should fall back to its default.")
 	assert_eq((harness.find("ScreenShakeDurationSlider") as HSlider).value, 260.0, "A missing screen shake duration should fall back to its default.")
 
 func test_visual_hook_duration_rows_live_in_the_hooks_category() -> void:
@@ -193,7 +190,6 @@ func test_visual_hook_duration_rows_live_in_the_hooks_category() -> void:
 		"ImpactBeatZoomOutLabel", "ImpactBeatZoomOutSlider",
 		"ImpactBeatWaveLabel", "ImpactBeatWaveSlider",
 		"ImpactBeatHoldLabel", "ImpactBeatHoldSlider",
-		"ImpactBeatZoomInLabel", "ImpactBeatZoomInSlider",
 		"ScreenShakeDurationLabel", "ScreenShakeDurationSlider",
 	]:
 		assert_eq(

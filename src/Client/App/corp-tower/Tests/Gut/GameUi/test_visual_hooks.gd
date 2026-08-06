@@ -32,7 +32,6 @@ func test_apply_reads_every_key_from_the_payload() -> void:
 		"impactBeatZoomOutMs": 100,
 		"impactBeatWaveMs": 200,
 		"impactBeatHoldMs": 300,
-		"impactBeatZoomInMs": 400,
 		"screenShakeMs": 500,
 		"screenShakeMagnitudeUnits": 0.6
 	})
@@ -42,8 +41,8 @@ func test_apply_reads_every_key_from_the_payload() -> void:
 	assert_eq(hooks.impact_beat_min_zoom, 0.45, "The zoom floor should follow the payload.")
 	assert_eq(hooks.screen_shake_ms, 500, "The shake duration should follow the payload.")
 	assert_eq(hooks.screen_shake_magnitude_units, 0.6, "The shake magnitude should follow the payload.")
-	assert_eq(hooks.impact_beat_total_ms(), 1000, "The beat total is the sum of its four phases.")
-	assert_eq(hooks.impact_beat_total_seconds(), 1.0, "The beat total converts to seconds.")
+	assert_eq(hooks.impact_beat_total_ms(), 600, "The beat total is the sum of zoom-out, wave and hold.")
+	assert_eq(hooks.impact_beat_total_seconds(), 0.6, "The beat total converts to seconds.")
 
 # A server predating the feature sends no visualHooks block at all, and a partial
 # payload must not zero the phases it omits -- a 0 ms beat would consume its slot
@@ -189,6 +188,24 @@ func test_faces_flip_to_their_placer_verdict_only_once_the_wave_arrives() -> voi
 		"",
 		"A placer with no Impact status this level gets no verdict face."
 	)
+
+func test_the_beat_holds_until_cancelled_with_no_zoom_in() -> void:
+	var tower: Control = _mounted_tower()
+
+	tower.play_impact_beat({ "P1": "positive" })
+	tower._step_impact_beat(float(tower.visual_hooks.impact_beat_zoom_out_ms) / 1000.0 + 0.01)
+	assert_eq(tower._beat_phase, TowerStackScript.BEAT_WAVE, "Zoom-out complete, the wave begins.")
+
+	tower._step_impact_beat(float(tower.visual_hooks.impact_beat_wave_ms) / 1000.0 + 0.01)
+	assert_eq(tower._beat_phase, TowerStackScript.BEAT_HOLD, "The wave complete, the beat settles into the hold.")
+
+	var held_zoom: float = tower._camera_zoom
+	tower._step_impact_beat(float(tower.visual_hooks.impact_beat_hold_ms) / 1000.0 + 10.0)
+	assert_eq(tower._beat_phase, TowerStackScript.BEAT_HOLD, "Hold has no timed exit -- only an external cancel ends it.")
+	assert_eq(tower._camera_zoom, held_zoom, "There is no zoom-in phase; the camera holds at the pulled-back zoom.")
+
+	tower.cancel_impact_beat()
+	assert_eq(tower._camera_zoom, 1.0, "Cancelling -- fired when the level summary closes -- snaps the camera back.")
 
 func test_cancelling_the_beat_restores_the_camera() -> void:
 	var tower: Control = _mounted_tower()

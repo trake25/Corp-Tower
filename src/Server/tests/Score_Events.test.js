@@ -1122,7 +1122,6 @@ test("visual hook toggles and durations round-trip through debug config and rese
     const previousZoomOutMs = GameConfig.visualHooks.impactBeatZoomOutMs;
     const previousWaveMs = GameConfig.visualHooks.impactBeatWaveMs;
     const previousHoldMs = GameConfig.visualHooks.impactBeatHoldMs;
-    const previousZoomInMs = GameConfig.visualHooks.impactBeatZoomInMs;
     const previousShakeMs = GameConfig.visualHooks.screenShakeMs;
 
     try {
@@ -1131,7 +1130,6 @@ test("visual hook toggles and durations round-trip through debug config and rese
         await lobbyManager.updateDebugConfig("visualHookZoomOutMs", 900);
         await lobbyManager.updateDebugConfig("visualHookWaveMs", 900);
         await lobbyManager.updateDebugConfig("visualHookHoldMs", 900);
-        await lobbyManager.updateDebugConfig("visualHookZoomInMs", 900);
         await lobbyManager.updateDebugConfig("visualHookShakeMs", 900);
 
         assert.equal(GameConfig.visualHooks.impactBeat, false);
@@ -1139,7 +1137,6 @@ test("visual hook toggles and durations round-trip through debug config and rese
         assert.equal(GameConfig.visualHooks.impactBeatZoomOutMs, 900);
         assert.equal(GameConfig.visualHooks.impactBeatWaveMs, 900);
         assert.equal(GameConfig.visualHooks.impactBeatHoldMs, 900);
-        assert.equal(GameConfig.visualHooks.impactBeatZoomInMs, 900);
         assert.equal(GameConfig.visualHooks.screenShakeMs, 900);
         assert.equal(lobbyManager.getDebugConfig().visualHookImpactBeat, false);
         assert.equal(lobbyManager.getDebugConfig().visualHookScreenShake, false);
@@ -1157,7 +1154,6 @@ test("visual hook toggles and durations round-trip through debug config and rese
         assert.equal(GameConfig.visualHooks.impactBeatZoomOutMs, previousZoomOutMs);
         assert.equal(GameConfig.visualHooks.impactBeatWaveMs, previousWaveMs);
         assert.equal(GameConfig.visualHooks.impactBeatHoldMs, previousHoldMs);
-        assert.equal(GameConfig.visualHooks.impactBeatZoomInMs, previousZoomInMs);
         assert.equal(GameConfig.visualHooks.screenShakeMs, previousShakeMs);
 
         // A raw, un-prefixed key (e.g. matching the game_state field name
@@ -1172,7 +1168,6 @@ test("visual hook toggles and durations round-trip through debug config and rese
         GameConfig.visualHooks.impactBeatZoomOutMs = previousZoomOutMs;
         GameConfig.visualHooks.impactBeatWaveMs = previousWaveMs;
         GameConfig.visualHooks.impactBeatHoldMs = previousHoldMs;
-        GameConfig.visualHooks.impactBeatZoomInMs = previousZoomInMs;
         GameConfig.visualHooks.screenShakeMs = previousShakeMs;
     }
 });

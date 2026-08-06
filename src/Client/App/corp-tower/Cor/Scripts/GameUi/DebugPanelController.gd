@@ -137,7 +137,7 @@ const DEBUG_TOOLTIPS := {
 	# --- Hooks ---------------------------------------------------------------
 	"HooksAboutButton": {
 		"title": "Visual Hooks",
-		"body": "The end-of-level flourishes every player in the room sees together, not client-local cosmetics.\n\nImpact Beat: the camera pulls back so the whole tower is visible while each placed brick flips to its placer's pass/fail face, then the camera returns. Plays once per level result. Skipped entirely on a collapse — there are no standing bricks left to wave across.\n\nScreen Shake: a jolt on a failed Impact or any negative verdict. Fires alongside a collapse instead of the beat.\n\nBoth toggles and every duration below round-trip through the server — a beat only reads as a shared moment if all three clients play it in lockstep, so this is not a Parallax-style client-local row.",
+		"body": "The end-of-level flourishes every player in the room sees together, not client-local cosmetics.\n\nImpact Beat: the camera pulls back so the whole tower is visible while each placed brick flips to its placer's pass/fail face, then holds there through the level summary and snaps back once the summary closes. Plays once per level result. Skipped entirely on a collapse — there are no standing bricks left to wave across.\n\nScreen Shake: a jolt on a failed Impact or any negative verdict. Fires alongside a collapse instead of the beat.\n\nBoth toggles and every duration below round-trip through the server — a beat only reads as a shared moment if all three clients play it in lockstep, so this is not a Parallax-style client-local row.",
 	},
 	"ImpactBeatZoomOutLabel": {
 		"title": "Impact Beat / Zoom Out",
@@ -145,15 +145,11 @@ const DEBUG_TOOLTIPS := {
 	},
 	"ImpactBeatWaveLabel": {
 		"title": "Impact Beat / Wave",
-		"body": "Second phase: how long the pass/fail face sweep takes to travel bottom-to-top across every placed brick, once the camera has finished pulling back.\n\nLonger = each brick's verdict is easier to read as it flips. Shorter = reads as a flash rather than a sweep.",
+		"body": "Second phase: how long the pass/fail face sweep takes to travel bottom-to-top across every placed brick, once the camera has finished pulling back.\n\nLonger = each brick's verdict is easier to read as it flips. Shorter = reads as a flash rather than a sweep.\n\nZoom Out + Wave run in sequence and their sum is added to the level-summary wait, so a longer beat delays the score screen by the same amount.",
 	},
 	"ImpactBeatHoldLabel": {
 		"title": "Impact Beat / Hold",
-		"body": "Third phase: how long the camera holds at the wide framing after the wave finishes, before zooming back in. 0 cuts straight from wave to zoom-in with no pause.",
-	},
-	"ImpactBeatZoomInLabel": {
-		"title": "Impact Beat / Zoom In",
-		"body": "Final phase: how long the camera takes to return to normal play framing.\n\nThe four phases run in sequence and their sum is added to the level-summary wait, so a longer beat delays the score screen by the same amount.",
+		"body": "Third phase: how long the camera stays at the wide framing, verdict faces held, before the level summary appears. There is no separate zoom-in -- the beat keeps holding through the summary itself and the camera only snaps back to normal play framing once the summary closes.",
 	},
 	"ScreenShakeDurationLabel": {
 		"title": "Screen Shake Duration",
@@ -374,8 +370,6 @@ var impact_beat_wave_label: Control
 var impact_beat_wave_slider: HSlider
 var impact_beat_hold_label: Control
 var impact_beat_hold_slider: HSlider
-var impact_beat_zoom_in_label: Control
-var impact_beat_zoom_in_slider: HSlider
 var screen_shake_duration_label: Control
 var screen_shake_duration_slider: HSlider
 var accessibility
@@ -420,8 +414,6 @@ func bind_nodes(binder) -> void:
 	impact_beat_wave_slider = binder.optional_node("ImpactBeatWaveSlider") as HSlider
 	impact_beat_hold_label = bind_tooltip_row(binder, "ImpactBeatHoldLabel")
 	impact_beat_hold_slider = binder.optional_node("ImpactBeatHoldSlider") as HSlider
-	impact_beat_zoom_in_label = bind_tooltip_row(binder, "ImpactBeatZoomInLabel")
-	impact_beat_zoom_in_slider = binder.optional_node("ImpactBeatZoomInSlider") as HSlider
 	screen_shake_duration_label = bind_tooltip_row(binder, "ScreenShakeDurationLabel")
 	screen_shake_duration_slider = binder.optional_node("ScreenShakeDurationSlider") as HSlider
 	bot_strategy_button = binder.optional_node("BotStrategyButton") as OptionButton
@@ -605,7 +597,6 @@ func setup(
 	configure_slider(impact_beat_zoom_out_slider, 100, 2000, 50, func(value): send_debug_int("visualHookZoomOutMs", value))
 	configure_slider(impact_beat_wave_slider, 100, 2000, 50, func(value): send_debug_int("visualHookWaveMs", value))
 	configure_slider(impact_beat_hold_slider, 0, 3000, 50, func(value): send_debug_int("visualHookHoldMs", value))
-	configure_slider(impact_beat_zoom_in_slider, 100, 2000, 50, func(value): send_debug_int("visualHookZoomInMs", value))
 	configure_slider(screen_shake_duration_slider, 0, 2000, 20, func(value): send_debug_int("visualHookShakeMs", value))
 
 	if tower_feedback_mode_button != null:
@@ -980,10 +971,9 @@ func apply_config(config) -> void:
 	set_slider_no_signal(power_max_slots_slider, float(config.get("powerMaxSlots", 3)))
 	set_slider_no_signal(power_cooldown_slider, float(config.get("powerActivationCooldownMs", 3000)))
 	set_slider_no_signal(power_replenish_share_slider, float(config.get("powerReplenishPileShare", 0.25)) * 100.0)
-	set_slider_no_signal(impact_beat_zoom_out_slider, float(config.get("visualHookZoomOutMs", 450)))
-	set_slider_no_signal(impact_beat_wave_slider, float(config.get("visualHookWaveMs", 550)))
+	set_slider_no_signal(impact_beat_zoom_out_slider, float(config.get("visualHookZoomOutMs", 900)))
+	set_slider_no_signal(impact_beat_wave_slider, float(config.get("visualHookWaveMs", 1100)))
 	set_slider_no_signal(impact_beat_hold_slider, float(config.get("visualHookHoldMs", 600)))
-	set_slider_no_signal(impact_beat_zoom_in_slider, float(config.get("visualHookZoomInMs", 350)))
 	set_slider_no_signal(screen_shake_duration_slider, float(config.get("visualHookShakeMs", 260)))
 	update_debug_labels()
 	is_syncing_debug_config = false
@@ -1159,19 +1149,15 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		impact_beat_zoom_out_label,
-		"Zoom Out: " + str(int(get_slider_value(impact_beat_zoom_out_slider, 450))) + " ms"
+		"Zoom Out: " + str(int(get_slider_value(impact_beat_zoom_out_slider, 900))) + " ms"
 	)
 	set_debug_label_text(
 		impact_beat_wave_label,
-		"Wave: " + str(int(get_slider_value(impact_beat_wave_slider, 550))) + " ms"
+		"Wave: " + str(int(get_slider_value(impact_beat_wave_slider, 1100))) + " ms"
 	)
 	set_debug_label_text(
 		impact_beat_hold_label,
 		"Hold: " + str(int(get_slider_value(impact_beat_hold_slider, 600))) + " ms"
-	)
-	set_debug_label_text(
-		impact_beat_zoom_in_label,
-		"Zoom In: " + str(int(get_slider_value(impact_beat_zoom_in_slider, 350))) + " ms"
 	)
 	set_debug_label_text(
 		screen_shake_duration_label,

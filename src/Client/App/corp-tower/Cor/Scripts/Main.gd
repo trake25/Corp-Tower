@@ -107,6 +107,7 @@ func _ready() -> void:
 		tower_stack.call("set_visual_hooks", visual_hooks)
 	quest.setup(players_ctx, match_state, popovers, should_block_popovers)
 	summary.quest_text_provider = quest.get_quest_summary_text
+	summary.on_summary_ended = visual_fx.end_beat
 	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_popovers, tutorial.on_chat_sent)
 	power.setup(NetworkManager, popovers, score_popups, should_block_popovers, tutorial.on_power_activated)
 	tutorial.setup({

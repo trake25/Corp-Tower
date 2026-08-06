@@ -186,7 +186,7 @@ Every row below is tunable live, and **each carries its own in-app explainer wit
 | **Power** | `powerUnlockLevel`, `powerMaxSlots`, `powerActivationCooldownMs`, `powerReplenishPileShare` (0–1, shown as a %) |
 | **Scoring** | `placementScorePerHeight`, `placementStabilityFloor`, `reinforceScorePerIntegrity`/`PerLean`, `precisionBonusPerLevel`, `teamExactBonusPerLevel`, `finisherBonusPerLevel`, `assistBonusPerLevel`, `assistContributionThreshold` |
 | **Parallax / Placement** | Client-local rendering and snap-feel values — no server round-trip. See [ui.md](./ui.md#main-ui-controller) |
-| **Hooks** | `visualHookImpactBeat`, `visualHookScreenShake` — kill switches only, one per [Impact Beat](./ui.md#leaf-components) effect. The beat's durations live in `Game_Config.visualHooks`, ride `game_state`, and are deliberately **not** tunable here |
+| **Hooks** | `visualHookImpactBeat`, `visualHookScreenShake` — the two kill switches; `visualHookZoomOutMs`/`WaveMs`/`HoldMs` and `visualHookShakeMs` tune the [Impact Beat](./ui.md#leaf-components)'s reveal/hold durations and the failure-shake length, all round-tripping through `Game_Config.visualHooks` |
 
 The three most load-bearing knobs, if you only touch a few: `towerStabilityDifficulty` (all of stability), `impactMinContributionShare` (the per-level gate), and `towerSiteSlendernessTarget` (reshapes the whole aspect ratio, and with it the site usage stability is measured against).
 

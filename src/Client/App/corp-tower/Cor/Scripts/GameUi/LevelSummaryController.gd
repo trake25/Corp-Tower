@@ -11,6 +11,7 @@ var level_summary_mvp_label: Label
 var level_summary_quest_label: Label
 var level_summary_players_box: VBoxContainer
 var quest_text_provider: Callable = Callable()
+var on_summary_ended: Callable = Callable()
 var last_level_summary_key: String = ""
 var pending_level_summary: Dictionary = {}
 var pending_level_summary_state: String = ""
@@ -169,6 +170,9 @@ func hide_level_summary() -> void:
 	if level_summary_overlay != null:
 		level_summary_overlay.visible = false
 		level_summary_overlay.modulate.a = 1.0
+
+	if on_summary_ended.is_valid():
+		on_summary_ended.call()
 
 func get_level_summary_key(summary: Dictionary) -> String:
 	return (

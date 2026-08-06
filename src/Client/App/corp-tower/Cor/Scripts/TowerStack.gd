@@ -14,7 +14,6 @@ const BEAT_NONE := 0
 const BEAT_ZOOM_OUT := 1
 const BEAT_WAVE := 2
 const BEAT_HOLD := 3
-const BEAT_ZOOM_IN := 4
 
 const WAVE_POP_BAND_UNITS := 2.5
 const WAVE_POP_SCALE := 0.35
@@ -251,22 +250,10 @@ func _step_impact_beat(delta: float) -> void:
 		if wave_t >= 1.0:
 			_beat_phase = BEAT_HOLD
 			_beat_elapsed = 0.0
-	elif _beat_phase == BEAT_HOLD:
-		if _beat_elapsed >= float(visual_hooks.impact_beat_hold_ms) / 1000.0:
-			_beat_phase = BEAT_ZOOM_IN
-			_beat_elapsed = 0.0
-			_beat_zoom_from = _camera_zoom
-	elif _beat_phase == BEAT_ZOOM_IN:
-		var zoom_in_seconds: float = maxf(0.001, float(visual_hooks.impact_beat_zoom_in_ms) / 1000.0)
-		var zoom_in_t: float = clampf(_beat_elapsed / zoom_in_seconds, 0.0, 1.0)
-
-		_set_camera_zoom(lerpf(_beat_zoom_from, 1.0, _beat_ease(zoom_in_t)))
-
-		if zoom_in_t >= 1.0:
-			_beat_phase = BEAT_NONE
-			_beat_elapsed = 0.0
-			_wave_progress = -1.0
-			_verdict_by_player = {}
+	# BEAT_HOLD has no timed exit: the camera stays pulled back, verdict faces
+	# held, until the caller ends the beat (cancel_impact_beat) when the level
+	# summary it is standing in for closes. There is no eased zoom-in -- the
+	# camera snaps back instantly via cancel_impact_beat's _set_camera_zoom(1.0).
 
 func _step_shake(delta: float) -> void:
 	_shake_elapsed += delta
@@ -485,7 +472,7 @@ func _process(delta: float) -> void:
 			_collapse_phase = COLLAPSE_SETTLED
 		needs_redraw = true
 
-	if _beat_phase != BEAT_NONE:
+	if _beat_phase != BEAT_NONE and _beat_phase != BEAT_HOLD:
 		_step_impact_beat(delta)
 		needs_redraw = true
 
