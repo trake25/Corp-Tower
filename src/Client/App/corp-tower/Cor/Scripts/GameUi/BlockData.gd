@@ -16,8 +16,6 @@ const BRICK_TEXTURE_PATHS := {
 	"Z": "res://Cor/Art/Bricks/brick_z.png"
 }
 
-const BRICK_SHADER_PATH := "res://Cor/Shaders/BrickShade.gdshader"
-
 const EMOJI_TEXTURE_PATHS := {
 	"positive": "res://Cor/Art/Static/emoji-smiley.png",
 	"negative": "res://Cor/Art/Static/emoji-worried.png",
@@ -28,9 +26,15 @@ const DEFAULT_EMOJI_MOOD := "neutral"
 const DEFAULT_MOOD_THRESHOLD := 3
 const BALANCE_DELTA_KEY := "balanceDelta"
 
+# A brick's lit-from-above look must survive its own rotation: these are baked
+# into per-vertex colors from each quad corner's actual screen-space Y (see
+# brick_quad_colors), never from texture UV, which rotates with the brick and
+# used to drag the "light" to whichever edge the rotation put on top.
+const TOP_SHADE_MULTIPLIER := 1.28
+const BOTTOM_SHADE_MULTIPLIER := 0.86
+
 static var _texture_cache: Dictionary = {}
 static var _emoji_cache: Dictionary = {}
-static var _shader: Shader = null
 
 static func normalize_block(raw_block, index: int) -> Dictionary:
 	if typeof(raw_block) == TYPE_DICTIONARY:
@@ -187,45 +191,45 @@ static func emoji_anchor(cells: Array) -> Vector2:
 
 	return anchor / float(tied)
 
-static func brick_shader_material() -> ShaderMaterial:
-	if _shader == null:
-		_shader = load(BRICK_SHADER_PATH)
-
-	var material := ShaderMaterial.new()
-	material.shader = _shader
-	return material
-
-# Detects how many 90-degree clockwise turns separate `cells` from the
-# canonical BRICK_SHAPES entry for `shape_id`, replicating the server's
-# Block_Supply.getRotations/rotateCellsCW so the client can rotate the
-# pre-rendered brick texture to match a randomly-rotated placed block.
-static func detect_rotation_steps(shape_id: String, cells: Array) -> int:
+# Detects how many 90-degree clockwise turns, and whether a horizontal mirror,
+# separate `cells` from the canonical BRICK_SHAPES entry for `shape_id`,
+# replicating the server's Block_Supply rotate/reflect so the client can
+# transform the pre-rendered brick texture to match a randomly-rotated (and
+# possibly mirrored) dealt block. Tries the four unmirrored rotations first,
+# then the four rotations of the mirrored shape.
+static func detect_orientation(shape_id: String, cells: Array) -> Dictionary:
 	if not BRICK_SHAPES.has(shape_id):
-		return 0
+		return {"steps": 0, "flipped": false}
 
 	var target_key: String = _cell_key(_normalize_cells(cells))
-	var current: Array = _normalize_cells(BRICK_SHAPES[shape_id])
+	var canonical: Array = _normalize_cells(BRICK_SHAPES[shape_id])
 
-	for step in range(4):
-		if _cell_key(current) == target_key:
-			return step
+	for flipped in [false, true]:
+		var current: Array = _reflect_cells_x(canonical) if flipped else canonical
 
-		current = _rotate_cells_cw(current)
+		for step in range(4):
+			if _cell_key(current) == target_key:
+				return {"steps": step, "flipped": flipped}
 
-	return 0
+			current = _rotate_cells_cw(current)
+
+	return {"steps": 0, "flipped": false}
 
 static func brick_quad_uvs() -> PackedVector2Array:
 	return PackedVector2Array([
 		Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0), Vector2(0.0, 1.0)
 	])
 
-static func brick_quad_points(center: Vector2, local_size: Vector2, rotation_steps: int) -> PackedVector2Array:
+static func brick_quad_points(
+	center: Vector2, local_size: Vector2, rotation_steps: int, flipped: bool = false
+) -> PackedVector2Array:
 	var half: Vector2 = local_size * 0.5
+	var flip_x: float = -1.0 if flipped else 1.0
 	var corners: Array[Vector2] = [
-		Vector2(-half.x, -half.y),
-		Vector2(half.x, -half.y),
-		Vector2(half.x, half.y),
-		Vector2(-half.x, half.y)
+		Vector2(-half.x * flip_x, -half.y),
+		Vector2(half.x * flip_x, -half.y),
+		Vector2(half.x * flip_x, half.y),
+		Vector2(-half.x * flip_x, half.y)
 	]
 	var angle: float = float(rotation_steps) * (PI * 0.5)
 	var points := PackedVector2Array()
@@ -234,6 +238,36 @@ static func brick_quad_points(center: Vector2, local_size: Vector2, rotation_ste
 		points.append(center + corner.rotated(angle))
 
 	return points
+
+# Per-vertex shade for a brick quad, lit from directly above the *screen*
+# regardless of the brick's own rotation/mirror -- computed straight from each
+# corner's already-rotated Y position (top corners get top_multiplier, bottom
+# corners get bottom_multiplier), not from texture UV, which stays fixed to
+# the unrotated texture and would drag the highlight to whatever edge the
+# rotation happened to put on top.
+static func brick_quad_colors(
+	base_color: Color,
+	points: PackedVector2Array,
+	top_multiplier: float = TOP_SHADE_MULTIPLIER,
+	bottom_multiplier: float = BOTTOM_SHADE_MULTIPLIER
+) -> PackedColorArray:
+	var min_y: float = INF
+	var max_y: float = -INF
+
+	for point in points:
+		min_y = minf(min_y, point.y)
+		max_y = maxf(max_y, point.y)
+
+	var span: float = max_y - min_y
+	var colors := PackedColorArray()
+
+	for point in points:
+		var t: float = (point.y - min_y) / span if span > 0.0001 else 0.0
+		var shade: float = lerpf(top_multiplier, bottom_multiplier, t)
+
+		colors.append(Color(base_color.r * shade, base_color.g * shade, base_color.b * shade, base_color.a))
+
+	return colors
 
 static func _normalize_cells(cells: Array) -> Array:
 	var min_x: int = 999999
@@ -257,6 +291,17 @@ static func _rotate_cells_cw(cells: Array) -> Array:
 		rotated.append([_cell_y(cell), -_cell_x(cell)])
 
 	return _normalize_cells(rotated)
+
+# Mirrors across the vertical axis -- the server-side counterpart is
+# Block_Supply.reflectCellsX, whose composition with rotation is what gives an
+# asymmetric shape (L, Z) its inverted (J-, S-like) counterpart.
+static func _reflect_cells_x(cells: Array) -> Array:
+	var reflected: Array = []
+
+	for cell in cells:
+		reflected.append([-_cell_x(cell), _cell_y(cell)])
+
+	return _normalize_cells(reflected)
 
 static func _cell_key(cells: Array) -> String:
 	var parts: Array = []

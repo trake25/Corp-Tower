@@ -74,6 +74,7 @@ func begin(seeds: Array, params: Dictionary) -> void:
 			"half_extent": maxf(footprint.x, footprint.y) * 0.5,
 			"quad_size": seed_data.get("quad_size", footprint),
 			"rotation_steps": int(seed_data.get("rotation_steps", 0)),
+			"flipped": bool(seed_data.get("flipped", false)),
 			"texture": seed_data.get("texture", null),
 			"color": seed_data.get("color", Color.WHITE),
 			"emoji_texture": seed_data.get("emoji_texture", null),

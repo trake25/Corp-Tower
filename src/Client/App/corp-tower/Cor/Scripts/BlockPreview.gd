@@ -33,9 +33,6 @@ var matched_vertex: Vector2i = NO_MATCHED_VERTEX
 
 @export var cell_size_override: float = 0.0
 
-func _ready() -> void:
-	material = BlockDataScript.brick_shader_material()
-
 func set_block(block: Dictionary) -> void:
 	cells = block.get("cells", [])
 	shape_id = str(block.get("shapeId", ""))
@@ -89,15 +86,17 @@ func _draw_brick(texture: Texture2D, color: Color, offset: Vector2, draw_snap_do
 		available_size.y / float(rows)
 	)))
 
-	var rotation_steps: int = BlockDataScript.detect_rotation_steps(shape_id, cells)
+	var orientation: Dictionary = BlockDataScript.detect_orientation(shape_id, cells)
 	var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(BlockDataScript.BRICK_SHAPES.get(shape_id, cells))
 	var canonical_columns: int = canonical_bounds.max_x - canonical_bounds.min_x + 1
 	var canonical_rows: int = canonical_bounds.max_y - canonical_bounds.min_y + 1
 	var canonical_size: Vector2 = Vector2(float(canonical_columns), float(canonical_rows)) * cell_size
 
 	var center: Vector2 = size * 0.5 + offset
-	var points: PackedVector2Array = BlockDataScript.brick_quad_points(center, canonical_size, rotation_steps)
-	var colors := PackedColorArray([color, color, color, color])
+	var points: PackedVector2Array = BlockDataScript.brick_quad_points(
+		center, canonical_size, int(orientation.steps), bool(orientation.flipped)
+	)
+	var colors: PackedColorArray = BlockDataScript.brick_quad_colors(color, points)
 
 	draw_primitive(points, colors, BlockDataScript.brick_quad_uvs(), texture)
 

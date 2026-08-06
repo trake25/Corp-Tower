@@ -225,7 +225,7 @@ func reset_ui() -> void:
 	score_popups.clear_score_popups()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
-	quest.hide_freeze_banner()
+	quest.reset_freeze_quest_popover()
 	inventory.cancel_block_drag()
 	score_popups.seen_score_event_ids.clear()
 	summary.last_level_summary_key = ""
@@ -249,7 +249,6 @@ func _input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	inventory.tick()
 	top_bar.tick_round_timer()
-	quest.tick_freeze_banner()
 
 func on_connect_pressed() -> void:
 	NetworkManager.toggle_connection()
@@ -281,7 +280,7 @@ func update_room(data) -> void:
 	visual_fx.reset()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
-	quest.hide_freeze_banner()
+	quest.reset_freeze_quest_popover()
 	top_bar.tower_status_label.text = "Match starting"
 	top_bar.set_tower_progress(0, int(data.get("targetHeight", 0)))
 	top_bar.set_top_indicator_progress(0, int(data.get("targetHeight", 0)))
@@ -318,7 +317,7 @@ func update_room_closed(data) -> void:
 	visual_fx.reset()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
-	quest.hide_freeze_banner()
+	quest.reset_freeze_quest_popover()
 	score_popups.seen_score_event_ids.clear()
 	summary.last_level_summary_key = ""
 	match_state.current_level = 0
@@ -383,7 +382,7 @@ func update_game_state(data) -> void:
 
 	players_ctx.update_from_players(players)
 	quest.update_quest_chip(data.get("sideQuest", {}))
-	quest.update_freeze_banner(state, incoming_level, seconds_remaining, data.get("sideQuest", {}))
+	quest.update_freeze_quest_popover(state, data.get("sideQuest", {}))
 	if tower_stack.has_method("set_player_color_map"):
 		tower_stack.call("set_player_color_map", players_ctx.color_map)
 

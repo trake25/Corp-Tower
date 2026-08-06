@@ -872,7 +872,7 @@ func apply_config(config) -> void:
 	set_slider_no_signal(debug_start_level_slider, float(config.get("debugStartLevel", 1)))
 	set_slider_no_signal(cooldown_slider, float(config.get("placementCooldown", 2000)))
 	set_slider_no_signal(level_time_slider, float(config.get("levelTimeLimitMs", 30000)))
-	set_slider_no_signal(start_delay_slider, float(config.get("startDelayMs", 1500)))
+	set_slider_no_signal(start_delay_slider, float(config.get("startDelayMs", 4000)))
 	tuning.placement_score_popup_duration_ms = int(config.get(
 		"placementScorePopupDurationMs",
 		UiTuningScript.SCORE_POPUP_DEFAULT_DURATION_MS
@@ -1002,7 +1002,7 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		start_delay_label,
-		"Start Delay: " + str(int(get_slider_value(start_delay_slider, 1500))) + " ms"
+		"Start Delay: " + str(int(get_slider_value(start_delay_slider, 4000))) + " ms"
 	)
 	set_debug_label_text(
 		placement_popup_duration_label,

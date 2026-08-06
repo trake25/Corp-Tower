@@ -13,13 +13,8 @@ var quest_badge: TextureRect
 var quest_popover: Control
 var quest_seen_level: int = -1
 var last_side_quest: Dictionary = {}
-var freeze_overlay: Control
-var freeze_title_label: Label
-var freeze_quest_label: Label
-var freeze_reward_label: Label
-var freeze_deadline_ms: int = 0
-var freeze_shown_seconds: int = -1
-var freeze_level: int = 0
+var freeze_popover_active: bool = false
+var freeze_popover_prev_auto_close: float = -1.0
 
 const REWARD_LABELS := {
 	"replenish": "Replenish",
@@ -32,10 +27,6 @@ func bind_nodes(binder) -> void:
 	quest_chip = binder.optional_node("QuestChip") as TextureButton
 	quest_badge = binder.optional_node("QuestBadge") as TextureRect
 	quest_popover = binder.optional_node("QuestPopover") as Control
-	freeze_overlay = binder.optional_node("FreezeQuestOverlay") as Control
-	freeze_title_label = binder.optional_node("FreezeQuestTitleLabel") as Label
-	freeze_quest_label = binder.optional_node("FreezeQuestLabel") as Label
-	freeze_reward_label = binder.optional_node("FreezeQuestRewardLabel") as Label
 	if quest_chip != null:
 		quest_chip.pressed.connect(on_quest_chip_pressed)
 
@@ -91,46 +82,45 @@ func get_quest_summary_text(raw_side_quest: Variant) -> String:
 
 	return "\n".join(lines)
 
-func update_freeze_banner(state: String, level: int, seconds_remaining: int, raw_side_quest: Variant) -> void:
-	if freeze_overlay == null:
-		return
-
+func update_freeze_quest_popover(state: String, raw_side_quest: Variant) -> void:
 	var side_quest: Dictionary = raw_side_quest if typeof(raw_side_quest) == TYPE_DICTIONARY else {}
 	var label: String = str(side_quest.get("label", ""))
+	var should_be_active: bool = state == "starting" and label != ""
 
-	if state != "starting" or label == "":
-		freeze_overlay.visible = false
+	if should_be_active == freeze_popover_active:
 		return
 
-	freeze_overlay.visible = true
-	freeze_level = level
-	freeze_deadline_ms = Time.get_ticks_msec() + maxi(0, seconds_remaining) * 1000
-	freeze_shown_seconds = -1
-	tick_freeze_banner()
+	freeze_popover_active = should_be_active
 
-	if freeze_quest_label != null:
-		freeze_quest_label.text = label
+	if should_be_active:
+		open_freeze_quest_popover()
+	else:
+		close_freeze_quest_popover()
 
-	if freeze_reward_label != null:
-		freeze_reward_label.text = "Reward: " + get_reward_label(str(side_quest.get("rewardId", "")))
+func reset_freeze_quest_popover() -> void:
+	freeze_popover_active = false
+	close_freeze_quest_popover()
 
-func tick_freeze_banner() -> void:
-	if freeze_overlay == null or !freeze_overlay.visible or freeze_title_label == null:
+func open_freeze_quest_popover() -> void:
+	if quest_popover == null or popovers == null:
 		return
 
-	var remaining: int = maxi(0, int(ceil(
-		float(freeze_deadline_ms - Time.get_ticks_msec()) / 1000.0
-	)))
+	freeze_popover_prev_auto_close = float(quest_popover.get("auto_close_seconds"))
+	quest_popover.set("auto_close_seconds", 0.0)
+	quest_seen_level = match_state.current_level
+	update_quest_chip(last_side_quest)
+	open_quest_popover()
 
-	if remaining == freeze_shown_seconds:
+func close_freeze_quest_popover() -> void:
+	if quest_popover == null:
 		return
 
-	freeze_shown_seconds = remaining
-	freeze_title_label.text = "LEVEL %d IN %d" % [freeze_level, remaining]
+	if freeze_popover_prev_auto_close >= 0.0:
+		quest_popover.set("auto_close_seconds", freeze_popover_prev_auto_close)
+		freeze_popover_prev_auto_close = -1.0
 
-func hide_freeze_banner() -> void:
-	if freeze_overlay != null:
-		freeze_overlay.visible = false
+	if popovers != null and popovers.is_open(quest_popover):
+		popovers.close_active()
 
 func on_quest_chip_pressed() -> void:
 	if popover_blocked.is_valid() and bool(popover_blocked.call()):

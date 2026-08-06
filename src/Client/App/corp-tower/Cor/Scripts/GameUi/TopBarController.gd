@@ -5,6 +5,8 @@ const LevelBadgeSafeTexture = preload("res://Cor/Art/Static/safe.png")
 const RoundTimeNormalTexture = preload("res://Cor/Art/Static/timer-round-time.png")
 const RoundTimeFreezeTexture = preload("res://Cor/Art/Static/timer-freeze-time.png")
 const TopIndicatorFillOverTexture = preload("res://Cor/Themes/TopIndicatorFillOver.tres")
+const FREEZE_BLINK_HALF_SECONDS := 0.35
+const FREEZE_BLINK_TINT := Color(1.0, 0.702, 0.055, 1.0)
 
 var match_state
 var level_label: Label
@@ -22,6 +24,7 @@ var tower_stability_label: Label
 var tower_fill: Panel
 var timer_deadline_ms: int = 0
 var timer_shown_seconds: int = -1
+var freeze_blink_tween: Tween
 
 func bind_nodes(binder) -> void:
 	level_label = binder.require_node("LevelLabel") as Label
@@ -49,6 +52,34 @@ func reset_indicators() -> void:
 		level_badge_texture.texture = LevelBadgeNormalTexture
 	if round_time_texture != null:
 		round_time_texture.texture = RoundTimeNormalTexture
+	stop_freeze_blink()
+
+func start_freeze_blink() -> void:
+	if timer_label == null:
+		return
+
+	if freeze_blink_tween != null and is_instance_valid(freeze_blink_tween) and freeze_blink_tween.is_running():
+		return
+
+	stop_freeze_blink()
+	timer_label.modulate = Color.WHITE
+	freeze_blink_tween = create_tween()
+	freeze_blink_tween.set_loops()
+	freeze_blink_tween.tween_property(
+		timer_label, "modulate", FREEZE_BLINK_TINT, FREEZE_BLINK_HALF_SECONDS
+	)
+	freeze_blink_tween.tween_property(
+		timer_label, "modulate", Color.WHITE, FREEZE_BLINK_HALF_SECONDS
+	)
+
+func stop_freeze_blink() -> void:
+	if freeze_blink_tween != null and is_instance_valid(freeze_blink_tween):
+		freeze_blink_tween.kill()
+
+	freeze_blink_tween = null
+
+	if timer_label != null:
+		timer_label.modulate = Color.WHITE
 
 func tick_round_timer() -> void:
 	if timer_label == null or timer_deadline_ms <= 0:
@@ -127,6 +158,11 @@ func update_top_bar_display(level: int, impact_level: int, state: String, second
 
 	if round_time_texture != null:
 		round_time_texture.texture = RoundTimeFreezeTexture if is_frozen else RoundTimeNormalTexture
+
+	if state == "starting":
+		start_freeze_blink()
+	else:
+		stop_freeze_blink()
 
 func get_tower_status(state: String, current_height: int, target_height: int) -> String:
 	if state == "starting":

@@ -14,7 +14,7 @@ const GameConfig = {
     targetHeightStepBase: 10,
     targetHeightStepGrowth: 5,
     targetHeightStepGrowthEvery: 3,
-    startDelayMs: 1000, // testing 0.5, release 2
+    startDelayMs: 4000, // testing 0.5, release 4
     // Floor only. The real limit is derived per level from target height
     // (Game_Engine.getLevelTimeLimitMs), so the clock cannot drift away from
     // the curve; this value is what short early levels get instead.
@@ -25,7 +25,7 @@ const GameConfig = {
     failRestartDelayMs: 1000, // testing 0.5, release 1
     placementScorePopupDurationMs: 2000,
     finishScorePopupDurationMs: 2000,
-    levelSummaryDelayMs: 2000,  // testing 2, release 3
+    levelSummaryDelayMs: 4000,  // testing 2, release 4
     impactInterval: 2,
     impactScoreRequirement: 0,
     // With an Impact every level this is the core loop: each player must earn

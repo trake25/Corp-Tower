@@ -94,6 +94,10 @@ function rotateCellsCW(cells) {
     return normalizeCells(cells.map(cell => [Number(cell[1]), -Number(cell[0])]));
 }
 
+function reflectCellsX(cells) {
+    return normalizeCells(cells.map(cell => [-Number(cell[0]), Number(cell[1])]));
+}
+
 function getRotations(cells) {
     const rotations = [];
     const seen = new Set();
@@ -116,6 +120,38 @@ function getRotations(cells) {
     return rotations;
 }
 
+// The four rotations of `cells` plus the four rotations of its mirror image,
+// deduped -- an asymmetric shape (L, Z) gains a distinct inverted (J-, S-like)
+// counterpart this way, while a shape whose mirror is already one of its own
+// rotations (O, I, T) contributes no duplicates. This is the pool a dealt
+// block's orientation is drawn from; getRotations alone stays rotation-only
+// since getAverageBrickHeight's estimate doesn't need the mirrored half (a
+// reflection never changes a shape's vertical extent).
+function getOrientations(cells) {
+    const orientations = [];
+    const seen = new Set();
+
+    [cells, reflectCellsX(cells)].forEach(startCells => {
+        let current = normalizeCells(startCells);
+
+        for (let i = 0; i < 4; i++) {
+            const orientationKey = current
+                .map(cell => cell.join(","))
+                .sort()
+                .join("|");
+
+            if (!seen.has(orientationKey)) {
+                seen.add(orientationKey);
+                orientations.push(current);
+            }
+
+            current = rotateCellsCW(current);
+        }
+    });
+
+    return orientations;
+}
+
 function createBlock(engine, shapeId = null, excludedShapeId = null) {
     const shapes = GameConfig.brickShapes || [];
     let shape = shapeId
@@ -130,9 +166,9 @@ function createBlock(engine, shapeId = null, excludedShapeId = null) {
         return null;
     }
 
-    const rotations = getRotations(shape.cells);
-    const rotation = rotations[Math.floor(Math.random() * rotations.length)];
-    const cells = engine.cloneCells(rotation);
+    const orientations = getOrientations(shape.cells);
+    const orientation = orientations[Math.floor(Math.random() * orientations.length)];
+    const cells = engine.cloneCells(orientation);
 
     return {
         id: engine.createBlockId(),

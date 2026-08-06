@@ -105,9 +105,6 @@ var _shake_elapsed: float = 0.0
 var _shake_magnitude_px: float = 0.0
 var _shake_offset: Vector2 = Vector2.ZERO
 
-func _ready() -> void:
-	material = BlockDataScript.brick_shader_material()
-
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		queue_redraw()
@@ -582,9 +579,12 @@ func _build_collapse_seed(
 	var texture: Texture2D = BlockDataScript.brick_texture(shape_id)
 	var quad_size: Vector2 = box.size
 	var rotation_steps: int = 0
+	var flipped: bool = false
 
 	if texture != null:
-		rotation_steps = BlockDataScript.detect_rotation_steps(shape_id, cells)
+		var orientation: Dictionary = BlockDataScript.detect_orientation(shape_id, cells)
+		rotation_steps = int(orientation.steps)
+		flipped = bool(orientation.flipped)
 		var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(
 			BlockDataScript.BRICK_SHAPES[shape_id]
 		)
@@ -618,6 +618,7 @@ func _build_collapse_seed(
 		"footprint": box.size,
 		"quad_size": quad_size,
 		"rotation_steps": rotation_steps,
+		"flipped": flipped,
 		"texture": texture,
 		"color": _player_color(entry),
 		"emoji_texture": emoji_texture,
@@ -663,7 +664,7 @@ func _draw_debris(unit: float) -> void:
 		else:
 			draw_primitive(
 				BlockDataScript.brick_quad_points(
-					Vector2.ZERO, piece.quad_size, int(piece.rotation_steps)
+					Vector2.ZERO, piece.quad_size, int(piece.rotation_steps), bool(piece.flipped)
 				),
 				PackedColorArray([color, color, color, color]),
 				uvs,
@@ -733,14 +734,16 @@ func _draw() -> void:
 		if texture == null:
 			_draw_fallback_block(center, box_rect.size, color)
 		else:
-			var rotation_steps: int = BlockDataScript.detect_rotation_steps(shape_id, cells)
+			var orientation: Dictionary = BlockDataScript.detect_orientation(shape_id, cells)
 			var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(BlockDataScript.BRICK_SHAPES[shape_id])
 			var canonical_size: Vector2 = Vector2(
 				float(canonical_bounds.max_x - canonical_bounds.min_x + 1) * unit,
 				float(canonical_bounds.max_y - canonical_bounds.min_y + 1) * unit
 			)
-			var points: PackedVector2Array = BlockDataScript.brick_quad_points(center, canonical_size, rotation_steps)
-			var colors := PackedColorArray([color, color, color, color])
+			var points: PackedVector2Array = BlockDataScript.brick_quad_points(
+				center, canonical_size, int(orientation.steps), bool(orientation.flipped)
+			)
+			var colors: PackedColorArray = BlockDataScript.brick_quad_colors(color, points)
 
 			draw_primitive(points, colors, BlockDataScript.brick_quad_uvs(), texture)
 
@@ -968,7 +971,7 @@ func _draw_drag_ghost(
 		draw_rect(Rect2(box.position - pivot, box.size), fill, true)
 	else:
 		var center: Vector2 = box.position + box.size * 0.5 - pivot
-		var rotation_steps: int = BlockDataScript.detect_rotation_steps(drag_shape_id, drag_cells)
+		var orientation: Dictionary = BlockDataScript.detect_orientation(drag_shape_id, drag_cells)
 		var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(
 			BlockDataScript.BRICK_SHAPES[drag_shape_id]
 		)
@@ -977,9 +980,9 @@ func _draw_drag_ghost(
 			float(canonical_bounds.max_y - canonical_bounds.min_y + 1) * unit
 		)
 		var points: PackedVector2Array = BlockDataScript.brick_quad_points(
-			center, canonical_size, rotation_steps
+			center, canonical_size, int(orientation.steps), bool(orientation.flipped)
 		)
-		var colors := PackedColorArray([fill, fill, fill, fill])
+		var colors: PackedColorArray = BlockDataScript.brick_quad_colors(fill, points)
 
 		draw_primitive(points, colors, BlockDataScript.brick_quad_uvs(), texture)
 
