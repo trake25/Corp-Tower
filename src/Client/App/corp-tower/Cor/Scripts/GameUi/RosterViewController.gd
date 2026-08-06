@@ -2,10 +2,7 @@ extends Node
 
 const MAX_RAIL_PLAYERS := 3
 const IMPACT_FLASH_PULSES := 3
-# Scaled from the shipped gold accent Color(1, 0.702, 0.055) -- GameUITheme.tres's
-# TopBarFrameAchievedPanel border and the "Safe" level badge -- so a met Impact
-# reads with the same gold the rest of the UI already uses for "safe"/achieved.
-const IMPACT_FLASH_MET_TINT := Color(1.6, 1.123, 0.088, 1.0)
+const IMPACT_GLOW_BRIGHTEN := 1.6
 const IMPACT_FLASH_MISSED_TINT := Color(1.3, 0.5, 0.5, 1.0)
 const PlayerRailEntryScene = preload("res://Cor/Scenes/PlayerRailEntry.tscn")
 const ImpactBarScene = preload("res://Cor/Scenes/ImpactBar.tscn")
@@ -226,10 +223,23 @@ func flash_impact_bars(verdicts: Dictionary, duration_seconds: float) -> void:
 		tween.tween_property(
 			bar,
 			"modulate",
-			IMPACT_FLASH_MET_TINT if met else IMPACT_FLASH_MISSED_TINT,
+			_impact_glow_tint(player_id) if met else IMPACT_FLASH_MISSED_TINT,
 			half_pulse
 		)
 		tween.tween_property(bar, "modulate", Color.WHITE, half_pulse)
+
+# A player who cleared their Impact share glows in their own seat color rather
+# than a shared tint, so the flash reads as "your bar, brighter" instead of a
+# generic pass color.
+func _impact_glow_tint(player_id: String) -> Color:
+	var seat_color: Color = players_ctx.seat_color(player_id)
+
+	return Color(
+		seat_color.r * IMPACT_GLOW_BRIGHTEN,
+		seat_color.g * IMPACT_GLOW_BRIGHTEN,
+		seat_color.b * IMPACT_GLOW_BRIGHTEN,
+		1.0
+	)
 
 func set_impact_status_visible(should_show: bool) -> void:
 	if impact_separator != null:

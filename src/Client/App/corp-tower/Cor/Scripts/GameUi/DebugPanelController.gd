@@ -973,7 +973,7 @@ func apply_config(config) -> void:
 	set_slider_no_signal(power_replenish_share_slider, float(config.get("powerReplenishPileShare", 0.25)) * 100.0)
 	set_slider_no_signal(impact_beat_zoom_out_slider, float(config.get("visualHookZoomOutMs", 900)))
 	set_slider_no_signal(impact_beat_wave_slider, float(config.get("visualHookWaveMs", 1100)))
-	set_slider_no_signal(impact_beat_hold_slider, float(config.get("visualHookHoldMs", 600)))
+	set_slider_no_signal(impact_beat_hold_slider, float(config.get("visualHookHoldMs", 0)))
 	set_slider_no_signal(screen_shake_duration_slider, float(config.get("visualHookShakeMs", 260)))
 	update_debug_labels()
 	is_syncing_debug_config = false
@@ -1157,7 +1157,7 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		impact_beat_hold_label,
-		"Hold: " + str(int(get_slider_value(impact_beat_hold_slider, 600))) + " ms"
+		"Hold: " + str(int(get_slider_value(impact_beat_hold_slider, 0))) + " ms"
 	)
 	set_debug_label_text(
 		screen_shake_duration_label,

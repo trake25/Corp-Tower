@@ -153,7 +153,7 @@ const GameConfig = {
         impactBeatMinZoom: 0.3,
         impactBeatZoomOutMs: 900,
         impactBeatWaveMs: 1100,
-        impactBeatHoldMs: 600,
+        impactBeatHoldMs: 0,
         screenShakeMs: 260,
         screenShakeMagnitudeUnits: 0.22
     },

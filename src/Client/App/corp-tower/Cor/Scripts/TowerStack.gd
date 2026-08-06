@@ -27,7 +27,6 @@ const FALLBACK_COLOR := PlayerColors.FALLBACK_COLOR
 
 const SNAP_DOT_COLOR := Color(1.0, 1.0, 1.0, 0.5)
 const SNAP_TARGET_HALO_ALPHA := 0.85
-const AIM_POINT_RING_ALPHA := 0.65
 const BAND_FILL_COLOR := Color(1.0, 1.0, 1.0, 0.11)
 const BAND_EDGE_COLOR := Color(1.0, 1.0, 1.0, 0.4)
 const BAND_HEADROOM_UNITS := 2.0
@@ -897,7 +896,8 @@ func _band_top_units() -> float:
 
 	if !drag_cells.is_empty():
 		var bounds: Dictionary = BlockDataScript.cell_bounds(drag_cells)
-		var ghost_top: int = int(active_snap.get("origin_y", 0)) + bounds.max_y + 1
+		var ghost_row: int = int(active_snap.get("aim_origin_y", active_snap.get("origin_y", 0)))
+		var ghost_top: int = ghost_row + bounds.max_y + 1
 		top_units = maxf(top_units, float(ghost_top))
 
 	return top_units + BAND_HEADROOM_UNITS
@@ -948,7 +948,13 @@ func _draw_drag_ghost(
 		return
 
 	var column: int = int(active_snap.get("column", SnapGridScript.placeable_column_min))
-	var origin_y: int = int(active_snap.get("origin_y", 0))
+	# The ghost previews the release row being aimed at, not where gravity will
+	# eventually carry it -- aiming at a real target (an overhang with open air
+	# beneath it) has to visibly dock there, or a legal spot never looks
+	# placeable. The two are the same value whenever the aim is already
+	# supported. Where it actually lands once placed is unaffected by this;
+	# that is resolved server-side from the same original aim.
+	var origin_y: int = int(active_snap.get("aim_origin_y", active_snap.get("origin_y", 0)))
 	var box: Rect2 = _footprint_box(
 		column, origin_y, drag_cells, unit, base_x, baseline, scroll_offset_units
 	)
@@ -1005,18 +1011,15 @@ func _draw_drag_ghost(
 
 # Drawn from SnapGrid's own point set, so every dot the player sees is a point
 # the resolver actually considers -- the two used to be computed independently.
+# Highlights target_point, the post-fall contact -- not the aim point, since
+# the ghost itself now docks at the aim (see _draw_drag_ghost); highlighting
+# the aim here too would just be the same information twice.
 func _draw_snap_points(
 	unit: float, base_x: float, baseline: float, scroll_offset_units: int, pivot: Vector2
 ) -> void:
 	var snapped: bool = bool(active_snap.get("snapped", false))
 	var target_point: Vector2i = active_snap.get("target_point", Vector2i.ZERO)
-	var aim_point: Vector2i = active_snap.get("aim_point", Vector2i.ZERO)
 	var halo: Color = Color(drag_color.r, drag_color.g, drag_color.b, SNAP_TARGET_HALO_ALPHA)
-	var aim_ring: Color = Color(drag_color.r, drag_color.g, drag_color.b, AIM_POINT_RING_ALPHA)
-	# The aim point only earns its own marker when it differs from where the
-	# brick actually settles -- otherwise it would just draw a second ring on
-	# top of the landing halo.
-	var show_aim_ring: bool = snapped and aim_point != target_point
 
 	for point in SnapGridScript.tower_snap_points(tower_blocks):
 		var local: Vector2 = _lattice_to_local(
@@ -1026,11 +1029,6 @@ func _draw_snap_points(
 		if snapped and point == target_point:
 			draw_arc(local, snap_target_radius, 0.0, TAU, 24, halo, 2.5, true)
 			draw_circle(local, snap_dot_radius + 1.0, halo)
-		elif show_aim_ring and point == aim_point:
-			# Hollow, not filled -- reads as "recognized target you're aiming
-			# at" rather than "this is where it will land" (the filled halo
-			# above), since gravity is still going to carry the brick further.
-			draw_arc(local, snap_target_radius, 0.0, TAU, 24, aim_ring, 2.0, true)
 		else:
 			draw_arc(local, snap_dot_radius, 0.0, TAU, 16, SNAP_DOT_COLOR, 1.5, true)
 

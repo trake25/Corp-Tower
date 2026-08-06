@@ -6,7 +6,7 @@ const RoundTimeNormalTexture = preload("res://Cor/Art/Static/timer-round-time.pn
 const RoundTimeFreezeTexture = preload("res://Cor/Art/Static/timer-freeze-time.png")
 const TopIndicatorFillOverTexture = preload("res://Cor/Themes/TopIndicatorFillOver.tres")
 const FREEZE_BLINK_HALF_SECONDS := 0.35
-const FREEZE_BLINK_TINT := Color(1.0, 0.702, 0.055, 1.0)
+const FREEZE_BLINK_COLOR := Color(0.82, 0.12, 0.12, 1.0)
 
 var match_state
 var level_label: Label
@@ -25,6 +25,7 @@ var tower_fill: Panel
 var timer_deadline_ms: int = 0
 var timer_shown_seconds: int = -1
 var freeze_blink_tween: Tween
+var freeze_blink_base_color: Color = Color.BLACK
 
 func bind_nodes(binder) -> void:
 	level_label = binder.require_node("LevelLabel") as Label
@@ -62,24 +63,30 @@ func start_freeze_blink() -> void:
 		return
 
 	stop_freeze_blink()
-	timer_label.modulate = Color.WHITE
+	# Blinking modulate would only re-tint the label's own font color, which is
+	# near-black (see TimerLabel's font_color override in GameUI.tscn) -- a
+	# multiplicative tint on a near-black base stays near-black no matter the
+	# target color, so the blink is invisible. Animate font_color directly instead.
+	freeze_blink_base_color = timer_label.get_theme_color("font_color")
 	freeze_blink_tween = create_tween()
 	freeze_blink_tween.set_loops()
 	freeze_blink_tween.tween_property(
-		timer_label, "modulate", FREEZE_BLINK_TINT, FREEZE_BLINK_HALF_SECONDS
+		timer_label, "theme_override_colors/font_color", FREEZE_BLINK_COLOR, FREEZE_BLINK_HALF_SECONDS
 	)
 	freeze_blink_tween.tween_property(
-		timer_label, "modulate", Color.WHITE, FREEZE_BLINK_HALF_SECONDS
+		timer_label, "theme_override_colors/font_color", freeze_blink_base_color, FREEZE_BLINK_HALF_SECONDS
 	)
 
 func stop_freeze_blink() -> void:
-	if freeze_blink_tween != null and is_instance_valid(freeze_blink_tween):
+	var was_active: bool = freeze_blink_tween != null and is_instance_valid(freeze_blink_tween)
+
+	if was_active:
 		freeze_blink_tween.kill()
 
 	freeze_blink_tween = null
 
-	if timer_label != null:
-		timer_label.modulate = Color.WHITE
+	if was_active and timer_label != null:
+		timer_label.add_theme_color_override("font_color", freeze_blink_base_color)
 
 func tick_round_timer() -> void:
 	if timer_label == null or timer_deadline_ms <= 0:

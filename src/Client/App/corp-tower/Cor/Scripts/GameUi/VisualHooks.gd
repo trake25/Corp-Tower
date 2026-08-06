@@ -5,7 +5,7 @@ const DEFAULT_SCREEN_SHAKE := true
 const DEFAULT_MIN_ZOOM := 0.3
 const DEFAULT_ZOOM_OUT_MS := 900
 const DEFAULT_WAVE_MS := 1100
-const DEFAULT_HOLD_MS := 600
+const DEFAULT_HOLD_MS := 0
 const DEFAULT_SHAKE_MS := 260
 const DEFAULT_SHAKE_MAGNITUDE_UNITS := 0.22
 
@@ -37,9 +37,10 @@ func apply(config: Variant) -> void:
 		0.0, float(hooks.get("screenShakeMagnitudeUnits", DEFAULT_SHAKE_MAGNITUDE_UNITS))
 	)
 
-# zoom_out + wave is the animated reveal (2s by design); hold is the stay
-# before the level summary appears -- the beat then keeps holding through the
-# summary itself, ending only when the summary closes (see VisualHooksController.end_beat).
+# zoom_out + wave is the animated reveal (2s by design); hold is an optional
+# extra stay before the level summary appears, 0 by default so the summary
+# shows the instant the reveal finishes. The beat then keeps holding through
+# the summary itself, ending only when the summary closes (see VisualHooksController.end_beat).
 func impact_beat_total_ms() -> int:
 	return impact_beat_zoom_out_ms + impact_beat_wave_ms + impact_beat_hold_ms
 

@@ -294,6 +294,14 @@ func test_resolve_exposes_the_aim_point_separately_from_where_gravity_lands_it()
 		under_the_foot.aim_point, under_the_foot.target_point,
 		"Aim and landing spot differ whenever the aim was over open air."
 	)
+	assert_eq(
+		under_the_foot.aim_origin_y, 3,
+		"The ghost must render at the aimed row (under the nose), not the settled one."
+	)
+	assert_ne(
+		under_the_foot.aim_origin_y, under_the_foot.origin_y,
+		"aim_origin_y and the settled origin_y differ whenever the aim was over open air."
+	)
 
 	var above_the_j_foot: Dictionary = SnapGridScript.resolve(tower_blocks, O_CELLS, Vector2(1.0, 1.0), 2.2)
 	assert_eq(above_the_j_foot.column, 0, "Aiming directly above the J's foot resolves to the same column.")
@@ -301,4 +309,31 @@ func test_resolve_exposes_the_aim_point_separately_from_where_gravity_lands_it()
 	assert_eq(
 		above_the_j_foot.aim_point, above_the_j_foot.target_point,
 		"Aiming at an already-supported spot means the aim point is the landing spot."
+	)
+	assert_eq(
+		above_the_j_foot.aim_origin_y, above_the_j_foot.origin_y,
+		"An already-supported aim renders the ghost at the same row it settles at."
+	)
+
+# The aim/settle split is generic to SnapGrid.resolve, not specific to the
+# O-under-L/J case above -- a single floating shelf cell with a completely
+# different shape (a 4-tall I) dropped under it, and nothing at all supporting
+# the column, must show the same divergence: aim at the shelf, settle on the
+# platform.
+func test_aim_origin_y_diverges_for_a_different_shape_too() -> void:
+	SnapGridScript.set_placeable_range(0, 5)
+
+	var i_vertical_cells: Array = [[0, 0], [0, 1], [0, 2], [0, 3]]
+	var shelf := entry([[0, 0]], 2, 5)
+	var tower_blocks := [shelf]
+
+	var under_the_shelf: Dictionary = SnapGridScript.resolve(tower_blocks, i_vertical_cells, Vector2(2.5, 3.0), 2.2)
+
+	assert_true(under_the_shelf.valid, "Aiming under the shelf must still resolve.")
+	assert_eq(under_the_shelf.column, 2, "The I settles in the shelf's own column.")
+	assert_eq(under_the_shelf.aim_origin_y, 1, "The ghost docks right under the shelf, where it was aimed.")
+	assert_eq(under_the_shelf.origin_y, 0, "With nothing at all beneath it, it actually falls to the platform.")
+	assert_ne(
+		under_the_shelf.aim_origin_y, under_the_shelf.origin_y,
+		"An I under an isolated overhang diverges exactly like the O under the L/J nose did."
 	)

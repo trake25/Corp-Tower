@@ -257,7 +257,8 @@ static func resolve(
 			"origin_y": 0,
 			"target_point": Vector2i.ZERO,
 			"matched_vertex": Vector2i.ZERO,
-			"aim_point": Vector2i.ZERO
+			"aim_point": Vector2i.ZERO,
+			"aim_origin_y": 0
 		}
 
 	var range_x: Vector2i = origin_range(cells)
@@ -314,24 +315,32 @@ static func resolve(
 			"matched_vertex": contact.get("vertex", best_vertex),
 			# The point actually aimed at, before gravity carries the brick any
 			# further down -- distinct from target_point (the post-fall contact)
-			# whenever the aim lands on an overhang with nothing under it, so the
-			# UI can confirm "this spot is a real target" even though the brick
-			# will keep falling past it. Equal to target_point when the aim was
-			# already the resting spot.
-			"aim_point": best_point
+			# whenever the aim lands on an overhang with nothing under it.
+			"aim_point": best_point,
+			# The release row itself, before settling -- what the ghost renders
+			# at while dragging, so hovering over open air under an overhang
+			# still shows a brick-shaped preview confirming the spot is a real
+			# target. origin_y (above) is the settled row the brick actually
+			# ends up at once placed; the two are equal whenever the aim was
+			# already fully supported.
+			"aim_origin_y": best_origin_y
 		}
 
 	var fallback_column: int = nearest_column(cells, ghost_center.x)
+	var fallback_origin_y: int = settle_origin_y(tower_blocks, cells, fallback_column)
 
 	return {
 		"valid": true,
 		"snapped": false,
 		"exact": false,
 		"column": fallback_column,
-		"origin_y": settle_origin_y(tower_blocks, cells, fallback_column),
+		"origin_y": fallback_origin_y,
 		"target_point": Vector2i.ZERO,
 		"matched_vertex": Vector2i.ZERO,
-		"aim_point": Vector2i.ZERO
+		"aim_point": Vector2i.ZERO,
+		# No exact aim beyond the snap radius -- the fallback already releases
+		# from above the tower, so the aim and settled rows are the same.
+		"aim_origin_y": fallback_origin_y
 	}
 
 # The pairing that decides where the brick is released is measured against the
