@@ -33,11 +33,11 @@ Wire contract → [networking.md](./networking.md#reconnect). Implementation →
 Each level gets a fresh shared pile = **team carry-over** + a **generated reserve**, shuffled before start. The reserve is **derived, not tabled**, so it self-corrects when `brickWeights`, target height, or site width change:
 
 ```
-requiredBrickHeight = ceil(targetHeight / packingEfficiency) × (1 − levelSupplyPowerReserveShare)
+requiredBrickHeight = ceil(targetHeight / packingEfficiency) × coverage(level)
 reserve = ceil((requiredBrickHeight + bandCentre − openingHandHeight − carryOverHeight) / avgBrickHeight)
 ```
 
-**The pile deliberately covers only `1 − levelSupplyPowerReserveShare` of the requirement** (default **10%** uncovered). One Replenish adds `powerReplenishPileShare` (25%) of the starting pile, so most levels finish unaided and Power is insurance against a bad draw rather than a mandatory cast. `maxGeneratedDrawPileBlocks` is a sanity ceiling against a bad config, **not a balance knob** — target height is uncapped, so a value that binds starves the level outright.
+**Coverage lerps from `levelSupplyCoverageStart` (**120%** at level 1) down to `levelSupplyCoverageEnd` (**90%**) by `levelSupplyCoverageFullLevel` (**20**)** — low levels run a surplus so the squeeze arrives gradually rather than being flat from level 1. One Replenish adds `powerReplenishPileShare` (25%) of the starting pile, insuring the uncovered share at the end value so most levels still finish unaided. `maxGeneratedDrawPileBlocks` is a sanity ceiling against a bad config, **not a balance knob** — target height is uncapped, so a value that binds starves the level outright.
 
 Opening-hand bricks fill slots directly without passing through the pile. On completion, unused hand + pile bricks become the next carry-over (up to `maxTeamCarryOverBlocks`, precision-first). **On failure, carry-over is discarded.**
 
@@ -100,20 +100,22 @@ Stability has **two independent axes**; reported `towerStability` is the lower o
 | Axis | Measures | Drives |
 |---|---|---|
 | **Lean** (signed) | CoM drift + column-height imbalance + the just-placed brick's overhang | Visual tilt; collapses at the resolved collapse-tilt score |
-| **Integrity** (0–100) | **Site usage** (base span vs. the buildable site) + **support deficit** (unsupported cells across the whole tower) | Collapses at 0 |
+| **Integrity** (0–100) | **Slenderness** (mean cells per occupied row, across the *whole* tower, vs. the buildable site) + **support deficit** (unsupported cells across the whole tower) | Collapses at 0 |
 
 ```
-siteUsage          = siteWidth / groundWidth        # 1.0 = whole site used, 2.0 = half of it
-slendernessPenalty = clamp01((siteUsage − Safe) / (Max − Safe))
-supportPenalty     = clamp01((unsupported cells / all cells) / supportDeficitMax)
+slenderness        = siteWidth / meanRowWidth        # mean row width, not the ground row alone
+slendernessPenalty = clamp01((slenderness − Safe) / (Max − Safe)) × severity
+supportPenalty     = clamp01((unsupported cells / all cells) / supportDeficitMax) × severity
 integrity          = round(100 × (1 − clamp01(slendernessPenalty + supportPenalty)))
 
-pressure           = (towerStabilityDifficulty / 100) × (floor + (1 − floor) × min(1, level / fullPressureLevel))
+pressure       = (towerStabilityDifficulty / 100) × (floor + (1 − floor) × min(1, level / fullPressureLevel))
+heightPressure = 1 + heightPressureGain × min(1, height / targetHeight)
+severity       = maturity × heightPressure
 ```
 
-**`towerStabilityDifficulty` (0–100) is the only stability tunable.** `pressure` interpolates every constant above between the **forgiving** and **harsh** anchor sets in `towerStabilityAnchors`, so threat also ramps with level ([decisions.md](./decisions.md#tower-stability-is-one-derived-dial-scaled-by-level)). `0` leaves stability inert — score multiplier only, no collapse; the default **90** holds levels 1–5 to score pressure alone and makes collapse a genuine threat past level ~25.
+**`towerStabilityDifficulty` (0–100) is the only stability tunable.** `pressure` interpolates every constant above (`heightPressureGain` included) between the **forgiving** and **harsh** anchor sets in `towerStabilityAnchors`, so threat ramps with level *and* with how close the tower is to its own target height ([decisions.md](./decisions.md#tower-stability-is-one-derived-dial-scaled-by-level)). `0` leaves stability inert — score multiplier only, no collapse. At the shipped default (**95**) a narrow build can fail from level 1; a full-width base stays safe at every level and difficulty, since slenderness measures the whole tower, not just its footprint.
 
-- **Maturity ramp.** Every penalty scales by `min(1, height / towerStabilityMinHeight)`, itself derived from pressure. Without it the opening brick is lethal — a single narrow brick on the ground is the worst site usage a tower can register.
+- **Maturity ramp.** `severity` scales every penalty by `maturity = min(1, height / towerStabilityMinHeight)` on top of `heightPressure`, so the opening brick is always safe regardless of how tight the anchors are tuned — a single narrow brick on the ground is the worst reading the tower can register.
 - **Every term is repairable at its source.** Widening the base or straightening a lean improves Integrity directly, and support deficit is fixable too: a brick released into a void puts the cells above it back on solid ground instead of only diluting the ratio. This is what [Reinforce](#scoring-system) pays for.
 - Warning/critical feedback fires at tuned thresholds; stability hitting 0 collapses the tower and fails the level **before** a height completion can count.
 
@@ -121,7 +123,7 @@ Algorithm → [backend.md § Tower Stability](./backend.md#tower-stability).
 
 ## Timer, quick chat, failure conditions
 
-**The level clock is derived from target height, not flat** — a curve growing in tens per level would outrun the time to build it. `limit = ceil(targetHeight / (avgBrickHeight × levelTimePlannedEfficiency) / players) × placementCooldown × levelTimeSlack`, floored at `levelTimeLimitMs` (30s). `levelTimePlannedEfficiency` (**0.55**) is what a human filling the site achieves — deliberately not the bots' ~0.9 spire rate, which is why bots never time out in the [Balance Simulator](./testing.md#balance-simulator); `levelTimeSlack` (**2.0**) covers think time. Rounds grow without bound (~30s at L1, ~86s at L10, ~356s at L25); `placementCooldown` is the dial to move if they run long, since throughput is `players / cooldown`.
+**The level clock is derived from target height, not flat** — a curve growing in tens per level would outrun the time to build it. `limit = ceil(targetHeight / (avgBrickHeight × levelTimePlannedEfficiency) / players) × placementCooldown × slack(level)`, floored at `levelTimeLimitMs` (**60s**). `levelTimePlannedEfficiency` (**0.55**) is what a human filling the site achieves — deliberately not the bots' ~0.9 spire rate, which is why bots never time out in the [Balance Simulator](./testing.md#balance-simulator). `slack` lerps from `levelTimeSlack` (**3.0** at level 1) down to `levelTimeSlackMin` (**1.5**, by `levelTimeSlackFullLevel` **25**), so low levels run generous and the squeeze arrives gradually. Rounds grow without bound but far slower than target height (60s at L1/L5, 105s at L10, 223s at L20, 267s at L25); `placementCooldown` is the dial to move if they run long, since throughput is `players / cooldown`.
 
 Quick chat is 3 fixed slots per player (`Place Block!`, `Sorry!`, `Hello!`), server-authoritative per-player cooldown, config-driven so text can change without touching gameplay contracts. A level fails when: time runs out; hands + pile are exhausted below target; remaining possible height can't reach target **and** nobody holds a Replenish that could rescue it; or any player is below their contribution requirement at an Impact.
 
@@ -132,9 +134,9 @@ Quick chat is 3 fixed slots per player (`Place Block!`, `Sorry!`, `Hello!`), ser
 | Component | Formula |
 |---|---|
 | Contribution (per placement) | `effective_height × level × placementScorePerHeight` (default `10`) **× stability multiplier** — the core earner, and what the Impact gate measures |
-| Stability multiplier | `placementStabilityFloor + (1 − floor) × stabilityBefore/100` (floor `0.5`). Uses the stability the placer **inherited**, so it rewards fixing-then-claiming instead of paying you for your own overhang |
+| Stability multiplier | `floor(height) + (1 − floor(height)) × stabilityBefore/100`, where `floor` lerps from `placementStabilityFloor` (**0.5**, at the ground) to `placementStabilityFloorAtTarget` (**0.15**, at target height) — stability is worth more to score the higher the tower rises. Uses the stability the placer **inherited** and the height *before* their placement, so it rewards fixing-then-claiming instead of paying you for your own overhang |
 | Reinforce (per placement) | `min(cap, round((integrity_gain × reinforceScorePerIntegrity + lean_correction × reinforceScorePerLean + supported_cells × reinforceScorePerSupportedCell) × level))`, `lean_correction = max(0, |lean_before| − |lean_after|)`, `supported_cells` = tower cells that were hanging and now rest on the placed brick |
-| Repair ceiling | `cap = reinforceScoreCapShare × avgBrickHeight × placementScorePerHeight × level`. **Repair and height are priced against each other, not independently:** at `1` a maximal repair equals an average height claim — worth choosing when the tower is hurt, never able to out-earn a good claim — and it re-prices itself when the brick mix or `placementScorePerHeight` changes. `0` removes the ceiling |
+| Repair ceiling | `cap = share(height) × avgBrickHeight × placementScorePerHeight × level`, where `share` lerps from `reinforceScoreCapShare` (**1**, at the ground) to `reinforceScoreCapShareAtTarget` (**3**, at target height). **Repair and height are priced against each other, not independently:** at `1` a maximal repair equals an average height claim; near the top a repair can now out-earn one, since little height is left to claim there. Re-prices itself when the brick mix or `placementScorePerHeight` changes. `0` removes the ceiling |
 | Precision Bonus (exact finish, finisher) | `level × precisionBonusPerLevel` (default `20`) |
 | Team Exact Bonus (exact finish, everyone) | `level × teamExactBonusPerLevel` (default `15`) |
 | Finisher Bonus | `0` — overbuild finishing earns nothing beyond banked contribution |
@@ -144,7 +146,7 @@ Quick chat is 3 fixed slots per player (`Place Block!`, `Sorry!`, `Hello!`), ser
 - The pool is **front-loaded**: `effective_height` is capped by the height still missing, so late placements are worth little and a slow start may be uncatchable. Deliberate urgency.
 - MVP = highest level score that level (display-only). Leaderboard score is snapshotted at each Impact and restored on rollback.
 
-**The Impact gate.** `required = impactMinContributionShare × targetHeight × level × placementScorePerHeight`, per player, with `impactScoreRequirement` as an optional flat floor (`max` of the two). Default share **30%**; `0` disables. The share is bounded by arithmetic, not taste — three players × the share is how much of the pool must split near-evenly, and above ~30% no natural distribution reaches it, so the default now sits right at that ceiling ([decisions.md](./decisions.md#impact-every-level-and-the-share-is-bounded-by-arithmetic)).
+**The Impact gate.** `required = impactMinContributionShare × targetHeight × level × placementScorePerHeight × impactExpectedStabilityMultiplier`, per player, with `impactScoreRequirement` as an optional flat floor (`max` of the two). Default share **30%**; `0` disables. `impactExpectedStabilityMultiplier` (**0.85**) discounts the formula's implicit perfect-stability assumption toward what a real placement actually pays, so the share keeps meaning "X% of what's realistically earnable" as the stability floor's own height-scaling changes. The share is bounded by arithmetic, not taste — three players × the share is how much of the pool must split near-evenly, and above ~30% no natural distribution reaches it, so the default now sits right at that ceiling ([decisions.md](./decisions.md#impact-every-level-and-the-share-is-bounded-by-arithmetic)).
 
 **Feedback UX.** `+points` popup per placement in the player's colour, with `REINFORCE +n` alongside it, then precision/team bonus popups. Exact-finish/overbuild state has no popup or level-end score-event callout of its own — the Top Indicator ([ui.md](./ui.md#main-ui-controller)) already shows it live during play. The level summary appears once the popup batch fades (result, team score, MVP, finisher, per-player score, contributed height). Failed summaries show level score but never bank it.
 
@@ -206,7 +208,7 @@ QA/local-test helpers only — not production AI. They fill rooms only when a re
 
 ### Future debug variables and open tuning questions
 
-Not yet exposed: `brickWeights`, `inventoryScaling`, the `targetHeightBase`/`Step*` curve knobs and the `levelTimePlannedEfficiency`/`levelTimeSlack` clock pair, per-shape generation pools, `debugBotStabilityTolerance`/`debugBotGapCandidates`, `reinforceScorePerSupportedCell`/`reinforceScoreCapShare`, and the `towerStabilityAnchors`/`towerStabilityPressure` sets the stability dial interpolates.
+Not yet exposed: `brickWeights`, `inventoryScaling`, the `targetHeightBase`/`Step*` curve knobs and the `levelTimePlannedEfficiency`/`levelTimeSlack`/`levelTimeSlackMin`/`FullLevel` clock group, `levelSupplyCoverageStart`/`End`/`FullLevel`, per-shape generation pools, `debugBotStabilityTolerance`/`debugBotGapCandidates`, `reinforceScorePerSupportedCell`/`reinforceScoreCapShare`/`AtTarget`, `placementStabilityFloorAtTarget`, `impactExpectedStabilityMultiplier`, and the `towerStabilityAnchors`/`towerStabilityPressure` sets (now including `towerHeightPressureGain`) the stability dial interpolates.
 
 - **Exact-finish runs high** (~55–80% simulated), so "PERFECT BUILD" fires often. Lower via supply surplus or `minPrecisionBlocksPerLevel` if it should feel rarer.
 - **The front-loaded pool** can make a slow start mathematically uncatchable; worth confirming that reads as urgency, not unfairness. **Per-shape pools and fail-condition pressure** remain untouched levers for later difficulty shaping.

@@ -17,6 +17,7 @@ Scope: one row per module — file path, purpose, dependencies, where the full d
 | Game Config | `src/Server/app/Game_Config.js` | Central tuning/config object | none | [backend.md](./backend.md#game-config) |
 | Redis State | `src/Server/app/Redis_State.js` | Shared-state adapter, in-memory fallback | `redis` (npm) | [backend.md](./backend.md#redis-state) |
 | Balance Simulator | `src/Server/tools/Balance_Simulator.js` | Offline balance-sampling CLI, cooldown-clocked, runs both bot strategies (not shipped) | Game Engine, Game Config, Bot Manager, Tower Stability | [testing.md](./testing.md#balance-simulator) |
+| Stability Probe | `src/Server/tools/Stability_Probe.js` | Deterministic hand-built-archetype stability CLI, complements the bot-driven simulator (not shipped) | Game Engine, Game Config, Tower Stability | [testing.md](./testing.md#balance-simulator) |
 | Server Score Events Tests | `src/Server/tests/Score_Events.test.js` | Score/summary contract tests (not shipped) | Game Engine, Game Config, Lobby Manager, Tower Stability | [testing.md](./testing.md#server-score-events-tests) |
 | Server Matchmaking Queue Tests | `src/Server/tests/Matchmaking_Queue.test.js` | Multi-pod matchmaking race/handoff regression test (not shipped) | Lobby Manager, Redis State (via a fake shared-cluster stateStore double) | [testing.md](./testing.md#server-matchmaking-queue-tests) |
 | Server Container Image | `src/Server/Dockerfile` | Packages `src/Server/app` for deploy | Server Entry (runtime) | [build.md](./build.md#server-container-image) |
