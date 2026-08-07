@@ -48,6 +48,24 @@ static func build_verdicts(status: Variant) -> Dictionary:
 
 	return verdicts
 
+# A "completed" summary never carries its own impactScoreStatus -- the gate
+# check for the next level runs later, on its own timer, and overwrites
+# lastLevelSummary with a separate "failed" result if it doesn't pass. So a
+# completed level was never judged and defaults every placer to positive.
+static func build_completion_verdicts(summary: Dictionary) -> Dictionary:
+	var verdicts: Dictionary = {}
+
+	for raw_player in summary.get("players", []):
+		if typeof(raw_player) != TYPE_DICTIONARY:
+			continue
+
+		var player_id: String = str((raw_player as Dictionary).get("id", ""))
+
+		if player_id != "":
+			verdicts[player_id] = VERDICT_POSITIVE
+
+	return verdicts
+
 static func level_result_key(summary: Dictionary, state: String) -> String:
 	return (
 		state + ":" +
@@ -77,12 +95,10 @@ func on_level_result(data: Dictionary, state: String) -> float:
 
 	last_beat_key = beat_key
 
-	var status: Variant = summary.get("impactScoreStatus", {})
+	var verdicts: Dictionary = build_verdicts(summary.get("impactScoreStatus", {}))
 
-	if typeof(status) != TYPE_DICTIONARY or (status as Dictionary).is_empty():
-		status = data.get("impactScoreStatus", {})
-
-	var verdicts: Dictionary = build_verdicts(status)
+	if verdicts.is_empty() and str(summary.get("result", "")) == "completed":
+		verdicts = build_completion_verdicts(summary)
 
 	if hooks.screen_shake_enabled and _should_shake(state, verdicts):
 		if tower_stack.has_method("shake"):

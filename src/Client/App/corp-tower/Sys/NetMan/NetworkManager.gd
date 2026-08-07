@@ -14,6 +14,7 @@ var profile_id := ""
 var current_url := ""
 var tried_failover := false
 var connect_attempt_elapsed := 0.0
+var background_since_msec := -1
 
 const PLAYER_ID_FILE := "user://corp_tower_player_id.save"
 const RECONNECT_TOKEN_FILE := "user://corp_tower_reconnect_token.save"
@@ -21,6 +22,7 @@ const PROFILE_ID_FILE := "user://corp_tower_profile_id.save"
 const AUTO_RECONNECT_DELAY_SECONDS := 1.0
 const AUTO_RECONNECT_MAX_ATTEMPTS := 8
 const CONNECT_TIMEOUT_SECONDS := 5.0
+const BACKGROUND_STALE_THRESHOLD_SECONDS := 5.0
 const SERVER_URL := EndpointConfig.PRIMARY
 const FAILOVER_SERVER_URL := EndpointConfig.FAILOVER
 
@@ -189,6 +191,32 @@ func send_quick_chat(slot: int) -> void:
 func activate_power(slot: int) -> void:
 	if is_conn_estab:
 		ws.send_text(JSON.stringify({"type": "activate_power", "slot": slot}))
+
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED:
+			if background_since_msec < 0:
+				background_since_msec = Time.get_ticks_msec()
+		NOTIFICATION_APPLICATION_FOCUS_IN, NOTIFICATION_APPLICATION_RESUMED:
+			if background_since_msec < 0:
+				return
+			var backgrounded_seconds = (Time.get_ticks_msec() - background_since_msec) / 1000.0
+			background_since_msec = -1
+			if backgrounded_seconds >= BACKGROUND_STALE_THRESHOLD_SECONDS:
+				force_reconnect_after_background()
+
+func force_reconnect_after_background():
+	if manual_disconnect_requested:
+		return
+
+	if not (is_conn_estab or is_connecting):
+		return
+
+	is_conn_estab = false
+	is_connecting = false
+	ws = WebSocketPeer.new()
+	auto_reconnect_attempts = 0
+	connect_server(true)
 
 func _process(delta: float) -> void:
 	if auto_reconnect_delay_remaining >= 0.0:

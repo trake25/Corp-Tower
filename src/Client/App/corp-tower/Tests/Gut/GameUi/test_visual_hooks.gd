@@ -218,6 +218,80 @@ func test_cancelling_the_beat_restores_the_camera() -> void:
 	assert_eq(tower._beat_phase, TowerStackScript.BEAT_NONE, "Cancelling must clear the beat phase.")
 	assert_lt(tower._wave_progress, 0.0, "Cancelling must retire the wave.")
 
+func test_completion_verdicts_default_every_player_to_positive() -> void:
+	var summary := {
+		"result": "completed",
+		"players": [{ "id": "P1" }, { "id": "P2" }]
+	}
+	var verdicts: Dictionary = VisualHooksController.build_completion_verdicts(summary)
+
+	assert_eq(verdicts.size(), 2, "Every scored player gets a default verdict.")
+	assert_eq(verdicts["P1"], VisualHooksController.VERDICT_POSITIVE, "A completed level defaults to positive.")
+	assert_eq(verdicts["P2"], VisualHooksController.VERDICT_POSITIVE, "A completed level defaults to positive.")
+
+func _controller_for(tower: Control) -> Node:
+	var controller := VisualHooksController.new()
+
+	add_child_autofree(controller)
+	controller.setup(tower, null, null, tower.visual_hooks)
+
+	return controller
+
+# A level that finishes with no impact judgement attached (either it wasn't
+# an Impact level, or it was one and the later gate check hasn't failed it)
+# must not borrow the live, forward-looking impactScoreStatus for the next
+# checkpoint -- that reads as a fresh band with nobody's contribution banked
+# yet, which would wave every brick to a false "worried" face.
+func test_a_completed_level_with_no_impact_judgement_waves_smiley_faces() -> void:
+	var tower: Control = _mounted_tower()
+	var controller: Node = _controller_for(tower)
+
+	var data := {
+		"lastLevelSummary": {
+			"level": 2,
+			"result": "completed",
+			"teamLevelScore": 500,
+			"players": [{ "id": "P1" }, { "id": "P2" }]
+		},
+		"impactScoreStatus": {
+			"nextImpactLevel": 3,
+			"players": [
+				{ "id": "P1", "met": false },
+				{ "id": "P2", "met": false }
+			]
+		}
+	}
+
+	controller.on_level_result(data, "finished")
+
+	assert_eq(
+		tower._verdict_by_player,
+		{ "P1": VisualHooksController.VERDICT_POSITIVE, "P2": VisualHooksController.VERDICT_POSITIVE },
+		"A completed level with no judgement of its own must not adopt the live next-checkpoint status."
+	)
+
+func test_a_failed_impact_gate_still_uses_its_own_real_verdicts() -> void:
+	var tower: Control = _mounted_tower()
+	var controller: Node = _controller_for(tower)
+
+	var data := {
+		"lastLevelSummary": {
+			"level": 3,
+			"result": "failed",
+			"reason": "impact_score_requirement",
+			"teamLevelScore": 500,
+			"impactScoreStatus": IMPACT_STATUS
+		}
+	}
+
+	controller.on_level_result(data, "failed")
+
+	assert_eq(
+		tower._verdict_by_player,
+		{ "P1": "positive", "P2": "negative", "P3": "positive" },
+		"A real Impact-gate failure keeps its own per-player verdicts."
+	)
+
 func test_the_level_result_key_separates_levels_and_outcomes() -> void:
 	var completed := { "level": 3, "result": "completed", "teamLevelScore": 900 }
 	var failed := { "level": 3, "result": "failed", "teamLevelScore": 900 }
