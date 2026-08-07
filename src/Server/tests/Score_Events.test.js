@@ -298,12 +298,15 @@ test("a slender spire collapses on integrity even when perfectly symmetrical", (
 
 test("the same tower is less stable at a high level than at level 1", () => {
     const entries = [];
-    const oBlock = { cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
-    const { engine } = createPlayingEngine(1, 10);
+    // A moderately wide (not razor-thin) 4-cell column: narrow enough that harsh
+    // pressure saturates its slenderness penalty, wide enough that low pressure
+    // still leaves room to grade it -- so the comparison proves the level ramp
+    // itself, not just "this tower is already maximally bad at any level."
+    const rowBlock = { cells: [[0, 0], [1, 0], [2, 0], [3, 0]] };
+    const { engine } = createPlayingEngine(1, 60);
 
-    for (let i = 0; i < 6; i++) {
-        const placement = TowerStability.settleBlock(entries, oBlock, 3);
-        entries.push({ block: oBlock, ...placement });
+    for (let y = 0; y < 10; y++) {
+        entries.push({ block: rowBlock, originX: 2, originY: y });
     }
 
     const early = TowerStability.evaluate(entries, engine.resolveStabilityConfig(1));

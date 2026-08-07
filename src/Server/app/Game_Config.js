@@ -64,48 +64,67 @@ const GameConfig = {
     towerMaxTiltAngleDeg: 10,   //18
     towerStabilityDifficulty: 95,   // 0 forgiving, 100 harsh, 90 default, 95 tuned
     towerStabilityPressure: {
-        // floor raised and fullPressureLevel lowered from 0.25/30: site width can
-        // no longer carry any of the across-level ramp (see towerSiteWidthMin
-        // above), and the target-height curve reaches 300 by level 15 and 950 by
-        // level 30 -- pressure now has to do the whole job on its own.
-        floor: 0.35,
-        fullPressureLevel: 15
+        // floor raised and fullPressureLevel lowered again after live playtesting
+        // at levels 1-4 found difficulty 100 still too gentle: at floor 0.35 /
+        // fullPressureLevel 15, even max difficulty only reached ~52% pressure at
+        // level 4, because the level ramp was still suppressing the dial's own
+        // effect where players actually are early on. Raising the floor gives the
+        // dial real teeth immediately; lowering fullPressureLevel means it doesn't
+        // take until level 15 to feel that.
+        floor: 0.55,
+        fullPressureLevel: 8
     },
     towerStabilityAnchors: {
         forgiving: {
             towerOverhangWeight: 0.02,
             towerLaneImbalanceWeight: 0.03,
             towerCollapseTiltScore: 4.00,
-            // Kept at their original (pre-mean-row-occupancy) width so a single
-            // narrow opening brick -- meanRowWidth 1, the worst case the new
-            // slenderness measure can register -- stays clear of the tunable's
-            // effect at low pressure. decisions.md#tower-stability-is-one-derived-
-            // dial-scaled-by-level: re-check the opening brick after every retune.
-            towerSlendernessSafe: 3.20,
-            towerSlendernessMax: 8.00,
-            towerSupportDeficitMax: 0.95,
-            towerStabilityMinHeight: 8,
+            // Tightened from 3.20/8.00 after playtesting found thin columns
+            // visibly should have been failing but weren't -- a straight, centred
+            // column has zero lean (comOffset/laneImbalance/overhang all measure
+            // asymmetry, not width), so slenderness is the *only* axis that can
+            // catch it, and it must actually bite even at low pressure. The
+            // opening-brick grace period is carried entirely by
+            // towerStabilityMinHeight below now, not by loose slenderness bounds.
+            towerSlendernessSafe: 2.40,
+            towerSlendernessMax: 5.00,
+            towerSupportDeficitMax: 0.85,
+            // Raised from 8: with slenderness tightened above, this is now the
+            // sole guard protecting the first few placements (maturity ramps
+            // penalties in as min(1, height/this)) -- decisions.md#tower-
+            // stability-is-one-derived-dial-scaled-by-level: re-check the opening
+            // brick after every retune.
+            towerStabilityMinHeight: 10,
             // Penalties additionally sharpen as height approaches the level's
             // target (severity = maturity x heightPressure in Tower_Stability.js),
             // so a tower near its target is graded harder than the same tower
             // early on. Kept as an anchor, not a standalone knob, so
             // towerStabilityDifficulty stays the sole stability tunable -- see
             // decisions.md#tower-stability-is-one-derived-dial-scaled-by-level.
-            // 0.0 = today's height-blind grading.
+            // 0.0 = height-blind grading, kept off so difficulty 0 stays close to
+            // its documented "stability inert" contract.
             towerHeightPressureGain: 0.0
         },
         harsh: {
             towerOverhangWeight: 0.34,
             towerLaneImbalanceWeight: 0.30,
-            towerCollapseTiltScore: 0.90,
-            // Model-typical play (~1.78) sits just inside the safe edge; ~2.5
-            // cells/row (a much wider, flatter spread) is a full penalty.
-            towerSlendernessSafe: 1.75,
-            towerSlendernessMax: 3.20,
-            towerSupportDeficitMax: 0.22,
-            towerStabilityMinHeight: 14,
-            // 1.0 = penalties double once the tower reaches its target height.
-            towerHeightPressureGain: 1.0
+            // Tightened from 0.90: lean collapses sooner at max pressure too, not
+            // just integrity -- a leaning-but-not-yet-slender tower should also
+            // be brutal at the top of the dial.
+            towerCollapseTiltScore: 0.75,
+            // Tightened from 1.75/3.20: model-typical play (~1.78) now sits near
+            // the edge of safe rather than comfortably inside it -- "brutal"
+            // means even fairly good building carries real risk at max pressure,
+            // not just deliberately bad building.
+            towerSlendernessSafe: 1.30,
+            towerSlendernessMax: 2.20,
+            towerSupportDeficitMax: 0.15,
+            // Lowered from 14: a long grace window contradicted "brutal" at max
+            // pressure -- maturity now reaches 1 within the first 8 rows instead
+            // of 14, so thin sections turn dangerous much sooner in height terms.
+            towerStabilityMinHeight: 8,
+            // 1.3 = penalties grow to 2.3x by the time the tower reaches target.
+            towerHeightPressureGain: 1.3
         }
     },
     towerBaseHalfWidthFloor: 1.0,
@@ -209,14 +228,23 @@ const GameConfig = {
         // tower rises. Config-file-only, same treatment as the reinforce keys below.
         placementStabilityFloor: 0.5,
         placementStabilityFloorAtTarget: 0.15,
-        reinforceScorePerIntegrity: 2,
-        reinforceScorePerLean: 20,
-        reinforceScorePerSupportedCell: 5,
+        // Raised from 2/20/5 after playtesting found repairing a wobbling tower
+        // didn't feel rewarding -- the reinforce cap rarely binds for a realistic
+        // repair, so these per-point rates (not the cap) are what a typical
+        // repair is actually worth, and they needed to be bigger to read as a
+        // real choice against a height claim.
+        reinforceScorePerIntegrity: 4,
+        reinforceScorePerLean: 35,
+        reinforceScorePerSupportedCell: 10,
         // Repair cap share also rises with height (reinforceScoreCapShare at the
         // ground -> reinforceScoreCapShareAtTarget at target height) -- see
-        // getReinforceScoreCap in Scoring.js.
+        // getReinforceScoreCap in Scoring.js. Ground share stays 1 (a maximal
+        // repair equals one average height claim there); the target-height share
+        // raised further so a big repair near the top can outpay a height claim,
+        // not just match it -- see decisions.md#scoring-carries-the-selfish-
+        // cooperation-tension.
         reinforceScoreCapShare: 1,
-        reinforceScoreCapShareAtTarget: 2,
+        reinforceScoreCapShareAtTarget: 3,
         finisherBonusPerLevel: 0,
         precisionBonusPerLevel: 20,
         teamExactBonusPerLevel: 15,
