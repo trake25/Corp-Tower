@@ -340,6 +340,209 @@ test("stability difficulty 0 leaves the same tower unpenalised", () => {
     }
 });
 
+test("a narrow spire on a wide base is no longer free -- slenderness reads mean row width, not the ground row", () => {
+    const config = fixedStabilityConfig({ towerSiteWidth: 6, towerStabilityMinHeight: 1 });
+    const entries = [];
+    const wideRow = { cells: [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0]] };
+    const narrowRow = { cells: [[0, 0], [1, 0]] };
+
+    // A full-width floor, then a narrow spire the rest of the way up. The old
+    // ground-row-only measure read siteWidth/groundWidth = 6/6 = 1.0 here --
+    // perfectly safe forever, which is the exploit this fix closes.
+    entries.push({ block: wideRow, originX: 0, originY: 0 });
+    for (let y = 1; y < 10; y++) {
+        entries.push({ block: narrowRow, originX: 2, originY: y });
+    }
+
+    const result = TowerStability.evaluate(entries, config);
+
+    assert.ok(
+        result.diagnostics.slenderness >= 2.0,
+        `expected the spire above a wide floor to read slender, got ${result.diagnostics.slenderness}`
+    );
+    assert.ok(result.diagnostics.integrity <= 50);
+});
+
+test("height pressure grades an identical tower harder as it nears target, without disturbing balance delta", () => {
+    const baseConfig = {
+        towerSiteWidth: 6,
+        towerBaseHalfWidthFloor: 1.0,
+        towerMaxTiltAngleDeg: 24,
+        towerOverhangWeight: 0.18,
+        towerLaneImbalanceWeight: 0.15,
+        towerCollapseTiltScore: 1.0,
+        towerSlendernessSafe: 1.2,
+        towerSlendernessMax: 2.5,
+        towerSupportDeficitMax: 0.35,
+        towerStabilityMinHeight: 1,
+        towerHeightPressureGain: 1.0
+    };
+    const rowBlock = { cells: [[0, 0], [1, 0], [2, 0]] };
+    const entries = [];
+
+    for (let y = 0; y < 8; y++) {
+        entries.push({ block: rowBlock, originX: 1, originY: y });
+    }
+
+    const nearTarget = TowerStability.evaluate(entries, { ...baseConfig, towerTargetHeight: 8 });
+    const farFromTarget = TowerStability.evaluate(entries, { ...baseConfig, towerTargetHeight: 800 });
+
+    assert.equal(nearTarget.diagnostics.tiltScore, 0, "a centred straight column has no lean either way");
+    assert.equal(farFromTarget.diagnostics.tiltScore, 0);
+    assert.ok(
+        nearTarget.stability < farFromTarget.stability,
+        `expected a tower at its own target height (${nearTarget.stability}) to grade strictly harsher ` +
+            `than the same tower far from target (${farFromTarget.stability})`
+    );
+    assert.equal(nearTarget.diagnostics.heightProgress, 1);
+    assert.ok(farFromTarget.diagnostics.heightProgress < 0.02);
+
+    // The lean-only signal must stay free of height drift regardless -- this is
+    // the invariant "a centred placement scores a zero balance delta at every
+    // height" depends on, checked here specifically against the new
+    // height-pressure axis rather than just the pre-existing maturity ramp.
+    const before = entries.slice(0, -1);
+    const beforeNear = TowerStability.evaluate(before, { ...baseConfig, towerTargetHeight: 8 });
+    const beforeFar = TowerStability.evaluate(before, { ...baseConfig, towerTargetHeight: 800 });
+    const deltaNear = TowerStability.balanceDelta(beforeNear.diagnostics, nearTarget.diagnostics, baseConfig);
+    const deltaFar = TowerStability.balanceDelta(beforeFar.diagnostics, farFromTarget.diagnostics, baseConfig);
+
+    assert.equal(deltaNear, 0, "a centred brick still scores zero balance delta near target height");
+    assert.equal(deltaFar, 0, "and the same brick still scores zero balance delta far from target height");
+});
+
+test("placement stability multiplier's floor descends toward target height", () => {
+    const { engine } = createPlayingEngine(1, 100);
+
+    GameConfig.scoring.placementStabilityFloor = 0.5;
+    GameConfig.scoring.placementStabilityFloorAtTarget = 0.1;
+
+    const atGround = engine.getPlacementStabilityMultiplier(0, 0);
+    const atTarget = engine.getPlacementStabilityMultiplier(0, 100);
+    const midway = engine.getPlacementStabilityMultiplier(0, 50);
+
+    assert.equal(atGround, 0.5, "floor at height 0 is placementStabilityFloor");
+    assert.ok(
+        Math.abs(atTarget - 0.1) < 1e-9,
+        "floor at target height is placementStabilityFloorAtTarget"
+    );
+    assert.ok(midway < atGround && midway > atTarget, "the floor lerps between the two");
+
+    // The single-argument form defaults heightBefore to the tower's current
+    // height, so a caller that only cares about the ground-floor rate can still
+    // call this with one argument -- room.currentHeight is 0 in a fresh engine.
+    assert.equal(engine.getPlacementStabilityMultiplier(0), atGround);
+});
+
+test("reinforce score cap's share rises toward target height", () => {
+    const { engine } = createPlayingEngine(5, 100);
+
+    GameConfig.scoring.reinforceScoreCapShare = 1;
+    GameConfig.scoring.reinforceScoreCapShareAtTarget = 2;
+
+    const atGround = engine.getReinforceScoreCap(0);
+    const atTarget = engine.getReinforceScoreCap(100);
+    const expectedAtGround = Math.round(
+        1 * engine.getAverageBrickHeight()
+            * GameConfig.scoring.placementScorePerHeight * engine.room.level
+    );
+    const expectedAtTarget = Math.round(
+        2 * engine.getAverageBrickHeight()
+            * GameConfig.scoring.placementScorePerHeight * engine.room.level
+    );
+
+    assert.equal(atGround, expectedAtGround);
+    assert.equal(atTarget, expectedAtTarget);
+    assert.ok(atTarget > atGround, "the cap should rise as the tower nears its target");
+
+    // heightAfter defaults to room.currentHeight, which is 0 in a fresh engine.
+    assert.equal(engine.getReinforceScoreCap(), atGround);
+});
+
+test("round-clock slack lerps down from levelTimeSlack to levelTimeSlackMin across levelTimeSlackFullLevel", () => {
+    const { engine } = createPlayingEngine(1, 10);
+    const original = {
+        levelTimeLimitMs: GameConfig.levelTimeLimitMs,
+        levelTimeSlack: GameConfig.levelTimeSlack,
+        levelTimeSlackMin: GameConfig.levelTimeSlackMin,
+        levelTimeSlackFullLevel: GameConfig.levelTimeSlackFullLevel
+    };
+
+    try {
+        GameConfig.levelTimeLimitMs = 60000;
+        GameConfig.levelTimeSlack = 3.0;
+        GameConfig.levelTimeSlackMin = 1.5;
+        GameConfig.levelTimeSlackFullLevel = 25;
+        // createPlayingEngine zeroes placementCooldown so placements in other
+        // tests don't have to wait out a real cooldown -- restored by the
+        // shared afterEach, but this test needs a realistic value or the
+        // derived clock collapses to near-zero regardless of level.
+        GameConfig.placementCooldown = 1000;
+
+        // Large enough that the floor never binds at any tested level, so what's
+        // left to vary is purely the slack ramp.
+        const fixedHeight = 1000;
+        const atLevel1 = engine.getLevelTimeLimitMs(fixedHeight, 1);
+        const atLevel13 = engine.getLevelTimeLimitMs(fixedHeight, 13);
+        const atLevel25 = engine.getLevelTimeLimitMs(fixedHeight, 25);
+        const atLevel40 = engine.getLevelTimeLimitMs(fixedHeight, 40);
+
+        assert.ok(
+            atLevel1 > atLevel13,
+            `expected level 1 (${atLevel1}) to allow more time than level 13 (${atLevel13})`
+        );
+        assert.ok(
+            atLevel13 > atLevel25,
+            `expected level 13 (${atLevel13}) to allow more time than level 25 (${atLevel25})`
+        );
+        assert.equal(atLevel25, atLevel40, "slack stays flat once levelTimeSlackFullLevel is reached");
+    } finally {
+        GameConfig.levelTimeLimitMs = original.levelTimeLimitMs;
+        GameConfig.levelTimeSlack = original.levelTimeSlack;
+        GameConfig.levelTimeSlackMin = original.levelTimeSlackMin;
+        GameConfig.levelTimeSlackFullLevel = original.levelTimeSlackFullLevel;
+    }
+});
+
+test("the round-clock floor binds at low levels and releases once the derived clock outgrows it", () => {
+    const { engine } = createPlayingEngine(1, 10);
+
+    // createPlayingEngine zeroes placementCooldown for other tests' convenience;
+    // restored by the shared afterEach.
+    GameConfig.placementCooldown = originalGameConfig.placementCooldown || 1000;
+
+    assert.equal(
+        engine.getLevelTimeLimitMs(engine.getTargetHeightForLevel(1), 1),
+        GameConfig.levelTimeLimitMs,
+        "level 1's small target should still be floored"
+    );
+    assert.ok(
+        engine.getLevelTimeLimitMs(engine.getTargetHeightForLevel(20), 20) > GameConfig.levelTimeLimitMs,
+        "by level 20 the derived clock should have grown past the floor"
+    );
+});
+
+test("supply coverage runs a surplus at level 1 and flattens by levelSupplyCoverageFullLevel", () => {
+    const { engine } = createPlayingEngine(1, 100);
+
+    engine.room.teamCarryOverBlocks = [];
+
+    engine.room.level = 1;
+    const l1Count = engine.getGeneratedDrawPileBlockCount();
+
+    engine.room.level = GameConfig.levelSupplyCoverageFullLevel;
+    const fullCount = engine.getGeneratedDrawPileBlockCount();
+
+    engine.room.level = GameConfig.levelSupplyCoverageFullLevel + 10;
+    const pastFullCount = engine.getGeneratedDrawPileBlockCount();
+
+    assert.ok(
+        l1Count > fullCount,
+        `expected level 1's generated pile (${l1Count}) to exceed the flat-coverage pile (${fullCount})`
+    );
+    assert.equal(fullCount, pastFullCount, "coverage stays flat past levelSupplyCoverageFullLevel");
+});
+
 test("placement score scales with the stability the placer inherited", () => {
     const { engine } = createPlayingEngine(1, 10);
 
@@ -707,7 +910,8 @@ test("stability difficulty is the only exposed stability tunable", async () => {
             "towerSlendernessSafe",
             "towerSlendernessMax",
             "towerSupportDeficitMax",
-            "towerStabilityMinHeight"
+            "towerStabilityMinHeight",
+            "towerHeightPressureGain"
         ]) {
             assert.equal(await lobbyManager.updateDebugConfig(key, 1), false, key);
             assert.equal(GameConfig[key], undefined, key);

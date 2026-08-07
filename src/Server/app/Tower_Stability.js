@@ -105,6 +105,7 @@ function evaluate(entries, config) {
                 integrity: 100,
                 slenderness: 0,
                 supportRatio: 1,
+                heightProgress: 0,
                 collapsed: false
             }
         };
@@ -177,7 +178,19 @@ function evaluate(entries, config) {
     const stabilityMinHeight = Math.max(1, config.towerStabilityMinHeight ?? 6);
     const maturity = Math.min(1, height / stabilityMinHeight);
 
-    const rawScore = (comOffset + laneImbalance + overhangPenalty) * maturity;
+    // Penalties additionally sharpen as the tower nears its target height, so a
+    // tall tower is graded harder than a short one at the same maturity --
+    // without this every penalty below is height-invariant once maturity
+    // saturates, which happens well under any level's target. Only feeds rawScore
+    // (post-maturity), never comOffset/laneImbalance themselves, so structuralLean
+    // and balanceDelta stay free of height drift.
+    const targetHeight = Math.max(0, Number(config.towerTargetHeight) || 0);
+    const heightProgress = targetHeight > 0 ? clamp01(height / targetHeight) : 0;
+    const heightPressureGain = Math.max(0, Number(config.towerHeightPressureGain) || 0);
+    const heightPressure = 1 + heightPressureGain * heightProgress;
+    const severity = maturity * heightPressure;
+
+    const rawScore = (comOffset + laneImbalance + overhangPenalty) * severity;
     const collapseThreshold = config.towerCollapseTiltScore ?? 1.0;
     const clampCeiling = collapseThreshold * 1.6;
     const tiltScore = Math.max(-clampCeiling, Math.min(clampCeiling, rawScore));
@@ -186,13 +199,16 @@ function evaluate(entries, config) {
     const tiltAngleDeg = Math.max(-maxTiltDeg, Math.min(maxTiltDeg, tiltScore * maxTiltDeg));
 
     const groundWidth = Math.max(1, groundMaxX - groundMinX + 1);
+    // Mean cells per occupied row -- not the ground row alone, so a wide floor
+    // topped by a narrow spire can't buy the whole tower permanent immunity.
+    const meanRowWidth = Math.max(0.0001, cellCount / Math.max(1, height));
     const siteWidth = Math.max(1, Number(config.towerSiteWidth) || groundWidth);
-    const slenderness = siteWidth / groundWidth;
+    const slenderness = siteWidth / meanRowWidth;
     const slendernessSafe = config.towerSlendernessSafe ?? 2.5;
     const slendernessMax = config.towerSlendernessMax ?? 6.0;
     const slendernessSpan = Math.max(0.0001, slendernessMax - slendernessSafe);
     const slendernessPenalty =
-        clamp01((slenderness - slendernessSafe) / slendernessSpan) * maturity;
+        clamp01((slenderness - slendernessSafe) / slendernessSpan) * severity;
 
     let unsupportedCells = 0;
     for (const entry of entries) {
@@ -204,7 +220,7 @@ function evaluate(entries, config) {
     }
     const supportDeficit = cellCount > 0 ? unsupportedCells / cellCount : 0;
     const supportDeficitMax = Math.max(0.0001, config.towerSupportDeficitMax ?? 0.35);
-    const supportPenalty = clamp01(supportDeficit / supportDeficitMax) * maturity;
+    const supportPenalty = clamp01(supportDeficit / supportDeficitMax) * severity;
 
     const integrity = Math.round(
         (1 - clamp01(slendernessPenalty + supportPenalty)) * 100
@@ -232,6 +248,7 @@ function evaluate(entries, config) {
             integrity,
             slenderness,
             supportRatio: 1 - supportDeficit,
+            heightProgress,
             collapsed
         }
     };

@@ -408,9 +408,15 @@ class BotManager {
         const stabilityBefore = engine.room.towerStability ?? 100;
         const structureBefore = engine.room.towerStabilityDiagnostics || {};
         const stabilityConfig = engine.resolveStabilityConfig();
+        // Both the placement multiplier's floor and the reinforce cap's share now
+        // scale with height, so bots must grade candidates on the same economics
+        // the server actually pays -- see getPlacementStabilityMultiplier/
+        // getReinforceScoreCap in Scoring.js. The multiplier's "before" state is
+        // shared across every candidate this turn (nothing has been placed yet),
+        // but the reinforce cap depends on each candidate's own post-placement
+        // height, so it moves inside the loop below.
         const placementMultiplier =
-            engine.getPlacementStabilityMultiplier(stabilityBefore);
-        const reinforceCap = engine.getReinforceScoreCap();
+            engine.getPlacementStabilityMultiplier(stabilityBefore, previousHeight);
         const level = engine.room.level;
         const perIntegrity =
             Number(GameConfig.scoring.reinforceScorePerIntegrity) || 0;
@@ -437,6 +443,9 @@ class BotManager {
             );
             const placementPoints = Math.round(
                 candidate.effectiveHeight * level * perHeight * placementMultiplier
+            );
+            const reinforceCap = engine.getReinforceScoreCap(
+                previousHeight + candidate.heightGain
             );
             const reinforcePoints = Math.min(
                 reinforceCap,

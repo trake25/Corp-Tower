@@ -4,9 +4,10 @@
   "main": "app/Server.js",
   "scripts": {
     "start": "node app/Server.js",
-    "test": "node --check app/Server.js && node --check app/Lobby_Manager.js && node --check app/Game_Engine.js && node --check app/engine/Block_Supply.js && node --check app/engine/Scoring.js && node --check app/engine/Impacts.js && node --check app/Game_Config.js && node --check app/Bot_Manager.js && node --check app/Redis_State.js && node --check app/Tower_Stability.js && node --check tools/Balance_Simulator.js && node --test tests/Score_Events.test.js tests/Matchmaking_Queue.test.js",
+    "test": "node --check app/Server.js && node --check app/Lobby_Manager.js && node --check app/Game_Engine.js && node --check app/engine/Block_Supply.js && node --check app/engine/Scoring.js && node --check app/engine/Impacts.js && node --check app/Game_Config.js && node --check app/Bot_Manager.js && node --check app/Redis_State.js && node --check app/Tower_Stability.js && node --check tools/Balance_Simulator.js && node --check tools/Stability_Probe.js && node --test tests/Score_Events.test.js tests/Matchmaking_Queue.test.js",
     "balance:simulate": "node tools/Balance_Simulator.js",
-    "balance:stability": "node tools/Balance_Simulator.js sweep"
+    "balance:stability": "node tools/Balance_Simulator.js sweep",
+    "balance:probe": "node tools/Stability_Probe.js"
   },
   "keywords": [],
   "author": "",

@@ -256,19 +256,25 @@ function getLevelSupplyMaxSurplus(requiredBrickHeight) {
     return flat + Math.ceil(requiredBrickHeight * share);
 }
 
-// Brick height the level's own pile is built to carry. The full packing-aware
-// requirement minus the share deliberately left uncovered: that gap is what a
-// Replenish is for, so the pile is sized to finish most levels on its own and
-// leave Power as insurance against a bad draw rather than a mandatory cast.
-// Design meaning -> gameplay.md; one Replenish adds powerReplenishPileShare of
-// the starting pile, so the reserve share must stay well under it.
-function getSuppliedBrickHeight(engine, requiredBrickHeight) {
-    const reserveShare = Math.max(
-        0,
-        Math.min(0.9, Number(GameConfig.levelSupplyPowerReserveShare) || 0)
-    );
+// Brick height the level's own pile is built to carry: the full packing-aware
+// requirement times a coverage share that lerps from levelSupplyCoverageStart
+// (level 1, generous) down to levelSupplyCoverageEnd (levelSupplyCoverageFullLevel
+// and beyond) -- so low levels run a surplus and the squeeze arrives gradually.
+// At the end value the remaining gap is what a Replenish is for, so the pile
+// still finishes most levels on its own and Power stays insurance rather than a
+// mandatory cast. Design meaning -> gameplay.md.
+function getSupplyCoverageShare(engine) {
+    const start = Math.max(0, Number(GameConfig.levelSupplyCoverageStart) || 0);
+    const end = Math.max(0, Number(GameConfig.levelSupplyCoverageEnd) || 0);
+    const fullLevel = Math.max(1, Number(GameConfig.levelSupplyCoverageFullLevel) || 1);
+    const level = Math.max(1, Number(engine.room?.level) || 1);
+    const ramp = Math.min(1, (level - 1) / Math.max(1, fullLevel - 1));
 
-    return Math.ceil(requiredBrickHeight * (1 - reserveShare));
+    return start + (end - start) * ramp;
+}
+
+function getSuppliedBrickHeight(engine, requiredBrickHeight) {
+    return Math.ceil(requiredBrickHeight * getSupplyCoverageShare(engine));
 }
 
 function getGeneratedDrawPileBlockCount(engine) {

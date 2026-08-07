@@ -12,7 +12,10 @@ const DEFAULT_LEVELS = 20;
 // scaling-plan.md §2.4.
 const DEFAULT_RUNS = 100;
 
-const SWEEP_DIFFICULTIES = [0, 25, 50, 75, 100];
+// 95 is the shipped towerStabilityDifficulty (Game_Config.js) -- sampling it
+// directly means a sweep run always includes the value actually live in the
+// game, instead of forcing you to interpolate between 75 and 100.
+const SWEEP_DIFFICULTIES = [0, 50, 75, 95, 100];
 const SWEEP_LEVEL_STEP = 5;
 
 function createPlayers() {
@@ -29,6 +32,9 @@ function createEngineForLevel(level) {
     withMutedConsole(() => {
         engine.createRoom(createPlayers());
         engine.room.level = level;
+        // Anchors the Impact band at this simulated level, since the simulator
+        // only ever plays one level in isolation -- see meetsImpactGate below.
+        engine.room.impactLevel = level;
         engine.room.targetHeight = engine.getTargetHeightForLevel(level);
         engine.room.teamCarryOverBlocks = [];
         engine.buildDrawPile();
@@ -163,7 +169,10 @@ function simulateSmartPlay(engine, strategy) {
         telemetry.integritySum += integrity;
         telemetry.leanSum += lean;
         telemetry.siteUsageSum += Number(d.slenderness) || 0;
-        telemetry.supportDeficitSum += 1 - (Number(d.supportRatio) ?? 1);
+        // `??` must sit inside Number() -- Number(undefined) is NaN, not
+        // nullish, so `(Number(x) ?? 1)` never falls back and one missing field
+        // would poison the whole sum to NaN.
+        telemetry.supportDeficitSum += 1 - Number(d.supportRatio ?? 1);
         if (integrity < lean) {
             telemetry.integrityBinding += 1;
         }
@@ -286,21 +295,24 @@ function getScoreSummary(engine) {
         teamLevelScore: totalScore,
         mvpLevelScore: mvpScore,
         scoreSpread: mvpScore - minScore,
-        gateMet: meetsImpactGate(engine, scores)
+        gateMet: meetsImpactGate(engine)
     };
 }
 
 // With an Impact every level, "did all three players clear their share?" is the
 // gate that actually decides whether the team advances, so it is the number
 // worth tuning against -- a level can complete and still roll the team back.
-function meetsImpactGate(engine, scores) {
-    const required =
-        engine.getImpactMinContributionShare() *
-        engine.room.targetHeight *
-        engine.room.level *
-        (Number(GameConfig.scoring.placementScorePerHeight) || 1);
-
-    return scores.every(score => score >= required);
+// Routed through the engine's real band-based gate (Impacts.js) rather than a
+// simplified per-level formula, so this reads the same requirement -- rounding,
+// the impactScoreRequirement floor, and impactExpectedStabilityMultiplier
+// included -- the server actually enforces. createEngineForLevel anchors
+// room.impactLevel at the simulated level, so blockedLevel = level + 1 sizes the
+// band to exactly the one level this run played (the simulator never chains
+// levels, so a wider band isn't modellable here). Only meaningful once the level
+// has completed and addLevelScoreToLeaderboard() has banked this run's score --
+// runLevel() already gates aggregation on result.completed for this reason.
+function meetsImpactGate(engine) {
+    return engine.hasMetImpactScoreRequirement(engine.room.level + 1);
 }
 
 function runLevel(level, runs, strategy = "cooperative") {

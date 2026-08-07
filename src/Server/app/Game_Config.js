@@ -18,9 +18,14 @@ const GameConfig = {
     // Floor only. The real limit is derived per level from target height
     // (Game_Engine.getLevelTimeLimitMs), so the clock cannot drift away from
     // the curve; this value is what short early levels get instead.
-    levelTimeLimitMs: 30000,    // testing 120, release 30 (for tuning)
+    levelTimeLimitMs: 60000,    // testing 120, release 30 (for tuning)
     levelTimePlannedEfficiency: 0.55,
-    levelTimeSlack: 2.0,
+    // Slack lerps from levelTimeSlack (level 1) down to levelTimeSlackMin (at
+    // levelTimeSlackFullLevel and beyond) -- a flat multiplier left the clock
+    // linear in target height, never proportionally tighter as levels grow.
+    levelTimeSlack: 3.0,
+    levelTimeSlackMin: 1.5,
+    levelTimeSlackFullLevel: 25,
     nextLevelDelayMs: 1000, // testing 0.5, release 1
     failRestartDelayMs: 1000, // testing 0.5, release 1
     placementScorePopupDurationMs: 2000,
@@ -34,11 +39,24 @@ const GameConfig = {
     // level is worth real score, not so much that one player can starve another
     // below their share without failing the whole team.
     impactMinContributionShare: 0.30,
+    // The Impact gate's expectation (getExpectedPlacementScoreForLevel) otherwise
+    // assumes every placement pays a perfect 1.0 stability multiplier. Real play
+    // pays placementStabilityFloor..1.0 (and that floor now descends toward
+    // placementStabilityFloorAtTarget as the tower rises), so this keeps the
+    // share's meaning honest ("X% of what is realistically earnable") instead of
+    // silently tightening the gate as a side effect of the stability retune.
+    impactExpectedStabilityMultiplier: 0.85,
     towerGridWidth: 8, //14 SnapGrid.gd previous values const GRID_WIDTH := 14 const GRID_CENTER_COL := 6.5
     placeableColumnMin: 2,
     placeableColumnMax: 5,
     towerSiteSlendernessTarget: 6.75,
-    towerSiteWidthMin: 8,
+    // Reverts a one-line, unreviewed change (63c4e8f) that pinned this equal to
+    // towerSiteWidthMax/towerGridWidth (both 8), which made getSiteWidthForHeight
+    // return 8 at every target height -- see decisions.md#buildable-site-width-
+    // scales-with-target-height. Now cosmetic (affects levels 1-2 only, since the
+    // target-height curve pushes every later level's derived width to the ceiling
+    // anyway); site-width no longer carries the stability ramp, see towerStabilityAnchors.
+    towerSiteWidthMin: 6,
     // Hard viewport ceiling, not a taste call: TowerStack is 272px wide at a
     // fixed 34px brick, so only grid columns 3-10 are ever on screen. A wider
     // site would place bricks the player can never see.
@@ -46,27 +64,48 @@ const GameConfig = {
     towerMaxTiltAngleDeg: 10,   //18
     towerStabilityDifficulty: 95,   // 0 forgiving, 100 harsh, 90 default, 95 tuned
     towerStabilityPressure: {
-        floor: 0.25,
-        fullPressureLevel: 30
+        // floor raised and fullPressureLevel lowered from 0.25/30: site width can
+        // no longer carry any of the across-level ramp (see towerSiteWidthMin
+        // above), and the target-height curve reaches 300 by level 15 and 950 by
+        // level 30 -- pressure now has to do the whole job on its own.
+        floor: 0.35,
+        fullPressureLevel: 15
     },
     towerStabilityAnchors: {
         forgiving: {
             towerOverhangWeight: 0.02,
             towerLaneImbalanceWeight: 0.03,
             towerCollapseTiltScore: 4.00,
+            // Kept at their original (pre-mean-row-occupancy) width so a single
+            // narrow opening brick -- meanRowWidth 1, the worst case the new
+            // slenderness measure can register -- stays clear of the tunable's
+            // effect at low pressure. decisions.md#tower-stability-is-one-derived-
+            // dial-scaled-by-level: re-check the opening brick after every retune.
             towerSlendernessSafe: 3.20,
             towerSlendernessMax: 8.00,
             towerSupportDeficitMax: 0.95,
-            towerStabilityMinHeight: 6
+            towerStabilityMinHeight: 8,
+            // Penalties additionally sharpen as height approaches the level's
+            // target (severity = maturity x heightPressure in Tower_Stability.js),
+            // so a tower near its target is graded harder than the same tower
+            // early on. Kept as an anchor, not a standalone knob, so
+            // towerStabilityDifficulty stays the sole stability tunable -- see
+            // decisions.md#tower-stability-is-one-derived-dial-scaled-by-level.
+            // 0.0 = today's height-blind grading.
+            towerHeightPressureGain: 0.0
         },
         harsh: {
             towerOverhangWeight: 0.34,
             towerLaneImbalanceWeight: 0.30,
             towerCollapseTiltScore: 0.90,
-            towerSlendernessSafe: 1.10,
-            towerSlendernessMax: 1.95,
+            // Model-typical play (~1.78) sits just inside the safe edge; ~2.5
+            // cells/row (a much wider, flatter spread) is a full penalty.
+            towerSlendernessSafe: 1.75,
+            towerSlendernessMax: 3.20,
             towerSupportDeficitMax: 0.22,
-            towerStabilityMinHeight: 10
+            towerStabilityMinHeight: 14,
+            // 1.0 = penalties double once the tower reaches its target height.
+            towerHeightPressureGain: 1.0
         }
     },
     towerBaseHalfWidthFloor: 1.0,
@@ -132,11 +171,15 @@ const GameConfig = {
     // once required height grows past the earliest levels -- config-file-only
     // for now, same treatment as reinforceScorePerSupportedCell.
     levelSupplyMaxSurplusShare: 0.12,
-    // Share of the level's brick requirement the pile deliberately does not
-    // cover. One Replenish adds powerReplenishPileShare of the starting pile,
-    // so at 0.10 most levels finish unaided and Power is insurance against a
-    // bad draw rather than a mandatory cast.
-    levelSupplyPowerReserveShare: 0.10,
+    // Share of the level's packing-aware requirement the pile is built to carry,
+    // lerped from levelSupplyCoverageStart (level 1) down to levelSupplyCoverageEnd
+    // (at levelSupplyCoverageFullLevel and beyond) -- early levels run generous so
+    // the squeeze is felt gradually, not from level 1. At the end value (today's
+    // flat 0.90) one Replenish (powerReplenishPileShare of the starting pile)
+    // insures the uncovered share, so most levels still finish unaided.
+    levelSupplyCoverageStart: 1.20,
+    levelSupplyCoverageEnd: 0.90,
+    levelSupplyCoverageFullLevel: 20,
     minPrecisionBlocksPerLevel: 3,
     openingHandGenerationAttempts: 1000,
 
@@ -160,11 +203,20 @@ const GameConfig = {
 
     scoring: {
         placementScorePerHeight: 10,
+        // The stability floor descends as the placement's height nears target
+        // (placementStabilityFloor at the ground -> placementStabilityFloorAtTarget
+        // at target height), so stability is worth more to score the higher the
+        // tower rises. Config-file-only, same treatment as the reinforce keys below.
         placementStabilityFloor: 0.5,
+        placementStabilityFloorAtTarget: 0.15,
         reinforceScorePerIntegrity: 2,
         reinforceScorePerLean: 20,
         reinforceScorePerSupportedCell: 5,
+        // Repair cap share also rises with height (reinforceScoreCapShare at the
+        // ground -> reinforceScoreCapShareAtTarget at target height) -- see
+        // getReinforceScoreCap in Scoring.js.
         reinforceScoreCapShare: 1,
+        reinforceScoreCapShareAtTarget: 2,
         finisherBonusPerLevel: 0,
         precisionBonusPerLevel: 20,
         teamExactBonusPerLevel: 15,

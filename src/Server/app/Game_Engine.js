@@ -537,9 +537,13 @@ class GameEngine {
     // a curve that grows in tens per level cannot outrun the time to build it.
     // Sized off the placements a player filling the site actually needs -- not
     // the bots' spire-building rate, which would grant far too little time --
-    // then divided across the room and padded by levelTimeSlack for think time
-    // and imperfect parallelism. GameConfig.levelTimeLimitMs is the floor.
-    getLevelTimeLimitMs(targetHeight) {
+    // then divided across the room and padded by a slack multiplier for think
+    // time and imperfect parallelism. GameConfig.levelTimeLimitMs is the floor.
+    //
+    // Slack itself lerps from levelTimeSlack (level 1) down to levelTimeSlackMin
+    // (at levelTimeSlackFullLevel and beyond): a flat slack left the clock linear
+    // in target height, so it never got proportionally tighter as levels grew.
+    getLevelTimeLimitMs(targetHeight, level) {
         const floor = Math.max(1000, Number(GameConfig.levelTimeLimitMs) || 1000);
         const height = Math.max(0, Number(
             targetHeight ?? this.room?.targetHeight
@@ -553,7 +557,16 @@ class GameEngine {
             0.05,
             Math.min(1, Number(GameConfig.levelTimePlannedEfficiency) || 0.05)
         );
-        const slack = Math.max(1, Number(GameConfig.levelTimeSlack) || 1);
+        const slackStart = Math.max(0.1, Number(GameConfig.levelTimeSlack) || 1);
+        const slackEnd = Math.max(
+            0.1, Math.min(slackStart, Number(GameConfig.levelTimeSlackMin) || slackStart)
+        );
+        const slackFullLevel = Math.max(
+            1, Number(GameConfig.levelTimeSlackFullLevel) || 1
+        );
+        const resolvedLevel = Math.max(1, Number(level ?? this.room?.level) || 1);
+        const slackRamp = Math.min(1, (resolvedLevel - 1) / Math.max(1, slackFullLevel - 1));
+        const slack = slackStart + (slackEnd - slackStart) * slackRamp;
         const cooldown = Math.max(1, Number(GameConfig.placementCooldown) || 1);
         const players = Math.max(1, this.room?.players?.length || 1);
         const heightPerPlacement = Math.max(
@@ -799,7 +812,7 @@ class GameEngine {
         this.room.towerBlocks.push(placedEntry);
         this.refillPlayerBlock(player);
 
-        this.addPlacementScore(player, block, effectiveHeight, stabilityBefore);
+        this.addPlacementScore(player, block, effectiveHeight, stabilityBefore, previousHeight);
 
         this.tryCompleteSideQuest(player, block, this.room.currentHeight === this.room.targetHeight);
 
@@ -857,6 +870,7 @@ class GameEngine {
             towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
             towerBaseHalfWidthFloor: GameConfig.towerBaseHalfWidthFloor,
             towerSiteWidth: this.getSiteWidthForHeight(this.room?.targetHeight),
+            towerTargetHeight: this.room?.targetHeight,
             towerStabilityPressureApplied: pressure
         };
 
@@ -1119,10 +1133,10 @@ class GameEngine {
     getPlayerBonusBreakdown(player) { return Scoring.getPlayerBonusBreakdown(this, player); }
     buildLevelSummary(options) { return Scoring.buildLevelSummary(this, options); }
     recordScoreBreakdown(player, key, points) { return Scoring.recordScoreBreakdown(this, player, key, points); }
-    addPlacementScore(player, block, effectiveHeight, stabilityBefore) { return Scoring.addPlacementScore(this, player, block, effectiveHeight, stabilityBefore); }
+    addPlacementScore(player, block, effectiveHeight, stabilityBefore, heightBefore) { return Scoring.addPlacementScore(this, player, block, effectiveHeight, stabilityBefore, heightBefore); }
     addReinforceScore(player, before, after, supportedCells = 0) { return Scoring.addReinforceScore(this, player, before, after, supportedCells); }
-    getPlacementStabilityMultiplier(stabilityBefore) { return Scoring.getPlacementStabilityMultiplier(this, stabilityBefore); }
-    getReinforceScoreCap() { return Scoring.getReinforceScoreCap(this); }
+    getPlacementStabilityMultiplier(stabilityBefore, heightBefore) { return Scoring.getPlacementStabilityMultiplier(this, stabilityBefore, heightBefore); }
+    getReinforceScoreCap(heightAfter) { return Scoring.getReinforceScoreCap(this, heightAfter); }
     awardCompletionBonuses(finisher, exactFinish) { return Scoring.awardCompletionBonuses(this, finisher, exactFinish); }
     addBonusScore(player, points, label) { return Scoring.addBonusScore(this, player, points, label); }
     getBonusScoreEventType(label) { return Scoring.getBonusScoreEventType(this, label); }

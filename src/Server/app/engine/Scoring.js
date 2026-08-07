@@ -120,21 +120,37 @@ function recordScoreBreakdown(engine, player, key, points) {
         Number(player.scoreBreakdown[key] || 0) + Number(points || 0);
 }
 
-function getPlacementStabilityMultiplier(engine, stabilityBefore) {
-    const floor = Math.max(
-        0,
-        Math.min(1, Number(GameConfig.scoring.placementStabilityFloor) ?? 1)
+// The floor itself descends with how close the placement's height is to the
+// level's target -- stability is worth more to score the higher you build.
+// heightBefore defaults to the tower's current height so a caller that only
+// cares about the ground-floor rate can still call this with one argument.
+function getPlacementStabilityMultiplier(engine, stabilityBefore, heightBefore) {
+    const floorAtGround = Math.max(
+        0, Math.min(1, Number(GameConfig.scoring.placementStabilityFloor ?? 1) || 0)
     );
+    const floorAtTarget = Math.max(
+        0,
+        Math.min(
+            1,
+            Number(GameConfig.scoring.placementStabilityFloorAtTarget ?? floorAtGround) || 0
+        )
+    );
+    const targetHeight = Math.max(0, Number(engine.room?.targetHeight) || 0);
+    const height = Math.max(
+        0, Number(heightBefore ?? engine.room?.currentHeight) || 0
+    );
+    const heightProgress = targetHeight > 0 ? Math.min(1, height / targetHeight) : 0;
+    const floor = floorAtGround + (floorAtTarget - floorAtGround) * heightProgress;
     const stability = Math.max(0, Math.min(100, Number(stabilityBefore ?? 100)));
 
     return floor + (1 - floor) * (stability / 100);
 }
 
-function addPlacementScore(engine, player, block, effectiveHeight, stabilityBefore) {
+function addPlacementScore(engine, player, block, effectiveHeight, stabilityBefore, heightBefore) {
     const scorePerHeight =
         Number(GameConfig.scoring.placementScorePerHeight) || 1;
     const multiplier =
-        engine.getPlacementStabilityMultiplier(stabilityBefore);
+        engine.getPlacementStabilityMultiplier(stabilityBefore, heightBefore);
     const points = Math.round(
         effectiveHeight *
             engine.room.level *
@@ -161,13 +177,32 @@ function addPlacementScore(engine, player, block, effectiveHeight, stabilityBefo
 }
 
 // Repair and height are the two ways to earn, so they are priced against each
-// other rather than independently: one placement's repair can pay at most
-// `reinforceScoreCapShare` of what an average brick's height claim pays at this
-// level. At 1.0 a maximal repair equals an average claim -- worth choosing when
-// the tower is hurt, never worth farming, and it re-prices itself automatically
-// when the brick mix or placementScorePerHeight is retuned.
-function getReinforceScoreCap(engine) {
-    const share = Math.max(0, Number(GameConfig.scoring.reinforceScoreCapShare) || 0);
+// other rather than independently: one placement's repair can pay at most a
+// share of what an average brick's height claim pays at this level. That share
+// itself rises from `reinforceScoreCapShare` (at the ground) to
+// `reinforceScoreCapShareAtTarget` (at target height) -- synergising with the
+// front-loaded scoring pool: near the top there is little height left to claim,
+// so repair becomes the rational play exactly where stability is most fragile.
+// heightAfter defaults to the tower's current (post-placement) height, since the
+// real placeBlock call site already updates room.currentHeight before this runs
+// and prices the repair that was just made. A caller evaluating a candidate
+// placement before committing it (Bot Manager) passes the candidate's own
+// projected post-placement height instead. At share 1.0 a maximal repair equals
+// an average claim -- worth choosing when the tower is hurt, never worth
+// farming -- and it re-prices itself automatically when the brick mix or
+// placementScorePerHeight is retuned.
+function getReinforceScoreCap(engine, heightAfter) {
+    const shareAtGround = Math.max(0, Number(GameConfig.scoring.reinforceScoreCapShare) || 0);
+    const shareAtTarget = Math.max(
+        0,
+        Number(GameConfig.scoring.reinforceScoreCapShareAtTarget ?? shareAtGround) || 0
+    );
+    const targetHeight = Math.max(0, Number(engine.room?.targetHeight) || 0);
+    const height = Math.max(
+        0, Number(heightAfter ?? engine.room?.currentHeight) || 0
+    );
+    const heightProgress = targetHeight > 0 ? Math.min(1, height / targetHeight) : 0;
+    const share = shareAtGround + (shareAtTarget - shareAtGround) * heightProgress;
 
     if (share <= 0) {
         return Infinity;
