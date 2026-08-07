@@ -61,7 +61,7 @@ const GameConfig = {
     // fixed 34px brick, so only grid columns 3-10 are ever on screen. A wider
     // site would place bricks the player can never see.
     towerSiteWidthMax: 8,
-    towerMaxTiltAngleDeg: 10,   //18
+    towerMaxTiltAngleDeg: 18,   //18
     towerStabilityDifficulty: 95,   // 0 forgiving, 100 harsh, 90 default, 95 tuned
     towerStabilityPressure: {
         // floor raised and fullPressureLevel lowered again after live playtesting
