@@ -181,24 +181,24 @@ const GameConfig = {
     // starves the level outright. The Balance Simulator's pileClipped column
     // reports if it ever does.
     maxGeneratedDrawPileBlocks: 4096,
-    supplyEffectiveWidthRatio: 0.5,
+    supplyEffectiveWidthRatio: 0.4,
     levelSupplyMinSurplus: 0,
-    levelSupplyMaxSurplus: 6,
+    levelSupplyMaxSurplus: 4,
     // Proportional slack added on top of the flat levelSupplyMaxSurplus above,
-    // scaled to the level's required brick height. A flat +6 against a total
-    // drawn from ~90 random bricks (sd ~10) is missed almost every attempt
-    // once required height grows past the earliest levels -- config-file-only
-    // for now, same treatment as reinforceScorePerSupportedCell.
-    levelSupplyMaxSurplusShare: 0.12,
+    // scaled to the level's required brick height. A flat surplus alone is
+    // missed almost every attempt once required height grows past the
+    // earliest levels -- config-file-only for now, same treatment as
+    // reinforceScorePerSupportedCell.
+    levelSupplyMaxSurplusShare: 0.08,
     // Share of the level's packing-aware requirement the pile is built to carry,
     // lerped from levelSupplyCoverageStart (level 1) down to levelSupplyCoverageEnd
     // (at levelSupplyCoverageFullLevel and beyond) -- early levels run generous so
     // the squeeze is felt gradually, not from level 1. At the end value (today's
-    // flat 0.90) one Replenish (powerReplenishPileShare of the starting pile)
-    // insures the uncovered share, so most levels still finish unaided.
-    levelSupplyCoverageStart: 1.20,
-    levelSupplyCoverageEnd: 0.90,
-    levelSupplyCoverageFullLevel: 20,
+    // flat 0.75) a Replenish (powerReplenishPileShare of the starting pile) insures
+    // the uncovered share, so most levels still finish unaided.
+    levelSupplyCoverageStart: 1.05,
+    levelSupplyCoverageEnd: 0.75,
+    levelSupplyCoverageFullLevel: 15,
     minPrecisionBlocksPerLevel: 3,
     openingHandGenerationAttempts: 1000,
 

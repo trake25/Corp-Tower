@@ -640,7 +640,7 @@ class GameEngine {
     getSupplyPackingEfficiency() {
         const cellsPerBrick = Math.max(1, this.getAverageBrickCellCount());
         const brickHeight = Math.max(0.1, this.getAverageBrickHeight());
-        const siteWidth = this.getSiteWidthForHeight(this.room?.targetHeight);
+        const siteWidth = this.getSupplySiteWidthEstimate(this.room?.targetHeight);
         const ratio = Math.max(
             0.1,
             Number(GameConfig.supplyEffectiveWidthRatio) || 0.1
@@ -651,6 +651,25 @@ class GameEngine {
             0.05,
             Math.min(1, cellsPerBrick / (brickHeight * effectiveWidth))
         );
+    }
+
+    // Same slenderness/min/max inputs as getSiteWidthForHeight, without its
+    // round-to-even step -- that step exists for the placement grid, but it
+    // turns one level's site-width growth into a single jump that supply
+    // sizing would otherwise inherit as an artificial spike.
+    getSupplySiteWidthEstimate(targetHeight) {
+        const slenderness = Math.max(
+            0.1,
+            Number(GameConfig.towerSiteSlendernessTarget) || 0.1
+        );
+        const minWidth = Math.max(1, Number(GameConfig.towerSiteWidthMin) || 1);
+        const maxWidth = Math.min(
+            Math.max(1, Number(GameConfig.towerGridWidth) || 1),
+            Math.max(minWidth, Number(GameConfig.towerSiteWidthMax) || minWidth)
+        );
+        const raw = Math.max(0, Number(targetHeight) || 0) / slenderness;
+
+        return Math.max(minWidth, Math.min(maxWidth, raw));
     }
 
     getSiteWidthForHeight(targetHeight) {
