@@ -1,0 +1,359 @@
+<!doctype html>
+<!--
+  CV source. Open in Chrome, Ctrl+P, Destination "Save as PDF", Paper A4,
+  Margins "Default", Headers and footers OFF, Background graphics OFF. Save to
+  site/public/cv/Enrique-Dela-Pena-Jr-CV.pdf, which is what the download button
+  in section 02 points at.
+
+  Same pattern as tools/og-source.html: an HTML source kept in the repo that
+  generates a binary asset, so the asset is never the only copy.
+
+  Three rules govern this file, none of them cosmetic:
+
+  1. NO STREET ADDRESS AND NO PHONE NUMBER. This is published on a public
+     website. City and country settle timezone and work authorisation, which is
+     all a recruiter or an ATS actually needs. The version carrying a phone
+     number goes out by email, to someone who has already made contact. The
+     address here is the routed alias, not the personal inbox behind it.
+
+  2. SINGLE COLUMN, NO TABLES, NO TEXT IN IMAGES. Applicant tracking systems
+     parse top to bottom. A two-column layout interleaves into nonsense and a
+     table orphans the dates from the role. The plain structure is why this
+     survives being machine-read.
+
+  3. KEY PROJECT SITS ABOVE EXPERIENCE. The professional history does not yet
+     show platform work — the project does. Burying it inside a role titled
+     "Indie Game Developer" on page two means a recruiter scanning for
+     infrastructure never reaches it. This ordering is standard for a career
+     change and it is the whole argument of the document.
+
+  Fitting two pages: each .role has break-inside: avoid, so a role that will not
+  fit is pushed whole to the next page rather than split. A large gap at the
+  bottom of page one means the next role is too tall, not that the spacing is
+  wrong — cut a bullet rather than fight the rule.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Enrique Dela Peña Jr. — Curriculum Vitae</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 12mm 14mm;
+      }
+
+      :root {
+        --ink: #16181c;
+        --muted: #4a5058;
+        --faint: #6c737c;
+        --rule: #c8ccd2;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Calibri", "Carlito", "Helvetica Neue", Arial, sans-serif;
+        font-size: 10pt;
+        line-height: 1.36;
+        color: var(--ink);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      h1 {
+        font-size: 19pt;
+        line-height: 1.1;
+        letter-spacing: -0.4pt;
+        margin: 0 0 1pt;
+      }
+
+      .target {
+        font-size: 10.8pt;
+        font-weight: 600;
+        color: var(--muted);
+        margin: 0 0 4pt;
+      }
+
+      .contact {
+        font-size: 9pt;
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.4;
+      }
+
+      .contact a {
+        color: var(--muted);
+        text-decoration: none;
+      }
+
+      h2 {
+        font-size: 9.2pt;
+        letter-spacing: 1.1pt;
+        text-transform: uppercase;
+        margin: 11pt 0 5pt;
+        padding-bottom: 2pt;
+        border-bottom: 0.75pt solid var(--rule);
+      }
+
+      p {
+        margin: 0 0 6pt;
+      }
+
+      .summary {
+        margin: 0;
+        text-align: justify;
+      }
+
+      .skills div {
+        margin-bottom: 2.5pt;
+      }
+
+      /* Role and project blocks. Flex rather than a table so a parser reads the
+         title and the dates as one continuous run of text. */
+      .role {
+        margin-bottom: 7pt;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .role-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10pt;
+      }
+
+      .role-title {
+        font-size: 10.6pt;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      .role-dates {
+        font-size: 8.8pt;
+        color: var(--faint);
+        white-space: nowrap;
+      }
+
+      .role-org {
+        font-size: 9.4pt;
+        font-style: italic;
+        color: var(--muted);
+        margin: 0 0 2pt;
+      }
+
+      .role-stack {
+        font-size: 8.8pt;
+        color: var(--faint);
+        margin: 0 0 2pt;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 13pt;
+      }
+
+      li {
+        margin-bottom: 1.5pt;
+      }
+
+      .credential {
+        margin-bottom: 3pt;
+      }
+
+      .credential-name {
+        font-weight: 700;
+      }
+
+      .credential-meta {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>Enrique C. Dela Peña Jr.</h1>
+      <p class="target">Platform &amp; DevOps Engineer</p>
+      <p class="contact">
+        Metro Manila, Philippines (UTC+8) · Remote preferred, hybrid in the Philippines · Full-time or contract<br />
+        <a href="mailto:hire@galaxxigames.com">hire@galaxxigames.com</a>
+        · <a href="https://enportfolio.galaxxigames.com">enportfolio.galaxxigames.com</a>
+        · <a href="https://www.linkedin.com/in/enrique-dela-pena-jr">linkedin.com/in/enrique-dela-pena-jr</a>
+        · <a href="https://github.com/trake25">github.com/trake25</a>
+      </p>
+    </header>
+
+    <h2>Profile</h2>
+    <p class="summary">
+      Infrastructure engineer with five years in enterprise network operations — NOC, SD-WAN and
+      enterprise circuits — including leading a team of nine. Returned through software QA by
+      design, to see how applications on that infrastructure behave in production, and now build
+      and operate the platform side directly: Terraform-managed AWS, a gated CI/CD pipeline across
+      five destinations, OIDC-based CI identity and enforced cost guardrails, all running under a
+      live game. Networking depth and delivery discipline, applied to platform work.
+    </p>
+
+    <h2>Technical Skills</h2>
+    <div class="skills">
+      <div>
+        <strong>Cloud &amp; IaC</strong> — AWS (EKS, EC2, ElastiCache, IAM, Budgets), Terraform,
+        Kubernetes, K3s, Docker, Linux, Redis, Cloudflare (Workers, R2, Tunnel)
+      </div>
+      <div>
+        <strong>CI/CD &amp; Release</strong> — GitHub Actions, Jenkins, composite actions, OIDC
+        federated CI identity, gated multi-environment deploys, artifact hash verification, Google
+        Play Publisher API, Play Console, TestFlight
+      </div>
+      <div>
+        <strong>Networking &amp; Reliability</strong> — NOC operations, incident and escalation
+        management, fault isolation, failover verification, high-availability design, SD-WAN,
+        WAN/LAN/WLAN/IPVPN/DIA, Cisco, HP Aruba
+      </div>
+      <div>
+        <strong>Security &amp; Quality</strong> — IAM policy scoping, short-lived credentials,
+        secrets management, Zero Trust access (Okta, Twingate); test plan and case design,
+        regression and exploratory testing, automated suites in CI, Jira, TestRail, Confluence
+      </div>
+      <div>
+        <strong>Programming &amp; AI-assisted delivery</strong> — Node.js, Python, Bash, GDScript,
+        Java/Kotlin, C#, Godot; agentic coding workflows, specification-first review loops, context
+        and token budgeting
+      </div>
+    </div>
+
+    <h2>Key Project</h2>
+    <div class="role">
+      <div class="role-head">
+        <p class="role-title">Top or Drop — real-time multiplayer game and its platform</p>
+        <span class="role-dates">Mar 2026 – Present</span>
+      </div>
+      <p class="role-stack">
+        Terraform · AWS EKS/EC2/ElastiCache · Kubernetes · Docker · GitHub Actions · Node.js ·
+        Redis · Godot · Cloudflare — playable at toddemo.galaxxigames.com, source at
+        github.com/trake25/Corp-Tower
+      </p>
+      <ul>
+        <li>Built the whole system: Terraform-managed AWS infrastructure, an authoritative Node.js WebSocket server on Redis shared state, and a Godot client that renders server state and never computes outcomes itself.</li>
+        <li>Ran production, staging and development as separate targets with their own networking — the EKS path written and tested, held deploy-on-demand until release, while staging and development share one already-paid-for Linux machine reached through a Cloudflare tunnel.</li>
+        <li>Designed GitHub Actions pipeline deploying to five destinations through shared composite actions; only development self-deploys on push, every other target clears a gate first.</li>
+        <li>Established CI identity through OIDC with no standing credentials, per-environment credential isolation, and platform-enforced encryption, tagging, quota and budget rules.</li>
+        <li>Defined the entire platform as code so it can be destroyed and rebuilt from one source, with the deploy itself as the test — it halts before installing anything if the previous apply never completed.</li>
+      </ul>
+    </div>
+
+    <h2>Experience</h2>
+
+    <div class="role">
+      <div class="role-head">
+        <p class="role-title">QA Tester</p>
+        <span class="role-dates">Sep 2025 – Present</span>
+      </div>
+      <p class="role-org">Amber · Philippines, on-site</p>
+      <ul>
+        <li>Execute and document game testing end to end — bug identification, tracking and regression verification — to safeguard release quality.</li>
+        <li>Design structured test plans and cases across functional and developmental QA, feeding into QA strategy and cost estimation.</li>
+        <li>Work daily inside Jenkins pipelines, Git/GitHub, ZTNA and authenticator-gated access, and build distribution systems as part of the release workflow.</li>
+        <li>Propose tools, workflows and QA practices that reduce repeat effort rather than absorbing it.</li>
+      </ul>
+    </div>
+
+    <div class="role">
+      <div class="role-head">
+        <p class="role-title">Indie Game Developer</p>
+        <span class="role-dates">Jan 2025 – Present</span>
+      </div>
+      <p class="role-org">Galaxxi Games (freelance) · Remote</p>
+      <p class="role-stack">
+        Shipped: <em>SpaceSheeps Pinball</em>, live on Google Play since June 2025 —
+        play.google.com/store/apps/details?id=com.galaxxigames.spacesheepspinball
+      </p>
+      <ul>
+        <li>Co-developed <em>SpaceSheeps Pinball</em> in Godot 4 and took it from prototype to a full Google Play release.</li>
+        <li>Integrated Google Play Sign-In, leaderboard and in-app donation APIs into a live production app using Java/Kotlin.</li>
+        <li>Owned the full lifecycle — gameplay logic, Android build and signing, store submission and post-release QA.</li>
+      </ul>
+    </div>
+
+    <div class="role">
+      <div class="role-head">
+        <p class="role-title">Career break — family caregiving and self-directed study</p>
+        <span class="role-dates">May 2021 – Dec 2024</span>
+      </div>
+      <p class="role-org">Philippines</p>
+      <ul>
+        <li>Took on full-time family caregiving responsibilities, and ran a personal residence construction project end to end — labour, procurement and payroll.</li>
+        <li>Continued self-study in networking, programming and game development, which is what made the return route through software possible.</li>
+      </ul>
+    </div>
+
+    <div class="role">
+      <div class="role-head">
+        <p class="role-title">Network Engineer Specialist — Client Service Assurance</p>
+        <span class="role-dates">Dec 2019 – Apr 2021</span>
+      </div>
+      <p class="role-org">Verizon Business · Philippines, hybrid</p>
+      <ul>
+        <li>Monitored and maintained VoIP, IPVPN, WAN, LAN, WLAN and DIA circuits for a multinational retail enterprise's U.S. operations.</li>
+        <li>Handled alarm detection, automated ticketing, fault isolation and failover verification to keep services up through incidents.</li>
+        <li>Resolved escalations on bridge calls with engineers, users and internal teams, investigating recurring faults with RFC, BERT, OTDR and CLI/SSH tooling.</li>
+        <li>Received Customer Excellence and Supervisor's Choice awards for support during the COVID-19 pandemic.</li>
+      </ul>
+    </div>
+
+    <div class="role">
+      <div class="role-head">
+        <p class="role-title">Lead Technical Network Operations Engineer</p>
+        <span class="role-dates">Jun 2017 – Dec 2019</span>
+      </div>
+      <p class="role-org">Globe Telecom · NCR, Philippines, on-site</p>
+      <ul>
+        <li>Led and mentored a team of 9 NOC engineers, raising ticket throughput and resolution efficiency.</li>
+        <li>Owned first-level escalations for enterprise circuits, driving fault resolution and service continuity.</li>
+        <li>Evaluated newly provisioned circuits for resiliency, design compliance and reliability, and coordinated outages, migrations and maintenance windows with Field Operations.</li>
+      </ul>
+    </div>
+
+    <div class="role">
+      <div class="role-head">
+        <p class="role-title">Network Operations Engineer</p>
+        <span class="role-dates">Jun 2016 – Jun 2017</span>
+      </div>
+      <p class="role-org">Asticom Technology Inc. (deployed to Globe Telecom / DRI) · Mandaluyong, Philippines</p>
+      <ul>
+        <li>Handled fault monitoring, escalation and ticket resolution for METRO-E, DIA and IPVPN enterprise circuits.</li>
+        <li>Traced recurring outages back to their cause and recommended circuit resiliency improvements.</li>
+      </ul>
+    </div>
+
+    <div class="role">
+      <div class="role-head">
+        <p class="role-title">Network Operations Engineer</p>
+        <span class="role-dates">Jul 2015 – Jun 2016</span>
+      </div>
+      <p class="role-org">ECI (deployed to Smart Communications Inc.) · Makati, Philippines</p>
+      <ul>
+        <li>Provisioned, tested and activated 3G/LTE services across SDH and Data Link layers in transmission networks.</li>
+        <li>Monitored alarms via NMS, performed first-level fault isolation, and covered on-call support for live testing.</li>
+        <li>Served as Tier 1 Shift Lead from January to June 2016, handling shift turnover and task coordination.</li>
+      </ul>
+    </div>
+
+    <h2>Education &amp; Certifications</h2>
+    <div class="credential">
+      <span class="credential-name">BS Electronics and Communications Engineering</span> —
+      <span class="credential-meta">University of the East · 2008 – 2014</span>
+    </div>
+    <div class="credential">
+      <span class="credential-name">Licensed Electronics Engineer</span> —
+      <span class="credential-meta">Professional Regulation Commission (PRC), Philippines · October 2014</span>
+    </div>
+    <div class="credential">
+      <span class="credential-name">Nokia-Huawei SD-WAN Training</span> —
+      <span class="credential-meta">Globe Telecom · April 2018 · 32 hours, virtual WAN operations</span>
+    </div>
+  </body>
+</html>

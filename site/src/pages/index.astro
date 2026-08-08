@@ -31,6 +31,41 @@ const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
 // in the cards but missing here is appended rather than dropped.
 const ROLE_ORDER = ["QA", "AI", "Cloud", "DevOps", "Backend", "Frontend"];
 
+// Section 02's second vignette. Deliberately not a content collection: three
+// static facts that change once a decade do not need one file each and a schema.
+// Deliberately not `<details>` tiles either — a credential has nothing to hide,
+// so it renders as a flat row. That keeps it visibly a different thing from the
+// job tiles directly above it, which is the level-grammar rule doing its job.
+// Annotated rather than inferred: only one entry carries a `note`, and without
+// this TypeScript infers a union the optional field is missing from.
+const CREDENTIALS: {
+  kind: string;
+  title: string;
+  issuer: string;
+  dates: string;
+  note?: string;
+}[] = [
+  {
+    kind: "Degree",
+    title: "BS Electronics and Communications Engineering",
+    issuer: "University of the East",
+    dates: "2008 — 2014",
+  },
+  {
+    kind: "Licence",
+    title: "Licensed Electronics Engineer",
+    issuer: "Professional Regulation Commission (PRC), Philippines",
+    dates: "Oct 2014",
+  },
+  {
+    kind: "Training",
+    title: "Nokia-Huawei SD-WAN",
+    issuer: "Globe Telecom",
+    dates: "Apr 2018",
+    note: "32 hours, covering virtual WAN operations.",
+  },
+];
+
 const byOrder = (a: { data: { order: number } }, b: { data: { order: number } }) =>
   a.data.order - b.data.order;
 
@@ -70,7 +105,7 @@ const year = new Date().getFullYear();
 
 <BaseLayout
   title={`${profile.name} — ${profile.jobTitle}`}
-  description={`Games by ${profile.name}, and the engineering behind them. ${profile.project} (${profile.projectShort}) is a real-time multiplayer game with a playable demo, built, quality-assured and operated end to end across ${cardEntries.length} disciplines.`}
+  description={`${profile.jobTitle} in ${profile.location}. Terraform-managed AWS, a gated CI/CD pipeline, and ${profile.project} — a real-time multiplayer game you can play, with the source behind it.`}
 >
   <header class="site-header">
     <a class="wordmark" href="/">
@@ -87,6 +122,11 @@ const year = new Date().getFullYear();
 
   <main id="main">
     <section class="hero">
+      {/* The h1 is the hook and stays the hook. This line exists because a
+          recruiter needs a name, a target role and a timezone before they will
+          read anything else, and none of those were on the page above the
+          fold. */}
+      <p class="eyebrow">{profile.name}</p>
       <h1>
         Orchestrator controls,<br class="hero-break" />
         agents accelerate.
@@ -96,6 +136,25 @@ const year = new Date().getFullYear();
         that deploys them. <strong>Agents do the implementing; the requirement, the review
         and the sign-off are mine.</strong>
       </p>
+      {/* Four facts, in the order someone screening actually asks them. */}
+      <dl class="facts">
+        <div>
+          <dt>Based</dt>
+          <dd>{profile.locationFull} · {profile.timezone}</dd>
+        </div>
+        <div>
+          <dt>Focus</dt>
+          <dd>Platform · Cloud · DevOps, with QA and AI orchestration behind it</dd>
+        </div>
+        <div>
+          <dt>Open to</dt>
+          <dd>Full-time or contract · remote preferred, hybrid in the Philippines</dd>
+        </div>
+        <div>
+          <dt>Now</dt>
+          <dd>QA Tester at Amber · building Top or Drop on the side</dd>
+        </div>
+      </dl>
     </section>
 
     <section id="playables" aria-labelledby="playables-heading">
@@ -218,8 +277,21 @@ const year = new Date().getFullYear();
         <span class="section-index">02</span> CV
       </h2>
       <p class="section-intro">
-        Professional work history, most recent first. Open a role for what it involved.
+        Five years running enterprise network operations, then a deliberate return through
+        software QA to see how the applications on top of that infrastructure actually
+        behave. Both halves point the same way. Open a role for what it involved.
       </p>
+
+      {/* Recruiters need a file for their tracking system, and asking them to
+          transcribe a web page loses candidates. `href: null` hides this. */}
+      {profile.cv.href && (
+        <p class="cv-download">
+          <a class="cta secondary" href={profile.cv.href} download>
+            {profile.cv.label}
+          </a>
+          <span class="cv-download-meta">Updated {profile.cv.updated}</span>
+        </p>
+      )}
 
       <div class="vignettes">
         <Vignette
@@ -248,6 +320,27 @@ const year = new Date().getFullYear();
             ))}
           </div>
         </Vignette>
+
+        <Vignette
+          id="credentials"
+          label="Education & certifications"
+          count={CREDENTIALS.length}
+          countNoun={CREDENTIALS.length === 1 ? "entry" : "entries"}
+        >
+          <ul class="credential-list">
+            {CREDENTIALS.map((credential) => (
+              <li class="credential">
+                <h4 class="credential-title">
+                  {credential.title}
+                  <span class="credential-kind">{credential.kind}</span>
+                  <span class="credential-dates">{credential.dates}</span>
+                </h4>
+                <span class="credential-issuer">{credential.issuer}</span>
+                {credential.note && <span class="credential-note">{credential.note}</span>}
+              </li>
+            ))}
+          </ul>
+        </Vignette>
       </div>
     </section>
 
@@ -257,8 +350,12 @@ const year = new Date().getFullYear();
       </h2>
       <p class="eyebrow">{profile.title}</p>
       {profile.availability && <p class="availability">{profile.availability}</p>}
+      {/* Labelled "Email …" rather than showing the bare address. A raw string
+          sitting in a button reads as a heading to anyone scanning, and the one
+          thing this section has to be unambiguous about is that this is where
+          you write to. */}
       <div class="contact-links">
-        <a class="cta primary" href={`mailto:${profile.email}`}>{profile.email}</a>
+        <a class="cta primary" href={`mailto:${profile.email}`}>Email {profile.email}</a>
         {contactLinks.map((link) => (
           <a class="cta secondary" href={link.href} target="_blank" rel="noopener noreferrer">
             {link.label}
@@ -290,22 +387,65 @@ const year = new Date().getFullYear();
   // component has to know how deeply it happens to be nested.
   const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // 1. One open at a time, per group. Applied to the card lists (games, jobs,
-  //    skills) but deliberately not to the vignettes: the cards are the bulky
-  //    things, and a reader may legitimately want two vignettes open at once.
+  // 1. One open at a time, per group — and while one is open the rest are taken
+  //    off the page rather than left as a stack of closed titles above and
+  //    below it. Applied to the card lists (games, jobs, skills) but
+  //    deliberately not to the vignettes: the cards are the bulky things, and a
+  //    reader may legitimately want two vignettes open at once.
   for (const group of document.querySelectorAll<HTMLElement>("[data-accordion]")) {
     const items = Array.from(group.children).filter(
       (child): child is HTMLDetailsElement => child instanceof HTMLDetailsElement
     );
 
+    // Siblings are removed while one is open, not merely collapsed. Closing it
+    // brings them back. `.is-peer-hidden` is deliberately a separate channel
+    // from the `hidden` attribute the role filter drives — sharing one would
+    // let closing a card resurrect cards the filter had taken away.
+    const sync = () => {
+      const open = items.find((item) => item.open);
+      for (const item of items) {
+        item.classList.toggle("is-peer-hidden", open !== undefined && item !== open);
+      }
+    };
+
     for (const item of items) {
       item.addEventListener("toggle", () => {
-        if (!item.open) return;
-        for (const sibling of items) {
-          if (sibling !== item) sibling.open = false;
+        if (item.open) {
+          for (const sibling of items) {
+            if (sibling !== item) sibling.open = false;
+          }
+
+          sync();
+
+          // Everything above the open tile just disappeared, which drags it up
+          // under the reader's cursor. Put it back where they are looking.
+          item.scrollIntoView({ block: "start", behavior: motionOk ? "smooth" : "auto" });
+          return;
         }
+
+        // A close fired while another tile is open is a side effect of that
+        // tile opening, not the reader closing this one. It is already hidden,
+        // so its box is zero and the correction below would be nonsense.
+        if (items.some((other) => other.open)) {
+          sync();
+          return;
+        }
+
+        // Restoring the siblings puts every tile above this one back on the
+        // page, pushing it down by their combined height — from the reader's
+        // side the page appears to jump back to the top of the list. Measure
+        // the tile either side of the change and cancel the difference out, so
+        // the tile they just closed stays under their eye.
+        const before = item.getBoundingClientRect().top;
+        sync();
+        const shift = item.getBoundingClientRect().top - before;
+        if (shift !== 0) window.scrollBy({ top: shift, behavior: "auto" });
       });
     }
+
+    // Tiles marked open in the HTML never fire `toggle`, so the initial state
+    // has to be applied directly.
+    sync();
   }
 
   // 2. A link into something nested has to open everything above it, or it

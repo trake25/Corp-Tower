@@ -18,31 +18,16 @@ details:
   - id: architecture
     title: "2 · Small pieces, one conductor"
     body: "What used to be one file well past two thousand lines is now a slim conductor delegating to focused, single-purpose pieces — one for the inventory, one for chat, one for the score popups, and so on. Each piece declares exactly which on-screen elements it needs and owns its own state; the conductor wires them together but doesn't do their job for them. Nothing gets added back into that one file just because it's convenient."
-    evidence:
-      label: "The shape every new piece of interface has to follow"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/coding-conventions.md#client-gameui-module-family-pattern"
   - id: implementation
     title: "3 · The tower draws what happened"
     body: "The piece that actually draws the tower doesn't decide anything — it takes the server's placement, plays the drop animation, and if the tower fails, hands off to a separate physics piece that plays the pieces falling apart. Even the collapse looks the same on every player's screen, because it's seeded from the exact same block data everyone already agrees on, not randomised locally per device."
-    evidence:
-      label: "Why every player sees the exact same collapse"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/ui.md#leaf-components"
   - id: optimization
     title: "4 · The camera moves, not the bricks"
     body: "Bricks never shrink to fit a taller tower — they stay a fixed size on screen no matter how high the tower gets. Instead, the camera view scrolls to keep the top of the tower visible. Resizing every brick every frame as a tower grows is real, repeated work for no visual benefit; scrolling the view is cheaper and reads better, since the bricks a player already placed don't visibly shift size under them."
-    evidence:
-      label: "Why the bricks stay the same size and the camera moves instead"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#fixed-brick-size--parallax-scroll-replaces-shrink-to-fit-tower-rendering"
   - id: validation
     title: "5 · Checked without opening the game"
     body: "The riskiest math in the client — exactly where a dragged piece is allowed to land — doesn't need the game running to check. It's pulled out into a plain, scene-free class, so nineteen tests can pin down the placement rules, corner cases and all, and run in seconds rather than requiring someone to actually play a match."
-    evidence:
-      label: "Nineteen tests that never have to open the game"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/testing.md#godot-client-tests"
   - id: readiness
     title: "6 · What the tests can't see, admitted"
     body: "Passing every one of those tests still isn't the same as the game looking right. A bug that wiped the drag preview on the very first move passed all of them, because nothing was actually rendering the screen to check — it was only caught by rendering the play field to an image and looking at it. That's a stated boundary now, not a blind spot: the tests verify the math, and looking at the actual screen is still a separate, required step."
-    evidence:
-      label: "The bug that passed every test and was caught only by looking at the screen"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/testing.md#known-coverage-gaps"
 ---

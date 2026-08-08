@@ -19,31 +19,16 @@ details:
   - id: architecture
     title: "2 · One entrance, not five"
     body: "The gameplay rules aren't one big file — they're split into focused pieces for scoring, supply, and bonus logic. But nothing outside is allowed to reach into any of those pieces directly: every call, even between two of those pieces, goes back through one shared entry point. That's what keeps 'who's allowed to touch what' answerable in one sentence instead of traced through the whole codebase."
-    evidence:
-      label: "Why every piece talks through one door, including to each other"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/coding-conventions.md#server-engine-module-delegation-pattern"
   - id: core_service
     title: "3 · A room follows its player"
     body: "A room isn't tied to the machine that created it. If the player who's actually connected is being answered by a different machine than the one running that room's game logic, the room hands that player off — quietly, automatically — so their signal always reaches whoever they're actually talking to. The player never has to know, or care, which machine that is."
-    evidence:
-      label: "The hand-off that lets a room follow its own player"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/backend.md#lobby-manager"
   - id: performance
     title: "4 · No two writes collide"
     body: "Under light load, two machines picking players off the same waiting list one at a time never actually collide. Under real load, they can — and when they did, the fix couldn't be 'read the list, then rewrite it,' because two machines can both read the same list before either writes back, and one of them's change quietly disappears. The fix takes exactly what it needs in a single, indivisible step instead."
-    evidence:
-      label: "The exact kind of collision that only shows up under real concurrency"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#matchmaking-queue-lost-update-and-cross-pod-room-gaps"
   - id: validation
     title: "5 · Proven to fail first, then proven fixed"
     body: "A fix like that doesn't get trusted just because it reads correctly. The regression test built for it does something stricter: it forces two machines to actually interleave their reads and writes the way real network timing would, runs the same scenario against the old, broken logic first to confirm it actually fails there, and only then checks it against the fix."
-    evidence:
-      label: "Proven to fail on the old code before it was trusted on the new one"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/testing.md#server-matchmaking-queue-tests"
   - id: production_readiness
     title: "6 · Said out loud, not hidden"
     body: "Not everything gets built just because it could be. Long-term player history and a real leaderboard aren't there yet — only the state a live match actually needs is kept, and that's said plainly rather than implied by silence. What's missing is on the record as future work, not something a future session has to rediscover the hard way."
-    evidence:
-      label: "What this backend deliberately doesn't do yet, written down"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#no-persistent-leaderboard-yet"
 ---

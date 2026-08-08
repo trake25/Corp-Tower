@@ -34,9 +34,10 @@ const { roles, total, intro } = Astro.props;
   <div class="building-body">
     {intro && <p class="building-intro">{intro}</p>}
     <CardFilter roles={roles} total={total} />
-    <!-- One skill card open at a time. index.astro's [data-accordion] handler
-         closes the siblings, so a reader can never stack six open cards into a
-         wall four levels down. -->
+    <!-- One skill card open at a time, stacked in a single column. index.astro's
+         [data-accordion] handler closes the siblings and hides them outright,
+         so an open card four levels down is read against blank space rather
+         than wedged between five closed titles. -->
     <div class="cards" data-accordion="true">
       <slot />
     </div>

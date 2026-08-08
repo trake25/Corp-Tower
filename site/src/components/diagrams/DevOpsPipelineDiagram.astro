@@ -24,13 +24,16 @@
 //   · the low sweep back into step 4 is the drain: five out, one back. Not a
 //     loop — QA owns the loop, and operations isn't a return to planning.
 //
+// Step 4 is monitoring, and it isn't built yet — `details[].planned: true` in
+// devops.md marks it, and this diagram matches that by graphing it greyed out
+// (`.node.is-planned` / `.hotspot.is-planned`) rather than drawing it as a live
+// workflow. Keep the two in sync: if the card stops calling it planned, the
+// diagram should stop greying it out in the same commit.
+//
 // Five destinations, not a 3x3 grid: game server and web client each go to
 // production and development, Android goes to one place (a Play Console
 // internal testing track). A grid would force a fudged or empty Android cell;
 // an uneven fan draws the real shape honestly.
-//
-// The three workflows ride inside the trunk rather than as lines — three
-// workflows across five destinations is fifteen paths, i.e. spaghetti.
 //
 // Box text stays plain-English, same rule as Cloud's diagram. Named
 // disciplines live one layer down in `details[].keywords`; the specifics
@@ -39,8 +42,7 @@
 //
 // Text budget: 230w ≈ 26 label chars / 33 sub chars; 190w ≈ 21 / 27;
 // 225w chips ≈ 25 label chars; 340w ≈ 39 / 50.
-// Source facts: src/content/cards/devops.md, docs/context/build.md,
-// docs/context/testing.md, docs/context/decisions.md.
+// Source facts: src/content/cards/devops.md.
 ---
 
 <figure class="card-diagram">
@@ -62,22 +64,28 @@
         Console internal testing track — and decides in the same breath how
         much trust each one gets. Step two is the trunk in the middle: a single
         body of shared pipeline code that every destination calls, so a fix
-        lands once, with the private art checks failing the build closed rather
-        than shipping something missing, and carrying all three workflows —
-        deploy, clean up, and diagnose. Step three is the five destinations on
-        the right, reached by five branches leaving that one trunk. A dashed
-        vertical clearance gate sits between them: the two production branches
-        and the Android branch cross it, while the two development branches
-        pass below where it ends, because development is the only destination
-        allowed to start a deploy from a push. Step four, at the bottom left,
-        is what comes back from a live destination: diagnose, which reads what
-        is actually running right now rather than what a stored flag claims,
-        and clean up, pointed at one destination on demand.
+        lands once, with each destination still running its own steps where it
+        actually differs, such as signing the Android build with a key
+        unlocked only for that step, or hash-checking art before it is allowed
+        into the build, either one failing the build outright. Step three is
+        the five destinations on the right, reached by five branches leaving
+        that one trunk. A dashed vertical clearance gate sits between them: the
+        two production branches and the Android branch cross it, while the two
+        development branches pass below where it ends, because development is
+        the only destination allowed to start a deploy from a push, and each
+        environment carries its own credentials so a leaked development key
+        cannot reach production. Step four, at the bottom left and drawn
+        greyed out, is monitoring: reading what is actually running in each
+        environment and alerting on drift. It is on the roadmap, not built
+        yet.
       </desc>
 
       <defs>
         <marker id="devops-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path class="arrow-head" d="M0,0 L10,5 L0,10 z" stroke="none" />
+        </marker>
+        <marker id="devops-arrow-planned" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="arrow-head is-planned" d="M0,0 L10,5 L0,10 z" stroke="none" />
         </marker>
       </defs>
 
@@ -93,10 +101,8 @@
 
       <g class="hotspot" data-detail="plan" role="button" tabindex="0" aria-label="Step 1, what ships where and how much trust each gets — open the explanation">
         <rect class="node" x="15" y="137" width="230" height="104" rx="10" />
-        <text class="label" x="29" y="163">1 · What ships where</text>
-        <text class="sub" x="29" y="185">five destinations</text>
-        <text class="sub" x="29" y="203">production and development</text>
-        <text class="sub" x="29" y="221">and the trust each one gets</text>
+        <text class="label" x="29" y="178">1 · What ships where</text>
+        <text class="sub" x="29" y="200">five destinations, one gate</text>
       </g>
 
       <path class="link" d="M245,189 L285,189" marker-end="url(#devops-arrow)" />
@@ -104,10 +110,8 @@
       <!-- step 2 as the trunk: one body of code, five branches leave from it -->
       <g class="hotspot" data-detail="build" role="button" tabindex="0" aria-label="Step 2, one pipeline written by the agent — open the explanation">
         <rect class="node" x="285" y="58" width="190" height="262" rx="10" />
-        <text class="label" x="299" y="156">2 · One pipeline</text>
-        <text class="sub" x="299" y="178">shared actions, one fix</text>
-        <text class="sub" x="299" y="196">art verified, fails closed</text>
-        <text class="sub" x="299" y="214">deploy, clean up, diagnose</text>
+        <text class="label" x="299" y="182">2 · One pipeline</text>
+        <text class="sub" x="299" y="204">signed builds, hashed art</text>
       </g>
 
       <text class="wire accent" x="390" y="26">a clearance gate</text>
@@ -117,7 +121,7 @@
       <path class="link" d="M550,52 L550,214" stroke-dasharray="5 5" />
       <text class="wire" x="478" y="222">development passes below</text>
 
-      <text class="label" x="580" y="44">3 · Where it lands</text>
+      <text class="label" x="580" y="44">3 · Target environments</text>
 
       <path class="link" d="M475,189 C515,189 545,78 580,78" marker-end="url(#devops-arrow)" />
       <path class="link" d="M475,189 C515,189 545,130 580,130" marker-end="url(#devops-arrow)" />
@@ -151,21 +155,20 @@
         <text class="label" x="594" y="306">Web client · development</text>
       </g>
 
-      <!-- the drain: five out, one back. Not a loop — operations doesn't
-           return to planning, it reads the destinations that are already live -->
-      <path class="link" d="M692,320 C692,392 520,412 355,412" marker-end="url(#devops-arrow)" />
-      <text class="wire accent" x="380" y="352">back from the live destinations</text>
+      <!-- the drain: five out, one back. Not a loop — monitoring doesn't
+           return to planning, it would read the destinations that are live.
+           Dashed and faint because the thing it feeds is planned, not built. -->
+      <path class="link is-planned" d="M692,320 C692,392 520,412 355,412" stroke-dasharray="4 5" marker-end="url(#devops-arrow-planned)" />
+      <text class="wire" x="380" y="352">would read from the live destinations</text>
 
-      <g class="hotspot" data-detail="operate" role="button" tabindex="0" aria-label="Step 4, operating it after it ships — open the explanation">
+      <g class="hotspot is-planned" data-detail="operate" role="button" tabindex="0" aria-label="Step 4, monitoring, planned but not yet built — open the explanation">
         <rect class="node" x="15" y="360" width="340" height="104" rx="10" />
-        <text class="label" x="29" y="386">4 · Operating it after it ships</text>
-        <text class="sub" x="29" y="408">diagnose what is actually running</text>
-        <text class="sub" x="29" y="426">clean up one destination on demand</text>
-        <text class="sub" x="29" y="444">deploying was the easy part</text>
+        <text class="label" x="29" y="405">4 · Monitoring</text>
+        <text class="sub" x="29" y="427">planned — not built yet</text>
       </g>
 
-      <text class="wire accent" x="15" y="492">only development is started by a push — everything else clears a gate first</text>
-      <text class="wire" x="15" y="508">an assistant wrote most of the workflow code; which checks may block a release was never its call</text>
+      <text class="wire accent" x="15" y="492">only development deploys itself from a push</text>
+      <text class="wire" x="15" y="508">everything else clears a gate first</text>
     </svg>
   </div>
   <figcaption class="card-diagram-caption">

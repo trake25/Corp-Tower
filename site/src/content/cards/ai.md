@@ -46,9 +46,6 @@ details:
       - "Context Routing"
       - "Selective Loading"
     body: "RAG is Retrieval-Augmented Generation: pulling in exactly the facts a model needs right before it answers, instead of expecting it to already know them. Inside planning, the coding agent doesn't read the repository — it retrieves. An indexed router names the documents the task needs and loads only those, and loads any AI skill the task calls for, on demand."
-    evidence:
-      label: "Load least, escalate only if needed"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/index.md#retrieval-load-least-escalate-only-if-needed"
   - id: review
     title: "6 · Orchestrator review and approval"
     keywords:

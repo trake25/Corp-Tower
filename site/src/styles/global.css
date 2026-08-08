@@ -421,6 +421,43 @@ main > section:first-child {
   fill: var(--accent);
 }
 
+/* A step that's planned but not built — same dashed/faint treatment as
+   .detail.is-planned in the written steps, so the two agree at a glance. */
+.topology .node.is-planned,
+.hotspot.is-planned .node {
+  stroke: var(--border);
+  stroke-dasharray: 5 5;
+  fill: transparent;
+}
+
+.hotspot.is-planned .label {
+  fill: var(--fg-faint);
+  font-weight: 550;
+}
+
+.hotspot.is-planned .sub {
+  fill: var(--fg-faint);
+}
+
+.hotspot.is-planned:hover .node,
+.hotspot.is-planned:focus-visible .node {
+  stroke: var(--fg-faint);
+  fill: transparent;
+}
+
+.hotspot.is-planned:hover .label,
+.hotspot.is-planned:focus-visible .label {
+  fill: var(--fg-muted);
+}
+
+.topology .link.is-planned {
+  stroke: var(--border);
+}
+
+.topology .arrow-head.is-planned {
+  fill: var(--border);
+}
+
 /* --- Filter -------------------------------------------------------------- */
 
 .filter-bar {
@@ -473,14 +510,15 @@ main > section:first-child {
 
 /* --- Cards --------------------------------------------------------------- */
 
-/* Level 4. Smaller tiles than a game or job card because they sit inset inside
-   one; an open card still takes the full row so its diagram has the width it
-   needs. */
+/* Level 4. Shorter tiles than a game or job card because they sit inset inside
+   one, and a single column rather than a grid: six cards in an auto-fit grid
+   were each a different height depending on how the headline wrapped, and the
+   whole block reflowed every time one opened. A stack is one width, one height
+   and one reading order — and it is what the peer-hide behaviour assumes. */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  align-items: start;
-  gap: 0.75rem;
+  grid-template-columns: 1fr;
+  gap: 0.4rem;
 }
 
 .card {
@@ -507,25 +545,23 @@ main > section:first-child {
 
 /* summary is the flex container itself. A wrapper element around the heading
    would be invalid: <summary> takes phrasing content intermixed with headings,
-   and a <span> may not contain an <h5>. */
+   and a <span> may not contain an <h5>.
+
+   A row, since the cards stack full-width. The old column layout existed to
+   fill a narrow grid cell and would leave a mostly-empty 7.5rem band here. */
 .card summary {
   cursor: pointer;
   list-style: none;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.8rem;
-  min-height: 7.5rem;
-  padding: 1.2rem 1.3rem;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  padding: 0.95rem 1.2rem;
 }
 
 .card summary::-webkit-details-marker {
   display: none;
-}
-
-.card[open] summary {
-  min-height: 0;
-  gap: 0.7rem;
 }
 
 /* Brass text alone — no chip. It is a category label on the smallest tile on
@@ -538,20 +574,28 @@ main > section:first-child {
   text-transform: uppercase;
   color: var(--accent);
   flex-shrink: 0;
+  /* Fixed column so all six headlines start at the same x. The longest role is
+     "Frontend"; anything longer than this simply pushes its own row out. */
+  min-width: 5.25rem;
 }
 
-/* Grows to fill the tile so the open/close hint is pushed to the bottom edge
-   and every tile in the row lines up. Deliberately smaller than a game or job
+/* Takes the free width so the open/close hint is pushed to the right edge and
+   every card in the stack lines up. Deliberately smaller than a game or job
    title: this is the deepest tile on the page and should not compete with the
    game it sits inside. */
 .card .headline {
   flex: 1;
+  min-width: 0;
   font-size: var(--step-0);
   font-weight: 650;
   letter-spacing: -0.015em;
   line-height: 1.3;
   margin: 0;
-  max-width: 46ch;
+  /* Uncapped on purpose. The old 46ch was sized for a narrow grid cell; keeping
+     it here would wrap the four longest headlines onto a second line and put
+     the cards back to mismatched heights. The longest is 86 characters, which
+     fits one line at desktop width. */
+  max-width: none;
 }
 
 .card .plain {
@@ -595,6 +639,8 @@ main > section:first-child {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  margin-left: auto;
+  flex-shrink: 0;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.08em;
@@ -669,13 +715,67 @@ main > section:first-child {
 
 /* --- Step-by-step details, paired with the diagram ----------------------- */
 
-.detail-list {
-  display: grid;
-  gap: 0.6rem;
+/* The steps stay behind their own small disclosure so opening a card doesn't
+   dump every step on screen before the diagram's had a look-in. Distinct
+   class names from .card's own .toggle-hint/.toggle-open/.toggle-close on
+   purpose — those are keyed off `.card[open]`, and nesting this `<details>`
+   inside `.card` means a bare reuse of those classes would hide this
+   summary's own text as soon as the outer card opened, regardless of this
+   one's state. */
+.detail-list-wrap {
   margin: 1.5rem 0 0;
 }
 
-.detail-list + .flow-body {
+.detail-list-wrap summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.detail-list-wrap summary::-webkit-details-marker {
+  display: none;
+}
+
+.detail-list-wrap:hover summary {
+  color: var(--fg);
+}
+
+.detail-list-toggle-close {
+  display: none;
+}
+
+.detail-list-wrap[open] .detail-list-toggle-open {
+  display: none;
+}
+
+.detail-list-wrap[open] .detail-list-toggle-close {
+  display: inline;
+}
+
+.detail-list-chevron {
+  transition: transform 0.2s ease;
+}
+
+.detail-list-wrap[open] .detail-list-chevron {
+  transform: rotate(180deg);
+}
+
+.detail-list-wrap > .detail-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0.9rem 0 0;
+  animation: reveal 0.28s ease both;
+}
+
+.detail-list-wrap + .flow-body {
   margin-top: 1.75rem;
 }
 
@@ -802,6 +902,37 @@ main > section:first-child {
 
 .detail.is-active .detail-jump {
   color: var(--accent);
+}
+
+/* A step that describes future work, not something already built. Muted
+   throughout — border, heading and body all drop to the faint tier — so it
+   reads as present-but-not-yet, distinct from every shipped step around it
+   without needing its own colour. */
+.detail.is-planned {
+  border-left-color: var(--border);
+  background: transparent;
+  opacity: 0.72;
+}
+
+.detail.is-planned .detail-jump {
+  color: var(--fg-muted);
+}
+
+.detail.is-planned:hover .detail-jump-hint,
+.detail.is-planned .detail-jump:focus-visible .detail-jump-hint {
+  color: var(--fg-faint);
+}
+
+.planned-tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.12rem 0.45rem;
 }
 
 /* The diagram step you came back from. */
@@ -1104,12 +1235,21 @@ main > section:first-child {
    it again in the CV.
    -------------------------------------------------------------------------- */
 
-.game-list,
-.job-list {
+.game-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   align-items: start;
   gap: 0.9rem;
+}
+
+/* A single column, newest at the top. A work history is a sequence, and an
+   auto-fit grid rendered it as an unordered wall whose tiles were all slightly
+   different heights depending on how each summary line wrapped. Reading order
+   now matches `order` in the frontmatter, top to bottom. */
+.job-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
 }
 
 .game,
@@ -1133,6 +1273,27 @@ main > section:first-child {
   grid-column: 1 / -1;
   border-color: var(--accent-dim);
   background: var(--surface);
+}
+
+/* --- Peer hiding ----------------------------------------------------------
+   Opening a tile removes its siblings rather than just collapsing them, so an
+   open card is read against blank space instead of a stack of closed titles.
+   Closing it brings them back.
+
+   A class, not the `hidden` attribute: `hidden` belongs to the role filter, and
+   sharing the channel would let closing a card resurrect cards the filter had
+   deliberately taken away. The two have to be able to disagree.
+   -------------------------------------------------------------------------- */
+
+.is-peer-hidden {
+  display: none;
+}
+
+/* Hiding everything above an open tile shifts it up under the reader's cursor,
+   so the script scrolls it into place. This keeps the sticky header off it. */
+.job,
+.card {
+  scroll-margin-block-start: 4.5rem;
 }
 
 .game > summary,
@@ -1190,9 +1351,18 @@ main > section:first-child {
   color: var(--fg-faint);
 }
 
+/* Two lines, always — clamped if the text overruns, reserved if it falls short.
+   Height is the one thing that made the collapsed tiles look mismatched, and it
+   came entirely from this line wrapping differently per role. */
 .job-summary {
   font-size: var(--step--1);
   max-width: var(--measure);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-height: 3.16em;
 }
 
 .job-dates {
@@ -1257,6 +1427,36 @@ main > section:first-child {
   margin-bottom: 0;
 }
 
+/* Bullets inside a game's markdown body — same colour, measure and type size
+   as .game-blurb/.game-note p, so a list reads as a continuation of the
+   description rather than a visually distinct block. */
+.game-note ul {
+  margin: 0 0 0.9rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+  max-width: var(--measure);
+}
+
+.game-note ul li {
+  position: relative;
+  padding-left: 1.3rem;
+  color: var(--fg-muted);
+}
+
+.game-note ul li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--accent);
+  opacity: 0.65;
+}
+
 .job-highlights {
   margin: 0;
   padding: 0;
@@ -1286,6 +1486,108 @@ main > section:first-child {
 
 .job-highlights + .job-note {
   margin-top: 1.2rem;
+}
+
+/* Sits between the section intro and the first vignette. Secondary styling on
+   purpose — the page is the CV, and the file is the copy you take away. */
+.cv-download {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 1.75rem;
+}
+
+.cv-download-meta {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+
+/* --- Level 2, static variant: credentials ---------------------------------
+   Same rank as a job tile and inside the same kind of vignette, but flat: no
+   summary, no chevron, no open state. A degree has no detail to disclose, and
+   giving it a tile that opens would promise one. Rules between rows instead of
+   a border box, so a reader can tell at a glance that this list behaves
+   differently from the one above it.
+
+   No brass anywhere in here. Section 02 spends its accent on the date chips of
+   the roles still running and on the highlight markers; a row of category chips
+   in the same colour would drown both out. Category is carried by the label,
+   not the palette.
+   -------------------------------------------------------------------------- */
+
+.credential-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.credential {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem 0.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.credential:first-child {
+  border-top: 0;
+  padding-top: 0.35rem;
+}
+
+.credential-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0;
+  font-size: var(--step-0);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.credential-kind {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.12rem 0.45rem;
+}
+
+.credential-dates {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+
+.credential-issuer,
+.credential-note {
+  font-size: var(--step--1);
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.credential-note {
+  color: var(--fg-faint);
+}
+
+@media (max-width: 540px) {
+  .credential-dates {
+    margin-left: 0;
+  }
 }
 
 /* --- Level 3: the Building the Game panel --------------------------------
@@ -1637,6 +1939,7 @@ footer {
   .site-header,
   .filter-bar,
   .toggle-hint,
+  .detail-list-summary,
   .ctas,
   .vignette-chevron,
   .building-chevron,
@@ -1647,12 +1950,14 @@ footer {
   }
 
   /* Every disclosure prints open — a printed CV with the roles collapsed is a
-     blank page. */
+     blank page, and a printed skill card with its steps still behind their
+     toggle is the same problem one level deeper. */
   .expanded,
   .vignette-body,
   .game-body,
   .job-body,
-  .building-body {
+  .building-body,
+  .detail-list {
     animation: none;
     display: block !important;
   }

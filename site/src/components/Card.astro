@@ -2,18 +2,25 @@
 import VideoSlot from "./VideoSlot.astro";
 
 // Level 4 — a skill card inside the Building the Game panel, inside a game
-// card, inside a vignette. Two states, not three:
+// card, inside a vignette.
 //
 //   1. Vignette — collapsed tile: role chip + summary title only.
-//   2. Open     — short description, tools, then diagram → video → the written
-//                 steps, all visible at once.
+//   2. Open     — short description, tools, then diagram → video, with the
+//                 written steps collapsed behind their own "Show N steps".
 //
-// The old third state (a `.flow-toggle` hiding the steps behind "Show all 7
-// steps") is gone. Step bodies are written to two or three sentences, which is
-// short enough to simply show — and removing that toggle removes a whole level
-// of nesting from a page that already nests four deep. Length is now the thing
-// keeping the card readable, so `details[].body` staying short is load-bearing,
-// not a style preference.
+// That steps toggle is a second, deliberately small `<details>` nested inside
+// the card's own — one click reveals every step at once, same as it always
+// has; it just no longer dumps onto the screen the instant the card opens.
+// A diagram hotspot click opens it automatically (see the script below), so
+// the diagram stays the fast path in either state.
+//
+// This used to be gone entirely — step bodies are short enough to simply show
+// — but the six-card panel got long enough that opening one card was a wall of
+// text before a reader had even looked at the diagram. Nesting one more
+// `<details>` costs less than that wall did. `details[].body` staying two to
+// three sentences is still load-bearing: this toggle reveals all of them at
+// once, not one at a time, so length is still what keeps it readable once
+// open.
 //
 // Order inside an open card is deliberate: the diagram gives you the shape, the
 // clip shows it running, the steps say why. An absent clip renders nothing.
@@ -32,6 +39,7 @@ interface CardDetail {
   keywords?: string[];
   body: string;
   evidence?: { label: string; href: string };
+  planned?: boolean;
 }
 
 interface Props {
@@ -79,43 +87,53 @@ const cardId = `card-${roleSlug}`;
     <VideoSlot video={video} label="Recorded run" />
 
     {hasFlow && (
-      <div class="detail-list">
-        {details.map((detail) => (
-          <section class="detail" data-detail-target={detail.id}>
-            <h6>
-              <button class="detail-jump" type="button">
-                {detail.title}
-                <span class="detail-jump-hint" aria-hidden="true">↑ diagram</span>
-              </button>
-            </h6>
-            {detail.keywords && detail.keywords.length > 0 && (
-              <p class="detail-keywords">
-                {detail.keywords.map((keyword) => <span class="keyword">{keyword}</span>)}
-              </p>
-            )}
-            <p>{detail.body}</p>
-            {detail.evidence && (
-              <a
-                class="detail-evidence"
-                href={detail.evidence.href}
-                target={detail.evidence.href.includes("#card-") ? undefined : "_blank"}
-                rel={detail.evidence.href.includes("#card-") ? undefined : "noopener noreferrer"}
-              >
-                {detail.evidence.label}
-                {detail.evidence.href.includes("#card-") ? (
-                  <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
-                    <path d="M2.5 6 H9.5 M6 2.5 L9.5 6 L6 9.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
-                    <path d="M3.5 8.5 L8.5 3.5 M8.5 3.5 H4.9 M8.5 3.5 V7.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                )}
-              </a>
-            )}
-          </section>
-        ))}
-      </div>
+      <details class="detail-list-wrap">
+        <summary class="detail-list-summary">
+          <span class="detail-list-toggle-open">Show {details.length} steps</span>
+          <span class="detail-list-toggle-close">Hide steps</span>
+          <svg class="detail-list-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+            <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </summary>
+        <div class="detail-list">
+          {details.map((detail) => (
+            <section class="detail" data-detail-target={detail.id} class:list={{ "is-planned": detail.planned }}>
+              <h6>
+                <button class="detail-jump" type="button">
+                  {detail.title}
+                  {detail.planned && <span class="planned-tag">Planned</span>}
+                  <span class="detail-jump-hint" aria-hidden="true">↑ diagram</span>
+                </button>
+              </h6>
+              {detail.keywords && detail.keywords.length > 0 && (
+                <p class="detail-keywords">
+                  {detail.keywords.map((keyword) => <span class="keyword">{keyword}</span>)}
+                </p>
+              )}
+              <p>{detail.body}</p>
+              {detail.evidence && (
+                <a
+                  class="detail-evidence"
+                  href={detail.evidence.href}
+                  target={detail.evidence.href.includes("#card-") ? undefined : "_blank"}
+                  rel={detail.evidence.href.includes("#card-") ? undefined : "noopener noreferrer"}
+                >
+                  {detail.evidence.label}
+                  {detail.evidence.href.includes("#card-") ? (
+                    <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
+                      <path d="M2.5 6 H9.5 M6 2.5 L9.5 6 L6 9.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
+                      <path d="M3.5 8.5 L8.5 3.5 M8.5 3.5 H4.9 M8.5 3.5 V7.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  )}
+                </a>
+              )}
+            </section>
+          ))}
+        </div>
+      </details>
     )}
 
     {hasBody && (
@@ -127,10 +145,12 @@ const cardId = `card-${roleSlug}`;
 </details>
 
 <script>
-  // The steps are always visible now, so a diagram click is purely a pointer:
-  // it highlights the matching step and scrolls to it. The return trip lights
-  // the diagram box back up. Both halves share `is-active` and are cleared
-  // together — a reset must never leave a step lit with nothing selected.
+  // The steps sit behind their own collapsed `<details>`, so a diagram click
+  // has to open that before it can highlight or scroll to anything — a step
+  // hidden by a closed disclosure can't be scrolled into view. The return
+  // trip lights the diagram box back up. Both halves share `is-active` and
+  // are cleared together — a reset must never leave a step lit with nothing
+  // selected.
   const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const cards = document.querySelectorAll<HTMLDetailsElement>(".card");
 
@@ -142,6 +162,17 @@ const cardId = `card-${roleSlug}`;
 
   for (const card of cards) {
     const diagram = card.querySelector<HTMLElement>(".card-diagram");
+    const stepsWrap = card.querySelector<HTMLDetailsElement>(".detail-list-wrap");
+
+    // Closing the card also closes its steps — reopening the card later
+    // should never skip the collapsed state just because it was left open
+    // earlier in the same visit.
+    card.addEventListener("toggle", () => {
+      if (!card.open) {
+        if (stepsWrap) stepsWrap.open = false;
+        clearActive(card);
+      }
+    });
 
     for (const detail of card.querySelectorAll<HTMLElement>("[data-detail-target]")) {
       const jumpToDiagram = () => {
@@ -175,6 +206,10 @@ const cardId = `card-${roleSlug}`;
         );
         if (!target) return;
 
+        // The step this hotspot points at may be behind the collapsed steps
+        // toggle — open it first, or there's nothing visible to scroll to.
+        if (stepsWrap && !stepsWrap.open) stepsWrap.open = true;
+
         clearActive(card);
         target.classList.add("is-active");
         hotspot.classList.add("is-active");
@@ -194,6 +229,8 @@ const cardId = `card-${roleSlug}`;
   document.addEventListener("cards:reset", () => {
     for (const card of cards) {
       card.open = false;
+      const stepsWrap = card.querySelector<HTMLDetailsElement>(".detail-list-wrap");
+      if (stepsWrap) stepsWrap.open = false;
       clearActive(card);
     }
   });

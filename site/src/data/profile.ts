@@ -14,8 +14,23 @@ import identity from "./profile.json";
 
 export const profile = {
   ...identity,
-  location: null as string | null,
-  email: "enriquedelapenajr@gmail.com",
+  // City-level and no further. It is what a recruiter needs to settle timezone
+  // and work authorisation in one glance; a street address is not something a
+  // portfolio ever has a reason to carry.
+  location: "Metro Manila, Philippines" as string | null,
+  // Long form, for the hero facts row where there is room for it.
+  locationFull: "Metro Manila, National Capital Region, Philippines",
+  timezone: "UTC+8",
+  // An alias on the domain, routed to the personal inbox by Cloudflare Email
+  // Routing — deliberately not the Gmail address behind it. This one is
+  // published in plain text and in the JSON-LD, so it will be scraped; the
+  // point is that what gets scraped is disposable. The address behind it is
+  // also the Google account recovery address, which is not something to hand
+  // out with a public tool stack sitting next to it.
+  //
+  // Routing forwards but does not send: replies leave from the personal
+  // address. That is fine against scraping and is not a send-as solution.
+  email: "hire@galaxxigames.com",
   // Structured data only (schema.org `sameAs`) — there is no site-wide GitHub
   // button any more. Source links are per game.
   github: "https://github.com/trake25",
@@ -29,7 +44,28 @@ export const profile = {
     { label: "itch.io", href: null },
     { label: "Add another", href: null },
   ] as { label: string; href: string | null }[],
+  // The downloadable CV. Served from site/public/ rather than R2 on purpose: it
+  // deploys with the site, versions in git, and needs no second credential or
+  // deploy path for a file that changes when the site does.
+  //
+  // What goes in that PDF is a security decision, not a formatting one. City
+  // and country, email, LinkedIn — and no street address and no phone number.
+  // Nothing an ATS needs is missing, and there is then nothing on the file
+  // worth gating. The version carrying a phone number goes out by email, to
+  // someone who has already made contact.
+  //
+  // `href: null` hides the button, same convention as `links` above. Keep it
+  // null until the file actually exists at that path.
+  cv: {
+    href: "/cv/Enrique-Dela-Pena-Jr-CV.pdf" as string | null,
+    label: "Download CV (PDF)",
+    updated: "August 2026",
+  },
   // Shown in the availability line. Set to null to hide the whole line.
+  // Says what the hero facts cannot fit rather than repeating them: the same
+  // role targets and the same remote/hybrid position, plus the working window.
+  // Timezone notation is UTC+8 in both places on purpose — one page should not
+  // switch between UTC and GMT halfway down.
   availability:
-    "Open to Platform and DevOps roles, full-time or contract — agent-assisted workflows with minimal human intervention.",
+    "Open to Platform, Cloud and DevOps roles, full-time or contract — including teams building agent-assisted delivery workflows. Remote preferred, hybrid possible in the Philippines. Working hours 5 AM – 8 PM (UTC+8).",
 } as const;

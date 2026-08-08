@@ -55,6 +55,11 @@ const cards = defineCollection({
           // next to the claim it backs. The schema checks the URL is well
           // formed — it cannot check the anchor still resolves.
           evidence: z.object({ label: z.string(), href: z.string().url() }).optional(),
+          // Marks a step that describes future work rather than something
+          // built today. Renders greyed out with a "Planned" tag in both the
+          // written step and its diagram hotspot — the claim stays visible,
+          // but visually distinct from what already ships.
+          planned: z.boolean().default(false),
         })
       )
       .default([]),
