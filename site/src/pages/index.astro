@@ -408,6 +408,20 @@ const year = new Date().getFullYear();
       }
     };
 
+    // A `toggle` does not mean the reader did anything. A tile marked open in
+    // the HTML fires one as the page is parsed, and a deep link opens tiles
+    // programmatically — scrolling on either is wrong. The first drags a fresh
+    // visitor past the hero into whichever tile happens to be open by default;
+    // the second fights revealHash's own scroll. So the scroll is owed only to
+    // a summary the reader actually activated. Keyboard activation of a
+    // <summary> dispatches a click too, so this covers both.
+    let activated: HTMLDetailsElement | null = null;
+    group.addEventListener("click", (event) => {
+      const parent = (event.target as HTMLElement).closest("summary")?.parentElement;
+      activated =
+        parent instanceof HTMLDetailsElement && items.includes(parent) ? parent : null;
+    });
+
     for (const item of items) {
       item.addEventListener("toggle", () => {
         if (item.open) {
@@ -419,7 +433,10 @@ const year = new Date().getFullYear();
 
           // Everything above the open tile just disappeared, which drags it up
           // under the reader's cursor. Put it back where they are looking.
-          item.scrollIntoView({ block: "start", behavior: motionOk ? "smooth" : "auto" });
+          if (activated === item) {
+            activated = null;
+            item.scrollIntoView({ block: "start", behavior: motionOk ? "smooth" : "auto" });
+          }
           return;
         }
 
@@ -431,20 +448,30 @@ const year = new Date().getFullYear();
           return;
         }
 
+        // Nothing to keep in view if the tile is not on the page — a role
+        // filter change closes every card and hides most of them in the same
+        // beat, and measuring one of those gives a zero box and a wild jump.
+        const box = item.getBoundingClientRect();
+        if (item.hidden || box.height === 0) {
+          sync();
+          return;
+        }
+
         // Restoring the siblings puts every tile above this one back on the
         // page, pushing it down by their combined height — from the reader's
         // side the page appears to jump back to the top of the list. Measure
         // the tile either side of the change and cancel the difference out, so
         // the tile they just closed stays under their eye.
-        const before = item.getBoundingClientRect().top;
+        const before = box.top;
         sync();
         const shift = item.getBoundingClientRect().top - before;
         if (shift !== 0) window.scrollBy({ top: shift, behavior: "auto" });
       });
     }
 
-    // Tiles marked open in the HTML never fire `toggle`, so the initial state
-    // has to be applied directly.
+    // Applied directly rather than left to the toggle handler: whether a tile
+    // marked open in the HTML fires `toggle` during parse is not consistent
+    // across engines, and the peer state has to be right either way.
     sync();
   }
 
