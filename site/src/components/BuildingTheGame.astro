@@ -1,0 +1,44 @@
+---
+import CardFilter from "./CardFilter.astro";
+
+// Level 3. The only thing inside a game card that expands further, and the
+// replacement for what used to be the top-level "Skills highlights" section.
+//
+// It is styled as an inset panel rather than another card on purpose: it has to
+// read as being *inside* the game, or a reader four levels down loses track of
+// where they are. The role filter moved in here with it — filtering skills is
+// only meaningful once you are looking at the skills.
+//
+// Its label is a plain control, not a heading: the headings on this page run
+// section → vignette → game → skill → step, and inserting a sixth level here
+// would push the step titles past h6.
+interface Props {
+  roles: string[];
+  total: number;
+  intro?: string;
+}
+
+const { roles, total, intro } = Astro.props;
+---
+
+<details class="building" id="building-the-game">
+  <summary>
+    <span class="building-label">Building the game</span>
+    <span class="building-count">{total} disciplines</span>
+    <span class="building-rule" aria-hidden="true"></span>
+    <svg class="building-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+      <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </summary>
+
+  <div class="building-body">
+    {intro && <p class="building-intro">{intro}</p>}
+    <CardFilter roles={roles} total={total} />
+    <!-- One skill card open at a time. index.astro's [data-accordion] handler
+         closes the siblings, so a reader can never stack six open cards into a
+         wall four levels down. -->
+    <div class="cards" data-accordion="true">
+      <slot />
+    </div>
+  </div>
+</details>

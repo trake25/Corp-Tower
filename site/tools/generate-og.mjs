@@ -70,31 +70,41 @@ const taglineSize = fit(
   0.52
 );
 
+// Mono Slate, matching src/styles/global.css. Brass (#c9a227) marks; slate
+// neutrals carry everything else. Kept in sync by hand — this file is plain
+// Node and cannot read the stylesheet's custom properties.
+const INK = "#f0f2f4";
+const MUTED = "#a3abb5";
+const FAINT = "#6f7883";
+const LINE = "#242a32";
+const GROUND = "#101215";
+const MARK = "#c9a227";
+
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <radialGradient id="glow" cx="0.12" cy="0.06" r="0.9">
-      <stop offset="0%" stop-color="#4fd6a4" stop-opacity="0.16" />
-      <stop offset="100%" stop-color="#4fd6a4" stop-opacity="0" />
+      <stop offset="0%" stop-color="${MARK}" stop-opacity="0.13" />
+      <stop offset="100%" stop-color="${MARK}" stop-opacity="0" />
     </radialGradient>
   </defs>
 
-  <rect width="1200" height="630" fill="#08090c" />
+  <rect width="1200" height="630" fill="${GROUND}" />
   <rect width="1200" height="630" fill="url(#glow)" />
-  <rect x="0" y="0" width="1200" height="6" fill="#4fd6a4" />
+  <rect x="0" y="0" width="1200" height="5" fill="${MARK}" />
 
-  <rect x="80" y="84" width="22" height="22" rx="4" fill="#4fd6a4" />
-  <text x="122" y="103" fill="#4fd6a4" font-family="${MONO}" font-size="23" font-weight="600" letter-spacing="3.4">${esc(profile.title.toUpperCase())}</text>
+  <rect x="80" y="84" width="20" height="20" rx="3" fill="${MARK}" />
+  <text x="120" y="102" fill="${MARK}" font-family="${MONO}" font-size="23" font-weight="600" letter-spacing="3.4">${esc(profile.title.toUpperCase())}</text>
 
-  <text x="80" y="262" fill="#eef1f5" font-family="${SANS}" font-size="${nameSize}" font-weight="700" letter-spacing="-1.5">${esc(profile.name)}</text>
+  <text x="80" y="262" fill="${INK}" font-family="${SANS}" font-size="${nameSize}" font-weight="700" letter-spacing="-1.5">${esc(profile.name)}</text>
 
-  <text x="80" y="336" fill="#eef1f5" font-family="${SANS}" font-size="30" font-weight="600">${esc(profile.project)} (${esc(profile.projectShort)})</text>
+  <text x="80" y="336" fill="${INK}" font-family="${SANS}" font-size="30" font-weight="600">${esc(profile.project)} (${esc(profile.projectShort)})</text>
   ${taglineLines
-    .map((line, index) => `<text x="80" y="${384 + index * 42}" fill="#949cab" font-family="${SANS}" font-size="${taglineSize}">${esc(line)}</text>`)
+    .map((line, index) => `<text x="80" y="${384 + index * 42}" fill="${MUTED}" font-family="${SANS}" font-size="${taglineSize}">${esc(line)}</text>`)
     .join("\n  ")}
 
-  <rect x="80" y="508" width="1040" height="1" fill="#21262f" />
+  <rect x="80" y="508" width="1040" height="1" fill="${LINE}" />
 
-  <text x="80" y="556" fill="#6b7280" font-family="${MONO}" font-size="22" letter-spacing="0.6">${esc(host)}</text>
+  <text x="80" y="556" fill="${FAINT}" font-family="${MONO}" font-size="22" letter-spacing="0.6">${esc(host)}</text>
 </svg>`;
 
 mkdirSync(resolve(root, "public"), { recursive: true });

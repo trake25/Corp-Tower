@@ -1,9 +1,22 @@
 ---
-// Three states, not two:
-//   1. Vignette  — collapsed tile: role chip + summary title only.
-//   2. Open      — short description, tools & tech, and the clickable diagram.
-//   3. Flow open — click a diagram step (or the toggle) and the step-by-step
-//                  explanations appear, scrolled to the step you clicked.
+import VideoSlot from "./VideoSlot.astro";
+
+// Level 4 — a skill card inside the Building the Game panel, inside a game
+// card, inside a vignette. Two states, not three:
+//
+//   1. Vignette — collapsed tile: role chip + summary title only.
+//   2. Open     — short description, tools, then diagram → video → the written
+//                 steps, all visible at once.
+//
+// The old third state (a `.flow-toggle` hiding the steps behind "Show all 7
+// steps") is gone. Step bodies are written to two or three sentences, which is
+// short enough to simply show — and removing that toggle removes a whole level
+// of nesting from a page that already nests four deep. Length is now the thing
+// keeping the card readable, so `details[].body` staying short is load-bearing,
+// not a style preference.
+//
+// Order inside an open card is deliberate: the diagram gives you the shape, the
+// clip shows it running, the steps say why. An absent clip renders nothing.
 //
 // `links` is intentionally not rendered — the "In the repo" block was removed.
 // The data is kept in the card frontmatter so it can be brought back without
@@ -27,29 +40,27 @@ interface Props {
   plain: string;
   tools: string[];
   details: CardDetail[];
+  video?: { src: string; poster?: string; caption?: string };
   hasBody: boolean;
   links?: CardLink[];
 }
 
-const { role, headline, plain, tools, details, hasBody } = Astro.props;
+const { role, headline, plain, tools, details, video, hasBody } = Astro.props;
 const hasFlow = details.length > 0;
 const roleSlug = role.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-const flowId = `flow-${roleSlug}`;
 const cardId = `card-${roleSlug}`;
 ---
 
 <details class="card" id={cardId} data-role={role}>
   <summary>
-    <span class="vignette">
-      <span class="role-tag">{role}</span>
-      <h3 class="headline">{headline}</h3>
-      <span class="toggle-hint">
-        <span class="toggle-open">Open</span>
-        <span class="toggle-close">Close</span>
-        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
-          <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </span>
+    <span class="role-tag">{role}</span>
+    <h5 class="headline">{headline}</h5>
+    <span class="toggle-hint">
+      <span class="toggle-open">Open</span>
+      <span class="toggle-close">Close</span>
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+        <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
     </span>
   </summary>
 
@@ -65,106 +76,73 @@ const cardId = `card-${roleSlug}`;
 
     <slot name="diagram" />
 
-    {hasFlow ? (
-      <>
-        <button class="flow-toggle" type="button" aria-expanded="false" aria-controls={flowId}>
-          <span class="flow-toggle-show">Show all {details.length} steps</span>
-          <span class="flow-toggle-hide">Hide the steps</span>
-          <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">
-            <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </button>
+    <VideoSlot video={video} label="Recorded run" />
 
-        <div class="flow-details" id={flowId} hidden>
-          <div class="detail-list">
-            {details.map((detail) => (
-              <section class="detail" data-detail-target={detail.id}>
-                <h4>
-                  <button class="detail-jump" type="button">
-                    {detail.title}
-                    <span class="detail-jump-hint" aria-hidden="true">↑ diagram</span>
-                  </button>
-                </h4>
-                {detail.keywords && detail.keywords.length > 0 && (
-                  <p class="detail-keywords">
-                    {detail.keywords.map((keyword) => <span class="keyword">{keyword}</span>)}
-                  </p>
+    {hasFlow && (
+      <div class="detail-list">
+        {details.map((detail) => (
+          <section class="detail" data-detail-target={detail.id}>
+            <h6>
+              <button class="detail-jump" type="button">
+                {detail.title}
+                <span class="detail-jump-hint" aria-hidden="true">↑ diagram</span>
+              </button>
+            </h6>
+            {detail.keywords && detail.keywords.length > 0 && (
+              <p class="detail-keywords">
+                {detail.keywords.map((keyword) => <span class="keyword">{keyword}</span>)}
+              </p>
+            )}
+            <p>{detail.body}</p>
+            {detail.evidence && (
+              <a
+                class="detail-evidence"
+                href={detail.evidence.href}
+                target={detail.evidence.href.includes("#card-") ? undefined : "_blank"}
+                rel={detail.evidence.href.includes("#card-") ? undefined : "noopener noreferrer"}
+              >
+                {detail.evidence.label}
+                {detail.evidence.href.includes("#card-") ? (
+                  <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
+                    <path d="M2.5 6 H9.5 M6 2.5 L9.5 6 L6 9.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
+                    <path d="M3.5 8.5 L8.5 3.5 M8.5 3.5 H4.9 M8.5 3.5 V7.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
                 )}
-                <p>{detail.body}</p>
-                {detail.evidence && (
-                  <a
-                    class="detail-evidence"
-                    href={detail.evidence.href}
-                    target={detail.evidence.href.includes("#card-") ? undefined : "_blank"}
-                    rel={detail.evidence.href.includes("#card-") ? undefined : "noopener noreferrer"}
-                  >
-                    {detail.evidence.label}
-                    {detail.evidence.href.includes("#card-") ? (
-                      <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
-                        <path d="M2.5 6 H9.5 M6 2.5 L9.5 6 L6 9.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
-                        <path d="M3.5 8.5 L8.5 3.5 M8.5 3.5 H4.9 M8.5 3.5 V7.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
-                    )}
-                  </a>
-                )}
-              </section>
-            ))}
-          </div>
-          {hasBody && (
-            <div class="flow-body">
-              <slot />
-            </div>
-          )}
-        </div>
-      </>
-    ) : (
-      hasBody && (
-        <div class="flow-body">
-          <slot />
-        </div>
-      )
+              </a>
+            )}
+          </section>
+        ))}
+      </div>
+    )}
+
+    {hasBody && (
+      <div class="flow-body">
+        <slot />
+      </div>
     )}
   </div>
 </details>
 
 <script>
-  // Diagram steps reveal the write-up rather than navigating anywhere: the flow
-  // details start hidden, clicking any step (or the toggle) opens them, and the
-  // step you clicked is highlighted and scrolled to. The toggle stays available
-  // in both directions so an opened flow can be put away again.
+  // The steps are always visible now, so a diagram click is purely a pointer:
+  // it highlights the matching step and scrolls to it. The return trip lights
+  // the diagram box back up. Both halves share `is-active` and are cleared
+  // together — a reset must never leave a step lit with nothing selected.
   const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
   const cards = document.querySelectorAll<HTMLDetailsElement>(".card");
 
-  // Both halves highlight, so both have to be cleared together — otherwise a
-  // reset leaves a diagram step lit with nothing selected below it.
   const clearActive = (card: HTMLElement) => {
     for (const marked of card.querySelectorAll<HTMLElement>(".is-active")) {
       marked.classList.remove("is-active");
     }
   };
 
-  const setFlow = (card: HTMLElement, open: boolean) => {
-    const flow = card.querySelector<HTMLElement>(".flow-details");
-    const toggle = card.querySelector<HTMLButtonElement>(".flow-toggle");
-    if (flow) flow.hidden = !open;
-    toggle?.setAttribute("aria-expanded", String(open));
-    if (!open) clearActive(card);
-  };
-
   for (const card of cards) {
-    const toggle = card.querySelector<HTMLButtonElement>(".flow-toggle");
     const diagram = card.querySelector<HTMLElement>(".card-diagram");
 
-    toggle?.addEventListener("click", () => {
-      setFlow(card, toggle.getAttribute("aria-expanded") !== "true");
-    });
-
-    // The trip back: clicking a written step returns to the diagram and lights
-    // up the step it came from, so the two halves stay tied together.
     for (const detail of card.querySelectorAll<HTMLElement>("[data-detail-target]")) {
       const jumpToDiagram = () => {
         if (!diagram) return;
@@ -182,8 +160,6 @@ const cardId = `card-${roleSlug}`;
       // is selecting text out of it — a drag-select ends in a click too.
       detail.addEventListener("click", (event) => {
         const target = event.target as HTMLElement;
-        // The jump button handles itself; the evidence link must be allowed to
-        // navigate rather than being swallowed by the block-level jump.
         if (target.closest(".detail-jump") || target.closest("a")) return;
         if ((window.getSelection()?.toString() ?? "").length > 0) return;
         jumpToDiagram();
@@ -193,7 +169,6 @@ const cardId = `card-${roleSlug}`;
     for (const hotspot of card.querySelectorAll<HTMLElement>("[data-detail]")) {
       const reveal = (event: Event) => {
         event.preventDefault();
-        setFlow(card, true);
 
         const target = card.querySelector<HTMLElement>(
           `[data-detail-target="${hotspot.dataset.detail}"]`
@@ -202,6 +177,7 @@ const cardId = `card-${roleSlug}`;
 
         clearActive(card);
         target.classList.add("is-active");
+        hotspot.classList.add("is-active");
         target.scrollIntoView({ block: "center", behavior: motionOk ? "smooth" : "auto" });
       };
 
@@ -218,28 +194,7 @@ const cardId = `card-${roleSlug}`;
   document.addEventListener("cards:reset", () => {
     for (const card of cards) {
       card.open = false;
-      setFlow(card, false);
+      clearActive(card);
     }
   });
-
-  for (const link of document.querySelectorAll<HTMLElement>('a[href*="#card-"]')) {
-    link.addEventListener("click", (event) => {
-      const hrefAttr = link.getAttribute("href");
-      if (!hrefAttr) return;
-
-      const hash = new URL(hrefAttr, document.baseURI).hash;
-      const targetCard = document.querySelector<HTMLDetailsElement>(hash);
-      if (!targetCard) return;
-
-      event.preventDefault();
-
-      const filterButton = document.querySelector<HTMLButtonElement>(
-        `.filter button[data-filter="${targetCard.dataset.role}"]`
-      );
-      filterButton?.click();
-
-      targetCard.open = true;
-      targetCard.scrollIntoView({ block: "start", behavior: motionOk ? "smooth" : "auto" });
-    });
-  }
 </script>

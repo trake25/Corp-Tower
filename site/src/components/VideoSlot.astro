@@ -1,0 +1,33 @@
+---
+// An absent `video` renders nothing at all — no player, no poster frame, no
+// "recording coming soon". That is the whole point: the six Building the Game
+// sections and the game cards can ship with none of their clips recorded and
+// the layout simply closes up. Adding one is a `video:` block in frontmatter.
+//
+// `preload="none"` with a poster means the browser fetches a single image, not
+// the clip, until someone presses play — six of these on one page would
+// otherwise be a very expensive visit.
+interface Props {
+  video?: { src: string; poster?: string; caption?: string };
+  label?: string;
+}
+
+const { video, label } = Astro.props;
+---
+
+{video && (
+  <figure class="clip">
+    {/* A <span>, not a second <figcaption> — a <figure> may only have one. */}
+    {label && <span class="clip-label">{label}</span>}
+    <video
+      class="clip-player"
+      src={video.src}
+      poster={video.poster}
+      controls
+      preload="none"
+      playsinline
+      muted
+    ></video>
+    {video.caption && <figcaption class="clip-caption">{video.caption}</figcaption>}
+  </figure>
+)}

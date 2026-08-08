@@ -1,0 +1,45 @@
+---
+// Section 00. Not a table of contents — a shortcut straight out of the site for
+// a visitor who came to play rather than to read. Every destination here is a
+// place the game actually runs, which is why it reads `links` and never `repo`.
+//
+// The title links to the first destination so a click anywhere obvious gets you
+// playing; the chips name every destination so nobody has to guess where the
+// title goes. A game with no `links` is skipped rather than rendered dead.
+interface PlayableGame {
+  title: string;
+  status: "production" | "development";
+  links: { label: string; href: string }[];
+}
+
+interface Props {
+  games: PlayableGame[];
+}
+
+const { games } = Astro.props;
+const playable = games.filter((game) => game.links.length > 0);
+---
+
+{playable.length > 0 && (
+  <ul class="playables">
+    {playable.map((game) => (
+      <li class="playable">
+        <a class="playable-title" href={game.links[0].href} target="_blank" rel="noopener noreferrer">
+          {game.title}
+        </a>
+        {game.status === "development" && <span class="playable-status">Demo</span>}
+        <span class="playable-rule" aria-hidden="true"></span>
+        <span class="playable-links">
+          {game.links.map((link) => (
+            <a class="playable-link" href={link.href} target="_blank" rel="noopener noreferrer">
+              {link.label}
+              <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false">
+                <path d="M3.5 8.5 L8.5 3.5 M8.5 3.5 H4.9 M8.5 3.5 V7.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+          ))}
+        </span>
+      </li>
+    ))}
+  </ul>
+)}

@@ -1,62 +1,88 @@
 /* ==========================================================================
    Top or Drop (TOD) — portfolio
-   Dark-first. One accent, one mono face for labels and numerals. No webfont
-   request: the display weight comes from scale and tracking, not from a
-   third-party download on a site whose pitch is engineering discipline.
+   Mono Slate. Dark-first, near-monochrome slate. No webfont request: the
+   display weight comes from scale and tracking, not a third-party download on
+   a site whose pitch is engineering discipline.
+
+   TWO colours, and they do different jobs — keep them apart:
+
+     --accent  brass. Spent only on *state and category*: section numbers, the
+               role chip, an open chevron, the current role, the active step,
+               an evidence link, the forward path in a diagram. If it is not
+               marking something, it should not be brass.
+     --action  near-white (near-black in light). The primary button and the
+               pressed filter — the things you click to do something.
+
+   Painting a primary button brass, or a status pill in --action, is what turns
+   this from Mono Slate into a generic dark theme. The restraint is the design.
+
+   Density is also deliberate: smaller steps, tighter leading and 4-6px radii,
+   so a reader four levels down sees a whole skill card rather than scrolling
+   through one.
    ========================================================================== */
 
 :root {
   color-scheme: dark light;
 
-  --bg: #08090c;
-  --bg-alt: #0c0e13;
-  --surface: #11141b;
-  --surface-hover: #161a23;
-  --fg: #eef1f5;
-  --fg-muted: #949cab;
-  --fg-faint: #6b7280;
-  --border: #21262f;
-  --border-strong: #2f3742;
+  --bg: #101215;
+  --bg-alt: #161a1f;
+  --surface: #1b2027;
+  --surface-hover: #222932;
+  --fg: #f0f2f4;
+  --fg-muted: #a3abb5;
+  --fg-faint: #6f7883;
+  --border: #242a32;
+  --border-strong: #39414b;
 
-  --accent: #4fd6a4;
-  --accent-dim: #2a8f6c;
-  --accent-fg: #04120c;
-  --accent-glow: rgba(79, 214, 164, 0.14);
+  --accent: #c9a227;
+  --accent-dim: #8f7420;
+  --accent-fg: #181402;
+  --accent-glow: rgba(201, 162, 39, 0.12);
 
-  --max-width: 1080px;
-  --measure: 68ch;
-  --radius: 14px;
-  --radius-sm: 8px;
+  --action: #f0f2f4;
+  --action-fg: #101215;
+
+  --max-width: 1120px;
+  --measure: 66ch;
+  --radius: 6px;
+  --radius-sm: 4px;
 
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
 
-  --step--1: clamp(0.8rem, 0.77rem + 0.15vw, 0.875rem);
-  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.075rem);
-  --step-1: clamp(1.15rem, 1.08rem + 0.35vw, 1.35rem);
-  --step-2: clamp(1.4rem, 1.25rem + 0.7vw, 1.85rem);
-  --step-3: clamp(1.8rem, 1.5rem + 1.4vw, 2.6rem);
-  --step-4: clamp(2.2rem, 1.6rem + 3vw, 4rem);
+  --step--1: clamp(0.775rem, 0.755rem + 0.1vw, 0.825rem);
+  --step-0: clamp(0.9rem, 0.875rem + 0.13vw, 0.955rem);
+  --step-1: clamp(1.05rem, 0.99rem + 0.3vw, 1.22rem);
+  --step-2: clamp(1.25rem, 1.12rem + 0.62vw, 1.62rem);
+  --step-3: clamp(1.55rem, 1.3rem + 1.15vw, 2.2rem);
+  --step-4: clamp(1.8rem, 1.35rem + 2.4vw, 2.9rem);
 }
 
+/* The light counterpart. Mono Slate is dark-first, so this is a translation
+   rather than an inversion: the same slate neutrals lightened, and the brass
+   darkened to #8a6d11 because #c9a227 has nowhere near enough contrast on a
+   light ground. */
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #fbfbfc;
-    --bg-alt: #f3f5f7;
+    --bg: #f7f8f9;
+    --bg-alt: #eef0f2;
     --surface: #ffffff;
-    --surface-hover: #f7f9fa;
-    --fg: #14171c;
-    --fg-muted: #4f5866;
-    --fg-faint: #767f8c;
-    --border: #e2e6eb;
-    --border-strong: #cdd4dc;
+    --surface-hover: #f4f6f7;
+    --fg: #14171b;
+    --fg-muted: #4d545d;
+    --fg-faint: #767d87;
+    --border: #e0e3e7;
+    --border-strong: #c6cbd1;
 
-    --accent: #0e7a58;
-    --accent-dim: #0e7a58;
+    --accent: #8a6d11;
+    --accent-dim: #8a6d11;
     --accent-fg: #ffffff;
-    --accent-glow: rgba(14, 122, 88, 0.1);
+    --accent-glow: rgba(138, 109, 17, 0.09);
+
+    --action: #14171b;
+    --action-fg: #f7f8f9;
   }
 }
 
@@ -78,7 +104,7 @@ body {
   color: var(--fg);
   font-family: var(--font-sans);
   font-size: var(--step-0);
-  line-height: 1.6;
+  line-height: 1.58;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -194,17 +220,15 @@ h3 {
   color: var(--fg);
 }
 
+/* No pill, no border. Mono Slate marks the primary nav item with colour alone
+   — a bordered chip up here competes with the tiles below it. */
 .site-header nav a.nav-cta {
   color: var(--accent);
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  padding: 0.3rem 0.85rem;
   font-weight: 600;
 }
 
 .site-header nav a.nav-cta:hover {
-  border-color: var(--accent);
-  background: var(--accent-glow);
+  color: var(--fg);
 }
 
 /* --- Layout -------------------------------------------------------------- */
@@ -216,13 +240,13 @@ main {
 }
 
 main > section {
-  padding: 4.5rem 0;
+  padding: 3.25rem 0;
   border-top: 1px solid var(--border);
 }
 
 main > section:first-child {
   border-top: 0;
-  padding-top: 3.5rem;
+  padding-top: 2.75rem;
 }
 
 .section-title {
@@ -286,15 +310,6 @@ main > section:first-child {
 
 /* --- Stack + CTAs -------------------------------------------------------- */
 
-.stack-line {
-  font-family: var(--font-mono);
-  font-size: var(--step--1);
-  color: var(--fg-faint);
-  line-height: 1.9;
-  max-width: var(--measure);
-  margin: 0 0 2rem;
-}
-
 .ctas,
 .contact-links {
   display: flex;
@@ -307,33 +322,31 @@ main > section:first-child {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.7rem 1.4rem;
-  border-radius: 999px;
+  padding: 0.55rem 1.05rem;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
   font-size: var(--step--1);
   font-weight: 600;
   text-decoration: none;
   color: var(--fg);
-  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.cta:hover {
-  transform: translateY(-1px);
-}
-
+/* --action, not --accent: this is a thing you click, not a status. */
 .cta.primary {
-  background: var(--accent);
-  color: var(--accent-fg);
-  border-color: var(--accent);
+  background: var(--action);
+  color: var(--action-fg);
+  border-color: var(--action);
 }
 
 .cta.primary:hover {
-  background: color-mix(in srgb, var(--accent) 88%, #fff);
+  background: color-mix(in srgb, var(--action) 88%, var(--accent));
+  border-color: color-mix(in srgb, var(--action) 88%, var(--accent));
 }
 
 .cta.secondary:hover {
-  border-color: var(--accent);
-  background: var(--accent-glow);
+  border-color: var(--fg);
+  background: var(--surface-hover);
 }
 
 .cta.ghost {
@@ -344,13 +357,6 @@ main > section:first-child {
 
 .cta.ghost:hover {
   color: var(--fg);
-}
-
-.disclosure {
-  color: var(--fg-faint);
-  font-size: var(--step--1);
-  max-width: var(--measure);
-  margin: 0;
 }
 
 /* --- Diagrams ------------------------------------------------------------
@@ -435,26 +441,25 @@ main > section:first-child {
 .filter button {
   font: inherit;
   font-size: var(--step--1);
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0.4rem 0.95rem;
-  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
   background: transparent;
-  color: var(--fg-muted);
+  color: var(--fg-faint);
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .filter button:hover {
   color: var(--fg);
-  border-color: var(--accent);
+  border-color: var(--fg);
 }
 
 .filter button[aria-pressed="true"] {
-  background: var(--accent);
-  color: var(--accent-fg);
-  border-color: var(--accent);
-  font-weight: 650;
+  background: var(--action);
+  color: var(--action-fg);
+  border-color: var(--action);
 }
 
 .filter-count {
@@ -468,13 +473,14 @@ main > section:first-child {
 
 /* --- Cards --------------------------------------------------------------- */
 
-/* Closed cards tile as vignettes; an open one takes the full row so its diagram
-   has the width it needs. */
+/* Level 4. Smaller tiles than a game or job card because they sit inset inside
+   one; an open card still takes the full row so its diagram has the width it
+   needs. */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   align-items: start;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .card {
@@ -499,56 +505,51 @@ main > section:first-child {
   background: var(--surface);
 }
 
+/* summary is the flex container itself. A wrapper element around the heading
+   would be invalid: <summary> takes phrasing content intermixed with headings,
+   and a <span> may not contain an <h5>. */
 .card summary {
   cursor: pointer;
   list-style: none;
-  display: block;
-  padding: 1.4rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.8rem;
+  min-height: 7.5rem;
+  padding: 1.2rem 1.3rem;
 }
 
 .card summary::-webkit-details-marker {
   display: none;
 }
 
-.vignette {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.85rem;
-  min-height: 8.5rem;
-}
-
-.card[open] .vignette {
+.card[open] summary {
   min-height: 0;
   gap: 0.7rem;
 }
 
-/* The title is the vignette's whole payload, so it grows to fill the tile and
-   pushes the open/close hint to the bottom edge — every tile lines up. */
-.vignette .headline {
-  flex: 1;
-}
-
+/* Brass text alone — no chip. It is a category label on the smallest tile on
+   the page, and a bordered pill at this size is mostly border. */
 .role-tag {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--accent);
-  background: var(--accent-glow);
-  border: 1px solid var(--accent-dim);
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  border-radius: 999px;
-  padding: 0.25rem 0.7rem;
   flex-shrink: 0;
 }
 
+/* Grows to fill the tile so the open/close hint is pushed to the bottom edge
+   and every tile in the row lines up. Deliberately smaller than a game or job
+   title: this is the deepest tile on the page and should not compete with the
+   game it sits inside. */
 .card .headline {
-  font-size: var(--step-1);
+  flex: 1;
+  font-size: var(--step-0);
   font-weight: 650;
   letter-spacing: -0.015em;
-  line-height: 1.25;
+  line-height: 1.3;
   margin: 0;
   max-width: 46ch;
 }
@@ -581,13 +582,13 @@ main > section:first-child {
 
 .card-tools .tool {
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   letter-spacing: 0.04em;
-  color: var(--fg-muted);
+  color: var(--fg-faint);
   background: var(--bg-alt);
   border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.2rem 0.62rem;
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.5rem;
 }
 
 .toggle-hint {
@@ -628,56 +629,7 @@ main > section:first-child {
 /* --- Expanded card body -------------------------------------------------- */
 
 .expanded {
-  padding: 0 1.5rem 1.75rem;
-  animation: reveal 0.28s ease both;
-}
-
-/* Opens and closes the whole write-up. Stays available in both directions, and
-   doubles as the route in for anyone who doesn't realise the diagram steps are
-   clickable — including anyone not using a pointer. */
-.flow-toggle {
-  font: inherit;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  cursor: pointer;
-  background: none;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  color: var(--fg-muted);
-  padding: 0.4rem 0.9rem;
-  margin-top: 0.5rem;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-}
-
-.flow-toggle:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: var(--accent-glow);
-}
-
-.flow-toggle svg {
-  transition: transform 0.2s ease;
-}
-
-.flow-toggle[aria-expanded="true"] svg {
-  transform: rotate(180deg);
-}
-
-.flow-toggle[aria-expanded="false"] .flow-toggle-hide,
-.flow-toggle[aria-expanded="true"] .flow-toggle-show {
-  display: none;
-}
-
-.flow-details[hidden] {
-  display: none;
-}
-
-.flow-details {
-  margin-top: 1.75rem;
+  padding: 0 1.3rem 1.5rem;
   animation: reveal 0.28s ease both;
 }
 
@@ -720,7 +672,11 @@ main > section:first-child {
 .detail-list {
   display: grid;
   gap: 0.6rem;
-  margin-bottom: 2rem;
+  margin: 1.5rem 0 0;
+}
+
+.detail-list + .flow-body {
+  margin-top: 1.75rem;
 }
 
 .detail {
@@ -737,8 +693,9 @@ main > section:first-child {
   cursor: pointer;
 }
 
-.detail h4 {
+.detail h6 {
   margin: 0 0 0.4rem;
+  font-weight: 650;
 }
 
 /* Looks like the heading it replaces; it is a real button so the trip back to
@@ -797,13 +754,13 @@ main > section:first-child {
 
 .detail-keywords .keyword {
   font-family: var(--font-mono);
-  font-size: 0.64rem;
-  letter-spacing: 0.06em;
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--fg-faint);
   border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.16rem 0.55rem;
+  border-radius: var(--radius-sm);
+  padding: 0.12rem 0.45rem;
 }
 
 .detail.is-active .keyword {
@@ -823,9 +780,9 @@ main > section:first-child {
   gap: 0.35rem;
   margin-top: 0.7rem;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   letter-spacing: 0.03em;
-  color: var(--fg-muted);
+  color: var(--accent);
   text-decoration: none;
   border-bottom: 1px solid var(--border-strong);
   padding-bottom: 0.1rem;
@@ -1032,54 +989,471 @@ main > section:first-child {
   stroke-width: 1.5;
 }
 
-/* --- Services ------------------------------------------------------------ */
+/* ==========================================================================
+   The four disclosure levels
+   --------------------------------------------------------------------------
+   This page nests four deep — vignette → game → building panel → skill card —
+   and the single thing that keeps it readable is that no two adjacent levels
+   look alike. A reader should be able to tell how deep they are from the shape
+   of what they are looking at, without counting chevrons.
 
-.services {
+     0  section        numbered heading, never collapses
+     1  vignette       full-width band: label, count, rule, chevron
+     2  game / job     tile in a grid, one line of meta when closed
+     3  building       inset tinted panel with an accent edge
+     4  skill card     small tile inside that panel
+
+   If a new level is ever added it needs its own grammar too, or the whole
+   thing collapses back into accordion soup.
+   ========================================================================== */
+
+/* --- Level 1: vignette ---------------------------------------------------
+   A divider that opens, not a card. Giving it a background and a border would
+   make it read as the same kind of object as the game tiles inside it.
+   -------------------------------------------------------------------------- */
+
+.vignettes {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1rem;
+  gap: 0.4rem;
 }
 
-.service {
+.vignette > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 0.15rem;
+  border-top: 1px solid var(--border);
+}
+
+.vignette > summary::-webkit-details-marker {
+  display: none;
+}
+
+.vignette-label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin: 0;
+  transition: color 0.15s ease;
+}
+
+/* Plain mono, no chip. A count is a footnote to the label beside it. */
+.vignette-count,
+.building-count {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+
+.vignette-rule,
+.building-rule {
+  flex: 1;
+  min-width: 1rem;
+  height: 1px;
+  background: var(--border);
+  transition: background 0.15s ease;
+}
+
+.vignette-chevron,
+.building-chevron,
+.game-chevron,
+.job-chevron {
+  flex-shrink: 0;
+  color: var(--fg-faint);
+  transition: transform 0.2s ease, color 0.15s ease;
+}
+
+.vignette[open] > summary .vignette-chevron,
+.building[open] > summary .building-chevron {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.vignette > summary:hover .vignette-label,
+.building > summary:hover .building-label {
+  color: var(--accent);
+}
+
+.vignette > summary:hover .vignette-rule,
+.building > summary:hover .building-rule {
+  background: var(--accent-dim);
+}
+
+.vignette-body {
+  padding: 0.35rem 0 1.6rem;
+  animation: reveal 0.28s ease both;
+}
+
+.vignette-note {
+  color: var(--fg-faint);
+  font-size: var(--step--1);
+  max-width: var(--measure);
+  margin: 0 0 1rem;
+}
+
+/* --- Level 2: game and job tiles -----------------------------------------
+   Both are the same kind of object and are styled together on purpose: a
+   reader who has learned that a tile opens in Games should not have to learn
+   it again in the CV.
+   -------------------------------------------------------------------------- */
+
+.game-list,
+.job-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  align-items: start;
+  gap: 0.9rem;
+}
+
+.game,
+.job {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.5rem 1.6rem;
+  transition: border-color 0.18s ease, background 0.18s ease;
 }
 
-.service h3 {
-  font-size: var(--step-0);
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  margin: 0 0 0.7rem;
+.game:hover,
+.job:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
 }
 
-.service p {
+/* An open tile takes the whole row — the diagrams four levels down need every
+   pixel of width they can get. */
+.game[open],
+.job[open] {
+  grid-column: 1 / -1;
+  border-color: var(--accent-dim);
+  background: var(--surface);
+}
+
+.game > summary,
+.job > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.3rem 1.5rem;
+}
+
+.game > summary::-webkit-details-marker,
+.job > summary::-webkit-details-marker {
+  display: none;
+}
+
+.game-title,
+.job-role {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
   margin: 0;
-  color: var(--fg-muted);
+  font-size: var(--step-1);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  transition: color 0.15s ease;
+}
+
+.game-chevron,
+.job-chevron {
+  margin-left: auto;
+}
+
+.game[open] > summary .game-chevron,
+.job[open] > summary .job-chevron {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.game > summary:hover .game-title,
+.job > summary:hover .job-role {
+  color: var(--accent);
+}
+
+.game-tagline,
+.job-company {
   font-size: var(--step--1);
-  line-height: 1.65;
+  color: var(--fg-muted);
 }
 
-.how-i-work {
-  margin-top: 1rem;
-  padding: 1.6rem 1.75rem;
+.job-location,
+.job-summary {
+  color: var(--fg-faint);
+}
+
+.job-summary {
+  font-size: var(--step--1);
+  max-width: var(--measure);
+}
+
+.job-dates {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--fg-faint);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--radius);
-  background: var(--bg-alt);
+  border-radius: var(--radius-sm);
+  padding: 0.1rem 0.45rem;
+  white-space: nowrap;
 }
 
-.how-i-work h3 {
-  font-size: var(--step-0);
-  font-weight: 650;
-  margin: 0 0 0.7rem;
+/* A role that is still running is the one fact worth colouring in a list of
+   dates that otherwise all look alike — exactly the kind of state brass is
+   reserved for. */
+.job-dates[data-current="true"] {
+  color: var(--accent);
+  border-color: var(--accent-dim);
 }
 
-.how-i-work p {
-  margin: 0;
+.game-body,
+.job-body {
+  padding: 0 1.5rem 1.6rem;
+  animation: reveal 0.28s ease both;
+}
+
+.game-blurb {
+  margin: 0 0 1.2rem;
   color: var(--fg-muted);
   max-width: var(--measure);
+}
+
+.game-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0 0 1.1rem;
+}
+
+/* Sits under the links rather than beside them: it explains one of them, and a
+   note that competes with the button it is about has failed. */
+.game-disclaimer {
+  font-size: var(--step--1);
+  color: var(--fg-faint);
+  max-width: var(--measure);
+  margin: 0 0 1.2rem;
+  border-left: 2px solid var(--border-strong);
+  padding-left: 0.85rem;
+}
+
+.game-note p,
+.job-note p {
+  color: var(--fg-muted);
+  max-width: var(--measure);
+  margin: 0 0 0.9rem;
+}
+
+.game-note > :last-child,
+.job-note > :last-child {
+  margin-bottom: 0;
+}
+
+.job-highlights {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.job-highlights li {
+  position: relative;
+  padding-left: 1.3rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.job-highlights li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--accent);
+  opacity: 0.65;
+}
+
+.job-highlights + .job-note {
+  margin-top: 1.2rem;
+}
+
+/* --- Level 3: the Building the Game panel --------------------------------
+   Inset and tinted so it reads as being inside the game card rather than
+   alongside it. The accent edge is the only one on the page — it marks the one
+   thing in a game card that opens further.
+   -------------------------------------------------------------------------- */
+
+.building {
+  margin-top: 1.5rem;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent-dim);
+  border-radius: var(--radius);
+  transition: border-color 0.18s ease;
+}
+
+.building[open] {
+  border-left-color: var(--accent);
+}
+
+.building > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem 1.25rem;
+}
+
+.building > summary::-webkit-details-marker {
+  display: none;
+}
+
+.building-label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg);
+  transition: color 0.15s ease;
+}
+
+.building-body {
+  padding: 0 1.25rem 1.4rem;
+  animation: reveal 0.28s ease both;
+}
+
+.building-intro {
+  color: var(--fg-muted);
+  font-size: var(--step--1);
+  max-width: var(--measure);
+  margin: 0 0 1.3rem;
+}
+
+/* --- Recorded clips ------------------------------------------------------
+   Between the diagram and the written steps: the shape, then the thing
+   running, then why. `preload="none"` keeps six of these from costing anything
+   until one is pressed.
+   -------------------------------------------------------------------------- */
+
+.clip {
+  margin: 1.3rem 0 0;
+}
+
+.clip-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin: 0 0 0.5rem;
+}
+
+.clip-player {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.clip-caption {
+  display: block;
+  font-size: var(--step--1);
+  color: var(--fg-faint);
+  max-width: var(--measure);
+  margin: 0.7rem 0 0;
+}
+
+/* --- Section 00: Playables -----------------------------------------------
+   The one place on the page with no disclosure at all. Somebody who came to
+   play should not have to open anything.
+   -------------------------------------------------------------------------- */
+
+.playables {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.playable {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.9rem 0.15rem;
+  border-top: 1px solid var(--border);
+}
+
+.playable:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.playable-title {
+  font-size: var(--step-1);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.playable-title:hover {
+  color: var(--accent);
+}
+
+.playable-status {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.playable-rule {
+  flex: 1;
+  min-width: 1rem;
+  height: 1px;
+  background: var(--border);
+}
+
+.playable-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.playable-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--fg);
+  text-decoration: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.75rem;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.playable-link:hover {
+  border-color: var(--fg);
+  background: var(--surface-hover);
 }
 
 /* --- Contact ------------------------------------------------------------- */
@@ -1179,11 +1553,30 @@ footer {
   }
 
   .card summary {
-    padding: 1.25rem;
+    padding: 1.1rem 1.15rem;
+    min-height: 6.5rem;
   }
 
   .expanded {
-    padding: 0 1.25rem 1.5rem;
+    padding: 0 1.15rem 1.35rem;
+  }
+
+  .game > summary,
+  .job > summary {
+    padding: 1.15rem 1.2rem;
+  }
+
+  .game-body,
+  .job-body {
+    padding: 0 1.2rem 1.35rem;
+  }
+
+  .building > summary {
+    padding: 0.9rem 1rem;
+  }
+
+  .building-body {
+    padding: 0 1rem 1.2rem;
   }
 
   .card-diagram-scroll {
@@ -1199,6 +1592,30 @@ footer {
 
   .ctas .cta.ghost {
     width: auto;
+  }
+
+  /* The title and its destinations stack rather than fighting over one line,
+     and the rule between them stops earning its space. */
+  .playable {
+    align-items: flex-start;
+    gap: 0.55rem;
+  }
+
+  .playable-rule {
+    display: none;
+  }
+
+  .playable-links {
+    width: 100%;
+  }
+
+  .playable-link {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .game-links .cta {
+    width: 100%;
   }
 }
 
@@ -1220,11 +1637,23 @@ footer {
   .site-header,
   .filter-bar,
   .toggle-hint,
-  .ctas {
+  .ctas,
+  .vignette-chevron,
+  .building-chevron,
+  .game-chevron,
+  .job-chevron,
+  .clip {
     display: none;
   }
 
-  .expanded {
+  /* Every disclosure prints open — a printed CV with the roles collapsed is a
+     blank page. */
+  .expanded,
+  .vignette-body,
+  .game-body,
+  .job-body,
+  .building-body {
     animation: none;
+    display: block !important;
   }
 }

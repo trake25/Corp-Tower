@@ -1,7 +1,11 @@
 ---
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import CardFilter from "../components/CardFilter.astro";
+import Playables from "../components/Playables.astro";
+import Vignette from "../components/Vignette.astro";
+import GameCard from "../components/GameCard.astro";
+import CvCard from "../components/CvCard.astro";
+import BuildingTheGame from "../components/BuildingTheGame.astro";
 import Card from "../components/Card.astro";
 import CloudTargetsDiagram from "../components/diagrams/CloudTargetsDiagram.astro";
 import QaLoopDiagram from "../components/diagrams/QaLoopDiagram.astro";
@@ -27,28 +31,46 @@ const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
 // in the cards but missing here is appended rather than dropped.
 const ROLE_ORDER = ["QA", "AI", "Cloud", "DevOps", "Backend", "Frontend"];
 
-// `hidden: true` cards stay in the collection and stay validated — they are just
-// not published. Everything downstream (filter bar, grid, meta description
-// count) derives from this list, so nothing else has to know they exist.
-const cardEntries = (await getCollection("cards", ({ data }) => !data.hidden)).sort(
-  (a, b) => a.data.order - b.data.order
-);
+const byOrder = (a: { data: { order: number } }, b: { data: { order: number } }) =>
+  a.data.order - b.data.order;
+
+// `hidden: true` entries stay in their collection and stay validated — they are
+// just not published. Every count, filter and grid on the page derives from
+// these three lists, so nothing else has to know they exist.
+const cardEntries = (await getCollection("cards", ({ data }) => !data.hidden)).sort(byOrder);
+const gameEntries = (await getCollection("games", ({ data }) => !data.hidden)).sort(byOrder);
+const cvEntries = (await getCollection("cv", ({ data }) => !data.hidden)).sort(byOrder);
+
 const presentRoles = [...new Set(cardEntries.map((entry) => entry.data.role))];
 const roles = [
   ...ROLE_ORDER.filter((role) => presentRoles.includes(role)),
   ...presentRoles.filter((role) => !ROLE_ORDER.includes(role)),
 ];
 
-const year = new Date().getFullYear();
-
-const rendered = await Promise.all(
+const renderedCards = await Promise.all(
   cardEntries.map(async (entry) => ({ entry, Content: (await entry.render()).Content }))
 );
+const renderedGames = await Promise.all(
+  gameEntries.map(async (entry) => ({ entry, Content: (await entry.render()).Content }))
+);
+const renderedCv = await Promise.all(
+  cvEntries.map(async (entry) => ({ entry, Content: (await entry.render()).Content }))
+);
+
+const inProduction = renderedGames.filter((game) => game.entry.data.status === "production");
+const inDevelopment = renderedGames.filter((game) => game.entry.data.status === "development");
+
+// A profile link with no URL yet is a placeholder waiting for one, not a button.
+const contactLinks = profile.links.filter(
+  (link): link is { label: string; href: string } => Boolean(link.href)
+);
+
+const year = new Date().getFullYear();
 ---
 
 <BaseLayout
   title={`${profile.name} — ${profile.jobTitle}`}
-  description={`I design, build, QA and operate ${profile.project} (${profile.projectShort}), a real-time multiplayer game on Android and browser, end to end. ${cardEntries.length} skills, each with the code that proves it.`}
+  description={`Games by ${profile.name}, and the engineering behind them. ${profile.project} (${profile.projectShort}) is a real-time multiplayer game with a playable demo, built, quality-assured and operated end to end across ${cardEntries.length} disciplines.`}
 >
   <header class="site-header">
     <a class="wordmark" href="/">
@@ -56,121 +78,192 @@ const rendered = await Promise.all(
       {profile.name}
     </a>
     <nav aria-label="Primary">
-      <a href="#skills">Skills</a>
-      <a href={profile.repo} target="_blank" rel="noopener noreferrer">Code</a>
+      <a href="#playables">Playables</a>
+      <a href="#games">Games</a>
+      <a href="#cv">CV</a>
       <a class="nav-cta" href="#contact">Contact</a>
     </nav>
   </header>
 
   <main id="main">
     <section class="hero">
-      <p class="eyebrow">{profile.title}</p>
       <h1>
         Orchestrator controls,<br class="hero-break" />
         agents accelerate.
       </h1>
       <p class="lede">
-        <strong>{profile.project} ({profile.projectShort})</strong> is a real-time
-        multiplayer game where three players cooperate to build a tower — and still
-        compete to outscore each other. I design, build, quality-assure and operate all of
-        it: the game, the servers under it, and the pipeline that ships it.
+        I build games end to end — the client, the servers under them, and the pipeline
+        that deploys them. <strong>Agents do the implementing; the requirement, the review
+        and the sign-off are mine.</strong>
       </p>
-
-      <dl class="facts">
-        <div>
-          <dt>Stack</dt>
-          <dd>Godot client, server-authoritative Node.js and Redis backend.</dd>
-        </div>
-        <div>
-          <dt>Playable</dt>
-          <dd>In the browser today. Android build in an internal testing track.</dd>
-        </div>
-        <div>
-          <dt>Deploys</dt>
-          <dd>
-            One container image, three environments: production on EKS, staging and
-            development on a machine already paid for.
-          </dd>
-        </div>
-        <div>
-          <dt>Agents</dt>
-          <dd>They do the implementing. I hold the requirement, the review and the sign-off.</dd>
-        </div>
-      </dl>
-
-      <div class="ctas">
-        <a class="cta primary" href={profile.demo} target="_blank" rel="noopener noreferrer">
-          Play the demo
-        </a>
-        <a class="cta secondary" href={profile.repo} target="_blank" rel="noopener noreferrer">
-          Read the source
-        </a>
-        <a class="cta ghost" href="#skills">Skip to the skills</a>
-      </div>
-
-      <details class="demo-notes">
-        <summary>Before you play: three things to know</summary>
-        <ul>
-          <li>Bots fill empty seats, so one visitor still gets a full round. The real game is three humans.</li>
-          <li>It runs from the dev environment to keep costs down, so latency is higher than production.</li>
-          <li>Still in development. Things will change.</li>
-        </ul>
-      </details>
     </section>
 
-    <section id="skills" aria-labelledby="skills-heading">
-      <h2 id="skills-heading" class="section-title">
-        <span class="section-index">01</span> Skills highlights
+    <section id="playables" aria-labelledby="playables-heading">
+      <h2 id="playables-heading" class="section-title">
+        <span class="section-index">00</span> Playables
       </h2>
       <p class="section-intro">
-        Open a card to see how each orchestrator skill was demonstrated, process by
-        process. Inside, click any step in the diagram to jump straight to the code that
-        runs it.
+        Straight to the game. No cards to open, no scrolling — every link here leaves the
+        site and starts something you can play.
+      </p>
+      <Playables
+        games={gameEntries.map((entry) => ({
+          title: entry.data.title,
+          status: entry.data.status,
+          links: entry.data.links,
+        }))}
+      />
+    </section>
+
+    <section id="games" aria-labelledby="games-heading">
+      <h2 id="games-heading" class="section-title">
+        <span class="section-index">01</span> Games
+      </h2>
+      <p class="section-intro">
+        Open a game for what it is and where to play it. One of them opens further, into
+        how it was built.
       </p>
 
-      <CardFilter roles={roles} total={cardEntries.length} />
+      <div class="vignettes">
+        <Vignette
+          id="in-production"
+          label="In production"
+          count={inProduction.length}
+          countNoun={inProduction.length === 1 ? "title" : "titles"}
+          note={inProduction.length === 0
+            ? "Nothing shipped under this name yet. The first release lands here."
+            : undefined}
+        >
+          <div class="game-list" data-accordion="true">
+            {inProduction.map(({ entry, Content }) => (
+              <GameCard
+                slug={entry.slug}
+                title={entry.data.title}
+                status={entry.data.status}
+                tagline={entry.data.tagline}
+                blurb={entry.data.blurb}
+                links={entry.data.links}
+                repo={entry.data.repo}
+                video={entry.data.video}
+                hasBody={entry.body.trim().length > 0}
+              >
+                <Fragment slot="note"><Content /></Fragment>
+              </GameCard>
+            ))}
+          </div>
+        </Vignette>
 
-      <div class="cards">
-        {rendered.map(({ entry, Content }) => {
-          const Diagram = diagrams[entry.data.role];
-          return (
-            <Card
-              role={entry.data.role}
-              headline={entry.data.headline}
-              plain={entry.data.plain}
-              tools={entry.data.tools}
-              details={entry.data.details}
-              hasBody={entry.body.trim().length > 0}
-              links={entry.data.links}
-            >
-              {Diagram && <Diagram slot="diagram" />}
-              <Content />
-            </Card>
-          );
-        })}
+        <Vignette
+          id="in-development"
+          label="In development"
+          count={inDevelopment.length}
+          countNoun={inDevelopment.length === 1 ? "title" : "titles"}
+          open={true}
+        >
+          <div class="game-list" data-accordion="true">
+            {/* Only the first one. The accordion script enforces one-open-at-a-time
+                from the `toggle` event, which never fires for a tile that was
+                already open in the HTML — so opening every in-development game
+                here would render two expanded at once until something was
+                clicked. */}
+            {inDevelopment.map(({ entry, Content }, index) => (
+              <GameCard
+                slug={entry.slug}
+                title={entry.data.title}
+                status={entry.data.status}
+                tagline={entry.data.tagline}
+                blurb={entry.data.blurb}
+                links={entry.data.links}
+                repo={entry.data.repo}
+                video={entry.data.video}
+                hasBody={entry.body.trim().length > 0}
+                open={index === 0}
+              >
+                <Fragment slot="note"><Content /></Fragment>
+                {entry.data.buildingTheGame && (
+                  <BuildingTheGame
+                    roles={roles}
+                    total={cardEntries.length}
+                    intro="One card per discipline. Each opens to the diagram of how that part of the game actually works, the recording of it running, then the steps behind it — click any step in a diagram to jump to its explanation."
+                  >
+                    {renderedCards.map(({ entry: card, Content: CardBody }) => {
+                      const Diagram = diagrams[card.data.role];
+                      return (
+                        <Card
+                          role={card.data.role}
+                          headline={card.data.headline}
+                          plain={card.data.plain}
+                          tools={card.data.tools}
+                          details={card.data.details}
+                          video={card.data.video}
+                          hasBody={card.body.trim().length > 0}
+                          links={card.data.links}
+                        >
+                          {Diagram && <Diagram slot="diagram" />}
+                          <CardBody />
+                        </Card>
+                      );
+                    })}
+                  </BuildingTheGame>
+                )}
+              </GameCard>
+            ))}
+          </div>
+        </Vignette>
+      </div>
+    </section>
+
+    <section id="cv" aria-labelledby="cv-heading">
+      <h2 id="cv-heading" class="section-title">
+        <span class="section-index">02</span> CV
+      </h2>
+      <p class="section-intro">
+        Professional work history, most recent first. Open a role for what it involved.
+      </p>
+
+      <div class="vignettes">
+        <Vignette
+          id="work-history"
+          label="Professional work history"
+          count={renderedCv.length}
+          countNoun={renderedCv.length === 1 ? "role" : "roles"}
+          open={true}
+          note={renderedCv.length === 0 ? "Roles are being added." : undefined}
+        >
+          <div class="job-list" data-accordion="true">
+            {renderedCv.map(({ entry, Content }) => (
+              <CvCard
+                slug={entry.slug}
+                role={entry.data.role}
+                company={entry.data.company}
+                location={entry.data.location}
+                start={entry.data.start}
+                end={entry.data.end}
+                summary={entry.data.summary}
+                highlights={entry.data.highlights}
+                hasBody={entry.body.trim().length > 0}
+              >
+                <Content />
+              </CvCard>
+            ))}
+          </div>
+        </Vignette>
       </div>
     </section>
 
     <section id="contact" aria-labelledby="contact-heading">
       <h2 id="contact-heading" class="section-title">
-        <span class="section-index">02</span> Get in touch
+        <span class="section-index">03</span> Get in touch
       </h2>
+      <p class="eyebrow">{profile.title}</p>
       {profile.availability && <p class="availability">{profile.availability}</p>}
       <div class="contact-links">
         <a class="cta primary" href={`mailto:${profile.email}`}>{profile.email}</a>
-        {profile.linkedin && (
-          <a class="cta secondary" href={profile.linkedin} target="_blank" rel="noopener noreferrer">
-            LinkedIn
+        {contactLinks.map((link) => (
+          <a class="cta secondary" href={link.href} target="_blank" rel="noopener noreferrer">
+            {link.label}
           </a>
-        )}
-        {profile.indeed && (
-          <a class="cta secondary" href={profile.indeed} target="_blank" rel="noopener noreferrer">
-            Indeed
-          </a>
-        )}
-        <a class="cta secondary" href={profile.github} target="_blank" rel="noopener noreferrer">
-          GitHub
-        </a>
+        ))}
       </div>
     </section>
   </main>
@@ -182,17 +275,100 @@ const rendered = await Promise.all(
         <span>{profile.title}{profile.location && ` · ${profile.location}`}</span>
       </p>
       <nav class="footer-nav" aria-label="Footer">
-        <a href={profile.demo} target="_blank" rel="noopener noreferrer">Demo</a>
-        <a href={profile.repo} target="_blank" rel="noopener noreferrer">Source</a>
+        <a href="#playables">Playables</a>
+        <a href="#games">Games</a>
+        <a href="#cv">CV</a>
         <a href="#contact">Contact</a>
       </nav>
     </div>
-    <p class="footer-meta">
-      © {year} {profile.name} · The repository still carries the project's working name,
-      Corp&nbsp;Tower.
-    </p>
+    <p class="footer-meta">© {year} {profile.name}</p>
   </footer>
 </BaseLayout>
+
+<script>
+  // Two behaviours the four-level structure needs, both document-wide so no
+  // component has to know how deeply it happens to be nested.
+  const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // 1. One open at a time, per group. Applied to the card lists (games, jobs,
+  //    skills) but deliberately not to the vignettes: the cards are the bulky
+  //    things, and a reader may legitimately want two vignettes open at once.
+  for (const group of document.querySelectorAll<HTMLElement>("[data-accordion]")) {
+    const items = Array.from(group.children).filter(
+      (child): child is HTMLDetailsElement => child instanceof HTMLDetailsElement
+    );
+
+    for (const item of items) {
+      item.addEventListener("toggle", () => {
+        if (!item.open) return;
+        for (const sibling of items) {
+          if (sibling !== item) sibling.open = false;
+        }
+      });
+    }
+  }
+
+  // 2. A link into something nested has to open everything above it, or it
+  //    scrolls to a collapsed tile and appears broken. Covers the per-step
+  //    evidence links that point at another card, the nav, and a hash typed
+  //    straight into the address bar.
+  const openAncestors = (target: Element) => {
+    let node: Element | null = target;
+    while (node) {
+      // Annotated because `node` is reassigned from this value — without it
+      // TypeScript sees the pair as circular and infers `any`.
+      const wrapper: HTMLDetailsElement | null = node.closest("details");
+      if (!wrapper) break;
+      wrapper.open = true;
+      node = wrapper.parentElement;
+    }
+  };
+
+  // A hash can be anything a card author typed, and an id that is not a valid
+  // selector throws rather than returning null.
+  const find = (hash: string): HTMLElement | null => {
+    if (!hash || hash === "#") return null;
+    try {
+      return document.querySelector<HTMLElement>(hash);
+    } catch {
+      return null;
+    }
+  };
+
+  const revealHash = (hash: string, smooth: boolean) => {
+    const target = find(hash);
+    if (!target) return false;
+
+    if (target instanceof HTMLDetailsElement) target.open = true;
+    openAncestors(target);
+    target.scrollIntoView({ block: "start", behavior: smooth && motionOk ? "smooth" : "auto" });
+    return true;
+  };
+
+  for (const link of document.querySelectorAll<HTMLAnchorElement>('a[href*="#"]')) {
+    link.addEventListener("click", (event) => {
+      const href = link.getAttribute("href");
+      if (!href) return;
+
+      const url = new URL(href, document.baseURI);
+      const samePage =
+        url.origin === window.location.origin && url.pathname === window.location.pathname;
+      if (!samePage || !url.hash) return;
+
+      // A card filtered out of view has to come back before it can be opened.
+      const targetCard = find(url.hash);
+      if (targetCard?.dataset.role) {
+        document
+          .querySelector<HTMLButtonElement>(`.filter button[data-filter="${targetCard.dataset.role}"]`)
+          ?.click();
+      }
+
+      if (revealHash(url.hash, true)) event.preventDefault();
+    });
+  }
+
+  if (window.location.hash) revealHash(window.location.hash, false);
+</script>
 
 <style>
   /* Hero spec list: replaces two long prose paragraphs with scannable rows. */
@@ -229,25 +405,5 @@ const rendered = await Promise.all(
       grid-template-columns: 1fr;
       gap: 0.15rem;
     }
-  }
-
-  /* Demo caveats: present for anyone who wants them, silent for everyone else. */
-  .demo-notes {
-    margin-top: 1.75rem;
-    max-width: 62ch;
-    font-size: 0.9rem;
-    opacity: 0.75;
-  }
-
-  .demo-notes summary {
-    cursor: pointer;
-    width: fit-content;
-  }
-
-  .demo-notes ul {
-    margin: 0.6rem 0 0;
-    padding-left: 1.1rem;
-    display: grid;
-    gap: 0.35rem;
   }
 </style>

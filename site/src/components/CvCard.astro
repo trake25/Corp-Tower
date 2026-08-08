@@ -1,0 +1,52 @@
+---
+// Level 2, same rank as a game card and styled as the same kind of tile — a
+// reader who has learned that a tile opens in the Games section should not have
+// to learn it again here.
+//
+// Collapsed: role, the date range, company and one summary line. Open: the
+// highlights, then whatever prose the markdown body carries.
+interface Props {
+  slug: string;
+  role: string;
+  company: string;
+  location?: string;
+  start: string;
+  end: string;
+  summary?: string;
+  highlights: string[];
+  hasBody: boolean;
+}
+
+const { slug, role, company, location, start, end, summary, highlights, hasBody } =
+  Astro.props;
+const current = end.trim().toLowerCase() === "present";
+---
+
+<details class="job" id={`job-${slug}`}>
+  <summary>
+    <h4 class="job-role">
+      {role}
+      <span class="job-dates" data-current={current ? "true" : "false"}>{start} — {end}</span>
+      <svg class="job-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+        <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </h4>
+    <span class="job-company">
+      {company}{location && <span class="job-location"> · {location}</span>}
+    </span>
+    {summary && <span class="job-summary">{summary}</span>}
+  </summary>
+
+  <div class="job-body">
+    {highlights.length > 0 && (
+      <ul class="job-highlights">
+        {highlights.map((highlight) => <li>{highlight}</li>)}
+      </ul>
+    )}
+    {hasBody && (
+      <div class="job-note">
+        <slot />
+      </div>
+    )}
+  </div>
+</details>

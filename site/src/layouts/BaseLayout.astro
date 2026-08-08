@@ -26,7 +26,7 @@ const personSchema = {
   email: `mailto:${profile.email}`,
   jobTitle: profile.jobTitle,
   description,
-  sameAs: [profile.github, profile.linkedin].filter(Boolean),
+  sameAs: [profile.github, ...profile.links.map((link) => link.href)].filter(Boolean),
   knowsAbout: [
     "Terraform",
     "Kubernetes",
@@ -51,8 +51,8 @@ const personSchema = {
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="author" content={profile.name} />
-    <meta name="theme-color" content="#08090c" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#fbfbfc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101215" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f7f8f9" media="(prefers-color-scheme: light)" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={profile.name} />

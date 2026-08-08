@@ -1,0 +1,73 @@
+---
+import VideoSlot from "./VideoSlot.astro";
+
+// Level 2. Collapsed it is a tile: title plus one line of meta, nothing else.
+//
+// Open, exactly one thing inside it expands further — the Building the Game
+// panel in the default slot. Play and source are plain buttons, not
+// disclosures. Three accordions stacked inside an accordion is the thing this
+// layout is built to avoid.
+interface Props {
+  slug: string;
+  title: string;
+  status: "production" | "development";
+  tagline?: string;
+  blurb: string;
+  links: { label: string; href: string }[];
+  repo?: { label: string; href: string; disclaimer?: string };
+  video?: { src: string; poster?: string; caption?: string };
+  hasBody: boolean;
+  open?: boolean;
+}
+
+const { slug, title, status, tagline, blurb, links, repo, video, hasBody, open = false } =
+  Astro.props;
+---
+
+<details class="game" id={`game-${slug}`} data-status={status} open={open}>
+  <summary>
+    <h4 class="game-title">
+      {title}
+      <svg class="game-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+        <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </h4>
+    {tagline && <span class="game-tagline">{tagline}</span>}
+  </summary>
+
+  <div class="game-body">
+    <p class="game-blurb">{blurb}</p>
+
+    {(links.length > 0 || repo) && (
+      <p class="game-links">
+        {links.map((link, index) => (
+          <a
+            class={`cta ${index === 0 ? "primary" : "secondary"}`}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {link.label}
+          </a>
+        ))}
+        {repo && (
+          <a class="cta secondary" href={repo.href} target="_blank" rel="noopener noreferrer">
+            {repo.label}
+          </a>
+        )}
+      </p>
+    )}
+
+    {repo?.disclaimer && <p class="game-disclaimer">{repo.disclaimer}</p>}
+
+    <VideoSlot video={video} />
+
+    {hasBody && (
+      <div class="game-note">
+        <slot name="note" />
+      </div>
+    )}
+
+    <slot />
+  </div>
+</details>

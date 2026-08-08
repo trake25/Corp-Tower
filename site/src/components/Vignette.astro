@@ -1,0 +1,41 @@
+---
+// Level 1 of the four-level disclosure. Deliberately not a card: a full-width
+// band with a label, a count and a rule running to the chevron. A card here
+// would make level 1 and level 2 look identical and the reader would lose track
+// of how deep they are.
+//
+// Levels, for orientation:
+//   0  section        — numbered heading, never collapses
+//   1  vignette       — this
+//   2  game / job     — tile in a grid
+//   3  building panel — inset, visibly inside a game card
+//   4  skill card     — small tile inside that panel
+interface Props {
+  id?: string;
+  label: string;
+  count?: number;
+  countNoun?: string;
+  note?: string;
+  open?: boolean;
+}
+
+const { id, label, count, countNoun = "", note, open = false } = Astro.props;
+---
+
+<details class="vignette" id={id} open={open}>
+  <summary>
+    <h3 class="vignette-label">{label}</h3>
+    {count !== undefined && (
+      <span class="vignette-count">{count}{countNoun && ` ${countNoun}`}</span>
+    )}
+    <span class="vignette-rule" aria-hidden="true"></span>
+    <svg class="vignette-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+      <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </summary>
+
+  <div class="vignette-body">
+    {note && <p class="vignette-note">{note}</p>}
+    <slot />
+  </div>
+</details>
