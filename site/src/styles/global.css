@@ -726,7 +726,11 @@ main > section:first-child {
   margin: 1.5rem 0 0;
 }
 
-.detail-list-wrap summary {
+/* The clips toggle and the steps toggle are peers inside a card, not two
+   levels — so they share one rule rather than being styled to merely resemble
+   each other. Changing one changes both, which is the point. */
+.detail-list-wrap summary,
+.clips-wrap summary {
   cursor: pointer;
   list-style: none;
   display: inline-flex;
@@ -740,31 +744,38 @@ main > section:first-child {
   color: var(--accent);
 }
 
-.detail-list-wrap summary::-webkit-details-marker {
+.detail-list-wrap summary::-webkit-details-marker,
+.clips-wrap summary::-webkit-details-marker {
   display: none;
 }
 
-.detail-list-wrap:hover summary {
+.detail-list-wrap:hover summary,
+.clips-wrap:hover summary {
   color: var(--fg);
 }
 
-.detail-list-toggle-close {
+.detail-list-toggle-close,
+.clips-toggle-close {
   display: none;
 }
 
-.detail-list-wrap[open] .detail-list-toggle-open {
+.detail-list-wrap[open] .detail-list-toggle-open,
+.clips-wrap[open] .clips-toggle-open {
   display: none;
 }
 
-.detail-list-wrap[open] .detail-list-toggle-close {
+.detail-list-wrap[open] .detail-list-toggle-close,
+.clips-wrap[open] .clips-toggle-close {
   display: inline;
 }
 
-.detail-list-chevron {
+.detail-list-chevron,
+.clips-chevron {
   transition: transform 0.2s ease;
 }
 
-.detail-list-wrap[open] .detail-list-chevron {
+.detail-list-wrap[open] .detail-list-chevron,
+.clips-wrap[open] .clips-chevron {
   transform: rotate(180deg);
 }
 
@@ -1650,11 +1661,16 @@ main > section:first-child {
    until one is pressed.
    -------------------------------------------------------------------------- */
 
-/* The group owns the outer spacing so a card with three stacked clips reads as
+.clips-wrap {
+  margin: 1.5rem 0 0;
+}
+
+/* The group owns the inner spacing so a card with three stacked clips reads as
    one block of evidence rather than three loose players. The gap between clips
    is deliberately smaller than the gap above the group. */
 .clips {
-  margin: 1.3rem 0 0;
+  margin: 0.9rem 0 0;
+  animation: reveal 0.28s ease both;
 }
 
 .clip {
@@ -1663,16 +1679,6 @@ main > section:first-child {
 
 .clip + .clip {
   margin-top: 1.1rem;
-}
-
-.clip-label {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--fg-faint);
-  margin: 0 0 0.5rem;
 }
 
 .clip-player {
@@ -1684,12 +1690,39 @@ main > section:first-child {
   border-radius: var(--radius);
 }
 
+/* The speed control lives on the caption line rather than over the player: an
+   overlay would sit on top of the one frame the poster is chosen to show. */
 .clip-caption {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
   font-size: var(--step--1);
   color: var(--fg-faint);
   max-width: var(--measure);
   margin: 0.7rem 0 0;
+}
+
+/* Brass, because playback rate is state — the same reason the open chevron and
+   the active step carry it. It is not a thing you click to do something, so it
+   is deliberately not --action. */
+.clip-speed {
+  flex: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  background: var(--bg-alt);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.28rem 0.45rem;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.clip-speed:hover {
+  color: var(--fg);
+  border-color: var(--accent);
 }
 
 /* --- Section 00: Playables -----------------------------------------------
@@ -1956,7 +1989,7 @@ footer {
   .building-chevron,
   .game-chevron,
   .job-chevron,
-  .clips {
+  .clips-wrap {
     display: none;
   }
 

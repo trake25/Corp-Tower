@@ -164,13 +164,16 @@ const cardId = `card-${roleSlug}`;
   for (const card of cards) {
     const diagram = card.querySelector<HTMLElement>(".card-diagram");
     const stepsWrap = card.querySelector<HTMLDetailsElement>(".detail-list-wrap");
+    const clipsWrap = card.querySelector<HTMLDetailsElement>(".clips-wrap");
 
-    // Closing the card also closes its steps — reopening the card later
-    // should never skip the collapsed state just because it was left open
-    // earlier in the same visit.
+    // Closing the card also closes its steps and its clips — reopening the
+    // card later should never skip the collapsed state just because it was
+    // left open earlier in the same visit. The clips do not re-download: the
+    // players keep the `src` they were given on first open.
     card.addEventListener("toggle", () => {
       if (!card.open) {
         if (stepsWrap) stepsWrap.open = false;
+        if (clipsWrap) clipsWrap.open = false;
         clearActive(card);
       }
     });
@@ -231,7 +234,9 @@ const cardId = `card-${roleSlug}`;
     for (const card of cards) {
       card.open = false;
       const stepsWrap = card.querySelector<HTMLDetailsElement>(".detail-list-wrap");
+      const clipsWrap = card.querySelector<HTMLDetailsElement>(".clips-wrap");
       if (stepsWrap) stepsWrap.open = false;
+      if (clipsWrap) clipsWrap.open = false;
       clearActive(card);
     }
   });

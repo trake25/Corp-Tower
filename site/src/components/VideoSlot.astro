@@ -1,16 +1,25 @@
 ---
-// No clips renders nothing at all — no player, no poster frame, no "recording
+// No clips renders nothing at all — no disclosure, no player, no "recording
 // coming soon". That is the whole point: the six Building the Game sections and
 // the game cards can ship with none of their clips recorded and the layout
-// simply closes up. Adding one is a `video:` block in frontmatter.
+// simply closes up.
 //
-// `preload="none"` with a poster means the browser fetches a single image, not
-// the clip, until someone presses play — nine of these on one page would
-// otherwise be a very expensive visit. That guarantee is why a poster is worth
-// supplying for every clip: without one the browser paints an empty black box
-// and the reader has no reason to press anything.
+// The clips sit behind a closed disclosure, a peer of the "Show N steps" toggle
+// and deliberately styled identically to it — two toggles at the same rank
+// inside a card should look the same. It is not another accordion level.
 //
-// `src` and `poster` are bucket-relative by default and resolved against
+// **Nothing is fetched until that disclosure is opened.** `src` and `poster`
+// are held in `data-` attributes and promoted to real attributes on first
+// open. `preload="none"` alone would still have pulled every poster on page
+// load, which for nine clips is the larger part of the cost — a poster is a
+// full-resolution frame. This is the only reason the clips can be this cheap
+// to have on the page at all.
+//
+// Trade-off: with JavaScript off there are no players. Accepted — the page's
+// accordions, role filter and diagram links are already script-driven, so a
+// no-JS visitor is not reading this card in the first place.
+//
+// `src` and `poster` are bucket-relative and resolved against
 // `profile.mediaBase` here rather than in each content file, so moving the
 // bucket is one edit. Anything already absolute is passed through, which keeps
 // an externally hosted clip possible without a second code path.
@@ -28,7 +37,7 @@ interface Props {
   label?: string;
 }
 
-const { video, videos = [], label } = Astro.props;
+const { video, videos = [], label = "Recording" } = Astro.props;
 
 const resolve = (path: string) =>
   /^https?:\/\//.test(path) ? path : `${profile.mediaBase.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
@@ -41,27 +50,110 @@ const clips = (video ? [video, ...videos] : videos).map((clip) => ({
   poster: clip.poster ? resolve(clip.poster) : undefined,
 }));
 
-// The label heads the group, not each player — repeating "Recorded run" above
-// three stacked clips says nothing the reader cannot already see.
-const heading = label && clips.length > 1 ? `${label}s` : label;
+const noun = label.toLowerCase();
+const summaryOpen =
+  clips.length === 1 ? `Show ${noun}` : `Show ${clips.length} ${noun}s`;
+const summaryClose = clips.length === 1 ? `Hide ${noun}` : `Hide ${noun}s`;
 ---
 
 {clips.length > 0 && (
-  <div class="clips">
-    {heading && <span class="clip-label">{heading}</span>}
-    {clips.map((clip) => (
-      <figure class="clip">
-        <video
-          class="clip-player"
-          src={clip.src}
-          poster={clip.poster}
-          controls
-          preload="none"
-          playsinline
-          muted
-        ></video>
-        {clip.caption && <figcaption class="clip-caption">{clip.caption}</figcaption>}
-      </figure>
-    ))}
-  </div>
+  <details class="clips-wrap">
+    <summary class="clips-summary">
+      <span class="clips-toggle-open">{summaryOpen}</span>
+      <span class="clips-toggle-close">{summaryClose}</span>
+      <svg class="clips-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+        <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </summary>
+
+    <div class="clips">
+      {clips.map((clip) => (
+        <figure class="clip">
+          <video
+            class="clip-player"
+            data-src={clip.src}
+            data-poster={clip.poster}
+            controls
+            preload="none"
+            playsinline
+            muted
+          ></video>
+          <figcaption class="clip-caption">
+            {/* Screen captures of a terminal or a pipeline are mostly waiting.
+                2× is the speed they are actually watchable at, and a minute of
+                footage is a lot to ask of someone skimming. The control is
+                visible rather than left to the browser's own speed menu, which
+                is three clicks deep and different in every browser — and a
+                reader who wants real time has to be able to find it. */}
+            <button class="clip-speed" type="button" data-speed="2">2×</button>
+            {clip.caption && <span class="clip-caption-text">{clip.caption}</span>}
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  </details>
 )}
+
+<script>
+  // Two jobs: promote `data-src`/`data-poster` to real attributes the first
+  // time a group is opened, and hold the playback rate across loads.
+  const RATES = [1, 1.5, 2];
+
+  // `playbackRate` is reset to `defaultPlaybackRate` every time a media element
+  // loads a resource, and the resource here does not exist until the disclosure
+  // opens. Setting both is what makes the rate survive that load — and pressing
+  // play after a seek to the end reloads nothing, so this holds for the session.
+  const applyRate = (player: HTMLVideoElement, rate: number) => {
+    player.defaultPlaybackRate = rate;
+    player.playbackRate = rate;
+  };
+
+  for (const wrap of document.querySelectorAll<HTMLDetailsElement>(".clips-wrap")) {
+    let hydrated = false;
+
+    wrap.addEventListener("toggle", () => {
+      // Collapsing the group — or closing the card above it, which closes this
+      // too — must stop playback. A `<details>` that is shut is still a running
+      // media element otherwise, decoding video nobody can see.
+      if (!wrap.open) {
+        for (const player of wrap.querySelectorAll<HTMLVideoElement>(".clip-player")) {
+          player.pause();
+        }
+        return;
+      }
+
+      if (hydrated) return;
+      hydrated = true;
+
+      for (const player of wrap.querySelectorAll<HTMLVideoElement>(".clip-player")) {
+        const { src, poster } = player.dataset;
+        if (poster) player.poster = poster;
+        // Setting `src` last: assigning it starts the load algorithm, and a
+        // poster applied after that would flash in behind the first frame.
+        if (src) player.src = src;
+      }
+    });
+  }
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>(".clip-speed")) {
+    const player = button.closest(".clip")?.querySelector<HTMLVideoElement>(".clip-player");
+    if (!player) continue;
+
+    let rate = Number(button.dataset.speed ?? 2);
+
+    // The element has no resource yet, so this is the handler that actually
+    // sets the rate for the first play — the assignment below it only takes
+    // effect once one exists.
+    player.addEventListener("loadedmetadata", () => applyRate(player, rate));
+    applyRate(player, rate);
+
+    button.addEventListener("click", () => {
+      rate = RATES[(RATES.indexOf(rate) + 1) % RATES.length];
+      applyRate(player, rate);
+      button.textContent = `${rate}×`;
+      button.setAttribute("aria-label", `Playback speed ${rate}×, press to change`);
+    });
+
+    button.setAttribute("aria-label", `Playback speed ${rate}×, press to change`);
+  }
+</script>
