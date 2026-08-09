@@ -1,33 +1,67 @@
 ---
-// An absent `video` renders nothing at all — no player, no poster frame, no
-// "recording coming soon". That is the whole point: the six Building the Game
-// sections and the game cards can ship with none of their clips recorded and
-// the layout simply closes up. Adding one is a `video:` block in frontmatter.
+// No clips renders nothing at all — no player, no poster frame, no "recording
+// coming soon". That is the whole point: the six Building the Game sections and
+// the game cards can ship with none of their clips recorded and the layout
+// simply closes up. Adding one is a `video:` block in frontmatter.
 //
 // `preload="none"` with a poster means the browser fetches a single image, not
-// the clip, until someone presses play — six of these on one page would
-// otherwise be a very expensive visit.
+// the clip, until someone presses play — nine of these on one page would
+// otherwise be a very expensive visit. That guarantee is why a poster is worth
+// supplying for every clip: without one the browser paints an empty black box
+// and the reader has no reason to press anything.
+//
+// `src` and `poster` are bucket-relative by default and resolved against
+// `profile.mediaBase` here rather than in each content file, so moving the
+// bucket is one edit. Anything already absolute is passed through, which keeps
+// an externally hosted clip possible without a second code path.
+import { profile } from "../data/profile";
+
+interface Clip {
+  src: string;
+  poster?: string;
+  caption?: string;
+}
+
 interface Props {
-  video?: { src: string; poster?: string; caption?: string };
+  video?: Clip;
+  videos?: Clip[];
   label?: string;
 }
 
-const { video, label } = Astro.props;
+const { video, videos = [], label } = Astro.props;
+
+const resolve = (path: string) =>
+  /^https?:\/\//.test(path) ? path : `${profile.mediaBase.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+
+// `video` first, then `videos` in order. An entry may use either or both, so a
+// card with one clip never has to grow an array to say so.
+const clips = (video ? [video, ...videos] : videos).map((clip) => ({
+  ...clip,
+  src: resolve(clip.src),
+  poster: clip.poster ? resolve(clip.poster) : undefined,
+}));
+
+// The label heads the group, not each player — repeating "Recorded run" above
+// three stacked clips says nothing the reader cannot already see.
+const heading = label && clips.length > 1 ? `${label}s` : label;
 ---
 
-{video && (
-  <figure class="clip">
-    {/* A <span>, not a second <figcaption> — a <figure> may only have one. */}
-    {label && <span class="clip-label">{label}</span>}
-    <video
-      class="clip-player"
-      src={video.src}
-      poster={video.poster}
-      controls
-      preload="none"
-      playsinline
-      muted
-    ></video>
-    {video.caption && <figcaption class="clip-caption">{video.caption}</figcaption>}
-  </figure>
+{clips.length > 0 && (
+  <div class="clips">
+    {heading && <span class="clip-label">{heading}</span>}
+    {clips.map((clip) => (
+      <figure class="clip">
+        <video
+          class="clip-player"
+          src={clip.src}
+          poster={clip.poster}
+          controls
+          preload="none"
+          playsinline
+          muted
+        ></video>
+        {clip.caption && <figcaption class="clip-caption">{clip.caption}</figcaption>}
+      </figure>
+    ))}
+  </div>
 )}

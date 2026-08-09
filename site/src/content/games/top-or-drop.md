@@ -12,8 +12,12 @@ repo:
   href: "https://github.com/trake25/Corp-Tower"
   disclaimer: "The repository still carries the project's working name, Corp Tower. Every evidence link below points at real files under that name, so it is kept rather than renamed."
 buildingTheGame: true
-# No recording yet. Add `video:` with an R2 `src` (and optionally `poster` and
-# `caption`) and a player appears here; leave it out and nothing renders.
+# Paths are relative to `profile.mediaBase` — the R2 public host is set once
+# there, not repeated per file.
+video:
+  src: "clips/top-or-drop-demo-win.mp4"
+  poster: "clips/top-or-drop-demo-win.jpg"
+  caption: "A full round in the browser demo, played through to a win."
 ---
 
 The demo runs from the development environment rather than production, which

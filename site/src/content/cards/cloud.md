@@ -11,6 +11,17 @@ tools:
   - "GitHub Actions"
   - "Cloudflare Tunnel"
   - "Claude Code"
+# Paths are relative to `profile.mediaBase` — the R2 public host is set once
+# there, not repeated per file. Apply and destroy are both here on purpose: a
+# card that only shows the cluster coming up has shown half of what
+# deploy-on-demand means, and the teardown is what backs the cost claim.
+videos:
+  - src: "clips/cloud-eks-infra-apply.mp4"
+    poster: "clips/cloud-eks-infra-apply.jpg"
+    caption: "Terraform apply standing the EKS environment up from nothing."
+  - src: "clips/cloud-eks-infra-destroy.mp4"
+    poster: "clips/cloud-eks-infra-destroy.jpg"
+    caption: "The same environment destroyed again — what deploy-on-demand costs when nobody is playing."
 details:
   - id: objectives
     title: "1 · The requirements, before anything is designed"

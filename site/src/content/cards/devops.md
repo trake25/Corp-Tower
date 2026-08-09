@@ -11,6 +11,20 @@ tools:
   - "Google Play Publisher API"
   - "Cloudflare R2"
   - "Claude Code"
+# Paths are relative to `profile.mediaBase` — the R2 public host is set once
+# there, not repeated per file. Three runs because the claim is that one
+# pipeline serves five destinations: a deploy, its teardown, and the Android
+# track that shares the same composite actions.
+videos:
+  - src: "clips/devops-deploy-all.mp4"
+    poster: "clips/devops-deploy-all.jpg"
+    caption: "One pipeline run deploying every destination."
+  - src: "clips/devops-cleanup-all.mp4"
+    poster: "clips/devops-cleanup-all.jpg"
+    caption: "The teardown workflow returning every destination to zero."
+  - src: "clips/devops-ci-android-client.mp4"
+    poster: "clips/devops-ci-android-client.jpg"
+    caption: "The Android client build, signed and pushed to the internal testing track."
 details:
   - id: plan
     title: "1 · What ships where, and how much trust each gets"

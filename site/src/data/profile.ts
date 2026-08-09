@@ -61,6 +61,17 @@ export const profile = {
     label: "Download CV (PDF)",
     updated: "August 2026",
   },
+  // Public base URL of the R2 bucket holding the screen recordings. Clips are
+  // the one asset class that does NOT ship with the site: they are tens of
+  // megabytes each, they would put binaries in git history, and Workers Static
+  // Assets caps a single file at 25 MiB. Keeping them behind one constant means
+  // moving buckets or putting a custom domain in front of one is a single edit
+  // here, not a find-and-replace across every content file.
+  //
+  // Content files carry a bucket-relative path ("clips/cloud-apply.mp4"); an
+  // entry that already starts with http:// or https:// is used as written, so
+  // an occasional externally hosted clip still works. No trailing slash.
+  mediaBase: "https://media.galaxxigames.com",
   // Shown in the availability line. Set to null to hide the whole line.
   // Says what the hero facts cannot fit rather than repeating them: the same
   // role targets and the same remote/hybrid position, plus the working window.

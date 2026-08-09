@@ -1,15 +1,27 @@
 import { defineCollection, z } from "astro:content";
 
-// One optional clip per skill section and per game. Left out entirely, nothing
-// renders — no empty player, no "coming soon" box. Fill `src` in when a
-// recording exists (R2 URL) and the block appears on its own.
-const video = z
-  .object({
-    src: z.string(),
-    poster: z.string().optional(),
-    caption: z.string().optional(),
-  })
-  .optional();
+// A single recording. `src` and `poster` are bucket-relative paths resolved
+// against `profile.mediaBase` at render time — an absolute http(s) URL is passed
+// through untouched. Not `z.string().url()` for that reason.
+const clip = z.object({
+  src: z.string(),
+  poster: z.string().optional(),
+  caption: z.string().optional(),
+});
+
+// Left out entirely, nothing renders — no empty player, no "coming soon" box.
+// Fill one in when a recording exists and the block appears on its own.
+const video = clip.optional();
+
+// Some work needs more than one clip to be checkable: an infrastructure card
+// that only shows `apply` has shown half a story, and a pipeline that deploys
+// to five destinations does not fit in one take. `videos` renders in order
+// after `video`, so an entry can use either or both — a card with one clip
+// stays a one-line `video:` block.
+//
+// Every clip should carry its own `caption`. With more than one player stacked
+// the caption is the only thing telling a reader which run they are looking at.
+const videos = z.array(clip).default([]);
 
 // Where a game can be played or downloaded. These are the only links section
 // `00 Playables` reads, which is what makes it a genuine shortcut rather than a
@@ -34,6 +46,7 @@ const cards = defineCollection({
     // Sits between the diagram and the written steps: you see the shape, then
     // see it running, then read why.
     video,
+    videos,
     // One entry per clickable element in the card's diagram. `id` must match the
     // `data-detail` on the diagram hotspot — that pairing is what turns a click
     // on a diagram step into the matching explanation highlighting below it.
@@ -106,6 +119,7 @@ const games = defineCollection({
       })
       .optional(),
     video,
+    videos,
     // Mounts the skill cards inside this game's card. Exactly one game should
     // carry it; a second would render the same six cards twice with duplicate
     // element ids.

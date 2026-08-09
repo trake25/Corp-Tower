@@ -204,6 +204,7 @@ const year = new Date().getFullYear();
                 links={entry.data.links}
                 repo={entry.data.repo}
                 video={entry.data.video}
+                videos={entry.data.videos}
                 hasBody={entry.body.trim().length > 0}
               >
                 <Fragment slot="note"><Content /></Fragment>
@@ -235,6 +236,7 @@ const year = new Date().getFullYear();
                 links={entry.data.links}
                 repo={entry.data.repo}
                 video={entry.data.video}
+                videos={entry.data.videos}
                 hasBody={entry.body.trim().length > 0}
                 open={index === 0}
               >
@@ -255,6 +257,7 @@ const year = new Date().getFullYear();
                           tools={card.data.tools}
                           details={card.data.details}
                           video={card.data.video}
+                          videos={card.data.videos}
                           hasBody={card.body.trim().length > 0}
                           links={card.data.links}
                         >

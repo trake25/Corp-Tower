@@ -1650,8 +1650,19 @@ main > section:first-child {
    until one is pressed.
    -------------------------------------------------------------------------- */
 
-.clip {
+/* The group owns the outer spacing so a card with three stacked clips reads as
+   one block of evidence rather than three loose players. The gap between clips
+   is deliberately smaller than the gap above the group. */
+.clips {
   margin: 1.3rem 0 0;
+}
+
+.clip {
+  margin: 0;
+}
+
+.clip + .clip {
+  margin-top: 1.1rem;
 }
 
 .clip-label {
@@ -1945,7 +1956,7 @@ footer {
   .building-chevron,
   .game-chevron,
   .job-chevron,
-  .clip {
+  .clips {
     display: none;
   }
 

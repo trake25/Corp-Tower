@@ -49,11 +49,12 @@ interface Props {
   tools: string[];
   details: CardDetail[];
   video?: { src: string; poster?: string; caption?: string };
+  videos?: { src: string; poster?: string; caption?: string }[];
   hasBody: boolean;
   links?: CardLink[];
 }
 
-const { role, headline, plain, tools, details, video, hasBody } = Astro.props;
+const { role, headline, plain, tools, details, video, videos, hasBody } = Astro.props;
 const hasFlow = details.length > 0;
 const roleSlug = role.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const cardId = `card-${roleSlug}`;
@@ -84,7 +85,7 @@ const cardId = `card-${roleSlug}`;
 
     <slot name="diagram" />
 
-    <VideoSlot video={video} label="Recorded run" />
+    <VideoSlot video={video} videos={videos} label="Recorded run" />
 
     {hasFlow && (
       <details class="detail-list-wrap">

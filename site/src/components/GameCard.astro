@@ -16,11 +16,12 @@ interface Props {
   links: { label: string; href: string }[];
   repo?: { label: string; href: string; disclaimer?: string };
   video?: { src: string; poster?: string; caption?: string };
+  videos?: { src: string; poster?: string; caption?: string }[];
   hasBody: boolean;
   open?: boolean;
 }
 
-const { slug, title, status, tagline, blurb, links, repo, video, hasBody, open = false } =
+const { slug, title, status, tagline, blurb, links, repo, video, videos, hasBody, open = false } =
   Astro.props;
 ---
 
@@ -60,7 +61,7 @@ const { slug, title, status, tagline, blurb, links, repo, video, hasBody, open =
 
     {repo?.disclaimer && <p class="game-disclaimer">{repo.disclaimer}</p>}
 
-    <VideoSlot video={video} />
+    <VideoSlot video={video} videos={videos} />
 
     {hasBody && (
       <div class="game-note">
