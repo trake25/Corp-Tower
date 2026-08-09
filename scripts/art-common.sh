@@ -65,5 +65,3 @@ pack_art() {
 }
 
 sha256_of() { sha256sum "$1" | cut -d' ' -f1; }
-
-read -p "Press Enter to exit..."
