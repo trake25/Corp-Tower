@@ -101,7 +101,7 @@ const GameConfig = {
     maxActiveBlocks: 3,
     maxTeamCarryOverBlocks: 3,
     maxGeneratedDrawPileBlocks: 4096,
-    supplyEffectiveWidthRatio: 0.35,
+    supplyEffectiveWidthRatio: 0.40,
     levelSupplyMinSurplus: 0,
     levelSupplyMaxSurplus: 4,    
     levelSupplyMaxSurplusShare: 0.08,    
