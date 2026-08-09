@@ -33,10 +33,10 @@ const GameConfig = {
     placeableColumnMin: 2,
     placeableColumnMax: 5,
     towerSiteSlendernessTarget: 6.75,
-    towerSiteWidthMin: 8,
+    towerSiteWidthMin: 6,
     towerSiteWidthMax: 8,
     towerMaxTiltAngleDeg: 18,   //18 Visual only, higher tilt is more dramatic
-    towerStabilityDifficulty: 95,   // 0 forgiving, 100 harsh, 90 default, 95 tuned
+    towerStabilityDifficulty: 90,   // 0 forgiving, 100 harsh, 90 default, 95 tuned
     towerStabilityPressure: {
         floor: 0.55,
         fullPressureLevel: 8
