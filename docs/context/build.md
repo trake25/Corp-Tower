@@ -1,68 +1,150 @@
 # Build & Release
 
-Scope: how source becomes a shippable artifact — Android build, HTML5/Web build, the private production-art pipeline both consume, and the server container image. Where these artifacts run → [deployment.md](./deployment.md).
+Scope: how source becomes a shippable artifact — Android build, Web build, the
+private production-art pipeline both consume, and the server container image.
+Where these artifacts run → [deployment.md](./deployment.md). Per-symbol file and
+line → grep [map/infra.md](./map/infra.md).
 
 ## Private Asset Pipeline
 
-Keeps production art out of the public repository while baking it into every release build. Art lives only on the developer machine, in a private Cloudflare R2 bucket, on the CI runner during a build, and inside the final exported game.
+Keeps production art out of the public repository while baking it into every
+release build. Art lives only on the developer machine, in a private Cloudflare R2
+bucket, on the CI runner during a build, and inside the exported game.
 
-Files: `.github/actions/fetch-private-assets/action.yml`, `src/Client/App/corp-tower/Cor/art-manifest.json`, `scripts/art-common.sh`, `scripts/art-pull.sh`, `scripts/art-push.sh`.
-
-- Versioned, immutable art bundles live in the private R2 bucket `corp-tower-assets`, at `art/releases/art-<version>.tar.gz`.
-- `art-manifest.json` (committed) holds `version`, `object`, `sha256`, `file_count`, `sentinels` — pins which bundle a given commit builds against, so rebuilding an old commit always fetches the art it was authored against.
+- Versioned, immutable bundles live in R2 bucket `corp-tower-assets` at
+  `art/releases/art-<version>.tar.gz`.
+- The committed `Cor/art-manifest.json` holds `version`, `object`, `sha256`,
+  `file_count` and `sentinels` — it **pins which bundle a given commit builds
+  against**, so rebuilding an old commit fetches the art it was authored with.
 - `Cor/Art/` is gitignored and has never been committed.
-- CI verification order: download → sha256 → extract → file count → sentinel files. **Every check fails closed** — the build fails rather than exporting with missing assets.
-- Bundles are packed deterministically (`tar --sort=name`, fixed mtime/ownership, `gzip -n`) so identical content always hashes identically — this is what lets `art-pull.sh` detect "already up to date" without downloading, and what makes the manifest hash meaningful.
-- `.import` files travel inside the bundle alongside their `.png` — they carry the UIDs public `.tscn` files reference (e.g. Game UI Scene pins `uid://b0dlpjeh71j0c` for `Static/bg.png`). Regenerating them in CI would mint fresh UIDs and break every scene reference. Scripts validate `.png`/`.import` pairing before packaging.
+- CI verification order: download → sha256 → extract → file count → sentinels.
+  **Every check fails closed** — the build fails rather than exporting with
+  missing assets.
+- Bundles are packed deterministically (`tar --sort=name`, fixed mtime and
+  ownership, `gzip -n`) so identical content always hashes identically. That is
+  what lets the pull script detect "already up to date" without downloading, and
+  what makes the manifest hash meaningful at all.
 
-**Credentials (deliberately split — see [decisions.md](./decisions.md#private-asset-pipeline-credential-split)):** CI holds an R2 **Object Read only** token (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`); local dev holds **Object Read & Write** in the gitignored `.env.art` (template `.env.art.example`).
+**Landmine — `.import` files travel inside the bundle alongside their `.png`.**
+They carry the UIDs that public `.tscn` files reference. **Regenerating them in CI
+would mint fresh UIDs and break every scene reference.** The scripts validate
+`.png`/`.import` pairing before packaging.
 
-**Developer workflow:** `./scripts/art-pull.sh` fetches the pinned bundle (refuses to overwrite differing local art unless `--force`). `./scripts/art-push.sh v<n>` validates pairing → packages → uploads → reads back and verifies the stored object → refuses to overwrite an already-published version → prints the manifest values to commit.
+Related: **never run `godot --editor --quit` to generate a `.uid` or check that a
+scene parses** — it re-saves `.tscn` files and silently drops authored overrides.
+Full detail → [ui.md](./ui.md#landmines).
 
-**Notes:**
-- Privacy scope: art is absent from the repo/history, not browsable/forkable from GitHub — but *is* extractable from a shipped build (see [decisions.md](./decisions.md#private-asset-pipeline-credential-split) for the full caveat).
-- The runner cleanup step (`if: always()`, removes fetched art) is best-effort — GitHub-hosted runners are ephemeral anyway. The real control is keeping `upload-artifact` paths narrow (the Android workflow uploads only the `.aab`).
-- Usage sits far inside R2's free tier (~17 MB against 10 GB-month; egress always free). Avoid enabling R2 Data Catalog, R2 SQL, or Infrequent Access storage on the bucket — each is billed separately.
-- `art_version_override` exists on every client build workflow for testing an unpublished bundle. It skips sha256 verification and warns — **must never be used for a release.**
+**Landmine — `art_version_override` skips sha256 verification.** It exists on every
+client build workflow for testing an unpublished bundle and it warns, but it
+**must never be used for a release.**
 
-## Android Deploy wsplaytod Workflow
+### Credential split
 
-`.github/workflows/Android-Deploy-wsplaytod.yml` — manual `workflow_dispatch` build/test/sign for Google Play internal testing, endpoint fixed to `wss://wsplaytod.galaxxigames.com` with debug UI enabled. Runs on `ubuntu-24.04`.
+CI holds an R2 **Object Read only** token; local dev holds **Object Read & Write**
+in the gitignored `.env.art`. Publishing is therefore local and manual by design.
 
-**Inputs:** `version_code_override`, `version_name`, `upload_to_play`, `art_version_override` (testing only).
+**Why:** Cloudflare's R2 S3-compatible endpoint doesn't accept GitHub OIDC
+federation — unlike the AWS Terraform workflows, which do use OIDC — so this path
+needs static credentials, and the read/write split is the mitigation.
 
-**Sequence:** fetch private art into `Cor/Art` → write the client endpoint config (`scripts/write-endpoint-config.sh` — see [Client endpoint config](#client-endpoint-config) below) → download Godot `4.6.2.stable` Linux → install Android SDK via `android-actions/setup-android` → resolve next version code from Google Play → restore release keystore from secrets → import/parse Godot project → run the always-on compile/startup smoke test → run required GUT tests → install the Android build template + export a signed AAB → validate the artifact → upload → optionally push to the Play internal track → verify the track lists the resolved version code → remove fetched art (`if: always()`).
+**Publishing stays manual.** Automating it would put a write token in GitHub
+Secrets, which is exactly what the read/write split prevents.
 
-**Version code resolution:** authenticates to the Google Play Android Publisher API (`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`), reads every track's `versionCodes[]` for `com.galaxxigames.corptower`, uses the highest value + 1 (or `1` if no release exists yet). `version_code_override` is allowed only as a positive integer greater than the detected maximum.
+**The guarantee covers repo and history only.** Art *is* extractable from a
+shipped build: `.pck` extractors are commodity tooling and the Web build serves the
+`.pck` as a public download. `Cor/Art/` is a build input, not a secret — encrypting
+the PCK wouldn't change that, since the key would ship inside the exported binary.
 
-**Export details:** CI preset uses Godot's Gradle Android build path; `--install-android-build-template` runs during headless export; CI writes a valid `EditorSettings` resource so Godot reads Android/Java SDK paths without parse warnings. The generated build template is never committed.
+Developer workflow: `art-pull.sh` fetches the pinned bundle and refuses to
+overwrite differing local art unless forced. `art-push.sh v<n>` validates pairing
+→ packages → uploads → reads back and verifies the stored object → **refuses to
+overwrite an already-published version** → prints the manifest values to commit.
 
-**Validation gates:** the exported AAB must be non-empty, pass zip integrity, contain the expected bundle config + base manifest, include `arm64-v8a` native libs, exclude disabled architectures, and pass Java signature verification. `res://Tests/CiSmokeTest.gd` fails the workflow if the main scene, `NetworkManager` autoload, Game UI Scene, scene instantiation, or ready-wiring is broken.
+The runner cleanup step is best-effort — GitHub-hosted runners are ephemeral
+anyway. The real control is keeping `upload-artifact` paths narrow: the Android
+workflow uploads only the `.aab`.
 
-**Runner/action runtime notes:** Node 24-compatible Action majors, avoiding deprecated Node 20 compat flags. SDK license acceptance handled by the setup action, not a manual shell pipe; CI installs only the specific platform/build/NDK/CMake packages it needs.
+Usage sits far inside R2's free tier. **Avoid enabling R2 Data Catalog, R2 SQL or
+Infrequent Access on the bucket** — each is billed separately.
 
-**Dependencies:** Godot Client App, Private Asset Pipeline, `.github/actions/fetch-private-assets`, `addons/gut`, `Tests/CiSmokeTest.gd`, `Tests/Gut`, `.github/godot/export_presets.android.ci.cfg`, a Google Play service account with Android Publisher API + Play Console access to `com.galaxxigames.corptower`.
+## Android Deploy wsplaytod workflow
+
+`.github/workflows/Android-Deploy-wsplaytod.yml` — manual `workflow_dispatch`
+build, test and sign for Google Play internal testing, endpoint fixed to
+`wsplaytod` with debug UI enabled.
+
+**Sequence:** fetch private art → write the endpoint config → download Godot
+`4.6.2.stable` → install the Android SDK → resolve the next version code from
+Google Play → restore the release keystore → import and parse the project → run
+the compile/startup smoke test → run required GUT tests → install the Android
+build template and export a signed AAB → validate → upload → optionally push to
+the internal track → verify the track lists the resolved version code → remove
+fetched art (`if: always()`).
+
+**Version code resolution** authenticates to the Play Android Publisher API, reads
+every track's `versionCodes[]`, and uses the highest + 1 (or `1` if no release
+exists). An override is allowed **only as a positive integer greater than the
+detected maximum**.
+
+**Export details:** the CI preset uses Godot's Gradle Android build path;
+`--install-android-build-template` runs during headless export; CI writes a valid
+`EditorSettings` resource so Godot reads the SDK paths without parse warnings. The
+generated build template is never committed.
+
+**Validation gates:** the AAB must be non-empty, pass zip integrity, contain the
+expected bundle config and base manifest, include `arm64-v8a` native libs, exclude
+disabled architectures, and pass Java signature verification. The smoke test fails
+the workflow if the main scene, the `NetworkManager` autoload, Game UI Scene,
+instantiation, or ready-wiring is broken.
+
+Action majors are kept Node 24-compatible, avoiding deprecated Node 20 compat
+flags. SDK license acceptance is handled by the setup action rather than a manual
+shell pipe.
 
 ## Client endpoint config
 
-`scripts/write-endpoint-config.sh` regenerates the committed `src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd` before each client build, from four env vars: `CORP_TOWER_WS_PRIMARY` (required), `CORP_TOWER_WS_FAILOVER` (optional — empty disables client-side failover, see [networking.md § Connection](./networking.md#connection)), `CORP_TOWER_DEBUG_UI` (`true`/`false`, gates the floating debug button — see [ui.md](./ui.md#screen-manager)), `CORP_TOWER_DEMO_MODE` (`true`/`false`, defaults `false` — gates the always-visible bots-disclosure label, see [ui.md](./ui.md#godot-client-app-shell)). The committed default (dev instance 1 primary, dev instance 2 failover, debug on, demo mode off) is what a local `godot --editor` run or an un-rewritten build gets. Every CI build that ships a real endpoint calls this script first: [Android Deploy wsplaytod](#android-deploy-wsplaytod-workflow) and the backup's `Backup-Deploy-Web-Server.yml` per instance, including the public demo ([deployment.md § Backup](./deployment.md#backup-physical-machine)).
+`scripts/write-endpoint-config.sh` regenerates the committed
+`Sys/NetMan/Endpoint_Config.gd` before each client build from four env vars:
 
-## Server Container Image
+| Var | Effect |
+|---|---|
+| `CORP_TOWER_WS_PRIMARY` | Required |
+| `CORP_TOWER_WS_FAILOVER` | Optional — **empty disables client-side failover** |
+| `CORP_TOWER_DEBUG_UI` | Gates the floating debug button |
+| `CORP_TOWER_DEMO_MODE` | Defaults `false` — gates the bots-disclosure label |
 
-`src/Server/Dockerfile` — packages the Node WebSocket server for staging deploy.
+The committed default (dev instance 1 primary, instance 2 failover, debug on, demo
+off) is what a local editor run or an un-rewritten build gets. **Every CI build
+that ships a real endpoint calls this script first.**
 
-- Installs server dependencies; copies source from `src/Server/app` **only** — tooling ([Balance Simulator](./testing.md#balance-simulator)) and tests ([Server Score Events Tests](./testing.md#server-score-events-tests)) live outside `app/` and are not copied in.
+The gate is a **build-time flag, not a runtime host check** — it has to hold on
+Android and in the editor, where there is no hostname to read.
+
+## Server container image
+
+`src/Server/Dockerfile` — packages the Node WebSocket server.
+
+- Installs dependencies and copies source from `src/Server/app` **only** — the
+  tooling and tests live outside `app/` and are deliberately not copied in.
 - Runs `Server.js`; exposes port `3000`.
-- Built as part of the [K3s Deploy workflows](./deployment.md#k3s-workflows) (one shared image for both prod and test); tagged with the immutable commit SHA; pushed to ECR. K3s server pods reuse this same ECR image/repository. Worker deployment provides `REDIS_URL` and `RECONNECT_TTL_SECONDS`.
-- Container healthchecks use a short staging interval so rolling-deploy readiness reports quickly.
-- Current staging deploy avoids requiring local Docker.
+- Built by the K3s deploy workflows as **one shared image for both prod and test**,
+  tagged with the immutable commit SHA and pushed to ECR. EKS server pods reuse the
+  same repository. The deployment provides `REDIS_URL` and
+  `RECONNECT_TTL_SECONDS`.
+- Healthchecks use a short interval so rolling-deploy readiness reports quickly.
 
 ## Required secrets (client / art scope)
 
 | Secret | Used for |
 |---|---|
-| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | Private Asset Pipeline (CI read-only) |
-| `ANDROID_RELEASE_KEYSTORE_BASE64`, `ANDROID_RELEASE_KEYSTORE_ALIAS`, `ANDROID_RELEASE_KEYSTORE_PASSWORD` | Android release signing |
-| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Google Play Android Publisher API access |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | Private Asset Pipeline, CI read-only |
+| `ANDROID_RELEASE_KEYSTORE_BASE64` / `_ALIAS` / `_PASSWORD` | Android release signing |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Play Android Publisher API access |
 
-Infra/K3s/EKS secrets are scoped separately — see [deployment.md § Required secrets](./deployment.md#required-secrets-infra-scope).
+Infra secrets are scoped separately →
+[deployment.md](./deployment.md#required-secrets-infra-scope).
+
+**Cloudflare Pages cannot host the client.** Its 25 MiB per-file cap applies on
+every plan and to the *stored* file, so compression does not help a 35.95 MiB
+`index.wasm`. Beyond the physical backup's own web servers, the Godot client has
+no web-hosted deploy target.

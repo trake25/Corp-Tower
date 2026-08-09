@@ -1,63 +1,104 @@
-# Corp Tower — AI Context Entry Point
+# Corp Tower — context entry
 
-Read this first, then load **only** the docs the task needs (see Task router). This is the single entry to the `docs/context/` knowledge base. Tool-agnostic — per-tool shims (e.g. gitignored `CLAUDE.md`) just point here.
+Router for the `docs/context/` knowledge base. Load **only** what the router
+names. The full retrieval contract is in the root `CLAUDE.md`.
 
 ## System
 
-3-player real-time **selfish-cooperation** tower puzzle. Godot Android client, authoritative Node.js WebSocket server, Redis shared state. Server is authoritative; the client renders `game_state` and never computes final outcomes.
+3-player real-time **selfish-cooperation** tower puzzle. Godot Android client,
+authoritative Node.js WebSocket server, Redis shared state. The server is
+authoritative; the client renders `game_state` and never computes an outcome.
 
 | Layer | Stack |
 |---|---|
 | Client | Godot `4.6.2.stable`, GDScript, `WebSocketPeer` |
 | Server | Node.js, `ws`, `redis` — entry `src/Server/app/Server.js` |
-| Shared state | Redis (multi-worker matchmaking / room / reconnect) |
-| Infra | Terraform · EKS (production-grade target, deploy-on-demand — fully implemented) · K3s-on-EC2 (lab) · Docker · Caddy |
+| Shared state | Redis — multi-worker matchmaking, rooms, reconnect |
+| Infra | Terraform · EKS (production-grade, deploy-on-demand) · K3s-on-EC2 (lab) · Docker · Caddy |
 | CI/CD | GitHub Actions |
-| Endpoint | Build-time injected per target — prod `wsplaytod.galaxxigames.com`, test `wstodtest.galaxxigames.com`, dev `devwstod1`/`devwstod2.galaxxigames.com` (physical backup) — see [networking.md](./networking.md#connection) |
 
-## Working rules (always apply)
+Flow: client connects to its build-injected endpoint → **Server Entry** accepts and
+routes → **Lobby Manager** queues, creates or resumes a 3-seat room, starts a
+**Game Engine** for it → the engine owns level lifecycle, timers, placement
+validation and Power, delegating supply/scoring/Impacts to `engine/` modules and
+grid physics to the pure **Tower Stability** → **Redis State** backs shared
+matchmaking and room snapshots so any worker can recover a session → the engine
+broadcasts `game_state` on every change.
 
-- Server is authoritative; the client never computes final gameplay outcomes.
-- **No explanatory comments in source** — context goes in the matching `docs/context/*.md`. Sole exception: `SAFETY EXCEPTION` credential/security comments.
-- **One owning doc per concept** (see Task router / [coding-conventions.md](./coding-conventions.md)). Edit that doc, never a duplicate.
-- **Docs change only when the user runs `/update-docs`** (after the goal is confirmed reached — never speculatively) **or `/compact-docs`**. Edits replace prose rather than append to it: these docs describe the system as it is now, not how it got here. Procedure → [doc-maintenance.md](./doc-maintenance.md); don't load it for a coding task.
-- Read source only when a doc is insufficient; then read only the needed section, not whole files.
-- Do **not** commit / push / pull / compare with remote unless explicitly instructed.
+Boundaries: the client talks only to Server Entry. Game Engine never touches Redis
+— Lobby Manager persists through Redis State. Tower Stability has zero
+dependencies and is deliberately pure. Balance Simulator constructs Game Engine
+directly, bypassing lobby, Redis and the socket entirely.
 
-## Retrieval (load least; escalate only if needed)
-
-`Tier 0` this file (always) → `Tier 1` the task's domain doc(s) via Task router → `Tier 2` [module-index.md](./module-index.md) row → the exact source `file:section` → `Tier 3` open source only if the doc is insufficient.
-**Fallback:** if all tiers miss, do a scoped search (respect the Ignore map), then record the finding in the owning doc via `/update-docs` so the next session hits Tier 1 instead of searching again.
+```mermaid
+flowchart LR
+  NM[NetworkManager] --> MUC["Main.gd + GameUi family"]
+  subgraph Server["Node.js worker"]
+    SE[Server Entry] --> LM[Lobby Manager] --> GE[Game Engine]
+    GE --> BS[Block Supply] & SC[Scoring] & IM[Impacts]
+    GE --> TS["Tower Stability (pure)"]
+    GE --> BM[Bot Manager]
+    GE -. reads .-> GC[Game Config]
+    LM --> RS[Redis State]
+  end
+  MUC -- "wss" --> SE
+  RS -. shared .-> Redis[("Redis")]
+```
 
 ## Task router
 
-| Task | Load (Tier 1) | Usually skip |
+| Task | Load | Then grep |
 |---|---|---|
-| Gameplay rules / scoring / balance / tuning semantics | [gameplay.md](./gameplay.md) | ui, deployment, build |
-| Server logic (rooms / engine / scoring / impacts / bots) | [backend.md](./backend.md) + [module-index.md](./module-index.md) | ui, deployment, build |
-| WebSocket messages / payload shapes / reconnect wire | [networking.md](./networking.md) | deployment, build |
-| Godot client UI / scenes / popovers | [ui.md](./ui.md) + [module-index.md](./module-index.md) | deployment, build, networking |
-| Deploy / K3s / EKS / infra / runbook | [deployment.md](./deployment.md) | gameplay, ui |
-| CI build / Android / HTML5 / private art pipeline | [build.md](./build.md) | gameplay, deployment |
-| Tests / balance simulator / CI gates | [testing.md](./testing.md) | deployment |
-| "Why is it built this way?" / rejected options / known gaps | [decisions.md](./decisions.md) | — |
-| "Which file does X?" | [module-index.md](./module-index.md) | — |
-| Terms / renames / tuning shorthand | [glossary.md](./glossary.md) | — |
-| System shape / runtime flow / repo layout | [architecture.md](./architecture.md) | — |
-| Editing these docs (`/update-docs`, `/compact-docs`) | [doc-maintenance.md](./doc-maintenance.md) | everything else until the gate passes |
-| Portfolio site (`site/`) or apex placeholder (`site-root/`) — separate Cloudflare Workers deploys, no game code | [site/README.md](../../site/README.md) / [site-root/README.md](../../site-root/README.md) | everything else in this KB |
+| Gameplay rules, scoring, balance, tuning semantics | [gameplay.md](./gameplay.md) | [map/backend.md](./map/backend.md) |
+| Server logic — rooms, engine, scoring, impacts, bots | [backend.md](./backend.md) | [map/backend.md](./map/backend.md) |
+| WebSocket messages, payload shapes, reconnect wire | [networking.md](./networking.md) | both maps |
+| Godot client UI, scenes, popovers | [ui.md](./ui.md) | [map/ui.md](./map/ui.md) |
+| Deploy, K3s, EKS, infra, runbook | [deployment.md](./deployment.md) | [map/infra.md](./map/infra.md) |
+| CI build, Android, HTML5, private art pipeline | [build.md](./build.md) | [map/infra.md](./map/infra.md) |
+| Tests, balance simulator, CI gates | [testing.md](./testing.md) | — |
+| "Which file does X?" | — | the matching map |
+| Editing these docs | `/update-docs` · `/compact-docs` | — |
+| `site/`, `site-root/` — separate Workers, no game code | their own READMEs | — |
 
-Every domain doc states its scope on line 1. Full doc catalog → [module-index.md](./module-index.md).
+Each domain doc states its scope on line 1. Docs describe how the system behaves
+now and what it still cannot do — not how it got here. There is no history doc.
 
-## Ignore map (don't read unless explicitly asked)
+## Working rules
 
-- **Godot generated:** `**/*.uid`, `**/*.import`, `.godot/`, `**/*.tres`
-- **Third-party / lockfiles:** `**/addons/`, `node_modules/`, `**/package-lock.json`
-- **Terraform state:** `**/.terraform/`, `**/*.tfstate*`, `**/.terraform.lock.hcl`
-- **Assets / binaries:** `*.ttf`, `*.fnt`, `*.png`, `*.svg`, private art `src/Client/App/corp-tower/Cor/Art/`
-- **Local / working:** `plan/`, `TOD*` hand-off files, build/export output
-- **Read only when working that area:** `**/tests/`, `**/Tests/`, `*.tscn` (consult [ui.md](./ui.md) node contract first)
+- Server is authoritative; the client never computes a final outcome.
+- **No explanatory comments in source.** Context belongs in the owning doc here.
+  Sole exception: `SAFETY EXCEPTION` comments, where the risk is invisible from
+  the code and a doc would put the warning where nobody editing that line reads it.
+- **One owning doc per concept.** Edit that doc, never a second copy.
+- **Docs own knob _semantics_; `Game_Config.js` owns knob _values_.** Mirroring a
+  number into prose is this KB's most common drift class. Write a value down only
+  when it drives design conversation on its own; otherwise give name, meaning and
+  shape, and let the reader open `Game_Config.js`.
+- Config keys appear in exact code-identifier form, never paraphrased.
+- Docs change only under `/update-docs` or `/compact-docs`, and edits **replace**
+  prose rather than append to it.
+- Don't commit, push, pull or compare with the remote unless told to.
 
-## Token discipline
+## Aliases
 
-A common task should load **this file + 1–2 domain docs** and do **0** repo-wide searches. Loading all of `docs/context/` (~1.2k lines) for a single task defeats the purpose — route, don't sweep.
+Chat logs, branches and old PRs use the left column; the system uses the right.
+
+| Term used | Means |
+|---|---|
+| Politics | **Power** — quests, items, activation |
+| Checkpoint | **Impact** — score gate and rollback (`Impacts.js`) |
+| Refresh / `free_refresh` | **Replenish** — tops up the shared draw pile |
+| Lane | **Column** on the level's derived **site** |
+| `anchorX` | retired — a dragged brick's geometry sets its column |
+| `Checkpoints.js` | `Impacts.js` |
+
+## Ignore map
+
+Godot generated (`*.uid`, `*.import`, `*.tres`, `.godot/`) · third-party and
+lockfiles (`addons/`, `node_modules/`, `package-lock.json`) · Terraform state
+(`.terraform/`, `*.tfstate*`) · assets and binaries, including private art under
+`Cor/Art/` · `plan/`, `TOD*` hand-off files, export output. Read `tests/`,
+`Tests/` and `*.tscn` only when working that area.
+
+`README.md` is a pitch for human readers — design intent in plain language, no
+contracts or numbers. It is not a KB doc and never a source of truth for one.

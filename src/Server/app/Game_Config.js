@@ -15,6 +15,7 @@ const GameConfig = {
     targetHeightStepGrowth: 5,
     targetHeightStepGrowthEvery: 3,
     startDelayMs: 4000,
+    levelTimeLimitMs: 60000,
     levelTimePlannedEfficiency: 0.55,
     levelTimeSlack: 3.0,
     levelTimeSlackMin: 1.5,

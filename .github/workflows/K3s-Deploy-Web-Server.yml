@@ -365,7 +365,7 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_GATEWAY_BUCKET }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
         run: |
-          # SAFETY EXCEPTION to the no-source-comments convention (Summary.md):
+          # SAFETY EXCEPTION to the no-source-comments convention (CLAUDE.md):
           # this step holds R2 credentials in env, and the downloaded archive
           # holds the gateway's ACME account key + TLS private key. Never add
           # `set -x` here, and never widen the umask/permissions below.
@@ -440,7 +440,7 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_GATEWAY_BUCKET }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
         run: |
-          # SAFETY EXCEPTION to the no-source-comments convention (Summary.md):
+          # SAFETY EXCEPTION to the no-source-comments convention (CLAUDE.md):
           # this step holds R2 credentials in env, and the fetched archive
           # holds the gateway's ACME account key + TLS private key. Never add
           # `set -x` here, and never widen the umask/permissions below.

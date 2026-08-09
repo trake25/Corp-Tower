@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SAFETY EXCEPTION to the no-source-comments convention (Summary.md): this file
+# SAFETY EXCEPTION to the no-source-comments convention (CLAUDE.md): this file
 # is committed to a public repo. It must never hold credential values — they
 # belong in the gitignored .env.art, which load_env reads at runtime.
 

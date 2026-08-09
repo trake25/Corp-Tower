@@ -80,7 +80,7 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.access-key-id }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.secret-access-key }}
-        # SAFETY EXCEPTION to the no-source-comments convention (Summary.md):
+        # SAFETY EXCEPTION to the no-source-comments convention (CLAUDE.md):
         # a caller workflow (e.g. K3s-Deploy-Web-Server.yml) may set a
         # job-level AWS_REGION for its own AWS/Terraform calls. AWS_REGION
         # takes precedence over AWS_DEFAULT_REGION, so it must be pinned to
@@ -98,7 +98,7 @@ runs:
         SENTINELS: ${{ steps.manifest.outputs.sentinels }}
         ASSET_VERSION: ${{ steps.manifest.outputs.version }}
       run: |
-        # SAFETY EXCEPTION to the no-source-comments convention (Summary.md):
+        # SAFETY EXCEPTION to the no-source-comments convention (CLAUDE.md):
         # this step holds R2 credentials in env. Never add `set -x` here — it
         # would echo them into public build logs.
         set -euo pipefail
@@ -117,7 +117,7 @@ runs:
               "$ARCHIVE" >/dev/null 2>"$WORK/err.txt"; then
           echo "::error::Failed to download ${OBJECT_KEY} from R2."
           echo "Check that the R2 secrets are set and the read-only token is scoped to bucket '${R2_BUCKET}'."
-          # SAFETY EXCEPTION to the no-source-comments convention (Summary.md):
+          # SAFETY EXCEPTION to the no-source-comments convention (CLAUDE.md):
           # aws CLI errors can quote the signing key. This sed redacts anything
           # key-shaped before it reaches the log. Do not remove.
           sed -e 's/[A-Za-z0-9/+=]\{32,\}/<redacted>/g' "$WORK/err.txt" >&2 || true

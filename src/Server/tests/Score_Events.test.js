@@ -801,10 +801,26 @@ test("activating replenish grows the shared draw pile and reports the count", ()
     caster.powerInventory = [{ id: "replenish", earnedLevel: 10 }];
     caster.lastPowerActivationTime = 0;
 
+    const heldBefore = engine.room.players
+        .reduce((total, player) => total + (player.blocks || []).length, 0);
+    const inCirculationBefore = engine.room.drawPile.length + heldBefore;
+
     assert.equal(engine.activatePower(caster.id, 0), true);
 
     assert.equal(caster.powerInventory.length, 0);
-    assert.equal(engine.room.drawPile.length, 15);
+
+    const heldAfter = engine.room.players
+        .reduce((total, player) => total + (player.blocks || []).length, 0);
+
+    assert.equal(
+        engine.room.drawPile.length + heldAfter,
+        inCirculationBefore + 3,
+        "replenish adds 25% of drawPileStartCount to the room"
+    );
+    assert.ok(
+        heldAfter > heldBefore,
+        "replenish refills every hand, so the new blocks reach players rather than sitting in the pile"
+    );
 
     const event = messages
         .flatMap(message => message.powerEvents || [])

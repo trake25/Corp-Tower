@@ -2,9 +2,9 @@ name: Demo Deploy
 
 # Manual-only, deliberately off the push-triggered path Backup-Deploy-All.yml
 # carries. wstoddemo/toddemo are always-on, so a routine push must never
-# redeploy the link on a résumé — see plan/corp-tower-demo-instance-plan.md
-# Decision 4. Redeploy this dispatcher only after verifying, then record the
-# deployed SHA as the pinned known-good.
+# redeploy the link on a résumé — see docs/context/deployment.md. Redeploy this
+# dispatcher only after verifying, then record the deployed SHA as the pinned
+# known-good.
 
 on:
   workflow_dispatch:

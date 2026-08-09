@@ -8,8 +8,7 @@ const STRATEGIES = ["cooperative", "mvp_greedy"];
 const DEFAULT_LEVELS = 20;
 // 1000 runs/level took ~20 minutes end to end, which made the tool
 // effectively unusable for iterative tuning; 100 is still enough samples to
-// read a rate to within a couple points. See plan/corp-tower-target-height-
-// scaling-plan.md §2.4.
+// read a rate to within a couple points.
 const DEFAULT_RUNS = 100;
 
 // 95 is the shipped towerStabilityDifficulty (Game_Config.js) -- sampling it

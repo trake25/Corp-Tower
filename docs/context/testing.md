@@ -1,86 +1,216 @@
 # Testing
 
-Scope: everything that verifies or tunes behavior — server contract tests, the balance-tuning CLI, client smoke/unit tests, and which CI workflow gates on what. Server logic under test → [backend.md](./backend.md). UI under test → [ui.md](./ui.md).
+Scope: server contract tests, balance CLIs, client smoke and unit tests, CI gates.
+Logic under test → [backend.md](./backend.md) · [ui.md](./ui.md).
 
-## Server Score Events Tests
+## Server tests
 
-`src/Server/tests/Score_Events.test.js` — CI/test-only, **not** shipped in the Docker image. Runs via `npm test` (Node's built-in test runner, no separate framework), or directly: `node --test tests/Score_Events.test.js` from `src/Server`. **53 tests, all passing.** Called by the [K3s Deploy workflows](./deployment.md#k3s-workflows) before a server image build/deploy.
+Nothing under `tests/` or `tools/` ships in the Docker image. `npm test` from
+`src/Server` runs Node's built-in test runner — no separate framework — plus
+`node --check` over the tooling.
 
-**Covers:** `balanceDelta` — that a centred brick scores exactly 0 at every height *and* at every target-height-driven height-pressure level *while* the raw stability score is asserted to sag over the same stack (the pair is the regression guard; see [decisions.md](./decisions.md#brick-faces-read-a-lean-only-balance-delta-not-the-stability-score)), that the sign follows the correction in both lean directions, and its ±100 clamp; placement score events; exact-finish (precision + team bonus) and overbuild (no finish bonus) behavior; **column→`originX` clamping** and **placeable-range narrowing by width**; **per-level site width** (scales with target height, stays centred on the grid at every width, clamps at `towerSiteWidthMax`) and that a brick's origin range follows the level's site rather than a fixed span; **the slenderness regression** — a symmetric 2-wide spire must reach `integrity 0`/`collapsed` with `tiltScore` still exactly 0, which a single tilt scalar cannot detect; **a wide-base/narrow-spire tower** now reads slender too, closing the exploit the ground-row-only measure left open; **the stability dial** — the same tower scores lower at level 40 than at level 1, difficulty `0` leaves it uncollapsed, difficulty is clamped 0–100, and the derived physics keys (`towerHeightPressureGain` included) are rejected as unknown; **stability multiplier and reinforce cap** both rising toward their target-height value as height nears target, and unchanged at the ground for a single-argument call; **the round-clock slack ramp** and its floor; **supply coverage** running a surplus at level 1 and flattening by `levelSupplyCoverageFullLevel`; **Reinforce** payout for integrity/lean gains, that a worsening placement pays 0, and that an empty tower's first brick earns no phantom Reinforce; confirms `createBlock` no longer assigns an `anchorX` field; level-summary banking for failed levels; debug-config clamping, including that `game_state` carries the `visualHooks` group, that its two toggles round-trip and are restored by Reset, and that a **duration** key is rejected as unknown; quick-chat event/cooldown contracts; refresh generation; activating a held `refresh` item, and holding one defers the not-enough-height fail check; Impact Power-inventory snapshot/rollback behavior.
+### `tests/Score_Events.test.js`
 
-**Geometry and stability tests pin their own config.** `useFixedGrid()` sets `towerGridWidth`/`towerSiteWidthMin`/`Max`/`towerSiteSlendernessTarget`; `fixedStabilityConfig(overrides)` returns a resolved stability set to hand `evaluate()` directly. Both exist because those values are designer-tunable — and because the stability constants are now *derived* from `towerStabilityDifficulty` and the level, so a test that passes raw `GameConfig` asserts on defaults rather than on live behavior. Pin both in any new test asserting concrete columns or stability numbers. **Even plain scoring tests can trip a live-tuned stability warning** — a single off-center block against the current tilt tuning is enough to emit an unexpected `tower_warning` event — so a test asserting an exact `scoreEvents` type list should also zero `towerStabilityDifficulty` around the placement (save/restore in a `try`/`finally`) unless it's deliberately exercising stability.
+The main contract suite: score events, exact-finish and overbuild, column→`originX`
+clamping and placeable-range narrowing, per-level site width, the stability dial
+and multiplier, reinforce cap, round-clock slack, supply coverage, quick chat,
+refresh generation, Impact snapshot and rollback.
 
-**Depends on:** Game Engine, Game Config, Lobby Manager, Tower Stability (directly required; exercised by a block-settling test). External: `node:test`, `node:assert/strict`.
+Four cases carry a reason worth knowing before editing them:
 
-**Notes:** protects the UI-facing payload contracts [Main UI Controller](./ui.md#main-ui-controller) renders directly — a passing suite is a reasonable signal client-visible scoring/summary behavior hasn't shifted. Coverage concentrates on Game Engine's scoring/summary paths; Bot Manager, Balance Simulator, and Server Entry have **no dedicated tests here** — Redis State's matchmaking-queue path now has coverage via [Server Matchmaking Queue Tests](#server-matchmaking-queue-tests) below.
+- **`balanceDelta` is asserted as a pair** — a centred brick scores exactly 0 at
+  every height and pressure level **while the raw stability score is asserted to
+  sag over the same stack**. Either half alone passes a broken implementation.
+- **The slenderness regression** — a symmetric 2-wide spire must reach
+  `integrity 0`/`collapsed` with `tiltScore` still exactly 0, which a single tilt
+  scalar cannot detect. A wide-base/narrow-spire tower must read slender too.
+- **An empty tower's first brick earns no phantom Reinforce.**
+- **Unknown-key rejection is asserted positively** — derived physics keys and a
+  `visualHooks` **duration** key must both be refused by debug-config clamping.
 
-## Server Matchmaking Queue Tests
+**Geometry and stability tests must pin their own config.** `useFixedGrid()` sets
+the grid and site keys; `fixedStabilityConfig(overrides)` returns a resolved
+stability set to hand `evaluate()` directly. Both exist because those values are
+designer-tunable **and because the stability constants are derived** — a test that
+passes raw `GameConfig` asserts on defaults rather than on live behaviour. Pin both
+in any new test asserting concrete columns or stability numbers.
 
-`src/Server/tests/Matchmaking_Queue.test.js` — CI/test-only, **not** shipped in the Docker image. Runs via `npm test`, or directly: `node --test tests/Matchmaking_Queue.test.js` from `src/Server`. **1 test, passing.**
+**Landmine — even a plain scoring test can trip a live-tuned stability warning.** A
+single off-centre block against the current tilt tuning emits an unexpected
+`tower_warning` event, so a test asserting an exact `scoreEvents` type list should
+zero `towerStabilityDifficulty` around the placement in a `try`/`finally`, unless
+it is deliberately exercising stability.
 
-**Covers:** the multi-pod matchmaking race fixed in [decisions.md](./decisions.md#matchmaking-queue-lost-update-and-cross-pod-room-gaps) — two `LobbyManager` instances (simulating two server pods) share one fake Redis-backed state store with artificial async gaps (`setImmediate` ticks) between read/write steps, so concurrent joins actually get a chance to interleave the way real network I/O would. Three players join near-simultaneously, two via one "pod" and one via the other; the test asserts all three end up assigned to the same room and each player's own socket receives a `room_created`/`room_resumed` message.
+Coverage concentrates on the engine's scoring and summary paths. **Bot Manager,
+Balance Simulator and Server Entry have no dedicated tests here.**
 
-**Depends on:** Lobby Manager, Redis State (only for `stripRuntimeRoom`, reused so the fake store's `saveRoom`/`getRoom` produce the same snapshot shape `hydrateRoom()` expects). External: `node:test`, `node:assert/strict`.
+### `tests/Matchmaking_Queue.test.js`
 
-**Notes:** the fake state store's `withMatchmakingLock` chains onto one shared promise across both simulated pods, faithfully serializing the matchmaking decision the way Redis's `SET NX` lock does — only `enqueuePlayer` is deliberately left unlocked, matching production, since that's the actual race window. Confirmed as a meaningful regression test by running it against the pre-fix queue logic (restored a `replaceQueue`-shaped fake store method matching the removed `Redis_State.js` method): it failed reliably there and passes against the fix.
+The multi-pod matchmaking race. Two `LobbyManager` instances sharing one fake
+Redis-backed store with artificial `setImmediate` gaps between read and write
+steps, so concurrent joins actually interleave the way real network I/O would.
+Three players join near-simultaneously, two via one "pod" and one via the other;
+all three must land in the same room and each socket must receive its
+`room_created`/`room_resumed`.
 
-## Balance Simulator
+The fake store's `withMatchmakingLock` chains onto one shared promise across both
+pods, faithfully serialising the decision the way Redis's `SET NX` lock does.
+**Only `enqueuePlayer` is deliberately left unlocked, matching production, since
+that is the actual race window.**
 
-`src/Server/tools/Balance_Simulator.js` — offline balance-sampling tool. Tooling only: not required by the running server/client, not copied into the Docker image, not `require()`d by anything else (CI only syntax-checks it via `node --check` in `npm test`; it never actually runs in CI).
+Confirmed as a meaningful regression test by running it against the pre-fix queue
+logic: it failed reliably there and passes against the fix. **A regression test
+that was never seen to fail is not yet known to be one.**
 
-- Instantiates [Game Engine](./backend.md#game-engine) directly at a chosen level — no Lobby Manager, no Redis, no WebSocket, no room-of-real-players setup.
-- **Delegates every decision to the shipped [Bot Manager](./backend.md#bot-manager)** (`chooseBotAction`, given an explicit strategy) rather than keeping a parallel copy of the heuristics, so what it measures is what a real room plays. The action carries its own `column`/`originY`, resolved through the engine's `resolvePlacementOrigin` so an aimed release row is honoured exactly as in a real room. It honours the `wait` action by burning that player's turn without placing.
-- **Models the per-player placement cooldown on a clock.** Each player has a `simReadyAt`; the simulator repeatedly picks the earliest-ready player with blocks and advances a millisecond clock, failing the run as `timedOut` once the clock passes the level's **derived** limit (`engine.getLevelTimeLimitMs()`, not the flat config value — reading that would report every level past the earliest as a false timeout). This is not just pacing: without it one player could place unboundedly in a row, which made contribution look wildly lopsided and the Impact gate look impossible (a ~0–8% pass rate that was pure artifact).
-- Runs **both bot strategies** per level and prints a `strategy` column, so the selfish-vs-cooperative comparison is directly readable.
-- CSV metrics: site width, achieved packing efficiency, completion rate, exact-finish rate, **collapse rate**, **timeout rate**, **starve rate**, **Impact-gate pass rate**, overbuild, placement count, clock used, gap placements, supported cells, supply height vs. required, `pileClipped`, `supplyValidRate`, score spread.
-- Run: `npm run balance:simulate -- <levels> <runs>` from `src/Server`.
-- **Stability sweep:** `npm run balance:stability -- <levels> <runs>` re-runs every level at `towerStabilityDifficulty` 0/50/75/95/100 (95 is the shipped default, sampled directly rather than interpolated) and prints the calibration view — `avgStability`, `minStability`, `avgIntegrity`, `avgLean`, `avgSiteUsage`, `avgSupportDeficit`, and `integrityBinding` (share of placements where integrity, not lean, is the lower axis, so it names which anchor to move). Sampled at **every placement**, not just level end.
+## Balance CLIs
 
-**Reading it:** `gatePassed` is the number that matters most under a per-band Impact rule — a level can complete and still roll the team back. `gatePassed` is routed through the engine's real `hasMetImpactScoreRequirement` (band-based, `impactExpectedStabilityMultiplier` included) rather than a simplified per-level formula, so it reads the same gate the server enforces — the simulator anchors `room.impactLevel` at the simulated level so the band matches the one level it actually played. The intended shape is cooperative winning on completion/gate while mvp-greedy wins on MVP score; if greedy wins both, stability is tuned too forgiving for collapse to punish it (see [gameplay.md § Bot behavior](./gameplay.md#bot-behavior)).
+`src/Server/tools/Balance_Simulator.js` — offline balance sampling, CI
+syntax-checked only. Run `npm run balance:simulate -- <levels> <runs>`.
 
-**Landmine — do not calibrate against `collapse`.** `chooseBotPlacement` evaluates every legal placement and skips any that collapses, so bots almost never die and the rate reads ~0% across wildly different configs. Tune against `avgStability` and the spread of per-placement outcomes instead; those track what a human under a timer actually experiences.
+- Instantiates [Game Engine](./backend.md#game-engine) directly — no lobby, no
+  Redis, no socket.
+- **Delegates every decision to the shipped Bot Manager** rather than keeping a
+  parallel copy of the heuristics, so what it measures is what a real room plays.
+  It honours the `wait` action by burning that player's turn.
+- **Models the per-player placement cooldown on a clock.** Each player has a
+  `simReadyAt`; the simulator picks the earliest-ready player with blocks and
+  advances a millisecond clock, failing the run as `timedOut` once it passes the
+  level's **derived** limit — reading the flat config value instead would report
+  every level past the earliest as a false timeout.
+- Runs **both strategies** per level so the comparison is directly readable.
+- **Stability sweep:** `npm run balance:stability` re-runs every level at
+  difficulty 0/50/75/95/100 and prints `avgStability`, `minStability`,
+  `avgIntegrity`, `avgLean`, `avgSiteUsage`, `avgSupportDeficit`, and
+  `integrityBinding` — the share of placements where integrity, not lean, is the
+  lower axis, which is what names the anchor to move. Sampled at **every
+  placement**, not just level end.
 
-**Two things the bots structurally cannot measure**, so neither is evidence of a balance problem:
+`gatePassed` is the number that matters most under a per-level Impact rule — a
+level can complete and still roll the team back. It routes through the engine's
+real `hasMetImpactScoreRequirement` rather than a simplified formula, so it reads
+the gate the server enforces. The intended shape is cooperative winning on
+completion and gate while greedy wins on MVP score; if greedy wins both, stability
+is tuned too forgiving for collapse to punish it.
 
-- **`timeout` and `smartComplete`.** The derived clock is sized for `levelTimePlannedEfficiency` (0.55, a human filling the site) while bots spire-build at ~0.9, so they finish in a fraction of the budget and never time out. Completion reads a flat 100% at every level regardless of the curve.
-- **`gapPlacements`.** Bots pick a max-stability placement every turn, so they build clean towers with no overhangs to repair — there is nothing to fill, and the rate stays near zero however tall the target. Gap-filling is a mechanic for players who create messes under time pressure; validating it needs playtests, not this tool.
+**Landmine — the cooldown model is not just pacing.** Drop it and one player
+places unboundedly in a row, which makes contribution read lopsided and the Impact
+gate read impossible — an artifact that swings the measured pass rate by an order
+of magnitude. **Never trust a tuning number from a simulator that omits a real
+constraint.**
 
-**Depends on:** Game Engine, Game Config, Bot Manager, Tower Stability (used directly for settle/evaluate on the simulated result, not just transitively through the engine).
+**Landmine — do not calibrate against `collapse`.** `chooseBotPlacement` skips any
+placement that collapses, so bots almost never die and the rate reads ~0% across
+wildly different configs. Tune against `avgStability` and the spread of
+per-placement outcomes.
 
-**Notes:** a tuning aid, not a gameplay authority — the real server's Game Engine is still the source of truth. Temporarily silences `console.log` (not `console.error`) during a run, then restores it, so large `<runs>` counts don't flood the terminal. Design interpretation of the output → [gameplay.md](./gameplay.md). **`src/Server/tools/Stability_Probe.js`** (same tooling-only treatment; `npm run balance:probe`) complements this tool's structural blind spot — bots always pick a max-stability placement, so they never build the wide-base/narrow-spire or overhang shapes needed to see whether a genuinely bad tower actually degrades. It hand-builds five archetypes at several heights/levels and evaluates each through `resolveStabilityConfig(level)` directly, asserting a single opening brick never collapses at any sampled level.
+**Two things the bots structurally cannot measure**, so neither is evidence of a
+balance problem:
 
-## Godot Client Tests
+- **`timeout` and completion.** The derived clock is sized for a human's 0.55
+  packing efficiency while bots spire-build at ~0.9, so they finish in a fraction
+  of the budget and read a flat 100% completion at every level.
+- **`gapPlacements`.** Bots pick a max-stability placement every turn, so they
+  build clean towers with nothing to repair. Gap-filling is a mechanic for players
+  who create messes under time pressure; validating it needs playtests.
 
-Files: `src/Client/App/corp-tower/Tests/CiSmokeTest.gd`, `Tests/Gut/test_player_colors.gd`, `Tests/Gut/GameUi/*`. Run headlessly through vendored GUT (`addons/gut`), invoked by [Android Deploy wsplaytod Workflow](./build.md#android-deploy-wsplaytod-workflow) before a signed export.
+`src/Server/tools/Stability_Probe.js` (`npm run balance:probe`) covers that second
+blind spot: because bots always pick a max-stability placement, they never build
+the wide-base/narrow-spire or overhang shapes needed to see whether a genuinely bad
+tower degrades. It hand-builds five archetypes at several heights and levels,
+evaluates each through `resolveStabilityConfig(level)` directly, and **asserts a
+single opening brick never collapses at any sampled level** — the guard for the
+site-usage-worst-at-the-first-brick landmine.
 
-**Covers:** loads application scripts under `Cor`/`Sys` (catches load-time/syntax errors before CI's build step); verifies the main scene + `NetworkManager` autoload wiring; verifies [Game UI Scene](./ui.md#game-ui-scene) loads/instantiates with every node Main UI Controller requires present; verifies [Player Colors](./ui.md#leaf-components) behavior through GUT.
+Both are tuning aids, not gameplay authorities.
 
-**`Tests/Gut/GameUi/test_snap_grid.gd`** is the one piece of genuinely behavioral placement coverage: `SnapGrid` is node-free, so it is exercised directly with no scene mount. **26 tests.** It pins the gravity settle against hand-computed stacking/cantilever cases from both release rows — above the tower and inside a void (the mirror of server `Tower_Stability.settleBlock` — if that server function changes, this suite is what should fail) — plus the release-row legality table (`is_placement_legal`: overlap and below-platform rejected, unsupported open air *accepted* because gravity, not the rule, resolves it), the snap-point set (platform points, placed-brick corners deduped, unplaceable columns excluded), `origin_range` clamping, true-outline-vertex selection for `T`, the snap-vs-fallback threshold, and the invariant that **no resolved column ever lets a footprint leave the placeable site**. Two paired cases carry the aim-and-fall rule: the same aim lands at row 0 over empty ground and stays at row 2 once a brick is under it. Two more pin `resolve()`'s `aim_origin_y`/`aim_point` against `origin_y`/`target_point`: an O aimed under an overhanging L/J-family foot with open air beneath it, and a differently-shaped I dropped under an isolated floating shelf, both dock at the aim and separately fall to the platform/nearest support — proving the aim/settle split is generic to the resolver, not special-cased to one shape pair. It also covers the **dynamic site**: a widened range grows the snap-point set and origin range, still confines every footprint, and `set_placeable_range` rejects inverted or off-grid spans. Because the range is `static var` state, `before_each`/`after_all` call `reset_placeable_range()` — omit that and tests leak grid state into each other. `test_inventory_controller.gd` additionally asserts the column actually handed to `place_block` lands in range, and covers the parallel-placement machine end to end: select → aim → confirm sends exactly one placement carrying the armed row, a tap elsewhere re-aims without sending, deselect sends nothing, and a card tap never starts a drag. Its taps reset `last_tap_ms` between steps — the 60 ms de-dupe window that protects a real tap from its emulated partner would otherwise swallow back-to-back synthetic events.
+## Godot client tests
 
-**`Tests/Gut/GameUi/test_block_emoji.gd`** is the other node-free behavioral suite: it pins every shape's [brick-face anchor](./ui.md#leaf-components) against the art guide and asserts the anchor stays on brick mass under all 4 rotations, that `BALANCE_DELTA_KEY` matches the server's field name (a mismatch silently removes every face), and that one delta reclassifies as the threshold moves. `test_debug_panel.gd` covers a knob's whole path — the row syncs from `debug_config`, its nodes really do parent under their own category, and the value reaches its target (`TowerStack.mood_threshold`; the two Hooks toggles under `Hooks`). **The face PNGs live in the gitignored private-art folder, so `test_block_emoji.gd::test_each_mood_resolves_its_own_texture` fails with `ERR_CANT_OPEN` on any machine that has not imported the art** — CI imports assets before running GUT, so a local 164/165 with only that case red is the expected state, not a regression.
+`Tests/CiSmokeTest.gd` plus GUT suites under `Tests/Gut/`, run headlessly through
+vendored GUT and invoked by the Android deploy workflow before a signed export.
 
-**`Tests/Gut/GameUi/test_block_orientation.gd`** is a fourth node-free behavioral suite, covering `BlockData`'s rotate-and-mirror rendering math against every orientation a dealt block can actually reach (the 4 rotations of each of the 5 shapes plus the 4 rotations of each shape's mirror, deduped — 19 total, independently re-derived rather than assumed): `detect_orientation` reproduces every one of them from the canonical shape, `brick_quad_points`'s rendered bounding box matches the real footprint for all 19, and `brick_quad_colors` shades a higher-on-screen vertex brighter than a lower one for every rotation/mirror combination — the regression guard for the brick-rotation and lit-from-above-regardless-of-rotation fixes.
+The smoke test loads every script under `Cor`/`Sys` (catching load-time and syntax
+errors before the build step), verifies the main scene and `NetworkManager`
+autoload wiring, and verifies Game UI Scene instantiates **with every node Main UI
+Controller requires present** — that last one is the node-contract guard.
 
-**`Tests/Gut/GameUi/test_visual_hooks.gd`** covers the [Impact Beat](./ui.md#leaf-components) — **13 tests**: config parsing, enabled-by-default and the `impactBeatMinZoom` clamp; verdict mapping off `impactScoreStatus`; the level-result key that de-dupes one beat per result; and `TowerStack` behaviour — skipped when the tower is empty, the hook disabled, or a collapse is running; the derived zoom respecting its floor; faces flipping only once the wave front reaches a brick; `BEAT_HOLD` never auto-advancing once its nominal duration elapses (only an external `cancel_impact_beat()` ends it); `cancel_impact_beat()` restoring the camera.
+The node-free behavioural suites carry the real coverage — a `RefCounted` service
+needs no scene mount:
 
-**`Tests/Gut/GameUi/test_collapse_sim.gd`** is a third node-free behavioral suite, exercising [Collapse Sim](./ui.md#leaf-components) directly with a fixed seed: no piece starts moving upward or ever settles below the platform or outside its span, every piece ends flat (`flat_rest_angle`'s footprint-wider-than-tall contract), the sim reaches settled within a bounded step count, and one seed reproduces the identical collapse while a different seed diverges.
+**`test_snap_grid.gd`** — gravity settle from **both** release rows against
+hand-computed stacking and cantilever cases. It mirrors server `settleBlock`, so
+**a change to that server function should break this suite**. Also the legality
+table (overlap and below-platform rejected; unsupported open air *accepted*,
+because gravity resolves it), snap-point set, origin-range clamping,
+true-outline-vertex selection, snap-vs-fallback threshold, and the invariant that
+**no resolved column lets a footprint leave the site**.
 
-**`Tests/Gut/GameUi/test_tutorial_*.gd`** covers the [Tutorial](./ui.md#tutorial) layer. `test_tutorial_lessons.gd` is the load-bearing regression guard — lesson ids unique, every step's gate is in `TutorialGates.ALL`, and every step's `target` resolves and is visible in the mounted scene (catches a rename or a control moved under `LegacyHidden`, same as the node-contract check above). `test_tutorial_gates.gd` is `is_satisfied`'s truth table, node-free. `test_tutorial_progress.gd` covers mark/read/reset and that a missing or corrupt save file degrades to nothing completed. `test_tutorial_controller.gd` covers advance/back/skip-step/skip-lesson, that an incidental action never silently advances an `info` step, that tutorial-mode placement never reaches `NetworkManager`, the stability lesson's tilt direction following the actual drop column, and the Refresh/quick-chat simulation.
+**`test_block_emoji.gd`** — face anchor per shape against the art guide, anchor
+stays on brick mass under all 4 rotations, delta reclassifies as the threshold
+moves, and `BALANCE_DELTA_KEY` matches the server's field name: **a mismatch
+silently removes every face.**
 
-**Depends on:** Godot Client App, NetworkManager, Main UI Controller, Game UI Scene, Player Colors. External: GUT, vendored under `addons/gut`.
+**`test_block_orientation.gd`** — `BlockData` rotate-and-mirror across all 19
+reachable orientations, **independently re-derived rather than assumed**:
+`detect_orientation` reproduces each, the rendered bounding box matches the real
+footprint, and a higher-on-screen vertex shades brighter every combination.
 
-**Notes:** coverage is **structural, not behavioral**, for almost everything except Player Colors — `CiSmokeTest.gd` confirms scripts/scenes load without error but doesn't exercise gameplay logic. Main UI Controller, NetworkManager, Block Preview, Cooldown Overlay, and Debug Overlay have **no behavioral test coverage today** — worth keeping in mind before larger refactors there. Tower Stack's own render code (`_draw`, `_begin_collapse`) is likewise untested; behavioral coverage reaches only the node-free physics it delegates to (Collapse Sim) and its Impact Beat surface (`test_visual_hooks.gd`). (Main UI Controller does have *characterization* coverage under `Tests/Gut/GameUi/` from its decomposition — see [ui.md](./ui.md#main-ui-controller) — which is narrower than full behavioral coverage.)
+**`test_visual_hooks.gd`** — Impact Beat config, verdict mapping, de-dupe key,
+and `TowerStack` behaviour: skipped when empty, disabled or collapsing; derived
+zoom respecting its floor; faces flipping only as the wave reaches them;
+**`BEAT_HOLD` never auto-advancing** once its nominal duration elapses.
 
-## CI test gates
+**`test_collapse_sim.gd`** — fixed-seed physics: no piece starts upward or
+settles below the platform or outside its span, every piece ends flat, the sim
+settles within a bounded step count, one seed reproduces an identical collapse
+while another diverges.
 
-| Workflow | Runs | Blocking? |
+**`test_tutorial_*.gd`** — lesson ids unique, every gate in the closed set, the
+gate truth table, progress degrading to nothing-completed on a corrupt file, an
+incidental action never silently advancing an `info` step, and **every step's
+`target` resolving and visible in the mounted scene** — which catches a rename or
+a control moved under a hidden container.
+
+`test_inventory_controller.gd` asserts the column handed to `place_block` lands in
+range and covers parallel placement end to end: select → aim → confirm sends
+exactly one placement carrying the armed row, a tap elsewhere re-aims without
+sending, deselect sends nothing, a card tap never starts a drag.
+**Its taps reset `last_tap_ms` between steps** — the 60 ms de-dupe window that
+protects a real tap from its emulated partner would otherwise swallow back-to-back
+synthetic events.
+
+`test_debug_panel.gd` covers a knob's whole path: the row syncs from
+`debug_config`, its nodes really do parent under their own category, and the value
+reaches its target.
+
+**Landmine — `SnapGrid`'s range is `static var` state**, so `before_each` and
+`after_all` must call `reset_placeable_range()`. Omit it and tests leak grid state
+into each other.
+
+**Landmine — the face PNGs live in the gitignored private-art folder**, so
+`test_block_emoji.gd::test_each_mood_resolves_its_own_texture` fails with
+`ERR_CANT_OPEN` on any machine that has not imported the art. CI imports assets
+before running GUT, so **a local run with only that one case red is the expected
+state, not a regression.**
+
+## CI gates
+
+| Workflow | Runs | Blocking |
 |---|---|---|
-| Android Deploy wsplaytod | `CiSmokeTest.gd`, required GUT tests | Yes — before signed export |
-| K3s Deploy (game server) | `npm test` (syntax checks + `Score_Events.test.js` + `Matchmaking_Queue.test.js`) | Yes — before image build/push |
+| Android Deploy wsplaytod | `CiSmokeTest.gd` + required GUT suites | Yes — before signed export |
+| K3s Deploy (game server) | `npm test` | Yes — before image build/push |
 
 ## Known coverage gaps
 
-- `checkFailCondition()`'s `all_blocks_used` branch and `setupSideQuest()`/quest completion have no direct test — worth adding before a larger refactor of the Power side-quest flow.
-- Multi-worker matchmaking (queue draining + cross-pod room handoff) has regression coverage — see [Server Matchmaking Queue Tests](#server-matchmaking-queue-tests). Reconnect and gateway routing across pods more broadly still have no integration tests — planned future work (see [decisions.md](./decisions.md#no-persistent-leaderboard-yet)).
-- Most client UI components (Main UI Controller, NetworkManager, Block Preview, Tower Stack, Cooldown Overlay, Debug Overlay) have structural coverage only, not behavioral. Placement, the brick-face math and the Impact Beat are the exceptions — covered by `test_snap_grid.gd` / `test_block_emoji.gd` / `test_visual_hooks.gd`.
-- **`TowerStack`'s drawing and drag-state handling remain untested**, and that gap is not theoretical: the bug where `clear_snap_preview()` wiped the drag state on the first move (leaving no ghost at all) passed every unit test and was only caught by rendering the play field to PNG. Verify placement visuals by running the client, not by the suite alone.
+- `checkFailCondition()`'s all-blocks-used branch and the Power side-quest flow
+  have no direct test.
+- Multi-worker matchmaking has regression coverage; **reconnect and gateway
+  routing across pods more broadly do not.**
+- Most client UI is **structural coverage only** — Main UI Controller,
+  NetworkManager, Block Preview, Cooldown Overlay and Debug Overlay have no
+  behavioural tests. Placement, the face maths, block orientation, the Impact Beat,
+  the collapse sim and the Tutorial are the exceptions.
+- **`TowerStack`'s drawing and drag-state handling remain untested, and that gap is
+  not theoretical.** The bug where `clear_snap_preview()` wiped drag state on the
+  first move — leaving no ghost at all — passed every unit test and was only caught
+  by rendering the play field to PNG. **Verify placement visuals by running the
+  client, not by the suite alone.**

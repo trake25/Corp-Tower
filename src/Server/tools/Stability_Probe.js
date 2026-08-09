@@ -140,7 +140,7 @@ const ARCHETYPES = {
 
     // Uniformly 2-wide from the ground up -- the height-optimal, stability-
     // free spire that motivated the two-axis Integrity redesign in the first
-    // place (decisions.md#two-axis-stability-lean--integrity...).
+    // place (docs/context/backend.md).
     twoWideSpire: (siteWidth, height) => {
         const width = Math.min(2, siteWidth);
         const originX = centeredOriginX(siteWidth, width);
@@ -208,8 +208,8 @@ function run() {
     }
 }
 
-// A real regression, not a hypothetical: decisions.md#tower-stability-is-one-
-// derived-dial-scaled-by-level records that a single narrow opening brick once
+// A real regression, not a hypothetical: docs/context/backend.md records that
+// a single narrow opening brick once
 // collapsed 47% of runs at high pressure, because site usage is at its worst
 // on the very first placement. Fails loudly rather than requiring a human to
 // notice it in the CSV.

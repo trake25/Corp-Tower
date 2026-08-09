@@ -1,173 +1,365 @@
 # UI (Godot Client)
 
-Scope: the Godot client's presentation layer — screen flow, the main gameplay HUD, and every leaf visual component. Wire protocol → [networking.md](./networking.md). Client shell/build config → this file's first section. Test coverage → [testing.md](./testing.md#godot-client-tests).
+Scope: the Godot client's presentation layer — screen flow, the gameplay HUD, and
+every leaf visual component. Wire protocol → [networking.md](./networking.md).
+Tests → [testing.md](./testing.md#godot-client-tests). Per-symbol file and line →
+grep [map/ui.md](./map/ui.md).
 
-All paths under `src/Client/App/corp-tower/` unless noted.
+All paths under `src/Client/App/corp-tower/` unless noted. **The client renders
+`game_state` and never computes a gameplay outcome.**
 
 ## Godot Client App (shell)
 
-Project root. Android-first client; connects through [NetworkManager](./networking.md#networkmanager), renders room/level/timer/tower/score/inventory state, sends player actions. **Reflects server state — never calculates final gameplay locally.**
-
 - `project.godot` autoloads NetworkManager as a singleton.
-- Display contract: 412×917 portrait design size, `canvas_items` stretch mode, per-platform stretch aspect — `expand` by default (Android fills any phone aspect), overridden to `keep` for web (`window/stretch/aspect.web`) so the browser pillarboxes to 412:917 instead of widening the viewport.
-- `Main.tscn` is the app root, owning [Screen Manager](#screen-manager). It swaps between join screen, find-match screen, and the instanced [Game UI Scene](#game-ui-scene) — there is no single statically-instanced UI root scene.
-- Android export config lives in the gitignored local `export_presets.cfg`; CI uses a non-secret preset (see [build.md](./build.md#android-deploy-wsplaytod-workflow)).
-- Current release target is **Android only**; web/Windows/iOS are future, not active.
+- Display: 412×917 portrait design size, `canvas_items` stretch. Aspect is
+  `expand` by default (Android fills any phone) and `keep` for web
+  (`window/stretch/aspect.web`), so the browser pillarboxes instead of widening.
+- `Main.tscn` is the app root and owns [Screen Manager](#screen-manager). It swaps
+  join / find-match / instanced [Game UI Scene](#game-ui-scene) — there is no
+  static UI root scene.
+- Android export config is the gitignored `export_presets.cfg`; CI uses a
+  non-secret preset → [build.md](./build.md#android-deploy-wsplaytod-workflow).
+- Release target is **Android only**. Web/Windows/iOS are future.
+- Two build-time flags from `EndpointConfig`, written per build by
+  `write-endpoint-config.sh`: `DEBUG_UI_ENABLED` gates the debug button, off for
+  the K3s web builds and the public demo; `DEMO_MODE_ENABLED` gates the required
+  `DemoModeLabel` node disclosing that empty seats are bots, set only for
+  `toddemo`.
 
-**Gotchas:**
-- `window/handheld/orientation` must be the Godot 4 integer `1` (`SCREEN_PORTRAIT`), not a Godot 3–style string — a string silently coerces to `0` (landscape) with **no warning**. This is what shipped every Android build in forced landscape until corrected; check this first if orientation ever regresses, since the string form *looks* correct.
-- `expand` vs `keep` produce genuinely different viewport sizes, not just different letterboxing — under `expand` the viewport grows past 412×917 to match window aspect; under `keep` it stays exactly 412×917. They coincide only when the run window is already 412×917, which is why the **editor looks identical under either setting and cannot validate web layout**. Verify web layout from a deployed build ([deployment.md § K3s workflows](./deployment.md#k3s-workflows) or the physical backup's `devtod1`/`devtod2`).
-- Debug tuning is a floating overlay ([Debug Overlay](#leaf-components)) toggled by a single global draggable button owned by Screen Manager — visibility is a build-time flag (`EndpointConfig.DEBUG_UI_ENABLED`, see [build.md § Client endpoint config](./build.md#client-endpoint-config)), off for the K3s web builds (`playtod`/`todtest`) and the physical backup's public demo (`toddemo`), on everywhere else (Android, editor, the physical backup's dev builds); where visible, it is further disabled (not hidden) until a room connects. See [decisions.md](./decisions.md#debug-menu-build-flag). Category navigation is a dropdown (`DebugCategoryDropdown`), not tabs — see [decisions.md](./decisions.md#debug-menu-category-navigation-switched-from-tabs-to-a-dropdown).
-- A second build-time flag, `EndpointConfig.DEMO_MODE_ENABLED`, gates a required `DemoModeLabel` node in [Game UI Scene](#game-ui-scene) (bound in `prepare_ui()` like every other required node) — an always-visible line disclosing that empty seats are bots. Set only for `toddemo`; every other build ships it hidden.
+There is **one** gameplay UI scene and no skin system.
+
+The debug gate is UI-only. `update_config`/`resetDebugConfig` still have **no
+server-side auth check** — full gating needs that before public release.
 
 ## Screen Manager
 
-`Cor/Scripts/ScreenManager.gd`, attached to `Main.tscn` — app-level root controller owning screen flow and the single global debug toggle button.
+`Cor/Scripts/ScreenManager.gd`, on `Main.tscn`. Owns screen flow and the single
+global floating debug button.
 
-- Swaps join screen / find-match screen / live [Game UI Scene](#game-ui-scene) inside `ScreenContainer`, responding to the child screens' `find_match_requested`/`cancel_requested` and NetworkManager's `room_joined`/`room_closed`.
-- Instantiates `PlayScreenScene` once per joined room, frees it on room close — not kept resident.
-- Owns one floating, draggable debug button above whichever screen is active. Distinguishes tap vs. drag via `DEBUG_BUTTON_DRAG_THRESHOLD`. Visibility is set once in `_ready()` from `EndpointConfig.DEBUG_UI_ENABLED`; where visible, it is further gated (enabled) only when a live play instance exists with a `toggle_debug_overlay()` method **and** `NetworkManager.is_conn_estab` is true.
-
-**Interface:** `show_join_screen()`, `show_find_match_screen()`, `reset_debug_button_position()` (snaps to top-right; called on `_ready()` and on room join — not after a manual drag, so a player's drag persists until the next room join), `_on_debug_button_tapped()` (calls `play_instance.call("toggle_debug_overlay")` via duck typing — no static dependency on Main UI Controller).
-
-**Depends on:** NetworkManager (`room_joined`, `room_closed`, `status_changed`, `is_conn_estab`); Main UI Controller (duck-typed call only); the join/find-match scenes (thin — they only emit their request/cancel signal and mirror `status_changed` into a label; not separately documented).
-
-**Notes:** debug button's default spot moved bottom-right → top-right to avoid the join/find-match screens' primary action buttons. Gated by a build flag (`EndpointConfig.DEBUG_UI_ENABLED`) — UI-only; the server still has no auth check on `update_config`/`resetDebugConfig` (see [decisions.md](./decisions.md#debug-menu-build-flag)).
+- Swaps join / find-match / live Game UI Scene inside `ScreenContainer`, driven by
+  the child screens' request signals and NetworkManager's `room_joined` /
+  `room_closed`.
+- Instantiates `PlayScreenScene` once per joined room and frees it on close.
+- The debug button distinguishes tap from drag via
+  `DEBUG_BUTTON_DRAG_THRESHOLD`. Visibility is set once in `_ready()` from
+  `DEBUG_UI_ENABLED`; it is further *enabled* only when a live play instance
+  exposes `toggle_debug_overlay()` and `NetworkManager.is_conn_estab` is true.
+- Calls into Main by duck typing (`play_instance.call(...)`), so there is no
+  static dependency on the Main UI Controller.
+- `reset_debug_button_position()` runs on `_ready()` and room join, never after a
+  manual drag — a player's drag persists until the next room join.
 
 ## Main UI Controller
 
-`Cor/Scripts/Main.gd` — was a single ~2,700-line script; now a slim (~415-line) orchestrator owning engine callbacks and server-signal fan-out, delegating everything to single-purpose modules under `Cor/Scripts/GameUi/`. Module shape convention → [coding-conventions.md](./coding-conventions.md#client-gameui-module-family-pattern).
+`Cor/Scripts/Main.gd` — a slim orchestrator owning engine callbacks and
+server-signal fan-out, delegating to single-purpose modules in
+`Cor/Scripts/GameUi/`.
 
-**Orchestrator responsibilities:**
-- Constructs shared services/controllers in `_ready()` (code-created children, never scene nodes); binds the [Game UI Scene](#game-ui-scene) node contract once via `UiNodeBinder`; aborts via `prepare_ui()` if a required node is missing.
-- Owns Godot input/frame callbacks: `_input()` → `inventory.handle_input()` only (each popover trigger connects its own signal — see Notes); `_process()` → `inventory.tick()`, `top_bar.tick_round_timer()`; `_unhandled_input()` → closes the debug overlay on `ui_cancel`.
-- Wires the six NetworkManager signals in `connect_network_signals()`; hosts `update_game_state()` as the fan-out pushing each `game_state` slice to its module.
-- Small direct surface: `toggle_debug_overlay()` (duck-typed from Screen Manager), `on_connect_pressed()`, `should_block_popovers()` (shared guard passed into each controller), connection/room/status handlers.
-- Exposes `missing_required_nodes` (read by the [smoke test](./testing.md#godot-client-tests)) and every module handle (`inventory`, `power`, `roster`, `score_popups`, `summary`, `quest`, `chat`, `top_bar`, `debug_panel`, `popovers`, `players_ctx`, `match_state`, `tuning`, `visual_hooks`, `visual_fx`).
+**Module family shape — follow it rather than adding logic back into `Main.gd`.**
+Two shapes only:
 
-**Module family (`Cor/Scripts/GameUi/`):**
+- **Shared services** (`RefCounted`) — stateless or shared data, instantiable in
+  GUT with no scene tree: `UiTuning`, `MatchState`, `PlayerContext`,
+  `UiNodeBinder`, `PointerEvents`, `AccessibilitySettings`, `VisualHooks`,
+  `PopoverCoordinator`, `BlockData`, `SnapGrid`.
+- **View controllers** (`Node`, `add_child`-ed by Main so they share the scene
+  lifecycle and can own `Tween`s/`Timer`s): `DebugPanelController`,
+  `ScorePopupController`, `LevelSummaryController`, `RosterViewController`,
+  `VisualHooksController`, `QuestController`, `QuickChatController`,
+  `PowerController`, `InventoryController`, `TopBarController`.
 
-*Shared services (RefCounted):*
+Neither shape is added to `GameUI.tscn` directly. Each declares the nodes it needs
+via its own `bind_nodes(binder)`, which Main aggregates through `UiNodeBinder`.
 
-| Module | Purpose |
-|---|---|
-| `UiTuning` | The four client-tuning values (`placement_cooldown_ms`, placement/finish popup durations, `level_summary_delay_ms`) from `debug_config` + `game_state` |
-| `MatchState` | `current_match_state`, `current_level`, `impact_interval`, `is_playing()` |
-| `PlayerContext` | Roster/color-map/seat-index + color/display-name/`is_local` helpers (consolidates scattered `NetworkManager.player_id` checks + Player Colors lookups) |
-| `UiNodeBinder` | Wraps `find_child` node-contract binding; collects missing required names |
-| `PointerEvents` | Pointer id/position statics; used by `InventoryController`'s touch-aware drag. Also owns the **input-kind latch**: Godot mirrors every touch into a matching mouse event (`emulate_mouse_from_touch`, on by default), tagged `device == -1`, so `is_emulated(event)` is what separates a real mouse from a thumb. `note_event()` latches `touch_mode` on a real touch and clears it on a real mouse event, and `has_mouse()` answers "should a cursor-anchored ghost exist at all?" — a hybrid device follows whichever input was used last |
-| `AccessibilitySettings` | The accessibility option set: room defaults from `game_state.accessibility`, overlaid by a **per-player local override** persisted to `user://accessibility.cfg` (`ConfigFile`; a missing/corrupt file degrades to defaults). `is_enabled(key)`/`set_override`/`toggle`, and a `changed` signal Main re-applies from. Currently one key, `parallelPlacement`. Per-player rather than room-wide by design — one player can build by tap while the rest of the room drags |
-| `VisualHooks` | The room's `game_state.visualHooks` group: the `impactBeat`/`screenShake` toggles plus every [Impact Beat](#leaf-components) duration, defaulting to enabled and clamping `impactBeatMinZoom` to 0.05–1.0. `impact_beat_total_ms()`/`_seconds()` sum zoom-out + wave + hold — the wait Main adds before showing the level summary; the beat then keeps holding through the summary itself, ending (no eased zoom-in) only when the summary closes. **The durations arrive only here; they are not `debug_config` keys** |
-| `PopoverCoordinator` | `active_popover` + `present()`/`is_open()`/`close_active()` — every popover is its own instance, so `is_open()` just compares against `active_popover` |
-| `BlockData` | `normalize_block`/`calculate_block_height` statics, shared by inventory and the draw-pile preview in the always-visible [Team Inventory Panel](#team-inventory-panel); also the shared rendering-support layer for [Block Preview](#leaf-components) and [Tower Stack](#leaf-components) — `brick_texture` (per-shape PNGs in `Cor/Art/Bricks/`), `cell_bounds`, `outline_corners`, `detect_orientation`/`brick_quad_points`/`brick_quad_uvs`/`brick_quad_colors`. `detect_orientation(shape_id, cells)` returns `{steps, flipped}`, replicating the server's rotate-and-mirror math (see [gameplay.md § Block system](./gameplay.md#block-system)) so a canonical brick texture can be rotated *and mirrored* to match a randomly-dealt block; `brick_quad_points` takes that `flipped` flag and mirrors the quad via UV winding (not a second texture asset) so a J/S-family piece renders correctly with the same PNGs. `brick_quad_colors` bakes the top/bottom lighting shade into each vertex from its own on-screen Y **after** rotation, so the highlight always reads as lit from directly above regardless of the brick's rotation or mirror — replaces the old `Cor/Shaders/BrickShade.gdshader` (deleted), whose gradient was keyed to texture UV and rotated together with the brick. Also owns the **brick face** layer: `BALANCE_DELTA_KEY`/`DEFAULT_MOOD_THRESHOLD`, `emoji_mood_for_delta(delta, threshold)` (`positive`/`negative`/`neutral`, threshold floored at 1 so a 0 delta can't satisfy both directions), `emoji_texture(mood)` (cached `Cor/Art/Static/emoji-{smiley,worried,disbelief}.png`), and `emoji_anchor(cells)` — the face's lattice offset: centroid of occupied cells pulled onto the nearest occupied cell centre, **averaging all cells tied for nearest**, which is what keeps a symmetric `O`/`I`/`Z` on its own middle instead of jumping into one quadrant. Reproduces `Art/Guide/guide-brick-emoji.png` exactly for all 5 shapes (`I` `(0.5,2.0)`, `O` `(1.0,1.0)`, `L` `(0.5,1.5)`, `T` `(1.5,1.5)`, `Z` `(1.5,1.0)`) — a bounding-box centre does **not**, since for `L`/`T` it lands on empty space or a seam |
-| `SnapGrid` | All placement snap/settle math, node-free so it is directly GUT-testable (see [testing.md](./testing.md#godot-client-tests)). **The grid is server-owned, not constant:** `grid_width` and `placeable_column_min`/`_max` are `static var`s fed from `game_state` each broadcast via `set_grid_width()`/`set_placeable_range()`, with `grid_center_col()` derived as `(grid_width − 1) / 2` and `reset_placeable_range()` restoring the `DEFAULT_*` consts. Static state was chosen over threading the range through ~8 static functions because it is genuinely global for a whole level; the trade-off is that **tests must call `reset_placeable_range()` in `before_each`** or they inherit the previous test's grid. [Tower Stack](#leaf-components) reads these rather than aliasing them into `const`s (a `const` alias silently froze the old 14/6.5 grid). Works in **lattice coordinates**: x is a column *boundary* index, y a height in grid units above the platform, which is what makes a brick corner and a snap point directly comparable. `tower_snap_points(tower_blocks)` = the 7 platform boundary points plus every placed brick's true outline vertices (deduped, clipped to the placeable span); `ghost_snap_points(cells)` = the dragged brick's own outline vertices. `resolve(...)` pairs each ghost vertex against each tower point, keeps the nearest pair whose whole origin is legal (`is_placement_legal`: inside the placeable range, on or above the platform, overlapping nothing), then applies gravity from that row — so the returned `origin_y` is where the brick comes to rest, and `exact` says whether a row was resolved at all. The pairing itself, before gravity, survives in the result too as `aim_point`/`aim_origin_y` — [Tower Stack](#leaf-components)'s docked ghost renders there, not at `origin_y`, so aiming at a legal target with nothing under it still visibly docks instead of reading as unplaceable; `origin_y`/`target_point` (the post-fall contact) are what's actually sent on placement and what the highlighted snap dot marks. Legality is only tested for a candidate already beating the best distance, so an illegal near-miss yields to the next-closest legal pairing instead of dropping the drag to the fallback — see [decisions.md](./decisions.md#point-based-snap-resolution-and-the-docked-landing-ghost). `settle_origin_y(…, from_y)`/`top_height`/`origin_range` mirror server `Tower_Stability.settleBlock`/`topHeight` and `Game_Engine.getPlaceableOriginRange`; `contact_pair` re-derives the highlighted point from the *fallen* footprint. **`settle_origin_y` and `is_placement_legal` must change whenever their server twins do**, or the landing preview silently disagrees with the server |
+**Orchestrator surface:** constructs services in `_ready()` (code-created
+children, never scene nodes); binds the node contract once and aborts via
+`prepare_ui()` if a required node is missing; owns `_input` → `inventory`,
+`_process` → `inventory.tick()` + `top_bar.tick_round_timer()`, `_unhandled_input`
+→ close debug on `ui_cancel`; wires six NetworkManager signals in
+`connect_network_signals()`; `update_game_state()` fans each `game_state` slice
+out to its module. Exposes `missing_required_nodes` for the smoke test.
 
-*View controllers (Node, `add_child`-ed by Main):*
+**Popover triggers wire their own signal.** Each trigger (`QuestChip`,
+`QuickChatTrigger`, `PowerTrigger`) connects its native `.pressed` and calls
+`should_block_popovers()` itself. There is no shared hit-test dispatcher — add new
+triggers the same way.
 
-| Module | Purpose |
-|---|---|
-| `DebugPanelController` | Entire debug overlay: slider/label wiring, `apply_config()`, `toggle()`/`set_open()`/`is_open()`, header Reset/Restart actions (`on_reset_debug_pressed()` sends `resetDebugConfig`; `on_restart_level_pressed()` sends the `restartLevel` action key then closes the overlay via `set_open(false)` — see [gameplay.md](./gameplay.md#debug-menu-and-live-tuning)). `setup_category_dropdown()`/`on_category_selected()` drive the `DebugCategoryDropdown` `OptionButton`, toggling `.visible` on exactly one of the `DebugCategoryPanels` children (`Bots`/`Round`/`UI`/`Supply`/`Scoring`/`Impact`/`Tower`/`Power`/`Parallax`/`Placement`/`Hooks`) at a time — see [decisions.md](./decisions.md#debug-menu-category-navigation-switched-from-tabs-to-a-dropdown). The **Parallax** and **Placement** categories share a second, parallel wiring path (`setup_parallax_controls()`/`on_parallax_slider_changed()`, data-driven off `tunable_rows()` = `PARALLAX_ROWS` + `PLACEMENT_ROWS`): unlike every other category, their sliders write straight onto the live `%TowerStack`/`%BgArt`/`%PlatformArt` nodes via `Object.set()`/`.get()` and call `refresh_visuals()` where needed, with **no server round-trip** — these are purely cosmetic client-local values, not `Game_Config` keys. `PLACEMENT_ROWS` covers the snap feel (`snap_radius_units`, `drag_grip_offset_units`, `ghost_alpha`, `snap_dot_radius`, `snap_target_radius`), all on `%TowerStack`. Each row's name is a flat, tappable `Button` (not a `Label`); pressing it calls `open_debug_tooltip(label, tooltip_text)`, forwarding to `DebugTooltip` (see [leaf components](#leaf-components)) for the row's designer-facing description. The Tower category's `TowerMoodThreshold` row is the brick-face band (server round-trip like its neighbours, not client-local despite being cosmetic — all three players must read the same faces). The **Hooks** category holds two `CheckButton`s, `ImpactBeatToggle`/`ScreenShakeToggle`, wired like `BotsToggle` — `update_config` round-trip on toggle, `set_pressed_no_signal` on sync — plus the beat's own duration rows (`ImpactBeatZoomOutSlider`/`WaveSlider`/`HoldSlider`, `ScreenShakeDurationSlider`, each `bind_tooltip_row`-wired), which round-trip the same way since a beat only reads as a shared moment if all three clients play it in lockstep. The UI category's `ParallelPlacementButton` is the third wiring shape: it round-trips nothing at all, flipping the local `AccessibilitySettings` override — the stand-in for the player-facing options menu, which is why it is per-player rather than an `update_config` key. **The Supply, Scoring, Impact and Tower categories now do the same** through a second mechanism: their rows stay hand-wired, but each name node was converted from `Label` to flat `Button` and is bound through `bind_tooltip_row(binder, node_name)`, which looks the row up in the `DEBUG_TOOLTIPS` constant (keyed by node name, values `{title, body}` including the knob's formula) and connects `pressed`. Because those name nodes are now `Button`s while other categories are still `Label`s, `set_debug_label_text()` takes a `Control` and writes via `set("text", …)` rather than typing the parameter — do not retype it back to `Label`. Every node lookup uses `binder.optional_node`, so a scene missing a row's `…Button`/`…Slider` degrades quietly instead of failing to bind. |
-| `ScorePopupController` | Score-event dedup, popup spawn/animation, `get_score_popup_position()` (viewport-ratio based). The `reinforce` event renders as `REINFORCE +n` and is treated as placement-class throughout — same popup duration and fade profile — since it fires alongside a placement rather than at level end. Per-player lane x-positions span a `0.16`–`0.84` fraction of the layer width — must stay wide enough that adjacent lanes clear the popup's own width (128px design units), since `team_exact_bonus` fires one popup per player at the same y simultaneously on an exact finish and narrower lanes overlap them |
-| `LevelSummaryController` | Owns the two one-shot `Timer`s; queues the summary after the score-popup batch fades; builds summary/impact-failure text. `LevelSummaryQuestLabel` is optional and filled through the injected `quest_text_provider` Callable, hidden when it returns empty |
-| `RosterViewController` | Player rail + per-player [Impact Bar](#leaf-components) track; exposes `rail_entry()`/`rail_box()` (chat-bubble anchors). `flash_impact_bars(verdicts, seconds)` pulses each bar's `modulate` — gold-shifted (scaled from the shipped gold accent `Color(1, 0.702, 0.055)`, the same one bordering the achieved Top Indicator frame and the "Safe" level badge) for a player who cleared their Impact share, red-shifted for one who missed — driven from here so [Impact Bar](#leaf-components) keeps its single-method `set_bar` surface |
-| `VisualHooksController` | Fires the [Impact Beat](#leaf-components) once per level result, deduped on a `state:level:result:teamLevelScore` key; `reset()` (level change, room join, room close) clears that key and cancels a running beat. Builds a `{player_id: "positive"|"negative"}` verdict map from `lastLevelSummary.impactScoreStatus.players[].met`, falling back to the live `game_state.impactScoreStatus`. Shakes on a `failed` state or any negative verdict, then plays the beat + `roster.flash_impact_bars()` and returns the seconds Main adds to the level-summary wait — `0.0` whenever the beat was skipped |
-| `QuestController` | Three-state quest chip + its popover. `update_freeze_quest_popover(state, side_quest)` auto-presents the popover for the whole `state == "starting"` window (temporarily zeroing the popover's `auto_close_seconds` so it can't self-dismiss mid-freeze; restored once the window ends) and closes it the instant play resumes — plain tap-to-toggle governs it outside that window. `reset_freeze_quest_popover()` is the room-reset/disconnect teardown. There is no separate freeze/countdown popup — the countdown itself lives on [TopBarController](#main-ui-controller)'s round timer. `get_quest_summary_text()` is handed to `LevelSummaryController` as a `Callable` so the summary's quest line reads claimed-by/reward without the two controllers depending on each other |
-| `QuickChatController` | Quick Chat popover rows (tap-to-send, cooldown-gated), incoming chat events, sender-anchored speech bubble. Dead `QuickChatButton1-3` code (never reachable) removed along with its binding |
-| `PowerController` | Power popover rows (tap-to-activate; no target field, effect always room-wide) + activation toast, which reads the whole power event so `replenish` can name its `meta.blocksAdded` count. Dead drag-onto-target UI removed; legacy room-wide score-rail tint on activation also removed — toast is the sole feedback |
-| `InventoryController` | 3-slot inventory cards, both placement input styles, **point-snap resolution and the drag/dock handoff**, local placement cooldown, draw-pile preview shown in the always-visible [Team Inventory Panel](#team-inventory-panel). Every drag-move offsets the pointer by the grip lift (`TowerStack.drag_grip_offset()`, falling back to `DRAG_GRIP_OFFSET_FALLBACK` if the node is absent) and calls `TowerStack.resolve_snap(cells, ghost_pos)`, storing the whole result in `drag_snap` — not just a column. Pointer inside `TowerDropZone` **and** snap valid → the floating `DragPreview` is hidden and `TowerStack.set_snap_state(drag_snap)` takes over the visual; otherwise the preview shows and `clear_snap_preview()` hides the overlay. Release sends `on_block_pressed(index, column, origin_y)` → `NetworkManager.place_block(...)`, gated on `drag_snap.valid` alongside the existing drop-zone/cooldown guards; `origin_y` is `-1` unless the resolution was `exact`. `TowerStack` is an *optional* bound node, so when it is missing `_resolve_snap` returns `UNRESOLVED_SNAP` (column `-1`, valid) and placement degrades to server-side clamping rather than refusing. **Parallel placement** (`set_parallel_placement`, driven by `AccessibilitySettings`) is the exclusive alternative to dragging: a card tap selects (`IDLE → SELECTED`), a drop-zone tap arms the ghost at the resolved spot (`ARMED`, purely local), and a second tap resolving to the *same* `(column, origin_y)` commits — any other tap re-aims, so correcting an aim can never place by accident. Selection dims the other cards and re-styles the chosen one from the `WhiteCardButton` theme box (duplicated, colour border pulsed from `tick()`); on a device with a pointer the `DragPreview` rides the cursor with **no grip lift** (the ghost is anchored to the cursor, so offsetting it would aim somewhere the player is not pointing), and on touch nothing floats at all until the aim tap. Enabling the mode flips `TowerDropZone`'s `mouse_filter` to STOP and connects its `gui_input`, so Godot's own hit-testing decides overlaps — `QuestChip` overhangs the drop-zone rect and must keep winning its own taps. Two guards are load-bearing: taps are de-duplicated on a 60 ms window because touch and its emulated mouse partner both arrive (either order) and would otherwise arm *and* confirm one tap; and `revalidate_armed_placement()` re-checks the armed spot against every broadcast, dropping back to `SELECTED` when a teammate fills it. `cancel_block_drag()` clears selection too, so every existing call site already covers both styles |
-| `TopBarController` | Level badge, round timer (blinks gold, looping, while `state == "starting"` — the start-level/freeze countdown; same alternating-modulate technique as `RosterViewController.flash_impact_bars`), tower height/progress, tower-stability readout, three-state Top Indicator (see Notes) |
+### Module notes that are not derivable from the source
 
-**Interface (driven by NetworkManager signals):** `update_status`, `update_connect_button`, `update_room(data)`, `update_room_closed(data)`, `update_game_state(data)`, `update_debug_config(config)` — all wired in `connect_network_signals()`. Action handlers live on the owning controller (`inventory.on_block_pressed`, `chat.on_quick_chat_pressed`, `power.open_power_popover`, `quest.on_quest_chip_pressed`).
+- `PointerEvents` owns the **input-kind latch**. Godot mirrors every touch into a
+  matching mouse event (`emulate_mouse_from_touch`, default on) tagged
+  `device == -1`, so `is_emulated(event)` is what separates a real mouse from a
+  thumb. A hybrid device follows whichever input was used last.
+- `AccessibilitySettings` holds room defaults overlaid by a **per-player** local
+  override persisted to `user://accessibility.cfg`; a missing or corrupt file
+  degrades to defaults. Per-player by design — one player can build by tap while
+  the rest of the room drags.
+- `VisualHooks` carries the Impact Beat durations. **They arrive only in
+  `game_state.visualHooks`, and are not `debug_config` keys.**
+- `BlockData.detect_orientation` replicates the server's rotate-and-mirror maths so
+  one canonical brick PNG can be rotated *and* mirrored to match a randomly-dealt
+  block; `brick_quad_points` mirrors via UV winding rather than a second asset.
+  `brick_quad_colors` bakes top/bottom shading from each vertex's on-screen Y
+  **after** rotation, so the highlight always reads as lit from above.
+- `BlockData.emoji_anchor(cells)` is the centroid of occupied cells pulled onto the
+  nearest occupied cell centre, **averaging all cells tied for nearest** — that tie
+  rule is what keeps a symmetric `O`/`I`/`Z` face on its middle. A bounding-box
+  centre does not work: for `L`/`T` it lands on empty space or a seam.
+- `SnapGrid` works in **lattice coordinates** — x is a column *boundary* index, y a
+  height in grid units above the platform. That is what makes a brick corner and a
+  snap point directly comparable.
+- `DebugPanelController` has three wiring shapes: most rows round-trip through
+  `update_config`; the **Parallax** and **Placement** rows write straight onto live
+  nodes with no server round-trip (purely cosmetic, client-local); the UI
+  category's `ParallelPlacementButton` round-trips nothing and flips the local
+  `AccessibilitySettings` override. The Tower category's mood threshold and the
+  Hooks category's beat durations **do** round-trip despite being cosmetic — all
+  three players must read the same faces and play the beat in lockstep.
+- `ScorePopupController` lane x-positions span `0.16`–`0.84` of the layer width.
+  They must stay wide enough to clear the popup's own 128px width, because
+  `team_exact_bonus` fires one popup per player at the same y simultaneously.
+- `InventoryController` **parallel placement** is the exclusive alternative to
+  dragging: card tap selects, drop-zone tap arms the ghost locally, a second tap
+  resolving to the *same* `(column, origin_y)` commits. Any other tap re-aims, so
+  correcting an aim can never place by accident.
 
-**Depends on:** NetworkManager (all server I/O), Godot Client App, Game UI Scene (bound node contract), and every leaf component below.
+The `exact_finish`/`overbuild_finish` wire events arrive `displayOnly` and are
+**dropped before a popup is built** — the Top Indicator already shows that state
+live. Handle them only if you want a callout the indicator does not already give.
 
-**Notes:**
-- **Zero behavior change was the decomposition's success criterion** — behavior moved verbatim, only references rewritten to injected services. Characterization coverage under `Tests/Gut/GameUi/` was added first (see [testing.md](./testing.md#godot-client-tests)).
-- Each popover trigger (`QuestChip`, `QuickChatTrigger`, `PowerTrigger`) wires its own `.pressed` signal — see [coding-conventions.md](./coding-conventions.md#client-gameui-module-family-pattern) and [decisions.md](./decisions.md#pointertriggerrouter-removed--native-per-trigger-signals) for why.
-- `ScorePopupLayer` ships `visible = false` in Game UI Scene; `ScorePopupController.bind_nodes()` re-enables it, since Godot hides a hidden `CanvasItem`'s whole subtree (which would otherwise block every popup/bubble).
-- Score events dedup by stable event id per level.
-- Each rail player's total-score line and Impact Bar fill both add the locally-tracked live `levelScore` only while `is_playing()` — total = `score` (+ live `levelScore`); bar = `bandScore / requiredBandScore` (+ live `levelScore`) — avoids double-counting a just-completed level during the finished/failed transition. The bar snapping to 0% right after a level that closes an Impact band is expected (it now tracks the next band's requirement), not a bug.
-- The top-bar round timer ticks locally every frame off the deadline set by the most recent broadcast, in every state, not only `playing` — that local tick is why it still counts down through `starting`, where the server sends exactly one broadcast rather than a per-second stream.
-- **Top Indicator** (`TopIndicatorRow` in Game UI Scene) is a three-state progress readout, driven purely client-side by `TopBarController.set_top_indicator_progress(current_height, target_height)` off the same `current_height`/`target_height` the tower-progress bar uses — display only, no new server data. States: **TOP** (`current < target`) — green→lime fill sized to progress ratio, plain white `TopBarFramePanel` frame; **PERFECT BUILD** (`current == target`) — full green→lime fill, gold-bordered `TopBarFrameAchievedPanel` frame (`Cor/Themes/GameUITheme.tres`); **OVER BUILD** (`current > target`) — full fill swapped to the red→orange `Cor/Themes/TopIndicatorFillOver.tres` texture, same gold-bordered frame. Label text mirrors the state, e.g. `"PERFECT BUILD (1000/1000)"`. Corresponds to the [Exact finish/Precision and Overbuild](./glossary.md#gameplay-terms) gameplay terms, which still solely govern actual bonus scoring.
-- Popover card mis-positioning on WebGL/Android and Power's trigger-tap issue are **not reproducible in the editor** — always verify UI-timing fixes on a deployed build.
-- `_ready()` connects [Tower Stack](#leaf-components)'s `scroll_offset_changed` signal to **both** `background_parallax.set_scroll_pixels` (the bound `BgArt` node) and `platform_parallax.set_scroll_pixels` (the bound `PlatformArt` node) right after `setup_popover_controls()` — guarded with `tower_stack.has_signal("scroll_offset_changed")` since `tower_stack`/`background_parallax`/`platform_parallax` are declared as plain `Control`, the same has_signal/Callable duck-typing style Screen Manager uses for its own cross-module call (see `_on_debug_button_tapped()` above). Tower Stack's `camera_zoom_changed` is wired the same way, to `apply_camera_zoom()` — which sets `PlatformArt`'s `pivot_offset` to the node's **top centre** before scaling it, so the ground surface stays put while the tower shrinks around its own base. Scaling it about any other pivot detaches the ground from the bricks resting on it, the same failure the platform parallax exists to prevent on the scroll axis.
-- No full behavioral test coverage of the orchestrator's fan-out beyond the characterization suite; sizable changes still need manual play-testing + CI's smoke test.
+**Live-score correction.** Each rail player's total and Impact Bar fill add the
+locally-tracked live `levelScore` **only while `is_playing()`** — total is
+`score` + live, bar is `bandScore / requiredBandScore` + live. This avoids
+double-counting a just-completed level during the finished/failed transition. The
+bar snapping to 0% right after a level that closes an Impact band is expected: it
+now tracks the next band's requirement.
+
+**The round timer ticks locally every frame** off the deadline in the most recent
+broadcast, in every state — that local tick is why it still counts down through
+`starting`, where the server sends exactly one broadcast rather than a stream.
 
 ## Game UI Scene
 
-`Cor/Scenes/GameUI.tscn`, themed by `Cor/Themes/GameUITheme.tres` — the single scene hosting every HUD/debug node Main binds against. Instanced dynamically by Screen Manager once a match is found (not a static child of `Main.tscn`); required at runtime.
+`Cor/Scenes/GameUI.tscn`, themed by `Cor/Themes/GameUITheme.tres` — the single
+scene hosting every HUD and debug node Main binds against. Instanced by Screen
+Manager once a match is found; required at runtime.
 
-**Node contract highlights:** `TowerDropZone` (full-rect control validating a drag-release position), `DragPreview` (hidden [Block Preview](#leaf-components) instance shown while dragging **outside** the drop zone — `170x170` with `cell_size_override = 34.0` so it renders at tower scale; it must stay large enough for a 4-unit `I` at `brick_unit_size` or the ghost clips), and the `DebugCategoryPanels/Placement` category rows (`SnapRadius`/`DragGripOffset`/`GhostAlpha`/`SnapDotRadius`/`SnapTargetRadius`, each a `…Button` + `…Slider` pair matching `PLACEMENT_ROWS` keys). Also `LevelSummaryQuestLabel` and the `UI` category's `ParallelPlacementButton` — both bound `optional_node`, so a scene missing one degrades quietly. There is no start-level/freeze popup node: the freeze countdown is the top bar's own round timer (blinking, see [Main UI Controller](#main-ui-controller)), and the quest content for that window reuses `QuestPopover`.
+`TeamInventoryPanel` is a **permanently visible** bar showing the shared draw pile,
+not a popover. It reuses the `DrawPilePreview`/`DrawPileNameLabel`/
+`DrawPileCountLabel` nodes verbatim, so `InventoryController` needs no logic for
+it.
 
-**`DebugCategoryPanels/Impact`** holds the Impact tunables (`ImpactInterval`, `ImpactScore` — the contribution share — `ImpactScoreFloor`); **`DebugCategoryPanels/Hooks`** holds `ImpactBeatToggle`/`ScreenShakeToggle` under its `HooksRows` container. **A `.tscn` declares parents before children**, so these row nodes must appear *after* the `Impact`/`ImpactRows` containers in file order; moving a row between categories without moving its node block produces a `Parent path … has vanished` warning at instantiation and the row silently disappears.
+Node contract highlights: `TowerDropZone` (full-rect drag-release validator),
+`DragPreview` (a hidden Block Preview shown while dragging *outside* the drop
+zone), `DebugCategoryPanels/*` (one `ScrollContainer` per category, exactly one
+visible), `LevelSummaryQuestLabel` and `ParallelPlacementButton` (both bound
+`optional_node`, so a scene missing one degrades quietly). There is no
+start-level popup — the freeze countdown is the top bar's own blinking round timer.
 
-**Landmine — `godot --editor --quit` re-saves this file and silently drops authored overrides.** The import/parse step ([build.md](./build.md#android-deploy-wsplaytod-workflow) runs it in CI) rewrote ~500 lines: reordered `ext_resource` blocks, injected `uid=`, converted `layout_mode = 0` to `anchors_preset = 0`, dropped `stretch_mode = 0` — and deleted the three [Popover Panel](#popover-panel) `Card` `custom_minimum_size` overrides, collapsing every card to 99px and failing `test_popover_layout_baseline.gd`. Edit `.tscn`/`.tres` by hand or from the real editor; never run `--editor --quit` to generate a `.uid` or check a scene parses. If it has run, `git checkout` the scene and re-apply intended edits.
+The three [Popover Panel](#popover-panel) instances each override their `Card` with
+an explicit `custom_minimum_size` — `260x163` for Chat and Power, `260x140` for
+Quest. **Card size is author-set, not content-derived**; change a popover's design
+size there. The y-anchor is `trigger.y - 13 - card_height`, so cards of unequal
+height do not share a bottom edge.
 
-**Notes:**
-- Formerly one of two swappable "skins" — see [decisions.md](./decisions.md#removed-systems-stale-references-you-may-still-hit). No `ProjectSettings` skin preference or skin-picker group exists anymore.
-- The `.tres` theme defines shared `theme_type_variation` styles (`ActionButton`, `CircleButtonPanel`, `HudPanel`, `WhiteCardButton`, `TopBarFramePanel`/`TopBarFrameAchievedPanel`/`TopBarTrackPanel`, `TowerFillPanel`/`TowerTrackPanel`); most per-node fine-tuning is still inline `theme_override_*` properties. `TopBarFrameAchievedPanel` is swapped onto `TopIndicatorFrame` at runtime by `TopBarController` (not statically assigned in the scene) — see [Top Indicator](#main-ui-controller).
-- The three [Popover Panel](#popover-panel) instances each override their `Card` node with an explicit `custom_minimum_size` — `260x163` for `ChatPopover`/`PowerPopover`, `260x140` for `QuestPopover`. This is the authored source of the fixed card size `get_card_size()` returns — change a popover's design size here.
-- **`mouse_filter` gotcha:** non-interactive nodes positioned over/near a tappable control must set `mouse_filter = 2` (ignore) — Godot's default `mouse_filter = 0` (stop) swallows touches even for nodes that draw nothing there. `ImpactTrack` (the Impact Bar column) overlaps ~80% of `PowerTrigger`'s tap area and was missing this, making the Power icon tap inconsistent until fixed. Check new overlay/decorative nodes against nearby interactive controls before assuming the default is harmless.
-- `BgArt` and `PlayField/PlatformArt` (both `TextureRect`s) carry `unique_name_in_owner = true` and the [Background Parallax](#leaf-components) script directly — there are no separate parallax nodes layered on top of either.
-
-## Team Inventory Panel
-
-`TeamInventoryPanel` node in [Game UI Scene](#game-ui-scene) (`PlayField/TeamInventoryPanel`, `PanelContainer` themed with the `WhiteCardPanel` variation) — a permanently-visible bar showing the shared draw pile's next-brick preview and remaining count. Replaced an earlier tap-to-open "Team Inventory" popover (see [decisions.md](./decisions.md#team-inventory-popover-removed--always-visible-team-inventory-panel)).
-
-- Hosts the same `DrawPilePreview` (Block Preview instance)/`DrawPileNameLabel`/`DrawPileCountLabel` nodes [InventoryController](#main-ui-controller) already drove for the old popover — only their parent/position changed (out of a hidden legacy container into this always-shown bar), so no controller logic changed. `InventoryController.update_draw_pile_ui()` sets `DrawPileNameLabel` to the constant `"Next Draw"` (never the next block's shape id — the preview icon already shows the shape), `DrawPileCountLabel` to `"<count> Remaining Bricks"`, and colors the preview with `players_ctx.local_color()` (matches the personal inventory cards, not a fixed draw-pile color).
-- Row layout is a left-aligned (`alignment = 0`) `HBoxContainer` — why centre alignment was rejected → [decisions.md](./decisions.md#team-inventory-popover-removed--always-visible-team-inventory-panel).
-- `DrawPileNameLabel`/`DrawPileCountLabel` need an explicit `theme_override_colors/font_color` (`Color(0.1, 0.1, 0.12, 1)`, matching `PopoverBodyLabel`/`RailScoreLabel`) — the `CardMetaLabel` theme type variation they use has no font color of its own, so it falls through to the theme's default near-white, which is invisible on `WhiteCardPanel`'s white background. Any other label placed on a white card background needs the same override.
-- `QuickChatTrigger`/`QuickChatTriggerCircle` sit in the screen position the removed `TeamInventoryButton` held, and `TeamInventoryPanel` occupies the row space they vacated; `PowerTrigger` is unchanged.
+Debug categories are a **dropdown**, not a tab header — the category count grows
+and a header does not scale with it.
 
 ## Popover Panel
 
-`Cor/Scripts/PopoverPanel.gd`, scene `Cor/Scenes/PopoverPanel.tscn` — reusable anchored card (title, rule, row list) used for every tap-triggered popover.
+`Cor/Scripts/PopoverPanel.gd`, scene `Cor/Scenes/PopoverPanel.tscn` — the reusable
+anchored card (title, rule, row list) behind every tap-triggered popover.
 
-**Interface:** `set_title(text)`, `clear_rows()`, `add_row(text) -> Label` (single-line, `clip_text` on — overflow clips rather than wrapping/growing the card), `add_action_row(text, on_pressed) -> Button`, `add_icon_row(icon, text) -> HBoxContainer`, `open()`/`close()`, `dismissed` signal, `get_card_size() -> Vector2` (floors `get_combined_minimum_size()` by `custom_minimum_size` — returns the fixed design size for typical short content), `set_card_global_position(target)` (resets anchors to top-left, places top-left at `target` clamped to the visible rect).
+- Auto-closes after `auto_close_seconds` (default 4s), on outside tap via the
+  full-screen `OutsideCatcher`, or when the owner closes it. Never pauses
+  gameplay underneath.
+- Three instances: `ChatPopover`, `PowerPopover` (bottom-right, near their
+  triggers), `QuestPopover` (top-left). Each controller computes its own card
+  position from its trigger's live `get_global_rect()`.
+- One popover open at a time. All three triggers **toggle**, checked against the
+  popover's live `.visible` rather than last-known bookkeeping, since `close()` can
+  fire asynchronously from the auto-close timer or an outside tap.
+- Rows are single-line with `clip_text`, so long text cannot inflate a card.
 
-- Auto-closes after `auto_close_seconds` (default 4s), on outside tap (full-screen `OutsideCatcher`, ignoring presses for `OUTSIDE_TAP_GRACE_MS` after `open()` — see below), or when the owner explicitly closes it (e.g. on drag start). Never pauses gameplay underneath it.
-- Three instances in Game UI Scene: `ChatPopover`, `PowerPopover` (bottom-right, near their trigger buttons), `QuestPopover` (top-left, next to the Quest chip). Each controller computes its own card position from its trigger's live `get_global_rect()`.
-- Only one popover open at a time (`PopoverCoordinator.close_active()` on open). Starting a block drag also closes the active popover. All three triggers **toggle** — tapping an already-open trigger closes it, checked via the popover's live `.visible` (`PopoverCoordinator.is_open()`), not just last-known bookkeeping, since `close()` can fire asynchronously from the auto-close timer or an outside tap.
-
-**Depends on:** none (rows/icons are handed to it fully built by the caller).
-
-**Notes — two fixed bugs:**
-- **Same-tap self-close race (Android + WebGL), fixed.** `OutsideCatcher` is a full-screen `mouse_filter=STOP` Control, so once open it covers the trigger's own screen position too. Every physical tap on Android/WebGL produces a real input event *and* an emulated partner (`input_devices/pointing/emulate_mouse_from_touch`, which defaults to `true` in Godot 4 — `project.godot` no longer lists it explicitly, since the editor omits settings left at their default; the behavior is unchanged); the trigger's `.pressed` consumes one, and the other landed on the now-visible `OutsideCatcher` and closed it again on the same tap — a timing race ("opens only sometimes" on repeated taps). Fix: `open()` stamps `opened_at_ms`; `_on_outside_catcher_gui_input` ignores presses within `OUTSIDE_TAP_GRACE_MS` (250 ms) of that stamp. Doesn't affect toggle-close or switching triggers (both call `close()` directly, bypassing `OutsideCatcher`). This was discovered via Power's trigger looking broken, but the root cause affected every popover trigger equally (at the time, including the since-removed Team Inventory popover) — see [decisions.md](./decisions.md#pointertriggerrouter-removed--native-per-trigger-signals).
-- **Card size is fixed at the source; on-device verification pending.** Each popover sets an explicit `custom_minimum_size` and its rows are single-line `clip_text`, so long text can't inflate the card either way. **Rejected:** sizing purely from content (base `Card` floored width only) → Power measured shorter than Chat and, since the y-anchor is `trigger.y - 13 - card_height`, their bottom edges drifted off Chat's baseline, while a wrapped long Quest label grew that card past its 140 design height. Editor and GUT layout tests confirm sizes/baseline, but the editor only runs at 412×917 design size — **a deployed WebGL or Android build is still required to confirm the on-device symptom is resolved.**
+`QuestController` auto-presents the Quest popover for the whole `state ==
+"starting"` window, temporarily zeroing `auto_close_seconds` so it cannot
+self-dismiss mid-freeze, and restoring it when the window ends.
 
 ## Leaf components
 
-| Component | File | Interface | Notes |
-|---|---|---|---|
-| **Block Preview** | `Cor/Scripts/BlockPreview.gd` | `set_block(block: Dictionary)`, `clear_block()`, `set_preview_mode(mode)` (`INVENTORY` / `FLOATING_DRAG`), `set_matched_vertex(v)`/`clear_matched_vertex()`, `cell_color: Color`, `@export cell_size_override: float` | Visual-only, never decides placement legality. Driven entirely by Main UI Controller; holds no gameplay state. Supports array- and dictionary-style cell coordinates from the server payload. Draws the brick as a single rotated (and, for a mirrored dealt piece, mirrored) textured quad via `BlockData.brick_texture`/`detect_orientation`/`brick_quad_points`/`brick_quad_colors` (falls back to per-cell rects if the shape has no texture). **`cell_size_override` pins the drawn cell pitch** instead of auto-fitting the control (0 = auto, the inventory-card behaviour); `DragPreview` sets it to [Tower Stack](#leaf-components)'s `brick_unit_size` so the floating ghost is already at tower scale and doesn't visibly resize the instant it docks. In `FLOATING_DRAG` mode only, `_draw_corner_dots` rings every true outline vertex of the brick's own shape (via `BlockData.outline_corners` — not its bounding box, which for `L`/`T`/`Z` would include phantom corners the brick doesn't occupy); the vertex currently paired with a tower snap point (`matched_vertex`) is drawn filled and haloed instead of hollow. For the gapped fallback render path, each candidate corner is sourced from its own cell's rect (same math as `_draw_cells`) since a lattice vertex shared by two gapped cells doesn't have one exact pixel position. This preview is only visible while the pointer is **outside** `TowerDropZone` — once docked, Tower Stack draws the ghost instead. No real snap-point art asset exists yet (`reference/guide-only-brick-emoji.png` is an old anchor-marker design mockup, not importable, now superseded); see [decisions.md](./decisions.md#point-based-snap-resolution-and-the-docked-landing-ghost). |
-| **Tower Stack** | `Cor/Scripts/TowerStack.gd` | `set_tower(blocks, height, target_height, stability=100, diagnostics={})`, `set_player_color_map(map)`, `clear_tower()`, `begin_snap_drag(block, color)`, `resolve_snap(cells, ghost_global_pos) -> Dictionary`, `set_snap_state(snap)`, `clear_snap_preview()`, `end_snap_drag()`, `drag_grip_offset() -> Vector2`, `set_mood_threshold(value)`, `set_visual_hooks(hooks)`, `play_impact_beat(verdicts) -> bool`, `cancel_impact_beat()`, `shake(ms, units)`, `grid_to_local`/`local_to_grid`/`global_to_grid`, `refresh_visuals()`, `scroll_offset_changed(pixels: float)` and `camera_zoom_changed(zoom: float)` signals | Visual-only; server owns tower state. Renders the **14-column grid**, aliasing the grid constants from `SnapGrid` rather than redeclaring them (`GRID_CENTER_COL` 6.5 — the midpoint of the placeable range, so the tower still renders centered; `PLACEABLE_COLUMN_MIN`/`MAX` = 4/9, matching server `placeableColumnMin`/`Max`). Draws each placed block as a single rotated textured quad (same `BlockData` texture/rotation helpers as Block Preview; falls back to a plain rect if the shape has no texture) **filling its full grid footprint** — the former 2px `BRICK_GAP` inset was removed so neighbouring bricks touch and a settled tower reads as one interlocking mass — and animates the newest block dropping into place (`_maybe_start_drop_animation`/`_drop_ease`, `drop_duration`). The fall **distance** is computed per-placement, not a fixed constant: `_compute_drop_fall_units` implements the spawn-height formula (platform top + previous global tower height + 2× the new brick's height, in the same row/height units `originY` uses), clamped by `_drop_clearance_units` — the open sky above the brick's own columns — and caches the result as `_drop_fall_units`. The clamp is what keeps a brick threaded into a gap from visibly falling *through* the solid bricks it was placed between; one landing on top of the tower has unbounded clearance and keeps the full spawn drop. **Drag/snap surface** (driven by `InventoryController`): `begin_snap_drag(block, color)` records the brick being dragged, `resolve_snap(cells, ghost_global_pos)` delegates to `SnapGrid.resolve` (converting the position via `global_to_grid`) and returns the full resolution `{valid, snapped, column, origin_y, target_point, matched_vertex, aim_point, aim_origin_y}`, and `set_snap_state(snap)` stores it for `_draw` — one entry point for three overlay states, keyed off the snap dict: a live drag/hover ghost, an `armed` ghost (denser fill, thicker pulsing outline: the "tap again to place" affordance) and a `show_ghost: false` brick-selected state that shows only the site band and its snap points. `is_placement_still_legal(cells, column, origin_y)` re-checks an armed spot against the live tower. `clear_snap_preview()` hides the overlay **without** forgetting the dragged brick; `end_snap_drag()` is the teardown — the two are deliberately separate because the pointer leaves and re-enters the drop zone freely during one drag (see [decisions.md](./decisions.md#point-based-snap-resolution-and-the-docked-landing-ghost)). While active, `_draw_snap_layer` draws three things under the tilt transform: the translucent **placeable-column band** (spanning columns 4–9, capped `BAND_HEADROOM_UNITS` above the taller of the tower peak and the ghost so it doesn't trail off into the sky), the **docked landing ghost** at the resolved `(column, aim_origin_y)` — the release row being aimed at, not the settled `origin_y` it will fall to, so a legal target with nothing under it (an overhang, a void) still visibly docks there instead of reading as unplaceable; same texture/rotation path as a placed brick, tinted `ghost_alpha`, plus a per-cell outline — and the **snap points**, enumerated from `SnapGrid.tower_snap_points` so the drawn dots are exactly the points the resolver considers. Idle points are light rings; the active `target_point` (the post-fall contact, not the aim) is enlarged and filled in the dragging player's colour, so the two overlays together show both where you're aiming and where it will actually land when they differ. Draw calls made under the tilt transform (`draw_set_transform(pivot, ...)`, active whenever `tower_blocks` is non-empty) must subtract `pivot` from every point first, since the transform auto-offsets subsequent draws — the overlay helpers take `pivot` as a parameter for exactly this. The ghost is emitted inside that same transform block precisely so it inherits tilt/scroll/scale and cannot desync from the tower. **All grid↔screen mapping goes through the single `_lattice_to_local` definition** (`_footprint_box`, `_height_to_pixel_y`, the overlay, the ghost, and the public `grid_to_local`/`local_to_grid`/`global_to_grid`); `local_to_grid` additionally applies `_untilt`, the inverse lean about the same bottom-centre pivot, so aiming at a point on a leaning tower resolves to the column it visually occupies rather than its upright column. `drag_grip_offset()` returns the finger-clearance lift in pixels from `drag_grip_offset_units` × `brick_unit_size`. Brick size is fixed at `brick_unit_size` (default 34px design units) — bricks never shrink to fit, regardless of tower height; see [decisions.md](./decisions.md#fixed-brick-size--parallax-scroll-replaces-shrink-to-fit-tower-rendering). `_scroll_offset_units()` **returns 0 outright when `target_height` already fits under the Top Indicator** (`target_height <= visible_units − top_indicator_clearance_units`) — panning a tower that was never going off-screen just drags the ground out from under it, which is what made the platform look detached at level 1. Flush capacity is 16 rows at a 34px brick in the 620px `TowerStack` rect, and the shipped [target-height curve](./gameplay.md#tower-system) opens above that — so no level takes this branch and every level scrolls; it is the guard that keeps a lowered `targetHeightMultiplier` or debug target from detaching the platform. Above that, it is a two-phase eased ramp, not a hard pin: below `scroll_start_ratio` (default 0.7) of the visible brick capacity, there is no scroll at all — the tower just grows from the bottom. Above that point, the drawn top row eases from the start row toward the "flush" row (`visible_units − top_indicator_clearance_units`, i.e. just under the Top Indicator, as close as the 34px brick grid allows without overlapping it) as `current_height` approaches `target_height`, via `pow(progress, scroll_ease_power)` (default power 3 — cubic ease-in, so the camera holds back for most of the climb and only visibly closes the gap in the final stretch, rather than drifting the whole way at a constant rate). Once `current_height` reaches `target_height` the ramp is capped there — scrolling freezes at the flush row instead of continuing to track height, so an overbuilt tower's uncompensated excess bricks render past the frozen top and up into the Top Indicator's screen space — `TopIndicatorRow` still draws after `TowerStack` in [Game UI Scene](#game-ui-scene)'s node order, so the indicator stays on top and overbuild bricks appear to tuck under it rather than cover it. `refresh_visuals()` forces an immediate recompute + redraw — used by the Debug Overlay's Parallax category (see [Debug Overlay](#leaf-components)) when one of these values is tweaked live. Does **not** set `clip_contents`; `_is_rect_visible()`'s bottom bound extends past the Control's own rect to the actual screen bottom (`get_parent().size.y - position.y`), so the oldest bricks keep rendering as they scroll down and are hidden only by later siblings drawing over them (the `ActionRow` inventory buttons, which start at `offset_top = 827`) rather than vanishing at the tower's own fixed boundary — see [decisions.md](./decisions.md#fixed-brick-size--parallax-scroll-replaces-shrink-to-fit-tower-rendering). Emits `scroll_offset_changed(pixels)` whenever the pixel scroll amount changes (deduped via `_last_scroll_pixels`) — consumed by [Background Parallax](#leaf-components) via [Main UI Controller](#main-ui-controller). Tilt has two layers: `tower_tilt_deg` (target lean, from `diagnostics.tiltAngleDeg`) and `displayed_tilt_deg` (eased via `tilt_ease_speed`, glides toward target — smoothing only, the underlying tilt is fully server-recalculated on every placement, never animated server-side). On the `diagnostics.collapsed` false→true edge, a `NONE → LEAN → FALL → SETTLED` phase machine arms in `set_tower()` (a repeat `collapsed: true` broadcast while failed, e.g. from a chat/power event, does not re-arm or reseed it); `clear_tower()` and a `collapsed: false` broadcast both reset it to `NONE`. **LEAN** (`collapse_lean_seconds`, default 0.25s) eases the whole-tower tilt toward `collapse_tilt_deg` (default 34°, past the live-play cap `towerMaxTiltAngleDeg` ~24° but no longer a fixed 70° freeze) exactly as before; at its end `_begin_collapse()` snapshots every brick's current leaned screen pose (world-space, scroll removed) into [Collapse Sim](#leaf-components) seeds, so the handoff from tower-render to debris-render is pixel-identical. **FALL** steps the sim and redraws its debris each frame in place of the placed-brick loop (no snap layer — no drag can be live); **SETTLED** stops ticking but keeps drawing the resting pile until the next level. The camera does not pan back down during the collapse, so on a level whose tower has scrolled (`_scroll_offset_units() != 0`) the debris lands below the visible viewport — only a tower that collapses before crossing the scroll ramp shows the landing on-screen. Rotates around a bottom-center pivot (matches where it rests on the ground); visibility culling done in pre-rotation space as a cheap approximation, fine at live-play angles and the bounded post-collapse angle. **Brick faces:** `_draw_block_emoji` draws each placed brick's face at `BlockData.emoji_anchor`, sized `emoji_unit_scale` × `brick_unit_size` (1.1), classified per-frame from the entry's `balanceDelta` against `mood_threshold` — fed from `debug_config` via [Main UI Controller](#main-ui-controller)'s `update_debug_config` and redrawn on change (→ [decisions.md](./decisions.md#brick-faces-read-a-lean-only-balance-delta-not-the-stability-score)). Emitted inside the tilt transform block so faces lean and scroll with the tower, but never rotated to match the brick texture's rotation — an upside-down smile reads as a frown. **Exception: FALL/SETTLED debris.** `_draw_debris` draws each piece's face inside that piece's own `draw_set_transform`, so once a brick detaches its face spins with it and can land upside down — a deliberate departure from the standing-tower rule, since a tumbling debris pile reads as physical wreckage rather than a live stability verdict. Placed bricks only: the drag ghost, `_draw_fallback_stack` and every [Block Preview](#leaf-components) instance (inventory cards, `DragPreview`, the draw-pile preview) stay faceless, since none has a stability outcome yet. **Impact Beat** (zoom-out + wave = 2s, end of level, driven by `VisualHooksController`): `play_impact_beat(verdicts)` arms a `BEAT_NONE → ZOOM_OUT → WAVE → HOLD` phase machine beside the collapse machine, phase durations from [VisualHooks](#main-ui-controller). **`HOLD` has no timed exit** — the camera stays pulled back with verdict faces held until [LevelSummaryController](#main-ui-controller)'s level summary closes and calls `cancel_impact_beat()` (via `VisualHooksController.end_beat()`), so the beat's end is synced to the summary's rather than its own timer, and the camera then snaps straight to full zoom — there is no eased zoom-in phase. The camera pull-back is a zoom and nothing else — `_unit_size()` returns `brick_unit_size * _camera_zoom`, so every transform, the scroll ramp and the visible capacity follow from that one value (→ [decisions.md](./decisions.md#fixed-brick-size--parallax-scroll-replaces-shrink-to-fit-tower-rendering)) — and each change emits `camera_zoom_changed` so [Main UI Controller](#main-ui-controller) can rescale `PlatformArt` in step. During WAVE, `_wave_progress` sweeps bottom→top and `_draw_block_emoji` swaps every brick it has passed to its placer's verdict face (`positive`/`negative`, **reusing the existing smiley/worried PNGs** — no new art) with a brief pop scale; verdict faces are dropped at `BEAT_NONE`, so the tower reverts to its balance-delta faces as the camera returns. It returns **false** — and the caller then adds no wait — when the tower is empty, the hook is disabled, or `_collapse_phase != COLLAPSE_NONE`, since a collapsed tower has no standing bricks to wave across; **a collapse failure therefore gets the shake only, no beat**. **Landmine — the `if not entry.has(BALANCE_DELTA_KEY): return` guard must sit *below* the verdict branch** in `_draw_block_emoji`: above it, a brick from a server that sent no `balanceDelta` is silently skipped by the wave and wears no verdict face. `shake(ms, units)` decays a random offset applied **only** to the local `base_x`/`baseline` inside `_draw()`/`_draw_debris()`, never threaded through `_lattice_to_local` — `_build_collapse_seed` passes scroll `0` through that same function, and a shake term there corrupts the collapse seeds; the consequence is that the tower and its debris shake while the HUD and buttons do not. Magnitude is measured against `brick_unit_size`, **not** `_unit_size()`, so the shake keeps its screen amplitude while the camera is pulled back. Both the zoomed platform scaling and the beat's timing against the level summary are invisible in the editor — check them on a deployed build. |
-| **Collapse Sim** | `Cor/Scripts/GameUi/CollapseSim.gd` | `begin(seeds: Array, params: Dictionary)`, `step(delta: float)`, `is_settled() -> bool`, `pieces: Array`, static `flat_rest_angle(angle, footprint) -> float` | Node-free (RefCounted), so it is directly GUT-testable — [Tower Stack](#leaf-components) owns the only lattice↔pixel transform and hands this module world-space pixel seeds, never lattice coordinates. Per piece: gravity + air-drag integration, one bounce (`collapse_restitution`/`collapse_floor_friction`), then an eased flatten to `flat_rest_angle` — the quarter turn nearest the piece's current angle whose footprint ends up wider than tall, so a `1x4` I lands on its side rather than balanced on one end, and easing (never snapping) means a piece never unwinds turns it made on the way down. Initial `vel.y` is a random **downward-only** kick (`collapse_drop_kick_units`); `vel.x` is `lean_sign * collapse_lean_push_units * height_ratio + random(±collapse_lateral_spread_units)` — sideways speed scaling with a piece's height above the platform continues the rigid-rotation velocity field of the lean that just happened, rather than reading as an explosion. Landing x is clamped into the platform span (`collapse_span_ratio` of the control width, centered); each landing piece rests on the running fill height of the one-brick-wide bucket (`collapse_pile_layers` deep) it came down in, giving a debris pile with no piece-to-piece collision pass. `begin()`'s RNG is seeded from a hash of the placed block ids ([Tower Stack](#leaf-components)'s `_collapse_seed()`), so every client renders the identical collapse and a `game_state` rebroadcast mid-fall cannot reshuffle it. |
-| **Background Parallax** | `Cor/Scripts/BackgroundParallax.gd` | `set_scroll_pixels(pixels: float)`, `@export parallax_ratio: float`, `@export ease_speed: float`, `@export instant: bool` | Visual-only leaf script, attached to **two** separate `TextureRect`s in [Game UI Scene](#game-ui-scene) rather than one — `BgArt` (the sky, script default `parallax_ratio = 0.4`, no per-node override) and `PlayField/PlatformArt` (the ground platform, overridden to `parallax_ratio = 1.0`). Each instance eases its own node's vertical position toward `pixels * parallax_ratio` via `ease_speed`-driven `lerpf` (script default `4.0`) — except when `instant` is true, in which case `set_scroll_pixels()` snaps `displayed_offset`/`position.y` straight to the target instead of waiting for `_process()`'s lerp, so the node moves in the same frame as the signal that triggered it. `PlatformArt` overrides `instant = true` (must track [Tower Stack](#leaf-components)'s scroll in exact 1:1 lockstep with zero lag so it never desyncs from the tower's receding base — see [decisions.md](./decisions.md#fixed-brick-size--parallax-scroll-replaces-shrink-to-fit-tower-rendering) for the gap bug this fixed); `BgArt` leaves `instant` at its default `false` since its slower, eased sky pan is a cosmetic depth layer with no alignment requirement. Panning `BgArt` down reveals the existing full-screen `Background` `Panel` behind it (solid sky-blue `Color(0.55, 0.83, 0.96, 1)` from the theme's panel style) above `BgArt`'s new position, standing in for extra sky as a placeholder — no new node was added for this fill. Both instances are driven by [Tower Stack](#leaf-components)'s `scroll_offset_changed` signal, wired in [Main UI Controller](#main-ui-controller). `parallax_ratio`/`ease_speed` on both instances are also live-adjustable from the Debug Overlay's Parallax category (see [Debug Overlay](#leaf-components)) — `DebugPanelController` sets them directly on `%BgArt`/`%PlatformArt`, no server round-trip, since these are purely cosmetic client-local values. Asset implication: since a flat color has no edge, it trivially supports unlimited pan; a future real art replacement must be a seamlessly vertically-tileable sky/cloud texture (top edge matching bottom edge) to preserve that, delivered through the existing [Private Asset Pipeline](./build.md#private-asset-pipeline). |
-| **Impact Bar** | `Cor/Scripts/ImpactBar.gd`, scene `ImpactBar.tscn` | `set_bar(seat_color: Color, ratio: float)` | Vertical gradient fill (lightened top/darkened bottom); `anchor_top = 1.0 - ratio`. Purely reactive, no polling of its own — Main's `update_impact_track()` computes the ratio once per broadcast. One instance per rail slot (up to `MAX_RAIL_PLAYERS`), keyed by player id, freed when a player drops out. Hosted in `ImpactTrack`, which sets `mouse_filter = 2` so it doesn't intercept `PowerTrigger` taps — see [Game UI Scene](#game-ui-scene) gotcha. |
-| **Cooldown Overlay** | `Cor/Scripts/CooldownOverlay.gd` | `set_remaining_ratio(value: float)` (0.0 hidden → 1.0 full) | Visual-only, purely reactive; Main computes the ratio from local cooldown state and calls this once per frame. One instance per inventory card, found via `get_node_or_null("CooldownOverlay")` — must keep that exact node name in Game UI Scene. |
-| **Debug Overlay** | `Cor/Scripts/DebugOverlay.gd` | `set_open(open: bool)`, `toggle()` | Lightweight show/hide shell only — sliders/toggles and server sync live in Main UI Controller's `DebugPanelController`. Server-side validation lives in [Lobby Manager](./backend.md#lobby-manager)/[Game Config](./backend.md#game-config). Expects unique-named descendants `%DebugDimLayer` and `%DebugPanel` — a replacement scene must replicate these exact names. |
-| **Debug Tooltip** | `Cor/Scripts/DebugTooltip.gd` | `open(title: String, body: String)`, `close()`, `dismissed` signal | Nested inside `DebugOverlay` (`%DebugTooltip`), drawn after `%DebugPanel` so it overlays the whole debug panel. `%TooltipDimLayer` is a semi-transparent `ColorRect` (`Color(0,0,0,0.55)`, `mouse_filter = STOP`) that both dims the panel behind the card and catches outside taps; a `card` sitting on top of it (mouse_filter default `STOP`) swallows its own taps first so tapping the card itself doesn't close it — same outside-tap-catcher shape as [Popover Panel](#popover-panel), but with an actual dim layer (Popover Panel's `OutsideCatcher` is transparent) since this is a modal explainer, not an anchored corner card. Guards the open tap from immediately re-closing itself via a 200 ms grace window (`OUTSIDE_TAP_GRACE_MS`) compared against `Time.get_ticks_msec()`, mirroring [Popover Panel](#popover-panel)'s `OUTSIDE_TAP_GRACE_MS` pattern. Purpose-built for the Parallax category's per-row info buttons (see `DebugPanelController` above) rather than reusing `PopoverPanel.tscn` directly, so this dim-layer behavior doesn't leak into the corner-anchored Chat/Power/Quest popovers. |
-| **Player Colors** | `Cor/Scripts/PlayerColors.gd` | `color_for_player_id(player_id) -> Color`, `color_for_player_index(player_index) -> Color` (wraps `PLAYER_COLORS`, `FALLBACK_COLOR` for negative index), `FALLBACK_COLOR` | Used by Main UI Controller and Tower Stack — both `preload()` this directly so color assignment has one home. |
+| Component | File | Role |
+|---|---|---|
+| Block Preview | `Cor/Scripts/BlockPreview.gd` | Rotated/mirrored textured quad at inventory or tower scale, plus the drag ghost's own snap-point rings |
+| Tower Stack | `Cor/Scripts/TowerStack.gd` | The whole tower render: bricks, drag overlay, drop/tilt animation, mood faces, collapse sequence, Impact Beat |
+| Collapse Sim | `Cor/Scripts/GameUi/CollapseSim.gd` | Node-free debris physics, seeded so every client renders it identically |
+| Background Parallax | `Cor/Scripts/BackgroundParallax.gd` | Pans `BgArt` and `PlatformArt` against Tower Stack's scroll |
+| Impact Bar | `Cor/Scripts/ImpactBar.gd` | Per-player Impact-progress fill |
+| Cooldown Overlay | `Cor/Scripts/CooldownOverlay.gd` | Radial per-card cooldown |
+| Debug Overlay | `Cor/Scripts/DebugOverlay.gd` | Show/hide shell only |
+| Debug Tooltip | `Cor/Scripts/DebugTooltip.gd` | Dimmed modal explainer for debug rows |
+| Player Colors | `Cor/Scripts/PlayerColors.gd` | `player_id` → colour |
+
+### Tower Stack — the rendering contracts that matter
+
+**The grid is server-owned.** `grid_width` and `placeable_column_min`/`_max` are
+`static var`s on `SnapGrid`, fed from `game_state` on every broadcast, with the
+render centre *derived* as `(grid_width − 1) / 2`. **Never alias them into `const`s**
+— the server re-derives the grid every level, and a const alias renders the wrong
+geometry with no error anywhere. The cost of `static` is that **tests must call
+`reset_placeable_range()` in `before_each`** or inherit the previous grid.
+
+**Fixed brick size plus a camera pan.** Bricks stay `brick_unit_size` always; the
+view pans up with the HUD fixed. No scroll at all while the target height already
+fits under the Top Indicator, none below `scroll_start_ratio` of visible capacity,
+then a `pow(progress, scroll_ease_power)` ease toward the flush row, frozen once
+target is reached so overbuild bricks ride up and tuck *under* the indicator.
+
+Panning is a **scalar correction, not a camera.** The client is `Control`-based and
+Tower Stack draws via raw `_draw()`, so there are no `Node2D` children for a
+`Camera2D` to move; anything camera-shaped means re-architecting three scripts and
+the drag hit-testing maths.
+
+**Placement resolution is a 2-D pairing** in `SnapGrid`: for every outline vertex
+of the dragged brick × every snap point on the platform and on every placed brick,
+the candidate origin is `point − vertex`; candidates outside the site or
+overlapping a placed cell are rejected and the smallest squared lattice distance
+wins. That pairing fixes the **release row, not the resting row** — gravity then
+runs from it, so a gap inside the tower is reachable while a brick aimed at
+nothing still falls. Beyond `snap_radius_units` it falls back to nearest-column
+aiming, so a drag over open sky never dead-ends. Support is **not** a legality
+rule — gravity settles the brick instead, which is why the snap-point set stays
+unfiltered.
+
+The docked ghost renders at the **aim** (`aim_point`/`aim_origin_y`), not the
+settled `origin_y`, so a legal target with nothing under it still visibly docks.
+The highlighted snap dot stays on the *post-fall* contact, since the ghost's own
+position already shows the aim.
+
+**The Impact Beat** is a `ZOOM_OUT → WAVE → HOLD` phase machine. `HOLD` has **no
+timed exit** — the camera stays pulled back until the level summary closes and
+calls `cancel_impact_beat()`, then snaps straight to full zoom with no eased
+zoom-in. The pull-back is a zoom and nothing else: `_unit_size()` returns
+`brick_unit_size * _camera_zoom`, so every transform, the scroll ramp and the
+visible capacity follow from that one value. The zoom is derived per level and
+`impactBeatMinZoom` is a **floor, not the zoom** — a level whose tower already
+fits yields `1.0` and plays the wave with no camera move.
+It returns **false**, and the caller adds no wait, when the tower is empty, the
+hook is off, or a collapse is in progress — **a collapse failure gets the shake
+only, no beat**. Zoom is the whole mechanism: no separate scroll-bias term is
+needed, because every scroll term already reads the zoomed unit.
+
+**Brick faces are classified in the view, never on the server.** The entry carries
+`balanceDelta` (lean-only) and the client compares it to the live
+`towerStabilityMoodThreshold` at draw time, so moving the knob restyles the whole
+standing tower. Faces lean and scroll with the tower but are **never rotated to
+match the brick texture** — an upside-down smile reads as a frown. The one
+exception is FALL/SETTLED debris, whose faces spin with their piece: a tumbling
+pile reads as wreckage, not a live verdict.
+
+## Landmines
+
+- **Never run `godot --editor --quit`.** Its import/parse pass re-saves `.tscn`
+  and drops authored overrides — `custom_minimum_size`, `stretch_mode`,
+  `layout_mode` — silently. Edit scenes by hand or in the real editor. If it has
+  run, `git checkout` the scene and re-apply.
+- **A `.tscn` declares parents before children.** A row node must sit after its
+  container in file order, or it draws a `Parent path … has vanished` warning and
+  disappears. Moving a row between categories means moving its node block too.
+- **`mouse_filter = 2` on every decorative or overlapping node.** Godot's default
+  `0` (stop) makes a Control swallow touches even where it draws nothing.
+- **`ScorePopupLayer` ships `visible = false`** and is re-enabled in
+  `bind_nodes()` — Godot hides a hidden `CanvasItem`'s whole subtree, which would
+  otherwise block every popup and bubble.
+- **`window/handheld/orientation` must be the Godot 4 integer `1`.** A Godot
+  3-style string silently coerces to `0` (landscape) with no warning, and the
+  string form *looks* correct — check it first if orientation regresses.
+- **Popovers ignore outside taps for `OUTSIDE_TAP_GRACE_MS` (250 ms) after
+  `open()`**, and parallel-placement taps de-duplicate on a 60 ms window.
+  Both exist because every physical tap yields a real event *and* an emulated
+  partner, in either order. `DebugTooltip` mirrors the popover shape at 200 ms.
+  `revalidate_armed_placement()` re-checks the armed spot on every broadcast and
+  drops back to `SELECTED` when a teammate fills it.
+- **`clear_snap_preview()` and `end_snap_drag()` are separate and must stay so.**
+  The pointer legitimately leaves and re-enters the drop zone many times per drag,
+  so a merged version wipes drag state on the first move.
+- **Drag grip lift is stored in brick units (`drag_grip_offset_units`)** so it
+  scales with `brick_unit_size`. It exists because a thumb-centred ghost covers
+  the exact area being aimed at — Android is the first-class target.
+- **`SnapGrid.settle_origin_y` / `is_placement_legal` are line-for-line mirrors of
+  server `Tower_Stability.settleBlock` / `isPlacementLegal`.** Any change to either
+  server function must be mirrored or the landing preview silently lies.
+- **Draw calls under the tilt transform must subtract `pivot` first**, since the
+  transform auto-offsets subsequent draws. The ghost is emitted inside that same
+  block precisely so it inherits tilt, scroll and scale and cannot desync.
+- **`local_to_grid` applies `_untilt`**, the inverse lean about the same pivot, or
+  aiming at a point on a leaning tower resolves to the column it would have had
+  upright — a real error at the live-play tilt cap.
+- **`shake()` offsets only the local `base_x`/`baseline` inside `_draw()`**, never
+  threaded through `_lattice_to_local`: `_build_collapse_seed` passes scroll `0`
+  through that same function, and a shake term there corrupts the collapse seeds.
+  Magnitude is measured against `brick_unit_size`, **not** `_unit_size()`, so the
+  shake keeps its screen amplitude while the camera is pulled back.
+- **The `balanceDelta` guard must sit *below* the verdict branch** in
+  `_draw_block_emoji`. Above it, a brick from a server that sent no `balanceDelta`
+  is silently skipped by the verdict wave and wears no face. A brick with no
+  `balanceDelta` deliberately draws **no face** — a neutral face is
+  indistinguishable from a real "barely moved" verdict and hides a stale server.
+- **The platform is background, not HUD.** Tower Stack does not set
+  `clip_contents`, and `_is_rect_visible()`'s bottom bound extends to the real
+  screen bottom, so old bricks are hidden by later-drawn siblings rather than
+  vanishing at the Control's own boundary.
+- **`apply_camera_zoom()` must pivot `PlatformArt` on its top centre** before
+  scaling, or the ground shrinks away from the bricks resting on it.
+- **`PlatformArt` runs `parallax_ratio = 1.0` with `instant = true`**, snapping in
+  the same frame as the brick redraw. It must stay aligned to the bricks, and no
+  constant ratio can cancel an easing-induced lag — the residual gap grows with
+  scroll distance. `BgArt` keeps eased motion; it has no alignment requirement.
+- **Camera follow during a collapse is deliberately out of scope.** On a scrolled
+  level the debris lands below the viewport, so Collapse Sim is invisible on most
+  failures.
+- **The revealed sky is a placeholder** — the solid `Background` panel stands in.
+  A flat colour has no edge so it pans any distance; a real replacement must be
+  **seamlessly vertically-tileable**, not merely a taller image.
+- **Labels on a white card need an explicit dark `font_color` override.** The
+  `CardMetaLabel` theme variation defines none and falls through to a near-white
+  default, invisible on `WhiteCardPanel`.
+- **`set_debug_label_text()` takes a `Control`, not a `Label`**, because some
+  category name nodes are now flat `Button`s. Do not retype it back.
+- **Node order in `GameUI.tscn` is deliberate.** `TopIndicatorRow` draws after
+  `TowerStack`, so overbuild bricks tuck under the indicator instead of covering
+  it. Ordering it before the tower makes the tower draw over the bar.
+- **The editor cannot validate web layout.** `expand` and `keep` produce genuinely
+  different viewport sizes and coincide only at 412×917 — which is exactly what the
+  editor runs at. Popover mis-positioning and trigger-tap timing are likewise not
+  reproducible in the editor. Verify on a deployed build.
 
 ## Tutorial
 
-`Cor/Scripts/GameUi/Tutorial/` — a lesson-based coach-mark onboarding layer, entirely client-side and rendered over the real [Game UI Scene](#game-ui-scene) (no parallel "tutorial mode" scene). Six modules, code-created children of Main following the [module family pattern](./coding-conventions.md#client-gameui-module-family-pattern):
+`Cor/Scripts/GameUi/Tutorial/` — a lesson-based coach-mark layer, entirely
+client-side, rendered over the real Game UI Scene. Six modules following the
+module-family shape: `TutorialLessons` (the 12-lesson catalog plus `DEFAULTS`),
+`TutorialGates` (the closed gate set and its pure predicate), `TutorialScene` (an
+offline "fake server" that expands a lesson seed into the same calls live
+`game_state` drives), `TutorialProgress` (`user://tutorial_progress.cfg`,
+degrading to "nothing completed"), `TutorialController` (step lifecycle, spotlight
+cutout, coach card), `TutorialMenuController` (the lesson list).
 
-| Module | Type | Owns |
-|---|---|---|
-| `TutorialLessons` | `RefCounted` | The catalog: 12 ordered lesson dicts (id, steps, `seed`) plus `DEFAULTS`, a values-only copy of the `Game_Config.js` keys the lessons narrate (site columns 1–6, grid width 8, hand slots 2→3 at L3, `impactInterval` 2, power unlock L1) — the only file a copy or tuning-number change touches. **Landmine — its level-1 target height (16) and Impact requirement (48) no longer match the server curve** ([gameplay.md](./gameplay.md#tower-system): 30 / 90). Resyncing is not a `DEFAULTS` edit: lesson copy quotes both figures verbatim and the exact-finish lesson seeds `_filler_tower(14, 3)` so the scripted brick lands on 16. |
-| `TutorialGates` | `RefCounted`, node-free | The closed gate set (`info`, `observe`, `place_block`, `place_block_at`, `open_quest`, `open_power`, `activate_power`, `open_chat`, `send_chat`) and the pure `is_satisfied(gate, gate_arg, action)` predicate. `is_satisfied(info, …)` is always true by design — the *controller*, not the predicate, must refuse to dispatch to an `info` step at all, or any incidental action (a stray placement, an unrelated popover) silently skips it. |
-| `TutorialScene` | `RefCounted` | The offline "fake server": expands a lesson's `seed` into the same calls live `game_state` drives (`TowerStack.set_tower`, `InventoryController.update_inventory_ui`, `RosterViewController.update_score_lines`, …) and locally re-derives placement (`SnapGrid.settle_origin_y`) so drag-and-drop plays identically to a real match. Also stands in for the two things a disconnected tutorial can't get from a server: `PowerController`'s toast + a swapped hand on Refresh, and `QuickChatController`'s speech bubble on a sent template. A hand block can carry `scriptedBalanceDelta`/`scriptedTiltAngleDeg` (a magnitude only — direction is derived from which side of the site the brick actually lands on) /`scriptedPoints` to script the outcome a lesson teaches. |
-| `TutorialProgress` | `RefCounted` | Per-lesson completion in `user://tutorial_progress.cfg` (`ConfigFile`); a missing or corrupt file degrades to "nothing completed" rather than erroring. |
-| `TutorialController` | `Node` | The runner: step lifecycle, the four-`ColorRect` spotlight cutout around the current step's `target` (resolved live through `UiNodeBinder`, never a hard-coded path), gate dispatch, and the coach card — fixed-size like [Popover Panel](#popover-panel)'s cards, for the same reason (see below). `observe` steps also show a manual Continue button; the timer is a floor so nobody is stuck reading, not the only way to proceed. |
-| `TutorialMenuController` | `Node` | The lesson-list overlay: rows built from the catalog with completion ticks, Start/Resume/Replay/Exit, behind its own full-screen dim so triggers underneath (Quest/Power/Chat) can't be tapped through it. |
+Entry points both funnel into `ScreenManager.start_tutorial(lesson_id)`: the Join
+Screen's How to Play button and a debug row reachable from a live match. The
+latter disconnects first, and Screen Manager guards `_on_room_closed()` while
+`tutorial_active` so a race with a server-sent close cannot kill the run.
 
-**Entry points**, both funnelling into `ScreenManager.start_tutorial(lesson_id)`: the Join Screen's "How to Play" button (always reachable, no connection needed) and a Debug Menu row (`TutorialLaunchButton`, UI category) reachable from a live match. The latter disconnects first; Screen Manager reuses the existing play instance rather than tearing it down, and guards `_on_room_closed()` while `tutorial_active` so a race with a server-sent close can't kill the tutorial mid-run. `Main.request_tutorial(lesson_id)`/`tutorial_requested` bubble the request from inside Game UI Scene up to Screen Manager; `tutorial_exited` bubbles the reverse once the lesson menu is closed.
-
-**Hooks into live code (minimal, null-guarded):** `MatchState.tutorial_mode` lets `InventoryController.is_placement_input_allowed()` bypass the connection/`"playing"` checks (keeping the cooldown) and routes `on_block_pressed` to `TutorialController.on_tutorial_place` instead of `NetworkManager.place_block`; `Main.update_game_state()` early-returns while `tutorial_mode` so a stray broadcast can't overwrite the seeded scene; `Main.should_block_popovers()` also blocks while the current step isn't itself a popover-opening gate, or while the lesson menu is open.
-
-**Landmine — a step needing both the inventory row and the tower (or a trigger's popover) must spotlight `PlayField`, not a narrower control.** `TowerStack`/`TowerDropZone`'s rect excludes `ActionRow` (bottom), and `PowerPopover`/`ChatPopover` render as siblings beside their trigger, outside the trigger's own rect — spotlighting either narrower target dims the exact input the step needs, silently blocking the drag or the popover tap. `PlayField` spans the whole screen, so its dim rects collapse to zero and nothing is blocked; the card is then positioned `"above"` rather than `"center"`, which otherwise sits directly over the drop zone.
-
-## Godot Client Tests (pointer)
-
-Smoke test + GUT coverage for this layer. Full detail → [testing.md](./testing.md#godot-client-tests).
+- **Drift — the tutorial's level-1 numbers no longer match the server curve.**
+  `TutorialLessons` states target height 16 and Impact requirement 48 against the
+  shipped curve's 30 / 90 ([gameplay.md](./gameplay.md)). Resyncing is not a
+  `DEFAULTS` edit: lesson copy quotes both figures verbatim and the exact-finish
+  lesson seeds a filler tower so the scripted brick lands on 16.
+- **`is_satisfied(info, …)` is always true by design.** The *controller*, not the
+  predicate, must refuse to dispatch to an `info` step at all — otherwise any
+  incidental action, a stray placement or an unrelated popover, silently skips it.
+- **A step needing both the inventory row and the tower must spotlight
+  `PlayField`, not a narrower control.** `TowerStack`/`TowerDropZone` exclude
+  `ActionRow`, and popovers render as siblings outside their trigger's rect, so
+  spotlighting either narrower target dims the exact input the step needs and
+  silently blocks it. `PlayField` spans the screen, so its dim rects collapse to
+  zero.

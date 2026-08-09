@@ -1,199 +1,424 @@
 # Backend
 
-Scope: server-side game logic — matchmaking, room lifecycle, authoritative gameplay rules, scoring, physics, config, shared state. Wire protocol → [networking.md](./networking.md). Game design meaning → [gameplay.md](./gameplay.md). Deploy/infra → [deployment.md](./deployment.md).
+Scope: server-side game logic — matchmaking, room lifecycle, authoritative rules,
+scoring, physics, config, shared state. Wire protocol →
+[networking.md](./networking.md). Design meaning → [gameplay.md](./gameplay.md).
+Deploy → [deployment.md](./deployment.md). Per-symbol file and line → grep
+[map/backend.md](./map/backend.md).
 
-All modules live under `src/Server/app/`. `Game_Engine.js` is the facade; `Block_Supply.js`, `Scoring.js`, `Impacts.js` (under `engine/`) follow the **engine module delegation pattern** — see [coding-conventions.md](./coding-conventions.md) — so their functions are only ever called through the `GameEngine` instance, never `require()`d directly by outside callers.
+All modules under `src/Server/app/`.
+
+## Engine module delegation pattern
+
+`Game_Engine.js` is the facade for one room. Block supply, scoring and Impact
+logic live in separate `engine/` modules, each the same shape:
+
+- Every export is a **plain function whose first argument is the owning
+  `GameEngine` instance** — `Scoring.addPlacementScore(engine, player, …)`.
+- `GameEngine` re-exposes each as a same-named method that calls straight through.
+- Callers — Lobby Manager, Bot Manager, Balance Simulator, tests — **always go
+  through the facade**, never `require()` an `engine/` module directly.
+- Cross-calls between a module's own functions also go through the facade, so the
+  facade stays the single seam.
+
+A new engine-owned system gets its own `engine/` module in this shape rather than
+growing `Game_Engine.js`.
 
 ## Lobby Manager
 
 `Lobby_Manager.js` — matchmaking, room lifecycle, runtime debug-config coordinator.
 
-- Maintains waiting players and active rooms, through shared Redis state when `REDIS_URL` is enabled.
-- Creates 3-participant rooms, filling with debug bots when allowed.
-- Validates/broadcasts debug-config updates; lets real players resume within the reconnect TTL; destroys rooms when the TTL expires with no connected real players.
-- Preserves hydrated room state (shape inventories, tower history) when a room is recovered from shared state.
-- Hands a player off to whichever pod owns their live WebSocket when that pod isn't the one that formed their room — see the cross-pod room handoff note below.
+Maintains waiting players and active rooms through shared Redis state; creates
+3-participant rooms, filling with debug bots when allowed; lets real players resume
+within the reconnect TTL and destroys rooms when it expires with no connected real
+players. Hydrated snapshots include `towerBlocks`, so non-owner workers and
+reconnecting clients redraw the tower without recomputing it.
 
-**Interface:** `addPlayer(player)`, `tryCreateRoom()`, `closeRoom(room, reason, disconnectedPlayer)`, `resumePlayer(player, roomId)`, `handleRoomReconnectExpired(roomId)`, `handlePlayerAssignment({playerId, roomId, sourcePodId})`, `dispatchRoomAction(player, action)`, `isRoomOwner(room)`, `updateDebugConfig(key, value)`, `start()`, `createPlayer(ws, reconnectRequest)`, `broadcastDebugConfig()`, `removePlayer(player)`. Internal-only: `runRoomAction(room, playerId, action)`.
+Reconnect TTL default is 60s — a **staging value, not settled for production**.
 
-**Depends on:** Game Engine, Game Config, Redis State (required, default-instantiated — not just optionally wired in), Bot Manager (indirectly, via the engine it starts).
+### `updateDebugConfig` — the authoritative validation
 
-**Notes:**
-- Reconnect TTL default is 60s (`RECONNECT_TTL_SECONDS`) — a **staging value, not necessarily final for production**.
-- `updateDebugConfig` validation (the authoritative version of these rules — [gameplay.md](./gameplay.md#debug-menu-and-live-tuning) covers what each variable *means*):
-  - Unknown keys rejected; numeric values clamped to safe ranges.
-  - `placementScorePopupDurationMs` / `finishScorePopupDurationMs` clamp to 500–10000 ms; `levelSummaryDelayMs` clamps to 1000–10000 ms.
-  - `debugBotStrategy` accepted only as `cooperative` or `mvp_greedy`.
-  - `debugBotDelayMax` ≥ `debugBotDelayMin` enforced.
-  - `debugStartLevel` applies immediately by restarting active debug rooms at that level.
-  - `towerSiteWidthMin`/`towerSiteWidthMax` clamp to **2–8**, matching the client viewport ceiling. Odd values are still safe: `getSiteWidthForHeight` re-evens the result so a debug-set odd bound can't push the site off-centre.
-  - Impact keys (`impactInterval` 1–10, `impactMinContributionShare` 0–1, `impactScoreRequirement`), `powerReplenishPileShare` (0–1) and the stability/scoring keys route through the same clamp helpers; `placementStabilityFloor` and the exposed `reinforceScorePerIntegrity`/`PerLean` live under `GameConfig.scoring` and use the scoring setters. `reinforceScorePerSupportedCell`/`reinforceScoreCapShare` are **not** exposed — they are config-file-only for now.
-  - `towerStabilityDifficulty` clamps to **0–100** and is the only accepted stability key. The derived physics constants have no setters, so a stale client sending `towerOverhangWeight`/`towerCollapseTiltScore`/`towerSlenderness*`/`towerSupportDeficitMax`/`towerStabilityMinHeight` is rejected as an unknown key rather than desyncing the dial.
-  - `visualHookImpactBeat`/`visualHookScreenShake` are flat booleans writing into the nested `GameConfig.visualHooks` group, and are its **only** setters — the group's durations have none, so `impactBeatWaveMs` and friends are rejected as unknown keys and reach the client through `game_state` alone.
-  - `resetDebugConfig` restores all exposed tunables to the Game Config startup defaults, then rebroadcasts `debug_config`.
-  - `restartLevel` is a boolean action key (same shape as `resetDebugConfig`, not a real tunable): restarts every active room at its **current** level via `restartAtLevel(room.level, { resetScores: false })` — level state (blocks/tower/timer) resets but total player score is preserved, unlike `debugStartLevel`'s full reset. Triggered by the Debug Overlay's Restart button ([ui.md](./ui.md#main-ui-controller)), which also closes the overlay on press.
-  - Debug settings are runtime tuning only, never player progression data.
-- Hydrated room snapshots include `towerBlocks`, so non-owner workers and reconnecting clients can redraw the tower without recomputing it client-side.
-- **Matchmaking queue draining is atomic, not read-modify-write:** `tryCreateRoom()` calls Redis State's `dequeueRealPlayers(3)` (atomic pop) instead of reading the full queue and rewriting it — see [decisions.md](./decisions.md#matchmaking-queue-lost-update-and-cross-pod-room-gaps) for why.
-- **Cross-pod room handoff:** when `createRoom()` assigns a player who isn't locally connected on this pod (their `ws` is `null` here), it calls Redis State's `publishPlayerAssignment(playerId, roomId)` instead of sending directly. Every pod subscribes to this at `start()`; the pod that actually owns that player's socket receives the event via `handlePlayerAssignment` and calls `resumePlayer(player, roomId)` — the same `hydrateRoom`/subscribe path already used for genuine reconnects, so `room_created`/`room_resumed` and all subsequent `game_state` broadcasts reach the player correctly regardless of which pod formed the room. That handed-off pod's own `engine.room` is otherwise a frozen snapshot from that one `hydrateRoom()` call — never refreshed by later broadcasts — so gameplay actions never run against it directly: `dispatchRoomAction()` runs `place_block`/`send_quick_chat`/`activate_power` locally only when `isRoomOwner(room)`, otherwise it republishes the action on `room:<id>:actions` for the lease-owning pod to execute against its live engine.
+This is where every debug key is clamped. [gameplay.md](./gameplay.md) covers what
+each variable *means*; the ranges live here.
+
+- Unknown keys rejected; numeric values clamped to safe ranges.
+- Popup durations clamp 500–10000 ms; `levelSummaryDelayMs` 1000–10000 ms.
+- `debugBotStrategy` accepted only as `cooperative` or `mvp_greedy`;
+  `towerStabilityFeedbackMode` only as `warnings_only` · `meter_only` ·
+  `live_preview`. Both are allowlists: an unlisted value is **dropped silently**,
+  leaving the old setting in place rather than erroring.
+- `debugBotDelayMax` ≥ `debugBotDelayMin` enforced.
+- `debugStartLevel` applies immediately, restarting active debug rooms there.
+- `towerSiteWidthMin`/`Max` clamp to **2–8**, matching the client viewport ceiling.
+  Odd values stay safe: `getSiteWidthForHeight` re-evens the result so a debug-set
+  odd bound cannot push the site off-centre.
+- Impact keys (`impactInterval` 1–10, `impactMinContributionShare` 0–1,
+  `impactScoreRequirement`), `powerReplenishPileShare` 0–1, and the
+  stability/scoring keys route through the same clamp helpers.
+  `reinforceScorePerSupportedCell`/`reinforceScoreCapShare` are **not** exposed.
+- `towerStabilityDifficulty` clamps to **0–100** and is the only accepted stability
+  key. The derived physics constants have no setters, so a stale client sending a
+  raw constant is rejected as unknown rather than desyncing the dial.
+- `visualHookImpactBeat`/`visualHookScreenShake` are flat booleans writing into the
+  nested `visualHooks` group and are its **only** setters — the group's durations
+  have none and reach the client through `game_state` alone.
+- `resetDebugConfig` restores every exposed tunable to startup defaults, then
+  rebroadcasts. `restartLevel` is an action key, not a tunable: it restarts every
+  room at its **current** level preserving total score, unlike `debugStartLevel`.
+- Debug settings are runtime tuning only, never player progression data.
+
+### Cross-pod room handoff
+
+When `createRoom()` assigns a player whose `ws` is `null` on this pod, it calls
+`publishPlayerAssignment(playerId, roomId)` rather than sending directly. Every pod
+subscribes at `start()`; the pod that owns that socket receives it via
+`handlePlayerAssignment` and calls `resumePlayer()` — the same
+`hydrateRoom`/subscribe path genuine reconnects use, so `room_created` and every
+later broadcast reach the player whichever pod formed the room.
+
+**That handed-off pod's `engine.room` is a frozen snapshot from that one
+`hydrateRoom()` call — never refreshed by later broadcasts**, because
+`subscribeRoom` relays messages straight to sockets, not back into local room
+state. So gameplay actions never run against it: `dispatchRoomAction()` executes
+`place_block`/`send_quick_chat`/`activate_power` locally **only when
+`isRoomOwner(room)`**, otherwise republishing on `room:<id>:actions` for the
+lease-owning pod. Remove that check and every pod executes the same action against
+its own stale snapshot, producing divergent tower state.
+
+**The owning pod must stay the sole writer.** Re-hydrating the local snapshot on
+relayed broadcasts does not fix this — it still leaves two independently-mutable
+copies of one room.
+
+**Queue draining is atomic `dequeueRealPlayers(3)`.** `addPlayer()` enqueues
+*before* taking the matchmaking lock, so any read-all/rewrite-all drain has a gap
+in which another pod's entry is silently wiped, leaving that player connected but
+queued nowhere. There is no non-atomic fallback path.
 
 ## Game Engine
 
-`Game_Engine.js` — authoritative gameplay rules and level lifecycle for one room; the facade over the `engine/` modules plus room/level lifecycle, timers, and the Power system.
+`Game_Engine.js` — authoritative rules and level lifecycle for one room.
 
-**Responsibilities:** create room state and assign blocks; build/deal the draw pile; maintain placed-block tower history; resolve settling/stability before completion (via Tower Stability); run start-delay/timer/tick broadcasts; validate placement; validate/broadcast quick-chat and Power messages; run the Power side-quest and item-activation system; calculate scores; detect success/failure and advance/roll back levels; stop timers/bots on close; notify Lobby Manager of state changes for persistence.
+Creates room state and assigns blocks; builds and deals the draw pile; maintains
+placed-block history; resolves settling and stability before completion; runs
+start-delay, timer and tick broadcasts; validates placement, quick chat and Power;
+runs the side quest and item activation; scores; detects success or failure and
+advances or rolls back; notifies Lobby Manager for persistence. **This file never
+talks to Redis.**
 
-**Interface** (one `GameEngine` class per room):
-- **Lifecycle:** `createRoom(...)`, `hydrateRoom(...)`, `closeRoom(reason)`, `startLevel()`, `restartAtConfiguredStartLevel()`, `restartAtLevel(level, options)` (shared restart primitive; `restartAtConfiguredStartLevel()` calls it with `{ resetScores: true }` at `debugStartLevel` — Lobby Manager's `restartRoomsAtCurrentLevel()` calls it directly with the room's current level and `{ resetScores: false }`)
-- **Placement:** `placeBlock(playerId, blockIndex, column, originY)` (unset column falls back to the site minimum), `resolvePlacementOrigin(block, column, originY)` (an integer `originY ≥ 0` that passes `isPlacementLegal` becomes the brick's **release row** and it falls from there; absent or illegal, it is released above the tower as before — so a bot, an unsnapped drag, or a row a teammate filled in flight still places instead of being lost. `Number(null)` is `0`, so "absent" must be checked before the numeric coercion or every origin-less placement threads into the lowest gap that fits), `getSiteWidthForHeight(targetHeight)` (derives the even, viewport-clamped site width), `getPlaceableColumnRange()` (that width centred on `towerGridWidth`; falls back to the `placeableColumnMin`/`Max` config pair when no target height is set yet), `getPlaceableOriginRange(block)` (the brick's valid origin-column range given its width and the level's site), `resolveColumnOriginX(block, column)` (clamps the requested column into that range — the sole placement-validation step, since a full-footprint clamp already guarantees the brick stays within the site)
-- **Supply sizing / progression:** `getSupplyPackingEfficiency()` (derived from brick geometry and the site width, not a constant; see [Block Supply](#block-supply)), `getTargetHeightForLevel(level)`, `buildTargetHeightCurve()` (the growing-step recurrence → [gameplay.md § Tower system](./gameplay.md#tower-system); no useful closed form, so the curve is built once and cached against a key of all five inputs — every one is debug-tunable at runtime, and `Impacts.getExpectedPlacementScoreForImpactBand` calls it in a loop), `getLevelTimeLimitMs(targetHeight, level)` (the derived clock, floored at `GameConfig.levelTimeLimitMs`; its slack multiplier itself lerps from `levelTimeSlack` at level 1 to `levelTimeSlackMin` by `levelTimeSlackFullLevel`; `startLevel()` stamps the result on `room.levelDurationMs` so `endsAt` and the fail timer cannot disagree)
-- **Scoring:** `addPlacementScore(player, block, effectiveHeight, stabilityBefore, heightBefore)`, `addReinforceScore(player, before, after, supportedCells)`, `getPlacementStabilityMultiplier(stabilityBefore, heightBefore)`, `getReinforceScoreCap(heightAfter)`, `awardCompletionBonuses(...)`, `addLevelScoreToLeaderboard()`, `getLevelMVP()`, `buildLevelSummary(...)`
-- **Impacts:** `saveImpactState()`, `restoreImpactScores()`, `restoreImpactPowers()`, `rollbackToImpact()`
-- **Power:** `setupSideQuest()`, `grantDefaultPowers()`, `activatePower(playerId, slot)`, `consumePowerEvents()`, `clonePowerInventory(items)`, `anyPlayerCanRescueSupply()` (defers the not-enough-height fail check while a player still holds Replenish)
-- **Stability:** `recalculateTowerStability()` (delegates the math to Tower Stability), `getStabilityPressure(level)` (`towerStabilityDifficulty` × the level ramp → 0–1), `resolveStabilityConfig(level)` (lerps `towerStabilityAnchors` by that pressure and injects the level's `towerSiteWidth`). **Every** `evaluate()` caller — engine, Bot Manager, Balance Simulator — must source its config here, or bots grade columns on different physics than the server scores them with
-- **Called by Lobby Manager:** `stopBots()`, `broadcastGameState()`, `getImpactScoreStatus()`, `getBlocksPerPlayer()`, `getNextDrawBlock()`
+Level states: `waiting` · `starting` · `playing` · `finished` · `failed` ·
+`game_completed` · `closed`.
 
-**Depends on:** Game Config, Tower Stability, Bot Manager, Lobby Manager (notify-only, never called into for gameplay logic), Block Supply, Scoring, Impacts.
+### Placement
 
-**Notes:**
-- Level states: `waiting`, `starting`, `playing`, `finished`, `failed`, `game_completed`, `closed`.
-- **No power has a token economy** (see [decisions.md](./decisions.md)): `activatePower()` takes no target — it loops every player in `room.players` for the per-item effect (`refresh`/`score_cap`/`copy_score`), while `replenish` instead calls `generateReplenishBlocks()` once for the shared pile and reports the count as `meta.blocksAdded` on the power event. `anyPlayerCanRescueSupply()` scans every player's Power inventory for a held `replenish` item.
-- **Grant paths all name `replenish`:** `grantDefaultPowers()` runs from `startLevel()` (every start/restart/rollback), giving each player one `{ id: "replenish" }` item if they don't already hold one and have space — independent of the quest/Impact-MVP paths; `setupSideQuest()`'s reward is hardcoded to `"replenish"`. `Impacts.js`'s `awardImpactPower()` filters `Object.keys(GameConfig.powerCatalog)` down to entries with `active: true` before picking randomly — currently only `replenish` qualifies. See [Game Config](#game-config) and [decisions.md](./decisions.md#inactive-powers-stay-defined-behind-the-powercatalog-active-flag).
-- `scoreEvents[]` (built in Scoring) and `quickChatEvents[]`/`powerEvents[]` (queued directly here) are transient, broadcast-only, never persisted — don't infer scoring UI from aggregate score diffs.
-- Engine owns live timers and rule execution; Lobby Manager/Redis State persist shared snapshots. This file never talks to Redis directly.
-- `getRemainingMs()` (backs broadcast `secondsRemaining`) is state-dependent, not a single `endsAt` clock: counts down to `room.startsAt` during `starting`, to `room.freezeEndsAt` during `finished`/`failed` (set by `completeLevel()`/`failLevel()` to `now + getPostLevelTransitionDelayMs() + GameConfig.startDelayMs`), and to `room.endsAt` only during `playing`. Keeps the client's frozen-timer display counting down real time-to-resume instead of a stale round clock.
-- No persistent leaderboard yet; see [decisions.md](./decisions.md#no-persistent-leaderboard-yet).
-- Renamed from "Politics"/"Checkpoint" to "Power"/"Impact" — see [decisions.md](./decisions.md#politics--power-checkpoint--impact-rename) for the deploy-ordering consequence.
+`resolvePlacementOrigin(block, column, originY)` — an integer `originY ≥ 0` that
+passes `isPlacementLegal` becomes the brick's **release row** and it falls from
+there; absent or illegal, it is released above the tower. That is what lets a bot,
+an unsnapped drag, or a row a teammate filled in flight still place rather than be
+lost.
+
+**Landmine: `Number(null)` is `0`.** "Absent" must be tested *before* the numeric
+coercion, or every origin-less placement reads as "aim at row 0" and threads into
+the lowest gap that fits.
+
+`resolveColumnOriginX(block, column)` clamps the requested column into
+`getPlaceableOriginRange(block)` — the sole placement-validation step, since a
+full-footprint clamp already guarantees the brick stays inside the site.
+`getSiteWidthForHeight(targetHeight)` derives the even, viewport-clamped site.
+
+### Derived curves
+
+`buildTargetHeightCurve()` is a growing-step recurrence with no useful closed
+form, so it is built once and cached against a key of all five inputs — every one
+is debug-tunable at runtime and `Impacts` calls it in a loop.
+`getLevelTimeLimitMs()` is a derived clock floored at `levelTimeLimitMs`, with a
+slack multiplier that itself lerps by level; `startLevel()` stamps the result on
+`room.levelDurationMs` so `endsAt` and the fail timer cannot disagree.
+
+`getRemainingMs()` is **state-dependent, not one `endsAt` clock**: it counts down
+to `startsAt` during `starting`, to `freezeEndsAt` during `finished`/`failed`, and
+to `endsAt` only during `playing`. That keeps the client's frozen-timer display
+counting real time-to-resume instead of a stale round clock.
+
+### Stability config
+
+`resolveStabilityConfig(level)` lerps `towerStabilityAnchors` by
+`getStabilityPressure(level)` and injects the level's `towerSiteWidth`. **Every
+`evaluate()` caller — engine, Bot Manager, Balance Simulator — must source its
+config here**, or bots grade columns on different physics than the server scores
+them with.
+
+### Power
+
+`activatePower()` takes **no target** — it loops every player for the per-item
+effect, while `replenish` calls `generateReplenishBlocks()` once for the shared
+pile and reports the count as `meta.blocksAdded`. No power has a token economy.
+Every grant path names `replenish`: `grantDefaultPowers()` from `startLevel()`,
+the side-quest reward hardcoded, and `awardImpactPower()` filtering the catalog to
+`active: true`. `anyPlayerCanRescueSupply()` defers the not-enough-height fail
+check while any player still holds one.
+
+`scoreEvents[]`, `quickChatEvents[]` and `powerEvents[]` are transient and
+broadcast-only, never persisted — do not infer scoring UI from score diffs.
 
 ## Block Supply
 
-`engine/Block_Supply.js` — block creation, shared draw pile, opening hands, refresh-block generation for one room. Follows the [engine module delegation pattern](./coding-conventions.md#server-engine-module-delegation-pattern).
+`engine/Block_Supply.js` — block creation, shared draw pile, opening hands,
+refresh generation.
 
-**Responsibilities:** create bricks from the **5 fixed shapes** (`brickShapes`, weighted by `brickWeights`, all available from level 1 — no size unlock), applying a **random orientation** to the shape's canonical `cells` at creation — internal `getOrientations` (the 4 rotations of the shape plus the 4 rotations of its mirror via `reflectCellsX`, deduped by cell layout) is what `createBlock` draws from, so an asymmetric shape (`L`, `Z`) can also deal its inverted (J-/S-like) counterpart; `getRotations`/`rotateCellsCW` alone (no mirror) remains the basis for `getAverageBrickHeight`'s supply-sizing estimate, since a reflection never changes a shape's vertical extent. Each created block is `{ id, shapeId, cells, derived height }`, with no per-instance anchor field; build/shuffle/deal the draw pile (sized via Game Config's generated-pile scaling); generate a **solvable** opening hand (retries until hand+pile can exactly reach target height, with enough precision blocks and surplus within bounds — falls back to the last attempt if none qualifies); refill a hand slot after placement; trim an oversized hand to `maxActiveBlocks` (keeping tallest/largest); generate a useful refresh set; prepare team carry-over blocks on completion.
+Bricks are the **5 fixed 4-cell shapes** (`I`/`O`/`L`/`T`/`Z`), weighted, all
+available from level 1. Each gets a **random orientation at creation**:
+`getOrientations` is the 4 rotations of the shape plus the 4 of its mirror, deduped
+by cell layout, so an asymmetric `L`/`Z` can also deal its J/S counterpart.
+`getRotations` alone (no mirror) stays the basis for supply sizing, since a
+reflection never changes vertical extent. Blocks are `{ id, shapeId, cells, height
+}` with `height` derived from the rotated cells — it varies 1–4 by draw, and there
+is **no per-block anchor field of any kind**.
 
-**Interface (grouped):**
-- Block creation — `pickWeightedShape(excludedShapeId)`, `createBlock(shapeId, excludedShapeId)` (`shapeId` null = weighted-random pick, optionally excluding one shape), `getRandomBlock()`, `createBlockId()`, `cloneCells(cells)`, `getBlockHeight(block)`, `getBlockCellCount(block)`, `getAverageBrickHeight()` / `getAverageBrickCellCount()` (weighted across every shape's unique rotations — the basis for both supply sizing and packing efficiency)
-- Draw pile — `getNextDrawBlock()`, `buildDrawPile()`, `getGeneratedDrawPileBlockCount()`, `generateDrawPileBlocks(count)`, `drawBlockFromPile()`, `shuffleBlocks(blocks)`, `getTotalBlockHeight(blocks)`
-- Opening hand — `getBlocksPerPlayer()`, `dealOpeningHands()`, `generateSolvableOpeningHandBlocks()`, `isLevelBlockSupplyValid(blocks, minimumOpeningBlocks)`, `countPrecisionBlocks(blocks)`, `hasExactHeightCombination(blocks, targetHeight)`, `refillPlayerBlock(player)`, `trimInventory(blocks)`
-- Refresh / Replenish — `generateRefreshBlocks(currentBlocks)`, `createRefreshBlock(currentBlock)`, `isRefreshBlockSetUseful(blocks)`, `scoreRefreshBlockSet(blocks)`; `getReplenishBlockCount()` (`max(1, round(powerReplenishPileShare × room.drawPileStartCount))`), `generateReplenishBlocks()` (appends that many fresh bricks to the live pile). `buildDrawPile()` stamps `drawPileStartCount`, which is persisted in the room snapshot so the share is measured against the level's *starting* pile, not whatever is left when the power fires
-- Carry-over — `prepareTeamCarryOverBlocks()`
-
-**Depends on:** Game Config (direct `require`); Game Engine for room state and cross-calls between its own functions.
-
-**Supply sizing is packing-aware.** `isLevelBlockSupplyValid` accepts a level when total brick height falls in `getSuppliedBrickHeight(...) + [levelSupplyMinSurplus, getLevelSupplyMaxSurplus(...)]`. `getSuppliedBrickHeight` multiplies `ceil(targetHeight / packingEfficiency)` by a coverage share that lerps from `levelSupplyCoverageStart` (level 1) down to `levelSupplyCoverageEnd` (by `levelSupplyCoverageFullLevel`); the gap at the end value is what a Replenish is meant to close → [gameplay.md § Draw pile](./gameplay.md#draw-pile--team-carry-over). The upper surplus edge is a flat amount plus `levelSupplyMaxSurplusShare` of the requirement: a fixed window is missed on nearly every attempt once the pile (and the random draw's variance around it) grows past the earliest levels. The efficiency is *derived*, not a constant:
+### Supply sizing is packing-aware
 
 ```
 effectiveWidth = siteWidth × supplyEffectiveWidthRatio + 0.5
 efficiency     = avgBrickCellCount / (avgBrickHeight × effectiveWidth)
 ```
 
-Sizing against raw target height instead assumed bricks stack perfectly vertically, which made every level past ~10 unwinnable — see [decisions.md](./decisions.md#supply-was-sized-for-vertical-stacking-and-made-high-levels-unwinnable). `getGeneratedDrawPileBlockCount` derives the reserve from the resulting shortfall rather than the removed `generatedDrawPileScaling` table.
+`getSuppliedBrickHeight` multiplies `ceil(targetHeight / efficiency)` by a coverage
+share lerping from `levelSupplyCoverageStart` down to `levelSupplyCoverageEnd`;
+the gap at the end value is what a Replenish closes. The upper surplus edge is a
+flat amount **plus** a share of the requirement, because a fixed window is missed
+on nearly every attempt once the pile and its draw variance grow.
 
-**`checkFailCondition` deliberately does *not* apply the efficiency factor** — it exists to detect genuinely impossible states, so it needs the true upper bound (a brick *can* contribute its full height if stacked). Applying efficiency there failed levels while a winning move still existed. **`hasExactHeightCombination` returns on the first hit** — it is an O(blocks × targetHeight) subset-sum run inside `generateSolvableOpeningHandBlocks`' retry loop and the pile scales with target height, so a full scan at a 700-brick pile is ~480k set operations × `openingHandGenerationAttempts`, seconds of blocked event loop per level start. Returning early keeps it effectively O(targetHeight): level start stays ~15 ms at target 690.
+Sizing must stay packing-aware: raw target height assumes one unit of brick height
+becomes one unit of *tower* height, which holds only for a single-column stack
+while stability demands spread.
 
-**Notes:** blocks are `{ id, shapeId, cells, height }` objects (`height` derived from the rotated `cells`' vertical span, so it varies 1–4 by draw — not a fixed per-shape number); no per-block anchor field of any kind exists ([decisions.md](./decisions.md#placement-design-lineage-superseded)); legacy numeric blocks are still read as plain height values. All 5 bricks are available from level 1 (no size unlock). `createRefreshBlock` rerolls a brick to a **different random shape** (excludes the current `shapeId`); since every brick is 4 cells, refresh no longer changes cell-count. Team carry-over: precision-first (height ≤ 2 kept), discarded entirely on level failure — Game Engine never calls `prepareTeamCarryOverBlocks` on the failure path. Refresh generation never touches the draw pile; there's no cooldown/lockout gating *when* a refresh can happen anymore beyond the shared Power activation cooldown.
+**`checkFailCondition` deliberately does *not* use the efficiency factor.** It
+tests *impossibility*, so it needs the true optimistic upper bound — one height-3
+brick genuinely can add 3 height if stacked. Applying the factor there fails
+levels that still have a winning move.
+
+**`maxGeneratedDrawPileBlocks` is a sanity ceiling against a bad config, not a
+balance knob** — target height is uncapped, so a value that binds starves the
+level outright.
+
+**`hasExactHeightCombination` returns on the first hit.** It is an
+O(blocks × targetHeight) subset-sum inside the opening-hand retry loop and the pile
+scales with target height, so a full scan at a 700-brick pile is ~480k set
+operations per attempt — seconds of blocked event loop per level start. Early
+return keeps level start at ~15 ms at target 690.
+
+Team carry-over is precision-first and **discarded entirely on level failure** —
+the engine never calls it on the failure path. Refresh generation never touches the
+draw pile.
 
 ## Scoring
 
-`engine/Scoring.js` — score events, placement/bonus scoring, leaderboard banking, MVP, level summaries. Follows the [engine module delegation pattern](./coding-conventions.md#server-engine-module-delegation-pattern).
+`engine/Scoring.js` — score events, placement and bonus scoring, leaderboard
+banking, MVP, level summaries.
 
-**Interface (grouped):**
-- Score events — `createScoreEvent(type, options)`, `queueScoreEvent(type, options)`, `consumeScoreEvents()`
-- Placement/bonus — `recordScoreBreakdown(player, key, points)`, `addPlacementScore(player, block, effectiveHeight, stabilityBefore, heightBefore)`, `getPlacementStabilityMultiplier(stabilityBefore, heightBefore)`, `getReinforceScoreCap(heightAfter)`, `addReinforceScore(player, before, after, supportedCells)`, `awardCompletionBonuses(finisher, exactFinish)`, `addBonusScore(player, points, label)`, `getBonusScoreEventType(label)`, `getBonusScoreEventLabel(label)`
-- Leaderboard — `addLevelScoreToLeaderboard()`
-- Summary/MVP — `getPlayerScoreMap()`, `getTeamLevelScore()`, `getPlayerBonusBreakdown(player)`, `buildLevelSummary(options)`, `getLevelMVP()`
+**Score banking is two-stage.** Points accumulate in `player.levelScore` during a
+level; only `addLevelScoreToLeaderboard()` moves that into `player.score`. That is
+why a failed level's score doesn't count — **and why anything reading live Impact
+standing mid-level must add `levelScore` to the banked band score itself.** Both
+the client's Impact bar and Bot Manager's yield check do exactly that.
 
-**Depends on:** Game Config (direct `require`); Block Supply via the engine facade (`addPlacementScore` reads `engine.getBlockHeight(block)` for event `meta`).
+`addPlacementScore` takes the stability and height the placer **inherited**, both
+captured before settling. `addReinforceScore` takes diagnostics from before and
+after, plus the `supportedCells` count measured *before* the entry was pushed, and
+is held to `getReinforceScoreCap(heightAfter)`. The cap is derived from
+`avgBrickHeight`, so it **re-prices itself when the brick mix is retuned**.
+Why the two are priced against each other →
+[gameplay.md](./gameplay.md#scoring-system).
 
-**Notes:**
-- **Score banking is two-stage:** placement/bonus points accumulate in `player.levelScore` during a level; only `addLevelScoreToLeaderboard()` moves that into `player.score`. This is why a failed level's score doesn't count toward the final total — **and why anything reading live Impact standing mid-level must add `levelScore` to the banked band score itself** (both the client's Impact bar and [Bot Manager](#bot-manager)'s yield check do exactly that).
-- **`addPlacementScore` takes the stability and height the placer inherited**, both captured in `placeBlock` *before* settling — the stability multiplier's floor itself lerps from `placementStabilityFloor` toward `placementStabilityFloorAtTarget` by that height, so a placement pays less the closer the tower already is to target. `addReinforceScore` takes the diagnostics from before and after `recalculateTowerStability()`, plus the `supportedCells` count `Tower Stability` measured *before* the entry was pushed. Its total is held to `getReinforceScoreCap(heightAfter)` — the repair-vs-height price anchor, off `engine.getAverageBrickHeight()` and a share that itself lerps from `reinforceScoreCapShare` to `reinforceScoreCapShareAtTarget`, so a repair can out-earn a height claim near the top. Bot Manager passes each candidate's own projected height, since the cap otherwise depends on the placement that hasn't happened yet. Formulas → [gameplay.md § Scoring system](./gameplay.md#scoring-system).
-- An empty tower has no `integrity` field, so `addReinforceScore` defaults a missing before/after integrity to **100**, not 0 — otherwise the first brick of every level would pay a full phantom Reinforce.
-- `getPlayerBonusBreakdown` gained a `reinforce` key. The server sends it inside `lastLevelSummary.players[].bonusBreakdown`; no client currently renders that payload.
-- Bonuses use multipliers from Game Config; a zero-value bonus emits no score event.
+**Repair must stay a paid action.** If only height gained pays, widening the base
+or correcting a lean earns nothing and collapse is a flat team-wide loss — the
+game's defining tension loses its mechanical surface. A *personal* collapse stake
+is not the alternative: it needs per-player blame attribution the pure stability
+function cannot produce.
+
+**An empty tower has no `integrity` field, so a missing before/after integrity
+defaults to 100, not 0** — otherwise the first brick of every level would pay a
+full phantom Reinforce.
 
 ## Impacts
 
-`engine/Impacts.js` — Impact score snapshots, restore/rollback, and the Impact score gate for one room. Follows the [engine module delegation pattern](./coding-conventions.md#server-engine-module-delegation-pattern). Formerly `Checkpoints.js` — see [decisions.md](./decisions.md#politics--power-checkpoint--impact-rename).
+`engine/Impacts.js` — snapshots, restore and rollback, and the Impact score gate.
 
-**Responsibilities:** snapshot score + Power inventory at the start of an Impact band; restore on rollback; award a Power item to the Impact-band leader when an Impact opens; decide whether each player met the band's minimum contribution share; build the per-player Impact-status payload broadcast every tick; fail the room to `failed` (with a summary) when the gate isn't met, then roll back to the last Impact level.
+Snapshots score and Power inventory at the start of a band; restores on rollback;
+awards a Power item to the band leader when an Impact opens; decides whether each
+player met the minimum contribution share; builds the per-player status payload;
+fails the room and rolls back when the gate isn't met.
 
-**Interface (grouped):**
-- Snapshots — `saveImpactScores()`, `saveImpactPowers()`, `saveImpactState()`, `ensureImpactScores()`, `ensureImpactPowers()`, `ensureImpactState()`, `restoreImpactScores()`, `restoreImpactPowers()`
-- Score gate — `isImpactLevel(level)`, `getImpactScoreRequirement()`, `getImpactMinContributionShare()`, `getExpectedPlacementScoreForLevel(level)`, `getExpectedPlacementScoreForImpactBand(blockedLevel)`, `getImpactBandScoreRequirement(blockedLevel)`, `getImpactScoreFailures(blockedLevel)`, `getNextImpactLevel()`, `getImpactScoreStatus(blockedLevel)`, `hasMetImpactScoreRequirement(blockedLevel)`
-- Rewards/rollback — `awardImpactPower()`, `failImpactScoreRequirement(blockedLevel)`, `rollbackToImpact()`
+`getExpectedPlacementScoreForLevel` multiplies by
+`impactExpectedStabilityMultiplier` — the formula otherwise assumes every
+placement pays a perfect 1.0 stability multiplier, so this keeps the gate's
+expectation honest as the real multiplier's floor descends with height.
 
-**Depends on:** Game Config (direct `require`); Game Engine via facade for lifecycle calls; Scoring via facade for score-event/summary calls.
-
-**Notes:** `getExpectedPlacementScoreForLevel` multiplies by `impactExpectedStabilityMultiplier` (default 0.85) — the formula otherwise assumes every placement pays a perfect 1.0 stability multiplier, so this keeps the gate's expectation honest as the real multiplier's floor descends with height (see [Scoring](#scoring)). `rollbackToImpact()` calls `engine.startLevel()` directly at the end — the room re-enters `starting` for the Impact level in the same call, not on a separate timer tick. `startLevel()` **preserves** any already-queued `pendingScoreEvents` (`= pendingScoreEvents || []`) instead of clearing them, so events queued before an Impact transition (e.g. `awardImpactPower`'s power events) still reach the Impact level's first broadcast. `clonePowerInventory` lives on the Game Engine facade, not here (pure Power data, no Impact semantics).
+`rollbackToImpact()` calls `startLevel()` directly at the end, so the room
+re-enters `starting` in the same call rather than on a separate tick.
+`startLevel()` **preserves** already-queued `pendingScoreEvents` instead of
+clearing them, so events queued before an Impact transition still reach the next
+level's first broadcast.
 
 ## Tower Stability
 
-`Tower_Stability.js` — pure, deterministic grid physics: settles a newly placed block and scores the resulting tower's stability. **Zero dependencies, internal or external.**
+`Tower_Stability.js` — pure, deterministic grid physics. **Zero dependencies,
+internal or external.**
 
-**Interface:**
-- `settleBlock(entries, block, originX, fromY = null) -> { originX, originY }` — gravity. Drops `block` into `entries` at the caller-provided **column-derived `originX`** (rounded) and returns where it lands (drop-to-first-contact, no auto-centering). `fromY` is the **release row**: omitted, the brick spawns above the tower and falls the whole way; given, it falls from that row instead — which is what lets a brick be threaded into a gap without letting it hang there. The column→`originX` clamp lives in [Game Engine](#game-engine)'s `resolveColumnOriginX()`, not here.
-- `isPlacementLegal(entries, block, originX, originY)` — the rule a client-chosen release row must satisfy: on or above the platform and not inside an occupied cell. **Support is deliberately not part of it** — an unsupported release is not refused, it falls.
-- `supportedCellsGained(entries, block, originX, originY)` — tower cells that were hanging (`y > 0`, nothing below) and would come to rest on the incoming brick. Must be called **before** the entry is pushed; feeds Reinforce's repair term.
-- `evaluate(entries, config) -> { stability, diagnostics }` — `diagnostics = { comOffset, laneImbalance, overhangPenalty, tiltScore, tiltAngleDeg, leanDirection, integrity, slenderness, supportRatio, heightProgress, collapsed }`. `config` is the **resolved** set from [Game Engine](#game-engine)'s `resolveStabilityConfig()`, not raw `GameConfig`: it reads `towerOverhangWeight`, `towerLaneImbalanceWeight`, `towerMaxTiltAngleDeg`, `towerCollapseTiltScore`, `towerSlendernessSafe`, `towerSlendernessMax`, `towerStabilityMinHeight`, `towerBaseHalfWidthFloor`, `towerSupportDeficitMax`, `towerSiteWidth`, `towerHeightPressureGain`, `towerTargetHeight`. **Landmine:** passing raw `GameConfig` still runs — the derived keys are absent, so it silently falls back to defaults and a `towerSiteWidth` equal to the ground width, which disables the slenderness penalty entirely. Tests pin their own resolved set.
-- `cellsFor(entry)` / `cellsForEntries(entries)` — absolute grid cells for one or many entries
-- `topHeight(entries)` — current highest occupied row
-- `structuralLean(diagnostics)` = `comOffset + laneImbalance` (signed) / `balanceDelta(before, after, config) -> −100..100` — how far one placement moved the tower toward centre: `100 × (|structuralLean before| − |structuralLean after|) / towerCollapseTiltScore`, rounded and clamped. Both arguments are `evaluate()` diagnostics; [Game Engine](#game-engine) stamps the result on the `towerBlocks` entry it just pushed. Feeds the brick faces only — never scoring, collapse or the stability score → [decisions.md](./decisions.md#brick-faces-read-a-lean-only-balance-delta-not-the-stability-score)
+**Must stay pure.** `settleBlock()` and `evaluate()` are deterministic functions of
+the `entries` array — no history, randomness or hidden state. The Balance Simulator
+re-runs `evaluate()` thousands of times and needs reproducible results, and the
+client re-derives tilt from a `game_state` snapshot after reconnecting rather than
+replaying placement history. Any change here must preserve determinism.
 
-**Notes:**
-- **Must stay pure — see [decisions.md](./decisions.md#tower-stability-must-stay-a-pure-function).** Both axes are recomputed from `entries` on every call — nothing is accumulated across calls, which is what lets a persistent-feeling Integrity score stay a pure function.
-- **Two axes; `stability = min(leanStability, integrity)`, and `collapsed` when either fails.** Design meaning and formulas → [gameplay.md § Tower stability](./gameplay.md#tower-stability-design-view).
-  - **Lean** (signed) = `comOffset` (whole-tower cell-count lean — horizontal CoM vs. ground footprint) + `laneImbalance` (signed, height-weighted column centroid vs. base center × `towerLaneImbalanceWeight`) + `overhangPenalty` (reaction to only the just-placed entry, so a bad placement reads as bad immediately without re-penalizing old, already-settled overhangs every later turn). Normalised by `baseHalfWidth`, floored at `towerBaseHalfWidthFloor`.
-  - **Integrity** (0–100) = 100 minus the clamped sum of a **slenderness** penalty (`towerSiteWidth ÷ mean cells per occupied row` — the *whole* tower's row density, not just its ground row, ramped between `towerSlendernessSafe` and `towerSlendernessMax`) and a **support deficit** penalty (unsupported cells ÷ all cells across the whole tower, over `towerSupportDeficitMax`). Both are scaled by `severity` rather than the maturity ramp alone.
-- **Every penalty is scaled by `severity = maturity × heightPressure`.** `maturity` (`min(1, height / towerStabilityMinHeight)`) keeps the opening bricks safe — the ratios are degenerate at small tower sizes, one narrow brick alone on the ground is the worst reading the tower can register, and a single `T` on its stem is literally 50% unsupported. `heightPressure` (`1 + towerHeightPressureGain × min(1, height / towerTargetHeight)`) additionally sharpens penalties as the tower nears its own target height, so the same tower is graded harder late in a level than early — deliberately excluded from `comOffset`/`laneImbalance` themselves so `structuralLean`/`balanceDelta` (the brick-face signal) stay free of height drift.
-- The settle path takes only already-resolved `originX`/cells and has no assumption of lane count or grid width. `evaluate` needs the level's site width, but only as a plain number off `config` — the module still derives no geometry itself.
-- Called from Game Engine: `settleBlock()` at placement time, `evaluate()` inside `recalculateTowerStability()` after every placement. Game Engine (not this file) compares the result against the warning/critical thresholds.
-- Tuning-knob rationale lives in [Game Config](#game-config) only — never restated here, in `Game_Config.js`, or in `Lobby_Manager.js`.
-- Guards against dividing by an empty base (no cells at `y === 0`), even though the first block placed should always settle on the floor.
+- `settleBlock(entries, block, originX, fromY)` — gravity, drop-to-first-contact,
+  no auto-centering. `fromY` is the **release row**: omitted, the brick spawns
+  above the tower and falls the whole way; given, it falls from there, which is
+  what lets a brick be threaded into a gap without hanging.
+- `isPlacementLegal` — on or above the platform, not inside an occupied cell.
+  **Support is deliberately not part of it** — an unsupported release is not
+  refused, it falls.
+- `supportedCellsGained` — must be called **before** the entry is pushed.
+- `evaluate(entries, config)` — the two-axis score.
+- `balanceDelta(before, after, config)` — how far one placement moved the tower
+  toward centre, in points of the collapse budget. **Lean only, not the change in
+  stability.** Feeds the brick faces and nothing else.
+
+**Landmine — passing raw `GameConfig` to `evaluate()` still runs.** The derived
+keys are simply absent, so it silently falls back to defaults and to a
+`towerSiteWidth` equal to the ground width, which **disables the slenderness
+penalty entirely**. `config` must be the resolved set from
+`resolveStabilityConfig()`. Tests pin their own resolved set.
+
+### Two axes
+
+`stability = min(leanStability, integrity)`; `collapsed` when either fails.
+
+```
+slenderness        = siteWidth / meanRowWidth      # whole tower, not the ground row
+slendernessPenalty = clamp01((slenderness − Safe) / (Max − Safe)) × severity
+supportPenalty     = clamp01((unsupported / all cells) / supportDeficitMax) × severity
+integrity          = round(100 × (1 − clamp01(slendernessPenalty + supportPenalty)))
+
+pressure       = (difficulty / 100) × (floor + (1 − floor) × min(1, level / fullPressureLevel))
+heightPressure = 1 + heightPressureGain × min(1, height / targetHeight)
+severity       = maturity × heightPressure
+```
+
+**Lean** (signed) = whole-tower CoM offset + height-weighted column imbalance + the
+just-placed brick's overhang, normalised by base half-width. Overhang reacts to
+only the new entry, so a bad placement reads as bad immediately without
+re-penalising settled overhangs every later turn.
+
+**Integrity cannot be folded back into Lean.** Every Lean term measures *asymmetry*
+normalised by the tower's own footprint, so none of them sees slenderness: a
+centred 2-wide, 40-tall spire scores `stability 100, tiltScore 0.000` on Lean
+alone, making the height-optimal play also the stability-optimal one.
+
+**Landmine — small towers make every ratio degenerate.** With 4 cells placed, a
+lone `T` on its stem is 50% unsupported and an `L`/`Z` leans ~10° immediately; both
+are the *intended* hook at scale. The single maturity ramp
+`min(1, height / towerStabilityMinHeight)` covers this on **all** penalty terms —
+never add per-shape special cases. `heightPressure` is deliberately excluded from
+the lean terms so `balanceDelta` stays free of height drift.
+
+**Landmine — `towerBaseHalfWidthFloor` is a divide-by-zero guard, not a difficulty
+lever.** Raised above the site's real half-width it pins lean's divisor, and
+`tiltScore` can no longer reach its threshold at all — the lean axis silently stops
+discriminating.
+
+Integrity is recomputed from `entries` on every call, never accumulated — that is
+what lets a persistent-*feeling* score stay a pure function, and why adding
+well-supported bricks raises it, which is what makes repair a payable action.
 
 ## Bot Manager
 
-`Bot_Manager.js` — QA/testing bot action scheduler. Bots are not production AI; they exist for testing rooms without three human players. Strategy behavior (cooperative vs. mvp-greedy) is the canonical design content in [gameplay.md § Bot behavior](./gameplay.md#bot-behavior) — this section covers only the scheduling mechanism.
+`Bot_Manager.js` — QA bot scheduler. Not production AI. Strategy *design* lives in
+[gameplay.md](./gameplay.md#bot-behaviour); this covers the mechanism.
 
-**Interface:** `startBots(engine)` (stops existing timers, starts one loop per bot), `stopBots(engine)` (the method Game Engine calls on close/restart/stop — internally calls `stopBot(bot)` per bot). Internal-only: `stopBot(bot)`, `runBotLoop`, `chooseBotAction(bot, engine, strategy)`, `chooseBotPlacement(engine, block, strategy)`, `getVoidReleaseRows`, `rankByStrategy`, `hasClearedShareWhileTeammateShort(bot, engine)`.
+Bots place through `placeBlock()` by inventory index **plus a column and a release
+row** — the same authoritative path real players use. `chooseBotPlacement` crosses
+every column in the brick's valid range with every release-row candidate
+(drop-from-above plus up to `debugBotGapCandidates` void floors), dedupes on the
+settled `(originX, originY)`, and ranks by strategy.
 
-**Depends on:** Game Config, Game Engine.
+Candidates are scored with the engine's **own reward formulas**, because both
+earners scale with height: the placement multiplier uses the shared pre-turn
+height, while the reinforce cap is recomputed per candidate off its own projected
+post-placement height — otherwise bots grade columns on cap economics the server
+never pays.
 
-**Notes:** bots place through `Game Engine`'s `placeBlock()` by inventory index **plus a column and a release row** — the same authoritative path real players use. `chooseBotPlacement` crosses every column in the brick's valid range (`engine.getPlaceableOriginRange(block)`) with every release-row candidate (drop-from-above plus up to `debugBotGapCandidates` void floors), dedupes on the settled `(originX, originY)`, and ranks by strategy — see [gameplay.md § Bot behavior](./gameplay.md#bot-behavior) for the two policies. Both it and `chooseBotAction` take an explicit `strategy` argument defaulting to `GameConfig.debugBotStrategy`, so the [Balance Simulator](./testing.md#balance-simulator) can drive either policy without mutating global config.
+Search cost is bounded two-stage: a cheap proxy pass narrows to the top 8, and only
+survivors pay for a full `evaluate()`. Naive enumeration is 3 bricks × 8 columns ×
+7 rows, `evaluate()` is O(tower cells), and towers run to hundreds of bricks.
 
-Candidates are scored with the engine's **own reward formulas** (`placementPoints + reinforcePoints`) — since both now scale with height, the placement multiplier uses the shared pre-turn height (same for every candidate this turn) while the reinforce cap is recomputed per candidate off its own projected post-placement height, or bots would grade columns on cap economics the server never actually pays. Brick choice is joined to placement choice — `chooseBotAction` evaluates the hand × best-placement-per-brick cross product after the exact-finisher shortcut, because a 1-high brick can out-earn a 4-high one as a repair. Search cost is bounded two-stage: a cheap proxy pass (no `evaluate()`) narrows to the top 8, and only survivors pay for a full `TowerStability.evaluate()` — naive enumeration is 3 bricks × 8 columns × 7 rows, `evaluate()` is O(tower cells), and towers now run to hundreds of bricks. **Landmine: ranking by `heightGain` instead is what makes gap-filling unreachable** — a brick threaded into a void gains zero height, so it loses every comparison, and enumerating release rows without also changing the objective function measurably does nothing. `chooseBotAction` returns `{ type: "place", blockIndex, column, originY }` — the placement travels with the action — or **`{ type: "wait" }`**, which `runBotLoop` reschedules on without placing; any new caller must handle both shapes. A cooperative bot yielding under the Impact gate takes `wait` only when no zero-height repair is available. Timer tracking (`bot.botTimer`, `botLoopLevel`) exists specifically so a disconnected/closed room's bots don't keep running in the background. Bots never hold or activate Power items — no bot refresh behavior (`canBotRefresh` and related branches were removed with the refresh token economy).
+**Landmine — ranking by `heightGain` makes gap-filling unreachable.** A brick
+threaded into a void gains zero height, so it loses every comparison. Enumerating
+release rows without also changing the objective function measurably does nothing.
+
+`chooseBotAction` returns `{ type: "place", … }` or **`{ type: "wait" }`**, which
+`runBotLoop` reschedules on without placing; any new caller must handle both
+shapes.
+
+Timer tracking exists specifically so a closed room's bots don't keep running.
 
 ## Game Config
 
-`Game_Config.js` — single exported `GameConfig` object; the source of truth for every numeric/rule constant the server uses. **No dependencies, internal or external.**
+`Game_Config.js` — the single exported object and source of truth for every
+numeric constant. **No dependencies.** Lobby Manager validates every debug write
+before mutating it.
 
-**Grouped contents:** game settings (pacing, cooldowns, popup/summary durations, `impactInterval`, `impactExpectedStabilityMultiplier`), progression settings (`targetHeightBase`/`StepBase`/`StepGrowth`/`StepGrowthEvery` — the growing-step curve, uncapped — plus `targetHeightMultiplier`, and the derived clock's `levelTimePlannedEfficiency`/`levelTimeSlack`/`levelTimeSlackMin`/`levelTimeSlackFullLevel` with `levelTimeLimitMs` as its floor → [gameplay.md](./gameplay.md#tower-system)), tower/placement settings (`towerGridWidth`; `placeableColumnMin`/`placeableColumnMax` now only a pre-level fallback, since the live site is derived per level; `towerSiteSlendernessTarget`, `towerSiteWidthMin`/`Max`), tower-stability settings (`towerStabilityDifficulty` — the sole tunable — plus the `towerStabilityPressure` level ramp and the `towerStabilityAnchors.forgiving`/`.harsh` sets it interpolates, each now also carrying `towerHeightPressureGain`; `towerMaxTiltAngleDeg` and `towerBaseHalfWidthFloor` stay fixed alongside them — see [Tower Stability](#tower-stability)), Power settings (incl. the `powerGuaranteedBaseline`/`powerImpactMvpReward` grant-path flags and `powerReplenishPileShare`), the `accessibility` sub-object (input-mode defaults a room broadcasts; players override locally — see [ui.md](./ui.md#main-ui-controller)), the `visualHooks` sub-object (the `impactBeat`/`screenShake` toggles plus the [Impact Beat](./ui.md#leaf-components)'s durations: `impactBeatMinZoom` 0.3, `impactBeatZoomOutMs` 900, `impactBeatWaveMs` 1100 (zoom-out + wave = the 2s reveal), `impactBeatHoldMs` 600 (the pre-summary stay; the beat then keeps holding until the level summary itself closes), `screenShakeMs` 260, `screenShakeMagnitudeUnits` 0.22 — shaped and broadcast exactly like `accessibility`), brick settings (`brickShapes` — the 5 fixed tetrominoes `I`/`O`/`L`/`T`/`Z`, each with only its canonical (unrotated) `cells`, no anchor field of any kind; `brickWeights`), inventory settings, draw-pile/opening-hand/carry-over settings incl. `supplyEffectiveWidthRatio` and the coverage curve `levelSupplyCoverageStart`/`End`/`FullLevel`, refresh block-generation settings, scoring settings (`scoring` sub-object: `placementScorePerHeight`, `placementStabilityFloor`/`AtTarget`, `reinforceScorePerIntegrity`, `reinforceScorePerLean`, `reinforceScorePerSupportedCell`, `reinforceScoreCapShare`/`AtTarget`, `precisionBonusPerLevel`, `teamExactBonusPerLevel`; `finisherBonusPerLevel`/`assistBonusPerLevel` = 0), debug settings incl. `debugBotStabilityTolerance`. Debug-exposed tunables → [gameplay.md § Currently exposed variables](./gameplay.md#currently-exposed-variables); scoring defaults → [gameplay.md § Scoring system](./gameplay.md#scoring-system).
+**The docs own knob semantics; this file owns knob values.** It currently holds
+hand-tuned playtest values that intentionally differ from the design reference.
 
-**Notes:**
-- Lobby Manager validates debug changes before mutating this object; production should restrict debug writes behind admin permissions later (not yet implemented — see [decisions.md](./decisions.md#debug-menu-build-flag)).
-- **Dead/unused keys:** `towerPlacementMode`, `nextLevelDelayMs`, `failRestartDelayMs` — nothing in `src/Server` reads them. The real post-level transition delay is `getPostLevelTransitionDelayMs()` (score-popup duration + `levelSummaryDelayMs`), not those keys. `generatedDrawPileScaling` was **removed**, not deprecated in place — the reserve count is derived now.
-- **`Game_Config.js` currently holds hand-tuned playtest values** that intentionally differ from the design reference (a long `levelTimeLimitMs`, short cooldowns). [gameplay.md](./gameplay.md) documents what each knob *means*; this file is the current *value*.
-- Tower-stability rationale: retune via `towerStabilityDifficulty` and the anchor sets, never by reintroducing per-constant knobs — the anchors are authored so that `tiltScore` `1.0` means the physical "CoM left the base", and `towerBaseHalfWidthFloor` is a divide-by-zero guard at `1.0`, **not** a tuning lever: raising it above the site's real half-width pins the divisor and makes lean unreachable. `towerMaxTiltAngleDeg` is the visual lean cap at tilt score ±1.0. `towerStabilityWarningThreshold`/`towerStabilityCriticalThreshold` gate the `tower_warning`/`tower_critical` display-only events; critical is clamped to never exceed warning.
-- `powerCatalog` entries each carry an `active: boolean` flag — only `active: true` entries are eligible for [Impacts](#impacts)' `awardImpactPower()` random draw. Currently only `replenish` is active; `refresh`/`score_cap`/`copy_score` are `active: false` (kept fully defined, including their `activatePower()` effect branch, for a one-line re-enable later). See [gameplay.md § Effects catalog](./gameplay.md#activation-and-effects) and [decisions.md](./decisions.md#inactive-powers-stay-defined-behind-the-powercatalog-active-flag).
-- Inspect balance/score distribution with the [Balance Simulator](./testing.md#balance-simulator).
+- **Dead keys:** `towerPlacementMode`, `nextLevelDelayMs`, `failRestartDelayMs` —
+  nothing in `src/Server` reads them. The real post-level delay is
+  `getPostLevelTransitionDelayMs()`. `generatedDrawPileScaling` was **removed**,
+  not deprecated in place; the reserve count is derived.
+- Retune stability via `towerStabilityDifficulty` and the anchor sets, never by
+  reintroducing per-constant knobs. The anchors are authored so `tiltScore` `1.0`
+  means the physical "CoM left the base".
+- `powerCatalog` entries carry an `active: boolean`; only `active: true` entries
+  are eligible for the Impact-MVP draw. Only `replenish` is active — supply, not
+  hand quality, is what actually strands a team.
+  The inactive entries and their effect branches **stay** — each is a one-line
+  flip to re-enable, and deleting them means re-authoring from scratch.
 
 ## Redis State
 
-`Redis_State.js` — shared-state adapter so multiple server workers can share matchmaking/room state. Active-session state only (matchmaking/reconnect), **not** long-term player/leaderboard persistence.
+`Redis_State.js` — shared-state adapter for multi-worker matchmaking and room
+state. **Active-session state only**, never long-term player or leaderboard
+persistence. Falls back to in-memory maps when `REDIS_URL` isn't configured, so
+single-worker and local runs keep working. The `redis` package is lazily required
+only when a real connection is attempted.
 
-**Interface:** `nextPlayerId()`/room-id equivalents (memory counters when Redis is disabled); session methods (reconnect token ↔ player/room mapping + TTL); room snapshot methods (`saveRoom(room, renewLease)`, strips live WebSocket refs before storing); matchmaking queue methods — `enqueuePlayer(player)` (unlocked `lPush`), `dequeueRealPlayers(maxCount)` (atomic `RPOP ... maxCount`, oldest-first), `requeuePlayers(players)` (atomic `RPUSH`, puts real players back without touching anything another pod concurrently enqueued), `getQueuedPlayers()` (read-only inspection), plus a lock (`withMatchmakingLock`) serializing the take-3-or-requeue decision across workers; pub/sub methods — per-room event channels (`publishRoom`/`subscribeToRoom`), a per-room action-routing channel (`publishRoomAction`/`subscribeToRoomActions`, used when a room action arrives on a pod that isn't the lease owner), plus a global `publishPlayerAssignment(playerId, roomId)`/`subscribeToPlayerAssignments(handler)` channel used for the cross-pod room handoff (all tagged with source pod/worker id so a worker can ignore its own echo); room lease methods (`claimRoomLease(roomId)`/`getRoomLeaseOwner(roomId)`, backed by `ROOM_LEASE_SECONDS` — decide which pod owns a hydrated room's timers, used by Lobby Manager's `hydrateRoom` `canOwnTimers` check); `getPodId()`/`getReconnectTtlSeconds()` accessors.
+- Queue: `enqueuePlayer` (unlocked `lPush`), `dequeueRealPlayers` (atomic `RPOP …
+  count`, oldest-first), `requeuePlayers` (atomic `RPUSH` of only what was taken),
+  plus `withMatchmakingLock` serialising the take-3-or-requeue decision. Neither
+  atomic call can clobber an entry it never touched.
+- Pub/sub: per-room event channels, a per-room action-routing channel for the
+  non-owner case, and a global player-assignment channel for the cross-pod
+  handoff. All tagged with source pod id so a worker ignores its own echo.
+- Leases: `claimRoomLease`/`getRoomLeaseOwner`, backed by `ROOM_LEASE_SECONDS`.
+  **Only the pod holding a room's lease runs that room's timers**; other pods may
+  read and hydrate without owning the clock.
 
-**Depends on:** `redis` npm package (lazily required only when a real connection is attempted, so this file loads fine without the package present).
+**Only the first `DRAW_PILE_SNAPSHOT_LIMIT` (16) pile bricks are persisted**, plus
+a hidden count that `hydrateRoom` regenerates. The pile scales with target height
+and `persistRoom()` runs on every placement, so writing all of it would push a
+snapshot past 140 KB at level 40 against ~3.4 KB truncated. The regenerated tail is
+fresh random bricks rather than the originals, which is invisible — only the next
+draw is ever shown.
 
-**Notes:**
-- Falls back to in-memory maps when `REDIS_URL` isn't configured — the server (and the Balance Simulator, which never goes through this file) keeps working single-worker/local.
-- Room snapshots preserve serializable gameplay state (shape inventory, `currentHeight`, `impactScores`, `impactPowers`, `drawPile`, `drawPileStartCount`, `levelDurationMs`, `teamCarryOverBlocks`, `towerBlocks`, quick-chat cooldown timestamps) while excluding transient chat events. **Only the first `DRAW_PILE_SNAPSHOT_LIMIT` (16) pile bricks are persisted**, plus a `drawPileHiddenCount` that `hydrateRoom` regenerates: the pile scales with target height and `persistRoom()` runs on every placement, so writing all of it would push a snapshot past 140 KB at level 40 against ~3.4 KB truncated. The regenerated tail is fresh random bricks rather than the originals, which is invisible — only the next draw is ever shown to players.
-- The connection retry loop's final cleanup wraps `client.disconnect()` in its own try/catch that intentionally swallows errors — best-effort cleanup after an already-failed connection, not a bug.
-- Only the pod holding a room's lease runs that room's timers; other pods may still read/hydrate the room without owning its clock.
-- `dequeueRealPlayers`/`requeuePlayers` replaced a prior `replaceQueue(players)` (read-then-full-overwrite) — removed, not deprecated-in-place, because its read/write gap was the source of a real lost-update bug. See [decisions.md](./decisions.md#matchmaking-queue-lost-update-and-cross-pod-room-gaps).
+The connection retry loop's final `client.disconnect()` is wrapped in a try/catch
+that intentionally swallows errors: best-effort cleanup after an already-failed
+connection, not a bug.
 
-## Tooling & tests (pointers)
+## Known gaps
 
-- **Balance Simulator** (`src/Server/tools/Balance_Simulator.js`) — instantiates Game Engine directly, bypassing Lobby Manager/Redis/WebSocket. Full detail → [testing.md](./testing.md#balance-simulator).
-- **Server Score Events Tests** (`src/Server/tests/Score_Events.test.js`) — contract coverage for scoring/summaries. Full detail → [testing.md](./testing.md#server-score-events-tests).
-- **Server Container Image** (`src/Server/Dockerfile`) — packages this directory for deploy. Full detail → [build.md](./build.md#server-container-image).
+- **No persistent leaderboard.** Redis holds active-session state only; durable
+  storage and structured logging are future work.
+- **Reconnect and gateway routing across pods are untested at integration level**,
+  beyond the matchmaking queue regression tests.
+- **Deploy client and server together.** The Power and Impact renames went across
+  every wire field, config key and Redis-persisted field, so a room in flight
+  during a split deploy will not restore its state from an old-shaped snapshot.

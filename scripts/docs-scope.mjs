@@ -64,8 +64,18 @@ const ROUTES = [
   [/^docker\//,                                      ['build.md'],                  'hunk'],
   [/^scripts\/art-|^scripts\/ADDING-ART/,            ['build.md'],                  'hunk'],
   [/^scripts\/write-endpoint-config/,                ['networking.md', 'build.md'], 'hunk'],
-  [/^scripts\/(validate-docs|docs-scope)\.mjs$/,     ['doc-maintenance.md'],        'hunk'],
+  // The doc procedure lives in .claude/commands/{update,compact}-docs.md now, not
+  // in a context doc -- a change to the tooling edits the command file directly.
+  [/^scripts\/(validate-docs|docs-scope|build-file-map)\.mjs$/, [],                 'hunk'],
   [/^scripts\//,                                     ['testing.md'],                'hunk'],
+];
+
+// Which map file owns a path. Any source change moves line numbers, so the run
+// has to say which maps need regenerating -- carry-forward makes it one command.
+const MAP_OWNER = [
+  [/^src\/Server\/(app|tools)\//,                    'map/backend.md'],
+  [/^src\/Client\/App\/corp-tower\/(Cor|Sys)\//,     'map/ui.md'],
+  [/^(infra|docker)\/|^\.github\/(workflows|actions)\/|^scripts\//, 'map/infra.md'],
 ];
 
 // --- collect the task's paths -------------------------------------------------
@@ -193,6 +203,11 @@ for (const [doc, items] of order) {
 if (unmapped.length) {
   console.log(`\nUNMAPPED (${unmapped.length}) — route by hand, then add a rule to ROUTES:`);
   unmapped.forEach(p => console.log('  ? ' + p));
+}
+const maps = [...new Set(scoped.map(p => MAP_OWNER.find(([re]) => re.test(p))?.[1]).filter(Boolean))];
+if (maps.length) {
+  console.log(`\nMAPS TO REGENERATE (line numbers moved): ${maps.join(', ')}`);
+  console.log('  node scripts/build-file-map.mjs');
 }
 if (dropped.length) console.log(`\nignored (${dropped.length}): ${dropped.join(', ')}`);
 if (stale) console.log(`\n! ${stale} path(s) have no diff vs ${RANGE}. If the task is already
