@@ -1,5 +1,6 @@
 extends Control
 
+const PlayLoaderScreenScene := preload("res://Cor/Scenes/PlayLoaderScreen.tscn")
 const JoinScreenScene := preload("res://Cor/Scenes/JoinScreen.tscn")
 const FindMatchScreenScene := preload("res://Cor/Scenes/FindMatchScreen.tscn")
 const PlayScreenScene := preload("res://Cor/Scenes/GameUI.tscn")
@@ -26,7 +27,7 @@ func _ready() -> void:
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
 	debug_button.visible = EndpointConfig.DEBUG_UI_ENABLED
 	reset_debug_button_position()
-	show_join_screen()
+	show_play_loader_screen()
 
 func _on_status_changed(_text: String) -> void:
 	update_debug_button_availability()
@@ -40,6 +41,14 @@ func _on_room_joined(_data) -> void:
 func _on_room_closed(_data) -> void:
 	if tutorial_active:
 		return
+	show_join_screen()
+
+func show_play_loader_screen() -> void:
+	var screen := PlayLoaderScreenScene.instantiate()
+	screen.loader_finished.connect(_on_play_loader_finished)
+	_set_overlay(screen)
+
+func _on_play_loader_finished() -> void:
 	show_join_screen()
 
 func show_join_screen() -> void:

@@ -3,7 +3,7 @@
 /android/
 
 # Export settings
-.export_presets.cfg
+export_presets.cfg
 
 # Android signing files
 *.keystore
