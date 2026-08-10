@@ -701,6 +701,73 @@ main > section:first-child {
   max-width: none;
 }
 
+/* --- Under-construction card ---------------------------------------------
+   A flat row, not a tile. It borrows `.card` for the border and the rhythm of
+   the stack, then undoes the parts that promise something to open: no pointer,
+   no hover lift, no chevron. Muted throughout so it reads as a placeholder at a
+   glance rather than something worth clicking.
+   -------------------------------------------------------------------------- */
+
+.card.is-wip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  padding: 0.95rem 1.2rem;
+  cursor: default;
+}
+
+.card.is-wip:hover {
+  border-color: var(--border);
+  background: none;
+}
+
+.card.is-wip .role-tag {
+  color: var(--fg-faint);
+}
+
+.card.is-wip .headline {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--step-0);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--fg-faint);
+  margin: 0;
+}
+
+/* Utility, not a call to action — it sits beside the copyright line and should
+   read as one. Styled as a link rather than a button for the same reason. */
+.print-cta {
+  font: inherit;
+  font-size: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-left: 0.9rem;
+  color: var(--fg-faint);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.print-cta:hover {
+  color: var(--fg);
+}
+
+.wip-tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.45rem;
+  flex-shrink: 0;
+}
+
 .card .plain {
   margin: 0 0 1.2rem;
   font-weight: 400;
@@ -2131,19 +2198,28 @@ footer {
   .vignette-chevron,
   .game-chevron,
   .job-chevron,
-  .clips-wrap {
-    display: none;
+  .clips-wrap,
+  /* Controls, not content. On paper a filter button is a dead pill and a
+     "↑ diagram" hint points at nothing. */
+  .print-cta,
+  .detail-jump-hint,
+  .method-link,
+  .game-crosslink,
+  .playables-strip,
+  .cv-download,
+  /* The one real judgement call in this block. The diagrams are the best thing
+     on the page and they are also the longest — six of them turn a readable
+     document into a flip-book. The written steps carry the same information in
+     prose, and the diagrams are interactive, which paper cannot honour. */
+  .card-diagram {
+    display: none !important;
   }
 
-  /* KNOWN NOT TO WORK, kept because it is harmless and the intent is right.
-     A closed <details> hides its children through the slot it does not render
-     them into, not through a `display` on the children — so overriding their
-     display here changes nothing, and a printed page still shows only the
-     disclosures that were already open in the markup. Fixing it properly means
-     opening them from `beforeprint` in script and restoring on `afterprint`.
-     Deliberately deferred: decide who the printed page is for first, because
-     "open everything" is a fifteen-page PDF and that may not be the thing
-     worth handing someone. */
+  /* The disclosures are opened from script on `beforeprint` — a closed
+     <details> hides its children through the slot it never renders them into,
+     so no stylesheet can reach them. These rules only kill the reveal
+     animations and undo the accordion's peer-hiding, both of which would
+     otherwise print blank space where a card should be. */
   .expanded,
   .vignette-body,
   .game-body,
@@ -2151,5 +2227,43 @@ footer {
   .detail-list {
     animation: none;
     display: block !important;
+  }
+
+  .is-peer-hidden {
+    display: block !important;
+  }
+
+  .card[hidden] {
+    display: block !important;
+  }
+
+  /* Nothing should straddle a page break where it costs the reader the thread:
+     a step split from its heading, or a role split from its dates. */
+  .card,
+  .detail,
+  .job,
+  .game,
+  .skill-group,
+  .credential {
+    break-inside: avoid;
+  }
+
+  main > section {
+    break-before: auto;
+    padding: 1.5rem 0;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  /* Evidence links are the point of the steps, and on paper a link with no URL
+     is an assertion. Printed after the label, small, so the sentence still
+     reads. */
+  .detail-evidence::after {
+    content: " (" attr(href) ")";
+    font-size: 0.62rem;
+    word-break: break-all;
   }
 }

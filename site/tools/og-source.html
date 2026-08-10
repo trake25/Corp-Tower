@@ -158,17 +158,25 @@
 
       <div class="bottom">
         <div>
-          <p class="name">Enrique de la Peña</p>
+          <!-- Spelled exactly as src/data/profile.json spells it. This card,
+               the CV and the site were carrying three different spellings of
+               the same name, which is the kind of thing a recruiter notices and
+               nobody means. -->
+          <p class="name">Enrique Dela Peña Jr.</p>
           <p class="role">enportfolio.galaxxigames.com</p>
         </div>
+        <!-- Only figures that are also claimed on the site, so the card never
+             promises a number the page cannot back. The CI workflow count that
+             used to sit here was dropped: it is about to change, and a stat on
+             a cached social image is the worst place to keep a moving number. -->
         <div class="stats">
           <div>
             <div class="stat-value">3</div>
             <div class="stat-label">environments</div>
           </div>
           <div>
-            <div class="stat-value">34</div>
-            <div class="stat-label">CI workflows</div>
+            <div class="stat-value">5</div>
+            <div class="stat-label">deploy targets</div>
           </div>
           <div>
             <div class="stat-value">1</div>

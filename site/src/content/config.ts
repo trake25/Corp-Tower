@@ -40,6 +40,17 @@ const cards = defineCollection({
     // out of `getCollection`, so the filter bar and the grid follow — setting it
     // back to false is the only step to bring a card back.
     hidden: z.boolean().default(false),
+    // A discipline that is real but whose card is still being written. It
+    // renders as a flat, non-expandable row carrying an "Under construction"
+    // tag, so the reader can see the discipline exists without being handed
+    // half-finished work as if it were evidence.
+    //
+    // Deliberately not `hidden`: hiding it makes the page claim four
+    // disciplines when there are six. Deliberately not published either — the
+    // honesty markers everywhere else on this site are only worth anything if
+    // this one is applied too. Everything below stays in the file untouched and
+    // comes back by flipping this to false.
+    wip: z.boolean().default(false),
     headline: z.string(),
     plain: z.string(),
     tools: z.array(z.string()).default([]),

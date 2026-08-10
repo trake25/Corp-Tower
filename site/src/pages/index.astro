@@ -91,18 +91,38 @@ const SKILL_GROUPS: { label: string; items: string[] }[] = [
       "GitHub Actions",
       "Composite actions",
       "Jenkins",
-      "OIDC federated identity",
+      "OIDC federated CI identity",
+      "Gated multi-environment deploys",
+      "Artifact hash verification",
       "Google Play Publisher API",
       "Git / GitHub",
     ],
   },
   {
-    label: "Backend & data",
-    items: ["Node.js", "Redis", "WebSocket (ws)", "REST", "Java / Kotlin"],
+    label: "Languages & runtimes",
+    items: [
+      "Node.js",
+      "Python",
+      "Bash",
+      "GDScript",
+      "Java / Kotlin",
+      "C#",
+      "Redis",
+      "WebSocket (ws)",
+    ],
   },
   {
     label: "Client & game",
-    items: ["Godot 4", "GDScript", "Android builds"],
+    items: ["Godot 4", "Android builds & signing", "Google Play Console"],
+  },
+  {
+    label: "Security & access",
+    items: [
+      "IAM policy scoping",
+      "Short-lived credentials",
+      "Secrets management",
+      "Zero Trust access (Okta, Twingate)",
+    ],
   },
   {
     label: "QA & testing",
@@ -110,14 +130,21 @@ const SKILL_GROUPS: { label: string; items: string[] }[] = [
       "Test plan & test case design",
       "Functional & regression testing",
       "Exploratory testing",
-      "Defect tracking",
       "GUT (Godot)",
       "Node.js test runner",
+      "Jira",
+      "TestRail",
+      "Confluence",
     ],
   },
   {
     label: "Networking & operations",
     items: [
+      "NOC operations",
+      "Incident & escalation management",
+      "Cisco",
+      "HP Aruba",
+      "SD-WAN (Nokia–Huawei)",
       "VoIP",
       "IPVPN",
       "METRO-E",
@@ -127,7 +154,7 @@ const SKILL_GROUPS: { label: string; items: string[] }[] = [
       "3G / LTE provisioning",
       "NMS alarm monitoring",
       "Fault isolation & failover",
-      "Nokia–Huawei SD-WAN",
+      "High-availability design",
       "BERT / OTDR",
       "CLI / SSH",
     ],
@@ -373,6 +400,7 @@ const year = new Date().getFullYear();
               videos={card.data.videos}
               hasBody={card.body.trim().length > 0}
               links={card.data.links}
+              wip={card.data.wip}
             >
               {Diagram && <Diagram slot="diagram" />}
               <CardBody />
@@ -601,7 +629,15 @@ const year = new Date().getFullYear();
         <a href="#contact">Contact</a>
       </nav>
     </div>
-    <p class="footer-meta">© {year} {profile.name}</p>
+    <p class="footer-meta">
+      © {year} {profile.name}
+      {/* Discoverable version of Ctrl+P. Both routes go through the same
+          `beforeprint` hook, so the printed document is identical either way —
+          the button exists because nobody thinks to print a portfolio, and this
+          is the page where printing actually produces something worth
+          forwarding. */}
+      <button class="print-cta" type="button" data-print>Print / Save as PDF</button>
+    </p>
   </footer>
 </BaseLayout>
 
@@ -609,6 +645,13 @@ const year = new Date().getFullYear();
   // Two behaviours the four-level structure needs, both document-wide so no
   // component has to know how deeply it happens to be nested.
   const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Raised while the page is being expanded for print. The accordion below
+  // enforces one-open-at-a-time from the `toggle` event, which would fight the
+  // print hook exactly: open every card in turn and the accordion closes each
+  // one as the next opens, leaving a single card on the page. This flag is what
+  // lets the two coexist without either knowing much about the other.
+  let printing = false;
 
   // 1. One open at a time, per group — and while one is open the rest are taken
   //    off the page rather than left as a stack of closed titles above and
@@ -647,6 +690,8 @@ const year = new Date().getFullYear();
 
     for (const item of items) {
       item.addEventListener("toggle", () => {
+        if (printing) return;
+
         if (item.open) {
           for (const sibling of items) {
             if (sibling !== item) sibling.open = false;
@@ -758,6 +803,45 @@ const year = new Date().getFullYear();
   }
 
   if (window.location.hash) revealHash(window.location.hash, false);
+
+  // 3. Print. A closed `<details>` hides its children through a slot it never
+  //    renders them into, so no stylesheet can open one — it has to be done to
+  //    the DOM. Everything opens on `beforeprint` and only what *was* closed is
+  //    put back on `afterprint`, so the reader's own open tiles survive being
+  //    printed. What actually reaches paper is trimmed in the `@media print`
+  //    block: diagrams, players, filters and hints are dropped, leaving the
+  //    prose, the steps, the evidence URLs and the CV.
+  let reclose: HTMLDetailsElement[] = [];
+
+  const expandForPrint = () => {
+    printing = true;
+    reclose = Array.from(document.querySelectorAll<HTMLDetailsElement>("details")).filter(
+      (item) => !item.open
+    );
+    for (const item of reclose) item.open = true;
+  };
+
+  const restoreAfterPrint = () => {
+    // Reversed, so a nested disclosure closes before the one containing it and
+    // no handler fires against a box that has already collapsed.
+    for (const item of reclose.reverse()) item.open = false;
+    reclose = [];
+    printing = false;
+  };
+
+  window.addEventListener("beforeprint", expandForPrint);
+  window.addEventListener("afterprint", restoreAfterPrint);
+
+  // Safari fires neither event; it drives print off the media query instead.
+  const printQuery = window.matchMedia("print");
+  printQuery.addEventListener("change", (event) => {
+    if (event.matches) expandForPrint();
+    else restoreAfterPrint();
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-print]")?.addEventListener("click", () => {
+    window.print();
+  });
 </script>
 
 <style>

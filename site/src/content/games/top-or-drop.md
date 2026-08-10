@@ -2,7 +2,7 @@
 title: "Top or Drop"
 status: "development"
 order: 1
-tagline: "Real-time multiplayer · browser and Android · in development since Jan 2025"
+tagline: "Real-time multiplayer · browser and Android · in development since Mar 2026"
 blurb: "Three players cooperate to build one tower and still compete to outscore each other. A Godot client against a server-authoritative Node.js and Redis backend, playable in the browser today with an Android build in an internal testing track. Bots fill empty seats, so a single visitor still gets a full round."
 links:
   - label: "Play the demo"

@@ -55,14 +55,27 @@ interface Props {
   videos?: { src: string; poster?: string; caption?: string }[];
   hasBody: boolean;
   links?: CardLink[];
+  wip?: boolean;
 }
 
-const { role, headline, plain, tools, details, video, videos, hasBody } = Astro.props;
+const { role, headline, plain, tools, details, video, videos, hasBody, wip = false } =
+  Astro.props;
 const hasFlow = details.length > 0;
 const roleSlug = role.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const cardId = `card-${roleSlug}`;
 ---
 
+{wip ? (
+  /* A div, not a `<details>`: there is nothing behind it to open, and a
+     disclosure that opens onto an apology is worse than a row that says so on
+     its face. Keeps `.card`, the id and `data-role` so the filter, the deep
+     links and the counts all still see it. */
+  <div class="card is-wip" id={cardId} data-role={role}>
+    <span class="role-tag">{role}</span>
+    <p class="headline">Being written — diagram, recording and steps in progress.</p>
+    <span class="wip-tag">Under construction</span>
+  </div>
+) : (
 <details class="card" id={cardId} data-role={role}>
   <summary>
     <span class="role-tag">{role}</span>
@@ -147,6 +160,7 @@ const cardId = `card-${roleSlug}`;
     )}
   </div>
 </details>
+)}
 
 <script>
   // The steps sit behind their own collapsed `<details>`, so a diagram click

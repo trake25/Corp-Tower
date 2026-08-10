@@ -10,6 +10,7 @@ highlights:
   - "Monitored and maintained VoIP, IPVPN, WAN, LAN, WLAN and DIA circuits for a multinational retail enterprise's U.S. operations."
   - "Handled alarm detection, automated ticketing, fault isolation and failover verification to keep services up through incidents."
   - "Resolved escalations on bridge calls with engineers, users and internal teams, investigating recurring faults with RFC, BERT, OTDR and CLI/SSH tooling."
+  - "Worked across Cisco and HP Aruba enterprise network equipment throughout, on the customer estate and on the escalation path behind it."
   - "Received Customer Excellence and Supervisor's Choice awards for support during the COVID-19 pandemic."
 ---
 
