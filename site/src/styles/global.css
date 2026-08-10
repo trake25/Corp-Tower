@@ -717,6 +717,15 @@ main > section:first-child {
   cursor: default;
 }
 
+/* `.card.is-wip` and `.card[hidden]` are the same specificity, so source order
+   alone would decide the tie — and this rule comes later, which is what let a
+   filtered-out WIP card (Backend, Frontend) stay on screen no matter what the
+   filter selected. One extra class beats that outright instead of relying on
+   position in the file. */
+.card.is-wip[hidden] {
+  display: none;
+}
+
 .card.is-wip:hover {
   border-color: var(--border);
   background: none;

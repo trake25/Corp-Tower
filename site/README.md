@@ -246,6 +246,12 @@ npm's `prebuild` hook — so `npm run build` (and CI) always ships a current ima
 `npm run og` regenerates it alone. `public/og.png` is **gitignored**: it's a build
 output.
 
+`tools/og-source.html` is **not** part of this — it predates `generate-og.mjs`,
+carries an older green theme that doesn't match the current site, and is kept
+only as a design-history reference (same spirit as `reference/`, see its
+README). Don't screenshot it into `public/og.png`; the note at its top explains
+why.
+
 Two things if you edit the generator:
 
 - **Name real font families, never the CSS generics.** Fonts resolve through

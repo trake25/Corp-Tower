@@ -134,11 +134,17 @@
   </head>
   <body>
     <!--
-      Screenshot this element at exactly 1200x630 and save it as site/public/og.png.
+      SUPERSEDED — not the live source. tools/generate-og.mjs now draws
+      public/og.png from src/data/profile.json on every build (the `prebuild`
+      npm script; see the "Social preview image" section of site/README.md).
+      This file predates that script and is kept only as a design reference for
+      the pre-Mono-Slate look; its palette (#4fd6a4 green, grid background,
+      stat row) does not match the current site theme. Screenshotting this and
+      overwriting public/og.png would ship a card that doesn't match the site.
 
-      Chrome: open this file, DevTools (F12) -> Ctrl+Shift+M (device toolbar) ->
-      set 1200 x 630, zoom 100% -> ⋮ menu -> "Capture screenshot".
-      Then move the file to site/public/og.png and redeploy.
+      Original manual instructions, for history: screenshot this element at
+      exactly 1200x630 (Chrome DevTools device toolbar, 1200 x 630, zoom 100%,
+      "Capture screenshot") and save as site/public/og.png.
     -->
     <div class="card">
       <div class="grid"></div>
