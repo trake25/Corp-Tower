@@ -11,11 +11,7 @@ const DEBUG_CATEGORY_NAMES := [
 	"Hooks"
 ]
 
-# Per-variable explainers for the server-backed categories, keyed by the row's
-# name-button node. Parallax/Placement carry their own copy inside their row
-# tables; these categories are hand-wired, so they live here instead.
 const DEBUG_TOOLTIPS := {
-	# --- Tower -------------------------------------------------------------
 	"TowerStabilityDifficultyLabel": {
 		"title": "Stability Difficulty",
 		"body": "The single dial for how punishing the tower is. Everything else — overhang weight, collapse threshold, slenderness band, support tolerance, the maturity ramp — is derived from it.\n\npressure = (this / 100) x (0.25 + 0.75 x min(1, level / 30))\n\nThreat also ramps with LEVEL, so the same setting is gentle early and dangerous late: at 90, level 1 sits near 87% stability and never collapses, while level 30+ punishes a careless column hard.\n\n0 = stability effectively off (score multiplier only). 90 = shipping default. 100 = brutal, greedy play fails the Impact gate.",
@@ -52,7 +48,6 @@ const DEBUG_TOOLTIPS := {
 		"title": "Stability Feedback",
 		"body": "How stability is surfaced: warning popups only, a numeric meter, or a live preview. Presentation only.",
 	},
-	# --- Impact ------------------------------------------------------------
 	"ImpactIntervalLabel": {
 		"title": "Impact Interval",
 		"body": "How many levels between Impacts. 1 = every level must be banked to advance, and a failure replays only that level.\n\nLarger = longer runs between checkpoints, so a rollback costs more.",
@@ -65,7 +60,6 @@ const DEBUG_TOOLTIPS := {
 		"title": "Impact Flat Floor",
 		"body": "Legacy absolute score floor per player, applied alongside the share.\n\nrequirement = max(this, share-derived requirement)\n\nLeave at 0 unless you specifically want a fixed number rather than a percentage.",
 	},
-	# --- Supply ------------------------------------------------------------
 	"LevelSupplyMinLabel": {
 		"title": "Supply Min Surplus",
 		"body": "Lowest total brick height a level may be dealt, above the amount needed.\n\nrequired = ceil(target height / packing efficiency), then this is added.\n\nRaise to guarantee slack; too low and levels run out of bricks.",
@@ -90,7 +84,6 @@ const DEBUG_TOOLTIPS := {
 		"title": "Supply Effective Width",
 		"body": "How much of the site a tower is assumed to actually occupy when sizing supply.\n\nefficiency = cells per brick / (avg brick height x (site width x this + 0.5))\n\nLower = assumes a narrow tower, deals fewer bricks. Raise if levels run dry.",
 	},
-	# --- Scoring -----------------------------------------------------------
 	"PlacementScoreLabel": {
 		"title": "Placement Score / Height",
 		"body": "The core earner, paid per unit of height your brick actually added.\n\npoints = effective height x level x this x stability multiplier\n\nEffective height is capped by the height still missing, so late placements pay less.",
@@ -128,13 +121,11 @@ const DEBUG_TOOLTIPS := {
 		"body": "Minimum contribution share needed to qualify for the Assist bonus. Only matters when Assist Bonus is above 0.",
 	},
 
-	# --- Power -------------------------------------------------------------
 	"PowerReplenishShareLabel": {
 		"title": "Replenish Share",
 		"body": "How many bricks the Replenish power adds to the shared draw pile.\n\nbricks = max(1, round(this x the level's STARTING draw pile size))\n\nThe starting pile is team carry-over plus the generated reserve, so this scales itself with target height, site width and brick weights instead of being a flat number. At 25% a level dealt 20 bricks replenishes 5.\n\nNew bricks are appended, never shuffled in — the \"Next Draw\" preview all three players can see stays put.\n\nReplenish is the side-quest reward and the only power that can rescue a level short on supply: holding one defers the not-enough-height failure.",
 	},
 
-	# --- Hooks ---------------------------------------------------------------
 	"HooksAboutButton": {
 		"title": "Visual Hooks",
 		"body": "The end-of-level flourishes every player in the room sees together, not client-local cosmetics.\n\nImpact Beat: the camera pulls back so the whole tower is visible while each placed brick flips to its placer's pass/fail face, then holds there through the level summary and snaps back once the summary closes. Plays once per level result. Skipped entirely on a collapse — there are no standing bricks left to wave across.\n\nScreen Shake: a jolt on a failed Impact or any negative verdict. Fires alongside a collapse instead of the beat.\n\nBoth toggles and every duration below round-trip through the server — a beat only reads as a shared moment if all three clients play it in lockstep, so this is not a Parallax-style client-local row.",
@@ -707,15 +698,10 @@ func get_slider_value(slider: HSlider, fallback: float = 0.0) -> float:
 
 	return slider.value
 
-# Row names are Buttons in the tooltip-bearing categories and plain Labels
-# elsewhere; both carry `text`, so this stays type-agnostic rather than forcing
-# every category to convert at once.
 func set_debug_label_text(label: Control, text: String) -> void:
 	if label != null:
 		label.set("text", text)
 
-# Binds a row's name control and, when it is a tappable Button with a registered
-# explainer, wires the tap to the shared debug tooltip.
 func bind_tooltip_row(row_binder, node_name: String) -> Control:
 	var node: Control = row_binder.optional_node(node_name) as Control
 
@@ -783,10 +769,6 @@ func _on_tutorial_launch_pressed() -> void:
 	if on_tutorial_requested.is_valid():
 		on_tutorial_requested.call()
 
-# Stand-in for the player-facing options menu: this writes a local override, so
-# one player can build by tap while the rest of the room drags. It deliberately
-# skips update_config -- the room default lives in Game_Config, but the choice
-# itself is per-player and never leaves this client.
 func _on_parallel_placement_pressed() -> void:
 	if accessibility == null:
 		return

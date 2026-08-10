@@ -63,11 +63,6 @@ function stripRuntimeRoom(room) {
             impactPowers: engineRoom.impactPowers || {},
             targetHeight: engineRoom.targetHeight || 0,
             currentHeight: engineRoom.currentHeight || 0,
-            // Only the head of the pile is persisted. The reserve is unseen
-            // random bricks -- players only ever read the next draw -- but the
-            // pile now scales with target height, so writing all of it would
-            // push a room snapshot past 80KB on every placement. The tail is
-            // regenerated on hydrate from drawPileHiddenCount.
             drawPile: (engineRoom.drawPile || []).slice(0, DRAW_PILE_SNAPSHOT_LIMIT),
             drawPileHiddenCount: Math.max(
                 0, (engineRoom.drawPile || []).length - DRAW_PILE_SNAPSHOT_LIMIT

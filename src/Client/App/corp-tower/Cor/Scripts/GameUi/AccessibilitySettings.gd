@@ -25,8 +25,6 @@ func _load() -> void:
 	for key in config.get_section_keys(SECTION):
 		overrides[key] = bool(config.get_value(SECTION, key, false))
 
-# The room broadcasts Game_Config.accessibility every tick; a player's own choice
-# always wins over it, so the future options menu only has to write an override.
 func apply_server_defaults(defaults: Dictionary) -> void:
 	if defaults == server_defaults:
 		return

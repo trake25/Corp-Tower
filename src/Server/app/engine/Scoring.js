@@ -120,10 +120,6 @@ function recordScoreBreakdown(engine, player, key, points) {
         Number(player.scoreBreakdown[key] || 0) + Number(points || 0);
 }
 
-// The floor itself descends with how close the placement's height is to the
-// level's target -- stability is worth more to score the higher you build.
-// heightBefore defaults to the tower's current height so a caller that only
-// cares about the ground-floor rate can still call this with one argument.
 function getPlacementStabilityMultiplier(engine, stabilityBefore, heightBefore) {
     const floorAtGround = Math.max(
         0, Math.min(1, Number(GameConfig.scoring.placementStabilityFloor ?? 1) || 0)
@@ -176,21 +172,6 @@ function addPlacementScore(engine, player, block, effectiveHeight, stabilityBefo
     return points;
 }
 
-// Repair and height are the two ways to earn, so they are priced against each
-// other rather than independently: one placement's repair can pay at most a
-// share of what an average brick's height claim pays at this level. That share
-// itself rises from `reinforceScoreCapShare` (at the ground) to
-// `reinforceScoreCapShareAtTarget` (at target height) -- synergising with the
-// front-loaded scoring pool: near the top there is little height left to claim,
-// so repair becomes the rational play exactly where stability is most fragile.
-// heightAfter defaults to the tower's current (post-placement) height, since the
-// real placeBlock call site already updates room.currentHeight before this runs
-// and prices the repair that was just made. A caller evaluating a candidate
-// placement before committing it (Bot Manager) passes the candidate's own
-// projected post-placement height instead. At share 1.0 a maximal repair equals
-// an average claim -- worth choosing when the tower is hurt, never worth
-// farming -- and it re-prices itself automatically when the brick mix or
-// placementScorePerHeight is retuned.
 function getReinforceScoreCap(engine, heightAfter) {
     const shareAtGround = Math.max(0, Number(GameConfig.scoring.reinforceScoreCapShare) || 0);
     const shareAtTarget = Math.max(

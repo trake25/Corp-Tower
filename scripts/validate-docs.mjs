@@ -58,7 +58,13 @@ const BUDGETS = {
 // rows -- which it did: `require()`/`preload()` imports were being listed as
 // symbols and are now filtered. A fully authored map is the working state, not
 // bloat; a map that grows without the symbol count growing is.
-const MAP_BUDGET = 16000;
+// Raised again to 28000 for self-sufficient rows. Every row now carries its own
+// `path:line`, costing ~13 tokens of file growth per row and removing an entire
+// second lookup per hit -- the solo probe's Q4 spent ~550 tokens re-grepping the
+// heading list purely to learn which file a matched line belonged to. File size is
+// the one cost a grep target does not pay, so this trade is close to free. Sized
+// for the fully-authored end state (~25k ui, ~18k infra), not today's size.
+const MAP_BUDGET = 28000;
 // "Whole KB loadable in an emergency" is a claim about prose. Maps are excluded
 // and reported separately.
 const PROSE_TOTAL_BUDGET = 40000;

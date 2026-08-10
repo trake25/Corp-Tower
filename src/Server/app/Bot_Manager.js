@@ -163,10 +163,6 @@ class BotManager {
 
     }
 
-    // True when this bot has already banked its own Impact share for the level
-    // while a teammate is still short of theirs. Under an Impact-every-level
-    // setup, continuing to claim height there is what fails the whole team, so a
-    // cooperative bot yields and a greedy one deliberately does not.
     hasClearedShareWhileTeammateShort(bot, engine) {
         const status = engine.getImpactScoreStatus();
 
@@ -174,10 +170,6 @@ class BotManager {
             return false;
         }
 
-        // getImpactScoreStatus reads banked `score`, which only absorbs
-        // `levelScore` once the level completes -- mid-level every player would
-        // otherwise read as short. Add the live level score the same way the
-        // client's Impact bar does.
         const liveBandScore = player => {
             const banked = Number(
                 status.players.find(entry => entry.id === player.id)?.bandScore || 0
@@ -197,13 +189,6 @@ class BotManager {
         });
     }
 
-    // Release-row candidates for one placement decision: `null` (drop from
-    // above, the pre-gap-targeting behavior) plus up to `debugBotGapCandidates`
-    // void floors, largest-void-first. A void is a run of empty cells in one
-    // column with an occupied cell sitting on top of it -- an open column top
-    // is not a void, it is already covered by the `null` candidate. Computed
-    // once per decision and tried against every column, rather than searched
-    // per column, so cost is bounded by tower shape rather than tower height.
     getVoidReleaseRows(entries, min, max) {
         const topHeight = TowerStability.topHeight(entries);
 
@@ -223,7 +208,6 @@ class BotManager {
             });
         });
 
-        // row -> largest void run found starting at that row, across columns.
         const runsByRow = new Map();
 
         for (let x = min; x <= max; x++) {
@@ -248,8 +232,6 @@ class BotManager {
                     runStart = null;
                 }
             }
-            // A run still open at topHeight has no lid -- it is the open top
-            // of that column, not a void, so it is deliberately dropped here.
         }
 
         const candidateCount = Math.max(
@@ -263,11 +245,6 @@ class BotManager {
         return [null, ...ranked];
     }
 
-    // Ranks a list of `{ points, heightGain, stability, ... }` candidates by
-    // strategy, preserving *risk appetite, not competence* -- see
-    // gameplay.md#bot-behavior. Used both to pick a placement for one brick and
-    // to pick a brick from a hand, so a cooperative bot is equally
-    // stability-averse at both stages.
     rankByStrategy(candidates, strategy) {
         if (!candidates || candidates.length === 0) {
             return null;
@@ -291,10 +268,6 @@ class BotManager {
             }, null);
         }
 
-        // Cooperative: gate on how much stability the *best available*
-        // candidate offers rather than a fixed threshold -- an absolute cutoff
-        // stops discriminating once the stability config is tuned forgiving
-        // enough that every candidate reads healthy.
         const bestStability = candidates.reduce((top, candidate) => {
             return Math.max(top, candidate.stability);
         }, 0);
@@ -318,15 +291,6 @@ class BotManager {
         }, null);
     }
 
-    // Chooses where to place one brick, searching every column crossed with
-    // every release-row candidate (drop-from-above plus up to
-    // debugBotGapCandidates void floors). Two-stage: a cheap proxy pass (no
-    // evaluate()) narrows to the top 8 candidates, then only those survivors
-    // pay for a full TowerStability.evaluate() and get scored with the engine's
-    // own placement/reinforce reward formulas -- so ranking reflects what the
-    // engine will actually pay, not a stand-in. Returns
-    // { column, originX, originY, heightGain, stability, points } or null if
-    // every candidate collapses the tower.
     chooseBotPlacement(engine, block, strategy = GameConfig.debugBotStrategy) {
         if (!block) {
             return null;
@@ -408,13 +372,6 @@ class BotManager {
         const stabilityBefore = engine.room.towerStability ?? 100;
         const structureBefore = engine.room.towerStabilityDiagnostics || {};
         const stabilityConfig = engine.resolveStabilityConfig();
-        // Both the placement multiplier's floor and the reinforce cap's share now
-        // scale with height, so bots must grade candidates on the same economics
-        // the server actually pays -- see getPlacementStabilityMultiplier/
-        // getReinforceScoreCap in Scoring.js. The multiplier's "before" state is
-        // shared across every candidate this turn (nothing has been placed yet),
-        // but the reinforce cap depends on each candidate's own post-placement
-        // height, so it moves inside the loop below.
         const placementMultiplier =
             engine.getPlacementStabilityMultiplier(stabilityBefore, previousHeight);
         const level = engine.room.level;
@@ -470,11 +427,6 @@ class BotManager {
         return this.rankByStrategy(scored, strategy);
     }
 
-    // Joins brick choice to placement choice: under gap targeting a 1-high
-    // brick can be worth more as a repair than a 4-high brick is as a claim, so
-    // brick and placement can no longer be picked independently. Evaluates the
-    // cross product of hand (<= 3 bricks) x best placement per brick and
-    // returns the best pair, after the cheap exact-finisher shortcut.
     chooseBotAction(bot, engine, strategy = GameConfig.debugBotStrategy) {
         const remainingHeight = Math.max(
             0, engine.room.targetHeight - engine.room.currentHeight
@@ -508,14 +460,6 @@ class BotManager {
             }
         });
 
-        // Cooperative only: already banked its own share while a teammate is
-        // short, so the height left in this level is worth more to them than
-        // to this bot, and under an Impact-every-level rule their shortfall
-        // fails the whole team. A zero-height repair still leaves every point
-        // of contested height to the short teammate while doing something
-        // useful, so prefer the best one over holding the turn outright. The
-        // teammate who is short can never take this branch, so the room
-        // cannot deadlock.
         if (
             strategy !== "mvp_greedy" &&
             remainingHeight > 0 &&

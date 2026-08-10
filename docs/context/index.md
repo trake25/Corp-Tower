@@ -52,6 +52,7 @@ flowchart LR
 | Gameplay rules, scoring, balance, tuning semantics | [gameplay.md](./gameplay.md) | [map/backend.md](./map/backend.md) |
 | Server logic — rooms, engine, scoring, impacts, bots | [backend.md](./backend.md) | [map/backend.md](./map/backend.md) |
 | WebSocket messages, payload shapes, reconnect wire | [networking.md](./networking.md) | both maps |
+| New event or scoring type end-to-end — emit → wire → render | [networking.md](./networking.md) **first**, it owns the type list | both maps |
 | Godot client UI, scenes, popovers | [ui.md](./ui.md) | [map/ui.md](./map/ui.md) |
 | Deploy, K3s, EKS, infra, runbook | [deployment.md](./deployment.md) | [map/infra.md](./map/infra.md) |
 | CI build, Android, HTML5, private art pipeline | [build.md](./build.md) | [map/infra.md](./map/infra.md) |

@@ -17,9 +17,6 @@ const FLOATING_DRAG_SHADOW_OFFSET := Vector2(0.0, 4.0)
 const FLOATING_DRAG_MIN_CELL_SIZE := 14.0
 const PREVIEW_GAP := 6.0
 
-# Hollow rings mark the dragged ghost's own snap points; the one currently
-# paired with a tower point is filled instead. The counterpart rings on the
-# platform and placed bricks are drawn by TowerStack.
 const SNAP_DOT_COLOR := Color(1.0, 1.0, 1.0, 0.6)
 const SNAP_DOT_RADIUS := 4.0
 const NO_MATCHED_VERTEX := Vector2i(-9999, -9999)
@@ -101,10 +98,6 @@ func _draw_brick(texture: Texture2D, color: Color, offset: Vector2, draw_snap_do
 	draw_primitive(points, colors, BlockDataScript.brick_quad_uvs(), texture)
 
 	if draw_snap_dots:
-		# The rendered quad is canonical_size rotated by rotation_steps, whose
-		# axis-aligned footprint always equals the current (already-rotated)
-		# cell bounds -- so the dot layout can be derived directly from
-		# `bounds`/`columns`/`rows` without re-deriving the rotation.
 		var origin: Vector2 = center - Vector2(float(columns), float(rows)) * cell_size * 0.5
 		_draw_corner_dots(bounds, origin, cell_size, 0.0)
 
@@ -196,17 +189,6 @@ func _draw_cells(
 		if border_width > 0.0:
 			draw_rect(rect, border_color, false, border_width)
 
-# Draws a hollow dot at each true outline vertex of the brick's own shape --
-# not its bounding box, which for L/T/Z would put dots on empty corners the
-# brick doesn't actually occupy. These are the ghost's own snap points, which
-# the player aligns against the filled dots TowerStack draws on the
-# platform/placed bricks.
-#
-# Cells can be drawn with a visible `gap` between them (the fallback path),
-# so a lattice vertex shared by two cells doesn't have one exact pixel
-# position -- each cell's own rect corner differs by the gap. We derive every
-# candidate corner from its actual source cell's rect (same math as
-# `_draw_cells`) and only draw each lattice vertex once.
 func _draw_corner_dots(bounds: Dictionary, origin: Vector2, cell_size: float, gap: float) -> void:
 	if !is_available or cells.is_empty():
 		return
@@ -242,9 +224,6 @@ func _draw_corner_dots(bounds: Dictionary, origin: Vector2, cell_size: float, ga
 			else:
 				draw_arc(at, SNAP_DOT_RADIUS, 0.0, TAU, 16, SNAP_DOT_COLOR, 1.5, true)
 
-# A non-zero override pins the drawn cell pitch to the tower's own brick unit
-# size, so the floating drag ghost is already at tower scale and does not
-# visibly resize the moment it docks onto the grid.
 func _resolve_cell_size(auto_size: float, gap: float = 0.0) -> float:
 	if cell_size_override <= 0.0:
 		return auto_size

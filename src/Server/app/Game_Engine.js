@@ -179,10 +179,6 @@ class GameEngine {
             sideQuest: snapshot.state.sideQuest || null,
             scoreEventSeq: 0
         };
-        // Redis_State persists only the head of the draw pile; the unseen
-        // reserve is regenerated here so the room resumes with a pile of the
-        // right size. These are fresh random bricks rather than the originals,
-        // which is invisible to players -- only the next draw is ever shown.
         const hiddenCount = Math.max(0, Number(snapshot.state.drawPileHiddenCount) || 0);
 
         if (hiddenCount > 0) {
@@ -486,12 +482,6 @@ class GameEngine {
         BotManager.stopBots(this);
     }
 
-    // Target height grows by a step that itself grows: +stepBase per level, and
-    // the step gains stepGrowth every stepGrowthEvery levels. Uncapped by
-    // design -- height never flattens, and the level's clock follows it via
-    // getLevelTimeLimitMs. The recurrence has no useful closed form, so the
-    // whole curve is built once and cached; every input is debug-tunable at
-    // runtime, so the cache key carries all of them.
     buildTargetHeightCurve() {
         const base = Math.max(1, Number(GameConfig.targetHeightBase) || 1);
         const stepBase = Math.max(0, Number(GameConfig.targetHeightStepBase) || 0);
@@ -533,16 +523,6 @@ class GameEngine {
         return target;
     }
 
-    // The level's clock is derived from its target height rather than flat, so
-    // a curve that grows in tens per level cannot outrun the time to build it.
-    // Sized off the placements a player filling the site actually needs -- not
-    // the bots' spire-building rate, which would grant far too little time --
-    // then divided across the room and padded by a slack multiplier for think
-    // time and imperfect parallelism. GameConfig.levelTimeLimitMs is the floor.
-    //
-    // Slack itself lerps from levelTimeSlack (level 1) down to levelTimeSlackMin
-    // (at levelTimeSlackFullLevel and beyond): a flat slack left the clock linear
-    // in target height, so it never got proportionally tighter as levels grew.
     getLevelTimeLimitMs(targetHeight, level) {
         const floor = Math.max(1000, Number(GameConfig.levelTimeLimitMs) || 1000);
         const height = Math.max(0, Number(
@@ -653,10 +633,6 @@ class GameEngine {
         );
     }
 
-    // Same slenderness/min/max inputs as getSiteWidthForHeight, without its
-    // round-to-even step -- that step exists for the placement grid, but it
-    // turns one level's site-width growth into a single jump that supply
-    // sizing would otherwise inherit as an artificial spike.
     getSupplySiteWidthEstimate(targetHeight) {
         const slenderness = Math.max(
             0.1,
@@ -689,9 +665,6 @@ class GameEngine {
         const evenWidth = Math.ceil(required / 2) * 2;
         const clamped = Math.max(minWidth, Math.min(maxWidth, evenWidth));
 
-        // The site is centered on the grid, so an odd width would sit half a
-        // column off-center. Debug tuning can set odd bounds, so re-even here
-        // rather than trusting the clamp.
         return Math.max(2, clamped - (clamped % 2));
     }
 
@@ -735,18 +708,9 @@ class GameEngine {
         return Math.max(min, Math.min(max, Math.round(requested)));
     }
 
-    // A client that resolved a snap sends the row it aimed at, and the brick is
-    // *released* there rather than above the tower -- so it can be threaded into
-    // a gap, and falls from that row if nothing holds it up. Anything else -- a
-    // bot, an unsnapped drag, or a row that stopped being legal while the packet
-    // was in flight (a teammate can fill the target gap first) -- is released
-    // above the tower as before, so a placement is never lost to the race.
     resolvePlacementOrigin(block, column, originY) {
         const originX = this.resolveColumnOriginX(block, column);
         const entries = this.room.towerBlocks || [];
-        // Number(null) is 0, which would read "no aimed row" as "aim at the
-        // platform" and quietly thread every bot's brick into the lowest gap it
-        // fits. Absent has to be checked before the numeric coercion.
         const requested =
             originY === null || originY === undefined ? NaN : Number(originY);
 

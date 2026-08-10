@@ -120,13 +120,6 @@ function getRotations(cells) {
     return rotations;
 }
 
-// The four rotations of `cells` plus the four rotations of its mirror image,
-// deduped -- an asymmetric shape (L, Z) gains a distinct inverted (J-, S-like)
-// counterpart this way, while a shape whose mirror is already one of its own
-// rotations (O, I, T) contributes no duplicates. This is the pool a dealt
-// block's orientation is drawn from; getRotations alone stays rotation-only
-// since getAverageBrickHeight's estimate doesn't need the mirrored half (a
-// reflection never changes a shape's vertical extent).
 function getOrientations(cells) {
     const orientations = [];
     const seen = new Set();
@@ -245,10 +238,6 @@ function getAverageBrickCellCount(engine) {
     return totalWeight > 0 ? weightedCells / totalWeight : 1;
 }
 
-// The surplus window's upper edge: the debug-tunable flat levelSupplyMaxSurplus
-// plus a share of the level's required brick height. The flat amount alone is
-// missed almost every attempt once the required height (and the random draw's
-// variance around it) grows past the earliest levels.
 function getLevelSupplyMaxSurplus(requiredBrickHeight) {
     const flat = Math.max(0, Number(GameConfig.levelSupplyMaxSurplus) || 0);
     const share = Math.max(0, Number(GameConfig.levelSupplyMaxSurplusShare) || 0);
@@ -256,13 +245,6 @@ function getLevelSupplyMaxSurplus(requiredBrickHeight) {
     return flat + Math.ceil(requiredBrickHeight * share);
 }
 
-// Brick height the level's own pile is built to carry: the full packing-aware
-// requirement times a coverage share that lerps from levelSupplyCoverageStart
-// (level 1, generous) down to levelSupplyCoverageEnd (levelSupplyCoverageFullLevel
-// and beyond) -- so low levels run a surplus and the squeeze arrives gradually.
-// At the end value the remaining gap is what a Replenish is for, so the pile
-// still finishes most levels on its own and Power stays insurance rather than a
-// mandatory cast. Design meaning -> gameplay.md.
 function getSupplyCoverageShare(engine) {
     const start = Math.max(0, Number(GameConfig.levelSupplyCoverageStart) || 0);
     const end = Math.max(0, Number(GameConfig.levelSupplyCoverageEnd) || 0);
@@ -295,10 +277,6 @@ function getGeneratedDrawPileBlockCount(engine) {
         requiredBrickHeight + bandCenter - openingHandHeight - carryOverHeight;
     const desired = Math.ceil(shortfall / averageBrickHeight);
 
-    // Diagnostic only -- read by the Balance Simulator's `pileClipped` column
-    // (see testing.md § Balance Simulator) to tell "the reserve is small
-    // because the level doesn't need more" apart from "the reserve is small
-    // because maxGeneratedDrawPileBlocks cut it off".
     engine.room.pileClipped = desired > GameConfig.maxGeneratedDrawPileBlocks;
 
     return Math.max(
@@ -343,8 +321,6 @@ function generateSolvableOpeningHandBlocks(engine) {
                 openingHandBlockCount
             )
         ) {
-            // Diagnostic only -- read by the Balance Simulator's
-            // `supplyValidRate` column (see testing.md § Balance Simulator).
             engine.room.lastOpeningHandValid = true;
             return newBlocks;
         }
@@ -390,12 +366,6 @@ function countPrecisionBlocks(engine, blocks) {
     }).length;
 }
 
-// Subset-sum over the whole supply, run inside generateSolvableOpeningHandBlocks'
-// retry loop. Cost is O(blocks x targetHeight) per call, so at a 700-brick pile
-// and a 690 target a full scan is ~480k set operations x up to
-// openingHandGenerationAttempts -- seconds of blocked event loop per level start.
-// The target is almost always reachable long before the last brick, so returning
-// on first hit keeps it effectively O(targetHeight).
 function hasExactHeightCombination(engine, blocks, targetHeight) {
     if (!(targetHeight > 0)) {
         return true;

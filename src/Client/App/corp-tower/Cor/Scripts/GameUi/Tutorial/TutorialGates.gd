@@ -18,9 +18,6 @@ const ALL: Array[StringName] = [
 static func is_gate(gate: StringName) -> bool:
 	return ALL.has(gate)
 
-# `action` describes what the player (or a scripted event) just did, e.g.
-# {"type": "place_block", "column": 3}. Types are compared as strings so a
-# caller may pass either a String or a StringName literal without desyncing.
 static func is_satisfied(gate: StringName, gate_arg: Variant, action: Dictionary) -> bool:
 	if gate == INFO:
 		return true

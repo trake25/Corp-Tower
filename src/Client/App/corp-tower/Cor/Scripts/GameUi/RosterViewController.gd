@@ -228,9 +228,6 @@ func flash_impact_bars(verdicts: Dictionary, duration_seconds: float) -> void:
 		)
 		tween.tween_property(bar, "modulate", Color.WHITE, half_pulse)
 
-# A player who cleared their Impact share glows in their own seat color rather
-# than a shared tint, so the flash reads as "your bar, brighter" instead of a
-# generic pass color.
 func _impact_glow_tint(player_id: String) -> Color:
 	var seat_color: Color = players_ctx.seat_color(player_id)
 

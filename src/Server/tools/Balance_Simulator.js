@@ -6,14 +6,8 @@ const BotManager = require("../app/Bot_Manager");
 const STRATEGIES = ["cooperative", "mvp_greedy"];
 
 const DEFAULT_LEVELS = 20;
-// 1000 runs/level took ~20 minutes end to end, which made the tool
-// effectively unusable for iterative tuning; 100 is still enough samples to
-// read a rate to within a couple points.
 const DEFAULT_RUNS = 100;
 
-// 95 is the shipped towerStabilityDifficulty (Game_Config.js) -- sampling it
-// directly means a sweep run always includes the value actually live in the
-// game, instead of forcing you to interpolate between 75 and 100.
 const SWEEP_DIFFICULTIES = [0, 50, 75, 95, 100];
 const SWEEP_LEVEL_STEP = 5;
 
@@ -31,8 +25,6 @@ function createEngineForLevel(level) {
     withMutedConsole(() => {
         engine.createRoom(createPlayers());
         engine.room.level = level;
-        // Anchors the Impact band at this simulated level, since the simulator
-        // only ever plays one level in isolation -- see meetsImpactGate below.
         engine.room.impactLevel = level;
         engine.room.targetHeight = engine.getTargetHeightForLevel(level);
         engine.room.teamCarryOverBlocks = [];
@@ -55,11 +47,6 @@ function withMutedConsole(callback) {
     }
 }
 
-// Each player is independently rate-limited by placementCooldown, so the room
-// naturally interleaves rather than letting whoever holds the best brick place
-// over and over. Modelling that matters for more than pacing: it is what spreads
-// contribution across the three players, which is exactly what the Impact gate
-// measures.
 function nextPlayerToAct(engine, clock) {
     let next = null;
 
@@ -78,8 +65,6 @@ function nextPlayerToAct(engine, clock) {
     return next;
 }
 
-// Delegates to the shipped bot brain rather than keeping a parallel copy, so
-// what the simulator measures is what a real room actually plays.
 function chooseSmartPlacement(engine, strategy, actor) {
     if (!actor.blocks || actor.blocks.length === 0) {
         return null;
@@ -97,9 +82,6 @@ function chooseSmartPlacement(engine, strategy, actor) {
         return null;
     }
 
-    // The action now carries its own placement: brick choice and placement are
-    // decided together, because a brick threaded into a gap can be worth more
-    // as a repair than a taller brick is as a height claim.
     return {
         player: actor,
         blockIndex: blockIndex,
@@ -117,10 +99,6 @@ function simulateSmartPlay(engine, strategy) {
     let gapPlacements = 0;
     let supportedCellsTotal = 0;
 
-    // Sampled at every placement, not just at the end. The binary collapse rate
-    // alone cannot tell a well-tuned stability config from one whose thresholds
-    // are unreachable -- both read 0%. These are what the difficulty sweep
-    // reads to decide which anchor to move.
     const telemetry = {
         samples: 0,
         stabilitySum: 0,
@@ -168,9 +146,6 @@ function simulateSmartPlay(engine, strategy) {
         telemetry.integritySum += integrity;
         telemetry.leanSum += lean;
         telemetry.siteUsageSum += Number(d.slenderness) || 0;
-        // `??` must sit inside Number() -- Number(undefined) is NaN, not
-        // nullish, so `(Number(x) ?? 1)` never falls back and one missing field
-        // would poison the whole sum to NaN.
         telemetry.supportDeficitSum += 1 - Number(d.supportRatio ?? 1);
         if (integrity < lean) {
             telemetry.integrityBinding += 1;
@@ -178,9 +153,6 @@ function simulateSmartPlay(engine, strategy) {
     };
 
     const cooldown = Math.max(0, Number(GameConfig.placementCooldown) || 0);
-    // Derived per level from target height, not the flat config value -- that
-    // is only the floor now, and reading it directly would report every level
-    // past the earliest as a false timeout.
     const timeLimit = Math.max(1, engine.getLevelTimeLimitMs());
     let clock = 0;
 
@@ -192,8 +164,6 @@ function simulateSmartPlay(engine, strategy) {
         const actor = nextPlayerToAct(engine, clock);
 
         if (!actor) {
-            // No player has a block left and the pile is dry -- a genuine
-            // supply starve, not a collapse or a timeout.
             return outcome({ starved: true });
         }
 
@@ -211,8 +181,6 @@ function simulateSmartPlay(engine, strategy) {
 
         actor.player.simReadyAt = clock + cooldown;
 
-        // A yielding bot burns its turn without placing, so the teammate who is
-        // short of their share gets the height instead.
         if (placement.waiting) {
             continue;
         }
@@ -222,9 +190,6 @@ function simulateSmartPlay(engine, strategy) {
         const previousHeight = engine.room.currentHeight;
         const stabilityBefore = engine.room.towerStability ?? 100;
         const structureBefore = engine.room.towerStabilityDiagnostics || {};
-        // Same resolution path the server runs, so an aimed release row is
-        // honoured -- and silently falls back to a drop from above when it is
-        // absent or illegal -- exactly as it would in a real room.
         const placementPosition = engine.resolvePlacementOrigin(
             block, placement.column, placement.originY
         );
@@ -298,18 +263,6 @@ function getScoreSummary(engine) {
     };
 }
 
-// With an Impact every level, "did all three players clear their share?" is the
-// gate that actually decides whether the team advances, so it is the number
-// worth tuning against -- a level can complete and still roll the team back.
-// Routed through the engine's real band-based gate (Impacts.js) rather than a
-// simplified per-level formula, so this reads the same requirement -- rounding,
-// the impactScoreRequirement floor, and impactExpectedStabilityMultiplier
-// included -- the server actually enforces. createEngineForLevel anchors
-// room.impactLevel at the simulated level, so blockedLevel = level + 1 sizes the
-// band to exactly the one level this run played (the simulator never chains
-// levels, so a wider band isn't modellable here). Only meaningful once the level
-// has completed and addLevelScoreToLeaderboard() has banked this run's score --
-// runLevel() already gates aggregation on result.completed for this reason.
 function meetsImpactGate(engine) {
     return engine.hasMetImpactScoreRequirement(engine.room.level + 1);
 }
@@ -386,10 +339,6 @@ function runLevel(level, runs, strategy = "cooperative") {
         stats.averageSupportedCells += result.supportedCells;
         stats.averageClockUsedS += result.clockMs / 1000;
 
-        // Deterministic per level given a fixed target height/site (no team
-        // carry-over in a fresh simulated room), so these track walls, not
-        // run-to-run noise. supplyValid is the exception -- it depends on the
-        // random opening hand each run.
         stats.requiredBrickHeight = Math.ceil(
             engine.room.targetHeight / engine.getSupplyPackingEfficiency()
         );
@@ -526,10 +475,6 @@ function printResults(results) {
     });
 }
 
-// The stability-calibration view: everything you need to place towerStabilityDifficulty
-// and, when a criterion misses, which anchor is responsible. avgSiteUsage is the
-// slenderness input (1.0 = whole plot used), integrityBinding says which axis is
-// actually deciding the score.
 function printStabilityResults(results) {
     console.log(
         [

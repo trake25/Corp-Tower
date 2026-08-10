@@ -2,7 +2,7 @@ const GameConfig = {
 
     maxLevel: 99,
     debugStartLevel: 1,
-    placementCooldown: 1500,    // testing phase at 500ms, 1 during release
+    placementCooldown: 1500,
     quickChatCooldownMs: 3000,
     quickChatTemplates: [
         "Place Block!",
@@ -20,23 +20,23 @@ const GameConfig = {
     levelTimeSlack: 3.0,
     levelTimeSlackMin: 1.5,
     levelTimeSlackFullLevel: 25,
-    nextLevelDelayMs: 1000, // testing 0.5, release 1
-    failRestartDelayMs: 1000, // testing 0.5, release 1
+    nextLevelDelayMs: 1000,
+    failRestartDelayMs: 1000,
     placementScorePopupDurationMs: 2000,
     finishScorePopupDurationMs: 2000,
-    levelSummaryDelayMs: 4000,  // testing 2, release 4
+    levelSummaryDelayMs: 4000,
     impactInterval: 2,
     impactScoreRequirement: 0,
     impactMinContributionShare: 0.30,
     impactExpectedStabilityMultiplier: 0.85,
-    towerGridWidth: 8, //14 SnapGrid.gd previous values const GRID_WIDTH := 14 const GRID_CENTER_COL := 6.5
+    towerGridWidth: 8,
     placeableColumnMin: 2,
     placeableColumnMax: 5,
     towerSiteSlendernessTarget: 6.75,
     towerSiteWidthMin: 6,
     towerSiteWidthMax: 8,
-    towerMaxTiltAngleDeg: 18,   //18 Visual only, higher tilt is more dramatic
-    towerStabilityDifficulty: 90,   // 0 forgiving, 100 harsh, 90 default, 95 tuned
+    towerMaxTiltAngleDeg: 18,
+    towerStabilityDifficulty: 90,
     towerStabilityPressure: {
         floor: 0.55,
         fullPressureLevel: 8
@@ -103,8 +103,8 @@ const GameConfig = {
     maxGeneratedDrawPileBlocks: 4096,
     supplyEffectiveWidthRatio: 0.40,
     levelSupplyMinSurplus: 0,
-    levelSupplyMaxSurplus: 4,    
-    levelSupplyMaxSurplusShare: 0.08,    
+    levelSupplyMaxSurplus: 4,
+    levelSupplyMaxSurplusShare: 0.08,
     levelSupplyCoverageStart: 1.05,
     levelSupplyCoverageEnd: 0.75,
     levelSupplyCoverageFullLevel: 15,
@@ -126,12 +126,12 @@ const GameConfig = {
         screenShakeMagnitudeUnits: 0.22
     },
     scoring: {
-        placementScorePerHeight: 10,        
+        placementScorePerHeight: 10,
         placementStabilityFloor: 0.5,
-        placementStabilityFloorAtTarget: 0.15,        
+        placementStabilityFloorAtTarget: 0.15,
         reinforceScorePerIntegrity: 4,
         reinforceScorePerLean: 35,
-        reinforceScorePerSupportedCell: 10,       
+        reinforceScorePerSupportedCell: 10,
         reinforceScoreCapShare: 1,
         reinforceScoreCapShareAtTarget: 3,
         finisherBonusPerLevel: 0,
@@ -140,7 +140,7 @@ const GameConfig = {
         assistBonusPerLevel: 0,
         assistContributionThreshold: 0.25
     },
-    debugBotsEnabled: process.env.CORP_TOWER_BOTS_ENABLED === "true",    //testing true, release false
+    debugBotsEnabled: process.env.CORP_TOWER_BOTS_ENABLED === "true",
     debugBotCount: 2,
     debugBotDelayMin: 1500,
     debugBotDelayMax: 6000,

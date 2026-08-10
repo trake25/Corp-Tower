@@ -19,9 +19,6 @@ func reset() -> void:
 	last_beat_key = ""
 	end_beat()
 
-# Called when the level summary it is standing in for closes -- the beat has
-# no timed end of its own once it reaches BEAT_HOLD, so this is the only way
-# the camera returns to normal play framing.
 func end_beat() -> void:
 	if tower_stack != null and tower_stack.has_method("cancel_impact_beat"):
 		tower_stack.call("cancel_impact_beat")
@@ -48,10 +45,6 @@ static func build_verdicts(status: Variant) -> Dictionary:
 
 	return verdicts
 
-# A "completed" summary never carries its own impactScoreStatus -- the gate
-# check for the next level runs later, on its own timer, and overwrites
-# lastLevelSummary with a separate "failed" result if it doesn't pass. So a
-# completed level was never judged and defaults every placer to positive.
 static func build_completion_verdicts(summary: Dictionary) -> Dictionary:
 	var verdicts: Dictionary = {}
 

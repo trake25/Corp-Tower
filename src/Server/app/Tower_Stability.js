@@ -19,10 +19,6 @@ function topHeight(entries) {
 
 function cellsForEntries(entries) { return entries.flatMap(cellsFor); }
 
-// Gravity. `fromY` is where the brick is released: omitted it spawns above the
-// tower and falls the whole way (a bot's column-only placement), given an aimed
-// row it falls from there instead -- which is what lets a brick be threaded into
-// a gap without letting it hang in mid-air once it is there.
 function settleBlock(entries, block, originX, fromY = null) {
     const cells = (block.cells || []).map(cell => ({ x: Number(cell[0]), y: Number(cell[1]) }));
     const anchoredX = Math.round(Number(originX) || 0);
@@ -43,10 +39,6 @@ function blockCells(block) {
     }));
 }
 
-// The rule a client-chosen release row has to satisfy: on or above the platform
-// and not inside anything already placed. Support is deliberately *not* checked
-// here -- an unsupported brick is not rejected, it falls (see settleBlock), so
-// aiming into thin air is a wasted placement rather than an illegal one.
 function isPlacementLegal(entries, block, originX, originY) {
     const cells = blockCells(block);
 
@@ -63,10 +55,6 @@ function isPlacementLegal(entries, block, originX, originY) {
     return !cells.some(cell => occupied.has(key(cell.x + originX, cell.y + originY)));
 }
 
-// Cells of the standing tower that were hanging with nothing beneath them and
-// now rest directly on the incoming brick. This is the repair that only became
-// possible once bricks stopped spawning above the tower, so it is what Reinforce
-// pays for; integrity alone dilutes it away in a tall tower.
 function supportedCellsGained(entries, block, originX, originY) {
     const cells = blockCells(block);
 
@@ -171,19 +159,9 @@ function evaluate(entries, config) {
 
     const height = topHeight(entries);
 
-    // A stubby tower physically cannot topple, and with only a handful of cells
-    // placed every ratio below swings wildly -- a lone T resting on its stem
-    // reads as 50% unsupported. Every penalty term is therefore scaled in as the
-    // tower grows, so the opening bricks are always safe.
     const stabilityMinHeight = Math.max(1, config.towerStabilityMinHeight ?? 6);
     const maturity = Math.min(1, height / stabilityMinHeight);
 
-    // Penalties additionally sharpen as the tower nears its target height, so a
-    // tall tower is graded harder than a short one at the same maturity --
-    // without this every penalty below is height-invariant once maturity
-    // saturates, which happens well under any level's target. Only feeds rawScore
-    // (post-maturity), never comOffset/laneImbalance themselves, so structuralLean
-    // and balanceDelta stay free of height drift.
     const targetHeight = Math.max(0, Number(config.towerTargetHeight) || 0);
     const heightProgress = targetHeight > 0 ? clamp01(height / targetHeight) : 0;
     const heightPressureGain = Math.max(0, Number(config.towerHeightPressureGain) || 0);
@@ -199,8 +177,6 @@ function evaluate(entries, config) {
     const tiltAngleDeg = Math.max(-maxTiltDeg, Math.min(maxTiltDeg, tiltScore * maxTiltDeg));
 
     const groundWidth = Math.max(1, groundMaxX - groundMinX + 1);
-    // Mean cells per occupied row -- not the ground row alone, so a wide floor
-    // topped by a narrow spire can't buy the whole tower permanent immunity.
     const meanRowWidth = Math.max(0.0001, cellCount / Math.max(1, height));
     const siteWidth = Math.max(1, Number(config.towerSiteWidth) || groundWidth);
     const slenderness = siteWidth / meanRowWidth;
@@ -259,21 +235,6 @@ function structuralLean(diagnostics) {
     return (Number(d.comOffset) || 0) + (Number(d.laneImbalance) || 0);
 }
 
-// How far one placement moved the tower back toward centre, in points of the
-// collapse budget. Positive = straighter, negative = more lopsided.
-//
-// Deliberately NOT the change in `stability`: that score is min(lean, integrity)
-// and decays with height on its own, so a flawlessly centred brick still reads
-// as a loss, and a lean correction is masked whenever integrity is the lower
-// axis. This reads only the persistent structural lean, which comes out of
-// evaluate() before the maturity ramp is applied -- that is what keeps it free
-// of the height drift.
-//
-// overhangPenalty is deliberately excluded even though it is already isolated to
-// the placed brick: a dangling brick puts its mass off-centre, so comOffset
-// already charges for it, and subtracting it again both double-counts and adds a
-// one-sided negative bias (over half of all placements carry some overhang, so
-// it made ordinary placements frown).
 function balanceDelta(before, after, config) {
     const collapse = Math.max(
         0.0001, Number((config || {}).towerCollapseTiltScore) || 1

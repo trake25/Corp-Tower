@@ -137,17 +137,12 @@ func _ready() -> void:
 	reset_ui()
 	connect_network_signals()
 
-# The player's own choice and the room default both land here, so the input mode
-# follows whichever changed without either side knowing about the other.
 func apply_accessibility() -> void:
 	inventory.set_parallel_placement(
 		accessibility.is_enabled(AccessibilitySettingsScript.PARALLEL_PLACEMENT)
 	)
 	debug_panel.refresh_accessibility_row()
 
-# The tower shrinks around its own base, so the ground has to shrink around its
-# top edge or it detaches from the bricks resting on it -- the same failure the
-# platform parallax exists to prevent for the scroll axis.
 func apply_camera_zoom(zoom: float) -> void:
 	if platform_parallax == null:
 		return
@@ -155,9 +150,6 @@ func apply_camera_zoom(zoom: float) -> void:
 	platform_parallax.pivot_offset = Vector2(platform_parallax.size.x * 0.5, 0.0)
 	platform_parallax.scale = Vector2(zoom, zoom)
 
-# Same guard the old PointerTriggerRouter applied to every trigger: don't let
-# a tap open a popover while the debug panel or the level-summary overlay is
-# covering the screen. Passed into each controller's setup().
 func should_block_popovers() -> bool:
 	return (
 		debug_panel.is_open()
@@ -420,7 +412,7 @@ func update_game_state(data) -> void:
 	var _scores_text :String = ""
 	var my_blocks: Array = []
 	var my_power: Array = []
-	
+
 	for i in range(players.size()):
 		var player: Dictionary = players[i]
 		var player_id: String = str(player.get("id", "P?"))

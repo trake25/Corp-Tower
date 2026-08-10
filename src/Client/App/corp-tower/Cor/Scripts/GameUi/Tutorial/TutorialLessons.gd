@@ -5,11 +5,6 @@ const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 
 const LOCAL_PLAYER_ID := "local"
 
-# Mirror of the src/Server/app/Game_Config.js values the lessons narrate, at
-# Level 1. Overridden by the last-seen live game_state/debug_config when the
-# tutorial is launched from inside a match (see TutorialScene). Values only,
-# no derivation here -- if Game_Config.js's tuning changes, update this dict
-# to match; nothing below re-derives them.
 const DEFAULTS := {
 	"level": 1,
 	"target_height": 16,
@@ -44,16 +39,11 @@ static func _scored_brick(id: String, shape_id: String, points: int, event_type:
 	block["scriptedEventType"] = event_type
 	return block
 
-# Drives the tower's visible lean for this placement -- balanceDelta only
-# reacts the brick's own face, it never moves TowerStack's tilt on its own.
 static func _tilting_brick(id: String, shape_id: String, balance_delta: int, tilt_deg: float) -> Dictionary:
 	var block: Dictionary = _brick(id, shape_id, balance_delta)
 	block["scriptedTiltAngleDeg"] = tilt_deg
 	return block
 
-# A single-column filler stack used to seed a partially-built tower without
-# hand-authoring every entry. Stacks O bricks (height 2) up from row 0;
-# `total_height` should stay even since no odd-height shape is substituted.
 static func _filler_tower(total_height: int, column: int) -> Array:
 	var blocks: Array = []
 	var placed: int = 0

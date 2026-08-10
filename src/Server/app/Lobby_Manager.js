@@ -992,9 +992,6 @@ class LobbyManager {
             if (player.ws && player.ws.readyState === 1) {
                 this.sendPlayer(player, roomCreatedMessage);
             } else {
-                // Player's live socket lives on a different pod than the one
-                // that formed this room; hand off so that pod can hydrate
-                // and deliver via the same path reconnects already use.
                 await this.stateStore.publishPlayerAssignment(player.id, room.id);
             }
         }
@@ -1139,11 +1136,6 @@ class LobbyManager {
         return room.ownerPodId === this.stateStore.getPodId();
     }
 
-    // A player's live socket can be handled by a pod that didn't form their
-    // room (see the cross-pod room handoff note above). Only the pod that
-    // owns the room's lease runs its authoritative engine/timers, so an
-    // action received on any other pod is forwarded there instead of being
-    // run against that pod's frozen, hydrate-time-only room snapshot.
     async dispatchRoomAction(player, action) {
         const room = player.room;
 

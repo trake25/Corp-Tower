@@ -2,15 +2,7 @@ extends Node
 
 const MAX_INVENTORY_SLOTS := 3
 const DRAG_PREVIEW_SIZE := Vector2(170, 170)
-# Fallback for the lift that keeps the dragged brick clear of the finger, used
-# only when TowerStack isn't available to supply its own brick-unit-relative
-# value. The lift is applied to the snap resolution too, so the docked ghost
-# lands where the lifted brick is pointing rather than where the thumb is.
 const DRAG_GRIP_OFFSET_FALLBACK := Vector2(0.0, -48.0)
-# TowerStack is an optional bound node, so placement has to keep working without
-# it. Column -1 is the same "let the server clamp it" value the pre-snap drag
-# code sent, so a missing tower view degrades to server-side resolution rather
-# than refusing to place.
 const UNRESOLVED_SNAP := {
 	"valid": true,
 	"snapped": false,
@@ -22,16 +14,11 @@ const UNRESOLVED_SNAP := {
 	"aim_point": Vector2i.ZERO,
 	"aim_origin_y": 0
 }
-# Only the build site and its snap points -- the state a selected-but-not-yet-
-# aimed brick is in, before the player has picked a spot for it.
 const SITE_ONLY_SNAP := {
 	"valid": true,
 	"snapped": false,
 	"show_ghost": false
 }
-# Two pointer events land per tap on any platform that emulates a mouse from
-# touch, and either one may arrive first. Whichever wins, its partner is inside
-# this window and must not arm and then immediately confirm the same tap.
 const TAP_DEDUPE_MS := 60
 const SELECTION_PULSE_SPEED := 4.5
 const SELECTED_CARD_BORDER_WIDTH := 3
@@ -361,10 +348,6 @@ func update_block_drag(global_pos: Vector2) -> void:
 	elif !docked and tower_stack_fallback.has_method("clear_snap_preview"):
 		tower_stack_fallback.call("clear_snap_preview")
 
-# Pairs the dragged brick's own corners against the tower's snap points and
-# returns the full resolution (target column, settled landing row, matched
-# point/vertex) -- not just a column, so the ghost can dock exactly where the
-# brick will come to rest.
 func _resolve_snap(ghost_global_pos: Vector2) -> Dictionary:
 	if tower_stack_fallback == null or !tower_stack_fallback.has_method("resolve_snap"):
 		return UNRESOLVED_SNAP.duplicate()
@@ -404,9 +387,6 @@ func finish_block_drag(global_pos: Vector2) -> void:
 	if should_place:
 		on_block_pressed(slot_index, column, origin_y)
 
-# A resolution that came off a snap point carries the exact row the brick was
-# aimed at; anything else leaves the row to the server's gravity settle, which
-# -1 asks for.
 func _snap_origin_y(snap: Dictionary) -> int:
 	if !bool(snap.get("exact", false)):
 		return -1
@@ -431,12 +411,6 @@ func cancel_block_drag() -> void:
 		if drag_preview.has_method("clear_matched_vertex"):
 			drag_preview.call("clear_matched_vertex")
 
-# --- Parallel placement (accessibility option 1): select, aim, confirm ---
-
-# The two input styles are exclusive. Drag placement keeps working through
-# _input, which runs ahead of the GUI pass; parallel placement instead makes the
-# drop zone itself pickable so Godot's own hit-testing decides overlaps -- the
-# Quest chip overhangs the drop zone's rect and has to keep winning its own taps.
 func set_parallel_placement(enabled: bool) -> void:
 	if enabled == parallel_placement:
 		return
@@ -516,9 +490,6 @@ func _clear_selection_state() -> void:
 		if drag_preview.has_method("clear_matched_vertex"):
 			drag_preview.call("clear_matched_vertex")
 
-# On a device with a pointer the ghost rides the cursor, which is the whole
-# preview before the first tap. On touch there is nothing to ride and the finger
-# would cover it anyway, so it stays hidden until a tap arms it on the tower.
 func _prepare_cursor_ghost(block: Dictionary, local_color: Color) -> void:
 	if drag_preview == null or !PointerEventsScript.has_mouse():
 		return
@@ -549,8 +520,6 @@ func _handle_selection_hover(event: InputEvent) -> void:
 	_update_cursor_ghost(event.global_position)
 
 func _update_cursor_ghost(global_pos: Vector2) -> void:
-	# No grip lift here, unlike a drag: the brick is anchored to the cursor, and
-	# offsetting it would aim the snap somewhere the player is not pointing.
 	drag_preview.global_position = global_pos - drag_preview.size * 0.5
 	drag_snap = _resolve_snap(global_pos)
 
@@ -585,17 +554,12 @@ func _on_tower_drop_zone_gui_input(event: InputEvent) -> void:
 	tower_drop_zone.accept_event()
 	_aim_or_place(_drop_zone_global_position(event))
 
-# gui_input hands mouse events in viewport space but touch events in the
-# control's own space, and the snap resolver only speaks global.
 func _drop_zone_global_position(event: InputEvent) -> Vector2:
 	if event is InputEventMouse:
 		return event.global_position
 
 	return tower_drop_zone.get_global_transform() * event.position
 
-# First tap aims: the ghost docks at the resolved spot and nothing is sent.
-# Tapping that same spot again is the confirmation; tapping anywhere else just
-# re-aims, so a player correcting their aim can never place by accident.
 func _aim_or_place(global_pos: Vector2) -> void:
 	var snap: Dictionary = _resolve_snap(global_pos)
 
@@ -631,10 +595,6 @@ func _commit_armed_placement() -> void:
 	if slot_index >= 0:
 		on_block_pressed(slot_index, column, origin_y)
 
-# A teammate can fill the aimed spot between the aim tap and the confirm tap, so
-# the armed ghost is re-checked against every broadcast instead of trusting the
-# tower it was aimed at. Losing the spot drops back to selected, not deselected --
-# the brick is still in hand and only needs re-aiming.
 func revalidate_armed_placement() -> void:
 	if !is_armed or selected_slot_index < 0:
 		return
@@ -712,8 +672,6 @@ func _apply_selection_visuals() -> void:
 			else Color.WHITE
 		)
 
-# Built from the theme variation's own box rather than the button's current one,
-# so re-selecting a card never stacks a border on top of a previous selection.
 func _build_selected_card_style(local_color: Color) -> StyleBoxFlat:
 	var base: StyleBox = inventory_buttons[selected_slot_index].get_theme_stylebox(
 		"normal", "WhiteCardButton"
@@ -803,8 +761,6 @@ func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS)
 			name_label.text = "Slot " + str(i + 1)
 			inventory_slot_blocks[i] = {}
 
-	# A refill swaps a different brick into the same slot, so a selection that
-	# outlived its brick would aim the wrong shape.
 	if selected_slot_index >= 0 and _selected_block_id() != selected_block_id:
 		deselect_block()
 

@@ -7,10 +7,6 @@ const DEFAULT_PLACEABLE_COLUMN_MIN := 4
 const DEFAULT_PLACEABLE_COLUMN_MAX := 9
 const SETTLE_SPAWN_MARGIN := 8
 
-# Grid width is server-owned (Game_Config.towerGridWidth) and arrives in
-# game_state. The drawn tower is centred on the grid, so the centre column has to
-# be derived from it -- a hardcoded centre silently shifts the whole tower
-# sideways the moment the grid is retuned.
 static var grid_width: int = DEFAULT_GRID_WIDTH
 
 static func grid_center_col() -> float:
@@ -22,11 +18,6 @@ static func set_grid_width(width: int) -> void:
 
 	grid_width = width
 
-# The placeable span is per-level: the server derives it from the level's target
-# height and sends it in game_state, so a taller target gets a wider build site.
-# Held as static state because it is genuinely global for the whole level -- the
-# alternative, threading it through every static function below, is far more
-# churn for the same value.
 static var placeable_column_min: int = DEFAULT_PLACEABLE_COLUMN_MIN
 static var placeable_column_max: int = DEFAULT_PLACEABLE_COLUMN_MAX
 
@@ -41,12 +32,6 @@ static func reset_placeable_range() -> void:
 	grid_width = DEFAULT_GRID_WIDTH
 	placeable_column_min = DEFAULT_PLACEABLE_COLUMN_MIN
 	placeable_column_max = DEFAULT_PLACEABLE_COLUMN_MAX
-
-# All positions here are *lattice* coordinates, not cell-center coordinates:
-# x is a column boundary index (column c spans x = c to c + 1) and y is a
-# height in grid units measured up from the platform (y = 0). Every snap point
-# and brick outline vertex lives on this lattice, which is what makes a snap
-# point and a brick corner directly comparable.
 
 static func entry_block(entry: Dictionary) -> Dictionary:
 	var block: Variant = entry.get("block", {})
@@ -91,7 +76,6 @@ static func occupied_cells(tower_blocks: Array) -> Dictionary:
 
 	return occupied
 
-# Mirror of server Tower_Stability.topHeight.
 static func top_height(tower_blocks: Array) -> int:
 	var top: int = 0
 
@@ -104,11 +88,6 @@ static func top_height(tower_blocks: Array) -> int:
 
 	return top
 
-# Mirror of server Tower_Stability.settleBlock's drop-to-contact loop. If that
-# function's semantics ever change, this must change with it or the client's
-# landing preview silently disagrees with where the server actually places the
-# brick. `from_y` is the release row: -1 spawns the brick above the tower (an
-# unaimed placement), otherwise it falls from the row the player aimed at.
 static func settle_origin_y(
 	tower_blocks: Array, cells: Array, origin_x: int, from_y: int = -1
 ) -> int:
@@ -129,9 +108,6 @@ static func _settle_from(
 
 	return origin_y
 
-# Mirror of server Game_Engine.getPlaceableOriginRange -- the brick's entire
-# footprint must fit the placeable columns, with no overflow into the excluded
-# outer columns.
 static func origin_range(cells: Array) -> Vector2i:
 	if cells.is_empty():
 		return Vector2i(placeable_column_min, placeable_column_min)
@@ -144,11 +120,6 @@ static func origin_range(cells: Array) -> Vector2i:
 		maxi(placeable_column_min, placeable_column_max - width + 1)
 	)
 
-# Mirror of server Tower_Stability.isPlacementLegal -- the rule a release row has
-# to satisfy: on or above the platform, and not inside anything already placed.
-# Support is deliberately not part of it, because an unsupported brick is not
-# refused, it falls; aiming into thin air costs the player the placement instead
-# of being blocked.
 static func is_placement_legal(
 	tower_blocks: Array, cells: Array, origin_x: int, origin_y: int
 ) -> bool:
@@ -235,13 +206,6 @@ static func nearest_column(cells: Array, lattice_x: float) -> int:
 
 	return best_origin
 
-# Pairs every outline vertex of the dragged brick against every snap point on
-# the platform and the placed tower, and keeps the closest pairing that is
-# legally placeable. A pairing fixes the whole origin, not just the column, so
-# gaps inside the tower are reachable and nothing spawns above the tower to fall
-# in -- but the brick is only *released* there: gravity still applies from that
-# row down, so an aim with nothing under it drops. A pointer beyond the snap
-# radius falls back to aiming by column alone, released above the tower.
 static func resolve(
 	tower_blocks: Array,
 	cells: Array,
@@ -283,10 +247,6 @@ static func resolve(
 
 			var distance_sq: float = vertex_position.distance_squared_to(Vector2(point))
 
-			# Legality is the expensive test, so it only runs for a candidate
-			# that already beats the best pairing found so far -- which also
-			# means an illegal near miss yields to the next-closest legal
-			# pairing instead of dropping the whole drag to the fallback.
 			if distance_sq >= best_distance_sq:
 				continue
 
@@ -313,16 +273,7 @@ static func resolve(
 			"origin_y": settled_y,
 			"target_point": contact.get("point", best_point),
 			"matched_vertex": contact.get("vertex", best_vertex),
-			# The point actually aimed at, before gravity carries the brick any
-			# further down -- distinct from target_point (the post-fall contact)
-			# whenever the aim lands on an overhang with nothing under it.
 			"aim_point": best_point,
-			# The release row itself, before settling -- what the ghost renders
-			# at while dragging, so hovering over open air under an overhang
-			# still shows a brick-shaped preview confirming the spot is a real
-			# target. origin_y (above) is the settled row the brick actually
-			# ends up at once placed; the two are equal whenever the aim was
-			# already fully supported.
 			"aim_origin_y": best_origin_y
 		}
 
@@ -338,15 +289,9 @@ static func resolve(
 		"target_point": Vector2i.ZERO,
 		"matched_vertex": Vector2i.ZERO,
 		"aim_point": Vector2i.ZERO,
-		# No exact aim beyond the snap radius -- the fallback already releases
-		# from above the tower, so the aim and settled rows are the same.
 		"aim_origin_y": fallback_origin_y
 	}
 
-# The pairing that decides where the brick is released is measured against the
-# ghost the player is holding, but gravity can drop it short of that point. The
-# highlight has to mark the point the *fallen* brick actually docks against, or
-# it points at a spot the brick never reaches.
 static func contact_pair(points: Array, cells: Array, origin_x: int, origin_y: int) -> Dictionary:
 	var best_distance_sq: float = INF
 	var best_point := Vector2i.ZERO

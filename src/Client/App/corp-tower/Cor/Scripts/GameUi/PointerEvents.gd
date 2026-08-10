@@ -17,12 +17,6 @@ static func pointer_id(event: InputEvent) -> int:
 
 	return POINTER_MOUSE
 
-# Godot mirrors every touch into a matching mouse event
-# (input_devices/pointing/emulate_mouse_from_touch, on by default), so the event
-# stream alone cannot answer "does this player have a pointer?". The emulated
-# partner carries device -1, which is what separates a real mouse from a thumb;
-# a real touch latches touch mode until a real mouse event arrives, so a hybrid
-# device follows whichever input the player actually used last.
 static func is_emulated(event: InputEvent) -> bool:
 	return event.device == DEVICE_ID_EMULATION
 

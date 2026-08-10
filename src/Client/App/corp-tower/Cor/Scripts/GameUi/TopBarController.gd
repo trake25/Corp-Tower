@@ -63,10 +63,6 @@ func start_freeze_blink() -> void:
 		return
 
 	stop_freeze_blink()
-	# Blinking modulate would only re-tint the label's own font color, which is
-	# near-black (see TimerLabel's font_color override in GameUI.tscn) -- a
-	# multiplicative tint on a near-black base stays near-black no matter the
-	# target color, so the blink is invisible. Animate font_color directly instead.
 	freeze_blink_base_color = timer_label.get_theme_color("font_color")
 	freeze_blink_tween = create_tween()
 	freeze_blink_tween.set_loops()

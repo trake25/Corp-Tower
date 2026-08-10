@@ -18,8 +18,11 @@ infra/eks/terraform/eks-lab.tfvars
 *.docx.bak
 *.exe
 /.cursor
-.claude/
-CLAUDE.md
+# The agent contract ships with the repo — CLAUDE.md, the role skills and the
+# /update-docs and /compact-docs commands are useless to a fresh clone if they
+# stay local-only. Machine-local permissions are the one part that does not
+# travel. plan/ and reference/ hold working material, not contract.
+.claude/settings.local.json
 plan/
 task/
 reference/

@@ -93,9 +93,6 @@ func load_seed(seed: Dictionary) -> void:
 
 	push_state()
 
-# Restores the real player-context identity. Only called once the whole
-# tutorial session ends (not between lessons), so a mid-session lesson swap
-# never clobbers the saved original with the tutorial's own override.
 func teardown() -> void:
 	if players_ctx != null and _get_local_id_overridden:
 		players_ctx.get_local_id = _original_get_local_id
@@ -133,11 +130,6 @@ func push_state() -> void:
 		chat.quick_chat_templates = quick_chat_templates
 		chat.quick_chat_cooldown_ms = quick_chat_cooldown_ms
 
-# Mirrors the live placement path: release the brick at the aimed row when the
-# client resolved a snap (and it is still legal), otherwise above the tower, then
-# let the same SnapGrid gravity mirror the server uses decide where it comes to
-# rest, append the entry, refill the emptied slot from the queued pool (as the
-# server would deal a new card), and re-push state.
 func apply_placement(index: int, column: int, requested_origin_y: int = -1) -> Dictionary:
 	if index < 0 or index >= hand.size():
 		return {"column": column}
@@ -165,14 +157,6 @@ func apply_placement(index: int, column: int, requested_origin_y: int = -1) -> D
 	)
 	var balance_delta: int = int(block.get("scriptedBalanceDelta", 0))
 
-	# TowerStack's visible lean comes entirely from diagnostics.tiltAngleDeg --
-	# it is a separate channel from the per-brick balanceDelta that only drives
-	# the brick's own face, so a lesson demonstrating lean must script this too
-	# or the tower never visibly tilts no matter what is placed. The scripted
-	# value is a magnitude only: direction is derived from which side of the
-	# site the brick actually landed on, so dropping it left of centre always
-	# leans left and right of centre always leans right, instead of a fixed
-	# direction that ignores where the player actually dropped it.
 	if block.has("scriptedTiltAngleDeg"):
 		var magnitude: float = absf(float(block.get("scriptedTiltAngleDeg", 0.0)))
 		var tilt: float = 0.0
@@ -228,8 +212,6 @@ func apply_placement(index: int, column: int, requested_origin_y: int = -1) -> D
 
 	return {"column": resolved_column, "originY": origin_y}
 
-# Applies a lesson step's scripted, non-placement side effect. Kept to a small
-# closed set -- new script types belong here, not in the catalog.
 func apply_script(script: Dictionary) -> void:
 	if script.is_empty():
 		return
@@ -252,9 +234,6 @@ func apply_script(script: Dictionary) -> void:
 			tower_blocks = (script.get("tower_blocks", tower_blocks) as Array).duplicate(true)
 			push_state()
 		"refresh_hand":
-			# Real Refresh is a server-driven inventory redeal; tutorial mode has
-			# no server, so this stands in with a seeded replacement hand plus
-			# the same toast PowerController.process_power_events would show.
 			if !power_refresh_hand.is_empty():
 				hand = power_refresh_hand.duplicate(true)
 				hand_pool = []
@@ -266,8 +245,6 @@ func apply_script(script: Dictionary) -> void:
 					3.0
 				)
 		"quick_chat":
-			# Real quick chat renders via a server-echoed quickChatEvents entry;
-			# tutorial mode has no server round-trip, so show the bubble directly.
 			var slot: int = int(script.get("slot", -1))
 			if chat != null and slot >= 0 and slot < quick_chat_templates.size():
 				chat.show_quick_chat_bubble(LOCAL_PLAYER_ID, str(quick_chat_templates[slot]), 3.0)

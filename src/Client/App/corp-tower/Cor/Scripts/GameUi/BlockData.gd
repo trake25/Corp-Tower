@@ -26,10 +26,6 @@ const DEFAULT_EMOJI_MOOD := "neutral"
 const DEFAULT_MOOD_THRESHOLD := 3
 const BALANCE_DELTA_KEY := "balanceDelta"
 
-# A brick's lit-from-above look must survive its own rotation: these are baked
-# into per-vertex colors from each quad corner's actual screen-space Y (see
-# brick_quad_colors), never from texture UV, which rotates with the brick and
-# used to drag the "light" to whichever edge the rotation put on top.
 const TOP_SHADE_MULTIPLIER := 1.28
 const BOTTOM_SHADE_MULTIPLIER := 0.86
 
@@ -96,13 +92,6 @@ static func cell_bounds(cells: Array) -> Dictionary:
 
 	return {"min_x": min_x, "min_y": min_y, "max_x": max_x, "max_y": max_y}
 
-# True outline vertices of a polyomino, in lattice (cell-corner) coordinates --
-# the actual points where the shape's silhouette turns, not just the 4
-# corners of its bounding box (which for L/T/Z include phantom points that
-# aren't part of the brick at all). A lattice point belongs to the outline
-# iff an odd number of the up-to-4 cells touching it are occupied; none of
-# this game's 5 tetromino shapes touch only diagonally, so 2 always means a
-# straight edge (not a vertex) and this simple parity rule is exact.
 static func outline_corners(cells: Array) -> Array:
 	var counts: Dictionary = {}
 
@@ -130,11 +119,6 @@ static func brick_texture(shape_id: String) -> Texture2D:
 
 	return _texture_cache[shape_id]
 
-# The server stamps each brick's balance delta once, at placement; the threshold
-# comparison happens here, every frame, against the live debug value. Splitting it
-# that way is what makes the knob tunable: a brick's delta is a fixed historical
-# fact, but dragging the threshold restyles the whole standing tower immediately
-# instead of only affecting bricks placed afterwards.
 static func emoji_mood_for_delta(delta: int, threshold: int) -> String:
 	var band: int = maxi(1, threshold)
 
@@ -154,14 +138,6 @@ static func emoji_texture(mood: String) -> Texture2D:
 
 	return _emoji_cache[resolved]
 
-# Where the face sits on a brick, in lattice units relative to the brick's own
-# origin. Uses the centroid of the occupied cells rather than the bounding-box
-# centre, whose middle is empty space for L/T/Z, then pulls it onto the nearest
-# occupied cell centre so the face is never straddling a seam between two cells.
-# All cells tied for nearest are averaged, which is what keeps a symmetric brick
-# (O, I, Z) centred on its own middle instead of jumping into one arbitrary
-# quadrant. Reproduces the hand-placed positions in Art/Guide/guide-brick-emoji
-# for all 5 shapes.
 static func emoji_anchor(cells: Array) -> Vector2:
 	if cells.is_empty():
 		return Vector2.ZERO
@@ -191,12 +167,6 @@ static func emoji_anchor(cells: Array) -> Vector2:
 
 	return anchor / float(tied)
 
-# Detects how many 90-degree clockwise turns, and whether a horizontal mirror,
-# separate `cells` from the canonical BRICK_SHAPES entry for `shape_id`,
-# replicating the server's Block_Supply rotate/reflect so the client can
-# transform the pre-rendered brick texture to match a randomly-rotated (and
-# possibly mirrored) dealt block. Tries the four unmirrored rotations first,
-# then the four rotations of the mirrored shape.
 static func detect_orientation(shape_id: String, cells: Array) -> Dictionary:
 	if not BRICK_SHAPES.has(shape_id):
 		return {"steps": 0, "flipped": false}
@@ -239,12 +209,6 @@ static func brick_quad_points(
 
 	return points
 
-# Per-vertex shade for a brick quad, lit from directly above the *screen*
-# regardless of the brick's own rotation/mirror -- computed straight from each
-# corner's already-rotated Y position (top corners get top_multiplier, bottom
-# corners get bottom_multiplier), not from texture UV, which stays fixed to
-# the unrotated texture and would drag the highlight to whatever edge the
-# rotation happened to put on top.
 static func brick_quad_colors(
 	base_color: Color,
 	points: PackedVector2Array,
@@ -292,9 +256,6 @@ static func _rotate_cells_cw(cells: Array) -> Array:
 
 	return _normalize_cells(rotated)
 
-# Mirrors across the vertical axis -- the server-side counterpart is
-# Block_Supply.reflectCellsX, whose composition with rotation is what gives an
-# asymmetric shape (L, Z) its inverted (J-, S-like) counterpart.
 static func _reflect_cells_x(cells: Array) -> Array:
 	var reflected: Array = []
 

@@ -44,6 +44,13 @@ contradicted source.
 | 5 | Finish Phase 3a+3b: delete 6 docs, close gates | 5 | A0 | 3 | 24 | ~40,000 | ~62,000 | ~120,000 | ~120,000 | ! | ok |
 | 6 | Retire `Rejected:`; strip fixed-bug narrative | 4 | A0 | 3 | 12 | ~25,000 | ~28,000 | ~52,000 | ~52,000 | ✓ | ok |
 | 7 | Fix 2 server tests; author map `Does` column | 4 | A0 | 2 | 20 | ~30,000 | ~55,000 | ~90,000 | ~90,000 | ! | ok |
+| 8 | Phase 4: comment strip, −653, maps regenerated | 4 | A | 3 | 33 | — | ~25,000 | ~55,000 | ~55,000 | ✓ | ok |
+| 9 | Phase 5: 5 role skills + `docs-steward` | 3 | A | 1 | 7 | — | ~5,000 | ~14,000 | ~14,000 | ✓ | ok |
+| 10 | After-5 probe run, P1–P6 (read-only) | 3 | A | 2 | 6 | — | 16,332 | 16,332 | 16,332 | ~ | ok |
+| 11 | Phase 6: delegation gate in `CLAUDE.md` | 2 | A | 1 | 4 | ~3,000 | ~1,500 | ~12,000 | ~12,000 | ✓ | ok |
+| 12 | Solo probe: 6 cold sessions, scored | 3 | A | 1 | 5 | — | ~3,000 | ~9,000 | ~9,000 | ✓ | ok |
+| 13 | Map rows carry `path:line`; infra map authored 436/436 | 4 | A | 2 | 12 | — | ~36,000 | ~70,000 | ~70,000 | ✓ | ok |
+| 14 | Skills-inert diagnosis; ui map 705/705; CLAUDE.md audited + un-ignored | 4 | A | 2 | 15 | — | ~33,000 | ~62,000 | ~62,000 | ✓ | ok |
 
 Rows 1–2 carry no `R-est`: both predate the append rule they establish. They are
 measurements, not predictions, and are marked as such rather than back-filled — a
@@ -110,4 +117,153 @@ regex; this is proof of what the regex version costs, and it was found by a conf
 key diff (`git show <sha>^:file | grep keys` against the current file), which is a
 cheap check Phase 4 should run as a gate rather than trusting parse + tests alone.
 
-**Rollup (cycle 1, open):** n=7 · median `R-act` ~45,000 · ✓2 ~1 ✗0 !4 · misroute 0%
+Rows 8–9 are the first marked `Mode: A` rather than `A0`. Rows 2–7 built Plan A
+and so could not retrieve through it; row 8 is the first task that did — it routed
+`resolvePlacementOrigin`, the settle mirrors and the Balance Simulator columns
+through `map/backend.md` and the domain docs without a repo-wide search. Mode `B`
+starts with the first task after row 9, since the skills exist but were not used
+to build themselves.
+
+Both carry no `R-est`, for a reason worth recording rather than hiding: **the
+session resumed mid-flight from a context compaction, so the "before reading
+anything" moment had already passed.** The append rule silently assumes a session
+boundary is a task boundary. It is not, and a fabricated estimate would be worse
+than a blank — the same call rows 1–2 made. If this recurs, the fix is to record
+`R-est` at the point the *task* is stated, not the point the session starts.
+
+Row 8's `Hit` is `✓`, and it is the first row where that means something specific.
+The strip deletes 653 comments, many of them load-bearing "why" prose, so the pass
+opened by auditing every one against the docs before removing any. The docs already
+held them — the mirror hazards, the `Number(null)` trap, the Balance Simulator
+columns, the supply lerp — and in two cases stated them **better** than the comment
+did: `ui.md` names the tutorial's actual numeric divergence where the source
+comment only warned that one was possible. That is the restructure's own claim,
+tested from the opposite direction: Phases 2–3b said the docs could carry this
+load, and Phase 4 is what happens if they cannot.
+
+The prediction it did settle: `map/backend.md` carried all 266 authored `Does`
+lines across a strip that moved nearly every line number in the file, at zero
+re-authoring cost. Carry-forward by `file#symbol` works.
+
+Two things Phase 4 found that the plan did not anticipate. The **−560 estimate was
+scoped to `src/Server/app` and `Cor/**` only**; adding `src/Server/tools` (90 lines
+across the two balance CLIs) reconciles it to 645 whole lines + 8 trailing. And the
+plan's refactor-gate list is **already stale** — it names six files over 600 lines
+at pre-strip counts and misses two K3s workflows at 621 and 612. The role skills
+therefore point the gate at the map's `### <path> — NNN ln` header, which
+regenerates on every edit, rather than carrying six copies of a list that rots.
+
+Row 10 is the after-Phase-5 probe and it is the row this whole log exists to make
+legible: **the restructure did not reduce retrieval cost.** 16,332 against a 13,700
+baseline, with S1 missing its target by roughly 6× and S2 flat at 4/6. S3, S4 and
+S5 all hold — nothing was traded away for speed, every answer landed, no doc
+contradicted source — so the failure is specifically and only the cost claim. Full
+scoring and post-hoc analysis in [retrieval-probes.md](./retrieval-probes.md).
+
+Three things that row establishes, none of which were visible before it ran. **The
+three-hop contract works when followed and nothing makes anyone follow it** — five
+of six questions averaged 1,780 tokens while the sixth loaded two docs whole and
+spent 7,429, which is 43% of the run. **The ≤2,740 target was arithmetically
+unreachable**: six questions each ending in a real source read cost ~1,700 apiece
+however good the KB is. And **the probe protocol favours the KB being replaced** —
+rule 3's fixed order let the baseline amortise three big doc loads across six
+questions and answer the last two for zero, which is the one workload where
+front-loading wins. Real sessions ask one question.
+
+Row 11 is the first row in the log with a real `R-est` recorded before the reads
+since row 7, and it ran 2× *over* estimate in the cheap direction — ~3,000
+predicted, ~1,500 actual. Small tasks are being over-estimated, which is the
+harmless direction but still a bias worth watching as the cycle fills, because it
+is the same bias that would push a borderline task toward delegation it does not
+need.
+
+Row 12 scores the six cold solo sessions. `R-est` is blank for the third time, and
+the reason is the one row 8 already named: the user's message *arrived carrying the
+data*, so reading began in the same breath as the task statement and the
+"before reading anything" moment never existed as a separate instant. Three blanks
+in twelve rows is now a pattern rather than an accident, and the pattern is that the
+append rule assumes a task starts with a pause. Fix it at the next cycle rollup, not
+by back-filling here.
+
+Its own cost is small — ~3,000 read — because it is the first task in the log to
+route entirely through the map and a targeted `Get-ChildItem`, opening no source
+file at all. What it *found* is in
+[retrieval-probes.md](./retrieval-probes.md); the part that belongs in this log is
+that **the token column of both files is a lower bound, not a measurement.** Six
+sessions reported the same `index.md` at six sizes, all 36–47% under its true 5,176
+bytes. Every `Tot` in this table is self-reported the same way. Ratios between rows
+survive that bias; absolute figures do not, and no decision should rest on one.
+
+Row 13's `R-est` is blank for the fourth time, and **this one is not the append
+rule's fault.** Rows 1-2, 8-9 and 12 had structural reasons; here the task arrived
+as five numbered instructions with a clear starting line, and the estimate simply
+was not written down. Recording that honestly is the point of the column. Four
+blanks in thirteen rows means the rule is being followed about 70% of the time,
+which is the number the cycle-1 rollup should act on.
+
+Two findings the row exists to carry. **The delegation gate said delegate and the
+task ran solo anyway**: it spans code and infra, touches far more than four files,
+and read ~36,000 tokens of source — three of the five thresholds. It ran inline
+because this session forbids unrequested subagents. It completed correctly, which
+is one data point that the ~25,000-token threshold may be set too low; one row is
+not enough to move it, but the closed-cycle rollup should look here first.
+
+And **`infra-engineer` never fired** on a task that was 100% infra work. That is
+the third independent confirmation, after the 12 probe runs, that role skills are
+inert — hop 0 is not reachable in practice, so `index.md` keeps being paid.
+
+The row is `✓` on a specific claim: the 424-row worklist was produced *by grepping
+the map itself*, and no repo-wide search happened at any point across 135 files.
+The map bootstrapped its own completion.
+
+Three defects the gates caught before anything was written: two rows over the
+300-character cap, one row using a banned construction, and one row that tripped
+the validator's own counted-claim check by containing the literal phrase it was
+describing. **All three were self-inflicted and none reached the file** — the
+line cap and the banned list are doing exactly the job they were added for.
+
+Row 14 closes the map layer: **1,407 symbols across three files, zero bare `TODO`**.
+The 175 remaining `ui` rows were found by grepping the map, same as row 13 — two
+consecutive completions with no repo-wide search between them.
+
+**The skills question, answered as far as it can be from inside a session.** What is
+proven: the six skills are registered and invocable — `docs-steward` was called here
+and loaded. So inertness is not a config defect, and no amount of file repair would
+have shown up as a fix. What is *not* provable from inside a running session: whether
+the name-and-description listing was surfaced at session start, since it is not
+visible after a compaction. The diagnosis therefore rests on the part that is
+inspectable, and that part is enough:
+
+**`CLAUDE.md` hop 0 gated the skills on a condition unknowable at hop 0.** It read
+"if one matches the paths you are about to touch" — but on a retrieval task the paths
+are the *output* of hops 1-3, not an input to hop 0. By the time a role was decidable,
+the routing the skill offers had already been paid for. That is why 12 probe runs and
+two authoring tasks all skipped it. Hop 0 now selects on the *kind of work*, which is
+known from the request itself, and names all six.
+
+The second half is that the skills advertise **routing**, which `CLAUDE.md` already
+states inline, while their non-duplicated value is **policy**. `infra-engineer` is the
+proof: it holds "`scripts/` and `.github/` keep their comments", and `CLAUDE.md` said
+flatly "No comments in source". `strip-comments.mjs` confirms the skill was right.
+**An agent reading only the entry file held a wrong belief about the comment rule**,
+and the correction sat in a file nothing ever opened. Fixed at the source.
+
+The audit cut three things that were scratchpad rather than contract: a probe's
+token measurements (they live in `retrieval-probes.md`), the `map/ui.md` gap notice
+(now false), and the hand-maintained "9 of 20" tally (already stale at 13, and the
+rollup line below owns that number). A counted claim in `CLAUDE.md` was also dropped
+on purpose — the file sits outside `validate-docs`, so a bare "9 SAFETY EXCEPTION
+comments" would rot silently, and **four of those nine live in the K3s workflows
+that are scheduled for deletion**.
+
+`R-est` was blank a fifth time, my omission again — 5 of 14 rows, ~64% compliance and
+falling. The rule is not working as written and the rollup should treat that as a
+finding about the rule, not about any one task.
+
+**The delegation gate said delegate, and the task ran solo again** — code plus docs,
+15 files, ~33,000 tokens of source: three of five thresholds, the same three as row
+13. Second consecutive correct completion over the gate's objection. Two data points
+now say the ~25,000-token threshold is too low.
+
+**Rollup (cycle 1, open):** n=14 · median `R-act` ~28,000 · ✓8 ~2 ✗0 !4 · misroute 0%
+· 6 rows to close

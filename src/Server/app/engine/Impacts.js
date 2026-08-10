@@ -124,12 +124,6 @@ function getImpactMinContributionShare(engine) {
     );
 }
 
-// The expectation this gate is measured against assumes a perfect stability
-// multiplier (1.0), while a real placement pays placementStabilityFloor..1.0 of
-// that -- and the floor itself now descends toward placementStabilityFloorAtTarget
-// as the tower rises (see Scoring.js). impactExpectedStabilityMultiplier keeps the
-// share's meaning honest ("X% of what is realistically earnable") instead of
-// silently tightening the gate as a side effect of the stability retune.
 function getExpectedPlacementScoreForLevel(engine, level) {
     const scorePerHeight =
         Number(GameConfig.scoring?.placementScorePerHeight) || 1;
