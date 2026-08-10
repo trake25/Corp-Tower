@@ -31,14 +31,16 @@ export const profile = {
   // Routing forwards but does not send: replies leave from the personal
   // address. That is fine against scraping and is not a send-as solution.
   email: "hire@galaxxigames.com",
-  // Structured data only (schema.org `sameAs`) — there is no site-wide GitHub
-  // button any more. Source links are per game.
+  // Also used for schema.org `sameAs`. The per-game repo links stay per game —
+  // this is the profile, which is a different thing and the one a platform
+  // recruiter goes looking for. BaseLayout dedupes the two.
   github: "https://github.com/trake25",
   // Contact destinations beyond email, rendered as buttons in section 03 in the
   // order given. Adding one is an entry here and nothing else. An entry with
   // `href: null` is skipped entirely, so a placeholder can sit in the list
   // until its URL exists.
   links: [
+    { label: "GitHub", href: "https://github.com/trake25" },
     { label: "LinkedIn", href: "https://www.linkedin.com/in/enrique-dela-pena-jr" },
     { label: "Indeed", href: null },
     { label: "itch.io", href: null },

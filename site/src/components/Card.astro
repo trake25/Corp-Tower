@@ -1,8 +1,11 @@
 ---
 import VideoSlot from "./VideoSlot.astro";
 
-// Level 4 — a skill card inside the Building the Game panel, inside a game
-// card, inside a vignette.
+// Level 2 — a skill card in section 00, directly under the section heading.
+// It used to be level 4 (panel → game card → vignette → section); promoting the
+// panel out of the game card took two levels off, which is why the headline is
+// an h3 and the step titles are h4 rather than the h5/h6 they were pinned to
+// when there were two more headings above them.
 //
 //   1. Vignette — collapsed tile: role chip + summary title only.
 //   2. Open     — short description, tools, then diagram → video, with the
@@ -63,7 +66,7 @@ const cardId = `card-${roleSlug}`;
 <details class="card" id={cardId} data-role={role}>
   <summary>
     <span class="role-tag">{role}</span>
-    <h5 class="headline">{headline}</h5>
+    <h3 class="headline">{headline}</h3>
     <span class="toggle-hint">
       <span class="toggle-open">Open</span>
       <span class="toggle-close">Close</span>
@@ -99,13 +102,13 @@ const cardId = `card-${roleSlug}`;
         <div class="detail-list">
           {details.map((detail) => (
             <section class="detail" data-detail-target={detail.id} class:list={{ "is-planned": detail.planned }}>
-              <h6>
+              <h4>
                 <button class="detail-jump" type="button">
                   {detail.title}
                   {detail.planned && <span class="planned-tag">Planned</span>}
                   <span class="detail-jump-hint" aria-hidden="true">↑ diagram</span>
                 </button>
-              </h6>
+              </h4>
               {detail.keywords && detail.keywords.length > 0 && (
                 <p class="detail-keywords">
                   {detail.keywords.map((keyword) => <span class="keyword">{keyword}</span>)}

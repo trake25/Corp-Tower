@@ -18,10 +18,10 @@ tools:
 videos:
   - src: "clips/cloud-eks-infra-apply.mp4"
     poster: "clips/cloud-eks-infra-apply.jpg"
-    caption: "Terraform apply standing the EKS environment up from nothing."
+    caption: "Terraform apply standing the EKS environment up from nothing — 12 to 15 minutes end to end."
   - src: "clips/cloud-eks-infra-destroy.mp4"
     poster: "clips/cloud-eks-infra-destroy.jpg"
-    caption: "The same environment destroyed again — what deploy-on-demand costs when nobody is playing."
+    caption: "The same environment destroyed again in about the same time — what deploy-on-demand costs when nobody is playing."
 details:
   - id: objectives
     title: "1 · The requirements, before anything is designed"
@@ -43,7 +43,7 @@ details:
       - "Environment Strategy"
       - "Network Architecture"
       - "Resource Isolation"
-    body: "Production, staging and development are three separate targets, each with its own networking. Production-grade infrastructure gets provisioned only where it's actually needed: the EKS path is written and tested, held deploy-on-demand until the game ships, while staging and development run today on one Linux machine already paid for, reached through a Cloudflare tunnel."
+    body: "Production, staging and development are three separate targets, each with its own networking. Production-grade infrastructure gets provisioned only where it's actually needed: the EKS path is written and tested, held deploy-on-demand until the game ships, while staging and development run today on one Linux machine already paid for, reached through a Cloudflare tunnel. Standing the cluster up takes 12 to 15 minutes and tearing it back down takes about the same, which is what makes deploy-on-demand a switch rather than a commitment."
   - id: guardrails
     title: "4 · The limits every resource has to obey"
     keywords:

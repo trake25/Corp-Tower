@@ -51,9 +51,9 @@ details:
     title: "4 · Monitoring"
     keywords:
       - "Live-State Verification"
-      - "Alerting"
+      - "Alerting & Escalation"
       - "Future Work"
-    body: "Not built yet. The plan is to read what's actually running in each environment and raise an alert when it drifts from what was deployed, rather than relying on someone noticing. It's on the roadmap, not on the record as shipped."
+    body: "Not built in this environment yet — the plan is to read what's actually running in each destination and raise an alert when it drifts from what was deployed, rather than relying on someone noticing. The practice behind it is not new to me: five years of enterprise NOC work was alarm detection, escalation and failover verification, which is this same problem with different nouns. What's missing here is the implementation, not the discipline."
     planned: true
 ---
 

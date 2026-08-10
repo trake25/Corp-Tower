@@ -29,7 +29,121 @@ const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
 
 // Filter buttons follow this order, not the cards' display order. A role present
 // in the cards but missing here is appended rather than dropped.
-const ROLE_ORDER = ["QA", "AI", "Cloud", "DevOps", "Backend", "Frontend"];
+//
+// Cloud and DevOps lead because they are what the target roles are actually
+// hiring for. QA and AI describe how the work gets done, which is a second
+// question — putting them first, as this list used to, made two process cards
+// the first thing a platform reader saw.
+const ROLE_ORDER = ["Cloud", "DevOps", "Backend", "Frontend", "QA", "AI"];
+
+// Plain-English capability lines for the recruiter layer, each with the
+// implementation named after it. Deliberately in this order and deliberately
+// not a content collection: four lines that change when the stack does, not
+// four files with a schema. The pattern is the point — someone who does not
+// know what EKS is still learns what was built, and someone who does gets the
+// receipt in the same row.
+const CAPABILITIES = [
+  {
+    plain:
+      "Build cloud infrastructure that runs and scales containerised applications, defined entirely as code so it can be destroyed and rebuilt from one source",
+    tech: "AWS · EKS · Terraform · Docker",
+  },
+  {
+    plain:
+      "Automate the delivery pipeline that tests, signs and deploys every release, with gates so nothing reaches production unproven",
+    tech: "GitHub Actions · OIDC · Cloudflare",
+  },
+  {
+    plain:
+      "Design the backend behind real-time multiplayer, where the server holds the truth and the client only draws it",
+    tech: "Node.js · Redis · WebSocket",
+  },
+  {
+    plain:
+      "Verify it — five years of enterprise network operations and a current software QA role, applied to my own work",
+    tech: "Jenkins · GUT · Node test runner",
+  },
+];
+
+// Section 00's closing block. The cards above prove these in context; this is
+// the flat enumeration a reader scanning for one word needs, and the surface an
+// applicant tracking system reads. Networking and QA tooling are here because
+// five years of the CV uses them and nothing else on the page names them.
+//
+// Every entry is something actually used. Nothing aspirational goes in this
+// list — it is the one block on the page with no surrounding prose to qualify
+// it, so an unearned entry here reads as a straight claim.
+const SKILL_GROUPS: { label: string; items: string[] }[] = [
+  {
+    label: "Cloud & infrastructure",
+    items: [
+      "AWS (EKS, EC2, ElastiCache, S3, IAM)",
+      "Terraform",
+      "Kubernetes",
+      "Docker",
+      "Cloudflare (Tunnel, R2, Workers)",
+      "Linux",
+    ],
+  },
+  {
+    label: "CI/CD & automation",
+    items: [
+      "GitHub Actions",
+      "Composite actions",
+      "Jenkins",
+      "OIDC federated identity",
+      "Google Play Publisher API",
+      "Git / GitHub",
+    ],
+  },
+  {
+    label: "Backend & data",
+    items: ["Node.js", "Redis", "WebSocket (ws)", "REST", "Java / Kotlin"],
+  },
+  {
+    label: "Client & game",
+    items: ["Godot 4", "GDScript", "Android builds"],
+  },
+  {
+    label: "QA & testing",
+    items: [
+      "Test plan & test case design",
+      "Functional & regression testing",
+      "Exploratory testing",
+      "Defect tracking",
+      "GUT (Godot)",
+      "Node.js test runner",
+    ],
+  },
+  {
+    label: "Networking & operations",
+    items: [
+      "VoIP",
+      "IPVPN",
+      "METRO-E",
+      "DIA",
+      "WAN / LAN / WLAN",
+      "SDH transmission",
+      "3G / LTE provisioning",
+      "NMS alarm monitoring",
+      "Fault isolation & failover",
+      "Nokia–Huawei SD-WAN",
+      "BERT / OTDR",
+      "CLI / SSH",
+    ],
+  },
+  {
+    label: "AI-assisted engineering",
+    items: [
+      "Claude Code",
+      "Codex",
+      "Cursor",
+      "MCP tool servers",
+      "Prompt & context engineering",
+      "Retrieval-augmented generation",
+    ],
+  },
+];
 
 // Section 02's second vignette. Deliberately not a content collection: three
 // static facts that change once a decade do not need one file each and a schema.
@@ -95,6 +209,15 @@ const renderedCv = await Promise.all(
 const inProduction = renderedGames.filter((game) => game.entry.data.status === "production");
 const inDevelopment = renderedGames.filter((game) => game.entry.data.status === "development");
 
+// The hero's play button. Derived, not hardcoded: play destinations belong to
+// the game file, and the one game carrying the skill cards is the one the hero
+// is talking about. No game with links, no button.
+const featuredGame =
+  gameEntries.find((entry) => entry.data.buildingTheGame) ??
+  inDevelopment[0]?.entry ??
+  gameEntries[0];
+const demoLink = featuredGame?.data.links[0];
+
 // A profile link with no URL yet is a placeholder waiting for one, not a button.
 const contactLinks = profile.links.filter(
   (link): link is { label: string; href: string } => Boolean(link.href)
@@ -105,7 +228,7 @@ const year = new Date().getFullYear();
 
 <BaseLayout
   title={`${profile.name} — ${profile.jobTitle}`}
-  description={`${profile.jobTitle} in ${profile.location}. Terraform-managed AWS, a gated CI/CD pipeline, and ${profile.project} — a real-time multiplayer game you can play, with the source behind it.`}
+  description={`${profile.jobTitle} in ${profile.location}. Five years of enterprise network operations, then software QA, now platform and DevOps. A deploy-on-demand AWS environment, a gated CI/CD pipeline to five destinations, and ${profile.project} — a real-time multiplayer game you can play, with the source behind it.`}
 >
   <header class="site-header">
     <a class="wordmark" href="/">
@@ -113,8 +236,8 @@ const year = new Date().getFullYear();
       {profile.name}
     </a>
     <nav aria-label="Primary">
-      <a href="#playables">Playables</a>
-      <a href="#games">Games</a>
+      <a href="#engineering">Engineering</a>
+      <a href="#projects">Projects</a>
       <a href="#cv">CV</a>
       <a class="nav-cta" href="#contact">Contact</a>
     </nav>
@@ -122,20 +245,41 @@ const year = new Date().getFullYear();
 
   <main id="main">
     <section class="hero">
-      {/* The h1 is the hook and stays the hook. This line exists because a
-          recruiter needs a name, a target role and a timezone before they will
-          read anything else, and none of those were on the page above the
-          fold. */}
+      {/* The h1 says what the job title is, in words someone who does not know
+          what EKS stands for can still act on. It used to be a slogan about
+          agents, which is a true and distinctive thing to say and the wrong
+          thing to say first: it framed the reader's first impression around the
+          tooling rather than the engineering, and a screener filtering for a
+          platform role found no role in the strongest tag on the page. The
+          orchestrator claim is not gone — it moved to `.method` below, where it
+          gets the room to say what it actually means. */}
       <p class="eyebrow">{profile.name}</p>
-      <h1>
-        Orchestrator controls,<br class="hero-break" />
-        agents accelerate.
-      </h1>
+      <h1>I build the cloud infrastructure and delivery pipelines software runs on.</h1>
       <p class="lede">
-        I build games end to end — the client, the servers under them, and the pipeline
-        that deploys them. <strong>Agents do the implementing; the requirement, the review
-        and the sign-off are mine.</strong>
+        Five years running enterprise network operations, then software QA, now platform
+        and DevOps. <strong>{profile.project}</strong> is where I prove it — a real-time
+        multiplayer game with the whole platform underneath it, built against a fixed
+        monthly ceiling and torn back down to zero when nobody is playing.
       </p>
+      {/* The differentiator, and the reason the CV reads as a route rather than
+          a wander. One sentence, because it only works if it is quotable. */}
+      <p class="differentiator">
+        Most engineers own one layer. I have run the network under the application,
+        tested the application, and built the platform in between.
+      </p>
+
+      <div class="ctas">
+        {demoLink && (
+          <a class="cta primary" href={demoLink.href} target="_blank" rel="noopener noreferrer">
+            {demoLink.label}
+          </a>
+        )}
+        <a class="cta secondary" href="#card-cloud">See the infrastructure work</a>
+        {profile.cv.href && (
+          <a class="cta secondary" href={profile.cv.href} download>Download CV (PDF)</a>
+        )}
+      </div>
+
       {/* Four facts, in the order someone screening actually asks them. */}
       <dl class="facts">
         <div>
@@ -151,37 +295,134 @@ const year = new Date().getFullYear();
           <dd>Full-time or contract · remote preferred, hybrid in the Philippines</dd>
         </div>
         <div>
+          {/* Platform work first, day job second. Both are true and both stay;
+              the order is the whole edit. */}
           <dt>Now</dt>
-          <dd>QA Tester at Amber · building Top or Drop on the side</dd>
+          <dd>Building {profile.project} end to end · QA Tester at Amber</dd>
         </div>
       </dl>
+
+      {/* Plain English first, implementation second, on the same row. The
+          technical terms are not hidden — they are just not the thing a reader
+          has to decode before they learn what was built. */}
+      <div class="capabilities">
+        <p class="block-label">What I actually do</p>
+        <ul>
+          {CAPABILITIES.map((capability) => (
+            <li>
+              <span class="capability-plain">{capability.plain}</span>
+              <span class="capability-tech">{capability.tech}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* The orchestrator claim, given the room to mean what it means. The old
+          hero line — "agents do the implementing, the sign-off is mine" — was
+          true but described a reviewer. The load-bearing half was missing: the
+          delegation is bounded by what can be read back. Choosing Godot because
+          the GDScript is legible to me, Node because I already know it, is the
+          reason the review is worth anything. */}
+      <div class="method">
+        <p class="block-label">How I work</p>
+        <p>
+          I decide the architecture, the environments and what they are allowed to cost —
+          and I pick tools I can read and verify myself: Godot because I write GDScript,
+          Node.js because I already know it. Agents accelerate the implementation I would
+          otherwise type by hand. <strong>The design decisions, the review and the
+          sign-off are mine</strong>, which is only worth saying because the stack was
+          chosen so that I can actually make them.
+          <a class="method-link" href="#card-ai">How that works, step by step →</a>
+        </p>
+      </div>
     </section>
 
-    <section id="playables" aria-labelledby="playables-heading">
-      <h2 id="playables-heading" class="section-title">
-        <span class="section-index">00</span> Playables
+    {/* Section 00, and it used to be section 01's fourth level. The six cards
+        below were mounted inside the Top or Drop game card, which put the
+        Terraform and CI/CD work five clicks from the hero behind a heading that
+        said "Games". The nesting was good information architecture answering
+        the wrong question: it optimised for a reader already convinced, and the
+        reader who has to be convinced never got there. */}
+    <section id="engineering" aria-labelledby="engineering-heading">
+      <h2 id="engineering-heading" class="section-title">
+        <span class="section-index">00</span> Engineering
       </h2>
       <p class="section-intro">
-        Straight to the game. No cards to open, no scrolling — every link here leaves the
-        site and starts something you can play.
+        Six disciplines, each one a working part of {profile.project} — the real-time
+        multiplayer game in section 01, which is the laboratory rather than the point.
+        Cloud and DevOps carry the platform argument; Backend and Frontend are the
+        application on top of it; QA and AI are how any of it gets checked before it
+        counts as done.
       </p>
-      <Playables
-        games={gameEntries.map((entry) => ({
-          title: entry.data.title,
-          status: entry.data.status,
-          links: entry.data.links,
-        }))}
-      />
+
+      <BuildingTheGame
+        roles={roles}
+        total={cardEntries.length}
+        intro="Each card opens to the diagram of how that part actually works, the recording of it running, then the steps behind it — click any step in a diagram to jump to its explanation."
+      >
+        {renderedCards.map(({ entry: card, Content: CardBody }) => {
+          const Diagram = diagrams[card.data.role];
+          return (
+            <Card
+              role={card.data.role}
+              headline={card.data.headline}
+              plain={card.data.plain}
+              tools={card.data.tools}
+              details={card.data.details}
+              video={card.data.video}
+              videos={card.data.videos}
+              hasBody={card.body.trim().length > 0}
+              links={card.data.links}
+            >
+              {Diagram && <Diagram slot="diagram" />}
+              <CardBody />
+            </Card>
+          );
+        })}
+      </BuildingTheGame>
+
+      {/* Flat, always visible, and not behind a disclosure on purpose. The cards
+          above prove these in context; this is for the reader deciding in four
+          seconds whether Kubernetes appears anywhere, and for the tracking
+          system that reads the markup rather than the page. */}
+      <div class="skills-index" id="skills">
+        <p class="block-label">Tools &amp; technologies</p>
+        <dl>
+          {SKILL_GROUPS.map((group) => (
+            <div class="skill-group">
+              <dt>{group.label}</dt>
+              <dd>
+                {group.items.map((item) => <span class="skill">{item}</span>)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </section>
 
-    <section id="games" aria-labelledby="games-heading">
-      <h2 id="games-heading" class="section-title">
-        <span class="section-index">01</span> Games
+    <section id="projects" aria-labelledby="projects-heading">
+      <h2 id="projects-heading" class="section-title">
+        <span class="section-index">01</span> Projects
       </h2>
       <p class="section-intro">
-        Open a game for what it is and where to play it. One of them opens further, into
-        how it was built.
+        The things section 00 was built for. Every link in the first row leaves the site
+        and starts something you can play; open a tile for what it is and where else it
+        runs.
       </p>
+
+      {/* Was its own section 00. Folded in here rather than dropped: a direct
+          route out to a running build is worth keeping, but it is not what a
+          platform reader is here for, and it should not be the first thing
+          under the hero. The id survives so existing #playables links resolve. */}
+      <div id="playables" class="playables-strip">
+        <Playables
+          games={gameEntries.map((entry) => ({
+            title: entry.data.title,
+            status: entry.data.status,
+            links: entry.data.links,
+          }))}
+        />
+      </div>
 
       <div class="vignettes">
         <Vignette
@@ -242,31 +483,9 @@ const year = new Date().getFullYear();
               >
                 <Fragment slot="note"><Content /></Fragment>
                 {entry.data.buildingTheGame && (
-                  <BuildingTheGame
-                    roles={roles}
-                    total={cardEntries.length}
-                    intro="One card per discipline. Each opens to the diagram of how that part of the game actually works, the recording of it running, then the steps behind it — click any step in a diagram to jump to its explanation."
-                  >
-                    {renderedCards.map(({ entry: card, Content: CardBody }) => {
-                      const Diagram = diagrams[card.data.role];
-                      return (
-                        <Card
-                          role={card.data.role}
-                          headline={card.data.headline}
-                          plain={card.data.plain}
-                          tools={card.data.tools}
-                          details={card.data.details}
-                          video={card.data.video}
-                          videos={card.data.videos}
-                          hasBody={card.body.trim().length > 0}
-                          links={card.data.links}
-                        >
-                          {Diagram && <Diagram slot="diagram" />}
-                          <CardBody />
-                        </Card>
-                      );
-                    })}
-                  </BuildingTheGame>
+                  <p class="game-crosslink">
+                    <a href="#engineering">How this one was built — six disciplines in section 00 →</a>
+                  </p>
                 )}
               </GameCard>
             ))}
@@ -375,8 +594,9 @@ const year = new Date().getFullYear();
         <span>{profile.title}{profile.location && ` · ${profile.location}`}</span>
       </p>
       <nav class="footer-nav" aria-label="Footer">
-        <a href="#playables">Playables</a>
-        <a href="#games">Games</a>
+        <a href="#engineering">Engineering</a>
+        <a href="#projects">Projects</a>
+        <a href="#skills">Skills</a>
         <a href="#cv">CV</a>
         <a href="#contact">Contact</a>
       </nav>

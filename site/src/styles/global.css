@@ -287,12 +287,30 @@ main > section:first-child {
   margin: 0 0 1.1rem;
 }
 
+/* Step 3, not step 4. The headline used to be a four-word slogan and could
+   carry the largest size on the page; it is a full sentence now, and a
+   72-character sentence at step 4 is four lines of display type before the
+   reader has learned anything else. Step 3 across 26ch lands it in two or
+   three, which is what a hero line should cost. */
 .hero h1 {
-  font-size: var(--step-4);
-  letter-spacing: -0.035em;
+  font-size: var(--step-3);
+  letter-spacing: -0.03em;
   font-weight: 700;
-  margin: 0 0 1.5rem;
-  max-width: 20ch;
+  line-height: 1.15;
+  margin: 0 0 1.25rem;
+  max-width: 26ch;
+}
+
+/* One sentence, and the only place on the page where body copy is set at the
+   lede's size in full-strength foreground. That contrast is the point: it is
+   the line a reader is meant to be able to repeat to someone else. */
+.differentiator {
+  font-size: var(--step-1);
+  line-height: 1.5;
+  max-width: var(--measure);
+  margin: 0 0 1.6rem;
+  padding-left: 0.9rem;
+  border-left: 2px solid var(--accent-dim);
 }
 
 .hero .lede {
@@ -306,6 +324,90 @@ main > section:first-child {
 .hero .lede strong {
   color: var(--fg);
   font-weight: 650;
+}
+
+/* --- The recruiter layer -------------------------------------------------
+   Everything between the facts row and section 00. It exists because the four
+   levels below it are built for a reader who has already decided to look, and
+   the reader who has not decided leaves from the hero. None of it replaces
+   anything: the technical language is all still downstairs, in the cards, at
+   full depth.
+   -------------------------------------------------------------------------- */
+
+/* Shared with the skills index. Deliberately not a heading — the outline runs
+   h1 → h2 per section, and these are labels on blocks inside the hero, not
+   sections of the document. Matches `.facts dt` so the hero reads as one
+   family of rows rather than three unrelated widgets. */
+.block-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin: 0 0 0.85rem;
+}
+
+.hero .ctas {
+  margin-bottom: 2rem;
+}
+
+.capabilities,
+.method {
+  margin-top: 2.25rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--border);
+}
+
+.capabilities ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.9rem;
+  max-width: var(--measure);
+}
+
+/* Plain line, then the receipt under it. Two elements rather than one string
+   so the implementation can be quieter without being smaller than the type
+   floor — a recruiter skips it, an engineer reads exactly it. */
+.capabilities li {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.capability-plain {
+  line-height: 1.55;
+}
+
+.capability-tech {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--fg-faint);
+}
+
+.method p {
+  max-width: var(--measure);
+  line-height: 1.6;
+  color: var(--fg-muted);
+  margin: 0;
+}
+
+.method strong {
+  color: var(--fg);
+  font-weight: 650;
+}
+
+.method-link {
+  display: inline-block;
+  margin-left: 0.35rem;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.method-link:hover {
+  text-decoration: underline;
 }
 
 /* --- Stack + CTAs -------------------------------------------------------- */
@@ -545,7 +647,7 @@ main > section:first-child {
 
 /* summary is the flex container itself. A wrapper element around the heading
    would be invalid: <summary> takes phrasing content intermixed with headings,
-   and a <span> may not contain an <h5>.
+   and a <span> may not contain an <h3>.
 
    A row, since the cards stack full-width. The old column layout existed to
    fill a narrow grid cell and would leave a mostly-empty 7.5rem band here. */
@@ -580,9 +682,10 @@ main > section:first-child {
 }
 
 /* Takes the free width so the open/close hint is pushed to the right edge and
-   every card in the stack lines up. Deliberately smaller than a game or job
-   title: this is the deepest tile on the page and should not compete with the
-   game it sits inside. */
+   every card in the stack lines up. Still step-0 even though the card is now a
+   top-level h3: there are six of these stacked and they are summaries of a
+   disclosure, not article titles. Sizing them up would make section 00 read as
+   six competing headings under one section heading. */
 .card .headline {
   flex: 1;
   min-width: 0;
@@ -804,7 +907,7 @@ main > section:first-child {
   cursor: pointer;
 }
 
-.detail h6 {
+.detail h4 {
   margin: 0 0 0.4rem;
   font-weight: 650;
 }
@@ -1185,8 +1288,7 @@ main > section:first-child {
 }
 
 /* Plain mono, no chip. A count is a footnote to the label beside it. */
-.vignette-count,
-.building-count {
+.vignette-count {
   font-family: var(--font-mono);
   font-size: 0.68rem;
   letter-spacing: 0.06em;
@@ -1194,8 +1296,7 @@ main > section:first-child {
   white-space: nowrap;
 }
 
-.vignette-rule,
-.building-rule {
+.vignette-rule {
   flex: 1;
   min-width: 1rem;
   height: 1px;
@@ -1204,7 +1305,6 @@ main > section:first-child {
 }
 
 .vignette-chevron,
-.building-chevron,
 .game-chevron,
 .job-chevron {
   flex-shrink: 0;
@@ -1212,19 +1312,16 @@ main > section:first-child {
   transition: transform 0.2s ease, color 0.15s ease;
 }
 
-.vignette[open] > summary .vignette-chevron,
-.building[open] > summary .building-chevron {
+.vignette[open] > summary .vignette-chevron {
   transform: rotate(180deg);
   color: var(--accent);
 }
 
-.vignette > summary:hover .vignette-label,
-.building > summary:hover .building-label {
+.vignette > summary:hover .vignette-label {
   color: var(--accent);
 }
 
-.vignette > summary:hover .vignette-rule,
-.building > summary:hover .building-rule {
+.vignette > summary:hover .vignette-rule {
   background: var(--accent-dim);
 }
 
@@ -1601,58 +1698,104 @@ main > section:first-child {
   }
 }
 
-/* --- Level 3: the Building the Game panel --------------------------------
-   Inset and tinted so it reads as being inside the game card rather than
-   alongside it. The accent edge is the only one on the page — it marks the one
-   thing in a game card that opens further.
+/* --- The skill-card panel -------------------------------------------------
+   Was an inset, tinted `<details>` inside the game card, styled to read as
+   being *inside* the game. It is section 00's own body now, so the inset and
+   the tint both go: a panel that looks nested inside nothing just looks like a
+   mistake. What survives is the intro and the spacing above the filter.
    -------------------------------------------------------------------------- */
-
-.building {
-  margin-top: 1.5rem;
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-left: 2px solid var(--accent-dim);
-  border-radius: var(--radius);
-  transition: border-color 0.18s ease;
-}
-
-.building[open] {
-  border-left-color: var(--accent);
-}
-
-.building > summary {
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 1rem 1.25rem;
-}
-
-.building > summary::-webkit-details-marker {
-  display: none;
-}
-
-.building-label {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--fg);
-  transition: color 0.15s ease;
-}
-
-.building-body {
-  padding: 0 1.25rem 1.4rem;
-  animation: reveal 0.28s ease both;
-}
 
 .building-intro {
   color: var(--fg-muted);
   font-size: var(--step--1);
   max-width: var(--measure);
   margin: 0 0 1.3rem;
+}
+
+/* --- Skills index --------------------------------------------------------
+   The flat enumeration under section 00's cards. Not a disclosure and not
+   inside one: its entire job is to be readable without a click, by a person
+   scanning for one word and by a parser that does not click at all.
+   -------------------------------------------------------------------------- */
+
+.skills-index {
+  margin-top: 2.5rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--border);
+}
+
+.skills-index dl {
+  margin: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.skill-group {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  gap: 0.4rem 1.2rem;
+  align-items: baseline;
+}
+
+.skills-index dt {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+
+.skills-index dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+/* Quieter than `.card-tools .tool` on purpose. Those sit next to the work that
+   proves them; these are an index, and an index that shouts competes with the
+   evidence above it. */
+.skill {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1.3;
+  padding: 0.22rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 44rem) {
+  .skill-group {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+}
+
+/* The play strip, folded into section 01 from what used to be its own section
+   00. Spaced away from the tiles below so it still reads as a shortcut past
+   them rather than a heading for them. */
+.playables-strip {
+  margin-bottom: 2.25rem;
+}
+
+/* The return trip. The skill cards left the game card in the restructure, so
+   the game card now says where they went — the one reader who wants the
+   engineering having arrived at the project first should not have to scroll
+   back up and guess. */
+.game-crosslink {
+  margin: 1.4rem 0 0;
+  font-size: var(--step--1);
+}
+
+.game-crosslink a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.game-crosslink a:hover {
+  text-decoration: underline;
 }
 
 /* --- Recorded clips ------------------------------------------------------
@@ -1986,21 +2129,25 @@ footer {
   .detail-list-summary,
   .ctas,
   .vignette-chevron,
-  .building-chevron,
   .game-chevron,
   .job-chevron,
   .clips-wrap {
     display: none;
   }
 
-  /* Every disclosure prints open — a printed CV with the roles collapsed is a
-     blank page, and a printed skill card with its steps still behind their
-     toggle is the same problem one level deeper. */
+  /* KNOWN NOT TO WORK, kept because it is harmless and the intent is right.
+     A closed <details> hides its children through the slot it does not render
+     them into, not through a `display` on the children — so overriding their
+     display here changes nothing, and a printed page still shows only the
+     disclosures that were already open in the markup. Fixing it properly means
+     opening them from `beforeprint` in script and restoring on `afterprint`.
+     Deliberately deferred: decide who the printed page is for first, because
+     "open everything" is a fifteen-page PDF and that may not be the thing
+     worth handing someone. */
   .expanded,
   .vignette-body,
   .game-body,
   .job-body,
-  .building-body,
   .detail-list {
     animation: none;
     display: block !important;

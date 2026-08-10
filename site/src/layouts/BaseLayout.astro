@@ -26,16 +26,27 @@ const personSchema = {
   email: `mailto:${profile.email}`,
   jobTitle: profile.jobTitle,
   description,
-  sameAs: [profile.github, ...profile.links.map((link) => link.href)].filter(Boolean),
+  // `github` is also published as a contact button, so the two lists overlap by
+  // one entry. Deduped rather than deconflicted: either source may gain the
+  // other's URL later and neither should have to know about it.
+  sameAs: [...new Set([profile.github, ...profile.links.map((link) => link.href)])].filter(Boolean),
   knowsAbout: [
+    "Platform Engineering",
+    "DevOps",
+    "Site Reliability Engineering",
     "Terraform",
     "Kubernetes",
     "Amazon Web Services",
+    "Amazon EKS",
     "CI/CD",
+    "GitHub Actions",
     "Docker",
     "Node.js",
     "Redis",
     "Infrastructure as Code",
+    "Network Operations",
+    "Software Quality Assurance",
+    "Test Automation",
     "AI agent workflows",
   ],
 };

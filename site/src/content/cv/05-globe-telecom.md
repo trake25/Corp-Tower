@@ -13,6 +13,6 @@ highlights:
   - "Coordinated outages, migrations and maintenance windows with Field Operations."
 ---
 
-The leadership half of the balance. Nine engineers across shifts, a live
-escalation queue, and the recurring problem of turning individual fixes into
-something the next shift could repeat without me.
+The leadership half of the balance. Led nine engineers in shifting schedule, a live
+escalation queue, and turning one-off fixes into repeatable procedures that enabled 
+the next shift to resolve recurring issues independently.
