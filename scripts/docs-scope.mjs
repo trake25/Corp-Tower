@@ -57,7 +57,7 @@ const ROUTES = [
   [/^src\/Client\/App\/corp-tower\/(Cor|Sys)\//,     ['ui.md'],                     'hunk'],
   [/^src\/Client\/App\/corp-tower\/project\.godot$/, ['ui.md', 'build.md'],         'hunk'],
   [/^src\/Client\/App\/corp-tower\//,                ['ui.md'],                     'hunk'],
-  [/^\.github\/workflows\/(EKS|K3s|Backup|Server)/,  ['deployment.md'],             'hunk'],
+  [/^\.github\/workflows\/(EKS|Backup|Server)/,      ['deployment.md'],             'hunk'],
   [/^\.github\/workflows\//,                         ['build.md'],                  'hunk'],
   [/^\.github\/actions\//,                           ['build.md'],                  'hunk'],
   [/^infra\//,                                       ['deployment.md'],             'hunk'],

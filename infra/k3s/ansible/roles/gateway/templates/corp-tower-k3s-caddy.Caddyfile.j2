@@ -1,5 +1,0 @@
-{% for site in gateway_sites %}
-{{ site.domain }} {
-  reverse_proxy {{ active_k3s_node_private_ips | map('regex_replace', '$', ':' ~ site.nodeport) | join(' ') }}
-}
-{% endfor %}

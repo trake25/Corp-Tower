@@ -37,7 +37,7 @@ the doc must say · the fix changes `build-file-map.mjs` output or the carry-for
 key · the fix would drop authored `Does` rows. State the defect and its cost, then
 stop.
 
-All three maps are fully authored — 1,407 symbols, no bare `TODO`. A row that is
+All three maps are fully authored — 1,309 symbols, no bare `TODO`. A row that is
 wrong or too vague to act on is the same defect as a missing one: fix it in place.
 
 ## Always

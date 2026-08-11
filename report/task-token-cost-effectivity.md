@@ -51,6 +51,7 @@ contradicted source.
 | 12 | Solo probe: 6 cold sessions, scored | 3 | A | 1 | 5 | — | ~3,000 | ~9,000 | ~9,000 | ✓ | ok |
 | 13 | Map rows carry `path:line`; infra map authored 436/436 | 4 | A | 2 | 12 | — | ~36,000 | ~70,000 | ~70,000 | ✓ | ok |
 | 14 | Skills-inert diagnosis; ui map 705/705; CLAUDE.md audited + un-ignored | 4 | A | 2 | 15 | — | ~33,000 | ~62,000 | ~62,000 | ✓ | ok |
+| 15 | Delete the K3s stack — source, workflows, docs | 3 | B | 2 | 85 | — | ~35,000 | ~75,000 | ~75,000 | ✓ | ok |
 
 Rows 1–2 carry no `R-est`: both predate the append rule they establish. They are
 measurements, not predictions, and are marked as such rather than back-filled — a
@@ -265,5 +266,29 @@ finding about the rule, not about any one task.
 13. Second consecutive correct completion over the gate's objection. Two data points
 now say the ~25,000-token threshold is too low.
 
-**Rollup (cycle 1, open):** n=14 · median `R-act` ~28,000 · ✓8 ~2 ✗0 !4 · misroute 0%
-· 6 rows to close
+Row 15 deletes the K3s stack row 14 anticipated. 85 files, but the widest task in the
+log so far is also among the cheapest per file: the maps answered every "who else
+references this" question by grep, and no doc contradicted source anywhere in it. The
+`Does` column earned its cost here — `resolve-ssh-key` was provably K3s-only from map
+rows alone, and `data.tf`'s row already said the ECR repository is shared with EKS and
+**not** created by K3s, which is the fact that made the deletion safe to attempt.
+
+The one coupling no map row could have surfaced was `eks-infra-drift-check` hashing
+`git rev-parse HEAD:infra/eks/terraform`: editing one stale K3s reference in an EKS
+Terraform output would have blocked every EKS deploy until a full Infra Apply. **That
+file was deliberately left alone.** A cross-stack guard whose blast radius is "any
+edit anywhere in this directory" deserves a louder note than a per-symbol row can
+carry; `deployment.md` already states it, which is where it belongs.
+
+`R-est` was blank a sixth time — 5 of 15 rows recorded, ~60% compliance and still
+falling. Three rows running, the estimate has been skipped by a different mechanism
+than forgetfulness: the task's shape was not knowable until after the first sweep.
+
+**The delegation gate said delegate, and the task ran solo again** — 2 domains, 85
+files, ~35,000 tokens of source: three thresholds, third consecutive correct
+completion over the gate's objection. The file-count threshold (~4) is now the
+worst-calibrated of the five; 85 files of mechanical deletion cost less than 15 files
+of diagnosis did in row 14.
+
+**Rollup (cycle 1, open):** n=15 · median `R-act` ~28,000 · ✓9 ~2 ✗0 !4 · misroute 0%
+· 5 rows to close

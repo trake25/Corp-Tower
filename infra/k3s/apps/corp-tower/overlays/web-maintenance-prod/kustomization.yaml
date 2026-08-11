@@ -1,5 +1,0 @@
-namespace: corp-tower-prod
-
-resources:
-  - namespace.yaml
-  - ../../web-maintenance-base

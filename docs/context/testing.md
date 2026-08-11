@@ -196,8 +196,8 @@ state, not a regression.**
 
 | Workflow | Runs | Blocking |
 |---|---|---|
-| Android Deploy wsplaytod | `CiSmokeTest.gd` + required GUT suites | Yes — before signed export |
-| K3s Deploy (game server) | `npm test` | Yes — before image build/push |
+| Android Deploy wstodplay | `CiSmokeTest.gd` + required GUT suites | Yes — before signed export |
+| EKS Deploy (game server) | `npm test` | Yes — before image build/push |
 
 ## Known coverage gaps
 

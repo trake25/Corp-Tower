@@ -234,7 +234,7 @@ bindings.
 **Maintenance mode.** `.github/workflows/Site-Cleanup-Workers.yml`
 (`workflow_dispatch` only) deploys `site/maintenance/index.html` in place of the
 built site — same Worker, same domain, no DNS or Worker deletion, mirroring the
-K3s web server's soft-cleanup pattern
+EKS web server's soft-cleanup pattern
 ([deployment.md](../docs/context/deployment.md)). A normal push to `site/**`
 rebuilds the real site and cleanly overwrites the placeholder.
 
@@ -307,7 +307,7 @@ exist. Don't re-run these against the live project.
 3. **Create an API token scoped to `Account > Workers Scripts > Edit` only**
    (start from the built-in "Edit Cloudflare Workers" template). Use a token
    **separate from** the existing `CLOUDFLARE_API_TOKEN` (scoped to `Zone.DNS
-   Edit` for the game's K3s/EKS records) — a compromise of one shouldn't reach
+   Edit` for the game's EKS records) — a compromise of one shouldn't reach
    the other's blast radius. Save as `CLOUDFLARE_WORKERS_API_TOKEN`.
 4. **Find the Account ID** (dashboard sidebar, or `wrangler whoami`). Save as
    `CLOUDFLARE_ACCOUNT_ID`.

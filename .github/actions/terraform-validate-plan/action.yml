@@ -6,7 +6,7 @@ description: >-
 
 inputs:
   working-directory:
-    description: Terraform stack directory (e.g. infra/k3s/terraform).
+    description: Terraform stack directory (e.g. infra/eks/terraform).
     required: true
 
 runs:

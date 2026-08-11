@@ -18,11 +18,11 @@ All paths under `src/Client/App/corp-tower/` unless noted. **The client renders
   join / find-match / instanced [Game UI Scene](#game-ui-scene) — there is no
   static UI root scene.
 - Android export config is the gitignored `export_presets.cfg`; CI uses a
-  non-secret preset → [build.md](./build.md#android-deploy-wsplaytod-workflow).
+  non-secret preset → [build.md](./build.md#android-deploy-wstodplay-workflow).
 - Release target is **Android only**. Web/Windows/iOS are future.
 - Two build-time flags from `EndpointConfig`, written per build by
   `write-endpoint-config.sh`: `DEBUG_UI_ENABLED` gates the debug button, off for
-  the K3s web builds and the public demo; `DEMO_MODE_ENABLED` gates the required
+  the EKS web builds and the public demo; `DEMO_MODE_ENABLED` gates the required
   `DemoModeLabel` node disclosing that empty seats are bots, set only for
   `toddemo`.
 

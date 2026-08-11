@@ -43,7 +43,7 @@ The result is a system with real edges to it: an authoritative server (the phone
 only draws what the server says), tower-stability math kept deliberately
 deterministic so it can be re-simulated thousands of times to balance the game,
 sessions that survive losing signal on the bus, and one CI/CD pipeline serving
-five deployment destinations where only the development one is trusted to
+four deployment destinations where only the development one is trusted to
 deploy itself.
 
 ## How it's put together
@@ -52,8 +52,8 @@ deploy itself.
 |---|---|
 | Client | Godot 4.6 (Android + Web), GDScript |
 | Server | Node.js, WebSocket, Redis — server is authoritative |
-| Infra | Terraform · EKS (on demand) · K3s lab · Docker · Cloudflare |
-| CI/CD | GitHub Actions — 5 destinations, one shared pipeline |
+| Infra | Terraform · EKS (on demand) · Docker · Cloudflare |
+| CI/CD | GitHub Actions — 4 destinations, one shared pipeline |
 
 ## Links
 

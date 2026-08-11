@@ -892,7 +892,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:1 | EndpointConfig · class_name | **build-time flags, rewritten per build by `write-endpoint-config.sh`** |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:3 | PRIMARY · const | primary WSS endpoint for this build |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:4 | FAILOVER · const | failover WSS endpoint |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:5 | DEBUG_UI_ENABLED · const | gates the debug button; off for K3s web builds and the demo |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:5 | DEBUG_UI_ENABLED · const | gates the debug button; off for EKS web builds and the demo |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:6 | DEMO_MODE_ENABLED · const | gates the bots-disclosure label; demo build only |
 
 ### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 306 ln

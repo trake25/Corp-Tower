@@ -36,13 +36,6 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/actions/fetch-private-assets/action.yml:9 | inputs · key | manifest path, dest path, and the four R2 credentials; **`version-override` skips sha256 verification and must never be used for a release build** |
 | .github/actions/fetch-private-assets/action.yml:36 | runs · key | **fails closed** — verifies sha256, file count and sentinel files, and redacts key-shaped strings from aws errors. `AWS_REGION` is pinned to `auto` or a caller's region leaks in and R2 rejects it |
 
-### .github/actions/resolve-ssh-key/action.yml — 46 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| .github/actions/resolve-ssh-key/action.yml:7 | inputs · key | `ssh-private-key`, the fallback the public key is derived from |
-| .github/actions/resolve-ssh-key/action.yml:13 | runs · key | uses `TF_VAR_ssh_public_key` when already exported, otherwise derives it with `ssh-keygen -y` and exports it via GITHUB_ENV; errors when neither secret is set |
-
 ### .github/actions/terraform-backend-bootstrap/action.yml — 42 ln
 
 | File:Ln | Symbol | Does |
@@ -57,13 +50,13 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/actions/terraform-validate-plan/action.yml:7 | inputs · key | `working-directory`, the stack directory to run in |
 | .github/actions/terraform-validate-plan/action.yml:12 | runs · key | the shared check sequence — init, **`fmt -check`**, validate, plan saved to `./tfplan` for a later apply step, then a readable plan summary |
 
-### .github/workflows/Android-Deploy-wsplaytod.yml — 419 ln
+### .github/workflows/Android-Deploy-wstodplay.yml — 419 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| .github/workflows/Android-Deploy-wsplaytod.yml:3 | on · key | manual only, with inputs |
-| .github/workflows/Android-Deploy-wsplaytod.yml:31 | jobs · key | single job: signed AAB build and Google Play upload |
-| .github/workflows/Android-Deploy-wsplaytod.yml:32 | build-android · job | fetches private art, writes the client endpoint config, resolves the next Play version code via the Developer API, then builds and uploads a signed AAB on Java 17 |
+| .github/workflows/Android-Deploy-wstodplay.yml:3 | on · key | manual only, with inputs |
+| .github/workflows/Android-Deploy-wstodplay.yml:31 | jobs · key | single job: signed AAB build and Google Play upload |
+| .github/workflows/Android-Deploy-wstodplay.yml:32 | build-android · job | fetches private art, writes the client endpoint config pinned to the EKS `wstodplay` host, resolves the next Play version code via the Developer API, then builds and uploads a signed AAB on Java 17 |
 
 ### .github/workflows/Backup-Cleanup-All.yml — 101 ln
 
@@ -264,99 +257,6 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/EKS-Shared-Infra-Apply.yml:9 | on · key | manual only, with a confirmation input |
 | .github/workflows/EKS-Shared-Infra-Apply.yml:27 | jobs · key | one guarded job |
 | .github/workflows/EKS-Shared-Infra-Apply.yml:28 | apply · job | applies the **persistent** ACM/Cloudflare root in `eks-shared` state; it must outlive session stacks, so it has no destroy counterpart |
-
-### .github/workflows/K3s-Cleanup-All.yml — 110 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| .github/workflows/K3s-Cleanup-All.yml:10 | on · key | manual only, with confirmation and environment inputs |
-| .github/workflows/K3s-Cleanup-All.yml:40 | jobs · key | confirmation guard, then four per-hostname teardowns split prod/test |
-| .github/workflows/K3s-Cleanup-All.yml:41 | guard · job | typed confirmation must match the target before any cleanup runs |
-| .github/workflows/K3s-Cleanup-All.yml:75 | cleanup-game-prod · job | game `wsplaytod`, skipped when environment is test |
-| .github/workflows/K3s-Cleanup-All.yml:84 | cleanup-game-test · job | game `wstodtest`, skipped when environment is prod |
-| .github/workflows/K3s-Cleanup-All.yml:93 | cleanup-web-prod · job | web `playtod`, **soft cleanup — maintenance placeholder, not deletion** |
-| .github/workflows/K3s-Cleanup-All.yml:102 | cleanup-web-test · job | web `todtest`, same soft cleanup |
-
-### .github/workflows/K3s-Cleanup-Game-Server.yml — 177 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| .github/workflows/K3s-Cleanup-Game-Server.yml:7 | on · key | `workflow_call` only |
-| .github/workflows/K3s-Cleanup-Game-Server.yml:26 | jobs · key | one job in the `staging` environment |
-| .github/workflows/K3s-Cleanup-Game-Server.yml:27 | cleanup-namespace · job | resolves the private K3s targets through the bastion and deletes the game server resources |
-
-### .github/workflows/K3s-Cleanup-Web-Server.yml — 185 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| .github/workflows/K3s-Cleanup-Web-Server.yml:9 | on · key | `workflow_call` only |
-| .github/workflows/K3s-Cleanup-Web-Server.yml:28 | jobs · key | one job in the `staging` environment |
-| .github/workflows/K3s-Cleanup-Web-Server.yml:29 | cleanup-web · job | swaps the web deployment to a maintenance placeholder rather than deleting it |
-
-### .github/workflows/K3s-Deploy-All.yml — 81 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| .github/workflows/K3s-Deploy-All.yml:8 | on · key | manual only, with target and environment selectors |
-| .github/workflows/K3s-Deploy-All.yml:34 | jobs · key | **fully serialised** — game prod, game test, web prod, web test, each waiting on all the previous |
-| .github/workflows/K3s-Deploy-All.yml:35 | deploy-game-prod · job | game `wsplaytod` |
-| .github/workflows/K3s-Deploy-All.yml:43 | deploy-game-test · job | game `wstodtest`, behind game prod |
-| .github/workflows/K3s-Deploy-All.yml:55 | deploy-web-prod · job | web `playtod`, behind both game deploys |
-| .github/workflows/K3s-Deploy-All.yml:68 | deploy-web-test · job | web `todtest`, last in the chain |
-
-### .github/workflows/K3s-Deploy-Game-Server.yml — 621 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| .github/workflows/K3s-Deploy-Game-Server.yml:3 | on · key | `workflow_call` only |
-| .github/workflows/K3s-Deploy-Game-Server.yml:22 | jobs · key | test, build and push, then install K3s and deploy — each gated on the previous succeeding |
-| .github/workflows/K3s-Deploy-Game-Server.yml:23 | test-server · job | runs the server test suite on a GitHub VM before anything is built |
-| .github/workflows/K3s-Deploy-Game-Server.yml:48 | build-and-push · job | OIDC to ECR, Buildx build and push, records the pushed image |
-| .github/workflows/K3s-Deploy-Game-Server.yml:94 | deploy-k3s · job | **installs K3s on the private nodes via the bastion and then deploys**, ending in a WebSocket smoke test |
-
-### .github/workflows/K3s-Deploy-Web-Server.yml — 612 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| .github/workflows/K3s-Deploy-Web-Server.yml:3 | on · key | `workflow_call` only |
-| .github/workflows/K3s-Deploy-Web-Server.yml:25 | jobs · key | resolve, build the export, push the image, deploy through the bastion |
-| .github/workflows/K3s-Deploy-Web-Server.yml:26 | resolve-target · job | picks the target environment for the rest of the run |
-| .github/workflows/K3s-Deploy-Web-Server.yml:58 | build · job | Godot web export with private art, then removes the private assets from the runner |
-| .github/workflows/K3s-Deploy-Web-Server.yml:105 | push · job | wraps the web build in a Docker image and pushes it to ECR |
-| .github/workflows/K3s-Deploy-Web-Server.yml:143 | deploy-k3s · job | Ansible over the bastion to reach the private nodes and roll the web deployment |
-
-### .github/workflows/K3s-Infra-Apply.yml — 90 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| .github/workflows/K3s-Infra-Apply.yml:3 | on · key | manual only, with a confirmation input |
-| .github/workflows/K3s-Infra-Apply.yml:24 | jobs · key | one guarded job |
-| .github/workflows/K3s-Infra-Apply.yml:25 | apply · job | confirmation, **SSH public key resolution**, backend bootstrap, plan, then apply |
-
-### .github/workflows/K3s-Infra-Destroy.yml — 193 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| .github/workflows/K3s-Infra-Destroy.yml:3 | on · key | manual only, with a `cleanup_mode` selector |
-| .github/workflows/K3s-Infra-Destroy.yml:32 | jobs · key | **two mutually exclusive modes** — one job runs, never both |
-| .github/workflows/K3s-Infra-Destroy.yml:33 | runtime-cleanup · job | `runtime_only`: Ansible tears down workloads on the nodes and **leaves the EC2 and VPC standing** |
-| .github/workflows/K3s-Infra-Destroy.yml:151 | terraform-destroy · job | `terraform_destroy`: confirmation, then destroys the whole lab stack |
-
-### .github/workflows/K3s-Infra-Diagnose.yml — 206 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| .github/workflows/K3s-Infra-Diagnose.yml:3 | on · key | manual or `workflow_call` |
-| .github/workflows/K3s-Infra-Diagnose.yml:14 | jobs · key | one read-only job |
-| .github/workflows/K3s-Infra-Diagnose.yml:15 | diagnostics · job | shows AWS topology, **verifies Cloudflare DNS still points at the gateway**, and probes SSH through the bastion |
-
-### .github/workflows/K3s-Infra-Plan.yml — 51 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| .github/workflows/K3s-Infra-Plan.yml:3 | on · key | manual or `workflow_call` |
-| .github/workflows/K3s-Infra-Plan.yml:20 | jobs · key | one read-only job |
-| .github/workflows/K3s-Infra-Plan.yml:21 | plan · job | resolves the SSH key, ensures the backend bucket, then validates and plans without applying |
 
 ### .github/workflows/Site-Cleanup-Workers.yml — 54 ln
 
@@ -629,239 +529,6 @@ _no extracted symbols_
 |---|---|---|
 | infra/eks/terraform/versions.tf:24 | aws · provider | AWS ~> 5.0 and tls ~> 4.0, Terraform >= 1.10; **S3 backend `eks-lab/terraform.tfstate` with `use_lockfile`**, and default_tags stamping Project/Environment/Stack/ManagedBy on everything |
 
-### infra/k3s/ansible/playbooks/cleanup.yml — 76 ln
-
-_no extracted symbols_
-
-### infra/k3s/ansible/playbooks/site.yml — 59 ln
-
-_no extracted symbols_
-
-### infra/k3s/ansible/roles/common/tasks/main.yml — 46 ln
-
-_no extracted symbols_
-
-### infra/k3s/ansible/roles/gateway/tasks/configure_caddy.yml — 113 ln
-
-_no extracted symbols_
-
-### infra/k3s/ansible/roles/gateway/tasks/main.yml — 245 ln
-
-_no extracted symbols_
-
-### infra/k3s/ansible/roles/k3s_agent/tasks/main.yml — 47 ln
-
-_no extracted symbols_
-
-### infra/k3s/ansible/roles/k3s_server/tasks/main.yml — 65 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/base/kustomization.yaml — 6 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/base/redis-deployment.yaml — 50 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/base/redis-service.yaml — 17 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/base/server-deployment.yaml — 60 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/base/server-service.yaml — 18 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/prod/kustomization.yaml — 11 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/prod/namespace.yaml — 9 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/test/kustomization.yaml — 20 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/test/namespace.yaml — 9 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/web-maintenance-prod/kustomization.yaml — 6 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/web-maintenance-prod/namespace.yaml — 9 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/web-maintenance-test/kustomization.yaml — 15 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/web-maintenance-test/namespace.yaml — 9 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/web-prod/kustomization.yaml — 11 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/web-prod/namespace.yaml — 9 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/web-test/kustomization.yaml — 20 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/overlays/web-test/namespace.yaml — 9 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/web-base/deployment.yaml — 47 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/web-base/kustomization.yaml — 4 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/web-base/service.yaml — 18 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/web-maintenance-base/configmap.yaml — 23 ln
-
-_no extracted symbols_
-
-### infra/k3s/apps/corp-tower/web-maintenance-base/kustomization.yaml — 25 ln
-
-_no extracted symbols_
-
-### infra/k3s/argocd/bootstrap/application.yaml — 16 ln
-
-_no extracted symbols_
-
-### infra/k3s/argocd/bootstrap/install/kustomization.yaml — 6 ln
-
-_no extracted symbols_
-
-### infra/k3s/argocd/bootstrap/kustomization.yaml — 5 ln
-
-_no extracted symbols_
-
-### infra/k3s/argocd/bootstrap/namespace.yaml — 8 ln
-
-_no extracted symbols_
-
-### infra/k3s/argocd/bootstrap/project.yaml — 21 ln
-
-_no extracted symbols_
-
-### infra/k3s/gateway_sites.yml — 6 ln
-
-_no extracted symbols_
-
-### infra/k3s/terraform/data.tf — 23 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| infra/k3s/terraform/data.tf:1 | aws_availability_zones.available · data | available AZs; the lab pins to the first unless `availability_zone` is set |
-| infra/k3s/terraform/data.tf:5 | aws_ami.amazon_linux_2023 · data | newest `al2023-ami-*-x86_64` HVM image from Amazon |
-| infra/k3s/terraform/data.tf:20 | aws_ecr_repository.server · data | **a data source shared with the EKS stack, not created here** — destroying k3s cannot delete it; its ARN scopes the node pull policy |
-
-### infra/k3s/terraform/ec2.tf — 124 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| infra/k3s/terraform/ec2.tf:1 | aws_key_pair.lab · resource | SSH key pair from `var.ssh_public_key`, which the workflows supply or derive |
-| infra/k3s/terraform/ec2.tf:23 | aws_instance.gateway · resource | **EC2-GW: bastion, Caddy terminator and NAT in one**; `source_dest_check = false` is what lets it route. **`ignore_changes` on ami/user_data** so a new AL2023 release cannot replace it |
-| infra/k3s/terraform/ec2.tf:57 | aws_instance.control_plane · resource | private K3s server node, reachable only via EC2-GW |
-| infra/k3s/terraform/ec2.tf:90 | aws_instance.agent · resource | `var.agent_count` private agents, same lifecycle guards as the control plane |
-
-### infra/k3s/terraform/iam.tf — 53 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| infra/k3s/terraform/iam.tf:1 | aws_caller_identity.current · data | the account the lab is applying into |
-| infra/k3s/terraform/iam.tf:3 | aws_iam_policy_document.ec2_ecr_pull · data | `ecr:GetAuthorizationToken` on `*` plus pull actions scoped to the one repository ARN |
-| infra/k3s/terraform/iam.tf:25 | aws_iam_role.ec2 · resource | instance role assumed by ec2.amazonaws.com, shared by gateway, control plane and agents |
-| infra/k3s/terraform/iam.tf:42 | aws_iam_role_policy.ec2_ecr_pull · resource | attaches the ECR pull document inline |
-| infra/k3s/terraform/iam.tf:49 | aws_iam_instance_profile.ec2 · resource | the profile every lab instance launches with |
-
-### infra/k3s/terraform/network.tf — 83 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| infra/k3s/terraform/network.tf:5 | aws_vpc.lab · resource | isolated lab VPC at 10.60.0.0/16, **deliberately clear of K3s default pod and service CIDRs** |
-| infra/k3s/terraform/network.tf:15 | aws_internet_gateway.lab · resource | public egress for the gateway subnet |
-| infra/k3s/terraform/network.tf:23 | aws_subnet.public · resource | single-AZ public subnet holding EC2-GW |
-| infra/k3s/terraform/network.tf:35 | aws_subnet.private · resource | single-AZ private subnet holding the control plane and agents, no public IP |
-| infra/k3s/terraform/network.tf:47 | aws_route_table.public · resource | default route to the internet gateway |
-| infra/k3s/terraform/network.tf:60 | aws_route_table_association.public · resource | binds the public subnet |
-| infra/k3s/terraform/network.tf:65 | aws_route_table.private · resource | empty table; the default route is added separately below |
-| infra/k3s/terraform/network.tf:73 | aws_route.private_default_via_gateway · resource | **private egress goes through EC2-GW's ENI, not a NAT Gateway** — this is the substitution that keeps the lab cheap, and it is why `source_dest_check` is disabled on the gateway |
-| infra/k3s/terraform/network.tf:79 | aws_route_table_association.private · resource | binds the private subnet |
-
-### infra/k3s/terraform/outputs.tf — 70 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| infra/k3s/terraform/outputs.tf:1 | aws_region · output | the region the lab is in |
-| infra/k3s/terraform/outputs.tf:6 | vpc_id · output | lab VPC ID |
-| infra/k3s/terraform/outputs.tf:11 | public_subnet_id · output | EC2-GW's subnet |
-| infra/k3s/terraform/outputs.tf:16 | private_subnet_id · output | the K3s nodes' subnet |
-| infra/k3s/terraform/outputs.tf:21 | gateway_public_ip · output | EC2-GW public IPv4 — the SSH target, the Cloudflare DNS target, and the NAT address |
-| infra/k3s/terraform/outputs.tf:26 | gateway_private_ip · output | EC2-GW private IPv4 |
-| infra/k3s/terraform/outputs.tf:31 | control_plane_private_ip · output | K3s server private IPv4 |
-| infra/k3s/terraform/outputs.tf:36 | agent_private_ips · output | agent private IPv4 list |
-| infra/k3s/terraform/outputs.tf:41 | node_private_ips · output | control plane plus agents — **the upstream list EC2-GW's Caddy proxies NodePorts to** |
-| infra/k3s/terraform/outputs.tf:46 | gateway_security_group_id · output | EC2-GW security group ID |
-| infra/k3s/terraform/outputs.tf:51 | k3s_nodes_security_group_id · output | private node security group ID |
-| infra/k3s/terraform/outputs.tf:56 | ecr_repository_name · output | the ECR repo K3s deploys pull from |
-| infra/k3s/terraform/outputs.tf:61 | learning_gateway_websocket_url · output | `wss://<gateway_domain>` for the Godot client; informational, and correct only for whichever stack currently owns the DNS record |
-| infra/k3s/terraform/outputs.tf:66 | k3s_lab_note · output | topology note: EC2-GW stands in for ALB/NLB, bastion and NAT; **managed EKS, ALB/NLB and NAT Gateway are intentionally not used here** |
-
-### infra/k3s/terraform/security_group.tf — 108 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| infra/k3s/terraform/security_group.tf:1 | aws_security_group.gateway · resource | EC2-GW: SSH from `ssh_cidr`, 80 for the Caddy ACME challenge, 443 for WSS, all outbound for NAT and Cloudflare DNS |
-| infra/k3s/terraform/security_group.tf:43 | aws_security_group.k3s_nodes · resource | private nodes: SSH and 6443 from the gateway, 6443/10250 and **UDP 8472 Flannel VXLAN between nodes**, NodePorts 30300-30311 from the gateway's Caddy |
-
-### infra/k3s/terraform/variables.tf — 102 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| infra/k3s/terraform/variables.tf:1 | aws_region · variable | default `ap-southeast-1` |
-| infra/k3s/terraform/variables.tf:7 | environment · variable | default `k3s-lab`; every resource name is `corp-tower-<environment>-*` |
-| infra/k3s/terraform/variables.tf:13 | ssh_public_key · variable | **validated as a real OpenSSH key at plan time**; workflows pass EC2_STAGING_SSH_PUBLIC_KEY or derive it from the private key |
-| infra/k3s/terraform/variables.tf:26 | ssh_cidr · variable | who may SSH the bastion; defaults open |
-| infra/k3s/terraform/variables.tf:32 | game_port_cidr · variable | who may reach the public gateway on 80 and 443 |
-| infra/k3s/terraform/variables.tf:38 | gateway_domain · variable | **informational only**; the gateway serves every hostname in `infra/k3s/gateway_sites.yml`. **k3s uses `wsplaytod`, EKS uses `wstodplay`** — near-anagrams on one zone, so confirm which stack owns a record before touching it |
-| infra/k3s/terraform/variables.tf:44 | ecr_repository_name · variable | existing repo, default `corp-tower-server-staging` |
-| infra/k3s/terraform/variables.tf:50 | vpc_cidr · variable | default 10.60.0.0/16; **avoid K3s default pod/service ranges when changing it** |
-| infra/k3s/terraform/variables.tf:56 | public_subnet_cidr · variable | default 10.60.1.0/24, EC2-GW |
-| infra/k3s/terraform/variables.tf:62 | private_subnet_cidr · variable | default 10.60.10.0/24, K3s nodes |
-| infra/k3s/terraform/variables.tf:68 | availability_zone · variable | empty means take the first available AZ; the lab is deliberately one-AZ |
-| infra/k3s/terraform/variables.tf:74 | gateway_instance_type · variable | default `t3.micro` |
-| infra/k3s/terraform/variables.tf:80 | control_plane_instance_type · variable | default `t3.small` |
-| infra/k3s/terraform/variables.tf:86 | agent_instance_type · variable | default `t3.micro` |
-| infra/k3s/terraform/variables.tf:92 | agent_count · variable | default 2, validated at >= 1 |
-
-### infra/k3s/terraform/versions.tf — 32 ln
-
-| File:Ln | Symbol | Does |
-|---|---|---|
-| infra/k3s/terraform/versions.tf:20 | aws · provider | AWS ~> 5.0, Terraform >= 1.5; **S3 backend `k3s-lab/terraform.tfstate` with `use_lockfile`**, default_tags stamping Stack `k3s-lab` |
-
 ### scripts/art-common.sh — 68 ln
 
 | File:Ln | Symbol | Does |
@@ -1058,4 +725,4 @@ _no extracted symbols_
 
 ---
 
-135 files · 436 symbols · 0 awaiting a `Does` line.
+81 files · 338 symbols · 0 awaiting a `Does` line.

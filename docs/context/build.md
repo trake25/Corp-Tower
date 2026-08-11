@@ -67,11 +67,12 @@ workflow uploads only the `.aab`.
 Usage sits far inside R2's free tier. **Avoid enabling R2 Data Catalog, R2 SQL or
 Infrequent Access on the bucket** — each is billed separately.
 
-## Android Deploy wsplaytod workflow
+## Android Deploy wstodplay workflow
 
-`.github/workflows/Android-Deploy-wsplaytod.yml` — manual `workflow_dispatch`
+`.github/workflows/Android-Deploy-wstodplay.yml` — manual `workflow_dispatch`
 build, test and sign for Google Play internal testing, endpoint fixed to
-`wsplaytod` with debug UI enabled.
+`wstodplay` with debug UI enabled. **EKS is session-scoped**, so a build is only
+reachable while an EKS session is up.
 
 **Sequence:** fetch private art → write the endpoint config → download Godot
 `4.6.2.stable` → install the Android SDK → resolve the next version code from
@@ -127,10 +128,9 @@ Android and in the editor, where there is no hostname to read.
 - Installs dependencies and copies source from `src/Server/app` **only** — the
   tooling and tests live outside `app/` and are deliberately not copied in.
 - Runs `Server.js`; exposes port `3000`.
-- Built by the K3s deploy workflows as **one shared image for both prod and test**,
-  tagged with the immutable commit SHA and pushed to ECR. EKS server pods reuse the
-  same repository. The deployment provides `REDIS_URL` and
-  `RECONNECT_TTL_SECONDS`.
+- Built by the EKS deploy workflow as **one shared image**, tagged with the
+  immutable commit SHA and pushed to ECR; the backup machine runs the same image.
+  The deployment provides `REDIS_URL` and `RECONNECT_TTL_SECONDS`.
 - Healthchecks use a short interval so rolling-deploy readiness reports quickly.
 
 ## Required secrets (client / art scope)

@@ -5,10 +5,6 @@ src/Client/App/corp-tower/export_presets.cfg
 infra/bootstrap/.terraform/
 infra/bootstrap/*.tfstate
 infra/bootstrap/*.tfstate.*
-infra/k3s/terraform/.terraform/
-infra/k3s/terraform/*.tfstate
-infra/k3s/terraform/*.tfstate.*
-infra/k3s/terraform/k3s-lab.tfvars
 infra/eks/terraform/.terraform/
 infra/eks/terraform/*.tfstate
 infra/eks/terraform/*.tfstate.*

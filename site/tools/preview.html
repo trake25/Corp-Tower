@@ -29,8 +29,8 @@
         <h1>I run production alone — so I automate<br class="hero-break" /> the team I don't have.</h1>
         <p class="lede">
           <strong>Corp Tower</strong> is a live 3-player real-time multiplayer game: a Godot
-          client, an authoritative Node.js server, Redis-backed shared state, deployed to K3s,
-          EKS and a physical backup machine from 34 CI workflows. I designed it, built it, and
+          client, an authoritative Node.js server, Redis-backed shared state, deployed to EKS
+          and a physical backup machine from 26 CI workflows. I designed it, built it, and
           operate it — infrastructure, backend, client, release pipeline and all.
         </p>
         <p class="lede">
@@ -44,7 +44,7 @@
             <dd>one container image</dd>
           </div>
           <div class="stat">
-            <dt><span class="stat-value">34</span><span class="stat-label">CI/CD workflows</span></dt>
+            <dt><span class="stat-value">26</span><span class="stat-label">CI/CD workflows</span></dt>
             <dd>no manual deploy steps</dd>
           </div>
           <div class="stat">
@@ -58,8 +58,8 @@
         </dl>
 
         <p class="stack-line">
-          Terraform · Kubernetes (K3s / EKS) · AWS · Docker · GitHub Actions · Cloudflare ·
-          Node.js · Redis · GDScript / Godot · Ansible
+          Terraform · Kubernetes (EKS) · AWS · Docker · GitHub Actions · Cloudflare ·
+          Node.js · Redis · GDScript / Godot
         </p>
 
         <div class="ctas">
@@ -95,16 +95,16 @@
             <path class="link" d="M164,200 L 264,200" marker-end="url(#arrow)" />
             <path class="link" d="M164,210 C 210,210 210,342 264,342" marker-end="url(#arrow)" />
             <text class="wire" x="205" y="120" text-anchor="middle">wss://</text>
-            <rect class="node" x="264" y="18" width="270" height="80" rx="10" />
-            <text class="label" x="278" y="42">K3s — production + test</text>
-            <text class="sub" x="278" y="60">EC2, Caddy gateway, always on</text>
-            <text class="sub" x="278" y="76">Redis: in-cluster</text>
-            <rect class="node ephemeral" x="264" y="160" width="270" height="80" rx="10" />
-            <text class="label" x="278" y="184">EKS — validation</text>
-            <text class="sub" x="278" y="202">ALB, managed nodes, session-scoped</text>
-            <text class="sub" x="278" y="218">Redis: ElastiCache (rediss://)</text>
+            <rect class="node ephemeral" x="264" y="18" width="270" height="80" rx="10" />
+            <text class="label" x="278" y="42">EKS — production</text>
+            <text class="sub" x="278" y="60">ALB, managed nodes, session-scoped</text>
+            <text class="sub" x="278" y="76">Redis: ElastiCache (rediss://)</text>
+            <rect class="node" x="264" y="160" width="270" height="80" rx="10" />
+            <text class="label" x="278" y="184">Physical machine — development</text>
+            <text class="sub" x="278" y="202">Cloudflare Tunnel, two dev instances</text>
+            <text class="sub" x="278" y="218">Redis: none (in-memory)</text>
             <rect class="node" x="264" y="302" width="270" height="80" rx="10" />
-            <text class="label" x="278" y="326">Physical backup — dev + demo</text>
+            <text class="label" x="278" y="326">Physical machine — public demo</text>
             <text class="sub" x="278" y="344">Cloudflare Tunnel, always on</text>
             <text class="sub" x="278" y="360">Redis: none (in-memory)</text>
             <path class="bracket" d="M552,30 L568,30 L568,370 L552,370" />
@@ -113,8 +113,8 @@
         </div>
         <p class="scroll-hint">Scroll the diagram sideways →</p>
         <p class="figure-caption">
-          Production and test on always-on K3s. A session-scoped EKS stack for production-grade
-          validation, destroyed nightly. Dev and the public demo on one Linux box behind a
+          Production on a session-scoped EKS stack, destroyed nightly so nothing idles on the
+          meter. Dev and the public demo on one Linux box already paid for, behind a
           Cloudflare Tunnel.
         </p>
       </section>
@@ -166,13 +166,13 @@
                 <li>Health matcher <code>426</code>, because <code>ws</code> answers a plain <code>GET /</code> with Upgrade Required.</li>
                 <li>The node security group carries its own control-plane and self-referencing rules via a launch template that opts out of EKS's default wiring.</li>
                 <li>Auto-destroy at 18:00 UTC daily <em>because AWS Budgets alerts lag 8–24h</em> — the alarm can't be the control.</li>
-                <li>Gateway TLS state externalised to R2 after ephemeral disks re-requested certificates until Let's Encrypt's rate limit stopped it.</li>
+                <li>Deploys refuse to run when the checked-out infra tree doesn't match the last apply — "the fix is on main" is not a deploy precondition.</li>
               </ul>
               <div class="proof-links">
                 <span class="proof-links-label">In the repo</span>
                 <ul>
                   <li><a href="#">EKS Terraform root</a></li>
-                  <li><a href="#">K3s Terraform root</a></li>
+                  <li><a href="#">EKS shared root (ACM + DNS)</a></li>
                   <li><a href="#">Nightly auto-destroy</a></li>
                   <li><a href="#">deployment.md</a></li>
                 </ul>

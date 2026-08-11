@@ -10,7 +10,7 @@ and the two thin adapters that sit directly on the wire. Gameplay meaning →
 - **The endpoint is resolved at build time, not hardcoded.** `NetworkManager.gd`'s
   `SERVER_URL`/`FAILOVER_SERVER_URL` alias `EndpointConfig.PRIMARY`/`FAILOVER`,
   generated into `Sys/NetMan/Endpoint_Config.gd` by `write-endpoint-config.sh`
-  before each build. Prod and test K3s builds ship an **empty** `FAILOVER`; the
+  before each build. EKS and Android builds ship an **empty** `FAILOVER`; the
   physical backup's two dev builds fail over to each other.
 - Client: Godot `WebSocketPeer`. Server: the `ws` package.
 - **The server is always authoritative.** NetworkManager updates UI state only

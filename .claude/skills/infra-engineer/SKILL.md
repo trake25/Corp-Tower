@@ -1,6 +1,6 @@
 ---
 name: infra-engineer
-description: Infrastructure and CI work — infra/ Terraform, .github/workflows and .github/actions, scripts/, docker/, the EKS and K3s deploy paths, backup and demo stacks, the private art pipeline, and the Android and Web build workflows.
+description: Infrastructure and CI work — infra/ Terraform, .github/workflows and .github/actions, scripts/, docker/, the EKS deploy path, backup and demo stacks, the private art pipeline, and the Android and Web build workflows.
 ---
 
 # Infra engineer
@@ -20,8 +20,8 @@ becomes an artifact → grep `docs/context/map/infra.md` → `Read(file, offset,
   workflows hold the credentials and the backend config; a local run is a
   different environment answering a different question.
 - **`SAFETY EXCEPTION` comments are the one place comments are allowed**, and
-  they all live in your paths — 9 of them, across `.github/actions/`,
-  `.github/workflows/` and `scripts/`. Never strip one. If you add one, say what
+  they all live in your paths — 5 of them, across `.github/actions/` and
+  `scripts/`. Never strip one. If you add one, say what
   the risk is and why it is invisible from the code.
 - **`scripts/` and `.github/` keep their comments.** The no-comments rule and
   `strip-comments.mjs` cover product source only.

@@ -14,7 +14,7 @@ authoritative; the client renders `game_state` and never computes an outcome.
 | Client | Godot `4.6.2.stable`, GDScript, `WebSocketPeer` |
 | Server | Node.js, `ws`, `redis` — entry `src/Server/app/Server.js` |
 | Shared state | Redis — multi-worker matchmaking, rooms, reconnect |
-| Infra | Terraform · EKS (production-grade, deploy-on-demand) · K3s-on-EC2 (lab) · Docker · Caddy |
+| Infra | Terraform · EKS (production-grade, deploy-on-demand) · Docker · Cloudflare |
 | CI/CD | GitHub Actions |
 
 Flow: client connects to its build-injected endpoint → **Server Entry** accepts and
@@ -54,7 +54,7 @@ flowchart LR
 | WebSocket messages, payload shapes, reconnect wire | [networking.md](./networking.md) | both maps |
 | New event or scoring type end-to-end — emit → wire → render | [networking.md](./networking.md) **first**, it owns the type list | both maps |
 | Godot client UI, scenes, popovers | [ui.md](./ui.md) | [map/ui.md](./map/ui.md) |
-| Deploy, K3s, EKS, infra, runbook | [deployment.md](./deployment.md) | [map/infra.md](./map/infra.md) |
+| Deploy, EKS, backup machine, infra, runbook | [deployment.md](./deployment.md) | [map/infra.md](./map/infra.md) |
 | CI build, Android, HTML5, private art pipeline | [build.md](./build.md) | [map/infra.md](./map/infra.md) |
 | Tests, balance simulator, CI gates | [testing.md](./testing.md) | — |
 | "Which file does X?" | — | the matching map |
@@ -92,6 +92,8 @@ Chat logs, branches and old PRs use the left column; the system uses the right.
 | Lane | **Column** on the level's derived **site** |
 | `anchorX` | retired — a dragged brick's geometry sets its column |
 | `Checkpoints.js` | `Impacts.js` |
+| K3s lab / EC2-GW / `infra/k3s` / `K3s-*.yml` | retired — EKS is the only AWS target; hostnames `wsplaytod`, `wstodtest`, `playtod`, `todtest` went with it |
+| `Android-Deploy-wsplaytod.yml` | `Android-Deploy-wstodplay.yml` — now targets EKS |
 
 ## Ignore map
 

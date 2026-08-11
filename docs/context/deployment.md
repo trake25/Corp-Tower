@@ -7,12 +7,10 @@ produces the artifacts → [build.md](./build.md). Server code →
 
 ## Overview
 
-Two parallel Terraform paths, region `ap-southeast-1` for both.
+One Terraform path in AWS, region `ap-southeast-1`.
 
 - **EKS (`infra/eks`) is the production-grade target** — fully implemented,
   deployed on demand for hours and torn down after.
-- **K3s (`infra/k3s`) is the lab** — where infra changes are tried before they
-  reach EKS.
 - The physical backup machine is the **development** environment — two dev
   instances plus the always-on public demo.
 
@@ -22,122 +20,27 @@ credits — the nightly auto-destroy exists to bound that. The price is ~15 min
 apply and ~14 min destroy of AWS-side latency per session, which no workflow
 change can shorten.
 
+A K3s-on-EC2 lab (bastion, Caddy gateway, private nodes) preceded EKS and was
+deleted once EKS covered the same ground; see the alias in
+[index.md](./index.md#aliases). Nothing in the tree depends on it.
+
 ### Terraform roots
 
 | Root | State key | Notes |
 |---|---|---|
-| `infra/k3s/terraform` | `k3s-lab/terraform.tfstate` | `Environment=k3s-lab` |
 | `infra/eks/terraform` | `eks-lab/terraform.tfstate` | stack `server-eks`, destroyed every session |
 | `infra/eks/terraform-shared` | `eks-shared/terraform.tfstate` | persistent — ACM wildcard + Cloudflare DNS validation, applied once, never destroyed |
 
 Workflows create the shared S3 backend bucket if missing.
 **Extend the shared composite actions rather than re-implementing per workflow** —
 `terraform-backend-bootstrap`, `aws-terraform-setup`, `terraform-validate-plan`
-back every Terraform workflow; K3s additionally uses `resolve-ssh-key`. Prefer
-GitHub Actions for Terraform validation and planning over local manual runs.
-
-## K3s topology
-
-- **`EC2-GW`** — public IPv4: SSH bastion, Caddy WSS gateway, Cloudflare DNS
-  updater, NAT instance. Uses Docker only for the Caddy container; the game
-  workload runs in K3s.
-- **`EC2-K3S-CP`** — private control plane. **`EC2-K3S-A1`/`A2`** — private agents.
-- VPC CIDR `10.60.0.0/16`, **chosen to avoid K3s's own pod (`10.42.0.0/16`) and
-  service (`10.43.0.0/16`) CIDRs.**
-- Traefik and ServiceLB are disabled — public traffic stays on EC2-GW Caddy.
-- Four hostnames point at the gateway via Cloudflare DNS: `wsplaytod` /
-  `wstodtest` (game) and `playtod` / `todtest` (web), enumerated in
-  `infra/k3s/gateway_sites.yml` — **the single source both the Caddy config and
-  the DNS upsert render from.**
-
-### Runtime
-
-Two isolated namespaces, `corp-tower-prod` and `corp-tower-test`, each with its own
-in-cluster Redis and its own server and web Deployments. Fixed NodePorts: 30300
-prod game · 30301 test game · 30310 prod web · 30311 test web.
-
-- **`ecr-pull` is namespace-scoped** — imagePullSecrets don't cross namespaces, so
-  prod and test each carry their own copy from the same ECR repository.
-- The four committed Kustomize overlays carry a placeholder image tag; each deploy
-  generates an **uncommitted** `overlays/runtime` (game) or `overlays/runtime-web`
-  at deploy time with the real ECR tag. **The committed tag is never what runs.**
-- **Every K3s deploy renders all four Caddy site blocks and upserts all four DNS
-  records**, whichever single target it deploys — the gateway is one shared Caddy
-  container, so a prod-only deploy must never orphan test's route.
-
-### Caddy gateway ACME cert persistence (R2)
-
-EC2-GW's root volume is ephemeral, so a recreated gateway carries no Caddy
-automatic-HTTPS state. `configure_caddy.yml` round-trips the Caddy data volume
-through R2 bucket `corp-tower-gateway-state`: restore before start, a liveness
-check after, then persist.
-
-**Landmine — Let's Encrypt allows 5 duplicate certificates per identifier set per
-168h.** Repeated destroy/recreate cycles within a week hit it and blocked the
-public WSS smoke test with `429 rateLimited`, surfacing only as a generic 5-minute
-timeout because nothing checked whether Caddy actually stayed up. The liveness
-check now waits 3s after start, asserts the container is still running, and fails
-loudly with `docker logs` captured.
-
-**Landmine — the archive carries the live ACME account key and TLS private key.**
-Both the runner and EC2-GW chmod it `0600` immediately after writing and delete it
-once consumed.
-
-R2 over S3 avoids widening AWS IAM scope and reuses existing free usage; the
-payload is a few KB.
-
-**Unverified in a live deploy.** The restore path is untested against a real Let's
-Encrypt rate-limit event — the condition it exists for. Confirm on the next deploy
-that EC2-GW reused the cached account key rather than requesting a new cert.
-
-### K3s workflows
-
-All manual `workflow_dispatch` only. K3s has no push-triggered path — that exists
-only for the physical backup's instance 1.
-
-| Workflow | Behaviour |
-|---|---|
-| `K3s-Infra-Plan.yml` | Plans the root; intentionally allows create/delete actions to be reviewed |
-| `K3s-Infra-Apply.yml` | Requires `APPLY_K3S`. Plans first and **hard-fails if the plan contains any delete or replace action** — run Infra Destroy's `terraform_destroy` first if one would |
-| `K3s-Infra-Diagnose.yml` | Tagged AWS resources, all four DNS records, SSH through the bastion |
-| `K3s-Infra-Destroy.yml` | `runtime_only` (uninstalls K3s/Caddy on every node, affects game *and* web) or `terraform_destroy` (`DESTROY_K3S`) — the only workflow that tears down the shared cluster's AWS resources |
-| `K3s-Deploy-Game-Server.yml` | Reusable core per target. Test → build/push one shared image by SHA → K3s via bastion → restore/persist ACME cache → render all four sites → upsert all four DNS → refresh `ecr-pull` → apply overlay → validate nodes/Redis/replica/Caddy/public WSS |
-| `K3s-Deploy-Web-Server.yml` | Same plumbing; builds the Web export with debug UI disabled, pushes `nginx:alpine` tagged `web-<target>-<sha>` |
-| `K3s-Deploy-All.yml` | Dispatcher. **Always runs game-prod → game-test → web-prod → web-test in that order** regardless of selection, since all four share one Caddy gateway and one R2 ACME cache |
-| `K3s-Cleanup-Game-Server.yml` | Deletes the game Deployment/Service and namespace-local Redis **by name — never the namespace**, which also hosts that environment's web server |
-| `K3s-Cleanup-Web-Server.yml` | Soft: swaps the web image to a maintenance placeholder. Deployment, Service and DNS are never deleted, so a normal redeploy cleanly overwrites it |
-| `K3s-Cleanup-All.yml` | Dispatcher, gated by a typed phrase specific to the chosen combination |
-
-### Operational runbook
-
-1. **Cold start:** Infra Plan → Infra Apply (`APPLY_K3S`) → Deploy All (`All`,
-   `all`).
-2. **Ordinary update:** Deploy All narrowed to the server and environment that
-   need it.
-3. **Reachability looks off:** Infra Diagnose.
-4. **Back to a clean runtime:** Cleanup All with its typed phrase, or Infra
-   Destroy's `terraform_destroy` to remove all AWS resources.
-
-**What "healthy" means:** Terraform `fmt`/`validate` · server `npm test` · Ansible
-syntax check · all nodes Ready · Redis Ready · the target's replica Ready ·
-`ecr-pull` present in the namespace · Caddy validates, reloads and is confirmed
-still running · DNS resolves to the gateway IP for all four hostnames · WSS (game)
-or HTTPS (web) smoke connects to the target's own hostname.
-
-```bash
-kubectl -n corp-tower-prod get pods -o wide
-kubectl -n corp-tower-prod logs deploy/corp-tower-server --all-containers --tail=200 -f
-kubectl get events -A --sort-by=.lastTimestamp
-```
-
-On EC2-GW: `sudo docker logs -f corp-tower-k3s-caddy`. On nodes:
-`sudo journalctl -u k3s -f` / `-u k3s-agent -f`.
+back every Terraform workflow. Prefer GitHub Actions for Terraform validation and
+planning over local manual runs.
 
 ## EKS (production-grade target)
 
-Own dedicated hostnames — `wstodplay` (game), `todplay` (web) — so a deploy never
-touches K3s's four records. Only the prod pair is deployed; `eks-test` overlays are
-committed but not wired to any workflow.
+Dedicated hostnames — `wstodplay` (game), `todplay` (web). Only the prod pair is
+deployed; `eks-test` overlays are committed but not wired to any workflow.
 
 **Topology:** Cloudflare CNAME → ALB `:443` (ACM wildcard, host-based routing,
 `idle_timeout=300`) → two target groups on the existing NodePorts, registered via
@@ -146,9 +49,9 @@ NAT egress) → pods → ElastiCache Redis over `rediss://`. **Game target group
 health matcher is `426`** — `ws` answers a plain `GET /` with Upgrade Required;
 web is `200`. No in-cluster Redis on EKS.
 
-Routing uses **`target_type=instance` NodePorts**, reusing the numbers K3s already
-standardises on, with no extra controllers. An AWS Load Balancer Controller would
-add a Helm install and IRSA wiring this stack does not need.
+Routing uses **`target_type=instance` NodePorts** — 30300 game, 30310 web — with no
+extra controllers. An AWS Load Balancer Controller would add a Helm install and
+IRSA wiring this stack does not need.
 
 **Landmine — a custom node security group replaces, not extends, EKS's automatic
 wiring.** Specifying any custom SG on the launch template silently opts out of the
@@ -191,8 +94,8 @@ since a `PATCH` onto a pre-existing record can outlast the 60s TTL if a resolver
 cached the old ALB just before the run — but fails immediately, without polling, if
 the ALB's own DNS name resolves to no IPs at all.
 
-No bastion, SSH, Ansible or Caddy on this path: the ALB terminates TLS and
-`update-kubeconfig` replaces K3s's bastion-tunnel dance.
+No bastion, SSH, Ansible or Caddy anywhere in AWS: the ALB terminates TLS and
+`update-kubeconfig` reaches the cluster directly.
 
 **One-time manual setup, before the first apply — no workflow can do these:**
 expand `AWS_ROLE_ARN`'s IAM permissions for EKS/ElastiCache/ELB/NAT/OIDC (**CI
@@ -204,19 +107,20 @@ CNAMEs are created by the deploy workflows on first use.
 ## Backup (physical machine)
 
 A manually-operated Linux Mint machine runs six containers behind one shared
-Cloudflare Tunnel, independent of K3s: two dev game servers
+Cloudflare Tunnel, independent of AWS: two dev game servers
 (`devwstod1`/`devwstod2`), two dev web servers (`devtod1`/`devtod2`), and one
 always-on public demo pair (`wstoddemo`/`toddemo`, instance **3**). Game servers
 run the unmodified server image.
 
 **No Redis here** — a single machine on `Redis_State.js`'s in-memory fallback.
-Correct for one machine, wrong for multi-replica K3s. Game servers bind loopback
+Correct for one machine, wrong for multi-replica EKS. Game servers bind loopback
 only, matching the web servers: `cloudflared` is the only intended caller.
 
 **Landmine — Cloudflare's free Universal SSL covers the zone apex and exactly one
 subdomain level.** A two-level name behind a *proxied* record (which a Tunnel
-requires) hits a bare TLS handshake failure. Every K3s hostname escapes this only
-because it is DNS-only with Caddy fetching its own cert. Reusing an existing
+requires) hits a bare TLS handshake failure. The EKS hostnames escape it only
+because they are DNS-only (`proxied:false`) with the ALB serving the ACM wildcard
+itself, so Cloudflare never terminates for them. Reusing an existing
 two-level hostname does not dodge it either — Cloudflare's edge, not the origin,
 terminates TLS for a proxied record.
 
@@ -304,21 +208,13 @@ on the physical machine.
 |---|---|
 | `AWS_ROLE_ARN` | GitHub OIDC → AWS. EKS needs the expanded policy attached once, manually |
 | `ECR_REPOSITORY` | Server image push/pull |
-| `EC2_STAGING_HOST` / `_USER` / `_SSH_KEY` | Bastion and node access |
-| `EC2_STAGING_SSH_PUBLIC_KEY` | *(optional)* preferred for key-pair creation; derived from the private key if empty |
-| `CLOUDFLARE_API_TOKEN` / `_ZONE_ID` | DNS for the four K3s hostnames, ACM validation, and the two EKS CNAMEs |
+| `CLOUDFLARE_API_TOKEN` / `_ZONE_ID` | ACM validation and the two EKS CNAMEs |
 | `EKS_OPERATOR_PRINCIPAL_ARN` | IAM **role** ARN granted cluster-admin via an access entry |
-| `R2_GATEWAY_BUCKET` / `_ACCESS_KEY_ID` / `_SECRET_ACCESS_KEY` | ACME cache persistence; **repo** secrets, not environment-scoped, so the `staging`-environment deploy job can still see them. Steps no-op if unset |
+
+The `R2_*` art-pipeline secrets are listed in [build.md](./build.md). The
+`EC2_STAGING_*` and `R2_GATEWAY_*` secrets went unused when the K3s lab was
+deleted — nothing reads them; revoke at will.
 
 **A step-scoped `env:` value does not carry to later steps** — only `$GITHUB_ENV`
 does. A later step reading a secret-derived variable another step resolved needs
 its own `env:` block, or `set -u` scripts fail on an unbound variable.
-
-## Argo CD readiness
-
-Bootstrap manifests exist at `infra/k3s/argocd/bootstrap`, covering both
-namespaces; **nothing installs or applies them.** Enablement waits on install → one
-manual sync → a passing rollback test, and only then automated prune/self-heal.
-When enabled, Argo CD stays private — bastion plus `kubectl port-forward` only.
-Private repos need a persistent repo-read credential; `GITHUB_TOKEN` is not
-suitable long-term.
