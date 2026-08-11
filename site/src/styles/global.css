@@ -362,7 +362,6 @@ main > section:first-child {
   letter-spacing: -0.03em;
   line-height: 1.1;
   text-transform: none;
-  color: var(--fg);
   margin-bottom: 0.65rem;
 }
 
