@@ -2,7 +2,7 @@
 role: "QA"
 order: 3
 headline: "Whoever builds it is the worst person to judge it"
-plain: "I work with an AI coding agent the way a QA engineer works with a developer. The specification and the expected results are written first — edge cases and security considered up front, before any planning — and nothing counts as finished until the real output matches them. The steps below are that loop."
+plain: "I separate building from acceptance: the agent can implement the change, but the expected result is decided first and the finished work has to prove it meets that standard."
 tools:
   - "GitHub Actions"
   - "Node.js test runner"

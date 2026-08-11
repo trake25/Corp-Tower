@@ -1,8 +1,8 @@
 ---
 role: "AI"
 order: 6
-headline: "Most people can't tell a small task from a hard one, so they pay full price for both"
-plain: "Before a coding agent writes a line, the task is research: what the goal actually is, where the guardrails sit, and which model and effort level it genuinely needs. I do that thinking with a cheaper assistant first, cut the prompt down to only what the goal requires, and hand the coding agent a short brief plus the exact documents it needs — never the whole repository. Nothing gets built until I've read the plan and approved it. The steps below are that groundwork."
+headline: "I use AI agents to do more implementation work without giving them control of engineering decisions."
+plain: "I decide what needs to be built, give the agent only the information it needs, review its plan, and verify the result."
 tools:
   - "Claude Code"
   - "Codex"
@@ -31,7 +31,7 @@ details:
       - "Model Selection"
       - "Effort Routing"
       - "Token Cost Control"
-    body: "There's no artifact for this one — it's a skill built by doing it wrong enough times to feel it: prompt engineering, context engineering, learning how a model responds to what it's fed. Most people can't tell a small task from a hard one, so they pay full price upfront regardless. A skilled orchestrator can tell the difference, and that's what keeps both quality and cost in check."
+    body: "I match the model and effort level to the task instead of using the most expensive option by default. That keeps quality, token use and turnaround proportionate to the work."
   - id: plan
     title: "4 · Planning phase"
     keywords:
@@ -57,4 +57,4 @@ details:
 
 #### Local LLMs, once the hardware exists
 
-Everything above assumes a Cloud LLM, in both roles: the sub-agent doing research and the coding agent doing the work. That's a cost and a dependency, not a permanent design choice. Once local hardware can run a model capable enough for this pipeline, step 5 — the router and the retrieval it drives — is the first candidate to move: offline, no per-token cost, no round trip. The documents stay the source of truth either way; the router table becomes something pointed at a local model instead of an API, not something rewritten.
+The current workflow uses cloud models. If capable local hardware becomes available, the retrieval router is the first part to move; the source documents and approval process stay the same.

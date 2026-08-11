@@ -1,8 +1,8 @@
 ---
 role: "DevOps"
 order: 2
-headline: "Every destination runs the same pipeline. Only one is allowed to start it by itself."
-plain: "This card combines the other two. The environments and guardrails come from the Cloud work, and the brief-and-review loop comes from the AI work. The result is one pipeline that deploys to five destinations, and a push only deploys itself to development. Everything past that has to clear a gate first."
+headline: "I automate software delivery so the same checks happen every time code is released."
+plain: "Changes move through testing and controlled environments before they can reach production."
 tools:
   - "GitHub Actions"
   - "Composite Actions"

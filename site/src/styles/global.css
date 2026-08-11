@@ -272,6 +272,72 @@ main > section:first-child {
   margin: 0 0 2rem;
 }
 
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.background-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.summary-card {
+  padding: 1.15rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.summary-card h3,
+.featured-title {
+  margin: 0 0 0.5rem;
+  font-size: var(--step-0);
+}
+
+.summary-card p {
+  color: var(--fg-muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.summary-tech {
+  display: block;
+  margin-top: 0.9rem;
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.featured-game {
+  margin-top: 1.5rem;
+}
+
+.ai-card-process {
+  display: grid;
+  gap: 0.3rem;
+  margin: 1.25rem 0;
+  padding: 0.9rem;
+  border-left: 2px solid var(--accent-dim);
+  color: var(--fg-muted);
+}
+
+.ai-card-process strong { color: var(--fg); }
+
+.qa-card-process {
+  margin: 1.25rem 0;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 44rem) {
+  .summary-grid,
+  .background-grid { grid-template-columns: 1fr; }
+}
+
 /* --- Hero ---------------------------------------------------------------- */
 
 .hero {

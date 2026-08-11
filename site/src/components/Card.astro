@@ -63,6 +63,7 @@ const { role, headline, plain, tools, details, video, videos, hasBody, wip = fal
 const hasFlow = details.length > 0;
 const roleSlug = role.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const cardId = `card-${roleSlug}`;
+const roleLabel = role === "AI" ? "AI-assisted engineering" : role;
 ---
 
 {wip ? (
@@ -71,14 +72,14 @@ const cardId = `card-${roleSlug}`;
      its face. Keeps `.card`, the id and `data-role` so the filter, the deep
      links and the counts all still see it. */
   <div class="card is-wip" id={cardId} data-role={role}>
-    <span class="role-tag">{role}</span>
+    <span class="role-tag">{roleLabel}</span>
     <p class="headline">Being written — diagram, recording and steps in progress.</p>
     <span class="wip-tag">Under construction</span>
   </div>
 ) : (
 <details class="card" id={cardId} data-role={role}>
   <summary>
-    <span class="role-tag">{role}</span>
+    <span class="role-tag">{roleLabel}</span>
     <h3 class="headline">{headline}</h3>
     <span class="toggle-hint">
       <span class="toggle-open">Open</span>
@@ -91,6 +92,17 @@ const cardId = `card-${roleSlug}`;
 
   <div class="expanded">
     <p class="plain">{plain}</p>
+
+    {role === "AI" && (
+      <div class="ai-card-process">
+        <strong>Define → Plan → Implement → Test → Review</strong>
+        <span>AI handles more of the typing. I remain responsible for the engineering.</span>
+      </div>
+    )}
+
+    {role === "QA" && (
+      <p class="qa-card-process">Specification → Build → Automated tests → Manual verification → Fix → Documentation</p>
+    )}
 
     {tools.length > 0 && (
       <p class="card-tools">

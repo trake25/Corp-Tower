@@ -11,8 +11,6 @@ import CloudTargetsDiagram from "../components/diagrams/CloudTargetsDiagram.astr
 import QaLoopDiagram from "../components/diagrams/QaLoopDiagram.astro";
 import AiWorkflowDiagram from "../components/diagrams/AiWorkflowDiagram.astro";
 import DevOpsPipelineDiagram from "../components/diagrams/DevOpsPipelineDiagram.astro";
-import BackendEngineeringDiagram from "../components/diagrams/BackendEngineeringDiagram.astro";
-import FrontendEngineeringDiagram from "../components/diagrams/FrontendEngineeringDiagram.astro";
 import { profile } from "../data/profile";
 
 // One showcase diagram per skill, keyed by the card's `role`. A role with no
@@ -23,8 +21,6 @@ const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
   QA: QaLoopDiagram,
   AI: AiWorkflowDiagram,
   DevOps: DevOpsPipelineDiagram,
-  Backend: BackendEngineeringDiagram,
-  Frontend: FrontendEngineeringDiagram,
 };
 
 // Filter buttons follow this order, not the cards' display order. A role present
@@ -34,7 +30,7 @@ const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
 // hiring for. QA and AI describe how the work gets done, which is a second
 // question — putting them first, as this list used to, made two process cards
 // the first thing a platform reader saw.
-const ROLE_ORDER = ["Cloud", "DevOps", "Backend", "Frontend", "QA", "AI"];
+const ROLE_ORDER = ["Cloud", "DevOps", "QA", "AI"];
 
 // Plain-English capability lines for the recruiter layer, each with the
 // implementation named after it. Deliberately in this order and deliberately
@@ -42,26 +38,26 @@ const ROLE_ORDER = ["Cloud", "DevOps", "Backend", "Frontend", "QA", "AI"];
 // four files with a schema. The pattern is the point — someone who does not
 // know what EKS is still learns what was built, and someone who does gets the
 // receipt in the same row.
-const CAPABILITIES = [
+const WHAT_I_DO = [
   {
-    plain:
-      "Build cloud infrastructure that runs and scales containerised applications, defined entirely as code so it can be destroyed and rebuilt from one source",
-    tech: "AWS · EKS · Terraform · Docker",
+    title: "Build the platform",
+    description: "I build the cloud infrastructure applications run on, with security and cost controls built in.",
+    tech: "Cloud · AWS · Terraform · Kubernetes · Docker",
   },
   {
-    plain:
-      "Automate the delivery pipeline that tests, signs and deploys every release, with gates so nothing reaches production unproven",
-    tech: "GitHub Actions · OIDC · Cloudflare",
+    title: "Automate delivery",
+    description: "I turn code changes into tested deployments instead of relying on manual release steps.",
+    tech: "GitHub Actions · CI/CD · OIDC · Deployment gates",
   },
   {
-    plain:
-      "Design the backend behind real-time multiplayer, where the server holds the truth and the client only draws it",
-    tech: "Node.js · Redis · WebSocket",
+    title: "Keep systems reliable",
+    description: "I test software and infrastructure before changes reach users.",
+    tech: "QA · Automated testing · Regression testing · Network operations",
   },
   {
-    plain:
-      "Verify it — five years of enterprise network operations and a current software QA role, applied to my own work",
-    tech: "Jenkins · GUT · Node test runner",
+    title: "Use AI to accelerate engineering",
+    description: "I use AI agents to do implementation work faster while I keep control of the design, review and final decision.",
+    tech: "AI agents · Context engineering · Model selection",
   },
 ];
 
@@ -229,6 +225,9 @@ const renderedCards = await Promise.all(
 const renderedGames = await Promise.all(
   gameEntries.map(async (entry) => ({ entry, Content: (await entry.render()).Content }))
 );
+const featuredRenderedGame = renderedGames.find(
+  ({ entry }) => entry.data.title === "Top or Drop"
+);
 const renderedCv = await Promise.all(
   cvEntries.map(async (entry) => ({ entry, Content: (await entry.render()).Content }))
 );
@@ -272,28 +271,10 @@ const year = new Date().getFullYear();
 
   <main id="main">
     <section class="hero">
-      {/* The h1 says what the job title is, in words someone who does not know
-          what EKS stands for can still act on. It used to be a slogan about
-          agents, which is a true and distinctive thing to say and the wrong
-          thing to say first: it framed the reader's first impression around the
-          tooling rather than the engineering, and a screener filtering for a
-          platform role found no role in the strongest tag on the page. The
-          orchestrator claim is not gone — it moved to `.method` below, where it
-          gets the room to say what it actually means. */}
       <p class="eyebrow">{profile.name}</p>
-      <h1>I build the cloud infrastructure and delivery pipelines software runs on.</h1>
-      <p class="lede">
-        Five years running enterprise network operations, then software QA, now platform
-        and DevOps. <strong>{profile.project}</strong> is where I prove it — a real-time
-        multiplayer game with the whole platform underneath it, built against a fixed
-        monthly ceiling and torn back down to zero when nobody is playing.
-      </p>
-      {/* The differentiator, and the reason the CV reads as a route rather than
-          a wander. One sentence, because it only works if it is quotable. */}
-      <p class="differentiator">
-        Most engineers own one layer. I have run the network under the application,
-        tested the application, and built the platform in between.
-      </p>
+      <h1>Platform, Cloud &amp; DevOps Engineer</h1>
+      <p class="lede">I build and automate the systems that keep software running.</p>
+      <p class="differentiator">Platform, Cloud and DevOps engineer with experience in network operations, software QA and AI-assisted development.</p>
 
       <div class="ctas">
         {demoLink && (
@@ -301,67 +282,64 @@ const year = new Date().getFullYear();
             {demoLink.label}
           </a>
         )}
-        <a class="cta secondary" href="#card-cloud">See the infrastructure work</a>
+        <a class="cta secondary" href="#engineering">See the engineering work</a>
         {profile.cv.href && (
           <a class="cta secondary" href={profile.cv.href} download>Download CV (PDF)</a>
         )}
       </div>
 
-      {/* Four facts, in the order someone screening actually asks them. */}
       <dl class="facts">
         <div>
-          <dt>Based</dt>
-          <dd>{profile.locationFull} · {profile.timezone}</dd>
-        </div>
-        <div>
           <dt>Focus</dt>
-          <dd>Platform · Cloud · DevOps, with QA and AI orchestration behind it</dd>
+          <dd>Platform · Cloud · DevOps</dd>
         </div>
         <div>
           <dt>Open to</dt>
-          <dd>Full-time or contract · remote preferred, hybrid in the Philippines</dd>
-        </div>
-        <div>
-          {/* Platform work first, day job second. Both are true and both stay;
-              the order is the whole edit. */}
-          <dt>Now</dt>
-          <dd>Building {profile.project} end to end · QA Tester at Amber</dd>
+          <dd>Full-time or contract · Remote preferred</dd>
         </div>
       </dl>
+    </section>
 
-      {/* Plain English first, implementation second, on the same row. The
-          technical terms are not hidden — they are just not the thing a reader
-          has to decode before they learn what was built. */}
-      <div class="capabilities">
-        <p class="block-label">What I actually do</p>
-        <ul>
-          {CAPABILITIES.map((capability) => (
-            <li>
-              <span class="capability-plain">{capability.plain}</span>
-              <span class="capability-tech">{capability.tech}</span>
-            </li>
-          ))}
-        </ul>
+    <section id="what-i-do" aria-labelledby="what-i-do-heading">
+      <h2 id="what-i-do-heading" class="section-title">What I do</h2>
+      <div class="summary-grid">
+        {WHAT_I_DO.map((item) => (
+          <article class="summary-card">
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+            <span class="summary-tech">{item.tech}</span>
+          </article>
+        ))}
       </div>
+    </section>
 
-      {/* The orchestrator claim, given the room to mean what it means. The old
-          hero line — "agents do the implementing, the sign-off is mine" — was
-          true but described a reviewer. The load-bearing half was missing: the
-          delegation is bounded by what can be read back. Choosing Godot because
-          the GDScript is legible to me, Node because I already know it, is the
-          reason the review is worth anything. */}
-      <div class="method">
-        <p class="block-label">How I work</p>
-        <p>
-          I decide the architecture, the environments and what they are allowed to cost —
-          and I pick tools I can read and verify myself: Godot because I write GDScript,
-          Node.js because I already know it. Agents accelerate the implementation I would
-          otherwise type by hand. <strong>The design decisions, the review and the
-          sign-off are mine</strong>, which is only worth saying because the stack was
-          chosen so that I can actually make them.
-          <a class="method-link" href="#card-ai">How that works, step by step →</a>
-        </p>
+    <section id="background" aria-labelledby="background-heading">
+      <h2 id="background-heading" class="section-title">Why my background is different</h2>
+      <p class="section-intro">I started by keeping networks running, moved into software QA, and now build the platform between software and production.</p>
+      <div class="summary-grid background-grid">
+        <article class="summary-card"><h3>Network operations</h3><p>5 years keeping enterprise systems available, handling incidents, escalations and failover.</p></article>
+        <article class="summary-card"><h3>Software QA</h3><p>I learned to test software from the other side of the system — finding problems before they reach users.</p></article>
+        <article class="summary-card"><h3>Platform &amp; DevOps</h3><p>I now bring those two perspectives together when designing infrastructure, deployment and engineering workflows.</p></article>
       </div>
+    </section>
+
+    <section id="featured-project" aria-labelledby="featured-project-heading">
+      <h2 id="featured-project-heading" class="section-title">Featured project</h2>
+      <h3 class="featured-title">Top or Drop</h3>
+      <p class="section-intro">A real-time multiplayer game I built to demonstrate the complete platform behind a live application.</p>
+      <div class="summary-grid">
+        <article class="summary-card"><h3>Infrastructure</h3><p>Cloud resources are defined as code so the environment can be rebuilt instead of configured by hand.</p></article>
+        <article class="summary-card"><h3>Delivery</h3><p>One pipeline tests and deploys the game to its different environments, with checks before production releases.</p></article>
+        <article class="summary-card"><h3>Backend</h3><p>The server controls the game state so players cannot simply tell the client what happened.</p></article>
+        <article class="summary-card"><h3>Verification</h3><p>Automated and manual tests check each change before I consider it finished.</p></article>
+      </div>
+      {featuredRenderedGame && (
+        <div class="featured-game" data-accordion="true">
+          <GameCard {...featuredRenderedGame.entry.data} slug={featuredRenderedGame.entry.slug} hasBody={featuredRenderedGame.entry.body.trim().length > 0} open={true}>
+            <Fragment slot="note"><featuredRenderedGame.Content /></Fragment>
+          </GameCard>
+        </div>
+      )}
     </section>
 
     {/* Section 00, and it used to be section 01's fourth level. The six cards
@@ -372,20 +350,16 @@ const year = new Date().getFullYear();
         reader who has to be convinced never got there. */}
     <section id="engineering" aria-labelledby="engineering-heading">
       <h2 id="engineering-heading" class="section-title">
-        <span class="section-index">00</span> Engineering
+        <span class="section-index">01</span> How I built it
       </h2>
       <p class="section-intro">
-        Six disciplines, each one a working part of {profile.project} — the real-time
-        multiplayer game in section 01, which is the laboratory rather than the point.
-        Cloud and DevOps carry the platform argument; Backend and Frontend are the
-        application on top of it; QA and AI are how any of it gets checked before it
-        counts as done.
+        The project gave me a real system to build, deploy and test — not just an isolated application.
       </p>
 
       <BuildingTheGame
         roles={roles}
         total={cardEntries.length}
-        intro="Each card opens to the diagram of how that part actually works, the recording of it running, then the steps behind it — click any step in a diagram to jump to its explanation."
+        intro="Open a card for the diagram, recording and detailed implementation evidence."
       >
         {renderedCards.map(({ entry: card, Content: CardBody }) => {
           const Diagram = diagrams[card.data.role];
@@ -409,12 +383,13 @@ const year = new Date().getFullYear();
         })}
       </BuildingTheGame>
 
-      {/* Flat, always visible, and not behind a disclosure on purpose. The cards
-          above prove these in context; this is for the reader deciding in four
-          seconds whether Kubernetes appears anywhere, and for the tracking
-          system that reads the markup rather than the page. */}
+    </section>
+
+    <section id="technologies" aria-labelledby="technologies-heading">
+      <h2 id="technologies-heading" class="section-title">
+        <span class="section-index">02</span> Technologies
+      </h2>
       <div class="skills-index" id="skills">
-        <p class="block-label">Tools &amp; technologies</p>
         <dl>
           {SKILL_GROUPS.map((group) => (
             <div class="skill-group">
@@ -430,12 +405,10 @@ const year = new Date().getFullYear();
 
     <section id="projects" aria-labelledby="projects-heading">
       <h2 id="projects-heading" class="section-title">
-        <span class="section-index">01</span> Projects
+        <span class="section-index">03</span> Projects
       </h2>
       <p class="section-intro">
-        The things section 00 was built for. Every link in the first row leaves the site
-        and starts something you can play; open a tile for what it is and where else it
-        runs.
+        Projects where I built, shipped or operated the systems behind the software.
       </p>
 
       {/* Was its own section 00. Folded in here rather than dropped: a direct
@@ -512,7 +485,7 @@ const year = new Date().getFullYear();
                 <Fragment slot="note"><Content /></Fragment>
                 {entry.data.buildingTheGame && (
                   <p class="game-crosslink">
-                    <a href="#engineering">How this one was built — six disciplines in section 00 →</a>
+                    <a href="#engineering">How this one was built →</a>
                   </p>
                 )}
               </GameCard>
@@ -524,12 +497,13 @@ const year = new Date().getFullYear();
 
     <section id="cv" aria-labelledby="cv-heading">
       <h2 id="cv-heading" class="section-title">
-        <span class="section-index">02</span> CV
+        <span class="section-index">04</span> CV
       </h2>
       <p class="section-intro">
-        Five years running enterprise network operations, then a deliberate return through
-        software QA to see how the applications on top of that infrastructure actually
-        behave. Both halves point the same way. Open a role for what it involved.
+        My career started in enterprise network operations, moved through software QA, and now focuses on platform and DevOps engineering.
+      </p>
+      <p class="section-intro">
+        The roles below show the operational, testing and engineering experience behind that progression.
       </p>
 
       {/* Recruiters need a file for their tracking system, and asking them to
@@ -596,10 +570,10 @@ const year = new Date().getFullYear();
 
     <section id="contact" aria-labelledby="contact-heading">
       <h2 id="contact-heading" class="section-title">
-        <span class="section-index">03</span> Get in touch
+        <span class="section-index">05</span> Let's talk
       </h2>
-      <p class="eyebrow">{profile.title}</p>
-      {profile.availability && <p class="availability">{profile.availability}</p>}
+      <p class="eyebrow">Platform &amp; DevOps Engineer</p>
+      <p class="availability">Open to Platform, Cloud and DevOps roles, full-time or contract. Remote preferred; hybrid possible in the Philippines.</p>
       {/* Labelled "Email …" rather than showing the bare address. A raw string
           sitting in a button reads as a heading to anyone scanning, and the one
           thing this section has to be unambiguous about is that this is where
@@ -611,6 +585,7 @@ const year = new Date().getFullYear();
             {link.label}
           </a>
         ))}
+        {profile.cv.href && <a class="cta secondary" href={profile.cv.href} download>CV</a>}
       </div>
     </section>
   </main>

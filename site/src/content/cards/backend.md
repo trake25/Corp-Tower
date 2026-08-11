@@ -1,6 +1,7 @@
 ---
 role: "Backend"
 order: 4
+hidden: true
 wip: true
 headline: "The server decides everything; the phone only draws the result."
 plain: "That's what lets someone lose signal on the bus, come back, and still be in the same game — served by a different worker than the one that started it."

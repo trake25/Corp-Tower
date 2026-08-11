@@ -1,8 +1,8 @@
 ---
 role: "Cloud"
 order: 1
-headline: "Knowing what it has to do, and what it's allowed to cost, is the whole job."
-plain: "Requirements, cost ceiling and guardrails get settled before any infrastructure exists. Changing them later is expensive, so they come first. An assistant compares options and models costs; I decide what to accept."
+headline: "I build infrastructure that can be rebuilt, secured and controlled for cost."
+plain: "Before I build anything, I decide what the system needs, who can access it, and what it should cost."
 tools:
   - "Terraform"
   - "AWS (EKS, EC2, ElastiCache)"
