@@ -26,11 +26,5 @@ Wire payloads are [`networking.md`](../../../docs/context/networking.md), not yo
 
 ## Always
 
-- **Read by section.** Grep the map for the symbol, then `Read(offset, limit)`.
-  Never load a map file or a whole source file.
-- **600-line refactor gate.** The map's `### <path> — NNN ln` header is the live
-  count. Over 600 → **propose the split, don't just do it.**
-- **No comments in source.** Explanation goes in the owning doc.
-  `scripts/strip-comments.mjs` enforces this.
 - **Escalate, don't reach.** Anything outside `Cor/` and `Sys/` → `fullstack-coordinator`.
 - **Done =** `qa-engineer` gate, then `docs-steward`.

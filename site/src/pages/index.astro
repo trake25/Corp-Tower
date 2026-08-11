@@ -13,9 +13,7 @@ import AiWorkflowDiagram from "../components/diagrams/AiWorkflowDiagram.astro";
 import DevOpsPipelineDiagram from "../components/diagrams/DevOpsPipelineDiagram.astro";
 import { profile } from "../data/profile";
 
-// One showcase diagram per skill, keyed by the card's `role`. A role with no
-// entry here simply renders without one, so adding the remaining diagrams is a
-// one-line change per skill.
+// One diagram per role. A role with no entry here renders without one.
 const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
   Cloud: CloudTargetsDiagram,
   QA: QaLoopDiagram,
@@ -23,21 +21,13 @@ const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
   DevOps: DevOpsPipelineDiagram,
 };
 
-// Filter buttons follow this order, not the cards' display order. A role present
-// in the cards but missing here is appended rather than dropped.
-//
-// Cloud and DevOps lead because they are what the target roles are actually
-// hiring for. QA and AI describe how the work gets done, which is a second
-// question — putting them first, as this list used to, made two process cards
-// the first thing a platform reader saw.
+// Filter button order, not the cards' display order. Cloud and DevOps lead
+// because that is what the target roles hire for. A role present in the cards
+// but missing here is appended rather than dropped.
 const ROLE_ORDER = ["Cloud", "DevOps", "QA", "AI"];
 
-// Plain-English capability lines for the recruiter layer, each with the
-// implementation named after it. Deliberately in this order and deliberately
-// not a content collection: four lines that change when the stack does, not
-// four files with a schema. The pattern is the point — someone who does not
-// know what EKS is still learns what was built, and someone who does gets the
-// receipt in the same row.
+// The recruiter layer: a plain-English capability with its implementation named
+// in the same row. Copy rules are site/docs/content.md.
 const WHAT_I_DO = [
   {
     title: "Build the platform",
@@ -61,14 +51,8 @@ const WHAT_I_DO = [
   },
 ];
 
-// Section 00's closing block. The cards above prove these in context; this is
-// the flat enumeration a reader scanning for one word needs, and the surface an
-// applicant tracking system reads. Networking and QA tooling are here because
-// five years of the CV uses them and nothing else on the page names them.
-//
-// Every entry is something actually used. Nothing aspirational goes in this
-// list — it is the one block on the page with no surrounding prose to qualify
-// it, so an unearned entry here reads as a straight claim.
+// The flat enumeration a scanning reader and an applicant tracking system need.
+// Every entry must be something actually used — nothing aspirational.
 const SKILL_GROUPS: { label: string; items: string[] }[] = [
   {
     label: "Cloud & infrastructure",
@@ -168,11 +152,7 @@ const SKILL_GROUPS: { label: string; items: string[] }[] = [
   },
 ];
 
-// Section 02's second vignette. Deliberately not a content collection: three
-// static facts that change once a decade do not need one file each and a schema.
-// Deliberately not `<details>` tiles either — a credential has nothing to hide,
-// so it renders as a flat row. That keeps it visibly a different thing from the
-// job tiles directly above it, which is the level-grammar rule doing its job.
+// Renders as flat rows, not tiles — see the level grammar in site/docs/design.md.
 // Annotated rather than inferred: only one entry carries a `note`, and without
 // this TypeScript infers a union the optional field is missing from.
 const CREDENTIALS: {
@@ -206,9 +186,8 @@ const CREDENTIALS: {
 const byOrder = (a: { data: { order: number } }, b: { data: { order: number } }) =>
   a.data.order - b.data.order;
 
-// `hidden: true` entries stay in their collection and stay validated — they are
-// just not published. Every count, filter and grid on the page derives from
-// these three lists, so nothing else has to know they exist.
+// `hidden: true` entries stay validated but unpublished. Every count, filter
+// and grid derives from these three lists, so nothing else has to know.
 const cardEntries = (await getCollection("cards", ({ data }) => !data.hidden)).sort(byOrder);
 const gameEntries = (await getCollection("games", ({ data }) => !data.hidden)).sort(byOrder);
 const cvEntries = (await getCollection("cv", ({ data }) => !data.hidden)).sort(byOrder);
@@ -235,9 +214,8 @@ const renderedCv = await Promise.all(
 const inProduction = renderedGames.filter((game) => game.entry.data.status === "production");
 const inDevelopment = renderedGames.filter((game) => game.entry.data.status === "development");
 
-// The hero's play button. Derived, not hardcoded: play destinations belong to
-// the game file, and the one game carrying the skill cards is the one the hero
-// is talking about. No game with links, no button.
+// The hero's play button, derived from the game carrying the skill cards.
+// No game with links, no button.
 const featuredGame =
   gameEntries.find((entry) => entry.data.buildingTheGame) ??
   inDevelopment[0]?.entry ??
@@ -342,12 +320,8 @@ const year = new Date().getFullYear();
       )}
     </section>
 
-    {/* Section 00, and it used to be section 01's fourth level. The six cards
-        below were mounted inside the Top or Drop game card, which put the
-        Terraform and CI/CD work five clicks from the hero behind a heading that
-        said "Games". The nesting was good information architecture answering
-        the wrong question: it optimised for a reader already convinced, and the
-        reader who has to be convinced never got there. */}
+    {/* The skill cards sit here at the top level and must not be nested back
+        inside a game card — site/docs/design.md. */}
     <section id="engineering" aria-labelledby="engineering-heading">
       <h2 id="engineering-heading" class="section-title">
         <span class="section-index">01</span> How I built it
@@ -411,10 +385,7 @@ const year = new Date().getFullYear();
         Projects where I built, shipped or operated the systems behind the software.
       </p>
 
-      {/* Was its own section 00. Folded in here rather than dropped: a direct
-          route out to a running build is worth keeping, but it is not what a
-          platform reader is here for, and it should not be the first thing
-          under the hero. The id survives so existing #playables links resolve. */}
+      {/* The id is load-bearing: existing #playables links point at it. */}
       <div id="playables" class="playables-strip">
         <Playables
           games={gameEntries.map((entry) => ({
@@ -463,11 +434,8 @@ const year = new Date().getFullYear();
           open={true}
         >
           <div class="game-list" data-accordion="true">
-            {/* Only the first one. The accordion script enforces one-open-at-a-time
-                from the `toggle` event, which never fires for a tile that was
-                already open in the HTML — so opening every in-development game
-                here would render two expanded at once until something was
-                clicked. */}
+            {/* Only the first: `toggle` never fires for a tile already open in
+                the HTML, so two default-open tiles both stay expanded. */}
             {inDevelopment.map(({ entry, Content }, index) => (
               <GameCard
                 slug={entry.slug}
@@ -506,8 +474,7 @@ const year = new Date().getFullYear();
         The roles below show the operational, testing and engineering experience behind that progression.
       </p>
 
-      {/* Recruiters need a file for their tracking system, and asking them to
-          transcribe a web page loses candidates. `href: null` hides this. */}
+      {/* `href: null` hides this. */}
       {profile.cv.href && (
         <p class="cv-download">
           <a class="cta secondary" href={profile.cv.href} download>
@@ -574,10 +541,7 @@ const year = new Date().getFullYear();
       </h2>
       <p class="eyebrow">Platform &amp; DevOps Engineer</p>
       <p class="availability">Open to Platform, Cloud and DevOps roles, full-time or contract. Remote preferred; hybrid possible in the Philippines.</p>
-      {/* Labelled "Email …" rather than showing the bare address. A raw string
-          sitting in a button reads as a heading to anyone scanning, and the one
-          thing this section has to be unambiguous about is that this is where
-          you write to. */}
+      {/* Labelled "Email …": a bare address in a button scans as a heading. */}
       <div class="contact-links">
         <a class="cta primary" href={`mailto:${profile.email}`}>Email {profile.email}</a>
         {contactLinks.map((link) => (
@@ -606,42 +570,30 @@ const year = new Date().getFullYear();
     </div>
     <p class="footer-meta">
       © {year} {profile.name}
-      {/* Discoverable version of Ctrl+P. Both routes go through the same
-          `beforeprint` hook, so the printed document is identical either way —
-          the button exists because nobody thinks to print a portfolio, and this
-          is the page where printing actually produces something worth
-          forwarding. */}
+      {/* Discoverable Ctrl+P. Both routes go through the same print hook. */}
       <button class="print-cta" type="button" data-print>Print / Save as PDF</button>
     </p>
   </footer>
 </BaseLayout>
 
 <script>
-  // Two behaviours the four-level structure needs, both document-wide so no
-  // component has to know how deeply it happens to be nested.
+  // Accordion, deep links and print. All document-wide, so no component has to
+  // know how deeply it is nested. Behaviour and reasoning: site/docs/design.md.
   const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Raised while the page is being expanded for print. The accordion below
-  // enforces one-open-at-a-time from the `toggle` event, which would fight the
-  // print hook exactly: open every card in turn and the accordion closes each
-  // one as the next opens, leaving a single card on the page. This flag is what
-  // lets the two coexist without either knowing much about the other.
+  // Suspends the accordion while print expands every disclosure — otherwise it
+  // closes each card as the next opens and one card reaches paper.
   let printing = false;
 
-  // 1. One open at a time, per group — and while one is open the rest are taken
-  //    off the page rather than left as a stack of closed titles above and
-  //    below it. Applied to the card lists (games, jobs, skills) but
-  //    deliberately not to the vignettes: the cards are the bulky things, and a
-  //    reader may legitimately want two vignettes open at once.
+  // 1. One open at a time, per group. Not applied to vignettes.
   for (const group of document.querySelectorAll<HTMLElement>("[data-accordion]")) {
     const items = Array.from(group.children).filter(
       (child): child is HTMLDetailsElement => child instanceof HTMLDetailsElement
     );
 
-    // Siblings are removed while one is open, not merely collapsed. Closing it
-    // brings them back. `.is-peer-hidden` is deliberately a separate channel
-    // from the `hidden` attribute the role filter drives — sharing one would
-    // let closing a card resurrect cards the filter had taken away.
+    // Siblings are removed while one is open, not merely collapsed.
+    // `.is-peer-hidden` stays a separate channel from the `hidden` attribute the
+    // role filter drives, or closing a card resurrects filtered-out cards.
     const sync = () => {
       const open = items.find((item) => item.open);
       for (const item of items) {
@@ -649,13 +601,9 @@ const year = new Date().getFullYear();
       }
     };
 
-    // A `toggle` does not mean the reader did anything. A tile marked open in
-    // the HTML fires one as the page is parsed, and a deep link opens tiles
-    // programmatically — scrolling on either is wrong. The first drags a fresh
-    // visitor past the hero into whichever tile happens to be open by default;
-    // the second fights revealHash's own scroll. So the scroll is owed only to
-    // a summary the reader actually activated. Keyboard activation of a
-    // <summary> dispatches a click too, so this covers both.
+    // A `toggle` does not mean the reader did anything — parse and deep links
+    // fire it too, and scrolling on either is wrong. The scroll is owed only to
+    // a summary the reader activated; keyboard activation dispatches a click.
     let activated: HTMLDetailsElement | null = null;
     group.addEventListener("click", (event) => {
       const parent = (event.target as HTMLElement).closest("summary")?.parentElement;
@@ -674,8 +622,8 @@ const year = new Date().getFullYear();
 
           sync();
 
-          // Everything above the open tile just disappeared, which drags it up
-          // under the reader's cursor. Put it back where they are looking.
+          // Everything above the open tile just disappeared. Put it back where
+          // the reader is looking.
           if (activated === item) {
             activated = null;
             item.scrollIntoView({ block: "start", behavior: motionOk ? "smooth" : "auto" });
@@ -684,27 +632,22 @@ const year = new Date().getFullYear();
         }
 
         // A close fired while another tile is open is a side effect of that
-        // tile opening, not the reader closing this one. It is already hidden,
-        // so its box is zero and the correction below would be nonsense.
+        // tile opening. Its box is already zero, so the correction is nonsense.
         if (items.some((other) => other.open)) {
           sync();
           return;
         }
 
-        // Nothing to keep in view if the tile is not on the page — a role
-        // filter change closes every card and hides most of them in the same
-        // beat, and measuring one of those gives a zero box and a wild jump.
+        // Nothing to keep in view if the tile is off the page — a filter change
+        // closes and hides in the same beat, and a zero box jumps wildly.
         const box = item.getBoundingClientRect();
         if (item.hidden || box.height === 0) {
           sync();
           return;
         }
 
-        // Restoring the siblings puts every tile above this one back on the
-        // page, pushing it down by their combined height — from the reader's
-        // side the page appears to jump back to the top of the list. Measure
-        // the tile either side of the change and cancel the difference out, so
-        // the tile they just closed stays under their eye.
+        // Restoring the siblings pushes this tile down by their combined
+        // height. Measure either side of the change and cancel the difference.
         const before = box.top;
         sync();
         const shift = item.getBoundingClientRect().top - before;
@@ -712,16 +655,13 @@ const year = new Date().getFullYear();
       });
     }
 
-    // Applied directly rather than left to the toggle handler: whether a tile
-    // marked open in the HTML fires `toggle` during parse is not consistent
-    // across engines, and the peer state has to be right either way.
+    // Applied directly: whether a tile open in the HTML fires `toggle` during
+    // parse is not consistent across engines.
     sync();
   }
 
-  // 2. A link into something nested has to open everything above it, or it
-  //    scrolls to a collapsed tile and appears broken. Covers the per-step
-  //    evidence links that point at another card, the nav, and a hash typed
-  //    straight into the address bar.
+  // 2. A link into something nested opens everything above it, or it scrolls to
+  //    a collapsed tile and appears broken.
   const openAncestors = (target: Element) => {
     let node: Element | null = target;
     while (node) {
@@ -780,12 +720,9 @@ const year = new Date().getFullYear();
   if (window.location.hash) revealHash(window.location.hash, false);
 
   // 3. Print. A closed `<details>` hides its children through a slot it never
-  //    renders them into, so no stylesheet can open one — it has to be done to
-  //    the DOM. Everything opens on `beforeprint` and only what *was* closed is
-  //    put back on `afterprint`, so the reader's own open tiles survive being
-  //    printed. What actually reaches paper is trimmed in the `@media print`
-  //    block: diagrams, players, filters and hints are dropped, leaving the
-  //    prose, the steps, the evidence URLs and the CV.
+  //    renders into, so no stylesheet can open one — it has to be done to the
+  //    DOM. Only what *was* closed is put back, so the reader's own open tiles
+  //    survive. What reaches paper is trimmed in the `@media print` block.
   let reclose: HTMLDetailsElement[] = [];
 
   const expandForPrint = () => {

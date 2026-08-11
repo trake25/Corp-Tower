@@ -33,7 +33,4 @@ is the preview. A task that only previews differently is `client-engineer`.
 
 ## Always
 
-- **Read by section.** Grep `docs/context/map/<area>.md`, then `Read(offset, limit)`.
-- **600-line refactor gate.** The map's `### <path> — NNN ln` header is the live
-  count. Over 600 → **propose the split, don't just do it.**
 - **Done =** `qa-engineer` gate over **both** suites, then `docs-steward`.

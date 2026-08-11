@@ -59,17 +59,18 @@ flowchart LR
 | Tests, balance simulator, CI gates | [testing.md](./testing.md) | — |
 | "Which file does X?" | — | the matching map |
 | Editing these docs | `/update-docs` · `/compact-docs` | — |
-| `site/`, `site-root/` — separate Workers, no game code | their own READMEs | — |
+| `site/` — the portfolio, a separate Worker and its own KB | [`site/docs/index.md`](../../site/docs/index.md) | — |
+| `site-root/` — apex-domain Worker, no game code | its own README | — |
 
 Each domain doc states its scope on line 1. Docs describe how the system behaves
 now and what it still cannot do — not how it got here. There is no history doc.
 
 ## Working rules
 
-- Server is authoritative; the client never computes a final outcome.
-- **No explanatory comments in source.** Context belongs in the owning doc here.
-  Sole exception: `SAFETY EXCEPTION` comments, where the risk is invisible from
-  the code and a doc would put the warning where nobody editing that line reads it.
+Repo-wide invariants — server authority, no comments in product source, don't
+commit — are in the root `CLAUDE.md` and are not repeated here. These are the
+rules for writing *these docs*.
+
 - **One owning doc per concept.** Edit that doc, never a second copy.
 - **Docs own knob _semantics_; `Game_Config.js` owns knob _values_.** Mirroring a
   number into prose is this KB's most common drift class. Write a value down only
@@ -78,7 +79,6 @@ now and what it still cannot do — not how it got here. There is no history doc
 - Config keys appear in exact code-identifier form, never paraphrased.
 - Docs change only under `/update-docs` or `/compact-docs`, and edits **replace**
   prose rather than append to it.
-- Don't commit, push, pull or compare with the remote unless told to.
 
 ## Aliases
 

@@ -57,7 +57,7 @@ npx wrangler@4.118.0 deploy --dry-run
 CI can create and update the Worker, but **it cannot attach the domain**: the
 `CLOUDFLARE_WORKERS_API_TOKEN` is scoped to Workers Scripts only, with no
 Zone/DNS permission (same split as the portfolio — see
-[`../site/README.md`](../site/README.md)). So the domain binding is a manual
+[`../site/docs/deploy.md`](../site/docs/deploy.md)). So the domain binding is a manual
 dashboard step. **Order matters** — the Worker must exist before any domain can
 point at it:
 

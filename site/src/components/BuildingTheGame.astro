@@ -1,22 +1,13 @@
 ---
 import CardFilter from "./CardFilter.astro";
 
-// The skill cards and the control that filters them.
+// The skill cards and the control that filters them. A plain body, not a
+// disclosure: `#engineering` owns it directly and it must not be nested back
+// inside a game card (site/docs/design.md). The progressive disclosure that
+// matters — card, then steps — lives one and two levels below.
 //
-// This used to be a `<details>` panel nested inside the Top or Drop game card —
-// inset and tinted so it read as being *inside* the game. It is not inside
-// anything any more. Section 00 owns it directly, which is the whole point of
-// the move: the platform work was five clicks from the hero and filed under a
-// heading that said "Games", and no one screening for a platform role clicks
-// that far into a game.
-//
-// So this is now a plain body, not a disclosure. It renders open because there
-// is nothing left for it to be closed inside of, and the progressive disclosure
-// that matters — card, then steps — still lives one and two levels below.
-//
-// The role filter stays here rather than in index.astro: filtering skills is
-// only meaningful next to the skills, and the `cards:reset` event it dispatches
-// is handled by Card.astro.
+// The role filter stays here, next to the skills. The `cards:reset` event it
+// dispatches is handled by Card.astro.
 interface Props {
   roles: string[];
   total: number;

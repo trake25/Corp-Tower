@@ -78,3 +78,7 @@ than 30 net lines into one doc means the session is being transcribed rather tha
 the system documented — compress before finishing.
 
 Whole-KB compaction is not part of this — that is `/compact-docs`.
+
+`site/` is out of scope: `docs-scope.mjs` drops those paths and prints them as
+dropped. The portfolio has its own KB at `site/docs/`, updated in place as part
+of the `web-designer` / `editorial` close-out.

@@ -616,7 +616,7 @@ _no extracted symbols_
 | scripts/build-file-map.mjs:292 | build · fn | walks every area, reads each file, and renders against the `Does` prose already in the map |
 | scripts/build-file-map.mjs:310 | main · fn | `--check` exits 1 on a stale map without writing; `--quiet` prints the summary line only |
 
-### scripts/docs-scope.mjs — 217 ln
+### scripts/docs-scope.mjs — 218 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -628,22 +628,22 @@ _no extracted symbols_
 | scripts/docs-scope.mjs:26 | CTX · const | the docs/context directory this tool routes into |
 | scripts/docs-scope.mjs:27 | CLIENT · const | Godot project prefix, stripped to form a second search needle per path |
 | scripts/docs-scope.mjs:28 | git · const | execFileSync git wrapper with stderr discarded |
-| scripts/docs-scope.mjs:32 | IGNORE · const | binary, generated and out-of-KB paths — including `docs/context/` itself, plan/, task/ and reference/ |
-| scripts/docs-scope.mjs:45 | ROUTES · const | **path to owning doc, first match wins**, with a read strategy per rule: `full` for files encoding contracts, `wide` for -U10, `hunk` for -U2 |
-| scripts/docs-scope.mjs:75 | MAP_OWNER · const | which map a path's line-number churn invalidates, so the run says what to regenerate |
-| scripts/docs-scope.mjs:82 | given · const | the explicit paths passed by the caller, minus the --range value |
-| scripts/docs-scope.mjs:92 | paths · const | deduped candidate set before the ignore map is applied |
-| scripts/docs-scope.mjs:104 | dropped · const | paths removed by IGNORE, reported as a count so a wrong ignore is visible |
-| scripts/docs-scope.mjs:105 | scoped · const | the surviving doc-relevant paths |
-| scripts/docs-scope.mjs:120 | churn · const | per-path `+adds/-dels`, or `new`, `deleted`, or **`no diff vs RANGE`** — the last means the task is already committed and needs --range |
-| scripts/docs-scope.mjs:127 | tracked · const | git ls-files probe distinguishing an untracked new file from an unchanged one |
-| scripts/docs-scope.mjs:137 | byDoc · const | owning doc to the paths that route into it, the report's primary grouping |
-| scripts/docs-scope.mjs:138 | unmapped · const | paths no ROUTES rule matched; the fix is a new rule, not a hand-route |
-| scripts/docs-scope.mjs:152 | needles · const | basename, full path, and client-relative path — the three forms a doc might use to name a file |
-| scripts/docs-scope.mjs:153 | targets · fn | **the falsification set**: only sections mentioning a changed file can have been made false, so step 4 reads those line ranges instead of the whole doc |
-| scripts/docs-scope.mjs:174 | outline · fn | `##` headings with line numbers, so a new entry can be placed without opening the doc |
-| scripts/docs-scope.mjs:186 | order · const | docs sorted by how many paths route into them, heaviest first |
-| scripts/docs-scope.mjs:207 | maps · const | the distinct map files needing regeneration after this task |
+| scripts/docs-scope.mjs:33 | IGNORE · const | binary, generated and out-of-KB paths — including `docs/context/` itself, plan/, task/ and reference/ |
+| scripts/docs-scope.mjs:46 | ROUTES · const | **path to owning doc, first match wins**, with a read strategy per rule: `full` for files encoding contracts, `wide` for -U10, `hunk` for -U2 |
+| scripts/docs-scope.mjs:76 | MAP_OWNER · const | which map a path's line-number churn invalidates, so the run says what to regenerate |
+| scripts/docs-scope.mjs:83 | given · const | the explicit paths passed by the caller, minus the --range value |
+| scripts/docs-scope.mjs:93 | paths · const | deduped candidate set before the ignore map is applied |
+| scripts/docs-scope.mjs:105 | dropped · const | paths removed by IGNORE, reported as a count so a wrong ignore is visible |
+| scripts/docs-scope.mjs:106 | scoped · const | the surviving doc-relevant paths |
+| scripts/docs-scope.mjs:121 | churn · const | per-path `+adds/-dels`, or `new`, `deleted`, or **`no diff vs RANGE`** — the last means the task is already committed and needs --range |
+| scripts/docs-scope.mjs:128 | tracked · const | git ls-files probe distinguishing an untracked new file from an unchanged one |
+| scripts/docs-scope.mjs:138 | byDoc · const | owning doc to the paths that route into it, the report's primary grouping |
+| scripts/docs-scope.mjs:139 | unmapped · const | paths no ROUTES rule matched; the fix is a new rule, not a hand-route |
+| scripts/docs-scope.mjs:153 | needles · const | basename, full path, and client-relative path — the three forms a doc might use to name a file |
+| scripts/docs-scope.mjs:154 | targets · fn | **the falsification set**: only sections mentioning a changed file can have been made false, so step 4 reads those line ranges instead of the whole doc |
+| scripts/docs-scope.mjs:175 | outline · fn | `##` headings with line numbers, so a new entry can be placed without opening the doc |
+| scripts/docs-scope.mjs:187 | order · const | docs sorted by how many paths route into them, heaviest first |
+| scripts/docs-scope.mjs:208 | maps · const | the distinct map files needing regeneration after this task |
 
 ### scripts/strip-comments.mjs — 293 ln — enforces the no-comments-in-source rule
 

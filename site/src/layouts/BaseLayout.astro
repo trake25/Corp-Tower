@@ -12,9 +12,9 @@ const { title, description } = Astro.props;
 const canonical = new URL(Astro.url.pathname, profile.site).href;
 const ogImage = new URL("/og.png", profile.site).href;
 
-// Filled in once the Cloudflare Web Analytics site token exists (see
-// site/README.md's one-time setup) — until then the script simply isn't
-// rendered, so there's no broken/empty beacon tag in the shipped HTML.
+// Filled in once the Cloudflare Web Analytics site token exists (site/docs/
+// deploy.md) — until then the script is not rendered at all, so no broken or
+// empty beacon tag ships.
 const analyticsToken = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN as string | undefined;
 
 const personSchema = {
@@ -26,9 +26,8 @@ const personSchema = {
   email: `mailto:${profile.email}`,
   jobTitle: profile.jobTitle,
   description,
-  // `github` is also published as a contact button, so the two lists overlap by
-  // one entry. Deduped rather than deconflicted: either source may gain the
-  // other's URL later and neither should have to know about it.
+  // Deduped rather than deconflicted: `github` is also a contact button, and
+  // either source may gain the other's URL later.
   sameAs: [...new Set([profile.github, ...profile.links.map((link) => link.href)])].filter(Boolean),
   knowsAbout: [
     "Platform Engineering",

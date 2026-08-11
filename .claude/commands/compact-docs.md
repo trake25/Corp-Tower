@@ -27,10 +27,7 @@ Procedure:
 4. **Landmines are not compressible.** Before rewriting a doc, list every gotcha in
    it; after rewriting, tick each one off in the new text. A *live* hazard is one
    the code still carries — a fixed bug is not a landmine and does not survive the
-   pass. If a doc is over budget, re-examine whether its content acts on anything
-   before touching the budget: **a doc growing is not evidence the budget is
-   wrong.** Raise one only when a doc is all State and live constraint and still
-   does not fit, and record why in the same change.
+   pass. Budget policy — when raising one is legitimate — is `docs-steward`'s.
 5. Move per-symbol detail into `docs/context/map/` rather than deleting it. A
    symbol's file, line and one-line purpose belong in a map row; the doc keeps the
    behaviour and the contract.

@@ -52,6 +52,7 @@ contradicted source.
 | 13 | Map rows carry `path:line`; infra map authored 436/436 | 4 | A | 2 | 12 | — | ~36,000 | ~70,000 | ~70,000 | ✓ | ok |
 | 14 | Skills-inert diagnosis; ui map 705/705; CLAUDE.md audited + un-ignored | 4 | A | 2 | 15 | — | ~33,000 | ~62,000 | ~62,000 | ✓ | ok |
 | 15 | Delete the K3s stack — source, workflows, docs | 3 | B | 2 | 85 | — | ~35,000 | ~75,000 | ~75,000 | ✓ | ok |
+| 16 | Portfolio KB + validator, 2 site skills, policy dedupe | 4 | B | 3 | 27 | — | ~38,000 | ~95,000 | ~95,000 | ! | ok |
 
 Rows 1–2 carry no `R-est`: both predate the append rule they establish. They are
 measurements, not predictions, and are marked as such rather than back-filled — a
@@ -290,5 +291,22 @@ completion over the gate's objection. The file-count threshold (~4) is now the
 worst-calibrated of the five; 85 files of mechanical deletion cost less than 15 files
 of diagnosis did in row 14.
 
-**Rollup (cycle 1, open):** n=15 · median `R-act` ~28,000 · ✓9 ~2 ✗0 !4 · misroute 0%
-· 5 rows to close
+Row 16 is `!` for the widest doc/source divergence measured so far, and it is the
+argument for this whole table. `site/` had one 15.7 KB README and no validator, so
+nothing could fail: it claimed a four-level page with the six skill cards nested
+inside the game card, six cards rendering, and three files that no longer exist,
+against a source where the cards are a top-level section and four render. The game
+KB, which is gated, has produced four `!` rows in fifteen tasks and none of that
+size. An ungated doc does not drift more slowly than a gated one — it drifts
+silently, and the cost lands on whoever reads it next.
+
+`R-est` was blank a seventh time — 5 of 16 rows, ~31% and falling. The mechanism is
+now stable and worth naming: on tasks whose scope is *discovering* what has drifted,
+the estimate is not knowable until the first sweep is already paid for.
+
+**The delegation gate said delegate, and the task ran solo again** — 3 domains, 27
+files, ~38,000 tokens: three thresholds, fourth consecutive completion over the
+gate's objection. The gate has now been wrong four times running and right zero.
+
+**Rollup (cycle 1, open):** n=16 · median `R-act` ~29,000 · ✓9 ~2 ✗0 !5 · misroute 0%
+· 4 rows to close

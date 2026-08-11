@@ -23,15 +23,13 @@ becomes an artifact → grep `docs/context/map/infra.md` → `Read(file, offset,
   they all live in your paths — 5 of them, across `.github/actions/` and
   `scripts/`. Never strip one. If you add one, say what
   the risk is and why it is invisible from the code.
-- **`scripts/` and `.github/` keep their comments.** The no-comments rule and
-  `strip-comments.mjs` cover product source only.
 
 ## Always
 
-- **Read by section.** Grep the map for the job or resource, then
-  `Read(offset, limit)`. Workflow files run long; never load one whole.
-- **600-line refactor gate.** The map's `### <path> — NNN ln` header is the live
-  count. Over 600 → **propose the split, don't just do it.**
+- **Workflow files run long — never load one whole.** Grep the map for the job or
+  resource, then `Read(offset, limit)`.
 - **Escalate, don't reach.** Game behaviour is not yours → `server-engineer`.
+  The portfolio's own build and deploy path is `site/docs/deploy.md`, and its
+  page is `web-designer`.
 - **Done =** `qa-engineer` gate if any server or client file moved, then
   `docs-steward`.

@@ -1,31 +1,21 @@
+// Field meanings, copy rules and the reasoning behind them: site/docs/content.md.
 import { defineCollection, z } from "astro:content";
 
-// A single recording. `src` and `poster` are bucket-relative paths resolved
-// against `profile.mediaBase` at render time — an absolute http(s) URL is passed
-// through untouched. Not `z.string().url()` for that reason.
+// Bucket-relative paths resolved against `profile.mediaBase`; an absolute
+// http(s) URL passes through, which is why this is not `z.string().url()`.
 const clip = z.object({
   src: z.string(),
   poster: z.string().optional(),
   caption: z.string().optional(),
 });
 
-// Left out entirely, nothing renders — no empty player, no "coming soon" box.
-// Fill one in when a recording exists and the block appears on its own.
+// Absent by default: no block, no player, no placeholder.
 const video = clip.optional();
 
-// Some work needs more than one clip to be checkable: an infrastructure card
-// that only shows `apply` has shown half a story, and a pipeline that deploys
-// to five destinations does not fit in one take. `videos` renders in order
-// after `video`, so an entry can use either or both — a card with one clip
-// stays a one-line `video:` block.
-//
-// Every clip should carry its own `caption`. With more than one player stacked
-// the caption is the only thing telling a reader which run they are looking at.
+// Renders in order after `video`. Give every clip its own caption.
 const videos = z.array(clip).default([]);
 
-// Where a game can be played or downloaded. These are the only links section
-// `00 Playables` reads, which is what makes it a genuine shortcut rather than a
-// second table of contents — a repo link is not somewhere you go to play.
+// Play or download destinations. The only links section 03's strip reads.
 const playLink = z.object({
   label: z.string(),
   href: z.string().url(),
@@ -36,92 +26,60 @@ const cards = defineCollection({
   schema: z.object({
     role: z.string(),
     order: z.number(),
-    // Kept in the collection, kept out of the page. `index.astro` filters these
-    // out of `getCollection`, so the filter bar and the grid follow — setting it
-    // back to false is the only step to bring a card back.
+    // Kept in the collection, kept out of the page.
     hidden: z.boolean().default(false),
-    // A discipline that is real but whose card is still being written. It
-    // renders as a flat, non-expandable row carrying an "Under construction"
-    // tag, so the reader can see the discipline exists without being handed
-    // half-finished work as if it were evidence.
-    //
-    // Deliberately not `hidden`: hiding it makes the page claim four
-    // disciplines when there are six. Deliberately not published either — the
-    // honesty markers everywhere else on this site are only worth anything if
-    // this one is applied too. Everything below stays in the file untouched and
-    // comes back by flipping this to false.
+    // A real discipline whose card is still being written: renders as a flat
+    // "Under construction" row. Deliberately neither hidden nor published.
     wip: z.boolean().default(false),
     headline: z.string(),
     plain: z.string(),
     tools: z.array(z.string()).default([]),
-    // Sits between the diagram and the written steps: you see the shape, then
-    // see it running, then read why.
     video,
     videos,
-    // One entry per clickable element in the card's diagram. `id` must match the
-    // `data-detail` on the diagram hotspot — that pairing is what turns a click
-    // on a diagram step into the matching explanation highlighting below it.
+    // One entry per clickable element in the card's diagram.
     details: z
       .array(
         z.object({
+          // Must match the `data-detail` on a diagram hotspot.
           id: z.string(),
           title: z.string(),
-          // The named disciplines this step exercises. Rendered as chips under
-          // the step title so the industry term is present for a reader (or a
-          // search) scanning for it, while the body stays in plain English.
+          // The named disciplines. Carries the jargon so the body need not.
           keywords: z.array(z.string()).default([]),
-          // Target length is two to three sentences, hard cap three. The step
-          // bodies are no longer behind a toggle — they render as soon as the
-          // skill card opens, so length is what keeps the card readable.
+          // Two to three sentences, hard cap three.
           body: z.string(),
-          // The one artefact that proves this step. Per-step rather than a
-          // bucket at the bottom of the card: a link is far stronger sitting
-          // next to the claim it backs. The schema checks the URL is well
-          // formed — it cannot check the anchor still resolves.
+          // The one artefact proving this step. The URL shape is checked here;
+          // the anchor resolving is not.
           evidence: z.object({ label: z.string(), href: z.string().url() }).optional(),
-          // Marks a step that describes future work rather than something
-          // built today. Renders greyed out with a "Planned" tag in both the
-          // written step and its diagram hotspot — the claim stays visible,
-          // but visually distinct from what already ships.
+          // Future work: greyed, tagged "Planned" in step and hotspot alike.
           planned: z.boolean().default(false),
         })
       )
       .default([]),
-    // Staging only, and not rendered anywhere. Cards not yet converted to
-    // per-step `evidence` keep their collected URLs here so they survive the
-    // rewrite. Delete this field and the `links` prop on Card.astro once the
-    // last card is converted.
+    // Staging only, rendered nowhere. Delete with `Card.astro`'s `links` prop
+    // once the last card carries per-step `evidence`.
     links: z
       .array(z.object({ label: z.string(), href: z.string().url() }))
       .default([]),
   }),
 });
 
-// One file per game. Adding a game is a new file here and nothing else: the
-// Playables strip, the In Production / In Development vignettes and the game
-// cards all derive from this collection.
+// One file per game. The Playables strip, both vignettes and the game cards all
+// derive from this collection.
 const games = defineCollection({
   type: "content",
   schema: z.object({
     title: z.string(),
-    // Which vignette the game files under. `development` also unlocks the
-    // Building the Game panel via `buildingTheGame` below.
+    // Which vignette it files under.
     status: z.enum(["production", "development"]),
     // Lowest first, within each status group.
     order: z.number(),
-    // Drafting a game? Set this true and it disappears from the strip, the
-    // vignette and the counts together. Nothing else needs to know.
     hidden: z.boolean().default(false),
-    // One short line under the title in the collapsed tile. Optional.
+    // One line under the title on the collapsed tile.
     tagline: z.string().optional(),
-    // Shown when the tile opens. Keep it to a short paragraph — the point of
-    // the card is the links, not the prose.
+    // Shown when the tile opens. Short — the card's point is the links.
     blurb: z.string(),
-    // Play/store destinations. Also what section 00 lists.
     links: z.array(playLink).default([]),
-    // Per-game source link, replacing the old site-wide footer one. The
-    // disclaimer exists because a repo may carry a different working name than
-    // the game does — leave it out and no note renders.
+    // Card-only. `disclaimer` covers a repo carrying a different working name.
     repo: z
       .object({
         label: z.string().default("GitHub"),
@@ -131,33 +89,29 @@ const games = defineCollection({
       .optional(),
     video,
     videos,
-    // Mounts the skill cards inside this game's card. Exactly one game should
-    // carry it; a second would render the same six cards twice with duplicate
-    // element ids.
+    // Mounts the skill cards. Exactly one game may carry it — a second renders
+    // the same cards twice with duplicate element ids.
     buildingTheGame: z.boolean().default(false),
   }),
 });
 
-// One file per role, newest first by `order`. The markdown body is free-form
-// and renders under the highlights when the entry is opened.
+// One file per role, newest first by `order`. The markdown body renders under
+// the highlights when the entry is opened.
 const cv = defineCollection({
   type: "content",
   schema: z.object({
     role: z.string(),
     company: z.string(),
-    // Free text, not dates — "Jan 2023", "2019", "Q3 2021" all work. They are
-    // printed as written and never parsed, so ordering is `order`'s job alone.
+    // Free text, printed as written and never parsed. Ordering is `order`'s job.
     start: z.string(),
     end: z.string().default("Present"),
-    // 1 is the most recent role. Renumbering when a job is added is the only
-    // maintenance this collection needs.
+    // 1 is the most recent role.
     order: z.number(),
     hidden: z.boolean().default(false),
     location: z.string().optional(),
-    // One line shown in the collapsed tile, under the role and company.
+    // One line shown in the collapsed tile.
     summary: z.string().optional(),
-    // Duties and achievements, one per entry. These are the payload of the
-    // card — the markdown body below them is for anything that needs prose.
+    // The payload of the card; the markdown body is for anything needing prose.
     highlights: z.array(z.string()).default([]),
   }),
 });

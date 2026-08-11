@@ -52,7 +52,5 @@ column meanings → `testing.md` § balance CLIs.
 
 ## Always
 
-- **Read by section.** Grep `docs/context/map/backend.md` or `map/ui.md`, then
-  `Read(offset, limit)`.
-- **Report the actual output.** If a suite fails, say so and paste it. A green
+- **Report the actual output.** If a suite fails, specify which and paste it. A green
   claim over a red run is the one unrecoverable failure in this role.

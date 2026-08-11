@@ -28,7 +28,8 @@ const CLIENT = 'src/Client/App/corp-tower/';
 const git = a => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
 // Ignore map from docs/context/index.md, plus paths outside this KB's scope.
-// site/ and site-root/ are separate Cloudflare Workers deploys with their own READMEs.
+// site/ and site-root/ are separate Cloudflare Workers deploys. site/ has its own
+// knowledge base at site/docs/; site-root/ has its own README.
 const IGNORE = [
   /\.(uid|import|tres|ttf|fnt|png|svg|jpg|jpeg|ico|otf|wav|ogg|mp3)$/i,
   /(^|\/)\.godot\//, /(^|\/)addons\//, /(^|\/)node_modules\//,
