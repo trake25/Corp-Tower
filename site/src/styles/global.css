@@ -353,6 +353,19 @@ main > section:first-child {
   margin: 0 0 1.1rem;
 }
 
+/* The name is the hero's primary identifier, so it intentionally outranks the
+   role title below it. Other eyebrow labels retain the compact shared style. */
+.hero .eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--step-4);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  text-transform: none;
+  color: var(--fg);
+  margin-bottom: 0.65rem;
+}
+
 /* Step 3, not step 4. The headline used to be a four-word slogan and could
    carry the largest size on the page; it is a full sentence now, and a
    72-character sentence at step 4 is four lines of display type before the
