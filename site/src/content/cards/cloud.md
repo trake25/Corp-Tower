@@ -1,8 +1,8 @@
 ---
 role: "Cloud"
 order: 1
-headline: "I build infrastructure that can be rebuilt, secured and controlled for cost."
-plain: "Before I build anything, I decide what the system needs, who can access it, and what it should cost."
+headline: "Build it so it can be rebuilt."
+plain: "I define the infrastructure so it can be recreated, secured and controlled for cost."
 tools:
   - "Terraform"
   - "AWS (EKS, EC2, ElastiCache)"

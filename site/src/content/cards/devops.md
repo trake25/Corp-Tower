@@ -1,8 +1,8 @@
 ---
 role: "DevOps"
 order: 2
-headline: "I automate software delivery so the same checks happen every time code is released."
-plain: "Changes move through testing and controlled environments before they can reach production."
+headline: "Ship it the same way every time."
+plain: "I automate delivery so changes follow the same tests, security checks and deployment controls."
 tools:
   - "GitHub Actions"
   - "Composite Actions"

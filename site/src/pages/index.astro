@@ -215,6 +215,9 @@ const renderedCv = await Promise.all(
 
 const inProduction = renderedGames.filter((game) => game.entry.data.status === "production");
 const inDevelopment = renderedGames.filter((game) => game.entry.data.status === "development");
+// Top or Drop is a jump link back to #featured-project, not a tile — the count
+// only reflects real tiles, and stays unset (no "0 titles") until one exists.
+const inDevelopmentTiles = inDevelopment.filter((game) => game.entry.data.title !== "Top or Drop");
 
 // The hero's play button, derived from the game carrying the skill cards.
 // No game with links, no button.
@@ -440,8 +443,8 @@ const year = new Date().getFullYear();
         <Vignette
           id="in-development"
           label="In development"
-          count={inDevelopment.length}
-          countNoun={inDevelopment.length === 1 ? "title" : "titles"}
+          count={inDevelopmentTiles.length > 0 ? inDevelopmentTiles.length : undefined}
+          countNoun={inDevelopmentTiles.length === 1 ? "title" : "titles"}
           open={true}
         >
           <div class="game-list" data-accordion="true">
@@ -457,7 +460,7 @@ const year = new Date().getFullYear();
             )}
             {/* Only the first: `toggle` never fires for a tile already open in
                 the HTML, so two default-open tiles both stay expanded. */}
-            {inDevelopment.filter(({ entry }) => entry.data.title !== "Top or Drop").map(({ entry, Content }, index) => (
+            {inDevelopmentTiles.map(({ entry, Content }, index) => (
               <GameCard
                 slug={entry.slug}
                 title={entry.data.title}
