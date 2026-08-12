@@ -69,3 +69,7 @@ Append one row to [`report/task-token-cost-effectivity.md`](report/task-token-co
 Record `R-est` **before** reading anything. If the row would be the 21st in the
 open cycle, close the cycle first — see that file's append rule — then log this
 task as row 1 of the next cycle.
+
+## Plan Policy
+
+All created plans *.md are saved in local plan folder.
