@@ -7,24 +7,23 @@
 // two attempts at the same picture. CloudTargetsDiagram jumps out to
 // `#card-devops`; the two links above step 1 close that loop from this side.
 //
-// Four hotspots, because Card.astro binds clickable regions to `details[].id`
-// in src/content/cards/devops.md — plan, build, ship, operate. Keep them in
-// lockstep or the click-to-reveal wiring silently does nothing.
+// Hotspots map directly to the step ids in src/content/cards/devops.md. Keep
+// them in lockstep or the click-to-reveal wiring silently does nothing.
 //
 // The geometry is the argument, not decoration:
 //   · step 2 is drawn as the trunk every branch leaves from, because that is
 //     literally what shared composite actions are — one body of pipeline code
 //     serving five destinations.
-//   · step 3 is the five destination chips themselves. All five carry
-//     data-detail="ship", so clicking any one lights all five: shipping is one
-//     step with five endpoints, not five steps.
+//   · step 4 is the five destination chips themselves. All five carry
+//     data-detail="artifact", so clicking any one lights all five: verification
+//     is one step with five endpoints, not five steps.
 //   · the dashed vertical is the clearance gate. Three branches cross it; the
 //     two development branches pass below where it ends. That makes the card's
 //     headline readable as geometry, with no caption doing the work.
 //   · the low sweep back into step 4 is the drain: five out, one back. Not a
 //     loop — QA owns the loop, and operations isn't a return to planning.
 //
-// Step 4 is monitoring, and it isn't built yet — `details[].planned: true` in
+// Monitoring is planned, and it isn't built yet — `details[].planned: true` in
 // devops.md marks it, and this diagram matches that by graphing it greyed out
 // (`.node.is-planned` / `.hotspot.is-planned`) rather than drawing it as a live
 // workflow. Keep the two in sync: if the card stops calling it planned, the
@@ -55,7 +54,7 @@
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
     >
-      <title id="devops-pipeline-title">One pipeline, five destinations, and a gate only development skips</title>
+      <title id="devops-pipeline-title">From code change to controlled release</title>
       <desc id="devops-pipeline-desc">
         One pipeline fanning out to five destinations, fed by the Cloud and AI
         cards. Step one, on the left: planning names the five destinations
@@ -99,29 +98,29 @@
       </a>
       <path class="link" d="M100,110 L100,137" marker-end="url(#devops-arrow)" />
 
-      <g class="hotspot" data-detail="plan" role="button" tabindex="0" aria-label="Step 1, what ships where and how much trust each gets — open the explanation">
+      <g class="hotspot" data-detail="destination" role="button" tabindex="0" aria-label="Step 1, choose the destination — open the explanation">
         <rect class="node" x="15" y="137" width="230" height="104" rx="10" />
-        <text class="label" x="29" y="178">1 · What ships where</text>
-        <text class="sub" x="29" y="200">five destinations, one gate</text>
+        <text class="label" x="29" y="178">1 · Choose the destination</text>
+        <text class="sub" x="29" y="200">five destinations, one pipeline</text>
       </g>
 
       <path class="link" d="M245,189 L285,189" marker-end="url(#devops-arrow)" />
 
       <!-- step 2 as the trunk: one body of code, five branches leave from it -->
-      <g class="hotspot" data-detail="build" role="button" tabindex="0" aria-label="Step 2, one pipeline written by the agent — open the explanation">
+      <g class="hotspot" data-detail="checks" role="button" tabindex="0" aria-label="Step 2, run the checks — open the explanation">
         <rect class="node" x="285" y="58" width="190" height="262" rx="10" />
-        <text class="label" x="299" y="182">2 · One pipeline</text>
-        <text class="sub" x="299" y="204">signed builds, hashed art</text>
+        <text class="label" x="299" y="182">2 · Run the checks</text>
+        <text class="sub" x="299" y="204">shared actions, tests and validation</text>
       </g>
 
-      <text class="wire accent" x="390" y="26">a clearance gate</text>
-      <text class="wire" x="390" y="42">three branches cross it</text>
+      <text class="wire accent" x="390" y="26" data-detail="authenticate" role="button" tabindex="0">3 · Authenticate securely</text>
+      <text class="wire" x="390" y="42" data-detail="authenticate" role="button" tabindex="0">OIDC access expires with the job</text>
 
       <!-- the gate stops short on purpose: development routes under its end -->
       <path class="link" d="M550,52 L550,214" stroke-dasharray="5 5" />
       <text class="wire" x="478" y="222">development passes below</text>
 
-      <text class="label" x="580" y="44">3 · Target environments</text>
+      <text class="label" x="580" y="44">4 · Verify the artifact</text>
 
       <path class="link" d="M475,189 C515,189 545,78 580,78" marker-end="url(#devops-arrow)" />
       <path class="link" d="M475,189 C515,189 545,130 580,130" marker-end="url(#devops-arrow)" />
@@ -129,28 +128,28 @@
       <path class="link" d="M475,189 C515,189 545,248 580,248" marker-end="url(#devops-arrow)" />
       <path class="link" d="M475,189 C515,189 545,300 580,300" marker-end="url(#devops-arrow)" />
 
-      <!-- all five chips share data-detail="ship": one step, five endpoints -->
-      <g class="hotspot" data-detail="ship" role="button" tabindex="0" aria-label="Step 3, the game server in production — open the explanation">
+      <!-- all five chips share data-detail="artifact": one step, five endpoints -->
+      <g class="hotspot" data-detail="artifact" role="button" tabindex="0" aria-label="Step 4, verify the game server artifact — open the explanation">
         <rect class="node" x="580" y="58" width="225" height="40" rx="10" />
         <text class="label" x="594" y="84">Game server · production</text>
       </g>
 
-      <g class="hotspot" data-detail="ship" role="button" tabindex="0" aria-label="Step 3, the web client in production — open the explanation">
+      <g class="hotspot" data-detail="artifact" role="button" tabindex="0" aria-label="Step 4, verify the web client artifact — open the explanation">
         <rect class="node" x="580" y="110" width="225" height="40" rx="10" />
         <text class="label" x="594" y="136">Web client · production</text>
       </g>
 
-      <g class="hotspot" data-detail="ship" role="button" tabindex="0" aria-label="Step 3, the Android build in the Play Console internal testing track — open the explanation">
+      <g class="hotspot" data-detail="artifact" role="button" tabindex="0" aria-label="Step 4, verify the Android artifact — open the explanation">
         <rect class="node" x="580" y="162" width="225" height="40" rx="10" />
         <text class="label" x="594" y="188">Android · internal track</text>
       </g>
 
-      <g class="hotspot" data-detail="ship" role="button" tabindex="0" aria-label="Step 3, the game server in development — open the explanation">
+      <g class="hotspot" data-detail="artifact" role="button" tabindex="0" aria-label="Step 4, verify the development artifact — open the explanation">
         <rect class="node" x="580" y="228" width="225" height="40" rx="10" />
         <text class="label" x="594" y="254">Game server · development</text>
       </g>
 
-      <g class="hotspot" data-detail="ship" role="button" tabindex="0" aria-label="Step 3, the web client in development — open the explanation">
+      <g class="hotspot" data-detail="artifact" role="button" tabindex="0" aria-label="Step 4, verify the development artifact — open the explanation">
         <rect class="node" x="580" y="280" width="225" height="40" rx="10" />
         <text class="label" x="594" y="306">Web client · development</text>
       </g>
@@ -161,17 +160,17 @@
       <path class="link is-planned" d="M692,320 C692,392 520,412 355,412" stroke-dasharray="4 5" marker-end="url(#devops-arrow-planned)" />
       <text class="wire" x="380" y="352">would read from the live destinations</text>
 
-      <g class="hotspot is-planned" data-detail="operate" role="button" tabindex="0" aria-label="Step 4, monitoring, planned but not yet built — open the explanation">
+      <g class="hotspot is-planned" data-detail="monitoring" role="button" tabindex="0" aria-label="Monitoring status, planned but not yet built — open the explanation">
         <rect class="node" x="15" y="360" width="340" height="104" rx="10" />
-        <text class="label" x="29" y="405">4 · Monitoring</text>
+        <text class="label" x="29" y="405">Monitoring status</text>
         <text class="sub" x="29" y="427">planned — not built yet</text>
       </g>
 
-      <text class="wire accent" x="15" y="492">only development deploys itself from a push</text>
-      <text class="wire" x="15" y="508">everything else clears a gate first</text>
+      <text class="wire accent" x="15" y="492" data-detail="gates" role="button" tabindex="0">5 · Apply deployment gates · 6 · Release or clean up</text>
+      <text class="wire" x="15" y="508" data-detail="release" role="button" tabindex="0">everything else clears a gate first; temporary infrastructure is removed when it is no longer needed</text>
     </svg>
   </div>
   <figcaption class="card-diagram-caption">
-    Click any step to read what it means.
+    From code change to controlled release · Click any step to read what it means.
   </figcaption>
 </figure>

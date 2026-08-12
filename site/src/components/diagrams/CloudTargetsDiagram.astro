@@ -33,25 +33,12 @@
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
     >
-      <title id="cloud-pipeline-title">Five decisions settled on paper, combined into one plan, then built as code</title>
+      <title id="cloud-pipeline-title">From requirements to running infrastructure</title>
       <desc id="cloud-pipeline-desc">
-        Five decisions are settled before any infrastructure exists. One: what
-        the platform has to deliver, and the monthly ceiling it may not cross.
-        Two: which identities exist, what each may touch, and for how long —
-        access that expires with the job rather than a saved password. Three:
-        the target environments — production, staging and development — each
-        with its own networking and its own reason to exist. Four: the limits
-        every resource has to obey, enforced by something that acts rather
-        than something that only notifies. Five: capacity and cost decided as
-        one question, worked against the ceiling from step one. Those five
-        combine into step six: a single brief the implementing agent plans the
-        build from, and a plan I read before a single resource is provisioned
-        — which is what caught an AWS default that quietly changes behaviour
-        without ever raising an error. Only then, step seven: all of it
-        written as code so it can be destroyed and rebuilt from one source,
-        and proven by deploying it, with a check that stops the deploy if the
-        last infrastructure apply never ran. From there, it's ready for the
-        DevOps card's release pipeline.
+        Seven steps turn requirements into running infrastructure: define the
+        requirements, set access rules, separate environments, choose resources,
+        add security and cost guardrails, define the environment as Terraform
+        code, then provision, deploy and verify the result before release.
       </desc>
 
       <defs>
@@ -62,32 +49,32 @@
 
       <g class="hotspot" data-detail="objectives" role="button" tabindex="0" aria-label="Step 1, the requirements before anything is designed — open the explanation">
         <rect class="node" x="15" y="14" width="286" height="56" rx="10" />
-        <text class="label" x="29" y="38">1 · The requirements</text>
-        <text class="sub" x="29" y="56">what it must deliver, what it may cost</text>
+        <text class="label" x="29" y="38">1 · Define requirements</text>
+        <text class="sub" x="29" y="56">needs, access and cost limits</text>
       </g>
 
       <g class="hotspot" data-detail="foundation" role="button" tabindex="0" aria-label="Step 2, who has access and for how long — open the explanation">
         <rect class="node" x="15" y="82" width="286" height="56" rx="10" />
-        <text class="label" x="29" y="106">2 · Who has access</text>
-        <text class="sub" x="29" y="124">each identity, and for how long</text>
+        <text class="label" x="29" y="106">2 · Set access rules</text>
+        <text class="sub" x="29" y="124">who can access each resource</text>
       </g>
 
       <g class="hotspot" data-detail="environments" role="button" tabindex="0" aria-label="Step 3, the target environments and what each is for — open the explanation">
         <rect class="node" x="15" y="150" width="286" height="56" rx="10" />
-        <text class="label" x="29" y="174">3 · The environments</text>
-        <text class="sub" x="29" y="192">production, staging, development</text>
+        <text class="label" x="29" y="174">3 · Separate environments</text>
+        <text class="sub" x="29" y="192">development and production apart</text>
       </g>
 
-      <g class="hotspot" data-detail="guardrails" role="button" tabindex="0" aria-label="Step 4, the limits every resource has to obey — open the explanation">
+      <g class="hotspot" data-detail="resources" role="button" tabindex="0" aria-label="Step 4, choose resources and capacity — open the explanation">
         <rect class="node" x="15" y="218" width="286" height="56" rx="10" />
-        <text class="label" x="29" y="242">4 · The limits</text>
-        <text class="sub" x="29" y="260">rules it obeys, not things remembered</text>
+        <text class="label" x="29" y="242">4 · Choose resources</text>
+        <text class="sub" x="29" y="260">services and capacity to fit needs</text>
       </g>
 
-      <g class="hotspot" data-detail="resources" role="button" tabindex="0" aria-label="Step 5, capacity and cost decided together — open the explanation">
+      <g class="hotspot" data-detail="guardrails" role="button" tabindex="0" aria-label="Step 5, add security and cost guardrails — open the explanation">
         <rect class="node" x="15" y="286" width="286" height="56" rx="10" />
-        <text class="label" x="29" y="310">5 · Capacity and cost</text>
-        <text class="sub" x="29" y="328">sized and priced as one question</text>
+        <text class="label" x="29" y="310">5 · Add guardrails</text>
+        <text class="sub" x="29" y="328">security and cost boundaries</text>
       </g>
 
       <!-- five decisions on one bus: step 3's leg is the merge, so the bundle
@@ -103,10 +90,10 @@
 
       <g class="hotspot" data-detail="validation" role="button" tabindex="0" aria-label="Step 6, steps one to five combined into one plan — open the explanation">
         <rect class="node" x="400" y="126" width="340" height="104" rx="10" />
-        <text class="label" x="414" y="152">6 · Five decisions, one plan</text>
-        <text class="sub" x="414" y="174">combined into one brief</text>
-        <text class="sub" x="414" y="192">the agent plans the build from it</text>
-        <text class="sub" x="414" y="210">I read it before anything is provisioned</text>
+        <text class="label" x="414" y="152">6 · Define as code</text>
+        <text class="sub" x="414" y="174">Terraform defines the environment</text>
+        <text class="sub" x="414" y="192">recreate it consistently</text>
+        <text class="sub" x="414" y="210">instead of configuring it by hand</text>
       </g>
 
       <path class="link" d="M570,230 L570,262" marker-end="url(#cloud-arrow)" />
@@ -114,10 +101,10 @@
 
       <g class="hotspot" data-detail="automation" role="button" tabindex="0" aria-label="Step 7, built as code then tested by deploying it — open the explanation">
         <rect class="node" x="400" y="262" width="340" height="104" rx="10" />
-        <text class="label" x="414" y="288">7 · Built as code, then deployed</text>
-        <text class="sub" x="414" y="310">one source, rebuilt from scratch</text>
-        <text class="sub" x="414" y="328">the deploy is the test</text>
-        <text class="sub" x="414" y="346">it stops if the last fix never ran</text>
+        <text class="label" x="414" y="288">7 · Build and verify</text>
+        <text class="sub" x="414" y="310">provision and deploy services</text>
+        <text class="sub" x="414" y="328">verify the intended infrastructure</text>
+        <text class="sub" x="414" y="346">before release</text>
       </g>
 
       <a class="card-jump" href="#card-devops" aria-label="Continue to the DevOps card, where this becomes a deploy pipeline">
@@ -126,11 +113,10 @@
         <text class="wire" x="582" y="400">&amp; application deployment</text>
       </a>
 
-      <text class="wire accent" x="15" y="424">An assistant compared the options, modelled the costs and drafted the Terraform</text>
-      <text class="wire" x="15" y="440">accepting or rejecting what came back needs someone holding both the business and the technical requirement</text>
+      <text class="wire accent" x="15" y="424">requirements guide the infrastructure, not the other way around</text>
     </svg>
   </div>
   <figcaption class="card-diagram-caption">
-    Click any step to read what it means.
+    From requirements to running infrastructure · Click any step to read what it means.
   </figcaption>
 </figure>

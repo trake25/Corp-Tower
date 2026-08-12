@@ -8,27 +8,11 @@
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
     >
-      <title id="ai-workflow-title">What happens before a coding agent writes a line</title>
+      <title id="ai-workflow-title">From request to verified implementation</title>
       <desc id="ai-workflow-desc">
-        Six steps, then a hand-off. One: initial prompting — research,
-        breaking an oversized task into phases, and discussing guardrails and
-        security, usually with a free-tier sub-agent rather than the coding
-        agent. Two: prompt refining — the draft is cut down to only the
-        words, phrases, constraints and context the task needs, which costs
-        fewer tokens and produces fewer clarifying questions later. Three:
-        the orchestrator matches the task to a model and an effort level —
-        low for a small task, high for a hard or high-consequence one, on
-        purpose. Four: for medium or large work, a planning phase runs on a
-        higher model at high to ultra effort; the refined prompt and the
-        retrieved context docs are fed to the coding agent, which can ask
-        the orchestrator for clarification. Five: simplified
-        retrieval-augmented generation — an indexed router retrieves only
-        the documents the task needs and loads any AI skill the task calls
-        for on demand. Six: the orchestrator reviews the plan as the
-        specification, refines or approves it, and stays aware of context
-        window, hallucination risk and token usage while doing it. From
-        there the flow hands off to the QA card's loop — implementation,
-        testing and fixes.
+        Six steps turn a request into verified implementation: define the task,
+        refine the context, retrieve only what matters, plan the change,
+        implement it, then test and review it with human acceptance.
       </desc>
 
       <defs>
@@ -39,54 +23,54 @@
 
       <g class="hotspot" data-detail="research" role="button" tabindex="0" aria-label="Step 1, initial prompting — open the explanation">
         <rect class="node" x="15" y="40" width="246" height="84" rx="10" />
-        <text class="label" x="29" y="64">1 · Right instructions</text>
-        <text class="sub" x="29" y="82">scope, guardrails, security</text>
-        <text class="sub" x="29" y="98">guardrails &amp; security first</text>
+        <text class="label" x="29" y="64">1 · Define the task</text>
+        <text class="sub" x="29" y="82">goals, expected results, constraints</text>
+        <text class="sub" x="29" y="98">before asking the agent to act</text>
       </g>
 
       <path class="link" d="M261,82 L287,82" marker-end="url(#ai-arrow)" />
 
       <g class="hotspot" data-detail="refine" role="button" tabindex="0" aria-label="Step 2, prompt refining — open the explanation">
         <rect class="node" x="287" y="40" width="246" height="84" rx="10" />
-        <text class="label" x="301" y="64">2 · Right model</text>
-        <text class="sub" x="301" y="82">prompt, model and effort</text>
-        <text class="sub" x="301" y="98">fewer tokens, fewer questions</text>
+        <text class="label" x="301" y="64">2 · Refine the context</text>
+        <text class="sub" x="301" y="82">focused instructions, less noise</text>
+        <text class="sub" x="301" y="98">right model and effort</text>
       </g>
 
       <path class="link" d="M533,82 L559,82" marker-end="url(#ai-arrow)" />
 
-      <g class="hotspot" data-detail="route" role="button" tabindex="0" aria-label="Step 3, model and effort matched to the task — open the explanation">
+      <g class="hotspot" data-detail="route" role="button" tabindex="0" aria-label="Step 3, retrieve what matters — open the explanation">
         <rect class="node" x="559" y="40" width="246" height="84" rx="10" />
-        <text class="label" x="573" y="64">3 · Needed context</text>
+        <text class="label" x="573" y="64">3 · Retrieve what matters</text>
         <text class="sub" x="573" y="82">retrieve, don't load all</text>
-        <text class="sub" x="573" y="98">complexity, not habit</text>
+        <text class="sub" x="573" y="98">documents and files on demand</text>
       </g>
 
       <path class="link" d="M682,124 L682,230" marker-end="url(#ai-arrow)" />
 
       <g class="hotspot" data-detail="plan" role="button" tabindex="0" aria-label="Step 4, planning phase — open the explanation">
         <rect class="node" x="559" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="573" y="254">4 · Human control</text>
+        <text class="label" x="573" y="254">4 · Plan the change</text>
         <text class="sub" x="573" y="272">review plans before work</text>
-        <text class="sub" x="573" y="288">high effort when it counts</text>
+        <text class="sub" x="573" y="288">human owns the decision</text>
       </g>
 
       <path class="link" d="M559,272 L533,272" marker-end="url(#ai-arrow)" />
 
-      <g class="hotspot" data-detail="rag" role="button" tabindex="0" aria-label="Step 5, simplified retrieval-augmented generation — open the explanation">
+      <g class="hotspot" data-detail="implement" role="button" tabindex="0" aria-label="Step 5, implement — open the explanation">
         <rect class="node" x="287" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="301" y="254">5 · Selective retrieval</text>
-        <text class="sub" x="301" y="272">router retrieves the docs</text>
-        <text class="sub" x="301" y="288">skills load on demand</text>
+        <text class="label" x="301" y="254">5 · Implement</text>
+        <text class="sub" x="301" y="272">work follows the approved plan</text>
+        <text class="sub" x="301" y="288">with focused context</text>
       </g>
 
       <path class="link" d="M287,272 L261,272" marker-end="url(#ai-arrow)" />
 
-      <g class="hotspot" data-detail="review" role="button" tabindex="0" aria-label="Step 6, orchestrator review and approval — open the explanation">
+      <g class="hotspot" data-detail="review" role="button" tabindex="0" aria-label="Step 6, test and review — open the explanation">
         <rect class="node" x="15" y="230" width="246" height="84" rx="10" />
-        <text class="label" x="29" y="254">6 · Review the result</text>
-        <text class="sub" x="29" y="272">plan becomes the spec</text>
-        <text class="sub" x="29" y="288">orchestrator signs off</text>
+        <text class="label" x="29" y="254">6 · Test and review</text>
+        <text class="sub" x="29" y="272">tests and manual verification</text>
+        <text class="sub" x="29" y="288">acceptance stays human-owned</text>
       </g>
 
       <a class="card-jump" href="#card-qa" aria-label="Continue to the QA card, where this hands off">
@@ -99,6 +83,6 @@
     </svg>
   </div>
   <figcaption class="card-diagram-caption">
-    Click any step to read what it means.
+    From request to verified implementation · Click any step to read what it means.
   </figcaption>
 </figure>

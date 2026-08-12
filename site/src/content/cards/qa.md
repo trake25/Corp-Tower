@@ -1,7 +1,7 @@
 ---
 role: "QA"
 order: 3
-headline: "Whoever builds it is the worst person to judge it"
+headline: "Whoever builds it is the worst person to judge it."
 plain: "I separate building from acceptance: the agent can implement the change, but the expected result is decided first and the finished work has to prove it meets that standard."
 tools:
   - "GitHub Actions"

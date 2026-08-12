@@ -333,14 +333,14 @@ const year = new Date().getFullYear();
         <span class="section-index">01</span> How I built it
       </h2>
       <p class="section-intro">
-        The project gave me a real system to build, deploy and test — not just an isolated application.
+        The game is only one part of the system. I built the infrastructure, delivery pipeline and verification process around it.
       </p>
       <EngineeringWorkflowDiagram />
 
       <BuildingTheGame
         roles={roles}
         total={cardEntries.length}
-        intro="Open a card for the diagram, recording and detailed implementation evidence."
+        intro="Open a card for the diagram and implementation evidence."
       >
         {renderedCards.map(({ entry: card, Content: CardBody }) => {
           const Diagram = diagrams[card.data.role];
@@ -393,7 +393,7 @@ const year = new Date().getFullYear();
       {/* The id is load-bearing: existing #playables links point at it. */}
       <div id="playables" class="playables-strip">
         <Playables
-          games={gameEntries.map((entry) => ({
+          games={gameEntries.filter((entry) => entry.data.title !== "Top or Drop").map((entry) => ({
             title: entry.data.title,
             status: entry.data.status,
             links: entry.data.links,

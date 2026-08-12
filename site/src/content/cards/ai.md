@@ -12,47 +12,47 @@ tools:
   - "Git"
 details:
   - id: research
-    title: "1 · Give the agent the right instructions"
+    title: "1 · Define the task"
     keywords:
       - "Prompt engineering"
       - "Context control"
       - "Token efficiency"
-    body: "I start with research and a scoped task, not code. Large requests are split into phases, with guardrails, edge cases and security decided before planning; that becomes the first prompt."
+    body: "I break larger requests into clear goals, expected results and constraints before asking an agent to implement them. Prompt engineering makes the guardrails, edge cases and security requirements explicit."
   - id: refine
-    title: "2 · Use the right model for the job"
+    title: "2 · Refine the context"
     keywords:
       - "Model selection"
       - "Effort routing"
       - "Token cost"
-    body: "I compress the prompt to the constraints and context the task needs, then match model and effort to its complexity. That keeps quality, token cost and turnaround proportionate instead of defaulting to the most expensive option."
+    body: "I give the agent focused instructions instead of sending unnecessary information. Prompt compression reduces noise and token cost; model selection and effort routing stay proportionate to the task."
   - id: route
-    title: "3 · Give the agent only what it needs"
+    title: "3 · Retrieve what matters"
     keywords:
       - "RAG"
       - "Context routing"
       - "Selective loading"
-    body: "Retrieval supplies the task-specific documents instead of loading the whole repository. The router selectively loads context and skills on demand, keeping the agent grounded and the context budget useful."
+    body: "The coding agent does not need the entire repository. Relevant documents and files are identified and loaded when the task needs them through RAG, context routing and selective loading."
   - id: plan
-    title: "4 · Keep the human in control"
+    title: "4 · Plan the change"
     keywords:
       - "Planning"
       - "Approval"
       - "Review"
-    body: "Straightforward work can skip formal planning. For medium or large work, especially security-sensitive changes, I review the agent's plan before implementation and give direction instead of allowing guesses."
-  - id: rag
-    title: "5 · Retrieve context selectively"
+    body: "The agent proposes an implementation plan before changing the code. I review the approach and remain responsible for the engineering decision, especially on medium, large or security-sensitive work."
+  - id: implement
+    title: "5 · Implement"
     keywords:
       - "Retrieval-Augmented Generation"
       - "Context Routing"
       - "Selective Loading"
-    body: "RAG means retrieving the facts a model needs just before it responds. The indexed router names the relevant documents and skills, then loads only those rather than asking the agent to infer repository-wide context."
+    body: "The agent handles more of the implementation work while following the approved context and plan. Context routing keeps it grounded instead of asking it to infer repository-wide facts."
   - id: review
-    title: "6 · Review the result before acceptance"
+    title: "6 · Test and review"
     keywords:
       - "Human-in-the-Loop"
       - "Plan Approval"
       - "Hallucination Risk"
-    body: "The approved plan is the implementation specification. I review the result against it, including context use and hallucination risk; only that review accepts the work."
+    body: "Tests and manual verification determine whether the result is actually acceptable. The agent can fix problems, but acceptance remains mine; review checks the result against the approved plan and hallucination risk."
 ---
 
 #### Local LLMs, once the hardware exists

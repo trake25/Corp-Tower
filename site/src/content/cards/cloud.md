@@ -24,52 +24,52 @@ videos:
     caption: "The same environment destroyed again in about the same time — what deploy-on-demand costs when nobody is playing."
 details:
   - id: objectives
-    title: "1 · Decide what the system needs"
+    title: "1 · Define requirements"
     keywords:
       - "Business Deliverables"
       - "Technical Requirements"
       - "AI-Assisted Discovery"
-    body: "I set concurrent-player, latency and monthly-cost requirements before design starts. That ruled out an always-on cluster: a game in development needs a reachable demo, not a load balancer billing by the hour. An assistant compared prices; I made the decision."
+    body: "Set player capacity, latency and monthly cost limits before choosing the architecture. For a game still in development, this ruled out keeping a full cluster running all the time."
   - id: foundation
-    title: "2 · Set the access rules"
+    title: "2 · Set access rules"
     keywords:
       - "Credentials"
       - "IAM & OIDC"
       - "Secrets Management"
-    body: "I define IAM roles and what each can access before granting them. Nothing keeps a standing credential: CI proves its identity through OIDC on every run, then access expires with the job."
+    body: "Define who or what can access each resource. CI uses short-lived identity through OIDC instead of storing long-lived cloud credentials; IAM roles scope what each identity can access."
   - id: environments
     title: "3 · Separate environments"
     keywords:
       - "Environment Strategy"
       - "Network Architecture"
       - "Resource Isolation"
-    body: "Production, staging and development are separate targets with their own networking. The EKS path is written and tested but stays deploy-on-demand until release; staging and development run on one already-paid-for Linux machine through a Cloudflare Tunnel. The cluster takes 12–15 minutes to create or remove."
-  - id: guardrails
-    title: "4 · Add security and cost guardrails"
-    keywords:
-      - "Security Baselines"
-      - "Compliance Constraints"
-      - "Cost Control"
-    body: "Encryption, tagging, monitoring, backup, quotas and budgets are platform rules, not reminders. They apply at provisioning time, before an untagged resource becomes an unnoticed cost."
+    body: "Keep development and production isolated so testing changes cannot accidentally affect the live environment. Production, staging and development have separate networking; the EKS path is deploy-on-demand, while staging and development use an already-paid-for Linux machine through Cloudflare Tunnel."
   - id: resources
-    title: "5 · Choose services and capacity"
+    title: "4 · Choose resources"
     keywords:
       - "Resource Management"
       - "Capacity & Scaling"
       - "Budget Forecasting"
-    body: "I choose sizing and price together. Instance families, cache tier and availability zones are checked against the cost ceiling before selection; that kept encrypted ElastiCache and ruled out a separate load-balancer controller."
+    body: "Select the AWS services and capacity based on the requirements instead of starting with infrastructure and fitting the application around it. Instance families, cache tier and availability zones are checked against the cost ceiling; this kept encrypted ElastiCache and ruled out a separate load-balancer controller."
+  - id: guardrails
+    title: "5 · Add guardrails"
+    keywords:
+      - "Security Baselines"
+      - "Compliance Constraints"
+      - "Cost Control"
+    body: "Set boundaries around access, resources and spending before deployment. Encryption, tagging, monitoring, backup, quotas and budgets apply at provisioning time, making the infrastructure difficult to misuse and easy to control."
   - id: validation
-    title: "6 · Define everything as code"
+    title: "6 · Define as code"
     keywords:
       - "Consolidated Brief"
       - "Implementation Plan"
       - "Final Review"
-    body: "The decisions become one implementation brief. The agent plans from it, and I review that plan before a resource is provisioned."
+    body: "Terraform defines the infrastructure so environments can be recreated consistently instead of configured manually. I review the plan and manifests before apply."
   - id: automation
-    title: "7 · Build and verify the environment"
+    title: "7 · Build and verify"
     keywords:
       - "Infrastructure as Code"
       - "Deployment Testing"
       - "Repeatability"
-    body: "Terraform makes the platform rebuildable from one source. I review the plan and manifests before apply, then verify by deploying: installation stops if the prior infrastructure apply did not complete."
+    body: "Provision the environment, deploy the required services and verify that the resulting infrastructure matches the intended design. Installation stops if the prior infrastructure apply did not complete; the EKS environment takes 12–15 minutes to create or remove."
 ---

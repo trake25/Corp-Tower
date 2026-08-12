@@ -26,34 +26,55 @@ videos:
     poster: "clips/devops-ci-android-client.jpg"
     caption: "The Android client build, signed and pushed to the internal testing track."
 details:
-  - id: plan
-    title: "1 · One pipeline for every destination"
+  - id: destination
+    title: "1 · Choose the destination"
     keywords:
       - "Destination Matrix"
       - "Trust Allocation"
       - "Gate Policy"
-    body: "The pipeline serves five destinations: production and development for the game server and web client, plus Android's internal testing track. Only development deploys from a push; every other release has a written gate."
-  - id: build
-    title: "2 · Test before deployment"
+    body: "One pipeline supports the project's different destinations instead of maintaining separate release processes: production and development for the game server and web client, plus Android's internal testing track."
+  - id: checks
+    title: "2 · Run the checks"
     keywords:
       - "Brief-Driven Implementation"
       - "Shared Composite Actions"
       - "Fail-Closed Checks"
-    body: "Shared GitHub Actions composite actions keep all destinations on one pipeline. CI uses OIDC short-lived cloud access; Android signing unlocks its key for one step, and every build hash-checks its art — either failure stops the build."
-  - id: ship
-    title: "3 · Control which environments can deploy"
+    body: "Every change passes the required tests and validation before deployment continues. Shared GitHub Actions composite actions keep the checks consistent across destinations."
+  - id: authenticate
+    title: "3 · Authenticate securely"
     keywords:
       - "Staged Rollout"
       - "Environment Isolation"
       - "Credential Scoping"
-    body: "Production and Android update only after development proves the build, never in parallel. Each environment has separate networking and credentials, so a development key cannot reach production."
-  - id: operate
-    title: "4 · Verify and observe releases"
+    body: "CI obtains short-lived cloud access through OIDC instead of relying on permanent credentials. Each environment has separate credentials, and Android signing unlocks its key for one step."
+  - id: artifact
+    title: "4 · Verify the artifact"
+    keywords:
+      - "Artifact verification"
+      - "Fail-closed checks"
+      - "Build integrity"
+    body: "Deployment uses the expected build artifact and verifies it before releasing it to the target environment. Every build hash-checks its art; a failed check stops the build."
+  - id: gates
+    title: "5 · Apply deployment gates"
+    keywords:
+      - "Deployment gates"
+      - "Environment isolation"
+      - "Protected environments"
+    body: "Production and other protected environments require the appropriate checks before deployment can proceed. Only development deploys from a push; every other release clears a written gate."
+  - id: release
+    title: "6 · Release or clean up"
+    keywords:
+      - "Deployment"
+      - "Teardown"
+      - "Temporary infrastructure"
+    body: "Deploy to the selected environment and remove temporary infrastructure when it is no longer needed."
+  - id: monitoring
+    title: "Monitoring status"
     keywords:
       - "Live-State Verification"
       - "Alerting & Escalation"
       - "Future Work"
-    body: "Planned, not yet built: read the live state in each destination and alert on drift from the deployed result. Five years of NOC work provides the alarm, escalation and failover-verification experience; this environment still needs the implementation."
+    body: "Planned, not yet built: read the live state in each destination and alert on drift from the deployed result."
     planned: true
 ---
 
