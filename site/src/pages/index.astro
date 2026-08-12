@@ -445,9 +445,19 @@ const year = new Date().getFullYear();
           open={true}
         >
           <div class="game-list" data-accordion="true">
+            {/* Top or Drop is fully expanded already, right above under
+                #featured-project — a second full card here would just repeat
+                it. This is a jump link back up to that one, not a tile. */}
+            {inDevelopment.some(({ entry }) => entry.data.title === "Top or Drop") && (
+              <article class="project-feature-link">
+                <h3>Top or Drop</h3>
+                <p>Real-time multiplayer · platform engineering project</p>
+                <a href="#featured-project">View featured project ↑</a>
+              </article>
+            )}
             {/* Only the first: `toggle` never fires for a tile already open in
                 the HTML, so two default-open tiles both stay expanded. */}
-            {inDevelopment.map(({ entry, Content }, index) => (
+            {inDevelopment.filter(({ entry }) => entry.data.title !== "Top or Drop").map(({ entry, Content }, index) => (
               <GameCard
                 slug={entry.slug}
                 title={entry.data.title}
