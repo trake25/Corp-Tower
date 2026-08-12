@@ -13,7 +13,8 @@
     "run_worker_first": ["/api/contact"]
   },
   // How many messages a day the form may send before it starts refusing. Sized
-  // under the mail provider's free daily allowance, not at it.
+  // under the mail provider's free daily allowance, not at it. Inert until a
+  // CONTACT_KV binding exists to count against it.
   "vars": {
     "CONTACT_DAILY_CAP": "50"
   },
@@ -31,13 +32,11 @@
       "namespace_id": "1002",
       "simple": { "limit": 10, "period": 60 }
     }
-  ],
-  // Holds one counter per day, `sent:YYYY-MM-DD`, with a 48h TTL. Create the
-  // namespace once and paste its id here -- see site/docs/deploy.md.
-  "kv_namespaces": [
-    {
-      "binding": "CONTACT_KV",
-      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
-    }
   ]
+  // No kv_namespaces block on purpose. A binding naming a namespace id that
+  // does not exist fails `wrangler deploy` outright -- and it would fail it for
+  // the whole site, not just the form. The daily cap is optional by design: the
+  // Worker turns the check off when CONTACT_KV is absent. To switch it on, run
+  // `wrangler kv namespace create CONTACT_KV` and add the block with the real
+  // id it prints. See site/docs/deploy.md.
 }

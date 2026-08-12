@@ -5,9 +5,9 @@ Scope: `package.json`, `astro.config.mjs`, `wrangler.jsonc`, `tools/`, the two
 
 ## Local development
 
-Requires **Node `^20.19.0` or `^22.12.0` or `>=23`**. The rest of this repo's
-tooling does not, so the system Node on a given machine may not satisfy it. When
-it does not, use a standalone build rather than changing the system install:
+Requires **Node `^20.19.0` or `^22.12.0` or `>=23`** — which the rest of this
+repo's tooling does not, so a machine's system Node may not reach it. Take a
+standalone build rather than moving the system install:
 
 ```bash
 curl -fsSL -o /tmp/node22.tar.xz https://nodejs.org/dist/v22.13.0/node-v22.13.0-linux-x64.tar.xz
@@ -26,8 +26,8 @@ npm run docs:check # validate site/docs
 ```
 
 `npm run build` runs `astro check` first and fails on a type error, exactly as CI
-does. `npx wrangler deploy --dry-run` after a build validates the Workers config
-and reports what it would upload with no network call.
+does. `npx wrangler deploy --dry-run` then checks the Workers config and lists
+what it would upload — offline, so it sees no account and validates no id.
 
 ## Build and hosting
 
@@ -38,10 +38,9 @@ Worker `corp-tower-portfolio`, points `assets.directory` at `./dist`, and sets
 `compressHTML` — the Astro build stays static and the adapter list stays empty.
 
 `main` mounts `worker/index.js` on the same Worker and
-`assets.run_worker_first: ["/api/contact"]` scopes it to that one path. Scoping
-is what keeps the rest intact: every other URL is still resolved by the asset
-router first, so `not_found_handling` goes on serving the built `404.html`.
-Widen that array and the Worker starts intercepting the site.
+`assets.run_worker_first: ["/api/contact"]` scopes it to that path. The scoping
+is what keeps the rest intact — every other URL still hits the asset router
+first. Widen that array and the Worker starts intercepting the site.
 
 `public/og.png` is a build output and is gitignored; everything else under
 `public/` ships as written.
@@ -52,23 +51,30 @@ Widen that array and the Worker starts intercepting the site.
 through Resend. `RESEND_API_KEY`, `CONTACT_TO` and `CONTACT_FROM` are secrets,
 set once with `wrangler secret put` and **preserved across every
 `wrangler deploy`** — so CI needs no new GitHub secret and the repo holds none.
-The recipient is a secret rather than a `var` because a `var` would sit in git.
+The recipient is a secret, not a `var`: a `var` sits in git.
+
+**The route deploys before its credentials do.** `GET /api/contact` answers
+`{ok, ready}` — presence of the three, never a value — and the dialog asks
+before taking over its triggers. Unready it takes over nothing, both `Hire me`
+anchors stay the `mailto:` links they already are, and a `503` on submit hands
+them back the same way. The form wakes when the secrets land, with no redeploy.
 
 Two rate limiters, `CONTACT_RL_IP` and `CONTACT_RL_ALL`, are account-local and
 need no external service, but their `period` accepts only 10 or 60 seconds —
-hence a counter for the longer ceiling: `CONTACT_KV` holds one
+hence a counter for the longer ceiling: `CONTACT_KV` keeps one
 `sent:YYYY-MM-DD` key on a 48h TTL, checked against the `CONTACT_DAILY_CAP`
 var. **Size that cap under the provider's free daily allowance, not at it.**
-Every guardrail is absent-safe: a missing binding disables its own check rather
-than failing the request, so a half-configured deploy degrades visibly.
+Every guardrail is absent-safe: a missing binding disables its own check, so a
+half-configured deploy degrades instead of failing.
 
-`CLOUDFLARE_WORKERS_API_TOKEN` is scoped to `Workers Scripts:Edit`, and a deploy
-binding KV may want `Workers KV Storage:Edit` too. If CI fails there, widen that
-token by the one permission or drop the KV cap and keep the limiters — neither
-path goes near the game's `Zone.DNS:Edit` token.
+**No `kv_namespaces` block is committed** and the cap is off until one is. A
+binding naming a namespace the account lacks fails `wrangler deploy` — the whole
+site, not the form — where `--dry-run` passes. Create the namespace, paste the
+id, then deploy. Binding KV may also want `Workers KV Storage:Edit` on the
+deploy token; if that is a wall, leave the cap off and keep the limiters.
 
-`npm run dev:worker` builds and serves `dist/` and the Worker together; `astro
-dev` alone cannot answer the route. Local secrets go in gitignored `.dev.vars`.
+`npm run dev:worker` serves `dist/` and the Worker together; `astro dev` alone
+cannot answer the route. Local secrets go in gitignored `.dev.vars`.
 
 ## CI
 
@@ -83,13 +89,13 @@ reach the other's blast radius.
 
 **`Site-Cleanup-Workers.yml`** is soft cleanup, `workflow_dispatch` only. It
 copies `maintenance/index.html` over `dist/index.html` and `dist/404.html` and
-deploys that — same Worker, same domain, no DNS or Worker deletion. Both
-workflows share the `site-deploy-workers` concurrency group, so a rebuild cannot
-race a takedown. A normal push to `site/**` overwrites the placeholder.
+deploys that — same Worker, same domain, no DNS or Worker deletion. Both share
+the `site-deploy-workers` concurrency group, so a rebuild cannot race a
+takedown. A normal push to `site/**` overwrites the placeholder.
 
 `PUBLIC_CF_ANALYTICS_TOKEN` is passed from the `CF_ANALYTICS_TOKEN` secret at
-build time. Until it exists, `BaseLayout` omits the beacon script entirely — no
-broken tag ships either way.
+build time. Until it exists, `BaseLayout` omits the beacon entirely, so no
+broken tag ships.
 
 ## Social preview image
 
@@ -106,27 +112,25 @@ Three constraints hold it together:
   machines — asking for `sans-serif` can return a monospace face. The `SANS` and
   `MONO` stacks name Arial/Helvetica for Windows and DejaVu/Liberation for the
   Ubuntu runner.
-- **Keep text left-aligned with slack on the longest line.** Different machines
-  pick faces with different metrics; left alignment means a wider face shifts
-  nothing instead of breaking a centred layout. There is no text measurement
-  available, so `fit()` estimates width from character count and shrinks to fit —
-  a longer name gets a smaller size rather than a clipped one.
+- **Keep text left-aligned with slack on the longest line.** Faces differ in
+  metrics by machine, and left alignment absorbs a wider one instead of breaking
+  a centred layout. With no text measurement available, `fit()` estimates width
+  from character count and shrinks — a long name gets smaller, not clipped.
 - **The palette is duplicated by hand.** Named constants at the top of the SVG
   template mirror `global.css`; plain Node cannot read CSS custom properties.
 
-`tools/og-source.html`, `tools/cv-source.html` and `tools/preview.html` are
-standalone design references. Nothing imports or deploys them, and the first
-carries an older theme — do not screenshot it into `public/og.png`.
+Nothing imports or deploys `tools/og-source.html`, `cv-source.html` or
+`preview.html` — standalone design references. The first carries an older theme;
+never screenshot it into `public/og.png`.
 
 ## Cloudflare estate — in place, kept for disaster recovery
 
-The Worker, its custom domain and the three secrets already exist. Do not re-run
-these against the live project.
+Steps 1–6 are done on the live project — do not re-run them. Step 7 is the only
+one outstanding, and the site deploys and serves without it.
 
 1. **Create the Worker.** Workers & Pages → Create Application → Upload assets.
    Build first and upload **`site/dist`**, never `site/` or `src/`. Name it
-   `corp-tower-portfolio` to match `wrangler.jsonc`. That first upload exists
-   only to create the Worker.
+   `corp-tower-portfolio` to match `wrangler.jsonc`.
 2. **Add the custom domain** `enportfolio.galaxxigames.com` under the Worker's
    Domains & Routes. `galaxxigames.com` is already a Cloudflare zone, so DNS is
    provisioned automatically.
@@ -137,8 +141,8 @@ these against the live project.
    `CLOUDFLARE_ACCOUNT_ID`.
 5. **Cloudflare Web Analytics**, optional. Analytics & Logs → Web Analytics → Add
    a site → copy the beacon token → save as `CF_ANALYTICS_TOKEN`.
-6. **First CI deploy.** Push to `main` or dispatch the deploy workflow, confirm
-   the run succeeds, then confirm the domain resolves.
-7. **Contact endpoint**, once: verify `galaxxigames.com` in Resend and take an
-   API key, `wrangler kv namespace create CONTACT_KV` and paste the id into
-   `wrangler.jsonc`, then set the three secrets above.
+6. **First CI deploy.** Push to `main` or dispatch the workflow, then confirm
+   the domain resolves.
+7. **Contact endpoint**, once: verify a sending domain in Resend, take an API
+   key, set the three secrets. Optional last, for the daily cap:
+   `wrangler kv namespace create CONTACT_KV` and add the block with its id.

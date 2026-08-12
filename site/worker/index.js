@@ -119,6 +119,11 @@ function buildBody({ name, email, message }) {
   ].join("\n");
 }
 
+// The route deploys before its credentials do, so it has to be able to say it
+// cannot send yet. Presence only -- no value of any of the three ever leaves.
+const mailConfigured = env =>
+  Boolean(env.RESEND_API_KEY && env.CONTACT_TO && env.CONTACT_FROM);
+
 // The one place that knows which provider sends the mail. A network failure
 // here has to read the same as a rejection, or the visitor gets a 500 with no
 // message instead of the dialog's retry line.
@@ -151,8 +156,15 @@ export default {
     // run_worker_first should mean this is the only path that arrives, but the
     // Worker is the thing on the network, so it states its own contract.
     if (url.pathname !== ROUTE) return new Response("Not found", { status: 404 });
+
+    // Readiness. The dialog asks before it takes over its triggers, so an
+    // unconfigured deploy leaves them as the mailto: links they already were
+    // rather than opening a form whose submit could only fail.
+    if (request.method === "GET" || request.method === "HEAD") {
+      return json({ ok: true, ready: mailConfigured(env) }, 200);
+    }
     if (request.method !== "POST") {
-      return new Response("Method not allowed", { status: 405, headers: { allow: "POST" } });
+      return new Response("Method not allowed", { status: 405, headers: { allow: "GET, POST" } });
     }
 
     // Same-origin only. Cheap, and it removes drive-by cross-site posting.
@@ -188,8 +200,10 @@ export default {
     const fields = validate(payload);
     if (fields.error) return fail(fields.error, 400);
 
-    if (!env.RESEND_API_KEY || !env.CONTACT_TO || !env.CONTACT_FROM) {
-      return fail("mail not configured", 502);
+    // 503, not 502: nothing failed, the route is not open yet. The dialog reads
+    // this status and hands its triggers back to the mailto: fallback.
+    if (!mailConfigured(env)) {
+      return json({ ok: false, error: "not configured", ready: false }, 503);
     }
 
     if (!(await send(env, fields))) return fail("send failed", 502);

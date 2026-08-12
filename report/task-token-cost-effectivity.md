@@ -54,6 +54,7 @@ contradicted source.
 | 15 | Delete the K3s stack — source, workflows, docs | 3 | B | 2 | 85 | — | ~35,000 | ~75,000 | ~75,000 | ✓ | ok |
 | 16 | Portfolio KB + validator, 2 site skills, policy dedupe | 4 | B | 3 | 27 | — | ~38,000 | ~95,000 | ~95,000 | ! | ok |
 | 17 | Contact form: dialog, `/api/contact` Worker, guardrails | 4 | Bd | 3 | 11 | — | ~22,000 | ~185,000 | ~110,000 | ✓ | ok |
+| 18 | CI deploy failed on the KV placeholder; endpoint made dormant-by-default | 2 | Bd | 3 | 6 | — | ~9,000 | ~55,000 | ~30,000 | ! | ok |
 
 Rows 1–2 carry no `R-est`: both predate the append rule they establish. They are
 measurements, not predictions, and are marked as such rather than back-filled — a
@@ -322,5 +323,22 @@ the site acquired a server route, three secrets and a token-scope caveat that di
 not exist when that number was set. The raise is logged in the validator itself, not
 just here.
 
-**Rollup (cycle 1, open):** n=17 · median `R-act` ~28,000 · ✓10 ~2 ✗0 !5 · misroute 0%
-· 3 rows to close
+Row 18 is `!` for a doc that was true and insufficient. `deploy.md` said
+`wrangler deploy --dry-run` "validates the Workers config" — it does, offline, which
+is why row 17 shipped a `kv_namespaces` id that no account had and CI died on the
+first push. The gap was never source-versus-doc; it was a doc that named a check
+without naming its limit, and a reader who took the green result as coverage. It now
+says what `--dry-run` cannot see. The same row shows what the budget rule buys: the
+task was owed ~140 tokens of new constraint in `deploy.md`, which had been raised to
+1900 one row earlier, and compaction found them in the section on generating a PNG.
+No budget moved.
+
+The design change is worth more than the fix. The endpoint now answers a readiness
+`GET`, and the dialog asks before it takes over its triggers — so an unconfigured
+deploy is not a broken form, it is two `mailto:` anchors that were always going to
+work. **A feature whose backend is pending should degrade to the thing it replaced,
+not to an error.** That is a rule about ordering: it made the manual setup optional
+and asynchronous after it had been a release blocker.
+
+**Rollup (cycle 1, open):** n=18 · median `R-act` ~26,500 · ✓10 ~2 ✗0 !6 · misroute 0%
+· 2 rows to close

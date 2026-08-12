@@ -53,8 +53,9 @@ A new level needs its own grammar or the separation collapses.
 reading order rather than inside it. Native `<dialog>` and `showModal()` are
 load-bearing — Escape, the focus trap and the inert background come from them,
 so nothing here reimplements focus management. Both `Hire me` triggers are
-anchors holding the `mailto:` href and the handler yields to them when
-`showModal` is missing, so the dialog upgrades a working link. Trigger and
+anchors holding the `mailto:` href, and the handler yields to them whenever it
+cannot do better — no `showModal`, or an endpoint that says it is not ready. The
+dialog only ever upgrades a working link. Trigger and
 dialog are both hidden in print: a control pointing at what cannot open.
 
 Headings run `h2` section → `h3` vignette and card headline → `h4` game, job and

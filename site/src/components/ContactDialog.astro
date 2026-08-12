@@ -113,6 +113,21 @@ import { profile } from "../data/profile";
   let sending = false;
   let lastTrigger: HTMLElement | null = null;
 
+  // The endpoint ships before its mail credentials do. Until it says it can
+  // send, this script takes over nothing and every trigger stays the mailto:
+  // link it already is — an unconfigured deploy has no half-working form in it.
+  // Starts false, so the gap before the answer arrives fails the same safe way.
+  let ready = false;
+
+  fetch("/api/contact", { method: "GET", headers: { accept: "application/json" } })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((payload) => {
+      ready = payload?.ready === true;
+    })
+    .catch(() => {
+      // No route, no network, no dialog. The anchors were never broken.
+    });
+
   function setError(message: string | null) {
     if (!errorEl) return;
     errorEl.textContent = message ?? "";
@@ -142,7 +157,9 @@ import { profile } from "../data/profile";
       "[data-contact-open]"
     );
     if (!trigger) return;
-    // No modal support means the anchor's mailto: is the better outcome.
+    // No modal support, or no endpoint behind it: the anchor's mailto: is the
+    // better outcome, and letting the click through is how it gets there.
+    if (!ready) return;
     if (!dialog || typeof dialog.showModal !== "function") return;
     event.preventDefault();
     openDialog(trigger);
@@ -221,6 +238,10 @@ import { profile } from "../data/profile";
           ts: openedAt,
         }),
       });
+
+      // Credentials pulled since the probe. Hand the triggers back so the next
+      // click reaches the inbox instead of reopening a form that cannot send.
+      if (response.status === 503) ready = false;
 
       const payload = (await response.json().catch(() => null)) as { ok?: boolean } | null;
       if (!response.ok || !payload?.ok) throw new Error("send failed");
