@@ -55,6 +55,7 @@ contradicted source.
 | 16 | Portfolio KB + validator, 2 site skills, policy dedupe | 4 | B | 3 | 27 | — | ~38,000 | ~95,000 | ~95,000 | ! | ok |
 | 17 | Contact form: dialog, `/api/contact` Worker, guardrails | 4 | Bd | 3 | 11 | — | ~22,000 | ~185,000 | ~110,000 | ✓ | ok |
 | 18 | CI deploy failed on the KV placeholder; endpoint made dormant-by-default | 2 | Bd | 3 | 6 | — | ~9,000 | ~55,000 | ~30,000 | ! | ok |
+| 19 | Portfolio content compression, workflow diagram and CV-source sync | 4 | A | 2 | 14 | — | ~21,000 | ~29,000 | ~29,000 | ✓ | ok |
 
 Rows 1–2 carry no `R-est`: both predate the append rule they establish. They are
 measurements, not predictions, and are marked as such rather than back-filled — a

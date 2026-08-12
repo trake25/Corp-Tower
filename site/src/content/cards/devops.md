@@ -27,33 +27,33 @@ videos:
     caption: "The Android client build, signed and pushed to the internal testing track."
 details:
   - id: plan
-    title: "1 · What ships where, and how much trust each gets"
+    title: "1 · One pipeline for every destination"
     keywords:
       - "Destination Matrix"
       - "Trust Allocation"
       - "Gate Policy"
-    body: "There are five destinations, not a vague every environment. The game server and web client each get a production and a development target, and Android gets a limited internal testing track. Development can deploy itself from a push; nothing else can, and the gates for every other release are written down before any pipeline exists."
+    body: "The pipeline serves five destinations: production and development for the game server and web client, plus Android's internal testing track. Only development deploys from a push; every other release has a written gate."
   - id: build
-    title: "2 · One pipeline, shared across every destination"
+    title: "2 · Test before deployment"
     keywords:
       - "Brief-Driven Implementation"
       - "Shared Composite Actions"
       - "Fail-Closed Checks"
-    body: "Every destination calls the same set of pipeline actions instead of five separate scripts, so a fix only has to land once. Each still runs its own steps where the target actually differs — the Android build gets signed with a key unlocked for that one step, and every build depends on art that gets hash-checked before it's allowed in. Either check failing stops the build outright, not just a warning in the log."
+    body: "Shared GitHub Actions composite actions keep all destinations on one pipeline. CI uses OIDC short-lived cloud access; Android signing unlocks its key for one step, and every build hash-checks its art — either failure stops the build."
   - id: ship
-    title: "3 · Target environments"
+    title: "3 · Control which environments can deploy"
     keywords:
       - "Staged Rollout"
       - "Environment Isolation"
       - "Credential Scoping"
-    body: "Production and the Android track only get an update once development has already proven it works, never in parallel. Each environment carries its own networking and its own credentials, so a leaked development key can't reach production. A bad development build stops at that wall instead of reaching a real player."
+    body: "Production and Android update only after development proves the build, never in parallel. Each environment has separate networking and credentials, so a development key cannot reach production."
   - id: operate
-    title: "4 · Monitoring"
+    title: "4 · Verify and observe releases"
     keywords:
       - "Live-State Verification"
       - "Alerting & Escalation"
       - "Future Work"
-    body: "Not built in this environment yet — the plan is to read what's actually running in each destination and raise an alert when it drifts from what was deployed, rather than relying on someone noticing. The practice behind it is not new to me: five years of enterprise NOC work was alarm detection, escalation and failover verification, which is this same problem with different nouns. What's missing here is the implementation, not the discipline."
+    body: "Planned, not yet built: read the live state in each destination and alert on drift from the deployed result. Five years of NOC work provides the alarm, escalation and failover-verification experience; this environment still needs the implementation."
     planned: true
 ---
 

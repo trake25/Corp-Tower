@@ -12,6 +12,7 @@ import CloudTargetsDiagram from "../components/diagrams/CloudTargetsDiagram.astr
 import QaLoopDiagram from "../components/diagrams/QaLoopDiagram.astro";
 import AiWorkflowDiagram from "../components/diagrams/AiWorkflowDiagram.astro";
 import DevOpsPipelineDiagram from "../components/diagrams/DevOpsPipelineDiagram.astro";
+import EngineeringWorkflowDiagram from "../components/diagrams/EngineeringWorkflowDiagram.astro";
 import { profile } from "../data/profile";
 
 // One diagram per role. A role with no entry here renders without one.
@@ -334,6 +335,7 @@ const year = new Date().getFullYear();
       <p class="section-intro">
         The project gave me a real system to build, deploy and test — not just an isolated application.
       </p>
+      <EngineeringWorkflowDiagram />
 
       <BuildingTheGame
         roles={roles}
@@ -369,16 +371,14 @@ const year = new Date().getFullYear();
         <span class="section-index">02</span> Technologies
       </h2>
       <div class="skills-index" id="skills">
-        <dl>
+        <div>
           {SKILL_GROUPS.map((group) => (
-            <div class="skill-group">
-              <dt>{group.label}</dt>
-              <dd>
-                {group.items.map((item) => <span class="skill">{item}</span>)}
-              </dd>
-            </div>
+            <details class="skill-group">
+              <summary><span class="skill-group-label">{group.label}</span><span>Show technologies</span></summary>
+              <div class="skill-group-items">{group.items.map((item) => <span class="skill">{item}</span>)}</div>
+            </details>
           ))}
-        </dl>
+        </div>
       </div>
     </section>
 
@@ -402,6 +402,13 @@ const year = new Date().getFullYear();
       </div>
 
       <div class="vignettes">
+        {featuredRenderedGame && (
+          <article class="project-feature-link">
+            <h3>Top or Drop</h3>
+            <p>Real-time multiplayer · platform engineering project</p>
+            <a href="#featured-project">View featured project ↑</a>
+          </article>
+        )}
         <Vignette
           id="in-production"
           label="In production"
@@ -441,7 +448,7 @@ const year = new Date().getFullYear();
           <div class="game-list" data-accordion="true">
             {/* Only the first: `toggle` never fires for a tile already open in
                 the HTML, so two default-open tiles both stay expanded. */}
-            {inDevelopment.map(({ entry, Content }, index) => (
+            {inDevelopment.filter(({ entry }) => entry.data.title !== "Top or Drop").map(({ entry, Content }, index) => (
               <GameCard
                 slug={entry.slug}
                 title={entry.data.title}
@@ -456,11 +463,6 @@ const year = new Date().getFullYear();
                 open={index === 0}
               >
                 <Fragment slot="note"><Content /></Fragment>
-                {entry.data.buildingTheGame && (
-                  <p class="game-crosslink">
-                    <a href="#engineering">How this one was built →</a>
-                  </p>
-                )}
               </GameCard>
             ))}
           </div>
@@ -474,9 +476,6 @@ const year = new Date().getFullYear();
       </h2>
       <p class="section-intro">
         My career started in enterprise network operations, moved through software QA, and now focuses on platform and DevOps engineering.
-      </p>
-      <p class="section-intro">
-        The roles below show the operational, testing and engineering experience behind that progression.
       </p>
 
       {/* `href: null` hides this. */}

@@ -1,5 +1,5 @@
 ---
-role: "Career break — caregiving and self-directed study"
+role: "Career break — family caregiving and technical study"
 company: "Independent"
 location: "Philippines"
 start: "May 2021"
@@ -9,5 +9,5 @@ summary: "Full-time family caregiving alongside a residential construction proje
 highlights:
   - "Took on full-time family caregiving responsibilities."
   - "Ran a personal residence construction project end to end — labour, procurement and payroll."
-  - "Kept studying networking, programming, game development and emerging technology, which is what made the return route through software possible."
+  - "Continued technical study in networking, programming and game development."
 ---

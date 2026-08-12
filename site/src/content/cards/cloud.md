@@ -24,52 +24,52 @@ videos:
     caption: "The same environment destroyed again in about the same time — what deploy-on-demand costs when nobody is playing."
 details:
   - id: objectives
-    title: "1 · The requirements, before anything is designed"
+    title: "1 · Decide what the system needs"
     keywords:
       - "Business Deliverables"
       - "Technical Requirements"
       - "AI-Assisted Discovery"
-    body: "Concurrent players, a latency budget, and a monthly cost limit get written down before any design work starts. That list ruled out an always-on cluster: a game still in development needs a reachable demo, not a load balancer billing by the hour. An assistant priced the options, and I made the call."
+    body: "I set concurrent-player, latency and monthly-cost requirements before design starts. That ruled out an always-on cluster: a game in development needs a reachable demo, not a load balancer billing by the hour. An assistant compared prices; I made the decision."
   - id: foundation
-    title: "2 · Who has access, and for how long"
+    title: "2 · Set the access rules"
     keywords:
       - "Credentials"
       - "IAM & OIDC"
       - "Secrets Management"
-    body: "Every identity is decided before it's handed out: which IAM roles exist, and what each one can touch. Nothing holds a standing credential. CI proves who it is on every run through OIDC, and its access expires with the job."
+    body: "I define IAM roles and what each can access before granting them. Nothing keeps a standing credential: CI proves its identity through OIDC on every run, then access expires with the job."
   - id: environments
-    title: "3 · The target environments, and what each is for"
+    title: "3 · Separate environments"
     keywords:
       - "Environment Strategy"
       - "Network Architecture"
       - "Resource Isolation"
-    body: "Production, staging and development are three separate targets, each with its own networking. Production-grade infrastructure gets provisioned only where it's actually needed: the EKS path is written and tested, held deploy-on-demand until the game ships, while staging and development run today on one Linux machine already paid for, reached through a Cloudflare tunnel. Standing the cluster up takes 12 to 15 minutes and tearing it back down takes about the same, which is what makes deploy-on-demand a switch rather than a commitment."
+    body: "Production, staging and development are separate targets with their own networking. The EKS path is written and tested but stays deploy-on-demand until release; staging and development run on one already-paid-for Linux machine through a Cloudflare Tunnel. The cluster takes 12–15 minutes to create or remove."
   - id: guardrails
-    title: "4 · The limits every resource has to obey"
+    title: "4 · Add security and cost guardrails"
     keywords:
       - "Security Baselines"
       - "Compliance Constraints"
       - "Cost Control"
-    body: "Encryption, tagging, monitoring, backup, quotas and budgets are written as rules the platform enforces, not things somebody has to remember to do. They are applied when a resource is provisioned rather than audited afterwards, because a resource that slipped its tag is exactly the one nobody notices is still charging."
+    body: "Encryption, tagging, monitoring, backup, quotas and budgets are platform rules, not reminders. They apply at provisioning time, before an untagged resource becomes an unnoticed cost."
   - id: resources
-    title: "5 · Capacity and cost, decided together"
+    title: "5 · Choose services and capacity"
     keywords:
       - "Resource Management"
       - "Capacity & Scaling"
       - "Budget Forecasting"
-    body: "Sizing and price are decided together, not separately. Instance families, cache tier, and how many availability zones all get checked against the cost ceiling from step one before anything is picked. That's how encrypted ElastiCache made the cut while a separate load-balancer controller didn't."
+    body: "I choose sizing and price together. Instance families, cache tier and availability zones are checked against the cost ceiling before selection; that kept encrypted ElastiCache and ruled out a separate load-balancer controller."
   - id: validation
-    title: "6 · Steps one to five, combined into one plan"
+    title: "6 · Define everything as code"
     keywords:
       - "Consolidated Brief"
       - "Implementation Plan"
       - "Final Review"
-    body: "Nothing gets built yet. The five decisions above are combined into one brief, and the agent plans from it. I read that plan before a single resource is provisioned."
+    body: "The decisions become one implementation brief. The agent plans from it, and I review that plan before a resource is provisioned."
   - id: automation
-    title: "7 · Built as code, then tested by deploying it"
+    title: "7 · Build and verify the environment"
     keywords:
       - "Infrastructure as Code"
       - "Deployment Testing"
       - "Repeatability"
-    body: "All of it is Terraform, so the platform can be destroyed and rebuilt from one source with nothing left in anybody's head. I read the plan and the manifests line by line before anything is applied — an apply is not the place to find out what a change actually does. Code isn't proof either, so the deploy itself is the test: it stops before installing anything if the last apply never ran."
+    body: "Terraform makes the platform rebuildable from one source. I review the plan and manifests before apply, then verify by deploying: installation stops if the prior infrastructure apply did not complete."
 ---
