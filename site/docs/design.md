@@ -52,7 +52,7 @@ A new level needs its own grammar or the separation collapses.
 **The contact dialog is not a fifth level.** It is the one modal, outside the
 reading order rather than inside it. Native `<dialog>` and `showModal()` are
 load-bearing — Escape, the focus trap and the inert background come from them,
-so nothing here reimplements focus management. Both `Hire me` triggers are
+so nothing here reimplements focus management. Both `Let's talk` triggers are
 anchors holding the `mailto:` href, and the handler yields to them whenever it
 cannot do better — no `showModal`, or an endpoint that says it is not ready. The
 dialog only ever upgrades a working link. Trigger and

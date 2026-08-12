@@ -47,7 +47,7 @@ first. Widen that array and the Worker starts intercepting the site.
 
 ## The contact endpoint
 
-`POST /api/contact` takes the `Hire me` dialog's three fields and sends them
+`POST /api/contact` takes the `Let's talk` dialog's fields and sends them
 through Resend. `RESEND_API_KEY`, `CONTACT_TO` and `CONTACT_FROM` are secrets,
 set once with `wrangler secret put` and **preserved across every
 `wrangler deploy`** — so CI needs no new GitHub secret and the repo holds none.
@@ -55,7 +55,7 @@ The recipient is a secret, not a `var`: a `var` sits in git.
 
 **The route deploys before its credentials do.** `GET /api/contact` answers
 `{ok, ready}` — presence of the three, never a value — and the dialog asks
-before taking over its triggers. Unready it takes over nothing, both `Hire me`
+before taking over its triggers. Unready it takes over nothing, both `Let's talk`
 anchors stay the `mailto:` links they already are, and a `503` on submit hands
 them back the same way. The form wakes when the secrets land, with no redeploy.
 

@@ -268,7 +268,7 @@ const year = new Date().getFullYear();
         {/* Secondary, not primary: the row already has one primary, and
             `--action` only means something while it marks a single action.
             The mailto: href is the fallback when the dialog cannot open. */}
-        <a class="cta secondary" href={`mailto:${profile.email}`} data-contact-open>Hire me</a>
+        <a class="cta secondary" href={`mailto:${profile.email}`} data-contact-open>Let's talk</a>
         <a class="cta secondary" href="#engineering">See the engineering work</a>
         {profile.cv.href && (
           <a class="cta secondary" href={profile.cv.href} download>Download CV (PDF)</a>
@@ -414,8 +414,6 @@ const year = new Date().getFullYear();
         <Vignette
           id="in-production"
           label="In production"
-          count={inProduction.length}
-          countNoun={inProduction.length === 1 ? "title" : "titles"}
           note={inProduction.length === 0
             ? "Nothing shipped under this name yet. The first release lands here."
             : undefined}
@@ -443,8 +441,6 @@ const year = new Date().getFullYear();
         <Vignette
           id="in-development"
           label="In development"
-          count={inDevelopmentTiles.length > 0 ? inDevelopmentTiles.length : undefined}
-          countNoun={inDevelopmentTiles.length === 1 ? "title" : "titles"}
           open={true}
         >
           <div class="game-list" data-accordion="true">
@@ -559,7 +555,7 @@ const year = new Date().getFullYear();
       <p class="availability">Open to Platform &amp; DevOps roles, full-time or contract. Remote preferred; hybrid possible in the Philippines.</p>
       {/* Labelled "Email …": a bare address in a button scans as a heading. */}
       <div class="contact-links">
-        <a class="cta primary" href={`mailto:${profile.email}`} data-contact-open>Hire me</a>
+        <a class="cta primary" href={`mailto:${profile.email}`} data-contact-open>Let's talk</a>
         <a class="cta secondary" href={`mailto:${profile.email}`}>Email {profile.email}</a>
         {contactLinks.map((link) => (
           <a class="cta secondary" href={link.href} target="_blank" rel="noopener noreferrer">

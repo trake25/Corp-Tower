@@ -68,7 +68,7 @@ Grep this section for a filename or a symbol; do not load a source file whole.
 | `src/styles/global.css` | Every style on the site. Colour tokens, type scale, level grammar, `.topology` diagram classes, print rules |
 | `src/components/Card.astro` | Skill card — vignette and open states, tools, diagram slot, the steps disclosure, evidence links, the `data-detail` hotspot↔step script, `cards:reset` handler |
 | `src/components/CardFilter.astro` | Role filter buttons and count; dispatches `cards:reset` |
-| `src/components/ContactDialog.astro` | The `Hire me` dialog — native `<dialog>`, the three-field form and its copy, the `/api/contact` fetch, the sending, success and failure states, and the readiness probe that leaves the triggers as `mailto:` links until the route can send |
+| `src/components/ContactDialog.astro` | The `Let's talk` dialog — native `<dialog>`, the three-field form and its copy, the `/api/contact` fetch, the sending, success and failure states, and the readiness probe that leaves the triggers as `mailto:` links until the route can send |
 | `worker/index.js` | `/api/contact` — the readiness `GET`, then on `POST` origin and field validation, header-injection guard, honeypot, timing check, rate limits, daily cap, the Resend call |
 | `src/components/BuildingTheGame.astro` | Wraps the filter and the card list under `#engineering` |
 | `src/components/GameCard.astro` | Game tile — tagline, blurb, play links, repo link and disclaimer |
