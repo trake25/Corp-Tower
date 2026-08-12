@@ -252,7 +252,7 @@ const year = new Date().getFullYear();
   <main id="main">
     <section class="hero">
       <p class="eyebrow">{profile.name}</p>
-      <h1>Platform, Cloud &amp; DevOps Engineer</h1>
+      <h1>Platform &amp; DevOps Engineer</h1>
       <p class="lede">I build and automate the systems that keep software running.</p>
       <p class="differentiator">Platform, Cloud and DevOps engineer with experience in network operations, software QA and AI-assisted development.</p>
 
@@ -665,6 +665,16 @@ const year = new Date().getFullYear();
     // Applied directly: whether a tile open in the HTML fires `toggle` during
     // parse is not consistent across engines.
     sync();
+  }
+
+  // Technology groups are independent disclosures. Explicitly toggling the
+  // native details element keeps repeated touch taps reliable on mobile.
+  for (const summary of document.querySelectorAll<HTMLElement>(".skill-group > summary")) {
+    summary.addEventListener("click", (event) => {
+      event.preventDefault();
+      const group = summary.parentElement;
+      if (group instanceof HTMLDetailsElement) group.open = !group.open;
+    });
   }
 
   // 2. A link into something nested opens everything above it, or it scrolls to

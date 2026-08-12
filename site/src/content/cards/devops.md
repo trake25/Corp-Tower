@@ -32,7 +32,7 @@ details:
       - "Destination Matrix"
       - "Trust Allocation"
       - "Gate Policy"
-    body: "One pipeline supports the project's different destinations instead of maintaining separate release processes: production and development for the game server and web client, plus Android's internal testing track."
+    body: "One pipeline supports the project's different destinations instead of maintaining separate release processes. It serves five destinations: production and development for the game server and web client, plus Android's internal testing track."
   - id: checks
     title: "2 · Run the checks"
     keywords:
@@ -48,26 +48,26 @@ details:
       - "Credential Scoping"
     body: "CI obtains short-lived cloud access through OIDC instead of relying on permanent credentials. Each environment has separate credentials, and Android signing unlocks its key for one step."
   - id: artifact
-    title: "4 · Verify the artifact"
+    title: "4 · Verify what gets deployed"
     keywords:
       - "Artifact verification"
       - "Fail-closed checks"
       - "Build integrity"
     body: "Deployment uses the expected build artifact and verifies it before releasing it to the target environment. Every build hash-checks its art; a failed check stops the build."
   - id: gates
-    title: "5 · Apply deployment gates"
+    title: "5 · Control the release"
     keywords:
       - "Deployment gates"
       - "Environment isolation"
       - "Protected environments"
-    body: "Production and other protected environments require the appropriate checks before deployment can proceed. Only development deploys from a push; every other release clears a written gate."
+    body: "Protected environments require the appropriate approval or deployment gate before a release can continue. Only development deploys from a push; every other release clears a written gate, with environment isolation keeping credentials separate."
   - id: release
-    title: "6 · Release or clean up"
+    title: "6 · Deploy and clean up"
     keywords:
       - "Deployment"
       - "Teardown"
       - "Temporary infrastructure"
-    body: "Deploy to the selected environment and remove temporary infrastructure when it is no longer needed."
+    body: "Deploy to the selected environment and remove temporary infrastructure when it is no longer needed. Teardown returns temporary destinations to zero."
   - id: monitoring
     title: "Monitoring status"
     keywords:

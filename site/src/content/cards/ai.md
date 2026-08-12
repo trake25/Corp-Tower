@@ -17,14 +17,14 @@ details:
       - "Prompt engineering"
       - "Context control"
       - "Token efficiency"
-    body: "I break larger requests into clear goals, expected results and constraints before asking an agent to implement them. Prompt engineering makes the guardrails, edge cases and security requirements explicit."
+    body: "I start with research and a scoped task, not code. Larger requests are split into smaller phases, with constraints and edge cases defined before the agent starts planning. Prompt engineering makes the guardrails explicit."
   - id: refine
     title: "2 · Refine the context"
     keywords:
       - "Model selection"
       - "Effort routing"
       - "Token cost"
-    body: "I give the agent focused instructions instead of sending unnecessary information. Prompt compression reduces noise and token cost; model selection and effort routing stay proportionate to the task."
+    body: "I give the agent focused instructions instead of unnecessary information. This reduces noise and keeps the task aligned with the intended result. Prompt compression, token efficiency, model selection and effort routing stay proportionate to the task."
   - id: route
     title: "3 · Retrieve what matters"
     keywords:
@@ -38,21 +38,21 @@ details:
       - "Planning"
       - "Approval"
       - "Review"
-    body: "The agent proposes an implementation plan before changing the code. I review the approach and remain responsible for the engineering decision, especially on medium, large or security-sensitive work."
+    body: "The agent proposes an implementation plan before changing the code. I review the approach and remain responsible for the engineering decision. Planning and human approval remain explicit."
   - id: implement
     title: "5 · Implement"
     keywords:
       - "Retrieval-Augmented Generation"
       - "Context Routing"
       - "Selective Loading"
-    body: "The agent handles more of the implementation work while following the approved context and plan. Context routing keeps it grounded instead of asking it to infer repository-wide facts."
-  - id: review
-    title: "6 · Test and review"
+    body: "The agent handles the implementation work using the approved context and plan. Context routing keeps it grounded instead of asking it to infer repository-wide facts."
+  - id: handoff
+    title: "6 · Hand off to QA"
     keywords:
       - "Human-in-the-Loop"
       - "Plan Approval"
-      - "Hallucination Risk"
-    body: "Tests and manual verification determine whether the result is actually acceptable. The agent can fix problems, but acceptance remains mine; review checks the result against the approved plan and hallucination risk."
+      - "Context Maintenance"
+    body: "Once the implementation is complete, it moves into the separate QA process for automated testing, manual verification and acceptance. I remain responsible for the handoff and context maintenance."
 ---
 
 #### Local LLMs, once the hardware exists

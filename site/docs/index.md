@@ -33,7 +33,7 @@ plain markup, not collections.
 
 | Section id | Heading | Source |
 |---|---|---|
-| `hero` (unnamed) | Platform, Cloud & DevOps Engineer | `index.astro` copy + `profile` |
+| `hero` (unnamed) | Platform & DevOps Engineer | `index.astro` copy + `profile` |
 | `what-i-do` | What I do | `WHAT_I_DO` in `index.astro` |
 | `background` | Why my background is different | inline in `index.astro` |
 | `featured-project` | Featured project | inline + the `buildingTheGame` game |

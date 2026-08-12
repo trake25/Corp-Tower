@@ -57,19 +57,19 @@ details:
       - "Security Baselines"
       - "Compliance Constraints"
       - "Cost Control"
-    body: "Set boundaries around access, resources and spending before deployment. Encryption, tagging, monitoring, backup, quotas and budgets apply at provisioning time, making the infrastructure difficult to misuse and easy to control."
+    body: "Set boundaries around access, resources and spending before deployment. The infrastructure should be difficult to misuse and easy to control. Encryption, tagging, monitoring, backup, quotas and budgets apply at provisioning time."
   - id: validation
-    title: "6 · Define as code"
+    title: "6 · Plan the build"
     keywords:
       - "Consolidated Brief"
       - "Implementation Plan"
       - "Final Review"
-    body: "Terraform defines the infrastructure so environments can be recreated consistently instead of configured manually. I review the plan and manifests before apply."
+    body: "Combine the requirements and infrastructure decisions into an implementation plan before provisioning resources. I review the plan before the build starts; Terraform and the manifests carry that plan into implementation."
   - id: automation
-    title: "7 · Build and verify"
+    title: "7 · Define and build as code"
     keywords:
       - "Infrastructure as Code"
       - "Deployment Testing"
       - "Repeatability"
-    body: "Provision the environment, deploy the required services and verify that the resulting infrastructure matches the intended design. Installation stops if the prior infrastructure apply did not complete; the EKS environment takes 12–15 minutes to create or remove."
+    body: "Terraform defines the infrastructure so the environment can be recreated consistently instead of configured manually. Provision the environment, deploy the required services and verify the result; installation stops if the prior infrastructure apply did not complete, and the EKS environment takes 12–15 minutes to create or remove."
 ---
