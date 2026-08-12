@@ -55,10 +55,9 @@ defect, not a reason to route around it. Repair it in the same task;
 
 Role skills load inline. Subagents are for complex work only, never the default.
 Force on with `@deep`, off with `@solo`. Absent either, delegate only if 2+ hold
-before work starts: spans 2+ role domains · more than ~4 files · needs a 600-line
-decomposition · independent parallel branches · expected source reads > 25k
-tokens. **These five thresholds are placeholders** — replace them from the first
-closed rollup in the task log, never from an estimate.
+before work starts: spans 2+ role domains · more than ~30 files · needs a 600-line
+decomposition · independent parallel branches · expected source reads > 40k
+tokens.
 
 Never delegate: single-section edits · context already loaded in this thread ·
 ambiguous tasks needing user input mid-flight (agents cannot ask). If it turns
@@ -67,5 +66,6 @@ out bigger mid-task, say so and propose escalation rather than spawning silently
 ## On task completion
 
 Append one row to [`report/task-token-cost-effectivity.md`](report/task-token-cost-effectivity.md).
-Record `R-est` **before** reading anything. At 20 entries, stop and say the cycle
-is full.
+Record `R-est` **before** reading anything. If the row would be the 21st in the
+open cycle, close the cycle first — see that file's append rule — then log this
+task as row 1 of the next cycle.
