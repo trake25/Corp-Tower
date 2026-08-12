@@ -36,9 +36,13 @@ server-side auth check** — full gating needs that before public release.
 `Cor/Scripts/ScreenManager.gd`, on `Main.tscn`. Owns screen flow and the single
 global floating debug button.
 
-- Swaps join / find-match / live Game UI Scene inside `ScreenContainer`, driven by
-  the child screens' request signals and NetworkManager's `room_joined` /
-  `room_closed`.
+- Swaps sign-in / home / join / find-match / live Game UI Scene inside
+  `ScreenContainer`, driven by the child screens' request signals and
+  NetworkManager's `room_joined` / `room_closed`.
+- Flow: Play Loader → Sign-in → Home → Join Screen. Tutorial exit lands on
+  Home; room-close lands on Join Screen — not the same screen. Per-screen
+  wired-vs-stub buttons: [map/ui.md](./map/ui.md).
+- No status bar is drawn — the OS supplies its own on mobile, web has none.
 - Instantiates `PlayScreenScene` once per joined room and frees it on close.
 - The debug button distinguishes tap from drag via
   `DEBUG_BUTTON_DRAG_THRESHOLD`. Visibility is set once in `_ready()` from

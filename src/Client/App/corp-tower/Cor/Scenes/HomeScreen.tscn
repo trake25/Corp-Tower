@@ -1,0 +1,249 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/HomeScreen.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/bg.svg" id="2_bg"]
+[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/logo.svg" id="3_logo"]
+[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/ic-colored-private-server.svg" id="4_private"]
+[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/ic-colored-join-server.svg" id="5_join"]
+[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/ic-colored-game-tutorial.svg" id="6_tutorial"]
+[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/btn-circular-rankings.svg" id="7_rankings"]
+[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/btn-circular-settings.svg" id="8_settings"]
+[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/btn-circular-profile.svg" id="9_profile"]
+
+[node name="HomeScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="Root" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TopSpacer" type="Control" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Logo" type="TextureRect" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(170, 170)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("3_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MenuSpacer" type="Control" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MenuColumn" type="VBoxContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PrivateServerButton" type="Button" parent="SafeArea/Root/MenuColumn"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_type_variation = &"MenuCardButton"
+text = ""
+
+[node name="Margin" type="MarginContainer" parent="SafeArea/Root/MenuColumn/PrivateServerButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_right = 18
+
+[node name="Row" type="HBoxContainer" parent="SafeArea/Root/MenuColumn/PrivateServerButton/Margin"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="TextureRect" parent="SafeArea/Root/MenuColumn/PrivateServerButton/Margin/Row"]
+mouse_filter = 2
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("4_private")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="SafeArea/Root/MenuColumn/PrivateServerButton/Margin/Row"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+text = "Private Server"
+
+[node name="JoinServerButton" type="Button" parent="SafeArea/Root/MenuColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_type_variation = &"MenuCardButton"
+text = ""
+
+[node name="Margin" type="MarginContainer" parent="SafeArea/Root/MenuColumn/JoinServerButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_right = 18
+
+[node name="Row" type="HBoxContainer" parent="SafeArea/Root/MenuColumn/JoinServerButton/Margin"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="TextureRect" parent="SafeArea/Root/MenuColumn/JoinServerButton/Margin/Row"]
+mouse_filter = 2
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("5_join")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="SafeArea/Root/MenuColumn/JoinServerButton/Margin/Row"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+text = "Join Server"
+
+[node name="TutorialButton" type="Button" parent="SafeArea/Root/MenuColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_type_variation = &"MenuCardButton"
+text = ""
+
+[node name="Margin" type="MarginContainer" parent="SafeArea/Root/MenuColumn/TutorialButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_right = 18
+
+[node name="Row" type="HBoxContainer" parent="SafeArea/Root/MenuColumn/TutorialButton/Margin"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="TextureRect" parent="SafeArea/Root/MenuColumn/TutorialButton/Margin/Row"]
+mouse_filter = 2
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("6_tutorial")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="SafeArea/Root/MenuColumn/TutorialButton/Margin/Row"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+text = "Game Tutorial"
+
+[node name="BottomSpacer" type="Control" parent="SafeArea/Root"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CircleRow" type="HBoxContainer" parent="SafeArea/Root"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 28
+
+[node name="RankingsColumn" type="VBoxContainer" parent="SafeArea/Root/CircleRow"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 4
+
+[node name="RankingsButton" type="TextureButton" parent="SafeArea/Root/CircleRow/RankingsColumn"]
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("7_rankings")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="RankingsLabel" type="Label" parent="SafeArea/Root/CircleRow/RankingsColumn"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+text = "Rankings"
+
+[node name="SettingsColumn" type="VBoxContainer" parent="SafeArea/Root/CircleRow"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 4
+
+[node name="SettingsButton" type="TextureButton" parent="SafeArea/Root/CircleRow/SettingsColumn"]
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("8_settings")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="SettingsLabel" type="Label" parent="SafeArea/Root/CircleRow/SettingsColumn"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+text = "Settings"
+
+[node name="ProfileColumn" type="VBoxContainer" parent="SafeArea/Root/CircleRow"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 4
+
+[node name="ProfileButton" type="TextureButton" parent="SafeArea/Root/CircleRow/ProfileColumn"]
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("9_profile")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ProfileLabel" type="Label" parent="SafeArea/Root/CircleRow/ProfileColumn"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+text = "Profile"

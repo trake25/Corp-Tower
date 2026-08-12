@@ -37,6 +37,7 @@ contradicted source.
 
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V |
 |---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Sign-in + Home screens built, Join Screen rebuilt, flow rewired | 4 | A | 1 | 13 | — | ~45,000 | ~60,000 | ~60,000 | ✓ | ok |
 
 ## Cycle 1 (closed)
 

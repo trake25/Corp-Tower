@@ -29,13 +29,69 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0, 0, 0, 0.16)
+shadow_size = 3
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_MenuCardNormal"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.42, 0.55, 0.6, 0.22)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_MenuCardHover"]
+bg_color = Color(0.85, 0.96, 1, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.42, 0.55, 0.6, 0.22)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_MenuCardPressed"]
+bg_color = Color(0.518, 0.902, 0.976, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.42, 0.55, 0.6, 0.22)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_JoinLineEditNormal"]
+bg_color = Color(1, 1, 1, 0.55)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0, 0, 0, 0.16)
-shadow_size = 3
-shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_JoinLineEditReadOnly"]
+bg_color = Color(1, 1, 1, 0.4)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_JoinLineEditFocus"]
+bg_color = Color(1, 1, 1, 0.7)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.23, 0.48, 0.84, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Panel"]
 bg_color = Color(0.13, 0.15, 0.18, 0.96)
@@ -157,6 +213,15 @@ HudPanel/base_type = &"PanelContainer"
 HudPanel/styles/panel = SubResource("StyleBoxFlat_Panel")
 InfoLabel/base_type = &"Label"
 InfoLabel/font_sizes/font_size = 14
+JoinLineEdit/base_type = &"LineEdit"
+JoinLineEdit/styles/normal = SubResource("StyleBoxFlat_JoinLineEditNormal")
+JoinLineEdit/styles/read_only = SubResource("StyleBoxFlat_JoinLineEditReadOnly")
+JoinLineEdit/styles/focus = SubResource("StyleBoxFlat_JoinLineEditFocus")
+MenuCardButton/base_type = &"Button"
+MenuCardButton/styles/normal = SubResource("StyleBoxFlat_MenuCardNormal")
+MenuCardButton/styles/hover = SubResource("StyleBoxFlat_MenuCardHover")
+MenuCardButton/styles/pressed = SubResource("StyleBoxFlat_MenuCardPressed")
+MenuCardButton/styles/disabled = SubResource("StyleBoxFlat_MenuCardNormal")
 Panel/styles/panel = SubResource("StyleBoxFlat_Background")
 PopoverBodyLabel/base_type = &"Label"
 PopoverBodyLabel/colors/font_color = Color(0.1, 0.1, 0.12, 1)

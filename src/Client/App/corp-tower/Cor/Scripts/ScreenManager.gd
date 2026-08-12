@@ -1,6 +1,8 @@
 extends Control
 
 const PlayLoaderScreenScene := preload("res://Cor/Scenes/PlayLoaderScreen.tscn")
+const SignInScreenScene := preload("res://Cor/Scenes/SignInScreen.tscn")
+const HomeScreenScene := preload("res://Cor/Scenes/HomeScreen.tscn")
 const JoinScreenScene := preload("res://Cor/Scenes/JoinScreen.tscn")
 const FindMatchScreenScene := preload("res://Cor/Scenes/FindMatchScreen.tscn")
 const PlayScreenScene := preload("res://Cor/Scenes/GameUI.tscn")
@@ -49,17 +51,37 @@ func show_play_loader_screen() -> void:
 	_set_overlay(screen)
 
 func _on_play_loader_finished() -> void:
+	show_sign_in_screen()
+
+func show_sign_in_screen() -> void:
+	var screen := SignInScreenScene.instantiate()
+	screen.guest_login_requested.connect(_on_guest_login_requested)
+	_set_overlay(screen)
+
+func _on_guest_login_requested() -> void:
+	show_home_screen()
+
+func show_home_screen() -> void:
+	var screen := HomeScreenScene.instantiate()
+	screen.join_server_requested.connect(_on_home_join_server_requested)
+	screen.tutorial_requested.connect(_on_home_tutorial_requested)
+	_set_overlay(screen)
+
+func _on_home_join_server_requested() -> void:
 	show_join_screen()
+
+func _on_home_tutorial_requested() -> void:
+	start_tutorial(&"")
 
 func show_join_screen() -> void:
 	_teardown_play_instance()
 	var screen := JoinScreenScene.instantiate()
 	screen.find_match_requested.connect(_on_find_match_requested)
-	screen.tutorial_requested.connect(_on_join_screen_tutorial_requested)
+	screen.back_requested.connect(_on_join_screen_back_requested)
 	_set_overlay(screen)
 
-func _on_join_screen_tutorial_requested() -> void:
-	start_tutorial(&"")
+func _on_join_screen_back_requested() -> void:
+	show_home_screen()
 
 func start_tutorial(lesson_id: StringName = &"") -> void:
 	tutorial_active = true
@@ -78,7 +100,7 @@ func _on_play_instance_tutorial_requested(lesson_id) -> void:
 
 func _on_play_instance_tutorial_exited() -> void:
 	tutorial_active = false
-	show_join_screen()
+	show_home_screen()
 
 func show_find_match_screen() -> void:
 	_ensure_play_instance()

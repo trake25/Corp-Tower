@@ -641,6 +641,14 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:70 | on_level_result | fires the beat once and returns the wait it costs; false when empty, off or collapsing |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:114 | _should_shake | shake on failure; a collapse gets the shake and no beat |
 
+### src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd — 9 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:3 | join_server_requested · signal | open Join Screen |
+| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:4 | tutorial_requested · signal | start the Tutorial |
+| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:6 | _ready | wire Join Server and Game Tutorial; Private Server stays unwired |
+
 ### src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd — 27 ln
 
 | File:Ln | Symbol | Does |
@@ -653,7 +661,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:3 | find_match_requested · signal | start matchmaking |
-| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | tutorial_requested · signal | enter the Tutorial instead |
+| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | back_requested · signal | return to Home Screen |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:6 | _ready | wire buttons |
 
 ### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 461 ln
@@ -732,39 +740,51 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd:107 | close | hide and emit dismissed |
 | src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd:114 | _on_outside_catcher_gui_input | tap-outside close, after the grace window |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 199 ln
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 221 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:8 | DEBUG_BUTTON_DRAG_THRESHOLD · const | px before a debug-button press counts as a drag, not a tap |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:9 | DEBUG_BUTTON_MARGIN · const | keep-on-screen margin |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:10 | DRAG_POINTER_MOUSE · const | mouse pointer sentinel |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:11 | DRAG_POINTER_NONE · const | no active pointer sentinel |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:23 | _ready | **debug button visibility set once here from `DEBUG_UI_ENABLED`** |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:32 | _on_status_changed | relay connection status to the active screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:35 | _on_room_joined | swap to the live Game UI Scene |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:41 | _on_room_closed | tear the play instance down |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:46 | show_play_loader_screen | splash before join |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:51 | _on_play_loader_finished | advance to the join screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:54 | show_join_screen | join / tutorial entry screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:61 | _on_join_screen_tutorial_requested | enter Tutorial from join |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:64 | start_tutorial | mount the Tutorial over the real HUD |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:76 | _on_play_instance_tutorial_requested | Tutorial requested from inside play |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:79 | _on_play_instance_tutorial_exited | return from Tutorial |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:83 | show_find_match_screen | matchmaking wait screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:90 | _on_find_match_requested | enter the queue |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:94 | _on_cancel_requested | leave the queue |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:99 | _ensure_play_instance | instantiate PlayScreenScene once per room |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:113 | _teardown_play_instance | free the play instance on room close |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:120 | _set_overlay | mount a screen in ScreenContainer |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:125 | _clear_overlay | unmount the current screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:131 | update_debug_button_availability | enabled only with a live instance and a connection |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:139 | reset_debug_button_position | runs on ready and room join, never after a manual drag |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:145 | _on_debug_button_gui_input | tap-vs-drag discrimination |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:170 | _begin_debug_button_gesture | start tracking a pointer |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:175 | _end_debug_button_gesture | stop tracking |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:183 | _move_debug_button | drag the floating button, clamped on screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:193 | _on_debug_button_tapped | calls Main by duck typing; no static dependency |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:10 | DEBUG_BUTTON_DRAG_THRESHOLD · const | px before a debug-button press counts as a drag, not a tap |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:11 | DEBUG_BUTTON_MARGIN · const | keep-on-screen margin |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:12 | DRAG_POINTER_MOUSE · const | mouse pointer sentinel |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:13 | DRAG_POINTER_NONE · const | no active pointer sentinel |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:25 | _ready | **debug button visibility set once here from `DEBUG_UI_ENABLED`** |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:34 | _on_status_changed | relay connection status to the active screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:37 | _on_room_joined | swap to the live Game UI Scene |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:43 | _on_room_closed | tear the play instance down |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:48 | show_play_loader_screen | splash before join |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:53 | _on_play_loader_finished | advance to Sign-in |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:56 | show_sign_in_screen | Play as Guest is the only wired control |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:61 | _on_guest_login_requested | advance to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:64 | show_home_screen | Private Server / Join Server / Game Tutorial menu |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:70 | _on_home_join_server_requested | advance to the join screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:73 | _on_home_tutorial_requested | start the Tutorial from Home |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:76 | show_join_screen | join / matchmaking entry screen, no tutorial button |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:83 | _on_join_screen_back_requested | return to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:86 | start_tutorial | mount the Tutorial over the real HUD |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:98 | _on_play_instance_tutorial_requested | Tutorial requested from inside play |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:101 | _on_play_instance_tutorial_exited | return from Tutorial to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:105 | show_find_match_screen | matchmaking wait screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:112 | _on_find_match_requested | enter the queue |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:116 | _on_cancel_requested | leave the queue |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:121 | _ensure_play_instance | instantiate PlayScreenScene once per room |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:135 | _teardown_play_instance | free the play instance on room close |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:142 | _set_overlay | mount a screen in ScreenContainer |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:147 | _clear_overlay | unmount the current screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:153 | update_debug_button_availability | enabled only with a live instance and a connection |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:161 | reset_debug_button_position | runs on ready and room join, never after a manual drag |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:167 | _on_debug_button_gui_input | tap-vs-drag discrimination |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:192 | _begin_debug_button_gesture | start tracking a pointer |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:197 | _end_debug_button_gesture | stop tracking |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:205 | _move_debug_button | drag the floating button, clamped on screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:215 | _on_debug_button_tapped | calls Main by duck typing; no static dependency |
+
+### src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd — 7 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:3 | guest_login_requested · signal | advance to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:5 | _ready | wire the Play as Guest button; FB/Google/TikTok stay unwired |
 
 ### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1032 ln
 
@@ -934,4 +954,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-44 files · 705 symbols · 0 awaiting a `Does` line.
+46 files · 715 symbols · 0 awaiting a `Does` line.

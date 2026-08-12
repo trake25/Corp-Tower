@@ -1,0 +1,171 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/SignInScreen.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/bg.svg" id="2_bg"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/profile-avatar.svg" id="3_avatar"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/fb-logo.svg" id="4_fb"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/google-logo.svg" id="5_google"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/tiktok-logo.svg" id="6_tiktok"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/ic-colored-user.svg" id="7_user"]
+
+[node name="SignInScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 16
+
+[node name="Root" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TopSpacer" type="Control" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Avatar" type="TextureRect" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(86, 86)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("3_avatar")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="SafeArea/Root"]
+layout_mode = 2
+theme_type_variation = &"PopoverTitleLabel"
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+text = "Sign in to continue"
+
+[node name="SubtitleLabel" type="Label" parent="SafeArea/Root"]
+layout_mode = 2
+theme_type_variation = &"InfoLabel"
+horizontal_alignment = 1
+autowrap_mode = 2
+text = "Link your social account to save your progress and keep your stats."
+
+[node name="SocialRow" type="HBoxContainer" parent="SafeArea/Root"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 24
+
+[node name="FacebookButton" type="TextureButton" parent="SafeArea/Root/SocialRow"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+texture_normal = ExtResource("4_fb")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="GoogleButton" type="TextureButton" parent="SafeArea/Root/SocialRow"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+texture_normal = ExtResource("5_google")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TiktokButton" type="TextureButton" parent="SafeArea/Root/SocialRow"]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+texture_normal = ExtResource("6_tiktok")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="OrDivider" type="HBoxContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LineLeft" type="ColorRect" parent="SafeArea/Root/OrDivider"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+color = Color(0, 0, 0, 0.15)
+
+[node name="OrLabel" type="Label" parent="SafeArea/Root/OrDivider"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "OR"
+
+[node name="LineRight" type="ColorRect" parent="SafeArea/Root/OrDivider"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+color = Color(0, 0, 0, 0.15)
+
+[node name="GuestButton" type="Button" parent="SafeArea/Root"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_type_variation = &"MenuCardButton"
+text = ""
+
+[node name="GuestMargin" type="MarginContainer" parent="SafeArea/Root/GuestButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+
+[node name="GuestRow" type="HBoxContainer" parent="SafeArea/Root/GuestButton/GuestMargin"]
+mouse_filter = 2
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="GuestIcon" type="TextureRect" parent="SafeArea/Root/GuestButton/GuestMargin/GuestRow"]
+mouse_filter = 2
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+texture = ExtResource("7_user")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GuestLabel" type="Label" parent="SafeArea/Root/GuestButton/GuestMargin/GuestRow"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+text = "Play as Guest"
+
+[node name="FootnoteLabel" type="Label" parent="SafeArea/Root"]
+layout_mode = 2
+theme_type_variation = &"InfoLabel"
+horizontal_alignment = 1
+text = "link your account later in Settings."
+
+[node name="BottomSpacer" type="Control" parent="SafeArea/Root"]
+layout_mode = 2
+size_flags_vertical = 3
