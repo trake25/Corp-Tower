@@ -42,9 +42,9 @@ details:
   - id: implement
     title: "5 · Implement"
     keywords:
-      - "Retrieval-Augmented Generation"
-      - "Context Routing"
-      - "Selective Loading"
+      - "Agent execution"
+      - "Implementation"
+      - "Code changes"
     body: "The agent handles the implementation work using the approved context and plan."
   - id: handoff
     title: "6 · Hand off to QA"
