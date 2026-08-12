@@ -44,5 +44,5 @@ export const profile = {
   mediaBase: "https://media.galaxxigames.com",
   // Shown in the availability line. Set to null to hide the whole line.
   availability:
-    "Open to Platform, Cloud and DevOps roles, full-time or contract — including teams building agent-assisted delivery workflows. Remote preferred, hybrid possible in the Philippines. Working hours 5 AM – 8 PM (UTC+8).",
+    "Open to Platform & DevOps roles, full-time or contract — including teams building agent-assisted delivery workflows. Remote preferred, hybrid possible in the Philippines. Working hours 5 AM – 8 PM (UTC+8).",
 } as const;

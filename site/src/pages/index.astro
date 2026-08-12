@@ -254,7 +254,7 @@ const year = new Date().getFullYear();
       <p class="eyebrow">{profile.name}</p>
       <h1>Platform &amp; DevOps Engineer</h1>
       <p class="lede">I build and automate the systems that keep software running.</p>
-      <p class="differentiator">Platform, Cloud and DevOps engineer with experience in network operations, software QA and AI-assisted development.</p>
+      <p class="differentiator">Platform &amp; DevOps engineer with experience in network operations, software QA and AI-assisted development.</p>
 
       <div class="ctas">
         {demoLink && (
@@ -275,7 +275,7 @@ const year = new Date().getFullYear();
       <dl class="facts">
         <div>
           <dt>Focus</dt>
-          <dd>Platform · Cloud · DevOps</dd>
+          <dd>Platform &amp; DevOps</dd>
         </div>
         <div>
           <dt>Open to</dt>
@@ -374,7 +374,13 @@ const year = new Date().getFullYear();
         <div>
           {SKILL_GROUPS.map((group) => (
             <details class="skill-group">
-              <summary><span class="skill-group-label">{group.label}</span><span>Show technologies</span></summary>
+              <summary>
+                <span class="skill-group-label">{group.label}</span>
+                <span class="skill-group-toggle">
+                  <span class="skill-group-toggle-open">Open</span>
+                  <span class="skill-group-toggle-close">Close</span>
+                </span>
+              </summary>
               <div class="skill-group-items">{group.items.map((item) => <span class="skill">{item}</span>)}</div>
             </details>
           ))}
@@ -393,7 +399,7 @@ const year = new Date().getFullYear();
       {/* The id is load-bearing: existing #playables links point at it. */}
       <div id="playables" class="playables-strip">
         <Playables
-          games={gameEntries.filter((entry) => entry.data.title !== "Top or Drop").map((entry) => ({
+          games={gameEntries.filter((entry) => entry.data.title !== "Top or Drop" && entry.data.title !== "SpaceSheeps Pinball").map((entry) => ({
             title: entry.data.title,
             status: entry.data.status,
             links: entry.data.links,
@@ -402,13 +408,6 @@ const year = new Date().getFullYear();
       </div>
 
       <div class="vignettes">
-        {featuredRenderedGame && (
-          <article class="project-feature-link">
-            <h3>Top or Drop</h3>
-            <p>Real-time multiplayer · platform engineering project</p>
-            <a href="#featured-project">View featured project ↑</a>
-          </article>
-        )}
         <Vignette
           id="in-production"
           label="In production"
@@ -448,7 +447,7 @@ const year = new Date().getFullYear();
           <div class="game-list" data-accordion="true">
             {/* Only the first: `toggle` never fires for a tile already open in
                 the HTML, so two default-open tiles both stay expanded. */}
-            {inDevelopment.filter(({ entry }) => entry.data.title !== "Top or Drop").map(({ entry, Content }, index) => (
+            {inDevelopment.map(({ entry, Content }, index) => (
               <GameCard
                 slug={entry.slug}
                 title={entry.data.title}
@@ -544,7 +543,7 @@ const year = new Date().getFullYear();
         <span class="section-index">05</span> Let's talk
       </h2>
       <p class="eyebrow">Platform &amp; DevOps Engineer</p>
-      <p class="availability">Open to Platform, Cloud and DevOps roles, full-time or contract. Remote preferred; hybrid possible in the Philippines.</p>
+      <p class="availability">Open to Platform &amp; DevOps roles, full-time or contract. Remote preferred; hybrid possible in the Philippines.</p>
       {/* Labelled "Email …": a bare address in a button scans as a heading. */}
       <div class="contact-links">
         <a class="cta primary" href={`mailto:${profile.email}`} data-contact-open>Hire me</a>
