@@ -1,0 +1,242 @@
+---
+// The "Hire me" dialog. Mounted once; every [data-contact-open] trigger on the
+// page opens this one instance. Native <dialog> + showModal() supplies Escape,
+// the focus trap and background inertness, so none of that is hand-rolled here.
+//
+// Triggers are anchors carrying the mailto: href, so a browser without
+// showModal — or a page where this script failed — still reaches the inbox.
+// Behaviour and reasoning: site/docs/design.md.
+import { profile } from "../data/profile";
+---
+
+<dialog id="contact-dialog" class="contact-dialog" aria-labelledby="contact-dialog-title">
+  <div class="contact-dialog-inner">
+    <button class="contact-dialog-close" type="button" data-contact-close aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+
+    <div data-contact-panel="form">
+      <h2 id="contact-dialog-title" class="contact-dialog-title">Let's talk</h2>
+      <p class="contact-dialog-lede">
+        Have a role, project, or opportunity in mind? Tell me a little about it and
+        I'll get back to you.
+      </p>
+
+      <form class="contact-form" data-contact-form novalidate>
+        <div class="contact-field">
+          <label for="contact-name">Name</label>
+          <input
+            id="contact-name"
+            name="name"
+            type="text"
+            placeholder="Your name"
+            required
+            maxlength="100"
+            autocomplete="name"
+          />
+        </div>
+
+        <div class="contact-field">
+          <label for="contact-email">Email</label>
+          <input
+            id="contact-email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            required
+            maxlength="200"
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="contact-field">
+          <label for="contact-message">Message</label>
+          <textarea
+            id="contact-message"
+            name="message"
+            rows="5"
+            placeholder="Tell me about the opportunity..."
+            required
+            maxlength="4000"></textarea>
+        </div>
+
+        {/* Honeypot. Off-screen rather than display:none — a bot that skips
+            hidden fields is exactly the one worth catching. */}
+        <div class="contact-hp" aria-hidden="true">
+          <label for="contact-company">Company</label>
+          <input id="contact-company" name="company" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <p class="contact-error" data-contact-error role="alert" hidden></p>
+
+        <button class="cta primary contact-submit" type="submit" data-contact-submit>
+          Send message
+        </button>
+      </form>
+
+      {/* The address is already published in plain text on this page; this is a
+          fallback route, not a disclosure. */}
+      <p class="contact-dialog-fallback">
+        Prefer your own mail client? <a href={`mailto:${profile.email}`}>{profile.email}</a>
+      </p>
+    </div>
+
+    <div data-contact-panel="success" hidden>
+      <h2 class="contact-dialog-title">Message sent.</h2>
+      <p class="contact-dialog-lede">
+        Thanks for reaching out. I'll get back to you as soon as I can.
+      </p>
+      <button class="cta primary" type="button" data-contact-close>Close</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  // One dialog, every trigger. Nothing here reaches into another component.
+  const dialog = document.querySelector<HTMLDialogElement>("#contact-dialog");
+  const form = dialog?.querySelector<HTMLFormElement>("[data-contact-form]");
+  const formPanel = dialog?.querySelector<HTMLElement>('[data-contact-panel="form"]');
+  const successPanel = dialog?.querySelector<HTMLElement>('[data-contact-panel="success"]');
+  const errorEl = dialog?.querySelector<HTMLElement>("[data-contact-error]");
+  const submitButton = dialog?.querySelector<HTMLButtonElement>("[data-contact-submit]");
+
+  const SUBMIT_LABEL = "Send message";
+  const SENDING_LABEL = "Sending...";
+  const FAILURE_MESSAGE = "Something went wrong. Please try again.";
+  const MESSAGE_MIN = 10;
+
+  // Stamped when the dialog opens and posted with the payload; the server
+  // rejects anything returned faster than a human can type.
+  let openedAt = 0;
+  // Guards the whole in-flight window, so a second Enter cannot fire a
+  // second request before the button has been disabled and repainted.
+  let sending = false;
+  let lastTrigger: HTMLElement | null = null;
+
+  function setError(message: string | null) {
+    if (!errorEl) return;
+    errorEl.textContent = message ?? "";
+    errorEl.hidden = !message;
+  }
+
+  function showPanel(which: "form" | "success") {
+    if (!formPanel || !successPanel) return;
+    formPanel.hidden = which !== "form";
+    successPanel.hidden = which !== "success";
+  }
+
+  function openDialog(trigger: HTMLElement | null) {
+    if (!dialog) return;
+    lastTrigger = trigger;
+    openedAt = Date.now();
+    setError(null);
+    showPanel("form");
+    dialog.showModal();
+    dialog.querySelector<HTMLInputElement>("#contact-name")?.focus();
+  }
+
+  // Delegated so a trigger added anywhere on the page is wired without this
+  // component knowing where it lives.
+  document.addEventListener("click", (event) => {
+    const trigger = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+      "[data-contact-open]"
+    );
+    if (!trigger) return;
+    // No modal support means the anchor's mailto: is the better outcome.
+    if (!dialog || typeof dialog.showModal !== "function") return;
+    event.preventDefault();
+    openDialog(trigger);
+  });
+
+  for (const button of dialog?.querySelectorAll<HTMLButtonElement>("[data-contact-close]") ?? []) {
+    button.addEventListener("click", () => dialog?.close());
+  }
+
+  // Clicking the backdrop closes. The backdrop is the dialog element itself:
+  // anything inside .contact-dialog-inner is a real target.
+  dialog?.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+
+  // Fires for the close button, the backdrop and Escape alike. The form is
+  // never reset here — reopening has to find what was typed still in place.
+  dialog?.addEventListener("close", () => {
+    lastTrigger?.focus();
+    lastTrigger = null;
+  });
+
+  function validate(): string | null {
+    if (!form) return FAILURE_MESSAGE;
+    const name = (form.elements.namedItem("name") as HTMLInputElement).value.trim();
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value.trim();
+    const message = (form.elements.namedItem("message") as HTMLTextAreaElement).value.trim();
+
+    if (!name) return "Please enter your name.";
+    if (!email) return "Please enter your email address.";
+    // The same shape the server enforces. This one is a courtesy; that one counts.
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Please enter a valid email address.";
+    if (message.length < MESSAGE_MIN) return "Please write a little more about the opportunity.";
+    return null;
+  }
+
+  function focusFirstInvalid() {
+    if (!form) return;
+    const name = form.elements.namedItem("name") as HTMLInputElement;
+    const email = form.elements.namedItem("email") as HTMLInputElement;
+    const message = form.elements.namedItem("message") as HTMLTextAreaElement;
+    if (!name.value.trim()) name.focus();
+    else if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()))
+      email.focus();
+    else message.focus();
+  }
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (sending || !form || !submitButton) return;
+
+    const problem = validate();
+    if (problem) {
+      setError(problem);
+      focusFirstInvalid();
+      return;
+    }
+
+    sending = true;
+    setError(null);
+    submitButton.disabled = true;
+    submitButton.textContent = SENDING_LABEL;
+    form.setAttribute("aria-busy", "true");
+
+    const data = new FormData(form);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(data.get("name") ?? ""),
+          email: String(data.get("email") ?? ""),
+          message: String(data.get("message") ?? ""),
+          company: String(data.get("company") ?? ""),
+          ts: openedAt,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as { ok?: boolean } | null;
+      if (!response.ok || !payload?.ok) throw new Error("send failed");
+
+      // The only path that clears the fields.
+      form.reset();
+      showPanel("success");
+      successPanel?.querySelector<HTMLButtonElement>("[data-contact-close]")?.focus();
+    } catch {
+      // Everything the visitor typed is still in the DOM; only the button moves.
+      setError(FAILURE_MESSAGE);
+    } finally {
+      sending = false;
+      submitButton.disabled = false;
+      submitButton.textContent = SUBMIT_LABEL;
+      form.removeAttribute("aria-busy");
+    }
+  });
+</script>

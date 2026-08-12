@@ -49,6 +49,14 @@ shape:
 
 A new level needs its own grammar or the separation collapses.
 
+**The contact dialog is not a fifth level.** It is the one modal, outside the
+reading order rather than inside it. Native `<dialog>` and `showModal()` are
+load-bearing — Escape, the focus trap and the inert background come from them,
+so nothing here reimplements focus management. Both `Hire me` triggers are
+anchors holding the `mailto:` href and the handler yields to them when
+`showModal` is missing, so the dialog upgrades a working link. Trigger and
+dialog are both hidden in print: a control pointing at what cannot open.
+
 Headings run `h2` section → `h3` vignette and card headline → `h4` game, job and
 step titles. Controls that are not headings — "Building the game", "Show N
 steps" — stay controls; promoting one pushes step titles past `h6`.

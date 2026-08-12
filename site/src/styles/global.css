@@ -539,6 +539,170 @@ main > section:first-child {
   color: var(--fg);
 }
 
+/* The .cta rules above were written for anchors; a <button> wearing the class
+   inherits neither the page font nor the pointer. */
+button.cta {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* --- Contact dialog ------------------------------------------------------
+   The one modal on the site. Native <dialog> carries Escape, the focus trap
+   and the inert background, so this block is only paint. Level grammar in
+   site/docs/design.md: it is not a disclosure and must not look like one.
+   -------------------------------------------------------------------------- */
+
+.contact-dialog {
+  width: min(32rem, calc(100vw - 2rem));
+  max-height: min(46rem, calc(100dvh - 2rem));
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--fg);
+  overflow: hidden;
+}
+
+.contact-dialog::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+
+.contact-dialog[open] {
+  /* The same keyframe every disclosure body on the page uses. */
+  animation: reveal 0.28s ease both;
+}
+
+.contact-dialog-inner {
+  position: relative;
+  max-height: inherit;
+  overflow-y: auto;
+  padding: 1.5rem 1.5rem 1.6rem;
+}
+
+.contact-dialog-close {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.8rem;
+  padding: 0.15rem 0.45rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--fg-faint);
+  font-family: inherit;
+  font-size: var(--step-2);
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.contact-dialog-close:hover {
+  color: var(--fg);
+  background: var(--surface-hover);
+}
+
+.contact-dialog-title {
+  margin: 0 2rem 0.5rem 0;
+  font-size: var(--step-2);
+  letter-spacing: -0.01em;
+}
+
+.contact-dialog-lede {
+  margin: 0 0 1.25rem;
+  max-width: var(--measure);
+  color: var(--fg-muted);
+  font-size: var(--step--1);
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.contact-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.contact-field label {
+  color: var(--fg-muted);
+  font-size: var(--step--2);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.contact-field input,
+.contact-field textarea {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-alt);
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--step--1);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.contact-field textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.contact-field input::placeholder,
+.contact-field textarea::placeholder {
+  color: var(--fg-faint);
+}
+
+.contact-field input:hover,
+.contact-field textarea:hover {
+  border-color: var(--border-strong);
+}
+
+/* Focus falls through to the global :focus-visible ring — the brass outline is
+   already the site's one focus signal and a second one would compete. */
+
+/* Off-screen rather than display:none: a bot that skips hidden fields is
+   exactly the one this catches. Never announced, never tabbable. */
+.contact-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.contact-error {
+  margin: 0;
+  color: var(--fg);
+  font-size: var(--step--1);
+}
+
+.contact-error[hidden] {
+  display: none;
+}
+
+.contact-submit {
+  align-self: flex-start;
+  margin-top: 0.2rem;
+}
+
+.contact-submit:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.contact-dialog-fallback {
+  margin: 1.1rem 0 0;
+  color: var(--fg-faint);
+  font-size: var(--step--2);
+}
+
+.contact-dialog-fallback a {
+  color: var(--fg-muted);
+}
+
 /* --- Diagrams ------------------------------------------------------------
    Shared visual language for every per-skill showcase. The container styles
    live under .card-diagram further down; these are the marks themselves.
@@ -2237,6 +2401,28 @@ footer {
     width: auto;
   }
 
+  /* Near-fullscreen only here. A 32rem card floating on a 390px screen wastes
+     the edges the form needs, and the body scrolls inside .contact-dialog-inner
+     rather than the page behind it. */
+  .contact-dialog {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100dvh;
+    height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .contact-dialog-inner {
+    max-height: 100dvh;
+    padding: 1.25rem 1.1rem 1.5rem;
+  }
+
+  .contact-submit {
+    align-self: stretch;
+  }
+
   /* The title and its destinations stack rather than fighting over one line,
      and the rule between them stops earning its space. */
   .playable {
@@ -2289,6 +2475,10 @@ footer {
   /* Controls, not content. On paper a filter button is a dead pill and a
      "↑ diagram" hint points at nothing. */
   .print-cta,
+  /* A dialog trigger on paper is a control pointing at nothing, and the dialog
+     itself never opened. The email address prints from .contact-links. */
+  [data-contact-open],
+  .contact-dialog,
   .detail-jump-hint,
   .method-link,
   .game-crosslink,

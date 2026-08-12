@@ -2,8 +2,42 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "corp-tower-portfolio",
   "compatibility_date": "2026-07-03",
+  // The site is still a static build. `main` adds exactly one server route --
+  // the contact form's -- and `run_worker_first` scopes the Worker to it, so
+  // every other request goes straight to the asset router and
+  // `not_found_handling` keeps serving the built 404 page.
+  "main": "worker/index.js",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "404-page"
-  }
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/contact"]
+  },
+  // How many messages a day the form may send before it starts refusing. Sized
+  // under the mail provider's free daily allowance, not at it.
+  "vars": {
+    "CONTACT_DAILY_CAP": "50"
+  },
+  // Cloudflare's own rate limiter: account-local, no external service, no
+  // dependency. `period` accepts only 10 or 60 seconds, which is why the daily
+  // ceiling above is counted in KV instead.
+  "ratelimits": [
+    {
+      "name": "CONTACT_RL_IP",
+      "namespace_id": "1001",
+      "simple": { "limit": 3, "period": 60 }
+    },
+    {
+      "name": "CONTACT_RL_ALL",
+      "namespace_id": "1002",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ],
+  // Holds one counter per day, `sent:YYYY-MM-DD`, with a 48h TTL. Create the
+  // namespace once and paste its id here -- see site/docs/deploy.md.
+  "kv_namespaces": [
+    {
+      "binding": "CONTACT_KV",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ]
 }

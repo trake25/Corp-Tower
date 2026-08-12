@@ -7,6 +7,7 @@ import GameCard from "../components/GameCard.astro";
 import CvCard from "../components/CvCard.astro";
 import BuildingTheGame from "../components/BuildingTheGame.astro";
 import Card from "../components/Card.astro";
+import ContactDialog from "../components/ContactDialog.astro";
 import CloudTargetsDiagram from "../components/diagrams/CloudTargetsDiagram.astro";
 import QaLoopDiagram from "../components/diagrams/QaLoopDiagram.astro";
 import AiWorkflowDiagram from "../components/diagrams/AiWorkflowDiagram.astro";
@@ -260,6 +261,10 @@ const year = new Date().getFullYear();
             {demoLink.label}
           </a>
         )}
+        {/* Secondary, not primary: the row already has one primary, and
+            `--action` only means something while it marks a single action.
+            The mailto: href is the fallback when the dialog cannot open. */}
+        <a class="cta secondary" href={`mailto:${profile.email}`} data-contact-open>Hire me</a>
         <a class="cta secondary" href="#engineering">See the engineering work</a>
         {profile.cv.href && (
           <a class="cta secondary" href={profile.cv.href} download>Download CV (PDF)</a>
@@ -543,7 +548,8 @@ const year = new Date().getFullYear();
       <p class="availability">Open to Platform, Cloud and DevOps roles, full-time or contract. Remote preferred; hybrid possible in the Philippines.</p>
       {/* Labelled "Email …": a bare address in a button scans as a heading. */}
       <div class="contact-links">
-        <a class="cta primary" href={`mailto:${profile.email}`}>Email {profile.email}</a>
+        <a class="cta primary" href={`mailto:${profile.email}`} data-contact-open>Hire me</a>
+        <a class="cta secondary" href={`mailto:${profile.email}`}>Email {profile.email}</a>
         {contactLinks.map((link) => (
           <a class="cta secondary" href={link.href} target="_blank" rel="noopener noreferrer">
             {link.label}
@@ -553,6 +559,8 @@ const year = new Date().getFullYear();
       </div>
     </section>
   </main>
+
+  <ContactDialog />
 
   <footer>
     <div class="footer-top">

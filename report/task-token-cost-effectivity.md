@@ -53,6 +53,7 @@ contradicted source.
 | 14 | Skills-inert diagnosis; ui map 705/705; CLAUDE.md audited + un-ignored | 4 | A | 2 | 15 | — | ~33,000 | ~62,000 | ~62,000 | ✓ | ok |
 | 15 | Delete the K3s stack — source, workflows, docs | 3 | B | 2 | 85 | — | ~35,000 | ~75,000 | ~75,000 | ✓ | ok |
 | 16 | Portfolio KB + validator, 2 site skills, policy dedupe | 4 | B | 3 | 27 | — | ~38,000 | ~95,000 | ~95,000 | ! | ok |
+| 17 | Contact form: dialog, `/api/contact` Worker, guardrails | 4 | Bd | 3 | 11 | — | ~22,000 | ~185,000 | ~110,000 | ✓ | ok |
 
 Rows 1–2 carry no `R-est`: both predate the append rule they establish. They are
 measurements, not predictions, and are marked as such rather than back-filled — a
@@ -308,5 +309,18 @@ the estimate is not knowable until the first sweep is already paid for.
 files, ~38,000 tokens: three thresholds, fourth consecutive completion over the
 gate's objection. The gate has now been wrong four times running and right zero.
 
-**Rollup (cycle 1, open):** n=16 · median `R-act` ~29,000 · ✓9 ~2 ✗0 !5 · misroute 0%
-· 4 rows to close
+Row 17 is the first row where the KB was right and the **request** was wrong. The
+brief named an existing "Hire me" button and an existing email route to reuse; the
+site had neither. `site/docs/index.md` said so in one line — "no server-side logic,
+no bindings" — and two searches confirmed it. `Hit` is `✓` because retrieval did its
+job; the cost that mattered was the two subagent sweeps run to be sure a whole
+subsystem was absent, which is the one thing a file map cannot prove on its own.
+Absence is more expensive to establish than presence, and no budget makes it cheap.
+
+It is also the first row to raise a site budget. deploy.md went 1450 → 1900 because
+the site acquired a server route, three secrets and a token-scope caveat that did
+not exist when that number was set. The raise is logged in the validator itself, not
+just here.
+
+**Rollup (cycle 1, open):** n=17 · median `R-act` ~28,000 · ✓10 ~2 ✗0 !5 · misroute 0%
+· 3 rows to close

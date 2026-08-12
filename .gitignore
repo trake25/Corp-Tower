@@ -43,3 +43,6 @@ site/dist/
 site/.astro/
 site/.wrangler/
 site/public/og.png
+# Local values for the contact Worker's secrets, read by `wrangler dev`.
+# The deployed ones live in Cloudflare, never here.
+site/.dev.vars

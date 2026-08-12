@@ -35,10 +35,40 @@ Astro static build → Cloudflare Workers Static Assets. `wrangler.jsonc` names 
 Worker `corp-tower-portfolio`, points `assets.directory` at `./dist`, and sets
 `not_found_handling: "404-page"` so the built `404.html` serves unknown paths.
 `astro.config.mjs` sets the canonical `site` URL, `output: "static"` and
-`compressHTML`. There is no server-side logic and there are no bindings.
+`compressHTML` — the Astro build stays static and the adapter list stays empty.
+
+`main` mounts `worker/index.js` on the same Worker and
+`assets.run_worker_first: ["/api/contact"]` scopes it to that one path. Scoping
+is what keeps the rest intact: every other URL is still resolved by the asset
+router first, so `not_found_handling` goes on serving the built `404.html`.
+Widen that array and the Worker starts intercepting the site.
 
 `public/og.png` is a build output and is gitignored; everything else under
 `public/` ships as written.
+
+## The contact endpoint
+
+`POST /api/contact` takes the `Hire me` dialog's three fields and sends them
+through Resend. `RESEND_API_KEY`, `CONTACT_TO` and `CONTACT_FROM` are secrets,
+set once with `wrangler secret put` and **preserved across every
+`wrangler deploy`** — so CI needs no new GitHub secret and the repo holds none.
+The recipient is a secret rather than a `var` because a `var` would sit in git.
+
+Two rate limiters, `CONTACT_RL_IP` and `CONTACT_RL_ALL`, are account-local and
+need no external service, but their `period` accepts only 10 or 60 seconds —
+hence a counter for the longer ceiling: `CONTACT_KV` holds one
+`sent:YYYY-MM-DD` key on a 48h TTL, checked against the `CONTACT_DAILY_CAP`
+var. **Size that cap under the provider's free daily allowance, not at it.**
+Every guardrail is absent-safe: a missing binding disables its own check rather
+than failing the request, so a half-configured deploy degrades visibly.
+
+`CLOUDFLARE_WORKERS_API_TOKEN` is scoped to `Workers Scripts:Edit`, and a deploy
+binding KV may want `Workers KV Storage:Edit` too. If CI fails there, widen that
+token by the one permission or drop the KV cap and keep the limiters — neither
+path goes near the game's `Zone.DNS:Edit` token.
+
+`npm run dev:worker` builds and serves `dist/` and the Worker together; `astro
+dev` alone cannot answer the route. Local secrets go in gitignored `.dev.vars`.
 
 ## CI
 
@@ -109,3 +139,6 @@ these against the live project.
    a site → copy the beacon token → save as `CF_ANALYTICS_TOKEN`.
 6. **First CI deploy.** Push to `main` or dispatch the deploy workflow, confirm
    the run succeeds, then confirm the domain resolves.
+7. **Contact endpoint**, once: verify `galaxxigames.com` in Resend and take an
+   API key, `wrangler kv namespace create CONTACT_KV` and paste the id into
+   `wrangler.jsonc`, then set the three secrets above.

@@ -96,6 +96,7 @@ thing telling a reader which run they are looking at.
 | The Technologies lists | `SKILL_GROUPS` in `index.astro` |
 | Degree, licence, training | `CREDENTIALS` in `index.astro` |
 | 404 copy | `src/pages/404.astro` |
+| Contact dialog — title, description, labels, placeholders, both states | `src/components/ContactDialog.astro` |
 
 Those four constants are deliberately not collections: static lines that change
 when the stack does, not files with a schema.
@@ -112,7 +113,8 @@ button. `profile.github` is also published as `sameAs` in the JSON-LD, which
 **The published email is a domain alias routed to the personal inbox, never the
 address behind it.** It ships in plain text and in the JSON-LD, so it will be
 scraped; what gets scraped has to be disposable. Routing forwards but does not
-send — replies leave from the personal address.
+send — replies leave from the personal address. **The contact form's recipient
+is a different value**, held in the `CONTACT_TO` secret and never rendered.
 
 **The CV PDF is served from `public/`**, not R2: it deploys with the site,
 versions in git, and needs no second credential for a file that changes when the

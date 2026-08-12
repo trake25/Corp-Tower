@@ -25,11 +25,19 @@ const tok = s => Math.round(Buffer.byteLength(s, 'utf8') / 4);
 // Per-doc TOKEN budgets, set just above measured size so the next unjustified
 // addition fails loudly. Raise one only when a doc is all current behaviour and
 // live constraint and still does not fit -- and say why in the same change.
+//
+// Raised for the contact endpoint: the site gained a server route, and with it
+// three secrets, three guardrails, a token-scope caveat and a second dev
+// command. deploy.md carries almost all of that and was budgeted for a site
+// with no server side at all; index.md gained two map rows and the one
+// exception to the build-time rule, design.md the modal that is not a fifth
+// disclosure level. None of it is narrative -- every line is a live constraint
+// someone changing this code has to know.
 const BUDGETS = {
-  'index.md': 1800, 'design.md': 1950, 'content.md': 1950, 'deploy.md': 1450,
+  'index.md': 1950, 'design.md': 2050, 'content.md': 1950, 'deploy.md': 1900,
 };
 const DEFAULT_BUDGET = 1500;
-const TOTAL_BUDGET = 7100;
+const TOTAL_BUDGET = 7800;
 const MAX_LINE_CHARS = 300;
 
 // Constructions that turn a description of the system into a story about it.

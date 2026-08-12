@@ -18,9 +18,12 @@ artefact that backs it.
 | Host | Cloudflare Workers Static Assets, `assets.directory: ./dist` |
 | CI | `Site-Deploy-Workers.yml` on any push to `site/**` |
 | Media | screen recordings in R2, addressed through `profile.mediaBase` |
+| Server | one route, `POST /api/contact`, on the same Worker — [deploy.md](./deploy.md) |
 
-No server-side logic, no bindings, no runtime data source. Everything on the
-page is decided at build time from the content collections and `src/data/`.
+**Exactly one thing happens at request time: the contact form.** `main` mounts
+`worker/index.js` and `run_worker_first` scopes it to that path, so every other
+URL still goes to the asset router. Nothing rendered reads it — the page is
+decided at build time from the collections and `src/data/`.
 
 ## Page order
 
@@ -65,6 +68,8 @@ Grep this section for a filename or a symbol; do not load a source file whole.
 | `src/styles/global.css` | Every style on the site. Colour tokens, type scale, level grammar, `.topology` diagram classes, print rules |
 | `src/components/Card.astro` | Skill card — vignette and open states, tools, diagram slot, the steps disclosure, evidence links, the `data-detail` hotspot↔step script, `cards:reset` handler |
 | `src/components/CardFilter.astro` | Role filter buttons and count; dispatches `cards:reset` |
+| `src/components/ContactDialog.astro` | The `Hire me` dialog — native `<dialog>`, the three-field form and its copy, the `/api/contact` fetch, and the sending, success and failure states |
+| `worker/index.js` | `POST /api/contact` — origin and field validation, header-injection guard, honeypot, timing check, rate limits, daily cap, the Resend call |
 | `src/components/BuildingTheGame.astro` | Wraps the filter and the card list under `#engineering` |
 | `src/components/GameCard.astro` | Game tile — tagline, blurb, play links, repo link and disclaimer |
 | `src/components/CvCard.astro` | Job tile — role, company, dates, summary, highlights |
@@ -102,9 +107,9 @@ sentence is an `editorial` follow-up.
 
 ## Working rules
 
-- **Build-time only.** No client-side data fetching and no runtime branch on
-  request state. A behaviour that cannot be decided at build time does not
-  belong on this site.
+- **Build-time only, with one named exception.** Nothing the page *renders* may
+  depend on a request; the contact form is the single route allowed to, and
+  widening it needs the same argument made again. No other client-side fetch.
 - **One owning doc per concept.** Edit that doc, never a second copy. Source
   keeps short field-level notes; rationale lives here.
 - **Every claim on the page carries its artefact.** A step asserting work exists
