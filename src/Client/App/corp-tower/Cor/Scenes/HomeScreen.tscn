@@ -139,7 +139,7 @@ texture = ExtResource("5_join")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="SafeArea/Root/MenuColumn/JoinServerButton/Margin/Row"]
+[node name="JoinServerLabel" type="Label" parent="SafeArea/Root/MenuColumn/JoinServerButton/Margin/Row"]
 unique_name_in_owner = true
 mouse_filter = 2
 layout_mode = 2
