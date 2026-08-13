@@ -9,7 +9,7 @@ VERSION="${1:-}"
 load_env
 
 OBJECT="art/releases/art-${VERSION}.tar.gz"
-MANIFEST="src/Client/App/corp-tower/Cor/art-manifest.json"
+MANIFEST="$REPO_ROOT/src/Client/App/corp-tower/Cor/art-manifest.json"
 
 [ -d "$ART_DIR" ] || die "$ART_DIR does not exist"
 [ -n "$(ls -A "$ART_DIR" 2>/dev/null || true)" ] || die "$ART_DIR is empty — refusing to publish"

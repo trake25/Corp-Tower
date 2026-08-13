@@ -33,6 +33,8 @@ reference/
 # a safety net if one ever ends up inside it.
 .env.backup
 scripts/backup/.env.backup
+scripts/aws
+scripts/awscliv2.zip
 
 # CI-downloaded web build artifact staged as the docker/web Docker build context
 docker/web/web/
