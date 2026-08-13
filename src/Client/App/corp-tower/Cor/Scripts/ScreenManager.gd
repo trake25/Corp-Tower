@@ -43,7 +43,10 @@ func _on_room_joined(_data) -> void:
 func _on_room_closed(_data) -> void:
 	if tutorial_active:
 		return
-	show_join_screen()
+	if EndpointConfig.DEMO_MODE_ENABLED:
+		show_home_screen()
+	else:
+		show_join_screen()
 
 func show_play_loader_screen() -> void:
 	var screen := PlayLoaderScreenScene.instantiate()
@@ -51,7 +54,10 @@ func show_play_loader_screen() -> void:
 	_set_overlay(screen)
 
 func _on_play_loader_finished() -> void:
-	show_sign_in_screen()
+	if EndpointConfig.DEMO_MODE_ENABLED:
+		show_home_screen()
+	else:
+		show_sign_in_screen()
 
 func show_sign_in_screen() -> void:
 	var screen := SignInScreenScene.instantiate()
@@ -68,7 +74,10 @@ func show_home_screen() -> void:
 	_set_overlay(screen)
 
 func _on_home_join_server_requested() -> void:
-	show_join_screen()
+	if EndpointConfig.DEMO_MODE_ENABLED:
+		NetworkManager.connect_server()
+	else:
+		show_join_screen()
 
 func _on_home_tutorial_requested() -> void:
 	start_tutorial(&"")

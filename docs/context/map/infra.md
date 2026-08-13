@@ -551,26 +551,6 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/aws/dist/awscli/customizations/wizard/wizards/configure/_main.yml — 147 ln
-
-_no extracted symbols_
-
-### scripts/aws/dist/awscli/customizations/wizard/wizards/dynamodb/new-table.yml — 283 ln
-
-_no extracted symbols_
-
-### scripts/aws/dist/awscli/customizations/wizard/wizards/events/new-rule.yml — 557 ln
-
-_no extracted symbols_
-
-### scripts/aws/dist/awscli/customizations/wizard/wizards/iam/new-role.yml — 319 ln
-
-_no extracted symbols_
-
-### scripts/aws/dist/awscli/customizations/wizard/wizards/lambda/new-function.yml — 146 ln
-
-_no extracted symbols_
-
 ### scripts/backup/backup-common.sh — 176 ln
 
 | File:Ln | Symbol | Does |
@@ -611,30 +591,30 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/build-file-map.mjs — 342 ln
+### scripts/build-file-map.mjs — 344 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | scripts/build-file-map.mjs:23 | CLIENT · const | the Godot project root prefix, used by both the ui area roots and the ignore list |
 | scripts/build-file-map.mjs:27 | AREAS · const | **the single source of truth for what counts as first-party source**; a file is claimed by the FIRST area whose root contains it, which is what makes exactly-one-map enforceable |
-| scripts/build-file-map.mjs:52 | IGNORE_DIR · const | never-walked directories: addons, node_modules, .godot, .terraform, .git |
-| scripts/build-file-map.mjs:53 | IGNORE_PATH · const | path-level excludes — client art, and the two separately-deployed Workers sites |
-| scripts/build-file-map.mjs:62 | COVERAGE_EXEMPT · const | tests are routed by testing.md, not by symbol map; their useful unit is the case name, which greps fine from source |
-| scripts/build-file-map.mjs:67 | norm · const | backslash to forward slash, so generated paths are identical on Windows and CI |
-| scripts/build-file-map.mjs:69 | walk · fn | recursive directory walk, sorted for deterministic output |
-| scripts/build-file-map.mjs:85 | firstPartyFiles · fn | every first-party file tagged with its owning area; **imported by validate-docs.mjs** rather than duplicated there |
-| scripts/build-file-map.mjs:107 | isExempt · const | true for test files, which are excluded from map coverage |
-| scripts/build-file-map.mjs:115 | JS_KEYWORD · const | words that look like a method signature but are control flow; keeps `if (...) {` out of the map |
-| scripts/build-file-map.mjs:120 | symbolsJs · fn | class, function, exports., top-level const and class-body method; **`const X = require(...)` is skipped** — an import cannot answer which file does X |
-| scripts/build-file-map.mjs:150 | symbolsGd · fn | class_name, signal, const, static var, `@export` var and func; **plain and `@onready` var are skipped** as node plumbing nothing routes to |
-| scripts/build-file-map.mjs:179 | symbolsTf · fn | resource, module, variable, output, data and provider blocks, named `type.name` |
-| scripts/build-file-map.mjs:188 | symbolsYml · fn | top-level keys plus job names under `jobs:`, which is the routable unit of a workflow |
-| scripts/build-file-map.mjs:204 | symbolsSh · fn | shell function definitions |
-| scripts/build-file-map.mjs:213 | extract · fn | dispatches to the per-language extractor by extension and returns line count with symbols |
-| scripts/build-file-map.mjs:229 | readAuthored · fn | **carry-forward**: parses the existing map so hand-written `Does` prose survives regeneration, keyed on `path#symbol` and never on line number; accepts both the old bare-number and the current `path:line` first cell |
-| scripts/build-file-map.mjs:252 | render · fn | emits the markdown; each row carries its own `path:line` so one grep hit needs no follow-up lookup |
-| scripts/build-file-map.mjs:292 | build · fn | walks every area, reads each file, and renders against the `Does` prose already in the map |
-| scripts/build-file-map.mjs:310 | main · fn | `--check` exits 1 on a stale map without writing; `--quiet` prints the summary line only |
+| scripts/build-file-map.mjs:54 | IGNORE_DIR · const | never-walked directories: addons, node_modules, .godot, .terraform, .git |
+| scripts/build-file-map.mjs:55 | IGNORE_PATH · const | path-level excludes — client art, and the two separately-deployed Workers sites |
+| scripts/build-file-map.mjs:64 | COVERAGE_EXEMPT · const | tests are routed by testing.md, not by symbol map; their useful unit is the case name, which greps fine from source |
+| scripts/build-file-map.mjs:69 | norm · const | backslash to forward slash, so generated paths are identical on Windows and CI |
+| scripts/build-file-map.mjs:71 | walk · fn | recursive directory walk, sorted for deterministic output |
+| scripts/build-file-map.mjs:87 | firstPartyFiles · fn | every first-party file tagged with its owning area; **imported by validate-docs.mjs** rather than duplicated there |
+| scripts/build-file-map.mjs:109 | isExempt · const | true for test files, which are excluded from map coverage |
+| scripts/build-file-map.mjs:117 | JS_KEYWORD · const | words that look like a method signature but are control flow; keeps `if (...) {` out of the map |
+| scripts/build-file-map.mjs:122 | symbolsJs · fn | class, function, exports., top-level const and class-body method; **`const X = require(...)` is skipped** — an import cannot answer which file does X |
+| scripts/build-file-map.mjs:152 | symbolsGd · fn | class_name, signal, const, static var, `@export` var and func; **plain and `@onready` var are skipped** as node plumbing nothing routes to |
+| scripts/build-file-map.mjs:181 | symbolsTf · fn | resource, module, variable, output, data and provider blocks, named `type.name` |
+| scripts/build-file-map.mjs:190 | symbolsYml · fn | top-level keys plus job names under `jobs:`, which is the routable unit of a workflow |
+| scripts/build-file-map.mjs:206 | symbolsSh · fn | shell function definitions |
+| scripts/build-file-map.mjs:215 | extract · fn | dispatches to the per-language extractor by extension and returns line count with symbols |
+| scripts/build-file-map.mjs:231 | readAuthored · fn | **carry-forward**: parses the existing map so hand-written `Does` prose survives regeneration, keyed on `path#symbol` and never on line number; accepts both the old bare-number and the current `path:line` first cell |
+| scripts/build-file-map.mjs:254 | render · fn | emits the markdown; each row carries its own `path:line` so one grep hit needs no follow-up lookup |
+| scripts/build-file-map.mjs:294 | build · fn | walks every area, reads each file, and renders against the `Does` prose already in the map |
+| scripts/build-file-map.mjs:312 | main · fn | `--check` exits 1 on a stale map without writing; `--quiet` prints the summary line only |
 
 ### scripts/docs-scope.mjs — 218 ln
 
@@ -745,4 +725,4 @@ _no extracted symbols_
 
 ---
 
-86 files · 338 symbols · 0 awaiting a `Does` line.
+81 files · 338 symbols · 0 awaiting a `Does` line.

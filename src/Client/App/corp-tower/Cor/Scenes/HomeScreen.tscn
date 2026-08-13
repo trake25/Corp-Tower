@@ -71,6 +71,7 @@ layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="PrivateServerButton" type="Button" parent="SafeArea/Root/MenuColumn"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_type_variation = &"MenuCardButton"
@@ -139,6 +140,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="Label" type="Label" parent="SafeArea/Root/MenuColumn/JoinServerButton/Margin/Row"]
+unique_name_in_owner = true
 mouse_filter = 2
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
@@ -188,6 +190,7 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="CircleRow" type="HBoxContainer" parent="SafeArea/Root"]
+unique_name_in_owner = true
 layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 28

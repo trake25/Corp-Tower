@@ -49,7 +49,9 @@ export const AREAS = [
 ];
 
 // Never walked. Third-party, generated, binary, or deployed separately.
-const IGNORE_DIR = /(^|[\\/])(addons|node_modules|\.godot|\.terraform|\.git)([\\/]|$)/;
+// scripts/aws is a gitignored, untracked local AWS CLI v2 bundle (see
+// .gitignore) — never part of the committed tree, so it must not be scanned.
+const IGNORE_DIR = /(^|[\\/])(addons|node_modules|\.godot|\.terraform|\.git|scripts[\\/]aws)([\\/]|$)/;
 const IGNORE_PATH = [
   new RegExp(`^${CLIENT}/Cor/Art/`),
   /^site\//, /^site-root\//,
