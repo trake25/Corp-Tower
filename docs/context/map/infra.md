@@ -547,7 +547,27 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/art-push.sh — 82 ln
+### scripts/art-push.sh — 83 ln
+
+_no extracted symbols_
+
+### scripts/aws/dist/awscli/customizations/wizard/wizards/configure/_main.yml — 147 ln
+
+_no extracted symbols_
+
+### scripts/aws/dist/awscli/customizations/wizard/wizards/dynamodb/new-table.yml — 283 ln
+
+_no extracted symbols_
+
+### scripts/aws/dist/awscli/customizations/wizard/wizards/events/new-rule.yml — 557 ln
+
+_no extracted symbols_
+
+### scripts/aws/dist/awscli/customizations/wizard/wizards/iam/new-role.yml — 319 ln
+
+_no extracted symbols_
+
+### scripts/aws/dist/awscli/customizations/wizard/wizards/lambda/new-function.yml — 146 ln
 
 _no extracted symbols_
 
@@ -725,4 +745,4 @@ _no extracted symbols_
 
 ---
 
-81 files · 338 symbols · 0 awaiting a `Does` line.
+86 files · 338 symbols · 0 awaiting a `Does` line.

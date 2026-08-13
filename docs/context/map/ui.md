@@ -740,6 +740,14 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd:107 | close | hide and emit dismissed |
 | src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd:114 | _on_outside_catcher_gui_input | tap-outside close, after the grace window |
 
+### src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd — 9 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd:3 | PRESSED_TINT · const | the shared cyan pressed color, matches MenuCardPressed |
+| src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd:4 | NORMAL_TINT · const | white, restores modulate on release |
+| src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd:6 | _ready | tint bare icon TextureButtons cyan on press, no StyleBox to swap |
+
 ### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 221 ln
 
 | File:Ln | Symbol | Does |
@@ -954,4 +962,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-46 files · 715 symbols · 0 awaiting a `Does` line.
+47 files · 718 symbols · 0 awaiting a `Does` line.

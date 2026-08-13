@@ -198,6 +198,16 @@ shadow_color = Color(0.42, 0.55, 0.6, 0.22)
 shadow_size = 8
 shadow_offset = Vector2(0, 4)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_WhiteCardPressed"]
+bg_color = Color(0.518, 0.902, 0.976, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.42, 0.55, 0.6, 0.22)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
 [resource]
 ActionButton/base_type = &"Button"
 ActionButton/styles/normal = SubResource("StyleBoxFlat_ActionButton")
@@ -255,6 +265,6 @@ WhiteCardButton/base_type = &"Button"
 WhiteCardButton/styles/disabled = SubResource("StyleBoxFlat_WhiteCard")
 WhiteCardButton/styles/hover = SubResource("StyleBoxFlat_WhiteCard")
 WhiteCardButton/styles/normal = SubResource("StyleBoxFlat_WhiteCard")
-WhiteCardButton/styles/pressed = SubResource("StyleBoxFlat_WhiteCard")
+WhiteCardButton/styles/pressed = SubResource("StyleBoxFlat_WhiteCardPressed")
 WhiteCardPanel/base_type = &"PanelContainer"
 WhiteCardPanel/styles/panel = SubResource("StyleBoxFlat_WhiteCard")

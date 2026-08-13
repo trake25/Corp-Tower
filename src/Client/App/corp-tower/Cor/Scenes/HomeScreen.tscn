@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/HomeScreen.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://Cor/Art/2-Home/bg.svg" id="2_bg"]
@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" path="res://Cor/Art/2-Home/btn-circular-rankings.svg" id="7_rankings"]
 [ext_resource type="Texture2D" path="res://Cor/Art/2-Home/btn-circular-settings.svg" id="8_settings"]
 [ext_resource type="Texture2D" path="res://Cor/Art/2-Home/btn-circular-profile.svg" id="9_profile"]
+[ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="10_presstint"]
 
 [node name="HomeScreen" type="Control"]
 layout_mode = 3
@@ -200,6 +201,7 @@ theme_override_constants/separation = 4
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 size_flags_horizontal = 4
+script = ExtResource("10_presstint")
 texture_normal = ExtResource("7_rankings")
 ignore_texture_size = true
 stretch_mode = 5
@@ -219,6 +221,7 @@ theme_override_constants/separation = 4
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 size_flags_horizontal = 4
+script = ExtResource("10_presstint")
 texture_normal = ExtResource("8_settings")
 ignore_texture_size = true
 stretch_mode = 5
@@ -238,6 +241,7 @@ theme_override_constants/separation = 4
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 size_flags_horizontal = 4
+script = ExtResource("10_presstint")
 texture_normal = ExtResource("9_profile")
 ignore_texture_size = true
 stretch_mode = 5

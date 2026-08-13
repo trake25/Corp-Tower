@@ -65,10 +65,10 @@ out bigger mid-task, say so and propose escalation rather than spawning silently
 
 ## On task completion
 
-Append one row to [`report/task-token-cost-effectivity.md`](report/task-token-cost-effectivity.md).
-Record `R-est` **before** reading anything. If the row would be the 21st in the
-open cycle, close the cycle first — see that file's append rule — then log this
-task as row 1 of the next cycle.
+Append one row to [`report/task-token-cost-effectivity.md`](report/task-token-cost-effectivity.md)
+via its sentinel — don't read the whole file. Record `R-est` **before** reading
+anything. Writing row 20 closes the cycle immediately — see that file's append
+rule.
 
 ## Plan Policy
 

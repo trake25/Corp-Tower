@@ -9,13 +9,15 @@ Cost is never read without correctness beside it. A cycle where `Tot` falls and
 
 ## Append rule
 
-> On task completion, append one row. Record `R-est` **before** reading
-> anything. If this row would be the 21st in the open cycle: first write a
-> plain-English rollup (median `R-act`, `Hit` distribution, misroute rate, and
-> whether the cycle was cost-efficient), archive the 20 rows under a new
-> `## Cycle N (closed)` heading below the rollup, clear the table, then log
-> this task as row 1 of the new cycle. A row is the minimum required — number,
-> columns, nothing else.
+> A `<!-- next: row N -->` sentinel sits immediately below the open table. To
+> append: grep this file for the sentinel (never read the whole file) to get
+> `N`, read just that line, then replace it with the new row plus an updated
+> sentinel for `N+1`. Record `R-est` **before** reading anything. Writing row
+> 20 closes the cycle immediately: read the full table, write a plain-English
+> rollup (median `R-act`, `Hit` distribution, misroute rate, and whether the
+> cycle was cost-efficient) above it, archive it under a new
+> `## Cycle N (closed)` heading, clear the table, and reset the sentinel to
+> `row 1`. A row is the minimum required — number, columns, nothing else.
 
 `R-est` recorded after the fact is worthless. A row where `R-est` equals `R-act`
 exactly is the tell; spot-check for it while a cycle is open.
@@ -38,6 +40,9 @@ contradicted source.
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | Sign-in + Home screens built, Join Screen rebuilt, flow rewired | 4 | A | 1 | 13 | — | ~45,000 | ~60,000 | ~60,000 | ✓ | ok |
+| 2 | Backjob: stub buttons pressable, pressed-state consistency, SVG pixelation fix | 3 | A | 1 | 6 | ~20,000 | ~19,000 | ~34,000 | ~34,000 | ✓ | ok |
+| 3 | Sentinel append policy authored + tested; scanned KB for other append-log candidates (none found) | 2 | A | 1 | 2 | — | ~4,000 | ~9,000 | ~9,000 | ✓ | ok |
+<!-- next: row 4 -->
 
 ## Cycle 1 (closed)
 
