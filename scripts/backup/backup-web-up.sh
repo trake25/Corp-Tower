@@ -43,6 +43,7 @@ docker run -d \
   --restart unless-stopped \
   -p "127.0.0.1:${PORT}:80" \
   -v "${CONTENT_DIR}:/usr/share/nginx/html:ro" \
+  -v "${SCRIPT_DIR}/nginx-no-cache.conf:/etc/nginx/conf.d/default.conf:ro" \
   "$IMAGE"
 
 info "Waiting for the web server to report ready"
