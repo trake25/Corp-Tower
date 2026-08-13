@@ -42,7 +42,8 @@ contradicted source.
 | 1 | Sign-in + Home screens built, Join Screen rebuilt, flow rewired | 4 | A | 1 | 13 | — | ~45,000 | ~60,000 | ~60,000 | ✓ | ok |
 | 2 | Backjob: stub buttons pressable, pressed-state consistency, SVG pixelation fix | 3 | A | 1 | 6 | ~20,000 | ~19,000 | ~34,000 | ~34,000 | ✓ | ok |
 | 3 | Sentinel append policy authored + tested; scanned KB for other append-log candidates (none found) | 2 | A | 1 | 2 | — | ~4,000 | ~9,000 | ~9,000 | ✓ | ok |
-<!-- next: row 4 -->
+| 4 | Android mobile misalignment: `window/stretch/aspect.mobile="keep"` fix + ui.md doc update | 3 | A | 2 | 2 | — | ~18,000 | ~32,000 | ~32,000 | ! | ok |
+<!-- next: row 5 -->
 
 ## Cycle 1 (closed)
 

@@ -12,8 +12,8 @@ All paths under `src/Client/App/corp-tower/` unless noted. **The client renders
 
 - `project.godot` autoloads NetworkManager as a singleton.
 - Display: 412×917 portrait design size, `canvas_items` stretch. Aspect is
-  `expand` by default (Android fills any phone) and `keep` for web
-  (`window/stretch/aspect.web`), so the browser pillarboxes instead of widening.
+  `keep` on web and mobile (`.web`/`.mobile`), pillarboxed rather than
+  widened — most `GameUI.tscn` children are fixed-offset, not edge-anchored.
 - `Main.tscn` is the app root and owns [Screen Manager](#screen-manager). It swaps
   join / find-match / instanced [Game UI Scene](#game-ui-scene) — there is no
   static UI root scene.
