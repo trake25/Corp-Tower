@@ -647,7 +647,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:3 | join_server_requested · signal | open Join Screen, or connect directly in demo |
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:4 | tutorial_requested · signal | start the Tutorial |
-| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:6 | _ready | wire Join Server and Game Tutorial; Private Server stays unwired; in demo, hides Private Server/CircleRow and relabels Join Server "Start Demo" |
+| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:6 | _ready | wire Join Server and Game Tutorial; Private Server stays unwired; in demo, hides Private Server/CircleRow and relabels Join Server "Play Demo" |
 
 ### src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd — 27 ln
 

@@ -40,7 +40,7 @@ global floating debug button.
   `ScreenContainer`, driven by the child screens' request signals and
   NetworkManager's `room_joined` / `room_closed`.
 - Flow: Play Loader → Sign-in → Home → Join Screen; tutorial exit → Home,
-  room-close → Join Screen. Demo skips both: Start Demo + Tutorial on
+  room-close → Join Screen. Demo skips both: Play Demo + Tutorial on
   Home, room-close → Home. Wired/stub buttons: [map/ui.md](./map/ui.md).
 - No status bar is drawn — the OS supplies its own on mobile, web has none.
 - Instantiates `PlayScreenScene` once per joined room and frees it on close.

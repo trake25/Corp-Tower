@@ -10,4 +10,4 @@ func _ready() -> void:
 	if EndpointConfig.DEMO_MODE_ENABLED:
 		%PrivateServerButton.visible = false
 		%CircleRow.visible = false
-		%JoinServerLabel.text = "Start Demo"
+		%JoinServerLabel.text = "Play Demo"
