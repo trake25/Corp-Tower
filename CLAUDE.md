@@ -56,7 +56,7 @@ defect, not a reason to route around it. Repair it in the same task;
 Role skills load inline. Subagents are for complex work only, never the default.
 Force on with `@deep`, off with `@solo`. Absent either, delegate only if 2+ hold
 before work starts: spans 2+ role domains · more than ~30 files · needs a 600-line
-decomposition · independent parallel branches · expected source reads > 40k
+decomposition · independent parallel branches · expected source reads > 50k
 tokens.
 
 Never delegate: single-section edits · context already loaded in this thread ·
@@ -72,4 +72,4 @@ rule.
 
 ## Plan Policy
 
-All created plans *.md are saved in local plan folder.
+Save plan in plan folder before any implementation.

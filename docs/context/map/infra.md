@@ -266,13 +266,13 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/Site-Cleanup-Workers.yml:17 | jobs · key | one job |
 | .github/workflows/Site-Cleanup-Workers.yml:18 | deploy-maintenance · job | generates a maintenance placeholder into `site/dist` and deploys it over the live Worker |
 
-### .github/workflows/Site-Deploy-Workers.yml — 58 ln
+### .github/workflows/Site-Deploy-Workers.yml — 65 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| .github/workflows/Site-Deploy-Workers.yml:10 | on · key | **push on `site/` paths plus manual** — the portfolio site deploys itself |
-| .github/workflows/Site-Deploy-Workers.yml:24 | jobs · key | one build-and-deploy job |
-| .github/workflows/Site-Deploy-Workers.yml:25 | build-and-deploy · job | builds the Astro site and deploys to Cloudflare Workers; **no game code is involved** |
+| .github/workflows/Site-Deploy-Workers.yml:10 | on · key | **push on `site/` paths, manual, plus daily 00:00 UTC** — the portfolio site deploys itself |
+| .github/workflows/Site-Deploy-Workers.yml:30 | jobs · key | one build-and-deploy job |
+| .github/workflows/Site-Deploy-Workers.yml:31 | build-and-deploy · job | builds the Astro site and deploys to Cloudflare Workers; **no game code is involved** |
 
 ### .github/workflows/Site-Root-Deploy-Workers.yml — 46 ln
 
@@ -567,6 +567,10 @@ _no extracted symbols_
 | scripts/backup/backup-common.sh:155 | start_cloudflared_if_needed · fn | starts the shared user-level cloudflared service; idempotent by design |
 | scripts/backup/backup-common.sh:165 | stop_cloudflared_if_idle · fn | **only stops the tunnel when none of the six containers is running** — all six share one cloudflared, so an unguarded stop cuts the others off |
 
+### scripts/backup/backup-redis-up.sh — 40 ln
+
+_no extracted symbols_
+
 ### scripts/backup/backup-server-down.sh — 26 ln
 
 _no extracted symbols_
@@ -575,7 +579,7 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/backup/backup-server-up.sh — 74 ln
+### scripts/backup/backup-server-up.sh — 83 ln
 
 _no extracted symbols_
 
@@ -725,4 +729,4 @@ _no extracted symbols_
 
 ---
 
-81 files · 338 symbols · 0 awaiting a `Does` line.
+82 files · 338 symbols · 0 awaiting a `Does` line.

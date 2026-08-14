@@ -112,9 +112,13 @@ Cloudflare Tunnel, independent of AWS: two dev game servers
 always-on public demo pair (`wstoddemo`/`toddemo`, instance **3**). Game servers
 run the unmodified server image.
 
-**No Redis here** — a single machine on `Redis_State.js`'s in-memory fallback.
-Correct for one machine, wrong for multi-replica EKS. Game servers bind loopback
-only, matching the web servers: `cloudflared` is the only intended caller.
+**No Redis for the two dev instances** — `Redis_State.js`'s in-memory fallback,
+correct for one machine, wrong for multi-replica EKS. Instance 3 (`wstoddemo`)
+alone gets a real, persistent `redis:7-alpine` container
+(`scripts/backup/backup-redis-up.sh`, appendonly, its own docker network) so
+the public demo-completion counters survive a redeploy's container recreate,
+not just a crash. Game servers bind loopback only, matching the web servers:
+`cloudflared` is the only intended caller.
 
 **Landmine — Cloudflare's free Universal SSL covers the zone apex and exactly one
 subdomain level.** A two-level name behind a *proxied* record (which a Tunnel

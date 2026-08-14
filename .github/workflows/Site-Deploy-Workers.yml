@@ -16,6 +16,12 @@ on:
       - "site/**"
       - ".github/workflows/Site-Deploy-Workers.yml"
   workflow_dispatch:
+  # 00:00 UTC daily -- midnight London time in GMT (winter); drifts to 1am
+  # during BST (late Mar-late Oct). Refreshes the demo-completion stat tile;
+  # not worth a second cron entry to correct an hour of drift on a
+  # decorative number.
+  schedule:
+    - cron: "0 0 * * *"
 
 concurrency:
   group: site-deploy-workers

@@ -45,7 +45,8 @@ contradicted source.
 | 4 | Android mobile misalignment: `window/stretch/aspect.mobile="keep"` fix + ui.md doc update | 3 | A | 2 | 2 | — | ~18,000 | ~32,000 | ~32,000 | ! | ok |
 | 5 | Contact form taken live: readiness debug, Resend 422 traced to a domain in CONTACT_TO, address guard + provider logging, live guardrail probe | 2 | B | 2 | 3 | — | ~6,000 | ~48,000 | ~48,000 | ! | ok |
 | 6 | Portfolio "By the numbers" stats: NOC/CI-deploy/cost/test tiles live, demo-completion instrumentation (Redis counters, new HTTP route, build-time fetch) shipped not yet live; both KBs updated, index.md budget raised | 5 | Bd | 4 | 14 | — | ~50,000 | ~268,000 | ~140,000 | ✓ | ok |
-<!-- next: row 7 -->
+| 7 | `DEMO_STATS_API_URL` resolved to `wstoddemo`, daily 00:00 UTC deploy cron added, demo-stat Redis counters made durable (new persistent `backup-redis-up.sh`, wired into instance 3 only) | 4 | B | 2 | 6 | ~15,000 | ~18,000 | ~45,000 | ~45,000 | ✓ | ok |
+<!-- next: row 8 -->
 
 ## Cycle 1 (closed)
 

@@ -74,8 +74,9 @@ cannot answer the route. Local secrets go in gitignored `.dev.vars`.
 ## CI
 
 **`Site-Deploy-Workers.yml`** builds and deploys on every push to `main`/`master`
-touching `site/**`, plus manual dispatch. Node 22, `npm ci`, `npm run build`,
-then `cloudflare/wrangler-action` with `workingDirectory: site`.
+touching `site/**`, on manual dispatch, and daily at 00:00 UTC. Node 22,
+`npm ci`, `npm run build`, then `cloudflare/wrangler-action` with
+`workingDirectory: site`.
 
 It is independent of every game deploy path and uses its own token
 `CLOUDFLARE_WORKERS_API_TOKEN`, scoped to `Workers Scripts:Edit` — never the

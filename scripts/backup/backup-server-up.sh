@@ -41,16 +41,25 @@ info "Building server image from $current_sha"
 docker build -t "$IMAGE_TAG" -f "$REPO_ROOT/src/Server/Dockerfile" "$REPO_ROOT/src/Server"
 
 docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-info "Starting $CONTAINER_NAME on 127.0.0.1:$PORT (no REDIS_URL — single-instance in-memory mode)"
 BOTS_ARGS=()
+REDIS_ARGS=()
 if [ "$INSTANCE" = "3" ]; then
   BOTS_ARGS=(-e CORP_TOWER_BOTS_ENABLED=true)
+  # The public demo counters (stats:demo:*) must survive this script's own
+  # container recreate, not just a crash, so instance 3 alone gets a real,
+  # persistent Redis instead of Redis_State.js's in-memory fallback.
+  "$SCRIPT_DIR/backup-redis-up.sh"
+  REDIS_ARGS=(--network corp-tower-backup -e REDIS_URL=redis://corp-tower-redis-demo:6379)
+  info "Starting $CONTAINER_NAME on 127.0.0.1:$PORT (REDIS_URL set — persistent demo stats)"
+else
+  info "Starting $CONTAINER_NAME on 127.0.0.1:$PORT (no REDIS_URL — single-instance in-memory mode)"
 fi
 docker run -d \
   --name "$CONTAINER_NAME" \
   --restart unless-stopped \
   -p "127.0.0.1:${PORT}:3000" \
   "${BOTS_ARGS[@]}" \
+  "${REDIS_ARGS[@]}" \
   "$IMAGE_TAG"
 
 start_cloudflared_if_needed
