@@ -28,12 +28,13 @@ decided at build time from the collections and `src/data/`.
 ## Page order
 
 `index.astro` renders one page in this order. Only numbered sections carry a
-`.section-index`; the four above the numbering are the recruiter layer and are
+`.section-index`; the five above the numbering are the recruiter layer and are
 plain markup, not collections.
 
 | Section id | Heading | Source |
 |---|---|---|
 | `hero` (unnamed) | Platform & DevOps Engineer | `index.astro` copy + `profile` |
+| `by-the-numbers` | By the numbers | `STATS` in `index.astro` |
 | `what-i-do` | What I do | `WHAT_I_DO` in `index.astro` |
 | `background` | Why my background is different | inline in `index.astro` |
 | `featured-project` | Featured project | inline + the `buildingTheGame` game |
@@ -83,6 +84,7 @@ Grep this section for a filename or a symbol; do not load a source file whole.
 | `src/content/cv/` | One file per role, `order: 1` is the most recent |
 | `src/data/profile.json` | Name, titles, project name, site URL, OG tagline. JSON because `generate-og.mjs` also reads it |
 | `src/data/profile.ts` | Email, location, contact links, CV file, `mediaBase`, availability line |
+| `src/data/demo-stats.json` · `tools/fetch-demo-stats.mjs` | Demo completion counts, refreshed from the game server as an npm `prebuild` step; fails soft |
 | `tools/generate-og.mjs` | Draws `public/og.png` with sharp from `profile.json`. Runs as npm `prebuild` |
 | `tools/validate-site-docs.mjs` | Gate for this KB — budgets, line length, links, and map coverage both ways |
 | `tools/preview.html` · `tools/cv-source.html` · `tools/og-source.html` | Standalone design references. Nothing imports or deploys them |

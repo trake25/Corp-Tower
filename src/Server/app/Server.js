@@ -1,3 +1,4 @@
+const http = require("http");
 const WebSocket = require("ws");
 
 const LobbyManager = require("./Lobby_Manager");
@@ -15,10 +16,34 @@ function safeJson(message) {
     }
 }
 
+async function handleStatsRequest(req, res) {
+    const stats = await lobbyManager.stateStore.getDemoStats();
+
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(stats));
+}
+
+function requestListener(req, res) {
+    if (req.method === "GET" && req.url === "/api/stats/demo") {
+        handleStatsRequest(req, res).catch(error => {
+            console.error("Stats request failed:", error.message);
+            res.writeHead(500);
+            res.end();
+        });
+        return;
+    }
+
+    res.writeHead(404);
+    res.end();
+}
+
 async function main() {
     await lobbyManager.start();
 
-    const wss = new WebSocket.Server({ port });
+    const server = http.createServer(requestListener);
+    const wss = new WebSocket.Server({ server });
+
+    server.listen(port);
 
     console.log(`WebSocket server running on port ${port}`);
 

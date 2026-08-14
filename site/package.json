@@ -7,7 +7,7 @@
     "dev": "astro dev",
     "dev:worker": "astro build && wrangler dev",
     "og": "node tools/generate-og.mjs",
-    "prebuild": "node tools/generate-og.mjs",
+    "prebuild": "node tools/generate-og.mjs && node tools/fetch-demo-stats.mjs",
     "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",

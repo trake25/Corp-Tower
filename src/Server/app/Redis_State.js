@@ -94,6 +94,10 @@ class RedisState {
             player: 1,
             room: 1
         };
+        this.memoryDemoStats = {
+            completed: 0,
+            failed: 0
+        };
         this.memorySessions = new Map();
         this.memoryRooms = new Map();
         this.memoryQueue = [];
@@ -219,6 +223,41 @@ class RedisState {
         }
 
         return await this.client.incr("counter:room");
+    }
+
+    async recordDemoOutcome(outcome) {
+        if (outcome !== "completed" && outcome !== "failed") {
+            return;
+        }
+
+        if (!this.enabled) {
+            this.memoryDemoStats[outcome]++;
+            return;
+        }
+
+        await this.client.incr(`stats:demo:level${outcome === "completed" ? "Completions" : "Failures"}`);
+    }
+
+    async getDemoStats() {
+        if (!this.enabled) {
+            return {
+                completed: this.memoryDemoStats.completed,
+                attempted: this.memoryDemoStats.completed + this.memoryDemoStats.failed
+            };
+        }
+
+        const [completed, failed] = await this.client.mGet([
+            "stats:demo:levelCompletions",
+            "stats:demo:levelFailures"
+        ]);
+
+        const completedCount = Number(completed) || 0;
+        const failedCount = Number(failed) || 0;
+
+        return {
+            completed: completedCount,
+            attempted: completedCount + failedCount
+        };
     }
 
     createReconnectToken() {

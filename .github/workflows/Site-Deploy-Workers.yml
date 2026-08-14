@@ -46,6 +46,7 @@ jobs:
         working-directory: site
         env:
           PUBLIC_CF_ANALYTICS_TOKEN: ${{ secrets.CF_ANALYTICS_TOKEN }}
+          DEMO_STATS_API_URL: https://wstoddemo.galaxxigames.com/api/stats/demo
         run: npm run build
 
       - name: Deploy to Cloudflare Workers

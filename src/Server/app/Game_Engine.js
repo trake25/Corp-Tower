@@ -14,6 +14,7 @@ class GameEngine {
         this.tickTimer = null;
         this.onRoomChanged = options.onRoomChanged || null;
         this.onRoomMessage = options.onRoomMessage || null;
+        this.onLevelOutcome = options.onLevelOutcome || null;
     }
 
     getRemainingMs() {
@@ -240,6 +241,20 @@ class GameEngine {
 
         this.onRoomChanged(this.room).catch(error => {
             console.error("Room persistence failed:", error.message);
+        });
+    }
+
+    recordLevelOutcome(outcome) {
+        if (!this.onLevelOutcome || !this.room) {
+            return;
+        }
+
+        if (this.room.players.some(player => player.isBot)) {
+            return;
+        }
+
+        this.onLevelOutcome(outcome).catch(error => {
+            console.error("Level outcome recording failed:", error.message);
         });
     }
 
@@ -941,6 +956,7 @@ class GameEngine {
             Date.now() + this.getPostLevelTransitionDelayMs() + GameConfig.startDelayMs;
         clearTimeout(this.levelTimer);
         clearInterval(this.tickTimer);
+        this.recordLevelOutcome("completed");
 
         const exactFinish =
             this.room.currentHeight === this.room.targetHeight;
@@ -1014,6 +1030,7 @@ class GameEngine {
         this.room.freezeEndsAt =
             Date.now() + this.getPostLevelTransitionDelayMs() + GameConfig.startDelayMs;
         this.clearTimers();
+        this.recordLevelOutcome("failed");
 
         const mvp = this.getLevelMVP();
         const previousTotalScores = this.getPlayerScoreMap();

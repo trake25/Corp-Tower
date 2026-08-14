@@ -1026,6 +1026,9 @@ class LobbyManager {
             },
             onRoomMessage: async (roomId, message) => {
                 await this.stateStore.publishRoom(roomId, message);
+            },
+            onLevelOutcome: async outcome => {
+                await this.stateStore.recordDemoOutcome(outcome);
             }
         });
     }

@@ -33,11 +33,19 @@ const tok = s => Math.round(Buffer.byteLength(s, 'utf8') / 4);
 // exception to the build-time rule, design.md the modal that is not a fifth
 // disclosure level. None of it is narrative -- every line is a live constraint
 // someone changing this code has to know.
+//
+// Raised again for the "By the numbers" stats section: a new recruiter-layer
+// page-order row, plus two new first-party files (demo-stats.json,
+// fetch-demo-stats.mjs) the map has to carry. Already compressed to one
+// combined map row; no further cut without losing a file's role. deploy.md
+// raised in the same change for the one new build-time env var
+// (DEMO_STATS_API_URL) that stat needs — which backup instance it points at
+// and why is a live constraint, not narrative.
 const BUDGETS = {
-  'index.md': 1950, 'design.md': 2050, 'content.md': 1950, 'deploy.md': 1900,
+  'index.md': 2010, 'design.md': 2050, 'content.md': 1950, 'deploy.md': 1950,
 };
 const DEFAULT_BUDGET = 1500;
-const TOTAL_BUDGET = 7800;
+const TOTAL_BUDGET = 7900;
 const MAX_LINE_CHARS = 300;
 
 // Constructions that turn a description of the system into a story about it.

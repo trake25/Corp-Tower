@@ -314,6 +314,58 @@ main > section:first-child {
   margin-top: 1.5rem;
 }
 
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.stat-tile {
+  padding: 1.15rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.stat-value {
+  margin: 0;
+  font-size: var(--step-2);
+  font-weight: 650;
+  color: var(--fg);
+  font-variant-numeric: proportional-nums;
+}
+
+.stat-unit {
+  margin-left: 0.3rem;
+  font-size: var(--step-0);
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+
+.stat-label {
+  margin: 0.3rem 0 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.stat-detail {
+  margin: 0.5rem 0 0;
+  color: var(--fg-faint);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 60rem) {
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 30rem) {
+  .stat-grid { grid-template-columns: 1fr; }
+}
+
 .ai-card-process {
   display: grid;
   gap: 0.3rem;

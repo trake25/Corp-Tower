@@ -139,7 +139,10 @@ fields.
 ## Server Entry
 
 `src/Server/app/Server.js` — the WebSocket entry point. **Not a module with
-exports; its interface *is* the message protocol above.**
+exports; its interface *is* the message protocol above.** Also serves one plain
+HTTP route on the same port, `GET /api/stats/demo` (JSON demo-stat counts) — the
+server's only non-WS surface, polled by the portfolio site's build step only,
+never a browser.
 
 - Starts on `PORT` (default `3000`).
 - Accepts the initial `reconnect` handshake, creates or resumes the session, adds

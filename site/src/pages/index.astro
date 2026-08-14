@@ -14,6 +14,7 @@ import AiWorkflowDiagram from "../components/diagrams/AiWorkflowDiagram.astro";
 import DevOpsPipelineDiagram from "../components/diagrams/DevOpsPipelineDiagram.astro";
 import EngineeringWorkflowDiagram from "../components/diagrams/EngineeringWorkflowDiagram.astro";
 import { profile } from "../data/profile";
+import demoStats from "../data/demo-stats.json";
 
 // One diagram per role. A role with no entry here renders without one.
 const diagrams: Record<string, typeof QaLoopDiagram | undefined> = {
@@ -185,6 +186,54 @@ const CREDENTIALS: {
   },
 ];
 
+// Curated, not comprehensive — every value here is real and sourced, not a
+// round/estimated number dressed up as fact. See plan/portfolio-showcase-analytics-plan.md
+// for where each one comes from. The demo-completion tile only appears once
+// site/src/data/demo-stats.json (refreshed at build time by
+// tools/fetch-demo-stats.mjs) has real attempts recorded.
+const STATS: { value: string; unit: string; label: string; detail: string }[] = [
+  {
+    value: "9",
+    unit: "engineers",
+    label: "NOC team led",
+    detail: "Network operations team, Globe Telecom — before moving into software.",
+  },
+  {
+    value: "4–6",
+    unit: "min",
+    label: "Full-stack deploy time",
+    detail: "One CI pipeline deploys game and web together; Android ships separately in 3–5 min.",
+  },
+  {
+    value: "12–15",
+    unit: "min",
+    label: "Infra apply time",
+    detail: "Terraform provisions the EKS + Redis + load balancer stack from scratch; teardown runs in 8–10 min.",
+  },
+  {
+    value: "~$170",
+    unit: "/mo",
+    label: "Infra cost estimate",
+    detail: "Public on-demand pricing to run the current AWS EKS + Redis + load balancer stack continuously — an estimate, not a live bill.",
+  },
+  {
+    value: "222",
+    unit: "tests",
+    label: "Automated tests",
+    detail: "54 server-side (Node) + 168 Godot client tests, run in CI before deploy.",
+  },
+  ...(demoStats.available && demoStats.attempted > 0
+    ? [
+        {
+          value: String(Math.round((demoStats.completed / demoStats.attempted) * 100)),
+          unit: "%",
+          label: "Demo levels completed",
+          detail: `Based on ${demoStats.attempted} tracked attempts since launch.`,
+        },
+      ]
+    : []),
+];
+
 const byOrder = (a: { data: { order: number } }, b: { data: { order: number } }) =>
   a.data.order - b.data.order;
 
@@ -285,6 +334,19 @@ const year = new Date().getFullYear();
           <dd>Full-time or contract · Remote preferred</dd>
         </div>
       </dl>
+    </section>
+
+    <section id="by-the-numbers" aria-labelledby="by-the-numbers-heading">
+      <h2 id="by-the-numbers-heading" class="section-title">By the numbers</h2>
+      <div class="stat-grid">
+        {STATS.map((stat) => (
+          <article class="stat-tile">
+            <p class="stat-value">{stat.value}<span class="stat-unit">{stat.unit}</span></p>
+            <p class="stat-label">{stat.label}</p>
+            <p class="stat-detail">{stat.detail}</p>
+          </article>
+        ))}
+      </div>
     </section>
 
     <section id="what-i-do" aria-labelledby="what-i-do-heading">

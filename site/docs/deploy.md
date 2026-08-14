@@ -92,6 +92,11 @@ takedown. A normal push to `site/**` overwrites the placeholder.
 build time. Until it exists, `BaseLayout` omits the beacon entirely, so no
 broken tag ships.
 
+`DEMO_STATS_API_URL` — `wstoddemo`'s `/api/stats/demo`, a plain workflow env
+(not a secret) — is read by `tools/fetch-demo-stats.mjs` at build time.
+`wstoddemo` is the always-on demo instance the play link targets, not EKS —
+`docs/context/deployment.md`.
+
 ## Social preview image
 
 `BaseLayout` points `og:image` at `/og.png`. `tools/generate-og.mjs` draws it at
