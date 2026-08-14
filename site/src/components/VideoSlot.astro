@@ -35,9 +35,11 @@ interface Props {
   video?: Clip;
   videos?: Clip[];
   label?: string;
+  id?: string;
+  role?: string;
 }
 
-const { video, videos = [], label = "Recording" } = Astro.props;
+const { video, videos = [], label = "Recording", id, role } = Astro.props;
 
 const resolve = (path: string) =>
   /^https?:\/\//.test(path) ? path : `${profile.mediaBase.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
@@ -57,7 +59,7 @@ const summaryClose = clips.length === 1 ? `Hide ${noun}` : `Hide ${noun}s`;
 ---
 
 {clips.length > 0 && (
-  <details class="clips-wrap">
+  <details class="clips-wrap" id={id} data-role={role}>
     <summary class="clips-summary">
       <span class="clips-toggle-open">{summaryOpen}</span>
       <span class="clips-toggle-close">{summaryClose}</span>

@@ -92,7 +92,7 @@ const roleLabel = role === "AI" ? "AI-assisted engineering" : role;
 
     <slot name="diagram" />
 
-    <VideoSlot video={video} videos={videos} label="Recorded run" />
+    <VideoSlot video={video} videos={videos} label="Recorded run" id={`${cardId}-clips`} role={role} />
 
     {hasFlow && (
       <details class="detail-list-wrap">

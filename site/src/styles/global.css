@@ -321,10 +321,20 @@ main > section:first-child {
 }
 
 .stat-tile {
+  display: block;
   padding: 1.15rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+a.stat-tile:hover,
+a.stat-tile:focus-visible {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
 }
 
 .stat-value {

@@ -191,36 +191,38 @@ const CREDENTIALS: {
 // for where each one comes from. The demo-completion tile only appears once
 // site/src/data/demo-stats.json (refreshed at build time by
 // tools/fetch-demo-stats.mjs) has real attempts recorded.
-const STATS: { value: string; unit: string; label: string; detail: string }[] = [
+// `href` jumps a tile to the card that backs its number — the deep-link
+// script in this file opens ancestors, un-filters and scrolls, so a plain
+// in-page hash is all a tile needs. The `-clips` ids point past the card into
+// its "Recorded run" disclosure, which sits inside the same open chain.
+const STATS: { value: string; unit: string; label: string; detail: string; href?: string }[] = [
   {
     value: "9",
     unit: "engineers",
     label: "NOC team led",
     detail: "Lead Technical for Network operations team, Globe Telecom — before moving into software.",
+    href: "#job-05-globe-telecom",
   },
   {
     value: "12–15",
     unit: "min",
     label: "Infra apply time",
     detail: "Terraform provisions the EKS + Redis + load balancer stack from scratch; teardown runs in 8–10 min.",
+    href: "#card-cloud-clips",
   },
   {
     value: "4–6",
     unit: "min",
     label: "Full-stack deploy time",
     detail: "One CI pipeline deploys game and web together; Android ships separately in 3–5 min.",
-  },
-  {
-    value: "~$170",
-    unit: "/mo",
-    label: "Infra cost estimate",
-    detail: "Public on-demand pricing to run the current AWS EKS + Redis + load balancer stack continuously — an estimate, not a live bill.",
+    href: "#card-devops-clips",
   },
   {
     value: "222",
     unit: "tests",
     label: "Automated tests",
     detail: "54 server-side (Node) + 168 Godot client tests, run in CI before deploy.",
+    href: "#card-qa",
   },
   ...(demoStats.available && demoStats.attempted > 0
     ? [
@@ -229,6 +231,7 @@ const STATS: { value: string; unit: string; label: string; detail: string }[] = 
           unit: "levels",
           label: "Demo levels completed",
           detail: `${demoStats.completed} finished, ${demoStats.attempted - demoStats.completed} did not — ${demoStats.attempted} tracked attempts since launch.`,
+          href: "#game-top-or-drop",
         },
       ]
     : []),
@@ -339,13 +342,16 @@ const year = new Date().getFullYear();
     <section id="by-the-numbers" aria-labelledby="by-the-numbers-heading">
       <h2 id="by-the-numbers-heading" class="section-title">By the numbers</h2>
       <div class="stat-grid">
-        {STATS.map((stat) => (
-          <article class="stat-tile">
-            <p class="stat-value">{stat.value}<span class="stat-unit">{stat.unit}</span></p>
-            <p class="stat-label">{stat.label}</p>
-            <p class="stat-detail">{stat.detail}</p>
-          </article>
-        ))}
+        {STATS.map((stat) => {
+          const Tile = stat.href ? "a" : "article";
+          return (
+            <Tile class="stat-tile" href={stat.href}>
+              <p class="stat-value">{stat.value}<span class="stat-unit">{stat.unit}</span></p>
+              <p class="stat-label">{stat.label}</p>
+              <p class="stat-detail">{stat.detail}</p>
+            </Tile>
+          );
+        })}
       </div>
     </section>
 
