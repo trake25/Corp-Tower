@@ -67,6 +67,35 @@ workflow uploads only the `.aab`.
 Usage sits far inside R2's free tier. **Avoid enabling R2 Data Catalog, R2 SQL or
 Infrequent Access on the bucket** — each is billed separately.
 
+## Asset Format & Import Conventions
+
+Godot rasterizes both `.svg` and `.png` into the same `.ctex` at import — it is
+not a live vector renderer. Source format is an authoring choice, not a
+runtime-quality lever; quality comes from import parameters: `svg/scale` (SVG
+only), `compress/mode`, `mipmaps/generate`. The base viewport is `412×917` and
+`window/stretch/mode="canvas_items"` scales it to the real device, so
+production art is authored at **4x** (`1648×3668`) to survive that scale —
+every SVG import sets `svg/scale=4.0`.
+
+| Asset kind | Format | Artist hands off |
+|---|---|---|
+| Screen background (`bg.*`) | SVG or PNG at 4x | Runtime file only — `.reference*.png` is a non-runtime mockup, never loaded in-game |
+| Icon (`ic-colored-*`) | SVG | One file, `viewBox` sized to the on-screen unit |
+| Button (`btn-circular-*`, `btn-toggle-*`) | SVG | Default state only — pressed state is `PressTintButton.gd` tint or the `styles/pressed` StyleBox, never separate art |
+| Tutorial overlay (`guide-*.png`) | PNG | Ships at runtime, distinct from `.reference*` |
+| Cosmetics (avatar, chat bubble) | PNG | One file per variant folder, fixed filename inside |
+
+`Static/player-dashboard(guide).png` breaks the dash-separated naming every
+other file uses — rename to `player-dashboard-guide.png` next time it's touched.
+
+`project.godot`'s `[importer_defaults]` § `texture` sets `svg/scale: 4.0` and
+`mipmaps/generate: true` for every future import — a new SVG needs no manual
+`.import` edit.
+
+**Landmine — Import Defaults are not retroactive.** They apply to new imports
+only; an already-imported asset keeps whatever it was imported with until
+explicitly re-imported.
+
 ## Android Deploy wstodplay workflow
 
 `.github/workflows/Android-Deploy-wstodplay.yml` — manual `workflow_dispatch`

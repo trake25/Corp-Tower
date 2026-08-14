@@ -37,6 +37,13 @@ window/stretch/aspect.mobile="keep"
 
 enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
+[importer_defaults]
+
+texture={
+"svg/scale": 4.0,
+"mipmaps/generate": true
+}
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

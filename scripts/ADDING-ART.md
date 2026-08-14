@@ -9,6 +9,10 @@ Put your new art in:
 
     src/Client/App/corp-tower/Cor/Art/
 
+Check the format/naming convention for that asset kind in
+[`docs/context/build.md`](../docs/context/build.md#asset-format--import-conventions)
+first — screens, icons, buttons, tutorial overlays and cosmetics each have one.
+
 Every `.png` needs a matching Godot `.png.import` file, and vice versa
 (no orphans). Open the project in Godot once so it generates `.import`
 files for anything new, then check both exist before pushing.

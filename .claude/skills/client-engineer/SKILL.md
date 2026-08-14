@@ -28,9 +28,9 @@ Wire payloads are [`networking.md`](../../../docs/context/networking.md), not yo
 
 - **Escalate, don't reach.** Anything outside `Cor/` and `Sys/` → `fullstack-coordinator`.
 - **Done =** `qa-engineer` gate, then `docs-steward`.
-- **Pixelated SVG:** `window/stretch/mode="canvas_items"` upscales past the
-  412×917 design canvas. Bump `svg/scale` (e.g. 3.0) in the `.import`, then
-  `Godot --headless --import`.
+- **Art asset conventions** (format, import defaults, naming, artist
+  handoff per kind) → [`build.md`](../../../docs/context/build.md) §
+  Asset Format & Import Conventions.
 - **Pressed state:** bare `TextureButton`s have no StyleBox — attach
   `Cor/Scripts/PressTintButton.gd`. Card `Button`s get a `styles/pressed`
   StyleBox. One color everywhere: `Color(0.518, 0.902, 0.976, 1)`
