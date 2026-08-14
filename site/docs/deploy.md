@@ -6,14 +6,9 @@ Scope: `package.json`, `astro.config.mjs`, `wrangler.jsonc`, `tools/`, the two
 ## Local development
 
 Requires **Node `^20.19.0` or `^22.12.0` or `>=23`** — which the rest of this
-repo's tooling does not, so a machine's system Node may not reach it. Take a
-standalone build rather than moving the system install:
-
-```bash
-curl -fsSL -o /tmp/node22.tar.xz https://nodejs.org/dist/v22.13.0/node-v22.13.0-linux-x64.tar.xz
-tar -xJf /tmp/node22.tar.xz -C /tmp
-export PATH="/tmp/node-v22.13.0-linux-x64/bin:$PATH"
-```
+repo's tooling does not, so a machine's system Node may not reach it. Unpack a
+standalone build from `nodejs.org/dist` and put it first on `PATH`, rather than
+moving the system install.
 
 From `site/`:
 
@@ -26,8 +21,8 @@ npm run docs:check # validate site/docs
 ```
 
 `npm run build` runs `astro check` first and fails on a type error, exactly as CI
-does. `npx wrangler deploy --dry-run` then checks the Workers config and lists
-what it would upload — offline, so it sees no account and validates no id.
+does. `npx wrangler deploy --dry-run` then checks the Workers config — offline,
+so it sees no account, validates no id and proves no binding reached the Worker.
 
 ## Build and hosting
 
@@ -119,14 +114,13 @@ Three constraints hold it together:
 - **The palette is duplicated by hand.** Named constants at the top of the SVG
   template mirror `global.css`; plain Node cannot read CSS custom properties.
 
-Nothing imports or deploys `tools/og-source.html`, `cv-source.html` or
-`preview.html` — standalone design references. The first carries an older theme;
-never screenshot it into `public/og.png`.
+`tools/og-source.html` carries an older theme; never screenshot it into
+`public/og.png`.
 
 ## Cloudflare estate — in place, kept for disaster recovery
 
-Steps 1–6 are done on the live project — do not re-run them. Step 7 is the only
-one outstanding, and the site deploys and serves without it.
+Steps 1–7 are done on the live project — do not re-run them. Only the KV daily
+cap is outstanding, and the form sends without it.
 
 1. **Create the Worker.** Workers & Pages → Create Application → Upload assets.
    Build first and upload **`site/dist`**, never `site/` or `src/`. Name it
@@ -144,5 +138,7 @@ one outstanding, and the site deploys and serves without it.
 6. **First CI deploy.** Push to `main` or dispatch the workflow, then confirm
    the domain resolves.
 7. **Contact endpoint**, once: verify a sending domain in Resend, take an API
-   key, set the three secrets. Optional last, for the daily cap:
-   `wrangler kv namespace create CONTACT_KV` and add the block with its id.
+   key, set the three secrets. `CONTACT_FROM` is a mailbox **on** that domain,
+   `CONTACT_TO` the one that receives; a bare domain in either is a provider
+   `422`. Set all three as **Secret** — a dashboard *Text* variable is erased by
+   the next `wrangler deploy`, which reapplies only the `vars` above.

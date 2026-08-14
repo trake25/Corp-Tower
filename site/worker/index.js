@@ -125,8 +125,17 @@ function buildBody({ name, email, message }) {
 // otherwise report ready and then fail at the provider.
 const present = value => typeof value === "string" && value.trim() !== "";
 
+// An address, optionally in the `Name <addr>` form the provider accepts. A bare
+// domain pasted where a mailbox belongs is otherwise only caught by the
+// provider, and the visitor reads that rejection as a failed send.
+const mailbox = value => {
+  if (!present(value)) return false;
+  const named = value.trim().match(/<([^>]*)>$/);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((named ? named[1] : value).trim());
+};
+
 const mailConfigured = env =>
-  present(env.RESEND_API_KEY) && present(env.CONTACT_TO) && present(env.CONTACT_FROM);
+  present(env.RESEND_API_KEY) && mailbox(env.CONTACT_TO) && mailbox(env.CONTACT_FROM);
 
 // The one place that knows which provider sends the mail. A network failure
 // here has to read the same as a rejection, or the visitor gets a 500 with no
