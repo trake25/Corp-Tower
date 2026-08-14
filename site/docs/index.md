@@ -16,7 +16,7 @@ artefact that backs it.
 | Framework | Astro 4, `output: "static"`, three content collections |
 | Styling | one hand-written stylesheet, `src/styles/global.css` — no framework, no webfont |
 | Host | Cloudflare Workers Static Assets, `assets.directory: ./dist` |
-| CI | `Site-Deploy-Workers.yml` on any push to `site/**` |
+| CI | prod (`Site-Deploy-Workers.yml`): manual/cron only. Staging (`Site-Deploy-Staging-Workers.yml`): push to `site/**` |
 | Media | screen recordings in R2, addressed through `profile.mediaBase` |
 | Server | one route, `POST /api/contact`, on the same Worker — [deploy.md](./deploy.md) |
 
@@ -90,7 +90,7 @@ Grep this section for a filename or a symbol; do not load a source file whole.
 | `tools/preview.html` · `tools/cv-source.html` · `tools/og-source.html` | Standalone design references. Nothing imports or deploys them |
 | `maintenance/index.html` | The placeholder `Site-Cleanup-Workers.yml` deploys in place of the site |
 | `astro.config.mjs` | `site` URL, static output, `compressHTML` |
-| `wrangler.jsonc` | Worker name `corp-tower-portfolio`, assets directory, 404 handling |
+| `wrangler.jsonc` | Worker name `corp-tower-portfolio`, assets directory, 404 handling, `env.staging` block for `corp-tower-portfolio-staging` |
 | `package.json` | Scripts — `dev`, `build` (`astro check` first), `og`, `prebuild`, `preview`, `deploy`, `docs:check` |
 
 ## The design ↔ editorial boundary

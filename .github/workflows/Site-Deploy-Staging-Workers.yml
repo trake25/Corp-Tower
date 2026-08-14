@@ -1,0 +1,59 @@
+name: Site Deploy Staging (Cloudflare Workers)
+
+# Builds and deploys the STAGING portfolio site at
+# devenportfolio.galaxxigames.com - the `env.staging` Worker
+# (corp-tower-portfolio-staging) in site/wrangler.jsonc. This is the
+# auto-deploy-on-push counterpart to Site-Deploy-Workers.yml, which now only
+# deploys the resume-linked enportfolio.galaxxigames.com on manual dispatch
+# or the daily cron. Same build, same Cloudflare token (scoped to Workers
+# Scripts:Edit, account-wide) as prod, different deployed Worker/domain.
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "site/**"
+      - ".github/workflows/Site-Deploy-Staging-Workers.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: site-deploy-staging-workers
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build And Deploy Staging Portfolio Site
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install dependencies
+        working-directory: site
+        run: npm ci
+
+      - name: Build site
+        working-directory: site
+        env:
+          PUBLIC_CF_ANALYTICS_TOKEN: ${{ secrets.CF_ANALYTICS_TOKEN }}
+          DEMO_STATS_API_URL: https://wstoddemo.galaxxigames.com/api/stats/demo
+        run: npm run build
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_WORKERS_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: site
+          command: deploy --env staging

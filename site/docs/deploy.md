@@ -1,7 +1,8 @@
 # Deploy — build, hosting, CI, social image
 
-Scope: `package.json`, `astro.config.mjs`, `wrangler.jsonc`, `tools/`, the two
-`Site-*-Workers.yml` workflows, and the Cloudflare estate behind the site.
+Scope: `package.json`, `astro.config.mjs`, `wrangler.jsonc`, `tools/`, the
+three `Site-*-Workers.yml` workflows, and the Cloudflare estate behind the
+site.
 
 ## Local development
 
@@ -73,15 +74,16 @@ cannot answer the route. Local secrets go in gitignored `.dev.vars`.
 
 ## CI
 
-**`Site-Deploy-Workers.yml`** builds and deploys on every push to `main`/`master`
-touching `site/**`, on manual dispatch, and daily at 00:00 UTC. Node 22,
-`npm ci`, `npm run build`, then `cloudflare/wrangler-action` with
-`workingDirectory: site`.
-
-It is independent of every game deploy path and uses its own token
-`CLOUDFLARE_WORKERS_API_TOKEN`, scoped to `Workers Scripts:Edit` — never the
-`Zone.DNS Edit` token the game's DNS updates use. A compromise of one must not
-reach the other's blast radius.
+`Site-Deploy-Workers.yml` deploys prod (`enportfolio.galaxxigames.com`,
+Worker `corp-tower-portfolio`) on manual dispatch and the daily 00:00 UTC
+cron only — no push trigger, résumé link; cron only refreshes the
+demo-completion stat tile. `Site-Deploy-Staging-Workers.yml` deploys staging
+(`devenportfolio.galaxxigames.com`, Worker `corp-tower-portfolio-staging`,
+`wrangler.jsonc`'s `env.staging`) on push to `site/**` and manual dispatch.
+Both: Node 22, `npm ci`, `npm run build`, `cloudflare/wrangler-action`
+(`command: deploy` / `deploy --env staging`), same account-scoped
+`CLOUDFLARE_WORKERS_API_TOKEN` (`Workers Scripts:Edit`) — never the
+`Zone.DNS Edit` token the game's DNS updates use.
 
 **`Site-Cleanup-Workers.yml`** is soft cleanup, `workflow_dispatch` only. It
 copies `maintenance/index.html` over `dist/index.html` and `dist/404.html` and
@@ -125,8 +127,9 @@ Three constraints hold it together:
 
 ## Cloudflare estate — in place, kept for disaster recovery
 
-Steps 1–7 are done on the live project — do not re-run them. Only the KV daily
-cap is outstanding, and the form sends without it.
+Steps 1–7 are done on the live project — do not re-run them. The KV daily cap
+and step 8 (staging domain) are outstanding; the form and prod deploy work
+without them.
 
 1. **Create the Worker.** Workers & Pages → Create Application → Upload assets.
    Build first and upload **`site/dist`**, never `site/` or `src/`. Name it
@@ -148,3 +151,8 @@ cap is outstanding, and the form sends without it.
    `CONTACT_TO` the one that receives; a bare domain in either is a provider
    `422`. Set all three as **Secret** — a dashboard *Text* variable is erased by
    the next `wrangler deploy`, which reapplies only the `vars` above.
+8. **Staging domain.** `wrangler deploy --env staging` creates
+   `corp-tower-portfolio-staging` on first run — no manual creation. Add
+   `devenportfolio.galaxxigames.com` under its Domains & Routes, same as step
+   2. Contact secrets are per-Worker; unset on staging, `/api/contact` stays
+   unready (mailto fallback) — optional, not required for deploy.

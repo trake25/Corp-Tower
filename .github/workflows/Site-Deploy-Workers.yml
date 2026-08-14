@@ -1,25 +1,22 @@
 name: Site Deploy (Cloudflare Workers)
 
-# Builds and deploys the portfolio site at enportfolio.galaxxigames.com as a
-# Workers Static Assets site (Cloudflare retired the standalone Pages
-# creation flow - see site/wrangler.jsonc). Independent of every game deploy
-# path (EKS/Backup) - path-filtered to site/** only, and uses its own
-# Cloudflare token scoped to Workers Scripts:Edit, never the Zone.DNS-Edit
-# token the game's DNS updates use.
+# Builds and deploys the LIVE portfolio site at enportfolio.galaxxigames.com
+# as a Workers Static Assets site (Cloudflare retired the standalone Pages
+# creation flow - see site/wrangler.jsonc). enportfolio is the resume link,
+# so this is manual-dispatch + scheduled only, never push-triggered - a
+# routine commit must not redeploy it. Auto-deploy-on-push lives on
+# devenportfolio instead: see Site-Deploy-Staging-Workers.yml. Independent of
+# every game deploy path (EKS/Backup), and uses its own Cloudflare token
+# scoped to Workers Scripts:Edit, never the Zone.DNS-Edit token the game's
+# DNS updates use.
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - "site/**"
-      - ".github/workflows/Site-Deploy-Workers.yml"
   workflow_dispatch:
   # 00:00 UTC daily -- midnight London time in GMT (winter); drifts to 1am
   # during BST (late Mar-late Oct). Refreshes the demo-completion stat tile;
   # not worth a second cron entry to correct an hour of drift on a
-  # decorative number.
+  # decorative number. Kept on prod as a deliberate exception to
+  # manual-only: freshness of a decorative stat outweighs the drift risk.
   schedule:
     - cron: "0 0 * * *"
 

@@ -192,13 +192,17 @@ const CREDENTIALS: {
 // in-page hash is all a tile needs. The `-clips` ids point past the card into
 // its "Recorded run" disclosure, which sits inside the same open chain.
 const STATS: { value: string; unit: string; label: string; detail: string; href?: string }[] = [
-  {
-    value: "9",
-    unit: "engineers",
-    label: "NOC team led",
-    detail: "Lead Technical for Network operations team, Globe Telecom — before moving into software.",
-    href: "#job-05-globe-telecom",
-  },
+  ...(demoStats.available && demoStats.attempted > 0
+    ? [
+        {
+          value: `${demoStats.completed}/${demoStats.attempted}`,
+          unit: "levels",
+          label: "Demo levels completed",
+          detail: `${demoStats.completed} finished, ${demoStats.attempted - demoStats.completed} did not — ${demoStats.attempted} tracked attempts since launch.`,
+          href: "#game-top-or-drop",
+        },
+      ]
+    : []),
   {
     value: "12–15",
     unit: "min",
@@ -220,17 +224,13 @@ const STATS: { value: string; unit: string; label: string; detail: string; href?
     detail: "54 server-side (Node) + 168 Godot client tests, run in CI before deploy.",
     href: "#card-qa",
   },
-  ...(demoStats.available && demoStats.attempted > 0
-    ? [
-        {
-          value: `${demoStats.completed}/${demoStats.attempted}`,
-          unit: "levels",
-          label: "Demo levels completed",
-          detail: `${demoStats.completed} finished, ${demoStats.attempted - demoStats.completed} did not — ${demoStats.attempted} tracked attempts since launch.`,
-          href: "#game-top-or-drop",
-        },
-      ]
-    : []),
+  {
+    value: "9",
+    unit: "engineers",
+    label: "NOC team led",
+    detail: "Lead Technical for Network operations team, Globe Telecom — before moving into software.",
+    href: "#job-05-globe-telecom",
+  },
 ];
 
 const byOrder = (a: { data: { order: number } }, b: { data: { order: number } }) =>

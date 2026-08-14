@@ -41,11 +41,19 @@ const tok = s => Math.round(Buffer.byteLength(s, 'utf8') / 4);
 // raised in the same change for the one new build-time env var
 // (DEMO_STATS_API_URL) that stat needs — which backup instance it points at
 // and why is a live constraint, not narrative.
+//
+// Raised again for the staging deploy split: enportfolio went manual+cron
+// only and a third workflow, a second Worker/domain and an env.staging
+// wrangler.jsonc block now exist. deploy.md carries the new CI trigger split
+// and the staging Cloudflare-estate step; index.md gained the CI row split
+// and a file-map row edit. All of it is live behaviour someone deploying the
+// site has to know, already compressed to one merged CI paragraph and one
+// numbered estate step rather than a new section.
 const BUDGETS = {
-  'index.md': 2010, 'design.md': 2050, 'content.md': 1950, 'deploy.md': 1950,
+  'index.md': 2050, 'design.md': 2050, 'content.md': 1950, 'deploy.md': 2150,
 };
 const DEFAULT_BUDGET = 1500;
-const TOTAL_BUDGET = 7900;
+const TOTAL_BUDGET = 8100;
 const MAX_LINE_CHARS = 300;
 
 // Constructions that turn a description of the system into a story about it.
