@@ -249,7 +249,7 @@ class GameEngine {
             return;
         }
 
-        if (this.room.players.some(player => player.isBot)) {
+        if (this.room.players.every(player => player.isBot)) {
             return;
         }
 

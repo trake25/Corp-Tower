@@ -103,7 +103,7 @@ placed-block history; resolves settling and stability before completion; runs
 start-delay, timer and tick broadcasts; validates placement, quick chat and Power;
 runs the side quest and item activation; scores; detects success or failure and
 advances or rolls back; notifies Lobby Manager for persistence and demo stats
-(bots excluded). **This file never talks to Redis.**
+(bot-only rooms excluded). **This file never talks to Redis.**
 
 Level states: `waiting` · `starting` · `playing` · `finished` · `failed` ·
 `game_completed` · `closed`.
