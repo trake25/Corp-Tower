@@ -121,8 +121,12 @@ function buildBody({ name, email, message }) {
 
 // The route deploys before its credentials do, so it has to be able to say it
 // cannot send yet. Presence only -- no value of any of the three ever leaves.
+// Whitespace-only counts as absent: a secret pasted as a stray newline would
+// otherwise report ready and then fail at the provider.
+const present = value => typeof value === "string" && value.trim() !== "";
+
 const mailConfigured = env =>
-  Boolean(env.RESEND_API_KEY && env.CONTACT_TO && env.CONTACT_FROM);
+  present(env.RESEND_API_KEY) && present(env.CONTACT_TO) && present(env.CONTACT_FROM);
 
 // The one place that knows which provider sends the mail. A network failure
 // here has to read the same as a rejection, or the visitor gets a 500 with no
@@ -132,19 +136,25 @@ async function send(env, fields) {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        authorization: `Bearer ${env.RESEND_API_KEY}`,
+        authorization: `Bearer ${env.RESEND_API_KEY.trim()}`,
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        from: env.CONTACT_FROM,
-        to: [env.CONTACT_TO],
+        from: env.CONTACT_FROM.trim(),
+        to: [env.CONTACT_TO.trim()],
         reply_to: fields.email,
         subject: `Portfolio contact from ${fields.name}`,
         text: buildBody(fields),
       }),
     });
-    return response.ok;
-  } catch {
+    if (response.ok) return true;
+    // The visitor still gets the generic retry line; this is the only place the
+    // provider's own reason exists. Read it with `wrangler tail`. A rejection
+    // body carries addresses, never the key.
+    console.error("resend rejected", response.status, await response.text());
+    return false;
+  } catch (error) {
+    console.error("resend unreachable", error);
     return false;
   }
 }
