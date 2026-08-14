@@ -336,7 +336,7 @@ const year = new Date().getFullYear();
     </section>
 
     <section id="by-the-numbers" aria-labelledby="by-the-numbers-heading">
-      <h2 id="by-the-numbers-heading" class="section-title">Proof</h2>
+      <h2 id="by-the-numbers-heading" class="section-title">Key Metrics</h2>
       <div class="stat-grid">
         {STATS.map((stat) => {
           const Tile = stat.href ? "a" : "article";
@@ -352,7 +352,9 @@ const year = new Date().getFullYear();
     </section>
 
     <section id="featured-project" aria-labelledby="featured-project-heading">
-      <h2 id="featured-project-heading" class="section-title">Featured project</h2>
+      <h2 id="featured-project-heading" class="section-title">
+        <span class="section-index">01</span> Featured project
+      </h2>
       <h3 class="featured-title">Top or Drop</h3>
       <p class="section-intro">A real-time multiplayer game I built to demonstrate the complete platform behind a live application.</p>
       <div class="summary-grid">
@@ -371,7 +373,9 @@ const year = new Date().getFullYear();
     </section>
 
     <section id="what-i-do" aria-labelledby="what-i-do-heading">
-      <h2 id="what-i-do-heading" class="section-title">Engineering Capabilities</h2>
+      <h2 id="what-i-do-heading" class="section-title">
+        <span class="section-index">02</span> Engineering Capabilities
+      </h2>
       <div class="summary-grid">
         {WHAT_I_DO.map((item) => (
           <article class="summary-card">
@@ -385,9 +389,7 @@ const year = new Date().getFullYear();
     {/* The skill cards sit here at the top level and must not be nested back
         inside a game card — site/docs/design.md. */}
     <section id="engineering" aria-labelledby="engineering-heading">
-      <h2 id="engineering-heading" class="section-title">
-        <span class="section-index">01</span> Engineering Process
-      </h2>
+      <h2 id="engineering-heading" class="section-title">Engineering Process</h2>
       <p class="section-intro">
         The game is only one part of the system. I built the infrastructure, delivery pipeline and verification process around it.
       </p>
@@ -420,38 +422,6 @@ const year = new Date().getFullYear();
         })}
       </BuildingTheGame>
 
-    </section>
-
-    <section id="background" aria-labelledby="background-heading">
-      <h2 id="background-heading" class="section-title">Career</h2>
-      <p class="section-intro">I started by keeping networks running, moved into software QA, and now build the platform between software and production.</p>
-      <div class="summary-grid background-grid">
-        <article class="summary-card"><h3>Network operations</h3><p>5 years keeping enterprise systems available, handling incidents, escalations and failover.</p></article>
-        <article class="summary-card"><h3>Software QA</h3><p>I learned to test software from the other side of the system — finding problems before they reach users.</p></article>
-        <article class="summary-card"><h3>Platform &amp; DevOps</h3><p>I now bring those two perspectives together when designing infrastructure, deployment and engineering workflows.</p></article>
-      </div>
-    </section>
-
-    <section id="technologies" aria-labelledby="technologies-heading">
-      <h2 id="technologies-heading" class="section-title">
-        <span class="section-index">02</span> Technologies
-      </h2>
-      <div class="skills-index" id="skills">
-        <div>
-          {SKILL_GROUPS.map((group) => (
-            <details class="skill-group">
-              <summary>
-                <span class="skill-group-label">{group.label}</span>
-                <span class="skill-group-toggle">
-                  <span class="skill-group-toggle-open">Open</span>
-                  <span class="skill-group-toggle-close">Close</span>
-                </span>
-              </summary>
-              <div class="skill-group-items">{group.items.map((item) => <span class="skill">{item}</span>)}</div>
-            </details>
-          ))}
-        </div>
-      </div>
     </section>
 
     <section id="projects" aria-labelledby="projects-heading">
@@ -541,10 +511,20 @@ const year = new Date().getFullYear();
       </div>
     </section>
 
-    <section id="cv" aria-labelledby="cv-heading">
-      <h2 id="cv-heading" class="section-title">
-        <span class="section-index">04</span> CV
+    <section id="background" aria-labelledby="background-heading">
+      <h2 id="background-heading" class="section-title">
+        <span class="section-index">04</span> Career
       </h2>
+      <p class="section-intro">I started by keeping networks running, moved into software QA, and now build the platform between software and production.</p>
+      <div class="summary-grid background-grid">
+        <article class="summary-card"><h3>Network operations</h3><p>5 years keeping enterprise systems available, handling incidents, escalations and failover.</p></article>
+        <article class="summary-card"><h3>Software QA</h3><p>I learned to test software from the other side of the system — finding problems before they reach users.</p></article>
+        <article class="summary-card"><h3>Platform &amp; DevOps</h3><p>I now bring those two perspectives together when designing infrastructure, deployment and engineering workflows.</p></article>
+      </div>
+    </section>
+
+    <section id="cv" aria-labelledby="cv-heading">
+      <h2 id="cv-heading" class="section-title">CV</h2>
       <p class="section-intro">
         Every role below, most recent first.
       </p>
@@ -610,9 +590,31 @@ const year = new Date().getFullYear();
       </div>
     </section>
 
+    <section id="technologies" aria-labelledby="technologies-heading">
+      <h2 id="technologies-heading" class="section-title">
+        <span class="section-index">05</span> Technologies
+      </h2>
+      <div class="skills-index" id="skills">
+        <div>
+          {SKILL_GROUPS.map((group) => (
+            <details class="skill-group">
+              <summary>
+                <span class="skill-group-label">{group.label}</span>
+                <span class="skill-group-toggle">
+                  <span class="skill-group-toggle-open">Open</span>
+                  <span class="skill-group-toggle-close">Close</span>
+                </span>
+              </summary>
+              <div class="skill-group-items">{group.items.map((item) => <span class="skill">{item}</span>)}</div>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
     <section id="contact" aria-labelledby="contact-heading">
       <h2 id="contact-heading" class="section-title">
-        <span class="section-index">05</span> Let's talk
+        <span class="section-index">06</span> Let's talk
       </h2>
       <p class="eyebrow">Platform &amp; DevOps Engineer</p>
       <p class="availability">{profile.availability}</p>

@@ -27,22 +27,22 @@ decided at build time from the collections and `src/data/`.
 
 ## Page order
 
-`index.astro` renders one page, top to bottom, in the row order below. Only
-`engineering`, `technologies`, `projects`, `cv` and `contact` carry a
-`.section-index` number; the rest are plain markup, not collections.
+`index.astro` renders one page, top to bottom, in this row order.
+`engineering` and `cv` share the number above them (`02`, `04`); unnumbered
+rows are plain markup, not collections.
 
 | Section id | Heading | Source |
 |---|---|---|
 | `hero` (unnamed) | Platform & DevOps Engineer | `index.astro` copy + `profile` |
-| `by-the-numbers` | Proof | `STATS` in `index.astro` |
-| `featured-project` | Featured project | inline + the `buildingTheGame` game |
-| `what-i-do` | Engineering Capabilities | `WHAT_I_DO` in `index.astro` |
-| `engineering` | `01` Engineering Process | `cards` collection via `BuildingTheGame` |
-| `background` | Career | inline in `index.astro` |
-| `technologies` | `02` Technologies (`#skills`) | `SKILL_GROUPS` in `index.astro` |
+| `by-the-numbers` | Key Metrics | `STATS` in `index.astro` |
+| `featured-project` | `01` Featured project | inline + `buildingTheGame` |
+| `what-i-do` | `02` Engineering Capabilities | `WHAT_I_DO` in `index.astro` |
+| `engineering` | Engineering Process | `cards` via `BuildingTheGame` |
 | `projects` | `03` Other Projects (`#playables`) | `games` collection |
-| `cv` | `04` CV | `cv` collection + `CREDENTIALS` |
-| `contact` | `05` Let's talk | `profile.email`, `profile.links` |
+| `background` | `04` Career | inline in `index.astro` |
+| `cv` | CV | `cv` collection + `CREDENTIALS` |
+| `technologies` | `05` Technologies (`#skills`) | `SKILL_GROUPS` in `index.astro` |
+| `contact` | `06` Let's talk | `profile.email`, `profile.links` |
 
 The six skill cards sit directly under `#engineering` at the top level. They are
 not nested inside the game card, and nothing may nest them again: the platform
@@ -74,7 +74,7 @@ Grep this section for a filename or a symbol; do not load a source file whole.
 | `src/components/BuildingTheGame.astro` | Wraps the filter and the card list under `#engineering` |
 | `src/components/GameCard.astro` | Game tile — tagline, blurb, play links, repo link and disclaimer |
 | `src/components/CvCard.astro` | Job tile — role, company, dates, summary, highlights |
-| `src/components/Playables.astro` | The play-destination strip inside `03 Projects` |
+| `src/components/Playables.astro` | The play-destination strip inside `03 Other Projects` |
 | `src/components/Vignette.astro` | Full-width band grouping tiles: label, count, note |
 | `src/components/VideoSlot.astro` | One clip — poster, `preload="none"`, caption; resolves `mediaBase` |
 | `src/components/diagrams/` | One SVG per skill role, registered by role in `index.astro`. Each `.hotspot` group carries the `data-detail` matching a step id |
