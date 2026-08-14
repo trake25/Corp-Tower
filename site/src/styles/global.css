@@ -301,15 +301,6 @@ main > section:first-child {
   margin: 0;
 }
 
-.summary-tech {
-  display: block;
-  margin-top: 0.9rem;
-  color: var(--fg-faint);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  line-height: 1.45;
-}
-
 .featured-game {
   margin-top: 1.5rem;
 }

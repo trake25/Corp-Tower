@@ -33,24 +33,20 @@ const ROLE_ORDER = ["Cloud", "DevOps", "QA", "AI"];
 // in the same row. Copy rules are site/docs/content.md.
 const WHAT_I_DO = [
   {
-    title: "Build the platform",
+    title: "Cloud Infrastructure",
     description: "I build the cloud infrastructure applications run on, with security and cost controls built in.",
-    tech: "Cloud · AWS · Terraform · Kubernetes · Docker",
   },
   {
-    title: "Automate delivery",
+    title: "DevOps & Delivery",
     description: "I turn code changes into tested deployments instead of relying on manual release steps.",
-    tech: "GitHub Actions · CI/CD · OIDC · Deployment gates",
   },
   {
-    title: "Keep systems reliable",
+    title: "Quality & Reliability",
     description: "I test software and infrastructure before changes reach users.",
-    tech: "QA · Automated testing · Regression testing · Network operations",
   },
   {
-    title: "Use AI to accelerate engineering",
+    title: "AI-Assisted Engineering",
     description: "I use AI agents to do implementation work faster while I keep control of the design, review and final decision.",
-    tech: "AI agents · Context engineering · Model selection",
   },
 ];
 
@@ -340,7 +336,7 @@ const year = new Date().getFullYear();
     </section>
 
     <section id="by-the-numbers" aria-labelledby="by-the-numbers-heading">
-      <h2 id="by-the-numbers-heading" class="section-title">By the numbers</h2>
+      <h2 id="by-the-numbers-heading" class="section-title">Proof</h2>
       <div class="stat-grid">
         {STATS.map((stat) => {
           const Tile = stat.href ? "a" : "article";
@@ -352,29 +348,6 @@ const year = new Date().getFullYear();
             </Tile>
           );
         })}
-      </div>
-    </section>
-
-    <section id="what-i-do" aria-labelledby="what-i-do-heading">
-      <h2 id="what-i-do-heading" class="section-title">What I do</h2>
-      <div class="summary-grid">
-        {WHAT_I_DO.map((item) => (
-          <article class="summary-card">
-            <h3>{item.title}</h3>
-            <p>{item.description}</p>
-            <span class="summary-tech">{item.tech}</span>
-          </article>
-        ))}
-      </div>
-    </section>
-
-    <section id="background" aria-labelledby="background-heading">
-      <h2 id="background-heading" class="section-title">Why my background is different</h2>
-      <p class="section-intro">I started by keeping networks running, moved into software QA, and now build the platform between software and production.</p>
-      <div class="summary-grid background-grid">
-        <article class="summary-card"><h3>Network operations</h3><p>5 years keeping enterprise systems available, handling incidents, escalations and failover.</p></article>
-        <article class="summary-card"><h3>Software QA</h3><p>I learned to test software from the other side of the system — finding problems before they reach users.</p></article>
-        <article class="summary-card"><h3>Platform &amp; DevOps</h3><p>I now bring those two perspectives together when designing infrastructure, deployment and engineering workflows.</p></article>
       </div>
     </section>
 
@@ -397,11 +370,23 @@ const year = new Date().getFullYear();
       )}
     </section>
 
+    <section id="what-i-do" aria-labelledby="what-i-do-heading">
+      <h2 id="what-i-do-heading" class="section-title">Engineering Capabilities</h2>
+      <div class="summary-grid">
+        {WHAT_I_DO.map((item) => (
+          <article class="summary-card">
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
     {/* The skill cards sit here at the top level and must not be nested back
         inside a game card — site/docs/design.md. */}
     <section id="engineering" aria-labelledby="engineering-heading">
       <h2 id="engineering-heading" class="section-title">
-        <span class="section-index">01</span> How I built it
+        <span class="section-index">01</span> Engineering Process
       </h2>
       <p class="section-intro">
         The game is only one part of the system. I built the infrastructure, delivery pipeline and verification process around it.
@@ -437,6 +422,16 @@ const year = new Date().getFullYear();
 
     </section>
 
+    <section id="background" aria-labelledby="background-heading">
+      <h2 id="background-heading" class="section-title">Career</h2>
+      <p class="section-intro">I started by keeping networks running, moved into software QA, and now build the platform between software and production.</p>
+      <div class="summary-grid background-grid">
+        <article class="summary-card"><h3>Network operations</h3><p>5 years keeping enterprise systems available, handling incidents, escalations and failover.</p></article>
+        <article class="summary-card"><h3>Software QA</h3><p>I learned to test software from the other side of the system — finding problems before they reach users.</p></article>
+        <article class="summary-card"><h3>Platform &amp; DevOps</h3><p>I now bring those two perspectives together when designing infrastructure, deployment and engineering workflows.</p></article>
+      </div>
+    </section>
+
     <section id="technologies" aria-labelledby="technologies-heading">
       <h2 id="technologies-heading" class="section-title">
         <span class="section-index">02</span> Technologies
@@ -461,7 +456,7 @@ const year = new Date().getFullYear();
 
     <section id="projects" aria-labelledby="projects-heading">
       <h2 id="projects-heading" class="section-title">
-        <span class="section-index">03</span> Projects
+        <span class="section-index">03</span> Other Projects
       </h2>
       <p class="section-intro">
         Projects where I built, shipped or operated the systems behind the software.
@@ -784,7 +779,20 @@ const year = new Date().getFullYear();
 
     if (target instanceof HTMLDetailsElement) target.open = true;
     openAncestors(target);
-    target.scrollIntoView({ block: "start", behavior: smooth && motionOk ? "smooth" : "auto" });
+
+    // Opening a target inside a `[data-accordion]` group collapses its
+    // siblings, but a `<details>` fires `toggle` as a queued task — that
+    // group's own listener hides the siblings a beat after this function
+    // returns. Scrolling now would measure the pre-collapse layout and can
+    // land anywhere once the page reflows out from under it (the first-run
+    // repro: no job open yet, so opening one hides every other job tile and
+    // the page lands on Contact). Two rAFs guarantee both the toggle task
+    // and the resulting layout have settled first.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ block: "start", behavior: smooth && motionOk ? "smooth" : "auto" });
+      });
+    });
     return true;
   };
 

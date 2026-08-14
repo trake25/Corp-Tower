@@ -27,20 +27,20 @@ decided at build time from the collections and `src/data/`.
 
 ## Page order
 
-`index.astro` renders one page in this order. Only numbered sections carry a
-`.section-index`; the five above the numbering are the recruiter layer and are
-plain markup, not collections.
+`index.astro` renders one page, top to bottom, in the row order below. Only
+`engineering`, `technologies`, `projects`, `cv` and `contact` carry a
+`.section-index` number; the rest are plain markup, not collections.
 
 | Section id | Heading | Source |
 |---|---|---|
 | `hero` (unnamed) | Platform & DevOps Engineer | `index.astro` copy + `profile` |
-| `by-the-numbers` | By the numbers | `STATS` in `index.astro` |
-| `what-i-do` | What I do | `WHAT_I_DO` in `index.astro` |
-| `background` | Why my background is different | inline in `index.astro` |
+| `by-the-numbers` | Proof | `STATS` in `index.astro` |
 | `featured-project` | Featured project | inline + the `buildingTheGame` game |
-| `engineering` | `01` How I built it | `cards` collection via `BuildingTheGame` |
+| `what-i-do` | Engineering Capabilities | `WHAT_I_DO` in `index.astro` |
+| `engineering` | `01` Engineering Process | `cards` collection via `BuildingTheGame` |
+| `background` | Career | inline in `index.astro` |
 | `technologies` | `02` Technologies (`#skills`) | `SKILL_GROUPS` in `index.astro` |
-| `projects` | `03` Projects (`#playables`) | `games` collection |
+| `projects` | `03` Other Projects (`#playables`) | `games` collection |
 | `cv` | `04` CV | `cv` collection + `CREDENTIALS` |
 | `contact` | `05` Let's talk | `profile.email`, `profile.links` |
 

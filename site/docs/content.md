@@ -92,7 +92,7 @@ thing telling a reader which run they are looking at.
 | Name, short name, titles, project name, site URL, OG tagline | `src/data/profile.json` — JSON because `tools/generate-og.mjs` reads the same values and is plain Node |
 | Email, location, timezone, contact links, CV button, `mediaBase`, availability line | `src/data/profile.ts` |
 | Hero, nav, footer, section intros | `src/pages/index.astro` markup |
-| The four "What I do" rows | `WHAT_I_DO` in `index.astro` |
+| The four "Engineering Capabilities" rows | `WHAT_I_DO` in `index.astro` |
 | The Technologies lists | `SKILL_GROUPS` in `index.astro` |
 | Degree, licence, training | `CREDENTIALS` in `index.astro` |
 | 404 copy | `src/pages/404.astro` |
