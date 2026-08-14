@@ -567,6 +567,10 @@ _no extracted symbols_
 | scripts/backup/backup-common.sh:155 | start_cloudflared_if_needed · fn | starts the shared user-level cloudflared service; idempotent by design |
 | scripts/backup/backup-common.sh:165 | stop_cloudflared_if_idle · fn | **only stops the tunnel when none of the six containers is running** — all six share one cloudflared, so an unguarded stop cuts the others off |
 
+### scripts/backup/backup-redis-reset-demo-stats.sh — 24 ln
+
+_no extracted symbols_
+
 ### scripts/backup/backup-redis-up.sh — 40 ln
 
 _no extracted symbols_
@@ -729,4 +733,4 @@ _no extracted symbols_
 
 ---
 
-82 files · 338 symbols · 0 awaiting a `Does` line.
+83 files · 338 symbols · 0 awaiting a `Does` line.

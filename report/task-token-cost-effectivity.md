@@ -47,7 +47,8 @@ contradicted source.
 | 6 | Portfolio "By the numbers" stats: NOC/CI-deploy/cost/test tiles live, demo-completion instrumentation (Redis counters, new HTTP route, build-time fetch) shipped not yet live; both KBs updated, index.md budget raised | 5 | Bd | 4 | 14 | — | ~50,000 | ~268,000 | ~140,000 | ✓ | ok |
 | 7 | `DEMO_STATS_API_URL` resolved to `wstoddemo`, daily 00:00 UTC deploy cron added, demo-stat Redis counters made durable (new persistent `backup-redis-up.sh`, wired into instance 3 only) | 4 | B | 2 | 6 | ~15,000 | ~18,000 | ~45,000 | ~45,000 | ✓ | ok |
 | 8 | Live-debugged tile stuck at 0/0: `curl`'d prod endpoint, traced to `some(isBot)` vs `every(isBot)` in the bot-exclusion guard — real demo sessions were silently excluded since `wstoddemo` bot-fills every solo visitor | 3 | B | 1 | 3 | ~5,000 | ~7,000 | ~15,000 | ~15,000 | ✓ | ok |
-<!-- next: row 9 -->
+| 9 | Demo tile switched percentage→raw `completed/attempted` (misleading at low N); new `backup-redis-reset-demo-stats.sh` scoped to the two demo keys only, never `FLUSHALL` since that Redis now backs live room/session/queue state too | 3 | B | 2 | 4 | ~3,000 | ~4,000 | ~12,000 | ~12,000 | ✓ | ok |
+<!-- next: row 10 -->
 
 ## Cycle 1 (closed)
 

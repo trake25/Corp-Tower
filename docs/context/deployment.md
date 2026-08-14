@@ -117,8 +117,11 @@ correct for one machine, wrong for multi-replica EKS. Instance 3 (`wstoddemo`)
 alone gets a real, persistent `redis:7-alpine` container
 (`scripts/backup/backup-redis-up.sh`, appendonly, its own docker network) so
 the public demo-completion counters survive a redeploy's container recreate,
-not just a crash. Game servers bind loopback only, matching the web servers:
-`cloudflared` is the only intended caller.
+not just a crash. `scripts/backup/backup-redis-reset-demo-stats.sh` zeroes
+just the two `stats:demo:*` keys — never a `FLUSHALL`, since this Redis also
+now backs `wstoddemo`'s live room/session/queue state. Game servers bind
+loopback only, matching the web servers: `cloudflared` is the only intended
+caller.
 
 **Landmine — Cloudflare's free Universal SSL covers the zone apex and exactly one
 subdomain level.** A two-level name behind a *proxied* record (which a Tunnel

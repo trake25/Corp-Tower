@@ -225,10 +225,10 @@ const STATS: { value: string; unit: string; label: string; detail: string }[] = 
   ...(demoStats.available && demoStats.attempted > 0
     ? [
         {
-          value: String(Math.round((demoStats.completed / demoStats.attempted) * 100)),
-          unit: "%",
+          value: `${demoStats.completed}/${demoStats.attempted}`,
+          unit: "levels",
           label: "Demo levels completed",
-          detail: `Based on ${demoStats.attempted} tracked attempts since launch.`,
+          detail: `${demoStats.completed} finished, ${demoStats.attempted - demoStats.completed} did not — ${demoStats.attempted} tracked attempts since launch.`,
         },
       ]
     : []),
