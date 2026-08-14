@@ -6,6 +6,12 @@
 // tools/generate-og.mjs reads the same values and is plain Node.
 //
 // Per-game links are not here — they live in that game's content file.
+//
+// `title` and `jobTitle` hold the same string on purpose, not by accident:
+// `title` feeds the footer and the OG-image alt text, `jobTitle` feeds the
+// page <title>, the meta description and the JSON-LD `jobTitle` property.
+// Keep both in sync by hand rather than collapsing them — doing that would
+// mean reworking BaseLayout.astro's JSON-LD wiring and generate-og.mjs.
 import identity from "./profile.json";
 
 export const profile = {
@@ -42,7 +48,7 @@ export const profile = {
   // files carry a bucket-relative path; an http(s) value is used as written.
   // No trailing slash.
   mediaBase: "https://media.galaxxigames.com",
-  // Shown in the availability line. Set to null to hide the whole line.
-  availability:
-    "Open to Platform & DevOps roles, full-time or contract — including teams building agent-assisted delivery workflows. Remote preferred, hybrid possible in the Philippines. Working hours 5 AM – 8 PM (UTC+8).",
+  // The literal string rendered in index.astro's #lets-talk availability
+  // line. Set to null to hide the whole line.
+  availability: "Open to Platform & DevOps roles.",
 } as const;

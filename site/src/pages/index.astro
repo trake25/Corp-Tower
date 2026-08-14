@@ -286,7 +286,7 @@ const year = new Date().getFullYear();
 
 <BaseLayout
   title={`${profile.name} — ${profile.jobTitle}`}
-  description={`${profile.jobTitle} in ${profile.location}. Five years of enterprise network operations, then software QA, now platform and DevOps. A deploy-on-demand AWS environment, a gated CI/CD pipeline to five destinations, and ${profile.project} — a real-time multiplayer game you can play, with the source behind it.`}
+  description={`${profile.jobTitle} in ${profile.location}. A deploy-on-demand AWS environment, a gated CI/CD pipeline to five destinations, and ${profile.project} — a real-time multiplayer game you can play, with the source behind it.`}
 >
   <header class="site-header">
     <a class="wordmark" href="/">
@@ -306,7 +306,7 @@ const year = new Date().getFullYear();
       <p class="eyebrow">{profile.name}</p>
       <h1>Platform &amp; DevOps Engineer</h1>
       <p class="lede">I build and automate the systems that keep software running.</p>
-      <p class="differentiator">Platform &amp; DevOps engineer with experience in network operations, software QA and AI-assisted development.</p>
+      <p class="differentiator">Platform &amp; DevOps Engineer with experience in network operations, software QA and AI-assisted development.</p>
 
       <div class="ctas">
         {demoLink && (
@@ -545,7 +545,7 @@ const year = new Date().getFullYear();
         <span class="section-index">04</span> CV
       </h2>
       <p class="section-intro">
-        My career started in enterprise network operations, moved through software QA, and now focuses on platform and DevOps engineering.
+        Every role below, most recent first.
       </p>
 
       {/* `href: null` hides this. */}
@@ -614,7 +614,7 @@ const year = new Date().getFullYear();
         <span class="section-index">05</span> Let's talk
       </h2>
       <p class="eyebrow">Platform &amp; DevOps Engineer</p>
-      <p class="availability">Open to Platform &amp; DevOps roles, full-time or contract. Remote preferred; hybrid possible in the Philippines.</p>
+      <p class="availability">{profile.availability}</p>
       {/* Labelled "Email …": a bare address in a button scans as a heading. */}
       <div class="contact-links">
         <a class="cta primary" href={`mailto:${profile.email}`} data-contact-open>Let's talk</a>

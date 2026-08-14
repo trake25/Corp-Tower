@@ -36,7 +36,7 @@ details:
       - "Credentials"
       - "IAM & OIDC"
       - "Secrets Management"
-    body: "Define who or what can access each resource. CI uses short-lived identity through OIDC instead of storing long-lived cloud credentials; IAM roles scope what each identity can access."
+    body: "Define who or what can access each resource. CI uses short-lived credentials through OIDC, not long-lived ones; IAM roles scope what each identity can access."
   - id: environments
     title: "3 · Separate environments"
     keywords:

@@ -2,7 +2,7 @@
 role: "QA"
 order: 3
 headline: "Whoever builds it is the worst person to judge it."
-plain: "I separate building from acceptance: the agent can implement the change, but the expected result is decided first and the finished work has to prove it meets that standard."
+plain: "I separate building from acceptance, so the agent never grades its own work."
 tools:
   - "GitHub Actions"
   - "Node.js test runner"
@@ -26,7 +26,7 @@ details:
       - "Separation of Duties"
       - "Test Independence"
       - "Implementation Hand-off"
-    body: "The coding agent plans, implements and fixes from the specification. It does not decide acceptance; that stays with the expected results, keeping implementation and judgement separate."
+    body: "The coding agent plans, implements and fixes from the specification. It has no say in whether the result passes — that's judged against step one's expected results."
   - id: tests
     title: "3 · Automated tests run before I look"
     keywords:

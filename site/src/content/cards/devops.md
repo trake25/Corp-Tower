@@ -46,7 +46,7 @@ details:
       - "Staged Rollout"
       - "Environment Isolation"
       - "Credential Scoping"
-    body: "CI obtains short-lived cloud access through OIDC instead of relying on permanent credentials. Each environment has separate credentials, and Android signing unlocks its key for one step."
+    body: "CI authenticates with short-lived credentials through OIDC, not long-lived ones. Each environment has separate credentials, and Android signing unlocks its key for one step."
   - id: artifact
     title: "4 · Verify what gets deployed"
     keywords:
@@ -60,7 +60,7 @@ details:
       - "Deployment gates"
       - "Environment isolation"
       - "Protected environments"
-    body: "Protected environments require the appropriate approval or deployment gate before a release can continue. Only development deploys from a push; every other release clears a written gate, with environment isolation keeping credentials separate."
+    body: "Protected environments require the appropriate approval or deployment gate before a release can continue. Only development deploys from a push; every other release has to clear that gate, with environment isolation keeping credentials separate."
   - id: release
     title: "6 · Deploy and clean up"
     keywords:
