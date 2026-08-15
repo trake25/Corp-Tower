@@ -48,10 +48,12 @@ global floating debug button.
   room-close → Join Screen. Demo skips both: Play Demo + Tutorial on Home,
   room-close → Home. Wired/stub buttons: [map/ui-screens.md](./map/ui-screens.md).
 - **`room_joined` no longer means "play now"** — it branches on `matchStarted`
-  (false → Public Lobby); `match_started` enters the game. `room_closed:
-  lobby_timeout` opens `AutoDismissModal` over the current screen instead of
-  swapping it away; other reasons → Join Screen (Home in demo) →
-  [networking.md](./networking.md).
+  (false → Public Lobby); `match_started` enters the game. **Demo mode skips the
+  Public Lobby**: it enters the play instance immediately and calls
+  `NetworkManager.send_ready()` itself, since bots already fill and pre-ready
+  every other seat there. `room_closed: lobby_timeout` opens `AutoDismissModal`
+  over the current screen instead of swapping it away; other reasons → Join
+  Screen (Home in demo) → [networking.md](./networking.md).
 - `AutoDismissModal` (`Main.tscn`, third child) also covers an unexpected
   disconnect while `find_match_active`. Both cases tear the screen underneath
   down only on dismiss, so it stays visible behind the modal's 3s countdown.

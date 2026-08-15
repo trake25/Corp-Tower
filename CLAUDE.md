@@ -48,8 +48,8 @@ defect, not a reason to route around it. Repair it in the same task;
   command and no re-authoring.
 - **A file over 600 lines is a decomposition candidate** — the map's
   `### <path> — NNN ln` header is the live count. Propose the split, don't do it.
-- **Don't commit, push, pull or compare with the remote unless told to.** The
-  Godot executable is in the root folder.
+- **Don't commit, push, pull or compare with the remote unless told to.**
+- **By default do not create another local repo branch unless told or need to but still need permission**
 
 ## Delegation (default: off)
 

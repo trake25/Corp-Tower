@@ -20,6 +20,7 @@ func _ready() -> void:
 	%ReadyButton.pressed.connect(_on_ready_pressed)
 	%LeaveLobbyModal.confirmed.connect(_on_leave_confirmed)
 	NetworkManager.lobby_updated.connect(_on_lobby_updated)
+	%ReadyButton.disabled = true
 	_apply_local_ready_style()
 
 func _exit_tree() -> void:
@@ -47,6 +48,8 @@ func _apply_roster(roster: Array) -> void:
 		else:
 			roster_ids.append("")
 			name_label.text = WAITING_NAME
+
+	%ReadyButton.disabled = roster.size() < SEAT_COUNT
 
 func _apply_lobby_state(lobby_data) -> void:
 	if lobby_data == null:

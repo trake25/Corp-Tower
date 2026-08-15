@@ -36,6 +36,7 @@ Wire payloads are [`networking.md`](../../../docs/context/networking.md), not yo
   StyleBox. One color everywhere: `Color(0.518, 0.902, 0.976, 1)`
   (`StyleBoxFlat_MenuCardPressed` in `GameUITheme.tres`).
 - Strictly follow the UI Design guide or reference when it is provided. The colors, gradients, shadows, spacings, texts, fonts, boxes, sizes, gaps must all be close to the guide as much as possible.
+- The Godot executable is in the root folder.
 
 ## Verifying UI changes — real screenshots
 

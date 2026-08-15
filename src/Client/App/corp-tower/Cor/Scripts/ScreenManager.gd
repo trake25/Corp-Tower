@@ -46,6 +46,9 @@ func _on_status_changed(text: String) -> void:
 func _on_room_joined(data) -> void:
 	if bool(data.get("matchStarted", true)):
 		_enter_play_instance()
+	elif EndpointConfig.DEMO_MODE_ENABLED:
+		_enter_play_instance()
+		NetworkManager.send_ready()
 	else:
 		show_public_lobby_screen(data)
 

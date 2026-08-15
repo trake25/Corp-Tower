@@ -47,7 +47,8 @@ contradicted source.
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | Matchmaking rebuilt to incremental room-fill; lobby persists through leaves/timeouts; ready toggle; disconnect modal | 5 | B | 3 | 13 | — | ~140,000 | ~300,000 | ~300,000 | ✓ | ok | Sonnet 5 | xhigh | — |
-<!-- next: row 2 -->
+| 2 | Demo-build impact audit vs lobby overhaul; ScreenManager skips Public Lobby, auto-readies in demo mode | 3 | B | 3 | 12 | — | ~10,000 | ~45,000 | ~45,000 | ✓ | ok | Sonnet 5 | medium | client-engineer, docs-steward |
+<!-- next: row 3 -->
 
 ## Cycle 2 (closed)
 
