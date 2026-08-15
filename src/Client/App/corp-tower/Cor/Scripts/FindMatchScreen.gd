@@ -2,24 +2,17 @@ extends Control
 
 signal cancel_requested
 
+const SWEEP_SECONDS := 1.4
+
+var sweep_phase := 0.0
+
 func _ready() -> void:
 	%CancelButton.pressed.connect(_on_cancel_pressed)
-	NetworkManager.status_changed.connect(_on_status_changed)
-	NetworkManager.queue_status_updated.connect(_on_queue_status_updated)
+
+func _process(delta: float) -> void:
+	sweep_phase = fmod(sweep_phase + delta / SWEEP_SECONDS, 2.0)
+	var t := sweep_phase if sweep_phase <= 1.0 else 2.0 - sweep_phase
+	%QueueProgressBar.value = t * %QueueProgressBar.max_value
 
 func _on_cancel_pressed() -> void:
 	cancel_requested.emit()
-
-func _on_status_changed(text: String) -> void:
-	%StatusLabel.text = text
-
-func _on_queue_status_updated(data) -> void:
-	var needed := maxi(1, int(data.get("playersNeeded", 3)))
-	%QueueProgressBar.max_value = needed
-	%QueueProgressBar.value = clampi(int(data.get("playersWaiting", 0)), 0, needed)
-
-func _exit_tree() -> void:
-	if NetworkManager.status_changed.is_connected(_on_status_changed):
-		NetworkManager.status_changed.disconnect(_on_status_changed)
-	if NetworkManager.queue_status_updated.is_connected(_on_queue_status_updated):
-		NetworkManager.queue_status_updated.disconnect(_on_queue_status_updated)

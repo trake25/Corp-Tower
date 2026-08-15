@@ -21,7 +21,7 @@ and the two thin adapters that sit directly on the wire. Gameplay meaning →
 - The client sends `reconnect` immediately after the socket opens, with stored
   `playerId`/`reconnectToken` persisted in Godot `user://`.
 - A valid pair resumes the same room and slot (`room_resumed`); otherwise the
-  server creates a new session and queues the player (`room_created`).
+  server creates a new session and joins or creates a room (`room_created`).
 - **Client auto-reconnect fires only after *unintended* disconnects**, and only
   when the last known room had 3 real players and no bots. Manual disconnect and
   app close never trigger it. Finite attempt count.
@@ -33,8 +33,7 @@ and the two thin adapters that sit directly on the wire. Gameplay meaning →
 | `room_created` | `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, initial `blocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock`, `roster`, plus `matchStarted` and `lobby` below |
 | `room_resumed` | Same shape, for an existing session |
 | `match_started` | Same field set as `room_created`, minus the reconnect and lobby fields. Sent when the last player readies |
-| `lobby_update` | `roomId`, `readyPlayerIds`, `readySecondsRemaining` — one per ready toggle |
-| `queue_status` | `playersWaiting`, `playersNeeded` — queue depth, to waiting real players only |
+| `lobby_update` | `roomId`, `roster`, `readyPlayerIds`, `readySecondsRemaining`, `timerActive` — sent on every join, leave, or ready toggle |
 | `game_state` | Authoritative live state — fields below |
 | `debug_config` | Authoritative debug state; meanings → [gameplay.md](./gameplay.md#debug-menu-and-live-tuning) |
 | `room_closed` | Teardown `reason`, sent to connected real players |
@@ -42,52 +41,73 @@ and the two thin adapters that sit directly on the wire. Gameplay meaning →
 **Every new connection triggers a `debug_config` broadcast to all connected real
 players on its first message**, not only on config changes.
 
-## The ready-up lobby sits between room formation and match start
+## Rooms fill incrementally; there is no matchmaking queue
 
-Forming a room no longer starts the match. `createRoom` builds the engine room and
-leaves it `state: "waiting"`; `startLevel` runs later, in `startMatch`, once every
-seat is ready. So `room_created` means "you have a seat", not "play now".
+A connecting player either takes a free seat in an already-open room or becomes
+seat one of a brand new one (`joinOrCreateRoom`). There is no FIFO wait for
+three players to accumulate before a room exists:
+`room_created`/`room_resumed` arrive as soon as a seat is claimed, whether that
+room has 1, 2, or 3 occupants. Forming (or joining) a room no longer starts the
+match either — `createRoom` builds the engine room and leaves it
+`state: "waiting"`; `startLevel` runs later, in `startMatch`, once the room is
+**full and** every seat is ready.
 
 - `matchStarted` is `false` for the whole ready-up window, `true` afterwards.
-  `lobby` carries `readyPlayerIds` and `readySecondsRemaining` while it is `false`.
-- `readySecondsRemaining` is an **integer recomputed at every send** from the room's
-  deadline, never a wall-clock timestamp. The client seeds its countdown from it and
-  interpolates locally between pushes.
-- **Bots are pre-readied at formation** — they cannot tap a button, so a debug room
-  waits only on its real players.
-- Ready is one-way. `markPlayerReady` is idempotent and ignores a started room.
-- The window is `lobbyReadyTimeoutMs`; seats per room is `playersPerRoom`. Both live
-  in `Game_Config.js`.
+  `lobby` carries `readyPlayerIds`, `readySecondsRemaining`, and `timerActive`
+  while it is `false`.
+- **The ready countdown only exists once the room is full.** `timerActive` is
+  `false` (and `readySecondsRemaining` is `0`) while a room waits on more seats;
+  reaching `playersPerRoom` arms a fresh `lobbyReadyTimeoutMs` window. Dropping
+  back under capacity cancels the timer outright — refilling later starts a full
+  new window, it never resumes a partial one.
+- `readySecondsRemaining` is an **integer recomputed at every send** from the
+  room's deadline, never a wall-clock timestamp.
+- **Bots are pre-readied at formation** — they cannot tap a button, so a debug
+  room waits only on its real players.
+- **`ready` toggles the seat**, both directions, via `toggleLobbyReady`. Tapping
+  again before the match starts un-readies. All-full-and-all-ready is what starts
+  the match; ignored once `matchStarted`.
+- Seats per room is `playersPerRoom`; the ready window is `lobbyReadyTimeoutMs`.
+  Both live in `Game_Config.js`.
 
-`room_closed` reasons steer three destinations, and the client branches on the string:
+**Any lobby-stage departure — a tapped `leave_lobby`, a dropped socket, or a
+ready-timeout eviction — removes just that seat, via `evictLobbyPlayer`.** The
+room keeps going for whoever is left as long as a real player remains: ready
+state resets for the survivors (bots stay pre-readied) and the timer cancels
+until the room refills. Only an empty-of-real-players room actually closes
+(`closeRoom`), which is why `player_left_lobby` never reaches a client in the
+ordinary case — the leaver navigates on their own tap, and the room they left
+usually still has someone in it to keep going rather than to notify.
 
-| `reason` | Server behaviour | Client lands on |
+| `reason` | When | Who is told, and what the client does |
 |---|---|---|
-| `lobby_timeout` | Notifies all three, requeues **nobody** | Home, after a 3s modal |
-| `player_left_lobby` | Notifies and requeues everyone **except** the leaver | Find Match |
-| anything else | Existing teardown | Join Screen (Home in demo mode) |
+| `lobby_timeout` | The full-room window expired | Only the **not-ready** seats, each with their own `room_closed` → a 3s modal, then Home. Ready seats and bots stay in the persisted room |
+| `player_left_lobby` | The room emptied of real players | Nobody in practice — the departing player already navigated locally |
+| anything else | Existing teardown (started-match paths) | Join Screen (Home in demo mode) |
 
-`closeRoom` therefore gates notify and requeue on **two separate booleans** — one
-reason notifies without requeueing. The leaver is excluded from both, so that client
-navigates on its own tap rather than on a message.
+**During ready-up, `removePlayer` checks `!room.matchStarted` before the
+reconnect-grace path**, so a dropped socket evicts immediately rather than
+arming the reconnect timer. That grace window belongs to started matches only.
 
-**During ready-up, any departure breaks the room immediately** — deliberate
-`leave_lobby` or a dropped socket alike. `removePlayer` checks `!room.matchStarted`
-before the reconnect-grace path, so survivors requeue at once. The grace window
-belongs to started matches only.
+Lobby state **is** persisted (`matchStarted`, `readyPlayerIds`, `lobbyDeadlineAt`
+in the room snapshot), and `hydrateRoom` restores all three and re-arms the
+timeout from the stored deadline on reconnect.
 
-Lobby state **is** persisted (`matchStarted`, `readyPlayerIds`, `lobbyDeadlineAt` in
-the room snapshot): cross-pod adoption during the lobby is the ordinary path whenever
-players land on different pods, not a failover edge case. `hydrateRoom` restores all
-three and re-arms the timeout from the stored deadline.
+**Cross-pod joins never mutate a room owned by another pod.** `claimOpenRoom`
+checks the Redis-tracked `matchmaking:open_rooms` set, but only ever attaches a
+new player directly when the local pod already owns that room (or the snapshot's
+`ownerPodId` says it should). A room another live pod owns is left alone and put
+back in the open set — the requesting pod creates its own room instead of racing
+a mutation into memory it doesn't own. **Trade-off:** two players connecting to
+different pods at the same instant aren't guaranteed the same room, only
+guaranteed each lands in *some* room. Same-pod joins always share the open one.
 
 ## Client → server
 
 | Message | Validation |
 |---|---|
-| `reconnect` | Token and id may resume a room; otherwise a new session is created and queued |
-| `leave_queue` | Dequeues a player who has not been matched yet. No room required |
-| `ready` | Requires a room; ignored once `matchStarted`. Marks the seat ready and may start the match |
+| `reconnect` | Token and id may resume a room; otherwise a new session joins/creates a room |
+| `ready` | Requires a room; ignored once `matchStarted`. Toggles the seat's ready state and may start the match |
 | `leave_lobby` | Requires a room; ignored once `matchStarted`. Closes the room as `player_left_lobby` |
 | `place_block` | Valid room, player, state, cooldown, inventory, block index. See below |
 | `activate_power` | Valid room, player, held item at `slot`, shared cooldown. **No target field** — the effect is room-wide, caster included |
@@ -208,11 +228,10 @@ registered as an autoload singleton.
 - **Methods:** `connect_server(is_auto_reconnect, is_failover_retry)`,
   `disconnect_server()`, `toggle_connection()`,
   `place_block(block_index, column, origin_y)` (**sends `originY` only when
-  `origin_y >= 0`**), `leave_queue()`, `send_ready()`, `leave_lobby()`,
+  `origin_y >= 0`**), `send_ready()`, `leave_lobby()`,
   `send_quick_chat(slot)`, `activate_power(slot)`, `update_config(key, value)`.
 - **Signals:** `status_changed`, `room_joined`, `match_started`, `lobby_updated`,
-  `queue_status_updated`, `room_closed`, `game_state_updated`, `client_status`,
-  `debug_config_updated`.
+  `room_closed`, `game_state_updated`, `client_status`, `debug_config_updated`.
 - `room_joined` fires for **both** `room_created` and `room_resumed`, so it now means
   "you have a seat" — its listeners must branch on `matchStarted` rather than assume
   the match is live. `ScreenManager` routes to the lobby or the game on that flag and

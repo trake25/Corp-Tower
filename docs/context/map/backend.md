@@ -27,7 +27,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 |---|---|---|
 | src/Server/app/Game_Config.js:1 | GameConfig · const | **every tuning value in one object** — read this file, not a prose copy |
 
-### src/Server/app/Game_Engine.js — 1171 ln
+### src/Server/app/Game_Engine.js — 1187 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -35,105 +35,109 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Game_Engine.js:20 | getRemainingMs | round clock remaining against `endsAt` |
 | src/Server/app/Game_Engine.js:40 | broadcastGameState | builds and sends the whole `game_state` payload clients render |
 | src/Server/app/Game_Engine.js:106 | createRoom | new room state, seat assignment, start level, first deal |
-| src/Server/app/Game_Engine.js:153 | hydrateRoom | rebuild room from a Redis snapshot on reconnect or pod handoff |
-| src/Server/app/Game_Engine.js:195 | restoreTimersFromState | restart level/tick timers after hydrate |
-| src/Server/app/Game_Engine.js:237 | persistRoom | notify Lobby Manager to snapshot; engine never writes Redis itself |
-| src/Server/app/Game_Engine.js:247 | recordLevelOutcome | TODO |
-| src/Server/app/Game_Engine.js:261 | queueQuickChat | quick chat cooldown check and event queue |
-| src/Server/app/Game_Engine.js:294 | consumeQuickChatEvents | drain pending quick chat for the next broadcast |
-| src/Server/app/Game_Engine.js:302 | consumePowerEvents | drain pending power-activation events for broadcast |
-| src/Server/app/Game_Engine.js:308 | clonePowerInventory | deep copy so snapshots don't alias live inventory |
-| src/Server/app/Game_Engine.js:312 | setupSideQuest | per-level shared side quest, gated by `powerUnlockLevel` |
-| src/Server/app/Game_Engine.js:318 | grantDefaultPowers | `powerGuaranteedBaseline` path, off by default |
-| src/Server/app/Game_Engine.js:329 | tryCompleteSideQuest | first exact finish claims the quest reward |
-| src/Server/app/Game_Engine.js:339 | activatePower | Power effects: replenish, refresh, score cap, copy score |
-| src/Server/app/Game_Engine.js:373 | getPostLevelTransitionDelayMs | popup duration + level summary delay |
-| src/Server/app/Game_Engine.js:380 | getPlacementScorePopupDurationMs | placement popup duration, clamped |
-| src/Server/app/Game_Engine.js:387 | getFinishScorePopupDurationMs | finish popup duration, clamped |
-| src/Server/app/Game_Engine.js:394 | getMaxScorePopupDurationMs | longest popup, sets the transition wait |
-| src/Server/app/Game_Engine.js:401 | startLevel | level init: target height, clock, quest, draw pile, opening hands |
-| src/Server/app/Game_Engine.js:442 | beginPlaying | `starting` → `playing`, arms the round clock |
-| src/Server/app/Game_Engine.js:463 | clearTimers | cancel start/level/tick timers |
-| src/Server/app/Game_Engine.js:475 | closeRoom | teardown, stop bots, clear timers |
-| src/Server/app/Game_Engine.js:496 | stopBots | delegate to Bot Manager |
-| src/Server/app/Game_Engine.js:500 | buildTargetHeightCurve | growing-step target height curve, cached |
-| src/Server/app/Game_Engine.js:530 | getTargetHeightForLevel | cached curve lookup per level |
-| src/Server/app/Game_Engine.js:541 | getLevelTimeLimitMs | derived round clock: slack ramp × cooldown, floored by `levelTimeLimitMs` |
-| src/Server/app/Game_Engine.js:577 | getConfiguredStartLevel | `debugStartLevel`, clamped |
-| src/Server/app/Game_Engine.js:581 | clampLevel | clamp to 1..`maxLevel` |
-| src/Server/app/Game_Engine.js:588 | restartAtConfiguredStartLevel | debug restart at the configured start level |
-| src/Server/app/Game_Engine.js:594 | restartAtLevel | restart every room at a level, optionally preserving score |
-| src/Server/app/Game_Engine.js:635 | getSupplyPackingEfficiency | cells per brick ÷ (height × effective width) |
-| src/Server/app/Game_Engine.js:651 | getSupplySiteWidthEstimate | site width estimate used for supply sizing |
-| src/Server/app/Game_Engine.js:666 | getSiteWidthForHeight | derives the even, viewport-clamped site from target height |
-| src/Server/app/Game_Engine.js:686 | getPlaceableColumnRange | broadcast `placeableColumnMin`/`Max` for the level |
-| src/Server/app/Game_Engine.js:703 | getPlaceableOriginRange | legal origin span for one brick's footprint |
-| src/Server/app/Game_Engine.js:715 | resolveColumnOriginX | clamps requested column into the placeable origin range |
-| src/Server/app/Game_Engine.js:726 | resolvePlacementOrigin | release-row legality and gap threading; `Number(null)` trap |
-| src/Server/app/Game_Engine.js:741 | placeBlock | authoritative placement: validate → settle → score → broadcast |
-| src/Server/app/Game_Engine.js:845 | getStabilityPressure | difficulty × level ramp → pressure scalar |
-| src/Server/app/Game_Engine.js:862 | resolveStabilityConfig | lerps stability anchors by pressure; every `evaluate()` caller sources here |
-| src/Server/app/Game_Engine.js:884 | recalculateTowerStability | re-runs Tower Stability over `entries` |
-| src/Server/app/Game_Engine.js:898 | checkWinCondition | target height reached, exact finish vs overbuild |
-| src/Server/app/Game_Engine.js:906 | checkFailCondition | impossibility test; uses the raw bound, never packing efficiency |
-| src/Server/app/Game_Engine.js:945 | anyPlayerCanRescueSupply | a held Replenish defers not-enough-height failure |
-| src/Server/app/Game_Engine.js:953 | completeLevel | bank scores, carry-over, summary, MVP, Impact gate |
-| src/Server/app/Game_Engine.js:1021 | failLevel | level failure, discard carry-over, Impact rollback |
-| src/Server/app/Game_Engine.js:1066 | nextLevel | advance level or finish the match at `maxLevel` |
+| src/Server/app/Game_Engine.js:142 | initializePlayerForRoom | TODO |
+| src/Server/app/Game_Engine.js:155 | removePlayerFromRoom | TODO |
+| src/Server/app/Game_Engine.js:169 | hydrateRoom | rebuild room from a Redis snapshot on reconnect or pod handoff |
+| src/Server/app/Game_Engine.js:211 | restoreTimersFromState | restart level/tick timers after hydrate |
+| src/Server/app/Game_Engine.js:253 | persistRoom | notify Lobby Manager to snapshot; engine never writes Redis itself |
+| src/Server/app/Game_Engine.js:263 | recordLevelOutcome | TODO |
+| src/Server/app/Game_Engine.js:277 | queueQuickChat | quick chat cooldown check and event queue |
+| src/Server/app/Game_Engine.js:310 | consumeQuickChatEvents | drain pending quick chat for the next broadcast |
+| src/Server/app/Game_Engine.js:318 | consumePowerEvents | drain pending power-activation events for broadcast |
+| src/Server/app/Game_Engine.js:324 | clonePowerInventory | deep copy so snapshots don't alias live inventory |
+| src/Server/app/Game_Engine.js:328 | setupSideQuest | per-level shared side quest, gated by `powerUnlockLevel` |
+| src/Server/app/Game_Engine.js:334 | grantDefaultPowers | `powerGuaranteedBaseline` path, off by default |
+| src/Server/app/Game_Engine.js:345 | tryCompleteSideQuest | first exact finish claims the quest reward |
+| src/Server/app/Game_Engine.js:355 | activatePower | Power effects: replenish, refresh, score cap, copy score |
+| src/Server/app/Game_Engine.js:389 | getPostLevelTransitionDelayMs | popup duration + level summary delay |
+| src/Server/app/Game_Engine.js:396 | getPlacementScorePopupDurationMs | placement popup duration, clamped |
+| src/Server/app/Game_Engine.js:403 | getFinishScorePopupDurationMs | finish popup duration, clamped |
+| src/Server/app/Game_Engine.js:410 | getMaxScorePopupDurationMs | longest popup, sets the transition wait |
+| src/Server/app/Game_Engine.js:417 | startLevel | level init: target height, clock, quest, draw pile, opening hands |
+| src/Server/app/Game_Engine.js:458 | beginPlaying | `starting` → `playing`, arms the round clock |
+| src/Server/app/Game_Engine.js:479 | clearTimers | cancel start/level/tick timers |
+| src/Server/app/Game_Engine.js:491 | closeRoom | teardown, stop bots, clear timers |
+| src/Server/app/Game_Engine.js:512 | stopBots | delegate to Bot Manager |
+| src/Server/app/Game_Engine.js:516 | buildTargetHeightCurve | growing-step target height curve, cached |
+| src/Server/app/Game_Engine.js:546 | getTargetHeightForLevel | cached curve lookup per level |
+| src/Server/app/Game_Engine.js:557 | getLevelTimeLimitMs | derived round clock: slack ramp × cooldown, floored by `levelTimeLimitMs` |
+| src/Server/app/Game_Engine.js:593 | getConfiguredStartLevel | `debugStartLevel`, clamped |
+| src/Server/app/Game_Engine.js:597 | clampLevel | clamp to 1..`maxLevel` |
+| src/Server/app/Game_Engine.js:604 | restartAtConfiguredStartLevel | debug restart at the configured start level |
+| src/Server/app/Game_Engine.js:610 | restartAtLevel | restart every room at a level, optionally preserving score |
+| src/Server/app/Game_Engine.js:651 | getSupplyPackingEfficiency | cells per brick ÷ (height × effective width) |
+| src/Server/app/Game_Engine.js:667 | getSupplySiteWidthEstimate | site width estimate used for supply sizing |
+| src/Server/app/Game_Engine.js:682 | getSiteWidthForHeight | derives the even, viewport-clamped site from target height |
+| src/Server/app/Game_Engine.js:702 | getPlaceableColumnRange | broadcast `placeableColumnMin`/`Max` for the level |
+| src/Server/app/Game_Engine.js:719 | getPlaceableOriginRange | legal origin span for one brick's footprint |
+| src/Server/app/Game_Engine.js:731 | resolveColumnOriginX | clamps requested column into the placeable origin range |
+| src/Server/app/Game_Engine.js:742 | resolvePlacementOrigin | release-row legality and gap threading; `Number(null)` trap |
+| src/Server/app/Game_Engine.js:757 | placeBlock | authoritative placement: validate → settle → score → broadcast |
+| src/Server/app/Game_Engine.js:861 | getStabilityPressure | difficulty × level ramp → pressure scalar |
+| src/Server/app/Game_Engine.js:878 | resolveStabilityConfig | lerps stability anchors by pressure; every `evaluate()` caller sources here |
+| src/Server/app/Game_Engine.js:900 | recalculateTowerStability | re-runs Tower Stability over `entries` |
+| src/Server/app/Game_Engine.js:914 | checkWinCondition | target height reached, exact finish vs overbuild |
+| src/Server/app/Game_Engine.js:922 | checkFailCondition | impossibility test; uses the raw bound, never packing efficiency |
+| src/Server/app/Game_Engine.js:961 | anyPlayerCanRescueSupply | a held Replenish defers not-enough-height failure |
+| src/Server/app/Game_Engine.js:969 | completeLevel | bank scores, carry-over, summary, MVP, Impact gate |
+| src/Server/app/Game_Engine.js:1037 | failLevel | level failure, discard carry-over, Impact rollback |
+| src/Server/app/Game_Engine.js:1082 | nextLevel | advance level or finish the match at `maxLevel` |
 
-### src/Server/app/Lobby_Manager.js — 1390 ln
+### src/Server/app/Lobby_Manager.js — 1453 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/app/Lobby_Manager.js:6 | DEFAULT_DEBUG_CONFIG · const | startup snapshot every debug reset restores to |
-| src/Server/app/Lobby_Manager.js:60 | LobbyManager · class | matchmaking, room lifecycle, reconnect, debug-config coordinator |
-| src/Server/app/Lobby_Manager.js:72 | start | boot: Redis wiring, assignment subscription |
-| src/Server/app/Lobby_Manager.js:87 | handlePlayerAssignment | cross-pod handoff receiver; adopts a player assigned elsewhere |
-| src/Server/app/Lobby_Manager.js:101 | createPlayer | socket → player, applies a `reconnect` request |
-| src/Server/app/Lobby_Manager.js:150 | addPlayer | enqueue for matchmaking; enqueues *before* taking the lock |
-| src/Server/app/Lobby_Manager.js:161 | resumePlayer | rejoin an existing room after disconnect |
-| src/Server/app/Lobby_Manager.js:226 | removePlayer | disconnect handling, reconnect grace window |
-| src/Server/app/Lobby_Manager.js:263 | leaveQueue | explicit dequeue |
-| src/Server/app/Lobby_Manager.js:273 | scheduleRoomReconnectExpiry | arm the room-abandon timer |
-| src/Server/app/Lobby_Manager.js:293 | cancelRoomReconnectExpiry | disarm on successful rejoin |
-| src/Server/app/Lobby_Manager.js:304 | handleRoomReconnectExpired | close a room nobody came back to |
-| src/Server/app/Lobby_Manager.js:329 | resetParticipantState | clear per-room state off a player |
-| src/Server/app/Lobby_Manager.js:340 | isConnectedRealPlayer | excludes bots and dead sockets |
-| src/Server/app/Lobby_Manager.js:348 | sendPlayer | single-socket send guard |
-| src/Server/app/Lobby_Manager.js:354 | closeRoom | room teardown, roster notify, Redis cleanup |
-| src/Server/app/Lobby_Manager.js:415 | resetBotCounterIfIdle | bot naming counter reset |
-| src/Server/app/Lobby_Manager.js:427 | getRealPlayers | non-bot connected players |
-| src/Server/app/Lobby_Manager.js:453 | broadcastDebugConfig | push `debug_config` to every client |
-| src/Server/app/Lobby_Manager.js:464 | getDebugConfig | current debug-tunable snapshot for the wire |
-| src/Server/app/Lobby_Manager.js:526 | applyDefaultDebugConfig | write `DEFAULT_DEBUG_CONFIG` back into `GameConfig` |
-| src/Server/app/Lobby_Manager.js:614 | resetDebugConfigToDefaults | restore every exposed tunable, then rebroadcast |
-| src/Server/app/Lobby_Manager.js:641 | updateDebugConfig | **the authoritative clamp**: every debug key's range and allowlist |
-| src/Server/app/Lobby_Manager.js:834 | restartRoomsAtDebugStartLevel | apply `debugStartLevel` to live rooms |
-| src/Server/app/Lobby_Manager.js:848 | restartRoomsAtCurrentLevel | `restartLevel` action; preserves total score |
-| src/Server/app/Lobby_Manager.js:864 | createBot | debug bot participant |
-| src/Server/app/Lobby_Manager.js:873 | fillQueueWithBotsIfNeeded | fill seats only when a real player waits |
-| src/Server/app/Lobby_Manager.js:895 | removeWaitingBots | drop queued bots |
-| src/Server/app/Lobby_Manager.js:901 | syncWaitingBots | reconcile queued bot count to `debugBotCount` |
-| src/Server/app/Lobby_Manager.js:921 | refreshMatchmaking | re-run matching after queue change |
-| src/Server/app/Lobby_Manager.js:926 | tryCreateRoom | atomic `dequeueRealPlayers(3)` then room creation |
-| src/Server/app/Lobby_Manager.js:965 | createRoom | 3-seat room, engine start, Redis publish |
-| src/Server/app/Lobby_Manager.js:1031 | getLobbySecondsRemaining | TODO |
-| src/Server/app/Lobby_Manager.js:1042 | buildLobbyPayload | TODO |
-| src/Server/app/Lobby_Manager.js:1049 | broadcastLobbyUpdate | TODO |
-| src/Server/app/Lobby_Manager.js:1063 | broadcastQueueStatus | TODO |
-| src/Server/app/Lobby_Manager.js:1080 | markPlayerReady | TODO |
-| src/Server/app/Lobby_Manager.js:1099 | startMatch | TODO |
-| src/Server/app/Lobby_Manager.js:1142 | leaveLobby | TODO |
-| src/Server/app/Lobby_Manager.js:1152 | scheduleLobbyReadyTimeout | TODO |
-| src/Server/app/Lobby_Manager.js:1174 | cancelLobbyReadyTimeout | TODO |
-| src/Server/app/Lobby_Manager.js:1185 | handleLobbyReadyTimeout | TODO |
-| src/Server/app/Lobby_Manager.js:1198 | buildRoomRoster | roster payload with profiles and colours |
-| src/Server/app/Lobby_Manager.js:1210 | createEngine | construct Game Engine with persist/broadcast callbacks |
-| src/Server/app/Lobby_Manager.js:1232 | hydrateRoom | rebuild a room this pod did not create |
-| src/Server/app/Lobby_Manager.js:1305 | subscribeRoom | listen on `room:<id>:actions` |
-| src/Server/app/Lobby_Manager.js:1341 | isRoomOwner | lease check; **removing it makes every pod write divergent state** |
-| src/Server/app/Lobby_Manager.js:1345 | dispatchRoomAction | run locally if owner, else republish to the lease owner |
-| src/Server/app/Lobby_Manager.js:1363 | runRoomAction | execute a room action against the live engine |
+| src/Server/app/Lobby_Manager.js:6 | MAX_OPEN_ROOM_CLAIM_ATTEMPTS · const | TODO |
+| src/Server/app/Lobby_Manager.js:8 | DEFAULT_DEBUG_CONFIG · const | startup snapshot every debug reset restores to |
+| src/Server/app/Lobby_Manager.js:62 | LobbyManager · class | matchmaking, room lifecycle, reconnect, debug-config coordinator |
+| src/Server/app/Lobby_Manager.js:73 | start | boot: Redis wiring, assignment subscription |
+| src/Server/app/Lobby_Manager.js:88 | handlePlayerAssignment | cross-pod handoff receiver; adopts a player assigned elsewhere |
+| src/Server/app/Lobby_Manager.js:102 | createPlayer | socket → player, applies a `reconnect` request |
+| src/Server/app/Lobby_Manager.js:151 | addPlayer | enqueue for matchmaking; enqueues *before* taking the lock |
+| src/Server/app/Lobby_Manager.js:157 | resumePlayer | rejoin an existing room after disconnect |
+| src/Server/app/Lobby_Manager.js:222 | removePlayer | disconnect handling, reconnect grace window |
+| src/Server/app/Lobby_Manager.js:254 | scheduleRoomReconnectExpiry | arm the room-abandon timer |
+| src/Server/app/Lobby_Manager.js:274 | cancelRoomReconnectExpiry | disarm on successful rejoin |
+| src/Server/app/Lobby_Manager.js:285 | handleRoomReconnectExpired | close a room nobody came back to |
+| src/Server/app/Lobby_Manager.js:310 | resetParticipantState | clear per-room state off a player |
+| src/Server/app/Lobby_Manager.js:321 | isConnectedRealPlayer | excludes bots and dead sockets |
+| src/Server/app/Lobby_Manager.js:329 | sendPlayer | single-socket send guard |
+| src/Server/app/Lobby_Manager.js:335 | closeRoom | room teardown, roster notify, Redis cleanup |
+| src/Server/app/Lobby_Manager.js:379 | resetBotCounterIfIdle | bot naming counter reset |
+| src/Server/app/Lobby_Manager.js:389 | getRealPlayers | non-bot connected players |
+| src/Server/app/Lobby_Manager.js:414 | broadcastDebugConfig | push `debug_config` to every client |
+| src/Server/app/Lobby_Manager.js:425 | getDebugConfig | current debug-tunable snapshot for the wire |
+| src/Server/app/Lobby_Manager.js:487 | applyDefaultDebugConfig | write `DEFAULT_DEBUG_CONFIG` back into `GameConfig` |
+| src/Server/app/Lobby_Manager.js:575 | resetDebugConfigToDefaults | restore every exposed tunable, then rebroadcast |
+| src/Server/app/Lobby_Manager.js:602 | updateDebugConfig | **the authoritative clamp**: every debug key's range and allowlist |
+| src/Server/app/Lobby_Manager.js:795 | restartRoomsAtDebugStartLevel | apply `debugStartLevel` to live rooms |
+| src/Server/app/Lobby_Manager.js:809 | restartRoomsAtCurrentLevel | `restartLevel` action; preserves total score |
+| src/Server/app/Lobby_Manager.js:825 | createBot | debug bot participant |
+| src/Server/app/Lobby_Manager.js:834 | fillRoomWithBotsIfNeeded | TODO |
+| src/Server/app/Lobby_Manager.js:849 | syncRoomBots | TODO |
+| src/Server/app/Lobby_Manager.js:881 | refreshMatchmaking | re-run matching after queue change |
+| src/Server/app/Lobby_Manager.js:895 | joinOrCreateRoom | TODO |
+| src/Server/app/Lobby_Manager.js:907 | claimOpenRoom | TODO |
+| src/Server/app/Lobby_Manager.js:960 | addPlayerToRoom | TODO |
+| src/Server/app/Lobby_Manager.js:988 | createRoom | 3-seat room, engine start, Redis publish |
+| src/Server/app/Lobby_Manager.js:1050 | buildRoomJoinedPayload | TODO |
+| src/Server/app/Lobby_Manager.js:1070 | getLobbySecondsRemaining | TODO |
+| src/Server/app/Lobby_Manager.js:1081 | buildLobbyPayload | TODO |
+| src/Server/app/Lobby_Manager.js:1089 | broadcastLobbyUpdate | TODO |
+| src/Server/app/Lobby_Manager.js:1104 | toggleLobbyReady | TODO |
+| src/Server/app/Lobby_Manager.js:1129 | startMatch | TODO |
+| src/Server/app/Lobby_Manager.js:1172 | leaveLobby | TODO |
+| src/Server/app/Lobby_Manager.js:1182 | evictLobbyPlayer | TODO |
+| src/Server/app/Lobby_Manager.js:1209 | scheduleLobbyReadyTimeout | TODO |
+| src/Server/app/Lobby_Manager.js:1231 | cancelLobbyReadyTimeout | TODO |
+| src/Server/app/Lobby_Manager.js:1242 | handleLobbyReadyTimeout | TODO |
+| src/Server/app/Lobby_Manager.js:1261 | buildRoomRoster | roster payload with profiles and colours |
+| src/Server/app/Lobby_Manager.js:1273 | createEngine | construct Game Engine with persist/broadcast callbacks |
+| src/Server/app/Lobby_Manager.js:1295 | hydrateRoom | rebuild a room this pod did not create |
+| src/Server/app/Lobby_Manager.js:1368 | subscribeRoom | listen on `room:<id>:actions` |
+| src/Server/app/Lobby_Manager.js:1404 | isRoomOwner | lease check; **removing it makes every pod write divergent state** |
+| src/Server/app/Lobby_Manager.js:1408 | dispatchRoomAction | run locally if owner, else republish to the lease owner |
+| src/Server/app/Lobby_Manager.js:1426 | runRoomAction | execute a room action against the live engine |
 
 ### src/Server/app/Profile_Store.js — 53 ln
 
@@ -145,7 +149,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Profile_Store.js:19 | connect | attach to Redis, or fall back to in-memory |
 | src/Server/app/Profile_Store.js:22 | getProfile | profile for a player id, generating one if absent |
 
-### src/Server/app/Redis_State.js — 584 ln
+### src/Server/app/Redis_State.js — 544 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -173,25 +177,23 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Redis_State.js:270 | saveSession | persist player session for reconnect |
 | src/Server/app/Redis_State.js:299 | getSession | look up a session by reconnect token |
 | src/Server/app/Redis_State.js:312 | markSessionDisconnected | start the reconnect grace window |
-| src/Server/app/Redis_State.js:330 | enqueuePlayer | matchmaking queue push |
-| src/Server/app/Redis_State.js:343 | removeQueuedPlayer | queue removal on leave/disconnect |
-| src/Server/app/Redis_State.js:357 | getQueuedPlayers | queue read |
-| src/Server/app/Redis_State.js:366 | dequeueRealPlayers | **atomic** 3-player drain; the non-atomic path loses cross-pod entries |
-| src/Server/app/Redis_State.js:382 | requeuePlayers | return players to the queue on failed room creation |
-| src/Server/app/Redis_State.js:404 | withMatchmakingLock | cross-pod matchmaking mutex |
-| src/Server/app/Redis_State.js:430 | saveRoom | room snapshot write |
-| src/Server/app/Redis_State.js:461 | claimRoomLease | take/renew room ownership; basis of `isRoomOwner` |
-| src/Server/app/Redis_State.js:474 | getRoomLeaseOwner | which pod owns this room |
-| src/Server/app/Redis_State.js:482 | getRoom | room snapshot read |
-| src/Server/app/Redis_State.js:495 | deleteRoom | snapshot + lease cleanup |
-| src/Server/app/Redis_State.js:509 | publishRoom | broadcast room state to other pods |
-| src/Server/app/Redis_State.js:523 | subscribeToRoom | receive other pods' room broadcasts |
-| src/Server/app/Redis_State.js:533 | publishRoomAction | send an action to the lease-owning pod |
-| src/Server/app/Redis_State.js:547 | subscribeToRoomActions | receive actions for rooms this pod owns |
-| src/Server/app/Redis_State.js:557 | publishPlayerAssignment | hand a player to another pod |
-| src/Server/app/Redis_State.js:568 | subscribeToPlayerAssignments | receive handed-off players |
+| src/Server/app/Redis_State.js:330 | markRoomOpen | TODO |
+| src/Server/app/Redis_State.js:339 | removeOpenRoom | TODO |
+| src/Server/app/Redis_State.js:348 | claimOpenRoomId | TODO |
+| src/Server/app/Redis_State.js:364 | withMatchmakingLock | cross-pod matchmaking mutex |
+| src/Server/app/Redis_State.js:390 | saveRoom | room snapshot write |
+| src/Server/app/Redis_State.js:421 | claimRoomLease | take/renew room ownership; basis of `isRoomOwner` |
+| src/Server/app/Redis_State.js:434 | getRoomLeaseOwner | which pod owns this room |
+| src/Server/app/Redis_State.js:442 | getRoom | room snapshot read |
+| src/Server/app/Redis_State.js:455 | deleteRoom | snapshot + lease cleanup |
+| src/Server/app/Redis_State.js:469 | publishRoom | broadcast room state to other pods |
+| src/Server/app/Redis_State.js:483 | subscribeToRoom | receive other pods' room broadcasts |
+| src/Server/app/Redis_State.js:493 | publishRoomAction | send an action to the lease-owning pod |
+| src/Server/app/Redis_State.js:507 | subscribeToRoomActions | receive actions for rooms this pod owns |
+| src/Server/app/Redis_State.js:517 | publishPlayerAssignment | hand a player to another pod |
+| src/Server/app/Redis_State.js:528 | subscribeToPlayerAssignments | receive handed-off players |
 
-### src/Server/app/Server.js — 163 ln
+### src/Server/app/Server.js — 158 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -355,4 +357,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-13 files · 281 symbols · 15 awaiting a `Does` line.
+13 files · 283 symbols · 27 awaiting a `Does` line.

@@ -31,6 +31,6 @@ theme_type_variation = &"ActionButton"
 theme_override_font_sizes/font_size = 14
 text = "Debug"
 
-[node name="TimeExpiredModal" parent="." instance=ExtResource("3_confirmmodal")]
+[node name="AutoDismissModal" parent="." instance=ExtResource("3_confirmmodal")]
 visible = false
 layout_mode = 1

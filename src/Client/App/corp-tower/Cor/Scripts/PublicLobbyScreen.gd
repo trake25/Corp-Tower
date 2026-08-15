@@ -12,21 +12,29 @@ const SEAT_COUNT := 3
 var roster_ids: Array = []
 var ready_deadline_ms: int = 0
 var shown_seconds: int = -1
-var has_readied := false
+var timer_active := false
+var is_locally_ready := false
 
 func _ready() -> void:
 	%BackButton.pressed.connect(_on_back_pressed)
 	%ReadyButton.pressed.connect(_on_ready_pressed)
 	%LeaveLobbyModal.confirmed.connect(_on_leave_confirmed)
 	NetworkManager.lobby_updated.connect(_on_lobby_updated)
-	_set_all_ready_style(false)
+	_apply_local_ready_style()
 
 func _exit_tree() -> void:
 	if NetworkManager.lobby_updated.is_connected(_on_lobby_updated):
 		NetworkManager.lobby_updated.disconnect(_on_lobby_updated)
 
 func apply_lobby_data(data) -> void:
-	var roster: Array = data.get("roster", [])
+	_apply_roster(data.get("roster", []))
+	_apply_lobby_state(data.get("lobby", {}))
+
+func _on_lobby_updated(data) -> void:
+	_apply_roster(data.get("roster", []))
+	_apply_lobby_state(data)
+
+func _apply_roster(roster: Array) -> void:
 	roster_ids.clear()
 
 	for seat in SEAT_COUNT:
@@ -40,11 +48,6 @@ func apply_lobby_data(data) -> void:
 			roster_ids.append("")
 			name_label.text = WAITING_NAME
 
-	_apply_lobby_state(data.get("lobby", {}))
-
-func _on_lobby_updated(data) -> void:
-	_apply_lobby_state(data)
-
 func _apply_lobby_state(lobby_data) -> void:
 	if lobby_data == null:
 		return
@@ -57,18 +60,18 @@ func _apply_lobby_state(lobby_data) -> void:
 		var check: TextureRect = get_node("%%PlayerRow%dCheck" % seat)
 		check.texture = CHECK_READY if is_ready else CHECK_WAITING
 
+	timer_active = bool(lobby_data.get("timerActive", false))
 	ready_deadline_ms = (
 		Time.get_ticks_msec()
 		+ int(lobby_data.get("readySecondsRemaining", 0)) * 1000
 	)
 	shown_seconds = -1
 
-	_set_all_ready_style(
-		roster_ids.size() > 0 and ready_ids.size() >= roster_ids.size()
-	)
+	is_locally_ready = ready_ids.has(str(NetworkManager.player_id))
+	_apply_local_ready_style()
 
 func _process(_delta: float) -> void:
-	if ready_deadline_ms <= 0:
+	if not timer_active:
 		return
 
 	var remaining := maxi(
@@ -83,21 +86,18 @@ func _process(_delta: float) -> void:
 	_refresh_ready_label()
 
 func _refresh_ready_label() -> void:
-	if %ReadyGradientFill.visible:
+	if is_locally_ready or not timer_active:
 		%ReadyLabel.text = READY_LABEL
 	else:
 		%ReadyLabel.text = READY_COUNTDOWN_FORMAT % shown_seconds
 
-func _set_all_ready_style(all_ready: bool) -> void:
-	%ReadyGradientFill.visible = all_ready
+func _apply_local_ready_style() -> void:
+	%ReadyGradientFill.visible = is_locally_ready
 	_refresh_ready_label()
 
 func _on_ready_pressed() -> void:
-	if has_readied:
-		return
-
-	has_readied = true
-	%ReadyButton.disabled = true
+	is_locally_ready = !is_locally_ready
+	_apply_local_ready_style()
 	NetworkManager.send_ready()
 
 func _on_back_pressed() -> void:

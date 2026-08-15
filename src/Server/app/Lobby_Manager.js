@@ -3,6 +3,8 @@ const GameConfig = require("./Game_Config");
 const { RedisState, stripRuntimePlayer } = require("./Redis_State");
 const ProfileStore = require("./Profile_Store");
 
+const MAX_OPEN_ROOM_CLAIM_ATTEMPTS = 5;
+
 const DEFAULT_DEBUG_CONFIG = {
     debugBotsEnabled: GameConfig.debugBotsEnabled,
     debugBotCount: GameConfig.debugBotCount,
@@ -61,7 +63,6 @@ class LobbyManager {
     constructor(stateStore = new RedisState()) {
         this.stateStore = stateStore;
         this.profileStore = new ProfileStore();
-        this.waitingPlayers = [];
         this.rooms = [];
         this.connectedPlayers = new Map();
         this.roomReconnectTimers = new Map();
@@ -150,12 +151,7 @@ class LobbyManager {
     async addPlayer(player) {
         this.resetParticipantState(player);
         this.connectedPlayers.set(player.id, player);
-        this.waitingPlayers.push(player);
-        await this.stateStore.enqueuePlayer(player);
-
-        console.log(`${player.id} added to queue`);
-        await this.tryCreateRoom();
-        this.broadcastQueueStatus();
+        await this.joinOrCreateRoom(player);
     }
 
     async resumePlayer(player, roomId) {
@@ -224,16 +220,12 @@ class LobbyManager {
     }
 
     async removePlayer(player) {
-        await this.stateStore.removeQueuedPlayer(player.id);
-        this.waitingPlayers = this.waitingPlayers.filter(
-            waitingPlayer => waitingPlayer.id !== player.id
-        );
         this.connectedPlayers.delete(player.id);
 
         await this.stateStore.markSessionDisconnected(player);
 
         if (player.room && !player.room.matchStarted) {
-            await this.closeRoom(player.room, "player_left_lobby", player);
+            await this.evictLobbyPlayer(player.room, player, "player_left_lobby");
             this.resetBotCounterIfIdle();
             console.log(`${player.id} left the lobby by disconnecting`);
             return;
@@ -256,18 +248,7 @@ class LobbyManager {
         }
 
         this.resetBotCounterIfIdle();
-        this.broadcastQueueStatus();
         console.log(`${player.id} disconnected; reconnect TTL active`);
-    }
-
-    async leaveQueue(player) {
-        await this.stateStore.removeQueuedPlayer(player.id);
-        this.waitingPlayers = this.waitingPlayers.filter(
-            waitingPlayer => waitingPlayer.id !== player.id
-        );
-        this.resetBotCounterIfIdle();
-        this.broadcastQueueStatus();
-        console.log(`${player.id} left queue`);
     }
 
     scheduleRoomReconnectExpiry(room) {
@@ -351,7 +332,7 @@ class LobbyManager {
         }
     }
 
-    async closeRoom(room, reason, disconnectedPlayer = null) {
+    async closeRoom(room, reason) {
         if (!room) {
             return;
         }
@@ -373,15 +354,10 @@ class LobbyManager {
         );
 
         await this.stateStore.deleteRoom(room.id);
-
-        const playersToRequeue = [];
+        await this.stateStore.removeOpenRoom(room.id);
 
         room.players.forEach(roomPlayer => {
-            const shouldNotify =
-                this.isConnectedRealPlayer(roomPlayer) &&
-                roomPlayer.id !== disconnectedPlayer?.id;
-
-            const shouldRequeue = shouldNotify && reason !== "lobby_timeout";
+            const shouldNotify = this.isConnectedRealPlayer(roomPlayer);
 
             this.resetParticipantState(roomPlayer);
 
@@ -395,29 +371,15 @@ class LobbyManager {
                     reason: reason
                 });
             }
-
-            if (shouldRequeue) {
-                playersToRequeue.push(roomPlayer);
-            }
         });
 
-        this.removeWaitingBots();
-
-        for (const roomPlayer of playersToRequeue) {
-            this.waitingPlayers.push(roomPlayer);
-            await this.stateStore.enqueuePlayer(roomPlayer);
-        }
-
         this.resetBotCounterIfIdle();
-        await this.tryCreateRoom();
     }
 
     resetBotCounterIfIdle() {
-        const hasBots =
-            this.waitingPlayers.some(player => player.isBot) ||
-            this.rooms.some(room => {
-                return room.players.some(player => player.isBot);
-            });
+        const hasBots = this.rooms.some(room => {
+            return room.players.some(player => player.isBot);
+        });
 
         if (!hasBots) {
             this.botCounter = 1;
@@ -442,7 +404,6 @@ class LobbyManager {
             players.push(player);
         };
 
-        this.waitingPlayers.forEach(addPlayer);
         this.rooms.forEach(room => {
             room.players.forEach(addPlayer);
         });
@@ -870,162 +831,240 @@ class LobbyManager {
         };
     }
 
-    fillQueueWithBotsIfNeeded() {
+    fillRoomWithBotsIfNeeded(room) {
         if (!GameConfig.debugBotsEnabled) {
-            this.removeWaitingBots();
             return;
         }
 
-        const realWaitingPlayers =
-            this.waitingPlayers.filter(player => !player.isBot);
+        const freeSlots = GameConfig.playersPerRoom - room.players.length;
+        const desiredBotCount = Math.min(GameConfig.debugBotCount, Math.max(0, freeSlots));
 
-        if (realWaitingPlayers.length === 0) {
-            this.removeWaitingBots();
-            return;
-        }
-
-        const desiredBotCount = Math.min(
-            GameConfig.debugBotCount,
-            Math.max(0, GameConfig.playersPerRoom - realWaitingPlayers.length)
-        );
-
-        this.syncWaitingBots(desiredBotCount);
-    }
-
-    removeWaitingBots() {
-        this.waitingPlayers = this.waitingPlayers.filter(
-            player => !player.isBot
-        );
-    }
-
-    syncWaitingBots(desiredBotCount) {
-        let waitingBots =
-            this.waitingPlayers.filter(player => player.isBot);
-
-        while (waitingBots.length > desiredBotCount) {
-            const bot = waitingBots.pop();
-
-            this.waitingPlayers = this.waitingPlayers.filter(
-                player => player.id !== bot.id
-            );
-        }
-
-        while (waitingBots.length < desiredBotCount) {
+        for (let i = 0; i < desiredBotCount; i++) {
             const bot = this.createBot();
-
-            this.waitingPlayers.push(bot);
-            waitingBots.push(bot);
+            room.engine.initializePlayerForRoom(bot);
+            room.readyPlayerIds.add(bot.id);
         }
+    }
+
+    async syncRoomBots(room) {
+        const realCount = room.players.filter(player => !player.isBot).length;
+        const currentBots = room.players.filter(player => player.isBot);
+        const desiredBotCount = GameConfig.debugBotsEnabled
+            ? Math.min(GameConfig.debugBotCount, Math.max(0, GameConfig.playersPerRoom - realCount))
+            : 0;
+
+        while (currentBots.length > desiredBotCount) {
+            const bot = currentBots.pop();
+            room.engine.removePlayerFromRoom(bot.id);
+            room.readyPlayerIds.delete(bot.id);
+        }
+
+        while (currentBots.length < desiredBotCount) {
+            const bot = this.createBot();
+            room.engine.initializePlayerForRoom(bot);
+            room.readyPlayerIds.add(bot.id);
+            currentBots.push(bot);
+        }
+
+        if (room.players.length >= GameConfig.playersPerRoom) {
+            room.lobbyDeadlineAt = Date.now() + GameConfig.lobbyReadyTimeoutMs;
+            this.scheduleLobbyReadyTimeout(room);
+            await this.stateStore.removeOpenRoom(room.id);
+        } else {
+            await this.stateStore.markRoomOpen(room.id);
+        }
+
+        await this.stateStore.saveRoom(room, this.isRoomOwner(room));
+        await this.broadcastLobbyUpdate(room);
     }
 
     async refreshMatchmaking() {
-        this.fillQueueWithBotsIfNeeded();
-        await this.tryCreateRoom();
-    }
-
-    async tryCreateRoom() {
-        await this.stateStore.withMatchmakingLock(async () => {
-            const poppedRealPlayers =
-                await this.stateStore.dequeueRealPlayers(GameConfig.playersPerRoom);
-
-            this.waitingPlayers = poppedRealPlayers.map(player => {
-                const connected = this.connectedPlayers.get(player.id);
-
-                if (connected) {
-                    Object.assign(connected, {
-                        ...player,
-                        ws: connected.ws
-                    });
-                    return connected;
-                }
-
-                return {
-                    ...player,
-                    ws: null
-                };
-            });
-
-            this.fillQueueWithBotsIfNeeded();
-
-            if (this.waitingPlayers.length < GameConfig.playersPerRoom) {
-                const realPlayersToRequeue =
-                    this.waitingPlayers.filter(player => !player.isBot);
-
-                await this.stateStore.requeuePlayers(realPlayersToRequeue);
-                this.broadcastQueueStatus();
-                return;
+        for (const room of this.rooms) {
+            if (room.matchStarted || room.players.length >= GameConfig.playersPerRoom) {
+                continue;
             }
 
-            const roomPlayers =
-                this.waitingPlayers.splice(0, GameConfig.playersPerRoom);
-            await this.createRoom(roomPlayers);
+            if (!this.isRoomOwner(room)) {
+                continue;
+            }
+
+            await this.syncRoomBots(room);
+        }
+    }
+
+    async joinOrCreateRoom(player) {
+        await this.stateStore.withMatchmakingLock(async () => {
+            const room = await this.claimOpenRoom();
+
+            if (room) {
+                await this.addPlayerToRoom(room, player);
+            } else {
+                await this.createRoom([player]);
+            }
         });
+    }
+
+    async claimOpenRoom() {
+        const attemptedIds = new Set();
+
+        for (let attempts = 0; attempts < MAX_OPEN_ROOM_CLAIM_ATTEMPTS; attempts++) {
+            const roomId = await this.stateStore.claimOpenRoomId();
+
+            if (roomId === null) {
+                return null;
+            }
+
+            if (attemptedIds.has(roomId)) {
+                await this.stateStore.markRoomOpen(roomId);
+                return null;
+            }
+
+            attemptedIds.add(roomId);
+
+            const localRoom =
+                this.rooms.find(activeRoom => String(activeRoom.id) === String(roomId));
+
+            if (localRoom) {
+                if (
+                    this.isRoomOwner(localRoom) &&
+                    !localRoom.matchStarted &&
+                    localRoom.players.length < GameConfig.playersPerRoom
+                ) {
+                    return localRoom;
+                }
+
+                continue;
+            }
+
+            const snapshot = await this.stateStore.getRoom(roomId);
+
+            if (!snapshot || snapshot.matchStarted || (snapshot.players || []).length >= GameConfig.playersPerRoom) {
+                continue;
+            }
+
+            if (snapshot.ownerPodId !== this.stateStore.getPodId()) {
+                await this.stateStore.markRoomOpen(roomId);
+                continue;
+            }
+
+            const room = await this.hydrateRoom(roomId);
+
+            if (room && !room.matchStarted && room.players.length < GameConfig.playersPerRoom) {
+                return room;
+            }
+        }
+
+        return null;
+    }
+
+    async addPlayerToRoom(room, player) {
+        player.room = room;
+        room.engine.initializePlayerForRoom(player);
+        this.connectedPlayers.set(player.id, player);
+
+        if (room.players.length >= GameConfig.playersPerRoom) {
+            await this.stateStore.removeOpenRoom(room.id);
+            room.lobbyDeadlineAt = Date.now() + GameConfig.lobbyReadyTimeoutMs;
+            this.scheduleLobbyReadyTimeout(room);
+        } else {
+            await this.stateStore.markRoomOpen(room.id);
+        }
+
+        await this.stateStore.saveRoom(room, this.isRoomOwner(room));
+
+        const payload = await this.buildRoomJoinedPayload(room);
+
+        this.sendPlayer(player, {
+            ...payload,
+            playerId: player.id,
+            reconnectToken: player.sessionId,
+            reconnectTtlSeconds: this.stateStore.getReconnectTtlSeconds(),
+            blocks: player.blocks
+        });
+
+        await this.broadcastLobbyUpdate(room);
     }
 
     async createRoom(roomPlayers) {
         const engine = this.createEngine();
+        engine.createRoom([]);
+
         const room = {
             id: await this.stateStore.nextRoomId(),
             ownerPodId: this.stateStore.getPodId(),
-            players: roomPlayers,
+            players: engine.room.players,
             engine: engine
         };
 
+        engine.room.id = room.id;
+
+        room.matchStarted = false;
+        room.readyPlayerIds = new Set();
+        room.lobbyDeadlineAt = 0;
+
         roomPlayers.forEach(player => {
             player.room = room;
-            if (!player.isBot) {
+            engine.initializePlayerForRoom(player);
+
+            if (player.isBot) {
+                room.readyPlayerIds.add(player.id);
+            } else {
                 this.connectedPlayers.set(player.id, player);
             }
         });
 
-        engine.createRoom(roomPlayers);
-        engine.room.id = room.id;
-
-        room.matchStarted = false;
-        room.readyPlayerIds = new Set(
-            roomPlayers.filter(player => player.isBot).map(player => player.id)
-        );
-        room.lobbyDeadlineAt = Date.now() + GameConfig.lobbyReadyTimeoutMs;
-        this.scheduleLobbyReadyTimeout(room);
-
         this.rooms.push(room);
-        await this.stateStore.saveRoom(room, true);
         await this.subscribeRoom(room.id);
 
-        console.log(`Room ${room.id} created with ${roomPlayers.length} players`);
+        this.fillRoomWithBotsIfNeeded(room);
 
-        const roster = await this.buildRoomRoster(room);
+        if (room.players.length >= GameConfig.playersPerRoom) {
+            room.lobbyDeadlineAt = Date.now() + GameConfig.lobbyReadyTimeoutMs;
+            this.scheduleLobbyReadyTimeout(room);
+            await this.stateStore.removeOpenRoom(room.id);
+        } else {
+            await this.stateStore.markRoomOpen(room.id);
+        }
+
+        await this.stateStore.saveRoom(room, true);
+
+        console.log(`Room ${room.id} created with ${room.players.length} players`);
+
+        const payload = await this.buildRoomJoinedPayload(room);
 
         for (const player of roomPlayers) {
             if (player.isBot) {
                 continue;
             }
 
-            const roomCreatedMessage = {
-                type: "room_created",
+            this.sendPlayer(player, {
+                ...payload,
                 playerId: player.id,
                 reconnectToken: player.sessionId,
                 reconnectTtlSeconds: this.stateStore.getReconnectTtlSeconds(),
-                roomId: room.id,
-                level: engine.room.level,
-                targetHeight: engine.room.targetHeight,
-                impactScoreStatus: engine.getImpactScoreStatus(),
-                activeInventorySlots: engine.getBlocksPerPlayer(),
-                maxActiveBlocks: GameConfig.maxActiveBlocks,
-                blocks: player.blocks,
-                drawPileCount: (engine.room.drawPile || []).length,
-                nextDrawBlock: engine.getNextDrawBlock(),
-                roster: roster,
-                matchStarted: false,
-                lobby: this.buildLobbyPayload(room)
-            };
-
-            if (player.ws && player.ws.readyState === 1) {
-                this.sendPlayer(player, roomCreatedMessage);
-            } else {
-                await this.stateStore.publishPlayerAssignment(player.id, room.id);
-            }
+                blocks: player.blocks
+            });
         }
+    }
+
+    async buildRoomJoinedPayload(room) {
+        const engine = room.engine;
+        const roster = await this.buildRoomRoster(room);
+
+        return {
+            type: "room_created",
+            roomId: room.id,
+            level: engine.room.level,
+            targetHeight: engine.room.targetHeight,
+            impactScoreStatus: engine.getImpactScoreStatus(),
+            activeInventorySlots: engine.getBlocksPerPlayer(),
+            maxActiveBlocks: GameConfig.maxActiveBlocks,
+            drawPileCount: (engine.room.drawPile || []).length,
+            nextDrawBlock: engine.getNextDrawBlock(),
+            roster: roster,
+            matchStarted: false,
+            lobby: this.buildLobbyPayload(room)
+        };
     }
 
     getLobbySecondsRemaining(room) {
@@ -1042,14 +1081,16 @@ class LobbyManager {
     buildLobbyPayload(room) {
         return {
             readyPlayerIds: Array.from(room.readyPlayerIds || []),
-            readySecondsRemaining: this.getLobbySecondsRemaining(room)
+            readySecondsRemaining: this.getLobbySecondsRemaining(room),
+            timerActive: Boolean(room.lobbyDeadlineAt)
         };
     }
 
-    broadcastLobbyUpdate(room) {
+    async broadcastLobbyUpdate(room) {
         const payload = {
             type: "lobby_update",
             roomId: room.id,
+            roster: await this.buildRoomRoster(room),
             ...this.buildLobbyPayload(room)
         };
 
@@ -1060,34 +1101,23 @@ class LobbyManager {
         });
     }
 
-    broadcastQueueStatus() {
-        const realWaitingPlayers =
-            this.waitingPlayers.filter(player => !player.isBot);
-
-        const payload = {
-            type: "queue_status",
-            playersWaiting: realWaitingPlayers.length,
-            playersNeeded: GameConfig.playersPerRoom
-        };
-
-        realWaitingPlayers.forEach(waitingPlayer => {
-            if (this.isConnectedRealPlayer(waitingPlayer)) {
-                this.sendPlayer(waitingPlayer, payload);
-            }
-        });
-    }
-
-    async markPlayerReady(player) {
+    async toggleLobbyReady(player) {
         const room = player.room;
 
         if (!room || room.matchStarted) {
             return;
         }
 
-        room.readyPlayerIds.add(player.id);
-        this.broadcastLobbyUpdate(room);
+        if (room.readyPlayerIds.has(player.id)) {
+            room.readyPlayerIds.delete(player.id);
+        } else {
+            room.readyPlayerIds.add(player.id);
+        }
 
-        const allReady = room.players.every(
+        await this.broadcastLobbyUpdate(room);
+
+        const isFull = room.players.length >= GameConfig.playersPerRoom;
+        const allReady = isFull && room.players.every(
             roomPlayer => room.readyPlayerIds.has(roomPlayer.id)
         );
 
@@ -1146,7 +1176,34 @@ class LobbyManager {
             return;
         }
 
-        await this.closeRoom(room, "player_left_lobby", player);
+        await this.evictLobbyPlayer(room, player, "player_left_lobby");
+    }
+
+    async evictLobbyPlayer(room, player, reason, notifyLeaver = false) {
+        room.engine.removePlayerFromRoom(player.id);
+        room.readyPlayerIds.delete(player.id);
+        this.resetParticipantState(player);
+
+        if (!player.isBot && notifyLeaver) {
+            this.sendPlayer(player, { type: "room_closed", reason: reason });
+        }
+
+        const hasRealPlayer = room.players.some(roomPlayer => !roomPlayer.isBot);
+
+        if (room.players.length === 0 || !hasRealPlayer) {
+            await this.closeRoom(room, reason);
+            return;
+        }
+
+        room.readyPlayerIds = new Set(
+            room.players.filter(roomPlayer => roomPlayer.isBot).map(roomPlayer => roomPlayer.id)
+        );
+        this.cancelLobbyReadyTimeout(room.id);
+        room.lobbyDeadlineAt = 0;
+
+        await this.stateStore.markRoomOpen(room.id);
+        await this.stateStore.saveRoom(room, this.isRoomOwner(room));
+        await this.broadcastLobbyUpdate(room);
     }
 
     scheduleLobbyReadyTimeout(room) {
@@ -1192,7 +1249,13 @@ class LobbyManager {
             return;
         }
 
-        await this.closeRoom(room, "lobby_timeout");
+        const notReadyPlayers = room.players.filter(
+            roomPlayer => !room.readyPlayerIds.has(roomPlayer.id)
+        );
+
+        for (const notReadyPlayer of notReadyPlayers) {
+            await this.evictLobbyPlayer(room, notReadyPlayer, "lobby_timeout", true);
+        }
     }
 
     async buildRoomRoster(room) {

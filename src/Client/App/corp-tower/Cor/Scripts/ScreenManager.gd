@@ -15,11 +15,12 @@ const DRAG_POINTER_NONE := -2
 
 @onready var screen_container: Control = $ScreenContainer
 @onready var debug_button: Button = $DebugButton
-@onready var time_expired_modal: Control = $TimeExpiredModal
+@onready var auto_dismiss_modal: Control = $AutoDismissModal
 
 var current_overlay: Node = null
 var play_instance: Node = null
 var tutorial_active := false
+var find_match_active := false
 var debug_button_dragging := false
 var debug_button_pointer_id := DRAG_POINTER_NONE
 var debug_button_drag_distance := 0.0
@@ -29,14 +30,18 @@ func _ready() -> void:
 	NetworkManager.match_started.connect(_on_match_started)
 	NetworkManager.room_closed.connect(_on_room_closed)
 	NetworkManager.status_changed.connect(_on_status_changed)
-	time_expired_modal.dismissed.connect(_on_time_expired_dismissed)
+	auto_dismiss_modal.dismissed.connect(_on_auto_dismiss_modal_dismissed)
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
 	debug_button.visible = EndpointConfig.DEBUG_UI_ENABLED
 	reset_debug_button_position()
 	show_play_loader_screen()
 
-func _on_status_changed(_text: String) -> void:
+func _on_status_changed(text: String) -> void:
 	update_debug_button_availability()
+
+	if text == "Disconnected" and find_match_active:
+		find_match_active = false
+		auto_dismiss_modal.open_disconnected()
 
 func _on_room_joined(data) -> void:
 	if bool(data.get("matchStarted", true)):
@@ -60,13 +65,7 @@ func _on_room_closed(data) -> void:
 	var reason := str(data.get("reason", ""))
 
 	if reason == "lobby_timeout":
-		_clear_overlay()
-		_teardown_play_instance()
-		time_expired_modal.open_time_expired()
-		return
-
-	if reason == "player_left_lobby":
-		show_find_match_screen()
+		auto_dismiss_modal.open_time_expired()
 		return
 
 	if EndpointConfig.DEMO_MODE_ENABLED:
@@ -74,8 +73,9 @@ func _on_room_closed(data) -> void:
 	else:
 		show_join_screen()
 
-func _on_time_expired_dismissed() -> void:
+func _on_auto_dismiss_modal_dismissed() -> void:
 	NetworkManager.disconnect_server()
+	_teardown_play_instance()
 	show_home_screen()
 
 func show_play_loader_screen() -> void:
@@ -147,13 +147,13 @@ func show_find_match_screen() -> void:
 	var screen := FindMatchScreenScene.instantiate()
 	screen.cancel_requested.connect(_on_cancel_requested)
 	_set_overlay(screen)
+	find_match_active = true
 
 func _on_find_match_requested() -> void:
 	NetworkManager.connect_server()
 	show_find_match_screen()
 
 func _on_cancel_requested() -> void:
-	NetworkManager.leave_queue()
 	NetworkManager.disconnect_server()
 	show_join_screen()
 
@@ -168,7 +168,8 @@ func show_public_lobby_screen(data) -> void:
 func _on_leave_lobby_requested() -> void:
 	NetworkManager.leave_lobby()
 	NetworkManager.disconnect_server()
-	show_join_screen()
+	_teardown_play_instance()
+	show_home_screen()
 
 func _ensure_play_instance() -> void:
 	if play_instance != null and is_instance_valid(play_instance):
@@ -197,6 +198,8 @@ func _set_overlay(screen: Node) -> void:
 	screen_container.add_child(screen)
 
 func _clear_overlay() -> void:
+	find_match_active = false
+
 	if current_overlay != null and is_instance_valid(current_overlay):
 		current_overlay.queue_free()
 

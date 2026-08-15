@@ -29,36 +29,16 @@ function createFakeWs() {
     };
 }
 
-function stripForQueue(player) {
-    return {
-        id: player.id,
-        sessionId: player.sessionId || null,
-        profileId: player.profileId || null,
-        isBot: Boolean(player.isBot),
-        score: player.score || 0,
-        levelScore: player.levelScore || 0,
-        scoreBreakdown: player.scoreBreakdown || {},
-        contributedHeight: player.contributedHeight || 0,
-        blocks: player.blocks || [],
-        lastPlacementTime: player.lastPlacementTime || 0,
-        lastQuickChatTime: player.lastQuickChatTime || 0,
-        powerInventory: player.powerInventory || [],
-        lastPowerActivationTime: player.lastPowerActivationTime || 0,
-        scoreCap: player.scoreCap || null,
-        botLoopLevel: player.botLoopLevel || null
-    };
-}
-
 function tick() {
     return new Promise(resolve => setImmediate(resolve));
 }
 
-// Simulates two server pods sharing one Redis-backed matchmaking queue, with
+// Simulates two server pods sharing one Redis-backed matchmaking state, with
 // real async gaps (via tick()) between read/write steps so that concurrent
 // joins actually get a chance to interleave, the way real network I/O would.
 function createSharedFakeCluster() {
     const shared = {
-        queue: [],
+        openRooms: new Set(),
         sessions: new Map(),
         rooms: new Map(),
         playerCounter: 1,
@@ -98,29 +78,22 @@ function createSharedFakeCluster() {
                 return sessionId ? (shared.sessions.get(sessionId) || null) : null;
             },
             async markSessionDisconnected() {},
-            async enqueuePlayer(player) {
-                const payload = stripForQueue(player);
+            async markRoomOpen(roomId) {
                 await tick();
-                shared.queue.push(payload);
+                shared.openRooms.add(roomId);
             },
-            async removeQueuedPlayer(playerId) {
+            async removeOpenRoom(roomId) {
                 await tick();
-                shared.queue = shared.queue.filter(entry => entry.id !== playerId);
+                shared.openRooms.delete(roomId);
             },
-            async getQueuedPlayers() {
+            async claimOpenRoomId() {
                 await tick();
-                return [...shared.queue];
-            },
-            async dequeueRealPlayers(maxCount) {
-                await tick();
-                return shared.queue.splice(0, maxCount);
-            },
-            async requeuePlayers(players) {
-                if (players.length === 0) {
-                    return;
+                const next = shared.openRooms.values().next();
+                if (next.done) {
+                    return null;
                 }
-                await tick();
-                shared.queue.unshift(...players.map(stripForQueue));
+                shared.openRooms.delete(next.value);
+                return next.value;
             },
             async withMatchmakingLock(callback) {
                 const run = shared.lockChain.then(() => callback());
@@ -199,6 +172,53 @@ function messagesOfType(ws, type) {
     return ws.sentMessages.filter(message => message.type === type);
 }
 
+test("a lone player creates a room and waits alone, unfilled", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+
+    activeLobbies.push(lobby);
+    await lobby.start();
+
+    const ws = createFakeWs();
+    const player = await lobby.createPlayer(ws, {});
+    await lobby.addPlayer(player);
+
+    const room = player.room;
+    assert.ok(room, "the first player should get a room of their own");
+    assert.equal(room.players.length, 1);
+    assert.equal(room.matchStarted, false);
+
+    const created = messagesOfType(ws, "room_created");
+    assert.equal(created.length, 1);
+    assert.equal(created[0].lobby.timerActive, false);
+    assert.equal(created[0].lobby.readySecondsRemaining, 0);
+});
+
+test("a second player fills the first player's still-open room", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+
+    activeLobbies.push(lobby);
+    await lobby.start();
+
+    const wsA = createFakeWs();
+    const playerA = await lobby.createPlayer(wsA, {});
+    await lobby.addPlayer(playerA);
+
+    const wsB = createFakeWs();
+    const playerB = await lobby.createPlayer(wsB, {});
+    await lobby.addPlayer(playerB);
+
+    assert.equal(playerB.room.id, playerA.room.id);
+    assert.equal(playerA.room.players.length, 2);
+    assert.equal(playerA.room.matchStarted, false);
+    assert.equal(playerA.room.lobbyDeadlineAt, 0, "the timer must not start before the room is full");
+
+    const updates = messagesOfType(wsA, "lobby_update");
+    assert.equal(updates.length, 1, "the first player should be told a second player joined");
+    assert.equal(updates[0].roster.length, 2);
+});
+
 test("a formed room waits in the lobby instead of starting the match", async () => {
     const { room, sockets } = await createLobbyOfThree();
 
@@ -206,15 +226,17 @@ test("a formed room waits in the lobby instead of starting the match", async () 
     assert.equal(room.matchStarted, false);
     assert.equal(room.engine.room.state, "waiting");
 
+    const created = messagesOfType(sockets[2], "room_created");
+    assert.equal(created.length, 1);
+    assert.equal(created[0].matchStarted, false);
+    assert.deepEqual(created[0].lobby.readyPlayerIds, []);
+    assert.equal(created[0].lobby.timerActive, true, "the timer starts the moment the room fills");
+    assert.ok(
+        created[0].lobby.readySecondsRemaining > 0,
+        "the lobby should ship a positive ready countdown"
+    );
+
     sockets.forEach(ws => {
-        const created = messagesOfType(ws, "room_created");
-        assert.equal(created.length, 1);
-        assert.equal(created[0].matchStarted, false);
-        assert.deepEqual(created[0].lobby.readyPlayerIds, []);
-        assert.ok(
-            created[0].lobby.readySecondsRemaining > 0,
-            "the lobby should ship a positive ready countdown"
-        );
         assert.equal(
             messagesOfType(ws, "match_started").length,
             0,
@@ -226,19 +248,18 @@ test("a formed room waits in the lobby instead of starting the match", async () 
 test("the match starts only once the last player readies up", async () => {
     const { lobby, players, sockets, room } = await createLobbyOfThree();
 
-    await lobby.markPlayerReady(players[0]);
-    await lobby.markPlayerReady(players[1]);
+    await lobby.toggleLobbyReady(players[0]);
+    await lobby.toggleLobbyReady(players[1]);
 
     assert.equal(room.matchStarted, false);
     sockets.forEach(ws => {
         assert.equal(messagesOfType(ws, "match_started").length, 0);
-        assert.equal(messagesOfType(ws, "lobby_update").length, 2);
     });
 
     const lastUpdate = messagesOfType(sockets[0], "lobby_update").pop();
     assert.equal(lastUpdate.readyPlayerIds.length, 2);
 
-    await lobby.markPlayerReady(players[2]);
+    await lobby.toggleLobbyReady(players[2]);
 
     assert.equal(room.matchStarted, true);
     assert.notEqual(room.engine.room.state, "waiting");
@@ -257,18 +278,47 @@ test("the match starts only once the last player readies up", async () => {
     );
 });
 
-test("readying up twice does not start the match early", async () => {
+test("readying up twice unreadies, and does not start the match early", async () => {
     const { lobby, players, room } = await createLobbyOfThree();
 
-    await lobby.markPlayerReady(players[0]);
-    await lobby.markPlayerReady(players[0]);
-    await lobby.markPlayerReady(players[0]);
+    await lobby.toggleLobbyReady(players[0]);
+    assert.equal(room.readyPlayerIds.has(players[0].id), true);
+
+    await lobby.toggleLobbyReady(players[0]);
+    assert.equal(room.readyPlayerIds.has(players[0].id), false);
 
     assert.equal(room.matchStarted, false);
-    assert.equal(room.readyPlayerIds.size, 1);
 });
 
-test("a lobby timeout sends everyone home instead of requeueing them", async () => {
+test("a lobby timeout only sends the not-ready players home", async () => {
+    const { lobby, players, sockets, room } = await createLobbyOfThree();
+
+    await lobby.toggleLobbyReady(players[0]);
+
+    await lobby.handleLobbyReadyTimeout(room.id);
+
+    const closed = messagesOfType(sockets[0], "room_closed");
+    assert.equal(closed.length, 0, "a ready player is not evicted by the timeout");
+
+    [sockets[1], sockets[2]].forEach(ws => {
+        const closedMessages = messagesOfType(ws, "room_closed");
+        assert.equal(closedMessages.length, 1);
+        assert.equal(closedMessages[0].reason, "lobby_timeout");
+    });
+
+    assert.equal(lobby.rooms.length, 1, "the ready player's room must survive");
+    assert.equal(room.players.length, 1);
+    assert.equal(room.players[0].id, players[0].id);
+    assert.equal(
+        room.readyPlayerIds.has(players[0].id),
+        false,
+        "the survivor's ready state resets and must be re-armed once the room refills"
+    );
+    assert.equal(room.lobbyDeadlineAt, 0);
+    assert.equal(lobby.roomLobbyTimers.has(room.id), false);
+});
+
+test("a lobby timeout with no one ready closes the room entirely", async () => {
     const { lobby, sockets, room } = await createLobbyOfThree();
 
     await lobby.handleLobbyReadyTimeout(room.id);
@@ -279,16 +329,11 @@ test("a lobby timeout sends everyone home instead of requeueing them", async () 
         assert.equal(closed[0].reason, "lobby_timeout");
     });
 
-    assert.equal(
-        lobby.waitingPlayers.length,
-        0,
-        "a timed-out lobby must not silently requeue its players"
-    );
     assert.equal(lobby.rooms.length, 0);
     assert.equal(lobby.roomLobbyTimers.has(room.id), false);
 });
 
-test("leaving the lobby requeues the others and stays silent to the leaver", async () => {
+test("leaving the lobby keeps the room alive for the other two, silently", async () => {
     const { lobby, players, sockets, room } = await createLobbyOfThree();
 
     await lobby.leaveLobby(players[0]);
@@ -300,16 +345,22 @@ test("leaving the lobby requeues the others and stays silent to the leaver", asy
     );
 
     [sockets[1], sockets[2]].forEach(ws => {
-        const closed = messagesOfType(ws, "room_closed");
-        assert.equal(closed.length, 1);
-        assert.equal(closed[0].reason, "player_left_lobby");
+        assert.equal(
+            messagesOfType(ws, "room_closed").length,
+            0,
+            "the remaining players stay in the room, they are not closed out"
+        );
     });
 
-    const requeuedIds = lobby.waitingPlayers.map(player => player.id);
-    assert.deepEqual(requeuedIds.sort(), [players[1].id, players[2].id].sort());
-    assert.equal(requeuedIds.includes(players[0].id), false);
+    assert.equal(lobby.rooms.length, 1, "the room persists for the remaining players");
+    assert.equal(room.players.length, 2);
+    assert.equal(room.players.some(roomPlayer => roomPlayer.id === players[0].id), false);
+    assert.equal(room.lobbyDeadlineAt, 0, "the timer resets until the room refills");
 
-    assert.equal(lobby.rooms.length, 0);
+    const updates = messagesOfType(sockets[1], "lobby_update");
+    assert.ok(updates.length >= 1);
+    assert.equal(updates.pop().roster.length, 2);
+
     assert.equal(
         lobby.roomLobbyTimers.has(room.id),
         false,
@@ -317,7 +368,23 @@ test("leaving the lobby requeues the others and stays silent to the leaver", asy
     );
 });
 
-test("dropping the socket during ready-up breaks the room immediately", async () => {
+test("leaving an otherwise-empty lobby closes the room", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+
+    activeLobbies.push(lobby);
+    await lobby.start();
+
+    const ws = createFakeWs();
+    const player = await lobby.createPlayer(ws, {});
+    await lobby.addPlayer(player);
+
+    await lobby.leaveLobby(player);
+
+    assert.equal(lobby.rooms.length, 0);
+});
+
+test("dropping the socket during ready-up breaks off just that player", async () => {
     const { lobby, players, sockets, room } = await createLobbyOfThree();
 
     sockets[0].readyState = 3;
@@ -330,46 +397,17 @@ test("dropping the socket during ready-up breaks the room immediately", async ()
     );
 
     [sockets[1], sockets[2]].forEach(ws => {
-        const closed = messagesOfType(ws, "room_closed");
-        assert.equal(closed.length, 1);
-        assert.equal(closed[0].reason, "player_left_lobby");
+        assert.equal(messagesOfType(ws, "room_closed").length, 0);
     });
 
-    assert.equal(lobby.rooms.length, 0);
-});
-
-test("queue status reports real waiting players against the room size", async () => {
-    const cluster = createSharedFakeCluster();
-    const lobby = new LobbyManager(cluster.makeStore("podA"));
-
-    activeLobbies.push(lobby);
-    await lobby.start();
-
-    const wsA = createFakeWs();
-    const playerA = await lobby.createPlayer(wsA, {});
-    await lobby.addPlayer(playerA);
-
-    const first = messagesOfType(wsA, "queue_status").pop();
-    assert.equal(first.playersWaiting, 1);
-    assert.equal(first.playersNeeded, 3);
-
-    const wsB = createFakeWs();
-    const playerB = await lobby.createPlayer(wsB, {});
-    await lobby.addPlayer(playerB);
-
-    const second = messagesOfType(wsB, "queue_status").pop();
-    assert.equal(second.playersWaiting, 2);
-
-    await lobby.leaveQueue(playerB);
-
-    const afterLeave = messagesOfType(wsA, "queue_status").pop();
-    assert.equal(afterLeave.playersWaiting, 1);
+    assert.equal(lobby.rooms.length, 1);
+    assert.equal(room.players.length, 2);
 });
 
 test("reconnecting mid-lobby resumes the ready state without a stray game_state", async () => {
     const { lobby, players, room } = await createLobbyOfThree();
 
-    await lobby.markPlayerReady(players[1]);
+    await lobby.toggleLobbyReady(players[1]);
 
     const rejoinWs = createFakeWs();
     players[0].ws = rejoinWs;
@@ -419,7 +457,7 @@ test("bots are pre-readied so a debug room only waits on its real player", async
 
     assert.equal(room.matchStarted, false);
 
-    await lobby.markPlayerReady(player);
+    await lobby.toggleLobbyReady(player);
 
     assert.equal(
         room.matchStarted,
@@ -431,7 +469,7 @@ test("bots are pre-readied so a debug room only waits on its real player", async
     await lobby.updateDebugConfig("debugBotCount", 0);
 });
 
-test("players who join together from different pods all reach the same room", async () => {
+test("players connecting to different pods each land in a room, even without a shared one", async () => {
     const cluster = createSharedFakeCluster();
     const lobbyA = new LobbyManager(cluster.makeStore("podA"));
     const lobbyB = new LobbyManager(cluster.makeStore("podB"));
@@ -447,7 +485,9 @@ test("players who join together from different pods all reach the same room", as
 
     // A and C happen to connect to podA (e.g. two friends behind the same
     // router hitting the load balancer around the same moment), B connects
-    // to podB from a different network.
+    // to podB from a different network. A non-owning pod never mutates
+    // another pod's room directly, so B is not guaranteed to land in A and
+    // C's room - it must always land in *a* valid room of its own.
     const playerA = await lobbyA.createPlayer(wsA, {});
     const playerB = await lobbyB.createPlayer(wsB, {});
     const playerC = await lobbyA.createPlayer(wsC, {});
@@ -466,8 +506,9 @@ test("players who join together from different pods all reach the same room", as
     assert.ok(playerB.room, "player B (joined via a different pod) should have been assigned a room");
     assert.ok(playerC.room, "player C should have been assigned a room");
 
-    assert.equal(playerB.room.id, playerA.room.id);
-    assert.equal(playerC.room.id, playerA.room.id);
+    assert.equal(playerA.room.id, playerC.room.id, "same-pod joiners share the same open room");
+    assert.equal(playerA.room.ownerPodId, "podA");
+    assert.equal(playerB.room.ownerPodId, "podB");
 
     [wsA, wsB, wsC].forEach(ws => {
         const gotAssignment = ws.sentMessages.some(

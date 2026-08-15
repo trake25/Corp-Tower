@@ -30,7 +30,6 @@ signal status_changed(text)
 signal room_joined(data)
 signal match_started(data)
 signal lobby_updated(data)
-signal queue_status_updated(data)
 signal room_closed(data)
 signal game_state_updated(data)
 signal client_status(status)
@@ -99,12 +98,6 @@ func place_block(block_index, column := -1, origin_y := -1):
 		data["originY"] = origin_y
 
 	ws.send_text(JSON.stringify(data))
-
-func leave_queue():
-	if not is_conn_estab:
-		return
-
-	ws.send_text(JSON.stringify({"type": "leave_queue"}))
 
 func send_ready():
 	if not is_conn_estab:
@@ -264,8 +257,6 @@ func _process(delta: float) -> void:
 				match_started.emit(data)
 			"lobby_update":
 				lobby_updated.emit(data)
-			"queue_status":
-				queue_status_updated.emit(data)
 			"game_state":
 				update_auto_reconnect_state(data)
 				game_state_updated.emit(data)

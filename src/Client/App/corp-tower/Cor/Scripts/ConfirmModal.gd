@@ -4,11 +4,14 @@ signal confirmed
 signal dismissed
 
 const OUTSIDE_TAP_GRACE_MS := 200
-const TIME_EXPIRED_SECONDS := 3.0
+const COUNTDOWN_SECONDS := 3.0
+const TIME_EXPIRED_BODY := "Lobby failed to continue. Returning to Home (%ds)."
+const DISCONNECTED_BODY := "You are disconnected. Returning to Home (%ds)."
 
 var opened_at_ms: int = -OUTSIDE_TAP_GRACE_MS
 var auto_dismiss_remaining: float = -1.0
 var shown_seconds: int = -1
+var countdown_body_format := ""
 
 @onready var dim_layer: ColorRect = %ModalDimLayer
 @onready var title_label: Label = %ModalTitleLabel
@@ -32,10 +35,14 @@ func open_leave_lobby() -> void:
 func open_time_expired() -> void:
 	title_label.text = "Time expired"
 	button_row.visible = false
-	auto_dismiss_remaining = TIME_EXPIRED_SECONDS
-	shown_seconds = -1
-	_refresh_time_expired_body()
-	_open()
+	countdown_body_format = TIME_EXPIRED_BODY
+	_start_countdown()
+
+func open_disconnected() -> void:
+	title_label.text = "Disconnected"
+	button_row.visible = false
+	countdown_body_format = DISCONNECTED_BODY
+	_start_countdown()
 
 func close() -> void:
 	if not visible:
@@ -43,6 +50,12 @@ func close() -> void:
 
 	visible = false
 	auto_dismiss_remaining = -1.0
+
+func _start_countdown() -> void:
+	auto_dismiss_remaining = COUNTDOWN_SECONDS
+	shown_seconds = -1
+	_refresh_countdown_body()
+	_open()
 
 func _open() -> void:
 	visible = true
@@ -56,7 +69,7 @@ func _on_continue_pressed() -> void:
 	auto_dismiss_remaining = -1.0
 	confirmed.emit()
 
-func _finish_time_expired() -> void:
+func _finish_countdown() -> void:
 	auto_dismiss_remaining = -1.0
 	visible = false
 	dismissed.emit()
@@ -66,19 +79,19 @@ func _process(delta: float) -> void:
 		return
 
 	auto_dismiss_remaining -= delta
-	_refresh_time_expired_body()
+	_refresh_countdown_body()
 
 	if auto_dismiss_remaining <= 0.0:
-		_finish_time_expired()
+		_finish_countdown()
 
-func _refresh_time_expired_body() -> void:
+func _refresh_countdown_body() -> void:
 	var seconds := maxi(0, ceili(auto_dismiss_remaining))
 
 	if seconds == shown_seconds:
 		return
 
 	shown_seconds = seconds
-	body_label.text = "Lobby failed to continue. Returning to Home (%ds)." % seconds
+	body_label.text = countdown_body_format % seconds
 
 func _on_dim_layer_gui_input(event: InputEvent) -> void:
 	if Time.get_ticks_msec() - opened_at_ms < OUTSIDE_TAP_GRACE_MS:
@@ -93,6 +106,6 @@ func _on_dim_layer_gui_input(event: InputEvent) -> void:
 		return
 
 	if auto_dismiss_remaining >= 0.0:
-		_finish_time_expired()
+		_finish_countdown()
 	else:
 		close()

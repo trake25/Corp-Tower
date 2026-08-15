@@ -95,18 +95,13 @@ async function handleMessage(player, message) {
         return;
     }
 
-    if (data.type === "leave_queue") {
-        await lobbyManager.leaveQueue(player);
-        return;
-    }
-
     if (data.type === "ready") {
         if (!player.room) {
             console.log("Player has no room");
             return;
         }
 
-        await lobbyManager.markPlayerReady(player);
+        await lobbyManager.toggleLobbyReady(player);
         return;
     }
 

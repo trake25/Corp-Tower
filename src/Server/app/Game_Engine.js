@@ -108,7 +108,7 @@ class GameEngine {
 
         this.room = {
             id: null,
-            players: players,
+            players: [],
             level: startLevel,
             impactLevel: startLevel,
             impactScores: {},
@@ -133,21 +133,37 @@ class GameEngine {
             scoreEventSeq: 0
         };
 
-        this.room.players.forEach(player => {
-            player.score = player.score || 0;
-            player.levelScore = 0;
-            player.scoreBreakdown = {};
-            player.contributedHeight = 0;
-            player.blocks = [];
-            player.lastPlacementTime = 0;
-            player.lastQuickChatTime = 0;
-            player.powerInventory = [];
-            player.lastPowerActivationTime = 0;
-            player.lastQuickChatTime = 0;
-        });
+        players.forEach(player => this.initializePlayerForRoom(player));
         this.saveImpactState();
 
         console.log("Room created:", this.room.id);
+    }
+
+    initializePlayerForRoom(player) {
+        player.score = player.score || 0;
+        player.levelScore = 0;
+        player.scoreBreakdown = {};
+        player.contributedHeight = 0;
+        player.blocks = [];
+        player.lastPlacementTime = 0;
+        player.lastQuickChatTime = 0;
+        player.powerInventory = [];
+        player.lastPowerActivationTime = 0;
+        this.room.players.push(player);
+    }
+
+    removePlayerFromRoom(playerId) {
+        if (!this.room) {
+            return;
+        }
+
+        const index = this.room.players.findIndex(player => player.id === playerId);
+
+        if (index === -1) {
+            return;
+        }
+
+        this.room.players.splice(index, 1);
     }
 
     hydrateRoom(snapshot, runtimePlayers) {

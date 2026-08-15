@@ -103,7 +103,7 @@ class RedisState {
         };
         this.memorySessions = new Map();
         this.memoryRooms = new Map();
-        this.memoryQueue = [];
+        this.memoryOpenRooms = new Set();
     }
 
     async connect() {
@@ -327,78 +327,38 @@ class RedisState {
         });
     }
 
-    async enqueuePlayer(player) {
-        const payload = stripRuntimePlayer(player);
-
+    async markRoomOpen(roomId) {
         if (!this.enabled) {
-            if (!this.memoryQueue.some(item => item.id === payload.id)) {
-                this.memoryQueue.push(payload);
+            this.memoryOpenRooms.add(roomId);
+            return;
+        }
+
+        await this.client.sAdd("matchmaking:open_rooms", String(roomId));
+    }
+
+    async removeOpenRoom(roomId) {
+        if (!this.enabled) {
+            this.memoryOpenRooms.delete(roomId);
+            return;
+        }
+
+        await this.client.sRem("matchmaking:open_rooms", String(roomId));
+    }
+
+    async claimOpenRoomId() {
+        if (!this.enabled) {
+            const next = this.memoryOpenRooms.values().next();
+
+            if (next.done) {
+                return null;
             }
-            return;
+
+            this.memoryOpenRooms.delete(next.value);
+            return next.value;
         }
 
-        await this.client.lPush("matchmaking:queue", JSON.stringify(payload));
-    }
-
-    async removeQueuedPlayer(playerId) {
-        if (!this.enabled) {
-            this.memoryQueue = this.memoryQueue.filter(player => player.id !== playerId);
-            return;
-        }
-
-        const queued = await this.client.lRange("matchmaking:queue", 0, -1);
-        await Promise.all(
-            queued
-                .filter(raw => JSON.parse(raw).id === playerId)
-                .map(raw => this.client.lRem("matchmaking:queue", 0, raw))
-        );
-    }
-
-    async getQueuedPlayers() {
-        if (!this.enabled) {
-            return [...this.memoryQueue];
-        }
-
-        const queued = await this.client.lRange("matchmaking:queue", 0, -1);
-        return queued.map(raw => JSON.parse(raw)).reverse();
-    }
-
-    async dequeueRealPlayers(maxCount) {
-        if (!this.enabled) {
-            return this.memoryQueue.splice(0, maxCount);
-        }
-
-        const raw = await this.client.sendCommand(
-            ["RPOP", "matchmaking:queue", String(maxCount)]
-        );
-
-        if (!raw) {
-            return [];
-        }
-
-        return raw.map(item => JSON.parse(item));
-    }
-
-    async requeuePlayers(players) {
-        if (players.length === 0) {
-            return;
-        }
-
-        const cleanPlayers = players.map(stripRuntimePlayer);
-
-        if (!this.enabled) {
-            this.memoryQueue.unshift(...cleanPlayers);
-            return;
-        }
-
-        const multi = this.client.multi();
-        cleanPlayers
-            .slice()
-            .reverse()
-            .forEach(player => {
-                multi.rPush("matchmaking:queue", JSON.stringify(player));
-            });
-        await multi.exec();
+        const roomId = await this.client.sPop("matchmaking:open_rooms");
+        return roomId === null ? null : Number(roomId);
     }
 
     async withMatchmakingLock(callback) {
