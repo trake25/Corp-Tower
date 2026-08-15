@@ -1,4 +1,6 @@
-[gd_resource type="Theme" format=3 uid="uid://u7rmxm0gc7i3"]
+[gd_resource type="Theme" load_steps=22 format=3 uid="uid://u7rmxm0gc7i3"]
+
+[ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Regular.ttf" id="1_poppins"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ActionButton"]
 bg_color = Color(0.16, 0.19, 0.23, 1)
@@ -221,6 +223,7 @@ shadow_size = 8
 shadow_offset = Vector2(0, 4)
 
 [resource]
+default_font = ExtResource("1_poppins")
 ActionButton/base_type = &"Button"
 ActionButton/styles/normal = SubResource("StyleBoxFlat_ActionButton")
 ActionCardPanel/base_type = &"PanelContainer"

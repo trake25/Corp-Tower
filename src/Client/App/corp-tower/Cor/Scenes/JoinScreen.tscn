@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/JoinScreen.gd" id="1_joinscreen"]
 [ext_resource type="Texture2D" uid="uid://407uawamvuq1" path="res://Cor/Art/6-Join-server/btn-circular-back.svg" id="2_back"]
 [ext_resource type="Texture2D" uid="uid://dr11ib653vwhw" path="res://Cor/Art/6-Join-server/ic-eye-close.svg" id="3_eye"]
 [ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="4_presstint"]
+[ext_resource type="Shader" path="res://Cor/Shaders/VerticalGradientFill.gdshader" id="5_gradientshader"]
 
 [sub_resource type="Gradient" id="Gradient_JoinBg"]
 offsets = PackedFloat32Array(0, 0.55, 1)
@@ -16,6 +17,18 @@ height = 512
 fill_to = Vector2(0, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_JoinHeader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_GreenPillFill"]
+shader = ExtResource("5_gradientshader")
+shader_parameter/color_top = Color(0.792, 1, 0.557, 1)
+shader_parameter/color_bottom = Color(0.404, 0.871, 0.106, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_GreenPillFill"]
+bg_color = Color(0.404, 0.871, 0.106, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 
 [node name="JoinScreen" type="Control"]
 layout_mode = 3
@@ -148,7 +161,19 @@ theme_override_constants/margin_right = 32
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 theme_type_variation = &"WhiteCardButton"
+text = ""
+
+[node name="Label" type="Label" parent="SafeArea/Root/JoinButtonMargin/JoinButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
 text = "Join"
 
 [node name="OrSpacer" type="Control" parent="SafeArea/Root"]
@@ -183,6 +208,12 @@ color = Color(0, 0, 0, 0.15)
 layout_mode = 2
 theme_type_variation = &"GreenPillPanel"
 
+[node name="PublicGradientFill" type="Panel" parent="SafeArea/Root/PublicPanel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_GreenPillFill")
+material = SubResource("ShaderMaterial_GreenPillFill")
+
 [node name="PublicMargin" type="MarginContainer" parent="SafeArea/Root/PublicPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 16
@@ -211,5 +242,17 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 theme_type_variation = &"WhiteCardButton"
+text = ""
+
+[node name="Label" type="Label" parent="SafeArea/Root/PublicPanel/PublicMargin/PublicRows/FindMatchMargin/FindMatchButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
 text = "Find Match"
