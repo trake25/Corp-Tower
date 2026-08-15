@@ -61,6 +61,11 @@ jobs:
           CORP_TOWER_WS_PRIMARY: wss://wstodplay.galaxxigames.com
           CORP_TOWER_WS_FAILOVER: ""
           CORP_TOWER_DEBUG_UI: "true"
+          # The anon key is public by design — it ships inside the binary — but
+          # it comes from a secret so it never lands in the committed config.
+          # Both unset means the build has no sign-in and uses a local profile id.
+          CORP_TOWER_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          CORP_TOWER_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: scripts/write-endpoint-config.sh
 
       - name: Authenticate to Google Play Developer API

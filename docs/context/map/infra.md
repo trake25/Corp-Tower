@@ -50,7 +50,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/actions/terraform-validate-plan/action.yml:7 | inputs · key | `working-directory`, the stack directory to run in |
 | .github/actions/terraform-validate-plan/action.yml:12 | runs · key | the shared check sequence — init, **`fmt -check`**, validate, plan saved to `./tfplan` for a later apply step, then a readable plan summary |
 
-### .github/workflows/Android-Deploy-wstodplay.yml — 419 ln
+### .github/workflows/Android-Deploy-wstodplay.yml — 424 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -179,7 +179,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/EKS-Deploy-All.yml:21 | deploy-game · job | calls the game deploy core for `wstodplay` |
 | .github/workflows/EKS-Deploy-All.yml:29 | deploy-web · job | calls the web deploy core for `todplay` |
 
-### .github/workflows/EKS-Deploy-Game-Server.yml — 465 ln
+### .github/workflows/EKS-Deploy-Game-Server.yml — 473 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -190,7 +190,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/EKS-Deploy-Game-Server.yml:71 | build-and-push · job | OIDC to ECR, Buildx build and push, and records the pushed image tag for the deploy job |
 | .github/workflows/EKS-Deploy-Game-Server.yml:117 | deploy-eks · job | reads Terraform outputs, updates kubeconfig, applies the manifests, and **ends in a WebSocket smoke test** rather than trusting rollout status |
 
-### .github/workflows/EKS-Deploy-Web-Server.yml — 349 ln
+### .github/workflows/EKS-Deploy-Web-Server.yml — 352 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -199,8 +199,8 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/EKS-Deploy-Web-Server.yml:27 | resolve-target · job | picks the target environment for the rest of the run |
 | .github/workflows/EKS-Deploy-Web-Server.yml:53 | verify-infra · job | same unapplied-infra fast fail as the game core |
 | .github/workflows/EKS-Deploy-Web-Server.yml:75 | build · job | Godot web export with private art, then **removes the private assets from the runner** before the job ends |
-| .github/workflows/EKS-Deploy-Web-Server.yml:122 | push · job | wraps the web build in a Docker image and pushes it to ECR |
-| .github/workflows/EKS-Deploy-Web-Server.yml:160 | deploy-eks · job | deploys to the cluster and **updates the Cloudflare CNAME to the current ALB DNS name** — a fresh apply changes that value every session |
+| .github/workflows/EKS-Deploy-Web-Server.yml:125 | push · job | wraps the web build in a Docker image and pushes it to ECR |
+| .github/workflows/EKS-Deploy-Web-Server.yml:163 | deploy-eks · job | deploys to the cluster and **updates the Cloudflare CNAME to the current ALB DNS name** — a fresh apply changes that value every session |
 
 ### .github/workflows/EKS-Force-Unlock.yml — 59 ln
 
@@ -294,7 +294,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 _no extracted symbols_
 
-### infra/eks/apps/corp-tower/base/server-deployment.yaml — 72 ln
+### infra/eks/apps/corp-tower/base/server-deployment.yaml — 79 ln
 
 _no extracted symbols_
 
@@ -591,7 +591,7 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/backup/backup-server-up.sh — 83 ln
+### scripts/backup/backup-server-up.sh — 90 ln
 
 _no extracted symbols_
 
@@ -679,7 +679,7 @@ _no extracted symbols_
 | scripts/strip-comments.mjs:217 | verify · fn | **three gates, any failure aborts the whole run**: no code line dropped · code content byte-identical · no config key lost |
 | scripts/strip-comments.mjs:249 | main · fn | dry-run and write modes; gates run on every file before a byte is written |
 
-### scripts/validate-docs.mjs — 443 ln
+### scripts/validate-docs.mjs — 453 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -693,50 +693,50 @@ _no extracted symbols_
 | scripts/validate-docs.mjs:33 | tok · const | **the token estimate is `bytes/4`** — deliberately no tokenizer dependency, deliberately conservative |
 | scripts/validate-docs.mjs:37 | DEFAULT_BUDGET · const | 3000 tokens for any doc without an explicit entry |
 | scripts/validate-docs.mjs:45 | BUDGETS · const | per-doc token ceilings, each set just above measured size so the next unjustified addition fails loudly |
-| scripts/validate-docs.mjs:75 | MAP_BUDGET · const | **a bloat alarm, not a load budget** — a map is grepped, never loaded, so its cost is per-hit and does not scale with file size |
-| scripts/validate-docs.mjs:78 | PROSE_TOTAL_BUDGET · const | whole-KB prose ceiling; maps are excluded from it and reported on their own |
-| scripts/validate-docs.mjs:79 | MAX_LINE_CHARS · const | **300, and the reason the budget cannot be gamed** — without it a doc meets any token budget by folding an essay into one table cell |
-| scripts/validate-docs.mjs:80 | NET_GROWTH_WARN · const | net added lines per doc per run above which the run asks whether you are transcribing rather than documenting |
-| scripts/validate-docs.mjs:87 | BANNED · const | constructions that turn a description of the system into a story about it; **`Rejected:` is on the list** because it was the loophole the others leaked through |
-| scripts/validate-docs.mjs:88 | BANNED_EXEMPT · const | deliberately matches nothing — the banned list has no exemption |
-| scripts/validate-docs.mjs:91 | STATUS · const | unresolved-commitment markers surfaced at the end of every run |
-| scripts/validate-docs.mjs:94 | slug · fn | GitHub heading to anchor slug, used for both anchor generation and link checking |
-| scripts/validate-docs.mjs:100 | files · const | the prose docs directly under docs/context |
-| scripts/validate-docs.mjs:101 | mapFiles · const | the generated map files |
-| scripts/validate-docs.mjs:102 | read · const | reads a prose doc |
-| scripts/validate-docs.mjs:103 | readMap · const | reads a map file |
-| scripts/validate-docs.mjs:104 | all · const | prose and map docs in one list, map entries prefixed `map/` |
-| scripts/validate-docs.mjs:108 | anchors · const | per-doc anchor sets, with GitHub's `-2` suffix rule for duplicate headings |
-| scripts/validate-docs.mjs:125 | referenced · const | docs linked from somewhere; the complement is the orphan warning |
-| scripts/validate-docs.mjs:164 | source · const | first-party files from build-file-map.mjs, minus tests — the map-coverage denominator |
-| scripts/validate-docs.mjs:165 | mapText · const | map filename to contents, used by both coverage directions |
-| scripts/validate-docs.mjs:189 | FILEISH · const | matches anything shaped like a repo filename inside prose or a comment |
-| scripts/validate-docs.mjs:192 | CITATION_ALLOW · const | names that legitimately resolve outside the walked tree — `Node.js` is a runtime that any regex reads as a file |
-| scripts/validate-docs.mjs:199 | CITATION_SKIP_FILES · const | the two tools whose job is quoting names that do not resolve; without this the checker reports its own error strings as drift |
-| scripts/validate-docs.mjs:205 | GLOBBY_SPAN · const | a backticked span holding a glob or brace expansion names a set, so no single basename in it is expected to resolve |
-| scripts/validate-docs.mjs:206 | maskGlobs · const | blanks those spans before scanning, rather than allow-listing the fragments, which would silence the real name too |
-| scripts/validate-docs.mjs:209 | CITATION_SKIP_SECTIONS · const | `## Aliases` exists to name retired things, so the dead half not resolving is the entry's purpose |
-| scripts/validate-docs.mjs:211 | CITES_OK · const | per-line escape for one deliberate reference to something gone |
-| scripts/validate-docs.mjs:212 | basenames · const | every filename in the tree, the set citations are checked against |
-| scripts/validate-docs.mjs:224 | checkCitations · fn | **a doc or source comment naming a repo file must name one that exists**; skips fenced blocks and alias sections |
-| scripts/validate-docs.mjs:240 | COMMENT · const | extracts the text of a `//` or `#` comment for citation checking |
-| scripts/validate-docs.mjs:260 | WORD_NUM · const | spelled-out numbers one through twelve, so a counted claim written in words is still checkable |
-| scripts/validate-docs.mjs:261 | treeFiles · const | source files under 400 KB that counted claims are verified against; **markdown is excluded** or writing about a count would inflate it |
-| scripts/validate-docs.mjs:280 | countToken · fn | case-insensitive occurrence count of a token across the tree |
-| scripts/validate-docs.mjs:320 | pkgPath · const | the server package.json, read for dependency-drift warnings |
-| scripts/validate-docs.mjs:336 | growth · const | net line change per doc vs HEAD, which decides hard error versus warning |
-| scripts/validate-docs.mjs:337 | addedLines · const | the exact lines this run added, so a banned phrase is a hard error only if newly written |
-| scripts/validate-docs.mjs:339 | git · const | execFileSync git wrapper; failure leaves gitOk false and downgrades everything to warnings |
-| scripts/validate-docs.mjs:362 | grew · const | true if the doc gained net lines this run |
-| scripts/validate-docs.mjs:363 | flag · const | **growth is blocked, compaction never is** — the same violation is an error in a doc that grew and a warning in one that shrank, so an over-budget doc can always be edited back down |
-| scripts/validate-docs.mjs:364 | isNew · const | true if this exact line was added in this run |
-| scripts/validate-docs.mjs:367 | statusMarkers · const | unresolved markers to keep, resolve or delete, listed at the end of the run |
-| scripts/validate-docs.mjs:368 | counts · const | per-doc token, budget and line count rows for the report |
-| scripts/validate-docs.mjs:403 | proseTotal · const | summed prose tokens, checked against PROSE_TOTAL_BUDGET |
-| scripts/validate-docs.mjs:404 | mapTotal · const | summed map tokens, reported but not part of the prose total |
-| scripts/validate-docs.mjs:421 | terse · const | true only on a quiet passing run |
+| scripts/validate-docs.mjs:85 | MAP_BUDGET · const | **a bloat alarm, not a load budget** — a map is grepped, never loaded, so its cost is per-hit and does not scale with file size |
+| scripts/validate-docs.mjs:88 | PROSE_TOTAL_BUDGET · const | whole-KB prose ceiling; maps are excluded from it and reported on their own |
+| scripts/validate-docs.mjs:89 | MAX_LINE_CHARS · const | **300, and the reason the budget cannot be gamed** — without it a doc meets any token budget by folding an essay into one table cell |
+| scripts/validate-docs.mjs:90 | NET_GROWTH_WARN · const | net added lines per doc per run above which the run asks whether you are transcribing rather than documenting |
+| scripts/validate-docs.mjs:97 | BANNED · const | constructions that turn a description of the system into a story about it; **`Rejected:` is on the list** because it was the loophole the others leaked through |
+| scripts/validate-docs.mjs:98 | BANNED_EXEMPT · const | deliberately matches nothing — the banned list has no exemption |
+| scripts/validate-docs.mjs:101 | STATUS · const | unresolved-commitment markers surfaced at the end of every run |
+| scripts/validate-docs.mjs:104 | slug · fn | GitHub heading to anchor slug, used for both anchor generation and link checking |
+| scripts/validate-docs.mjs:110 | files · const | the prose docs directly under docs/context |
+| scripts/validate-docs.mjs:111 | mapFiles · const | the generated map files |
+| scripts/validate-docs.mjs:112 | read · const | reads a prose doc |
+| scripts/validate-docs.mjs:113 | readMap · const | reads a map file |
+| scripts/validate-docs.mjs:114 | all · const | prose and map docs in one list, map entries prefixed `map/` |
+| scripts/validate-docs.mjs:118 | anchors · const | per-doc anchor sets, with GitHub's `-2` suffix rule for duplicate headings |
+| scripts/validate-docs.mjs:135 | referenced · const | docs linked from somewhere; the complement is the orphan warning |
+| scripts/validate-docs.mjs:174 | source · const | first-party files from build-file-map.mjs, minus tests — the map-coverage denominator |
+| scripts/validate-docs.mjs:175 | mapText · const | map filename to contents, used by both coverage directions |
+| scripts/validate-docs.mjs:199 | FILEISH · const | matches anything shaped like a repo filename inside prose or a comment |
+| scripts/validate-docs.mjs:202 | CITATION_ALLOW · const | names that legitimately resolve outside the walked tree — `Node.js` is a runtime that any regex reads as a file |
+| scripts/validate-docs.mjs:209 | CITATION_SKIP_FILES · const | the two tools whose job is quoting names that do not resolve; without this the checker reports its own error strings as drift |
+| scripts/validate-docs.mjs:215 | GLOBBY_SPAN · const | a backticked span holding a glob or brace expansion names a set, so no single basename in it is expected to resolve |
+| scripts/validate-docs.mjs:216 | maskGlobs · const | blanks those spans before scanning, rather than allow-listing the fragments, which would silence the real name too |
+| scripts/validate-docs.mjs:219 | CITATION_SKIP_SECTIONS · const | `## Aliases` exists to name retired things, so the dead half not resolving is the entry's purpose |
+| scripts/validate-docs.mjs:221 | CITES_OK · const | per-line escape for one deliberate reference to something gone |
+| scripts/validate-docs.mjs:222 | basenames · const | every filename in the tree, the set citations are checked against |
+| scripts/validate-docs.mjs:234 | checkCitations · fn | **a doc or source comment naming a repo file must name one that exists**; skips fenced blocks and alias sections |
+| scripts/validate-docs.mjs:250 | COMMENT · const | extracts the text of a `//` or `#` comment for citation checking |
+| scripts/validate-docs.mjs:270 | WORD_NUM · const | spelled-out numbers one through twelve, so a counted claim written in words is still checkable |
+| scripts/validate-docs.mjs:271 | treeFiles · const | source files under 400 KB that counted claims are verified against; **markdown is excluded** or writing about a count would inflate it |
+| scripts/validate-docs.mjs:290 | countToken · fn | case-insensitive occurrence count of a token across the tree |
+| scripts/validate-docs.mjs:330 | pkgPath · const | the server package.json, read for dependency-drift warnings |
+| scripts/validate-docs.mjs:346 | growth · const | net line change per doc vs HEAD, which decides hard error versus warning |
+| scripts/validate-docs.mjs:347 | addedLines · const | the exact lines this run added, so a banned phrase is a hard error only if newly written |
+| scripts/validate-docs.mjs:349 | git · const | execFileSync git wrapper; failure leaves gitOk false and downgrades everything to warnings |
+| scripts/validate-docs.mjs:372 | grew · const | true if the doc gained net lines this run |
+| scripts/validate-docs.mjs:373 | flag · const | **growth is blocked, compaction never is** — the same violation is an error in a doc that grew and a warning in one that shrank, so an over-budget doc can always be edited back down |
+| scripts/validate-docs.mjs:374 | isNew · const | true if this exact line was added in this run |
+| scripts/validate-docs.mjs:377 | statusMarkers · const | unresolved markers to keep, resolve or delete, listed at the end of the run |
+| scripts/validate-docs.mjs:378 | counts · const | per-doc token, budget and line count rows for the report |
+| scripts/validate-docs.mjs:413 | proseTotal · const | summed prose tokens, checked against PROSE_TOTAL_BUDGET |
+| scripts/validate-docs.mjs:414 | mapTotal · const | summed map tokens, reported but not part of the prose total |
+| scripts/validate-docs.mjs:431 | terse · const | true only on a quiet passing run |
 
-### scripts/write-endpoint-config.sh — 36 ln
+### scripts/write-endpoint-config.sh — 58 ln
 
 _no extracted symbols_
 

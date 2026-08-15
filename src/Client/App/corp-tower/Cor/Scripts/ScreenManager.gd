@@ -89,6 +89,10 @@ func show_play_loader_screen() -> void:
 func _on_play_loader_finished() -> void:
 	if EndpointConfig.DEMO_MODE_ENABLED:
 		show_home_screen()
+		return
+
+	if await AuthManager.restore_session():
+		show_home_screen()
 	else:
 		show_sign_in_screen()
 
@@ -98,7 +102,22 @@ func show_sign_in_screen() -> void:
 	_set_overlay(screen)
 
 func _on_guest_login_requested() -> void:
-	show_home_screen()
+	var screen := current_overlay
+
+	if screen != null and is_instance_valid(screen) and screen.has_method("set_busy"):
+		screen.call("set_busy", true)
+
+	var reason: String = await AuthManager.sign_in_guest()
+
+	if reason == AuthManager.REASON_NONE:
+		show_home_screen()
+		return
+
+	if screen == null or not is_instance_valid(screen) or screen != current_overlay:
+		return
+
+	screen.call("set_busy", false)
+	screen.call("show_error", reason)
 
 func show_home_screen() -> void:
 	var screen := HomeScreenScene.instantiate()

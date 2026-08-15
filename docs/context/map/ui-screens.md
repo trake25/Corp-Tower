@@ -105,7 +105,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:23 | format_score | **the 10-char `..` truncation lives here and nowhere else** |
 | src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:35 | load_avatar_texture | avatar id to texture, with fallback |
 
-### src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd — 108 ln
+### src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd — 119 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -113,21 +113,24 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:7 | WAITING_NAME · const | TODO |
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:8 | READY_COUNTDOWN_FORMAT · const | TODO |
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:9 | READY_LABEL · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:10 | SEAT_COUNT · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:18 | _ready | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:25 | _exit_tree | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:29 | apply_lobby_data | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:33 | _on_lobby_updated | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:37 | _apply_roster | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:51 | _apply_lobby_state | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:73 | _process | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:88 | _refresh_ready_label | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:94 | _apply_local_ready_style | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:98 | _on_ready_pressed | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:103 | _on_back_pressed | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:106 | _on_leave_confirmed | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:10 | CANCEL_LABEL · const | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:11 | SEAT_COUNT · const | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:12 | DISABLED_MODULATE · const | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:20 | _ready | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:28 | _exit_tree | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:32 | apply_lobby_data | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:36 | _on_lobby_updated | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:40 | _apply_roster | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:56 | _set_room_full | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:60 | _apply_lobby_state | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:82 | _process | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:97 | _refresh_ready_label | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:105 | _apply_local_ready_style | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:109 | _on_ready_pressed | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:114 | _on_back_pressed | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:117 | _on_leave_confirmed | TODO |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 279 ln
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 298 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -144,41 +147,76 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:79 | _on_auto_dismiss_modal_dismissed | TODO |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:84 | show_play_loader_screen | splash before join |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:89 | _on_play_loader_finished | advance to Sign-in; in demo, straight to Home |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:95 | show_sign_in_screen | Play as Guest is the only wired control |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:100 | _on_guest_login_requested | advance to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:103 | show_home_screen | Private Server / Join Server / Game Tutorial menu |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:109 | _on_home_join_server_requested | advance to the join screen; in demo, `connect_server()` directly |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:115 | _on_home_tutorial_requested | start the Tutorial from Home |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:118 | show_join_screen | join / matchmaking entry screen, no tutorial button |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:125 | _on_join_screen_back_requested | return to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:128 | start_tutorial | mount the Tutorial over the real HUD |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:140 | _on_play_instance_tutorial_requested | Tutorial requested from inside play |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:143 | _on_play_instance_tutorial_exited | return from Tutorial to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:147 | show_find_match_screen | matchmaking wait screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:155 | _on_find_match_requested | enter the queue |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:159 | _on_cancel_requested | leave the queue |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:163 | show_public_lobby_screen | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:171 | _on_leave_lobby_requested | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:177 | _ensure_play_instance | instantiate PlayScreenScene once per room |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:191 | _teardown_play_instance | free the play instance on room close |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:198 | _set_overlay | mount a screen in ScreenContainer |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:203 | _clear_overlay | unmount the current screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:211 | update_debug_button_availability | enabled only with a live instance and a connection |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:219 | reset_debug_button_position | runs on ready and room join, never after a manual drag |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:225 | _on_debug_button_gui_input | tap-vs-drag discrimination |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:250 | _begin_debug_button_gesture | start tracking a pointer |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:255 | _end_debug_button_gesture | stop tracking |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:263 | _move_debug_button | drag the floating button, clamped on screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:273 | _on_debug_button_tapped | calls Main by duck typing; no static dependency |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:99 | show_sign_in_screen | Play as Guest is the only wired control |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:104 | _on_guest_login_requested | advance to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:122 | show_home_screen | Private Server / Join Server / Game Tutorial menu |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:128 | _on_home_join_server_requested | advance to the join screen; in demo, `connect_server()` directly |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:134 | _on_home_tutorial_requested | start the Tutorial from Home |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:137 | show_join_screen | join / matchmaking entry screen, no tutorial button |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:144 | _on_join_screen_back_requested | return to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:147 | start_tutorial | mount the Tutorial over the real HUD |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:159 | _on_play_instance_tutorial_requested | Tutorial requested from inside play |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:162 | _on_play_instance_tutorial_exited | return from Tutorial to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:166 | show_find_match_screen | matchmaking wait screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:174 | _on_find_match_requested | enter the queue |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:178 | _on_cancel_requested | leave the queue |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:182 | show_public_lobby_screen | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:190 | _on_leave_lobby_requested | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:196 | _ensure_play_instance | instantiate PlayScreenScene once per room |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:210 | _teardown_play_instance | free the play instance on room close |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:217 | _set_overlay | mount a screen in ScreenContainer |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:222 | _clear_overlay | unmount the current screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:230 | update_debug_button_availability | enabled only with a live instance and a connection |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:238 | reset_debug_button_position | runs on ready and room join, never after a manual drag |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:244 | _on_debug_button_gui_input | tap-vs-drag discrimination |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:269 | _begin_debug_button_gesture | start tracking a pointer |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:274 | _end_debug_button_gesture | stop tracking |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:282 | _move_debug_button | drag the floating button, clamped on screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:292 | _on_debug_button_tapped | calls Main by duck typing; no static dependency |
 
-### src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd — 7 ln
+### src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd — 26 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:3 | guest_login_requested · signal | advance to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:5 | _ready | wire the Play as Guest button; FB/Google/TikTok stay unwired |
+| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:5 | GUEST_LABEL_IDLE · const | Play as Guest button text at rest |
+| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:6 | GUEST_LABEL_BUSY · const | same button while sign-in is in flight |
+| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:7 | ERROR_MESSAGES · const | AuthManager reason code → the words shown to the player |
+| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:12 | _ready | wire the Play as Guest button; FB/Google/TikTok stay unwired |
+| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:16 | set_busy | disable the button and swap its label during sign-in |
+| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:23 | show_error | reveal ErrorLabel; unknown reasons fall back to the generic message |
 
-### src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd — 7 ln
+### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 240 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:3 | SESSION_FILE · const | persisted Supabase session — tokens and expiry |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:4 | REFRESH_MARGIN_SECONDS · const | refresh this far ahead of expiry |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:5 | REFRESH_CHECK_INTERVAL_SECONDS · const | background timer period |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:6 | REQUEST_TIMEOUT_SECONDS · const | per-request cap on every auth call |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:8 | REASON_NONE · const | empty string — the success value every call returns |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:9 | REASON_UNREACHABLE · const | network or timeout — distinct from a refusal |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:10 | REASON_REJECTED · const | Supabase answered and refused |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:19 | _ready | load the stored session; arm the refresh timer only when enabled |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:31 | is_enabled | **both URL and anon key must be set**, else auth is off and the build behaves as it did pre-Supabase |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:34 | is_signed_in | enabled and holding a refresh token |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:37 | access_token | token for the wire; **returns empty once expired** rather than sending a stale one |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:46 | restore_session | splash-time check — true routes to Home, false to Sign-in |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:55 | sign_in_guest | anonymous sign-up; returns a reason code, empty on success |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:69 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:95 | sign_out | clear memory and delete the session file |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:105 | seconds_until_expiry | 0 when no session is held |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:111 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:120 | _notification | refresh on app resume when the token went stale in the background |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:132 | _auth_url | join the project URL to an auth path |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:135 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:173 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:192 | _store_session | apply, then persist |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:199 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:212 | _save_session | write the session JSON to `user://` |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:226 | _load_session | read it back on boot; malformed content is ignored |
+
+### src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd — 9 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -187,8 +225,10 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:4 | FAILOVER · const | failover WSS endpoint |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:5 | DEBUG_UI_ENABLED · const | gates the debug button; off for EKS web builds and the demo |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:6 | DEMO_MODE_ENABLED · const | gates the bots-disclosure label; demo build only |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:7 | SUPABASE_URL · const | Supabase project URL; **empty disables sign-in entirely** |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:8 | SUPABASE_ANON_KEY · const | public anon key, build-injected from a secret; both must be set |
 
-### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 318 ln
+### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 319 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -219,15 +259,15 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:129 | generate_uuid_v4 | new player id |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:139 | save_reconnect_identity | persist id and token |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:151 | send_reconnect_request | first message on every connection |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:161 | update_auto_reconnect_state | track attempts and backoff |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:172 | schedule_auto_reconnect | arm the retry timer |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:190 | send_quick_chat | quick chat slot |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:199 | activate_power | Power activation by slot |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:203 | _notification | app pause and resume for background detection |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:216 | force_reconnect_after_background | reconnect after a long background |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:229 | _process | poll the WebSocketPeer and drain frames |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:307 | update_config | send a debug `update_config` |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:162 | update_auto_reconnect_state | track attempts and backoff |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:173 | schedule_auto_reconnect | arm the retry timer |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:191 | send_quick_chat | quick chat slot |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:200 | activate_power | Power activation by slot |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:204 | _notification | app pause and resume for background detection |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:217 | force_reconnect_after_background | reconnect after a long background |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:230 | _process | poll the WebSocketPeer and drain frames |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:308 | update_config | send a debug `update_config` |
 
 ---
 
-12 files · 161 symbols · 47 awaiting a `Does` line.
+13 files · 196 symbols · 50 awaiting a `Does` line.

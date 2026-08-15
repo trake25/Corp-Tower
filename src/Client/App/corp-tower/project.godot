@@ -22,6 +22,7 @@ boot_splash/stretch_mode.mobile=4
 [autoload]
 
 NetworkManager="*res://Sys/NetMan/NetworkManager.gd"
+AuthManager="*res://Sys/Auth/Auth_Manager.gd"
 
 [display]
 

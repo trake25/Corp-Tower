@@ -2,8 +2,10 @@ const http = require("http");
 const WebSocket = require("ws");
 
 const LobbyManager = require("./Lobby_Manager");
+const AuthVerifier = require("./Auth_Verifier");
 
 const lobbyManager = new LobbyManager();
+const authVerifier = new AuthVerifier();
 
 const port = Number(process.env.PORT) || 3000;
 
@@ -55,9 +57,17 @@ async function main() {
             const reconnectRequest =
                 data.type === "reconnect" ? data : {};
 
-            player = await lobbyManager.createPlayer(ws, reconnectRequest);
+            const identity = await authVerifier.verifyAccessToken(data.accessToken);
 
-            console.log(`${player.id} connected`);
+            if (authVerifier.isRequired() && !identity) {
+                console.log("Rejected a connection with no verifiable access token");
+                ws.close(4401, "unauthorized");
+                return;
+            }
+
+            player = await lobbyManager.createPlayer(ws, reconnectRequest, identity);
+
+            console.log(`${player.id} connected${identity ? " (verified)" : ""}`);
 
             if (!reconnectRequest.reconnectToken || !player.room) {
                 await lobbyManager.addPlayer(player);

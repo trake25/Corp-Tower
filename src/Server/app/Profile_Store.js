@@ -19,13 +19,13 @@ class ProfileStore {
     async connect() {
     }
 
-    async getProfile(profileId, seatIndex) {
+    async getProfile(profileId, seatIndex, verifiedName = null) {
         const avatarId = "avatar_" + seatIndex;
 
         if (!profileId) {
             return {
                 profileId: null,
-                displayName: "Player " + (seatIndex + 1),
+                displayName: verifiedName || "Player " + (seatIndex + 1),
                 avatarId,
                 equipped: {},
                 owned: []
@@ -33,12 +33,19 @@ class ProfileStore {
         }
 
         if (this.profiles.has(profileId)) {
-            return this.profiles.get(profileId);
+            const cached = this.profiles.get(profileId);
+
+            if (verifiedName && cached.displayName !== verifiedName) {
+                cached.displayName = verifiedName;
+            }
+
+            return cached;
         }
 
         const profile = {
             profileId,
-            displayName: WORD_LIST[hashString(profileId) % WORD_LIST.length],
+            displayName:
+                verifiedName || WORD_LIST[hashString(profileId) % WORD_LIST.length],
             avatarId,
             equipped: {},
             owned: []

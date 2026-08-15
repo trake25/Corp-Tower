@@ -45,6 +45,13 @@ spec:
               value: "3000"
             - name: REDIS_URL
               value: rediss://lab-placeholder:6379
+            # Empty SUPABASE_URL leaves token verification off and the server
+            # falls back to the client-supplied profile id. The deploy workflow
+            # patches both in when the project is configured.
+            - name: SUPABASE_URL
+              value: ""
+            - name: SUPABASE_AUTH_REQUIRED
+              value: "false"
             - name: RECONNECT_TTL_SECONDS
               value: "10"
             - name: REDIS_CONNECT_RETRIES

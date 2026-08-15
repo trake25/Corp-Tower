@@ -44,8 +44,18 @@ const DEFAULT_BUDGET = 3000;
 // Authoring map prose is what brings these back to 5000; raising them again is not.
 const BUDGETS = {
   'index.md': 1500,
-  'backend.md': 5700, 'gameplay.md': 5300, 'deployment.md': 5000,
-  'networking.md': 4000, 'build.md': 3000, 'testing.md': 3000,
+  // backend.md 5700 -> 6000: first raise. It had sat at 5698/5700 for several
+  // tasks, so every change was already compacting to fit, and Supabase token
+  // verification added a genuinely new server subsystem (Auth_Verifier, the
+  // identity override, the soft gate) rather than more prose about an old one.
+  // The same change retired the dead matchmaking-queue text. Next time it goes
+  // over, compact or split -- do not raise again.
+  'backend.md': 6000, 'gameplay.md': 5300, 'deployment.md': 5000,
+  // testing.md 3000 -> 3200: first raise, same reason as backend.md above. It
+  // sat at exactly 3000 and auth landed two genuinely new suites
+  // (Auth_Verifier.test.js, test_auth_manager.gd). The same change folded a
+  // fixed-bug story back into plain description. Next time: compact or split.
+  'networking.md': 4000, 'build.md': 3000, 'testing.md': 3200,
   // ui.md split by concept (screens / HUD / tutorial) once map/ui.md's single
   // 28,000-token ceiling stopped holding the client area -- see git history on
   // this file for the two prior MAP_BUDGET raises this replaced.

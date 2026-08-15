@@ -99,7 +99,22 @@ class LobbyManager {
         await this.resumePlayer(player, roomId);
     }
 
-    async createPlayer(ws, reconnectRequest = {}) {
+    resolveIdentityFields(reconnectRequest, identity) {
+        if (identity && identity.userId) {
+            return {
+                profileId: identity.userId,
+                displayName: identity.displayName || null
+            };
+        }
+
+        return {
+            profileId: reconnectRequest.profileId || null,
+            displayName: null
+        };
+    }
+
+    async createPlayer(ws, reconnectRequest = {}, identity = null) {
+        const identityFields = this.resolveIdentityFields(reconnectRequest, identity);
         const existingSession =
             await this.stateStore.getSession(reconnectRequest.reconnectToken);
 
@@ -110,7 +125,8 @@ class LobbyManager {
             const player = {
                 id: existingSession.playerId,
                 sessionId: existingSession.sessionId,
-                profileId: reconnectRequest.profileId || null,
+                profileId: identityFields.profileId,
+                displayName: identityFields.displayName,
                 ws: ws,
                 score: 0,
                 lastPlacementTime: 0
@@ -130,7 +146,8 @@ class LobbyManager {
         const player = {
             id: await this.stateStore.nextPlayerId(),
             sessionId: sessionId,
-            profileId: reconnectRequest.profileId || null,
+            profileId: identityFields.profileId,
+            displayName: identityFields.displayName,
             ws: ws,
             score: 0,
             lastPlacementTime: 0
@@ -182,6 +199,7 @@ class LobbyManager {
         roomPlayer.ws = player.ws;
         roomPlayer.sessionId = player.sessionId;
         roomPlayer.profileId = player.profileId || roomPlayer.profileId;
+        roomPlayer.displayName = player.displayName || roomPlayer.displayName || null;
         player.room = room;
         this.cancelRoomReconnectExpiry(room.id);
 
@@ -1260,7 +1278,9 @@ class LobbyManager {
 
     async buildRoomRoster(room) {
         return Promise.all(room.players.map(async (player, seatIndex) => {
-            const profile = await this.profileStore.getProfile(player.profileId, seatIndex);
+            const profile = await this.profileStore.getProfile(
+                player.profileId, seatIndex, player.displayName
+            );
             return {
                 id: player.id,
                 isBot: Boolean(player.isBot),

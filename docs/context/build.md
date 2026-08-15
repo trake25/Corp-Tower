@@ -139,7 +139,7 @@ shell pipe.
 ## Client endpoint config
 
 `scripts/write-endpoint-config.sh` regenerates the committed
-`Sys/NetMan/Endpoint_Config.gd` before each client build from four env vars:
+`Sys/NetMan/Endpoint_Config.gd` before each client build from six env vars:
 
 | Var | Effect |
 |---|---|
@@ -147,9 +147,15 @@ shell pipe.
 | `CORP_TOWER_WS_FAILOVER` | Optional — **empty disables client-side failover** |
 | `CORP_TOWER_DEBUG_UI` | Gates the floating debug button |
 | `CORP_TOWER_DEMO_MODE` | Defaults `false` — gates the bots-disclosure label |
+| `CORP_TOWER_SUPABASE_URL` | Optional — **empty disables sign-in** |
+| `CORP_TOWER_SUPABASE_ANON_KEY` | Public anon key, from a secret so it stays uncommitted |
+
+**The two Supabase vars are all-or-nothing** — setting one without the other is a
+hard error, so a build cannot half-enable sign-in. The script logs the URL but
+only ever prints `<set>`/`<none>` for the key.
 
 The committed default (dev instance 1 primary, instance 2 failover, debug on, demo
-off) is what a local editor run or an un-rewritten build gets. **Every CI build
+off, sign-in off) is what a local editor run or an un-rewritten build gets. **Every CI build
 that ships a real endpoint calls this script first.**
 
 The gate is a **build-time flag, not a runtime host check** — it has to hold on

@@ -28,13 +28,29 @@ growing `Game_Engine.js`.
 
 `Lobby_Manager.js` — matchmaking, room lifecycle, runtime debug-config coordinator.
 
-Maintains waiting players and active rooms through shared Redis state; creates
+Maintains active rooms through shared Redis state; seats players into open
 3-participant rooms, filling with debug bots when allowed; lets real players resume
 within the reconnect TTL and destroys rooms when it expires with no connected real
 players. Hydrated snapshots include `towerBlocks`, so non-owner workers and
 reconnecting clients redraw the tower without recomputing it.
 
 Reconnect TTL default is 60s — a **staging value, not settled for production**.
+
+### Player identity
+
+`Auth_Verifier.js` (the `jose` package) verifies the handshake's `accessToken`
+against the Supabase project's public JWKS, asymmetric algorithms only, pinned to
+issuer and `aud: authenticated`. It returns `{userId, isAnonymous, displayName}`
+or `null`, and never throws.
+
+**`resolveIdentityFields` makes a verified `sub` the `profileId`**, so a client
+cannot claim another player's profile by sending one; with no identity it keeps
+the client's own value. `Profile_Store` prefers the verified `displayName` and
+falls back to its `WORD_LIST` hash, so guests still get a name. `displayName` is
+persisted on the player, so a cross-pod hydrate does not lose it.
+
+Verification needs **no secret** — only `SUPABASE_URL`, and unset turns the whole
+path off. `SUPABASE_AUTH_REQUIRED` decides whether an unverified socket is closed.
 
 ### `updateDebugConfig` — the authoritative validation
 
@@ -89,10 +105,12 @@ its own stale snapshot, producing divergent tower state.
 relayed broadcasts does not fix this — it still leaves two independently-mutable
 copies of one room.
 
-**Queue draining is atomic `dequeueRealPlayers(3)`.** `addPlayer()` enqueues
-*before* taking the matchmaking lock, so any read-all/rewrite-all drain has a gap
-in which another pod's entry is silently wiped, leaving that player connected but
-queued nowhere. There is no non-atomic fallback path.
+**Seating runs under `withMatchmakingLock`.** `joinOrCreateRoom` claims an open
+room id atomically (`claimOpenRoomId` pops it), seats the player, or creates a
+room when none is claimable. A pod that pops a room it does not own must
+`markRoomOpen` it again before moving on, or the room leaks out of the open set
+and no one can ever join it. `claimOpenRoom` retries at most
+`MAX_OPEN_ROOM_CLAIM_ATTEMPTS` and re-opens a repeat id rather than looping.
 
 ## Game Engine
 
@@ -391,10 +409,9 @@ persistence. Falls back to in-memory maps when `REDIS_URL` isn't configured, so
 single-worker and local runs keep working. The `redis` package is lazily required
 only when a real connection is attempted.
 
-- Queue: `enqueuePlayer` (unlocked `lPush`), `dequeueRealPlayers` (atomic `RPOP …
-  count`, oldest-first), `requeuePlayers` (atomic `RPUSH` of only what was taken),
-  plus `withMatchmakingLock` serialising the take-3-or-requeue decision. Neither
-  atomic call can clobber an entry it never touched.
+- Open rooms: `markRoomOpen`/`removeOpenRoom`, and `claimOpenRoomId` which **pops**
+  an id so two pods cannot seat into the same free slot, plus `withMatchmakingLock`
+  serialising the claim-or-create decision.
 - Pub/sub: per-room event channels, a per-room action-routing channel for the
   non-owner case, and a global player-assignment channel for the cross-pod
   handoff. All tagged with source pod id so a worker ignores its own echo.
@@ -419,7 +436,7 @@ connection, not a bug.
 - **No persistent leaderboard.** Redis holds active-session state only; durable
   storage and structured logging are future work.
 - **Reconnect and gateway routing across pods are untested at integration level**,
-  beyond the matchmaking queue regression tests.
+  beyond the room-seating regression tests.
 - **Deploy client and server together.** The Power and Impact renames went across
   every wire field, config key and Redis-persisted field, so a room in flight
   during a split deploy will not restore its state from an old-shaped snapshot.

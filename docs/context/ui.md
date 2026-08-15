@@ -13,47 +13,48 @@ All paths under `src/Client/App/corp-tower/` unless noted. **The client renders
 
 ## Godot Client App (shell)
 
-- `project.godot` autoloads NetworkManager as a singleton.
+- `project.godot` autoloads NetworkManager and `AuthManager` (`Sys/Auth/`), which
+  owns the Supabase session in `user://` and refreshes it on a timer so the
+  connect path never awaits — NetworkManager just reads `access_token()`.
 - Display: 412×917 portrait design size, `canvas_items` stretch. Aspect is
   `keep` on web and mobile (`.web`/`.mobile`), pillarboxed rather than
   widened — most `GameUI.tscn` children are fixed-offset, not edge-anchored.
-- `Main.tscn` is the app root and owns [Screen Manager](#screen-manager). It swaps
-  join / find-match / instanced [Game UI Scene](./ui-hud.md#game-ui-scene) — there is no
-  static UI root scene.
+- `Main.tscn` is the app root and owns [Screen Manager](#screen-manager); there is
+  no static UI root scene.
 - Default font: Poppins, via `Theme.default_font` on `GameUITheme.tres` —
   inherited everywhere. A heavier weight is a per-`Label` font override.
 - Android export config is the gitignored `export_presets.cfg`; CI uses a
   non-secret preset → [build.md](./build.md#android-deploy-wstodplay-workflow).
 - Release target is **Android only**. Web/Windows/iOS are future.
-- Two build-time flags from `EndpointConfig`, written per build by
+- Build-time flags from `EndpointConfig`, written per build by
   `write-endpoint-config.sh`: `DEBUG_UI_ENABLED` gates the debug button, off for
   the EKS web builds and the public demo; `DEMO_MODE_ENABLED` gates the required
   `DemoModeLabel` node disclosing that empty seats are bots, set only for
-  `toddemo`.
+  `toddemo`; `SUPABASE_URL`/`SUPABASE_ANON_KEY` enable sign-in — **both empty
+  (the committed default) disables AuthManager**.
 
 There is **one** gameplay UI scene and no skin system.
 
-The debug gate is UI-only. `update_config`/`resetDebugConfig` still have **no
-server-side auth check** — full gating needs that before public release.
+`update_config`/`resetDebugConfig` have **no server-side auth check** — the debug
+gate is UI-only, and needs one before public release.
 
 ## Screen Manager
 
 `Cor/Scripts/ScreenManager.gd`, on `Main.tscn`. Owns screen flow and the single
 global floating debug button.
 
-- Swaps sign-in / home / join / find-match / public-lobby / live Game UI Scene
-  inside `ScreenContainer`, driven by the child screens' request signals and
-  NetworkManager's `room_joined` / `match_started` / `room_closed`.
-- Flow: Play Loader → Sign-in → Home → Join Screen; tutorial exit → Home,
-  room-close → Join Screen. Demo skips both: Play Demo + Tutorial on Home,
+- Swaps screens inside `ScreenContainer`, driven by the child screens' request
+  signals and NetworkManager's `room_joined` / `match_started` / `room_closed`.
+- Flow: Play Loader → Sign-in → Home → Join Screen, but a restored session skips
+  Sign-in; tutorial exit → Home, room-close → Join Screen. Demo skips both:
+  Play Demo + Tutorial on Home,
   room-close → Home. Wired/stub buttons: [map/ui-screens.md](./map/ui-screens.md).
-- **`room_joined` no longer means "play now"** — it branches on `matchStarted`
-  (false → Public Lobby); `match_started` enters the game. **Demo mode skips the
-  Public Lobby**: it enters the play instance immediately and calls
-  `NetworkManager.send_ready()` itself, since bots already fill and pre-ready
-  every other seat there. `room_closed: lobby_timeout` opens `AutoDismissModal`
-  over the current screen instead of swapping it away; other reasons → Join
-  Screen (Home in demo) → [networking.md](./networking.md).
+- Routes `room_joined` on `matchStarted` (false → Public Lobby); `match_started`
+  enters the game → [networking.md](./networking.md). **Demo skips the Public
+  Lobby**: it enters play immediately and calls `send_ready()` itself, since bots
+  pre-ready every other seat. `room_closed: lobby_timeout` opens
+  `AutoDismissModal` over the current screen instead of swapping it away; other
+  reasons → Join Screen (Home in demo).
 - `AutoDismissModal` (`Main.tscn`, third child) also covers an unexpected
   disconnect while `find_match_active`. Both cases tear the screen underneath
   down only on dismiss, so it stays visible behind the modal's 3s countdown.

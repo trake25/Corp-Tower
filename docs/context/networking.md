@@ -22,6 +22,11 @@ and the two thin adapters that sit directly on the wire. Gameplay meaning →
   `playerId`/`reconnectToken` persisted in Godot `user://`.
 - A valid pair resumes the same room and slot (`room_resumed`); otherwise the
   server creates a new session and joins or creates a room (`room_created`).
+- `reconnect` also carries `profileId` and `accessToken`. **The token is the
+  identity; `profileId` is only the fallback** — `Auth_Verifier.js` verifies it
+  and its `sub` overrides the claimed `profileId`. While
+  `SUPABASE_AUTH_REQUIRED` is `false` an absent or expired token is not an error
+  and the server drops to `profileId`; `true` closes the socket with `4401`.
 - **Client auto-reconnect fires only after *unintended* disconnects**, and only
   when the last known room had 3 real players and no bots. Manual disconnect and
   app close never trigger it. Finite attempt count.
@@ -43,14 +48,11 @@ players on its first message**, not only on config changes.
 
 ## Rooms fill incrementally; there is no matchmaking queue
 
-A connecting player either takes a free seat in an already-open room or becomes
-seat one of a brand new one (`joinOrCreateRoom`). There is no FIFO wait for
-three players to accumulate before a room exists:
-`room_created`/`room_resumed` arrive as soon as a seat is claimed, whether that
-room has 1, 2, or 3 occupants. Forming (or joining) a room no longer starts the
-match either — `createRoom` builds the engine room and leaves it
-`state: "waiting"`; `startLevel` runs later, in `startMatch`, once the room is
-**full and** every seat is ready.
+A connecting player takes a free seat in an open room or becomes seat one of a
+new one (`joinOrCreateRoom`); `room_created`/`room_resumed` arrive as soon as a
+seat is claimed, at 1, 2 or 3 occupants. Claiming a seat does not start the
+match — `createRoom` leaves the engine room `state: "waiting"`, and `startLevel`
+runs later in `startMatch`, once the room is **full and** every seat is ready.
 
 - `matchStarted` is `false` for the whole ready-up window, `true` afterwards.
   `lobby` carries `readyPlayerIds`, `readySecondsRemaining`, and `timerActive`
@@ -106,7 +108,7 @@ guaranteed each lands in *some* room. Same-pod joins always share the open one.
 
 | Message | Validation |
 |---|---|
-| `reconnect` | Token and id may resume a room; otherwise a new session joins/creates a room |
+| `reconnect` | Token and id may resume a room; otherwise a new session joins/creates a room. `accessToken` is verified; see Reconnect above |
 | `ready` | Requires a room; ignored once `matchStarted`. Toggles the seat's ready state and may start the match |
 | `leave_lobby` | Requires a room; ignored once `matchStarted`. Closes the room as `player_left_lobby` |
 | `place_block` | Valid room, player, state, cooldown, inventory, block index. See below |
@@ -136,9 +138,6 @@ that fits.
 The client sends `originY` **only when the resolution was `exact`** — a
 beyond-snap-radius aim leaves the row to the server. `target_point` and
 `matched_vertex` are client-side presentation only and never cross the wire.
-
-The server still owns the final `originX`/`originY` and re-clamps the client's
-column authoritatively, so a stale client preview can never corrupt placement.
 
 ## Block and tower payloads
 
@@ -210,8 +209,8 @@ server's only non-WS surface, polled by the portfolio site's build step only,
 never a browser.
 
 - Starts on `PORT` (default `3000`).
-- Accepts the initial `reconnect` handshake, creates or resumes the session, adds
-  the player to Lobby Manager.
+- Accepts the initial `reconnect` handshake, **verifies its `accessToken` first**,
+  creates or resumes the session, adds the player to Lobby Manager.
 - Routes `update_config` to the debug-config coordinator, and
   `place_block`/`send_quick_chat`/`activate_power` through `dispatchRoomAction`,
   which runs the room's engine locally **if this pod owns the room**, or forwards
@@ -232,14 +231,13 @@ registered as an autoload singleton.
   `send_quick_chat(slot)`, `activate_power(slot)`, `update_config(key, value)`.
 - **Signals:** `status_changed`, `room_joined`, `match_started`, `lobby_updated`,
   `room_closed`, `game_state_updated`, `client_status`, `debug_config_updated`.
-- `room_joined` fires for **both** `room_created` and `room_resumed`, so it now means
-  "you have a seat" — its listeners must branch on `matchStarted` rather than assume
-  the match is live. `ScreenManager` routes to the lobby or the game on that flag and
-  swaps into the game on `match_started`; `Main.gd` primes the game UI on
-  `match_started` *and* on a `room_joined` that already reports `matchStarted`, which
-  is what a mid-match reconnect delivers. ScreenManager creates the play instance on
-  entering Find Match *or* the lobby, so Main's listeners exist before
-  `match_started` can arrive.
+- `room_joined` fires for **both** `room_created` and `room_resumed` and means only
+  "you have a seat", so listeners **must branch on `matchStarted`**. `ScreenManager`
+  routes to lobby or game on that flag and swaps in on `match_started`; `Main.gd`
+  primes the UI on `match_started` *and* on a `room_joined` already reporting
+  `matchStarted`, which is what a mid-match reconnect delivers. ScreenManager builds
+  the play instance on entering Find Match *or* the lobby, so Main's listeners exist
+  before `match_started` arrives.
 - **State read directly** by Main UI Controller in places, not only via signals:
   `is_conn_estab`, `player_id`.
 
@@ -254,5 +252,5 @@ A build with an empty `FAILOVER_SERVER_URL` never takes that branch — it just
 reports disconnected. **Once failed over, in-game auto-reconnects keep targeting
 the backup**; only a fresh manual connect resets to primary.
 
-It does not interpret block geometry itself, and **carries no debug logging by
-design** — every state transition is already observable through its signals.
+**Carries no debug logging by design** — every state transition is already
+observable through its signals.

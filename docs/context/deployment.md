@@ -217,6 +217,17 @@ on the physical machine.
 | `ECR_REPOSITORY` | Server image push/pull |
 | `CLOUDFLARE_API_TOKEN` / `_ZONE_ID` | ACM validation and the two EKS CNAMEs |
 | `EKS_OPERATOR_PRINCIPAL_ARN` | IAM **role** ARN granted cluster-admin via an access entry |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` | Auth. Both optional — unset ships builds with sign-in off |
+
+### Server auth env
+
+The game pod takes `SUPABASE_URL` and `SUPABASE_AUTH_REQUIRED`, patched in beside
+`REDIS_URL` by the deploy workflow's runtime overlay and passed by
+`backup-server-up.sh` on the backup box. **Neither is a secret** — verification
+uses the project's public JWKS, so no key reaches the pod. Unset `SUPABASE_URL`
+turns verification off entirely; `SUPABASE_AUTH_REQUIRED=true` closes any socket
+that fails it, which breaks every already-installed client, so flip it only once
+signed-in builds are out.
 
 The `R2_*` art-pipeline secrets are listed in [build.md](./build.md). The
 `EC2_STAGING_*` and `R2_GATEWAY_*` secrets went unused when the K3s lab was

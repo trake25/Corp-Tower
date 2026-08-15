@@ -274,6 +274,10 @@ jobs:
       - name: Apply Corp Tower Kustomize overlay
         env:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          # Unset secrets resolve to empty, which leaves token verification off
+          # and the server on the pre-Supabase profile id path.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_AUTH_REQUIRED: ${{ vars.SUPABASE_AUTH_REQUIRED || 'false' }}
         run: |
           set -euo pipefail
 
@@ -303,6 +307,10 @@ jobs:
                           env:
                             - name: REDIS_URL
                               value: ${REDIS_URL}
+                            - name: SUPABASE_URL
+                              value: "${SUPABASE_URL}"
+                            - name: SUPABASE_AUTH_REQUIRED
+                              value: "${SUPABASE_AUTH_REQUIRED}"
           EOF
 
           kubectl apply -k "$RUNTIME_OVERLAY"

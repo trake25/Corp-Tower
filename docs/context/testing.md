@@ -47,12 +47,19 @@ Balance Simulator and Server Entry have no dedicated tests here.**
 
 ### `tests/Matchmaking_Queue.test.js`
 
-The multi-pod matchmaking race. Two `LobbyManager` instances sharing one fake
-Redis-backed store with artificial `setImmediate` gaps between read and write
-steps, so concurrent joins actually interleave the way real network I/O would.
-Three players join near-simultaneously, two via one "pod" and one via the other;
-all three must land in the same room and each socket must receive its
+The multi-pod seating race. Two `LobbyManager`s share one fake Redis store with
+`setImmediate` gaps between read and write, so concurrent joins interleave the way
+real I/O would. Three players join near-simultaneously across two "pods"; all
+three must land in the same room and each socket receive its
 `room_created`/`room_resumed`.
+
+### `tests/Auth_Verifier.test.js`
+
+Token verification against a locally generated RSA key, never the network, so it
+runs offline. The accept path plus every rejection that matters — wrong issuer,
+wrong audience, expired, foreign key, **unsigned `alg: none`**, missing `sub`,
+junk — and that a verified `sub` beats a spoofed `profileId` while a verified
+display name still reaches the roster.
 
 The fake store's `withMatchmakingLock` chains onto one shared promise across both
 pods, faithfully serialising the decision the way Redis's `SET NX` lock does.
@@ -130,8 +137,8 @@ Both are tuning aids, not gameplay authorities.
 vendored GUT and invoked by the Android deploy workflow before a signed export.
 
 The smoke test loads every script under `Cor`/`Sys` (catching load-time and syntax
-errors before the build step), verifies the main scene and `NetworkManager`
-autoload wiring, and verifies Game UI Scene instantiates **with every node Main UI
+errors before the build step), verifies the main scene and **every** autoload's
+wiring, and verifies Game UI Scene instantiates **with every node Main UI
 Controller requires present** — that last one is the node-contract guard.
 
 The node-free behavioural suites carry the real coverage — a `RefCounted` service
@@ -159,6 +166,11 @@ footprint, and a higher-on-screen vertex shades brighter every combination.
 and `TowerStack` behaviour: skipped when empty, disabled or collapsing; derived
 zoom respecting its floor; faces flipping only as the wave reaches them;
 **`BEAT_HOLD` never auto-advancing** once its nominal duration elapses.
+
+**`test_auth_manager.gd`** — session parsing and expiry maths with no network:
+absolute `expires_at` beating `expires_in`, a tokenless payload refused, an
+expired token reading as no token, and **an unconfigured build still reaching
+Sign-in and Home exactly as it did before Supabase** — the rollout guard.
 
 **`test_collapse_sim.gd`** — fixed-seed physics: no piece starts upward or
 settles below the platform or outside its span, every piece ends flat, the sim
@@ -206,12 +218,10 @@ state, not a regression.**
   have no direct test.
 - Multi-worker matchmaking has regression coverage; **reconnect and gateway
   routing across pods more broadly do not.**
-- Most client UI is **structural coverage only** — Main UI Controller,
-  NetworkManager, Block Preview, Cooldown Overlay and Debug Overlay have no
-  behavioural tests. Placement, the face maths, block orientation, the Impact Beat,
-  the collapse sim and the Tutorial are the exceptions.
-- **`TowerStack`'s drawing and drag-state handling remain untested, and that gap is
-  not theoretical.** The bug where `clear_snap_preview()` wiped drag state on the
-  first move — leaving no ghost at all — passed every unit test and was only caught
-  by rendering the play field to PNG. **Verify placement visuals by running the
-  client, not by the suite alone.**
+- Most client UI is **structural coverage only**: Main UI Controller,
+  NetworkManager, Block Preview, Cooldown and Debug Overlay have no behavioural
+  tests. The exceptions are placement, face maths, block orientation, the Impact
+  Beat, the collapse sim, the Tutorial and the auth session.
+- **`TowerStack`'s drawing and drag-state handling remain untested**, and the suite
+  has already passed a drag bug that only a rendered frame caught. **Verify
+  placement visuals by running the client, not by the suite alone.**

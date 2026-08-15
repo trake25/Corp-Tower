@@ -43,6 +43,12 @@ docker build -t "$IMAGE_TAG" -f "$REPO_ROOT/src/Server/Dockerfile" "$REPO_ROOT/s
 docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 BOTS_ARGS=()
 REDIS_ARGS=()
+# Export SUPABASE_URL before running this script to turn token verification on;
+# left unset the server stays on the client-supplied profile id path.
+AUTH_ARGS=(
+  -e "SUPABASE_URL=${SUPABASE_URL:-}"
+  -e "SUPABASE_AUTH_REQUIRED=${SUPABASE_AUTH_REQUIRED:-false}"
+)
 if [ "$INSTANCE" = "3" ]; then
   BOTS_ARGS=(-e CORP_TOWER_BOTS_ENABLED=true)
   # The public demo counters (stats:demo:*) must survive this script's own
@@ -60,6 +66,7 @@ docker run -d \
   -p "127.0.0.1:${PORT}:3000" \
   "${BOTS_ARGS[@]}" \
   "${REDIS_ARGS[@]}" \
+  "${AUTH_ARGS[@]}" \
   "$IMAGE_TAG"
 
 start_cloudflared_if_needed

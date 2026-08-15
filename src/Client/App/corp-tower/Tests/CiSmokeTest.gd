@@ -3,6 +3,11 @@ extends SceneTree
 const MAIN_SCENE_PATH := "res://Cor/Scenes/Main.tscn"
 const MAIN_SCENE_UID := "uid://c0po62b2x6ltb"
 const NETWORK_MANAGER_PATH := "res://Sys/NetMan/NetworkManager.gd"
+const AUTH_MANAGER_PATH := "res://Sys/Auth/Auth_Manager.gd"
+const EXPECTED_AUTOLOADS := {
+	"NetworkManager": NETWORK_MANAGER_PATH,
+	"AuthManager": AUTH_MANAGER_PATH
+}
 const UI_SCENE_PATH := "res://Cor/Scenes/GameUI.tscn"
 const APPLICATION_SCRIPT_ROOTS := [
 	"res://Cor",
@@ -80,22 +85,26 @@ func check_project_settings() -> void:
 		)
 
 func check_autoload() -> void:
-	var autoload_setting := str(ProjectSettings.get_setting("autoload/NetworkManager", ""))
-	var expected_autoload := "*" + NETWORK_MANAGER_PATH
-
-	if autoload_setting != expected_autoload:
-		failures.append(
-			"autoload/NetworkManager must be %s; got %s" %
-			[expected_autoload, autoload_setting]
+	for autoload_name in EXPECTED_AUTOLOADS:
+		var script_path: String = EXPECTED_AUTOLOADS[autoload_name]
+		var autoload_setting := str(
+			ProjectSettings.get_setting("autoload/" + autoload_name, "")
 		)
+		var expected_autoload := "*" + script_path
 
-	var network_manager_script := load(NETWORK_MANAGER_PATH) as Script
-	if network_manager_script == null:
-		failures.append("Failed to load NetworkManager script: " + NETWORK_MANAGER_PATH)
+		if autoload_setting != expected_autoload:
+			failures.append(
+				"autoload/%s must be %s; got %s" %
+				[autoload_name, expected_autoload, autoload_setting]
+			)
 
-	var network_manager := root.get_node_or_null("NetworkManager")
-	if network_manager == null:
-		failures.append("NetworkManager autoload was not added to the scene tree.")
+		var autoload_script := load(script_path) as Script
+		if autoload_script == null:
+			failures.append("Failed to load autoload script: " + script_path)
+
+		var autoload_node := root.get_node_or_null(NodePath(autoload_name))
+		if autoload_node == null:
+			failures.append(autoload_name + " autoload was not added to the scene tree.")
 
 func check_scene_load(path: String, description: String) -> void:
 	var scene := load(path) as PackedScene

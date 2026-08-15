@@ -4,3 +4,5 @@ const PRIMARY := "wss://devwstod1.galaxxigames.com"
 const FAILOVER := "wss://devwstod2.galaxxigames.com"
 const DEBUG_UI_ENABLED := true
 const DEMO_MODE_ENABLED := false
+const SUPABASE_URL := ""
+const SUPABASE_ANON_KEY := ""

@@ -153,7 +153,8 @@ func send_reconnect_request():
 		"type": "reconnect",
 		"playerId": player_id,
 		"reconnectToken": reconnect_token,
-		"profileId": profile_id
+		"profileId": profile_id,
+		"accessToken": AuthManager.access_token()
 	}
 
 	ws.send_text(JSON.stringify(data))
