@@ -18,6 +18,16 @@ What survives an edit, and how it is written, is the retention test in
 [`/update-docs`](../../commands/update-docs.md). That file is its only home;
 a second copy here is the exact drift this KB exists to prevent.
 
+**A fixed bug does not by itself earn a landmine.** A landmine is for a trap
+still genuinely reachable in the code's current shape, with no compiler or test
+signal to catch it — not a record that something was once broken. Default to
+folding the resulting behaviour into the relevant section's normal description
+(how the system works now, stated so the next agent can reuse it) instead of
+appending a landmine bullet; reach for a landmine only when the failure would
+otherwise be silent. These docs are not a session log or a scratchpad — nothing
+here should read as a trace of what a session did, only as the mechanism as it
+now stands.
+
 ## Budgets
 
 The validators enforce tokens (`bytes/4`), not lines, plus a 300-character line
@@ -26,6 +36,15 @@ re-examine is whether the content acts on anything — retiring narrative has
 repeatedly freed more room than raising a budget would have. Raise a budget only
 when a doc is all current behaviour and live constraint and still does not fit,
 and say why in the same change.
+
+**A doc over budget again after already being raised is a compaction signal, not
+a second raise.** Check history before touching the ceiling:
+`git log -p -- scripts/validate-docs.mjs | grep "'<doc>.md':"`. If the number
+already moved once, raising it again is not the fix — run
+[`/compact-docs`](../../commands/compact-docs.md) on that doc, and if
+compaction can't recover enough room, split it (a new doc plus a router entry)
+instead. One raise is allowed without that check; the same doc going over a
+second time skips straight to compaction or a split.
 
 ## Repairing a retrieval miss
 

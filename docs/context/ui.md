@@ -17,6 +17,8 @@ All paths under `src/Client/App/corp-tower/` unless noted. **The client renders
 - `Main.tscn` is the app root and owns [Screen Manager](#screen-manager). It swaps
   join / find-match / instanced [Game UI Scene](#game-ui-scene) — there is no
   static UI root scene.
+- Default font: Poppins, via `Theme.default_font` on `GameUITheme.tres` —
+  inherited everywhere. A heavier weight is a per-`Label` font override.
 - Android export config is the gitignored `export_presets.cfg`; CI uses a
   non-secret preset → [build.md](./build.md#android-deploy-wstodplay-workflow).
 - Release target is **Android only**. Web/Windows/iOS are future.
@@ -202,6 +204,7 @@ self-dismiss mid-freeze, and restoring it when the window ends.
 | Debug Overlay | `Cor/Scripts/DebugOverlay.gd` | Show/hide shell only |
 | Debug Tooltip | `Cor/Scripts/DebugTooltip.gd` | Dimmed modal explainer for debug rows |
 | Player Colors | `Cor/Scripts/PlayerColors.gd` | `player_id` → colour |
+| Gradient Fill | `Cor/Shaders/VerticalGradientFill.gdshader` | Vertical tint on a borderless `Panel` inset inside a bordered panel, so its border/shadow stay untouched |
 
 ### Tower Stack — the rendering contracts that matter
 
@@ -327,6 +330,10 @@ pile reads as wreckage, not a live verdict.
 - **Labels on a white card need an explicit dark `font_color` override.** The
   `CardMetaLabel` theme variation defines none and falls through to a near-white
   default, invisible on `WhiteCardPanel`.
+- **A `Button`'s native `text` goes near-invisible on hover/press** unless
+  `font_hover_color`/`font_pressed_color` are also set — they default to a light
+  colour. Every text-bearing button instead uses `text = ""` plus a child
+  `Label` (fixed `font_color`), outside `Button`'s state colours entirely.
 - **`set_debug_label_text()` takes a `Control`, not a `Label`**, because some
   category name nodes are now flat `Button`s. Do not retype it back.
 - **Node order in `GameUI.tscn` is deliberate.** `TopIndicatorRow` draws after

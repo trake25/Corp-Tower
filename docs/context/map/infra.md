@@ -266,13 +266,21 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/Site-Cleanup-Workers.yml:17 | jobs · key | one job |
 | .github/workflows/Site-Cleanup-Workers.yml:18 | deploy-maintenance · job | generates a maintenance placeholder into `site/dist` and deploys it over the live Worker |
 
-### .github/workflows/Site-Deploy-Workers.yml — 65 ln
+### .github/workflows/Site-Deploy-Staging-Workers.yml — 60 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| .github/workflows/Site-Deploy-Workers.yml:10 | on · key | **push on `site/` paths, manual, plus daily 00:00 UTC** — the portfolio site deploys itself |
-| .github/workflows/Site-Deploy-Workers.yml:30 | jobs · key | one build-and-deploy job |
-| .github/workflows/Site-Deploy-Workers.yml:31 | build-and-deploy · job | builds the Astro site and deploys to Cloudflare Workers; **no game code is involved** |
+| .github/workflows/Site-Deploy-Staging-Workers.yml:11 | on · key | TODO |
+| .github/workflows/Site-Deploy-Staging-Workers.yml:25 | jobs · key | TODO |
+| .github/workflows/Site-Deploy-Staging-Workers.yml:26 | build-and-deploy · job | TODO |
+
+### .github/workflows/Site-Deploy-Workers.yml — 62 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| .github/workflows/Site-Deploy-Workers.yml:13 | on · key | **push on `site/` paths, manual, plus daily 00:00 UTC** — the portfolio site deploys itself |
+| .github/workflows/Site-Deploy-Workers.yml:27 | jobs · key | one build-and-deploy job |
+| .github/workflows/Site-Deploy-Workers.yml:28 | build-and-deploy · job | builds the Astro site and deploys to Cloudflare Workers; **no game code is involved** |
 
 ### .github/workflows/Site-Root-Deploy-Workers.yml — 46 ln
 
@@ -733,4 +741,4 @@ _no extracted symbols_
 
 ---
 
-83 files · 338 symbols · 0 awaiting a `Does` line.
+84 files · 341 symbols · 3 awaiting a `Does` line.

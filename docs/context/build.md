@@ -84,9 +84,14 @@ every SVG import sets `svg/scale=4.0`.
 | Button (`btn-circular-*`, `btn-toggle-*`) | SVG | Default state only — pressed state is `PressTintButton.gd` tint or the `styles/pressed` StyleBox, never separate art |
 | Tutorial overlay (`guide-*.png`) | PNG | Ships at runtime, distinct from `.reference*` |
 | Cosmetics (avatar, chat bubble) | PNG | One file per variant folder, fixed filename inside |
+| Font (`Cor/Fonts/<family>/`) | TTF/OTF, one file per weight | Whole family handed off; only the weights actually referenced by a theme get imported into a build |
 
 `Static/player-dashboard(guide).png` breaks the dash-separated naming every
 other file uses — rename to `player-dashboard-guide.png` next time it's touched.
+
+**Landmine — a freshly-added font has no `.import` yet.** Loading it (e.g. via a
+`Theme.default_font` reference) fails with `No loader found for resource` until
+the editor's import pass runs once: `godot --headless --path <project> --import`.
 
 `project.godot`'s `[importer_defaults]` § `texture` sets `svg/scale: 4.0` and
 `mipmaps/generate: true` for every future import — a new SVG needs no manual
