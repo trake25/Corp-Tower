@@ -7,7 +7,9 @@ const CHECK_WAITING := preload("res://Cor/Art/8-Public-lobby/ic-colored-checkmar
 const WAITING_NAME := "Waiting for player..."
 const READY_COUNTDOWN_FORMAT := "Ready (%ds)"
 const READY_LABEL := "Ready"
+const CANCEL_LABEL := "Cancel"
 const SEAT_COUNT := 3
+const DISABLED_MODULATE := Color("#cccccc")
 
 var roster_ids: Array = []
 var ready_deadline_ms: int = 0
@@ -20,7 +22,7 @@ func _ready() -> void:
 	%ReadyButton.pressed.connect(_on_ready_pressed)
 	%LeaveLobbyModal.confirmed.connect(_on_leave_confirmed)
 	NetworkManager.lobby_updated.connect(_on_lobby_updated)
-	%ReadyButton.disabled = true
+	_set_room_full(false)
 	_apply_local_ready_style()
 
 func _exit_tree() -> void:
@@ -49,7 +51,11 @@ func _apply_roster(roster: Array) -> void:
 			roster_ids.append("")
 			name_label.text = WAITING_NAME
 
-	%ReadyButton.disabled = roster.size() < SEAT_COUNT
+	_set_room_full(roster.size() >= SEAT_COUNT)
+
+func _set_room_full(is_room_full: bool) -> void:
+	%ReadyButton.disabled = not is_room_full
+	%ReadyButton.modulate = Color.WHITE if is_room_full else DISABLED_MODULATE
 
 func _apply_lobby_state(lobby_data) -> void:
 	if lobby_data == null:
@@ -89,7 +95,9 @@ func _process(_delta: float) -> void:
 	_refresh_ready_label()
 
 func _refresh_ready_label() -> void:
-	if is_locally_ready or not timer_active:
+	if is_locally_ready:
+		%ReadyLabel.text = CANCEL_LABEL
+	elif not timer_active:
 		%ReadyLabel.text = READY_LABEL
 	else:
 		%ReadyLabel.text = READY_COUNTDOWN_FORMAT % shown_seconds
