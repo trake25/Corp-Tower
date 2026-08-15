@@ -35,3 +35,20 @@ Wire payloads are [`networking.md`](../../../docs/context/networking.md), not yo
   `Cor/Scripts/PressTintButton.gd`. Card `Button`s get a `styles/pressed`
   StyleBox. One color everywhere: `Color(0.518, 0.902, 0.976, 1)`
   (`StyleBoxFlat_MenuCardPressed` in `GameUITheme.tres`).
+
+## Verifying UI changes — real screenshots
+
+`DISPLAY` is a live X11 session; `ffmpeg` and `wmctrl` are already installed —
+nothing to install or allow. Launch, crop-capture the window, `Read` the PNG:
+
+```bash
+G=$(ls ./Godot_v*.x86_64 | head -1)
+nohup "$G" --path . >/tmp/godot.log 2>&1 & disown
+sleep 6 && wmctrl -a "Godot" && sleep 1
+read -r _ _ X Y W H _ <<<"$(wmctrl -l -G | grep -im1 godot)"
+ffmpeg -y -f x11grab -video_size ${W}x${H} -i :0.0+$X,$Y -frames:v 1 -update 1 /tmp/godot_shot.png
+pkill -f "$(basename "$G")"
+```
+
+Then `Read(/tmp/godot_shot.png)`. Always crop to the window geometry — a
+full-desktop grab can capture unrelated windows sharing the session.

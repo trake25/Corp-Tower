@@ -51,7 +51,8 @@ contradicted source.
 | 10 | Portfolio deploy split: enportfolio (prod) now manual dispatch + daily cron only, new devenportfolio staging auto-deploys on push via `env.staging` in `wrangler.jsonc`; deploy.md/index.md updated, deploy.md/index.md/total budgets raised with rationale | 3 | A | 2 | 6 | — | ~65,000 | ~110,000 | ~110,000 | ~ | ok |
 | 11 | JoinScreen visual bug fix: dropped white "Join Private Server" card, added blue-to-white gradient background, restructured field/spacing to match `guide-only-join-screen.png`; verified by headless scene instantiation (no display server for a real screenshot) | 3 | B | 1 | 1 | — | ~35,000 | ~40,000 | ~40,000 | ✗ | →Bd |
 | 12 | JoinScreen fix #1 failed user's browser check (`Join-Screen-Bug.png`): header had a leftover dark panel style, field text had no left padding, Join/Find Match buttons filled full width instead of a narrower centered pill, and the public-match title was white-on-green instead of dark. Root-caused each via pixel measurement against both reference images (not eyeballing), fixed all 4 in scene + theme | 4 | B | 1 | 2 | — | ~55,000 | ~65,000 | ~65,000 | ✓ | ok |
-<!-- next: row 13 -->
+| 13 | `client-engineer` skill gained a real X11 screenshot recipe; used it to actually render JoinScreen in-engine (via a throwaway themed wrapper scene, since launching JoinScreen.tscn standalone skips the theme normally applied by Main.tscn) and confirmed fix #2 visually matches the guide — first real render check instead of static analysis | 2 | B | 1 | 0 | — | ~12,000 | ~20,000 | ~20,000 | ✓ | ok |
+<!-- next: row 14 -->
 
 ## Cycle 1 (closed)
 
