@@ -42,7 +42,30 @@ contradicted source.
 `Effort` reasoning effort level in effect (low/medium/high/xhigh/max).
 `Skills` skills loaded during the task, comma-separated.
 
-## Cycle 2 (open)
+## Cycle 3 (open)
+
+| # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+<!-- next: row 1 -->
+
+## Cycle 2 (closed)
+
+Median `R-act` ~18,500 tok (n=20). `Hit`: 15 ✓ first try, 3 `!` doc contradicted
+source, 1 `~` needed a second doc, 1 `✗` fell back to repo search — a 5%
+misroute rate (1/20), flat vs cycle 1. All three `!` rows (4, 5, 19) were docs
+the code had outrun, caught and fixed in the same task, not a retrieval defect.
+One task (11, a JoinScreen visual fix verified only by headless instantiation,
+no real render) was flagged `→Bd` — the follow-on tasks (12–17) added a live
+X11 screenshot verification loop and ran clean afterward, so the gap closed
+within the cycle rather than repeating. `R-est` was logged before reading in
+only 6 of 20 tasks — the discipline gap flagged at the end of cycle 1 persisted
+through cycle 2 unchanged. Task 19 (`Bd`, Opus 5, xhigh) is the clear outlier
+at 230,000 `R-act` / 495,000 `Tot`, a genuinely large two-domain feature;
+excluding it the cycle's spread is tight (4,000–65,000). **Verdict:
+cost-efficient** — no repeat misroutes, docs self-corrected their own
+staleness, delegation was reserved for the one task that warranted it — but
+`R-est`-before-read still needs enforcement, not just logging, going into
+cycle 3.
 
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -65,7 +88,7 @@ contradicted source.
 | 17 | "Join Server" / "Join public match" titles set bold via per-`Label` `theme_override_fonts/font` pointing at `Poppins-Bold.ttf`, rather than changing the theme-wide default — verified live with a screenshot | 1 | B | 1 | 1 | — | ~6,000 | ~14,000 | ~14,000 | ✓ | ok | — | — | — |
 | 18 | docs-steward close-out for the JoinScreen/Poppins session: `ui.md` gained the Poppins fact, a Gradient Fill leaf-component row, and the Button-hover-text landmine; `build.md` gained a Font row + the fresh-font-`.import` landmine. `ui.md` had zero budget headroom pre-existing (already at 5800/5800) — trimmed additions repeatedly, still +157 tok over; flagged rather than silently raising, per user's call raised to 6000 with no inline reason this one time. Also hardened the `docs-steward` skill itself per user feedback: landmines now require a still-live, silent trap (not "a bug got fixed"); docs must read as current mechanism, not a session log; a doc over budget *again* after one raise must be compacted or split, not raised again (checked via `git log` on the budget table) | 4 | B | 2 | 6 | — | ~35,000 | ~58,000 | ~58,000 | ✓ | ok | — | — | — |
 | 19 | Public Lobby ready-up stage added between matchmaking and match start; Find Match rebuilt onto guide art | 5 | Bd | 2 | 19 | — | ~230,000 | ~495,000 | ~195,000 | ! | ok | Opus 5 | xhigh | client-engineer, fullstack-coordinator, docs-steward |
-<!-- next: row 20 -->
+| 20 | ui.md/map-ui.md split by concept into screens/HUD/debug/tutorial docs; fixed carry-forward + STRIP_AREAS generator bugs | 4 | A | 1 | 15 | — | ~22,000 | ~48,000 | ~48,000 | ✓ | ok | Sonnet 5 | medium | docs-steward |
 
 ## Cycle 1 (closed)
 

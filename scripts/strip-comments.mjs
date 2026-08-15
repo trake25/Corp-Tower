@@ -6,10 +6,10 @@
 //   node scripts/strip-comments.mjs             # rewrite in place
 //   node scripts/strip-comments.mjs --quiet     # totals only
 //
-// Scope comes from build-file-map.mjs AREAS (backend + ui) rather than a second
-// hand-maintained list. scripts/ and .github/ are deliberately NOT in scope: the
-// tooling and workflow layer explains itself, product source does not, and all 9
-// SAFETY EXCEPTION comments live there.
+// Scope comes from build-file-map.mjs AREAS (backend + every ui-* area) rather
+// than a second hand-maintained list. scripts/ and .github/ are deliberately
+// NOT in scope: the tooling and workflow layer explains itself, product source
+// does not, and all 9 SAFETY EXCEPTION comments live there.
 //
 // This is a tokenizer, not a regex. `//` inside a string, a template literal or a
 // regex literal is not a comment, and `#` inside a GDScript string is not a
@@ -23,7 +23,10 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { AREAS, firstPartyFiles, isExempt } from './build-file-map.mjs';
 
-const STRIP_AREAS = new Set(['backend', 'ui']);
+// Derived, not hand-listed: every `ui-*` area is a further split of the one
+// client area this always meant, and each new split must not need a second
+// edit here to stay in scope.
+const STRIP_AREAS = new Set(['backend', ...AREAS.filter(a => a.name.startsWith('ui')).map(a => a.name)]);
 
 // Kept verbatim wherever they appear.
 const SAFETY = /SAFETY EXCEPTION/;

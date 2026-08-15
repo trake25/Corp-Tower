@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Generates docs/context/map/{backend,ui,infra}.md -- one row per symbol, so
-// retrieval can land on a section of a 1,200-line file instead of the file.
-// Zero dependencies (Node stdlib only).
+// Generates docs/context/map/{backend,ui-tutorial,ui-debug,ui-hud,ui-screens,
+// infra}.md -- one row per symbol, so retrieval can land on a section of a
+// 1,200-line file instead of the file. Zero dependencies (Node stdlib only).
 //   node scripts/build-file-map.mjs            # regenerate in place
 //   node scripts/build-file-map.mjs --check    # exit 1 if the committed maps are stale
 //   node scripts/build-file-map.mjs --quiet    # summary line only
@@ -22,8 +22,13 @@ import { pathToFileURL } from 'node:url';
 
 const CLIENT = 'src/Client/App/corp-tower';
 
-// One row per area. `roots` are repo-relative; a file is claimed by the FIRST area
-// whose root contains it, which is what makes "exactly one map file" enforceable.
+// One row per area. `roots` are repo-relative directories, walked recursively; an
+// area may instead (or also) give `files`, an explicit list of repo-relative
+// paths, for a bucket that doesn't align with a directory boundary. A file is
+// claimed by the FIRST area (in list order) whose `roots` or `files` contains
+// it, which is what makes "exactly one map file" enforceable — so a narrower
+// area (a subdirectory, or an explicit file carved out of a shared directory)
+// must be listed before the broader area it would otherwise fall into.
 export const AREAS = [
   {
     name: 'backend',
@@ -33,9 +38,55 @@ export const AREAS = [
     exts: ['.js'],
   },
   {
-    name: 'ui',
-    out: 'ui.md',
-    title: 'Client — `corp-tower/{Cor,Sys}/**`',
+    // Listed before ui-hud: its root is a subdirectory of ui-hud's.
+    name: 'ui-tutorial',
+    out: 'ui-tutorial.md',
+    title: 'Client — Tutorial `Cor/Scripts/GameUi/Tutorial/**`',
+    roots: [`${CLIENT}/Cor/Scripts/GameUi/Tutorial`],
+    exts: ['.gd'],
+  },
+  {
+    // Listed before ui-hud and ui-screens: DebugPanelController.gd sits inside
+    // GameUi/ alongside HUD files, DebugTooltip.gd/DebugOverlay.gd sit at the
+    // Cor/Scripts/ top level alongside screens -- no directory boundary
+    // isolates just these three, so they're named explicitly instead.
+    name: 'ui-debug',
+    out: 'ui-debug.md',
+    title: 'Client — Debug tooling',
+    files: [
+      `${CLIENT}/Cor/Scripts/GameUi/DebugPanelController.gd`,
+      `${CLIENT}/Cor/Scripts/DebugTooltip.gd`,
+      `${CLIENT}/Cor/Scripts/DebugOverlay.gd`,
+    ],
+    exts: ['.gd'],
+  },
+  {
+    // Listed before ui-screens: its root is a subdirectory of ui-screens', and
+    // its `files` name top-level Cor/Scripts/*.gd leaf components that ui-hud.md
+    // documents (Tower Stack deep-dive, Leaf components table) despite living
+    // outside GameUi/ -- same non-directory-boundary case as ui-debug above.
+    name: 'ui-hud',
+    out: 'ui-hud.md',
+    title: 'Client — Gameplay HUD & Stack `Cor/Scripts/GameUi/**` (+ leaf components)',
+    roots: [`${CLIENT}/Cor/Scripts/GameUi`],
+    files: [
+      `${CLIENT}/Cor/Scripts/TowerStack.gd`,
+      `${CLIENT}/Cor/Scripts/BlockPreview.gd`,
+      `${CLIENT}/Cor/Scripts/PopoverPanel.gd`,
+      `${CLIENT}/Cor/Scripts/ImpactBar.gd`,
+      `${CLIENT}/Cor/Scripts/CooldownOverlay.gd`,
+      `${CLIENT}/Cor/Scripts/PressTintButton.gd`,
+      `${CLIENT}/Cor/Scripts/PlayerColors.gd`,
+      `${CLIENT}/Cor/Scripts/BackgroundParallax.gd`,
+    ],
+    exts: ['.gd'],
+  },
+  {
+    // Broadest of the four ui-* areas: mops up whatever ui-tutorial, ui-debug
+    // and ui-hud didn't already claim under Cor/ and Sys/.
+    name: 'ui-screens',
+    out: 'ui-screens.md',
+    title: 'Client — Screens & Navigation `corp-tower/{Cor,Sys}/**`',
     roots: [`${CLIENT}/Cor`, `${CLIENT}/Sys`],
     exts: ['.gd'],
   },
@@ -89,11 +140,14 @@ export function firstPartyFiles(root) {
   const result = [];
   for (const area of AREAS) {
     const found = [];
-    for (const r of area.roots) {
+    for (const r of area.roots || []) {
       const abs = join(root, r);
       if (!existsSync(abs)) continue;
       if (statSync(abs).isFile()) { found.push(norm(r)); continue; }
       walk(abs, root, found);
+    }
+    for (const f of area.files || []) {
+      if (existsSync(join(root, f))) found.push(norm(f));
     }
     for (const rel of [...new Set(found)].sort()) {
       if (claimed.has(rel)) continue;
@@ -251,6 +305,23 @@ function readAuthored(file) {
   return { does, blurb };
 }
 
+// Same key space (`path#symbol`, and file-path for blurbs) across every map
+// file, so authored prose survives an area being split or merged, not only a
+// same-file regeneration: read every existing map file, not just the one an
+// area is about to overwrite, and let later files win on a same-key collision
+// (there shouldn't be one -- each source file is claimed by exactly one area).
+function readAuthoredAll(mapDir) {
+  const does = new Map();
+  const blurb = new Map();
+  if (!existsSync(mapDir)) return { does, blurb };
+  for (const f of readdirSync(mapDir).filter(f => f.endsWith('.md'))) {
+    const one = readAuthored(join(mapDir, f));
+    for (const [k, v] of one.does) does.set(k, v);
+    for (const [k, v] of one.blurb) blurb.set(k, v);
+  }
+  return { does, blurb };
+}
+
 function render(area, files, authored) {
   const L = [];
   L.push(`# Map — ${area.title}`);
@@ -294,6 +365,7 @@ function render(area, files, authored) {
 function build(root) {
   const all = firstPartyFiles(root);
   const mapDir = join(root, 'docs/context/map');
+  const authored = readAuthoredAll(mapDir);
   const results = [];
   for (const area of AREAS) {
     const mine = all.filter(f => f.area === area.name && !isExempt(f.rel));
@@ -302,7 +374,6 @@ function build(root) {
       return { rel, ...extract(rel, text) };
     });
     const out = join(mapDir, area.out);
-    const authored = readAuthored(out);
     const { text, rows, todo } = render(area, files, authored);
     results.push({ area, out, text, files: files.length, rows, todo });
   }

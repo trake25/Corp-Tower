@@ -1,7 +1,8 @@
 # Testing
 
 Scope: server contract tests, balance CLIs, client smoke and unit tests, CI gates.
-Logic under test → [backend.md](./backend.md) · [ui.md](./ui.md).
+Logic under test → [backend.md](./backend.md) · [ui.md](./ui.md) ·
+[ui-hud.md](./ui-hud.md) · [ui-tutorial.md](./ui-tutorial.md).
 
 ## Server tests
 

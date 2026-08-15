@@ -29,7 +29,7 @@ Placement: drag a brick from an inventory card onto the tower; its nearest corne
 snaps to the nearest snap point within the level's site, and release sends the
 resolved column and release row. An accessibility option swaps the drag for
 tap-select → tap-aim → tap-confirm. First-time players are onboarded offline
-through the client-only Tutorial → [ui.md](./ui.md#tutorial).
+through the client-only Tutorial → [ui-tutorial.md](./ui-tutorial.md#tutorial).
 
 ## Reconnect continuity
 
@@ -166,7 +166,7 @@ second authored table drifts from the height curve. One knob reshapes both.
   applies from that row down**, so a brick aimed with nothing under it falls and
   mis-aiming wastes a placement rather than hanging a brick in mid-air. Overhangs
   survive; a `T` balancing on its stem is the intended stability hook. Snap-point
-  set and resolution → [ui.md](./ui.md#tower-stack--the-rendering-contracts-that-matter).
+  set and resolution → [ui-hud.md](./ui-hud.md#tower-stack--the-rendering-contracts-that-matter).
 
 ### Tower stability (design view)
 
@@ -321,7 +321,7 @@ and holds the keys and current values, so read it rather than a prose copy.
 `towerSiteWidthMax` is hard-capped at 8 by the viewport, and the two feedback
 warning thresholds are display-only with critical clamped below warning. Which
 categories round-trip to the server and which write straight to live nodes →
-[ui.md](./ui.md#module-notes-that-are-not-derivable-from-the-source).
+[ui-hud.md](./ui-hud.md#module-notes-that-are-not-derivable-from-the-source).
 
 The three most load-bearing knobs: `towerStabilityDifficulty` (all of stability),
 `impactMinContributionShare` (the per-level gate), and

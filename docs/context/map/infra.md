@@ -607,30 +607,31 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/build-file-map.mjs — 344 ln
+### scripts/build-file-map.mjs — 415 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | scripts/build-file-map.mjs:23 | CLIENT · const | the Godot project root prefix, used by both the ui area roots and the ignore list |
-| scripts/build-file-map.mjs:27 | AREAS · const | **the single source of truth for what counts as first-party source**; a file is claimed by the FIRST area whose root contains it, which is what makes exactly-one-map enforceable |
-| scripts/build-file-map.mjs:54 | IGNORE_DIR · const | never-walked directories: addons, node_modules, .godot, .terraform, .git |
-| scripts/build-file-map.mjs:55 | IGNORE_PATH · const | path-level excludes — client art, and the two separately-deployed Workers sites |
-| scripts/build-file-map.mjs:64 | COVERAGE_EXEMPT · const | tests are routed by testing.md, not by symbol map; their useful unit is the case name, which greps fine from source |
-| scripts/build-file-map.mjs:69 | norm · const | backslash to forward slash, so generated paths are identical on Windows and CI |
-| scripts/build-file-map.mjs:71 | walk · fn | recursive directory walk, sorted for deterministic output |
-| scripts/build-file-map.mjs:87 | firstPartyFiles · fn | every first-party file tagged with its owning area; **imported by validate-docs.mjs** rather than duplicated there |
-| scripts/build-file-map.mjs:109 | isExempt · const | true for test files, which are excluded from map coverage |
-| scripts/build-file-map.mjs:117 | JS_KEYWORD · const | words that look like a method signature but are control flow; keeps `if (...) {` out of the map |
-| scripts/build-file-map.mjs:122 | symbolsJs · fn | class, function, exports., top-level const and class-body method; **`const X = require(...)` is skipped** — an import cannot answer which file does X |
-| scripts/build-file-map.mjs:152 | symbolsGd · fn | class_name, signal, const, static var, `@export` var and func; **plain and `@onready` var are skipped** as node plumbing nothing routes to |
-| scripts/build-file-map.mjs:181 | symbolsTf · fn | resource, module, variable, output, data and provider blocks, named `type.name` |
-| scripts/build-file-map.mjs:190 | symbolsYml · fn | top-level keys plus job names under `jobs:`, which is the routable unit of a workflow |
-| scripts/build-file-map.mjs:206 | symbolsSh · fn | shell function definitions |
-| scripts/build-file-map.mjs:215 | extract · fn | dispatches to the per-language extractor by extension and returns line count with symbols |
-| scripts/build-file-map.mjs:231 | readAuthored · fn | **carry-forward**: parses the existing map so hand-written `Does` prose survives regeneration, keyed on `path#symbol` and never on line number; accepts both the old bare-number and the current `path:line` first cell |
-| scripts/build-file-map.mjs:254 | render · fn | emits the markdown; each row carries its own `path:line` so one grep hit needs no follow-up lookup |
-| scripts/build-file-map.mjs:294 | build · fn | walks every area, reads each file, and renders against the `Does` prose already in the map |
-| scripts/build-file-map.mjs:312 | main · fn | `--check` exits 1 on a stale map without writing; `--quiet` prints the summary line only |
+| scripts/build-file-map.mjs:32 | AREAS · const | **the single source of truth for what counts as first-party source**; a file is claimed by the FIRST area whose `roots` (dir) or `files` (explicit list, for a non-directory bucket) contains it |
+| scripts/build-file-map.mjs:105 | IGNORE_DIR · const | never-walked directories: addons, node_modules, .godot, .terraform, .git |
+| scripts/build-file-map.mjs:106 | IGNORE_PATH · const | path-level excludes — client art, and the two separately-deployed Workers sites |
+| scripts/build-file-map.mjs:115 | COVERAGE_EXEMPT · const | tests are routed by testing.md, not by symbol map; their useful unit is the case name, which greps fine from source |
+| scripts/build-file-map.mjs:120 | norm · const | backslash to forward slash, so generated paths are identical on Windows and CI |
+| scripts/build-file-map.mjs:122 | walk · fn | recursive directory walk, sorted for deterministic output |
+| scripts/build-file-map.mjs:138 | firstPartyFiles · fn | every first-party file tagged with its owning area; **imported by validate-docs.mjs** rather than duplicated there |
+| scripts/build-file-map.mjs:163 | isExempt · const | true for test files, which are excluded from map coverage |
+| scripts/build-file-map.mjs:171 | JS_KEYWORD · const | words that look like a method signature but are control flow; keeps `if (...) {` out of the map |
+| scripts/build-file-map.mjs:176 | symbolsJs · fn | class, function, exports., top-level const and class-body method; **`const X = require(...)` is skipped** — an import cannot answer which file does X |
+| scripts/build-file-map.mjs:206 | symbolsGd · fn | class_name, signal, const, static var, `@export` var and func; **plain and `@onready` var are skipped** as node plumbing nothing routes to |
+| scripts/build-file-map.mjs:235 | symbolsTf · fn | resource, module, variable, output, data and provider blocks, named `type.name` |
+| scripts/build-file-map.mjs:244 | symbolsYml · fn | top-level keys plus job names under `jobs:`, which is the routable unit of a workflow |
+| scripts/build-file-map.mjs:260 | symbolsSh · fn | shell function definitions |
+| scripts/build-file-map.mjs:269 | extract · fn | dispatches to the per-language extractor by extension and returns line count with symbols |
+| scripts/build-file-map.mjs:285 | readAuthored · fn | **carry-forward**: parses the existing map so hand-written `Does` prose survives regeneration, keyed on `path#symbol` and never on line number; accepts both the old bare-number and the current `path:line` first cell |
+| scripts/build-file-map.mjs:313 | readAuthoredAll · fn | merges carry-forward across **every** existing map file, not just the one an area is about to overwrite, so authored `Does` prose survives an area being split (same `path#symbol` key space) |
+| scripts/build-file-map.mjs:325 | render · fn | emits the markdown; each row carries its own `path:line` so one grep hit needs no follow-up lookup |
+| scripts/build-file-map.mjs:365 | build · fn | walks every area, reads each file, and renders against the `Does` prose already in the map |
+| scripts/build-file-map.mjs:383 | main · fn | `--check` exits 1 on a stale map without writing; `--quiet` prints the summary line only |
 
 ### scripts/docs-scope.mjs — 218 ln
 
@@ -661,24 +662,24 @@ _no extracted symbols_
 | scripts/docs-scope.mjs:187 | order · const | docs sorted by how many paths route into them, heaviest first |
 | scripts/docs-scope.mjs:208 | maps · const | the distinct map files needing regeneration after this task |
 
-### scripts/strip-comments.mjs — 293 ln — enforces the no-comments-in-source rule
+### scripts/strip-comments.mjs — 296 ln — enforces the no-comments-in-source rule
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| scripts/strip-comments.mjs:26 | STRIP_AREAS · const | backend + ui only; **`scripts/` and `.github/` are out of scope** and keep their comments |
-| scripts/strip-comments.mjs:29 | SAFETY · const | `SAFETY EXCEPTION` lines are kept verbatim wherever they appear |
-| scripts/strip-comments.mjs:30 | GD_REGION · const | `#region`/`#endregion` are folding markers, not comments |
-| scripts/strip-comments.mjs:36 | REGEX_AFTER_WORD · const | keywords after which `/` opens a regex rather than dividing |
-| scripts/strip-comments.mjs:40 | WORD_CHAR · const | identifier-character test for the regex/division decision |
-| scripts/strip-comments.mjs:42 | regexAllowed · fn | **the `/` ambiguity**: after a value it divides, after an operator or keyword it opens a regex |
-| scripts/strip-comments.mjs:54 | scanJs · fn | char-level scanner: string, template (with `${}` nesting), regex and block-comment states |
-| scripts/strip-comments.mjs:123 | scanGd · fn | same for GDScript: `#` outside single, double and both triple-quoted string forms |
-| scripts/strip-comments.mjs:159 | strip · fn | emits per line; drops comment-only lines, rtrims trailing ones, **preserves per-file CRLF/LF** |
-| scripts/strip-comments.mjs:208 | keyBag · const | counts `identifier:` keys on RAW text, so gate 3 does not trust the scanner |
-| scripts/strip-comments.mjs:214 | verify · fn | **three gates, any failure aborts the whole run**: no code line dropped · code content byte-identical · no config key lost |
-| scripts/strip-comments.mjs:246 | main · fn | dry-run and write modes; gates run on every file before a byte is written |
+| scripts/strip-comments.mjs:29 | STRIP_AREAS · const | backend + every `ui-*` area, derived from `AREAS` rather than hand-listed; **`scripts/` and `.github/` are out of scope** and keep their comments |
+| scripts/strip-comments.mjs:32 | SAFETY · const | `SAFETY EXCEPTION` lines are kept verbatim wherever they appear |
+| scripts/strip-comments.mjs:33 | GD_REGION · const | `#region`/`#endregion` are folding markers, not comments |
+| scripts/strip-comments.mjs:39 | REGEX_AFTER_WORD · const | keywords after which `/` opens a regex rather than dividing |
+| scripts/strip-comments.mjs:43 | WORD_CHAR · const | identifier-character test for the regex/division decision |
+| scripts/strip-comments.mjs:45 | regexAllowed · fn | **the `/` ambiguity**: after a value it divides, after an operator or keyword it opens a regex |
+| scripts/strip-comments.mjs:57 | scanJs · fn | char-level scanner: string, template (with `${}` nesting), regex and block-comment states |
+| scripts/strip-comments.mjs:126 | scanGd · fn | same for GDScript: `#` outside single, double and both triple-quoted string forms |
+| scripts/strip-comments.mjs:162 | strip · fn | emits per line; drops comment-only lines, rtrims trailing ones, **preserves per-file CRLF/LF** |
+| scripts/strip-comments.mjs:211 | keyBag · const | counts `identifier:` keys on RAW text, so gate 3 does not trust the scanner |
+| scripts/strip-comments.mjs:217 | verify · fn | **three gates, any failure aborts the whole run**: no code line dropped · code content byte-identical · no config key lost |
+| scripts/strip-comments.mjs:249 | main · fn | dry-run and write modes; gates run on every file before a byte is written |
 
-### scripts/validate-docs.mjs — 435 ln
+### scripts/validate-docs.mjs — 443 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -692,48 +693,48 @@ _no extracted symbols_
 | scripts/validate-docs.mjs:33 | tok · const | **the token estimate is `bytes/4`** — deliberately no tokenizer dependency, deliberately conservative |
 | scripts/validate-docs.mjs:37 | DEFAULT_BUDGET · const | 3000 tokens for any doc without an explicit entry |
 | scripts/validate-docs.mjs:45 | BUDGETS · const | per-doc token ceilings, each set just above measured size so the next unjustified addition fails loudly |
-| scripts/validate-docs.mjs:67 | MAP_BUDGET · const | **a bloat alarm, not a load budget** — a map is grepped, never loaded, so its cost is per-hit and does not scale with file size |
-| scripts/validate-docs.mjs:70 | PROSE_TOTAL_BUDGET · const | whole-KB prose ceiling; maps are excluded from it and reported on their own |
-| scripts/validate-docs.mjs:71 | MAX_LINE_CHARS · const | **300, and the reason the budget cannot be gamed** — without it a doc meets any token budget by folding an essay into one table cell |
-| scripts/validate-docs.mjs:72 | NET_GROWTH_WARN · const | net added lines per doc per run above which the run asks whether you are transcribing rather than documenting |
-| scripts/validate-docs.mjs:79 | BANNED · const | constructions that turn a description of the system into a story about it; **`Rejected:` is on the list** because it was the loophole the others leaked through |
-| scripts/validate-docs.mjs:80 | BANNED_EXEMPT · const | deliberately matches nothing — the banned list has no exemption |
-| scripts/validate-docs.mjs:83 | STATUS · const | unresolved-commitment markers surfaced at the end of every run |
-| scripts/validate-docs.mjs:86 | slug · fn | GitHub heading to anchor slug, used for both anchor generation and link checking |
-| scripts/validate-docs.mjs:92 | files · const | the prose docs directly under docs/context |
-| scripts/validate-docs.mjs:93 | mapFiles · const | the generated map files |
-| scripts/validate-docs.mjs:94 | read · const | reads a prose doc |
-| scripts/validate-docs.mjs:95 | readMap · const | reads a map file |
-| scripts/validate-docs.mjs:96 | all · const | prose and map docs in one list, map entries prefixed `map/` |
-| scripts/validate-docs.mjs:100 | anchors · const | per-doc anchor sets, with GitHub's `-2` suffix rule for duplicate headings |
-| scripts/validate-docs.mjs:117 | referenced · const | docs linked from somewhere; the complement is the orphan warning |
-| scripts/validate-docs.mjs:156 | source · const | first-party files from build-file-map.mjs, minus tests — the map-coverage denominator |
-| scripts/validate-docs.mjs:157 | mapText · const | map filename to contents, used by both coverage directions |
-| scripts/validate-docs.mjs:181 | FILEISH · const | matches anything shaped like a repo filename inside prose or a comment |
-| scripts/validate-docs.mjs:184 | CITATION_ALLOW · const | names that legitimately resolve outside the walked tree — `Node.js` is a runtime that any regex reads as a file |
-| scripts/validate-docs.mjs:191 | CITATION_SKIP_FILES · const | the two tools whose job is quoting names that do not resolve; without this the checker reports its own error strings as drift |
-| scripts/validate-docs.mjs:197 | GLOBBY_SPAN · const | a backticked span holding a glob or brace expansion names a set, so no single basename in it is expected to resolve |
-| scripts/validate-docs.mjs:198 | maskGlobs · const | blanks those spans before scanning, rather than allow-listing the fragments, which would silence the real name too |
-| scripts/validate-docs.mjs:201 | CITATION_SKIP_SECTIONS · const | `## Aliases` exists to name retired things, so the dead half not resolving is the entry's purpose |
-| scripts/validate-docs.mjs:203 | CITES_OK · const | per-line escape for one deliberate reference to something gone |
-| scripts/validate-docs.mjs:204 | basenames · const | every filename in the tree, the set citations are checked against |
-| scripts/validate-docs.mjs:216 | checkCitations · fn | **a doc or source comment naming a repo file must name one that exists**; skips fenced blocks and alias sections |
-| scripts/validate-docs.mjs:232 | COMMENT · const | extracts the text of a `//` or `#` comment for citation checking |
-| scripts/validate-docs.mjs:252 | WORD_NUM · const | spelled-out numbers one through twelve, so a counted claim written in words is still checkable |
-| scripts/validate-docs.mjs:253 | treeFiles · const | source files under 400 KB that counted claims are verified against; **markdown is excluded** or writing about a count would inflate it |
-| scripts/validate-docs.mjs:272 | countToken · fn | case-insensitive occurrence count of a token across the tree |
-| scripts/validate-docs.mjs:312 | pkgPath · const | the server package.json, read for dependency-drift warnings |
-| scripts/validate-docs.mjs:328 | growth · const | net line change per doc vs HEAD, which decides hard error versus warning |
-| scripts/validate-docs.mjs:329 | addedLines · const | the exact lines this run added, so a banned phrase is a hard error only if newly written |
-| scripts/validate-docs.mjs:331 | git · const | execFileSync git wrapper; failure leaves gitOk false and downgrades everything to warnings |
-| scripts/validate-docs.mjs:354 | grew · const | true if the doc gained net lines this run |
-| scripts/validate-docs.mjs:355 | flag · const | **growth is blocked, compaction never is** — the same violation is an error in a doc that grew and a warning in one that shrank, so an over-budget doc can always be edited back down |
-| scripts/validate-docs.mjs:356 | isNew · const | true if this exact line was added in this run |
-| scripts/validate-docs.mjs:359 | statusMarkers · const | unresolved markers to keep, resolve or delete, listed at the end of the run |
-| scripts/validate-docs.mjs:360 | counts · const | per-doc token, budget and line count rows for the report |
-| scripts/validate-docs.mjs:395 | proseTotal · const | summed prose tokens, checked against PROSE_TOTAL_BUDGET |
-| scripts/validate-docs.mjs:396 | mapTotal · const | summed map tokens, reported but not part of the prose total |
-| scripts/validate-docs.mjs:413 | terse · const | true only on a quiet passing run |
+| scripts/validate-docs.mjs:75 | MAP_BUDGET · const | **a bloat alarm, not a load budget** — a map is grepped, never loaded, so its cost is per-hit and does not scale with file size |
+| scripts/validate-docs.mjs:78 | PROSE_TOTAL_BUDGET · const | whole-KB prose ceiling; maps are excluded from it and reported on their own |
+| scripts/validate-docs.mjs:79 | MAX_LINE_CHARS · const | **300, and the reason the budget cannot be gamed** — without it a doc meets any token budget by folding an essay into one table cell |
+| scripts/validate-docs.mjs:80 | NET_GROWTH_WARN · const | net added lines per doc per run above which the run asks whether you are transcribing rather than documenting |
+| scripts/validate-docs.mjs:87 | BANNED · const | constructions that turn a description of the system into a story about it; **`Rejected:` is on the list** because it was the loophole the others leaked through |
+| scripts/validate-docs.mjs:88 | BANNED_EXEMPT · const | deliberately matches nothing — the banned list has no exemption |
+| scripts/validate-docs.mjs:91 | STATUS · const | unresolved-commitment markers surfaced at the end of every run |
+| scripts/validate-docs.mjs:94 | slug · fn | GitHub heading to anchor slug, used for both anchor generation and link checking |
+| scripts/validate-docs.mjs:100 | files · const | the prose docs directly under docs/context |
+| scripts/validate-docs.mjs:101 | mapFiles · const | the generated map files |
+| scripts/validate-docs.mjs:102 | read · const | reads a prose doc |
+| scripts/validate-docs.mjs:103 | readMap · const | reads a map file |
+| scripts/validate-docs.mjs:104 | all · const | prose and map docs in one list, map entries prefixed `map/` |
+| scripts/validate-docs.mjs:108 | anchors · const | per-doc anchor sets, with GitHub's `-2` suffix rule for duplicate headings |
+| scripts/validate-docs.mjs:125 | referenced · const | docs linked from somewhere; the complement is the orphan warning |
+| scripts/validate-docs.mjs:164 | source · const | first-party files from build-file-map.mjs, minus tests — the map-coverage denominator |
+| scripts/validate-docs.mjs:165 | mapText · const | map filename to contents, used by both coverage directions |
+| scripts/validate-docs.mjs:189 | FILEISH · const | matches anything shaped like a repo filename inside prose or a comment |
+| scripts/validate-docs.mjs:192 | CITATION_ALLOW · const | names that legitimately resolve outside the walked tree — `Node.js` is a runtime that any regex reads as a file |
+| scripts/validate-docs.mjs:199 | CITATION_SKIP_FILES · const | the two tools whose job is quoting names that do not resolve; without this the checker reports its own error strings as drift |
+| scripts/validate-docs.mjs:205 | GLOBBY_SPAN · const | a backticked span holding a glob or brace expansion names a set, so no single basename in it is expected to resolve |
+| scripts/validate-docs.mjs:206 | maskGlobs · const | blanks those spans before scanning, rather than allow-listing the fragments, which would silence the real name too |
+| scripts/validate-docs.mjs:209 | CITATION_SKIP_SECTIONS · const | `## Aliases` exists to name retired things, so the dead half not resolving is the entry's purpose |
+| scripts/validate-docs.mjs:211 | CITES_OK · const | per-line escape for one deliberate reference to something gone |
+| scripts/validate-docs.mjs:212 | basenames · const | every filename in the tree, the set citations are checked against |
+| scripts/validate-docs.mjs:224 | checkCitations · fn | **a doc or source comment naming a repo file must name one that exists**; skips fenced blocks and alias sections |
+| scripts/validate-docs.mjs:240 | COMMENT · const | extracts the text of a `//` or `#` comment for citation checking |
+| scripts/validate-docs.mjs:260 | WORD_NUM · const | spelled-out numbers one through twelve, so a counted claim written in words is still checkable |
+| scripts/validate-docs.mjs:261 | treeFiles · const | source files under 400 KB that counted claims are verified against; **markdown is excluded** or writing about a count would inflate it |
+| scripts/validate-docs.mjs:280 | countToken · fn | case-insensitive occurrence count of a token across the tree |
+| scripts/validate-docs.mjs:320 | pkgPath · const | the server package.json, read for dependency-drift warnings |
+| scripts/validate-docs.mjs:336 | growth · const | net line change per doc vs HEAD, which decides hard error versus warning |
+| scripts/validate-docs.mjs:337 | addedLines · const | the exact lines this run added, so a banned phrase is a hard error only if newly written |
+| scripts/validate-docs.mjs:339 | git · const | execFileSync git wrapper; failure leaves gitOk false and downgrades everything to warnings |
+| scripts/validate-docs.mjs:362 | grew · const | true if the doc gained net lines this run |
+| scripts/validate-docs.mjs:363 | flag · const | **growth is blocked, compaction never is** — the same violation is an error in a doc that grew and a warning in one that shrank, so an over-budget doc can always be edited back down |
+| scripts/validate-docs.mjs:364 | isNew · const | true if this exact line was added in this run |
+| scripts/validate-docs.mjs:367 | statusMarkers · const | unresolved markers to keep, resolve or delete, listed at the end of the run |
+| scripts/validate-docs.mjs:368 | counts · const | per-doc token, budget and line count rows for the report |
+| scripts/validate-docs.mjs:403 | proseTotal · const | summed prose tokens, checked against PROSE_TOTAL_BUDGET |
+| scripts/validate-docs.mjs:404 | mapTotal · const | summed map tokens, reported but not part of the prose total |
+| scripts/validate-docs.mjs:421 | terse · const | true only on a quiet passing run |
 
 ### scripts/write-endpoint-config.sh — 36 ln
 
@@ -741,4 +742,4 @@ _no extracted symbols_
 
 ---
 
-84 files · 341 symbols · 3 awaiting a `Does` line.
+84 files · 342 symbols · 3 awaiting a `Does` line.

@@ -53,7 +53,9 @@ flowchart LR
 | Server logic — rooms, engine, scoring, impacts, bots | [backend.md](./backend.md) | [map/backend.md](./map/backend.md) |
 | WebSocket messages, payload shapes, reconnect wire | [networking.md](./networking.md) | both maps |
 | New event or scoring type end-to-end — emit → wire → render | [networking.md](./networking.md) **first**, it owns the type list | both maps |
-| Godot client UI, scenes, popovers | [ui.md](./ui.md) | [map/ui.md](./map/ui.md) |
+| Godot client screens, navigation, shell, network bootstrap | [ui.md](./ui.md) | [map/ui-screens.md](./map/ui-screens.md) |
+| Godot client HUD, stack rendering, popovers, debug panel | [ui-hud.md](./ui-hud.md) | [map/ui-hud.md](./map/ui-hud.md) · [map/ui-debug.md](./map/ui-debug.md) |
+| Godot client tutorial layer | [ui-tutorial.md](./ui-tutorial.md) | [map/ui-tutorial.md](./map/ui-tutorial.md) |
 | Deploy, EKS, backup machine, infra, runbook | [deployment.md](./deployment.md) | [map/infra.md](./map/infra.md) |
 | CI build, Android, HTML5, private art pipeline | [build.md](./build.md) | [map/infra.md](./map/infra.md) |
 | Tests, balance simulator, CI gates | [testing.md](./testing.md) | — |

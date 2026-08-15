@@ -44,8 +44,12 @@ const DEFAULT_BUDGET = 3000;
 // Authoring map prose is what brings these back to 5000; raising them again is not.
 const BUDGETS = {
   'index.md': 1500,
-  'backend.md': 5700, 'ui.md': 6000, 'gameplay.md': 5300, 'deployment.md': 5000,
+  'backend.md': 5700, 'gameplay.md': 5300, 'deployment.md': 5000,
   'networking.md': 4000, 'build.md': 3000, 'testing.md': 3000,
+  // ui.md split by concept (screens / HUD / tutorial) once map/ui.md's single
+  // 28,000-token ceiling stopped holding the client area -- see git history on
+  // this file for the two prior MAP_BUDGET raises this replaced.
+  'ui.md': 1400, 'ui-hud.md': 4700, 'ui-tutorial.md': 700,
 };
 // Map files are grep targets, not reads. Their cost model is per-hit (~150 tokens
 // for one row), not per-load, so a load budget on them measures a thing that never
@@ -62,8 +66,12 @@ const BUDGETS = {
 // `path:line`, costing ~13 tokens of file growth per row and removing an entire
 // second lookup per hit -- the solo probe's Q4 spent ~550 tokens re-grepping the
 // heading list purely to learn which file a matched line belonged to. File size is
-// the one cost a grep target does not pay, so this trade is close to free. Sized
-// for the fully-authored end state (~25k ui, ~18k infra), not today's size.
+// the one cost a grep target does not pay, so this trade is close to free.
+// map/ui.md hit this ceiling anyway (fully-authored, ~28.7k) -- not because the
+// client area covers unusually many files, but because 3 of its ~49 source files
+// are oversized multi-responsibility scripts with unusually dense per-symbol
+// rows. Split into ui-tutorial/ui-debug/ui-hud/ui-screens rather than raised a
+// third time; each lands well under this same shared ceiling.
 const MAP_BUDGET = 28000;
 // "Whole KB loadable in an emergency" is a claim about prose. Maps are excluded
 // and reported separately.
