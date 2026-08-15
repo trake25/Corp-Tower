@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/JoinScreen.gd" id="1_joinscreen"]
 [ext_resource type="Texture2D" uid="uid://407uawamvuq1" path="res://Cor/Art/6-Join-server/btn-circular-back.svg" id="2_back"]
@@ -14,6 +14,8 @@ gradient = SubResource("Gradient_JoinBg")
 width = 4
 height = 512
 fill_to = Vector2(0, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_JoinHeader"]
 
 [node name="JoinScreen" type="Control"]
 layout_mode = 3
@@ -55,6 +57,7 @@ theme_override_constants/separation = 16
 [node name="Header" type="PanelContainer" parent="SafeArea/Root"]
 layout_mode = 2
 size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_JoinHeader")
 
 [node name="HeaderMargin" type="MarginContainer" parent="SafeArea/Root/Header"]
 layout_mode = 2
@@ -136,7 +139,12 @@ stretch_mode = 5
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 
-[node name="JoinButton" type="Button" parent="SafeArea/Root"]
+[node name="JoinButtonMargin" type="MarginContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+
+[node name="JoinButton" type="Button" parent="SafeArea/Root/JoinButtonMargin"]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 theme_type_variation = &"WhiteCardButton"
@@ -178,22 +186,27 @@ theme_type_variation = &"GreenPillPanel"
 [node name="PublicMargin" type="MarginContainer" parent="SafeArea/Root/PublicPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
+theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_bottom = 20
 
 [node name="PublicRows" type="VBoxContainer" parent="SafeArea/Root/PublicPanel/PublicMargin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 28
 
 [node name="PublicTitleLabel" type="Label" parent="SafeArea/Root/PublicPanel/PublicMargin/PublicRows"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 22
 horizontal_alignment = 1
 text = "Join public match"
 
-[node name="FindMatchButton" type="Button" parent="SafeArea/Root/PublicPanel/PublicMargin/PublicRows"]
+[node name="FindMatchMargin" type="MarginContainer" parent="SafeArea/Root/PublicPanel/PublicMargin/PublicRows"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
+
+[node name="FindMatchButton" type="Button" parent="SafeArea/Root/PublicPanel/PublicMargin/PublicRows/FindMatchMargin"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
