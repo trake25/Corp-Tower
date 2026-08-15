@@ -1,6 +1,23 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/FindMatchScreen.gd" id="1_findmatchscreen"]
+[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/bg.svg" id="2_bg"]
+[ext_resource type="Texture2D" path="res://Cor/Art/7-Find-match/bricks.svg" id="3_bricks"]
+[ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Bold.ttf" id="4_poppinsbold"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_QueueTrack"]
+bg_color = Color(0.741, 0.757, 0.776, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_QueueFill"]
+bg_color = Color(0.129, 0.678, 0.933, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="FindMatchScreen" type="Control"]
 layout_mode = 3
@@ -11,13 +28,17 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_findmatchscreen")
 
-[node name="Background" type="Panel" parent="."]
+[node name="Background" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="SafeArea" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -26,84 +47,84 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
 [node name="Root" type="VBoxContainer" parent="SafeArea"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 0
 
-[node name="Header" type="PanelContainer" parent="SafeArea/Root"]
+[node name="TopSpacer" type="Control" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="StatusRows" type="VBoxContainer" parent="SafeArea/Root"]
 layout_mode = 2
 size_flags_vertical = 0
-theme_type_variation = &"HudPanel"
+theme_override_constants/separation = 18
 
-[node name="HeaderMargin" type="MarginContainer" parent="SafeArea/Root/Header"]
+[node name="BricksIcon" type="TextureRect" parent="SafeArea/Root/StatusRows"]
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 8
+mouse_filter = 2
+texture = ExtResource("3_bricks")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="HeaderRow" type="HBoxContainer" parent="SafeArea/Root/Header/HeaderMargin"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="BackButton" type="Button" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
+[node name="StatusLabel" type="Label" parent="SafeArea/Root/StatusRows"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(38, 38)
 layout_mode = 2
-theme_type_variation = &"ActionButton"
-text = "<"
-
-[node name="TitleLabel" type="Label" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_fonts/font = ExtResource("4_poppinsbold")
+theme_override_font_sizes/font_size = 26
 horizontal_alignment = 1
-text = "Find Match"
+text = "Finding your match"
 
-[node name="HeaderSpacer" type="Control" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
-custom_minimum_size = Vector2(38, 0)
+[node name="QueueProgressMargin" type="MarginContainer" parent="SafeArea/Root/StatusRows"]
 layout_mode = 2
+theme_override_constants/margin_left = 90
+theme_override_constants/margin_right = 90
 
-[node name="StatusPanel" type="PanelContainer" parent="SafeArea/Root"]
+[node name="QueueProgressBar" type="ProgressBar" parent="SafeArea/Root/StatusRows/QueueProgressMargin"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/background = SubResource("StyleBoxFlat_QueueTrack")
+theme_override_styles/fill = SubResource("StyleBoxFlat_QueueFill")
+max_value = 3.0
+value = 0.0
+show_percentage = false
+
+[node name="BottomSpacer" type="Control" parent="SafeArea/Root"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_type_variation = &"HudPanel"
 
-[node name="StatusMargin" type="MarginContainer" parent="SafeArea/Root/StatusPanel"]
+[node name="CancelButtonMargin" type="MarginContainer" parent="SafeArea/Root"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 12
 
-[node name="StatusCenter" type="CenterContainer" parent="SafeArea/Root/StatusPanel/StatusMargin"]
-layout_mode = 2
-
-[node name="StatusRows" type="VBoxContainer" parent="SafeArea/Root/StatusPanel/StatusMargin/StatusCenter"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="LoadingPlaceholder" type="PanelContainer" parent="SafeArea/Root/StatusPanel/StatusMargin/StatusCenter/StatusRows"]
-custom_minimum_size = Vector2(120, 120)
-layout_mode = 2
-theme_type_variation = &"ActionCardPanel"
-
-[node name="StatusLabel" type="Label" parent="SafeArea/Root/StatusPanel/StatusMargin/StatusCenter/StatusRows"]
+[node name="CancelButton" type="Button" parent="SafeArea/Root/CancelButtonMargin"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-theme_override_font_sizes/font_size = 15
+theme_type_variation = &"WhiteCardButton"
+text = ""
+
+[node name="Label" type="Label" parent="SafeArea/Root/CancelButtonMargin/CancelButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 19
 horizontal_alignment = 1
-text = "Finding your game..."
-
-[node name="CancelButton" type="Button" parent="SafeArea/Root"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-size_flags_vertical = 0
-theme_type_variation = &"ActionButton"
+vertical_alignment = 1
 text = "Cancel"

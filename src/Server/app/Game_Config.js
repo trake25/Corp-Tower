@@ -2,6 +2,7 @@ const GameConfig = {
 
     maxLevel: 99,
     debugStartLevel: 1,
+    playersPerRoom: 3,
     placementCooldown: 1500,
     quickChatCooldownMs: 3000,
     quickChatTemplates: [
@@ -15,6 +16,7 @@ const GameConfig = {
     targetHeightStepGrowth: 5,
     targetHeightStepGrowthEvery: 3,
     startDelayMs: 4000,
+    lobbyReadyTimeoutMs: 60000,
     levelTimeLimitMs: 60000,
     levelTimePlannedEfficiency: 0.55,
     levelTimeSlack: 3.0,

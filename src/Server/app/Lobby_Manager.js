@@ -65,6 +65,7 @@ class LobbyManager {
         this.rooms = [];
         this.connectedPlayers = new Map();
         this.roomReconnectTimers = new Map();
+        this.roomLobbyTimers = new Map();
         this.botCounter = 1;
     }
 
@@ -154,6 +155,7 @@ class LobbyManager {
 
         console.log(`${player.id} added to queue`);
         await this.tryCreateRoom();
+        this.broadcastQueueStatus();
     }
 
     async resumePlayer(player, roomId) {
@@ -211,10 +213,14 @@ class LobbyManager {
             blocks: roomPlayer.blocks || [],
             drawPileCount: (room.engine.room.drawPile || []).length,
             nextDrawBlock: room.engine.getNextDrawBlock(),
-            roster: roster
+            roster: roster,
+            matchStarted: Boolean(room.matchStarted),
+            lobby: room.matchStarted ? null : this.buildLobbyPayload(room)
         });
 
-        room.engine.broadcastGameState();
+        if (room.matchStarted) {
+            room.engine.broadcastGameState();
+        }
     }
 
     async removePlayer(player) {
@@ -225,6 +231,13 @@ class LobbyManager {
         this.connectedPlayers.delete(player.id);
 
         await this.stateStore.markSessionDisconnected(player);
+
+        if (player.room && !player.room.matchStarted) {
+            await this.closeRoom(player.room, "player_left_lobby", player);
+            this.resetBotCounterIfIdle();
+            console.log(`${player.id} left the lobby by disconnecting`);
+            return;
+        }
 
         if (player.room) {
             const roomPlayer =
@@ -243,6 +256,7 @@ class LobbyManager {
         }
 
         this.resetBotCounterIfIdle();
+        this.broadcastQueueStatus();
         console.log(`${player.id} disconnected; reconnect TTL active`);
     }
 
@@ -252,6 +266,7 @@ class LobbyManager {
             waitingPlayer => waitingPlayer.id !== player.id
         );
         this.resetBotCounterIfIdle();
+        this.broadcastQueueStatus();
         console.log(`${player.id} left queue`);
     }
 
@@ -350,6 +365,7 @@ class LobbyManager {
 
         console.log(`Closing room ${room.id}: ${reason}`);
         this.cancelRoomReconnectExpiry(room.id);
+        this.cancelLobbyReadyTimeout(room.id);
         room.engine.closeRoom(reason);
 
         this.rooms = this.rooms.filter(
@@ -361,9 +377,11 @@ class LobbyManager {
         const playersToRequeue = [];
 
         room.players.forEach(roomPlayer => {
-            const shouldRequeue =
+            const shouldNotify =
                 this.isConnectedRealPlayer(roomPlayer) &&
                 roomPlayer.id !== disconnectedPlayer?.id;
+
+            const shouldRequeue = shouldNotify && reason !== "lobby_timeout";
 
             this.resetParticipantState(roomPlayer);
 
@@ -371,12 +389,14 @@ class LobbyManager {
                 return;
             }
 
-            if (shouldRequeue) {
+            if (shouldNotify) {
                 this.sendPlayer(roomPlayer, {
                     type: "room_closed",
                     reason: reason
                 });
+            }
 
+            if (shouldRequeue) {
                 playersToRequeue.push(roomPlayer);
             }
         });
@@ -866,7 +886,7 @@ class LobbyManager {
 
         const desiredBotCount = Math.min(
             GameConfig.debugBotCount,
-            Math.max(0, 3 - realWaitingPlayers.length)
+            Math.max(0, GameConfig.playersPerRoom - realWaitingPlayers.length)
         );
 
         this.syncWaitingBots(desiredBotCount);
@@ -905,7 +925,8 @@ class LobbyManager {
 
     async tryCreateRoom() {
         await this.stateStore.withMatchmakingLock(async () => {
-            const poppedRealPlayers = await this.stateStore.dequeueRealPlayers(3);
+            const poppedRealPlayers =
+                await this.stateStore.dequeueRealPlayers(GameConfig.playersPerRoom);
 
             this.waitingPlayers = poppedRealPlayers.map(player => {
                 const connected = this.connectedPlayers.get(player.id);
@@ -926,15 +947,17 @@ class LobbyManager {
 
             this.fillQueueWithBotsIfNeeded();
 
-            if (this.waitingPlayers.length < 3) {
+            if (this.waitingPlayers.length < GameConfig.playersPerRoom) {
                 const realPlayersToRequeue =
                     this.waitingPlayers.filter(player => !player.isBot);
 
                 await this.stateStore.requeuePlayers(realPlayersToRequeue);
+                this.broadcastQueueStatus();
                 return;
             }
 
-            const roomPlayers = this.waitingPlayers.splice(0, 3);
+            const roomPlayers =
+                this.waitingPlayers.splice(0, GameConfig.playersPerRoom);
             await this.createRoom(roomPlayers);
         });
     }
@@ -957,7 +980,13 @@ class LobbyManager {
 
         engine.createRoom(roomPlayers);
         engine.room.id = room.id;
-        engine.startLevel();
+
+        room.matchStarted = false;
+        room.readyPlayerIds = new Set(
+            roomPlayers.filter(player => player.isBot).map(player => player.id)
+        );
+        room.lobbyDeadlineAt = Date.now() + GameConfig.lobbyReadyTimeoutMs;
+        this.scheduleLobbyReadyTimeout(room);
 
         this.rooms.push(room);
         await this.stateStore.saveRoom(room, true);
@@ -986,7 +1015,9 @@ class LobbyManager {
                 blocks: player.blocks,
                 drawPileCount: (engine.room.drawPile || []).length,
                 nextDrawBlock: engine.getNextDrawBlock(),
-                roster: roster
+                roster: roster,
+                matchStarted: false,
+                lobby: this.buildLobbyPayload(room)
             };
 
             if (player.ws && player.ws.readyState === 1) {
@@ -995,8 +1026,173 @@ class LobbyManager {
                 await this.stateStore.publishPlayerAssignment(player.id, room.id);
             }
         }
+    }
+
+    getLobbySecondsRemaining(room) {
+        if (!room || !room.lobbyDeadlineAt) {
+            return 0;
+        }
+
+        return Math.max(
+            0,
+            Math.ceil((room.lobbyDeadlineAt - Date.now()) / 1000)
+        );
+    }
+
+    buildLobbyPayload(room) {
+        return {
+            readyPlayerIds: Array.from(room.readyPlayerIds || []),
+            readySecondsRemaining: this.getLobbySecondsRemaining(room)
+        };
+    }
+
+    broadcastLobbyUpdate(room) {
+        const payload = {
+            type: "lobby_update",
+            roomId: room.id,
+            ...this.buildLobbyPayload(room)
+        };
+
+        room.players.forEach(roomPlayer => {
+            if (this.isConnectedRealPlayer(roomPlayer)) {
+                this.sendPlayer(roomPlayer, payload);
+            }
+        });
+    }
+
+    broadcastQueueStatus() {
+        const realWaitingPlayers =
+            this.waitingPlayers.filter(player => !player.isBot);
+
+        const payload = {
+            type: "queue_status",
+            playersWaiting: realWaitingPlayers.length,
+            playersNeeded: GameConfig.playersPerRoom
+        };
+
+        realWaitingPlayers.forEach(waitingPlayer => {
+            if (this.isConnectedRealPlayer(waitingPlayer)) {
+                this.sendPlayer(waitingPlayer, payload);
+            }
+        });
+    }
+
+    async markPlayerReady(player) {
+        const room = player.room;
+
+        if (!room || room.matchStarted) {
+            return;
+        }
+
+        room.readyPlayerIds.add(player.id);
+        this.broadcastLobbyUpdate(room);
+
+        const allReady = room.players.every(
+            roomPlayer => room.readyPlayerIds.has(roomPlayer.id)
+        );
+
+        if (allReady) {
+            await this.startMatch(room);
+        }
+    }
+
+    async startMatch(room) {
+        if (room.matchStarted) {
+            return;
+        }
+
+        room.matchStarted = true;
+        this.cancelLobbyReadyTimeout(room.id);
+
+        const engine = room.engine;
+
+        engine.startLevel();
+
+        await this.stateStore.saveRoom(
+            room,
+            room.ownerPodId === this.stateStore.getPodId()
+        );
+
+        const roster = await this.buildRoomRoster(room);
+
+        for (const player of room.players) {
+            if (player.isBot) {
+                continue;
+            }
+
+            this.sendPlayer(player, {
+                type: "match_started",
+                playerId: player.id,
+                roomId: room.id,
+                level: engine.room.level,
+                targetHeight: engine.room.targetHeight,
+                impactScoreStatus: engine.getImpactScoreStatus(),
+                activeInventorySlots: engine.getBlocksPerPlayer(),
+                maxActiveBlocks: GameConfig.maxActiveBlocks,
+                blocks: player.blocks,
+                drawPileCount: (engine.room.drawPile || []).length,
+                nextDrawBlock: engine.getNextDrawBlock(),
+                roster: roster
+            });
+        }
 
         engine.broadcastGameState();
+    }
+
+    async leaveLobby(player) {
+        const room = player.room;
+
+        if (!room || room.matchStarted) {
+            return;
+        }
+
+        await this.closeRoom(room, "player_left_lobby", player);
+    }
+
+    scheduleLobbyReadyTimeout(room) {
+        if (!room || this.roomLobbyTimers.has(room.id)) {
+            return;
+        }
+
+        const remainingMs = room.lobbyDeadlineAt
+            ? Math.max(0, room.lobbyDeadlineAt - Date.now())
+            : GameConfig.lobbyReadyTimeoutMs;
+
+        const timer = setTimeout(() => {
+            this.handleLobbyReadyTimeout(room.id).catch(error => {
+                console.error("Lobby ready timeout handling failed:", error.message);
+            });
+        }, remainingMs);
+
+        if (timer.unref) {
+            timer.unref();
+        }
+
+        this.roomLobbyTimers.set(room.id, timer);
+    }
+
+    cancelLobbyReadyTimeout(roomId) {
+        const timer = this.roomLobbyTimers.get(roomId);
+
+        if (!timer) {
+            return;
+        }
+
+        clearTimeout(timer);
+        this.roomLobbyTimers.delete(roomId);
+    }
+
+    async handleLobbyReadyTimeout(roomId) {
+        this.roomLobbyTimers.delete(roomId);
+
+        const room =
+            this.rooms.find(activeRoom => activeRoom.id === roomId);
+
+        if (!room || room.matchStarted) {
+            return;
+        }
+
+        await this.closeRoom(room, "lobby_timeout");
     }
 
     async buildRoomRoster(room) {
@@ -1062,12 +1258,19 @@ class LobbyManager {
                 ? this.stateStore.getPodId()
                 : snapshot.ownerPodId,
             players: runtimePlayers,
-            engine: engine
+            engine: engine,
+            matchStarted: Boolean(snapshot.matchStarted),
+            readyPlayerIds: new Set(snapshot.readyPlayerIds || []),
+            lobbyDeadlineAt: snapshot.lobbyDeadlineAt || 0
         };
 
         runtimePlayers.forEach(player => {
             player.room = room;
         });
+
+        if (!room.matchStarted && canOwnTimers) {
+            this.scheduleLobbyReadyTimeout(room);
+        }
 
         if (canOwnTimers) {
             engine.hydrateRoom(snapshot, runtimePlayers);

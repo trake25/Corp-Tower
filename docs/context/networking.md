@@ -30,20 +30,65 @@ and the two thin adapters that sit directly on the wire. Gameplay meaning →
 
 | Message | Contents |
 |---|---|
-| `room_created` | `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, initial `blocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock` |
+| `room_created` | `playerId`, `reconnectToken`, `roomId`, `level`, `targetHeight`, initial `blocks`, `activeInventorySlots`, `maxActiveBlocks`, `drawPileCount`, `nextDrawBlock`, `roster`, plus `matchStarted` and `lobby` below |
 | `room_resumed` | Same shape, for an existing session |
+| `match_started` | Same field set as `room_created`, minus the reconnect and lobby fields. Sent when the last player readies |
+| `lobby_update` | `roomId`, `readyPlayerIds`, `readySecondsRemaining` — one per ready toggle |
+| `queue_status` | `playersWaiting`, `playersNeeded` — queue depth, to waiting real players only |
 | `game_state` | Authoritative live state — fields below |
 | `debug_config` | Authoritative debug state; meanings → [gameplay.md](./gameplay.md#debug-menu-and-live-tuning) |
-| `room_closed` | Teardown reason, sent to connected real players |
+| `room_closed` | Teardown `reason`, sent to connected real players |
 
 **Every new connection triggers a `debug_config` broadcast to all connected real
 players on its first message**, not only on config changes.
+
+## The ready-up lobby sits between room formation and match start
+
+Forming a room no longer starts the match. `createRoom` builds the engine room and
+leaves it `state: "waiting"`; `startLevel` runs later, in `startMatch`, once every
+seat is ready. So `room_created` means "you have a seat", not "play now".
+
+- `matchStarted` is `false` for the whole ready-up window, `true` afterwards.
+  `lobby` carries `readyPlayerIds` and `readySecondsRemaining` while it is `false`.
+- `readySecondsRemaining` is an **integer recomputed at every send** from the room's
+  deadline, never a wall-clock timestamp. The client seeds its countdown from it and
+  interpolates locally between pushes.
+- **Bots are pre-readied at formation** — they cannot tap a button, so a debug room
+  waits only on its real players.
+- Ready is one-way. `markPlayerReady` is idempotent and ignores a started room.
+- The window is `lobbyReadyTimeoutMs`; seats per room is `playersPerRoom`. Both live
+  in `Game_Config.js`.
+
+`room_closed` reasons steer three destinations, and the client branches on the string:
+
+| `reason` | Server behaviour | Client lands on |
+|---|---|---|
+| `lobby_timeout` | Notifies all three, requeues **nobody** | Home, after a 3s modal |
+| `player_left_lobby` | Notifies and requeues everyone **except** the leaver | Find Match |
+| anything else | Existing teardown | Join Screen (Home in demo mode) |
+
+`closeRoom` therefore gates notify and requeue on **two separate booleans** — one
+reason notifies without requeueing. The leaver is excluded from both, so that client
+navigates on its own tap rather than on a message.
+
+**During ready-up, any departure breaks the room immediately** — deliberate
+`leave_lobby` or a dropped socket alike. `removePlayer` checks `!room.matchStarted`
+before the reconnect-grace path, so survivors requeue at once. The grace window
+belongs to started matches only.
+
+Lobby state **is** persisted (`matchStarted`, `readyPlayerIds`, `lobbyDeadlineAt` in
+the room snapshot): cross-pod adoption during the lobby is the ordinary path whenever
+players land on different pods, not a failover edge case. `hydrateRoom` restores all
+three and re-arms the timeout from the stored deadline.
 
 ## Client → server
 
 | Message | Validation |
 |---|---|
 | `reconnect` | Token and id may resume a room; otherwise a new session is created and queued |
+| `leave_queue` | Dequeues a player who has not been matched yet. No room required |
+| `ready` | Requires a room; ignored once `matchStarted`. Marks the seat ready and may start the match |
+| `leave_lobby` | Requires a room; ignored once `matchStarted`. Closes the room as `player_left_lobby` |
 | `place_block` | Valid room, player, state, cooldown, inventory, block index. See below |
 | `activate_power` | Valid room, player, held item at `slot`, shared cooldown. **No target field** — the effect is room-wide, caster included |
 | `send_quick_chat` | Valid active room, template slot `0..2`, server-authoritative per-player cooldown |
@@ -163,10 +208,19 @@ registered as an autoload singleton.
 - **Methods:** `connect_server(is_auto_reconnect, is_failover_retry)`,
   `disconnect_server()`, `toggle_connection()`,
   `place_block(block_index, column, origin_y)` (**sends `originY` only when
-  `origin_y >= 0`**), `send_quick_chat(slot)`, `activate_power(slot)`,
-  `update_config(key, value)`.
-- **Signals:** `status_changed`, `room_joined`, `room_closed`,
-  `game_state_updated`, `client_status`, `debug_config_updated`.
+  `origin_y >= 0`**), `leave_queue()`, `send_ready()`, `leave_lobby()`,
+  `send_quick_chat(slot)`, `activate_power(slot)`, `update_config(key, value)`.
+- **Signals:** `status_changed`, `room_joined`, `match_started`, `lobby_updated`,
+  `queue_status_updated`, `room_closed`, `game_state_updated`, `client_status`,
+  `debug_config_updated`.
+- `room_joined` fires for **both** `room_created` and `room_resumed`, so it now means
+  "you have a seat" — its listeners must branch on `matchStarted` rather than assume
+  the match is live. `ScreenManager` routes to the lobby or the game on that flag and
+  swaps into the game on `match_started`; `Main.gd` primes the game UI on
+  `match_started` *and* on a `room_joined` that already reports `matchStarted`, which
+  is what a mid-match reconnect delivers. ScreenManager creates the play instance on
+  entering Find Match *or* the lobby, so Main's listeners exist before
+  `match_started` can arrive.
 - **State read directly** by Main UI Controller in places, not only via signals:
   `is_conn_estab`, `player_id`.
 

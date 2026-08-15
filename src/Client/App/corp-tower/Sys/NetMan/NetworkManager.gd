@@ -28,6 +28,9 @@ const FAILOVER_SERVER_URL := EndpointConfig.FAILOVER
 
 signal status_changed(text)
 signal room_joined(data)
+signal match_started(data)
+signal lobby_updated(data)
+signal queue_status_updated(data)
 signal room_closed(data)
 signal game_state_updated(data)
 signal client_status(status)
@@ -102,6 +105,18 @@ func leave_queue():
 		return
 
 	ws.send_text(JSON.stringify({"type": "leave_queue"}))
+
+func send_ready():
+	if not is_conn_estab:
+		return
+
+	ws.send_text(JSON.stringify({"type": "ready"}))
+
+func leave_lobby():
+	if not is_conn_estab:
+		return
+
+	ws.send_text(JSON.stringify({"type": "leave_lobby"}))
 
 func load_reconnect_identity():
 	if FileAccess.file_exists(PLAYER_ID_FILE):
@@ -245,6 +260,12 @@ func _process(delta: float) -> void:
 				save_reconnect_identity(data)
 				auto_reconnect_attempts = 0
 				room_joined.emit(data)
+			"match_started":
+				match_started.emit(data)
+			"lobby_update":
+				lobby_updated.emit(data)
+			"queue_status":
+				queue_status_updated.emit(data)
 			"game_state":
 				update_auto_reconnect_state(data)
 				game_state_updated.emit(data)

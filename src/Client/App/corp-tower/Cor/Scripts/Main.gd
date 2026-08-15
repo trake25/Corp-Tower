@@ -225,7 +225,8 @@ func reset_ui() -> void:
 
 func connect_network_signals() -> void:
 	NetworkManager.status_changed.connect(update_status)
-	NetworkManager.room_joined.connect(update_room)
+	NetworkManager.room_joined.connect(_on_room_joined)
+	NetworkManager.match_started.connect(update_room)
 	NetworkManager.room_closed.connect(update_room_closed)
 	NetworkManager.client_status.connect(update_connect_button)
 	NetworkManager.game_state_updated.connect(update_game_state)
@@ -258,6 +259,10 @@ func update_connect_button(status: String) -> void:
 		connect_button.text = "Disconnect"
 	else:
 		connect_button.text = status.replace("[", "").replace("]", "").strip_edges()
+
+func _on_room_joined(data) -> void:
+	if bool(data.get("matchStarted", true)):
+		update_room(data)
 
 func update_room(data) -> void:
 	connect_button.disabled = true

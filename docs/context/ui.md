@@ -38,22 +38,24 @@ server-side auth check** — full gating needs that before public release.
 `Cor/Scripts/ScreenManager.gd`, on `Main.tscn`. Owns screen flow and the single
 global floating debug button.
 
-- Swaps sign-in / home / join / find-match / live Game UI Scene inside
-  `ScreenContainer`, driven by the child screens' request signals and
-  NetworkManager's `room_joined` / `room_closed`.
+- Swaps sign-in / home / join / find-match / public-lobby / live Game UI Scene
+  inside `ScreenContainer`, driven by the child screens' request signals and
+  NetworkManager's `room_joined` / `match_started` / `room_closed`.
 - Flow: Play Loader → Sign-in → Home → Join Screen; tutorial exit → Home,
-  room-close → Join Screen. Demo skips both: Play Demo + Tutorial on
-  Home, room-close → Home. Wired/stub buttons: [map/ui.md](./map/ui.md).
-- No status bar is drawn — the OS supplies its own on mobile, web has none.
-- Instantiates `PlayScreenScene` once per joined room and frees it on close.
-- The debug button distinguishes tap from drag via
-  `DEBUG_BUTTON_DRAG_THRESHOLD`. Visibility is set once in `_ready()` from
-  `DEBUG_UI_ENABLED`; it is further *enabled* only when a live play instance
-  exposes `toggle_debug_overlay()` and `NetworkManager.is_conn_estab` is true.
-- Calls into Main by duck typing (`play_instance.call(...)`), so there is no
-  static dependency on the Main UI Controller.
-- `reset_debug_button_position()` runs on `_ready()` and room join, never after a
-  manual drag — a player's drag persists until the next room join.
+  room-close → Join Screen. Demo skips both: Play Demo + Tutorial on Home,
+  room-close → Home. Wired/stub buttons: [map/ui.md](./map/ui.md).
+- **`room_joined` no longer means "play now"** — it branches on `matchStarted`
+  (false → Public Lobby); `match_started` enters the game. Two `room_closed`
+  reasons divert to Home and Find Match → [networking.md](./networking.md).
+- No status bar is drawn — the OS supplies its own on mobile; web has none.
+- Instantiates `PlayScreenScene` on entering Find Match or the lobby, frees it on
+  close.
+- Debug button: tap vs drag via `DEBUG_BUTTON_DRAG_THRESHOLD`; *visible* from
+  `DEBUG_UI_ENABLED`, *enabled* only with a live play instance exposing
+  `toggle_debug_overlay()` and `is_conn_estab`. Position resets on `_ready()` and
+  room join, never after a drag, so a drag persists to the next join.
+- Calls into Main by duck typing (`play_instance.call(...)`) — no static
+  dependency on it.
 
 ## Main UI Controller
 

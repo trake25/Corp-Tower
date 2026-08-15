@@ -56,6 +56,9 @@ function stripRuntimeRoom(room) {
         id: room.id,
         ownerPodId: room.ownerPodId || POD_ID,
         players: (room.players || []).map(stripRuntimePlayer),
+        matchStarted: Boolean(room.matchStarted),
+        readyPlayerIds: Array.from(room.readyPlayerIds || []),
+        lobbyDeadlineAt: room.lobbyDeadlineAt || 0,
         state: {
             level: engineRoom.level || 1,
             impactLevel: engineRoom.impactLevel || 1,

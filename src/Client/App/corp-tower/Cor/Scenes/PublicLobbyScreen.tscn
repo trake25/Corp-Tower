@@ -1,0 +1,260 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/PublicLobbyScreen.gd" id="1_publiclobby"]
+[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/bg.svg" id="2_bg"]
+[ext_resource type="Texture2D" path="res://Cor/Art/8-Public-lobby/btn-circular-back.svg" id="3_back"]
+[ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="4_presstint"]
+[ext_resource type="Texture2D" path="res://Cor/Art/8-Public-lobby/ic-colored-checkmark-grey.svg" id="5_checkgrey"]
+[ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Bold.ttf" id="6_poppinsbold"]
+[ext_resource type="Shader" path="res://Cor/Shaders/VerticalGradientFill.gdshader" id="7_gradientshader"]
+[ext_resource type="PackedScene" path="res://Cor/Scenes/ConfirmModal.tscn" id="8_confirmmodal"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_LobbyHeader"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_WaitingRoomCard"]
+bg_color = Color(0.878, 0.945, 0.988, 0.82)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.6)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ReadyGreenFill"]
+shader = ExtResource("7_gradientshader")
+shader_parameter/color_top = Color(0.792, 1, 0.557, 1)
+shader_parameter/color_bottom = Color(0.404, 0.871, 0.106, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ReadyGreenFill"]
+bg_color = Color(0.404, 0.871, 0.106, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[node name="PublicLobbyScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_publiclobby")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Root" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="PanelContainer" parent="SafeArea/Root"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_LobbyHeader")
+
+[node name="HeaderMargin" type="MarginContainer" parent="SafeArea/Root/Header"]
+layout_mode = 2
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="HeaderRow" type="HBoxContainer" parent="SafeArea/Root/Header/HeaderMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BackButton" type="TextureButton" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+script = ExtResource("4_presstint")
+texture_normal = ExtResource("3_back")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_fonts/font = ExtResource("6_poppinsbold")
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Lobby"
+
+[node name="HeaderSpacer" type="Control" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
+custom_minimum_size = Vector2(46, 0)
+layout_mode = 2
+
+[node name="WaitingRoomCard" type="PanelContainer" parent="SafeArea/Root"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_WaitingRoomCard")
+
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/WaitingRoomCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 24
+
+[node name="CardRoot" type="VBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="WaitingRoomTitle" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_fonts/font = ExtResource("6_poppinsbold")
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+text = "Waiting room"
+
+[node name="CardDivider" type="ColorRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(0.078, 0.078, 0.094, 0.18)
+
+[node name="PlayerRows" type="VBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="PlayerRow0" type="HBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot/PlayerRows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PlayerRow0Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot/PlayerRows/PlayerRow0"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+text = "Waiting for player..."
+
+[node name="PlayerRow0Check" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot/PlayerRows/PlayerRow0"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("5_checkgrey")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlayerRow1" type="HBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot/PlayerRows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PlayerRow1Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot/PlayerRows/PlayerRow1"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+text = "Waiting for player..."
+
+[node name="PlayerRow1Check" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot/PlayerRows/PlayerRow1"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("5_checkgrey")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlayerRow2" type="HBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot/PlayerRows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PlayerRow2Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot/PlayerRows/PlayerRow2"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+text = "Waiting for player..."
+
+[node name="PlayerRow2Check" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/CardRoot/PlayerRows/PlayerRow2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("5_checkgrey")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LobbySpacer" type="Control" parent="SafeArea/Root"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ReadyButtonMargin" type="MarginContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 12
+
+[node name="ReadyButton" type="Button" parent="SafeArea/Root/ReadyButtonMargin"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_type_variation = &"WhiteCardButton"
+text = ""
+
+[node name="ReadyGradientFill" type="Panel" parent="SafeArea/Root/ReadyButtonMargin/ReadyButton"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ReadyGreenFill")
+material = SubResource("ShaderMaterial_ReadyGreenFill")
+
+[node name="ReadyLabel" type="Label" parent="SafeArea/Root/ReadyButtonMargin/ReadyButton"]
+unique_name_in_owner = true
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 19
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Ready (60s)"
+
+[node name="LeaveLobbyModal" parent="." instance=ExtResource("8_confirmmodal")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1

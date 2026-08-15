@@ -5,6 +5,7 @@ const SignInScreenScene := preload("res://Cor/Scenes/SignInScreen.tscn")
 const HomeScreenScene := preload("res://Cor/Scenes/HomeScreen.tscn")
 const JoinScreenScene := preload("res://Cor/Scenes/JoinScreen.tscn")
 const FindMatchScreenScene := preload("res://Cor/Scenes/FindMatchScreen.tscn")
+const PublicLobbyScreenScene := preload("res://Cor/Scenes/PublicLobbyScreen.tscn")
 const PlayScreenScene := preload("res://Cor/Scenes/GameUI.tscn")
 
 const DEBUG_BUTTON_DRAG_THRESHOLD := 6.0
@@ -14,6 +15,7 @@ const DRAG_POINTER_NONE := -2
 
 @onready var screen_container: Control = $ScreenContainer
 @onready var debug_button: Button = $DebugButton
+@onready var time_expired_modal: Control = $TimeExpiredModal
 
 var current_overlay: Node = null
 var play_instance: Node = null
@@ -24,8 +26,10 @@ var debug_button_drag_distance := 0.0
 
 func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
+	NetworkManager.match_started.connect(_on_match_started)
 	NetworkManager.room_closed.connect(_on_room_closed)
 	NetworkManager.status_changed.connect(_on_status_changed)
+	time_expired_modal.dismissed.connect(_on_time_expired_dismissed)
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
 	debug_button.visible = EndpointConfig.DEBUG_UI_ENABLED
 	reset_debug_button_position()
@@ -34,19 +38,45 @@ func _ready() -> void:
 func _on_status_changed(_text: String) -> void:
 	update_debug_button_availability()
 
-func _on_room_joined(_data) -> void:
+func _on_room_joined(data) -> void:
+	if bool(data.get("matchStarted", true)):
+		_enter_play_instance()
+	else:
+		show_public_lobby_screen(data)
+
+func _on_match_started(_data) -> void:
+	_enter_play_instance()
+
+func _enter_play_instance() -> void:
 	_ensure_play_instance()
 	_clear_overlay()
 	reset_debug_button_position()
 	update_debug_button_availability()
 
-func _on_room_closed(_data) -> void:
+func _on_room_closed(data) -> void:
 	if tutorial_active:
 		return
+
+	var reason := str(data.get("reason", ""))
+
+	if reason == "lobby_timeout":
+		_clear_overlay()
+		_teardown_play_instance()
+		time_expired_modal.open_time_expired()
+		return
+
+	if reason == "player_left_lobby":
+		show_find_match_screen()
+		return
+
 	if EndpointConfig.DEMO_MODE_ENABLED:
 		show_home_screen()
 	else:
 		show_join_screen()
+
+func _on_time_expired_dismissed() -> void:
+	NetworkManager.disconnect_server()
+	show_home_screen()
 
 func show_play_loader_screen() -> void:
 	var screen := PlayLoaderScreenScene.instantiate()
@@ -124,6 +154,19 @@ func _on_find_match_requested() -> void:
 
 func _on_cancel_requested() -> void:
 	NetworkManager.leave_queue()
+	NetworkManager.disconnect_server()
+	show_join_screen()
+
+func show_public_lobby_screen(data) -> void:
+	_ensure_play_instance()
+
+	var screen := PublicLobbyScreenScene.instantiate()
+	screen.leave_lobby_requested.connect(_on_leave_lobby_requested)
+	_set_overlay(screen)
+	screen.apply_lobby_data(data)
+
+func _on_leave_lobby_requested() -> void:
+	NetworkManager.leave_lobby()
 	NetworkManager.disconnect_server()
 	show_join_screen()
 

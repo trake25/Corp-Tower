@@ -21,7 +21,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Bot_Manager.js:294 | chooseBotPlacement | column × release-row search, two-stage proxy then `evaluate()` |
 | src/Server/app/Bot_Manager.js:430 | chooseBotAction | returns `{type:"place"}` or **`{type:"wait"}`**; callers must handle both |
 
-### src/Server/app/Game_Config.js — 153 ln
+### src/Server/app/Game_Config.js — 155 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -81,49 +81,59 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Game_Engine.js:1021 | failLevel | level failure, discard carry-over, Impact rollback |
 | src/Server/app/Game_Engine.js:1066 | nextLevel | advance level or finish the match at `maxLevel` |
 
-### src/Server/app/Lobby_Manager.js — 1187 ln
+### src/Server/app/Lobby_Manager.js — 1390 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Server/app/Lobby_Manager.js:6 | DEFAULT_DEBUG_CONFIG · const | startup snapshot every debug reset restores to |
 | src/Server/app/Lobby_Manager.js:60 | LobbyManager · class | matchmaking, room lifecycle, reconnect, debug-config coordinator |
-| src/Server/app/Lobby_Manager.js:71 | start | boot: Redis wiring, assignment subscription |
-| src/Server/app/Lobby_Manager.js:86 | handlePlayerAssignment | cross-pod handoff receiver; adopts a player assigned elsewhere |
-| src/Server/app/Lobby_Manager.js:100 | createPlayer | socket → player, applies a `reconnect` request |
-| src/Server/app/Lobby_Manager.js:149 | addPlayer | enqueue for matchmaking; enqueues *before* taking the lock |
-| src/Server/app/Lobby_Manager.js:159 | resumePlayer | rejoin an existing room after disconnect |
-| src/Server/app/Lobby_Manager.js:220 | removePlayer | disconnect handling, reconnect grace window |
-| src/Server/app/Lobby_Manager.js:249 | leaveQueue | explicit dequeue |
-| src/Server/app/Lobby_Manager.js:258 | scheduleRoomReconnectExpiry | arm the room-abandon timer |
-| src/Server/app/Lobby_Manager.js:278 | cancelRoomReconnectExpiry | disarm on successful rejoin |
-| src/Server/app/Lobby_Manager.js:289 | handleRoomReconnectExpired | close a room nobody came back to |
-| src/Server/app/Lobby_Manager.js:314 | resetParticipantState | clear per-room state off a player |
-| src/Server/app/Lobby_Manager.js:325 | isConnectedRealPlayer | excludes bots and dead sockets |
-| src/Server/app/Lobby_Manager.js:333 | sendPlayer | single-socket send guard |
-| src/Server/app/Lobby_Manager.js:339 | closeRoom | room teardown, roster notify, Redis cleanup |
-| src/Server/app/Lobby_Manager.js:395 | resetBotCounterIfIdle | bot naming counter reset |
-| src/Server/app/Lobby_Manager.js:407 | getRealPlayers | non-bot connected players |
-| src/Server/app/Lobby_Manager.js:433 | broadcastDebugConfig | push `debug_config` to every client |
-| src/Server/app/Lobby_Manager.js:444 | getDebugConfig | current debug-tunable snapshot for the wire |
-| src/Server/app/Lobby_Manager.js:506 | applyDefaultDebugConfig | write `DEFAULT_DEBUG_CONFIG` back into `GameConfig` |
-| src/Server/app/Lobby_Manager.js:594 | resetDebugConfigToDefaults | restore every exposed tunable, then rebroadcast |
-| src/Server/app/Lobby_Manager.js:621 | updateDebugConfig | **the authoritative clamp**: every debug key's range and allowlist |
-| src/Server/app/Lobby_Manager.js:814 | restartRoomsAtDebugStartLevel | apply `debugStartLevel` to live rooms |
-| src/Server/app/Lobby_Manager.js:828 | restartRoomsAtCurrentLevel | `restartLevel` action; preserves total score |
-| src/Server/app/Lobby_Manager.js:844 | createBot | debug bot participant |
-| src/Server/app/Lobby_Manager.js:853 | fillQueueWithBotsIfNeeded | fill seats only when a real player waits |
-| src/Server/app/Lobby_Manager.js:875 | removeWaitingBots | drop queued bots |
-| src/Server/app/Lobby_Manager.js:881 | syncWaitingBots | reconcile queued bot count to `debugBotCount` |
-| src/Server/app/Lobby_Manager.js:901 | refreshMatchmaking | re-run matching after queue change |
-| src/Server/app/Lobby_Manager.js:906 | tryCreateRoom | atomic `dequeueRealPlayers(3)` then room creation |
-| src/Server/app/Lobby_Manager.js:942 | createRoom | 3-seat room, engine start, Redis publish |
-| src/Server/app/Lobby_Manager.js:1002 | buildRoomRoster | roster payload with profiles and colours |
-| src/Server/app/Lobby_Manager.js:1014 | createEngine | construct Game Engine with persist/broadcast callbacks |
-| src/Server/app/Lobby_Manager.js:1036 | hydrateRoom | rebuild a room this pod did not create |
-| src/Server/app/Lobby_Manager.js:1102 | subscribeRoom | listen on `room:<id>:actions` |
-| src/Server/app/Lobby_Manager.js:1138 | isRoomOwner | lease check; **removing it makes every pod write divergent state** |
-| src/Server/app/Lobby_Manager.js:1142 | dispatchRoomAction | run locally if owner, else republish to the lease owner |
-| src/Server/app/Lobby_Manager.js:1160 | runRoomAction | execute a room action against the live engine |
+| src/Server/app/Lobby_Manager.js:72 | start | boot: Redis wiring, assignment subscription |
+| src/Server/app/Lobby_Manager.js:87 | handlePlayerAssignment | cross-pod handoff receiver; adopts a player assigned elsewhere |
+| src/Server/app/Lobby_Manager.js:101 | createPlayer | socket → player, applies a `reconnect` request |
+| src/Server/app/Lobby_Manager.js:150 | addPlayer | enqueue for matchmaking; enqueues *before* taking the lock |
+| src/Server/app/Lobby_Manager.js:161 | resumePlayer | rejoin an existing room after disconnect |
+| src/Server/app/Lobby_Manager.js:226 | removePlayer | disconnect handling, reconnect grace window |
+| src/Server/app/Lobby_Manager.js:263 | leaveQueue | explicit dequeue |
+| src/Server/app/Lobby_Manager.js:273 | scheduleRoomReconnectExpiry | arm the room-abandon timer |
+| src/Server/app/Lobby_Manager.js:293 | cancelRoomReconnectExpiry | disarm on successful rejoin |
+| src/Server/app/Lobby_Manager.js:304 | handleRoomReconnectExpired | close a room nobody came back to |
+| src/Server/app/Lobby_Manager.js:329 | resetParticipantState | clear per-room state off a player |
+| src/Server/app/Lobby_Manager.js:340 | isConnectedRealPlayer | excludes bots and dead sockets |
+| src/Server/app/Lobby_Manager.js:348 | sendPlayer | single-socket send guard |
+| src/Server/app/Lobby_Manager.js:354 | closeRoom | room teardown, roster notify, Redis cleanup |
+| src/Server/app/Lobby_Manager.js:415 | resetBotCounterIfIdle | bot naming counter reset |
+| src/Server/app/Lobby_Manager.js:427 | getRealPlayers | non-bot connected players |
+| src/Server/app/Lobby_Manager.js:453 | broadcastDebugConfig | push `debug_config` to every client |
+| src/Server/app/Lobby_Manager.js:464 | getDebugConfig | current debug-tunable snapshot for the wire |
+| src/Server/app/Lobby_Manager.js:526 | applyDefaultDebugConfig | write `DEFAULT_DEBUG_CONFIG` back into `GameConfig` |
+| src/Server/app/Lobby_Manager.js:614 | resetDebugConfigToDefaults | restore every exposed tunable, then rebroadcast |
+| src/Server/app/Lobby_Manager.js:641 | updateDebugConfig | **the authoritative clamp**: every debug key's range and allowlist |
+| src/Server/app/Lobby_Manager.js:834 | restartRoomsAtDebugStartLevel | apply `debugStartLevel` to live rooms |
+| src/Server/app/Lobby_Manager.js:848 | restartRoomsAtCurrentLevel | `restartLevel` action; preserves total score |
+| src/Server/app/Lobby_Manager.js:864 | createBot | debug bot participant |
+| src/Server/app/Lobby_Manager.js:873 | fillQueueWithBotsIfNeeded | fill seats only when a real player waits |
+| src/Server/app/Lobby_Manager.js:895 | removeWaitingBots | drop queued bots |
+| src/Server/app/Lobby_Manager.js:901 | syncWaitingBots | reconcile queued bot count to `debugBotCount` |
+| src/Server/app/Lobby_Manager.js:921 | refreshMatchmaking | re-run matching after queue change |
+| src/Server/app/Lobby_Manager.js:926 | tryCreateRoom | atomic `dequeueRealPlayers(3)` then room creation |
+| src/Server/app/Lobby_Manager.js:965 | createRoom | 3-seat room, engine start, Redis publish |
+| src/Server/app/Lobby_Manager.js:1031 | getLobbySecondsRemaining | TODO |
+| src/Server/app/Lobby_Manager.js:1042 | buildLobbyPayload | TODO |
+| src/Server/app/Lobby_Manager.js:1049 | broadcastLobbyUpdate | TODO |
+| src/Server/app/Lobby_Manager.js:1063 | broadcastQueueStatus | TODO |
+| src/Server/app/Lobby_Manager.js:1080 | markPlayerReady | TODO |
+| src/Server/app/Lobby_Manager.js:1099 | startMatch | TODO |
+| src/Server/app/Lobby_Manager.js:1142 | leaveLobby | TODO |
+| src/Server/app/Lobby_Manager.js:1152 | scheduleLobbyReadyTimeout | TODO |
+| src/Server/app/Lobby_Manager.js:1174 | cancelLobbyReadyTimeout | TODO |
+| src/Server/app/Lobby_Manager.js:1185 | handleLobbyReadyTimeout | TODO |
+| src/Server/app/Lobby_Manager.js:1198 | buildRoomRoster | roster payload with profiles and colours |
+| src/Server/app/Lobby_Manager.js:1210 | createEngine | construct Game Engine with persist/broadcast callbacks |
+| src/Server/app/Lobby_Manager.js:1232 | hydrateRoom | rebuild a room this pod did not create |
+| src/Server/app/Lobby_Manager.js:1305 | subscribeRoom | listen on `room:<id>:actions` |
+| src/Server/app/Lobby_Manager.js:1341 | isRoomOwner | lease check; **removing it makes every pod write divergent state** |
+| src/Server/app/Lobby_Manager.js:1345 | dispatchRoomAction | run locally if owner, else republish to the lease owner |
+| src/Server/app/Lobby_Manager.js:1363 | runRoomAction | execute a room action against the live engine |
 
 ### src/Server/app/Profile_Store.js — 53 ln
 
@@ -135,7 +145,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Profile_Store.js:19 | connect | attach to Redis, or fall back to in-memory |
 | src/Server/app/Profile_Store.js:22 | getProfile | profile for a player id, generating one if absent |
 
-### src/Server/app/Redis_State.js — 581 ln
+### src/Server/app/Redis_State.js — 584 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -149,39 +159,39 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Redis_State.js:30 | stripRuntimePlayer · fn | drop sockets/timers before a player is serialised |
 | src/Server/app/Redis_State.js:50 | DRAW_PILE_SNAPSHOT_LIMIT · const | cap on pile entries written to a snapshot |
 | src/Server/app/Redis_State.js:52 | stripRuntimeRoom · fn | drop non-serialisable room state before persist |
-| src/Server/app/Redis_State.js:86 | RedisState · class | shared-state adapter; in-memory fallback when no `REDIS_URL` |
-| src/Server/app/Redis_State.js:106 | connect | connect or fall back to in-memory maps |
-| src/Server/app/Redis_State.js:135 | connectRedisClients | main + subscriber clients with retry |
-| src/Server/app/Redis_State.js:187 | closeRedisClient | teardown |
-| src/Server/app/Redis_State.js:203 | getPodId | this pod's id |
-| src/Server/app/Redis_State.js:207 | getReconnectTtlSeconds | resolved reconnect TTL |
-| src/Server/app/Redis_State.js:211 | nextPlayerId | id allocation |
-| src/Server/app/Redis_State.js:220 | nextRoomId | id allocation |
-| src/Server/app/Redis_State.js:228 | recordDemoOutcome | TODO |
-| src/Server/app/Redis_State.js:241 | getDemoStats | TODO |
-| src/Server/app/Redis_State.js:263 | createReconnectToken | token a client presents to resume |
-| src/Server/app/Redis_State.js:267 | saveSession | persist player session for reconnect |
-| src/Server/app/Redis_State.js:296 | getSession | look up a session by reconnect token |
-| src/Server/app/Redis_State.js:309 | markSessionDisconnected | start the reconnect grace window |
-| src/Server/app/Redis_State.js:327 | enqueuePlayer | matchmaking queue push |
-| src/Server/app/Redis_State.js:340 | removeQueuedPlayer | queue removal on leave/disconnect |
-| src/Server/app/Redis_State.js:354 | getQueuedPlayers | queue read |
-| src/Server/app/Redis_State.js:363 | dequeueRealPlayers | **atomic** 3-player drain; the non-atomic path loses cross-pod entries |
-| src/Server/app/Redis_State.js:379 | requeuePlayers | return players to the queue on failed room creation |
-| src/Server/app/Redis_State.js:401 | withMatchmakingLock | cross-pod matchmaking mutex |
-| src/Server/app/Redis_State.js:427 | saveRoom | room snapshot write |
-| src/Server/app/Redis_State.js:458 | claimRoomLease | take/renew room ownership; basis of `isRoomOwner` |
-| src/Server/app/Redis_State.js:471 | getRoomLeaseOwner | which pod owns this room |
-| src/Server/app/Redis_State.js:479 | getRoom | room snapshot read |
-| src/Server/app/Redis_State.js:492 | deleteRoom | snapshot + lease cleanup |
-| src/Server/app/Redis_State.js:506 | publishRoom | broadcast room state to other pods |
-| src/Server/app/Redis_State.js:520 | subscribeToRoom | receive other pods' room broadcasts |
-| src/Server/app/Redis_State.js:530 | publishRoomAction | send an action to the lease-owning pod |
-| src/Server/app/Redis_State.js:544 | subscribeToRoomActions | receive actions for rooms this pod owns |
-| src/Server/app/Redis_State.js:554 | publishPlayerAssignment | hand a player to another pod |
-| src/Server/app/Redis_State.js:565 | subscribeToPlayerAssignments | receive handed-off players |
+| src/Server/app/Redis_State.js:89 | RedisState · class | shared-state adapter; in-memory fallback when no `REDIS_URL` |
+| src/Server/app/Redis_State.js:109 | connect | connect or fall back to in-memory maps |
+| src/Server/app/Redis_State.js:138 | connectRedisClients | main + subscriber clients with retry |
+| src/Server/app/Redis_State.js:190 | closeRedisClient | teardown |
+| src/Server/app/Redis_State.js:206 | getPodId | this pod's id |
+| src/Server/app/Redis_State.js:210 | getReconnectTtlSeconds | resolved reconnect TTL |
+| src/Server/app/Redis_State.js:214 | nextPlayerId | id allocation |
+| src/Server/app/Redis_State.js:223 | nextRoomId | id allocation |
+| src/Server/app/Redis_State.js:231 | recordDemoOutcome | TODO |
+| src/Server/app/Redis_State.js:244 | getDemoStats | TODO |
+| src/Server/app/Redis_State.js:266 | createReconnectToken | token a client presents to resume |
+| src/Server/app/Redis_State.js:270 | saveSession | persist player session for reconnect |
+| src/Server/app/Redis_State.js:299 | getSession | look up a session by reconnect token |
+| src/Server/app/Redis_State.js:312 | markSessionDisconnected | start the reconnect grace window |
+| src/Server/app/Redis_State.js:330 | enqueuePlayer | matchmaking queue push |
+| src/Server/app/Redis_State.js:343 | removeQueuedPlayer | queue removal on leave/disconnect |
+| src/Server/app/Redis_State.js:357 | getQueuedPlayers | queue read |
+| src/Server/app/Redis_State.js:366 | dequeueRealPlayers | **atomic** 3-player drain; the non-atomic path loses cross-pod entries |
+| src/Server/app/Redis_State.js:382 | requeuePlayers | return players to the queue on failed room creation |
+| src/Server/app/Redis_State.js:404 | withMatchmakingLock | cross-pod matchmaking mutex |
+| src/Server/app/Redis_State.js:430 | saveRoom | room snapshot write |
+| src/Server/app/Redis_State.js:461 | claimRoomLease | take/renew room ownership; basis of `isRoomOwner` |
+| src/Server/app/Redis_State.js:474 | getRoomLeaseOwner | which pod owns this room |
+| src/Server/app/Redis_State.js:482 | getRoom | room snapshot read |
+| src/Server/app/Redis_State.js:495 | deleteRoom | snapshot + lease cleanup |
+| src/Server/app/Redis_State.js:509 | publishRoom | broadcast room state to other pods |
+| src/Server/app/Redis_State.js:523 | subscribeToRoom | receive other pods' room broadcasts |
+| src/Server/app/Redis_State.js:533 | publishRoomAction | send an action to the lease-owning pod |
+| src/Server/app/Redis_State.js:547 | subscribeToRoomActions | receive actions for rooms this pod owns |
+| src/Server/app/Redis_State.js:557 | publishPlayerAssignment | hand a player to another pod |
+| src/Server/app/Redis_State.js:568 | subscribeToPlayerAssignments | receive handed-off players |
 
-### src/Server/app/Server.js — 143 ln
+### src/Server/app/Server.js — 163 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -345,4 +355,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-13 files · 271 symbols · 5 awaiting a `Does` line.
+13 files · 281 symbols · 15 awaiting a `Does` line.
