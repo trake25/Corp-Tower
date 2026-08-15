@@ -69,7 +69,3 @@ Append one row to [`report/task-token-cost-effectivity.md`](report/task-token-co
 via its sentinel — don't read the whole file. Record `R-est` **before** reading
 anything. Writing row 20 closes the cycle immediately — see that file's append
 rule.
-
-## Plan Policy
-
-Save plan in plan folder before any implementation.

@@ -1,9 +1,19 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/JoinScreen.gd" id="1_joinscreen"]
 [ext_resource type="Texture2D" uid="uid://407uawamvuq1" path="res://Cor/Art/6-Join-server/btn-circular-back.svg" id="2_back"]
 [ext_resource type="Texture2D" uid="uid://dr11ib653vwhw" path="res://Cor/Art/6-Join-server/ic-eye-close.svg" id="3_eye"]
 [ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="4_presstint"]
+
+[sub_resource type="Gradient" id="Gradient_JoinBg"]
+offsets = PackedFloat32Array(0, 0.55, 1)
+colors = PackedColorArray(0.55, 0.83, 0.96, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_JoinBg"]
+gradient = SubResource("Gradient_JoinBg")
+width = 4
+height = 512
+fill_to = Vector2(0, 1)
 
 [node name="JoinScreen" type="Control"]
 layout_mode = 3
@@ -14,13 +24,17 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_joinscreen")
 
-[node name="Background" type="Panel" parent="."]
+[node name="Background" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_JoinBg")
+expand_mode = 1
+stretch_mode = 0
 
 [node name="SafeArea" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -72,29 +86,11 @@ text = "Join Server"
 custom_minimum_size = Vector2(46, 0)
 layout_mode = 2
 
-[node name="PrivatePanel" type="PanelContainer" parent="SafeArea/Root"]
+[node name="FieldsColumn" type="VBoxContainer" parent="SafeArea/Root"]
 layout_mode = 2
-theme_type_variation = &"WhiteCardPanel"
+theme_override_constants/separation = 20
 
-[node name="PrivateMargin" type="MarginContainer" parent="SafeArea/Root/PrivatePanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 14
-
-[node name="PrivateRows" type="VBoxContainer" parent="SafeArea/Root/PrivatePanel/PrivateMargin"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="PrivateTitleLabel" type="Label" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
-text = "Join Private Server"
-
-[node name="PlayerNameEdit" type="LineEdit" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows"]
+[node name="PlayerNameEdit" type="LineEdit" parent="SafeArea/Root/FieldsColumn"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_type_variation = &"JoinLineEdit"
@@ -103,7 +99,7 @@ theme_override_colors/font_placeholder_color = Color(0.35, 0.4, 0.46, 0.85)
 editable = false
 placeholder_text = "Enter your name"
 
-[node name="ServerIdEdit" type="LineEdit" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows"]
+[node name="ServerIdEdit" type="LineEdit" parent="SafeArea/Root/FieldsColumn"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_type_variation = &"JoinLineEdit"
@@ -112,11 +108,11 @@ theme_override_colors/font_placeholder_color = Color(0.35, 0.4, 0.46, 0.85)
 editable = false
 placeholder_text = "Server ID"
 
-[node name="PasswordRow" type="HBoxContainer" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows"]
+[node name="PasswordRow" type="HBoxContainer" parent="SafeArea/Root/FieldsColumn"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PasswordEdit" type="LineEdit" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows/PasswordRow"]
+[node name="PasswordEdit" type="LineEdit" parent="SafeArea/Root/FieldsColumn/PasswordRow"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -127,7 +123,7 @@ editable = false
 placeholder_text = "Server password"
 secret = true
 
-[node name="PasswordVisibilityButton" type="TextureButton" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows/PasswordRow"]
+[node name="PasswordVisibilityButton" type="TextureButton" parent="SafeArea/Root/FieldsColumn/PasswordRow"]
 custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_vertical = 4
@@ -136,12 +132,20 @@ texture_normal = ExtResource("3_eye")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="JoinButton" type="Button" parent="SafeArea/Root/PrivatePanel/PrivateMargin/PrivateRows"]
+[node name="JoinSpacer" type="Control" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+
+[node name="JoinButton" type="Button" parent="SafeArea/Root"]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 theme_type_variation = &"WhiteCardButton"
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 text = "Join"
+
+[node name="OrSpacer" type="Control" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
 
 [node name="OrDivider" type="HBoxContainer" parent="SafeArea/Root"]
 layout_mode = 2
