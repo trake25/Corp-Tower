@@ -34,23 +34,29 @@ within the reconnect TTL and destroys rooms when it expires with no connected re
 players. Hydrated snapshots include `towerBlocks`, so non-owner workers and
 reconnecting clients redraw the tower without recomputing it.
 
-Reconnect TTL default is 60s — a **staging value, not settled for production**.
+`RECONNECT_TTL_SECONDS` is **not settled for production**; the deploy overrides
+the code default.
 
 ### Player identity
 
 `Auth_Verifier.js` (the `jose` package) verifies the handshake's `accessToken`
 against the Supabase project's public JWKS, asymmetric algorithms only, pinned to
 issuer and `aud: authenticated`. It returns `{userId, isAnonymous, displayName}`
-or `null`, and never throws.
+or `null`, and never throws. It needs **no secret** — only `SUPABASE_URL`, and
+unset turns the whole path off.
 
 **`resolveIdentityFields` makes a verified `sub` the `profileId`**, so a client
 cannot claim another player's profile by sending one; with no identity it keeps
-the client's own value. `Profile_Store` prefers the verified `displayName` and
-falls back to its `WORD_LIST` hash, so guests still get a name. `displayName` is
-persisted on the player, so a cross-pod hydrate does not lose it.
+the client's own value. `displayName` is persisted on the player, so a cross-pod
+hydrate does not lose it.
 
-Verification needs **no secret** — only `SUPABASE_URL`, and unset turns the whole
-path off. `SUPABASE_AUTH_REQUIRED` decides whether an unverified socket is closed.
+`Profile_Store` stays in memory unless **`SUPABASE_SERVICE_ROLE_KEY`** is set.
+With it, a first sighting reads `public.profiles` over PostgREST, inserts a
+missing row and stamps `last_login_at`; **the stored name wins once it exists**,
+so a rename outlives the provider's. Reads cache per pod and degrade to the
+`WORD_LIST` name on failure — **an outage must not fail a roster**. `status` is
+carried, not enforced. Schema and RLS: `src/Server/migrations/0001_profiles.sql`,
+applied by hand.
 
 ### `updateDebugConfig` — the authoritative validation
 
@@ -433,10 +439,10 @@ connection, not a bug.
 
 ## Known gaps
 
-- **No persistent leaderboard.** Redis holds active-session state only; durable
-  storage and structured logging are future work.
+- **No leaderboard.** `profiles` is durable but holds no scores; Redis still keeps
+  active-session state only. Ranking and structured logging are future work.
 - **Reconnect and gateway routing across pods are untested at integration level**,
   beyond the room-seating regression tests.
-- **Deploy client and server together.** The Power and Impact renames went across
-  every wire field, config key and Redis-persisted field, so a room in flight
-  during a split deploy will not restore its state from an old-shaped snapshot.
+- **Deploy client and server together.** Wire fields, config keys and
+  Redis-persisted fields move as one, so a room in flight during a split deploy
+  will not restore from an old-shaped snapshot.

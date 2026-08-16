@@ -51,7 +51,17 @@ The multi-pod seating race. Two `LobbyManager`s share one fake Redis store with
 `setImmediate` gaps between read and write, so concurrent joins interleave the way
 real I/O would. Three players join near-simultaneously across two "pods"; all
 three must land in the same room and each socket receive its
-`room_created`/`room_resumed`.
+`room_created`/`room_resumed`. The fake store's `withMatchmakingLock` chains onto
+one shared promise across both pods, serialising the decision the way Redis's
+`SET NX` lock does.
+
+### `tests/Profile_Store.test.js`
+
+Profile persistence against a fake PostgREST, offline. **No request at all**
+without a key or url; a stored name beats a freshly verified one, so a rename
+sticks; a missing row inserts with `ignore-duplicates` against a racing pod; an
+outage and a 500 both **degrade to the generated name rather than fail the
+roster**; the service_role key rides in headers, never a URL.
 
 ### `tests/Auth_Verifier.test.js`
 
@@ -60,15 +70,6 @@ runs offline. The accept path plus every rejection that matters — wrong issuer
 wrong audience, expired, foreign key, **unsigned `alg: none`**, missing `sub`,
 junk — and that a verified `sub` beats a spoofed `profileId` while a verified
 display name still reaches the roster.
-
-The fake store's `withMatchmakingLock` chains onto one shared promise across both
-pods, faithfully serialising the decision the way Redis's `SET NX` lock does.
-**Only `enqueuePlayer` is deliberately left unlocked, matching production, since
-that is the actual race window.**
-
-Confirmed as a meaningful regression test by running it against the pre-fix queue
-logic: it failed reliably there and passes against the fix. **A regression test
-that was never seen to fail is not yet known to be one.**
 
 ## Balance CLIs
 
@@ -102,9 +103,8 @@ is tuned too forgiving for collapse to punish it.
 
 **Landmine — the cooldown model is not just pacing.** Drop it and one player
 places unboundedly in a row, which makes contribution read lopsided and the Impact
-gate read impossible — an artifact that swings the measured pass rate by an order
-of magnitude. **Never trust a tuning number from a simulator that omits a real
-constraint.**
+gate read impossible — an artifact that swings the measured pass
+rate by an order of magnitude.
 
 **Landmine — do not calibrate against `collapse`.** `chooseBotPlacement` skips any
 placement that collapses, so bots almost never die and the rate reads ~0% across
@@ -122,10 +122,9 @@ balance problem:
   who create messes under time pressure; validating it needs playtests.
 
 `src/Server/tools/Stability_Probe.js` (`npm run balance:probe`) covers that second
-blind spot: because bots always pick a max-stability placement, they never build
-the wide-base/narrow-spire or overhang shapes needed to see whether a genuinely bad
-tower degrades. It hand-builds five archetypes at several heights and levels,
-evaluates each through `resolveStabilityConfig(level)` directly, and **asserts a
+blind spot: max-stability bots never build the wide-base/narrow-spire or overhang
+shapes that show whether a bad tower degrades. It hand-builds five archetypes
+across heights and levels through `resolveStabilityConfig(level)`, and **asserts a
 single opening brick never collapses at any sampled level** — the guard for the
 site-usage-worst-at-the-first-brick landmine.
 
@@ -188,13 +187,11 @@ incidental action never silently advancing an `info` step, and **every step's
 `target` resolving and visible in the mounted scene** — which catches a rename or
 a control moved under a hidden container.
 
-`test_inventory_controller.gd` asserts the column handed to `place_block` lands in
-range and covers parallel placement end to end: select → aim → confirm sends
-exactly one placement carrying the armed row, a tap elsewhere re-aims without
-sending, deselect sends nothing, a card tap never starts a drag.
-**Its taps reset `last_tap_ms` between steps** — the 60 ms de-dupe window that
-protects a real tap from its emulated partner would otherwise swallow back-to-back
-synthetic events.
+`test_inventory_controller.gd` — the column handed to `place_block` stays in
+range, and parallel placement end to end: select → aim → confirm sends exactly one
+placement carrying the armed row; re-aim, deselect and card-tap send nothing.
+**Its taps reset `last_tap_ms` between steps**, or the 60 ms de-dupe window
+swallows back-to-back synthetic events.
 
 `test_debug_panel.gd` covers a knob's whole path: the row syncs from
 `debug_config`, its nodes really do parent under their own category, and the value

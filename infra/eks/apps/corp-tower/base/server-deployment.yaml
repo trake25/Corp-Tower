@@ -52,6 +52,15 @@ spec:
               value: ""
             - name: SUPABASE_AUTH_REQUIRED
               value: "false"
+            # optional: absent secret means the env var is simply unset and the
+            # profile store stays in memory. Unlike the two above this IS a
+            # secret, so it never travels through the kustomize patch.
+            - name: SUPABASE_SERVICE_ROLE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: corp-tower-supabase
+                  key: service-role-key
+                  optional: true
             - name: RECONNECT_TTL_SECONDS
               value: "10"
             - name: REDIS_CONNECT_RETRIES

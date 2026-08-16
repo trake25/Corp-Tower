@@ -50,7 +50,8 @@ contradicted source.
 | 2 | Demo-build impact audit vs lobby overhaul; ScreenManager skips Public Lobby, auto-readies in demo mode | 3 | B | 3 | 12 | — | ~10,000 | ~45,000 | ~45,000 | ✓ | ok | Sonnet 5 | medium | client-engineer, docs-steward |
 | 3 | Supabase auth Phase 1: verified-JWT identity on the reconnect handshake, guest sign-in, flag-gated soft rollout | 4 | B | 5 | 35 | — | ~85,000 | ~420,000 | ~420,000 | ! | ok | Opus 5 | xhigh→max | docs-steward |
 | 4 | Supabase auth Phase 2: Google PKCE sign-in on Android and web, vendored Deeplink plugin, still flag-dormant | 4 | B | 4 | 20 | ~60,000 | ~55,000 | ~330,000 | ~330,000 | ✓ | ok | Opus 5 | max | docs-steward |
-<!-- next: row 5 -->
+| 5 | Supabase auth Phase 3: `profiles` table + RLS, PostgREST profile store behind the service_role key | 3 | B | 3 | 12 | ~25,000 | ~30,000 | ~180,000 | ~180,000 | ! | ok | Opus 5 | max | docs-steward |
+<!-- next: row 6 -->
 
 ## Cycle 2 (closed)
 

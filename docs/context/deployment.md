@@ -218,6 +218,7 @@ on the physical machine.
 | `CLOUDFLARE_API_TOKEN` / `_ZONE_ID` | ACM validation and the two EKS CNAMEs |
 | `EKS_OPERATOR_PRINCIPAL_ARN` | IAM **role** ARN granted cluster-admin via an access entry |
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` | Auth. Both optional — unset ships builds with sign-in off |
+| `SUPABASE_SERVICE_ROLE_KEY` | Optional. **Bypasses RLS** — server-side only, never in a client build |
 
 Provider sign-in additionally needs **both redirect targets in Supabase's allow
 list** — `corptower://auth-callback` for Android and the deployed web origin.
@@ -229,7 +230,16 @@ entry looks like a redirect to the wrong page rather than an error.
 The game pod takes `SUPABASE_URL` and `SUPABASE_AUTH_REQUIRED`, patched in beside
 `REDIS_URL` by the deploy workflow's runtime overlay and passed by
 `backup-server-up.sh` on the backup box. **Neither is a secret** — verification
-uses the project's public JWKS, so no key reaches the pod. Unset `SUPABASE_URL`
+uses the project's public JWKS, so no key reaches the pod.
+
+`SUPABASE_SERVICE_ROLE_KEY` is different: it **bypasses row-level security**, so
+it never travels through the kustomize patch, whose values land in workflow logs.
+The deploy job syncs it into a `corp-tower-supabase` k8s Secret piped through
+`kubectl apply` (the `ecr-pull` pattern) and the container reads it via
+`secretKeyRef` with `optional: true` — no secret, no env var, and the profile
+store stays in memory. Unsetting the GitHub secret deletes the k8s one.
+**A Secret change alone does not restart pods**; the deploy patches the image tag
+every run, which is what actually rolls them. Unset `SUPABASE_URL`
 turns verification off entirely; `SUPABASE_AUTH_REQUIRED=true` closes any socket
 that fails it, which breaks every already-installed client, so flip it only once
 signed-in builds are out.

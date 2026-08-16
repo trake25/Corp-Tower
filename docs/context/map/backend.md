@@ -156,15 +156,24 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Lobby_Manager.js:1428 | dispatchRoomAction | run locally if owner, else republish to the lease owner |
 | src/Server/app/Lobby_Manager.js:1446 | runRoomAction | execute a room action against the live engine |
 
-### src/Server/app/Profile_Store.js — 60 ln
+### src/Server/app/Profile_Store.js — 169 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Server/app/Profile_Store.js:1 | WORD_LIST · const | word pool for generated display names |
-| src/Server/app/Profile_Store.js:6 | hashString · fn | stable hash → deterministic name per player id |
-| src/Server/app/Profile_Store.js:14 | ProfileStore · class | display-name/profile lookup |
-| src/Server/app/Profile_Store.js:19 | connect | attach to Redis, or fall back to in-memory |
-| src/Server/app/Profile_Store.js:22 | getProfile | profile for a player id, generating one if absent |
+| src/Server/app/Profile_Store.js:6 | REQUEST_TIMEOUT_MS · const | cap on a PostgREST call, so a slow Supabase cannot stall a roster |
+| src/Server/app/Profile_Store.js:7 | PROFILE_COLUMNS · const | columns selected — id, display_name, status |
+| src/Server/app/Profile_Store.js:9 | hashString · fn | stable hash → deterministic name per player id |
+| src/Server/app/Profile_Store.js:17 | generatedName · fn | deterministic `WORD_LIST` name from a profile id |
+| src/Server/app/Profile_Store.js:21 | normalizeUrl · fn | trim and drop trailing slashes |
+| src/Server/app/Profile_Store.js:25 | ProfileStore · class | display-name/profile lookup |
+| src/Server/app/Profile_Store.js:42 | connect | attach to Redis, or fall back to in-memory |
+| src/Server/app/Profile_Store.js:47 | getProfile | profile for a player id, generating one if absent |
+| src/Server/app/Profile_Store.js:87 | hydrateFromSupabase | **never throws** — an outage degrades to the generated name rather than failing the room |
+| src/Server/app/Profile_Store.js:117 | request | PostgREST call carrying the service_role key **in headers, never the URL** |
+| src/Server/app/Profile_Store.js:137 | fetchRow | read one profile row, or null |
+| src/Server/app/Profile_Store.js:147 | insertRow | create a missing row; `ignore-duplicates` so a racing pod cannot clobber it |
+| src/Server/app/Profile_Store.js:159 | patchRow | stamp `last_login_at`, and backfill a name only when the row has none |
 
 ### src/Server/app/Redis_State.js — 545 ln
 
@@ -375,4 +384,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-14 files · 296 symbols · 27 awaiting a `Does` line.
+14 files · 305 symbols · 27 awaiting a `Does` line.

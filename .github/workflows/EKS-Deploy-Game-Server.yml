@@ -271,6 +271,24 @@ jobs:
             echo "IMAGE_URI=${ECR_REGISTRY}/${ECR_REPOSITORY}:${GITHUB_SHA}"
           } >> "$GITHUB_ENV"
 
+      - name: Sync Supabase service role secret
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+
+          # Piped through apply so the value never reaches the workflow log,
+          # same as the ecr-pull secret above.
+          if [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            echo "No SUPABASE_SERVICE_ROLE_KEY set - profile persistence stays off."
+            kubectl -n "$NAMESPACE" delete secret corp-tower-supabase --ignore-not-found
+            exit 0
+          fi
+
+          kubectl -n "$NAMESPACE" create secret generic corp-tower-supabase \
+            --from-literal=service-role-key="$SUPABASE_SERVICE_ROLE_KEY" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Apply Corp Tower Kustomize overlay
         env:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}

@@ -48,6 +48,9 @@ REDIS_ARGS=()
 AUTH_ARGS=(
   -e "SUPABASE_URL=${SUPABASE_URL:-}"
   -e "SUPABASE_AUTH_REQUIRED=${SUPABASE_AUTH_REQUIRED:-false}"
+  # SAFETY EXCEPTION: this is the service_role key, which bypasses row-level
+  # security. Export it only on a box you control, and never echo it.
+  -e "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}"
 )
 if [ "$INSTANCE" = "3" ]; then
   BOTS_ARGS=(-e CORP_TOWER_BOTS_ENABLED=true)
