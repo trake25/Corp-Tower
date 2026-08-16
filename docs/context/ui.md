@@ -21,19 +21,15 @@ All paths under `src/Client/App/corp-tower/` unless noted. **The client renders
   widened — most `GameUI.tscn` children are fixed-offset, not edge-anchored.
 - `Main.tscn` is the app root and owns [Screen Manager](#screen-manager); there is
   no static UI root scene.
-- Default font: Poppins, via `Theme.default_font` on `GameUITheme.tres` —
-  inherited everywhere. A heavier weight is a per-`Label` font override.
-- Android export config is the gitignored `export_presets.cfg`; CI uses a
-  non-secret preset → [build.md](./build.md#android-deploy-wstodplay-workflow).
-- Release target is **Android only**. Web/Windows/iOS are future.
+- `export_presets.cfg` is gitignored; CI uses a non-secret preset →
+  [build.md](./build.md#android-deploy-wstodplay-workflow).
 - Build-time flags from `EndpointConfig`, written per build by
   `write-endpoint-config.sh`: `DEBUG_UI_ENABLED` gates the debug button, off for
   the EKS web builds and the public demo; `DEMO_MODE_ENABLED` gates the required
   `DemoModeLabel` node disclosing that empty seats are bots, set only for
   `toddemo`; `SUPABASE_URL`/`SUPABASE_ANON_KEY` enable sign-in — **both empty
-  (the committed default) disables AuthManager**.
-
-There is **one** gameplay UI scene and no skin system.
+  (the committed default) disables AuthManager**; `AUTH_OAUTH_ENABLED` and
+  `AUTH_REDIRECT_WEB` add provider sign-in on top.
 
 `update_config`/`resetDebugConfig` have **no server-side auth check** — the debug
 gate is UI-only, and needs one before public release.
@@ -43,12 +39,15 @@ gate is UI-only, and needs one before public release.
 `Cor/Scripts/ScreenManager.gd`, on `Main.tscn`. Owns screen flow and the single
 global floating debug button.
 
+- Sign-in shows a social button **only for a provider in `AuthManager.PROVIDERS`
+  with OAuth on**, hiding the row and divider otherwise — no dead social button
+  ships. Android returns via the vendored Deeplink plugin, web via its own URL.
 - Swaps screens inside `ScreenContainer`, driven by the child screens' request
   signals and NetworkManager's `room_joined` / `match_started` / `room_closed`.
-- Flow: Play Loader → Sign-in → Home → Join Screen, but a restored session skips
-  Sign-in; tutorial exit → Home, room-close → Join Screen. Demo skips both:
-  Play Demo + Tutorial on Home,
-  room-close → Home. Wired/stub buttons: [map/ui-screens.md](./map/ui-screens.md).
+- Flow: Play Loader → Sign-in → Home → Join Screen; a restored session skips
+  Sign-in. Tutorial exit → Home, room-close → Join Screen. Demo skips both:
+  Play Demo + Tutorial on Home, room-close → Home. Buttons:
+  [map/ui-screens.md](./map/ui-screens.md).
 - Routes `room_joined` on `matchStarted` (false → Public Lobby); `match_started`
   enters the game → [networking.md](./networking.md). **Demo skips the Public
   Lobby**: it enters play immediately and calls `send_ready()` itself, since bots

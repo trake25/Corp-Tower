@@ -50,7 +50,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/actions/terraform-validate-plan/action.yml:7 | inputs · key | `working-directory`, the stack directory to run in |
 | .github/actions/terraform-validate-plan/action.yml:12 | runs · key | the shared check sequence — init, **`fmt -check`**, validate, plan saved to `./tfplan` for a later apply step, then a readable plan summary |
 
-### .github/workflows/Android-Deploy-wstodplay.yml — 424 ln
+### .github/workflows/Android-Deploy-wstodplay.yml — 427 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -190,7 +190,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/EKS-Deploy-Game-Server.yml:71 | build-and-push · job | OIDC to ECR, Buildx build and push, and records the pushed image tag for the deploy job |
 | .github/workflows/EKS-Deploy-Game-Server.yml:117 | deploy-eks · job | reads Terraform outputs, updates kubeconfig, applies the manifests, and **ends in a WebSocket smoke test** rather than trusting rollout status |
 
-### .github/workflows/EKS-Deploy-Web-Server.yml — 352 ln
+### .github/workflows/EKS-Deploy-Web-Server.yml — 356 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -199,8 +199,8 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/EKS-Deploy-Web-Server.yml:27 | resolve-target · job | picks the target environment for the rest of the run |
 | .github/workflows/EKS-Deploy-Web-Server.yml:53 | verify-infra · job | same unapplied-infra fast fail as the game core |
 | .github/workflows/EKS-Deploy-Web-Server.yml:75 | build · job | Godot web export with private art, then **removes the private assets from the runner** before the job ends |
-| .github/workflows/EKS-Deploy-Web-Server.yml:125 | push · job | wraps the web build in a Docker image and pushes it to ECR |
-| .github/workflows/EKS-Deploy-Web-Server.yml:163 | deploy-eks · job | deploys to the cluster and **updates the Cloudflare CNAME to the current ALB DNS name** — a fresh apply changes that value every session |
+| .github/workflows/EKS-Deploy-Web-Server.yml:129 | push · job | wraps the web build in a Docker image and pushes it to ECR |
+| .github/workflows/EKS-Deploy-Web-Server.yml:167 | deploy-eks · job | deploys to the cluster and **updates the Cloudflare CNAME to the current ALB DNS name** — a fresh apply changes that value every session |
 
 ### .github/workflows/EKS-Force-Unlock.yml — 59 ln
 
@@ -736,7 +736,7 @@ _no extracted symbols_
 | scripts/validate-docs.mjs:414 | mapTotal · const | summed map tokens, reported but not part of the prose total |
 | scripts/validate-docs.mjs:431 | terse · const | true only on a quiet passing run |
 
-### scripts/write-endpoint-config.sh — 58 ln
+### scripts/write-endpoint-config.sh — 78 ln
 
 _no extracted symbols_
 

@@ -149,10 +149,27 @@ shell pipe.
 | `CORP_TOWER_DEMO_MODE` | Defaults `false` — gates the bots-disclosure label |
 | `CORP_TOWER_SUPABASE_URL` | Optional — **empty disables sign-in** |
 | `CORP_TOWER_SUPABASE_ANON_KEY` | Public anon key, from a secret so it stays uncommitted |
+| `CORP_TOWER_AUTH_OAUTH` | Defaults `false` — gates the provider buttons |
+| `CORP_TOWER_AUTH_REDIRECT_WEB` | Where Supabase returns a web build; the Android scheme is not build-injected |
 
 **The two Supabase vars are all-or-nothing** — setting one without the other is a
-hard error, so a build cannot half-enable sign-in. The script logs the URL but
-only ever prints `<set>`/`<none>` for the key.
+hard error, so a build cannot half-enable sign-in, and `CORP_TOWER_AUTH_OAUTH=true`
+without a project is a hard error too. The script logs the URL but only ever
+prints `<set>`/`<none>` for the key.
+
+### Vendored Deeplink plugin
+
+`addons/DeeplinkPlugin/` is third-party, pinned at **v5.3** — the last release
+tested against Godot 4.6; v6.x moved to 4.7. It exists so Android can receive the
+OAuth redirect on the `corptower://` scheme.
+
+It hooks in as an `EditorExportPlugin`, so **enabling it in `project.godot`
+`[editor_plugins]` is the whole wiring** — it injects its own manifest activity
+and AAR, and the committed CI preset needs no plugin key. It does require
+`gradle_build/use_gradle_build=true`, which the preset already sets, and it pulls
+`androidx.annotation` through gradle at export.
+
+The scheme and host come from `addons/DeeplinkPlugin/export.cfg`, not from code.
 
 The committed default (dev instance 1 primary, instance 2 failover, debug on, demo
 off, sign-in off) is what a local editor run or an un-rewritten build gets. **Every CI build

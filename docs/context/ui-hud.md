@@ -106,7 +106,9 @@ broadcast, in every state — that local tick is why it still counts down throug
 
 `Cor/Scenes/GameUI.tscn`, themed by `Cor/Themes/GameUITheme.tres` — the single
 scene hosting every HUD and debug node Main binds against. Instanced by Screen
-Manager once a match is found; required at runtime.
+Manager once a match is found; required at runtime. Default font is Poppins via
+`Theme.default_font` there, inherited everywhere; a heavier weight is a
+per-`Label` override. There is no skin system.
 
 `TeamInventoryPanel` is a **permanently visible** bar showing the shared draw pile,
 not a popover. It reuses the `DrawPilePreview`/`DrawPileNameLabel`/

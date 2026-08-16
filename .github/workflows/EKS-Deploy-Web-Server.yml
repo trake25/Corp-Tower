@@ -100,6 +100,10 @@ jobs:
           # Both unset means the build has no sign-in and uses a local profile id.
           CORP_TOWER_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           CORP_TOWER_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # The web build returns through its own origin, so the redirect is the
+          # deployed domain and must be in Supabase's allow list.
+          CORP_TOWER_AUTH_OAUTH: ${{ vars.CORP_TOWER_AUTH_OAUTH || 'false' }}
+          CORP_TOWER_AUTH_REDIRECT_WEB: https://${{ needs.resolve-target.outputs.domain }}/
         run: scripts/write-endpoint-config.sh
 
       - name: Build web export

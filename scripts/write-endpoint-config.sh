@@ -16,6 +16,12 @@ CORP_TOWER_SUPABASE_URL="${CORP_TOWER_SUPABASE_URL:-}"
 CORP_TOWER_SUPABASE_ANON_KEY="${CORP_TOWER_SUPABASE_ANON_KEY:-}"
 CORP_TOWER_SUPABASE_URL="${CORP_TOWER_SUPABASE_URL%/}"
 
+# OAuth rides on top of that: it needs a redirect target the platform can receive.
+# Android uses the custom scheme baked into addons/DeeplinkPlugin/export.cfg, so
+# only the web target is build-injected. Guest sign-in works without any of this.
+CORP_TOWER_AUTH_OAUTH="${CORP_TOWER_AUTH_OAUTH:-false}"
+CORP_TOWER_AUTH_REDIRECT_WEB="${CORP_TOWER_AUTH_REDIRECT_WEB:-}"
+
 case "$CORP_TOWER_DEBUG_UI" in
   true|false) ;;
   *) echo "error: CORP_TOWER_DEBUG_UI must be 'true' or 'false', got '$CORP_TOWER_DEBUG_UI'" >&2; exit 1 ;;
@@ -24,6 +30,11 @@ esac
 case "$CORP_TOWER_DEMO_MODE" in
   true|false) ;;
   *) echo "error: CORP_TOWER_DEMO_MODE must be 'true' or 'false', got '$CORP_TOWER_DEMO_MODE'" >&2; exit 1 ;;
+esac
+
+case "$CORP_TOWER_AUTH_OAUTH" in
+  true|false) ;;
+  *) echo "error: CORP_TOWER_AUTH_OAUTH must be 'true' or 'false', got '$CORP_TOWER_AUTH_OAUTH'" >&2; exit 1 ;;
 esac
 
 if [ -n "$CORP_TOWER_SUPABASE_URL" ] && [ -z "$CORP_TOWER_SUPABASE_ANON_KEY" ]; then
@@ -36,6 +47,11 @@ if [ -z "$CORP_TOWER_SUPABASE_URL" ] && [ -n "$CORP_TOWER_SUPABASE_ANON_KEY" ]; 
   exit 1
 fi
 
+if [ "$CORP_TOWER_AUTH_OAUTH" = "true" ] && [ -z "$CORP_TOWER_SUPABASE_URL" ]; then
+  echo "error: CORP_TOWER_AUTH_OAUTH is true but no Supabase project is configured" >&2
+  exit 1
+fi
+
 cat > "$CONFIG_FILE" <<EOF
 class_name EndpointConfig
 
@@ -45,6 +61,8 @@ const DEBUG_UI_ENABLED := ${CORP_TOWER_DEBUG_UI}
 const DEMO_MODE_ENABLED := ${CORP_TOWER_DEMO_MODE}
 const SUPABASE_URL := "${CORP_TOWER_SUPABASE_URL}"
 const SUPABASE_ANON_KEY := "${CORP_TOWER_SUPABASE_ANON_KEY}"
+const AUTH_OAUTH_ENABLED := ${CORP_TOWER_AUTH_OAUTH}
+const AUTH_REDIRECT_WEB := "${CORP_TOWER_AUTH_REDIRECT_WEB}"
 EOF
 
 echo "Wrote $CONFIG_FILE"
@@ -55,3 +73,5 @@ echo "  DEMO_MODE_ENABLED=${CORP_TOWER_DEMO_MODE}"
 echo "  SUPABASE_URL=${CORP_TOWER_SUPABASE_URL:-<none>}"
 # Never echo the key itself, only whether the build carries one.
 echo "  SUPABASE_ANON_KEY=$([ -n "$CORP_TOWER_SUPABASE_ANON_KEY" ] && echo "<set>" || echo "<none>")"
+echo "  AUTH_OAUTH_ENABLED=${CORP_TOWER_AUTH_OAUTH}"
+echo "  AUTH_REDIRECT_WEB=${CORP_TOWER_AUTH_REDIRECT_WEB:-<none>}"

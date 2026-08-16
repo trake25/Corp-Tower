@@ -49,7 +49,8 @@ contradicted source.
 | 1 | Matchmaking rebuilt to incremental room-fill; lobby persists through leaves/timeouts; ready toggle; disconnect modal | 5 | B | 3 | 13 | — | ~140,000 | ~300,000 | ~300,000 | ✓ | ok | Sonnet 5 | xhigh | — |
 | 2 | Demo-build impact audit vs lobby overhaul; ScreenManager skips Public Lobby, auto-readies in demo mode | 3 | B | 3 | 12 | — | ~10,000 | ~45,000 | ~45,000 | ✓ | ok | Sonnet 5 | medium | client-engineer, docs-steward |
 | 3 | Supabase auth Phase 1: verified-JWT identity on the reconnect handshake, guest sign-in, flag-gated soft rollout | 4 | B | 5 | 35 | — | ~85,000 | ~420,000 | ~420,000 | ! | ok | Opus 5 | xhigh→max | docs-steward |
-<!-- next: row 4 -->
+| 4 | Supabase auth Phase 2: Google PKCE sign-in on Android and web, vendored Deeplink plugin, still flag-dormant | 4 | B | 4 | 20 | ~60,000 | ~55,000 | ~330,000 | ~330,000 | ✓ | ok | Opus 5 | max | docs-steward |
+<!-- next: row 5 -->
 
 ## Cycle 2 (closed)
 

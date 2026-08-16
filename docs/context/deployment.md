@@ -219,6 +219,11 @@ on the physical machine.
 | `EKS_OPERATOR_PRINCIPAL_ARN` | IAM **role** ARN granted cluster-admin via an access entry |
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` | Auth. Both optional — unset ships builds with sign-in off |
 
+Provider sign-in additionally needs **both redirect targets in Supabase's allow
+list** — `corptower://auth-callback` for Android and the deployed web origin.
+Supabase silently falls back to its Site URL for anything not listed, so a missing
+entry looks like a redirect to the wrong page rather than an error.
+
 ### Server auth env
 
 The game pod takes `SUPABASE_URL` and `SUPABASE_AUTH_REQUIRED`, patched in beside

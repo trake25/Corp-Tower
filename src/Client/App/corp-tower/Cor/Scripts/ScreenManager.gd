@@ -99,13 +99,17 @@ func _on_play_loader_finished() -> void:
 func show_sign_in_screen() -> void:
 	var screen := SignInScreenScene.instantiate()
 	screen.guest_login_requested.connect(_on_guest_login_requested)
+	screen.provider_login_requested.connect(_on_provider_login_requested)
 	_set_overlay(screen)
+
+	var pending: String = AuthManager.take_oauth_error()
+
+	if pending != AuthManager.REASON_NONE:
+		screen.call("show_error", pending)
 
 func _on_guest_login_requested() -> void:
 	var screen := current_overlay
-
-	if screen != null and is_instance_valid(screen) and screen.has_method("set_busy"):
-		screen.call("set_busy", true)
+	_set_sign_in_busy(screen, true)
 
 	var reason: String = await AuthManager.sign_in_guest()
 
@@ -113,6 +117,34 @@ func _on_guest_login_requested() -> void:
 		show_home_screen()
 		return
 
+	_show_sign_in_error(screen, reason)
+
+func _on_provider_login_requested(provider: String) -> void:
+	var screen := current_overlay
+	_set_sign_in_busy(screen, true)
+
+	var launch_reason: String = AuthManager.sign_in_with_provider(provider)
+
+	if launch_reason != AuthManager.REASON_NONE:
+		_show_sign_in_error(screen, launch_reason)
+		return
+
+	if OS.has_feature("web"):
+		return
+
+	var reason: String = await AuthManager.oauth_completed
+
+	if reason == AuthManager.REASON_NONE:
+		show_home_screen()
+		return
+
+	_show_sign_in_error(screen, reason)
+
+func _set_sign_in_busy(screen: Node, busy: bool) -> void:
+	if screen != null and is_instance_valid(screen) and screen.has_method("set_busy"):
+		screen.call("set_busy", busy)
+
+func _show_sign_in_error(screen: Node, reason: String) -> void:
 	if screen == null or not is_instance_valid(screen) or screen != current_overlay:
 		return
 

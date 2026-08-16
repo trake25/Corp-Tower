@@ -172,6 +172,11 @@ absolute `expires_at` beating `expires_in`, a tokenless payload refused, an
 expired token reading as no token, and **an unconfigured build still reaching
 Sign-in and Home exactly as it did before Supabase** — the rollout guard.
 
+**`test_auth_pkce.gd`** — S256 against the **published RFC 7636 vector** rather
+than against itself, verifier shape and uniqueness, callback parsing (denied
+consent, malformed pairs), and `export.cfg` still matching `REDIRECT_ANDROID` —
+drift there dead-ends sign-in on device, unseen by every other test.
+
 **`test_collapse_sim.gd`** — fixed-seed physics: no piece starts upward or
 settles below the platform or outside its span, every piece ends flat, the sim
 settles within a bounded step count, one seed reproduces an identical collapse

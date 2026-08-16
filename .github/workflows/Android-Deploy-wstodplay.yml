@@ -66,6 +66,9 @@ jobs:
           # Both unset means the build has no sign-in and uses a local profile id.
           CORP_TOWER_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           CORP_TOWER_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # Android's redirect is the custom scheme in addons/DeeplinkPlugin/export.cfg,
+          # so only the flag is injected here. Needs the scheme in Supabase's allow list.
+          CORP_TOWER_AUTH_OAUTH: ${{ vars.CORP_TOWER_AUTH_OAUTH || 'false' }}
         run: scripts/write-endpoint-config.sh
 
       - name: Authenticate to Google Play Developer API
