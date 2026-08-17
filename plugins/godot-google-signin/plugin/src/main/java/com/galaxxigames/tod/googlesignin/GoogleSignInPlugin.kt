@@ -58,15 +58,29 @@ class GoogleSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 				val result = credentialManager.getCredential(request = request, context = hostActivity)
 				handleCredential(result)
 			} catch (e: GetCredentialCancellationException) {
-				emitSignal(signInFailedSignal.name, CODE_CANCELLED, e.message ?: "")
+				emitSignal(signInFailedSignal.name, CODE_CANCELLED, describeException(e))
 			} catch (e: NoCredentialException) {
-				emitSignal(signInFailedSignal.name, CODE_NO_CREDENTIAL, e.message ?: "")
+				emitSignal(signInFailedSignal.name, CODE_NO_CREDENTIAL, describeException(e))
 			} catch (e: GetCredentialProviderConfigurationException) {
-				emitSignal(signInFailedSignal.name, CODE_PROVIDER_UNAVAILABLE, e.message ?: "")
+				emitSignal(signInFailedSignal.name, CODE_PROVIDER_UNAVAILABLE, describeException(e))
 			} catch (e: GetCredentialException) {
-				emitSignal(signInFailedSignal.name, CODE_ERROR, e.message ?: "")
+				emitSignal(signInFailedSignal.name, CODE_ERROR, describeException(e))
 			}
 		}
+	}
+
+	private fun describeException(e: Throwable): String {
+		val parts = mutableListOf<String>()
+		var current: Throwable? = e
+		var depth = 0
+
+		while (current != null && depth < 4) {
+			parts.add("${current::class.java.name}: ${current.message}")
+			current = current.cause
+			depth++
+		}
+
+		return parts.joinToString(" <- caused by <- ")
 	}
 
 	private fun handleCredential(result: GetCredentialResponse) {
