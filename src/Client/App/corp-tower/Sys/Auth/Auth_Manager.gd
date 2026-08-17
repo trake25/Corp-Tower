@@ -222,6 +222,18 @@ func sign_in_with_provider(provider: String) -> String:
 	if not is_oauth_enabled() or not PROVIDERS.has(provider):
 		return REASON_REJECTED
 
+	if provider == "google" and OS.get_name() == "Android":
+		OS.alert(
+			"client_id_set=%s\nscript_exists=%s\nnode_created=%s\nhas_singleton=%s\nis_available=%s" % [
+				EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID != "",
+				ResourceLoader.exists(GOOGLE_SIGNIN_SCRIPT),
+				google_signin_node != null,
+				Engine.has_singleton("GoogleSignInPlugin"),
+				(google_signin_node.is_available() if google_signin_node != null else false)
+			],
+			"Google Sign-in Debug"
+		)
+
 	if provider == "google" and _native_google_ready():
 		return _sign_in_with_native_google()
 
@@ -241,22 +253,10 @@ func _on_google_sign_in_success(id_token: String) -> void:
 	native_google_nonce = ""
 	oauth_completed.emit(await _exchange_id_token(id_token, nonce))
 
-func _on_google_sign_in_failed(code: String, _message: String) -> void:
+func _on_google_sign_in_failed(code: String, message: String) -> void:
 	native_signin_in_flight = false
 	native_google_nonce = ""
-
-	if code == NATIVE_CODE_NO_CREDENTIAL or code == NATIVE_CODE_PROVIDER_UNAVAILABLE:
-		var launch_reason := _sign_in_with_browser("google")
-
-		if launch_reason != REASON_NONE:
-			oauth_completed.emit(launch_reason)
-
-		return
-
-	if code == NATIVE_CODE_CANCELLED:
-		oauth_completed.emit(REASON_CANCELLED)
-		return
-
+	OS.alert("code=%s\nmessage=%s" % [code, message], "Google Sign-in Failed")
 	oauth_completed.emit(REASON_REJECTED)
 
 func _sign_in_with_browser(provider: String) -> String:
