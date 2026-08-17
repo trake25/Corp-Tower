@@ -61,10 +61,12 @@ val copyReleaseAAR by tasks.registering(Copy::class) {
 	into("$addonBinDir/release")
 }
 
-tasks.named("assembleDebug").configure {
-	finalizedBy(copyDebugAAR)
-}
+afterEvaluate {
+	tasks.named("assembleDebug").configure {
+		finalizedBy(copyDebugAAR)
+	}
 
-tasks.named("assembleRelease").configure {
-	finalizedBy(copyReleaseAAR)
+	tasks.named("assembleRelease").configure {
+		finalizedBy(copyReleaseAAR)
+	}
 }
