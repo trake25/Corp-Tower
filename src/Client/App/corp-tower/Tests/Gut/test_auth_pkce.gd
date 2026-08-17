@@ -50,12 +50,12 @@ func test_base64url_has_no_padding_or_unsafe_characters() -> void:
 
 func test_authorize_url_encodes_the_redirect_and_pins_s256() -> void:
 	var url: String = auth._build_authorize_url(
-		"google", "corptower://auth-callback", "challenge+value/here"
+		"google", "com.galaxxigames.tod://auth-callback", "challenge+value/here"
 	)
 
 	assert_true(url.contains("provider=google"), "Provider must be on the query.")
 	assert_true(
-		url.contains("redirect_to=corptower%3A%2F%2Fauth-callback"),
+		url.contains("redirect_to=com.galaxxigames.tod%3A%2F%2Fauth-callback"),
 		"The redirect must be percent-encoded, not raw: " + url
 	)
 	assert_true(
@@ -95,7 +95,7 @@ func test_callback_query_reports_a_denied_consent() -> void:
 	assert_eq(parsed["error"], "access_denied")
 
 func test_android_redirect_parts_split_correctly() -> void:
-	assert_eq(auth.redirect_android_scheme(), "corptower")
+	assert_eq(auth.redirect_android_scheme(), "com.galaxxigames.tod")
 	assert_eq(auth.redirect_android_host(), "auth-callback")
 
 # The manifest intent-filter is generated from export.cfg at export time while

@@ -119,7 +119,10 @@ fetched art (`if: always()`).
 **Version code resolution** authenticates to the Play Android Publisher API, reads
 every track's `versionCodes[]`, and uses the highest + 1 (or `1` if no release
 exists). An override is allowed **only as a positive integer greater than the
-detected maximum**.
+detected maximum**. This now targets `com.galaxxigames.tod`, a listing
+bootstrapped by hand — see `tod-android-migration-manual-plan.md` Part G — so the
+first CI-only run resolves to version code 1 only if that manual bootstrap upload
+has not already happened.
 
 **Export details:** the CI preset uses Godot's Gradle Android build path;
 `--install-android-build-template` runs during headless export; CI writes a valid
@@ -161,7 +164,7 @@ prints `<set>`/`<none>` for the key.
 
 `addons/DeeplinkPlugin/` is third-party, pinned at **v5.3** — the last release
 tested against Godot 4.6; v6.x moved to 4.7. It exists so Android can receive the
-OAuth redirect on the `corptower://` scheme.
+OAuth redirect on the `com.galaxxigames.tod://` scheme.
 
 It hooks in as an `EditorExportPlugin`, so **enabling it in `project.godot`
 `[editor_plugins]` is the whole wiring** — it injects its own manifest activity

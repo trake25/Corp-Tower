@@ -23,6 +23,11 @@ on:
         required: false
         default: ""
         type: string
+      debug_ui:
+        description: "Enable the in-game debug UI overlay."
+        required: true
+        default: true
+        type: boolean
 
 concurrency:
   group: android-deploy-wstodplay
@@ -36,7 +41,7 @@ jobs:
       GODOT_VERSION: "4.6.2"
       GODOT_STATUS: "stable"
       GODOT_PROJECT_PATH: "src/Client/App/corp-tower"
-      PACKAGE_NAME: "com.galaxxigames.corptower"
+      PACKAGE_NAME: "com.galaxxigames.tod"
       AAB_PATH: ${{ github.workspace }}/build/CorpTower.aab
       GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.ANDROID_RELEASE_KEYSTORE_ALIAS }}
       GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
@@ -60,7 +65,7 @@ jobs:
         env:
           CORP_TOWER_WS_PRIMARY: wss://wstodplay.galaxxigames.com
           CORP_TOWER_WS_FAILOVER: ""
-          CORP_TOWER_DEBUG_UI: "true"
+          CORP_TOWER_DEBUG_UI: ${{ inputs.debug_ui }}
           # The anon key is public by design — it ships inside the binary — but
           # it comes from a secret so it never lands in the committed config.
           # Both unset means the build has no sign-in and uses a local profile id.

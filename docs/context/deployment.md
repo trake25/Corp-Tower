@@ -221,7 +221,8 @@ on the physical machine.
 | `SUPABASE_SERVICE_ROLE_KEY` | Optional. **Bypasses RLS** — server-side only, never in a client build |
 
 Provider sign-in additionally needs **both redirect targets in Supabase's allow
-list** — `corptower://auth-callback` for Android and the deployed web origin.
+list** — `com.galaxxigames.tod://auth-callback` for Android and the deployed web
+origin.
 Supabase silently falls back to its Site URL for anything not listed, so a missing
 entry looks like a redirect to the wrong page rather than an error.
 

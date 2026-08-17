@@ -50,13 +50,13 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/actions/terraform-validate-plan/action.yml:7 | inputs · key | `working-directory`, the stack directory to run in |
 | .github/actions/terraform-validate-plan/action.yml:12 | runs · key | the shared check sequence — init, **`fmt -check`**, validate, plan saved to `./tfplan` for a later apply step, then a readable plan summary |
 
-### .github/workflows/Android-Deploy-wstodplay.yml — 427 ln
+### .github/workflows/Android-Deploy-wstodplay.yml — 432 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | .github/workflows/Android-Deploy-wstodplay.yml:3 | on · key | manual only, with inputs |
-| .github/workflows/Android-Deploy-wstodplay.yml:31 | jobs · key | single job: signed AAB build and Google Play upload |
-| .github/workflows/Android-Deploy-wstodplay.yml:32 | build-android · job | fetches private art, writes the client endpoint config pinned to the EKS `wstodplay` host, resolves the next Play version code via the Developer API, then builds and uploads a signed AAB on Java 17 |
+| .github/workflows/Android-Deploy-wstodplay.yml:36 | jobs · key | single job: signed AAB build and Google Play upload |
+| .github/workflows/Android-Deploy-wstodplay.yml:37 | build-android · job | fetches private art, writes the client endpoint config pinned to the EKS `wstodplay` host, resolves the next Play version code via the Developer API, then builds and uploads a signed AAB on Java 17 |
 
 ### .github/workflows/Backup-Cleanup-All.yml — 101 ln
 

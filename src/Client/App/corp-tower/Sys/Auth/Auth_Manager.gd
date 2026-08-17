@@ -8,7 +8,7 @@ const REQUEST_TIMEOUT_SECONDS := 12.0
 const VERIFIER_BYTES := 32
 const OAUTH_RESUME_GRACE_SECONDS := 2.0
 
-const REDIRECT_ANDROID := "corptower://auth-callback"
+const REDIRECT_ANDROID := "com.galaxxigames.tod://auth-callback"
 const DEEPLINK_SCRIPT := "res://addons/DeeplinkPlugin/Deeplink.gd"
 
 const PROVIDERS := ["google"]
