@@ -110,11 +110,11 @@ reachable while an EKS session is up.
 
 **Sequence:** fetch private art → write the endpoint config → download Godot
 `4.6.2.stable` → install the Android SDK → resolve the next version code from
-Google Play → restore the release keystore → import and parse the project → run
-the compile/startup smoke test → run required GUT tests → install the Android
-build template and export a signed AAB → validate → upload → optionally push to
-the internal track → verify the track lists the resolved version code → remove
-fetched art (`if: always()`).
+Google Play → build the Google sign-in plugin (Gradle) → restore the release
+keystore → import and parse the project → run the compile/startup smoke test →
+run required GUT tests → install the Android build template and export a signed
+AAB → validate → upload → optionally push to the internal track → verify the
+track lists the resolved version code → remove fetched art (`if: always()`).
 
 **Version code resolution** authenticates to the Play Android Publisher API, reads
 every track's `versionCodes[]`, and uses the highest + 1 (or `1` if no release
@@ -149,7 +149,7 @@ shell pipe.
 ## Client endpoint config
 
 `scripts/write-endpoint-config.sh` regenerates the committed
-`Sys/NetMan/Endpoint_Config.gd` before each client build from six env vars:
+`Sys/NetMan/Endpoint_Config.gd` before each client build from nine env vars:
 
 | Var | Effect |
 |---|---|
@@ -161,6 +161,7 @@ shell pipe.
 | `CORP_TOWER_SUPABASE_ANON_KEY` | Public anon key, from a secret so it stays uncommitted |
 | `CORP_TOWER_AUTH_OAUTH` | Defaults `false` — gates the provider buttons |
 | `CORP_TOWER_AUTH_REDIRECT_WEB` | Where Supabase returns a web build; the Android scheme is not build-injected |
+| `CORP_TOWER_GOOGLE_SERVER_CLIENT_ID` | Android only — the Web OAuth client ID reused as `serverClientId`; empty disables native sign-in |
 
 **The two Supabase vars are all-or-nothing** — setting one without the other is a
 hard error, so a build cannot half-enable sign-in, and `CORP_TOWER_AUTH_OAUTH=true`
@@ -187,6 +188,19 @@ that ships a real endpoint calls this script first.**
 
 The gate is a **build-time flag, not a runtime host check** — it has to hold on
 Android and in the editor, where there is no hostname to read.
+
+### Google sign-in plugin
+
+Unlike the vendored Deeplink plugin, `addons/GoogleSignInPlugin/` is
+**first-party**: Kotlin source in `plugins/godot-google-signin/`, its AAR built
+by CI (`scripts/build-android-plugin.sh` via `gradle/actions/setup-gradle@v4`)
+and never committed — `bin/` is gitignored, so a missing AAR means the build
+step hasn't run, not that the addon is broken. Same `EditorExportPlugin` wiring
+as Deeplink (`project.godot` `[editor_plugins]`, no preset key), but no
+manifest injection: Credential Manager needs no permission or exported
+component, only the Gradle deps `_get_android_dependencies()` pulls in.
+`Auth_Manager.gd` tries it first on Android when
+`AUTH_GOOGLE_SERVER_CLIENT_ID` is set, else falls back to the browser flow.
 
 ## Server container image
 

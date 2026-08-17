@@ -38,3 +38,6 @@ Thumbs.db
 
 # Assets
 Cor/Art/
+
+# Built by scripts/build-android-plugin.sh, not committed
+addons/GoogleSignInPlugin/bin/

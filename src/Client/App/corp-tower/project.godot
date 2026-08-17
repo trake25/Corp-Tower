@@ -36,7 +36,7 @@ window/stretch/aspect.mobile="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/DeeplinkPlugin/plugin.cfg", "res://addons/gut/plugin.cfg")
+enabled=PackedStringArray("res://addons/DeeplinkPlugin/plugin.cfg", "res://addons/GoogleSignInPlugin/plugin.cfg", "res://addons/gut/plugin.cfg")
 
 [importer_defaults]
 

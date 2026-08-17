@@ -10,6 +10,7 @@ const OAUTH_RESUME_GRACE_SECONDS := 2.0
 
 const REDIRECT_ANDROID := "com.galaxxigames.tod://auth-callback"
 const DEEPLINK_SCRIPT := "res://addons/DeeplinkPlugin/Deeplink.gd"
+const GOOGLE_SIGNIN_SCRIPT := "res://addons/GoogleSignInPlugin/GoogleSignIn.gd"
 
 const PROVIDERS := ["google"]
 
@@ -18,6 +19,10 @@ const REASON_UNREACHABLE := "unreachable"
 const REASON_REJECTED := "rejected"
 const REASON_CANCELLED := "cancelled"
 const REASON_BROWSER := "browser"
+
+const NATIVE_CODE_NO_CREDENTIAL := "no_credential"
+const NATIVE_CODE_PROVIDER_UNAVAILABLE := "provider_unavailable"
+const NATIVE_CODE_CANCELLED := "cancelled"
 
 signal oauth_completed(reason: String)
 
@@ -30,6 +35,9 @@ var refresh_in_flight := false
 var oauth_in_flight := false
 var last_oauth_reason := ""
 var deeplink_node: Node = null
+var google_signin_node: Node = null
+var native_signin_in_flight := false
+var native_google_nonce := ""
 
 func _ready() -> void:
 	_load_session()
@@ -44,6 +52,7 @@ func _ready() -> void:
 	add_child(refresh_timer)
 
 	_setup_deeplink()
+	_setup_native_google()
 
 func _setup_deeplink() -> void:
 	if not is_oauth_enabled() or OS.get_name() != "Android":
@@ -63,6 +72,29 @@ func _setup_deeplink() -> void:
 	deeplink_node.deeplink_received.connect(_on_deeplink_received)
 	add_child(deeplink_node)
 	deeplink_node.initialize()
+
+func _setup_native_google() -> void:
+	if not is_oauth_enabled() or OS.get_name() != "Android":
+		return
+
+	if EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID == "":
+		return
+
+	if not ResourceLoader.exists(GOOGLE_SIGNIN_SCRIPT):
+		return
+
+	var script: GDScript = load(GOOGLE_SIGNIN_SCRIPT)
+
+	if script == null:
+		return
+
+	google_signin_node = script.new()
+	google_signin_node.sign_in_success.connect(_on_google_sign_in_success)
+	google_signin_node.sign_in_failed.connect(_on_google_sign_in_failed)
+	add_child(google_signin_node)
+
+func _native_google_ready() -> bool:
+	return google_signin_node != null and google_signin_node.is_available()
 
 func redirect_android_scheme() -> String:
 	return REDIRECT_ANDROID.split("://", true, 1)[0]
@@ -190,6 +222,44 @@ func sign_in_with_provider(provider: String) -> String:
 	if not is_oauth_enabled() or not PROVIDERS.has(provider):
 		return REASON_REJECTED
 
+	if provider == "google" and _native_google_ready():
+		return _sign_in_with_native_google()
+
+	return _sign_in_with_browser(provider)
+
+func _sign_in_with_native_google() -> String:
+	native_google_nonce = _generate_code_verifier()
+	native_signin_in_flight = true
+	google_signin_node.sign_in(
+		EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID, _sha256_hex(native_google_nonce)
+	)
+	return REASON_NONE
+
+func _on_google_sign_in_success(id_token: String) -> void:
+	native_signin_in_flight = false
+	var nonce := native_google_nonce
+	native_google_nonce = ""
+	oauth_completed.emit(await _exchange_id_token(id_token, nonce))
+
+func _on_google_sign_in_failed(code: String, _message: String) -> void:
+	native_signin_in_flight = false
+	native_google_nonce = ""
+
+	if code == NATIVE_CODE_NO_CREDENTIAL or code == NATIVE_CODE_PROVIDER_UNAVAILABLE:
+		var launch_reason := _sign_in_with_browser("google")
+
+		if launch_reason != REASON_NONE:
+			oauth_completed.emit(launch_reason)
+
+		return
+
+	if code == NATIVE_CODE_CANCELLED:
+		oauth_completed.emit(REASON_CANCELLED)
+		return
+
+	oauth_completed.emit(REASON_REJECTED)
+
+func _sign_in_with_browser(provider: String) -> String:
 	var verifier := _generate_code_verifier()
 	_save_verifier(verifier)
 
@@ -236,6 +306,21 @@ func _code_challenge(verifier: String) -> String:
 func _base64url(bytes: PackedByteArray) -> String:
 	return Marshalls.raw_to_base64(bytes).replace("+", "-").replace("/", "_").rstrip("=")
 
+func _sha256_hex(s: String) -> String:
+	var context := HashingContext.new()
+	context.start(HashingContext.HASH_SHA256)
+	var bytes := s.to_utf8_buffer()
+
+	if bytes.size() > 0:
+		context.update(bytes)
+
+	var hex := ""
+
+	for byte in context.finish():
+		hex += "%02x" % byte
+
+	return hex
+
 func _parse_callback_query(query: String) -> Dictionary:
 	var result := {"code": "", "error": ""}
 
@@ -263,6 +348,30 @@ func _exchange_code(code: String) -> String:
 	var response := await _post_auth(
 		"/auth/v1/token?grant_type=pkce",
 		{"auth_code": code, "code_verifier": verifier}
+	)
+
+	if response["reason"] != REASON_NONE:
+		return response["reason"]
+
+	if not _store_session(response["data"]):
+		return REASON_REJECTED
+
+	return REASON_NONE
+
+func _build_id_token_body(id_token: String, nonce: String) -> Dictionary:
+	return {
+		"provider": "google",
+		"id_token": id_token,
+		"nonce": nonce,
+		"client_id": EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID
+	}
+
+func _exchange_id_token(id_token: String, nonce: String) -> String:
+	if id_token == "" or nonce == "":
+		return REASON_REJECTED
+
+	var response := await _post_auth(
+		"/auth/v1/token?grant_type=id_token", _build_id_token_body(id_token, nonce)
 	)
 
 	if response["reason"] != REASON_NONE:

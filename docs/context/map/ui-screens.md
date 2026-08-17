@@ -193,7 +193,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:50 | set_busy | disable the button and swap its label during sign-in |
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:61 | show_error | reveal ErrorLabel; unknown reasons fall back to the generic message |
 
-### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 452 ln
+### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 558 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -206,52 +206,65 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:9 | OAUTH_RESUME_GRACE_SECONDS · const | wait after resume before calling a flow abandoned |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:11 | REDIRECT_ANDROID · const | custom-scheme callback; **`export.cfg` must match**, asserted by `test_auth_pkce.gd` |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:12 | DEEPLINK_SCRIPT · const | vendored plugin path, loaded at runtime so nothing links against it |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:14 | PROVIDERS · const | **the allowlist that decides which buttons exist** — google only |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:16 | REASON_NONE · const | empty string — the success value every call returns |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:17 | REASON_UNREACHABLE · const | network or timeout — distinct from a refusal |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:18 | REASON_REJECTED · const | Supabase answered and refused |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:19 | REASON_CANCELLED · const | consent denied, or returned to the app with no callback |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:20 | REASON_BROWSER · const | the system browser would not open |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:22 | oauth_completed · signal | Android flow finished; carries a reason, empty on success |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:34 | _ready | load the stored session; arm the refresh timer only when enabled |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:48 | _setup_deeplink | Android only: instantiate the vendored Deeplink node and listen |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:67 | redirect_android_scheme | scheme half of `REDIRECT_ANDROID` |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:70 | redirect_android_host | host half, path stripped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:78 | _on_deeplink_received | callback arrived while the app stayed alive → exchange |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:91 | is_enabled | **both URL and anon key must be set**, else auth is off and the build behaves as it did pre-Supabase |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:94 | is_signed_in | enabled and holding a refresh token |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:97 | access_token | token for the wire; **returns empty once expired** rather than sending a stale one |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:106 | restore_session | splash-time check — true routes to Home, false to Sign-in |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:120 | consume_web_callback | web only: read `?code` off the URL, exchange it, then scrub the URL |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:142 | take_oauth_error | one-shot read so Sign-in can explain a failed web return |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:147 | _save_verifier | persist the verifier before leaving for the browser |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:153 | _load_verifier | read it back on return |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:159 | _clear_verifier | single-use: cleared on exchange, cancel and sign-out |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:163 | sign_in_guest | anonymous sign-up; returns a reason code, empty on success |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:177 | is_oauth_enabled | needs auth on, the flag, **and a redirect this platform can receive** |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:180 | redirect_uri | web → build-injected origin · Android → custom scheme · else empty |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:189 | sign_in_with_provider | mint verifier → open authorize URL; returns a *launch* reason only |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:209 | _expire_oauth_after_grace | resumed with no callback → cancel, so the screen cannot stick busy |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:219 | _build_authorize_url | authorize URL with the encoded redirect and **`s256`, never `plain`** |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:227 | _generate_code_verifier | 32 crypto-random bytes, base64url |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:230 | _code_challenge | SHA-256 → base64url; checked against the RFC 7636 vector |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:236 | _base64url | base64 → url-safe alphabet, padding stripped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:239 | _parse_callback_query | pull `code`/`error` off a callback query; junk pairs skipped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:256 | _exchange_code | `grant_type=pkce` swap of code + verifier for a session |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:276 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:302 | sign_out | clear memory and delete the session file |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:314 | seconds_until_expiry | 0 when no session is held |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:320 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:329 | _notification | refresh on app resume when the token went stale in the background |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:344 | _auth_url | join the project URL to an auth path |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:347 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:385 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:404 | _store_session | apply, then persist |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:411 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:424 | _save_session | write the session JSON to `user://` |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:438 | _load_session | read it back on boot; malformed content is ignored |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:13 | GOOGLE_SIGNIN_SCRIPT · const | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:15 | PROVIDERS · const | **the allowlist that decides which buttons exist** — google only |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:17 | REASON_NONE · const | empty string — the success value every call returns |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:18 | REASON_UNREACHABLE · const | network or timeout — distinct from a refusal |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:19 | REASON_REJECTED · const | Supabase answered and refused |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:20 | REASON_CANCELLED · const | consent denied, or returned to the app with no callback |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:21 | REASON_BROWSER · const | the system browser would not open |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:23 | NATIVE_CODE_NO_CREDENTIAL · const | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:24 | NATIVE_CODE_PROVIDER_UNAVAILABLE · const | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:25 | NATIVE_CODE_CANCELLED · const | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:27 | oauth_completed · signal | Android flow finished; carries a reason, empty on success |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:42 | _ready | load the stored session; arm the refresh timer only when enabled |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:57 | _setup_deeplink | Android only: instantiate the vendored Deeplink node and listen |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:76 | _setup_native_google | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:96 | _native_google_ready | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:99 | redirect_android_scheme | scheme half of `REDIRECT_ANDROID` |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:102 | redirect_android_host | host half, path stripped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:110 | _on_deeplink_received | callback arrived while the app stayed alive → exchange |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:123 | is_enabled | **both URL and anon key must be set**, else auth is off and the build behaves as it did pre-Supabase |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:126 | is_signed_in | enabled and holding a refresh token |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:129 | access_token | token for the wire; **returns empty once expired** rather than sending a stale one |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:138 | restore_session | splash-time check — true routes to Home, false to Sign-in |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:152 | consume_web_callback | web only: read `?code` off the URL, exchange it, then scrub the URL |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:174 | take_oauth_error | one-shot read so Sign-in can explain a failed web return |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:179 | _save_verifier | persist the verifier before leaving for the browser |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:185 | _load_verifier | read it back on return |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:191 | _clear_verifier | single-use: cleared on exchange, cancel and sign-out |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:195 | sign_in_guest | anonymous sign-up; returns a reason code, empty on success |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:209 | is_oauth_enabled | needs auth on, the flag, **and a redirect this platform can receive** |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:212 | redirect_uri | web → build-injected origin · Android → custom scheme · else empty |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:221 | sign_in_with_provider | mint verifier → open authorize URL; returns a *launch* reason only |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:230 | _sign_in_with_native_google | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:238 | _on_google_sign_in_success | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:244 | _on_google_sign_in_failed | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:262 | _sign_in_with_browser | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:279 | _expire_oauth_after_grace | resumed with no callback → cancel, so the screen cannot stick busy |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:289 | _build_authorize_url | authorize URL with the encoded redirect and **`s256`, never `plain`** |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:297 | _generate_code_verifier | 32 crypto-random bytes, base64url |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:300 | _code_challenge | SHA-256 → base64url; checked against the RFC 7636 vector |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:306 | _base64url | base64 → url-safe alphabet, padding stripped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:309 | _sha256_hex | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:321 | _parse_callback_query | pull `code`/`error` off a callback query; junk pairs skipped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:338 | _exchange_code | `grant_type=pkce` swap of code + verifier for a session |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:358 | _build_id_token_body | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:366 | _exchange_id_token | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:382 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:408 | sign_out | clear memory and delete the session file |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:420 | seconds_until_expiry | 0 when no session is held |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:426 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:435 | _notification | refresh on app resume when the token went stale in the background |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:450 | _auth_url | join the project URL to an auth path |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:453 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:491 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:510 | _store_session | apply, then persist |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:517 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:530 | _save_session | write the session JSON to `user://` |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:544 | _load_session | read it back on boot; malformed content is ignored |
 
-### src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd — 11 ln
+### src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd — 12 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -264,6 +277,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:8 | SUPABASE_ANON_KEY · const | public anon key, build-injected from a secret; both must be set |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:9 | AUTH_OAUTH_ENABLED · const | gates provider sign-in; guest works without it |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:10 | AUTH_REDIRECT_WEB · const | where Supabase returns a web build; **must be in the allow list** |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:11 | AUTH_GOOGLE_SERVER_CLIENT_ID · const | TODO |
 
 ### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 319 ln
 
@@ -307,4 +321,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-13 files · 233 symbols · 50 awaiting a `Does` line.
+13 files · 247 symbols · 64 awaiting a `Does` line.

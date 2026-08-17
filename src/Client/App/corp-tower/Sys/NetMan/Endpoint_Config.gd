@@ -8,3 +8,4 @@ const SUPABASE_URL := ""
 const SUPABASE_ANON_KEY := ""
 const AUTH_OAUTH_ENABLED := false
 const AUTH_REDIRECT_WEB := ""
+const AUTH_GOOGLE_SERVER_CLIENT_ID := ""

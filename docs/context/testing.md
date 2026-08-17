@@ -176,6 +176,10 @@ than against itself, verifier shape and uniqueness, callback parsing (denied
 consent, malformed pairs), and `export.cfg` still matching `REDIRECT_ANDROID` —
 drift there dead-ends sign-in on device, unseen by every other test.
 
+**`test_auth_google_native.gd`** — `_sha256_hex` against standard vectors, the
+`grant_type=id_token` body carrying the **raw** nonce, not its digest, native
+readiness always false off-tree, and the plugin singleton name pinned.
+
 **`test_collapse_sim.gd`** — fixed-seed physics: no piece starts upward or
 settles below the platform or outside its span, every piece ends flat, the sim
 settles within a bounded step count, one seed reproduces an identical collapse

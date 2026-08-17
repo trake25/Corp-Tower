@@ -55,7 +55,11 @@ const BUDGETS = {
   // sat at exactly 3000 and auth landed two genuinely new suites
   // (Auth_Verifier.test.js, test_auth_manager.gd). The same change folded a
   // fixed-bug story back into plain description. Next time: compact or split.
-  'networking.md': 4000, 'build.md': 3000, 'testing.md': 3200,
+  // build.md 3000 -> 3300: first raise. The Android deploy workflow gained a
+  // genuinely new build step (the first-party Google sign-in plugin, built by
+  // CI rather than vendored) and its own doc subsection; nothing existing was
+  // narrative to retire. Next time: compact or split.
+  'networking.md': 4000, 'build.md': 3300, 'testing.md': 3200,
   // ui.md split by concept (screens / HUD / tutorial) once map/ui.md's single
   // 28,000-token ceiling stopped holding the client area -- see git history on
   // this file for the two prior MAP_BUDGET raises this replaced.

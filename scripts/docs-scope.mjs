@@ -63,6 +63,7 @@ const ROUTES = [
   [/^\.github\/actions\//,                           ['build.md'],                  'hunk'],
   [/^infra\//,                                       ['deployment.md'],             'hunk'],
   [/^docker\//,                                      ['build.md'],                  'hunk'],
+  [/^plugins\//,                                      ['build.md'],                  'hunk'],
   [/^scripts\/art-|^scripts\/ADDING-ART/,            ['build.md'],                  'hunk'],
   [/^scripts\/write-endpoint-config/,                ['networking.md', 'build.md'], 'hunk'],
   // The doc procedure lives in .claude/commands/{update,compact}-docs.md now, not

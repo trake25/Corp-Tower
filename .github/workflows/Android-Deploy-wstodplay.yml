@@ -74,6 +74,11 @@ jobs:
           # Android's redirect is the custom scheme in addons/DeeplinkPlugin/export.cfg,
           # so only the flag is injected here. Needs the scheme in Supabase's allow list.
           CORP_TOWER_AUTH_OAUTH: ${{ vars.CORP_TOWER_AUTH_OAUTH || 'false' }}
+          # The Google Cloud "Web application" OAuth client ID, reused as Credential
+          # Manager's serverClientId for native sign-in. Public by design, same
+          # secret-sourcing reasoning as the anon key above. Empty disables native
+          # sign-in and Android falls back to the browser flow unconditionally.
+          CORP_TOWER_GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_WEB_CLIENT_ID }}
         run: scripts/write-endpoint-config.sh
 
       - name: Authenticate to Google Play Developer API
@@ -197,6 +202,14 @@ jobs:
           mkdir -p "$TEMPLATES_DIR"
           unzip -q export_templates.tpz
           cp -R templates/* "$TEMPLATES_DIR/"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13.2"
+
+      - name: Build Google sign-in Android plugin
+        run: scripts/build-android-plugin.sh
 
       - name: Configure Godot Android export settings
         run: |

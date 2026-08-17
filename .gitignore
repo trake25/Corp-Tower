@@ -48,3 +48,10 @@ site/public/og.png
 # Local values for the contact Worker's secrets, read by `wrangler dev`.
 # The deployed ones live in Cloudflare, never here.
 site/.dev.vars
+
+# Google sign-in Android plugin (Kotlin/Gradle) — build.md documents rebuilding
+# it with scripts/build-android-plugin.sh; only its source is tracked.
+plugins/godot-google-signin/.gradle/
+plugins/godot-google-signin/build/
+plugins/godot-google-signin/plugin/build/
+plugins/godot-google-signin/local.properties

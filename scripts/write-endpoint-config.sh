@@ -22,6 +22,12 @@ CORP_TOWER_SUPABASE_URL="${CORP_TOWER_SUPABASE_URL%/}"
 CORP_TOWER_AUTH_OAUTH="${CORP_TOWER_AUTH_OAUTH:-false}"
 CORP_TOWER_AUTH_REDIRECT_WEB="${CORP_TOWER_AUTH_REDIRECT_WEB:-}"
 
+# Android only: the Google Cloud "Web application" OAuth client ID, reused as
+# Credential Manager's serverClientId so the native account-picker flow issues
+# an ID token Supabase already trusts. Empty disables native sign-in and
+# Android falls back to the browser flow unconditionally.
+CORP_TOWER_GOOGLE_SERVER_CLIENT_ID="${CORP_TOWER_GOOGLE_SERVER_CLIENT_ID:-}"
+
 case "$CORP_TOWER_DEBUG_UI" in
   true|false) ;;
   *) echo "error: CORP_TOWER_DEBUG_UI must be 'true' or 'false', got '$CORP_TOWER_DEBUG_UI'" >&2; exit 1 ;;
@@ -52,6 +58,10 @@ if [ "$CORP_TOWER_AUTH_OAUTH" = "true" ] && [ -z "$CORP_TOWER_SUPABASE_URL" ]; t
   exit 1
 fi
 
+if [ -n "$CORP_TOWER_GOOGLE_SERVER_CLIENT_ID" ] && [ "$CORP_TOWER_AUTH_OAUTH" != "true" ]; then
+  echo "warning: CORP_TOWER_GOOGLE_SERVER_CLIENT_ID is set but CORP_TOWER_AUTH_OAUTH is not true — native Google sign-in will stay unreachable" >&2
+fi
+
 cat > "$CONFIG_FILE" <<EOF
 class_name EndpointConfig
 
@@ -63,6 +73,7 @@ const SUPABASE_URL := "${CORP_TOWER_SUPABASE_URL}"
 const SUPABASE_ANON_KEY := "${CORP_TOWER_SUPABASE_ANON_KEY}"
 const AUTH_OAUTH_ENABLED := ${CORP_TOWER_AUTH_OAUTH}
 const AUTH_REDIRECT_WEB := "${CORP_TOWER_AUTH_REDIRECT_WEB}"
+const AUTH_GOOGLE_SERVER_CLIENT_ID := "${CORP_TOWER_GOOGLE_SERVER_CLIENT_ID}"
 EOF
 
 echo "Wrote $CONFIG_FILE"
@@ -75,3 +86,4 @@ echo "  SUPABASE_URL=${CORP_TOWER_SUPABASE_URL:-<none>}"
 echo "  SUPABASE_ANON_KEY=$([ -n "$CORP_TOWER_SUPABASE_ANON_KEY" ] && echo "<set>" || echo "<none>")"
 echo "  AUTH_OAUTH_ENABLED=${CORP_TOWER_AUTH_OAUTH}"
 echo "  AUTH_REDIRECT_WEB=${CORP_TOWER_AUTH_REDIRECT_WEB:-<none>}"
+echo "  AUTH_GOOGLE_SERVER_CLIENT_ID=${CORP_TOWER_GOOGLE_SERVER_CLIENT_ID:-<none>}"

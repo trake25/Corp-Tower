@@ -29,8 +29,8 @@ All paths under `src/Client/App/corp-tower/` unless noted. **The client renders
   the EKS web builds and the public demo; `DEMO_MODE_ENABLED` gates the required
   `DemoModeLabel` node disclosing that empty seats are bots, set only for
   `toddemo`; `SUPABASE_URL`/`SUPABASE_ANON_KEY` enable sign-in — **both empty
-  (the committed default) disables AuthManager**; `AUTH_OAUTH_ENABLED` and
-  `AUTH_REDIRECT_WEB` add provider sign-in on top.
+  (the committed default) disables AuthManager**; `AUTH_OAUTH_ENABLED`,
+  `AUTH_REDIRECT_WEB`, `AUTH_GOOGLE_SERVER_CLIENT_ID` add provider sign-in.
 
 `update_config`/`resetDebugConfig` have **no server-side auth check** — the debug
 gate is UI-only, and needs one before public release.
