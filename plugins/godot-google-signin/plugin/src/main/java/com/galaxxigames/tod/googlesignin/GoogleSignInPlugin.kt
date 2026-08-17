@@ -1,6 +1,5 @@
 package com.galaxxigames.tod.googlesignin
 
-import android.content.MutableContextWrapper
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -53,11 +52,10 @@ class GoogleSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 			.build()
 
 		val credentialManager = CredentialManager.create(hostActivity)
-		val requestContext = MutableContextWrapper(hostActivity)
 
 		pluginScope.launch {
 			try {
-				val result = credentialManager.getCredential(request = request, context = requestContext)
+				val result = credentialManager.getCredential(request = request, context = hostActivity)
 				handleCredential(result)
 			} catch (e: GetCredentialCancellationException) {
 				emitSignal(signInFailedSignal.name, CODE_CANCELLED, e.message ?: "")
