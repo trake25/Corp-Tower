@@ -17,7 +17,7 @@ config/features=PackedStringArray("4.6", "GL Compatibility")
 boot_splash/image="uid://gomqu3yyp75n"
 config/icon="res://icon.svg"
 boot_splash/stretch_mode.web=1
-boot_splash/stretch_mode.mobile=1
+boot_splash/stretch_mode.mobile=3
 
 [autoload]
 

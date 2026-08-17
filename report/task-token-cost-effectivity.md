@@ -53,7 +53,8 @@ contradicted source.
 | 5 | Supabase auth Phase 3: `profiles` table + RLS, PostgREST profile store behind the service_role key | 3 | B | 3 | 12 | ~25,000 | ~30,000 | ~180,000 | ~180,000 | ! | ok | Opus 5 | max | docs-steward |
 | 6 | Android package rename `corptower`→`tod`: export preset, deploy workflow, OAuth redirect scheme, debug_ui dispatch input, docs | 2 | B | 3 | 8 | ~15,000 | ~14,000 | ~60,000 | ~60,000 | ✓ | ok | Sonnet 5 | medium | infra-engineer, client-engineer |
 | 7 | Android splash crop + screen-fill fixed: `boot_splash` stretch_mode, `window/stretch/aspect.mobile`=expand, doc updated | 3 | B | 2 | 2 | — | ~12,000 | ~220,000 | ~220,000 | ✓ | ok | Sonnet 5 | medium | client-engineer |
-<!-- next: row 8 -->
+| 8 | Android boot_splash still cropped post-fix: traced engine source, Keep→Keep Height (mode 3); web mobile letterbox diagnosed, deferred | 3 | B | 1 | 1 | — | ~8,000 | ~140,000 | ~140,000 | ✓ | ok | Sonnet 5 | medium | client-engineer |
+<!-- next: row 9 -->
 
 ## Cycle 2 (closed)
 
