@@ -16,9 +16,10 @@ All paths under `src/Client/App/corp-tower/` unless noted. **The client renders
 - `project.godot` autoloads NetworkManager and `AuthManager` (`Sys/Auth/`), which
   owns the Supabase session in `user://` and refreshes it on a timer so the
   connect path never awaits — NetworkManager just reads `access_token()`.
-- Display: 412×917 portrait design size, `canvas_items` stretch. Aspect is
-  `keep` on web and mobile (`.web`/`.mobile`), pillarboxed rather than
-  widened — most `GameUI.tscn` children are fixed-offset, not edge-anchored.
+- Display: 412×917 portrait design size, `canvas_items` stretch, `keep` aspect
+  on web (`.web`, pillarboxed), `expand` on mobile (`.mobile`) to fill device
+  edges — `GameUI.tscn`'s fixed-offset HUD sits under `PlayField`'s origin, so
+  extra canvas only adds background beneath it.
 - `Main.tscn` is the app root and owns [Screen Manager](#screen-manager); there is
   no static UI root scene.
 - `export_presets.cfg` is gitignored; CI uses a non-secret preset →
@@ -85,7 +86,7 @@ global floating debug button.
   `font_hover_color`/`font_pressed_color` are also set — they default to a light
   colour. Every text-bearing button instead uses `text = ""` plus a child
   `Label` (fixed `font_color`), outside `Button`'s state colours entirely.
-- **The editor cannot validate web layout.** `expand` and `keep` produce genuinely
-  different viewport sizes and coincide only at 412×917 — which is exactly what the
-  editor runs at. Popover mis-positioning and trigger-tap timing are likewise not
-  reproducible in the editor. Verify on a deployed build.
+- **The editor viewport is fixed at 412×917**, where `expand` and `keep`
+  coincide — it can't show device-size layout, popover mis-positioning, or
+  trigger-tap timing. Resize the running desktop client instead, or verify on
+  a deployed build.

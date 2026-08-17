@@ -52,7 +52,8 @@ contradicted source.
 | 4 | Supabase auth Phase 2: Google PKCE sign-in on Android and web, vendored Deeplink plugin, still flag-dormant | 4 | B | 4 | 20 | ~60,000 | ~55,000 | ~330,000 | ~330,000 | ✓ | ok | Opus 5 | max | docs-steward |
 | 5 | Supabase auth Phase 3: `profiles` table + RLS, PostgREST profile store behind the service_role key | 3 | B | 3 | 12 | ~25,000 | ~30,000 | ~180,000 | ~180,000 | ! | ok | Opus 5 | max | docs-steward |
 | 6 | Android package rename `corptower`→`tod`: export preset, deploy workflow, OAuth redirect scheme, debug_ui dispatch input, docs | 2 | B | 3 | 8 | ~15,000 | ~14,000 | ~60,000 | ~60,000 | ✓ | ok | Sonnet 5 | medium | infra-engineer, client-engineer |
-<!-- next: row 7 -->
+| 7 | Android splash crop + screen-fill fixed: `boot_splash` stretch_mode, `window/stretch/aspect.mobile`=expand, doc updated | 3 | B | 2 | 2 | — | ~12,000 | ~220,000 | ~220,000 | ✓ | ok | Sonnet 5 | medium | client-engineer |
+<!-- next: row 8 -->
 
 ## Cycle 2 (closed)
 
