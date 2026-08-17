@@ -9,7 +9,7 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
 import androidx.credentials.exceptions.NoCredentialException
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import kotlinx.coroutines.CoroutineScope
@@ -44,14 +44,12 @@ class GoogleSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 			return
 		}
 
-		val googleIdOption = GetGoogleIdOption.Builder()
-			.setFilterByAuthorizedAccounts(false)
-			.setServerClientId(serverClientId)
+		val signInOption = GetSignInWithGoogleOption.Builder(serverClientId)
 			.setNonce(hashedNonce)
 			.build()
 
 		val request = GetCredentialRequest.Builder()
-			.addCredentialOption(googleIdOption)
+			.addCredentialOption(signInOption)
 			.build()
 
 		val credentialManager = CredentialManager.create(hostActivity)

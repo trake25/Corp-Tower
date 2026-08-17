@@ -193,7 +193,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:50 | set_busy | disable the button and swap its label during sign-in |
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:61 | show_error | reveal ErrorLabel; unknown reasons fall back to the generic message |
 
-### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 558 ln
+### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 561 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -237,9 +237,9 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:209 | is_oauth_enabled | needs auth on, the flag, **and a redirect this platform can receive** |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:212 | redirect_uri | web → build-injected origin · Android → custom scheme · else empty |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:221 | sign_in_with_provider | mint verifier → open authorize URL; returns a *launch* reason only |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:230 | _sign_in_with_native_google | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:238 | _on_google_sign_in_success | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:244 | _on_google_sign_in_failed | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:242 | _sign_in_with_native_google | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:250 | _on_google_sign_in_success | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:256 | _on_google_sign_in_failed | TODO |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:262 | _sign_in_with_browser | TODO |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:279 | _expire_oauth_after_grace | resumed with no callback → cancel, so the screen cannot stick busy |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:289 | _build_authorize_url | authorize URL with the encoded redirect and **`s256`, never `plain`** |
@@ -247,22 +247,22 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:300 | _code_challenge | SHA-256 → base64url; checked against the RFC 7636 vector |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:306 | _base64url | base64 → url-safe alphabet, padding stripped |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:309 | _sha256_hex | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:321 | _parse_callback_query | pull `code`/`error` off a callback query; junk pairs skipped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:338 | _exchange_code | `grant_type=pkce` swap of code + verifier for a session |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:358 | _build_id_token_body | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:366 | _exchange_id_token | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:382 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:408 | sign_out | clear memory and delete the session file |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:420 | seconds_until_expiry | 0 when no session is held |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:426 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:435 | _notification | refresh on app resume when the token went stale in the background |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:450 | _auth_url | join the project URL to an auth path |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:453 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:491 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:510 | _store_session | apply, then persist |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:517 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:530 | _save_session | write the session JSON to `user://` |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:544 | _load_session | read it back on boot; malformed content is ignored |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:324 | _parse_callback_query | pull `code`/`error` off a callback query; junk pairs skipped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:341 | _exchange_code | `grant_type=pkce` swap of code + verifier for a session |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:361 | _build_id_token_body | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:369 | _exchange_id_token | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:385 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:411 | sign_out | clear memory and delete the session file |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:423 | seconds_until_expiry | 0 when no session is held |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:429 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:438 | _notification | refresh on app resume when the token went stale in the background |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:453 | _auth_url | join the project URL to an auth path |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:456 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:494 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:513 | _store_session | apply, then persist |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:520 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:533 | _save_session | write the session JSON to `user://` |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:547 | _load_session | read it back on boot; malformed content is ignored |
 
 ### src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd — 12 ln
 

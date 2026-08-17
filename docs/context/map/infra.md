@@ -740,7 +740,7 @@ _no extracted symbols_
 | scripts/validate-docs.mjs:418 | mapTotal · const | summed map tokens, reported but not part of the prose total |
 | scripts/validate-docs.mjs:435 | terse · const | true only on a quiet passing run |
 
-### scripts/write-endpoint-config.sh — 90 ln
+### scripts/write-endpoint-config.sh — 94 ln
 
 _no extracted symbols_
 
