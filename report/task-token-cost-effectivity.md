@@ -54,7 +54,8 @@ contradicted source.
 | 6 | Android package rename `corptower`→`tod`: export preset, deploy workflow, OAuth redirect scheme, debug_ui dispatch input, docs | 2 | B | 3 | 8 | ~15,000 | ~14,000 | ~60,000 | ~60,000 | ✓ | ok | Sonnet 5 | medium | infra-engineer, client-engineer |
 | 7 | Android splash crop + screen-fill fixed: `boot_splash` stretch_mode, `window/stretch/aspect.mobile`=expand, doc updated | 3 | B | 2 | 2 | — | ~12,000 | ~220,000 | ~220,000 | ✓ | ok | Sonnet 5 | medium | client-engineer |
 | 8 | Android boot_splash still cropped post-fix: traced engine source, Keep→Keep Height (mode 3); web mobile letterbox diagnosed, deferred | 3 | B | 1 | 1 | — | ~8,000 | ~140,000 | ~140,000 | ✓ | ok | Sonnet 5 | medium | client-engineer |
-<!-- next: row 9 -->
+| 9 | Diagnosed splash.png rounded-corner alpha defect + margin math; patched locally (unpublished, gitignored art), stretch_mode.mobile back to Cover | 3 | B | 1 | 2 | — | ~15,000 | ~160,000 | ~160,000 | ✓ | ok | Sonnet 5 | medium | client-engineer |
+<!-- next: row 10 -->
 
 ## Cycle 2 (closed)
 
