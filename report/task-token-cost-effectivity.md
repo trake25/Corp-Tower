@@ -55,7 +55,8 @@ contradicted source.
 | 7 | Android splash crop + screen-fill fixed: `boot_splash` stretch_mode, `window/stretch/aspect.mobile`=expand, doc updated | 3 | B | 2 | 2 | — | ~12,000 | ~220,000 | ~220,000 | ✓ | ok | Sonnet 5 | medium | client-engineer |
 | 8 | Android boot_splash still cropped post-fix: traced engine source, Keep→Keep Height (mode 3); web mobile letterbox diagnosed, deferred | 3 | B | 1 | 1 | — | ~8,000 | ~140,000 | ~140,000 | ✓ | ok | Sonnet 5 | medium | client-engineer |
 | 9 | Diagnosed splash.png rounded-corner alpha defect + margin math; patched locally (unpublished, gitignored art), stretch_mode.mobile back to Cover | 3 | B | 1 | 2 | — | ~15,000 | ~160,000 | ~160,000 | ✓ | ok | Sonnet 5 | medium | client-engineer |
-<!-- next: row 10 -->
+| 10 | Splash crop root cause found via git archaeology: `screen/immersive_mode` flipped true→false in the splash commit; restored, build.md landmine added | 2 | A | 1 | 2 | ~10,000 | ~9,000 | ~55,000 | ~55,000 | ✓ | ok | Opus 5 | xhigh | infra-engineer, docs-steward |
+<!-- next: row 11 -->
 
 ## Cycle 2 (closed)
 
