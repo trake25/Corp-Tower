@@ -3,11 +3,6 @@ extends GutTest
 const AuthManagerScript := preload("res://Sys/Auth/Auth_Manager.gd")
 const PLUGIN_CFG_PATH := "res://addons/GoogleSignInPlugin/plugin.cfg"
 
-# The standard SHA-256 test vectors for the empty string and for "abc",
-# checked against `sha256sum` rather than trusted from memory.
-const SHA256_EMPTY := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-const SHA256_ABC := "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
-
 var auth
 
 func before_each() -> void:
@@ -16,30 +11,14 @@ func before_each() -> void:
 func after_each() -> void:
 	auth.free()
 
-func test_sha256_hex_matches_the_empty_string_vector() -> void:
-	assert_eq(auth._sha256_hex(""), SHA256_EMPTY)
-
-func test_sha256_hex_matches_the_abc_vector() -> void:
-	assert_eq(auth._sha256_hex("abc"), SHA256_ABC)
-
-func test_sha256_hex_is_lowercase_and_unpadded() -> void:
-	var hex: String = auth._sha256_hex("nonce-value")
-
-	assert_eq(hex.length(), 64, "A SHA-256 digest is 32 bytes, 64 hex characters.")
-	assert_eq(hex, hex.to_lower(), "Hex output must be lowercase.")
-
-func test_id_token_body_carries_the_raw_nonce_not_the_digest() -> void:
-	var body: Dictionary = auth._build_id_token_body("the-id-token", "the-raw-nonce")
+func test_id_token_body_carries_the_id_token() -> void:
+	var body: Dictionary = auth._build_id_token_body("the-id-token")
 
 	assert_eq(body["provider"], "google")
 	assert_eq(body["id_token"], "the-id-token")
-	assert_eq(
-		body["nonce"], "the-raw-nonce",
-		"Supabase re-hashes the raw nonce itself; sending the digest would never match."
-	)
 
 func test_id_token_body_carries_the_configured_client_id() -> void:
-	var body: Dictionary = auth._build_id_token_body("id-token", "nonce")
+	var body: Dictionary = auth._build_id_token_body("id-token")
 
 	assert_eq(body["client_id"], EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID)
 
