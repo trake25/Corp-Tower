@@ -21,8 +21,6 @@ const REASON_CANCELLED := "cancelled"
 const REASON_BROWSER := "browser"
 
 const NATIVE_CODE_CANCELLED := "cancelled"
-# Temporary diagnostic switch; restore to true after native OAuth testing.
-const NATIVE_FAILURE_FALLBACK_ENABLED := false
 
 signal oauth_completed(reason: String)
 
@@ -110,14 +108,6 @@ func _on_deeplink_received(url) -> void:
 	oauth_in_flight = false
 	var callback := _parse_callback_query(url.get_query())
 
-	if OS.get_name() == "Android":
-		OS.alert(
-			"query=%s\ncode_present=%s\nerror=%s" % [
-				url.get_query(), callback["code"] != "", callback["error"]
-			],
-			"Deeplink Received"
-		)
-
 	if callback["code"] == "":
 		_clear_verifier()
 		oauth_completed.emit(
@@ -126,9 +116,6 @@ func _on_deeplink_received(url) -> void:
 		return
 
 	var reason := await _exchange_code(callback["code"])
-
-	if OS.get_name() == "Android":
-		OS.alert("reason=%s" % reason, "Token Exchange Result")
 
 	oauth_completed.emit(reason)
 
@@ -246,23 +233,13 @@ func _sign_in_with_native_google() -> String:
 
 func _on_google_sign_in_success(id_token: String) -> void:
 	native_signin_in_flight = false
-	var reason := await _exchange_id_token(id_token)
-	if OS.get_name() == "Android":
-		OS.alert("Native Google sign-in succeeded; ID token received.\nexchange_reason=%s" % reason, "Native Google Diagnostic")
-	oauth_completed.emit(reason)
+	oauth_completed.emit(await _exchange_id_token(id_token))
 
 func _on_google_sign_in_failed(code: String, message: String) -> void:
 	native_signin_in_flight = false
-	OS.alert("code=%s\nmessage=%s" % [code, message], "Google Sign-in Failed")
 
 	if code == NATIVE_CODE_CANCELLED:
 		oauth_completed.emit(REASON_CANCELLED)
-		return
-
-	# TEMPORARY NATIVE DIAGNOSTIC: keep native failures visible instead of
-	# masking them by opening the browser fallback.
-	if not NATIVE_FAILURE_FALLBACK_ENABLED:
-		oauth_completed.emit(REASON_REJECTED)
 		return
 
 	var browser_reason := _sign_in_with_browser("google")
