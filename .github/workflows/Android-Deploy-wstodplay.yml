@@ -102,6 +102,7 @@ jobs:
           import os
           import re
           import sys
+          import time
           from urllib.error import HTTPError
           from urllib.parse import quote
           from urllib.request import Request, urlopen
@@ -112,7 +113,7 @@ jobs:
           base_url = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications"
           package_url = f"{base_url}/{quote(package_name, safe='')}"
 
-          def request_json(method, url, payload=None, allow_empty=False):
+          def request_json(method, url, payload=None, allow_empty=False, retries=0):
               body = None if payload is None else json.dumps(payload).encode("utf-8")
               headers = {
                   "Authorization": f"Bearer {token}",
@@ -121,22 +122,36 @@ jobs:
               if body is not None:
                   headers["Content-Type"] = "application/json"
               request = Request(url, data=body, headers=headers, method=method)
-              try:
-                  with urlopen(request, timeout=60) as response:
-                      raw = response.read().decode("utf-8")
-                      return {} if allow_empty and not raw else json.loads(raw)
-              except HTTPError as error:
-                  details = error.read().decode("utf-8", errors="replace")
-                  print(f"Google Play API request failed: {method} {url}", file=sys.stderr)
-                  print(details, file=sys.stderr)
-                  raise
+              for attempt in range(retries + 1):
+                  try:
+                      with urlopen(request, timeout=60) as response:
+                          raw = response.read().decode("utf-8")
+                          return {} if allow_empty and not raw else json.loads(raw)
+                  except HTTPError as error:
+                      details = error.read().decode("utf-8", errors="replace")
+                      if error.code in {429, 500, 502, 503, 504} and attempt < retries:
+                          delay = 2 ** attempt
+                          print(
+                              f"Google Play API returned HTTP {error.code}; retrying "
+                              f"{method} in {delay}s (attempt {attempt + 2}/{retries + 1})",
+                              file=sys.stderr,
+                          )
+                          time.sleep(delay)
+                          continue
+                      print(f"Google Play API request failed: {method} {url}", file=sys.stderr)
+                      print(details, file=sys.stderr)
+                      raise
 
           edit = request_json("POST", f"{package_url}/edits", {})
           edit_id = edit["id"]
           max_version_code = 0
 
           try:
-              tracks_payload = request_json("GET", f"{package_url}/edits/{quote(edit_id, safe='')}/tracks")
+              tracks_payload = request_json(
+                  "GET",
+                  f"{package_url}/edits/{quote(edit_id, safe='')}/tracks",
+                  retries=5,
+              )
               for track in tracks_payload.get("tracks", []):
                   for release in track.get("releases", []) or []:
                       for version_code in release.get("versionCodes", []) or []:
@@ -376,7 +391,7 @@ jobs:
           base_url = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications"
           package_url = f"{base_url}/{quote(package_name, safe='')}"
 
-          def request_json(method, url, payload=None, allow_empty=False):
+          def request_json(method, url, payload=None, allow_empty=False, retries=0):
               body = None if payload is None else json.dumps(payload).encode("utf-8")
               headers = {
                   "Authorization": f"Bearer {token}",
@@ -385,15 +400,25 @@ jobs:
               if body is not None:
                   headers["Content-Type"] = "application/json"
               request = Request(url, data=body, headers=headers, method=method)
-              try:
-                  with urlopen(request, timeout=60) as response:
-                      raw = response.read().decode("utf-8")
-                      return {} if allow_empty and not raw else json.loads(raw)
-              except HTTPError as error:
-                  details = error.read().decode("utf-8", errors="replace")
-                  print(f"Google Play API request failed: {method} {url}", file=sys.stderr)
-                  print(details, file=sys.stderr)
-                  raise
+              for attempt in range(retries + 1):
+                  try:
+                      with urlopen(request, timeout=60) as response:
+                          raw = response.read().decode("utf-8")
+                          return {} if allow_empty and not raw else json.loads(raw)
+                  except HTTPError as error:
+                      details = error.read().decode("utf-8", errors="replace")
+                      if error.code in {429, 500, 502, 503, 504} and attempt < retries:
+                          delay = 2 ** attempt
+                          print(
+                              f"Google Play API returned HTTP {error.code}; retrying "
+                              f"{method} in {delay}s (attempt {attempt + 2}/{retries + 1})",
+                              file=sys.stderr,
+                          )
+                          time.sleep(delay)
+                          continue
+                      print(f"Google Play API request failed: {method} {url}", file=sys.stderr)
+                      print(details, file=sys.stderr)
+                      raise
 
           def fetch_internal_track_version_codes():
               edit = request_json("POST", f"{package_url}/edits", {})
@@ -402,6 +427,7 @@ jobs:
                   track = request_json(
                       "GET",
                       f"{package_url}/edits/{quote(edit_id, safe='')}/tracks/internal",
+                      retries=5,
                   )
                   version_codes = set()
                   for release in track.get("releases", []) or []:
