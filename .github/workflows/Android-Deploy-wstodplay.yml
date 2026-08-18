@@ -78,7 +78,9 @@ jobs:
           # Manager's serverClientId for native sign-in. Public by design, same
           # secret-sourcing reasoning as the anon key above. Empty disables native
           # sign-in and Android falls back to the browser flow unconditionally.
-          CORP_TOWER_GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_WEB_CLIENT_ID }}
+          # Temporary native-sign-in diagnostic: use the scratch GCP project's
+          # Web OAuth client. Revert to GOOGLE_OAUTH_WEB_CLIENT_ID after testing.
+          CORP_TOWER_GOOGLE_SERVER_CLIENT_ID: 952407895975-2en0utrncfchdiiet2pbaske7lqkpmt9.apps.googleusercontent.com
         run: scripts/write-endpoint-config.sh
 
       - name: Authenticate to Google Play Developer API
