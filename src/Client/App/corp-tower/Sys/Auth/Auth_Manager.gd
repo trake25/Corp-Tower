@@ -108,6 +108,14 @@ func _on_deeplink_received(url) -> void:
 	oauth_in_flight = false
 	var callback := _parse_callback_query(url.get_query())
 
+	if OS.get_name() == "Android":
+		OS.alert(
+			"query=%s\ncode_present=%s\nerror=%s" % [
+				url.get_query(), callback["code"] != "", callback["error"]
+			],
+			"Deeplink Received"
+		)
+
 	if callback["code"] == "":
 		_clear_verifier()
 		oauth_completed.emit(
@@ -115,7 +123,12 @@ func _on_deeplink_received(url) -> void:
 		)
 		return
 
-	oauth_completed.emit(await _exchange_code(callback["code"]))
+	var reason := await _exchange_code(callback["code"])
+
+	if OS.get_name() == "Android":
+		OS.alert("reason=%s" % reason, "Token Exchange Result")
+
+	oauth_completed.emit(reason)
 
 func is_enabled() -> bool:
 	return EndpointConfig.SUPABASE_URL != "" and EndpointConfig.SUPABASE_ANON_KEY != ""
