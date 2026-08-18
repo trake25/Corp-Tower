@@ -6,7 +6,6 @@ signal sign_in_failed(code: String, message: String)
 
 const PLUGIN_SINGLETON_NAME: String = "GoogleSignInPlugin"
 
-const CODE_NO_CREDENTIAL := "no_credential"
 const CODE_PROVIDER_UNAVAILABLE := "provider_unavailable"
 const CODE_CANCELLED := "cancelled"
 const CODE_ERROR := "error"
@@ -28,11 +27,11 @@ func is_available() -> bool:
 	return bool(_plugin_singleton.is_available())
 
 
-func sign_in(server_client_id: String, hashed_nonce: String) -> bool:
+func sign_in(server_client_id: String) -> bool:
 	if _plugin_singleton == null:
 		return false
 
-	_plugin_singleton.sign_in(server_client_id, hashed_nonce)
+	_plugin_singleton.sign_in(server_client_id)
 	return true
 
 

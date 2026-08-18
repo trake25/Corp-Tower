@@ -1,28 +1,16 @@
 package com.galaxxigames.tod.googlesignin
 
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.GetCredentialResponse
-import androidx.credentials.exceptions.GetCredentialCancellationException
-import androidx.credentials.exceptions.GetCredentialException
-import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
-import androidx.credentials.exceptions.NoCredentialException
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import android.content.Intent
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
+import com.google.android.gms.common.api.ApiException
 import org.godotengine.godot.Godot
 import org.godotengine.godot.plugin.GodotPlugin
 import org.godotengine.godot.plugin.SignalInfo
 import org.godotengine.godot.plugin.UsedByGodot
 
 class GoogleSignInPlugin(godot: Godot) : GodotPlugin(godot) {
-
-	private val pluginScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
 	private val signInSuccessSignal = SignalInfo("sign_in_success", String::class.java)
 	private val signInFailedSignal = SignalInfo("sign_in_failed", String::class.java, String::class.java)
@@ -35,7 +23,7 @@ class GoogleSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 	fun is_available(): Boolean = activity != null
 
 	@UsedByGodot
-	fun sign_in(serverClientId: String, hashedNonce: String) {
+	fun sign_in(serverClientId: String) {
 		val hostActivity = activity
 
 		if (hostActivity == null) {
@@ -43,66 +31,43 @@ class GoogleSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 			return
 		}
 
-		val signInOption = GetSignInWithGoogleOption.Builder(serverClientId)
-			.setNonce(hashedNonce)
+		val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+			.requestIdToken(serverClientId)
+			.requestEmail()
 			.build()
 
-		val request = GetCredentialRequest.Builder()
-			.addCredentialOption(signInOption)
-			.build()
-
-		val credentialManager = CredentialManager.create(hostActivity)
-
-		pluginScope.launch {
-			try {
-				val result = credentialManager.getCredential(request = request, context = hostActivity)
-				handleCredential(result)
-			} catch (e: GetCredentialCancellationException) {
-				emitSignal(signInFailedSignal.name, CODE_CANCELLED, describeException(e))
-			} catch (e: NoCredentialException) {
-				emitSignal(signInFailedSignal.name, CODE_NO_CREDENTIAL, describeException(e))
-			} catch (e: GetCredentialProviderConfigurationException) {
-				emitSignal(signInFailedSignal.name, CODE_PROVIDER_UNAVAILABLE, describeException(e))
-			} catch (e: GetCredentialException) {
-				emitSignal(signInFailedSignal.name, CODE_ERROR, describeException(e))
-			}
-		}
+		val client = GoogleSignIn.getClient(hostActivity, options)
+		hostActivity.startActivityForResult(client.signInIntent, RC_SIGN_IN)
 	}
 
-	private fun describeException(e: Throwable): String {
-		val parts = mutableListOf<String>()
-		var current: Throwable? = e
-		var depth = 0
-
-		while (current != null && depth < 4) {
-			parts.add("${current::class.java.name}: ${current.message}")
-			current = current.cause
-			depth++
-		}
-
-		return parts.joinToString(" <- caused by <- ")
-	}
-
-	private fun handleCredential(result: GetCredentialResponse) {
-		val credential = result.credential
-
-		if (credential !is CustomCredential ||
-			credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-		) {
-			emitSignal(signInFailedSignal.name, CODE_ERROR, "unexpected credential type")
+	override fun onMainActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+		if (requestCode != RC_SIGN_IN) {
 			return
 		}
 
 		try {
-			val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-			emitSignal(signInSuccessSignal.name, googleIdTokenCredential.idToken)
-		} catch (e: GoogleIdTokenParsingException) {
-			emitSignal(signInFailedSignal.name, CODE_ERROR, e.message ?: "")
+			val account = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException::class.java)
+			val idToken = account.idToken
+
+			if (idToken == null) {
+				emitSignal(signInFailedSignal.name, CODE_ERROR, "no id token in account")
+				return
+			}
+
+			emitSignal(signInSuccessSignal.name, idToken)
+		} catch (e: ApiException) {
+			val statusName = GoogleSignInStatusCodes.getStatusCodeString(e.statusCode)
+			val code = if (e.statusCode == GoogleSignInStatusCodes.SIGN_IN_CANCELLED) CODE_CANCELLED else CODE_ERROR
+			emitSignal(
+				signInFailedSignal.name,
+				code,
+				"statusCode=${e.statusCode} (${statusName}) message=${e.message}"
+			)
 		}
 	}
 
 	companion object {
-		const val CODE_NO_CREDENTIAL = "no_credential"
+		private const val RC_SIGN_IN = 9001
 		const val CODE_PROVIDER_UNAVAILABLE = "provider_unavailable"
 		const val CODE_CANCELLED = "cancelled"
 		const val CODE_ERROR = "error"

@@ -20,8 +20,6 @@ const REASON_REJECTED := "rejected"
 const REASON_CANCELLED := "cancelled"
 const REASON_BROWSER := "browser"
 
-const NATIVE_CODE_NO_CREDENTIAL := "no_credential"
-const NATIVE_CODE_PROVIDER_UNAVAILABLE := "provider_unavailable"
 const NATIVE_CODE_CANCELLED := "cancelled"
 
 signal oauth_completed(reason: String)
@@ -37,7 +35,6 @@ var last_oauth_reason := ""
 var deeplink_node: Node = null
 var google_signin_node: Node = null
 var native_signin_in_flight := false
-var native_google_nonce := ""
 
 func _ready() -> void:
 	_load_session()
@@ -222,42 +219,32 @@ func sign_in_with_provider(provider: String) -> String:
 	if not is_oauth_enabled() or not PROVIDERS.has(provider):
 		return REASON_REJECTED
 
-	if provider == "google" and OS.get_name() == "Android":
-		OS.alert(
-			"client_id_set=%s\nscript_exists=%s\nnode_created=%s\nhas_singleton=%s\nis_available=%s" % [
-				EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID != "",
-				ResourceLoader.exists(GOOGLE_SIGNIN_SCRIPT),
-				google_signin_node != null,
-				Engine.has_singleton("GoogleSignInPlugin"),
-				(google_signin_node.is_available() if google_signin_node != null else false)
-			],
-			"Google Sign-in Debug"
-		)
-
 	if provider == "google" and _native_google_ready():
 		return _sign_in_with_native_google()
 
 	return _sign_in_with_browser(provider)
 
 func _sign_in_with_native_google() -> String:
-	native_google_nonce = _generate_code_verifier()
 	native_signin_in_flight = true
-	google_signin_node.sign_in(
-		EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID, _sha256_hex(native_google_nonce)
-	)
+	google_signin_node.sign_in(EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID)
 	return REASON_NONE
 
 func _on_google_sign_in_success(id_token: String) -> void:
 	native_signin_in_flight = false
-	var nonce := native_google_nonce
-	native_google_nonce = ""
-	oauth_completed.emit(await _exchange_id_token(id_token, nonce))
+	oauth_completed.emit(await _exchange_id_token(id_token))
 
 func _on_google_sign_in_failed(code: String, message: String) -> void:
 	native_signin_in_flight = false
-	native_google_nonce = ""
 	OS.alert("code=%s\nmessage=%s" % [code, message], "Google Sign-in Failed")
-	oauth_completed.emit(REASON_REJECTED)
+
+	if code == NATIVE_CODE_CANCELLED:
+		oauth_completed.emit(REASON_CANCELLED)
+		return
+
+	var browser_reason := _sign_in_with_browser("google")
+
+	if browser_reason != REASON_NONE:
+		oauth_completed.emit(browser_reason)
 
 func _sign_in_with_browser(provider: String) -> String:
 	var verifier := _generate_code_verifier()
@@ -306,21 +293,6 @@ func _code_challenge(verifier: String) -> String:
 func _base64url(bytes: PackedByteArray) -> String:
 	return Marshalls.raw_to_base64(bytes).replace("+", "-").replace("/", "_").rstrip("=")
 
-func _sha256_hex(s: String) -> String:
-	var context := HashingContext.new()
-	context.start(HashingContext.HASH_SHA256)
-	var bytes := s.to_utf8_buffer()
-
-	if bytes.size() > 0:
-		context.update(bytes)
-
-	var hex := ""
-
-	for byte in context.finish():
-		hex += "%02x" % byte
-
-	return hex
-
 func _parse_callback_query(query: String) -> Dictionary:
 	var result := {"code": "", "error": ""}
 
@@ -358,20 +330,19 @@ func _exchange_code(code: String) -> String:
 
 	return REASON_NONE
 
-func _build_id_token_body(id_token: String, nonce: String) -> Dictionary:
+func _build_id_token_body(id_token: String) -> Dictionary:
 	return {
 		"provider": "google",
 		"id_token": id_token,
-		"nonce": nonce,
 		"client_id": EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID
 	}
 
-func _exchange_id_token(id_token: String, nonce: String) -> String:
-	if id_token == "" or nonce == "":
+func _exchange_id_token(id_token: String) -> String:
+	if id_token == "":
 		return REASON_REJECTED
 
 	var response := await _post_auth(
-		"/auth/v1/token?grant_type=id_token", _build_id_token_body(id_token, nonce)
+		"/auth/v1/token?grant_type=id_token", _build_id_token_body(id_token)
 	)
 
 	if response["reason"] != REASON_NONE:

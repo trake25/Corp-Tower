@@ -3,10 +3,7 @@ extends EditorPlugin
 
 const PLUGIN_NAME: String = "GoogleSignInPlugin"
 const ANDROID_DEPENDENCIES: Array = [
-	"androidx.credentials:credentials:1.5.0",
-	"androidx.credentials:credentials-play-services-auth:1.5.0",
-	"com.google.android.libraries.identity.googleid:googleid:1.1.1",
-	"org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1"
+	"com.google.android.gms:play-services-auth:21.6.0"
 ]
 
 var android_export_plugin: AndroidExportPlugin
