@@ -37,6 +37,7 @@ var deeplink_node: Node = null
 var google_signin_node: Node = null
 var facebook_signin_node: Node = null
 var native_signin_in_flight := false
+var last_oauth_diagnostic := ""
 
 func _ready() -> void:
 	_load_session()
@@ -205,6 +206,11 @@ func take_oauth_error() -> String:
 	last_oauth_reason = REASON_NONE
 	return reason
 
+func take_oauth_diagnostic() -> String:
+	var diagnostic := last_oauth_diagnostic
+	last_oauth_diagnostic = ""
+	return diagnostic
+
 func _save_verifier(verifier: String) -> void:
 	var file := FileAccess.open(VERIFIER_FILE, FileAccess.WRITE)
 
@@ -291,10 +297,14 @@ func _on_facebook_sign_in_success(access_token: String) -> void:
 
 func _on_facebook_sign_in_failed(code: String, message: String) -> void:
 	native_signin_in_flight = false
+	last_oauth_diagnostic = "Facebook native failure: %s — %s" % [code, message.left(240)]
 
 	if code == NATIVE_CODE_CANCELLED:
 		oauth_completed.emit(REASON_CANCELLED)
 		return
+
+	if EndpointConfig.DEBUG_UI_ENABLED:
+		OS.alert(last_oauth_diagnostic, "Facebook native diagnostics")
 
 	var browser_reason := _sign_in_with_browser("facebook")
 
@@ -383,6 +393,7 @@ func _exchange_code(code: String) -> String:
 	if not _store_session(response["data"]):
 		return REASON_REJECTED
 
+	last_oauth_diagnostic = ""
 	return REASON_NONE
 
 func _build_id_token_body(id_token: String, provider: String = "google") -> Dictionary:
@@ -407,6 +418,7 @@ func _exchange_id_token(id_token: String, provider: String = "google") -> String
 	if not _store_session(response["data"]):
 		return REASON_REJECTED
 
+	last_oauth_diagnostic = ""
 	return REASON_NONE
 
 func ensure_fresh_token() -> bool:
@@ -508,6 +520,11 @@ func _post_auth(path: String, body: Dictionary) -> Dictionary:
 	var status := int(result[1])
 
 	if status < 200 or status >= 300:
+		last_oauth_diagnostic = "%s returned HTTP %d: %s" % [
+			path,
+			status,
+			_auth_error_detail(payload)
+		]
 		return {"reason": REASON_REJECTED, "data": {}}
 
 	var payload: PackedByteArray = result[3]
@@ -517,6 +534,18 @@ func _post_auth(path: String, body: Dictionary) -> Dictionary:
 		return {"reason": REASON_REJECTED, "data": {}}
 
 	return {"reason": REASON_NONE, "data": parsed}
+
+func _auth_error_detail(payload: PackedByteArray) -> String:
+	var parsed = JSON.parse_string(payload.get_string_from_utf8())
+
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return "non-JSON response"
+
+	for key in ["error_code", "code", "msg", "message", "error_description"]:
+		if parsed.has(key):
+			return "%s=%s" % [key, str(parsed[key]).left(240)]
+
+	return "JSON error without a safe detail field"
 
 func _apply_session(data: Dictionary) -> bool:
 	var access := str(data.get("access_token", ""))

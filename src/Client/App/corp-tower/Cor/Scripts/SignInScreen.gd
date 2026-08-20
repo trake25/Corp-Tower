@@ -61,3 +61,9 @@ func set_busy(busy: bool) -> void:
 func show_error(reason: String) -> void:
 	%ErrorLabel.text = ERROR_MESSAGES.get(reason, ERROR_MESSAGES["rejected"])
 	%ErrorLabel.visible = true
+
+func show_diagnostic(diagnostic: String) -> void:
+	if not EndpointConfig.DEBUG_UI_ENABLED:
+		return
+
+	OS.alert(diagnostic, "Sign-in diagnostics")

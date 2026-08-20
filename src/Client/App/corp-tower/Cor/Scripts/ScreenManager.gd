@@ -150,6 +150,10 @@ func _show_sign_in_error(screen: Node, reason: String) -> void:
 
 	screen.call("set_busy", false)
 	screen.call("show_error", reason)
+	var diagnostic: String = AuthManager.take_oauth_diagnostic()
+
+	if diagnostic != "":
+		screen.call("show_diagnostic", diagnostic)
 
 func show_home_screen() -> void:
 	var screen := HomeScreenScene.instantiate()
