@@ -4,72 +4,55 @@ Scope: server contract tests, balance CLIs, client smoke and unit tests, CI gate
 Logic under test → [backend.md](./backend.md) · [ui.md](./ui.md) ·
 [ui-hud.md](./ui-hud.md) · [ui-tutorial.md](./ui-tutorial.md).
 
+## Local selection matrix
+
+Scope selection to files changed for the current task; unrelated dirty files do
+not widen the gate. A changed test runs itself. Unknown/shared runtime paths fall
+back to the full affected-domain suite. CI keeps its full domain gates.
+
+| Task-owned source | Local tests |
+|---|---|
+| Server `Auth_Verifier.js` | `Auth_Verifier.test.js` |
+| Server `Profile_Store.js` | `Profile_Store.test.js` |
+| Server `Redis_State.js` | `Matchmaking_Queue.test.js` |
+| Server `Tower_Stability.js` | `Stability_Scoring.test.js` |
+| Server `Block_Supply.js` or `Impacts.js` | `Gameplay_Events.test.js` |
+| Server `Scoring.js` | placement, stability/scoring and gameplay event suites |
+| Server `Game_Engine.js`, `Game_Config.js`, `Lobby_Manager.js`, `Server.js`, Bot Manager or the shared test fixture | full `npm test` |
+| Server settle/range mirror | server placement plus client `test_snap_grid.gd` |
+| Client `SnapGrid`, Inventory, BlockData/orientation, emoji, CollapseSim, VisualHooks/TowerStack, Tutorial, DebugPanel, summary, roster or player context | the correspondingly named GUT file/group |
+| Client Auth Manager or shared auth config | all `test_auth_*.gd`; a provider addon alone runs its provider file |
+| Client `Main.gd`, `GameUI.tscn`, project/autoload config, `UiNodeBinder` or `GameUiHarness` | smoke plus full GUT |
+| Any other client runtime file | smoke plus nearest mapped GUT; full GUT if no mapping is defensible |
+| Infra, docs, site or non-runtime assets only | no game suite unless the change creates a client runtime risk Godot can exercise |
+
+Every client runtime gate includes `CiSmokeTest.gd`. New/changed assets get a
+headless `--import` first. Complex UI, screens, scene/autoload and asset
+integration require smoke plus related GUT, then a live rendered comparison;
+headless mode cannot prove visual fidelity.
+
 ## Server tests
 
-Nothing under `tests/` or `tools/` ships in the Docker image. `npm test` from
-`src/Server` runs Node's built-in test runner — no separate framework — plus
-`node --check` over the tooling.
+Nothing under `tests/` or `tools/` ships in the image. `npm test` runs syntax
+checks and every Node test; targeted local runs use the files above.
 
-### `tests/Score_Events.test.js`
+The engine contracts are split by failure signal: `Placement_Geometry.test.js`,
+`Stability_Scoring.test.js`, `Gameplay_Events.test.js` and
+`Debug_State_Contracts.test.js`. `helpers/Game_Engine_Fixture.js` owns pinned
+configuration, engine construction and cleanup. Geometry/stability cases must
+use `useFixedGrid()`/`fixedStabilityConfig()` instead of live tunables.
 
-The main contract suite: score events, exact-finish and overbuild, column→`originX`
-clamping and placeable-range narrowing, per-level site width, the stability dial
-and multiplier, reinforce cap, round-clock slack, supply coverage, quick chat,
-refresh generation, Impact snapshot and rollback.
+Keep these paired signals: centred `balanceDelta === 0` while raw stability sags;
+a symmetric slender spire collapses with zero tilt; the first brick earns no
+phantom Reinforce; unknown derived/debug keys are positively rejected. An
+off-centre scoring case that asserts exact event types must zero live stability
+difficulty in `try`/`finally` or an unrelated warning joins the event list.
 
-Four cases carry a reason worth knowing before editing them:
-
-- **`balanceDelta` is asserted as a pair** — a centred brick scores exactly 0 at
-  every height and pressure level **while the raw stability score is asserted to
-  sag over the same stack**. Either half alone passes a broken implementation.
-- **The slenderness regression** — a symmetric 2-wide spire must reach
-  `integrity 0`/`collapsed` with `tiltScore` still exactly 0, which a single tilt
-  scalar cannot detect. A wide-base/narrow-spire tower must read slender too.
-- **An empty tower's first brick earns no phantom Reinforce.**
-- **Unknown-key rejection is asserted positively** — derived physics keys and a
-  `visualHooks` **duration** key must both be refused by debug-config clamping.
-
-**Geometry and stability tests must pin their own config.** `useFixedGrid()` sets
-the grid and site keys; `fixedStabilityConfig(overrides)` returns a resolved
-stability set to hand `evaluate()` directly. Both exist because those values are
-designer-tunable **and because the stability constants are derived** — a test that
-passes raw `GameConfig` asserts on defaults rather than on live behaviour. Pin both
-in any new test asserting concrete columns or stability numbers.
-
-**Landmine — even a plain scoring test can trip a live-tuned stability warning.** A
-single off-centre block against the current tilt tuning emits an unexpected
-`tower_warning` event, so a test asserting an exact `scoreEvents` type list should
-zero `towerStabilityDifficulty` around the placement in a `try`/`finally`, unless
-it is deliberately exercising stability.
-
-Coverage concentrates on the engine's scoring and summary paths. **Bot Manager,
-Balance Simulator and Server Entry have no dedicated tests here.**
-
-### `tests/Matchmaking_Queue.test.js`
-
-The multi-pod seating race. Two `LobbyManager`s share one fake Redis store with
-`setImmediate` gaps between read and write, so concurrent joins interleave the way
-real I/O would. Three players join near-simultaneously across two "pods"; all
-three must land in the same room and each socket receive its
-`room_created`/`room_resumed`. The fake store's `withMatchmakingLock` chains onto
-one shared promise across both pods, serialising the decision the way Redis's
-`SET NX` lock does.
-
-### `tests/Profile_Store.test.js`
-
-Profile persistence against a fake PostgREST, offline. **No request at all**
-without a key or url; a stored name beats a freshly verified one, so a rename
-sticks; a missing row inserts with `ignore-duplicates` against a racing pod; an
-outage and a 500 both **degrade to the generated name rather than fail the
-roster**; the service_role key rides in headers, never a URL.
-
-### `tests/Auth_Verifier.test.js`
-
-Token verification against a locally generated RSA key, never the network, so it
-runs offline. The accept path plus every rejection that matters — wrong issuer,
-wrong audience, expired, foreign key, **unsigned `alg: none`**, missing `sub`,
-junk — and that a verified `sub` beats a spoofed `profileId` while a verified
-display name still reaches the roster.
+`Matchmaking_Queue.test.js` covers the Redis-locked multi-pod seating race.
+`Profile_Store.test.js` covers offline PostgREST fallback, racing insert and
+header-only credentials. `Auth_Verifier.test.js` verifies JWT/Meta identity and
+rejections offline. Bot Manager, balance tools and Server Entry still have no
+dedicated behavioural tests.
 
 ## Balance CLIs
 
@@ -132,77 +115,20 @@ Both are tuning aids, not gameplay authorities.
 
 ## Godot client tests
 
-`Tests/CiSmokeTest.gd` plus GUT suites under `Tests/Gut/`, run headlessly through
-vendored GUT and invoked by the Android deploy workflow before a signed export.
+The smoke test loads every `Cor`/`Sys` script, main scene, autoload and required
+GameUI node. GUT covers placement mirrors, inventory, block visuals, fixed-seed
+collapse, hooks, auth, tutorial gates/targets, summaries, roster/context, layout
+baselines and debug wiring. Auth remains offline; native/browser/device flows are
+manual release coverage.
 
-The smoke test loads every script under `Cor`/`Sys` (catching load-time and syntax
-errors before the build step), verifies the main scene and **every** autoload's
-wiring, and verifies Game UI Scene instantiates **with every node Main UI
-Controller requires present** — that last one is the node-contract guard.
+`test_snap_grid.gd` must move with server settle/range semantics. Its legality
+contract accepts unsupported release rows because gravity resolves them, while
+rejecting overlap/below-platform and any origin that lets a footprint escape.
+`test_block_emoji.gd` pins the server `balanceDelta` key. Tutorial target tests
+mount the scene so renamed or hidden controls fail.
 
-The node-free behavioural suites carry the real coverage — a `RefCounted` service
-needs no scene mount:
-
-**`test_snap_grid.gd`** — gravity settle from **both** release rows against
-hand-computed stacking and cantilever cases. It mirrors server `settleBlock`, so
-**a change to that server function should break this suite**. Also the legality
-table (overlap and below-platform rejected; unsupported open air *accepted*,
-because gravity resolves it), snap-point set, origin-range clamping,
-true-outline-vertex selection, snap-vs-fallback threshold, and the invariant that
-**no resolved column lets a footprint leave the site**.
-
-**`test_block_emoji.gd`** — face anchor per shape against the art guide, anchor
-stays on brick mass under all 4 rotations, delta reclassifies as the threshold
-moves, and `BALANCE_DELTA_KEY` matches the server's field name: **a mismatch
-silently removes every face.**
-
-**`test_block_orientation.gd`** — `BlockData` rotate-and-mirror across all 19
-reachable orientations, **independently re-derived rather than assumed**:
-`detect_orientation` reproduces each, the rendered bounding box matches the real
-footprint, and a higher-on-screen vertex shades brighter every combination.
-
-**`test_visual_hooks.gd`** — Impact Beat config, verdict mapping, de-dupe key,
-and `TowerStack` behaviour: skipped when empty, disabled or collapsing; derived
-zoom respecting its floor; faces flipping only as the wave reaches them;
-**`BEAT_HOLD` never auto-advancing** once its nominal duration elapses.
-
-**`test_auth_manager.gd`** — offline session parsing, expiry, token rejection,
-and the unconfigured-build rollout guard.
-
-**`test_auth_pkce.gd`** — RFC 7636 S256, verifier shape/uniqueness, callback
-parsing, and `export.cfg` matching `REDIRECT_ANDROID`.
-
-**`test_auth_google_native.gd`** — raw ID-token bodies, off-tree readiness, and
-the Google plugin singleton name.
-
-**`test_auth_facebook_native.gd`** — provider registration, browser URL wiring,
-off-tree native readiness, addon presence, and the Facebook plugin singleton name.
-
-Manual auth smoke coverage: guest, Google, and Facebook pass on Android native
-and PC web. Native Facebook returns an access token with production credentials;
-native failure hands off to the system browser. Mobile browser fallback remains
-manual coverage for the release checklist.
-
-**`test_collapse_sim.gd`** — fixed-seed physics: no piece starts upward or
-settles below the platform or outside its span, every piece ends flat, the sim
-settles within a bounded step count, one seed reproduces an identical collapse
-while another diverges.
-
-**`test_tutorial_*.gd`** — lesson ids unique, every gate in the closed set, the
-gate truth table, progress degrading to nothing-completed on a corrupt file, an
-incidental action never silently advancing an `info` step, and **every step's
-`target` resolving and visible in the mounted scene** — which catches a rename or
-a control moved under a hidden container.
-
-`test_inventory_controller.gd` — the column handed to `place_block` stays in
-range, and parallel placement end to end: select → aim → confirm sends exactly one
-placement carrying the armed row; re-aim, deselect and card-tap send nothing.
-**Its taps reset `last_tap_ms` between steps**, or the 60 ms de-dupe window
-swallows back-to-back synthetic events.
-
-`test_debug_panel.gd` covers a knob's whole path: the row syncs from
-`debug_config`, its nodes really do parent under their own category, and the value
-reaches its target.
+Synthetic inventory taps reset `last_tap_ms` or the 60 ms de-dupe window swallows
+them.
 
 **Landmine — `SnapGrid`'s range is `static var` state**, so `before_each` and
 `after_all` must call `reset_placeable_range()`. Omit it and tests leak grid state

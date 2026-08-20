@@ -36,15 +36,18 @@ Wire payloads are [`networking.md`](../../../docs/context/networking.md), not yo
   StyleBox. One color everywhere: `Color(0.518, 0.902, 0.976, 1)`
   (`StyleBoxFlat_MenuCardPressed` in `GameUITheme.tres`).
 - Strictly follow the UI Design guide or reference when it is provided. The colors, gradients, shadows, spacings, texts, fonts, boxes, sizes, gaps must all be close to the guide as much as possible.
-- The Godot executable is in the root folder.
+- The local Godot executable is in the repository root on Windows and Linux;
+  `qa-engineer` owns platform discovery and headless commands. Complex UI,
+  screen, scene/autoload and asset integration must pass that headless gate
+  before the rendered comparison below.
 
-## Verifying UI changes — real screenshots
+## Verifying UI changes — real Linux/X11 screenshots
 
 `DISPLAY` is a live X11 session; `ffmpeg` and `wmctrl` are already installed —
 nothing to install or allow. Launch, crop-capture the window, `Read` the PNG:
 
 ```bash
-G=$(ls ./Godot_v*.x86_64 | head -1)
+G=$(find . -maxdepth 1 -type f -name 'Godot_v*_linux.x86_64' -print | sort -V | tail -1)
 nohup "$G" --path . >/tmp/godot.log 2>&1 & disown
 sleep 6 && wmctrl -a "Godot" && sleep 1
 read -r _ _ X Y W H _ <<<"$(wmctrl -l -G | grep -im1 godot)"

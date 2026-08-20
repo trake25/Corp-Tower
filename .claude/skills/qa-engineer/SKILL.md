@@ -13,18 +13,41 @@ Most tasks invoke this skill as their **gate**, not as standalone work.
 
 ## The gate
 
-Run what the change touched. Server-only changes do not need the Godot run.
+Verify the files owned by this task, not every pre-existing dirty file. The
+source→suite matrix and full-domain fallback paths live in `testing.md` § Local
+selection matrix.
+
+- Server: `node --check` each changed JavaScript file, then run the mapped tests.
+- Client: run the smoke test plus mapped GUT files. A changed test runs itself.
+- Unmapped or shared-core runtime code runs the full affected-domain suite.
+- Infra, docs and site-only work runs neither game suite unless it changes a
+  client artifact or presents a client runtime risk that Godot can validate.
+
+For a complex task, decide whether Godot can exercise the integration risk and
+use it when it can. Complex UI, screen, scene/autoload and asset integration
+always require headless smoke/related GUT before a live rendered comparison.
+
+The local Godot binary is in the repository root on both platforms. Select the
+newest host-matching file — `Godot_v*_linux.x86_64` on Linux or
+`Godot_v*_win64.exe` on Windows — and never hardcode its version or silently use
+a system Godot. Stop with the missing pattern if no match exists. On restricted
+Linux hosts, prefix the command with an `XDG_DATA_HOME` under `/tmp` if Godot
+cannot write `user://logs`.
+
+Test process time does not spend model tokens; retained stdout/stderr does.
+Compact successful runs, then rerun a failure with normal output and report it
+in full. Examples, from the repository root:
 
 ```bash
-cd src/Server && npm test
+cd src/Server && node --test --test-reporter=dot <mapped-test-files>
 ```
 
 ```bash
-./Godot_v4.6.2-stable_win64.exe --headless --path "src/Client/App/corp-tower" -s Tests/CiSmokeTest.gd
+"$GODOT_BIN" --headless --path src/Client/App/corp-tower -s Tests/CiSmokeTest.gd
 ```
 
 ```bash
-./Godot_v4.6.2-stable_win64.exe --headless --path "src/Client/App/corp-tower" -s addons/gut/gut_cmdln.gd -gdir=res://Tests/Gut -ginclude_subdirs -gexit
+"$GODOT_BIN" --headless --path src/Client/App/corp-tower -s addons/gut/gut_cmdln.gd -gtest=res://Tests/Gut/<mapped-test>.gd -glog=0 -gdisable_colors -gexit
 ```
 
 The smoke test loads every script under `Cor`/`Sys`, so it is the real syntax
@@ -54,3 +77,5 @@ column meanings → `testing.md` § balance CLIs.
 
 - **Report the actual output.** If a suite fails, specify which and paste it. A green
   claim over a red run is the one unrecoverable failure in this role.
+- `npm test` and the full GUT directory remain the complete domain gates for CI
+  and for local fallback; targeted local verification never narrows deployment CI.

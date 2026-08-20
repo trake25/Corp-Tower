@@ -62,7 +62,8 @@ contradicted source.
 | 14 | Native Facebook access-token verification bridge, profile UUID mapping, deploy secret wiring and tests | 5 | A | 4 | 17 | — | ~26,000 | ~58,000 | ~58,000 | ✓ | ok | GPT-5 | high | — |
 | 15 | Restored Facebook native callback compatibility and bounded missing callback state | 3 | A | 2 | 5 | — | ~8,000 | ~20,000 | ~20,000 | ✓ | ok | GPT-5 | high | — |
 | 16 | Documented provider display-name fallbacks and replaced stale Facebook OIDC guidance | 2 | A | 2 | 4 | — | ~6,000 | ~15,000 | ~15,000 | ✓ | ok | GPT-5 | medium | — |
-<!-- next: row 17 -->
+| 17 | Targeted QA gate: cross-platform root Godot policy, compact selection matrix, 53-case server suite split, CI coverage preserved | 4 | A | 2 | 10 | ~25,000 | ~24,000 | ~50,000 | ~50,000 | ✓ | ok | GPT-5 | high | qa-engineer, docs-steward |
+<!-- next: row 18 -->
 
 ## Cycle 2 (closed)
 
