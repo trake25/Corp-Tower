@@ -518,6 +518,7 @@ func _post_auth(path: String, body: Dictionary) -> Dictionary:
 		return {"reason": REASON_UNREACHABLE, "data": {}}
 
 	var status := int(result[1])
+	var payload: PackedByteArray = result[3]
 
 	if status < 200 or status >= 300:
 		last_oauth_diagnostic = "%s returned HTTP %d: %s" % [
@@ -527,7 +528,6 @@ func _post_auth(path: String, body: Dictionary) -> Dictionary:
 		]
 		return {"reason": REASON_REJECTED, "data": {}}
 
-	var payload: PackedByteArray = result[3]
 	var parsed = JSON.parse_string(payload.get_string_from_utf8())
 
 	if typeof(parsed) != TYPE_DICTIONARY:
