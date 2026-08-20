@@ -50,7 +50,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/actions/terraform-validate-plan/action.yml:7 | inputs · key | `working-directory`, the stack directory to run in |
 | .github/actions/terraform-validate-plan/action.yml:12 | runs · key | the shared check sequence — init, **`fmt -check`**, validate, plan saved to `./tfplan` for a later apply step, then a readable plan summary |
 
-### .github/workflows/Android-Deploy-wstodplay.yml — 471 ln
+### .github/workflows/Android-Deploy-wstodplay.yml — 484 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -611,6 +611,10 @@ _no extracted symbols_
 
 _no extracted symbols_
 
+### scripts/build-facebook-android-plugin.sh — 20 ln
+
+_no extracted symbols_
+
 ### scripts/build-file-map.mjs — 415 ln
 
 | File:Ln | Symbol | Does |
@@ -740,10 +744,10 @@ _no extracted symbols_
 | scripts/validate-docs.mjs:418 | mapTotal · const | summed map tokens, reported but not part of the prose total |
 | scripts/validate-docs.mjs:435 | terse · const | true only on a quiet passing run |
 
-### scripts/write-endpoint-config.sh — 94 ln
+### scripts/write-endpoint-config.sh — 100 ln
 
 _no extracted symbols_
 
 ---
 
-85 files · 342 symbols · 3 awaiting a `Does` line.
+86 files · 342 symbols · 3 awaiting a `Does` line.

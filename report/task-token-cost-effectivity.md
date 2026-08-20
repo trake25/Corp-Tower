@@ -56,7 +56,10 @@ contradicted source.
 | 8 | Android boot_splash still cropped post-fix: traced engine source, Keep→Keep Height (mode 3); web mobile letterbox diagnosed, deferred | 3 | B | 1 | 1 | — | ~8,000 | ~140,000 | ~140,000 | ✓ | ok | Sonnet 5 | medium | client-engineer |
 | 9 | Diagnosed splash.png rounded-corner alpha defect + margin math; patched locally (unpublished, gitignored art), stretch_mode.mobile back to Cover | 3 | B | 1 | 2 | — | ~15,000 | ~160,000 | ~160,000 | ✓ | ok | Sonnet 5 | medium | client-engineer |
 | 10 | Splash crop root cause found via git archaeology: `screen/immersive_mode` flipped true→false in the splash commit; restored, build.md landmine added | 2 | A | 1 | 2 | ~10,000 | ~9,000 | ~55,000 | ~55,000 | ✓ | ok | Opus 5 | xhigh | infra-engineer, docs-steward |
-<!-- next: row 11 -->
+| 11 | Detailed Facebook manual setup guide and repository implementation plan saved | 3 | A | 3 | 2 | ~18,000 | ~18,000 | ~18,000 | ~18,000 | ✓ | ok | Opus 5 | high | — |
+| 12 | Updated Facebook plans for current Meta Quickstart UI and clarified configuration destinations | 2 | A | 3 | 2 | ~10,000 | ~8,000 | ~8,000 | ~8,000 | ✓ | ok | Opus 5 | high | — |
+| 13 | Facebook repo integration: native Android plugin, Supabase token exchange, CI config, tests and docs | 4 | A | 3 | 17 | ~30,000 | ~32,000 | ~70,000 | ~70,000 | ✓ | ok | Opus 5 | high | — |
+<!-- next: row 14 -->
 
 ## Cycle 2 (closed)
 
@@ -135,3 +138,5 @@ before cycle 2's numbers can be trusted.
 | 17 | Contact form: dialog, `/api/contact` Worker, guardrails | 4 | Bd | 3 | 11 | — | ~22,000 | ~185,000 | ~110,000 | ✓ | ok |
 | 18 | CI deploy failed on the KV placeholder; endpoint made dormant-by-default | 2 | Bd | 3 | 6 | — | ~9,000 | ~55,000 | ~30,000 | ! | ok |
 | 19 | Portfolio content compression, workflow diagram and CV-source sync | 4 | A | 2 | 14 | — | ~21,000 | ~29,000 | ~29,000 | ✓ | ok |
+| 20 | Assess Google consent-screen branding plan against native/web auth split | 3 | A | 2 | 18 | ~18,000 | ~16,000 | ~24,000 | ~24,000 | ✓ | ok |
+| 21 | Replace release-oriented consent plan with development-only branding decision plan | 3 | A | 2 | 12 | ~12,000 | ~9,000 | ~16,000 | ~16,000 | ✓ | ok |

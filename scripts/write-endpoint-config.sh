@@ -27,6 +27,8 @@ CORP_TOWER_AUTH_REDIRECT_WEB="${CORP_TOWER_AUTH_REDIRECT_WEB:-}"
 # an ID token Supabase already trusts. Empty disables native sign-in and
 # Android falls back to the browser flow unconditionally.
 CORP_TOWER_GOOGLE_SERVER_CLIENT_ID="${CORP_TOWER_GOOGLE_SERVER_CLIENT_ID:-}"
+TOD_FACEBOOK_APP_ID="${TOD_FACEBOOK_APP_ID:-}"
+TOD_FACEBOOK_CLIENT_TOKEN="${TOD_FACEBOOK_CLIENT_TOKEN:-}"
 
 case "$CORP_TOWER_DEBUG_UI" in
   true|false) ;;
@@ -74,6 +76,8 @@ const SUPABASE_ANON_KEY := "${CORP_TOWER_SUPABASE_ANON_KEY}"
 const AUTH_OAUTH_ENABLED := ${CORP_TOWER_AUTH_OAUTH}
 const AUTH_REDIRECT_WEB := "${CORP_TOWER_AUTH_REDIRECT_WEB}"
 const AUTH_GOOGLE_SERVER_CLIENT_ID := "${CORP_TOWER_GOOGLE_SERVER_CLIENT_ID}"
+const AUTH_FACEBOOK_APP_ID := "${TOD_FACEBOOK_APP_ID}"
+const AUTH_FACEBOOK_CLIENT_TOKEN := "${TOD_FACEBOOK_CLIENT_TOKEN}"
 EOF
 
 echo "Wrote $CONFIG_FILE"
@@ -91,3 +95,5 @@ if [ -n "$CORP_TOWER_GOOGLE_SERVER_CLIENT_ID" ]; then
 else
   echo "  AUTH_GOOGLE_SERVER_CLIENT_ID=<none>"
 fi
+echo "  AUTH_FACEBOOK_APP_ID=$([ -n "$TOD_FACEBOOK_APP_ID" ] && echo "<set>" || echo "<none>")"
+echo "  AUTH_FACEBOOK_CLIENT_TOKEN=$([ -n "$TOD_FACEBOOK_CLIENT_TOKEN" ] && echo "<set>" || echo "<none>")"

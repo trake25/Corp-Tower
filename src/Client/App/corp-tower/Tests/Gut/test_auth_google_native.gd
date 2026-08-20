@@ -22,6 +22,13 @@ func test_id_token_body_carries_the_configured_client_id() -> void:
 
 	assert_eq(body["client_id"], EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID)
 
+func test_facebook_token_body_uses_facebook_provider_without_google_client_id() -> void:
+	var body: Dictionary = auth._build_id_token_body("facebook-access-token", "facebook")
+
+	assert_eq(body["provider"], "facebook")
+	assert_eq(body["id_token"], "facebook-access-token")
+	assert_false(body.has("client_id"))
+
 func test_native_google_is_never_ready_without_setup() -> void:
 	assert_false(
 		auth._native_google_ready(),

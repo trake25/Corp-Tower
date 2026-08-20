@@ -110,7 +110,7 @@ reachable while an EKS session is up.
 
 **Sequence:** fetch private art → write the endpoint config → download Godot
 `4.6.2.stable` → install the Android SDK → resolve the next version code from
-Google Play → build the Google sign-in plugin (Gradle) → restore the release
+Google Play → build the Google and Facebook sign-in plugins (Gradle) → restore the release
 keystore → import and parse the project → run the compile/startup smoke test →
 run required GUT tests → install the Android build template and export a signed
 AAB → validate → upload → optionally push to the internal track → verify the
@@ -149,7 +149,7 @@ shell pipe.
 ## Client endpoint config
 
 `scripts/write-endpoint-config.sh` regenerates the committed
-`Sys/NetMan/Endpoint_Config.gd` before each client build from nine env vars:
+`Sys/NetMan/Endpoint_Config.gd` before each client build:
 
 | Var | Effect |
 |---|---|
@@ -162,6 +162,8 @@ shell pipe.
 | `CORP_TOWER_AUTH_OAUTH` | Defaults `false` — gates the provider buttons |
 | `CORP_TOWER_AUTH_REDIRECT_WEB` | Where Supabase returns a web build; the Android scheme is not build-injected |
 | `CORP_TOWER_GOOGLE_SERVER_CLIENT_ID` | Android only — the Web OAuth client ID reused as `serverClientId`; empty disables native sign-in |
+| `TOD_FACEBOOK_APP_ID` | Android Meta App ID; empty disables native sign-in |
+| `TOD_FACEBOOK_CLIENT_TOKEN` | Android Meta Client Token; empty disables native sign-in |
 
 **The two Supabase vars are all-or-nothing** — setting one without the other is a
 hard error, so a build cannot half-enable sign-in, and `CORP_TOWER_AUTH_OAUTH=true`
@@ -191,16 +193,20 @@ Android and in the editor, where there is no hostname to read.
 
 ### Google sign-in plugin
 
-Unlike the vendored Deeplink plugin, `addons/GoogleSignInPlugin/` is
-**first-party**: Kotlin source in `plugins/godot-google-signin/`, its AAR built
-by CI (`scripts/build-android-plugin.sh` via `gradle/actions/setup-gradle@v4`)
-and never committed — `bin/` is gitignored, so a missing AAR means the build
-step hasn't run, not that the addon is broken. Same `EditorExportPlugin` wiring
-as Deeplink (`project.godot` `[editor_plugins]`, no preset key), but no
-manifest injection: Credential Manager needs no permission or exported
-component, only the Gradle deps `_get_android_dependencies()` pulls in.
-`Auth_Manager.gd` tries it first on Android when
-`AUTH_GOOGLE_SERVER_CLIENT_ID` is set, else falls back to the browser flow.
+`addons/GoogleSignInPlugin/` is first-party Kotlin in
+`plugins/godot-google-signin/`; CI builds its uncommitted AAR. It uses Google's
+Play Services auth dependency and the same editor-plugin wiring as Deeplink.
+Android tries native sign-in when `AUTH_GOOGLE_SERVER_CLIENT_ID` is set, then
+uses the browser flow on native failure; web uses the provider flow directly.
+
+Facebook uses Kotlin in `plugins/godot-facebook-signin/` (SDK 18.0.3),
+requests `public_profile`/`email`, exchanges through Supabase, and falls back to
+browser OAuth when native setup fails. The App Secret belongs only in Supabase.
+
+After Play key rotation, API levels can receive different certificates. Register
+one Android OAuth client per active app-signing SHA-1 in the Web client's GCP
+project; do not use the upload key for Play installs. The injected Web client
+ID remains the `serverClientId` trusted by Supabase.
 
 ## Server container image
 

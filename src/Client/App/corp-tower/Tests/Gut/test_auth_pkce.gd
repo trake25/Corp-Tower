@@ -153,7 +153,7 @@ func test_only_wired_providers_get_a_button() -> void:
 	var screen = load("res://Cor/Scripts/SignInScreen.gd").new()
 
 	assert_eq(
-		screen.available_providers(true), ["google"],
+		screen.available_providers(true), ["google", "facebook"],
 		"With OAuth on, only providers in AuthManager.PROVIDERS may show a button."
 	)
 	assert_eq(
@@ -176,7 +176,5 @@ func test_unknown_providers_are_refused() -> void:
 		auth.REASON_REJECTED,
 		"Only providers listed in PROVIDERS may start a flow."
 	)
-	assert_false(
-		auth.PROVIDERS.has("facebook") or auth.PROVIDERS.has("tiktok"),
-		"Facebook and TikTok are out of scope this pass and must stay unwired."
-	)
+	assert_true(auth.PROVIDERS.has("facebook"))
+	assert_false(auth.PROVIDERS.has("tiktok"))

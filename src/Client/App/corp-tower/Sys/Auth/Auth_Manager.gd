@@ -11,8 +11,9 @@ const OAUTH_RESUME_GRACE_SECONDS := 2.0
 const REDIRECT_ANDROID := "com.galaxxigames.tod://auth-callback"
 const DEEPLINK_SCRIPT := "res://addons/DeeplinkPlugin/Deeplink.gd"
 const GOOGLE_SIGNIN_SCRIPT := "res://addons/GoogleSignInPlugin/GoogleSignIn.gd"
+const FACEBOOK_SIGNIN_SCRIPT := "res://addons/FacebookSignInPlugin/FacebookSignIn.gd"
 
-const PROVIDERS := ["google"]
+const PROVIDERS := ["google", "facebook"]
 
 const REASON_NONE := ""
 const REASON_UNREACHABLE := "unreachable"
@@ -34,6 +35,7 @@ var oauth_in_flight := false
 var last_oauth_reason := ""
 var deeplink_node: Node = null
 var google_signin_node: Node = null
+var facebook_signin_node: Node = null
 var native_signin_in_flight := false
 
 func _ready() -> void:
@@ -50,6 +52,7 @@ func _ready() -> void:
 
 	_setup_deeplink()
 	_setup_native_google()
+	_setup_native_facebook()
 
 func _setup_deeplink() -> void:
 	if not is_oauth_enabled() or OS.get_name() != "Android":
@@ -92,6 +95,33 @@ func _setup_native_google() -> void:
 
 func _native_google_ready() -> bool:
 	return google_signin_node != null and google_signin_node.is_available()
+
+func _setup_native_facebook() -> void:
+	if not is_oauth_enabled() or OS.get_name() != "Android":
+		return
+
+	if EndpointConfig.AUTH_FACEBOOK_APP_ID == "" or EndpointConfig.AUTH_FACEBOOK_CLIENT_TOKEN == "":
+		return
+
+	if not ResourceLoader.exists(FACEBOOK_SIGNIN_SCRIPT):
+		return
+
+	var script: GDScript = load(FACEBOOK_SIGNIN_SCRIPT)
+
+	if script == null:
+		return
+
+	facebook_signin_node = script.new()
+	facebook_signin_node.sign_in_success.connect(_on_facebook_sign_in_success)
+	facebook_signin_node.sign_in_failed.connect(_on_facebook_sign_in_failed)
+	add_child(facebook_signin_node)
+	facebook_signin_node.configure(
+		EndpointConfig.AUTH_FACEBOOK_APP_ID,
+		EndpointConfig.AUTH_FACEBOOK_CLIENT_TOKEN
+	)
+
+func _native_facebook_ready() -> bool:
+	return facebook_signin_node != null and facebook_signin_node.is_available()
 
 func redirect_android_scheme() -> String:
 	return REDIRECT_ANDROID.split("://", true, 1)[0]
@@ -224,6 +254,9 @@ func sign_in_with_provider(provider: String) -> String:
 	if provider == "google" and _native_google_ready():
 		return _sign_in_with_native_google()
 
+	if provider == "facebook" and _native_facebook_ready():
+		return _sign_in_with_native_facebook()
+
 	return _sign_in_with_browser(provider)
 
 func _sign_in_with_native_google() -> String:
@@ -243,6 +276,27 @@ func _on_google_sign_in_failed(code: String, message: String) -> void:
 		return
 
 	var browser_reason := _sign_in_with_browser("google")
+
+	if browser_reason != REASON_NONE:
+		oauth_completed.emit(browser_reason)
+
+func _sign_in_with_native_facebook() -> String:
+	native_signin_in_flight = true
+	facebook_signin_node.sign_in()
+	return REASON_NONE
+
+func _on_facebook_sign_in_success(access_token: String) -> void:
+	native_signin_in_flight = false
+	oauth_completed.emit(await _exchange_id_token(access_token, "facebook"))
+
+func _on_facebook_sign_in_failed(code: String, message: String) -> void:
+	native_signin_in_flight = false
+
+	if code == NATIVE_CODE_CANCELLED:
+		oauth_completed.emit(REASON_CANCELLED)
+		return
+
+	var browser_reason := _sign_in_with_browser("facebook")
 
 	if browser_reason != REASON_NONE:
 		oauth_completed.emit(browser_reason)
@@ -331,19 +385,20 @@ func _exchange_code(code: String) -> String:
 
 	return REASON_NONE
 
-func _build_id_token_body(id_token: String) -> Dictionary:
-	return {
-		"provider": "google",
-		"id_token": id_token,
-		"client_id": EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID
-	}
+func _build_id_token_body(id_token: String, provider: String = "google") -> Dictionary:
+	var body := {"provider": provider, "id_token": id_token}
 
-func _exchange_id_token(id_token: String) -> String:
+	if provider == "google":
+		body["client_id"] = EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID
+
+	return body
+
+func _exchange_id_token(id_token: String, provider: String = "google") -> String:
 	if id_token == "":
 		return REASON_REJECTED
 
 	var response := await _post_auth(
-		"/auth/v1/token?grant_type=id_token", _build_id_token_body(id_token)
+		"/auth/v1/token?grant_type=id_token", _build_id_token_body(id_token, provider)
 	)
 
 	if response["reason"] != REASON_NONE:

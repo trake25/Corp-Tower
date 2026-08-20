@@ -79,6 +79,8 @@ jobs:
           # secret-sourcing reasoning as the anon key above. Empty disables native
           # sign-in and Android falls back to the browser flow unconditionally.
           CORP_TOWER_GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_WEB_CLIENT_ID }}
+          TOD_FACEBOOK_APP_ID: ${{ vars.TOD_FACEBOOK_APP_ID || '' }}
+          TOD_FACEBOOK_CLIENT_TOKEN: ${{ vars.TOD_FACEBOOK_CLIENT_TOKEN || '' }}
         run: scripts/write-endpoint-config.sh
 
       - name: Authenticate to Google Play Developer API
@@ -225,6 +227,17 @@ jobs:
 
       - name: Build Google sign-in Android plugin
         run: scripts/build-android-plugin.sh
+
+      - name: Build Facebook sign-in Android plugin
+        run: scripts/build-facebook-android-plugin.sh
+
+      - name: Validate native sign-in plugin artifacts
+        run: |
+          set -euo pipefail
+          test -s "$GODOT_PROJECT_PATH/addons/GoogleSignInPlugin/bin/debug/GoogleSignInPlugin-debug.aar"
+          test -s "$GODOT_PROJECT_PATH/addons/GoogleSignInPlugin/bin/release/GoogleSignInPlugin-release.aar"
+          test -s "$GODOT_PROJECT_PATH/addons/FacebookSignInPlugin/bin/debug/FacebookSignInPlugin-debug.aar"
+          test -s "$GODOT_PROJECT_PATH/addons/FacebookSignInPlugin/bin/release/FacebookSignInPlugin-release.aar"
 
       - name: Configure Godot Android export settings
         run: |

@@ -166,19 +166,22 @@ and `TowerStack` behaviour: skipped when empty, disabled or collapsing; derived
 zoom respecting its floor; faces flipping only as the wave reaches them;
 **`BEAT_HOLD` never auto-advancing** once its nominal duration elapses.
 
-**`test_auth_manager.gd`** — session parsing and expiry maths with no network:
-absolute `expires_at` beating `expires_in`, a tokenless payload refused, an
-expired token reading as no token, and **an unconfigured build still reaching
-Sign-in and Home exactly as it did before Supabase** — the rollout guard.
+**`test_auth_manager.gd`** — offline session parsing, expiry, token rejection,
+and the unconfigured-build rollout guard.
 
-**`test_auth_pkce.gd`** — S256 against the **published RFC 7636 vector** rather
-than against itself, verifier shape and uniqueness, callback parsing (denied
-consent, malformed pairs), and `export.cfg` still matching `REDIRECT_ANDROID` —
-drift there dead-ends sign-in on device, unseen by every other test.
+**`test_auth_pkce.gd`** — RFC 7636 S256, verifier shape/uniqueness, callback
+parsing, and `export.cfg` matching `REDIRECT_ANDROID`.
 
-**`test_auth_google_native.gd`** — `_sha256_hex` against standard vectors, the
-`grant_type=id_token` body carrying the **raw** nonce, not its digest, native
-readiness always false off-tree, and the plugin singleton name pinned.
+**`test_auth_google_native.gd`** — raw ID-token bodies, off-tree readiness, and
+the Google plugin singleton name.
+
+**`test_auth_facebook_native.gd`** — provider registration, browser URL wiring,
+off-tree native readiness, addon presence, and the Facebook plugin singleton name.
+
+Manual auth smoke coverage: guest, Google, and Facebook pass on Android native
+and PC web. Native Facebook returns an access token with production credentials;
+native failure hands off to the system browser. Mobile browser fallback remains
+manual coverage for the release checklist.
 
 **`test_collapse_sim.gd`** — fixed-seed physics: no piece starts upward or
 settles below the platform or outside its span, every piece ends flat, the sim

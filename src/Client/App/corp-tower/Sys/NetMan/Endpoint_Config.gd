@@ -9,3 +9,5 @@ const SUPABASE_ANON_KEY := ""
 const AUTH_OAUTH_ENABLED := false
 const AUTH_REDIRECT_WEB := ""
 const AUTH_GOOGLE_SERVER_CLIENT_ID := ""
+const AUTH_FACEBOOK_APP_ID := ""
+const AUTH_FACEBOOK_CLIENT_TOKEN := ""
