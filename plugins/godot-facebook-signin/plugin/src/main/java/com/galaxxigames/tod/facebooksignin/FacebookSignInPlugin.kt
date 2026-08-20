@@ -2,9 +2,11 @@ package com.galaxxigames.tod.facebooksignin
 
 import android.content.Intent
 import com.facebook.CallbackManager
+import com.facebook.AuthenticationToken
 import com.facebook.FacebookCallback
 import com.facebook.FacebookException
 import com.facebook.FacebookSdk
+import com.facebook.login.LoginBehavior
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import org.godotengine.godot.Godot
@@ -53,7 +55,14 @@ class FacebookSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 
 		LoginManager.getInstance().registerCallback(manager, object : FacebookCallback<LoginResult> {
 			override fun onSuccess(result: LoginResult) {
-				emitSignal(signInSuccessSignal.name, result.accessToken.token)
+				val authenticationToken = AuthenticationToken.getCurrentAuthenticationToken()
+
+				if (authenticationToken == null) {
+					emitSignal(signInFailedSignal.name, CODE_ERROR, "no Facebook OIDC authentication token")
+					return
+				}
+
+				emitSignal(signInSuccessSignal.name, authenticationToken.token)
 			}
 
 			override fun onCancel() {
@@ -65,9 +74,11 @@ class FacebookSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 			}
 		})
 
-		LoginManager.getInstance().logInWithReadPermissions(
+		val loginManager = LoginManager.getInstance()
+		loginManager.setLoginBehavior(LoginBehavior.WEB_ONLY)
+		loginManager.logInWithReadPermissions(
 			hostActivity,
-			listOf("public_profile", "email")
+			listOf("public_profile", "email", "openid")
 		)
 	}
 
