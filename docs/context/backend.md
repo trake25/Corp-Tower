@@ -39,24 +39,23 @@ the code default.
 
 ### Player identity
 
-`Auth_Verifier.js` (the `jose` package) verifies the handshake's `accessToken`
-against the Supabase project's public JWKS, asymmetric algorithms only, pinned to
-issuer and `aud: authenticated`. It returns `{userId, isAnonymous, displayName}`
-or `null`, and never throws. It needs **no secret** — only `SUPABASE_URL`, and
-unset turns the whole path off.
+`Auth_Verifier.js` verifies Supabase JWTs (JWKS, issuer and audience) or native
+Facebook tokens through Meta `debug_token`, returning
+`{userId, isAnonymous, displayName}` or `null` without throwing. Facebook needs
+the server-only App Secret and maps its Meta id to a stable UUID.
 
-**`resolveIdentityFields` makes a verified `sub` the `profileId`**, so a client
-cannot claim another player's profile by sending one; with no identity it keeps
-the client's own value. `displayName` is persisted on the player, so a cross-pod
-hydrate does not lose it.
+**`resolveIdentityFields` makes that verified id the `profileId`**, preventing a
+client from claiming another profile. Google normally carries a Supabase-metadata
+name; guests and native Facebook carry none. Facebook never calls Meta `/me`, so
+the roster uses its fallback name; Meta review does not affect this.
 
-`Profile_Store` stays in memory unless **`SUPABASE_SERVICE_ROLE_KEY`** is set.
-With it, a first sighting reads `public.profiles` over PostgREST, inserts a
-missing row and stamps `last_login_at`; **the stored name wins once it exists**,
-so a rename outlives the provider's. Reads cache per pod and degrade to the
-`WORD_LIST` name on failure — **an outage must not fail a roster**. `status` is
-carried, not enforced. Schema and RLS: `src/Server/migrations/0001_profiles.sql`,
-applied by hand.
+`Profile_Store` is memory-only without **`SUPABASE_SERVICE_ROLE_KEY`**. It reads,
+inserts and stamps `public.profiles`; **the stored name wins once it exists**.
+Missing or unavailable records use a deterministic `WORD_LIST` name. Facebook's
+derived UUID has no matching `auth.users` row, so the profile foreign key rejects
+it until the future profile system provisions it. `status` is carried, not
+enforced. Schema and RLS: `src/Server/migrations/0001_profiles.sql`, applied by
+hand.
 
 ### `updateDebugConfig` — the authoritative validation
 

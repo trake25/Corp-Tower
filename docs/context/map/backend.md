@@ -14,7 +14,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Auth_Verifier.js:4 | SIGNING_ALGORITHMS · const | asymmetric algs only; HS* and `none` can never verify |
 | src/Server/app/Auth_Verifier.js:5 | AUDIENCE · const | required `aud` claim — Supabase issues `authenticated` |
 | src/Server/app/Auth_Verifier.js:6 | DISPLAY_NAME_MAX_LENGTH · const | clamp on a provider-supplied name before it reaches the roster |
-| src/Server/app/Auth_Verifier.js:7 | FACEBOOK_GRAPH_URL · const | TODO |
+| src/Server/app/Auth_Verifier.js:7 | FACEBOOK_GRAPH_URL · const | Meta endpoint that validates a classic native access token |
 | src/Server/app/Auth_Verifier.js:9 | normalizeUrl · fn | trim and drop trailing slashes so the issuer always matches |
 | src/Server/app/Auth_Verifier.js:13 | resolveDisplayName · fn | first non-empty of `full_name`/`name`/`preferred_username`, else null |
 | src/Server/app/Auth_Verifier.js:30 | resolveFacebookProfileId · fn | hashes a verified Meta user id into the UUID shape required by profiles |
@@ -388,4 +388,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-14 files · 309 symbols · 28 awaiting a `Does` line.
+14 files · 309 symbols · 27 awaiting a `Does` line.

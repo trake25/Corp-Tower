@@ -251,8 +251,9 @@ Native Android Facebook verification needs `TOD_FACEBOOK_APP_ID` (repository
 variable) and `TOD_FACEBOOK_APP_SECRET` (GitHub secret). The deploy job creates
 the optional `corp-tower-facebook` Secret; `Auth_Verifier.js` uses it only to
 call Meta's `debug_token` endpoint and maps the verified Meta id to the existing
-UUID-only profile table. If either value is absent, Facebook sign-in cannot
-pass a required-auth socket gate.
+UUID shape. That UUID has no `auth.users` row, so the current profile schema
+cannot persist it and the roster uses its deterministic fallback name. If either
+value is absent, Facebook sign-in cannot pass a required-auth socket gate.
 
 The `R2_*` art-pipeline secrets are listed in [build.md](./build.md). The
 `EC2_STAGING_*` and `R2_GATEWAY_*` secrets went unused when the K3s lab was

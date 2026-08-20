@@ -201,9 +201,10 @@ Play Services auth dependency and the same editor-plugin wiring as Deeplink.
 Android tries native sign-in when `AUTH_GOOGLE_SERVER_CLIENT_ID` is set, then
 uses the browser flow on native failure; web uses the provider flow directly.
 
-Facebook uses Kotlin in `plugins/godot-facebook-signin/` (SDK 18.0.3), requests
-`public_profile`/`email`/`openid` for a Limited Login OIDC token, exchanges it
-through Supabase, and falls back to browser OAuth. The App Secret stays in Supabase.
+Facebook's Kotlin plugin `plugins/godot-facebook-signin/` (SDK 18.0.3) requests
+`public_profile`/`email` in the Meta app and sends its token to the server for
+verification. It bypasses Supabase and browser OAuth; the App Secret stays
+server-side.
 
 After Play key rotation, API levels can receive different certificates. Register
 one Android OAuth client per active app-signing SHA-1 in the Web client's GCP
