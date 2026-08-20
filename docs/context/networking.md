@@ -7,11 +7,10 @@ and the two thin adapters that sit directly on the wire. Gameplay meaning →
 
 ## Connection
 
-- **The endpoint is resolved at build time, not hardcoded.** `NetworkManager.gd`'s
-  `SERVER_URL`/`FAILOVER_SERVER_URL` alias `EndpointConfig.PRIMARY`/`FAILOVER`,
-  generated into `Sys/NetMan/Endpoint_Config.gd` by `write-endpoint-config.sh`
-  before each build. EKS and Android builds ship an **empty** `FAILOVER`; the
-  physical backup's two dev builds fail over to each other.
+- **The endpoint is resolved at build time, not hardcoded.** `NetworkManager.gd`
+  aliases generated `EndpointConfig.PRIMARY`/`FAILOVER`. EKS and Android builds
+  ship an **empty** `FAILOVER`; the physical backup's two dev builds cross-fail
+  over.
 - Client: Godot `WebSocketPeer`. Server: the `ws` package.
 - **The server is always authoritative.** NetworkManager updates UI state only
   after a server message arrives, never optimistically.
@@ -22,9 +21,11 @@ and the two thin adapters that sit directly on the wire. Gameplay meaning →
   `playerId`/`reconnectToken` persisted in Godot `user://`.
 - A valid pair resumes the same room and slot (`room_resumed`); otherwise the
   server creates a new session and joins or creates a room (`room_created`).
-- `reconnect` also carries `profileId` and `accessToken`. **The token is the
-  identity; `profileId` is only the fallback** — `Auth_Verifier.js` verifies it
-  and its `sub` overrides the claimed `profileId`. While
+- `reconnect` also carries `profileId`, `accessToken`, and `authProvider`.
+  **The token is the identity; `profileId` is only the fallback** — a Supabase
+  token supplies its `sub`; a native Facebook token is verified against Meta and
+  deterministically mapped to a UUID, either overriding the claimed `profileId`.
+  While
   `SUPABASE_AUTH_REQUIRED` is `false` an absent or expired token is not an error
   and the server drops to `profileId`; `true` closes the socket with `4401`.
 - **Client auto-reconnect fires only after *unintended* disconnects**, and only
@@ -108,7 +109,7 @@ guaranteed each lands in *some* room. Same-pod joins always share the open one.
 
 | Message | Validation |
 |---|---|
-| `reconnect` | Token and id may resume a room; otherwise a new session joins/creates a room. `accessToken` is verified; see Reconnect above |
+| `reconnect` | Token and id may resume a room; otherwise a new session joins/creates a room. `accessToken` and `authProvider` are verified; see Reconnect above |
 | `ready` | Requires a room; ignored once `matchStarted`. Toggles the seat's ready state and may start the match |
 | `leave_lobby` | Requires a room; ignored once `matchStarted`. Closes the room as `player_left_lobby` |
 | `place_block` | Valid room, player, state, cooldown, inventory, block index. See below |
@@ -209,8 +210,9 @@ server's only non-WS surface, polled by the portfolio site's build step only,
 never a browser.
 
 - Starts on `PORT` (default `3000`).
-- Accepts the initial `reconnect` handshake, **verifies its `accessToken` first**,
-  creates or resumes the session, adds the player to Lobby Manager.
+- Accepts the initial `reconnect` handshake, **verifies its `accessToken` and
+  `authProvider` first**, creates or resumes the session, adds the player to
+  Lobby Manager.
 - Routes `update_config` to the debug-config coordinator, and
   `place_block`/`send_quick_chat`/`activate_power` through `dispatchRoomAction`,
   which runs the room's engine locally **if this pod owns the room**, or forwards

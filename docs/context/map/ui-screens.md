@@ -194,7 +194,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:61 | show_error | reveal ErrorLabel; unknown reasons fall back to the generic message |
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:65 | show_diagnostic | TODO |
 
-### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 617 ln
+### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 675 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -217,58 +217,63 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:22 | REASON_BROWSER · const | the system browser would not open |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:24 | NATIVE_CODE_CANCELLED · const | TODO |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:26 | oauth_completed · signal | Android flow finished; carries a reason, empty on success |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:42 | _ready | load the stored session; arm the refresh timer only when enabled |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:58 | _setup_deeplink | Android only: instantiate the vendored Deeplink node and listen |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:77 | _setup_native_google | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:97 | _native_google_ready | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:100 | _setup_native_facebook | Android-only Facebook setup from build-injected App ID and Client Token |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:124 | _native_facebook_ready | native Facebook singleton is configured and available |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:127 | redirect_android_scheme | scheme half of `REDIRECT_ANDROID` |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:130 | redirect_android_host | host half, path stripped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:138 | _on_deeplink_received | callback arrived while the app stayed alive → exchange |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:153 | is_enabled | **both URL and anon key must be set**, else auth is off and the build behaves as it did pre-Supabase |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:156 | is_signed_in | enabled and holding a refresh token |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:159 | access_token | token for the wire; **returns empty once expired** rather than sending a stale one |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:168 | restore_session | splash-time check — true routes to Home, false to Sign-in |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:182 | consume_web_callback | web only: read `?code` off the URL, exchange it, then scrub the URL |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:204 | take_oauth_error | one-shot read so Sign-in can explain a failed web return |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:209 | take_oauth_diagnostic | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:214 | _save_verifier | persist the verifier before leaving for the browser |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:220 | _load_verifier | read it back on return |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:226 | _clear_verifier | single-use: cleared on exchange, cancel and sign-out |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:230 | sign_in_guest | anonymous sign-up; returns a reason code, empty on success |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:244 | is_oauth_enabled | needs auth on, the flag, **and a redirect this platform can receive** |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:247 | redirect_uri | web → build-injected origin · Android → custom scheme · else empty |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:256 | sign_in_with_provider | mint verifier → open authorize URL; returns a *launch* reason only |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:268 | _sign_in_with_native_google | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:273 | _on_google_sign_in_success | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:277 | _on_google_sign_in_failed | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:289 | _sign_in_with_native_facebook | start native Facebook Login |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:294 | _on_facebook_sign_in_success | exchange Facebook access token through Supabase |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:298 | _on_facebook_sign_in_failed | cancel or fall back to browser Facebook OAuth |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:314 | _sign_in_with_browser | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:331 | _expire_oauth_after_grace | resumed with no callback → cancel, so the screen cannot stick busy |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:341 | _build_authorize_url | authorize URL with the encoded redirect and **`s256`, never `plain`** |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:349 | _generate_code_verifier | 32 crypto-random bytes, base64url |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:352 | _code_challenge | SHA-256 → base64url; checked against the RFC 7636 vector |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:358 | _base64url | base64 → url-safe alphabet, padding stripped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:361 | _parse_callback_query | pull `code`/`error` off a callback query; junk pairs skipped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:378 | _exchange_code | `grant_type=pkce` swap of code + verifier for a session |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:399 | _build_id_token_body | provider-specific Supabase token exchange body; Google adds client_id |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:407 | _exchange_id_token | exchange Google ID token or Facebook access token for a session |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:424 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:450 | sign_out | clear memory and delete the session file |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:462 | seconds_until_expiry | 0 when no session is held |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:468 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:477 | _notification | refresh on app resume when the token went stale in the background |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:492 | _auth_url | join the project URL to an auth path |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:495 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:538 | _auth_error_detail | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:550 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:569 | _store_session | apply, then persist |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:576 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:589 | _save_session | write the session JSON to `user://` |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:603 | _load_session | read it back on boot; malformed content is ignored |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:44 | _ready | load the stored session; arm the refresh timer only when enabled |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:60 | _setup_deeplink | Android only: instantiate the vendored Deeplink node and listen |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:79 | _setup_native_google | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:99 | _native_google_ready | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:102 | _setup_native_facebook | Android-only Facebook setup from build-injected App ID and Client Token |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:126 | _native_facebook_ready | native Facebook singleton is configured and available |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:129 | redirect_android_scheme | scheme half of `REDIRECT_ANDROID` |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:132 | redirect_android_host | host half, path stripped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:140 | _on_deeplink_received | callback arrived while the app stayed alive → exchange |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:155 | is_enabled | **both URL and anon key must be set**, else auth is off and the build behaves as it did pre-Supabase |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:158 | is_signed_in | enabled and holding a refresh token |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:161 | access_token | token for the wire; **returns empty once expired** rather than sending a stale one |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:170 | connection_access_token | native Facebook token first, otherwise a fresh Supabase JWT |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:176 | connection_auth_provider | labels the accompanying handshake token, never guessing from token shape |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:185 | restore_session | splash-time check — true routes to Home, false to Sign-in |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:202 | consume_web_callback | web only: read `?code` off the URL, exchange it, then scrub the URL |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:224 | take_oauth_error | one-shot read so Sign-in can explain a failed web return |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:229 | take_oauth_diagnostic | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:234 | _save_verifier | persist the verifier before leaving for the browser |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:240 | _load_verifier | read it back on return |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:246 | _clear_verifier | single-use: cleared on exchange, cancel and sign-out |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:250 | sign_in_guest | anonymous sign-up; returns a reason code, empty on success |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:264 | is_oauth_enabled | needs auth on, the flag, **and a redirect this platform can receive** |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:267 | redirect_uri | web → build-injected origin · Android → custom scheme · else empty |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:276 | sign_in_with_provider | mint verifier → open authorize URL; returns a *launch* reason only |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:295 | _sign_in_with_native_google | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:300 | _on_google_sign_in_success | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:304 | _on_google_sign_in_failed | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:316 | _sign_in_with_native_facebook | start native Facebook Login |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:321 | _on_facebook_sign_in_success | exchange Facebook access token through Supabase |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:332 | _on_facebook_sign_in_failed | cancel or fall back to browser Facebook OAuth |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:345 | _sign_in_with_browser | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:362 | _expire_oauth_after_grace | resumed with no callback → cancel, so the screen cannot stick busy |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:372 | _build_authorize_url | authorize URL with the encoded redirect and **`s256`, never `plain`** |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:380 | _generate_code_verifier | 32 crypto-random bytes, base64url |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:383 | _code_challenge | SHA-256 → base64url; checked against the RFC 7636 vector |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:389 | _base64url | base64 → url-safe alphabet, padding stripped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:392 | _parse_callback_query | pull `code`/`error` off a callback query; junk pairs skipped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:409 | _exchange_code | `grant_type=pkce` swap of code + verifier for a session |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:430 | _build_id_token_body | provider-specific Supabase token exchange body; Google adds client_id |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:438 | _exchange_id_token | exchange Google ID token or Facebook access token for a session |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:455 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:484 | sign_out | clear memory and delete the session file |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:498 | seconds_until_expiry | 0 when no session is held |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:504 | _has_facebook_access_token | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:507 | _apply_facebook_session | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:515 | _store_facebook_session | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:522 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:531 | _notification | refresh on app resume when the token went stale in the background |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:546 | _auth_url | join the project URL to an auth path |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:549 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:592 | _auth_error_detail | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:604 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:623 | _store_session | apply, then persist |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:630 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:643 | _save_session | write the session JSON to `user://` |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:659 | _load_session | read it back on boot; malformed content is ignored |
 
 ### src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd — 14 ln
 
@@ -287,7 +292,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:12 | AUTH_FACEBOOK_APP_ID · const | TODO |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:13 | AUTH_FACEBOOK_CLIENT_TOKEN · const | TODO |
 
-### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 319 ln
+### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 320 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -317,16 +322,16 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:114 | load_reconnect_identity | read persisted id and token |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:129 | generate_uuid_v4 | new player id |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:139 | save_reconnect_identity | persist id and token |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:151 | send_reconnect_request | first message on every connection |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:162 | update_auto_reconnect_state | track attempts and backoff |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:173 | schedule_auto_reconnect | arm the retry timer |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:191 | send_quick_chat | quick chat slot |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:200 | activate_power | Power activation by slot |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:204 | _notification | app pause and resume for background detection |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:217 | force_reconnect_after_background | reconnect after a long background |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:230 | _process | poll the WebSocketPeer and drain frames |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:308 | update_config | send a debug `update_config` |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:151 | send_reconnect_request | first message includes the connection token and its provider label |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:163 | update_auto_reconnect_state | track attempts and backoff |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:174 | schedule_auto_reconnect | arm the retry timer |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:192 | send_quick_chat | quick chat slot |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:201 | activate_power | Power activation by slot |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:205 | _notification | app pause and resume for background detection |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:218 | force_reconnect_after_background | reconnect after a long background |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:231 | _process | poll the WebSocketPeer and drain frames |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:309 | update_config | send a debug `update_config` |
 
 ---
 
-13 files · 255 symbols · 64 awaiting a `Does` line.
+13 files · 260 symbols · 67 awaiting a `Does` line.

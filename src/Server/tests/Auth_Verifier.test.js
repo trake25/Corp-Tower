@@ -6,6 +6,8 @@ const LobbyManager = require("../app/Lobby_Manager");
 
 const SUPABASE_URL = "https://project-ref.supabase.co";
 const ISSUER = SUPABASE_URL + "/auth/v1";
+const FACEBOOK_APP_ID = "123456789";
+const FACEBOOK_APP_SECRET = "facebook-app-secret";
 
 const jose = require("jose");
 
@@ -39,6 +41,14 @@ function createVerifier(overrides = {}) {
         required: false,
         keyResolver: keyPair.publicKey,
         ...overrides
+    });
+}
+
+function createFacebookVerifier(fetchImpl) {
+    return new AuthVerifier({
+        facebookAppId: FACEBOOK_APP_ID,
+        facebookAppSecret: FACEBOOK_APP_SECRET,
+        fetchImpl
     });
 }
 
@@ -142,6 +152,63 @@ test("an unconfigured verifier is disabled and never required", async () => {
 test("a configured verifier honours the required flag", () => {
     assert.equal(createVerifier({ required: true }).isRequired(), true);
     assert.equal(createVerifier({ required: false }).isRequired(), false);
+});
+
+test("a verified Facebook native token resolves to a stable UUID identity", async () => {
+    const verifier = createFacebookVerifier(async url => {
+        assert.equal(url.pathname, "/debug_token");
+        assert.equal(url.searchParams.get("input_token"), "native-facebook-token");
+        assert.equal(
+            url.searchParams.get("access_token"),
+            FACEBOOK_APP_ID + "|" + FACEBOOK_APP_SECRET
+        );
+        return {
+            ok: true,
+            json: async () => ({
+                data: {
+                    is_valid: true,
+                    app_id: FACEBOOK_APP_ID,
+                    user_id: "meta-user-42"
+                }
+            })
+        };
+    });
+
+    const identity = await verifier.verifyAccessToken(
+        "native-facebook-token", "facebook"
+    );
+
+    assert.deepEqual(identity, {
+        userId: "60286323-4946-840f-a9e6-ae0efa6a3531",
+        isAnonymous: false,
+        displayName: null
+    });
+});
+
+test("Facebook tokens from another app are rejected", async () => {
+    const verifier = createFacebookVerifier(async () => ({
+        ok: true,
+        json: async () => ({
+            data: {
+                is_valid: true,
+                app_id: "other-app",
+                user_id: "meta-user-42"
+            }
+        })
+    }));
+
+    assert.equal(await verifier.verifyAccessToken("native-facebook-token", "facebook"), null);
+});
+
+test("Facebook verification is required when it is the only configured provider", () => {
+    const verifier = new AuthVerifier({
+        required: true,
+        facebookAppId: FACEBOOK_APP_ID,
+        facebookAppSecret: FACEBOOK_APP_SECRET
+    });
+
+    assert.equal(verifier.isEnabled(), true);
+    assert.equal(verifier.isRequired(), true);
 });
 
 test("a trailing slash on the project URL does not break the issuer", () => {

@@ -179,7 +179,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/EKS-Deploy-All.yml:21 | deploy-game · job | calls the game deploy core for `wstodplay` |
 | .github/workflows/EKS-Deploy-All.yml:29 | deploy-web · job | calls the web deploy core for `todplay` |
 
-### .github/workflows/EKS-Deploy-Game-Server.yml — 491 ln
+### .github/workflows/EKS-Deploy-Game-Server.yml — 509 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -294,7 +294,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 _no extracted symbols_
 
-### infra/eks/apps/corp-tower/base/server-deployment.yaml — 88 ln
+### infra/eks/apps/corp-tower/base/server-deployment.yaml — 100 ln
 
 _no extracted symbols_
 
@@ -591,7 +591,7 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/backup/backup-server-up.sh — 93 ln
+### scripts/backup/backup-server-up.sh — 95 ln
 
 _no extracted symbols_
 

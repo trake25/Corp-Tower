@@ -2,11 +2,9 @@ package com.galaxxigames.tod.facebooksignin
 
 import android.content.Intent
 import com.facebook.CallbackManager
-import com.facebook.AuthenticationToken
 import com.facebook.FacebookCallback
 import com.facebook.FacebookException
 import com.facebook.FacebookSdk
-import com.facebook.login.LoginBehavior
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import org.godotengine.godot.Godot
@@ -16,7 +14,7 @@ import org.godotengine.godot.plugin.UsedByGodot
 
 class FacebookSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 
-	private val signInSuccessSignal = SignalInfo("sign_in_success", String::class.java)
+	private val signInSuccessSignal = SignalInfo("sign_in_success", String::class.java, Long::class.java)
 	private val signInFailedSignal = SignalInfo("sign_in_failed", String::class.java, String::class.java)
 	private var callbackManager: CallbackManager? = null
 	private var configured = false
@@ -55,14 +53,18 @@ class FacebookSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 
 		LoginManager.getInstance().registerCallback(manager, object : FacebookCallback<LoginResult> {
 			override fun onSuccess(result: LoginResult) {
-				val authenticationToken = AuthenticationToken.getCurrentAuthenticationToken()
+				val accessToken = result.accessToken
 
-				if (authenticationToken == null) {
-					emitSignal(signInFailedSignal.name, CODE_ERROR, "no Facebook OIDC authentication token")
+				if (accessToken == null || accessToken.token.isBlank()) {
+					emitSignal(signInFailedSignal.name, CODE_ERROR, "no Facebook access token")
 					return
 				}
 
-				emitSignal(signInSuccessSignal.name, authenticationToken.token)
+				emitSignal(
+					signInSuccessSignal.name,
+					accessToken.token,
+					accessToken.expires.time / 1000L
+				)
 			}
 
 			override fun onCancel() {
@@ -74,11 +76,9 @@ class FacebookSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 			}
 		})
 
-		val loginManager = LoginManager.getInstance()
-		loginManager.setLoginBehavior(LoginBehavior.WEB_ONLY)
-		loginManager.logInWithReadPermissions(
+		LoginManager.getInstance().logInWithReadPermissions(
 			hostActivity,
-			listOf("public_profile", "email", "openid")
+			listOf("public_profile", "email")
 		)
 	}
 

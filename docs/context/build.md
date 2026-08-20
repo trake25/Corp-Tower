@@ -162,19 +162,21 @@ shell pipe.
 | `CORP_TOWER_AUTH_OAUTH` | Defaults `false` — gates the provider buttons |
 | `CORP_TOWER_AUTH_REDIRECT_WEB` | Where Supabase returns a web build; the Android scheme is not build-injected |
 | `CORP_TOWER_GOOGLE_SERVER_CLIENT_ID` | Android only — the Web OAuth client ID reused as `serverClientId`; empty disables native sign-in |
-| `TOD_FACEBOOK_APP_ID` | Android Meta App ID; empty disables native sign-in |
-| `TOD_FACEBOOK_CLIENT_TOKEN` | Android Meta Client Token; empty disables native sign-in |
+| `TOD_FACEBOOK_APP_ID` | Meta App ID; empty disables native login and server verification |
+| `TOD_FACEBOOK_CLIENT_TOKEN` | Meta Client Token; empty disables native login |
 
-**The two Supabase vars are all-or-nothing** — setting one without the other is a
-hard error, so a build cannot half-enable sign-in, and `CORP_TOWER_AUTH_OAUTH=true`
-without a project is a hard error too. The script logs the URL but only ever
-prints `<set>`/`<none>` for the key.
+**The two Supabase vars are all-or-nothing** — exactly one is a hard error, as
+is `CORP_TOWER_AUTH_OAUTH=true` without a project. The script logs the URL but
+only prints `<set>`/`<none>` for the key.
+
+Android Facebook uses the installed Meta app and sends its classic token only to
+the game server, never Supabase.
 
 ### Vendored Deeplink plugin
 
-`addons/DeeplinkPlugin/` is third-party, pinned at **v5.3** — the last release
-tested against Godot 4.6; v6.x moved to 4.7. It exists so Android can receive the
-OAuth redirect on the `com.galaxxigames.tod://` scheme.
+`addons/DeeplinkPlugin/` is third-party **v5.3** (last for Godot 4.6; v6.x needs
+4.7) and receives Android OAuth redirects on the `com.galaxxigames.tod://`
+scheme.
 
 It hooks in as an `EditorExportPlugin`, so **enabling it in `project.godot`
 `[editor_plugins]` is the whole wiring** — it injects its own manifest activity

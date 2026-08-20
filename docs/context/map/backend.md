@@ -7,21 +7,25 @@ The `Does` column IS hand-authored and is carried forward on regeneration.
 `path:line` and purpose, so it feeds straight into a `Read` with no second
 lookup. Loading the whole map costs thousands and gives you the same one row.
 
-### src/Server/app/Auth_Verifier.js — 97 ln
+### src/Server/app/Auth_Verifier.js — 185 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/app/Auth_Verifier.js:3 | SIGNING_ALGORITHMS · const | asymmetric algs only; HS* and `none` can never verify |
-| src/Server/app/Auth_Verifier.js:4 | AUDIENCE · const | required `aud` claim — Supabase issues `authenticated` |
-| src/Server/app/Auth_Verifier.js:5 | DISPLAY_NAME_MAX_LENGTH · const | clamp on a provider-supplied name before it reaches the roster |
-| src/Server/app/Auth_Verifier.js:7 | normalizeUrl · fn | trim and drop trailing slashes so the issuer always matches |
-| src/Server/app/Auth_Verifier.js:11 | resolveDisplayName · fn | first non-empty of `full_name`/`name`/`preferred_username`, else null |
-| src/Server/app/Auth_Verifier.js:28 | AuthVerifier · class | verifies a Supabase access token against the project's public JWKS |
-| src/Server/app/Auth_Verifier.js:42 | isEnabled | off entirely when `SUPABASE_URL` is unset — the default |
-| src/Server/app/Auth_Verifier.js:46 | isRequired | **the soft gate**: only closes unverified sockets when enabled *and* `SUPABASE_AUTH_REQUIRED=true` |
-| src/Server/app/Auth_Verifier.js:50 | getIssuer | expected `iss` — `<SUPABASE_URL>/auth/v1` |
-| src/Server/app/Auth_Verifier.js:54 | getKeyResolver | injected key for tests, else a cached remote JWKS set |
-| src/Server/app/Auth_Verifier.js:68 | verifyAccessToken | token → `{userId, isAnonymous, displayName}` or null; never throws |
+| src/Server/app/Auth_Verifier.js:4 | SIGNING_ALGORITHMS · const | asymmetric algs only; HS* and `none` can never verify |
+| src/Server/app/Auth_Verifier.js:5 | AUDIENCE · const | required `aud` claim — Supabase issues `authenticated` |
+| src/Server/app/Auth_Verifier.js:6 | DISPLAY_NAME_MAX_LENGTH · const | clamp on a provider-supplied name before it reaches the roster |
+| src/Server/app/Auth_Verifier.js:7 | FACEBOOK_GRAPH_URL · const | TODO |
+| src/Server/app/Auth_Verifier.js:9 | normalizeUrl · fn | trim and drop trailing slashes so the issuer always matches |
+| src/Server/app/Auth_Verifier.js:13 | resolveDisplayName · fn | first non-empty of `full_name`/`name`/`preferred_username`, else null |
+| src/Server/app/Auth_Verifier.js:30 | resolveFacebookProfileId · fn | hashes a verified Meta user id into the UUID shape required by profiles |
+| src/Server/app/Auth_Verifier.js:49 | AuthVerifier · class | verifies Supabase JWTs and Meta-native classic access tokens |
+| src/Server/app/Auth_Verifier.js:74 | isEnabled | true when either Supabase or complete Facebook server credentials are configured |
+| src/Server/app/Auth_Verifier.js:78 | isFacebookEnabled | requires both `FACEBOOK_APP_ID` and `FACEBOOK_APP_SECRET` |
+| src/Server/app/Auth_Verifier.js:82 | isRequired | **the soft gate**: only closes unverified sockets when enabled *and* `SUPABASE_AUTH_REQUIRED=true` |
+| src/Server/app/Auth_Verifier.js:86 | getIssuer | expected `iss` — `<SUPABASE_URL>/auth/v1` |
+| src/Server/app/Auth_Verifier.js:90 | getKeyResolver | injected key for tests, else a cached remote JWKS set |
+| src/Server/app/Auth_Verifier.js:104 | verifyAccessToken | routes a handshake token to its configured provider and never throws |
+| src/Server/app/Auth_Verifier.js:139 | verifyFacebookAccessToken | checks Meta `debug_token`, binds app id, and returns a stable UUID identity |
 
 ### src/Server/app/Bot_Manager.js — 503 ln
 
@@ -219,7 +223,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Redis_State.js:518 | publishPlayerAssignment | hand a player to another pod |
 | src/Server/app/Redis_State.js:529 | subscribeToPlayerAssignments | receive handed-off players |
 
-### src/Server/app/Server.js — 168 ln
+### src/Server/app/Server.js — 170 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -230,7 +234,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Server.js:21 | handleStatsRequest · fn | TODO |
 | src/Server/app/Server.js:28 | requestListener · fn | TODO |
 | src/Server/app/Server.js:42 | main · fn | WebSocket entry point, connection accept, first `reconnect` |
-| src/Server/app/Server.js:94 | handleMessage · fn | **the message router** — every client message type dispatches here |
+| src/Server/app/Server.js:96 | handleMessage · fn | **the message router** — every client message type dispatches here |
 
 ### src/Server/app/Tower_Stability.js — 253 ln
 
@@ -384,4 +388,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-14 files · 305 symbols · 27 awaiting a `Does` line.
+14 files · 309 symbols · 28 awaiting a `Does` line.

@@ -289,6 +289,24 @@ jobs:
             --from-literal=service-role-key="$SUPABASE_SERVICE_ROLE_KEY" \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Sync Facebook native verification secret
+        env:
+          FACEBOOK_APP_ID: ${{ vars.TOD_FACEBOOK_APP_ID || '' }}
+          FACEBOOK_APP_SECRET: ${{ secrets.TOD_FACEBOOK_APP_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${FACEBOOK_APP_ID:-}" ] || [ -z "${FACEBOOK_APP_SECRET:-}" ]; then
+            echo "Facebook native verification is disabled."
+            kubectl -n "$NAMESPACE" delete secret corp-tower-facebook --ignore-not-found
+            exit 0
+          fi
+
+          kubectl -n "$NAMESPACE" create secret generic corp-tower-facebook \
+            --from-literal=app-id="$FACEBOOK_APP_ID" \
+            --from-literal=app-secret="$FACEBOOK_APP_SECRET" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Apply Corp Tower Kustomize overlay
         env:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}

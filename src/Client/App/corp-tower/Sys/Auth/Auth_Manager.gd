@@ -28,6 +28,8 @@ signal oauth_completed(reason: String)
 var access_token_value := ""
 var refresh_token_value := ""
 var expires_at_unix := 0
+var facebook_access_token_value := ""
+var facebook_expires_at_unix := 0
 var user_id := ""
 var is_anonymous := false
 var refresh_in_flight := false
@@ -154,7 +156,7 @@ func is_enabled() -> bool:
 	return EndpointConfig.SUPABASE_URL != "" and EndpointConfig.SUPABASE_ANON_KEY != ""
 
 func is_signed_in() -> bool:
-	return is_enabled() and refresh_token_value != ""
+	return is_enabled() and (refresh_token_value != "" or _has_facebook_access_token())
 
 func access_token() -> String:
 	if not is_enabled():
@@ -165,13 +167,31 @@ func access_token() -> String:
 
 	return access_token_value
 
+func connection_access_token() -> String:
+	if _has_facebook_access_token():
+		return facebook_access_token_value
+
+	return access_token()
+
+func connection_auth_provider() -> String:
+	if _has_facebook_access_token():
+		return "facebook"
+
+	if access_token() != "":
+		return "supabase"
+
+	return ""
+
 func restore_session() -> bool:
 	if not is_enabled():
 		return false
 
 	await consume_web_callback()
 
-	if not is_signed_in():
+	if _has_facebook_access_token():
+		return true
+
+	if refresh_token_value == "":
 		return false
 
 	if seconds_until_expiry() > REFRESH_MARGIN_SECONDS:
@@ -254,14 +274,21 @@ func redirect_uri() -> String:
 	return ""
 
 func sign_in_with_provider(provider: String) -> String:
-	if not is_oauth_enabled() or not PROVIDERS.has(provider):
+	if not PROVIDERS.has(provider):
+		return REASON_REJECTED
+
+	if provider == "facebook" and OS.get_name() == "Android":
+		if _native_facebook_ready():
+			return _sign_in_with_native_facebook()
+
+		last_oauth_diagnostic = "Facebook native sign-in is unavailable in this build."
+		return REASON_REJECTED
+
+	if not is_oauth_enabled():
 		return REASON_REJECTED
 
 	if provider == "google" and _native_google_ready():
 		return _sign_in_with_native_google()
-
-	if provider == "facebook" and _native_facebook_ready():
-		return _sign_in_with_native_facebook()
 
 	return _sign_in_with_browser(provider)
 
@@ -291,9 +318,16 @@ func _sign_in_with_native_facebook() -> String:
 	facebook_signin_node.sign_in()
 	return REASON_NONE
 
-func _on_facebook_sign_in_success(access_token: String) -> void:
+func _on_facebook_sign_in_success(access_token: String, native_expires_at_unix: int) -> void:
 	native_signin_in_flight = false
-	oauth_completed.emit(await _exchange_id_token(access_token, "facebook"))
+
+	if not _store_facebook_session(access_token, native_expires_at_unix):
+		last_oauth_diagnostic = "Facebook native sign-in returned an invalid access-token expiry."
+		oauth_completed.emit(REASON_REJECTED)
+		return
+
+	last_oauth_diagnostic = ""
+	oauth_completed.emit(REASON_NONE)
 
 func _on_facebook_sign_in_failed(code: String, message: String) -> void:
 	native_signin_in_flight = false
@@ -306,10 +340,7 @@ func _on_facebook_sign_in_failed(code: String, message: String) -> void:
 	if EndpointConfig.DEBUG_UI_ENABLED:
 		OS.alert(last_oauth_diagnostic, "Facebook native diagnostics")
 
-	var browser_reason := _sign_in_with_browser("facebook")
-
-	if browser_reason != REASON_NONE:
-		oauth_completed.emit(browser_reason)
+	oauth_completed.emit(REASON_REJECTED)
 
 func _sign_in_with_browser(provider: String) -> String:
 	var verifier := _generate_code_verifier()
@@ -422,7 +453,10 @@ func _exchange_id_token(id_token: String, provider: String = "google") -> String
 	return REASON_NONE
 
 func ensure_fresh_token() -> bool:
-	if not is_signed_in():
+	if refresh_token_value == "":
+		return _has_facebook_access_token()
+
+	if not is_enabled():
 		return false
 
 	if seconds_until_expiry() > REFRESH_MARGIN_SECONDS:
@@ -451,6 +485,8 @@ func sign_out() -> void:
 	access_token_value = ""
 	refresh_token_value = ""
 	expires_at_unix = 0
+	facebook_access_token_value = ""
+	facebook_expires_at_unix = 0
 	user_id = ""
 	is_anonymous = false
 
@@ -464,6 +500,24 @@ func seconds_until_expiry() -> int:
 		return 0
 
 	return expires_at_unix - int(Time.get_unix_time_from_system())
+
+func _has_facebook_access_token() -> bool:
+	return facebook_access_token_value != "" and facebook_expires_at_unix > int(Time.get_unix_time_from_system())
+
+func _apply_facebook_session(access_token: String, native_expires_at_unix: int) -> bool:
+	if access_token == "" or native_expires_at_unix <= int(Time.get_unix_time_from_system()):
+		return false
+
+	facebook_access_token_value = access_token
+	facebook_expires_at_unix = native_expires_at_unix
+	return true
+
+func _store_facebook_session(access_token: String, native_expires_at_unix: int) -> bool:
+	if not _apply_facebook_session(access_token, native_expires_at_unix):
+		return false
+
+	_save_session()
+	return true
 
 func _on_refresh_timer_timeout() -> void:
 	if not is_signed_in():
@@ -596,6 +650,8 @@ func _save_session() -> void:
 		"access_token": access_token_value,
 		"refresh_token": refresh_token_value,
 		"expires_at": expires_at_unix,
+		"facebook_access_token": facebook_access_token_value,
+		"facebook_expires_at": facebook_expires_at_unix,
 		"user_id": user_id,
 		"is_anonymous": is_anonymous
 	}))
@@ -612,5 +668,7 @@ func _load_session() -> void:
 	access_token_value = str(parsed.get("access_token", ""))
 	refresh_token_value = str(parsed.get("refresh_token", ""))
 	expires_at_unix = int(parsed.get("expires_at", 0))
+	facebook_access_token_value = str(parsed.get("facebook_access_token", ""))
+	facebook_expires_at_unix = int(parsed.get("facebook_expires_at", 0))
 	user_id = str(parsed.get("user_id", ""))
 	is_anonymous = bool(parsed.get("is_anonymous", false))

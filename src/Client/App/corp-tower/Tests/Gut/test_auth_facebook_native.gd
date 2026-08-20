@@ -45,3 +45,17 @@ func test_diagnostic_is_empty_by_default_and_can_be_consumed() -> void:
 	auth.last_oauth_diagnostic = "safe diagnostic"
 	assert_eq(auth.take_oauth_diagnostic(), "safe diagnostic")
 	assert_eq(auth.take_oauth_diagnostic(), "")
+
+func test_native_facebook_session_uses_its_access_token_on_the_server_wire() -> void:
+	var expiry := int(Time.get_unix_time_from_system()) + 3600
+
+	assert_true(auth._apply_facebook_session("native-facebook-token", expiry))
+	assert_eq(auth.connection_access_token(), "native-facebook-token")
+	assert_eq(auth.connection_auth_provider(), "facebook")
+
+func test_native_facebook_session_rejects_expired_tokens() -> void:
+	assert_false(
+		auth._apply_facebook_session(
+			"native-facebook-token", int(Time.get_unix_time_from_system()) - 1
+		)
+	)

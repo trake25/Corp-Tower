@@ -57,7 +57,9 @@ async function main() {
             const reconnectRequest =
                 data.type === "reconnect" ? data : {};
 
-            const identity = await authVerifier.verifyAccessToken(data.accessToken);
+            const identity = await authVerifier.verifyAccessToken(
+                data.accessToken, data.authProvider
+            );
 
             if (authVerifier.isRequired() && !identity) {
                 console.log("Rejected a connection with no verifiable access token");

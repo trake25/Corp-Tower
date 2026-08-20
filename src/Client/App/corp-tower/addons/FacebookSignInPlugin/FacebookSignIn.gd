@@ -1,7 +1,7 @@
 @tool
 class_name FacebookSignIn extends Node
 
-signal sign_in_success(access_token: String)
+signal sign_in_success(access_token: String, expires_at_unix: int)
 signal sign_in_failed(code: String, message: String)
 
 const PLUGIN_SINGLETON_NAME: String = "FacebookSignInPlugin"
@@ -28,8 +28,8 @@ func sign_in() -> bool:
 	_plugin_singleton.sign_in()
 	return true
 
-func _on_sign_in_success(access_token: String) -> void:
-	sign_in_success.emit(access_token)
+func _on_sign_in_success(access_token: String, expires_at_unix: int) -> void:
+	sign_in_success.emit(access_token, expires_at_unix)
 
 func _on_sign_in_failed(code: String, message: String) -> void:
 	sign_in_failed.emit(code, message)

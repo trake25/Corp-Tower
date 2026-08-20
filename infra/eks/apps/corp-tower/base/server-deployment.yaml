@@ -61,6 +61,18 @@ spec:
                   name: corp-tower-supabase
                   key: service-role-key
                   optional: true
+            - name: FACEBOOK_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: corp-tower-facebook
+                  key: app-id
+                  optional: true
+            - name: FACEBOOK_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: corp-tower-facebook
+                  key: app-secret
+                  optional: true
             - name: RECONNECT_TTL_SECONDS
               value: "10"
             - name: REDIS_CONNECT_RETRIES

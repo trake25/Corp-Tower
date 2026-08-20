@@ -219,10 +219,12 @@ on the physical machine.
 | `EKS_OPERATOR_PRINCIPAL_ARN` | IAM **role** ARN granted cluster-admin via an access entry |
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` | Auth. Both optional — unset ships builds with sign-in off |
 | `SUPABASE_SERVICE_ROLE_KEY` | Optional. **Bypasses RLS** — server-side only, never in a client build |
+| `TOD_FACEBOOK_APP_SECRET` | Meta App Secret; server-only verification of native Android access tokens |
 
-Provider sign-in additionally needs **both redirect targets in Supabase's allow
-list** — `com.galaxxigames.tod://auth-callback` for Android and the deployed web
-origin.
+Browser-provider sign-in additionally needs **both redirect targets in Supabase's
+allow list** — `com.galaxxigames.tod://auth-callback` for Android and the
+deployed web origin. Native Android Facebook uses the installed Meta app and
+does not redirect through Supabase.
 Supabase silently falls back to its Site URL for anything not listed, so a missing
 entry looks like a redirect to the wrong page rather than an error.
 
@@ -244,6 +246,13 @@ every run, which is what actually rolls them. Unset `SUPABASE_URL`
 turns verification off entirely; `SUPABASE_AUTH_REQUIRED=true` closes any socket
 that fails it, which breaks every already-installed client, so flip it only once
 signed-in builds are out.
+
+Native Android Facebook verification needs `TOD_FACEBOOK_APP_ID` (repository
+variable) and `TOD_FACEBOOK_APP_SECRET` (GitHub secret). The deploy job creates
+the optional `corp-tower-facebook` Secret; `Auth_Verifier.js` uses it only to
+call Meta's `debug_token` endpoint and maps the verified Meta id to the existing
+UUID-only profile table. If either value is absent, Facebook sign-in cannot
+pass a required-auth socket gate.
 
 The `R2_*` art-pipeline secrets are listed in [build.md](./build.md). The
 `EC2_STAGING_*` and `R2_GATEWAY_*` secrets went unused when the K3s lab was
