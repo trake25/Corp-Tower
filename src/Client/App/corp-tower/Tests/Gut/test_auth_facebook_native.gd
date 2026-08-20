@@ -59,3 +59,6 @@ func test_native_facebook_session_rejects_expired_tokens() -> void:
 			"native-facebook-token", int(Time.get_unix_time_from_system()) - 1
 		)
 	)
+
+func test_facebook_native_callback_timeout_is_bounded() -> void:
+	assert_eq(auth.NATIVE_FACEBOOK_TIMEOUT_SECONDS, 30.0)

@@ -28,8 +28,16 @@ func sign_in() -> bool:
 	_plugin_singleton.sign_in()
 	return true
 
-func _on_sign_in_success(access_token: String, expires_at_unix: int) -> void:
-	sign_in_success.emit(access_token, expires_at_unix)
+func _on_sign_in_success(payload: String) -> void:
+	var parsed = JSON.parse_string(payload)
+
+	if typeof(parsed) != TYPE_DICTIONARY:
+		sign_in_failed.emit("error", "invalid Facebook sign-in payload")
+		return
+
+	sign_in_success.emit(
+		str(parsed.get("accessToken", "")), int(parsed.get("expiresAt", 0))
+	)
 
 func _on_sign_in_failed(code: String, message: String) -> void:
 	sign_in_failed.emit(code, message)

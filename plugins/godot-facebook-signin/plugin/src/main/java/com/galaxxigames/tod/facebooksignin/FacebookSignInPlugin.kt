@@ -14,7 +14,7 @@ import org.godotengine.godot.plugin.UsedByGodot
 
 class FacebookSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 
-	private val signInSuccessSignal = SignalInfo("sign_in_success", String::class.java, Long::class.java)
+	private val signInSuccessSignal = SignalInfo("sign_in_success", String::class.java)
 	private val signInFailedSignal = SignalInfo("sign_in_failed", String::class.java, String::class.java)
 	private var callbackManager: CallbackManager? = null
 	private var configured = false
@@ -60,11 +60,8 @@ class FacebookSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 					return
 				}
 
-				emitSignal(
-					signInSuccessSignal.name,
-					accessToken.token,
-					accessToken.expires.time / 1000L
-				)
+				val payload = "{\"accessToken\":${org.json.JSONObject.quote(accessToken.token)},\"expiresAt\":${accessToken.expires.time / 1000L}}"
+				emitSignal(signInSuccessSignal.name, payload)
 			}
 
 			override fun onCancel() {

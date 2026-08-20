@@ -5,6 +5,7 @@ const VERIFIER_FILE := "user://corp_tower_auth_verifier.save"
 const REFRESH_MARGIN_SECONDS := 120
 const REFRESH_CHECK_INTERVAL_SECONDS := 30.0
 const REQUEST_TIMEOUT_SECONDS := 12.0
+const NATIVE_FACEBOOK_TIMEOUT_SECONDS := 30.0
 const VERIFIER_BYTES := 32
 const OAUTH_RESUME_GRACE_SECONDS := 2.0
 
@@ -315,7 +316,13 @@ func _on_google_sign_in_failed(code: String, message: String) -> void:
 
 func _sign_in_with_native_facebook() -> String:
 	native_signin_in_flight = true
-	facebook_signin_node.sign_in()
+
+	if not facebook_signin_node.sign_in():
+		native_signin_in_flight = false
+		last_oauth_diagnostic = "Facebook native sign-in could not start."
+		return REASON_REJECTED
+
+	_expire_native_facebook_sign_in()
 	return REASON_NONE
 
 func _on_facebook_sign_in_success(access_token: String, native_expires_at_unix: int) -> void:
@@ -340,6 +347,16 @@ func _on_facebook_sign_in_failed(code: String, message: String) -> void:
 	if EndpointConfig.DEBUG_UI_ENABLED:
 		OS.alert(last_oauth_diagnostic, "Facebook native diagnostics")
 
+	oauth_completed.emit(REASON_REJECTED)
+
+func _expire_native_facebook_sign_in() -> void:
+	await get_tree().create_timer(NATIVE_FACEBOOK_TIMEOUT_SECONDS).timeout
+
+	if not native_signin_in_flight:
+		return
+
+	native_signin_in_flight = false
+	last_oauth_diagnostic = "Facebook native sign-in did not return to the game."
 	oauth_completed.emit(REASON_REJECTED)
 
 func _sign_in_with_browser(provider: String) -> String:

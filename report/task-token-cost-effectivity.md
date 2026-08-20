@@ -60,7 +60,8 @@ contradicted source.
 | 12 | Updated Facebook plans for current Meta Quickstart UI and clarified configuration destinations | 2 | A | 3 | 2 | ~10,000 | ~8,000 | ~8,000 | ~8,000 | ✓ | ok | Opus 5 | high | — |
 | 13 | Facebook repo integration: native Android plugin, Supabase token exchange, CI config, tests and docs | 4 | A | 3 | 17 | ~30,000 | ~32,000 | ~70,000 | ~70,000 | ✓ | ok | Opus 5 | high | — |
 | 14 | Native Facebook access-token verification bridge, profile UUID mapping, deploy secret wiring and tests | 5 | A | 4 | 17 | — | ~26,000 | ~58,000 | ~58,000 | ✓ | ok | GPT-5 | high | — |
-<!-- next: row 15 -->
+| 15 | Restored Facebook native callback compatibility and bounded missing callback state | 3 | A | 2 | 5 | — | ~8,000 | ~20,000 | ~20,000 | ✓ | ok | GPT-5 | high | — |
+<!-- next: row 16 -->
 
 ## Cycle 2 (closed)
 
