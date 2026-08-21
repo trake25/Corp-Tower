@@ -1,5 +1,4 @@
 const { createRemoteJWKSet, jwtVerify } = require("jose");
-const { createHash } = require("crypto");
 
 const SIGNING_ALGORITHMS = ["RS256", "RS512", "ES256", "ES512", "EdDSA"];
 const AUDIENCE = "authenticated";
@@ -25,25 +24,6 @@ function resolveDisplayName(payload) {
     }
 
     return null;
-}
-
-function resolveFacebookProfileId(facebookUserId) {
-    const bytes = createHash("sha256")
-        .update("facebook:" + facebookUserId)
-        .digest()
-        .subarray(0, 16);
-
-    bytes[6] = (bytes[6] & 0x0f) | 0x80;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    const hex = bytes.toString("hex");
-
-    return [
-        hex.slice(0, 8),
-        hex.slice(8, 12),
-        hex.slice(12, 16),
-        hex.slice(16, 20),
-        hex.slice(20)
-    ].join("-");
 }
 
 class AuthVerifier {
@@ -126,7 +106,10 @@ class AuthVerifier {
             }
 
             return {
-                userId: String(payload.sub),
+                kind: "supabase",
+                supabaseUserId: String(payload.sub),
+                accessToken: token,
+                provider: String(payload.app_metadata && payload.app_metadata.provider || ""),
                 isAnonymous: Boolean(payload.is_anonymous),
                 displayName: resolveDisplayName(payload)
             };
@@ -170,7 +153,9 @@ class AuthVerifier {
             }
 
             return {
-                userId: resolveFacebookProfileId(data.user_id),
+                kind: "facebook_native",
+                provider: "facebook",
+                providerSubject: data.user_id,
                 isAnonymous: false,
                 displayName: null
             };

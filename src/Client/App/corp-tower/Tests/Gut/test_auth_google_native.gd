@@ -50,6 +50,18 @@ func test_native_google_is_enabled_by_default_and_can_be_persisted_locally() -> 
 	assert_false(restored.is_native_google_enabled(), "The device-local debug preference must survive a new manager instance.")
 	restored.free()
 
+func test_native_facebook_is_enabled_by_default_and_can_be_persisted_locally() -> void:
+	auth.debug_preferences_path = DEBUG_PREFERENCES_TEST_PATH
+	assert_true(auth.is_native_facebook_enabled(), "Native Facebook must default to enabled.")
+
+	auth.set_native_facebook_enabled(false)
+	var restored = AuthManagerScript.new()
+	restored.debug_preferences_path = DEBUG_PREFERENCES_TEST_PATH
+	restored._load_debug_preferences()
+
+	assert_false(restored.is_native_facebook_enabled(), "The device-local Facebook preference must survive a new manager instance.")
+	restored.free()
+
 func test_unconfigured_provider_call_never_reaches_native() -> void:
 	if EndpointConfig.SUPABASE_URL != "" or EndpointConfig.AUTH_OAUTH_ENABLED:
 		return

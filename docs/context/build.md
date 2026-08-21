@@ -203,8 +203,8 @@ uses the browser flow on native failure; web uses the provider flow directly.
 
 Facebook's Kotlin plugin `plugins/godot-facebook-signin/` (SDK 18.0.3) requests
 `public_profile`/`email` in the Meta app and sends its token to the server for
-verification. It bypasses Supabase and browser OAuth; the App Secret stays
-server-side.
+verification. It requests `NATIVE_ONLY`; an unavailable or failed native flow
+continues through Supabase browser OAuth. The App Secret stays server-side.
 
 After Play key rotation, API levels can receive different certificates. Register
 one Android OAuth client per active app-signing SHA-1 in the Web client's GCP

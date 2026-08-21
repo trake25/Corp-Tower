@@ -4,7 +4,7 @@ const WORD_LIST = [
 ];
 
 const REQUEST_TIMEOUT_MS = 4000;
-const PROFILE_COLUMNS = "id,display_name,status";
+const PROFILE_COLUMNS = "player_account_id,display_name,status";
 
 function hashString(value) {
     let hash = 5381;
@@ -136,7 +136,7 @@ class ProfileStore {
 
     async fetchRow(profileId) {
         const response = await this.request(
-            `profiles?id=eq.${encodeURIComponent(profileId)}&select=${PROFILE_COLUMNS}`,
+            `player_profiles?player_account_id=eq.${encodeURIComponent(profileId)}&select=${PROFILE_COLUMNS}`,
             { method: "GET" }
         );
         const rows = await response.json();
@@ -145,11 +145,11 @@ class ProfileStore {
     }
 
     async insertRow(profileId, displayName) {
-        await this.request("profiles", {
+        await this.request("player_profiles", {
             method: "POST",
             headers: { Prefer: "return=minimal,resolution=ignore-duplicates" },
             body: JSON.stringify([{
-                id: profileId,
+                player_account_id: profileId,
                 display_name: displayName,
                 last_login_at: new Date().toISOString()
             }])
@@ -157,7 +157,7 @@ class ProfileStore {
     }
 
     async patchRow(profileId, patch) {
-        await this.request(`profiles?id=eq.${encodeURIComponent(profileId)}`, {
+        await this.request(`player_profiles?player_account_id=eq.${encodeURIComponent(profileId)}`, {
             method: "PATCH",
             headers: { Prefer: "return=minimal" },
             body: JSON.stringify(patch)

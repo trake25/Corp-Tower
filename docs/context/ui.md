@@ -43,8 +43,9 @@ global floating debug button.
 - Sign-in shows a social button **only for a provider in `AuthManager.PROVIDERS`
   with OAuth on**, hiding the row and divider otherwise — no dead social button
   ships. Android returns via the vendored Deeplink plugin, web via its own URL.
-  Its debug Sign In category can locally force Google through browser OAuth by
-  disabling the default-on native Android path; the preference is per device.
+  Its debug Sign In category can locally force Google or Facebook through browser
+  OAuth by disabling the default-on native Android path; each preference is per
+  device.
 - Swaps screens inside `ScreenContainer`, driven by the child screens' request
   signals and NetworkManager's `room_joined` / `match_started` / `room_closed`.
 - Flow: Play Loader → Sign-in → Home → Join Screen; a restored session skips

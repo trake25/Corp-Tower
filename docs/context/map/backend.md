@@ -7,25 +7,52 @@ The `Does` column IS hand-authored and is carried forward on regeneration.
 `path:line` and purpose, so it feeds straight into a `Read` with no second
 lookup. Loading the whole map costs thousands and gives you the same one row.
 
-### src/Server/app/Auth_Verifier.js — 185 ln
+### src/Server/app/Account_Store.js — 327 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/app/Auth_Verifier.js:4 | SIGNING_ALGORITHMS · const | asymmetric algs only; HS* and `none` can never verify |
-| src/Server/app/Auth_Verifier.js:5 | AUDIENCE · const | required `aud` claim — Supabase issues `authenticated` |
-| src/Server/app/Auth_Verifier.js:6 | DISPLAY_NAME_MAX_LENGTH · const | clamp on a provider-supplied name before it reaches the roster |
-| src/Server/app/Auth_Verifier.js:7 | FACEBOOK_GRAPH_URL · const | Meta endpoint that validates a classic native access token |
-| src/Server/app/Auth_Verifier.js:9 | normalizeUrl · fn | trim and drop trailing slashes so the issuer always matches |
-| src/Server/app/Auth_Verifier.js:13 | resolveDisplayName · fn | first non-empty of `full_name`/`name`/`preferred_username`, else null |
-| src/Server/app/Auth_Verifier.js:30 | resolveFacebookProfileId · fn | hashes a verified Meta user id into the UUID shape required by profiles |
-| src/Server/app/Auth_Verifier.js:49 | AuthVerifier · class | verifies Supabase JWTs and Meta-native classic access tokens |
-| src/Server/app/Auth_Verifier.js:74 | isEnabled | true when either Supabase or complete Facebook server credentials are configured |
-| src/Server/app/Auth_Verifier.js:78 | isFacebookEnabled | requires both `FACEBOOK_APP_ID` and `FACEBOOK_APP_SECRET` |
-| src/Server/app/Auth_Verifier.js:82 | isRequired | **the soft gate**: only closes unverified sockets when enabled *and* `SUPABASE_AUTH_REQUIRED=true` |
-| src/Server/app/Auth_Verifier.js:86 | getIssuer | expected `iss` — `<SUPABASE_URL>/auth/v1` |
-| src/Server/app/Auth_Verifier.js:90 | getKeyResolver | injected key for tests, else a cached remote JWKS set |
-| src/Server/app/Auth_Verifier.js:104 | verifyAccessToken | routes a handshake token to its configured provider and never throws |
-| src/Server/app/Auth_Verifier.js:139 | verifyFacebookAccessToken | checks Meta `debug_token`, binds app id, and returns a stable UUID identity |
+| src/Server/app/Account_Store.js:3 | REQUEST_TIMEOUT_MS · const | cap for Supabase identity and REST calls |
+| src/Server/app/Account_Store.js:4 | FACEBOOK_PROVIDER · const | canonical provider key for identity records |
+| src/Server/app/Account_Store.js:6 | normalizeUrl · fn | trim and drop trailing slashes from the Supabase URL |
+| src/Server/app/Account_Store.js:10 | positiveInteger · fn | accepts only positive HMAC key versions |
+| src/Server/app/Account_Store.js:15 | AccountStore · class | turns verified credentials into durable game accounts |
+| src/Server/app/Account_Store.js:51 | connect | enables persistence only with Supabase service credentials and HMAC key |
+| src/Server/app/Account_Store.js:59 | resolve | dispatches a verified native or Supabase credential to an account |
+| src/Server/app/Account_Store.js:90 | identityForAccount | final Lobby Manager identity shape with game account UUID |
+| src/Server/app/Account_Store.js:98 | hashProviderSubject | HMAC-SHA-256 provider subject; raw provider IDs never persist |
+| src/Server/app/Account_Store.js:104 | resolveFacebook | finds or creates a Facebook account and binds its Supabase user |
+| src/Server/app/Account_Store.js:138 | findFacebookIdentity | checks active HMAC then re-records a matching prior-version hash |
+| src/Server/app/Account_Store.js:158 | fetchFacebookProviderSubject | reads the trusted Supabase user identity and verifies its subject |
+| src/Server/app/Account_Store.js:194 | findOrCreateSupabaseAccount | owns one game account per verified Supabase user |
+| src/Server/app/Account_Store.js:211 | createAccount | inserts and re-reads a native-only game account |
+| src/Server/app/Account_Store.js:223 | bindSupabaseUser | permanently attaches the browser user to its Facebook account |
+| src/Server/app/Account_Store.js:246 | findAccountById | reads one game account by UUID |
+| src/Server/app/Account_Store.js:253 | findAccountBySupabaseUserId | reads the game account linked to a Supabase subject |
+| src/Server/app/Account_Store.js:260 | findIdentity | finds one versioned, HMACed Facebook identity |
+| src/Server/app/Account_Store.js:267 | insertFacebookIdentity | writes the active-version Facebook identity hash |
+| src/Server/app/Account_Store.js:275 | insertIdentity | idempotently creates a provider-to-account link |
+| src/Server/app/Account_Store.js:288 | insertAccount | idempotently creates a player account record |
+| src/Server/app/Account_Store.js:299 | fetchRows | parses a PostgREST list response |
+| src/Server/app/Account_Store.js:305 | request | service-role PostgREST request with a bounded timeout |
+
+### src/Server/app/Auth_Verifier.js — 170 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Server/app/Auth_Verifier.js:3 | SIGNING_ALGORITHMS · const | asymmetric algs only; HS* and `none` can never verify |
+| src/Server/app/Auth_Verifier.js:4 | AUDIENCE · const | required `aud` claim — Supabase issues `authenticated` |
+| src/Server/app/Auth_Verifier.js:5 | DISPLAY_NAME_MAX_LENGTH · const | clamp on a provider-supplied name before it reaches the roster |
+| src/Server/app/Auth_Verifier.js:6 | FACEBOOK_GRAPH_URL · const | Meta endpoint that validates a classic native access token |
+| src/Server/app/Auth_Verifier.js:8 | normalizeUrl · fn | trim and drop trailing slashes so the issuer always matches |
+| src/Server/app/Auth_Verifier.js:12 | resolveDisplayName · fn | first non-empty of `full_name`/`name`/`preferred_username`, else null |
+| src/Server/app/Auth_Verifier.js:29 | AuthVerifier · class | verifies Supabase JWTs and Meta-native classic access tokens |
+| src/Server/app/Auth_Verifier.js:54 | isEnabled | true when either Supabase or complete Facebook server credentials are configured |
+| src/Server/app/Auth_Verifier.js:58 | isFacebookEnabled | requires both `FACEBOOK_APP_ID` and `FACEBOOK_APP_SECRET` |
+| src/Server/app/Auth_Verifier.js:62 | isRequired | **the soft gate**: only closes unverified sockets when enabled *and* `SUPABASE_AUTH_REQUIRED=true` |
+| src/Server/app/Auth_Verifier.js:66 | getIssuer | expected `iss` — `<SUPABASE_URL>/auth/v1` |
+| src/Server/app/Auth_Verifier.js:70 | getKeyResolver | injected key for tests, else a cached remote JWKS set |
+| src/Server/app/Auth_Verifier.js:84 | verifyAccessToken | routes a handshake token to its configured provider and never throws |
+| src/Server/app/Auth_Verifier.js:122 | verifyFacebookAccessToken | checks Meta `debug_token`, binds app id, and returns the provider subject |
 
 ### src/Server/app/Bot_Manager.js — 503 ln
 
@@ -223,18 +250,19 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Redis_State.js:518 | publishPlayerAssignment | hand a player to another pod |
 | src/Server/app/Redis_State.js:529 | subscribeToPlayerAssignments | receive handed-off players |
 
-### src/Server/app/Server.js — 170 ln
+### src/Server/app/Server.js — 182 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/app/Server.js:7 | lobbyManager · const | singleton instance |
-| src/Server/app/Server.js:8 | authVerifier · const | process-wide token verifier, configured from env |
-| src/Server/app/Server.js:10 | port · const | listen port from env |
-| src/Server/app/Server.js:12 | safeJson · fn | parse guard; malformed frames never throw |
-| src/Server/app/Server.js:21 | handleStatsRequest · fn | serves the read-only demo statistics HTTP response |
-| src/Server/app/Server.js:28 | requestListener · fn | routes HTTP requests before WebSocket upgrade handling |
-| src/Server/app/Server.js:42 | main · fn | WebSocket entry point, connection accept, first `reconnect` |
-| src/Server/app/Server.js:96 | handleMessage · fn | **the message router** — every client message type dispatches here |
+| src/Server/app/Server.js:8 | lobbyManager · const | singleton instance |
+| src/Server/app/Server.js:9 | authVerifier · const | process-wide token verifier, configured from env |
+| src/Server/app/Server.js:10 | accountStore · const | process-wide resolver from verified credential to game account |
+| src/Server/app/Server.js:12 | port · const | listen port from env |
+| src/Server/app/Server.js:14 | safeJson · fn | parse guard; malformed frames never throw |
+| src/Server/app/Server.js:23 | handleStatsRequest · fn | serves the read-only demo statistics HTTP response |
+| src/Server/app/Server.js:30 | requestListener · fn | routes HTTP requests before WebSocket upgrade handling |
+| src/Server/app/Server.js:44 | main · fn | WebSocket entry point, connection accept, first `reconnect` |
+| src/Server/app/Server.js:108 | handleMessage · fn | **the message router** — every client message type dispatches here |
 
 ### src/Server/app/Tower_Stability.js — 253 ln
 
@@ -346,6 +374,14 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/engine/Scoring.js:325 | addLevelScoreToLeaderboard · fn | **the only banking step**; failed levels never bank |
 | src/Server/app/engine/Scoring.js:332 | getLevelMVP · fn | highest level score; display only |
 
+### src/Server/migrations/0001_profiles.sql — 46 ln
+
+_no extracted symbols_
+
+### src/Server/migrations/0002_player_accounts.sql — 67 ln
+
+_no extracted symbols_
+
 ### src/Server/tools/Balance_Simulator.js — 576 ln
 
 | File:Ln | Symbol | Does |
@@ -388,4 +424,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-14 files · 309 symbols · 0 awaiting a `Does` line.
+17 files · 332 symbols · 0 awaiting a `Does` line.

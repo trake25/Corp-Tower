@@ -43,6 +43,7 @@ var facebook_signin_node: Node = null
 var native_signin_in_flight := false
 var last_oauth_diagnostic := ""
 var native_google_enabled := true
+var native_facebook_enabled := true
 var debug_preferences_path := DEBUG_PREFERENCES_FILE
 
 func _ready() -> void:
@@ -110,7 +111,20 @@ func is_native_google_enabled() -> bool:
 func set_native_google_enabled(enabled: bool) -> void:
 	native_google_enabled = enabled
 	var preferences := ConfigFile.new()
+	if preferences.load(debug_preferences_path) != OK:
+		preferences = ConfigFile.new()
 	preferences.set_value("oauth", "native_google_enabled", native_google_enabled)
+	preferences.save(debug_preferences_path)
+
+func is_native_facebook_enabled() -> bool:
+	return native_facebook_enabled
+
+func set_native_facebook_enabled(enabled: bool) -> void:
+	native_facebook_enabled = enabled
+	var preferences := ConfigFile.new()
+	if preferences.load(debug_preferences_path) != OK:
+		preferences = ConfigFile.new()
+	preferences.set_value("oauth", "native_facebook_enabled", native_facebook_enabled)
 	preferences.save(debug_preferences_path)
 
 func _load_debug_preferences() -> void:
@@ -119,6 +133,7 @@ func _load_debug_preferences() -> void:
 		return
 
 	native_google_enabled = bool(preferences.get_value("oauth", "native_google_enabled", true))
+	native_facebook_enabled = bool(preferences.get_value("oauth", "native_facebook_enabled", true))
 
 func _setup_native_facebook() -> void:
 	if not is_oauth_enabled() or OS.get_name() != "Android":
@@ -298,18 +313,14 @@ func sign_in_with_provider(provider: String) -> String:
 	if not PROVIDERS.has(provider):
 		return REASON_REJECTED
 
-	if provider == "facebook" and OS.get_name() == "Android":
-		if _native_facebook_ready():
-			return _sign_in_with_native_facebook()
-
-		last_oauth_diagnostic = "Facebook native sign-in is unavailable in this build."
-		return REASON_REJECTED
-
 	if not is_oauth_enabled():
 		return REASON_REJECTED
 
 	if provider == "google" and native_google_enabled and _native_google_ready():
 		return _sign_in_with_native_google()
+
+	if provider == "facebook" and native_facebook_enabled and _native_facebook_ready():
+		return _sign_in_with_native_facebook()
 
 	return _sign_in_with_browser(provider)
 
@@ -367,7 +378,10 @@ func _on_facebook_sign_in_failed(code: String, message: String) -> void:
 	if EndpointConfig.DEBUG_UI_ENABLED:
 		OS.alert(last_oauth_diagnostic, "Facebook native diagnostics")
 
-	oauth_completed.emit(REASON_REJECTED)
+	var browser_reason := _sign_in_with_browser("facebook")
+
+	if browser_reason != REASON_NONE:
+		oauth_completed.emit(browser_reason)
 
 func _expire_native_facebook_sign_in() -> void:
 	await get_tree().create_timer(NATIVE_FACEBOOK_TIMEOUT_SECONDS).timeout

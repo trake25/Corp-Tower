@@ -3,9 +3,11 @@ const WebSocket = require("ws");
 
 const LobbyManager = require("./Lobby_Manager");
 const AuthVerifier = require("./Auth_Verifier");
+const AccountStore = require("./Account_Store");
 
 const lobbyManager = new LobbyManager();
 const authVerifier = new AuthVerifier();
+const accountStore = new AccountStore();
 
 const port = Number(process.env.PORT) || 3000;
 
@@ -40,6 +42,7 @@ function requestListener(req, res) {
 }
 
 async function main() {
+    await accountStore.connect();
     await lobbyManager.start();
 
     const server = http.createServer(requestListener);
@@ -57,9 +60,18 @@ async function main() {
             const reconnectRequest =
                 data.type === "reconnect" ? data : {};
 
-            const identity = await authVerifier.verifyAccessToken(
+            const credential = await authVerifier.verifyAccessToken(
                 data.accessToken, data.authProvider
             );
+            let identity = null;
+
+            if (credential) {
+                try {
+                    identity = await accountStore.resolve(credential);
+                } catch (error) {
+                    console.log("Account identity rejected:", error.message);
+                }
+            }
 
             if (authVerifier.isRequired() && !identity) {
                 console.log("Rejected a connection with no verifiable access token");

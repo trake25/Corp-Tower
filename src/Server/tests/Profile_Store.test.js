@@ -62,7 +62,7 @@ test("without a project url the store stays disabled even with a key", async () 
 
 test("a stored display name wins over the generated one", async () => {
     const { fetchImpl } = createFakeSupabase([[
-        { id: PROFILE_ID, display_name: "Ada Lovelace", status: "active" }
+        { player_account_id: PROFILE_ID, display_name: "Ada Lovelace", status: "active" }
     ]]);
     const store = createStore({ fetchImpl });
     await store.connect();
@@ -75,7 +75,7 @@ test("a stored display name wins over the generated one", async () => {
 
 test("a stored name also wins over a freshly verified one, so a rename sticks", async () => {
     const { fetchImpl } = createFakeSupabase([[
-        { id: PROFILE_ID, display_name: "ChosenName", status: "active" }
+        { player_account_id: PROFILE_ID, display_name: "ChosenName", status: "active" }
     ]]);
     const store = createStore({ fetchImpl });
     await store.connect();
@@ -101,7 +101,7 @@ test("a missing row is inserted with the verified name", async () => {
     assert.ok(insert, "A missing row must be inserted.");
 
     const body = JSON.parse(insert.body)[0];
-    assert.equal(body.id, PROFILE_ID);
+    assert.equal(body.player_account_id, PROFILE_ID);
     assert.equal(body.display_name, "Ada Lovelace");
     assert.ok(body.last_login_at, "Insert must stamp last_login_at.");
     assert.match(
@@ -112,7 +112,7 @@ test("a missing row is inserted with the verified name", async () => {
 
 test("a row with no name is backfilled rather than left blank", async () => {
     const { calls, fetchImpl } = createFakeSupabase([[
-        { id: PROFILE_ID, display_name: null, status: "active" }
+        { player_account_id: PROFILE_ID, display_name: null, status: "active" }
     ]]);
     const store = createStore({ fetchImpl });
     await store.connect();
@@ -128,7 +128,7 @@ test("a row with no name is backfilled rather than left blank", async () => {
 
 test("an existing named row is patched for login time only", async () => {
     const { calls, fetchImpl } = createFakeSupabase([[
-        { id: PROFILE_ID, display_name: "ChosenName", status: "active" }
+        { player_account_id: PROFILE_ID, display_name: "ChosenName", status: "active" }
     ]]);
     const store = createStore({ fetchImpl });
     await store.connect();
@@ -146,7 +146,7 @@ test("an existing named row is patched for login time only", async () => {
 
 test("a banned status is carried through but not acted on", async () => {
     const { fetchImpl } = createFakeSupabase([[
-        { id: PROFILE_ID, display_name: "Ada", status: "banned" }
+        { player_account_id: PROFILE_ID, display_name: "Ada", status: "banned" }
     ]]);
     const store = createStore({ fetchImpl });
     await store.connect();
@@ -199,7 +199,7 @@ test("the service role key is sent as apikey and bearer, never on the query", as
 
 test("a cached profile is served without a second round trip", async () => {
     const { calls, fetchImpl } = createFakeSupabase([[
-        { id: PROFILE_ID, display_name: "Ada", status: "active" }
+        { player_account_id: PROFILE_ID, display_name: "Ada", status: "active" }
     ]]);
     const store = createStore({ fetchImpl });
     await store.connect();

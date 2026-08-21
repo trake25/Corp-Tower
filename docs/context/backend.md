@@ -39,24 +39,24 @@ the code default.
 
 ### Player identity
 
-`Auth_Verifier.js` uses the `jose` dependency to verify Supabase JWTs (JWKS,
-issuer and audience) or native
-Facebook tokens through Meta `debug_token`, returning
-`{userId, isAnonymous, displayName}` or `null` without throwing. Facebook needs
-the server-only App Secret and maps its Meta id to a stable UUID.
+`Auth_Verifier.js` uses `jose` to verify Supabase JWTs (JWKS, issuer and audience) and native
+Facebook tokens through Meta `debug_token`, returning a verified credential or
+`null` without throwing. `Account_Store` resolves that credential to the stable
+`player_accounts.id` used as `profileId`, preventing a client from claiming
+another player.
 
-**`resolveIdentityFields` makes that verified id the `profileId`**, preventing a
-client from claiming another profile. Google normally carries a Supabase-metadata
-name; guests and native Facebook carry none. Facebook never calls Meta `/me`, so
-the roster uses its fallback name; Meta review does not affect this.
+`player_accounts` optionally links a Supabase user; `player_identities` links
+Facebook through a versioned HMAC-SHA-256 of its provider subject. Raw Meta IDs
+and access tokens never reach the database. Native Facebook creates an account
+without `auth.users`; browser Facebook asks Supabase for the same provider subject
+and binds its Supabase user to that account. Google and guests receive an account
+through their verified Supabase subject.
 
 `Profile_Store` is memory-only without **`SUPABASE_SERVICE_ROLE_KEY`**. It reads,
-inserts and stamps `public.profiles`; **the stored name wins once it exists**.
-Missing or unavailable records use a deterministic `WORD_LIST` name. Facebook's
-derived UUID has no matching `auth.users` row, so the profile foreign key rejects
-it until the future profile system provisions it. `status` is carried, not
-enforced. Schema and RLS: `src/Server/migrations/0001_profiles.sql`, applied by
-hand.
+inserts and stamps `public.player_profiles`; **the stored name wins once it
+exists**. Missing or unavailable records use a deterministic `WORD_LIST` name;
+`status` is carried, not enforced. Schema and RLS:
+`src/Server/migrations/0002_player_accounts.sql`, applied by hand.
 
 ### `updateDebugConfig` — the authoritative validation
 

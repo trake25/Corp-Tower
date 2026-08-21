@@ -211,8 +211,9 @@ never a browser.
 
 - Starts on `PORT` (default `3000`).
 - Accepts the initial `reconnect` handshake, **verifies its `accessToken` and
-  `authProvider` first**, creates or resumes the session, adds the player to
-  Lobby Manager.
+  `authProvider` first**, resolves the verified credential to a game-owned player
+  account, then creates or resumes the session and adds the player to Lobby
+  Manager.
 - Routes `update_config` to the debug-config coordinator, and
   `place_block`/`send_quick_chat`/`activate_power` through `dispatchRoomAction`,
   which runs the room's engine locally **if this pod owns the room**, or forwards

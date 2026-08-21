@@ -307,6 +307,28 @@ jobs:
             --from-literal=app-secret="$FACEBOOK_APP_SECRET" \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Sync player identity HMAC secret
+        env:
+          PLAYER_IDENTITY_HMAC_SECRET: ${{ secrets.PLAYER_IDENTITY_HMAC_SECRET }}
+          PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET: ${{ secrets.PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PLAYER_IDENTITY_HMAC_SECRET:-}" ]; then
+            echo "Player identity persistence is disabled."
+            kubectl -n "$NAMESPACE" delete secret corp-tower-identity --ignore-not-found
+            exit 0
+          fi
+
+          identity_secret_args=(--from-literal=hmac-secret="$PLAYER_IDENTITY_HMAC_SECRET")
+          if [ -n "${PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET:-}" ]; then
+            identity_secret_args+=(--from-literal=previous-hmac-secret="$PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET")
+          fi
+
+          kubectl -n "$NAMESPACE" create secret generic corp-tower-identity \
+            "${identity_secret_args[@]}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Apply Corp Tower Kustomize overlay
         env:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
@@ -314,6 +336,8 @@ jobs:
           # and the server on the pre-Supabase profile id path.
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_AUTH_REQUIRED: ${{ vars.SUPABASE_AUTH_REQUIRED || 'false' }}
+          PLAYER_IDENTITY_HMAC_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_KEY_VERSION || '1' }}
+          PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION || '0' }}
         run: |
           set -euo pipefail
 
@@ -347,6 +371,10 @@ jobs:
                               value: "${SUPABASE_URL}"
                             - name: SUPABASE_AUTH_REQUIRED
                               value: "${SUPABASE_AUTH_REQUIRED}"
+                            - name: PLAYER_IDENTITY_HMAC_KEY_VERSION
+                              value: "${PLAYER_IDENTITY_HMAC_KEY_VERSION}"
+                            - name: PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION
+                              value: "${PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION}"
           EOF
 
           kubectl apply -k "$RUNTIME_OVERLAY"

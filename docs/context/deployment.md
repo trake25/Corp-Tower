@@ -220,6 +220,7 @@ on the physical machine.
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` | Auth. Both optional — unset ships builds with sign-in off |
 | `SUPABASE_SERVICE_ROLE_KEY` | Optional. **Bypasses RLS** — server-side only, never in a client build |
 | `TOD_FACEBOOK_APP_SECRET` | Meta App Secret; server-only verification of native Android access tokens |
+| `PLAYER_IDENTITY_HMAC_SECRET` | Server-only HMAC key for Facebook provider identities |
 
 Browser-provider sign-in additionally needs **both redirect targets in Supabase's
 allow list** — `com.galaxxigames.tod://auth-callback` for Android and the
@@ -238,9 +239,9 @@ uses the project's public JWKS, so no key reaches the pod.
 `SUPABASE_SERVICE_ROLE_KEY` is different: it **bypasses row-level security**, so
 it never travels through the kustomize patch, whose values land in workflow logs.
 The deploy job syncs it into a `corp-tower-supabase` k8s Secret piped through
-`kubectl apply` (the `ecr-pull` pattern) and the container reads it via
-`secretKeyRef` with `optional: true` — no secret, no env var, and the profile
-store stays in memory. Unsetting the GitHub secret deletes the k8s one.
+`kubectl apply` (the `ecr-pull` pattern). `PLAYER_IDENTITY_HMAC_SECRET` similarly
+syncs to `corp-tower-identity`; both are required for durable player-account
+resolution. Unsetting either secret disables that resolution.
 **A Secret change alone does not restart pods**; the deploy patches the image tag
 every run, which is what actually rolls them. Unset `SUPABASE_URL`
 turns verification off entirely; `SUPABASE_AUTH_REQUIRED=true` closes any socket
@@ -249,11 +250,12 @@ signed-in builds are out.
 
 Native Android Facebook verification needs `TOD_FACEBOOK_APP_ID` (repository
 variable) and `TOD_FACEBOOK_APP_SECRET` (GitHub secret). The deploy job creates
-the optional `corp-tower-facebook` Secret; `Auth_Verifier.js` uses it only to
-call Meta's `debug_token` endpoint and maps the verified Meta id to the existing
-UUID shape. That UUID has no `auth.users` row, so the current profile schema
-cannot persist it and the roster uses its deterministic fallback name. If either
-value is absent, Facebook sign-in cannot pass a required-auth socket gate.
+the optional `corp-tower-facebook` Secret; `Auth_Verifier.js` calls Meta
+`debug_token`, then `Account_Store` HMACs the verified provider subject. The
+runtime overlay sets `PLAYER_IDENTITY_HMAC_KEY_VERSION`; a rotation also supplies
+the optional prior secret and version until every active identity has a new hash.
+If account resolution is unavailable, Facebook cannot pass a required-auth socket
+gate.
 
 The `R2_*` art-pipeline secrets are listed in [build.md](./build.md). The
 `EC2_STAGING_*` and `R2_GATEWAY_*` secrets went unused when the K3s lab was

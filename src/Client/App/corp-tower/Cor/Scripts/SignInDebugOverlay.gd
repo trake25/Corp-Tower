@@ -5,6 +5,7 @@ const DebugPanelControllerScript = preload("res://Cor/Scripts/GameUi/DebugPanelC
 var panel: PanelContainer
 var category_dropdown: OptionButton
 var native_google_toggle: CheckButton
+var native_facebook_toggle: CheckButton
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -28,9 +29,9 @@ func _build() -> void:
 	add_child(dim)
 
 	panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(320, 250)
+	panel.custom_minimum_size = Vector2(320, 320)
 	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-160, -125)
+	panel.position = Vector2(-160, -160)
 	add_child(panel)
 
 	var margin := MarginContainer.new()
@@ -81,20 +82,37 @@ func _build() -> void:
 	detail.text = "Off forces Google sign-in through the browser OAuth flow on this device."
 	rows.add_child(detail)
 
+	native_facebook_toggle = CheckButton.new()
+	native_facebook_toggle.name = "NativeFacebookToggle"
+	native_facebook_toggle.text = "Use native Android Facebook sign-in"
+	native_facebook_toggle.toggled.connect(_on_native_facebook_toggled)
+	rows.add_child(native_facebook_toggle)
+
+	var facebook_detail := Label.new()
+	facebook_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	facebook_detail.text = "Off forces Facebook sign-in through the browser OAuth flow on this device."
+	rows.add_child(facebook_detail)
+
 	_refresh()
 
 func _refresh() -> void:
-	if native_google_toggle == null:
+	if native_google_toggle == null or native_facebook_toggle == null:
 		return
 
 	native_google_toggle.set_pressed_no_signal(AuthManager.is_native_google_enabled())
+	native_facebook_toggle.set_pressed_no_signal(AuthManager.is_native_facebook_enabled())
 	var is_android := OS.get_name() == "Android"
 	native_google_toggle.disabled = not is_android
+	native_facebook_toggle.disabled = not is_android
 	if not is_android:
 		native_google_toggle.text = "Use native Android Google sign-in (Android only)"
+		native_facebook_toggle.text = "Use native Android Facebook sign-in (Android only)"
 
 func _on_native_google_toggled(enabled: bool) -> void:
 	AuthManager.set_native_google_enabled(enabled)
+
+func _on_native_facebook_toggled(enabled: bool) -> void:
+	AuthManager.set_native_facebook_enabled(enabled)
 
 func _on_dim_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:

@@ -59,7 +59,10 @@ test("a valid token resolves to a verified identity", async () => {
     });
 
     assert.deepEqual(await verifier.verifyAccessToken(token), {
-        userId: "user-uuid",
+        kind: "supabase",
+        supabaseUserId: "user-uuid",
+        accessToken: token,
+        provider: "",
         isAnonymous: false,
         displayName: "Ada Lovelace"
     });
@@ -154,7 +157,7 @@ test("a configured verifier honours the required flag", () => {
     assert.equal(createVerifier({ required: false }).isRequired(), false);
 });
 
-test("a verified Facebook native token resolves to a stable UUID identity", async () => {
+test("a verified Facebook native token exposes its provider subject for account resolution", async () => {
     const verifier = createFacebookVerifier(async url => {
         assert.equal(url.pathname, "/debug_token");
         assert.equal(url.searchParams.get("input_token"), "native-facebook-token");
@@ -179,7 +182,9 @@ test("a verified Facebook native token resolves to a stable UUID identity", asyn
     );
 
     assert.deepEqual(identity, {
-        userId: "60286323-4946-840f-a9e6-ae0efa6a3531",
+        kind: "facebook_native",
+        provider: "facebook",
+        providerSubject: "meta-user-42",
         isAnonymous: false,
         displayName: null
     });

@@ -187,7 +187,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/EKS-Deploy-All.yml:21 | deploy-game · job | calls the game deploy core for `wstodplay` |
 | .github/workflows/EKS-Deploy-All.yml:29 | deploy-web · job | calls the web deploy core for `todplay` |
 
-### .github/workflows/EKS-Deploy-Game-Server.yml — 509 ln
+### .github/workflows/EKS-Deploy-Game-Server.yml — 537 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -302,7 +302,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 _no extracted symbols_
 
-### infra/eks/apps/corp-tower/base/server-deployment.yaml — 100 ln
+### infra/eks/apps/corp-tower/base/server-deployment.yaml — 116 ln
 
 _no extracted symbols_
 
@@ -599,7 +599,7 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/backup/backup-server-up.sh — 95 ln
+### scripts/backup/backup-server-up.sh — 99 ln
 
 _no extracted symbols_
 
@@ -707,7 +707,7 @@ _no extracted symbols_
 | scripts/docs-scope.mjs:148 | order · const | docs sorted by how many paths route into them, heaviest first |
 | scripts/docs-scope.mjs:169 | maps · const | the distinct map files needing regeneration after this task |
 
-### scripts/lib/context-routing.mjs — 147 ln
+### scripts/lib/context-routing.mjs — 148 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -717,16 +717,16 @@ _no extracted symbols_
 | scripts/lib/context-routing.mjs:11 | hudFiles · const | hud files constant used by context-routing |
 | scripts/lib/context-routing.mjs:22 | MAP_AREAS · const | map areas constant used by context-routing |
 | scripts/lib/context-routing.mjs:54 | ROUTE_RULES · const | route rules constant used by context-routing |
-| scripts/lib/context-routing.mjs:84 | AREA_ALIASES · const | area aliases constant used by context-routing |
-| scripts/lib/context-routing.mjs:99 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
-| scripts/lib/context-routing.mjs:105 | mapOwnerForPath · fn | returns the generated map that owns a source path |
-| scripts/lib/context-routing.mjs:109 | IGNORE_DIR · const | ignore dir constant used by context-routing |
-| scripts/lib/context-routing.mjs:110 | IGNORE_PATH · const | ignore path constant used by context-routing |
-| scripts/lib/context-routing.mjs:111 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
-| scripts/lib/context-routing.mjs:112 | norm · const | norm constant used by context-routing |
-| scripts/lib/context-routing.mjs:114 | walk · fn | walk operation implemented by context-routing |
-| scripts/lib/context-routing.mjs:125 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
-| scripts/lib/context-routing.mjs:146 | isExempt · const | reports whether a first-party path is exempt from map coverage |
+| scripts/lib/context-routing.mjs:85 | AREA_ALIASES · const | area aliases constant used by context-routing |
+| scripts/lib/context-routing.mjs:100 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
+| scripts/lib/context-routing.mjs:106 | mapOwnerForPath · fn | returns the generated map that owns a source path |
+| scripts/lib/context-routing.mjs:110 | IGNORE_DIR · const | ignore dir constant used by context-routing |
+| scripts/lib/context-routing.mjs:111 | IGNORE_PATH · const | ignore path constant used by context-routing |
+| scripts/lib/context-routing.mjs:112 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
+| scripts/lib/context-routing.mjs:113 | norm · const | norm constant used by context-routing |
+| scripts/lib/context-routing.mjs:115 | walk · fn | walk operation implemented by context-routing |
+| scripts/lib/context-routing.mjs:126 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
+| scripts/lib/context-routing.mjs:147 | isExempt · const | reports whether a first-party path is exempt from map coverage |
 
 ### scripts/strip-comments.mjs — 296 ln — enforces the no-comments-in-source rule
 

@@ -73,6 +73,22 @@ spec:
                   name: corp-tower-facebook
                   key: app-secret
                   optional: true
+            - name: PLAYER_IDENTITY_HMAC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: corp-tower-identity
+                  key: hmac-secret
+                  optional: true
+            - name: PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: corp-tower-identity
+                  key: previous-hmac-secret
+                  optional: true
+            - name: PLAYER_IDENTITY_HMAC_KEY_VERSION
+              value: "1"
+            - name: PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION
+              value: "0"
             - name: RECONNECT_TTL_SECONDS
               value: "10"
             - name: REDIS_CONNECT_RETRIES

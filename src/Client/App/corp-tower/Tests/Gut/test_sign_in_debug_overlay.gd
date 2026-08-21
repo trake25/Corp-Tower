@@ -28,3 +28,12 @@ func test_native_google_toggle_matches_the_platform() -> void:
 		OS.get_name() != "Android",
 		"The native Google preference is only interactive on Android."
 	)
+
+func test_native_facebook_toggle_matches_the_platform() -> void:
+	var native_facebook_toggle := overlay.find_child("NativeFacebookToggle", true, false) as CheckButton
+
+	assert_eq(
+		native_facebook_toggle.disabled,
+		OS.get_name() != "Android",
+		"The native Facebook preference is only interactive on Android."
+	)

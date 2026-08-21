@@ -22,7 +22,7 @@ const hudFiles = [
 export const MAP_AREAS = [
   {
     name: 'backend', out: 'backend.md', title: 'Backend — `src/Server/**`',
-    roots: ['src/Server/app', 'src/Server/tools'], exts: ['.js'],
+    roots: ['src/Server/app', 'src/Server/tools', 'src/Server/migrations'], exts: ['.js', '.sql'],
   },
   {
     name: 'ui-tutorial', out: 'ui-tutorial.md',
@@ -55,6 +55,7 @@ export const ROUTE_RULES = [
   { pattern: /^src\/Server\/app\/Game_Config\.js$/, skill: 'server-engineer', docs: ['backend.md', 'gameplay.md'], map: 'backend.md', read: 'full' },
   { pattern: /^src\/Server\/app\/(Server|Redis_State)\.js$/, skill: 'fullstack-coordinator', docs: ['networking.md', 'backend.md'], map: 'backend.md', read: 'hunk' },
   { pattern: /^src\/Server\/app\//, skill: 'server-engineer', docs: ['backend.md'], map: 'backend.md', read: 'hunk' },
+  { pattern: /^src\/Server\/migrations\//, skill: 'server-engineer', docs: ['backend.md'], map: 'backend.md', read: 'hunk' },
   { pattern: /^src\/Server\/tests\//, skill: 'qa-engineer', docs: ['testing.md'], map: null, read: 'hunk' },
   { pattern: /^src\/Server\/tools\//, skill: 'qa-engineer', docs: ['testing.md'], map: 'backend.md', read: 'hunk' },
   { pattern: /^src\/Server\/Dockerfile$/, skill: 'infra-engineer', docs: ['build.md'], map: null, read: 'hunk' },

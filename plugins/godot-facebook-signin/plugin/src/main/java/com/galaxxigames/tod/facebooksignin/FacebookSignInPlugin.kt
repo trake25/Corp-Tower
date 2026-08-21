@@ -7,6 +7,7 @@ import com.facebook.FacebookException
 import com.facebook.FacebookSdk
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
+import com.facebook.login.LoginBehavior
 import org.godotengine.godot.Godot
 import org.godotengine.godot.plugin.GodotPlugin
 import org.godotengine.godot.plugin.SignalInfo
@@ -73,7 +74,9 @@ class FacebookSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 			}
 		})
 
-		LoginManager.getInstance().logInWithReadPermissions(
+		val loginManager = LoginManager.getInstance()
+		loginManager.setLoginBehavior(LoginBehavior.NATIVE_ONLY)
+		loginManager.logInWithReadPermissions(
 			hostActivity,
 			listOf("public_profile", "email")
 		)
