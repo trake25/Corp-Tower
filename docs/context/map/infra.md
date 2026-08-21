@@ -707,7 +707,14 @@ _no extracted symbols_
 | scripts/docs-scope.mjs:148 | order · const | docs sorted by how many paths route into them, heaviest first |
 | scripts/docs-scope.mjs:169 | maps · const | the distinct map files needing regeneration after this task |
 
-### scripts/lib/context-routing.mjs — 148 ln
+### scripts/install-git-hooks.mjs — 16 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/install-git-hooks.mjs:6 | root · const | resolves the repository supplied on the command line or the current directory |
+| scripts/install-git-hooks.mjs:7 | hooks · const | resolves the versioned hook directory whose pre-commit entry must exist |
+
+### scripts/lib/context-routing.mjs — 149 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -717,16 +724,16 @@ _no extracted symbols_
 | scripts/lib/context-routing.mjs:11 | hudFiles · const | hud files constant used by context-routing |
 | scripts/lib/context-routing.mjs:22 | MAP_AREAS · const | map areas constant used by context-routing |
 | scripts/lib/context-routing.mjs:54 | ROUTE_RULES · const | route rules constant used by context-routing |
-| scripts/lib/context-routing.mjs:85 | AREA_ALIASES · const | area aliases constant used by context-routing |
-| scripts/lib/context-routing.mjs:100 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
-| scripts/lib/context-routing.mjs:106 | mapOwnerForPath · fn | returns the generated map that owns a source path |
-| scripts/lib/context-routing.mjs:110 | IGNORE_DIR · const | ignore dir constant used by context-routing |
-| scripts/lib/context-routing.mjs:111 | IGNORE_PATH · const | ignore path constant used by context-routing |
-| scripts/lib/context-routing.mjs:112 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
-| scripts/lib/context-routing.mjs:113 | norm · const | norm constant used by context-routing |
-| scripts/lib/context-routing.mjs:115 | walk · fn | walk operation implemented by context-routing |
-| scripts/lib/context-routing.mjs:126 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
-| scripts/lib/context-routing.mjs:147 | isExempt · const | reports whether a first-party path is exempt from map coverage |
+| scripts/lib/context-routing.mjs:86 | AREA_ALIASES · const | area aliases constant used by context-routing |
+| scripts/lib/context-routing.mjs:101 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
+| scripts/lib/context-routing.mjs:107 | mapOwnerForPath · fn | returns the generated map that owns a source path |
+| scripts/lib/context-routing.mjs:111 | IGNORE_DIR · const | ignore dir constant used by context-routing |
+| scripts/lib/context-routing.mjs:112 | IGNORE_PATH · const | ignore path constant used by context-routing |
+| scripts/lib/context-routing.mjs:113 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
+| scripts/lib/context-routing.mjs:114 | norm · const | norm constant used by context-routing |
+| scripts/lib/context-routing.mjs:116 | walk · fn | walk operation implemented by context-routing |
+| scripts/lib/context-routing.mjs:127 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
+| scripts/lib/context-routing.mjs:148 | isExempt · const | reports whether a first-party path is exempt from map coverage |
 
 ### scripts/strip-comments.mjs — 296 ln — enforces the no-comments-in-source rule
 
@@ -852,4 +859,4 @@ _no extracted symbols_
 
 ---
 
-93 files · 409 symbols · 0 awaiting a `Does` line.
+94 files · 411 symbols · 0 awaiting a `Does` line.

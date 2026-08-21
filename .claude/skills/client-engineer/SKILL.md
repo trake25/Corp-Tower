@@ -48,5 +48,8 @@ Wire payloads are [`networking.md`](../../../docs/context/networking.md), not yo
 ## Rendered verification
 
 For visual comparison on a Linux/X11 host, read
-[`references/ui-screenshots.md`](references/ui-screenshots.md). Use it only after
-the headless gate passes and only when a live display is available.
+[`references/ui-screenshots.md`](references/ui-screenshots.md). Use it only for
+the application and visual state named by the task, after the headless gate
+passes, and when the user has not prohibited GUI execution. A missing `DISPLAY`
+inside a sandbox is not proof that the host display is unavailable; follow the
+reference's guarded diagnostic before deferring rendered verification.

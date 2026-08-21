@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+set -eu
+
+if git diff --cached --quiet -- .agents/skills; then
+  exit 0
+fi
+
+if ! git diff --quiet -- .claude/skills; then
+  echo "Cannot synchronize skills: .claude/skills has unstaged changes." >&2
+  echo "Stage or discard those changes, then retry the commit." >&2
+  exit 1
+fi
+
+node scripts/sync-agent-skills.mjs
+git add -- .claude/skills
+node scripts/sync-agent-skills.mjs --check
