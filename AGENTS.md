@@ -21,6 +21,18 @@ This file is the vendor-neutral repository contract. Load one role skill from
 A miss is a knowledge-base defect. Repair its route or map purpose in the same
 task under `docs-steward`, unless the correct behavior needs a user decision.
 
+### Skill reuse
+
+Load each selected role skill once per active context window, then reuse it for
+all matching follow-up work in that window. Do not reread a `SKILL.md` merely
+because the user sends a new message or narrows the current task.
+
+Reload a skill only when the context was compacted, the task switches to a new
+role, or a required referenced instruction was not previously read. Keep the
+active skill names in the task's first working update or plan; if a reload is
+needed, record its reason there. This makes a reload auditable instead of an
+automatic reflex.
+
 ## Always
 
 - The server is authoritative. The client renders `game_state`; it does not

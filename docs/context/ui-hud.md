@@ -29,8 +29,7 @@ Two shapes only:
   lifecycle and can own `Tween`s/`Timer`s): `DebugPanelController`,
   `ScorePopupController`, `LevelSummaryController`, `RosterViewController`,
   `VisualHooksController`, `QuestController`, `QuickChatController`,
-  `PowerController`, `InventoryController`, `TopBarController`,
-  `GameStatusController`.
+  `PowerController`, `InventoryController`, `TopBarController`.
 
 Neither shape is added to `GameUI.tscn` directly. Each declares the nodes it needs
 via its own `bind_nodes(binder)`, which Main aggregates through `UiNodeBinder`.
@@ -119,10 +118,14 @@ not a popover. It reuses the `DrawPilePreview`/`DrawPileNameLabel`/
 `DrawPileCountLabel` nodes verbatim, so `InventoryController` needs no logic for
 it.
 
-`GameStatusController` owns the non-connected banner and the player/room session
-panel. `TopIndicatorLabel` is the single tower objective surface; stability is a
-separate visible label. Local inventory metadata is visible on each card, and
-the Impact pill toggles its server-fed readiness/detail panel.
+`ConnectionBanner` is retained hidden until its replacement artwork and UX are
+ready; no controller currently reveals it. `TopIndicatorLabel` is the single
+tower objective surface. The tower's physical lean is the normal stability cue;
+the numeric `TowerStabilityLabel` stays hidden unless the debug-only Stability
+Feedback selector is set to Meter Only or Live Preview. Inventory cards use only
+their brick preview and enabled, empty, or locked card state; no text metadata
+duplicates that state. The Impact pill and its per-player bars are the sole
+server-fed readiness presentation; there is no expandable details panel.
 
 Node contract highlights: `TowerDropZone` (full-rect drag-release validator),
 `DragPreview` (a hidden Block Preview shown while dragging *outside* the drop

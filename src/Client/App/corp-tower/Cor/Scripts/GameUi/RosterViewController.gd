@@ -14,27 +14,14 @@ var impact_bars: Dictionary = {}
 var player_level_scores: Dictionary = {}
 var player_rail_box: VBoxContainer
 var impact_track: VBoxContainer
-var impact_pill: BaseButton
-var impact_status_panel: Control
-var impact_status_label: Label
 
 func bind_nodes(binder) -> void:
 	player_rail_box = binder.optional_node("PlayerRailBox") as VBoxContainer
 	impact_track = binder.optional_node("ImpactTrack") as VBoxContainer
-	impact_pill = binder.require_node("ImpactPill") as BaseButton
-	impact_status_panel = binder.require_node("ImpactStatusPanel") as Control
-	impact_status_label = binder.require_node("ImpactStatusLabel") as Label
 
 func setup(players_ref, match_state_ref) -> void:
 	players_ctx = players_ref
 	match_state = match_state_ref
-	impact_pill.pressed.connect(toggle_impact_details)
-
-func toggle_impact_details() -> void:
-	if impact_status_label.text.is_empty():
-		return
-
-	impact_status_panel.visible = !impact_status_panel.visible
 
 func rail_entry(player_id: String) -> Control:
 	return player_rail_entries.get(player_id, null)
@@ -85,13 +72,7 @@ func update_score_lines(players: Array) -> void:
 			player_rail_entries.erase(player_id)
 
 func update_impact_status_ui(raw_status: Variant) -> void:
-	if impact_status_label == null:
-		return
-
 	if typeof(raw_status) != TYPE_DICTIONARY:
-		set_impact_status_visible(false)
-		impact_status_label.visible = false
-		impact_status_label.text = ""
 		update_impact_track([], 0)
 		return
 
@@ -102,59 +83,11 @@ func update_impact_status_ui(raw_status: Variant) -> void:
 	))
 
 	if required_band_score <= 0:
-		set_impact_status_visible(false)
-		impact_status_label.visible = false
-		impact_status_label.text = ""
 		update_impact_track([], 0)
 		return
 
 	var next_impact_level: int = int(status.get("nextImpactLevel", 0))
 	var player_statuses: Array = status.get("players", [])
-	var ready_count: int = 0
-	var player_count: int = 0
-	var local_status: Dictionary = {}
-	var short_player_goals: Array[String] = []
-
-	for player_status in player_statuses:
-		if typeof(player_status) != TYPE_DICTIONARY:
-			continue
-
-		var player_id: String = str(player_status.get("id", ""))
-		var is_local_player: bool = players_ctx.is_local(player_id)
-		player_count += 1
-
-		if is_local_player:
-			local_status = player_status
-
-		if bool(player_status.get("met", false)):
-			ready_count += 1
-			continue
-
-		if !is_local_player:
-			short_player_goals.append(
-				players_ctx.display_name(player_id) +
-				" " + str(int(player_status.get("requiredScore", required_band_score)))
-			)
-
-	var lines: Array[String] = [
-		"Impact L" + str(next_impact_level) + "  |  " + str(ready_count) + "/" + str(player_count) + " ready"
-	]
-
-	if !local_status.is_empty():
-		var local_score: int = int(local_status.get("score", 0))
-		var local_required_score: int = int(local_status.get("requiredScore", required_band_score))
-
-		lines.append("You: " + str(local_score) + " / " + str(local_required_score))
-	elif short_player_goals.is_empty():
-		lines.append("All players ready")
-
-	if !short_player_goals.is_empty():
-		lines.append("Goals: " + ", ".join(short_player_goals))
-	elif !local_status.is_empty() && ready_count == player_count:
-		lines.append("All ready")
-
-	set_impact_status_visible(true)
-	impact_status_label.text = "\n".join(lines)
 
 	update_impact_track(player_statuses, next_impact_level)
 
@@ -244,8 +177,3 @@ func _impact_glow_tint(player_id: String) -> Color:
 		seat_color.b * IMPACT_GLOW_BRIGHTEN,
 		1.0
 	)
-
-func set_impact_status_visible(should_show: bool) -> void:
-	if !should_show:
-		impact_status_panel.visible = false
-	impact_status_label.visible = should_show

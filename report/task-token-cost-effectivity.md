@@ -75,7 +75,11 @@ metadata cannot recover the variant.
 | 4 | Remove OAuth diagnostic alerts and preserve web PKCE verifier across provider redirect reloads | 3 | B | 2 | 6 | ~7,000 | ~11,000 | ~32,000 | ~32,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
 | 5 | Remove hidden legacy HUD wiring and expose connection, session, objective, Impact, and inventory state | 4 | B | 3 | 13 | late estimate ~18,000 | ~25,000 | ~55,000 | ~55,000 | ~ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
 | 6 | Guard X11 visual verification with approved host access and window-only capture | 2 | B | 1 | 4 | late estimate ~4,000 | ~8,000 | ~15,000 | ~15,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | skill-creator |
-<!-- next: row 7 -->
+| 7 | Remove reintroduced session and inventory HUD text; gate numeric stability meter behind debug feedback modes | 3 | B | 3 | 9 | late estimate ~8,000 | ~14,000 | ~28,000 | ~28,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward |
+| 8 | Remove expandable Impact readiness panel while retaining the player bars | 2 | B | 3 | 5 | late estimate ~5,000 | ~9,000 | ~17,000 | ~17,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward |
+| 9 | Remove redundant inventory card metadata and revise the UI art handoff checklist | 2 | B | 3 | 5 | late estimate ~6,000 | ~11,000 | ~21,000 | ~21,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward |
+| 10 | Add repository-wide skill reuse and reload-reason guardrail | 1 | B | 1 | 1 | late estimate ~1,000 | ~2,000 | ~4,000 | ~4,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | none |
+<!-- next: row 11 -->
 
 ## Cycle 3 (closed)
 

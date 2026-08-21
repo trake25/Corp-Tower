@@ -38,9 +38,6 @@ var accessibility
 var inventory_buttons: Array = []
 var cooldown_overlays: Array = []
 var block_previews: Array = []
-var block_height_labels: Array = []
-var block_name_labels: Array = []
-var block_label: Label
 var draw_pile_name_label: Label
 var draw_pile_count_label: Label
 var draw_pile_preview: Control
@@ -64,7 +61,6 @@ var last_tap_ms: int = 0
 var selected_card_style: StyleBoxFlat = null
 
 func bind_nodes(binder) -> void:
-	block_label = binder.require_node("BlockLabel") as Label
 	draw_pile_name_label = binder.require_node("DrawPileNameLabel") as Label
 	draw_pile_count_label = binder.require_node("DrawPileCountLabel") as Label
 	draw_pile_preview = binder.require_node("DrawPilePreview") as Control
@@ -81,16 +77,6 @@ func bind_nodes(binder) -> void:
 		binder.require_node("BlockPreview1") as Control,
 		binder.require_node("BlockPreview2") as Control,
 		binder.require_node("BlockPreview3") as Control
-	]
-	block_height_labels = [
-		binder.require_node("BlockHeightLabel1") as Label,
-		binder.require_node("BlockHeightLabel2") as Label,
-		binder.require_node("BlockHeightLabel3") as Label
-	]
-	block_name_labels = [
-		binder.require_node("BlockNameLabel1") as Label,
-		binder.require_node("BlockNameLabel2") as Label,
-		binder.require_node("BlockNameLabel3") as Label
 	]
 	cooldown_overlays = []
 	for button in inventory_buttons:
@@ -714,36 +700,26 @@ func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS)
 	for i in range(blocks.size()):
 		clean_blocks.append(BlockDataScript.normalize_block(blocks[i], i))
 
-	block_label.text = "Inventory " + str(clean_blocks.size()) + "/" + str(active_inventory_slots)
-
 	for i in range(inventory_buttons.size()):
 		var button: Button = inventory_buttons[i]
 		var preview: Control = block_previews[i]
-		var slot_height_label: Label = block_height_labels[i]
-		var name_label: Label = block_name_labels[i]
 		preview.cell_color = local_player_color
 
 		if i >= active_inventory_slots:
 			button.disabled = true
 			button.text = ""
 			preview.clear_block()
-			slot_height_label.text = "Locked"
-			name_label.text = "Level " + str(get_slot_unlock_level(i))
 			inventory_slot_blocks[i] = {}
 		elif i < clean_blocks.size():
 			var block: Dictionary = clean_blocks[i]
 			button.disabled = false
 			button.text = ""
 			preview.set_block(block)
-			slot_height_label.text = "Height " + str(int(block.get("height", 0)))
-			name_label.text = str(block.get("shapeId", "BLOCK"))
 			inventory_slot_blocks[i] = block
 		else:
 			button.disabled = true
 			button.text = ""
 			preview.clear_block()
-			slot_height_label.text = "Empty"
-			name_label.text = "Slot " + str(i + 1)
 			inventory_slot_blocks[i] = {}
 
 	if selected_slot_index >= 0 and _selected_block_id() != selected_block_id:
@@ -754,14 +730,6 @@ func _selected_block_id() -> String:
 		return ""
 
 	return str(inventory_slot_blocks[selected_slot_index].get("id", ""))
-
-func get_slot_unlock_level(slot_index: int) -> int:
-	if slot_index <= 0:
-		return 1
-	if slot_index == 1:
-		return 2
-
-	return 4
 
 func update_draw_pile_ui(draw_pile_count: int, raw_next_block: Variant) -> void:
 	last_draw_pile_count = draw_pile_count

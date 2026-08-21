@@ -34,6 +34,7 @@ func bind_nodes(binder) -> void:
 	if top_indicator_fill != null:
 		top_indicator_fill_texture = top_indicator_fill.texture
 	tower_stability_label = binder.require_node("TowerStabilityLabel") as Label
+	tower_stability_label.visible = false
 
 func setup(match_state_ref) -> void:
 	match_state = match_state_ref
@@ -164,3 +165,6 @@ func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
 			lean_suffix = " - leaning " + lean_direction
 	tower_stability_label.text = state.to_upper() + " · " + str(safe_stability) + "%" + lean_suffix
 	tower_stability_label.modulate = Color(0.7, 1.0, 0.75, 1.0) if safe_stability > 60 else (Color(1.0, 0.8, 0.3, 1.0) if safe_stability > 30 else Color(1.0, 0.4, 0.32, 1.0))
+
+func set_stability_meter_visible(feedback_mode: String) -> void:
+	tower_stability_label.visible = feedback_mode == "meter_only" or feedback_mode == "live_preview"

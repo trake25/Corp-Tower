@@ -17,7 +17,6 @@ const QuickChatControllerScript = preload("res://Cor/Scripts/GameUi/QuickChatCon
 const PowerControllerScript = preload("res://Cor/Scripts/GameUi/PowerController.gd")
 const InventoryControllerScript = preload("res://Cor/Scripts/GameUi/InventoryController.gd")
 const TopBarControllerScript = preload("res://Cor/Scripts/GameUi/TopBarController.gd")
-const GameStatusControllerScript = preload("res://Cor/Scripts/GameUi/GameStatusController.gd")
 const VisualHooksScript = preload("res://Cor/Scripts/GameUi/VisualHooks.gd")
 const VisualHooksControllerScript = preload("res://Cor/Scripts/GameUi/VisualHooksController.gd")
 const TutorialControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialController.gd")
@@ -43,7 +42,6 @@ var chat
 var power
 var inventory
 var top_bar
-var game_status
 var visual_hooks
 var visual_fx
 var tutorial
@@ -79,8 +77,6 @@ func _ready() -> void:
 	add_child(inventory)
 	top_bar = TopBarControllerScript.new()
 	add_child(top_bar)
-	game_status = GameStatusControllerScript.new()
-	add_child(game_status)
 	visual_hooks = VisualHooksScript.new()
 	visual_fx = VisualHooksControllerScript.new()
 	add_child(visual_fx)
@@ -173,7 +169,6 @@ func bind_ui_nodes() -> void:
 	demo_mode_label = binder.require_node("DemoModeLabel") as Label
 
 	top_bar.bind_nodes(binder)
-	game_status.bind_nodes(binder)
 	inventory.bind_nodes(binder)
 	debug_panel.bind_nodes(binder)
 	score_popups.bind_nodes(binder)
@@ -187,7 +182,6 @@ func bind_ui_nodes() -> void:
 	missing_required_nodes = binder.missing
 
 func reset_ui() -> void:
-	game_status.reset()
 	top_bar.reset_indicators()
 	match_state.current_match_state = ""
 	inventory.last_placement_sent_at_ms = 0
@@ -207,7 +201,6 @@ func reset_ui() -> void:
 	match_state.current_level = 0
 
 func connect_network_signals() -> void:
-	NetworkManager.status_changed.connect(game_status.update_connection_status)
 	NetworkManager.room_joined.connect(_on_room_joined)
 	NetworkManager.match_started.connect(update_room)
 	NetworkManager.room_closed.connect(update_room_closed)
@@ -237,7 +230,6 @@ func _on_room_joined(data) -> void:
 
 func update_room(data) -> void:
 	players_ctx.roster = data.get("roster", [])
-	game_status.update_session(str(data.playerId), int(data.roomId))
 	top_bar.update_top_bar_display(int(data.get("level", 0)), int(data.get("level", 0)), "starting", 0)
 	match_state.current_level = int(data.get("level", 0))
 	score_popups.seen_score_event_ids.clear()
@@ -265,7 +257,6 @@ func update_room_closed(_data) -> void:
 	players_ctx.roster = []
 	inventory.last_placement_sent_at_ms = 0
 	inventory.cancel_block_drag()
-	game_status.update_room_closed()
 	top_bar.reset_indicators()
 	roster.update_impact_status_ui({})
 	top_bar.set_top_indicator_progress(0, 0, "room_closed")
@@ -408,6 +399,9 @@ func update_game_state(data) -> void:
 
 func update_debug_config(config) -> void:
 	debug_panel.apply_config(config)
+	top_bar.set_stability_meter_visible(
+		str(config.get("towerStabilityFeedbackMode", "warnings_only"))
+	)
 
 	if tower_stack != null and tower_stack.has_method("set_mood_threshold"):
 		tower_stack.set_mood_threshold(
