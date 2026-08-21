@@ -26,6 +26,11 @@ selection matrix.
 For a complex task, decide whether Godot can exercise the integration risk and
 use it when it can. Complex UI, screen, scene/autoload and asset integration
 always require headless smoke/related GUT before a live rendered comparison.
+Headless verification is the correctness gate; rendered comparison supplements
+it for clipping, overlap, scale, and visual fidelity and never replaces it. On a
+sandboxed Linux host, use the guarded procedure in
+[`client-engineer/references/ui-screenshots.md`](../client-engineer/references/ui-screenshots.md)
+before declaring the host display unavailable.
 
 The local Godot binary is in the repository root on both platforms. Select the
 newest host-matching file — `Godot_v*_linux.x86_64` on Linux or
