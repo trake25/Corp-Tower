@@ -870,6 +870,7 @@ class LobbyManager {
         const desiredBotCount = GameConfig.debugBotsEnabled
             ? Math.min(GameConfig.debugBotCount, Math.max(0, GameConfig.playersPerRoom - realCount))
             : 0;
+        const botRosterChanged = currentBots.length !== desiredBotCount;
 
         while (currentBots.length > desiredBotCount) {
             const bot = currentBots.pop();
@@ -882,6 +883,14 @@ class LobbyManager {
             room.engine.initializePlayerForRoom(bot);
             room.readyPlayerIds.add(bot.id);
             currentBots.push(bot);
+        }
+
+        if (botRosterChanged) {
+            room.readyPlayerIds = new Set(
+                room.players
+                    .filter(player => player.isBot)
+                    .map(player => player.id)
+            );
         }
 
         if (room.players.length >= GameConfig.playersPerRoom) {
@@ -898,7 +907,7 @@ class LobbyManager {
 
     async refreshMatchmaking() {
         for (const room of this.rooms) {
-            if (room.matchStarted || room.players.length >= GameConfig.playersPerRoom) {
+            if (room.matchStarted) {
                 continue;
             }
 

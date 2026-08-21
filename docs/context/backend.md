@@ -71,6 +71,9 @@ each variable *means*; the ranges live here.
   leaving the old setting in place rather than erroring.
 - `debugBotDelayMax` ≥ `debugBotDelayMin` enforced.
 - `debugStartLevel` applies immediately, restarting active debug rooms there.
+- Bot enablement/count changes reconcile every unstarted owned room, including a
+  full lobby. A changed bot roster clears real-player readiness while retaining
+  ready bots, then sends the resulting `lobby_update`.
 - `towerSiteWidthMin`/`Max` clamp to **2–8**, matching the client viewport ceiling.
   Odd values stay safe: `getSiteWidthForHeight` re-evens the result so a debug-set
   odd bound cannot push the site off-centre.

@@ -469,6 +469,39 @@ test("bots are pre-readied so a debug room only waits on its real player", async
     await lobby.updateDebugConfig("debugBotCount", 0);
 });
 
+test("changing the bot roster resets ready players and broadcasts their unready state", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+
+    activeLobbies.push(lobby);
+    await lobby.start();
+
+    const ws = createFakeWs();
+    const player = await lobby.createPlayer(ws, {});
+    await lobby.addPlayer(player);
+
+    const room = player.room;
+    room.readyPlayerIds.add(player.id);
+
+    await lobby.updateDebugConfig("debugBotsEnabled", true);
+    await lobby.updateDebugConfig("debugBotCount", 2);
+
+    assert.equal(room.matchStarted, false, "adding bots must not start a ready player’s match");
+    assert.equal(room.readyPlayerIds.has(player.id), false);
+
+    const enabledUpdate = messagesOfType(ws, "lobby_update").pop();
+    assert.equal(enabledUpdate.readyPlayerIds.includes(player.id), false);
+    assert.equal(enabledUpdate.readyPlayerIds.length, 2);
+
+    room.readyPlayerIds.add(player.id);
+    await lobby.updateDebugConfig("debugBotsEnabled", false);
+
+    assert.equal(room.readyPlayerIds.has(player.id), false);
+
+    const disabledUpdate = messagesOfType(ws, "lobby_update").pop();
+    assert.deepEqual(disabledUpdate.readyPlayerIds, []);
+});
+
 test("players connecting to different pods each land in a room, even without a shared one", async () => {
     const cluster = createSharedFakeCluster();
     const lobbyA = new LobbyManager(cluster.makeStore("podA"));

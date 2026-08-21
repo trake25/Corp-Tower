@@ -70,7 +70,8 @@ metadata cannot recover the variant.
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | Durable Facebook player accounts with HMAC identity links, browser fallback, and native debug toggle | 5 | B | 4 | 29 | ~20,000 | ~30,000 | ~85,000 | ~85,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | fullstack-coordinator,server-engineer,client-engineer,infra-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 2 -->
+| 2 | Keep debug bot toggles in the lobby and reset readiness on roster changes | 2 | A | 2 | 4 | ~3,000 | ~9,000 | ~16,000 | ~16,000 | ✓ | ok | variant unrecorded | medium | client-engineer, fullstack-coordinator, server-engineer, qa-engineer, docs-steward, update-docs |
+<!-- next: row 3 -->
 
 ## Cycle 3 (closed)
 

@@ -130,7 +130,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Game_Engine.js:1037 | failLevel | level failure, discard carry-over, Impact rollback |
 | src/Server/app/Game_Engine.js:1082 | nextLevel | advance level or finish the match at `maxLevel` |
 
-### src/Server/app/Lobby_Manager.js — 1473 ln
+### src/Server/app/Lobby_Manager.js — 1482 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -163,29 +163,29 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Lobby_Manager.js:843 | createBot | debug bot participant |
 | src/Server/app/Lobby_Manager.js:852 | fillRoomWithBotsIfNeeded | fills vacant lobby seats with bots when the mode requires it |
 | src/Server/app/Lobby_Manager.js:867 | syncRoomBots | reconciles lobby bot seats with the live room roster |
-| src/Server/app/Lobby_Manager.js:899 | refreshMatchmaking | re-run matching after queue change |
-| src/Server/app/Lobby_Manager.js:913 | joinOrCreateRoom | joins a claimable room or creates a new lobby |
-| src/Server/app/Lobby_Manager.js:925 | claimOpenRoom | atomically claims an advertised open room for a player |
-| src/Server/app/Lobby_Manager.js:978 | addPlayerToRoom | adds a player to the room roster and persisted assignment |
-| src/Server/app/Lobby_Manager.js:1006 | createRoom | 3-seat room, engine start, Redis publish |
-| src/Server/app/Lobby_Manager.js:1068 | buildRoomJoinedPayload | builds the authoritative room-joined wire payload |
-| src/Server/app/Lobby_Manager.js:1088 | getLobbySecondsRemaining | returns the bounded ready-up time remaining |
-| src/Server/app/Lobby_Manager.js:1099 | buildLobbyPayload | builds the lobby state broadcast payload |
-| src/Server/app/Lobby_Manager.js:1107 | broadcastLobbyUpdate | broadcasts the current lobby roster and ready state |
-| src/Server/app/Lobby_Manager.js:1122 | toggleLobbyReady | toggles a player ready state and evaluates match start |
-| src/Server/app/Lobby_Manager.js:1147 | startMatch | transitions a ready lobby into an active game engine |
-| src/Server/app/Lobby_Manager.js:1190 | leaveLobby | handles a voluntary lobby departure |
-| src/Server/app/Lobby_Manager.js:1200 | evictLobbyPlayer | removes a disconnected or timed-out lobby player |
-| src/Server/app/Lobby_Manager.js:1227 | scheduleLobbyReadyTimeout | starts the lobby ready-up timeout |
-| src/Server/app/Lobby_Manager.js:1249 | cancelLobbyReadyTimeout | cancels the active lobby ready-up timeout |
-| src/Server/app/Lobby_Manager.js:1260 | handleLobbyReadyTimeout | resolves a lobby whose ready-up timer expired |
-| src/Server/app/Lobby_Manager.js:1279 | buildRoomRoster | roster payload with profiles and colours |
-| src/Server/app/Lobby_Manager.js:1293 | createEngine | construct Game Engine with persist/broadcast callbacks |
-| src/Server/app/Lobby_Manager.js:1315 | hydrateRoom | rebuild a room this pod did not create |
-| src/Server/app/Lobby_Manager.js:1388 | subscribeRoom | listen on `room:<id>:actions` |
-| src/Server/app/Lobby_Manager.js:1424 | isRoomOwner | lease check; **removing it makes every pod write divergent state** |
-| src/Server/app/Lobby_Manager.js:1428 | dispatchRoomAction | run locally if owner, else republish to the lease owner |
-| src/Server/app/Lobby_Manager.js:1446 | runRoomAction | execute a room action against the live engine |
+| src/Server/app/Lobby_Manager.js:908 | refreshMatchmaking | re-run matching after queue change |
+| src/Server/app/Lobby_Manager.js:922 | joinOrCreateRoom | joins a claimable room or creates a new lobby |
+| src/Server/app/Lobby_Manager.js:934 | claimOpenRoom | atomically claims an advertised open room for a player |
+| src/Server/app/Lobby_Manager.js:987 | addPlayerToRoom | adds a player to the room roster and persisted assignment |
+| src/Server/app/Lobby_Manager.js:1015 | createRoom | 3-seat room, engine start, Redis publish |
+| src/Server/app/Lobby_Manager.js:1077 | buildRoomJoinedPayload | builds the authoritative room-joined wire payload |
+| src/Server/app/Lobby_Manager.js:1097 | getLobbySecondsRemaining | returns the bounded ready-up time remaining |
+| src/Server/app/Lobby_Manager.js:1108 | buildLobbyPayload | builds the lobby state broadcast payload |
+| src/Server/app/Lobby_Manager.js:1116 | broadcastLobbyUpdate | broadcasts the current lobby roster and ready state |
+| src/Server/app/Lobby_Manager.js:1131 | toggleLobbyReady | toggles a player ready state and evaluates match start |
+| src/Server/app/Lobby_Manager.js:1156 | startMatch | transitions a ready lobby into an active game engine |
+| src/Server/app/Lobby_Manager.js:1199 | leaveLobby | handles a voluntary lobby departure |
+| src/Server/app/Lobby_Manager.js:1209 | evictLobbyPlayer | removes a disconnected or timed-out lobby player |
+| src/Server/app/Lobby_Manager.js:1236 | scheduleLobbyReadyTimeout | starts the lobby ready-up timeout |
+| src/Server/app/Lobby_Manager.js:1258 | cancelLobbyReadyTimeout | cancels the active lobby ready-up timeout |
+| src/Server/app/Lobby_Manager.js:1269 | handleLobbyReadyTimeout | resolves a lobby whose ready-up timer expired |
+| src/Server/app/Lobby_Manager.js:1288 | buildRoomRoster | roster payload with profiles and colours |
+| src/Server/app/Lobby_Manager.js:1302 | createEngine | construct Game Engine with persist/broadcast callbacks |
+| src/Server/app/Lobby_Manager.js:1324 | hydrateRoom | rebuild a room this pod did not create |
+| src/Server/app/Lobby_Manager.js:1397 | subscribeRoom | listen on `room:<id>:actions` |
+| src/Server/app/Lobby_Manager.js:1433 | isRoomOwner | lease check; **removing it makes every pod write divergent state** |
+| src/Server/app/Lobby_Manager.js:1437 | dispatchRoomAction | run locally if owner, else republish to the lease owner |
+| src/Server/app/Lobby_Manager.js:1455 | runRoomAction | execute a room action against the live engine |
 
 ### src/Server/app/Profile_Store.js — 169 ln
 
