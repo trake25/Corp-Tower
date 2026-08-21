@@ -2,8 +2,6 @@ extends GutTest
 
 const AuthManagerScript := preload("res://Sys/Auth/Auth_Manager.gd")
 const PLUGIN_CFG_PATH := "res://addons/GoogleSignInPlugin/plugin.cfg"
-const DEBUG_PREFERENCES_TEST_PATH := "user://test_google_debug_preferences.save"
-
 var auth
 
 func before_each() -> void:
@@ -11,7 +9,6 @@ func before_each() -> void:
 
 func after_each() -> void:
 	auth.free()
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(DEBUG_PREFERENCES_TEST_PATH))
 
 func test_id_token_body_carries_the_id_token() -> void:
 	var body: Dictionary = auth._build_id_token_body("the-id-token")
@@ -38,28 +35,22 @@ func test_native_google_is_never_ready_without_setup() -> void:
 		"runs and google_signin_node stays null -- native must never be reachable here."
 	)
 
-func test_native_google_is_enabled_by_default_and_can_be_persisted_locally() -> void:
-	auth.debug_preferences_path = DEBUG_PREFERENCES_TEST_PATH
+func test_native_google_resets_to_enabled_for_a_new_manager() -> void:
 	assert_true(auth.is_native_google_enabled(), "Native Google must default to enabled.")
 
 	auth.set_native_google_enabled(false)
 	var restored = AuthManagerScript.new()
-	restored.debug_preferences_path = DEBUG_PREFERENCES_TEST_PATH
-	restored._load_debug_preferences()
 
-	assert_false(restored.is_native_google_enabled(), "The device-local debug preference must survive a new manager instance.")
+	assert_true(restored.is_native_google_enabled(), "Native Google must reset when the app reloads.")
 	restored.free()
 
-func test_native_facebook_is_enabled_by_default_and_can_be_persisted_locally() -> void:
-	auth.debug_preferences_path = DEBUG_PREFERENCES_TEST_PATH
+func test_native_facebook_resets_to_enabled_for_a_new_manager() -> void:
 	assert_true(auth.is_native_facebook_enabled(), "Native Facebook must default to enabled.")
 
 	auth.set_native_facebook_enabled(false)
 	var restored = AuthManagerScript.new()
-	restored.debug_preferences_path = DEBUG_PREFERENCES_TEST_PATH
-	restored._load_debug_preferences()
 
-	assert_false(restored.is_native_facebook_enabled(), "The device-local Facebook preference must survive a new manager instance.")
+	assert_true(restored.is_native_facebook_enabled(), "Native Facebook must reset when the app reloads.")
 	restored.free()
 
 func test_unconfigured_provider_call_never_reaches_native() -> void:

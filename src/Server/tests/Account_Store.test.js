@@ -148,6 +148,28 @@ test("native Facebook and browser Facebook resolve to the same player account", 
     }
 });
 
+test("browser Facebook accepts the compatible Auth identity id field", async () => {
+    const database = createFakeSupabase();
+    const store = createStore(database);
+    await store.connect();
+
+    database.usersByToken.set("browser-facebook-token", {
+        id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        identities: [{ provider: "facebook", id: "meta-user-42" }]
+    });
+    const browser = await store.resolve({
+        kind: "supabase",
+        supabaseUserId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        provider: "facebook",
+        accessToken: "browser-facebook-token",
+        isAnonymous: false,
+        displayName: "Ada Lovelace"
+    });
+
+    assert.ok(browser.userId);
+    assert.equal(database.identities.size, 1);
+});
+
 test("a non-Facebook Supabase user receives a durable game account", async () => {
     const database = createFakeSupabase();
     const store = createStore(database);

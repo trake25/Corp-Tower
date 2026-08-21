@@ -7,7 +7,7 @@ The `Does` column IS hand-authored and is carried forward on regeneration.
 `path:line` and purpose, so it feeds straight into a `Read` with no second
 lookup. Loading the whole map costs thousands and gives you the same one row.
 
-### src/Server/app/Account_Store.js — 327 ln
+### src/Server/app/Account_Store.js — 329 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -23,17 +23,17 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Account_Store.js:104 | resolveFacebook | finds or creates a Facebook account and binds its Supabase user |
 | src/Server/app/Account_Store.js:138 | findFacebookIdentity | checks active HMAC then re-records a matching prior-version hash |
 | src/Server/app/Account_Store.js:158 | fetchFacebookProviderSubject | reads the trusted Supabase user identity and verifies its subject |
-| src/Server/app/Account_Store.js:194 | findOrCreateSupabaseAccount | owns one game account per verified Supabase user |
-| src/Server/app/Account_Store.js:211 | createAccount | inserts and re-reads a native-only game account |
-| src/Server/app/Account_Store.js:223 | bindSupabaseUser | permanently attaches the browser user to its Facebook account |
-| src/Server/app/Account_Store.js:246 | findAccountById | reads one game account by UUID |
-| src/Server/app/Account_Store.js:253 | findAccountBySupabaseUserId | reads the game account linked to a Supabase subject |
-| src/Server/app/Account_Store.js:260 | findIdentity | finds one versioned, HMACed Facebook identity |
-| src/Server/app/Account_Store.js:267 | insertFacebookIdentity | writes the active-version Facebook identity hash |
-| src/Server/app/Account_Store.js:275 | insertIdentity | idempotently creates a provider-to-account link |
-| src/Server/app/Account_Store.js:288 | insertAccount | idempotently creates a player account record |
-| src/Server/app/Account_Store.js:299 | fetchRows | parses a PostgREST list response |
-| src/Server/app/Account_Store.js:305 | request | service-role PostgREST request with a bounded timeout |
+| src/Server/app/Account_Store.js:196 | findOrCreateSupabaseAccount | owns one game account per verified Supabase user |
+| src/Server/app/Account_Store.js:213 | createAccount | inserts and re-reads a native-only game account |
+| src/Server/app/Account_Store.js:225 | bindSupabaseUser | permanently attaches the browser user to its Facebook account |
+| src/Server/app/Account_Store.js:248 | findAccountById | reads one game account by UUID |
+| src/Server/app/Account_Store.js:255 | findAccountBySupabaseUserId | reads the game account linked to a Supabase subject |
+| src/Server/app/Account_Store.js:262 | findIdentity | finds one versioned, HMACed Facebook identity |
+| src/Server/app/Account_Store.js:269 | insertFacebookIdentity | writes the active-version Facebook identity hash |
+| src/Server/app/Account_Store.js:277 | insertIdentity | idempotently creates a provider-to-account link |
+| src/Server/app/Account_Store.js:290 | insertAccount | idempotently creates a player account record |
+| src/Server/app/Account_Store.js:301 | fetchRows | parses a PostgREST list response |
+| src/Server/app/Account_Store.js:307 | request | service-role PostgREST request with a bounded timeout |
 
 ### src/Server/app/Auth_Verifier.js — 170 ln
 

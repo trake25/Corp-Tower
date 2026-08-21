@@ -182,7 +182,9 @@ class AccountStore {
         const facebookIdentity = Array.isArray(user.identities)
             ? user.identities.find(identity => identity && identity.provider === FACEBOOK_PROVIDER)
             : null;
-        const providerSubject = facebookIdentity && facebookIdentity.provider_id;
+        const providerSubject = facebookIdentity && (
+            facebookIdentity.provider_id || facebookIdentity.id
+        );
 
         if (typeof providerSubject !== "string" || providerSubject === "") {
             throw new Error("Supabase Facebook provider identity is missing");

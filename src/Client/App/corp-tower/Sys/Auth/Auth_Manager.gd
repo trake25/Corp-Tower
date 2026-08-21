@@ -2,7 +2,6 @@ extends Node
 
 const SESSION_FILE := "user://corp_tower_auth_session.save"
 const VERIFIER_FILE := "user://corp_tower_auth_verifier.save"
-const DEBUG_PREFERENCES_FILE := "user://corp_tower_debug_preferences.save"
 const REFRESH_MARGIN_SECONDS := 120
 const REFRESH_CHECK_INTERVAL_SECONDS := 30.0
 const REQUEST_TIMEOUT_SECONDS := 12.0
@@ -44,11 +43,9 @@ var native_signin_in_flight := false
 var last_oauth_diagnostic := ""
 var native_google_enabled := true
 var native_facebook_enabled := true
-var debug_preferences_path := DEBUG_PREFERENCES_FILE
 
 func _ready() -> void:
 	_load_session()
-	_load_debug_preferences()
 
 	if not is_enabled():
 		return
@@ -110,30 +107,12 @@ func is_native_google_enabled() -> bool:
 
 func set_native_google_enabled(enabled: bool) -> void:
 	native_google_enabled = enabled
-	var preferences := ConfigFile.new()
-	if preferences.load(debug_preferences_path) != OK:
-		preferences = ConfigFile.new()
-	preferences.set_value("oauth", "native_google_enabled", native_google_enabled)
-	preferences.save(debug_preferences_path)
 
 func is_native_facebook_enabled() -> bool:
 	return native_facebook_enabled
 
 func set_native_facebook_enabled(enabled: bool) -> void:
 	native_facebook_enabled = enabled
-	var preferences := ConfigFile.new()
-	if preferences.load(debug_preferences_path) != OK:
-		preferences = ConfigFile.new()
-	preferences.set_value("oauth", "native_facebook_enabled", native_facebook_enabled)
-	preferences.save(debug_preferences_path)
-
-func _load_debug_preferences() -> void:
-	var preferences := ConfigFile.new()
-	if preferences.load(debug_preferences_path) != OK:
-		return
-
-	native_google_enabled = bool(preferences.get_value("oauth", "native_google_enabled", true))
-	native_facebook_enabled = bool(preferences.get_value("oauth", "native_facebook_enabled", true))
 
 func _setup_native_facebook() -> void:
 	if not is_oauth_enabled() or OS.get_name() != "Android":

@@ -71,7 +71,8 @@ metadata cannot recover the variant.
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | Durable Facebook player accounts with HMAC identity links, browser fallback, and native debug toggle | 5 | B | 4 | 29 | ~20,000 | ~30,000 | ~85,000 | ~85,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | fullstack-coordinator,server-engineer,client-engineer,infra-engineer,qa-engineer,docs-steward,update-docs |
 | 2 | Keep debug bot toggles in the lobby and reset readiness on roster changes | 2 | A | 2 | 4 | ~3,000 | ~9,000 | ~16,000 | ~16,000 | ✓ | ok | variant unrecorded | medium | client-engineer, fullstack-coordinator, server-engineer, qa-engineer, docs-steward, update-docs |
-<!-- next: row 3 -->
+| 3 | Reset native sign-in debug toggles per app reload and accept compatible Supabase Facebook identity IDs | 3 | B | 3 | 8 | ~8,000 | ~13,000 | ~38,000 | ~38,000 | ~ | ok | gpt-5 (variant unrecorded) | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
+<!-- next: row 4 -->
 
 ## Cycle 3 (closed)
 

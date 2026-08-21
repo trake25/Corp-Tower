@@ -49,8 +49,9 @@ another player.
 Facebook through a versioned HMAC-SHA-256 of its provider subject. Raw Meta IDs
 and access tokens never reach the database. Native Facebook creates an account
 without `auth.users`; browser Facebook asks Supabase for the same provider subject
-and binds its Supabase user to that account. Google and guests receive an account
-through their verified Supabase subject.
+(`provider_id`, or its compatible `id` response field) and binds its Supabase
+user to that account. Google and guests receive an account through their verified
+Supabase subject.
 
 `Profile_Store` is memory-only without **`SUPABASE_SERVICE_ROLE_KEY`**. It reads,
 inserts and stamps `public.player_profiles`; **the stored name wins once it
