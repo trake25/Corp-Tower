@@ -31,6 +31,12 @@ headless `--import` first. Complex UI, screens, scene/autoload and asset
 integration require smoke plus related GUT, then a live rendered comparison;
 headless mode cannot prove visual fidelity.
 
+`node scripts/qa-gate.mjs --changed <task-owned-path>...` applies this matrix
+without reading the working-tree diff, prints only a compact successful summary,
+and prints captured test output only on failure. Pass every task-owned changed
+path explicitly; the command widens unknown or shared runtime changes to the
+full affected-domain suite.
+
 ## Server tests
 
 Nothing under `tests/` or `tools/` ships in the image. `npm test` runs syntax

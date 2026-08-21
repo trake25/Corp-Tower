@@ -17,6 +17,13 @@ Verify the files owned by this task, not every pre-existing dirty file. The
 source→suite matrix and full-domain fallback paths live in `testing.md` § Local
 selection matrix.
 
+For a changed-source task, run `node scripts/qa-gate.mjs --changed <task-owned-path>...`
+with every task-owned changed path stated explicitly. It selects this matrix,
+prints one compact result on success, and saves verbose failure output under
+`/tmp`; read that file only after a failure. It never derives scope from a dirty
+working tree. Broaden the gate when the task's integration risk exceeds the
+path mapping.
+
 - Server: `node --check` each changed JavaScript file, then run the mapped tests.
 - Client: run the smoke test plus mapped GUT files. A changed test runs itself.
 - Unmapped or shared-core runtime code runs the full affected-domain suite.

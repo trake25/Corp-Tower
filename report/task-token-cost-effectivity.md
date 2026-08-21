@@ -80,7 +80,8 @@ metadata cannot recover the variant.
 | 9 | Remove redundant inventory card metadata and revise the UI art handoff checklist | 2 | B | 3 | 5 | late estimate ~6,000 | ~11,000 | ~21,000 | ~21,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward |
 | 10 | Add repository-wide skill reuse and reload-reason guardrail | 1 | B | 1 | 1 | late estimate ~1,000 | ~2,000 | ~4,000 | ~4,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | none |
 | 11 | Automate canonical skill mirroring with a path-aware pre-commit hook | 2 | B | 2 | 5 | ~6,000 | ~13,000 | ~22,000 | ~22,000 | ✓ | ok | gpt-5.6 (variant unrecorded) | medium | infra-engineer,qa-engineer,docs-steward |
-<!-- next: row 12 -->
+| 12 | Add compact path-based QA gate for task-owned source changes | 3 | B | 2 | 6 | ~6,000 | ~18,000 | ~32,000 | ~32,000 | ✓ | ok | gpt-5.6 (variant unrecorded) | medium | qa-engineer,infra-engineer,docs-steward |
+<!-- next: row 13 -->
 
 ## Cycle 3 (closed)
 

@@ -78,6 +78,7 @@ export const ROUTE_RULES = [
   { pattern: /^scripts\/write-endpoint-config/, skill: 'fullstack-coordinator', docs: ['networking.md', 'build.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/(validate-docs|docs-scope|build-file-map|context|sync-agent-skills|validate-agent-config|task-report|benchmark-rag)\.mjs$/, skill: 'docs-steward', docs: [], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/install-git-hooks\.mjs$/, skill: 'infra-engineer', docs: [], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/qa-gate\.mjs$/, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\//, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^site\/src\/content\//, skill: 'editorial', docs: ['site/docs/content.md'], map: null, read: 'hunk' },
   { pattern: /^site\//, skill: 'web-designer', docs: ['site/docs/design.md'], map: null, read: 'hunk' },

@@ -714,7 +714,7 @@ _no extracted symbols_
 | scripts/install-git-hooks.mjs:6 | root · const | resolves the repository supplied on the command line or the current directory |
 | scripts/install-git-hooks.mjs:7 | hooks · const | resolves the versioned hook directory whose pre-commit entry must exist |
 
-### scripts/lib/context-routing.mjs — 149 ln
+### scripts/lib/context-routing.mjs — 150 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -724,16 +724,38 @@ _no extracted symbols_
 | scripts/lib/context-routing.mjs:11 | hudFiles · const | hud files constant used by context-routing |
 | scripts/lib/context-routing.mjs:22 | MAP_AREAS · const | map areas constant used by context-routing |
 | scripts/lib/context-routing.mjs:54 | ROUTE_RULES · const | route rules constant used by context-routing |
-| scripts/lib/context-routing.mjs:86 | AREA_ALIASES · const | area aliases constant used by context-routing |
-| scripts/lib/context-routing.mjs:101 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
-| scripts/lib/context-routing.mjs:107 | mapOwnerForPath · fn | returns the generated map that owns a source path |
-| scripts/lib/context-routing.mjs:111 | IGNORE_DIR · const | ignore dir constant used by context-routing |
-| scripts/lib/context-routing.mjs:112 | IGNORE_PATH · const | ignore path constant used by context-routing |
-| scripts/lib/context-routing.mjs:113 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
-| scripts/lib/context-routing.mjs:114 | norm · const | norm constant used by context-routing |
-| scripts/lib/context-routing.mjs:116 | walk · fn | walk operation implemented by context-routing |
-| scripts/lib/context-routing.mjs:127 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
-| scripts/lib/context-routing.mjs:148 | isExempt · const | reports whether a first-party path is exempt from map coverage |
+| scripts/lib/context-routing.mjs:87 | AREA_ALIASES · const | area aliases constant used by context-routing |
+| scripts/lib/context-routing.mjs:102 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
+| scripts/lib/context-routing.mjs:108 | mapOwnerForPath · fn | returns the generated map that owns a source path |
+| scripts/lib/context-routing.mjs:112 | IGNORE_DIR · const | ignore dir constant used by context-routing |
+| scripts/lib/context-routing.mjs:113 | IGNORE_PATH · const | ignore path constant used by context-routing |
+| scripts/lib/context-routing.mjs:114 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
+| scripts/lib/context-routing.mjs:115 | norm · const | norm constant used by context-routing |
+| scripts/lib/context-routing.mjs:117 | walk · fn | walk operation implemented by context-routing |
+| scripts/lib/context-routing.mjs:128 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
+| scripts/lib/context-routing.mjs:149 | isExempt · const | reports whether a first-party path is exempt from map coverage |
+
+### scripts/qa-gate.mjs — 128 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/qa-gate.mjs:7 | ROOT · const | resolves the repository root from the current working directory |
+| scripts/qa-gate.mjs:8 | CLIENT · const | names the Godot project path used by client gates |
+| scripts/qa-gate.mjs:9 | SERVER · const | names the Node server path used by server gates |
+| scripts/qa-gate.mjs:10 | argv · const | retains the command arguments for explicit task-path selection |
+| scripts/qa-gate.mjs:11 | changedAt · const | finds the required `--changed` argument boundary |
+| scripts/qa-gate.mjs:12 | changed · const | normalizes only the task-owned paths supplied after `--changed` |
+| scripts/qa-gate.mjs:13 | serverTests · const | accumulates the narrow server test files selected by source paths |
+| scripts/qa-gate.mjs:14 | clientTests · const | accumulates the narrow GUT files selected by client paths |
+| scripts/qa-gate.mjs:15 | serverSources · const | retains changed server JavaScript files for syntax checks |
+| scripts/qa-gate.mjs:20 | serverRules · const | maps known server ownership paths to their focused Node tests |
+| scripts/qa-gate.mjs:29 | clientRules · const | maps known client ownership paths to focused GUT tests |
+| scripts/qa-gate.mjs:46 | addMatches · fn | adds the first matching rule's tests and says whether a mapping existed |
+| scripts/qa-gate.mjs:55 | failureDetail · fn | reduces captured test output to totals and one actionable failing line |
+| scripts/qa-gate.mjs:61 | fail · fn | prints a compact failure and saves verbose output under a temporary directory |
+| scripts/qa-gate.mjs:70 | run · fn | runs one selected command silently unless it fails |
+| scripts/qa-gate.mjs:77 | godotBinary · fn | selects the newest host-compatible repository Godot executable |
+| scripts/qa-gate.mjs:102 | completed · const | collects successful gate labels for the single-line result |
 
 ### scripts/strip-comments.mjs — 296 ln — enforces the no-comments-in-source rule
 
@@ -859,4 +881,4 @@ _no extracted symbols_
 
 ---
 
-94 files · 411 symbols · 0 awaiting a `Does` line.
+95 files · 428 symbols · 0 awaiting a `Does` line.
