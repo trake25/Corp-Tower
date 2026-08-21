@@ -46,7 +46,6 @@ var draw_pile_count_label: Label
 var draw_pile_preview: Control
 var tower_drop_zone: Control
 var tower_stack_fallback: Control
-var tower_fill: Panel
 var drag_preview: Control
 var inventory_slot_blocks: Array = []
 var active_inventory_slots: int = MAX_INVENTORY_SLOTS
@@ -71,7 +70,6 @@ func bind_nodes(binder) -> void:
 	draw_pile_preview = binder.require_node("DrawPilePreview") as Control
 	tower_drop_zone = binder.require_node("TowerDropZone") as Control
 	tower_stack_fallback = binder.optional_node("TowerStack") as Control
-	tower_fill = binder.optional_node("TowerFill") as Panel
 	drag_preview = binder.require_node("DragPreview") as Control
 
 	inventory_buttons = [
@@ -325,7 +323,6 @@ func update_block_drag(global_pos: Vector2) -> void:
 
 	var ghost_pos: Vector2 = global_pos + _drag_grip_offset()
 	drag_preview.global_position = ghost_pos - drag_preview.size * 0.5
-	update_tower_drop_zone_highlight(global_pos)
 	drag_snap = _resolve_snap(ghost_pos)
 
 	var docked: bool = (
@@ -399,7 +396,6 @@ func cancel_block_drag() -> void:
 	drag_pointer_id = PointerEventsScript.POINTER_MOUSE
 	drag_snap = {}
 	_clear_selection_state()
-	reset_tower_drop_zone_highlight()
 
 	if tower_stack_fallback != null and tower_stack_fallback.has_method("end_snap_drag"):
 		tower_stack_fallback.call("end_snap_drag")
@@ -707,17 +703,6 @@ func is_pointer_in_tower_drop_zone(global_pos: Vector2) -> bool:
 		return false
 
 	return drop_zone.get_global_rect().has_point(global_pos)
-
-func update_tower_drop_zone_highlight(global_pos: Vector2) -> void:
-	if tower_fill == null:
-		return
-
-	var in_drop_zone: bool = is_pointer_in_tower_drop_zone(global_pos)
-	tower_fill.modulate = Color(1.18, 1.18, 1.18, 1.0) if in_drop_zone else Color.WHITE
-
-func reset_tower_drop_zone_highlight() -> void:
-	if tower_fill != null:
-		tower_fill.modulate = Color.WHITE
 
 func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS) -> void:
 	var clean_blocks: Array = []

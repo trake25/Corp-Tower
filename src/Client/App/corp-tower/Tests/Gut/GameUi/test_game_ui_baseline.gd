@@ -47,16 +47,27 @@ func test_all_required_nodes_bound() -> void:
 
 func test_reset_ui_restores_idle_labels() -> void:
 	harness.main.reset_ui()
-	assert_eq((harness.find("StatusLabel") as Label).text, "Disconnected", "reset_ui should show the disconnected status.")
+	assert_eq((harness.find("StatusLabel") as Label).text, "DISCONNECTED", "reset_ui should show the disconnected status.")
 	assert_eq((harness.find("BlockLabel") as Label).text, "Inventory 0/3", "reset_ui should reset the inventory label to an empty count.")
-	assert_eq((harness.find("TowerStatusLabel") as Label).text, "Connect to start", "reset_ui should reset the tower status.")
-	assert_eq((harness.find("ConnectButton") as Button).text, "Connect", "reset_ui should reset the connect button.")
+	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "WAITING FOR MATCH", "reset_ui should reset the visible objective status.")
+	assert_true((harness.find("ConnectionBanner") as Control).is_visible_in_tree(), "Disconnected status should be visible.")
+
+func test_legacy_hidden_contract_is_removed() -> void:
+	assert_null(harness.find("LegacyHidden"), "The permanently hidden legacy ancestor should not exist.")
+	for retired_name in ["ConnectButton", "ScoreLabel", "TowerFill", "HeightLabel", "TowerValueLabel", "TowerStatusLabel", "ImpactSeparator", "PowerQuestLabel"]:
+		assert_null(harness.find(retired_name), "%s should be retired instead of retained as a hidden alias." % retired_name)
+
+func test_session_state_resolves_in_visible_controls() -> void:
+	harness.main.game_status.update_session("P1", 42)
+	assert_eq((harness.find("PlayerLabel") as Label).text, "PLAYER P1")
+	assert_eq((harness.find("RoomLabel") as Label).text, "ROOM 42")
+	assert_true((harness.find("SessionPanel") as Control).is_visible_in_tree())
 
 func test_game_state_renders_rail_and_top_bar() -> void:
 	harness.main.update_game_state(GAME_STATE_FIXTURE)
 	assert_eq(harness.main.roster.player_rail_entries.size(), 3, "A three player payload should produce three rail entries.")
-	assert_eq((harness.find("HeightLabel") as Label).text, "Height 2/12", "The height label should reflect the payload heights.")
-	assert_eq((harness.find("TowerValueLabel") as Label).text, "2 / 12", "The tower value label should reflect the payload heights.")
+	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP (2/12)", "The visible top indicator should reflect the payload heights.")
+	assert_true((harness.find("TowerStabilityLabel") as Label).is_visible_in_tree(), "Tower stability should resolve outside a hidden ancestor.")
 	assert_eq((harness.find("LevelLabel") as Label).text, "1", "The level label should reflect the payload level.")
 
 func test_score_events_deduplicate_by_id() -> void:
@@ -84,12 +95,16 @@ func test_inventory_renders_active_empty_and_locked_slots() -> void:
 	assert_true((harness.find("PlaceBlockButton3") as Button).disabled, "A slot past the active count should be disabled.")
 	assert_eq((harness.find("BlockHeightLabel3") as Label).text, "Locked", "A slot past the active count should read Locked.")
 	assert_eq((harness.find("BlockNameLabel3") as Label).text, "Level 4", "The third slot should show its unlock level.")
+	assert_true((harness.find("BlockNameLabel1") as Label).is_visible_in_tree(), "Inventory metadata should no longer be permanently hidden.")
+	assert_true((harness.find("BlockHeightLabel1") as Label).is_visible_in_tree(), "Inventory state should no longer be permanently hidden.")
 
 func test_impact_status_renders_track_and_ready_counts() -> void:
 	harness.main.roster.update_impact_status_ui(IMPACT_STATUS_FIXTURE)
 	assert_eq(harness.main.roster.impact_bars.size(), 3, "Each impact player status should get a track bar.")
 	var status_label: Label = harness.find("ImpactStatusLabel") as Label
 	assert_true(status_label.visible, "The impact status label should show while a requirement is active.")
+	harness.main.roster.toggle_impact_details()
+	assert_true((harness.find("ImpactStatusPanel") as Control).is_visible_in_tree(), "Impact details should open from the visible Impact trigger.")
 	assert_true(status_label.text.begins_with("Impact L3  |  1/3 ready"), "The impact status should show the blocked level and ready count.")
 
 func test_empty_impact_status_hides_track() -> void:

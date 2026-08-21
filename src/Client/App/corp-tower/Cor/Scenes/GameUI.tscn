@@ -19,6 +19,7 @@
 [ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-chat.png" id="21_chat"]
 [ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-power.png" id="22_power"]
 [ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-quest-state1.png" id="18_queststate1"]
+[ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="23_presstint"]
 
 [sub_resource type="Gradient" id="Gradient_TopBarFill"]
 colors = PackedColorArray(0.192, 0.725, 0.271, 1, 0.714, 0.992, 0.29, 1)
@@ -84,16 +85,6 @@ script = ExtResource("3b_backgroundparallax")
 parallax_ratio = 1.0
 instant = true
 
-[node name="TowerFill" type="Panel" parent="PlayField" unique_id=1497040853]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 70.0
-offset_top = 111.0
-offset_right = 342.0
-offset_bottom = 731.0
-theme_type_variation = &"TowerFillPanel"
-
 [node name="TowerStack" type="Control" parent="PlayField" unique_id=1556131207]
 unique_name_in_owner = true
 anchors_preset = 0
@@ -132,6 +123,71 @@ offset_bottom = 97.0
 texture_normal = ExtResource("10_menu")
 ignore_texture_size = true
 stretch_mode = 5
+
+[node name="ConnectionBanner" type="PanelContainer" parent="PlayField" unique_id=401001001]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 70.0
+offset_top = 5.0
+offset_right = 342.0
+offset_bottom = 37.0
+mouse_filter = 2
+theme_type_variation = &"WhiteCardPanel"
+
+[node name="ConnectionMargin" type="MarginContainer" parent="PlayField/ConnectionBanner" unique_id=401001002]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+
+[node name="StatusLabel" type="Label" parent="PlayField/ConnectionBanner/ConnectionMargin" unique_id=546576960]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"CardMetaLabel"
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+theme_override_font_sizes/font_size = 11
+text = "DISCONNECTED"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SessionPanel" type="PanelContainer" parent="PlayField" unique_id=401001003]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 5.0
+offset_top = 101.0
+offset_right = 108.0
+offset_bottom = 126.0
+mouse_filter = 2
+theme_type_variation = &"WhiteCardPanel"
+
+[node name="SessionMargin" type="MarginContainer" parent="PlayField/SessionPanel" unique_id=401001004]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 2
+
+[node name="SessionRows" type="VBoxContainer" parent="PlayField/SessionPanel/SessionMargin" unique_id=401001005]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="PlayerLabel" type="Label" parent="PlayField/SessionPanel/SessionMargin/SessionRows" unique_id=1124339455]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"CardMetaLabel"
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+theme_override_font_sizes/font_size = 8
+text = "PLAYER -"
+
+[node name="RoomLabel" type="Label" parent="PlayField/SessionPanel/SessionMargin/SessionRows" unique_id=1767853773]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"CardMetaLabel"
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+theme_override_font_sizes/font_size = 8
+text = "ROOM -"
 
 [node name="DemoModeLabel" type="Label" parent="PlayField" unique_id=1310221500]
 unique_name_in_owner = true
@@ -280,13 +336,44 @@ text = "TOP"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="TowerStabilityLabel" type="Label" parent="PlayField" unique_id=1117939618]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 90.0
+offset_top = 164.0
+offset_right = 322.0
+offset_bottom = 184.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.7, 1, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 11
+text = "STABLE · 100%"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="ActionRow" type="HBoxContainer" parent="PlayField" unique_id=1790326432]
 layout_mode = 0
 offset_left = 10.0
-offset_top = 827.0
+offset_top = 837.0
 offset_right = 402.0
-offset_bottom = 907.0
+offset_bottom = 917.0
 theme_override_constants/separation = 6
+
+[node name="BlockLabel" type="Label" parent="PlayField" unique_id=1880050889]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 10.0
+offset_top = 814.0
+offset_right = 204.0
+offset_bottom = 836.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 12
+text = "INVENTORY 0/3"
+vertical_alignment = 1
 
 [node name="TeamInventoryPanel" type="PanelContainer" parent="PlayField" unique_id=1310221200]
 unique_name_in_owner = true
@@ -426,17 +513,44 @@ mouse_filter = 2
 theme_override_constants/separation = 0
 alignment = 0
 
-[node name="ImpactPill" type="TextureRect" parent="PlayField" unique_id=1310220003]
+[node name="ImpactPill" type="TextureButton" parent="PlayField" unique_id=1310220003]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 328.0
 offset_top = 170.0
 offset_right = 412.0
 offset_bottom = 212.0
-mouse_filter = 2
-texture = ExtResource("19_impacttext")
-expand_mode = 1
+texture_normal = ExtResource("19_impacttext")
+ignore_texture_size = true
 stretch_mode = 0
+script = ExtResource("23_presstint")
+
+[node name="ImpactStatusPanel" type="PanelContainer" parent="PlayField" unique_id=401001006]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 282.0
+offset_top = 214.0
+offset_right = 407.0
+offset_bottom = 282.0
+mouse_filter = 2
+theme_type_variation = &"WhiteCardPanel"
+
+[node name="ImpactStatusMargin" type="MarginContainer" parent="PlayField/ImpactStatusPanel" unique_id=401001007]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 4
+
+[node name="ImpactStatusLabel" type="Label" parent="PlayField/ImpactStatusPanel/ImpactStatusMargin" unique_id=2127769895]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"CardMetaLabel"
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+theme_override_font_sizes/font_size = 9
+text = "Impact"
+autowrap_mode = 3
 
 [node name="PlaceBlockButton1" type="Button" parent="PlayField/ActionRow" unique_id=169731104]
 unique_name_in_owner = true
@@ -473,26 +587,26 @@ layout_mode = 2
 mouse_filter = 2
 
 [node name="BlockNameLabel1" type="Label" parent="PlayField/ActionRow/PlaceBlockButton1/CardMargin/CardRows" unique_id=1512281476]
-visible = false
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"CardMetaLabel"
+theme_override_font_sizes/font_size = 9
 text = "Slot 1"
 horizontal_alignment = 1
 
 [node name="BlockPreview1" type="Control" parent="PlayField/ActionRow/PlaceBlockButton1/CardMargin/CardRows" unique_id=1941618900]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(70, 44)
+custom_minimum_size = Vector2(70, 30)
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
 [node name="BlockHeightLabel1" type="Label" parent="PlayField/ActionRow/PlaceBlockButton1/CardMargin/CardRows" unique_id=92563347]
-visible = false
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"CardMetaLabel"
+theme_override_font_sizes/font_size = 9
 text = "Empty"
 horizontal_alignment = 1
 
@@ -531,26 +645,26 @@ layout_mode = 2
 mouse_filter = 2
 
 [node name="BlockNameLabel2" type="Label" parent="PlayField/ActionRow/PlaceBlockButton2/CardMargin/CardRows" unique_id=263004265]
-visible = false
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"CardMetaLabel"
+theme_override_font_sizes/font_size = 9
 text = "Slot 2"
 horizontal_alignment = 1
 
 [node name="BlockPreview2" type="Control" parent="PlayField/ActionRow/PlaceBlockButton2/CardMargin/CardRows" unique_id=1547697295]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(70, 44)
+custom_minimum_size = Vector2(70, 30)
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
 [node name="BlockHeightLabel2" type="Label" parent="PlayField/ActionRow/PlaceBlockButton2/CardMargin/CardRows" unique_id=457625149]
-visible = false
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"CardMetaLabel"
+theme_override_font_sizes/font_size = 9
 text = "Empty"
 horizontal_alignment = 1
 
@@ -589,26 +703,26 @@ layout_mode = 2
 mouse_filter = 2
 
 [node name="BlockNameLabel3" type="Label" parent="PlayField/ActionRow/PlaceBlockButton3/CardMargin/CardRows" unique_id=1993362837]
-visible = false
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"CardMetaLabel"
+theme_override_font_sizes/font_size = 9
 text = "Slot 3"
 horizontal_alignment = 1
 
 [node name="BlockPreview3" type="Control" parent="PlayField/ActionRow/PlaceBlockButton3/CardMargin/CardRows" unique_id=1640407898]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(70, 44)
+custom_minimum_size = Vector2(70, 30)
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("2_blockpreview")
 
 [node name="BlockHeightLabel3" type="Label" parent="PlayField/ActionRow/PlaceBlockButton3/CardMargin/CardRows" unique_id=242861446]
-visible = false
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"CardMetaLabel"
+theme_override_font_sizes/font_size = 9
 text = "Empty"
 horizontal_alignment = 1
 
@@ -1979,96 +2093,3 @@ layout_mode = 2
 theme_type_variation = &"PopoverBodyLabel"
 autowrap_mode = 3
 text = "Body"
-
-[node name="LegacyHidden" type="Control" parent="." unique_id=1010101010]
-visible = false
-anchors_preset = 0
-mouse_filter = 2
-
-[node name="StatusLabel" type="Label" parent="LegacyHidden" unique_id=546576960]
-unique_name_in_owner = true
-layout_mode = 0
-theme_override_font_sizes/font_size = 18
-text = "Disconnected"
-
-[node name="ConnectButton" type="Button" parent="LegacyHidden" unique_id=2055968287]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 40)
-layout_mode = 0
-theme_type_variation = &"PrimaryButton"
-theme_override_font_sizes/font_size = 16
-text = "Connect"
-
-[node name="PlayerLabel" type="Label" parent="LegacyHidden" unique_id=1124339455]
-unique_name_in_owner = true
-layout_mode = 0
-theme_type_variation = &"InfoLabel"
-text = "Player -"
-
-[node name="RoomLabel" type="Label" parent="LegacyHidden" unique_id=1767853773]
-unique_name_in_owner = true
-layout_mode = 0
-theme_type_variation = &"InfoLabel"
-text = "Room -"
-
-[node name="TowerStatusLabel" type="Label" parent="LegacyHidden" unique_id=1048868068]
-unique_name_in_owner = true
-layout_mode = 0
-theme_override_font_sizes/font_size = 18
-text = "Connect to start"
-horizontal_alignment = 1
-
-[node name="TowerValueLabel" type="Label" parent="LegacyHidden" unique_id=313491058]
-unique_name_in_owner = true
-layout_mode = 0
-theme_override_font_sizes/font_size = 24
-text = "0 / 0"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="HeightLabel" type="Label" parent="LegacyHidden" unique_id=727880221]
-unique_name_in_owner = true
-layout_mode = 0
-theme_override_font_sizes/font_size = 16
-text = "Height 0/0"
-horizontal_alignment = 1
-
-[node name="ScoreLabel" type="Label" parent="LegacyHidden" unique_id=1265606165]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-theme_type_variation = &"InfoLabel"
-text = "Waiting for players"
-autowrap_mode = 3
-
-[node name="ImpactSeparator" type="HSeparator" parent="LegacyHidden" unique_id=58388377]
-visible = false
-layout_mode = 0
-
-[node name="ImpactStatusLabel" type="Label" parent="LegacyHidden" unique_id=2127769895]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-theme_override_colors/font_color = Color(0.84, 0.9, 0.98, 1)
-theme_override_font_sizes/font_size = 13
-text = "Impact"
-autowrap_mode = 3
-
-[node name="TowerStabilityLabel" type="Label" parent="LegacyHidden" unique_id=1117939618]
-unique_name_in_owner = true
-layout_mode = 0
-theme_override_font_sizes/font_size = 13
-text = "Tower Stability: 100% (Stable)"
-
-[node name="BlockLabel" type="Label" parent="LegacyHidden" unique_id=1880050889]
-unique_name_in_owner = true
-layout_mode = 0
-theme_override_font_sizes/font_size = 16
-text = "Inventory"
-
-[node name="PowerQuestLabel" type="Label" parent="LegacyHidden" unique_id=103165954]
-unique_name_in_owner = true
-layout_mode = 0
-text = "Power Quest
-Unlocks at Level 4"
-autowrap_mode = 3

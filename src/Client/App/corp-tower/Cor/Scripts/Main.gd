@@ -17,6 +17,7 @@ const QuickChatControllerScript = preload("res://Cor/Scripts/GameUi/QuickChatCon
 const PowerControllerScript = preload("res://Cor/Scripts/GameUi/PowerController.gd")
 const InventoryControllerScript = preload("res://Cor/Scripts/GameUi/InventoryController.gd")
 const TopBarControllerScript = preload("res://Cor/Scripts/GameUi/TopBarController.gd")
+const GameStatusControllerScript = preload("res://Cor/Scripts/GameUi/GameStatusController.gd")
 const VisualHooksScript = preload("res://Cor/Scripts/GameUi/VisualHooks.gd")
 const VisualHooksControllerScript = preload("res://Cor/Scripts/GameUi/VisualHooksController.gd")
 const TutorialControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialController.gd")
@@ -42,17 +43,13 @@ var chat
 var power
 var inventory
 var top_bar
+var game_status
 var visual_hooks
 var visual_fx
 var tutorial
 var tutorial_menu
 
-var status_label: Label
-var player_label: Label
-var room_label: Label
-var score_label: Label
 var tower_stack: Control
-var connect_button: Button
 var background_parallax: Control
 var platform_parallax: Control
 var demo_mode_label: Label
@@ -82,6 +79,8 @@ func _ready() -> void:
 	add_child(inventory)
 	top_bar = TopBarControllerScript.new()
 	add_child(top_bar)
+	game_status = GameStatusControllerScript.new()
+	add_child(game_status)
 	visual_hooks = VisualHooksScript.new()
 	visual_fx = VisualHooksControllerScript.new()
 	add_child(visual_fx)
@@ -122,7 +121,6 @@ func _ready() -> void:
 		"players_ctx": players_ctx
 	})
 	tutorial_menu.setup(tutorial, _on_tutorial_menu_exit)
-	setup_popover_controls()
 
 	if tower_stack.has_signal("scroll_offset_changed"):
 		tower_stack.connect("scroll_offset_changed", Callable(background_parallax, "set_scroll_pixels"))
@@ -169,17 +167,13 @@ func prepare_ui() -> bool:
 
 func bind_ui_nodes() -> void:
 	var binder = UiNodeBinderScript.new(ui_root)
-	status_label = binder.require_node("StatusLabel") as Label
-	player_label = binder.require_node("PlayerLabel") as Label
-	room_label = binder.require_node("RoomLabel") as Label
-	score_label = binder.require_node("ScoreLabel") as Label
 	tower_stack = binder.require_node("TowerStack") as Control
-	connect_button = binder.require_node("ConnectButton") as Button
 	background_parallax = binder.require_node("BgArt") as Control
 	platform_parallax = binder.require_node("PlatformArt") as Control
 	demo_mode_label = binder.require_node("DemoModeLabel") as Label
 
 	top_bar.bind_nodes(binder)
+	game_status.bind_nodes(binder)
 	inventory.bind_nodes(binder)
 	debug_panel.bind_nodes(binder)
 	score_popups.bind_nodes(binder)
@@ -192,25 +186,14 @@ func bind_ui_nodes() -> void:
 	tutorial_menu.bind_nodes(binder)
 	missing_required_nodes = binder.missing
 
-func setup_popover_controls() -> void:
-	connect_button.pressed.connect(on_connect_pressed)
-
 func reset_ui() -> void:
-	connect_button.text = "Connect"
-	status_label.text = "Disconnected"
-	player_label.text = "Player -"
-	room_label.text = "Room -"
+	game_status.reset()
 	top_bar.reset_indicators()
-	score_label.text = "Waiting for players"
 	match_state.current_match_state = ""
 	inventory.last_placement_sent_at_ms = 0
 	inventory.cancel_block_drag()
 	roster.update_impact_status_ui({})
-	top_bar.height_label.text = "Height 0/0"
-	top_bar.tower_value_label.text = "0 / 0"
-	top_bar.tower_status_label.text = "Connect to start"
-	top_bar.set_tower_progress(0, 0)
-	top_bar.set_top_indicator_progress(0, 0)
+	top_bar.set_top_indicator_progress(0, 0, "")
 	tower_stack.clear_tower()
 	inventory.update_inventory_ui([], InventoryControllerScript.MAX_INVENTORY_SLOTS)
 	inventory.update_draw_pile_ui(0, null)
@@ -224,11 +207,10 @@ func reset_ui() -> void:
 	match_state.current_level = 0
 
 func connect_network_signals() -> void:
-	NetworkManager.status_changed.connect(update_status)
+	NetworkManager.status_changed.connect(game_status.update_connection_status)
 	NetworkManager.room_joined.connect(_on_room_joined)
 	NetworkManager.match_started.connect(update_room)
 	NetworkManager.room_closed.connect(update_room_closed)
-	NetworkManager.client_status.connect(update_connect_button)
 	NetworkManager.game_state_updated.connect(update_game_state)
 	NetworkManager.debug_config_updated.connect(update_debug_config)
 
@@ -243,35 +225,19 @@ func _process(_delta: float) -> void:
 	inventory.tick()
 	top_bar.tick_round_timer()
 
-func on_connect_pressed() -> void:
-	NetworkManager.toggle_connection()
-
 func toggle_debug_overlay() -> void:
 	debug_panel.toggle()
 
 func set_debug_context(context: String) -> void:
 	debug_panel.set_screen_context(context)
 
-func update_status(text: String) -> void:
-	status_label.text = text
-
-func update_connect_button(status: String) -> void:
-	if status == "[Connect]":
-		connect_button.text = "Connect"
-	elif status == "[Disconnect]":
-		connect_button.text = "Disconnect"
-	else:
-		connect_button.text = status.replace("[", "").replace("]", "").strip_edges()
-
 func _on_room_joined(data) -> void:
 	if bool(data.get("matchStarted", true)):
 		update_room(data)
 
 func update_room(data) -> void:
-	connect_button.disabled = true
 	players_ctx.roster = data.get("roster", [])
-	player_label.text = PlayerContextScript.LOCAL_PLAYER_MARKER + " " + str(data.playerId)
-	room_label.text = "Room " + str(int(data.roomId))
+	game_status.update_session(str(data.playerId), int(data.roomId))
 	top_bar.update_top_bar_display(int(data.get("level", 0)), int(data.get("level", 0)), "starting", 0)
 	match_state.current_level = int(data.get("level", 0))
 	score_popups.seen_score_event_ids.clear()
@@ -281,9 +247,7 @@ func update_room(data) -> void:
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
 	quest.reset_freeze_quest_popover()
-	top_bar.tower_status_label.text = "Match starting"
-	top_bar.set_tower_progress(0, int(data.get("targetHeight", 0)))
-	top_bar.set_top_indicator_progress(0, int(data.get("targetHeight", 0)))
+	top_bar.set_top_indicator_progress(0, int(data.get("targetHeight", 0)), "starting")
 	tower_stack.clear_tower()
 	inventory.update_inventory_ui(
 		data.get("blocks", []),
@@ -296,19 +260,15 @@ func update_room(data) -> void:
 	roster.update_impact_status_ui(data.get("impactScoreStatus", {}))
 	top_bar.update_tower_stability_ui(int(data.get("towerStability", 100)), data.get("towerStabilityDiagnostics", {}))
 
-func update_room_closed(data) -> void:
+func update_room_closed(_data) -> void:
 	match_state.current_match_state = ""
 	players_ctx.roster = []
 	inventory.last_placement_sent_at_ms = 0
 	inventory.cancel_block_drag()
-	room_label.text = "Room closed"
+	game_status.update_room_closed()
 	top_bar.reset_indicators()
-	top_bar.height_label.text = "Height -"
-	score_label.text = "Room closed: " + str(data.get("reason", "unknown"))
 	roster.update_impact_status_ui({})
-	top_bar.tower_status_label.text = "Room closed"
-	top_bar.set_tower_progress(0, 0)
-	top_bar.set_top_indicator_progress(0, 0)
+	top_bar.set_top_indicator_progress(0, 0, "room_closed")
 	tower_stack.clear_tower()
 	inventory.update_inventory_ui([], InventoryControllerScript.MAX_INVENTORY_SLOTS)
 	inventory.update_draw_pile_ui(0, null)
@@ -387,14 +347,8 @@ func update_game_state(data) -> void:
 		tower_stack.call("set_player_color_map", players_ctx.color_map)
 
 	top_bar.update_top_bar_display(incoming_level, impact_level, state, seconds_remaining)
-	top_bar.set_top_indicator_progress(current_height, target_height)
-	top_bar.height_label.text = "Height " + str(current_height) + "/" + str(target_height)
+	top_bar.set_top_indicator_progress(current_height, target_height, state)
 	top_bar.update_tower_stability_ui(int(data.get("towerStability", 100)), data.get("towerStabilityDiagnostics", {}))
-	top_bar.tower_value_label.text = str(current_height) + " / " + str(target_height)
-	top_bar.tower_status_label.text = top_bar.get_tower_status(state, current_height, target_height)
-	if str(data.get("towerStabilityFeedbackMode", "warnings_only")) == "meter_only":
-		top_bar.tower_status_label.text += " | Stability " + str(int(data.get("towerStability", 100))) + "%"
-	top_bar.set_tower_progress(current_height, target_height)
 	if data.has("accessibility"):
 		accessibility.apply_server_defaults(data.get("accessibility", {}))
 	if data.has("visualHooks"):
@@ -417,22 +371,15 @@ func update_game_state(data) -> void:
 	)
 	inventory.revalidate_armed_placement()
 
-	var _scores_text :String = ""
 	var my_blocks: Array = []
 	var my_power: Array = []
 
 	for i in range(players.size()):
 		var player: Dictionary = players[i]
 		var player_id: String = str(player.get("id", "P?"))
-		var prefix: String = PlayerContextScript.LOCAL_PLAYER_MARKER if players_ctx.is_local(player_id) else player_id
-		_scores_text += prefix + ": " + str(int(player.get("score", 0))) + " total / " + str(int(player.get("levelScore", 0))) + " level"
-
 		if players_ctx.is_local(player_id):
 			my_blocks = player.get("blocks", [])
 			my_power = player.get("powerInventory", [])
-
-		if i < players.size() - 1:
-			_scores_text += "\n"
 
 	roster.update_score_lines(players)
 	roster.update_impact_status_ui(data.get("impactScoreStatus", {}))

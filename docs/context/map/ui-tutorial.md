@@ -112,7 +112,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialProgress.gd:40 | completed_ids | raw key list, counted for the menu header |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialProgress.gd:43 | _save | rewrites the whole section from `_complete` on every call, so a removed key really disappears |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd — 251 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd — 248 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -121,8 +121,8 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:57 | load_seed | **deep-copies the seed** so replays start clean, splits `hand` into visible slots and a pool, sets `SnapGrid` width and placeable range, and **overrides `players_ctx.get_local_id`** |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:96 | teardown | restores the saved `get_local_id`. **Skipping it leaves the real session resolving every local id to `local`** |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:101 | push_state | **the offline stand-in for a server broadcast** — fans local state out to tower_stack, inventory, top_bar, roster, quest, power and chat, each null-guarded |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:133 | apply_placement | the offline placement rule: clamps the column into placeable range, settles via **`SnapGrid.settle_origin_y`, the same call the live client makes**, applies scripted tilt, draws from `hand_pool` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:215 | apply_script | dispatcher for a step's scripted effect — `score_popup`, `set_diagnostics`, `set_tower`, `refresh_hand` and `quick_chat`; an unrecognised type is silently ignored |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:130 | apply_placement | the offline placement rule: clamps the column into placeable range, settles via **`SnapGrid.settle_origin_y`, the same call the live client makes**, applies scripted tilt, draws from `hand_pool` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:212 | apply_script | dispatcher for a step's scripted effect — `score_popup`, `set_diagnostics`, `set_tower`, `refresh_hand` and `quick_chat`; an unrecognised type is silently ignored |
 
 ---
 

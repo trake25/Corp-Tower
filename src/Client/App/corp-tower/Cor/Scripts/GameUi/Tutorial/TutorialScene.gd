@@ -110,11 +110,8 @@ func push_state() -> void:
 
 	if top_bar != null:
 		top_bar.update_top_bar_display(level, level, "playing", seconds_remaining)
-		top_bar.set_top_indicator_progress(current_height, target_height)
-		top_bar.set_tower_progress(current_height, target_height)
+		top_bar.set_top_indicator_progress(current_height, target_height, "playing")
 		top_bar.update_tower_stability_ui(stability, diagnostics)
-		top_bar.height_label.text = "Height " + str(current_height) + "/" + str(target_height)
-		top_bar.tower_value_label.text = str(current_height) + " / " + str(target_height)
 
 	if roster != null:
 		roster.update_score_lines(players)

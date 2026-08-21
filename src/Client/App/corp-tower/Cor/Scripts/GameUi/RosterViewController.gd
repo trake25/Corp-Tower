@@ -14,20 +14,27 @@ var impact_bars: Dictionary = {}
 var player_level_scores: Dictionary = {}
 var player_rail_box: VBoxContainer
 var impact_track: VBoxContainer
-var impact_pill: Control
+var impact_pill: BaseButton
+var impact_status_panel: Control
 var impact_status_label: Label
-var impact_separator: HSeparator
 
 func bind_nodes(binder) -> void:
 	player_rail_box = binder.optional_node("PlayerRailBox") as VBoxContainer
 	impact_track = binder.optional_node("ImpactTrack") as VBoxContainer
-	impact_pill = binder.optional_node("ImpactPill") as Control
+	impact_pill = binder.require_node("ImpactPill") as BaseButton
+	impact_status_panel = binder.require_node("ImpactStatusPanel") as Control
 	impact_status_label = binder.require_node("ImpactStatusLabel") as Label
-	impact_separator = binder.optional_node("ImpactSeparator") as HSeparator
 
 func setup(players_ref, match_state_ref) -> void:
 	players_ctx = players_ref
 	match_state = match_state_ref
+	impact_pill.pressed.connect(toggle_impact_details)
+
+func toggle_impact_details() -> void:
+	if impact_status_label.text.is_empty():
+		return
+
+	impact_status_panel.visible = !impact_status_panel.visible
 
 func rail_entry(player_id: String) -> Control:
 	return player_rail_entries.get(player_id, null)
@@ -239,8 +246,6 @@ func _impact_glow_tint(player_id: String) -> Color:
 	)
 
 func set_impact_status_visible(should_show: bool) -> void:
-	if impact_separator != null:
-		impact_separator.visible = should_show
-
-	if impact_status_label != null:
-		impact_status_label.visible = should_show
+	if !should_show:
+		impact_status_panel.visible = false
+	impact_status_label.visible = should_show

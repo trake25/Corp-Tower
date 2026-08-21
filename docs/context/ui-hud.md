@@ -29,7 +29,8 @@ Two shapes only:
   lifecycle and can own `Tween`s/`Timer`s): `DebugPanelController`,
   `ScorePopupController`, `LevelSummaryController`, `RosterViewController`,
   `VisualHooksController`, `QuestController`, `QuickChatController`,
-  `PowerController`, `InventoryController`, `TopBarController`.
+  `PowerController`, `InventoryController`, `TopBarController`,
+  `GameStatusController`.
 
 Neither shape is added to `GameUI.tscn` directly. Each declares the nodes it needs
 via its own `bind_nodes(binder)`, which Main aggregates through `UiNodeBinder`.
@@ -117,6 +118,11 @@ per-`Label` override. There is no skin system.
 not a popover. It reuses the `DrawPilePreview`/`DrawPileNameLabel`/
 `DrawPileCountLabel` nodes verbatim, so `InventoryController` needs no logic for
 it.
+
+`GameStatusController` owns the non-connected banner and the player/room session
+panel. `TopIndicatorLabel` is the single tower objective surface; stability is a
+separate visible label. Local inventory metadata is visible on each card, and
+the Impact pill toggles its server-fed readiness/detail panel.
 
 Node contract highlights: `TowerDropZone` (full-rect drag-release validator),
 `DragPreview` (a hidden Block Preview shown while dragging *outside* the drop

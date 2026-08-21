@@ -56,37 +56,33 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | back_requested · signal | return to Home Screen |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:6 | _ready | wire buttons |
 
-### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 469 ln
+### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 416 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:25 | tutorial_requested · signal | ask ScreenManager to open the Tutorial |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:26 | tutorial_exited · signal | Tutorial finished |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:60 | _ready | construct the GameUi module family and bind nodes |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:140 | apply_accessibility | push AccessibilitySettings into the controllers |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:146 | apply_camera_zoom | **must pivot PlatformArt on its top centre** before scaling |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:153 | should_block_popovers | shared gate every popover trigger calls itself |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:161 | prepare_ui | verify the scene node contract; feeds `missing_required_nodes` |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:170 | bind_ui_nodes | aggregate every module bind_nodes(binder) through UiNodeBinder |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:195 | setup_popover_controls | wire the three popover instances |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:198 | reset_ui | clear per-room UI state |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:226 | connect_network_signals | subscribe to NetworkManager |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:235 | _unhandled_input | fallback input |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:239 | _input | global input hooks |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:242 | _process | per-frame local ticks, incl. the round timer |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:246 | on_connect_pressed | manual connect |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:249 | toggle_debug_overlay | duck-typed entry the debug button calls |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:252 | set_debug_context | forwards screen context to the gameplay debug controller |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:255 | update_status | connection status text |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:258 | update_connect_button | connect button label and state |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:266 | _on_room_joined | routes a successful room join into the lobby screen flow |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:270 | update_room | roster and room metadata |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:299 | update_room_closed | room end handling |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:325 | start_tutorial | enter Tutorial from play |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:334 | request_tutorial | emit tutorial_requested |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:337 | _on_tutorial_menu_exit | leave the lesson menu |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:343 | update_game_state | **the main render entry** — fans `game_state` out to every controller |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:462 | update_debug_config | apply a `debug_config` broadcast |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:26 | tutorial_requested · signal | ask ScreenManager to open the Tutorial |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:27 | tutorial_exited · signal | Tutorial finished |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:57 | _ready | construct the GameUi module family and bind nodes |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:138 | apply_accessibility | push AccessibilitySettings into the controllers |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:144 | apply_camera_zoom | **must pivot PlatformArt on its top centre** before scaling |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:151 | should_block_popovers | shared gate every popover trigger calls itself |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:159 | prepare_ui | verify the scene node contract; feeds `missing_required_nodes` |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:168 | bind_ui_nodes | aggregate every module bind_nodes(binder) through UiNodeBinder |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:189 | reset_ui | clear per-room UI state |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:209 | connect_network_signals | subscribe to NetworkManager |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:217 | _unhandled_input | fallback input |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:221 | _input | global input hooks |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:224 | _process | per-frame local ticks, incl. the round timer |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:228 | toggle_debug_overlay | duck-typed entry the debug button calls |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:231 | set_debug_context | forwards screen context to the gameplay debug controller |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:234 | _on_room_joined | routes a successful room join into the lobby screen flow |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:238 | update_room | roster and room metadata |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:263 | update_room_closed | room end handling |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:285 | start_tutorial | enter Tutorial from play |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:294 | request_tutorial | emit tutorial_requested |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:297 | _on_tutorial_menu_exit | leave the lesson menu |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:303 | update_game_state | **the main render entry** — fans `game_state` out to every controller |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:409 | update_debug_config | apply a `debug_config` broadcast |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd — 12 ln
 
@@ -358,4 +354,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-14 files · 279 symbols · 0 awaiting a `Does` line.
+14 files · 275 symbols · 0 awaiting a `Does` line.

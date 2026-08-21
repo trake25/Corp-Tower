@@ -124,7 +124,17 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:195 | flat_rest_angle · static func | final lie-flat angle |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:215 | _flatten_ease | easing into the resting angle |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd — 800 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/GameStatusController.gd — 35 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/GameStatusController.gd:9 | bind_nodes | bind connection banner and player/room session controls |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/GameStatusController.gd:16 | reset | disconnected defaults with no active session |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/GameStatusController.gd:22 | update_connection_status | show non-connected network state; hide the banner once connected |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/GameStatusController.gd:27 | update_session | expose server-provided player and room identity |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/GameStatusController.gd:32 | update_room_closed | retain visible room-closed session state |
+
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd — 785 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -137,56 +147,54 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:23 | SELECTION_PULSE_SPEED · const | selected-card pulse rate |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:24 | SELECTED_CARD_BORDER_WIDTH · const | selected-card border |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:25 | SELECTED_CARD_TINT · const | selected-card tint |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:67 | bind_nodes | declare the nodes this module needs |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:101 | setup | wire tower stack, context and accessibility |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:138 | _tower_brick_unit_size | brick size read from TowerStack |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:149 | _drag_grip_offset | resolved grip lift |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:155 | handle_input | route pointer events for drag and parallel placement |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:165 | tick | per-frame cooldown and pulse updates |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:169 | on_block_pressed | card press entry |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:181 | _on_inventory_card_gui_input | per-card input |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:213 | _handle_block_drag_input | drag gesture state machine |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:237 | can_start_block_drag | drag allowed for this card |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:240 | can_place_block | placement allowed right now |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:261 | is_placement_input_allowed | cooldown and state gate |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:274 | get_placement_cooldown_remaining_ms | per-player cooldown remaining |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:281 | update_placement_cooldown_overlays | radial cooldown per card |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:289 | begin_block_drag | start dragging a brick |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:322 | update_block_drag | follow the pointer, resolve the snap |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:351 | _resolve_snap | ask TowerStack/SnapGrid for a landing origin |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:363 | _is_snap_valid | is the resolved origin placeable |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:366 | _can_dock | may the ghost dock here |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:369 | finish_block_drag | release; **sends `place_block` with column and origin_y** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:390 | _snap_origin_y | release row sent to the server |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:396 | cancel_block_drag | abort a drag without placing |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:414 | set_parallel_placement | switch between drag and tap-to-place |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:435 | _handle_card_tap | tap on an inventory card |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:447 | select_block | parallel placement step 1: select |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:468 | deselect_block | clear selection |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:477 | _clear_selection_state | reset selection visuals and state |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:493 | _prepare_cursor_ghost | ghost that follows the aim |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:513 | _handle_selection_hover | aim preview while selected |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:522 | _update_cursor_ghost | move the aim ghost |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:546 | _show_site_overlay | show the placeable band |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:550 | _on_tower_drop_zone_gui_input | drop-zone pointer events |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:557 | _drop_zone_global_position | drop zone origin in screen space |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:563 | _aim_or_place | step 2 arm, step 3 commit; **any other tap re-aims, never places** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:575 | _arm_placement | arm a spot locally without sending |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:588 | _commit_armed_placement | second tap on the same spot sends exactly one placement |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:598 | revalidate_armed_placement | re-check on every broadcast; drops to SELECTED if a teammate fills it |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:623 | _is_same_placement | same column and origin_y as the armed spot |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:629 | _is_primary_press | primary button or touch |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:638 | _accept_tap | **tap de-dupe**; tests reset last_tap_ms between steps |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:648 | _apply_selection_visuals | selected-card styling |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:675 | _build_selected_card_style | selected-card stylebox |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:691 | _tick_selection_pulse | selected-card pulse |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:703 | is_pointer_in_tower_drop_zone | hit test against the drop zone |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:711 | update_tower_drop_zone_highlight | highlight while dragging over the tower |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:718 | reset_tower_drop_zone_highlight | clear the highlight |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:722 | update_inventory_ui | redraw hand cards from `game_state` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:767 | _selected_block_id | currently selected block |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:773 | get_slot_unlock_level | which level unlocks a slot |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:781 | update_draw_pile_ui | shared draw pile bar; reuses the DrawPile* nodes |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:66 | bind_nodes | declare the nodes this module needs |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:99 | setup | wire tower stack, context and accessibility |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:136 | _tower_brick_unit_size | brick size read from TowerStack |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:147 | _drag_grip_offset | resolved grip lift |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:153 | handle_input | route pointer events for drag and parallel placement |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:163 | tick | per-frame cooldown and pulse updates |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:167 | on_block_pressed | card press entry |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:179 | _on_inventory_card_gui_input | per-card input |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:211 | _handle_block_drag_input | drag gesture state machine |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:235 | can_start_block_drag | drag allowed for this card |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:238 | can_place_block | placement allowed right now |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:259 | is_placement_input_allowed | cooldown and state gate |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:272 | get_placement_cooldown_remaining_ms | per-player cooldown remaining |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:279 | update_placement_cooldown_overlays | radial cooldown per card |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:287 | begin_block_drag | start dragging a brick |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:320 | update_block_drag | follow the pointer, resolve the snap |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:348 | _resolve_snap | ask TowerStack/SnapGrid for a landing origin |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:360 | _is_snap_valid | is the resolved origin placeable |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:363 | _can_dock | may the ghost dock here |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:366 | finish_block_drag | release; **sends `place_block` with column and origin_y** |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:387 | _snap_origin_y | release row sent to the server |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:393 | cancel_block_drag | abort a drag without placing |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:410 | set_parallel_placement | switch between drag and tap-to-place |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:431 | _handle_card_tap | tap on an inventory card |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:443 | select_block | parallel placement step 1: select |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:464 | deselect_block | clear selection |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:473 | _clear_selection_state | reset selection visuals and state |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:489 | _prepare_cursor_ghost | ghost that follows the aim |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:509 | _handle_selection_hover | aim preview while selected |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:518 | _update_cursor_ghost | move the aim ghost |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:542 | _show_site_overlay | show the placeable band |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:546 | _on_tower_drop_zone_gui_input | drop-zone pointer events |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:553 | _drop_zone_global_position | drop zone origin in screen space |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:559 | _aim_or_place | step 2 arm, step 3 commit; **any other tap re-aims, never places** |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:571 | _arm_placement | arm a spot locally without sending |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:584 | _commit_armed_placement | second tap on the same spot sends exactly one placement |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:594 | revalidate_armed_placement | re-check on every broadcast; drops to SELECTED if a teammate fills it |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:619 | _is_same_placement | same column and origin_y as the armed spot |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:625 | _is_primary_press | primary button or touch |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:634 | _accept_tap | **tap de-dupe**; tests reset last_tap_ms between steps |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:644 | _apply_selection_visuals | selected-card styling |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:671 | _build_selected_card_style | selected-card stylebox |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:687 | _tick_selection_pulse | selected-card pulse |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:699 | is_pointer_in_tower_drop_zone | hit test against the drop zone |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:707 | update_inventory_ui | redraw hand cards from `game_state` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:752 | _selected_block_id | currently selected block |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:758 | get_slot_unlock_level | which level unlocks a slot |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:766 | update_draw_pile_ui | shared draw pile bar; reuses the DrawPile* nodes |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd — 385 ln
 
@@ -300,7 +308,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:109 | show_quick_chat_bubble | **falls back to a score popup when the speaker has no rail entry**, otherwise builds a bubble anchored 8px right of the rail at that row's vertical centre, tweened intro then hold then fade |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:166 | make_chat_bubble_style | white card, 14px corners except bottom-left at 4 — the square corner is the tail pointing back at the rail row |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd — 247 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd — 252 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -309,14 +317,15 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:5 | IMPACT_GLOW_BRIGHTEN · const | Impact flash brightness |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:21 | bind_nodes | declare the nodes this module needs |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:28 | setup | wire player context |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:32 | rail_entry | one PlayerRailEntry by seat |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:35 | rail_box | rail container by seat |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:38 | update_score_lines | **adds live levelScore while is_playing()**, else banked only |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:80 | update_impact_status_ui | per-player Impact standing |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:154 | update_impact_track | Impact bar fill; resets to 0% when a band closes |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:205 | flash_impact_bars | Impact Beat bar flash |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:231 | _impact_glow_tint | flash colour |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:241 | set_impact_status_visible | show or hide Impact status |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:33 | toggle_impact_details | open or close server-fed Impact readiness details |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:39 | rail_entry | one PlayerRailEntry by seat |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:42 | rail_box | rail container by seat |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:45 | update_score_lines | **adds live levelScore while is_playing()**, else banked only |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:87 | update_impact_status_ui | per-player Impact standing |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:161 | update_impact_track | Impact bar fill; resets to 0% when a band closes |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:212 | flash_impact_bars | Impact Beat bar flash |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:238 | _impact_glow_tint | flash colour |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:248 | set_impact_status_visible | show or hide Impact status |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 308 ln
 
@@ -379,24 +388,22 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:320 | cell_x · static func | cell column accessor |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:326 | cell_y · static func | cell row accessor |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 201 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 167 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:8 | FREEZE_BLINK_HALF_SECONDS · const | freeze countdown blink period |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:9 | FREEZE_BLINK_COLOR · const | freeze countdown colour |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:30 | bind_nodes | declare the nodes this module needs |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:46 | setup | wire context and tuning |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:49 | reset_indicators | clear the bar between rooms |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:58 | start_freeze_blink | **the start-level countdown**; there is no separate popup |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:76 | stop_freeze_blink | end the countdown blink |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:87 | tick_round_timer | **ticks locally every frame** off the last broadcast deadline |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:102 | format_clock | mm:ss formatting |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:107 | set_tower_progress | height vs target |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:120 | set_top_indicator_progress | top indicator fill |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:149 | update_top_bar_display | refresh the whole bar from `game_state` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:170 | get_tower_status | exact / overbuild / short state shown live |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:189 | update_tower_stability_ui | stability warning bands, display only |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:26 | bind_nodes | declare the nodes this module needs |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:38 | setup | wire context and tuning |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:41 | reset_indicators | clear the bar between rooms |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:50 | start_freeze_blink | **the start-level countdown**; there is no separate popup |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:68 | stop_freeze_blink | end the countdown blink |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:79 | tick_round_timer | **ticks locally every frame** off the last broadcast deadline |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:94 | format_clock | mm:ss formatting |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:99 | set_top_indicator_progress | top indicator fill |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:136 | update_top_bar_display | refresh the whole bar from `game_state` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:157 | update_tower_stability_ui | stability warning bands, display only |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd — 22 ln
 
@@ -608,4 +615,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-28 files · 459 symbols · 0 awaiting a `Does` line.
+29 files · 461 symbols · 0 awaiting a `Does` line.

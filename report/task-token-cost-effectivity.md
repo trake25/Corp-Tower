@@ -73,7 +73,8 @@ metadata cannot recover the variant.
 | 2 | Keep debug bot toggles in the lobby and reset readiness on roster changes | 2 | A | 2 | 4 | ~3,000 | ~9,000 | ~16,000 | ~16,000 | ✓ | ok | variant unrecorded | medium | client-engineer, fullstack-coordinator, server-engineer, qa-engineer, docs-steward, update-docs |
 | 3 | Reset native sign-in debug toggles per app reload and accept compatible Supabase Facebook identity IDs | 3 | B | 3 | 8 | ~8,000 | ~13,000 | ~38,000 | ~38,000 | ~ | ok | gpt-5 (variant unrecorded) | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
 | 4 | Remove OAuth diagnostic alerts and preserve web PKCE verifier across provider redirect reloads | 3 | B | 2 | 6 | ~7,000 | ~11,000 | ~32,000 | ~32,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 5 -->
+| 5 | Remove hidden legacy HUD wiring and expose connection, session, objective, Impact, and inventory state | 4 | B | 3 | 13 | late estimate ~18,000 | ~25,000 | ~55,000 | ~55,000 | ~ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
+<!-- next: row 6 -->
 
 ## Cycle 3 (closed)
 

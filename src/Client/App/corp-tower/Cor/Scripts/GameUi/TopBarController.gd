@@ -17,11 +17,7 @@ var top_indicator_frame: Panel
 var top_indicator_fill: TextureRect
 var top_indicator_fill_texture: Texture2D
 var top_indicator_label: Label
-var height_label: Label
-var tower_value_label: Label
-var tower_status_label: Label
 var tower_stability_label: Label
-var tower_fill: Panel
 var timer_deadline_ms: int = 0
 var timer_shown_seconds: int = -1
 var freeze_blink_tween: Tween
@@ -37,11 +33,7 @@ func bind_nodes(binder) -> void:
 	top_indicator_label = binder.optional_node("TopIndicatorLabel") as Label
 	if top_indicator_fill != null:
 		top_indicator_fill_texture = top_indicator_fill.texture
-	height_label = binder.require_node("HeightLabel") as Label
-	tower_value_label = binder.require_node("TowerValueLabel") as Label
-	tower_status_label = binder.require_node("TowerStatusLabel") as Label
-	tower_stability_label = binder.optional_node("TowerStabilityLabel") as Label
-	tower_fill = binder.require_node("TowerFill") as Panel
+	tower_stability_label = binder.require_node("TowerStabilityLabel") as Label
 
 func setup(match_state_ref) -> void:
 	match_state = match_state_ref
@@ -104,20 +96,7 @@ func format_clock(total_seconds: int) -> String:
 
 	return "%02d:%02d" % [safe_seconds / 60, safe_seconds % 60]
 
-func set_tower_progress(current_height: int, target_height: int) -> void:
-	var ratio: float = 0.0
-
-	if target_height > 0:
-		ratio = clamp(float(current_height) / float(target_height), 0.0, 1.0)
-
-	tower_fill.anchor_top = 1.0 - ratio
-	tower_fill.anchor_bottom = 1.0
-	tower_fill.offset_top = 0.0
-	tower_fill.offset_bottom = 0.0
-	tower_fill.offset_left = 0.0
-	tower_fill.offset_right = 0.0
-
-func set_top_indicator_progress(current_height: int, target_height: int) -> void:
+func set_top_indicator_progress(current_height: int, target_height: int, state: String = "playing") -> void:
 	if top_indicator_fill == null:
 		return
 
@@ -137,8 +116,16 @@ func set_top_indicator_progress(current_height: int, target_height: int) -> void
 		top_indicator_frame.theme_type_variation = &"TopBarFrameAchievedPanel" if is_achieved else &"TopBarFramePanel"
 
 	if top_indicator_label != null:
-		if target_height <= 0:
-			top_indicator_label.text = "TOP"
+		if state == "room_closed":
+			top_indicator_label.text = "ROOM CLOSED"
+		elif state == "starting":
+			top_indicator_label.text = "GET READY · %d/%d" % [current_height, target_height]
+		elif state == "failed":
+			top_indicator_label.text = "LEVEL FAILED · %d/%d" % [current_height, target_height]
+		elif state == "game_completed":
+			top_indicator_label.text = "TOWER COMPLETE · %d/%d" % [current_height, target_height]
+		elif target_height <= 0:
+			top_indicator_label.text = "WAITING FOR MATCH"
 		elif is_over_build:
 			top_indicator_label.text = "OVER BUILD (%d/%d)" % [current_height, target_height]
 		elif is_perfect_build:
@@ -167,28 +154,7 @@ func update_top_bar_display(level: int, impact_level: int, state: String, second
 	else:
 		stop_freeze_blink()
 
-func get_tower_status(state: String, current_height: int, target_height: int) -> String:
-	if state == "starting":
-		return "Get ready"
-
-	if state == "failed":
-		return "Level failed"
-
-	if state == "finished":
-		return "Target reached"
-
-	if state == "game_completed":
-		return "Tower complete"
-
-	if target_height <= 0:
-		return "Waiting"
-
-	var remaining: int = max(0, target_height - current_height)
-	return str(remaining) + " height to target"
-
 func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
-	if tower_stability_label == null:
-		return
 	var safe_stability: int = clampi(stability, 0, 100)
 	var state := "Stable" if safe_stability > 60 else ("Warning" if safe_stability > 30 else "Critical")
 	var lean_suffix := ""
@@ -196,5 +162,5 @@ func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
 		var lean_direction := str(diagnostics.get("leanDirection", "center"))
 		if lean_direction != "center":
 			lean_suffix = " - leaning " + lean_direction
-	tower_stability_label.text = "Tower Stability: " + str(safe_stability) + "% (" + state + lean_suffix + ")"
+	tower_stability_label.text = state.to_upper() + " · " + str(safe_stability) + "%" + lean_suffix
 	tower_stability_label.modulate = Color(0.7, 1.0, 0.75, 1.0) if safe_stability > 60 else (Color(1.0, 0.8, 0.3, 1.0) if safe_stability > 30 else Color(1.0, 0.4, 0.32, 1.0))
