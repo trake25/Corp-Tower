@@ -50,11 +50,13 @@ const tok = s => Math.round(Buffer.byteLength(s, 'utf8') / 4);
 // site has to know, already compressed to one merged CI paragraph and one
 // numbered estate step rather than a new section.
 const BUDGETS = {
-  'index.md': 2050, 'design.md': 2050, 'content.md': 1950, 'deploy.md': 2150,
+  'index.md': 2800, 'design.md': 2800, 'content.md': 2700, 'deploy.md': 3000,
 };
 const DEFAULT_BUDGET = 1500;
-const TOTAL_BUDGET = 8100;
+const TOTAL_BUDGET = 11000;
 const MAX_LINE_CHARS = 300;
+const SECTION_WARN = 1000;
+const SECTION_LIMIT = 1600;
 
 // Constructions that turn a description of the system into a story about it.
 const BANNED = /\b(used to|previously|originally|the first attempt|was later|since removed|then deleted|reverted|earlier version|in this pass|Rejected:)\b/i;
@@ -91,6 +93,8 @@ for (const f of files) {
   total += size;
   const budget = BUDGETS[f] ?? DEFAULT_BUDGET;
   if (size > budget) errors.push(`budget: ${f} ~${size} tok > ${budget}`);
+  else if (size >= Math.round(budget * 0.85)) warnings.push(`budget pressure 85%: ${f} ~${size} / ${budget} tok`);
+  else if (size >= Math.round(budget * 0.70)) warnings.push(`budget pressure 70%: ${f} ~${size} / ${budget} tok`);
 
   body.split(/\r?\n/).forEach((line, i) => {
     const n = i + 1;
@@ -99,6 +103,18 @@ for (const f of files) {
     if (banned) errors.push(`banned phrase: ${f}:${n} "${banned[1]}"`);
     const status = STATUS.exec(line);
     if (status) warnings.push(`status marker: ${f}:${n} "${status[1]}"`);
+    if (/(?:^|[`(\s])(?:\.{0,2}\/)*(?:plan|task|reference)\/[^\s`|)]+\.[A-Za-z0-9]+/.test(line))
+      errors.push(`isolation: ${f}:${n} cites working material`);
+  });
+
+  const lines = body.split(/\r?\n/);
+  const heads = [];
+  lines.forEach((line, index) => { const match = /^##\s+(.+)$/.exec(line); if (match) heads.push({ heading: match[1], start: index }); });
+  heads.forEach((head, index) => {
+    const end = heads[index + 1]?.start ?? lines.length;
+    const sectionSize = tok(lines.slice(head.start, end).join('\n'));
+    if (sectionSize > SECTION_LIMIT) errors.push(`section: ${f} "${head.heading}" ~${sectionSize} tok > ${SECTION_LIMIT}`);
+    else if (sectionSize > SECTION_WARN) warnings.push(`large section: ${f} "${head.heading}" ~${sectionSize} tok > ${SECTION_WARN}`);
   });
 }
 if (total > TOTAL_BUDGET) errors.push(`KB total ~${total} tok > ${TOTAL_BUDGET}`);

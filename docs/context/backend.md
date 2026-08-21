@@ -39,7 +39,8 @@ the code default.
 
 ### Player identity
 
-`Auth_Verifier.js` verifies Supabase JWTs (JWKS, issuer and audience) or native
+`Auth_Verifier.js` uses the `jose` dependency to verify Supabase JWTs (JWKS,
+issuer and audience) or native
 Facebook tokens through Meta `debug_token`, returning
 `{userId, isAnonymous, displayName}` or `null` without throwing. Facebook needs
 the server-only App Secret and maps its Meta id to a stable UUID.

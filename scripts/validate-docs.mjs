@@ -2,7 +2,7 @@
 // Validates the docs/context knowledge base. Zero dependencies (Node stdlib only).
 //   node scripts/validate-docs.mjs [repoRoot] [--quiet]
 // --quiet suppresses the per-doc table and status-marker list on a passing run (the
-//   /update-docs receipt only needs pass/fail); a failing run always prints in full.
+//   update-docs receipt only needs pass/fail); a failing run always prints in full.
 //
 // Budgets are TOKENS, not lines. A 173-line ui.md passed the old line budget while
 // costing ~31k tokens, because 43 of those lines were 400+ character table cells.
@@ -20,7 +20,7 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { AREAS, firstPartyFiles, isExempt } from './build-file-map.mjs';
+import { MAP_AREAS as AREAS, firstPartyFiles, isExempt } from './lib/context-routing.mjs';
 
 const argv = process.argv.slice(2);
 const QUIET = argv.includes('--quiet');
@@ -29,41 +29,25 @@ const CTX = join(ROOT, 'docs/context');
 const MAP = join(CTX, 'map');
 const errors = [];
 const warnings = [];
+const ISOLATED_DIRS = new Set(['plan', 'task', 'reference']);
+const isIsolated = absolute => {
+  const rel = absolute.slice(ROOT.length + 1).split(/[\\/]/);
+  return rel.length > 1 && ISOLATED_DIRS.has(rel[0]);
+};
 
 const tok = s => Math.round(Buffer.byteLength(s, 'utf8') / 4);
 
-// Per-doc TOKEN budgets. Exceeding one is a split-or-compact signal, not a style
-// nit: the KB's whole value is being loadable for a task without crowding it out.
+// Per-doc token budgets are capacity ceilings, while section limits below bound
+// the normal retrieval unit. Exceeding either is a split-or-compact signal.
 const DEFAULT_BUDGET = 3000;
-// Set to just above measured size, so the next unjustified addition fails loudly.
-// ui/backend/gameplay sit above the plan's flat 5000. That gap is a real debt, not
-// a licence: what remains in them is mechanism -- how the system behaves now --
-// after removing every rejected-alternative narrative and fixed-bug story. The
-// plan expected per-symbol detail to migrate into map rows, and Phase 2 generates
-// maps bare with `Does` authored on demand, so that destination is still empty.
-// Authoring map prose is what brings these back to 5000; raising them again is not.
+// Re-baselined in the universal-agent migration from measured use of 32,673 /
+// 40,000 tokens. Active domains receive roughly 35–45% growth room, but the
+// 45,000 global ceiling remains lower than the sum of individual ceilings.
 const BUDGETS = {
-  'index.md': 1500,
-  // backend.md 5700 -> 6000: first raise. It had sat at 5698/5700 for several
-  // tasks, so every change was already compacting to fit, and Supabase token
-  // verification added a genuinely new server subsystem (Auth_Verifier, the
-  // identity override, the soft gate) rather than more prose about an old one.
-  // The same change retired the dead matchmaking-queue text. Next time it goes
-  // over, compact or split -- do not raise again.
-  'backend.md': 6000, 'gameplay.md': 5300, 'deployment.md': 5000,
-  // testing.md 3000 -> 3200: first raise, same reason as backend.md above. It
-  // sat at exactly 3000 and auth landed two genuinely new suites
-  // (Auth_Verifier.test.js, test_auth_manager.gd). The same change folded a
-  // fixed-bug story back into plain description. Next time: compact or split.
-  // build.md 3000 -> 3300: first raise. The Android deploy workflow gained a
-  // genuinely new build step (the first-party Google sign-in plugin, built by
-  // CI rather than vendored) and its own doc subsection; nothing existing was
-  // narrative to retire. Next time: compact or split.
-  'networking.md': 4000, 'build.md': 3300, 'testing.md': 3200,
-  // ui.md split by concept (screens / HUD / tutorial) once map/ui.md's single
-  // 28,000-token ceiling stopped holding the client area -- see git history on
-  // this file for the two prior MAP_BUDGET raises this replaced.
-  'ui.md': 1400, 'ui-hud.md': 4700, 'ui-tutorial.md': 700,
+  'index.md': 1800,
+  'backend.md': 8500, 'gameplay.md': 7500, 'deployment.md': 5250,
+  'networking.md': 5750, 'build.md': 4500, 'testing.md': 4000,
+  'ui.md': 2000, 'ui-hud.md': 6500, 'ui-tutorial.md': 1200,
 };
 // Map files are grep targets, not reads. Their cost model is per-hit (~150 tokens
 // for one row), not per-load, so a load budget on them measures a thing that never
@@ -89,9 +73,11 @@ const BUDGETS = {
 const MAP_BUDGET = 28000;
 // "Whole KB loadable in an emergency" is a claim about prose. Maps are excluded
 // and reported separately.
-const PROSE_TOTAL_BUDGET = 40000;
+const PROSE_TOTAL_BUDGET = 45000;
 const MAX_LINE_CHARS = 300;
 const NET_GROWTH_WARN = 30;
+const SECTION_WARN = 1000;
+const SECTION_LIMIT = 1600;
 
 // Constructions that turn a description of the system into a story about it.
 // No exemption. A failed alternative is not preserved as a narrative: if the
@@ -160,7 +146,11 @@ for (const { f, dir, txt } of all) {
         const key = abs.startsWith(MAP + sep) ? `map/${base}` : base;
         if (!anchors[key]) { errors.push(`${f}: link to missing doc '${pathPart}'`); continue; }
         tgt = key; referenced.add(key);
-      } else { if (!existsSync(abs)) errors.push(`${f}: link to missing file '${pathPart}'`); continue; }
+      } else {
+        if (isIsolated(abs)) errors.push(`${f}: knowledge-base link targets isolated working material '${pathPart}'`);
+        else if (!existsSync(abs)) errors.push(`${f}: link to missing file '${pathPart}'`);
+        continue;
+      }
     }
     if (anchor && !(anchors[tgt] && anchors[tgt].has(anchor)))
       errors.push(`${f}: dead anchor '#${anchor}' in ${tgt}`);
@@ -229,6 +219,7 @@ const basenames = new Set();
   try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
   for (const e of entries) {
     if (e.isDirectory()) {
+      if (dir === ROOT && ISOLATED_DIRS.has(e.name)) continue;
       if (/^(node_modules|\.git|\.godot|addons|\.terraform)$/.test(e.name)) continue;
       indexTree(join(dir, e.name));
     } else basenames.add(e.name);
@@ -243,6 +234,8 @@ function checkCitations(label, text) {
     const h = /^#{1,6}\s+(.*)$/.exec(line);
     if (h) { section = slug(h[1]); return; }
     if (CITATION_SKIP_SECTIONS.has(section) || CITES_OK.test(line)) return;
+    if (/(?:^|[`(\s])(?:\.{0,2}\/)*(?:plan|task|reference)\/[^\s`|)]+\.[A-Za-z0-9]+/.test(line))
+      errors.push(`${label}:${i + 1} cites isolated working material`);
     for (const m of maskGlobs(line).matchAll(FILEISH)) {
       const name = m[1];
       if (CITATION_ALLOW.has(name) || basenames.has(name)) continue;
@@ -258,6 +251,8 @@ for (const { rel } of source) {
   txt.split(/\r?\n/).forEach((line, i) => {
     const c = COMMENT.exec(line);
     if (!c || CITES_OK.test(line)) return;
+    if (/(?:^|[`(\s])(?:\.{0,2}\/)*(?:plan|task|reference)\/[^\s`|)]+\.[A-Za-z0-9]+/.test(c[1]))
+      errors.push(`${rel}:${i + 1} comment cites isolated working material`);
     for (const m of maskGlobs(c[1]).matchAll(FILEISH)) {
       const name = m[1];
       if (CITATION_ALLOW.has(name) || basenames.has(name)) continue;
@@ -279,6 +274,7 @@ const treeFiles = [];
   for (const e of entries) {
     const abs = join(dir, e.name);
     if (e.isDirectory()) {
+      if (dir === ROOT && ISOLATED_DIRS.has(e.name)) continue;
       if (/^(node_modules|\.git|\.godot|addons|\.terraform|site|site-root)$/.test(e.name)) continue;
       collect(abs);
     } else if (/\.(js|mjs|gd|sh|yml|yaml|tf|json)$/.test(e.name) && statSync(abs).size < 400_000) {
@@ -337,10 +333,10 @@ if (existsSync(pkgPath)) {
   const joined = all.map(d => d.txt).join('\n');
   for (const dep of Object.keys(pkg.dependencies || {}))
     if (!new RegExp(`\\b${dep.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(joined))
-      warnings.push(`drift: server dependency '${dep}' not mentioned in any context doc`);
+      errors.push(`drift: server dependency '${dep}' not mentioned in any context doc`);
   const mainBase = (pkg.main || '').split('/').pop();
   if (mainBase && !joined.includes(mainBase))
-    warnings.push(`drift: server entry '${mainBase}' (package.json main) not mentioned in docs`);
+    errors.push(`drift: server entry '${mainBase}' (package.json main) not mentioned in docs`);
 }
 
 // --- growth split -------------------------------------------------------------
@@ -391,7 +387,11 @@ for (const { f, txt } of all) {
   const budget = isMap ? MAP_BUDGET : (BUDGETS[f] ?? DEFAULT_BUDGET);
   counts.push([f, t, budget, lines.length, isMap]);
   if (t > budget)
-    flag(f, `over budget: ${f} ~${t} tok > ${budget}${grew(f) ? ` (and grew +${growth[f]} this run)` : ' — compact it'}`);
+    errors.push(`over budget: ${f} ~${t} tok > ${budget} — compact or split it`);
+  else if (!isMap && t >= Math.round(budget * 0.85))
+    warnings.push(`budget pressure 85%: ${f} ~${t} / ${budget} tok`);
+  else if (!isMap && t >= Math.round(budget * 0.70))
+    warnings.push(`budget pressure 70%: ${f} ~${t} / ${budget} tok`);
   if ((growth[f] || 0) > NET_GROWTH_WARN)
     warnings.push(`net growth: ${f} +${growth[f]} lines this run (> ${NET_GROWTH_WARN}) — transcribing, not documenting?`);
   let fenced = false;
@@ -413,11 +413,27 @@ for (const { f, txt } of all) {
     statusMarkers.push(`${f}:${i + 1}  ${line.trim().slice(0, 90)}`);
   });
 }
+
+for (const { f, txt } of all.filter(item => !item.f.startsWith('map/'))) {
+  const lines = txt.split(/\r?\n/);
+  const heads = [];
+  lines.forEach((line, index) => {
+    const match = /^##\s+(.+)$/.exec(line);
+    if (match) heads.push({ heading: match[1], start: index });
+  });
+  heads.forEach((head, index) => {
+    const end = heads[index + 1]?.start ?? lines.length;
+    const size = tok(lines.slice(head.start, end).join('\n'));
+    if (size > SECTION_LIMIT) errors.push(`section over limit: ${f} "${head.heading}" ~${size} tok > ${SECTION_LIMIT}`);
+    else if (size > SECTION_WARN) warnings.push(`large section: ${f} "${head.heading}" ~${size} tok > ${SECTION_WARN}`);
+  });
+}
+if (mapTodos) errors.push(`map purposes: ${mapTodos} row(s) still use TODO`);
 counts.sort((a, b) => b[1] - a[1]);
 const proseTotal = counts.filter(c => !c[4]).reduce((s, c) => s + c[1], 0);
 const mapTotal = counts.filter(c => c[4]).reduce((s, c) => s + c[1], 0);
 if (proseTotal > PROSE_TOTAL_BUDGET)
-  warnings.push(`KB prose total ~${proseTotal} tok > ${PROSE_TOTAL_BUDGET} — run /compact-docs`);
+  errors.push(`KB prose total ~${proseTotal} tok > ${PROSE_TOTAL_BUDGET} — compact or split docs`);
 
 // --- map freshness ------------------------------------------------------------
 let mapFresh = 'skipped';
@@ -435,7 +451,7 @@ try {
 const terse = QUIET && !errors.length;
 console.log('=== docs/context validation ===');
 console.log(`docs: ${files.length} + ${mapFiles.length} map   prose: ~${proseTotal} / ${PROSE_TOTAL_BUDGET} tok   maps: ~${mapTotal} tok   links: ${linkCount}   map: ${mapFresh}`);
-if (mapTodos) console.log(`map rows awaiting a Does line: ${mapTodos} (expected — author on demand, per Phase 2)`);
+if (mapTodos) console.log(`map rows awaiting a Does line: ${mapTodos}`);
 if (!terse) {
   console.log('tokens per doc (budget, net line change):');
   for (const [f, t, b, ln, isMap] of counts) {

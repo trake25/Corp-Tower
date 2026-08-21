@@ -55,12 +55,12 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Game_Engine.js:20 | getRemainingMs | round clock remaining against `endsAt` |
 | src/Server/app/Game_Engine.js:40 | broadcastGameState | builds and sends the whole `game_state` payload clients render |
 | src/Server/app/Game_Engine.js:106 | createRoom | new room state, seat assignment, start level, first deal |
-| src/Server/app/Game_Engine.js:142 | initializePlayerForRoom | TODO |
-| src/Server/app/Game_Engine.js:155 | removePlayerFromRoom | TODO |
+| src/Server/app/Game_Engine.js:142 | initializePlayerForRoom | creates the per-player engine state used by a room |
+| src/Server/app/Game_Engine.js:155 | removePlayerFromRoom | removes a player and their room-owned engine state |
 | src/Server/app/Game_Engine.js:169 | hydrateRoom | rebuild room from a Redis snapshot on reconnect or pod handoff |
 | src/Server/app/Game_Engine.js:211 | restoreTimersFromState | restart level/tick timers after hydrate |
 | src/Server/app/Game_Engine.js:253 | persistRoom | notify Lobby Manager to snapshot; engine never writes Redis itself |
-| src/Server/app/Game_Engine.js:263 | recordLevelOutcome | TODO |
+| src/Server/app/Game_Engine.js:263 | recordLevelOutcome | records the completed level result for progression and reporting |
 | src/Server/app/Game_Engine.js:277 | queueQuickChat | quick chat cooldown check and event queue |
 | src/Server/app/Game_Engine.js:310 | consumeQuickChatEvents | drain pending quick chat for the next broadcast |
 | src/Server/app/Game_Engine.js:318 | consumePowerEvents | drain pending power-activation events for broadcast |
@@ -107,7 +107,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/app/Lobby_Manager.js:6 | MAX_OPEN_ROOM_CLAIM_ATTEMPTS · const | TODO |
+| src/Server/app/Lobby_Manager.js:6 | MAX_OPEN_ROOM_CLAIM_ATTEMPTS · const | max open room claim attempts constant used by Lobby_Manager |
 | src/Server/app/Lobby_Manager.js:8 | DEFAULT_DEBUG_CONFIG · const | startup snapshot every debug reset restores to |
 | src/Server/app/Lobby_Manager.js:62 | LobbyManager · class | matchmaking, room lifecycle, reconnect, debug-config coordinator |
 | src/Server/app/Lobby_Manager.js:73 | start | boot: Redis wiring, assignment subscription |
@@ -134,24 +134,24 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Lobby_Manager.js:813 | restartRoomsAtDebugStartLevel | apply `debugStartLevel` to live rooms |
 | src/Server/app/Lobby_Manager.js:827 | restartRoomsAtCurrentLevel | `restartLevel` action; preserves total score |
 | src/Server/app/Lobby_Manager.js:843 | createBot | debug bot participant |
-| src/Server/app/Lobby_Manager.js:852 | fillRoomWithBotsIfNeeded | TODO |
-| src/Server/app/Lobby_Manager.js:867 | syncRoomBots | TODO |
+| src/Server/app/Lobby_Manager.js:852 | fillRoomWithBotsIfNeeded | fills vacant lobby seats with bots when the mode requires it |
+| src/Server/app/Lobby_Manager.js:867 | syncRoomBots | reconciles lobby bot seats with the live room roster |
 | src/Server/app/Lobby_Manager.js:899 | refreshMatchmaking | re-run matching after queue change |
-| src/Server/app/Lobby_Manager.js:913 | joinOrCreateRoom | TODO |
-| src/Server/app/Lobby_Manager.js:925 | claimOpenRoom | TODO |
-| src/Server/app/Lobby_Manager.js:978 | addPlayerToRoom | TODO |
+| src/Server/app/Lobby_Manager.js:913 | joinOrCreateRoom | joins a claimable room or creates a new lobby |
+| src/Server/app/Lobby_Manager.js:925 | claimOpenRoom | atomically claims an advertised open room for a player |
+| src/Server/app/Lobby_Manager.js:978 | addPlayerToRoom | adds a player to the room roster and persisted assignment |
 | src/Server/app/Lobby_Manager.js:1006 | createRoom | 3-seat room, engine start, Redis publish |
-| src/Server/app/Lobby_Manager.js:1068 | buildRoomJoinedPayload | TODO |
-| src/Server/app/Lobby_Manager.js:1088 | getLobbySecondsRemaining | TODO |
-| src/Server/app/Lobby_Manager.js:1099 | buildLobbyPayload | TODO |
-| src/Server/app/Lobby_Manager.js:1107 | broadcastLobbyUpdate | TODO |
-| src/Server/app/Lobby_Manager.js:1122 | toggleLobbyReady | TODO |
-| src/Server/app/Lobby_Manager.js:1147 | startMatch | TODO |
-| src/Server/app/Lobby_Manager.js:1190 | leaveLobby | TODO |
-| src/Server/app/Lobby_Manager.js:1200 | evictLobbyPlayer | TODO |
-| src/Server/app/Lobby_Manager.js:1227 | scheduleLobbyReadyTimeout | TODO |
-| src/Server/app/Lobby_Manager.js:1249 | cancelLobbyReadyTimeout | TODO |
-| src/Server/app/Lobby_Manager.js:1260 | handleLobbyReadyTimeout | TODO |
+| src/Server/app/Lobby_Manager.js:1068 | buildRoomJoinedPayload | builds the authoritative room-joined wire payload |
+| src/Server/app/Lobby_Manager.js:1088 | getLobbySecondsRemaining | returns the bounded ready-up time remaining |
+| src/Server/app/Lobby_Manager.js:1099 | buildLobbyPayload | builds the lobby state broadcast payload |
+| src/Server/app/Lobby_Manager.js:1107 | broadcastLobbyUpdate | broadcasts the current lobby roster and ready state |
+| src/Server/app/Lobby_Manager.js:1122 | toggleLobbyReady | toggles a player ready state and evaluates match start |
+| src/Server/app/Lobby_Manager.js:1147 | startMatch | transitions a ready lobby into an active game engine |
+| src/Server/app/Lobby_Manager.js:1190 | leaveLobby | handles a voluntary lobby departure |
+| src/Server/app/Lobby_Manager.js:1200 | evictLobbyPlayer | removes a disconnected or timed-out lobby player |
+| src/Server/app/Lobby_Manager.js:1227 | scheduleLobbyReadyTimeout | starts the lobby ready-up timeout |
+| src/Server/app/Lobby_Manager.js:1249 | cancelLobbyReadyTimeout | cancels the active lobby ready-up timeout |
+| src/Server/app/Lobby_Manager.js:1260 | handleLobbyReadyTimeout | resolves a lobby whose ready-up timer expired |
 | src/Server/app/Lobby_Manager.js:1279 | buildRoomRoster | roster payload with profiles and colours |
 | src/Server/app/Lobby_Manager.js:1293 | createEngine | construct Game Engine with persist/broadcast callbacks |
 | src/Server/app/Lobby_Manager.js:1315 | hydrateRoom | rebuild a room this pod did not create |
@@ -201,15 +201,15 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Redis_State.js:211 | getReconnectTtlSeconds | resolved reconnect TTL |
 | src/Server/app/Redis_State.js:215 | nextPlayerId | id allocation |
 | src/Server/app/Redis_State.js:224 | nextRoomId | id allocation |
-| src/Server/app/Redis_State.js:232 | recordDemoOutcome | TODO |
-| src/Server/app/Redis_State.js:245 | getDemoStats | TODO |
+| src/Server/app/Redis_State.js:232 | recordDemoOutcome | increments durable demo attempt and completion counters |
+| src/Server/app/Redis_State.js:245 | getDemoStats | reads durable demo attempt and completion counters |
 | src/Server/app/Redis_State.js:267 | createReconnectToken | token a client presents to resume |
 | src/Server/app/Redis_State.js:271 | saveSession | persist player session for reconnect |
 | src/Server/app/Redis_State.js:300 | getSession | look up a session by reconnect token |
 | src/Server/app/Redis_State.js:313 | markSessionDisconnected | start the reconnect grace window |
-| src/Server/app/Redis_State.js:331 | markRoomOpen | TODO |
-| src/Server/app/Redis_State.js:340 | removeOpenRoom | TODO |
-| src/Server/app/Redis_State.js:349 | claimOpenRoomId | TODO |
+| src/Server/app/Redis_State.js:331 | markRoomOpen | advertises a room as available for an atomic claim |
+| src/Server/app/Redis_State.js:340 | removeOpenRoom | removes a room from the open-room index |
+| src/Server/app/Redis_State.js:349 | claimOpenRoomId | atomically claims one room id from the open-room index |
 | src/Server/app/Redis_State.js:365 | withMatchmakingLock | cross-pod matchmaking mutex |
 | src/Server/app/Redis_State.js:391 | saveRoom | room snapshot write |
 | src/Server/app/Redis_State.js:422 | claimRoomLease | take/renew room ownership; basis of `isRoomOwner` |
@@ -231,8 +231,8 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Server.js:8 | authVerifier · const | process-wide token verifier, configured from env |
 | src/Server/app/Server.js:10 | port · const | listen port from env |
 | src/Server/app/Server.js:12 | safeJson · fn | parse guard; malformed frames never throw |
-| src/Server/app/Server.js:21 | handleStatsRequest · fn | TODO |
-| src/Server/app/Server.js:28 | requestListener · fn | TODO |
+| src/Server/app/Server.js:21 | handleStatsRequest · fn | serves the read-only demo statistics HTTP response |
+| src/Server/app/Server.js:28 | requestListener · fn | routes HTTP requests before WebSocket upgrade handling |
 | src/Server/app/Server.js:42 | main · fn | WebSocket entry point, connection accept, first `reconnect` |
 | src/Server/app/Server.js:96 | handleMessage · fn | **the message router** — every client message type dispatches here |
 
@@ -388,4 +388,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-14 files · 309 symbols · 27 awaiting a `Does` line.
+14 files · 309 symbols · 0 awaiting a `Does` line.

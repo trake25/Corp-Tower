@@ -120,9 +120,9 @@ track lists the resolved version code → remove fetched art (`if: always()`).
 every track's `versionCodes[]`, and uses the highest + 1 (or `1` if no release
 exists). An override is allowed **only as a positive integer greater than the
 detected maximum**. This now targets `com.galaxxigames.tod`, a listing
-bootstrapped by hand — see `tod-android-migration-manual-plan.md` Part G — so the
-first CI-only run resolves to version code 1 only if that manual bootstrap upload
-has not already happened.
+created in Play Console before CI can publish. The first CI-only run resolves to
+version code 1 when the listing has no release; after any manual bootstrap upload,
+the track query observes that version and increments it.
 
 **Export details:** the CI preset uses Godot's Gradle Android build path;
 `--install-android-build-template` runs during headless export; CI writes a valid

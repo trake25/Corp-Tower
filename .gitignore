@@ -22,6 +22,7 @@ infra/eks/terraform/eks-lab.tfvars
 plan/
 task/
 reference/
+report/benchmarks/raw/
 *.x86_64
 
 # Private art asset pipeline — R2 credentials for local dev.

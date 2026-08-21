@@ -1,4 +1,5 @@
 ---
+name: update-docs
 description: Diff-driven update of docs/context to match code changes. Run only after a goal is confirmed reached.
 ---
 
@@ -59,7 +60,7 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
    hide — `Game_Config.js`), `wide` (`git diff -U10`), `hunk` (`git diff -U2`).
 
 4. **Edit as replacement.** Read **only the line ranges `docs-scope.mjs` printed** —
-   the only prose this diff can have falsified — with `offset`/`limit`. Never read
+   the only prose this diff can have falsified — with a bounded line-range command. Never read
    a doc in full to change a few lines. A doc with no printed ranges is getting a
    new entry: pick the insertion point from the printed outline.
 
@@ -77,7 +78,7 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
 than 30 net lines into one doc means the session is being transcribed rather than
 the system documented — compress before finishing.
 
-Whole-KB compaction is not part of this — that is `/compact-docs`.
+Whole-KB compaction is not part of this — load `compact-docs` for that workflow.
 
 `site/` is out of scope: `docs-scope.mjs` drops those paths and prints them as
 dropped. The portfolio has its own KB at `site/docs/`, updated in place as part

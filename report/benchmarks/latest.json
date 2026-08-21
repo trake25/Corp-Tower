@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-21T01:55:35.614Z",
+  "runner": "deterministic-context-cli",
+  "client_version": "v18.19.1",
+  "model": null,
+  "provider_input_tokens": null,
+  "provider_output_tokens": null,
+  "provider_cost_usd": null,
+  "retrieval": [
+    {
+      "id": "P1",
+      "correctness": true,
+      "first_route_hit": true,
+      "fallback": false,
+      "whole_document_reads": 0,
+      "repository_bytes_returned": 259,
+      "estimated_tokens": 65,
+      "tool_calls": 2,
+      "wall_time_ms": 4.715,
+      "route": "hud",
+      "skill": "client-engineer",
+      "lookups": [
+        {
+          "map": "ui-hud",
+          "query": "auto_close_seconds",
+          "expects": "PopoverPanel.gd",
+          "matches": 1,
+          "overflow": false,
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "correctness": true,
+      "first_route_hit": true,
+      "fallback": false,
+      "whole_document_reads": 0,
+      "repository_bytes_returned": 320,
+      "estimated_tokens": 80,
+      "tool_calls": 2,
+      "wall_time_ms": 3.553,
+      "route": "hud",
+      "skill": "client-engineer",
+      "lookups": [
+        {
+          "map": "ui-hud",
+          "query": "emoji_mood_for_delta",
+          "expects": "BlockData.gd",
+          "matches": 1,
+          "overflow": false,
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "P3",
+      "correctness": true,
+      "first_route_hit": true,
+      "fallback": false,
+      "whole_document_reads": 0,
+      "repository_bytes_returned": 229,
+      "estimated_tokens": 57,
+      "tool_calls": 2,
+      "wall_time_ms": 1.427,
+      "route": "backend",
+      "skill": "server-engineer",
+      "lookups": [
+        {
+          "map": "backend",
+          "query": "updateDebugConfig",
+          "expects": "Lobby_Manager.js",
+          "matches": 1,
+          "overflow": false,
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "P4",
+      "correctness": true,
+      "first_route_hit": true,
+      "fallback": false,
+      "whole_document_reads": 0,
+      "repository_bytes_returned": 564,
+      "estimated_tokens": 141,
+      "tool_calls": 3,
+      "wall_time_ms": 4.609,
+      "route": "networking",
+      "skill": "fullstack-coordinator",
+      "lookups": [
+        {
+          "map": "ui-hud",
+          "query": "snap_radius_units",
+          "expects": "TowerStack.gd",
+          "matches": 2,
+          "overflow": false,
+          "correct": true
+        },
+        {
+          "map": "backend",
+          "query": "resolveColumnOriginX",
+          "expects": "Game_Engine.js",
+          "matches": 1,
+          "overflow": false,
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "P5",
+      "correctness": true,
+      "first_route_hit": true,
+      "fallback": false,
+      "whole_document_reads": 0,
+      "repository_bytes_returned": 458,
+      "estimated_tokens": 115,
+      "tool_calls": 3,
+      "wall_time_ms": 5.107,
+      "route": "networking",
+      "skill": "fullstack-coordinator",
+      "lookups": [
+        {
+          "map": "backend",
+          "query": "createScoreEvent",
+          "expects": "Scoring.js",
+          "matches": 1,
+          "overflow": false,
+          "correct": true
+        },
+        {
+          "map": "ui-hud",
+          "query": "process_score_events",
+          "expects": "ScorePopupController.gd",
+          "matches": 1,
+          "overflow": false,
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "P6",
+      "correctness": true,
+      "first_route_hit": true,
+      "fallback": false,
+      "whole_document_reads": 0,
+      "repository_bytes_returned": 450,
+      "estimated_tokens": 113,
+      "tool_calls": 3,
+      "wall_time_ms": 3.279,
+      "route": "backend",
+      "skill": "server-engineer",
+      "lookups": [
+        {
+          "map": "backend",
+          "query": "dispatchRoomAction",
+          "expects": "Lobby_Manager.js",
+          "matches": 1,
+          "overflow": false,
+          "correct": true
+        },
+        {
+          "map": "backend",
+          "query": "isRoomOwner",
+          "expects": "Redis_State.js",
+          "matches": 2,
+          "overflow": false,
+          "correct": true
+        }
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "id": "client",
+      "path": "src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd",
+      "expected_skill": "client-engineer",
+      "selected_skill": "client-engineer",
+      "correct": true,
+      "wall_time_ms": 2.466
+    },
+    {
+      "id": "server",
+      "path": "src/Server/app/Game_Engine.js",
+      "expected_skill": "server-engineer",
+      "selected_skill": "server-engineer",
+      "correct": true,
+      "wall_time_ms": 0.541
+    },
+    {
+      "id": "fullstack",
+      "path": "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+      "expected_skill": "fullstack-coordinator",
+      "selected_skill": "fullstack-coordinator",
+      "correct": true,
+      "wall_time_ms": 0.592
+    },
+    {
+      "id": "infra",
+      "path": ".github/workflows/Android-Deploy-wstodplay.yml",
+      "expected_skill": "infra-engineer",
+      "selected_skill": "infra-engineer",
+      "correct": true,
+      "wall_time_ms": 0.393
+    },
+    {
+      "id": "qa",
+      "path": "src/Server/tests/Gameplay_Events.test.js",
+      "expected_skill": "qa-engineer",
+      "selected_skill": "qa-engineer",
+      "correct": true,
+      "wall_time_ms": 0.036
+    },
+    {
+      "id": "docs",
+      "path": "scripts/validate-docs.mjs",
+      "expected_skill": "docs-steward",
+      "selected_skill": "docs-steward",
+      "correct": true,
+      "wall_time_ms": 0.888
+    },
+    {
+      "id": "web",
+      "path": "site/src/components/diagrams/QaLoopDiagram.astro",
+      "expected_skill": "web-designer",
+      "selected_skill": "web-designer",
+      "correct": true,
+      "wall_time_ms": 0.732
+    },
+    {
+      "id": "editorial",
+      "path": "site/src/content/cards/qa.md",
+      "expected_skill": "editorial",
+      "selected_skill": "editorial",
+      "correct": true,
+      "wall_time_ms": 0.269
+    }
+  ]
+}

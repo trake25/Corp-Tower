@@ -11,33 +11,33 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:3 | confirmed · signal | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:4 | dismissed · signal | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:6 | OUTSIDE_TAP_GRACE_MS · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:7 | COUNTDOWN_SECONDS · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:8 | TIME_EXPIRED_BODY · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:9 | DISCONNECTED_BODY · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:21 | _ready | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:28 | open_leave_lobby | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:35 | open_time_expired | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:41 | open_disconnected | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:47 | close | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:54 | _start_countdown | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:60 | _open | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:64 | _on_continue_pressed | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:72 | _finish_countdown | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:77 | _process | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:87 | _refresh_countdown_body | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:96 | _on_dim_layer_gui_input | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:3 | confirmed · signal | emitted when the modal action is confirmed |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:4 | dismissed · signal | emitted when the modal closes without confirmation |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:6 | OUTSIDE_TAP_GRACE_MS · const | outside tap grace ms constant used by ConfirmModal |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:7 | COUNTDOWN_SECONDS · const | countdown seconds constant used by ConfirmModal |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:8 | TIME_EXPIRED_BODY · const | time expired body constant used by ConfirmModal |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:9 | DISCONNECTED_BODY · const | disconnected body constant used by ConfirmModal |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:21 | _ready | initializes node state and connects runtime signals |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:28 | open_leave_lobby | opens the modal for a voluntary lobby exit |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:35 | open_time_expired | opens the modal with the ready-timeout message |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:41 | open_disconnected | opens the modal with the disconnected message |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:47 | close | closes the modal and clears its countdown state |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:54 | _start_countdown | starts the modal confirmation countdown |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:60 | _open | configures and displays the requested modal state |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:64 | _on_continue_pressed | accepts the modal action and emits confirmation |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:72 | _finish_countdown | finishes the countdown and resolves the modal action |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:77 | _process | updates time-sensitive view state each frame |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:87 | _refresh_countdown_body | renders the current countdown value in the modal copy |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:96 | _on_dim_layer_gui_input | dismisses the modal for a valid outside click |
 
 ### src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd — 19 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:3 | cancel_requested · signal | player backed out of matchmaking |
-| src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:5 | SWEEP_SECONDS · const | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:5 | SWEEP_SECONDS · const | sweep seconds constant used by FindMatchScreen |
 | src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:9 | _ready | wire NetworkManager status |
-| src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:12 | _process | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:12 | _process | updates time-sensitive view state each frame |
 | src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:17 | _on_cancel_pressed | leave the queue |
 
 ### src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd — 14 ln
@@ -78,7 +78,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:249 | toggle_debug_overlay | duck-typed entry the debug button calls |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:252 | update_status | connection status text |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:255 | update_connect_button | connect button label and state |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:263 | _on_room_joined | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:263 | _on_room_joined | routes a successful room join into the lobby screen flow |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:267 | update_room | roster and room metadata |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:296 | update_room_closed | room end handling |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:322 | start_tutorial | enter Tutorial from play |
@@ -109,26 +109,26 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:3 | leave_lobby_requested · signal | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:7 | WAITING_NAME · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:8 | READY_COUNTDOWN_FORMAT · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:9 | READY_LABEL · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:10 | CANCEL_LABEL · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:11 | SEAT_COUNT · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:12 | DISABLED_MODULATE · const | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:20 | _ready | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:28 | _exit_tree | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:32 | apply_lobby_data | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:36 | _on_lobby_updated | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:40 | _apply_roster | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:56 | _set_room_full | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:60 | _apply_lobby_state | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:82 | _process | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:97 | _refresh_ready_label | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:105 | _apply_local_ready_style | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:109 | _on_ready_pressed | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:114 | _on_back_pressed | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:117 | _on_leave_confirmed | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:3 | leave_lobby_requested · signal | emitted when leave lobby requested |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:7 | WAITING_NAME · const | waiting name constant used by PublicLobbyScreen |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:8 | READY_COUNTDOWN_FORMAT · const | ready countdown format constant used by PublicLobbyScreen |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:9 | READY_LABEL · const | ready label constant used by PublicLobbyScreen |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:10 | CANCEL_LABEL · const | cancel label constant used by PublicLobbyScreen |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:11 | SEAT_COUNT · const | seat count constant used by PublicLobbyScreen |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:12 | DISABLED_MODULATE · const | disabled modulate constant used by PublicLobbyScreen |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:20 | _ready | initializes node state and connects runtime signals |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:28 | _exit_tree | disconnects signals and releases node-owned state |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:32 | apply_lobby_data | applies an authoritative lobby payload to the screen |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:36 | _on_lobby_updated | receives and renders a lobby update broadcast |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:40 | _apply_roster | renders the lobby seat roster from authoritative data |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:56 | _set_room_full | updates controls and copy for a full lobby |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:60 | _apply_lobby_state | renders lobby readiness and countdown state |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:82 | _process | updates time-sensitive view state each frame |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:97 | _refresh_ready_label | updates the ready button label from current state |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:105 | _apply_local_ready_style | updates the local ready button visual state |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:109 | _on_ready_pressed | sends the local ready toggle action |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:114 | _on_back_pressed | opens confirmation before leaving the lobby |
+| src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:117 | _on_leave_confirmed | leaves the lobby after modal confirmation |
 
 ### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 334 ln
 
@@ -141,10 +141,10 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:28 | _ready | **debug button visibility set once here from `DEBUG_UI_ENABLED`** |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:39 | _on_status_changed | relay connection status to the active screen |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:46 | _on_room_joined | swap to the live Game UI Scene |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:55 | _on_match_started | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:58 | _enter_play_instance | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:55 | _on_match_started | routes a match-start broadcast into gameplay |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:58 | _enter_play_instance | switches screen state into the active play instance |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:64 | _on_room_closed | tear the play instance down via Join Screen; in demo, back to Home instead |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:79 | _on_auto_dismiss_modal_dismissed | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:79 | _on_auto_dismiss_modal_dismissed | restores navigation after an automatic modal closes |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:84 | show_play_loader_screen | splash before join |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:89 | _on_play_loader_finished | advance to Sign-in; in demo, straight to Home |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:99 | show_sign_in_screen | Play as Guest is the only wired control |
@@ -163,8 +163,8 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:202 | show_find_match_screen | matchmaking wait screen |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:210 | _on_find_match_requested | enter the queue |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:214 | _on_cancel_requested | leave the queue |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:218 | show_public_lobby_screen | TODO |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:226 | _on_leave_lobby_requested | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:218 | show_public_lobby_screen | shows the public lobby using the latest room payload |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:226 | _on_leave_lobby_requested | opens the leave-lobby confirmation flow |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:232 | _ensure_play_instance | instantiate PlayScreenScene once per room |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:246 | _teardown_play_instance | free the play instance on room close |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:253 | _set_overlay | mount a screen in ScreenContainer |
@@ -192,7 +192,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:34 | _apply_provider_availability | **shows a button only if `AuthManager.PROVIDERS` has it**; hides row and OR divider when none qualify, so no dead social button ever ships |
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:50 | set_busy | disable the button and swap its label during sign-in |
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:61 | show_error | reveal ErrorLabel; unknown reasons fall back to the generic message |
-| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:65 | show_diagnostic | TODO |
+| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:65 | show_diagnostic | shows bounded sign-in diagnostic text to the user |
 
 ### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 692 ln
 
@@ -208,7 +208,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:10 | OAUTH_RESUME_GRACE_SECONDS · const | wait after resume before calling a flow abandoned |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:12 | REDIRECT_ANDROID · const | custom-scheme callback; **`export.cfg` must match**, asserted by `test_auth_pkce.gd` |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:13 | DEEPLINK_SCRIPT · const | vendored plugin path, loaded at runtime so nothing links against it |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:14 | GOOGLE_SIGNIN_SCRIPT · const | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:14 | GOOGLE_SIGNIN_SCRIPT · const | google signin script constant used by Auth_Manager |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:15 | FACEBOOK_SIGNIN_SCRIPT · const | first-party Facebook Android addon path |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:17 | PROVIDERS · const | **the allowlist that decides which buttons exist** — Google and Facebook |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:19 | REASON_NONE · const | empty string — the success value every call returns |
@@ -216,12 +216,12 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:21 | REASON_REJECTED · const | Supabase answered and refused |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:22 | REASON_CANCELLED · const | consent denied, or returned to the app with no callback |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:23 | REASON_BROWSER · const | the system browser would not open |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:25 | NATIVE_CODE_CANCELLED · const | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:25 | NATIVE_CODE_CANCELLED · const | native code cancelled constant used by Auth_Manager |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:27 | oauth_completed · signal | Android flow finished; carries a reason, empty on success |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:45 | _ready | load the stored session; arm the refresh timer only when enabled |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:61 | _setup_deeplink | Android only: instantiate the vendored Deeplink node and listen |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:80 | _setup_native_google | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:100 | _native_google_ready | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:80 | _setup_native_google | creates and configures the native Google sign-in bridge |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:100 | _native_google_ready | returns whether the native Google bridge can be used |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:103 | _setup_native_facebook | Android-only Facebook setup from build-injected App ID and Client Token |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:127 | _native_facebook_ready | native Facebook singleton is configured and available |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:130 | redirect_android_scheme | scheme half of `REDIRECT_ANDROID` |
@@ -235,7 +235,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:186 | restore_session | splash-time check — true routes to Home, false to Sign-in |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:203 | consume_web_callback | web only: read `?code` off the URL, exchange it, then scrub the URL |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:225 | take_oauth_error | one-shot read so Sign-in can explain a failed web return |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:230 | take_oauth_diagnostic | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:230 | take_oauth_diagnostic | returns and clears the latest OAuth diagnostic |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:235 | _save_verifier | persist the verifier before leaving for the browser |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:241 | _load_verifier | read it back on return |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:247 | _clear_verifier | single-use: cleared on exchange, cancel and sign-out |
@@ -243,14 +243,14 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:265 | is_oauth_enabled | needs auth on, the flag, **and a redirect this platform can receive** |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:268 | redirect_uri | web → build-injected origin · Android → custom scheme · else empty |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:277 | sign_in_with_provider | mint verifier → open authorize URL; returns a *launch* reason only |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:296 | _sign_in_with_native_google | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:301 | _on_google_sign_in_success | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:305 | _on_google_sign_in_failed | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:296 | _sign_in_with_native_google | starts native Google sign-in on supported Android builds |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:301 | _on_google_sign_in_success | exchanges a successful native Google result for a game session |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:305 | _on_google_sign_in_failed | normalizes and reports a native Google sign-in failure |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:317 | _sign_in_with_native_facebook | starts the plugin only if it accepts the request, then arms the callback cap |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:328 | _on_facebook_sign_in_success | stores the native token and expiry for the verified server handshake |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:339 | _on_facebook_sign_in_failed | reports the native failure without opening browser OAuth |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:352 | _expire_native_facebook_sign_in | emits a bounded rejected result if Android does not return a callback |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:362 | _sign_in_with_browser | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:362 | _sign_in_with_browser | starts the browser PKCE sign-in flow |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:379 | _expire_oauth_after_grace | resumed with no callback → cancel, so the screen cannot stick busy |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:389 | _build_authorize_url | authorize URL with the encoded redirect and **`s256`, never `plain`** |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:397 | _generate_code_verifier | 32 crypto-random bytes, base64url |
@@ -263,14 +263,14 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:472 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:501 | sign_out | clear memory and delete the session file |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:515 | seconds_until_expiry | 0 when no session is held |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:521 | _has_facebook_access_token | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:524 | _apply_facebook_session | TODO |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:532 | _store_facebook_session | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:521 | _has_facebook_access_token | checks whether a usable native Facebook token is stored |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:524 | _apply_facebook_session | applies a verified Facebook session to client auth state |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:532 | _store_facebook_session | persists the verified Facebook session fields |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:539 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:548 | _notification | refresh on app resume when the token went stale in the background |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:563 | _auth_url | join the project URL to an auth path |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:566 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:609 | _auth_error_detail | TODO |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:609 | _auth_error_detail | normalizes provider errors into bounded diagnostic detail |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:621 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:640 | _store_session | apply, then persist |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:647 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
@@ -290,9 +290,9 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:8 | SUPABASE_ANON_KEY · const | public anon key, build-injected from a secret; both must be set |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:9 | AUTH_OAUTH_ENABLED · const | gates provider sign-in; guest works without it |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:10 | AUTH_REDIRECT_WEB · const | where Supabase returns a web build; **must be in the allow list** |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:11 | AUTH_GOOGLE_SERVER_CLIENT_ID · const | TODO |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:12 | AUTH_FACEBOOK_APP_ID · const | TODO |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:13 | AUTH_FACEBOOK_CLIENT_TOKEN · const | TODO |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:11 | AUTH_GOOGLE_SERVER_CLIENT_ID · const | auth google server client id constant used by Endpoint_Config |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:12 | AUTH_FACEBOOK_APP_ID · const | auth facebook app id constant used by Endpoint_Config |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:13 | AUTH_FACEBOOK_CLIENT_TOKEN · const | auth facebook client token constant used by Endpoint_Config |
 
 ### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 320 ln
 
@@ -309,8 +309,8 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:27 | FAILOVER_SERVER_URL · const | failover endpoint, build-injected |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:29 | status_changed · signal | connection status text |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:30 | room_joined · signal | room assigned |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:31 | match_started · signal | TODO |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:32 | lobby_updated · signal | TODO |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:31 | match_started · signal | emitted when match started |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:32 | lobby_updated · signal | emitted when lobby updated |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:33 | room_closed · signal | room ended |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:34 | game_state_updated · signal | **every render starts from this signal** |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:35 | client_status · signal | connection state machine |
@@ -319,8 +319,8 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:73 | disconnect_server | close the socket |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:81 | toggle_connection | connect or disconnect |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:87 | place_block | **sends `place_block`** with column and optional origin_y |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:102 | send_ready | TODO |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:108 | leave_lobby | TODO |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:102 | send_ready | sends the lobby ready-toggle action |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:108 | leave_lobby | sends the lobby leave action |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:114 | load_reconnect_identity | read persisted id and token |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:129 | generate_uuid_v4 | new player id |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:139 | save_reconnect_identity | persist id and token |
@@ -336,4 +336,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-13 files · 262 symbols · 67 awaiting a `Does` line.
+13 files · 262 symbols · 0 awaiting a `Does` line.

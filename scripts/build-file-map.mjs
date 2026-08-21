@@ -12,92 +12,18 @@
 // re-authoring. New symbols land as TODO -- already a status marker the validator
 // surfaces -- and deleted symbols drop out silently.
 //
-// This file is also the single source of truth for "what counts as first-party
-// source". validate-docs.mjs imports AREAS/firstPartyFiles from here rather than
-// keeping its own copy, because two hand-maintained scope lists is exactly the
-// three-overlapping-catalogs defect this whole restructure exists to remove.
+// Area ownership comes from scripts/lib/context-routing.mjs, shared with docs
+// scoping and agent-config validation so a route split cannot leave stale callers.
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { MAP_AREAS } from './lib/context-routing.mjs';
 
 const CLIENT = 'src/Client/App/corp-tower';
 
-// One row per area. `roots` are repo-relative directories, walked recursively; an
-// area may instead (or also) give `files`, an explicit list of repo-relative
-// paths, for a bucket that doesn't align with a directory boundary. A file is
-// claimed by the FIRST area (in list order) whose `roots` or `files` contains
-// it, which is what makes "exactly one map file" enforceable — so a narrower
-// area (a subdirectory, or an explicit file carved out of a shared directory)
-// must be listed before the broader area it would otherwise fall into.
-export const AREAS = [
-  {
-    name: 'backend',
-    out: 'backend.md',
-    title: 'Backend — `src/Server/**`',
-    roots: ['src/Server/app', 'src/Server/tools'],
-    exts: ['.js'],
-  },
-  {
-    // Listed before ui-hud: its root is a subdirectory of ui-hud's.
-    name: 'ui-tutorial',
-    out: 'ui-tutorial.md',
-    title: 'Client — Tutorial `Cor/Scripts/GameUi/Tutorial/**`',
-    roots: [`${CLIENT}/Cor/Scripts/GameUi/Tutorial`],
-    exts: ['.gd'],
-  },
-  {
-    // Listed before ui-hud and ui-screens: DebugPanelController.gd sits inside
-    // GameUi/ alongside HUD files, DebugTooltip.gd/DebugOverlay.gd sit at the
-    // Cor/Scripts/ top level alongside screens -- no directory boundary
-    // isolates just these three, so they're named explicitly instead.
-    name: 'ui-debug',
-    out: 'ui-debug.md',
-    title: 'Client — Debug tooling',
-    files: [
-      `${CLIENT}/Cor/Scripts/GameUi/DebugPanelController.gd`,
-      `${CLIENT}/Cor/Scripts/DebugTooltip.gd`,
-      `${CLIENT}/Cor/Scripts/DebugOverlay.gd`,
-    ],
-    exts: ['.gd'],
-  },
-  {
-    // Listed before ui-screens: its root is a subdirectory of ui-screens', and
-    // its `files` name top-level Cor/Scripts/*.gd leaf components that ui-hud.md
-    // documents (Tower Stack deep-dive, Leaf components table) despite living
-    // outside GameUi/ -- same non-directory-boundary case as ui-debug above.
-    name: 'ui-hud',
-    out: 'ui-hud.md',
-    title: 'Client — Gameplay HUD & Stack `Cor/Scripts/GameUi/**` (+ leaf components)',
-    roots: [`${CLIENT}/Cor/Scripts/GameUi`],
-    files: [
-      `${CLIENT}/Cor/Scripts/TowerStack.gd`,
-      `${CLIENT}/Cor/Scripts/BlockPreview.gd`,
-      `${CLIENT}/Cor/Scripts/PopoverPanel.gd`,
-      `${CLIENT}/Cor/Scripts/ImpactBar.gd`,
-      `${CLIENT}/Cor/Scripts/CooldownOverlay.gd`,
-      `${CLIENT}/Cor/Scripts/PressTintButton.gd`,
-      `${CLIENT}/Cor/Scripts/PlayerColors.gd`,
-      `${CLIENT}/Cor/Scripts/BackgroundParallax.gd`,
-    ],
-    exts: ['.gd'],
-  },
-  {
-    // Broadest of the four ui-* areas: mops up whatever ui-tutorial, ui-debug
-    // and ui-hud didn't already claim under Cor/ and Sys/.
-    name: 'ui-screens',
-    out: 'ui-screens.md',
-    title: 'Client — Screens & Navigation `corp-tower/{Cor,Sys}/**`',
-    roots: [`${CLIENT}/Cor`, `${CLIENT}/Sys`],
-    exts: ['.gd'],
-  },
-  {
-    name: 'infra',
-    out: 'infra.md',
-    title: 'Infra — `infra/` · `.github/` · `scripts/`',
-    roots: ['infra', '.github/workflows', '.github/actions', 'scripts', 'docker'],
-    exts: ['.tf', '.yml', '.yaml', '.sh', '.mjs'],
-  },
-];
+// A file is claimed by the first shared area whose roots or explicit files
+// contain it; narrow client areas therefore precede the screens fallback.
+export const AREAS = MAP_AREAS;
 
 // Never walked. Third-party, generated, binary, or deployed separately.
 // scripts/aws is a gitignored, untracked local AWS CLI v2 bundle (see

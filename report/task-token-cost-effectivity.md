@@ -7,17 +7,37 @@ things cost lately"* — not *"did the restructure work?"* That is
 Cost is never read without correctness beside it. A cycle where `Tot` falls and
 `Hit` degrades is recorded as a **regression**, not a win.
 
+## Methodology audit (2026-08-21)
+
+The historical rows are useful observations, not provider billing records. Most
+token totals were estimated, many pre-read estimates are missing, and Cycle 1's
+summary says 19 tasks although its preserved table contains 21. The log mixes
+agents, models, effort levels and task types; correctness grades are partly
+subjective and completed tasks create selection bias. Older runs did not retain
+exact cache use, latency, bytes returned, tool calls, provider usage, or reliable
+skill-activation evidence. These flaws make trend direction more trustworthy than
+precise cost comparisons.
+
+Recommendations: use the append helper for all new rows, record exact runtime
+model IDs from session metadata, and use the normalized RAG benchmark for route,
+read-volume and latency comparisons. Leave provider token and cost fields empty
+when the client does not expose them; never mix estimates into exact fields.
+
 ## Append rule
 
-> A `<!-- next: row N -->` sentinel sits immediately below the open table. To
-> append: grep this file for the sentinel (never read the whole file) to get
-> `N`, read just that line, then replace it with the new row plus an updated
-> sentinel for `N+1`. Record `R-est` **before** reading anything. Writing row
-> 20 closes the cycle immediately: read the full table, write a plain-English
-> rollup (median `R-act`, `Hit` distribution, misroute rate, and whether the
-> cycle was cost-efficient) above it, archive it under a new
-> `## Cycle N (closed)` heading, clear the table, and reset the sentinel to
-> `row 1`. A row is the minimum required — number, columns, nothing else.
+> Record `R-est` **before** reading anything. Append through
+> `node scripts/task-report.mjs append` with one flag for every column; the
+> helper reads the `<!-- next: row N -->` sentinel without loading this report,
+> validates the row, and advances it. Row 20 also requires `--summary`; the
+> helper closes the cycle, opens the next one, and refuses a summary that omits
+> improvements, regressions, flaws, or recommendations. Run
+> `node scripts/task-report.mjs validate` to check the open cycle without editing.
+
+The rollup is written for a human reader, not as a metrics dump. It must explain
+in plain English what the cycle accomplished, whether retrieval stayed correct,
+where time or tokens were wasted, the flaws the data exposed, and the concrete
+recommendations for the next cycle. Define any abbreviation the summary uses;
+the table remains the detailed evidence rather than the prose itself.
 
 `R-est` recorded after the fact is worthless. A row where `R-est` equals `R-act`
 exactly is the tell; spot-check for it while a cycle is open.
@@ -38,7 +58,10 @@ complexity predicts cost at all.
 `Hit` ✓ first try · ~ needed a second doc · ✗ fell back to repo search · ! doc
 contradicted source.
 `V` verdict: `ok` · `→Bd` should have delegated · `→A` delegation wasn't worth it.
-`Model` model used for the task (e.g. Sonnet 5, Opus 5).
+`Model` exact runtime model id when available (for example `gpt-5.6-sol`,
+`gpt-5.6-terra`, `gpt-5.6-luna`, Sonnet 5, or Opus 5). Never collapse a known
+Codex model to `GPT-5`; use `<family> (variant unrecorded)` only when the runtime
+metadata cannot recover the variant.
 `Effort` reasoning effort level in effect (low/medium/high/xhigh/max).
 `Skills` skills loaded during the task, comma-separated.
 
@@ -59,11 +82,13 @@ contradicted source.
 | 11 | Detailed Facebook manual setup guide and repository implementation plan saved | 3 | A | 3 | 2 | ~18,000 | ~18,000 | ~18,000 | ~18,000 | ✓ | ok | Opus 5 | high | — |
 | 12 | Updated Facebook plans for current Meta Quickstart UI and clarified configuration destinations | 2 | A | 3 | 2 | ~10,000 | ~8,000 | ~8,000 | ~8,000 | ✓ | ok | Opus 5 | high | — |
 | 13 | Facebook repo integration: native Android plugin, Supabase token exchange, CI config, tests and docs | 4 | A | 3 | 17 | ~30,000 | ~32,000 | ~70,000 | ~70,000 | ✓ | ok | Opus 5 | high | — |
-| 14 | Native Facebook access-token verification bridge, profile UUID mapping, deploy secret wiring and tests | 5 | A | 4 | 17 | — | ~26,000 | ~58,000 | ~58,000 | ✓ | ok | GPT-5 | high | — |
-| 15 | Restored Facebook native callback compatibility and bounded missing callback state | 3 | A | 2 | 5 | — | ~8,000 | ~20,000 | ~20,000 | ✓ | ok | GPT-5 | high | — |
-| 16 | Documented provider display-name fallbacks and replaced stale Facebook OIDC guidance | 2 | A | 2 | 4 | — | ~6,000 | ~15,000 | ~15,000 | ✓ | ok | GPT-5 | medium | — |
-| 17 | Targeted QA gate: cross-platform root Godot policy, compact selection matrix, 53-case server suite split, CI coverage preserved | 4 | A | 2 | 10 | ~25,000 | ~24,000 | ~50,000 | ~50,000 | ✓ | ok | GPT-5 | high | qa-engineer, docs-steward |
-<!-- next: row 18 -->
+| 14 | Native Facebook access-token verification bridge, profile UUID mapping, deploy secret wiring and tests | 5 | A | 4 | 17 | — | ~26,000 | ~58,000 | ~58,000 | ✓ | ok | gpt-5.6-terra | high | — |
+| 15 | Restored Facebook native callback compatibility and bounded missing callback state | 3 | A | 2 | 5 | — | ~8,000 | ~20,000 | ~20,000 | ✓ | ok | gpt-5.6-terra | high | — |
+| 16 | Documented provider display-name fallbacks and replaced stale Facebook OIDC guidance | 2 | A | 2 | 4 | — | ~6,000 | ~15,000 | ~15,000 | ✓ | ok | gpt-5.6-terra | medium | — |
+| 17 | Targeted QA gate: cross-platform root Godot policy, compact selection matrix, 53-case server suite split, CI coverage preserved | 4 | A | 2 | 10 | ~25,000 | ~24,000 | ~50,000 | ~50,000 | ✓ | ok | gpt-5.6-sol | high | qa-engineer, docs-steward |
+| 18 | Saved approved persistent Facebook identity repository plan and manual runbook | 1 | A | 0 | 2 | — | ~1,000 | ~3,000 | ~3,000 | ✓ | ok | gpt-5.6-terra | low | — |
+| 19 | Universal agent/RAG migration: canonical skills, bounded routing, hard validators, budgets and analytics | 5 | B | 3 | 50 | unrecorded | ~65,000 | unavailable | unavailable | ✓ | ok | gpt-5.6-sol | high | skill-creator, openai-docs |
+<!-- next: row 20 -->
 
 ## Cycle 2 (closed)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Scopes a /update-docs run to ONE task. Zero dependencies (Node stdlib only).
+// Scopes an update-docs run to ONE task. Zero dependencies (Node stdlib only).
 //   node scripts/docs-scope.mjs <path> [<path>...]   # the task's files (required)
 //   node scripts/docs-scope.mjs --range <sha>^..<sha> ...  # task already committed
 //   node scripts/docs-scope.mjs --from-git           # fall back to the whole working tree
@@ -13,6 +13,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, resolve, basename } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { routeSourcePath, mapOwnerForPath } from './lib/context-routing.mjs';
 
 const argv = process.argv.slice(2);
 const FROM_GIT = argv.includes('--from-git');
@@ -37,47 +38,6 @@ const IGNORE = [
   /^plan\//, /^task\//, /^reference\//, /^docs\/context\//,
   /^src\/Client\/App\/corp-tower\/Cor\/Art\//,
   /^site\//, /^site-root\//, /^TOD/,
-];
-
-// First match wins. `read` is the strategy doc-maintenance.md step 3 applies:
-//   full  -- read the file in full (it encodes numbers/contracts a hunk can hide)
-//   wide  -- git diff -U10, escalate to a full read only if a hunk stays ambiguous
-//   hunk  -- git diff -U2 is enough
-const ROUTES = [
-  [/^src\/Server\/app\/Game_Config\.js$/,            ['backend.md', 'gameplay.md'], 'full'],
-  [/^src\/Server\/app\/engine\//,                    ['backend.md'],                'wide'],
-  [/^src\/Server\/app\/Tower_Stability\.js$/,        ['backend.md'],                'wide'],
-  [/^src\/Server\/app\/(Server|Redis_State)\.js$/,   ['networking.md', 'backend.md'], 'hunk'],
-  [/^src\/Server\/tests\//,                          ['testing.md'],                'hunk'],
-  [/^src\/Server\/tools\//,                          ['testing.md'],                'hunk'],
-  [/^src\/Server\/Dockerfile$/,                      ['build.md'],                  'hunk'],
-  [/^src\/Server\/package\.json$/,                   ['backend.md', 'build.md'],    'hunk'],
-  [/^src\/Server\/app\//,                            ['backend.md'],                'hunk'],
-  [/^src\/Client\/App\/corp-tower\/Sys\/NetMan\//,   ['networking.md'],             'hunk'],
-  [/^src\/Client\/App\/corp-tower\/Tests\//,         ['testing.md'],                'hunk'],
-  [/^src\/Client\/App\/corp-tower\/(Cor|Sys)\//,     ['ui.md'],                     'hunk'],
-  [/^src\/Client\/App\/corp-tower\/project\.godot$/, ['ui.md', 'build.md'],         'hunk'],
-  [/^src\/Client\/App\/corp-tower\//,                ['ui.md'],                     'hunk'],
-  [/^\.github\/workflows\/(EKS|Backup|Server)/,      ['deployment.md'],             'hunk'],
-  [/^\.github\/workflows\//,                         ['build.md'],                  'hunk'],
-  [/^\.github\/actions\//,                           ['build.md'],                  'hunk'],
-  [/^infra\//,                                       ['deployment.md'],             'hunk'],
-  [/^docker\//,                                      ['build.md'],                  'hunk'],
-  [/^plugins\//,                                      ['build.md'],                  'hunk'],
-  [/^scripts\/art-|^scripts\/ADDING-ART/,            ['build.md'],                  'hunk'],
-  [/^scripts\/write-endpoint-config/,                ['networking.md', 'build.md'], 'hunk'],
-  // The doc procedure lives in .claude/commands/{update,compact}-docs.md now, not
-  // in a context doc -- a change to the tooling edits the command file directly.
-  [/^scripts\/(validate-docs|docs-scope|build-file-map)\.mjs$/, [],                 'hunk'],
-  [/^scripts\//,                                     ['testing.md'],                'hunk'],
-];
-
-// Which map file owns a path. Any source change moves line numbers, so the run
-// has to say which maps need regenerating -- carry-forward makes it one command.
-const MAP_OWNER = [
-  [/^src\/Server\/(app|tools)\//,                    'map/backend.md'],
-  [/^src\/Client\/App\/corp-tower\/(Cor|Sys)\//,     'map/ui.md'],
-  [/^(infra|docker)\/|^\.github\/(workflows|actions)\/|^scripts\//, 'map/infra.md'],
 ];
 
 // --- collect the task's paths -------------------------------------------------
@@ -139,9 +99,9 @@ for (const p of scoped) {
 const byDoc = new Map();
 const unmapped = [];
 for (const path of scoped) {
-  const r = ROUTES.find(([re]) => re.test(path));
+  const r = routeSourcePath(path);
   if (!r) { unmapped.push(path); continue; }
-  const [, docs, read] = r;
+  const { docs, read } = r;
   for (const doc of docs) {
     if (!byDoc.has(doc)) byDoc.set(doc, []);
     byDoc.get(doc).push({ path, read });
@@ -186,7 +146,7 @@ function outline(doc) {
 
 // --- report -------------------------------------------------------------------
 const order = [...byDoc].sort((a, b) => b[1].length - a[1].length);
-console.log(`=== /update-docs scope: ${scoped.length} path(s) → ${byDoc.size} candidate doc(s) ===`);
+console.log(`=== update-docs scope: ${scoped.length} path(s) → ${byDoc.size} candidate doc(s) ===`);
 for (const [doc, items] of order) {
   console.log(`\n${doc}`);
   for (const { path, read } of items)
@@ -203,10 +163,10 @@ for (const [doc, items] of order) {
   }
 }
 if (unmapped.length) {
-  console.log(`\nUNMAPPED (${unmapped.length}) — route by hand, then add a rule to ROUTES:`);
+  console.log(`\nUNMAPPED (${unmapped.length}) — route by hand, then add a shared rule:`);
   unmapped.forEach(p => console.log('  ? ' + p));
 }
-const maps = [...new Set(scoped.map(p => MAP_OWNER.find(([re]) => re.test(p))?.[1]).filter(Boolean))];
+const maps = [...new Set(scoped.map(p => mapOwnerForPath(p)).filter(Boolean))].map(f => `map/${f}`);
 if (maps.length) {
   console.log(`\nMAPS TO REGENERATE (line numbers moved): ${maps.join(', ')}`);
   console.log('  node scripts/build-file-map.mjs');

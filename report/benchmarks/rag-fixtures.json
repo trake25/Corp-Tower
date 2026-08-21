@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "retrieval": [
+    { "id": "P1", "area": "hud", "queries": [{ "map": "ui-hud", "query": "auto_close_seconds", "expects": "PopoverPanel.gd" }] },
+    { "id": "P2", "area": "hud", "queries": [{ "map": "ui-hud", "query": "emoji_mood_for_delta", "expects": "BlockData.gd" }] },
+    { "id": "P3", "area": "backend", "queries": [{ "map": "backend", "query": "updateDebugConfig", "expects": "Lobby_Manager.js" }] },
+    { "id": "P4", "area": "networking", "queries": [{ "map": "ui-hud", "query": "snap_radius_units", "expects": "TowerStack.gd" }, { "map": "backend", "query": "resolveColumnOriginX", "expects": "Game_Engine.js" }] },
+    { "id": "P5", "area": "networking", "queries": [{ "map": "backend", "query": "createScoreEvent", "expects": "Scoring.js" }, { "map": "ui-hud", "query": "process_score_events", "expects": "ScorePopupController.gd" }] },
+    { "id": "P6", "area": "backend", "queries": [{ "map": "backend", "query": "dispatchRoomAction", "expects": "Lobby_Manager.js" }, { "map": "backend", "query": "isRoomOwner", "expects": "Redis_State.js" }] }
+  ],
+  "skills": [
+    { "id": "client", "path": "src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd", "expects": "client-engineer" },
+    { "id": "server", "path": "src/Server/app/Game_Engine.js", "expects": "server-engineer" },
+    { "id": "fullstack", "path": "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd", "expects": "fullstack-coordinator" },
+    { "id": "infra", "path": ".github/workflows/Android-Deploy-wstodplay.yml", "expects": "infra-engineer" },
+    { "id": "qa", "path": "src/Server/tests/Gameplay_Events.test.js", "expects": "qa-engineer" },
+    { "id": "docs", "path": "scripts/validate-docs.mjs", "expects": "docs-steward" },
+    { "id": "web", "path": "site/src/components/diagrams/QaLoopDiagram.astro", "expects": "web-designer" },
+    { "id": "editorial", "path": "site/src/content/cards/qa.md", "expects": "editorial" }
+  ]
+}

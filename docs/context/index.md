@@ -1,7 +1,7 @@
 # Corp Tower — context entry
 
 Router for the `docs/context/` knowledge base. Load **only** what the router
-names. The full retrieval contract is in the root `CLAUDE.md`.
+names. The full retrieval contract is in the root `AGENTS.md`.
 
 ## System
 
@@ -60,7 +60,7 @@ flowchart LR
 | CI build, Android, HTML5, private art pipeline | [build.md](./build.md) | [map/infra.md](./map/infra.md) |
 | Tests, balance simulator, CI gates | [testing.md](./testing.md) | — |
 | "Which file does X?" | — | the matching map |
-| Editing these docs | `/update-docs` · `/compact-docs` | — |
+| Editing these docs | `update-docs` · `compact-docs` skills | — |
 | `site/` — the portfolio, a separate Worker and its own KB | [`site/docs/index.md`](../../site/docs/index.md) | — |
 | `site-root/` — apex-domain Worker, no game code | its own README | — |
 
@@ -70,7 +70,7 @@ now and what it still cannot do — not how it got here. There is no history doc
 ## Working rules
 
 Repo-wide invariants — server authority, no comments in product source, don't
-commit — are in the root `CLAUDE.md` and are not repeated here. These are the
+commit — are in the root `AGENTS.md` and are not repeated here. These are the
 rules for writing *these docs*.
 
 - **One owning doc per concept.** Edit that doc, never a second copy.
@@ -79,7 +79,7 @@ rules for writing *these docs*.
   when it drives design conversation on its own; otherwise give name, meaning and
   shape, and let the reader open `Game_Config.js`.
 - Config keys appear in exact code-identifier form, never paraphrased.
-- Docs change only under `/update-docs` or `/compact-docs`, and edits **replace**
+- Docs change only under the `update-docs` or `compact-docs` skill, and edits **replace**
   prose rather than append to it.
 
 ## Aliases
