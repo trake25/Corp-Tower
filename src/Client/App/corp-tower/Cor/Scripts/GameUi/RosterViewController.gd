@@ -139,9 +139,6 @@ func update_impact_track(player_statuses: Array, _next_impact_level: int) -> voi
 			impact_bars[player_id].queue_free()
 			impact_bars.erase(player_id)
 
-	if impact_pill != null:
-		impact_pill.visible = true
-
 func flash_impact_bars(verdicts: Dictionary, duration_seconds: float) -> void:
 	if impact_bars.is_empty() or duration_seconds <= 0.0:
 		return

@@ -81,7 +81,8 @@ metadata cannot recover the variant.
 | 10 | Add repository-wide skill reuse and reload-reason guardrail | 1 | B | 1 | 1 | late estimate ~1,000 | ~2,000 | ~4,000 | ~4,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | none |
 | 11 | Automate canonical skill mirroring with a path-aware pre-commit hook | 2 | B | 2 | 5 | ~6,000 | ~13,000 | ~22,000 | ~22,000 | ✓ | ok | gpt-5.6 (variant unrecorded) | medium | infra-engineer,qa-engineer,docs-steward |
 | 12 | Add compact path-based QA gate for task-owned source changes | 3 | B | 2 | 6 | ~6,000 | ~18,000 | ~32,000 | ~32,000 | ✓ | ok | gpt-5.6 (variant unrecorded) | medium | qa-engineer,infra-engineer,docs-steward |
-<!-- next: row 13 -->
+| 13 | Restore player score rail and Impact progress rendering | 1 | B | 1 | 1 | late estimate ~1,000 | ~1,200 | ~3,000 | ~3,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer, qa-engineer, docs-steward |
+<!-- next: row 14 -->
 
 ## Cycle 3 (closed)
 
