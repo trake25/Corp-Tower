@@ -43,6 +43,8 @@ global floating debug button.
 - Sign-in shows a social button **only for a provider in `AuthManager.PROVIDERS`
   with OAuth on**, hiding the row and divider otherwise — no dead social button
   ships. Android returns via the vendored Deeplink plugin, web via its own URL.
+  Its debug Sign In category can locally force Google through browser OAuth by
+  disabling the default-on native Android path; the preference is per device.
 - Swaps screens inside `ScreenContainer`, driven by the child screens' request
   signals and NetworkManager's `room_joined` / `match_started` / `room_closed`.
 - Flow: Play Loader → Sign-in → Home → Join Screen; a restored session skips
@@ -62,9 +64,11 @@ global floating debug button.
 - Instantiates `PlayScreenScene` on entering Find Match or the lobby, frees it on
   close.
 - Debug button: tap vs drag via `DEBUG_BUTTON_DRAG_THRESHOLD`; *visible* from
-  `DEBUG_UI_ENABLED`, *enabled* only with a live play instance exposing
-  `toggle_debug_overlay()` and `is_conn_estab`. Position resets on `_ready()` and
-  room join, never after a drag, so a drag persists to the next join.
+  `DEBUG_UI_ENABLED`, and enabled on Sign In, Public Lobby, and Play only.
+  Sign In enables only its local Sign In category, Public Lobby only Bots, and
+  Play every gameplay category; unrelated categories remain visible but disabled.
+  Position resets on `_ready()` and room join, never after a drag, so a drag
+  persists to the next join.
 - Calls into Main by duck typing (`play_instance.call(...)`) — no static
   dependency on it.
 

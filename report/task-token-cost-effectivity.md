@@ -65,7 +65,15 @@ metadata cannot recover the variant.
 `Effort` reasoning effort level in effect (low/medium/high/xhigh/max).
 `Skills` skills loaded during the task, comma-separated.
 
-## Cycle 3 (open)
+## Cycle 4 (open)
+
+| # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+<!-- next: row 1 -->
+
+## Cycle 3 (closed)
+
+Improvement: the cycle completed a broad mix of client, server, auth, infrastructure, and documentation tasks with role-specific retrieval usually finding the correct local context. Regression: several tasks still incurred high total token cost for narrow fixes, especially when validation or cross-domain inspection expanded. Flaw: historical entries have incomplete pre-read estimates and mixed model metadata, so cost comparisons remain directional. Recommendation: record the retrieval estimate before the first read, keep implementation scope matched to the owning role, and retain targeted smoke and GUT gates for client changes.
 
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -88,7 +96,7 @@ metadata cannot recover the variant.
 | 17 | Targeted QA gate: cross-platform root Godot policy, compact selection matrix, 53-case server suite split, CI coverage preserved | 4 | A | 2 | 10 | ~25,000 | ~24,000 | ~50,000 | ~50,000 | ✓ | ok | gpt-5.6-sol | high | qa-engineer, docs-steward |
 | 18 | Saved approved persistent Facebook identity repository plan and manual runbook | 1 | A | 0 | 2 | — | ~1,000 | ~3,000 | ~3,000 | ✓ | ok | gpt-5.6-terra | low | — |
 | 19 | Universal agent/RAG migration: canonical skills, bounded routing, hard validators, budgets and analytics | 5 | B | 3 | 50 | unrecorded | ~65,000 | unavailable | unavailable | ✓ | ok | gpt-5.6-sol | high | skill-creator, openai-docs |
-<!-- next: row 20 -->
+| 20 | Screen-aware debug menu with device-local Android Google browser fallback | 3 | B | 3 | 14 | ~15,000 | ~24,000 | ~95,000 | ~95,000 | ✓ | ok | gpt-5.6 (variant unrecorded) | medium | client-engineer, qa-engineer, docs-steward, update-docs |
 
 ## Cycle 2 (closed)
 

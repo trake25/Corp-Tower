@@ -249,6 +249,9 @@ func on_connect_pressed() -> void:
 func toggle_debug_overlay() -> void:
 	debug_panel.toggle()
 
+func set_debug_context(context: String) -> void:
+	debug_panel.set_screen_context(context)
+
 func update_status(text: String) -> void:
 	status_label.text = text
 

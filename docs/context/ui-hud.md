@@ -79,6 +79,9 @@ triggers the same way.
   Hooks category's beat durations **do** round-trip despite being cosmetic — all
   three players must read the same faces and play the beat in lockstep. Per-symbol
   detail for its debug-only source → [map/ui-debug.md](./map/ui-debug.md).
+- The game debug selector receives its screen context from `ScreenManager`: lobby
+  permits Bots only, play permits all gameplay categories, and Sign In is always
+  disabled there because it belongs to the standalone sign-in overlay.
 - `ScorePopupController` lane x-positions span `0.16`–`0.84` of the layer width.
   They must stay wide enough to clear the popup's own 128px width, because
   `team_exact_bonus` fires one popup per player at the same y simultaneously.

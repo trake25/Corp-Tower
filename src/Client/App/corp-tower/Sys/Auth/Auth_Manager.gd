@@ -2,6 +2,7 @@ extends Node
 
 const SESSION_FILE := "user://corp_tower_auth_session.save"
 const VERIFIER_FILE := "user://corp_tower_auth_verifier.save"
+const DEBUG_PREFERENCES_FILE := "user://corp_tower_debug_preferences.save"
 const REFRESH_MARGIN_SECONDS := 120
 const REFRESH_CHECK_INTERVAL_SECONDS := 30.0
 const REQUEST_TIMEOUT_SECONDS := 12.0
@@ -41,9 +42,12 @@ var google_signin_node: Node = null
 var facebook_signin_node: Node = null
 var native_signin_in_flight := false
 var last_oauth_diagnostic := ""
+var native_google_enabled := true
+var debug_preferences_path := DEBUG_PREFERENCES_FILE
 
 func _ready() -> void:
 	_load_session()
+	_load_debug_preferences()
 
 	if not is_enabled():
 		return
@@ -99,6 +103,22 @@ func _setup_native_google() -> void:
 
 func _native_google_ready() -> bool:
 	return google_signin_node != null and google_signin_node.is_available()
+
+func is_native_google_enabled() -> bool:
+	return native_google_enabled
+
+func set_native_google_enabled(enabled: bool) -> void:
+	native_google_enabled = enabled
+	var preferences := ConfigFile.new()
+	preferences.set_value("oauth", "native_google_enabled", native_google_enabled)
+	preferences.save(debug_preferences_path)
+
+func _load_debug_preferences() -> void:
+	var preferences := ConfigFile.new()
+	if preferences.load(debug_preferences_path) != OK:
+		return
+
+	native_google_enabled = bool(preferences.get_value("oauth", "native_google_enabled", true))
 
 func _setup_native_facebook() -> void:
 	if not is_oauth_enabled() or OS.get_name() != "Android":
@@ -288,7 +308,7 @@ func sign_in_with_provider(provider: String) -> String:
 	if not is_oauth_enabled():
 		return REASON_REJECTED
 
-	if provider == "google" and _native_google_ready():
+	if provider == "google" and native_google_enabled and _native_google_ready():
 		return _sign_in_with_native_google()
 
 	return _sign_in_with_browser(provider)

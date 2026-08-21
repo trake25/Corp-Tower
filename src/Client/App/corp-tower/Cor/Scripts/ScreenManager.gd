@@ -7,6 +7,10 @@ const JoinScreenScene := preload("res://Cor/Scenes/JoinScreen.tscn")
 const FindMatchScreenScene := preload("res://Cor/Scenes/FindMatchScreen.tscn")
 const PublicLobbyScreenScene := preload("res://Cor/Scenes/PublicLobbyScreen.tscn")
 const PlayScreenScene := preload("res://Cor/Scenes/GameUI.tscn")
+const DEBUG_CONTEXT_NONE := ""
+const DEBUG_CONTEXT_SIGN_IN := "sign_in"
+const DEBUG_CONTEXT_LOBBY := "lobby"
+const DEBUG_CONTEXT_PLAY := "play"
 
 const DEBUG_BUTTON_DRAG_THRESHOLD := 6.0
 const DEBUG_BUTTON_MARGIN := 12.0
@@ -24,6 +28,7 @@ var find_match_active := false
 var debug_button_dragging := false
 var debug_button_pointer_id := DRAG_POINTER_NONE
 var debug_button_drag_distance := 0.0
+var debug_context := DEBUG_CONTEXT_NONE
 
 func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
@@ -58,6 +63,7 @@ func _on_match_started(_data) -> void:
 func _enter_play_instance() -> void:
 	_ensure_play_instance()
 	_clear_overlay()
+	_set_debug_context(DEBUG_CONTEXT_PLAY)
 	reset_debug_button_position()
 	update_debug_button_availability()
 
@@ -101,6 +107,7 @@ func show_sign_in_screen() -> void:
 	screen.guest_login_requested.connect(_on_guest_login_requested)
 	screen.provider_login_requested.connect(_on_provider_login_requested)
 	_set_overlay(screen)
+	_set_debug_context(DEBUG_CONTEXT_SIGN_IN)
 
 	var pending: String = AuthManager.take_oauth_error()
 
@@ -160,6 +167,7 @@ func show_home_screen() -> void:
 	screen.join_server_requested.connect(_on_home_join_server_requested)
 	screen.tutorial_requested.connect(_on_home_tutorial_requested)
 	_set_overlay(screen)
+	_set_debug_context(DEBUG_CONTEXT_NONE)
 
 func _on_home_join_server_requested() -> void:
 	if EndpointConfig.DEMO_MODE_ENABLED:
@@ -176,6 +184,7 @@ func show_join_screen() -> void:
 	screen.find_match_requested.connect(_on_find_match_requested)
 	screen.back_requested.connect(_on_join_screen_back_requested)
 	_set_overlay(screen)
+	_set_debug_context(DEBUG_CONTEXT_NONE)
 
 func _on_join_screen_back_requested() -> void:
 	show_home_screen()
@@ -188,6 +197,7 @@ func start_tutorial(lesson_id: StringName = &"") -> void:
 
 	_ensure_play_instance()
 	_clear_overlay()
+	_set_debug_context(DEBUG_CONTEXT_NONE)
 
 	if play_instance != null and is_instance_valid(play_instance) and play_instance.has_method("start_tutorial"):
 		play_instance.call("start_tutorial", lesson_id)
@@ -205,6 +215,7 @@ func show_find_match_screen() -> void:
 	var screen := FindMatchScreenScene.instantiate()
 	screen.cancel_requested.connect(_on_cancel_requested)
 	_set_overlay(screen)
+	_set_debug_context(DEBUG_CONTEXT_NONE)
 	find_match_active = true
 
 func _on_find_match_requested() -> void:
@@ -221,6 +232,7 @@ func show_public_lobby_screen(data) -> void:
 	var screen := PublicLobbyScreenScene.instantiate()
 	screen.leave_lobby_requested.connect(_on_leave_lobby_requested)
 	_set_overlay(screen)
+	_set_debug_context(DEBUG_CONTEXT_LOBBY)
 	screen.apply_lobby_data(data)
 
 func _on_leave_lobby_requested() -> void:
@@ -250,6 +262,12 @@ func _teardown_play_instance() -> void:
 	play_instance = null
 	update_debug_button_availability()
 
+func _set_debug_context(context: String) -> void:
+	debug_context = context
+	if play_instance != null and is_instance_valid(play_instance) and play_instance.has_method("set_debug_context"):
+		play_instance.call("set_debug_context", DEBUG_CONTEXT_LOBBY if context == DEBUG_CONTEXT_LOBBY else DEBUG_CONTEXT_PLAY)
+	update_debug_button_availability()
+
 func _set_overlay(screen: Node) -> void:
 	_clear_overlay()
 	current_overlay = screen
@@ -269,7 +287,18 @@ func update_debug_button_availability() -> void:
 		and is_instance_valid(play_instance)
 		and play_instance.has_method("toggle_debug_overlay")
 	)
-	debug_button.disabled = !has_play_instance or !NetworkManager.is_conn_estab
+	var sign_in_debug_available := (
+		debug_context == DEBUG_CONTEXT_SIGN_IN
+		and current_overlay != null
+		and is_instance_valid(current_overlay)
+		and current_overlay.has_method("toggle_debug_overlay")
+	)
+	var game_debug_available := (
+		(debug_context == DEBUG_CONTEXT_LOBBY or debug_context == DEBUG_CONTEXT_PLAY)
+		and has_play_instance
+		and NetworkManager.is_conn_estab
+	)
+	debug_button.disabled = not sign_in_debug_available and not game_debug_available
 
 func reset_debug_button_position() -> void:
 	debug_button.position = Vector2(
@@ -329,5 +358,7 @@ func _on_debug_button_tapped() -> void:
 	if debug_button.disabled:
 		return
 
-	if play_instance != null and is_instance_valid(play_instance) and play_instance.has_method("toggle_debug_overlay"):
+	if debug_context == DEBUG_CONTEXT_SIGN_IN and current_overlay != null and is_instance_valid(current_overlay) and current_overlay.has_method("toggle_debug_overlay"):
+		current_overlay.call("toggle_debug_overlay")
+	elif play_instance != null and is_instance_valid(play_instance) and play_instance.has_method("toggle_debug_overlay"):
 		play_instance.call("toggle_debug_overlay")

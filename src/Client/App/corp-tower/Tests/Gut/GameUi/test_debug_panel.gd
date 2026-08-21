@@ -41,6 +41,22 @@ func test_apply_config_syncs_sliders_toggles_and_options() -> void:
 	assert_eq((harness.find("BotStrategyButton") as OptionButton).selected, 1, "The MVP greedy strategy should select the second option.")
 	assert_eq((harness.find("TowerFeedbackModeButton") as OptionButton).selected, 1, "The meter_only mode should select the second option.")
 
+func test_lobby_debug_context_enables_only_bots() -> void:
+	harness.main.set_debug_context("lobby")
+	var dropdown := harness.find("DebugCategoryDropdown") as OptionButton
+
+	assert_false(dropdown.is_item_disabled(0), "Bots must be selectable in the public lobby.")
+	assert_true(dropdown.is_item_disabled(1), "Round controls must be disabled outside play.")
+	assert_true(dropdown.is_item_disabled(dropdown.item_count - 1), "Sign In must be disabled in the lobby.")
+
+func test_play_debug_context_disables_only_sign_in() -> void:
+	harness.main.set_debug_context("play")
+	var dropdown := harness.find("DebugCategoryDropdown") as OptionButton
+
+	assert_false(dropdown.is_item_disabled(0), "Bots must be selectable during play.")
+	assert_false(dropdown.is_item_disabled(1), "Gameplay controls must be selectable during play.")
+	assert_true(dropdown.is_item_disabled(dropdown.item_count - 1), "Sign In is not a gameplay category.")
+
 func test_apply_config_falls_back_to_defaults_for_missing_keys() -> void:
 	harness.main.update_debug_config({})
 	assert_eq((harness.find("BotDelayMinSlider") as HSlider).value, 2000.0, "A missing bot delay min should fall back to its default.")

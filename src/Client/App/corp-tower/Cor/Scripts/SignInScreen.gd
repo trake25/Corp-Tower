@@ -1,5 +1,7 @@
 extends Control
 
+const SignInDebugOverlayScript = preload("res://Cor/Scripts/SignInDebugOverlay.gd")
+
 signal guest_login_requested
 signal provider_login_requested(provider: String)
 
@@ -17,10 +19,15 @@ const PROVIDER_BUTTONS := {
 	"tiktok": "TiktokButton"
 }
 
+var sign_in_debug_overlay: Control
+
 func _ready() -> void:
 	%GuestButton.pressed.connect(func(): guest_login_requested.emit())
 	%ErrorLabel.visible = false
 	_apply_provider_availability()
+	if EndpointConfig.DEBUG_UI_ENABLED:
+		sign_in_debug_overlay = SignInDebugOverlayScript.new()
+		add_child(sign_in_debug_overlay)
 
 func available_providers(oauth_enabled: bool) -> Array:
 	var result := []
@@ -67,3 +74,7 @@ func show_diagnostic(diagnostic: String) -> void:
 		return
 
 	OS.alert(diagnostic, "Sign-in diagnostics")
+
+func toggle_debug_overlay() -> void:
+	if sign_in_debug_overlay != null and sign_in_debug_overlay.has_method("toggle"):
+		sign_in_debug_overlay.call("toggle")

@@ -8,8 +8,10 @@ const TOWER_FEEDBACK_MODES := ["warnings_only", "meter_only", "live_preview"]
 const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Meter Only", "Live Preview"]
 const DEBUG_CATEGORY_NAMES := [
 	"Bots", "Round", "UI", "Supply", "Scoring", "Impact", "Tower", "Power", "Parallax", "Placement",
-	"Hooks"
+	"Hooks", "Sign In"
 ]
+const DEBUG_CONTEXT_LOBBY := "lobby"
+const DEBUG_CONTEXT_PLAY := "play"
 
 const DEBUG_TOOLTIPS := {
 	"TowerStabilityDifficultyLabel": {
@@ -365,6 +367,7 @@ var screen_shake_duration_label: Control
 var screen_shake_duration_slider: HSlider
 var accessibility
 var on_tutorial_requested: Callable = Callable()
+var debug_context := DEBUG_CONTEXT_PLAY
 
 func bind_nodes(binder) -> void:
 	debug_overlay = binder.optional_node("DebugOverlay") as Control
@@ -383,6 +386,7 @@ func bind_nodes(binder) -> void:
 		"Parallax": binder.optional_node("Parallax") as Control,
 		"Placement": binder.optional_node("Placement") as Control,
 		"Hooks": binder.optional_node("Hooks") as Control,
+		"Sign In": null,
 	}
 	parallax_targets = {
 		PARALLAX_TARGET_TOWER: binder.optional_node("TowerStack"),
@@ -597,6 +601,7 @@ func setup(
 		tower_feedback_mode_button.item_selected.connect(on_tower_feedback_mode_selected)
 
 	setup_category_dropdown()
+	set_screen_context(debug_context)
 	setup_parallax_controls()
 	update_debug_labels()
 
@@ -609,14 +614,43 @@ func setup_category_dropdown() -> void:
 		category_dropdown.add_item(DEBUG_CATEGORY_NAMES[i], i)
 
 	category_dropdown.item_selected.connect(on_category_selected)
-	category_dropdown.select(0)
-	on_category_selected(0)
+	select_first_enabled_category()
+
+func set_screen_context(context: String) -> void:
+	debug_context = context
+
+	if category_dropdown == null:
+		return
+
+	for i in range(DEBUG_CATEGORY_NAMES.size()):
+		category_dropdown.set_item_disabled(i, not is_category_enabled(DEBUG_CATEGORY_NAMES[i]))
+
+	select_first_enabled_category()
+
+func is_category_enabled(category_name: String) -> bool:
+	if debug_context == DEBUG_CONTEXT_LOBBY:
+		return category_name == "Bots"
+
+	return debug_context == DEBUG_CONTEXT_PLAY and category_name != "Sign In"
+
+func select_first_enabled_category() -> void:
+	if category_dropdown == null:
+		return
+
+	for i in range(DEBUG_CATEGORY_NAMES.size()):
+		if is_category_enabled(DEBUG_CATEGORY_NAMES[i]):
+			category_dropdown.select(i)
+			on_category_selected(i)
+			return
 
 func on_category_selected(index: int) -> void:
 	if index < 0 or index >= DEBUG_CATEGORY_NAMES.size():
 		return
 
 	var selected_name: String = DEBUG_CATEGORY_NAMES[index]
+	if not is_category_enabled(selected_name):
+		select_first_enabled_category()
+		return
 	for category_name in category_panels:
 		var panel: Control = category_panels[category_name]
 		if panel != null:

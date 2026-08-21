@@ -26,7 +26,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/DebugTooltip.gd:24 | close | hide and emit dismissed |
 | src/Client/App/corp-tower/Cor/Scripts/DebugTooltip.gd:30 | _on_dim_layer_gui_input | tap-outside close, after the grace window |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd — 1148 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd — 1182 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -34,49 +34,54 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:6 | BOT_STRATEGY_MVP_GREEDY · const | `mvp_greedy`, the wire value behind dropdown index 1 |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:7 | TOWER_FEEDBACK_MODES · const | the three wire values: `warnings_only`, `meter_only`, `live_preview` |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:8 | TOWER_FEEDBACK_MODE_TITLES · const | display titles, **index-aligned with `TOWER_FEEDBACK_MODES`** — reorder one and you must reorder both |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:9 | DEBUG_CATEGORY_NAMES · const | the 11 category tabs. **Each name is also the panel node name**, so renaming a node here silently hides that tab |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:14 | DEBUG_TOOLTIPS · const | node name to `{title, body}`. **This is where the tuning is actually documented** — the formulas, defaults and trade-offs behind each dial. `bind_tooltip_row` wires them to the ⓘ buttons |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:151 | PARALLAX_TARGET_TOWER · const | `tower`, keying `parallax_targets` to the `TowerStack` node |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:152 | PARALLAX_TARGET_SKY · const | `sky`, keying `parallax_targets` to the `BgArt` node |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:153 | PARALLAX_TARGET_GROUND · const | `ground`, keying `parallax_targets` to the `PlatformArt` node |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:155 | PARALLAX_ROWS · const | 13 camera and art rows. **Client-local: these write a node property directly and never touch the server**, unlike every slider in `setup` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:223 | PLACEMENT_ROWS · const | 5 more client-local rows for drag and snap feel — snap radius, grip lift, ghost alpha and the two dot sizes |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:251 | tunable_rows · static func | `PARALLAX_ROWS + PLACEMENT_ROWS` — the single list both `bind_nodes` and `setup_parallax_controls` walk, so a new row needs no other edit |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:369 | bind_nodes | resolves every panel node as optional, and **derives slider and button names from each row key** as `<key>Slider` and `<key>Button` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:497 | setup | **the one place every server-backed dial's range, step and config key is written**; also wires the toggles, dropdowns and buttons, then paints labels once |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:603 | setup_category_dropdown | fills the dropdown from `DEBUG_CATEGORY_NAMES` and selects index 0 so a panel is always showing |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:615 | on_category_selected | shows exactly one panel by **name equality** against `category_panels` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:625 | setup_parallax_controls | seeds each slider from the **live node property**, scaling by 100 for percent rows, then wires the change handler and the ⓘ tooltip |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:647 | on_parallax_slider_changed | **writes straight to the node property** and calls `refresh_visuals` when the node has it — no server round-trip, so these do not survive a reload |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:662 | update_parallax_button_text | `<label>: <value><suffix>  ⓘ`, honouring the row's `decimals` and `percent` flags |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:678 | open_debug_tooltip | forwards title and body to the tooltip node's `open`, when the scene has one |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:682 | configure_slider | range, step and change callback in one null-safe call — how `setup` stays a flat list |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:691 | set_slider_no_signal | assigns without firing `value_changed`. **This is what stops `apply_config` echoing the server's own value back at it** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:695 | get_slider_value | the slider value, or the fallback when that slider is absent from the scene |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:701 | set_debug_label_text | null-safe `text` write through `set()`, so it works on a Label or a Button alike |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:705 | bind_tooltip_row | binds the node and, when it has a `pressed` signal **and** a `DEBUG_TOOLTIPS` entry, wires the ⓘ press; returns the node either way |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:717 | toggle | prefers the overlay's own `toggle` method, falling back to flipping `visible` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:726 | set_open | prefers the overlay's `set_open`, else sets `visible`. **Closing also closes the tooltip**, so it cannot outlive the panel |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:738 | is_open | true when the overlay exists and is visible |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:741 | on_debug_dim_layer_input | any mouse press on the dim closes the panel — the tap-outside-to-dismiss path |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:745 | on_bots_toggle | sends `debugBotsEnabled`, skipped while `is_syncing_debug_config` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:750 | on_impact_beat_toggle | sends `visualHookImpactBeat`, skipped while syncing |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:755 | on_screen_shake_toggle | sends `visualHookScreenShake`, skipped while syncing |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:760 | on_reset_debug_pressed | sends `resetDebugConfig`; **the server owns the reset**, this does not clear anything locally |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:763 | on_restart_level_pressed | sends `restartLevel`, then closes the panel so the restart is visible |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:767 | _on_tutorial_launch_pressed | closes the panel, then calls `on_tutorial_requested` — the only entry point into the tutorial |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:772 | _on_parallel_placement_pressed | toggles the accessibility flag. **A device-local setting, never sent to the server** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:778 | refresh_accessibility_row | repaints the button as `Parallel Placement: ON` or `OFF` from the stored flag |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:789 | on_bot_strategy_selected | maps index 1 to `mvp_greedy` and everything else to `cooperative`, then sends `debugBotStrategy` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:799 | on_tower_feedback_mode_selected | bounds-checks the index, then sends the matching `towerStabilityFeedbackMode` value |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:808 | send_debug_int | **one of the two outbound paths** — no-op while syncing, repaint labels, then `network.update_config` with an int |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:814 | send_debug_float | the float twin of `send_debug_int`; percent sliders divide by 100 at the call site, not here |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:820 | on_placement_popup_duration_changed | **writes local `tuning` first, then the server**, so popup length changes without waiting for the broadcast |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:824 | on_finish_popup_duration_changed | same local-then-server order for `finishScorePopupDurationMs` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:828 | on_level_summary_delay_changed | same local-then-server order for `levelSummaryDelayMs`, which `LevelSummaryController` reads |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:832 | apply_config | **the inbound path** — raises `is_syncing_debug_config`, then pushes every server value into its slider with no signal, so nothing echoes back. Returns early when the panel is not bound |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:963 | update_debug_labels | repaints every label from current slider values; called on setup and after each send |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:9 | DEBUG_CATEGORY_NAMES · const | 12 selector categories; gameplay entries remain panel node names, while Sign In belongs to its own overlay |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:13 | DEBUG_CONTEXT_LOBBY · const | context that enables Bots only |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:14 | DEBUG_CONTEXT_PLAY · const | context that enables all gameplay categories |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:16 | DEBUG_TOOLTIPS · const | node name to `{title, body}`. **This is where the tuning is actually documented** — the formulas, defaults and trade-offs behind each dial. `bind_tooltip_row` wires them to the ⓘ buttons |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:153 | PARALLAX_TARGET_TOWER · const | `tower`, keying `parallax_targets` to the `TowerStack` node |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:154 | PARALLAX_TARGET_SKY · const | `sky`, keying `parallax_targets` to the `BgArt` node |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:155 | PARALLAX_TARGET_GROUND · const | `ground`, keying `parallax_targets` to the `PlatformArt` node |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:157 | PARALLAX_ROWS · const | 13 camera and art rows. **Client-local: these write a node property directly and never touch the server**, unlike every slider in `setup` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:225 | PLACEMENT_ROWS · const | 5 more client-local rows for drag and snap feel — snap radius, grip lift, ghost alpha and the two dot sizes |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:253 | tunable_rows · static func | `PARALLAX_ROWS + PLACEMENT_ROWS` — the single list both `bind_nodes` and `setup_parallax_controls` walk, so a new row needs no other edit |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:372 | bind_nodes | resolves every panel node as optional, and **derives slider and button names from each row key** as `<key>Slider` and `<key>Button` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:501 | setup | **the one place every server-backed dial's range, step and config key is written**; also wires the toggles, dropdowns and buttons, then paints labels once |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:608 | setup_category_dropdown | fills the dropdown from `DEBUG_CATEGORY_NAMES` and selects index 0 so a panel is always showing |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:619 | set_screen_context | disables categories that cannot act on the active screen |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:630 | is_category_enabled | lobby permits Bots; play permits gameplay categories but never Sign In |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:636 | select_first_enabled_category | selects the first permitted category after a context change |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:646 | on_category_selected | shows exactly one panel by **name equality** against `category_panels` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:659 | setup_parallax_controls | seeds each slider from the **live node property**, scaling by 100 for percent rows, then wires the change handler and the ⓘ tooltip |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:681 | on_parallax_slider_changed | **writes straight to the node property** and calls `refresh_visuals` when the node has it — no server round-trip, so these do not survive a reload |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:696 | update_parallax_button_text | `<label>: <value><suffix>  ⓘ`, honouring the row's `decimals` and `percent` flags |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:712 | open_debug_tooltip | forwards title and body to the tooltip node's `open`, when the scene has one |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:716 | configure_slider | range, step and change callback in one null-safe call — how `setup` stays a flat list |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:725 | set_slider_no_signal | assigns without firing `value_changed`. **This is what stops `apply_config` echoing the server's own value back at it** |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:729 | get_slider_value | the slider value, or the fallback when that slider is absent from the scene |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:735 | set_debug_label_text | null-safe `text` write through `set()`, so it works on a Label or a Button alike |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:739 | bind_tooltip_row | binds the node and, when it has a `pressed` signal **and** a `DEBUG_TOOLTIPS` entry, wires the ⓘ press; returns the node either way |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:751 | toggle | prefers the overlay's own `toggle` method, falling back to flipping `visible` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:760 | set_open | prefers the overlay's `set_open`, else sets `visible`. **Closing also closes the tooltip**, so it cannot outlive the panel |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:772 | is_open | true when the overlay exists and is visible |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:775 | on_debug_dim_layer_input | any mouse press on the dim closes the panel — the tap-outside-to-dismiss path |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:779 | on_bots_toggle | sends `debugBotsEnabled`, skipped while `is_syncing_debug_config` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:784 | on_impact_beat_toggle | sends `visualHookImpactBeat`, skipped while syncing |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:789 | on_screen_shake_toggle | sends `visualHookScreenShake`, skipped while syncing |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:794 | on_reset_debug_pressed | sends `resetDebugConfig`; **the server owns the reset**, this does not clear anything locally |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:797 | on_restart_level_pressed | sends `restartLevel`, then closes the panel so the restart is visible |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:801 | _on_tutorial_launch_pressed | closes the panel, then calls `on_tutorial_requested` — the only entry point into the tutorial |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:806 | _on_parallel_placement_pressed | toggles the accessibility flag. **A device-local setting, never sent to the server** |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:812 | refresh_accessibility_row | repaints the button as `Parallel Placement: ON` or `OFF` from the stored flag |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:823 | on_bot_strategy_selected | maps index 1 to `mvp_greedy` and everything else to `cooperative`, then sends `debugBotStrategy` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:833 | on_tower_feedback_mode_selected | bounds-checks the index, then sends the matching `towerStabilityFeedbackMode` value |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:842 | send_debug_int | **one of the two outbound paths** — no-op while syncing, repaint labels, then `network.update_config` with an int |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:848 | send_debug_float | the float twin of `send_debug_int`; percent sliders divide by 100 at the call site, not here |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:854 | on_placement_popup_duration_changed | **writes local `tuning` first, then the server**, so popup length changes without waiting for the broadcast |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:858 | on_finish_popup_duration_changed | same local-then-server order for `finishScorePopupDurationMs` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:862 | on_level_summary_delay_changed | same local-then-server order for `levelSummaryDelayMs`, which `LevelSummaryController` reads |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:866 | apply_config | **the inbound path** — raises `is_syncing_debug_config`, then pushes every server value into its slider with no signal, so nothing echoes back. Returns early when the panel is not bound |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:997 | update_debug_labels | repaints every label from current slider values; called on setup and after each send |
 
 ---
 
-3 files · 55 symbols · 0 awaiting a `Does` line.
+3 files · 60 symbols · 0 awaiting a `Does` line.
