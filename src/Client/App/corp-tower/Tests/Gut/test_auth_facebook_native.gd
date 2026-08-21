@@ -40,12 +40,6 @@ func test_facebook_authorize_url_uses_provider_generic_pkce() -> void:
 	assert_true(url.contains("provider=facebook"))
 	assert_true(url.contains("code_challenge_method=s256"))
 
-func test_diagnostic_is_empty_by_default_and_can_be_consumed() -> void:
-	assert_eq(auth.take_oauth_diagnostic(), "")
-	auth.last_oauth_diagnostic = "safe diagnostic"
-	assert_eq(auth.take_oauth_diagnostic(), "safe diagnostic")
-	assert_eq(auth.take_oauth_diagnostic(), "")
-
 func test_native_facebook_session_uses_its_access_token_on_the_server_wire() -> void:
 	var expiry := int(Time.get_unix_time_from_system()) + 3600
 

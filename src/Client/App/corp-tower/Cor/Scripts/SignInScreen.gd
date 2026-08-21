@@ -69,12 +69,6 @@ func show_error(reason: String) -> void:
 	%ErrorLabel.text = ERROR_MESSAGES.get(reason, ERROR_MESSAGES["rejected"])
 	%ErrorLabel.visible = true
 
-func show_diagnostic(diagnostic: String) -> void:
-	if not EndpointConfig.DEBUG_UI_ENABLED:
-		return
-
-	OS.alert(diagnostic, "Sign-in diagnostics")
-
 func toggle_debug_overlay() -> void:
 	if sign_in_debug_overlay != null and sign_in_debug_overlay.has_method("toggle"):
 		sign_in_debug_overlay.call("toggle")

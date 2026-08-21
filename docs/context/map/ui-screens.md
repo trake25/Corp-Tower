@@ -131,7 +131,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:114 | _on_back_pressed | opens confirmation before leaving the lobby |
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:117 | _on_leave_confirmed | leaves the lobby after modal confirmation |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 365 ln
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 361 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -157,31 +157,31 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:129 | _on_provider_login_requested | launch the provider flow, then **await `oauth_completed`** — except on web, where the page is already navigating away |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:150 | _set_sign_in_busy | duck-typed busy toggle on whichever sign-in screen is mounted |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:154 | _show_sign_in_error | surface a reason, but only if that screen is still the live overlay |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:165 | show_home_screen | Private Server / Join Server / Game Tutorial menu |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:172 | _on_home_join_server_requested | advance to the join screen; in demo, `connect_server()` directly |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:178 | _on_home_tutorial_requested | start the Tutorial from Home |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:181 | show_join_screen | join / matchmaking entry screen, no tutorial button |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:189 | _on_join_screen_back_requested | return to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:192 | start_tutorial | mount the Tutorial over the real HUD |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:205 | _on_play_instance_tutorial_requested | Tutorial requested from inside play |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:208 | _on_play_instance_tutorial_exited | return from Tutorial to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:212 | show_find_match_screen | matchmaking wait screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:221 | _on_find_match_requested | enter the queue |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:225 | _on_cancel_requested | leave the queue |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:229 | show_public_lobby_screen | shows the public lobby using the latest room payload |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:238 | _on_leave_lobby_requested | opens the leave-lobby confirmation flow |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:244 | _ensure_play_instance | instantiate PlayScreenScene once per room |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:258 | _teardown_play_instance | free the play instance on room close |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:265 | _set_debug_context | updates the trigger and forwards lobby/play restrictions to Main |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:271 | _set_overlay | mount a screen in ScreenContainer |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:276 | _clear_overlay | unmount the current screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:284 | update_debug_button_availability | enabled only with a live instance and a connection |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:303 | reset_debug_button_position | runs on ready and room join, never after a manual drag |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:309 | _on_debug_button_gui_input | tap-vs-drag discrimination |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:334 | _begin_debug_button_gesture | start tracking a pointer |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:339 | _end_debug_button_gesture | stop tracking |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:347 | _move_debug_button | drag the floating button, clamped on screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:357 | _on_debug_button_tapped | calls Main by duck typing; no static dependency |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:161 | show_home_screen | Private Server / Join Server / Game Tutorial menu |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:168 | _on_home_join_server_requested | advance to the join screen; in demo, `connect_server()` directly |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:174 | _on_home_tutorial_requested | start the Tutorial from Home |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:177 | show_join_screen | join / matchmaking entry screen, no tutorial button |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:185 | _on_join_screen_back_requested | return to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:188 | start_tutorial | mount the Tutorial over the real HUD |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:201 | _on_play_instance_tutorial_requested | Tutorial requested from inside play |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:204 | _on_play_instance_tutorial_exited | return from Tutorial to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:208 | show_find_match_screen | matchmaking wait screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:217 | _on_find_match_requested | enter the queue |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:221 | _on_cancel_requested | leave the queue |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:225 | show_public_lobby_screen | shows the public lobby using the latest room payload |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:234 | _on_leave_lobby_requested | opens the leave-lobby confirmation flow |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:240 | _ensure_play_instance | instantiate PlayScreenScene once per room |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:254 | _teardown_play_instance | free the play instance on room close |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:261 | _set_debug_context | updates the trigger and forwards lobby/play restrictions to Main |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:267 | _set_overlay | mount a screen in ScreenContainer |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:272 | _clear_overlay | unmount the current screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:280 | update_debug_button_availability | enabled only with a live instance and a connection |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:299 | reset_debug_button_position | runs on ready and room join, never after a manual drag |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:305 | _on_debug_button_gui_input | tap-vs-drag discrimination |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:330 | _begin_debug_button_gesture | start tracking a pointer |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:335 | _end_debug_button_gesture | stop tracking |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:343 | _move_debug_button | drag the floating button, clamped on screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:353 | _on_debug_button_tapped | calls Main by duck typing; no static dependency |
 
 ### src/Client/App/corp-tower/Cor/Scripts/SignInDebugOverlay.gd — 120 ln
 
@@ -196,7 +196,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/SignInDebugOverlay.gd:114 | _on_native_facebook_toggled | persists the local native-Facebook choice |
 | src/Client/App/corp-tower/Cor/Scripts/SignInDebugOverlay.gd:117 | _on_dim_input | closes on a dim-layer click |
 
-### src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd — 81 ln
+### src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd — 75 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -211,33 +211,33 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:41 | _apply_provider_availability | **shows a button only if `AuthManager.PROVIDERS` has it**; hides row and OR divider when none qualify, so no dead social button ever ships |
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:57 | set_busy | disable the button and swap its label during sign-in |
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:68 | show_error | reveal ErrorLabel; unknown reasons fall back to the generic message |
-| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:72 | show_diagnostic | shows bounded sign-in diagnostic text to the user |
-| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:78 | toggle_debug_overlay | floating debug-button entry for the local sign-in overlay |
+| src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:72 | toggle_debug_overlay | floating debug-button entry for the local sign-in overlay |
 
-### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 705 ln
+### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 692 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:3 | SESSION_FILE · const | persisted Supabase session — tokens and expiry |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:4 | VERIFIER_FILE · const | PKCE verifier, on disk because the web redirect restarts the app |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:5 | REFRESH_MARGIN_SECONDS · const | refresh this far ahead of expiry |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:6 | REFRESH_CHECK_INTERVAL_SECONDS · const | background timer period |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:7 | REQUEST_TIMEOUT_SECONDS · const | per-request cap on every auth call |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:8 | NATIVE_FACEBOOK_TIMEOUT_SECONDS · const | cap before a missing native callback releases the sign-in screen |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:9 | VERIFIER_BYTES · const | 32 → a 43-char base64url verifier, the RFC 7636 minimum |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:10 | OAUTH_RESUME_GRACE_SECONDS · const | wait after resume before calling a flow abandoned |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:12 | REDIRECT_ANDROID · const | custom-scheme callback; **`export.cfg` must match**, asserted by `test_auth_pkce.gd` |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:13 | DEEPLINK_SCRIPT · const | vendored plugin path, loaded at runtime so nothing links against it |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:14 | GOOGLE_SIGNIN_SCRIPT · const | google signin script constant used by Auth_Manager |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:15 | FACEBOOK_SIGNIN_SCRIPT · const | first-party Facebook Android addon path |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:17 | PROVIDERS · const | **the allowlist that decides which buttons exist** — Google and Facebook |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:19 | REASON_NONE · const | empty string — the success value every call returns |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:20 | REASON_UNREACHABLE · const | network or timeout — distinct from a refusal |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:21 | REASON_REJECTED · const | Supabase answered and refused |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:22 | REASON_CANCELLED · const | consent denied, or returned to the app with no callback |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:23 | REASON_BROWSER · const | the system browser would not open |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:25 | NATIVE_CODE_CANCELLED · const | native code cancelled constant used by Auth_Manager |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:27 | oauth_completed · signal | Android flow finished; carries a reason, empty on success |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:5 | WEB_VERIFIER_KEY · const | same-tab session-storage key for the web PKCE verifier |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:6 | REFRESH_MARGIN_SECONDS · const | refresh this far ahead of expiry |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:7 | REFRESH_CHECK_INTERVAL_SECONDS · const | background timer period |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:8 | REQUEST_TIMEOUT_SECONDS · const | per-request cap on every auth call |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:9 | NATIVE_FACEBOOK_TIMEOUT_SECONDS · const | cap before a missing native callback releases the sign-in screen |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:10 | VERIFIER_BYTES · const | 32 → a 43-char base64url verifier, the RFC 7636 minimum |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:11 | OAUTH_RESUME_GRACE_SECONDS · const | wait after resume before calling a flow abandoned |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:13 | REDIRECT_ANDROID · const | custom-scheme callback; **`export.cfg` must match**, asserted by `test_auth_pkce.gd` |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:14 | DEEPLINK_SCRIPT · const | vendored plugin path, loaded at runtime so nothing links against it |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:15 | GOOGLE_SIGNIN_SCRIPT · const | google signin script constant used by Auth_Manager |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:16 | FACEBOOK_SIGNIN_SCRIPT · const | first-party Facebook Android addon path |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:18 | PROVIDERS · const | **the allowlist that decides which buttons exist** — Google and Facebook |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:20 | REASON_NONE · const | empty string — the success value every call returns |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:21 | REASON_UNREACHABLE · const | network or timeout — distinct from a refusal |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:22 | REASON_REJECTED · const | Supabase answered and refused |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:23 | REASON_CANCELLED · const | consent denied, or returned to the app with no callback |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:24 | REASON_BROWSER · const | the system browser would not open |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:26 | NATIVE_CODE_CANCELLED · const | native code cancelled constant used by Auth_Manager |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:28 | oauth_completed · signal | Android flow finished; carries a reason, empty on success |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:47 | _ready | load the stored session; arm the refresh timer only when enabled |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:63 | _setup_deeplink | Android only: instantiate the vendored Deeplink node and listen |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:82 | _setup_native_google | creates and configures the native Google sign-in bridge |
@@ -259,47 +259,45 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:200 | restore_session | splash-time check — true routes to Home, false to Sign-in |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:217 | consume_web_callback | web only: read `?code` off the URL, exchange it, then scrub the URL |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:239 | take_oauth_error | one-shot read so Sign-in can explain a failed web return |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:244 | take_oauth_diagnostic | returns and clears the latest OAuth diagnostic |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:249 | _save_verifier | persist the verifier before leaving for the browser |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:255 | _load_verifier | read it back on return |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:261 | _clear_verifier | single-use: cleared on exchange, cancel and sign-out |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:265 | sign_in_guest | anonymous sign-up; returns a reason code, empty on success |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:279 | is_oauth_enabled | needs auth on, the flag, **and a redirect this platform can receive** |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:282 | redirect_uri | web → build-injected origin · Android → custom scheme · else empty |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:291 | sign_in_with_provider | mint verifier → open authorize URL; returns a *launch* reason only |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:306 | _sign_in_with_native_google | starts native Google sign-in on supported Android builds |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:311 | _on_google_sign_in_success | exchanges a successful native Google result for a game session |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:315 | _on_google_sign_in_failed | normalizes and reports a native Google sign-in failure |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:327 | _sign_in_with_native_facebook | starts the plugin only if it accepts the request, then arms the callback cap |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:338 | _on_facebook_sign_in_success | stores the native token and expiry for the verified server handshake |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:349 | _on_facebook_sign_in_failed | reports the native failure without opening browser OAuth |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:365 | _expire_native_facebook_sign_in | emits a bounded rejected result if Android does not return a callback |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:375 | _sign_in_with_browser | starts the browser PKCE sign-in flow |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:392 | _expire_oauth_after_grace | resumed with no callback → cancel, so the screen cannot stick busy |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:402 | _build_authorize_url | authorize URL with the encoded redirect and **`s256`, never `plain`** |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:410 | _generate_code_verifier | 32 crypto-random bytes, base64url |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:413 | _code_challenge | SHA-256 → base64url; checked against the RFC 7636 vector |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:419 | _base64url | base64 → url-safe alphabet, padding stripped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:422 | _parse_callback_query | pull `code`/`error` off a callback query; junk pairs skipped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:439 | _exchange_code | `grant_type=pkce` swap of code + verifier for a session |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:460 | _build_id_token_body | provider-specific Supabase token exchange body; Google adds client_id |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:468 | _exchange_id_token | exchange Google ID token or Facebook access token for a session |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:485 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:514 | sign_out | clear memory and delete the session file |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:528 | seconds_until_expiry | 0 when no session is held |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:534 | _has_facebook_access_token | checks whether a usable native Facebook token is stored |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:537 | _apply_facebook_session | applies a verified Facebook session to client auth state |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:545 | _store_facebook_session | persists the verified Facebook session fields |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:552 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:561 | _notification | refresh on app resume when the token went stale in the background |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:576 | _auth_url | join the project URL to an auth path |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:579 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:622 | _auth_error_detail | normalizes provider errors into bounded diagnostic detail |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:634 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:653 | _store_session | apply, then persist |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:660 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:673 | _save_session | write the session JSON to `user://` |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:689 | _load_session | read it back on boot; malformed content is ignored |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:244 | _save_verifier | persist the verifier before leaving for the browser |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:258 | _load_verifier | read it back on return |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:269 | _clear_verifier | single-use: cleared on exchange, cancel and sign-out |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:279 | sign_in_guest | anonymous sign-up; returns a reason code, empty on success |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:293 | is_oauth_enabled | needs auth on, the flag, **and a redirect this platform can receive** |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:296 | redirect_uri | web → build-injected origin · Android → custom scheme · else empty |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:305 | sign_in_with_provider | mint verifier → open authorize URL; returns a *launch* reason only |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:320 | _sign_in_with_native_google | starts native Google sign-in on supported Android builds |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:325 | _on_google_sign_in_success | exchanges a successful native Google result for a game session |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:329 | _on_google_sign_in_failed | normalizes and reports a native Google sign-in failure |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:341 | _sign_in_with_native_facebook | starts the plugin only if it accepts the request, then arms the callback cap |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:351 | _on_facebook_sign_in_success | stores the native token and expiry for the verified server handshake |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:360 | _on_facebook_sign_in_failed | reports the native failure without opening browser OAuth |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:372 | _expire_native_facebook_sign_in | emits a bounded rejected result if Android does not return a callback |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:381 | _sign_in_with_browser | starts the browser PKCE sign-in flow |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:398 | _expire_oauth_after_grace | resumed with no callback → cancel, so the screen cannot stick busy |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:408 | _build_authorize_url | authorize URL with the encoded redirect and **`s256`, never `plain`** |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:416 | _generate_code_verifier | 32 crypto-random bytes, base64url |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:419 | _code_challenge | SHA-256 → base64url; checked against the RFC 7636 vector |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:425 | _base64url | base64 → url-safe alphabet, padding stripped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:428 | _parse_callback_query | pull `code`/`error` off a callback query; junk pairs skipped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:445 | _exchange_code | `grant_type=pkce` swap of code + verifier for a session |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:465 | _build_id_token_body | provider-specific Supabase token exchange body; Google adds client_id |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:473 | _exchange_id_token | exchange Google ID token or Facebook access token for a session |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:489 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:518 | sign_out | clear memory and delete the session file |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:532 | seconds_until_expiry | 0 when no session is held |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:538 | _has_facebook_access_token | checks whether a usable native Facebook token is stored |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:541 | _apply_facebook_session | applies a verified Facebook session to client auth state |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:549 | _store_facebook_session | persists the verified Facebook session fields |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:556 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:565 | _notification | refresh on app resume when the token went stale in the background |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:580 | _auth_url | join the project URL to an auth path |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:583 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:621 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:640 | _store_session | apply, then persist |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:647 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:660 | _save_session | write the session JSON to `user://` |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:676 | _load_session | read it back on boot; malformed content is ignored |
 
 ### src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd — 14 ln
 
@@ -360,4 +358,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-14 files · 281 symbols · 0 awaiting a `Does` line.
+14 files · 279 symbols · 0 awaiting a `Does` line.

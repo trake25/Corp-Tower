@@ -42,7 +42,9 @@ global floating debug button.
 
 - Sign-in shows a social button **only for a provider in `AuthManager.PROVIDERS`
   with OAuth on**, hiding the row and divider otherwise — no dead social button
-  ships. Android returns via the vendored Deeplink plugin, web via its own URL.
+  ships. Android returns via the vendored Deeplink plugin; web reloads at its
+  configured URL and holds the one-time PKCE verifier in same-tab session storage
+  until the callback exchange completes.
   Its debug Sign In category can locally force Google or Facebook through browser
   OAuth by disabling the default-on native Android path; both runtime-only
   preferences reset to enabled when the app reloads.

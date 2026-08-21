@@ -2,6 +2,7 @@ extends Node
 
 const SESSION_FILE := "user://corp_tower_auth_session.save"
 const VERIFIER_FILE := "user://corp_tower_auth_verifier.save"
+const WEB_VERIFIER_KEY := "corp_tower_auth_verifier"
 const REFRESH_MARGIN_SECONDS := 120
 const REFRESH_CHECK_INTERVAL_SECONDS := 30.0
 const REQUEST_TIMEOUT_SECONDS := 12.0
@@ -40,7 +41,6 @@ var deeplink_node: Node = null
 var google_signin_node: Node = null
 var facebook_signin_node: Node = null
 var native_signin_in_flight := false
-var last_oauth_diagnostic := ""
 var native_google_enabled := true
 var native_facebook_enabled := true
 
@@ -241,24 +241,38 @@ func take_oauth_error() -> String:
 	last_oauth_reason = REASON_NONE
 	return reason
 
-func take_oauth_diagnostic() -> String:
-	var diagnostic := last_oauth_diagnostic
-	last_oauth_diagnostic = ""
-	return diagnostic
-
 func _save_verifier(verifier: String) -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval(
+			"window.sessionStorage.setItem(%s, %s)" % [
+				JSON.stringify(WEB_VERIFIER_KEY), JSON.stringify(verifier)
+			], true
+		)
+		return
+
 	var file := FileAccess.open(VERIFIER_FILE, FileAccess.WRITE)
 
 	if file != null:
 		file.store_string(verifier)
 
 func _load_verifier() -> String:
+	if OS.has_feature("web"):
+		return str(JavaScriptBridge.eval(
+			"window.sessionStorage.getItem(%s) || ''" % JSON.stringify(WEB_VERIFIER_KEY), true
+		))
+
 	if not FileAccess.file_exists(VERIFIER_FILE):
 		return ""
 
 	return FileAccess.get_file_as_string(VERIFIER_FILE).strip_edges()
 
 func _clear_verifier() -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval(
+			"window.sessionStorage.removeItem(%s)" % JSON.stringify(WEB_VERIFIER_KEY), true
+		)
+		return
+
 	if FileAccess.file_exists(VERIFIER_FILE):
 		DirAccess.remove_absolute(VERIFIER_FILE)
 
@@ -329,7 +343,6 @@ func _sign_in_with_native_facebook() -> String:
 
 	if not facebook_signin_node.sign_in():
 		native_signin_in_flight = false
-		last_oauth_diagnostic = "Facebook native sign-in could not start."
 		return REASON_REJECTED
 
 	_expire_native_facebook_sign_in()
@@ -339,23 +352,17 @@ func _on_facebook_sign_in_success(access_token: String, native_expires_at_unix: 
 	native_signin_in_flight = false
 
 	if not _store_facebook_session(access_token, native_expires_at_unix):
-		last_oauth_diagnostic = "Facebook native sign-in returned an invalid access-token expiry."
 		oauth_completed.emit(REASON_REJECTED)
 		return
 
-	last_oauth_diagnostic = ""
 	oauth_completed.emit(REASON_NONE)
 
-func _on_facebook_sign_in_failed(code: String, message: String) -> void:
+func _on_facebook_sign_in_failed(code: String, _message: String) -> void:
 	native_signin_in_flight = false
-	last_oauth_diagnostic = "Facebook native failure: %s — %s" % [code, message.left(240)]
 
 	if code == NATIVE_CODE_CANCELLED:
 		oauth_completed.emit(REASON_CANCELLED)
 		return
-
-	if EndpointConfig.DEBUG_UI_ENABLED:
-		OS.alert(last_oauth_diagnostic, "Facebook native diagnostics")
 
 	var browser_reason := _sign_in_with_browser("facebook")
 
@@ -369,7 +376,6 @@ func _expire_native_facebook_sign_in() -> void:
 		return
 
 	native_signin_in_flight = false
-	last_oauth_diagnostic = "Facebook native sign-in did not return to the game."
 	oauth_completed.emit(REASON_REJECTED)
 
 func _sign_in_with_browser(provider: String) -> String:
@@ -454,7 +460,6 @@ func _exchange_code(code: String) -> String:
 	if not _store_session(response["data"]):
 		return REASON_REJECTED
 
-	last_oauth_diagnostic = ""
 	return REASON_NONE
 
 func _build_id_token_body(id_token: String, provider: String = "google") -> Dictionary:
@@ -479,7 +484,6 @@ func _exchange_id_token(id_token: String, provider: String = "google") -> String
 	if not _store_session(response["data"]):
 		return REASON_REJECTED
 
-	last_oauth_diagnostic = ""
 	return REASON_NONE
 
 func ensure_fresh_token() -> bool:
@@ -605,11 +609,6 @@ func _post_auth(path: String, body: Dictionary) -> Dictionary:
 	var payload: PackedByteArray = result[3]
 
 	if status < 200 or status >= 300:
-		last_oauth_diagnostic = "%s returned HTTP %d: %s" % [
-			path,
-			status,
-			_auth_error_detail(payload)
-		]
 		return {"reason": REASON_REJECTED, "data": {}}
 
 	var parsed = JSON.parse_string(payload.get_string_from_utf8())
@@ -618,18 +617,6 @@ func _post_auth(path: String, body: Dictionary) -> Dictionary:
 		return {"reason": REASON_REJECTED, "data": {}}
 
 	return {"reason": REASON_NONE, "data": parsed}
-
-func _auth_error_detail(payload: PackedByteArray) -> String:
-	var parsed = JSON.parse_string(payload.get_string_from_utf8())
-
-	if typeof(parsed) != TYPE_DICTIONARY:
-		return "non-JSON response"
-
-	for key in ["error_code", "code", "msg", "message", "error_description"]:
-		if parsed.has(key):
-			return "%s=%s" % [key, str(parsed[key]).left(240)]
-
-	return "JSON error without a safe detail field"
 
 func _apply_session(data: Dictionary) -> bool:
 	var access := str(data.get("access_token", ""))
