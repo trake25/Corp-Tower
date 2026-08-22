@@ -19,14 +19,14 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scenes/ConfirmModal.tscn:76 | %ModalCloseButton · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/ConfirmModal.tscn:91 | %ModalContinueButton · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn — 131 ln
+### src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn — 122 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:22 | FindMatchScreen · scene root | root of this reusable Godot scene |
-| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:76 | %StatusLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:90 | %QueueProgressBar · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:111 | %CancelButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:21 | FindMatchScreen · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:67 | %StatusLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:81 | %QueueProgressBar · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:102 | %CancelButton · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn — 257 ln
 
@@ -53,11 +53,12 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/Main.tscn:7 | Main · scene root | root of this reusable Godot scene |
 
-### src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn — 62 ln
+### src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn — 98 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn:6 | PlayLoaderScreen · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn:21 | PlayLoaderScreen · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn:56 | %LoadingProgressBar · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn — 261 ln
 
@@ -165,13 +166,14 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:294 | update_game_state | **the main render entry** — fans `game_state` out to every controller |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:400 | update_debug_config | apply a `debug_config` broadcast |
 
-### src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd — 12 ln
+### src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd — 21 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd:3 | loader_finished · signal | splash done, advance to play |
-| src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd:7 | _ready | start the advance timer |
-| src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd:10 | _on_advance_timer_timeout | emit loader_finished |
+| src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd:8 | _ready | start the advance timer |
+| src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd:12 | _process | advance the reusable loading progress bar during the timer interval |
+| src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd:18 | _on_advance_timer_timeout | emit loader_finished |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd — 43 ln
 
@@ -446,4 +448,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-23 files · 322 symbols · 0 awaiting a `Does` line.
+23 files · 324 symbols · 0 awaiting a `Does` line.

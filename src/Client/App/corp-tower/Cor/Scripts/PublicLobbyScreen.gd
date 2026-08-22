@@ -2,8 +2,8 @@ extends Control
 
 signal leave_lobby_requested
 
-const CHECK_READY := preload("res://Cor/Art/8-Public-lobby/ic-colored-checkmark-green.svg")
-const CHECK_WAITING := preload("res://Cor/Art/8-Public-lobby/ic-colored-checkmark-grey.svg")
+const CHECK_READY := preload("res://Cor/Art/8-Public-lobby/ic-colored-checkmark-green.png")
+const CHECK_WAITING := preload("res://Cor/Art/8-Public-lobby/ic-colored-checkmark-grey.png")
 const WAITING_NAME := "Waiting for player..."
 const READY_COUNTDOWN_FORMAT := "Ready (%ds)"
 const READY_LABEL := "Ready"

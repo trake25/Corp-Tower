@@ -1,12 +1,12 @@
 [gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/SignInScreen.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/bg.svg" id="2_bg"]
-[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/profile-avatar.svg" id="3_avatar"]
-[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/fb-logo.svg" id="4_fb"]
-[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/google-logo.svg" id="5_google"]
-[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/tiktok-logo.svg" id="6_tiktok"]
-[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/ic-colored-user.svg" id="7_user"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/sign-in-bg-@4x.png" id="2_bg"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/avatar-placeholder.png" id="3_avatar"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/fb-logo.png" id="4_fb"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/google-logo.png" id="5_google"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/tiktok-logo.png" id="6_tiktok"]
+[ext_resource type="Texture2D" path="res://Cor/Art/1-Sign-in/ic-colored-user.png" id="7_user"]
 [ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="8_presstint"]
 
 [node name="SignInScreen" type="Control"]

@@ -1,10 +1,10 @@
 [gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/PublicLobbyScreen.gd" id="1_publiclobby"]
-[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/bg.svg" id="2_bg"]
-[ext_resource type="Texture2D" path="res://Cor/Art/8-Public-lobby/btn-circular-back.svg" id="3_back"]
+[ext_resource type="Texture2D" path="res://Cor/Art/8-Public-lobby/lobby-bg-@4x.png" id="2_bg"]
+[ext_resource type="Texture2D" path="res://Cor/Art/8-Public-lobby/btn-circular-back.png" id="3_back"]
 [ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="4_presstint"]
-[ext_resource type="Texture2D" path="res://Cor/Art/8-Public-lobby/ic-colored-checkmark-grey.svg" id="5_checkgrey"]
+[ext_resource type="Texture2D" path="res://Cor/Art/8-Public-lobby/ic-colored-checkmark-grey.png" id="5_checkgrey"]
 [ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Bold.ttf" id="6_poppinsbold"]
 [ext_resource type="Shader" path="res://Cor/Shaders/VerticalGradientFill.gdshader" id="7_gradientshader"]
 [ext_resource type="PackedScene" path="res://Cor/Scenes/ConfirmModal.tscn" id="8_confirmmodal"]
@@ -12,7 +12,7 @@
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_LobbyHeader"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_WaitingRoomCard"]
-bg_color = Color(0.878, 0.945, 0.988, 0.82)
+bg_color = Color(0.878, 0.945, 0.988, 0.8)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1

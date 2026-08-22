@@ -1,8 +1,7 @@
 [gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/FindMatchScreen.gd" id="1_findmatchscreen"]
-[ext_resource type="Texture2D" path="res://Cor/Art/2-Home/bg.svg" id="2_bg"]
-[ext_resource type="Texture2D" path="res://Cor/Art/7-Find-match/bricks.svg" id="3_bricks"]
+[ext_resource type="Texture2D" path="res://Cor/Art/7-Find-match/find-match-bg-@4x.png" id="2_bg"]
 [ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Bold.ttf" id="4_poppinsbold"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_QueueTrack"]
@@ -64,14 +63,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_vertical = 0
 theme_override_constants/separation = 18
-
-[node name="BricksIcon" type="TextureRect" parent="SafeArea/Root/StatusRows"]
-custom_minimum_size = Vector2(0, 180)
-layout_mode = 2
-mouse_filter = 2
-texture = ExtResource("3_bricks")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="StatusLabel" type="Label" parent="SafeArea/Root/StatusRows"]
 unique_name_in_owner = true

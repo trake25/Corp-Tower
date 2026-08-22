@@ -40,6 +40,7 @@ Wire payloads are [`networking.md`](../../../docs/context/networking.md), not yo
   StyleBox. One color everywhere: `Color(0.518, 0.902, 0.976, 1)`
   (`StyleBoxFlat_MenuCardPressed` in `GameUITheme.tres`).
 - Strictly follow the UI Design guide or reference when it is provided. The colors, gradients, shadows, spacings, texts, fonts, boxes, sizes, gaps must all be close to the guide as much as possible.
+- Glass card treatment: use a light translucent panel with an 80% light pass, zero refraction, depth 100, dispersion 100, frost 25 and splay 0. In Godot, approximate unsupported refraction/depth/dispersion with a translucent white fill, soft screen-space frost/blur when practical, a white edge, rounded corners and a restrained shadow.
 - The local Godot executable is in the repository root on Windows and Linux;
   `qa-engineer` owns platform discovery and headless commands. Complex UI,
   screen, scene/autoload and asset integration must pass that headless gate

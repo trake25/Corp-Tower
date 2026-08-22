@@ -86,7 +86,8 @@ metadata cannot recover the variant.
 | 15 | Cover tutorial and demo HUD routes for legacy UI fixes | 1 | B | 1 | 2 | late estimate ~800 | ~1,500 | ~3,000 | ~3,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer, qa-engineer, docs-steward |
 | 16 | Restore Top indicator height counts and audit hidden legacy HUD | 2 | B | 1 | 4 | late estimate ~1,500 | ~2,500 | ~5,500 | ~5,500 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer, qa-engineer, docs-steward |
 | 17 | Decompose server/client ownership, compose GameUI subscenes, and split deployment routing | 5 | B | 4 | 40 | late estimate ~25,000 | ~55,000 | ~120,000 | ~120,000 | ✓ | ok | gpt-5.6-sol | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 18 -->
+| 18 | Refresh PNG UI art and screen layouts for Sign-in, Home, Join, Match, Lobby, and reusable Loader | 3 | B | 2 | 12 | late estimate ~12,000 | ~22,000 | ~42,000 | ~42,000 | ~ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward |
+<!-- next: row 19 -->
 
 ## Cycle 3 (closed)
 
