@@ -62,9 +62,9 @@ cat > "$MANIFEST" <<MANIFEST_EOF
   "sha256": "$SHA",
   "file_count": $COUNT,
   "sentinels": [
-    "Static/bg.png",
-    "Static/bg.png.import",
-    "Cosmetics/avatar/avatar_0/avatar.png"
+    "9-Play/play-bg-@4x.png",
+    "9-Play/play-bg-@4x.png.import",
+    "9-Play/avatar-lion.png"
   ]
 }
 MANIFEST_EOF

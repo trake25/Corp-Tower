@@ -5,8 +5,8 @@
   "sha256": "e7999c8773155aa79ba88b2037fe3d15a579b5131d0525014b06ac37ca4c1ab6",
   "file_count": 190,
   "sentinels": [
-    "Static/bg.png",
-    "Static/bg.png.import",
-    "Cosmetics/avatar/avatar_0/avatar.png"
+    "9-Play/play-bg-@4x.png",
+    "9-Play/play-bg-@4x.png.import",
+    "9-Play/avatar-lion.png"
   ]
 }
