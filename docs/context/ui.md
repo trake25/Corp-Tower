@@ -52,9 +52,10 @@ global floating debug button.
   preferences reset to enabled when the app reloads.
 - Swaps screens inside `ScreenContainer`, driven by the child screens' request
   signals and NetworkManager's `room_joined` / `match_started` / `room_closed`.
-- Flow: Play Loader → Sign-in → Home → Join Screen; a restored session skips
-  Sign-in. Tutorial exit → Home, room-close → Join Screen. Demo skips both:
-  Play Demo + Tutorial on Home, room-close → Home. Buttons:
+- Flow: Splash → Sign-in → Home → Join Screen; a restored session skips
+  Sign-in, while Play Loader remains reusable and unwired. Tutorial exit → Home,
+  room-close → Join Screen. Demo skips Sign-in: Play Demo + Tutorial on Home,
+  room-close → Home. Buttons:
   [map/ui-screens.md](./map/ui-screens.md).
 - Routes `room_joined` on `matchStarted` (false → Public Lobby); `match_started`
   enters the game → [networking.md](./networking.md). **Demo skips the Public
@@ -65,7 +66,9 @@ global floating debug button.
 - `AutoDismissModal` (`Main.tscn`, third child) also covers an unexpected
   disconnect while `find_match_active`. Both cases tear the screen underneath
   down only on dismiss, so it stays visible behind the modal's 3s countdown.
-- Android exports keep the OS status bar visible above the 412×917 content area; web has no status bar.
+- Android exports keep the OS status bar visible above the 412×917 content area;
+  the fixed-width Play field centers itself when the resulting canvas is wider.
+  Web has no status bar.
 - Instantiates `PlayScreenScene` on entering Find Match or the lobby, frees it on
   close.
 - Debug button: tap vs drag via `DEBUG_BUTTON_DRAG_THRESHOLD`; *visible* from

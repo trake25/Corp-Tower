@@ -138,33 +138,35 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | back_requested · signal | return to Home Screen |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:6 | _ready | wire buttons |
 
-### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 410 ln
+### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 422 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:25 | tutorial_requested · signal | ask ScreenManager to open the Tutorial |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:26 | tutorial_exited · signal | Tutorial finished |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:55 | _ready | construct the GameUi module family and bind nodes |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:134 | apply_accessibility | push AccessibilitySettings into the controllers |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:140 | apply_camera_zoom | **must pivot PlatformArt on its top centre** before scaling |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:147 | should_block_popovers | shared gate every popover trigger calls itself |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:155 | prepare_ui | verify the scene node contract; feeds `missing_required_nodes` |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:164 | bind_ui_nodes | aggregate every module bind_nodes(binder) through UiNodeBinder |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:184 | reset_ui | clear per-room UI state |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:203 | connect_network_signals | subscribe to NetworkManager |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:210 | _unhandled_input | fallback input |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:214 | _input | global input hooks |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:217 | _process | per-frame local ticks, incl. the round timer |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:221 | toggle_debug_overlay | duck-typed entry the debug button calls |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:224 | set_debug_context | forwards screen context to the gameplay debug controller |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:227 | _on_room_joined | routes a successful room join into the lobby screen flow |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:231 | update_room | roster and room metadata |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:255 | update_room_closed | room end handling |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:276 | start_tutorial | enter Tutorial from play |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:285 | request_tutorial | emit tutorial_requested |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:288 | _on_tutorial_menu_exit | leave the lesson menu |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:294 | update_game_state | **the main render entry** — fans `game_state` out to every controller |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:400 | update_debug_config | apply a `debug_config` broadcast |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:24 | PLAYFIELD_DESIGN_WIDTH · const | gameplay canvas width for Android horizontal centering |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:26 | tutorial_requested · signal | ask ScreenManager to open the Tutorial |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:27 | tutorial_exited · signal | Tutorial finished |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:57 | _ready | construct the GameUi module family and bind nodes |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:138 | _center_android_play_field | centers the fixed-width Play field within an expanded Android canvas |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:146 | apply_accessibility | push AccessibilitySettings into the controllers |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:152 | apply_camera_zoom | **must pivot PlatformArt on its top centre** before scaling |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:159 | should_block_popovers | shared gate every popover trigger calls itself |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:167 | prepare_ui | verify the scene node contract; feeds `missing_required_nodes` |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:176 | bind_ui_nodes | aggregate every module bind_nodes(binder) through UiNodeBinder |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:196 | reset_ui | clear per-room UI state |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:215 | connect_network_signals | subscribe to NetworkManager |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:222 | _unhandled_input | fallback input |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:226 | _input | global input hooks |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:229 | _process | per-frame local ticks, incl. the round timer |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:233 | toggle_debug_overlay | duck-typed entry the debug button calls |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:236 | set_debug_context | forwards screen context to the gameplay debug controller |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:239 | _on_room_joined | routes a successful room join into the lobby screen flow |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:243 | update_room | roster and room metadata |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:267 | update_room_closed | room end handling |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:288 | start_tutorial | enter Tutorial from play |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:297 | request_tutorial | emit tutorial_requested |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:300 | _on_tutorial_menu_exit | leave the lesson menu |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:306 | update_game_state | **the main render entry** — fans `game_state` out to every controller |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:412 | update_debug_config | apply a `debug_config` broadcast |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd — 21 ln
 
@@ -210,7 +212,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:114 | _on_back_pressed | opens confirmation before leaving the lobby |
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:117 | _on_leave_confirmed | leaves the lobby after modal confirmation |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 368 ln
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 379 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -224,44 +226,45 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:18 | DRAG_POINTER_NONE · const | no active pointer sentinel |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:33 | _ready | **debug button visibility set once here from `DEBUG_UI_ENABLED`** |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:45 | _show_runtime_android_system_bars | request visible Android system bars after the immersive boot splash |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:51 | _on_status_changed | relay connection status to the active screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:58 | _on_room_joined | swap to the live Game UI Scene |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:67 | _on_match_started | routes a match-start broadcast into gameplay |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:70 | _enter_play_instance | switches screen state into the active play instance |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:77 | _on_room_closed | tear the play instance down via Join Screen; in demo, back to Home instead |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:92 | _on_auto_dismiss_modal_dismissed | restores navigation after an automatic modal closes |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:97 | show_play_loader_screen | splash before join |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:102 | _on_play_loader_finished | advance to Sign-in; in demo, straight to Home |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:112 | show_sign_in_screen | Play as Guest is the only wired control |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:124 | _on_guest_login_requested | advance to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:136 | _on_provider_login_requested | launch the provider flow, then **await `oauth_completed`** — except on web, where the page is already navigating away |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:157 | _set_sign_in_busy | duck-typed busy toggle on whichever sign-in screen is mounted |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:161 | _show_sign_in_error | surface a reason, but only if that screen is still the live overlay |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:168 | show_home_screen | Private Server / Join Server / Game Tutorial menu |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:175 | _on_home_join_server_requested | advance to the join screen; in demo, `connect_server()` directly |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:181 | _on_home_tutorial_requested | start the Tutorial from Home |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:184 | show_join_screen | join / matchmaking entry screen, no tutorial button |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:192 | _on_join_screen_back_requested | return to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:195 | start_tutorial | mount the Tutorial over the real HUD |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:208 | _on_play_instance_tutorial_requested | Tutorial requested from inside play |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:211 | _on_play_instance_tutorial_exited | return from Tutorial to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:215 | show_find_match_screen | matchmaking wait screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:224 | _on_find_match_requested | enter the queue |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:228 | _on_cancel_requested | leave the queue |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:232 | show_public_lobby_screen | shows the public lobby using the latest room payload |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:241 | _on_leave_lobby_requested | opens the leave-lobby confirmation flow |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:247 | _ensure_play_instance | instantiate PlayScreenScene once per room |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:261 | _teardown_play_instance | free the play instance on room close |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:268 | _set_debug_context | updates the trigger and forwards lobby/play restrictions to Main |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:274 | _set_overlay | mount a screen in ScreenContainer |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:279 | _clear_overlay | unmount the current screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:287 | update_debug_button_availability | enabled only with a live instance and a connection |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:306 | reset_debug_button_position | runs on ready and room join, never after a manual drag |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:312 | _on_debug_button_gui_input | tap-vs-drag discrimination |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:337 | _begin_debug_button_gesture | start tracking a pointer |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:342 | _end_debug_button_gesture | stop tracking |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:350 | _move_debug_button | drag the floating button, clamped on screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:360 | _on_debug_button_tapped | calls Main by duck typing; no static dependency |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:51 | _show_initial_screen | routes restored sessions and demo builds to Home without mounting Play Loader |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:62 | _on_status_changed | relay connection status to the active screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:69 | _on_room_joined | swap to the live Game UI Scene |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:78 | _on_match_started | routes a match-start broadcast into gameplay |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:81 | _enter_play_instance | switches screen state into the active play instance |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:88 | _on_room_closed | tear the play instance down via Join Screen; in demo, back to Home instead |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:103 | _on_auto_dismiss_modal_dismissed | restores navigation after an automatic modal closes |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:108 | show_play_loader_screen | splash before join |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:113 | _on_play_loader_finished | advance to Sign-in; in demo, straight to Home |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:123 | show_sign_in_screen | Play as Guest is the only wired control |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:135 | _on_guest_login_requested | advance to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:147 | _on_provider_login_requested | launch the provider flow, then **await `oauth_completed`** — except on web, where the page is already navigating away |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:168 | _set_sign_in_busy | duck-typed busy toggle on whichever sign-in screen is mounted |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:172 | _show_sign_in_error | surface a reason, but only if that screen is still the live overlay |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:179 | show_home_screen | Private Server / Join Server / Game Tutorial menu |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:186 | _on_home_join_server_requested | advance to the join screen; in demo, `connect_server()` directly |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:192 | _on_home_tutorial_requested | start the Tutorial from Home |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:195 | show_join_screen | join / matchmaking entry screen, no tutorial button |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:203 | _on_join_screen_back_requested | return to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:206 | start_tutorial | mount the Tutorial over the real HUD |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:219 | _on_play_instance_tutorial_requested | Tutorial requested from inside play |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:222 | _on_play_instance_tutorial_exited | return from Tutorial to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:226 | show_find_match_screen | matchmaking wait screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:235 | _on_find_match_requested | enter the queue |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:239 | _on_cancel_requested | leave the queue |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:243 | show_public_lobby_screen | shows the public lobby using the latest room payload |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:252 | _on_leave_lobby_requested | opens the leave-lobby confirmation flow |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:258 | _ensure_play_instance | instantiate PlayScreenScene once per room |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:272 | _teardown_play_instance | free the play instance on room close |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:279 | _set_debug_context | updates the trigger and forwards lobby/play restrictions to Main |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:285 | _set_overlay | mount a screen in ScreenContainer |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:290 | _clear_overlay | unmount the current screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:298 | update_debug_button_availability | enabled only with a live instance and a connection |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:317 | reset_debug_button_position | runs on ready and room join, never after a manual drag |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:323 | _on_debug_button_gui_input | tap-vs-drag discrimination |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:348 | _begin_debug_button_gesture | start tracking a pointer |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:353 | _end_debug_button_gesture | stop tracking |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:361 | _move_debug_button | drag the floating button, clamped on screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:371 | _on_debug_button_tapped | calls Main by duck typing; no static dependency |
 
 ### src/Client/App/corp-tower/Cor/Scripts/SignInDebugOverlay.gd — 120 ln
 
@@ -449,4 +452,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-23 files · 325 symbols · 0 awaiting a `Does` line.
+23 files · 328 symbols · 0 awaiting a `Does` line.

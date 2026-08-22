@@ -21,11 +21,13 @@ const VisualHooksScript = preload("res://Cor/Scripts/GameUi/VisualHooks.gd")
 const VisualHooksControllerScript = preload("res://Cor/Scripts/GameUi/VisualHooksController.gd")
 const TutorialControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialController.gd")
 const TutorialMenuControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialMenuController.gd")
+const PLAYFIELD_DESIGN_WIDTH := 412.0
 
 signal tutorial_requested(lesson_id: StringName)
 signal tutorial_exited
 
 @onready var ui_root: Control = self
+@onready var play_field: Control = $PlayField
 
 var missing_required_nodes: Array[String] = []
 var tuning
@@ -53,6 +55,8 @@ var platform_parallax: Control
 var demo_mode_label: Label
 
 func _ready() -> void:
+	resized.connect(_center_android_play_field)
+	call_deferred("_center_android_play_field")
 	tuning = UiTuningScript.new()
 	accessibility = AccessibilitySettingsScript.new()
 	players_ctx = PlayerContextScript.new()
@@ -130,6 +134,14 @@ func _ready() -> void:
 
 	reset_ui()
 	connect_network_signals()
+
+func _center_android_play_field() -> void:
+	if OS.get_name() != "Android":
+		return
+
+	var content_width := minf(size.x, PLAYFIELD_DESIGN_WIDTH)
+	play_field.size.x = content_width
+	play_field.position.x = (size.x - content_width) * 0.5
 
 func apply_accessibility() -> void:
 	inventory.set_parallel_placement(

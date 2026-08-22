@@ -69,7 +69,8 @@ metadata cannot recover the variant.
 
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-<!-- next: row 1 -->
+| 1 | Restore session startup and center Android Play canvas | 2 | B | 2 | 4 | ~2,000 | ~3,500 | ~8,000 | ~8,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward |
+<!-- next: row 2 -->
 
 ## Cycle 4 (closed)
 

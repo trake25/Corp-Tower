@@ -40,13 +40,24 @@ func _ready() -> void:
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
 	debug_button.visible = EndpointConfig.DEBUG_UI_ENABLED
 	reset_debug_button_position()
-	show_sign_in_screen()
+	_show_initial_screen()
 
 func _show_runtime_android_system_bars() -> void:
 	if OS.get_name() != "Android":
 		return
 
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+
+func _show_initial_screen() -> void:
+	if EndpointConfig.DEMO_MODE_ENABLED:
+		show_home_screen()
+		return
+
+	if await AuthManager.restore_session():
+		show_home_screen()
+		return
+
+	show_sign_in_screen()
 
 func _on_status_changed(text: String) -> void:
 	update_debug_button_availability()
