@@ -52,29 +52,30 @@ func test_reset_ui_restores_idle_labels() -> void:
 
 func test_legacy_hidden_contract_is_removed() -> void:
 	assert_null(harness.find("LegacyHidden"), "The permanently hidden legacy ancestor should not exist.")
-	for retired_name in ["ConnectButton", "ScoreLabel", "TowerFill", "HeightLabel", "TowerValueLabel", "TowerStatusLabel", "ImpactSeparator", "PowerQuestLabel", "BlockLabel", "SessionPanel", "PlayerLabel", "RoomLabel"]:
+	for retired_name in ["ConnectButton", "TowerFill", "HeightLabel", "TowerValueLabel", "TowerStatusLabel", "ImpactSeparator", "PowerQuestLabel", "BlockLabel", "SessionPanel", "PlayerLabel", "RoomLabel"]:
 		assert_null(harness.find(retired_name), "%s should be retired instead of retained as a hidden alias." % retired_name)
 
 func test_game_state_renders_rail_and_top_bar() -> void:
 	harness.main.update_game_state(GAME_STATE_FIXTURE)
 	assert_eq(harness.main.roster.player_rail_entries.size(), 3, "A three player payload should produce three rail entries.")
-	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP", "The visible top indicator should use approved copy while its fill reflects payload heights.")
+	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP (2/12)", "The visible top indicator should show the approved label and payload heights.")
+	assert_not_null(harness.main.roster.rail_entry("P1").find_child("ScoreLabel"), "The player rail score label is active HUD, not legacy UI.")
 	assert_false((harness.find("TowerStabilityLabel") as Label).is_visible_in_tree(), "Tower stability should stay hidden outside the debug meter modes.")
 	assert_eq((harness.find("LevelLabel") as Label).text, "1", "The level label should reflect the payload level.")
 
 func test_top_indicator_uses_only_approved_copy() -> void:
 	var label: Label = harness.find("TopIndicatorLabel") as Label
 	harness.main.top_bar.set_top_indicator_progress(0, 12)
-	assert_eq(label.text, "TOP")
+	assert_eq(label.text, "TOP (0/12)")
 	harness.main.top_bar.set_top_indicator_progress(12, 12)
-	assert_eq(label.text, "PERFECT BUILD")
+	assert_eq(label.text, "PERFECT BUILD (12/12)")
 	harness.main.top_bar.set_top_indicator_progress(13, 12)
-	assert_eq(label.text, "OVER BUILD")
+	assert_eq(label.text, "OVER BUILD (13/12)")
 
 func test_demo_game_state_uses_the_shared_hud_contract() -> void:
 	harness.main.demo_mode_label.visible = true
 	harness.main.update_game_state(GAME_STATE_FIXTURE)
-	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP")
+	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP (2/12)")
 	assert_eq(harness.main.roster.player_rail_entries.size(), 3)
 	assert_eq(harness.main.roster.impact_bars.size(), 3)
 

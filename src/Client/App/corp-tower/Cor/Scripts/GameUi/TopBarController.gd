@@ -117,12 +117,14 @@ func set_top_indicator_progress(current_height: int, target_height: int) -> void
 		top_indicator_frame.theme_type_variation = &"TopBarFrameAchievedPanel" if is_achieved else &"TopBarFramePanel"
 
 	if top_indicator_label != null:
-		if is_over_build:
-			top_indicator_label.text = "OVER BUILD"
-		elif is_perfect_build:
-			top_indicator_label.text = "PERFECT BUILD"
-		else:
+		if target_height <= 0:
 			top_indicator_label.text = "TOP"
+		elif is_over_build:
+			top_indicator_label.text = "OVER BUILD (%d/%d)" % [current_height, target_height]
+		elif is_perfect_build:
+			top_indicator_label.text = "PERFECT BUILD (%d/%d)" % [current_height, target_height]
+		else:
+			top_indicator_label.text = "TOP (%d/%d)" % [current_height, target_height]
 
 func update_top_bar_display(level: int, impact_level: int, state: String, seconds_remaining: int) -> void:
 	var is_impact_level: bool = level > 1 and (level - 1) % match_state.impact_interval == 0

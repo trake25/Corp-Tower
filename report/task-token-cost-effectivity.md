@@ -84,7 +84,8 @@ metadata cannot recover the variant.
 | 13 | Restore player score rail and Impact progress rendering | 1 | B | 1 | 1 | late estimate ~1,000 | ~1,200 | ~3,000 | ~3,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer, qa-engineer, docs-steward |
 | 14 | Restrict Top indicator copy and remove c07 UI remnants | 2 | B | 1 | 5 | late estimate ~1,500 | ~2,400 | ~5,000 | ~5,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer, qa-engineer, docs-steward, update-docs |
 | 15 | Cover tutorial and demo HUD routes for legacy UI fixes | 1 | B | 1 | 2 | late estimate ~800 | ~1,500 | ~3,000 | ~3,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer, qa-engineer, docs-steward |
-<!-- next: row 16 -->
+| 16 | Restore Top indicator height counts and audit hidden legacy HUD | 2 | B | 1 | 4 | late estimate ~1,500 | ~2,500 | ~5,500 | ~5,500 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer, qa-engineer, docs-steward |
+<!-- next: row 17 -->
 
 ## Cycle 3 (closed)
 
