@@ -121,9 +121,9 @@ All live Play textures come from `Cor/Art/9-Play/`: the full-height 4x
 background, platform, HUD icons and state frames, brick faces, mood emoji and
 flat avatar files. `PlayerRailEntry` owns the explicit `avatar_0`–`avatar_5` to
 named-avatar mapping used by the rail, Impact markers and Level Summary.
-`PlayField` keeps the guide's fixed 412-unit width and centres inside the
-full-rect `GameUI` root; the background and transient overlay layers continue to
-fill the expanded root.
+`PlayField` keeps the guide's authored 412-unit coordinate width and scales that
+width from the left edge to fill `GameUI` when Android exposes a wider logical
+root. The background and transient overlay layers remain full-rect and unscaled.
 
 `TeamInventoryPanel` is a **permanently visible** bar showing the shared draw pile,
 not a popover. It reuses the `DrawPilePreview`/`DrawPileNameLabel`/
@@ -141,8 +141,9 @@ their brick preview and enabled, empty, or locked card state; no text metadata
 duplicates that state. The per-player Impact bars are the sole server-fed
 readiness presentation; the heading is omitted, and each bar keeps a
 static 9-Play frame around a runtime solid seat-colour fill. Its avatar sits at
-the live fill edge only after progress is greater than zero. There is no
-expandable details panel. `QuestChip` has exactly two room-wide
+the live fill edge only after progress is greater than zero. Each slot reserves
+the complete 187-unit frame plus eight units between siblings, preventing marker
+overlap. There is no expandable details panel. `QuestChip` has exactly two room-wide
 visual states: active until `claimedBy` is populated, completed afterwards.
 
 Node contract highlights: `TowerDropZone` (full-rect drag-release validator),
@@ -173,6 +174,10 @@ white edge, rounded corners and restrained shadow as these cards and the summary
 The power toast is a fixed `330x64` single-line card centred at 79.3% of the
 full overlay height; its label clips with an ellipsis instead of resizing the
 glass surface.
+Popover roots draw at z-index 50 and Level Summary at 60, above the Impact
+fill/avatar z-indices; Score Popup Layer starts at 40 before its runtime child
+offset. Glass transparency may reveal bars underneath, but bars never draw over
+the surface or its content.
 
 - Auto-closes after `auto_close_seconds` (default 4s), on outside tap via the
   full-screen `OutsideCatcher`, or when the owner closes it. Never pauses
@@ -322,10 +327,14 @@ pile reads as wreckage, not a live verdict.
 - **Node order in `PlayField.tscn` is deliberate.** `TopIndicatorRow` draws after
   `TowerStack`, so overbuild bricks tuck under the indicator instead of covering
   it. Ordering it before the tower makes the tower draw over the bar.
-- **`PlayField` is a centred 412-unit canvas on Android.** Mobile uses stretch
-  aspect `expand`, so system-bar devices can expose a wider logical root. Keep
-  `BgArt`, score popups and summary full-rect, centre only `PlayField`, and
+- **`PlayField` is authored at 412 units but scales horizontally on Android.**
+  Mobile uses stretch aspect `expand`, so system-bar devices can expose a wider
+  logical root. Scale the Play transform by `root_width / 412` from the left
+  edge; keep `BgArt`, score popups and summary full-rect and unscaled, and
   position popover cards from their triggers' global rectangles.
 - **Impact progress draws above the frame's opaque track interior.** Keep
   `ImpactBarTrack.clip_children` disabled and its z-index above `BarTexture`, or
   avatars move while the runtime fill is completely hidden.
+- **Impact's local z-index does not make it a global overlay.** Popovers, score
+  popups and Level Summary must retain their higher root z-indices or Impact
+  avatars and fills draw over glass cards.

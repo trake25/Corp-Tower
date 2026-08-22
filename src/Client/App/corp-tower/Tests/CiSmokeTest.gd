@@ -125,10 +125,17 @@ func instantiate_scene(path: String, description: String) -> Node:
 
 func check_main_scene_ready(main_instance: Node) -> void:
 	var screen_container := main_instance.get_node_or_null("ScreenContainer")
+	var startup_splash := main_instance.get_node_or_null("StartupSplash") as TextureRect
+	if startup_splash == null:
+		failures.append("Main scene is missing StartupSplash continuity art.")
+	elif startup_splash.texture == null or !startup_splash.texture.resource_path.ends_with("/0-Splash/splash.png"):
+		failures.append("Main scene StartupSplash must reuse the boot splash texture.")
 	if screen_container == null:
 		failures.append("Main scene is missing ScreenContainer.")
 	elif screen_container.get_child_count() == 0:
 		failures.append("Main scene ScreenContainer has no active screen.")
+	elif startup_splash != null and startup_splash.visible:
+		failures.append("StartupSplash should hide after the first real screen is ready.")
 
 	var debug_button := main_instance.get_node_or_null("DebugButton")
 	if debug_button == null:

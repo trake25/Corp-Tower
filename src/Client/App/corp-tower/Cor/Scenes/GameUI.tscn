@@ -46,11 +46,9 @@ sync_revealed_background = true
 
 [node name="PlayField" parent="." unique_id=1310220001 instance=ExtResource("23_playfield")]
 layout_mode = 1
-anchor_left = 0.5
-anchor_right = 0.5
+anchor_right = 0.0
 anchor_bottom = 1.0
-offset_left = -206.0
-offset_right = 206.0
+offset_right = 412.0
 grow_horizontal = 2
 
 [node name="LevelSummaryOverlay" parent="." unique_id=959750494 instance=ExtResource("24_summary")]
@@ -70,6 +68,7 @@ cell_size_override = 34.0
 [node name="ScorePopupLayer" type="Control" parent="." unique_id=981608802]
 unique_name_in_owner = true
 visible = false
+z_index = 40
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

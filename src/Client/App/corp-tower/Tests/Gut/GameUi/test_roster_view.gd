@@ -47,6 +47,20 @@ func test_impact_bars_follow_status_membership() -> void:
 	})
 	assert_eq(roster().impact_bars.size(), 1, "A player who leaves the status should lose their impact bar.")
 
+func test_impact_bars_leave_room_for_avatar_markers() -> void:
+	roster().update_impact_status_ui({
+		"requiredBandScore": 40,
+		"players": [
+			{"id": "P1", "bandScore": 20, "requiredBandScore": 40},
+			{"id": "P2", "bandScore": 20, "requiredBandScore": 40}
+		]
+	})
+	await get_tree().process_frame
+	var first_bar: Control = roster().impact_bars["P1"]
+	var second_bar: Control = roster().impact_bars["P2"]
+	assert_almost_eq(first_bar.custom_minimum_size.y, 187.0, 0.5, "Each Impact slot should reserve the complete frame height.")
+	assert_almost_eq(second_bar.position.y - first_bar.position.y, 195.0, 0.5, "Impact frames should keep an eight-unit gap for their avatar markers.")
+
 func test_legacy_avatar_ids_map_to_flat_9_play_assets() -> void:
 	var expected := {
 		"avatar_0": "avatar-lion.png",

@@ -18,6 +18,7 @@ const DRAG_POINTER_MOUSE := -1
 const DRAG_POINTER_NONE := -2
 
 @onready var screen_container: Control = $ScreenContainer
+@onready var startup_splash: TextureRect = %StartupSplash
 @onready var debug_button: Button = $DebugButton
 @onready var auto_dismiss_modal: Control = $AutoDismissModal
 
@@ -286,6 +287,7 @@ func _set_overlay(screen: Node) -> void:
 	_clear_overlay()
 	current_overlay = screen
 	screen_container.add_child(screen)
+	startup_splash.visible = false
 
 func _clear_overlay() -> void:
 	find_match_active = false

@@ -33,7 +33,7 @@ shadow_size = 3
 shadow_offset = Vector2(0, 2)
 
 [node name="ImpactBar" type="Control"]
-custom_minimum_size = Vector2(36, 166)
+custom_minimum_size = Vector2(36, 187)
 layout_mode = 3
 mouse_filter = 2
 script = ExtResource("1_impactbar")

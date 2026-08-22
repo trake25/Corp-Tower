@@ -52,6 +52,10 @@ global floating debug button.
   preferences reset to enabled when the app reloads.
 - Swaps screens inside `ScreenContainer`, driven by the child screens' request
   signals and NetworkManager's `room_joined` / `match_started` / `room_closed`.
+- `StartupSplash` reuses the boot splash texture behind `ScreenContainer` while
+  the initial `restore_session()` await is unresolved, then hides when Home or
+  Sign-in is attached. This prevents a cold post-update token refresh from
+  exposing the empty grey root.
 - Flow: Splash → Sign-in → Home → Join Screen; a restored session skips
   Sign-in, while Play Loader remains reusable and unwired. Tutorial exit → Home,
   room-close → Join Screen. Demo skips Sign-in: Play Demo + Tutorial on Home,
@@ -66,9 +70,9 @@ global floating debug button.
 - `AutoDismissModal` (`Main.tscn`, third child) also covers an unexpected
   disconnect while `find_match_active`. Both cases tear the screen underneath
   down only on dismiss, so it stays visible behind the modal's 3s countdown.
-- Android exports keep the OS status bar visible above the 412×917 content area;
-  the fixed-width Play field centers itself when the resulting canvas is wider.
-  Web has no status bar.
+- Android exports keep the OS status bar visible above the 412×917 authored
+  content area. When the resulting logical canvas is wider, Play scales its
+  horizontal guide coordinates across that width; Web keeps the 412-wide aspect.
 - Instantiates `PlayScreenScene` on entering Find Match or the lobby, frees it on
   close.
 - Debug button: tap vs drag via `DEBUG_BUTTON_DRAG_THRESHOLD`; *visible* from

@@ -7,17 +7,17 @@ The `Does` column IS hand-authored and is carried forward on regeneration.
 `path:line` and purpose, so it feeds straight into a `Read` with no second
 lookup. Loading the whole map costs thousands and gives you the same one row.
 
-### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 123 ln
+### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 122 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:14 | GameUI · scene root | root of this reusable Godot scene |
 | src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:32 | %BgArt · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:58 | %DragPreview · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:70 | %ScorePopupLayer · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:81 | %ChatPopover · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:93 | %PowerPopover · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:105 | %QuestPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:56 | %DragPreview · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:68 | %ScorePopupLayer · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:80 | %ChatPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:92 | %PowerPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:104 | %QuestPopover · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn — 108 ln
 
@@ -29,19 +29,19 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:82 | %ImpactAvatarRing · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:93 | %ImpactAvatarTexture · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn — 104 ln
+### src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn — 105 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:3 | LevelSummaryOverlay · scene root | root of this reusable Godot scene |
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:3 | %LevelSummaryOverlay · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:52 | %LevelSummaryTitleLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:63 | %LevelSummaryResultLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:68 | %LevelSummaryTeamLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:73 | %LevelSummaryMvpLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:78 | %LevelSummaryPlayersBox · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:84 | %LevelSummaryCountdownLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:94 | %LevelSummaryQuestLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:53 | %LevelSummaryTitleLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:64 | %LevelSummaryResultLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:69 | %LevelSummaryTeamLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:74 | %LevelSummaryMvpLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:79 | %LevelSummaryPlayersBox · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:85 | %LevelSummaryCountdownLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:95 | %LevelSummaryQuestLabel · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn — 540 ln
 
@@ -87,16 +87,16 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scenes/PlayerRailEntry.tscn:64 | %NameLabel · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/PlayerRailEntry.tscn:82 | %ScoreLabel · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn — 67 ln
+### src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn — 68 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:5 | PopoverPanel · scene root | root of this reusable Godot scene |
-| src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:15 | %OutsideCatcher · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:25 | %Card · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:51 | %TitleLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:60 | %RowsBox · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:65 | %CloseTimer · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:16 | %OutsideCatcher · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:26 | %Card · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:52 | %TitleLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:61 | %RowsBox · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:66 | %CloseTimer · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd — 55 ln
 

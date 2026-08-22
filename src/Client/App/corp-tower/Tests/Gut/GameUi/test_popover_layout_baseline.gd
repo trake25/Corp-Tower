@@ -85,16 +85,36 @@ func test_score_popup_positions_scale_with_layer_size() -> void:
 	assert_almost_eq(expanded_position.x, EXPANDED_SIZE.x * 0.5, 0.5, "MVP popups should keep centering horizontally when the layer grows.")
 	assert_almost_eq(expanded_position.y, EXPANDED_SIZE.y * 0.25, 0.5, "MVP popups should keep their proportional height when the layer grows.")
 
-func test_play_canvas_centers_inside_android_expanded_width() -> void:
+func test_play_canvas_scales_across_android_expanded_width() -> void:
 	await mount_at(ANDROID_EXPANDED_SIZE)
-	var play_rect: Rect2 = (harness.find("PlayField") as Control).get_global_rect()
+	var play_field: Control = harness.find("PlayField") as Control
+	var top_indicator_rect: Rect2 = (harness.find("TopIndicatorRow") as Control).get_global_rect()
 	var background_rect: Rect2 = (harness.find("BgArt") as Control).get_global_rect()
-	assert_almost_eq(play_rect.position.x, 36.0, 0.5, "The 412-wide Play canvas should center inside Android's expanded root.")
-	assert_almost_eq(play_rect.size.x, DESIGN_SIZE.x, 0.5, "Android expansion should not stretch the fixed Play HUD coordinates.")
+	var expected_scale: float = ANDROID_EXPANDED_SIZE.x / DESIGN_SIZE.x
+	assert_almost_eq(play_field.position.x, 0.0, 0.5, "The Android Play canvas should start at the available left edge.")
+	assert_almost_eq(play_field.size.x, DESIGN_SIZE.x, 0.5, "Play should retain its authored coordinate width before responsive scaling.")
+	assert_almost_eq(play_field.scale.x, expected_scale, 0.001, "Android should scale the authored Play coordinates across the available width.")
+	assert_almost_eq(top_indicator_rect.position.x, 8.0 * expected_scale, 0.5, "The top indicator should preserve its guide-relative left margin.")
+	assert_almost_eq(top_indicator_rect.end.x, 404.0 * expected_scale, 0.5, "The top indicator should preserve its guide-relative right margin.")
 	assert_almost_eq(background_rect.position.x, 0.0, 0.5, "The Play background should continue covering the complete Android root.")
 	assert_almost_eq(background_rect.size.x, ANDROID_EXPANDED_SIZE.x, 0.5, "The Play background should fill Android's extra width.")
 	var background_style: StyleBoxFlat = (harness.find("Background") as Panel).get_theme_stylebox("panel")
 	assert_gt(background_style.bg_color.g, 0.85, "The revealed parallax backdrop should sample the visible sky instead of using the mismatched legacy blue.")
+
+func test_popups_and_summary_draw_above_impact_bars() -> void:
+	await mount_at(DESIGN_SIZE)
+	harness.main.players_ctx.roster = [{"id": "P1", "avatarId": "avatar_0"}]
+	harness.main.roster.update_impact_status_ui({
+		"requiredBandScore": 40,
+		"players": [{"id": "P1", "bandScore": 20, "requiredBandScore": 40}]
+	})
+	var impact_bar: Control = harness.main.roster.impact_bars["P1"]
+	var impact_marker: Control = impact_bar.get_node("%ImpactAvatarMarker") as Control
+	var impact_track: Panel = impact_bar.get_node("ImpactBarTrack") as Panel
+	assert_gt((harness.find("PowerPopover") as Control).z_index, impact_marker.z_index, "Power popups should draw above Impact avatars.")
+	assert_gt((harness.find("ChatPopover") as Control).z_index, impact_marker.z_index, "Chat popups should draw above Impact avatars.")
+	assert_gt((harness.find("LevelSummaryOverlay") as Control).z_index, impact_marker.z_index, "Level Summary should draw above Impact avatars.")
+	assert_gt((harness.find("ScorePopupLayer") as Control).z_index, impact_track.z_index, "Runtime toasts should draw above Impact fills.")
 
 func test_power_event_builds_a_visible_text_toast() -> void:
 	await mount_at(DESIGN_SIZE)
