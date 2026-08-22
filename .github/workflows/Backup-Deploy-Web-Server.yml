@@ -27,6 +27,7 @@ jobs:
       ws_failover: ${{ steps.resolve.outputs.ws_failover }}
       debug_ui: ${{ steps.resolve.outputs.debug_ui }}
       demo_mode: ${{ steps.resolve.outputs.demo_mode }}
+      domain: ${{ steps.resolve.outputs.domain }}
     steps:
       - name: Resolve
         id: resolve
@@ -39,6 +40,7 @@ jobs:
               echo "ws_failover=wss://devwstod2.galaxxigames.com" >> "$GITHUB_OUTPUT"
               echo "debug_ui=true" >> "$GITHUB_OUTPUT"
               echo "demo_mode=false" >> "$GITHUB_OUTPUT"
+              echo "domain=devtod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
               ;;
             devtod2)
               echo "instance=2" >> "$GITHUB_OUTPUT"
@@ -46,6 +48,7 @@ jobs:
               echo "ws_failover=wss://devwstod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
               echo "debug_ui=true" >> "$GITHUB_OUTPUT"
               echo "demo_mode=false" >> "$GITHUB_OUTPUT"
+              echo "domain=devtod2.galaxxigames.com" >> "$GITHUB_OUTPUT"
               ;;
             toddemo)
               echo "instance=3" >> "$GITHUB_OUTPUT"
@@ -53,6 +56,7 @@ jobs:
               echo "ws_failover=wss://devwstod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
               echo "debug_ui=false" >> "$GITHUB_OUTPUT"
               echo "demo_mode=true" >> "$GITHUB_OUTPUT"
+              echo "domain=toddemo.galaxxigames.com" >> "$GITHUB_OUTPUT"
               ;;
             *)
               echo "::error::Unknown target '${{ inputs.target }}'. Expected devtod1, devtod2, or toddemo."
@@ -90,6 +94,10 @@ jobs:
           CORP_TOWER_WS_FAILOVER: ${{ needs.resolve-target.outputs.ws_failover }}
           CORP_TOWER_DEBUG_UI: ${{ needs.resolve-target.outputs.debug_ui }}
           CORP_TOWER_DEMO_MODE: ${{ needs.resolve-target.outputs.demo_mode }}
+          CORP_TOWER_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          CORP_TOWER_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          CORP_TOWER_AUTH_OAUTH: ${{ vars.CORP_TOWER_AUTH_OAUTH || 'false' }}
+          CORP_TOWER_AUTH_REDIRECT_WEB: https://${{ needs.resolve-target.outputs.domain }}/
         run: scripts/write-endpoint-config.sh
 
       - name: Build web export

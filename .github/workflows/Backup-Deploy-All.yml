@@ -187,6 +187,7 @@ jobs:
     uses: ./.github/workflows/Backup-Deploy-Game-Server.yml
     with:
       target: devwstod1
+    secrets: inherit
 
   deploy-devwstod2:
     name: Deploy devwstod2
@@ -199,6 +200,7 @@ jobs:
     uses: ./.github/workflows/Backup-Deploy-Game-Server.yml
     with:
       target: devwstod2
+    secrets: inherit
 
   deploy-devtod1:
     name: Deploy devtod1

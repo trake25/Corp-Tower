@@ -48,6 +48,12 @@ Tunnel's own config and credentials.
 Script logic is tracked in `scripts/backup/` so the multi-instance fan-out gets
 review, CI and history; only genuinely secret material stays off-repo.
 
+The dev web exports embed the Supabase public configuration and their own
+`https://devtod{1,2}.galaxxigames.com/` OAuth redirect. The backup game deploy
+inherits the matching verification, profile-store, Facebook, and identity secrets
+so `devwstod{1,2}` can verify those signed-in clients. Both redirect URLs must
+remain in Supabase's allow list.
+
 `stop_cloudflared_if_idle` only stops the tunnel once **all six** containers are
 down — with the demo always running, it effectively never stops on its own.
 

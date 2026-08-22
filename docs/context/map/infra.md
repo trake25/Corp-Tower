@@ -86,7 +86,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/Backup-Cleanup-Web-Server.yml:15 | jobs · key | one job on the self-hosted backup runner |
 | .github/workflows/Backup-Cleanup-Web-Server.yml:16 | cleanup-backup · job | stands down the HTML5 web instance on the physical backup machine |
 
-### .github/workflows/Backup-Deploy-All.yml — 230 ln
+### .github/workflows/Backup-Deploy-All.yml — 232 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -96,11 +96,11 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/Backup-Deploy-All.yml:139 | check-devwstod1-status · job | **push-triggered only** — looks for an already-running container so a push does not redeploy an idle instance |
 | .github/workflows/Backup-Deploy-All.yml:159 | check-devtod1-status · job | same running-container check for the web side |
 | .github/workflows/Backup-Deploy-All.yml:179 | deploy-devwstod1 · job | game instance 1; gated on the resolve plan and the status check |
-| .github/workflows/Backup-Deploy-All.yml:191 | deploy-devwstod2 · job | game instance 2, **serialised behind instance 1** rather than run in parallel |
-| .github/workflows/Backup-Deploy-All.yml:203 | deploy-devtod1 · job | web instance 1; gated on the resolve plan and the status check |
-| .github/workflows/Backup-Deploy-All.yml:217 | deploy-devtod2 · job | web instance 2, serialised behind web instance 1 |
+| .github/workflows/Backup-Deploy-All.yml:192 | deploy-devwstod2 · job | game instance 2, **serialised behind instance 1** rather than run in parallel |
+| .github/workflows/Backup-Deploy-All.yml:205 | deploy-devtod1 · job | web instance 1; gated on the resolve plan and the status check |
+| .github/workflows/Backup-Deploy-All.yml:219 | deploy-devtod2 · job | web instance 2, serialised behind web instance 1 |
 
-### .github/workflows/Backup-Deploy-Game-Server.yml — 42 ln
+### .github/workflows/Backup-Deploy-Game-Server.yml — 51 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -108,15 +108,15 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | .github/workflows/Backup-Deploy-Game-Server.yml:15 | jobs · key | one job on the self-hosted backup runner |
 | .github/workflows/Backup-Deploy-Game-Server.yml:16 | deploy-backup · job | resolves the instance number and runs the backup server up script, which also self-records the deployed SHA |
 
-### .github/workflows/Backup-Deploy-Web-Server.yml — 135 ln
+### .github/workflows/Backup-Deploy-Web-Server.yml — 143 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | .github/workflows/Backup-Deploy-Web-Server.yml:3 | on · key | `workflow_call` only |
 | .github/workflows/Backup-Deploy-Web-Server.yml:20 | jobs · key | resolve target, build the web export on a GitHub runner, then hand the artifact to the backup machine |
 | .github/workflows/Backup-Deploy-Web-Server.yml:21 | resolve-target · job | picks which web instance this run targets |
-| .github/workflows/Backup-Deploy-Web-Server.yml:63 | build · job | fetches private art, writes the endpoint config, builds the web export, uploads it, and **removes the private assets from the runner** |
-| .github/workflows/Backup-Deploy-Web-Server.yml:115 | deploy-to-backup · job | downloads the artifact on the self-hosted runner and deploys it locally |
+| .github/workflows/Backup-Deploy-Web-Server.yml:67 | build · job | fetches private art, writes the endpoint config, builds the web export, uploads it, and **removes the private assets from the runner** |
+| .github/workflows/Backup-Deploy-Web-Server.yml:123 | deploy-to-backup · job | downloads the artifact on the self-hosted runner and deploys it locally |
 
 ### .github/workflows/Backup-Diagnose.yml — 42 ln
 
