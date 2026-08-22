@@ -110,7 +110,7 @@ func push_state() -> void:
 
 	if top_bar != null:
 		top_bar.update_top_bar_display(level, level, "playing", seconds_remaining)
-		top_bar.set_top_indicator_progress(current_height, target_height, "playing")
+		top_bar.set_top_indicator_progress(current_height, target_height)
 		top_bar.update_tower_stability_ui(stability, diagnostics)
 
 	if roster != null:

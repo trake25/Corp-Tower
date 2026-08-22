@@ -97,7 +97,7 @@ func format_clock(total_seconds: int) -> String:
 
 	return "%02d:%02d" % [safe_seconds / 60, safe_seconds % 60]
 
-func set_top_indicator_progress(current_height: int, target_height: int, state: String = "playing") -> void:
+func set_top_indicator_progress(current_height: int, target_height: int) -> void:
 	if top_indicator_fill == null:
 		return
 
@@ -117,22 +117,12 @@ func set_top_indicator_progress(current_height: int, target_height: int, state: 
 		top_indicator_frame.theme_type_variation = &"TopBarFrameAchievedPanel" if is_achieved else &"TopBarFramePanel"
 
 	if top_indicator_label != null:
-		if state == "room_closed":
-			top_indicator_label.text = "ROOM CLOSED"
-		elif state == "starting":
-			top_indicator_label.text = "GET READY · %d/%d" % [current_height, target_height]
-		elif state == "failed":
-			top_indicator_label.text = "LEVEL FAILED · %d/%d" % [current_height, target_height]
-		elif state == "game_completed":
-			top_indicator_label.text = "TOWER COMPLETE · %d/%d" % [current_height, target_height]
-		elif target_height <= 0:
-			top_indicator_label.text = "WAITING FOR MATCH"
-		elif is_over_build:
-			top_indicator_label.text = "OVER BUILD (%d/%d)" % [current_height, target_height]
+		if is_over_build:
+			top_indicator_label.text = "OVER BUILD"
 		elif is_perfect_build:
-			top_indicator_label.text = "PERFECT BUILD (%d/%d)" % [current_height, target_height]
+			top_indicator_label.text = "PERFECT BUILD"
 		else:
-			top_indicator_label.text = "TOP (%d/%d)" % [current_height, target_height]
+			top_indicator_label.text = "TOP"
 
 func update_top_bar_display(level: int, impact_level: int, state: String, seconds_remaining: int) -> void:
 	var is_impact_level: bool = level > 1 and (level - 1) % match_state.impact_interval == 0

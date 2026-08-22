@@ -19,7 +19,6 @@
 [ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-chat.png" id="21_chat"]
 [ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-power.png" id="22_power"]
 [ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-quest-state1.png" id="18_queststate1"]
-[ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="23_presstint"]
 
 [sub_resource type="Gradient" id="Gradient_TopBarFill"]
 colors = PackedColorArray(0.192, 0.725, 0.271, 1, 0.714, 0.992, 0.29, 1)
@@ -319,9 +318,9 @@ vertical_alignment = 1
 [node name="ActionRow" type="HBoxContainer" parent="PlayField" unique_id=1790326432]
 layout_mode = 0
 offset_left = 10.0
-offset_top = 837.0
+offset_top = 827.0
 offset_right = 402.0
-offset_bottom = 917.0
+offset_bottom = 907.0
 theme_override_constants/separation = 6
 
 [node name="TeamInventoryPanel" type="PanelContainer" parent="PlayField" unique_id=1310221200]
@@ -462,17 +461,17 @@ mouse_filter = 2
 theme_override_constants/separation = 0
 alignment = 0
 
-[node name="ImpactPill" type="TextureButton" parent="PlayField" unique_id=1310220003]
+[node name="ImpactPill" type="TextureRect" parent="PlayField" unique_id=1310220003]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 328.0
 offset_top = 170.0
 offset_right = 412.0
 offset_bottom = 212.0
-texture_normal = ExtResource("19_impacttext")
-ignore_texture_size = true
+mouse_filter = 2
+texture = ExtResource("19_impacttext")
+expand_mode = 1
 stretch_mode = 0
-script = ExtResource("23_presstint")
 
 [node name="PlaceBlockButton1" type="Button" parent="PlayField/ActionRow" unique_id=169731104]
 unique_name_in_owner = true

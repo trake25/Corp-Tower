@@ -82,7 +82,9 @@ metadata cannot recover the variant.
 | 11 | Automate canonical skill mirroring with a path-aware pre-commit hook | 2 | B | 2 | 5 | ~6,000 | ~13,000 | ~22,000 | ~22,000 | ✓ | ok | gpt-5.6 (variant unrecorded) | medium | infra-engineer,qa-engineer,docs-steward |
 | 12 | Add compact path-based QA gate for task-owned source changes | 3 | B | 2 | 6 | ~6,000 | ~18,000 | ~32,000 | ~32,000 | ✓ | ok | gpt-5.6 (variant unrecorded) | medium | qa-engineer,infra-engineer,docs-steward |
 | 13 | Restore player score rail and Impact progress rendering | 1 | B | 1 | 1 | late estimate ~1,000 | ~1,200 | ~3,000 | ~3,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer, qa-engineer, docs-steward |
-<!-- next: row 14 -->
+| 14 | Restrict Top indicator copy and remove c07 UI remnants | 2 | B | 1 | 5 | late estimate ~1,500 | ~2,400 | ~5,000 | ~5,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer, qa-engineer, docs-steward, update-docs |
+| 15 | Cover tutorial and demo HUD routes for legacy UI fixes | 1 | B | 1 | 2 | late estimate ~800 | ~1,500 | ~3,000 | ~3,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer, qa-engineer, docs-steward |
+<!-- next: row 16 -->
 
 ## Cycle 3 (closed)
 

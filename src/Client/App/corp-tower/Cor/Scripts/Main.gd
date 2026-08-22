@@ -187,7 +187,7 @@ func reset_ui() -> void:
 	inventory.last_placement_sent_at_ms = 0
 	inventory.cancel_block_drag()
 	roster.update_impact_status_ui({})
-	top_bar.set_top_indicator_progress(0, 0, "")
+	top_bar.set_top_indicator_progress(0, 0)
 	tower_stack.clear_tower()
 	inventory.update_inventory_ui([], InventoryControllerScript.MAX_INVENTORY_SLOTS)
 	inventory.update_draw_pile_ui(0, null)
@@ -239,7 +239,7 @@ func update_room(data) -> void:
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
 	quest.reset_freeze_quest_popover()
-	top_bar.set_top_indicator_progress(0, int(data.get("targetHeight", 0)), "starting")
+	top_bar.set_top_indicator_progress(0, int(data.get("targetHeight", 0)))
 	tower_stack.clear_tower()
 	inventory.update_inventory_ui(
 		data.get("blocks", []),
@@ -259,7 +259,7 @@ func update_room_closed(_data) -> void:
 	inventory.cancel_block_drag()
 	top_bar.reset_indicators()
 	roster.update_impact_status_ui({})
-	top_bar.set_top_indicator_progress(0, 0, "room_closed")
+	top_bar.set_top_indicator_progress(0, 0)
 	tower_stack.clear_tower()
 	inventory.update_inventory_ui([], InventoryControllerScript.MAX_INVENTORY_SLOTS)
 	inventory.update_draw_pile_ui(0, null)
@@ -338,7 +338,7 @@ func update_game_state(data) -> void:
 		tower_stack.call("set_player_color_map", players_ctx.color_map)
 
 	top_bar.update_top_bar_display(incoming_level, impact_level, state, seconds_remaining)
-	top_bar.set_top_indicator_progress(current_height, target_height, state)
+	top_bar.set_top_indicator_progress(current_height, target_height)
 	top_bar.update_tower_stability_ui(int(data.get("towerStability", 100)), data.get("towerStabilityDiagnostics", {}))
 	if data.has("accessibility"):
 		accessibility.apply_server_defaults(data.get("accessibility", {}))

@@ -37,6 +37,7 @@ func test_start_lesson_enters_the_first_step() -> void:
 	await tutorial().start_lesson(&"basics")
 	assert_true(tutorial().is_active(), "Starting a lesson should make the tutorial active.")
 	assert_eq(tutorial().current_step_index, 0, "A freshly started lesson must begin at step 0.")
+	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP", "Tutorial state should use the shared top indicator contract.")
 
 func test_back_is_disabled_on_step_zero_and_enabled_after() -> void:
 	await tutorial().start_lesson(&"basics")

@@ -375,7 +375,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:320 | cell_x · static func | cell column accessor |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:326 | cell_y · static func | cell row accessor |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 171 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 161 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -389,9 +389,9 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:80 | tick_round_timer | **ticks locally every frame** off the last broadcast deadline |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:95 | format_clock | mm:ss formatting |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:100 | set_top_indicator_progress | top indicator fill |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:137 | update_top_bar_display | refresh the whole bar from `game_state` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:158 | update_tower_stability_ui | stability warning bands, display only |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:169 | set_stability_meter_visible | reveal numeric stability only for debug meter modes |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:127 | update_top_bar_display | refresh the whole bar from `game_state` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:148 | update_tower_stability_ui | stability warning bands, display only |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:159 | set_stability_meter_visible | reveal numeric stability only for debug meter modes |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd — 22 ln
 

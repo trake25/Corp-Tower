@@ -47,7 +47,7 @@ func test_all_required_nodes_bound() -> void:
 
 func test_reset_ui_restores_idle_labels() -> void:
 	harness.main.reset_ui()
-	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "WAITING FOR MATCH", "reset_ui should reset the visible objective status.")
+	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP", "reset_ui should reset the top indicator.")
 	assert_false((harness.find("ConnectionBanner") as Control).is_visible_in_tree(), "The disconnected banner should stay hidden until its replacement UX is ready.")
 
 func test_legacy_hidden_contract_is_removed() -> void:
@@ -58,9 +58,25 @@ func test_legacy_hidden_contract_is_removed() -> void:
 func test_game_state_renders_rail_and_top_bar() -> void:
 	harness.main.update_game_state(GAME_STATE_FIXTURE)
 	assert_eq(harness.main.roster.player_rail_entries.size(), 3, "A three player payload should produce three rail entries.")
-	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP (2/12)", "The visible top indicator should reflect the payload heights.")
+	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP", "The visible top indicator should use approved copy while its fill reflects payload heights.")
 	assert_false((harness.find("TowerStabilityLabel") as Label).is_visible_in_tree(), "Tower stability should stay hidden outside the debug meter modes.")
 	assert_eq((harness.find("LevelLabel") as Label).text, "1", "The level label should reflect the payload level.")
+
+func test_top_indicator_uses_only_approved_copy() -> void:
+	var label: Label = harness.find("TopIndicatorLabel") as Label
+	harness.main.top_bar.set_top_indicator_progress(0, 12)
+	assert_eq(label.text, "TOP")
+	harness.main.top_bar.set_top_indicator_progress(12, 12)
+	assert_eq(label.text, "PERFECT BUILD")
+	harness.main.top_bar.set_top_indicator_progress(13, 12)
+	assert_eq(label.text, "OVER BUILD")
+
+func test_demo_game_state_uses_the_shared_hud_contract() -> void:
+	harness.main.demo_mode_label.visible = true
+	harness.main.update_game_state(GAME_STATE_FIXTURE)
+	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP")
+	assert_eq(harness.main.roster.player_rail_entries.size(), 3)
+	assert_eq(harness.main.roster.impact_bars.size(), 3)
 
 func test_debug_meter_mode_reveals_stability_label() -> void:
 	harness.main.update_debug_config({"towerStabilityFeedbackMode": "meter_only"})

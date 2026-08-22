@@ -120,7 +120,8 @@ it.
 
 `ConnectionBanner` is retained hidden until its replacement artwork and UX are
 ready; no controller currently reveals it. `TopIndicatorLabel` is the single
-tower objective surface. The tower's physical lean is the normal stability cue;
+tower objective surface: its copy is `TOP`, `PERFECT BUILD`, or `OVER BUILD`;
+the fill carries height progress. The tower's physical lean is the normal stability cue;
 the numeric `TowerStabilityLabel` stays hidden unless the debug-only Stability
 Feedback selector is set to Meter Only or Live Preview. Inventory cards use only
 their brick preview and enabled, empty, or locked card state; no text metadata
