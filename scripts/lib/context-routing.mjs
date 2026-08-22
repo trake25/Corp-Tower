@@ -3,10 +3,15 @@ import { join, relative } from 'node:path';
 
 const CLIENT = 'src/Client/App/corp-tower';
 const tutorialRoot = `${CLIENT}/Cor/Scripts/GameUi/Tutorial`;
+const tutorialScenes = [
+  `${CLIENT}/Cor/Scenes/TutorialLayer.tscn`,
+];
 const debugFiles = [
   `${CLIENT}/Cor/Scripts/GameUi/DebugPanelController.gd`,
+  `${CLIENT}/Cor/Scripts/GameUi/DebugPanelCatalog.gd`,
   `${CLIENT}/Cor/Scripts/DebugTooltip.gd`,
   `${CLIENT}/Cor/Scripts/DebugOverlay.gd`,
+  `${CLIENT}/Cor/Scenes/DebugPanel.tscn`,
 ];
 const hudFiles = [
   `${CLIENT}/Cor/Scripts/TowerStack.gd`,
@@ -17,6 +22,12 @@ const hudFiles = [
   `${CLIENT}/Cor/Scripts/PressTintButton.gd`,
   `${CLIENT}/Cor/Scripts/PlayerColors.gd`,
   `${CLIENT}/Cor/Scripts/BackgroundParallax.gd`,
+  `${CLIENT}/Cor/Scenes/GameUI.tscn`,
+  `${CLIENT}/Cor/Scenes/ImpactBar.tscn`,
+  `${CLIENT}/Cor/Scenes/LevelSummary.tscn`,
+  `${CLIENT}/Cor/Scenes/PlayerRailEntry.tscn`,
+  `${CLIENT}/Cor/Scenes/PlayField.tscn`,
+  `${CLIENT}/Cor/Scenes/PopoverPanel.tscn`,
 ];
 
 export const MAP_AREAS = [
@@ -27,21 +38,21 @@ export const MAP_AREAS = [
   {
     name: 'ui-tutorial', out: 'ui-tutorial.md',
     title: 'Client — Tutorial `Cor/Scripts/GameUi/Tutorial/**`',
-    roots: [tutorialRoot], exts: ['.gd'],
+    roots: [tutorialRoot], files: tutorialScenes, exts: ['.gd', '.tscn'],
   },
   {
     name: 'ui-debug', out: 'ui-debug.md', title: 'Client — Debug tooling',
-    files: debugFiles, exts: ['.gd'],
+    files: debugFiles, exts: ['.gd', '.tscn'],
   },
   {
     name: 'ui-hud', out: 'ui-hud.md',
     title: 'Client — Gameplay HUD & Stack `Cor/Scripts/GameUi/**` (+ leaf components)',
-    roots: [`${CLIENT}/Cor/Scripts/GameUi`], files: hudFiles, exts: ['.gd'],
+    roots: [`${CLIENT}/Cor/Scripts/GameUi`], files: hudFiles, exts: ['.gd', '.tscn'],
   },
   {
     name: 'ui-screens', out: 'ui-screens.md',
     title: 'Client — Screens & Navigation `corp-tower/{Cor,Sys}/**`',
-    roots: [`${CLIENT}/Cor`, `${CLIENT}/Sys`], exts: ['.gd'],
+    roots: [`${CLIENT}/Cor`, `${CLIENT}/Sys`], exts: ['.gd', '.tscn'],
   },
   {
     name: 'infra', out: 'infra.md',
@@ -61,6 +72,7 @@ export const ROUTE_RULES = [
   { pattern: /^src\/Server\/Dockerfile$/, skill: 'infra-engineer', docs: ['build.md'], map: null, read: 'hunk' },
   { pattern: /^src\/Server\/package\.json$/, skill: 'server-engineer', docs: ['backend.md', 'build.md'], map: null, read: 'hunk' },
   { pattern: new RegExp(`^${tutorialRoot}/`), skill: 'client-engineer', docs: ['ui-tutorial.md'], map: 'ui-tutorial.md', read: 'hunk' },
+  { test: path => tutorialScenes.includes(path), skill: 'client-engineer', docs: ['ui-tutorial.md'], map: 'ui-tutorial.md', read: 'hunk' },
   { test: path => debugFiles.includes(path), skill: 'client-engineer', docs: ['ui-hud.md'], map: 'ui-debug.md', read: 'hunk' },
   { test: path => path.startsWith(`${CLIENT}/Cor/Scripts/GameUi/`) || hudFiles.includes(path), skill: 'client-engineer', docs: ['ui-hud.md'], map: 'ui-hud.md', read: 'hunk' },
   { pattern: new RegExp(`^${CLIENT}/Sys/NetMan/`), skill: 'fullstack-coordinator', docs: ['networking.md', 'ui.md'], map: 'ui-screens.md', read: 'hunk' },
@@ -68,13 +80,16 @@ export const ROUTE_RULES = [
   { pattern: new RegExp(`^${CLIENT}/project\\.godot$`), skill: 'client-engineer', docs: ['ui.md', 'build.md'], map: null, read: 'hunk' },
   { pattern: new RegExp(`^${CLIENT}/(Cor|Sys)/`), skill: 'client-engineer', docs: ['ui.md'], map: 'ui-screens.md', read: 'hunk' },
   { pattern: new RegExp(`^${CLIENT}/`), skill: 'client-engineer', docs: ['ui.md'], map: null, read: 'hunk' },
-  { pattern: /^\.github\/workflows\/(EKS|Backup|Server)/, skill: 'infra-engineer', docs: ['deployment.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^\.github\/workflows\/EKS/, skill: 'infra-engineer', docs: ['deployment-eks.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^\.github\/workflows\/Backup/, skill: 'infra-engineer', docs: ['deployment-backup.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^\.github\/workflows\/Server/, skill: 'infra-engineer', docs: ['deployment.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^\.github\/workflows\//, skill: 'infra-engineer', docs: ['build.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^\.github\/actions\//, skill: 'infra-engineer', docs: ['build.md'], map: 'infra.md', read: 'hunk' },
-  { pattern: /^infra\//, skill: 'infra-engineer', docs: ['deployment.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^infra\//, skill: 'infra-engineer', docs: ['deployment-eks.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^docker\//, skill: 'infra-engineer', docs: ['build.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^plugins\//, skill: 'infra-engineer', docs: ['build.md'], map: null, read: 'hunk' },
   { pattern: /^scripts\/(art-|ADDING-ART)/, skill: 'infra-engineer', docs: ['build.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/backup\//, skill: 'infra-engineer', docs: ['deployment-backup.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/write-endpoint-config/, skill: 'fullstack-coordinator', docs: ['networking.md', 'build.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/(validate-docs|docs-scope|build-file-map|context|sync-agent-skills|validate-agent-config|task-report|benchmark-rag)\.mjs$/, skill: 'docs-steward', docs: [], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/install-git-hooks\.mjs$/, skill: 'infra-engineer', docs: [], map: 'infra.md', read: 'hunk' },
@@ -91,7 +106,7 @@ export const AREA_ALIASES = {
   screens: { skill: 'client-engineer', docs: ['docs/context/ui.md'], maps: ['docs/context/map/ui-screens.md'] },
   hud: { skill: 'client-engineer', docs: ['docs/context/ui-hud.md'], maps: ['docs/context/map/ui-hud.md', 'docs/context/map/ui-debug.md'] },
   tutorial: { skill: 'client-engineer', docs: ['docs/context/ui-tutorial.md'], maps: ['docs/context/map/ui-tutorial.md'] },
-  infra: { skill: 'infra-engineer', docs: ['docs/context/deployment.md'], maps: ['docs/context/map/infra.md'] },
+  infra: { skill: 'infra-engineer', docs: ['docs/context/deployment.md', 'docs/context/deployment-eks.md', 'docs/context/deployment-backup.md'], maps: ['docs/context/map/infra.md'] },
   build: { skill: 'infra-engineer', docs: ['docs/context/build.md'], maps: ['docs/context/map/infra.md'] },
   testing: { skill: 'qa-engineer', docs: ['docs/context/testing.md'], maps: [] },
   'site-design': { skill: 'web-designer', docs: ['site/docs/design.md'], maps: ['site/docs/index.md'] },

@@ -1,11 +1,11 @@
 extends Node
 
+const AuthRequestTransportScript = preload("res://Sys/Auth/Auth_Request_Transport.gd")
 const SESSION_FILE := "user://corp_tower_auth_session.save"
 const VERIFIER_FILE := "user://corp_tower_auth_verifier.save"
 const WEB_VERIFIER_KEY := "corp_tower_auth_verifier"
 const REFRESH_MARGIN_SECONDS := 120
 const REFRESH_CHECK_INTERVAL_SECONDS := 30.0
-const REQUEST_TIMEOUT_SECONDS := 12.0
 const NATIVE_FACEBOOK_TIMEOUT_SECONDS := 30.0
 const VERIFIER_BYTES := 32
 const OAUTH_RESUME_GRACE_SECONDS := 2.0
@@ -43,8 +43,12 @@ var facebook_signin_node: Node = null
 var native_signin_in_flight := false
 var native_google_enabled := true
 var native_facebook_enabled := true
+var auth_transport
 
 func _ready() -> void:
+	auth_transport = AuthRequestTransportScript.new()
+	auth_transport.bind_nodes(self)
+	auth_transport.setup(EndpointConfig.SUPABASE_URL, EndpointConfig.SUPABASE_ANON_KEY)
 	_load_session()
 
 	if not is_enabled():
@@ -581,42 +585,12 @@ func _auth_url(path: String) -> String:
 	return EndpointConfig.SUPABASE_URL.rstrip("/") + path
 
 func _post_auth(path: String, body: Dictionary) -> Dictionary:
-	var http := HTTPRequest.new()
-	http.timeout = REQUEST_TIMEOUT_SECONDS
-	add_child(http)
+	if auth_transport == null:
+		auth_transport = AuthRequestTransportScript.new()
+		auth_transport.bind_nodes(self)
+		auth_transport.setup(EndpointConfig.SUPABASE_URL, EndpointConfig.SUPABASE_ANON_KEY)
 
-	var headers := PackedStringArray([
-		"Content-Type: application/json",
-		"apikey: " + EndpointConfig.SUPABASE_ANON_KEY,
-		"Authorization: Bearer " + EndpointConfig.SUPABASE_ANON_KEY
-	])
-
-	var error := http.request(
-		_auth_url(path), headers, HTTPClient.METHOD_POST, JSON.stringify(body)
-	)
-
-	if error != OK:
-		http.queue_free()
-		return {"reason": REASON_UNREACHABLE, "data": {}}
-
-	var result: Array = await http.request_completed
-	http.queue_free()
-
-	if int(result[0]) != HTTPRequest.RESULT_SUCCESS:
-		return {"reason": REASON_UNREACHABLE, "data": {}}
-
-	var status := int(result[1])
-	var payload: PackedByteArray = result[3]
-
-	if status < 200 or status >= 300:
-		return {"reason": REASON_REJECTED, "data": {}}
-
-	var parsed = JSON.parse_string(payload.get_string_from_utf8())
-
-	if typeof(parsed) != TYPE_DICTIONARY:
-		return {"reason": REASON_REJECTED, "data": {}}
-
-	return {"reason": REASON_NONE, "data": parsed}
+	return await auth_transport.post(path, body)
 
 func _apply_session(data: Dictionary) -> bool:
 	var access := str(data.get("access_token", ""))

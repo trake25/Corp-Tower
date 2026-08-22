@@ -24,7 +24,7 @@ Two shapes only:
 - **Shared services** (`RefCounted`) — stateless or shared data, instantiable in
   GUT with no scene tree: `UiTuning`, `MatchState`, `PlayerContext`,
   `UiNodeBinder`, `PointerEvents`, `AccessibilitySettings`, `VisualHooks`,
-  `PopoverCoordinator`, `BlockData`, `SnapGrid`.
+  `PopoverCoordinator`, `BlockData`, `SnapGrid`, `DebugPanelCatalog`.
 - **View controllers** (`Node`, `add_child`-ed by Main so they share the scene
   lifecycle and can own `Tween`s/`Timer`s): `DebugPanelController`,
   `ScorePopupController`, `LevelSummaryController`, `RosterViewController`,
@@ -79,6 +79,8 @@ triggers the same way.
   Hooks category's beat durations **do** round-trip despite being cosmetic — all
   three players must read the same faces and play the beat in lockstep. Per-symbol
   detail for its debug-only source → [map/ui-debug.md](./map/ui-debug.md).
+  `DebugPanelCatalog` owns the immutable tooltip and local tuning-row definitions;
+  the controller retains binding, synchronization and presentation lifecycle.
 - The game debug selector receives its screen context from `ScreenManager`: lobby
   permits Bots only, play permits all gameplay categories, and Sign In is always
   disabled there because it belongs to the standalone sign-in overlay.
@@ -107,11 +109,13 @@ broadcast, in every state — that local tick is why it still counts down throug
 
 ## Game UI Scene
 
-`Cor/Scenes/GameUI.tscn`, themed by `Cor/Themes/GameUITheme.tres` — the single
-scene hosting every HUD and debug node Main binds against. Instanced by Screen
-Manager once a match is found; required at runtime. Default font is Poppins via
-`Theme.default_font` there, inherited everywhere; a heavier weight is a
-per-`Label` override. There is no skin system.
+`Cor/Scenes/GameUI.tscn`, themed by `Cor/Themes/GameUITheme.tres` — the wiring root
+Main binds against. It composes `PlayField.tscn`, `LevelSummary.tscn`,
+`TutorialLayer.tscn` and `DebugPanel.tscn`, while transient popovers, drag preview
+and score-popup layers remain direct children. Screen Manager instances the root
+once a match is found. Default font is Poppins via `Theme.default_font` there and
+is inherited by every subscene; a heavier weight is a per-`Label` override. There
+is no skin system.
 
 `TeamInventoryPanel` is a **permanently visible** bar showing the shared draw pile,
 not a popover. It reuses the `DrawPilePreview`/`DrawPileNameLabel`/
@@ -294,6 +298,6 @@ pile reads as wreckage, not a live verdict.
   default, invisible on `WhiteCardPanel`.
 - **`set_debug_label_text()` takes a `Control`, not a `Label`**, because some
   category name nodes are now flat `Button`s. Do not retype it back.
-- **Node order in `GameUI.tscn` is deliberate.** `TopIndicatorRow` draws after
+- **Node order in `PlayField.tscn` is deliberate.** `TopIndicatorRow` draws after
   `TowerStack`, so overbuild bricks tuck under the indicator instead of covering
   it. Ordering it before the tower makes the tower draw over the bar.

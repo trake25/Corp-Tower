@@ -306,7 +306,7 @@ make a level impossible before player decisions happen.
 Exposes [Game Config](./backend.md#game-config) variables without code changes or
 restarts. The server validates and clamps every change then broadcasts
 `debug_config` — the authoritative ranges live in
-[backend.md](./backend.md#updatedebugconfig--the-authoritative-validation). The
+[backend.md](./backend.md#debug_config--the-authoritative-validation). The
 overlay is dropdown-navigated with Reset and Restart actions.
 
 **Shipping requirement:** the menu is gated by a client build flag, but the server

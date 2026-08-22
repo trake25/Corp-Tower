@@ -1,0 +1,561 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://xcgtj0oaftef" path="res://Cor/Scripts/BlockPreview.gd" id="2_blockpreview"]
+[ext_resource type="Script" uid="uid://0lvf4bd13i4n" path="res://Cor/Scripts/TowerStack.gd" id="3_towerstack"]
+[ext_resource type="Script" path="res://Cor/Scripts/BackgroundParallax.gd" id="3b_backgroundparallax"]
+[ext_resource type="Script" uid="uid://ck4u6fflu3cy3" path="res://Cor/Scripts/CooldownOverlay.gd" id="6_cooldown"]
+[ext_resource type="Texture2D" uid="uid://bypg06jvodky3" path="res://Cor/Art/Static/bg-platform.png" id="9_platform"]
+[ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-menu.png" id="10_menu"]
+[ext_resource type="Texture2D" uid="uid://c03udqp6kbfm8" path="res://Cor/Art/Static/timer-round-time.png" id="11_roundtime"]
+[ext_resource type="Texture2D" uid="uid://3q1arbtnnf4x" path="res://Cor/Art/Static/level.png" id="13_level"]
+[ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-quest-state1.png" id="18_queststate1"]
+[ext_resource type="Texture2D" path="res://Cor/Art/Static/impact-text.png" id="19_impacttext"]
+[ext_resource type="Texture2D" path="res://Cor/Art/Static/indicator.png" id="20_indicator"]
+[ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-chat.png" id="21_chat"]
+[ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-power.png" id="22_power"]
+
+[sub_resource type="Gradient" id="Gradient_TopBarFill"]
+colors = PackedColorArray(0.192, 0.725, 0.271, 1, 0.714, 0.992, 0.29, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_TopBarFill"]
+gradient = SubResource("Gradient_TopBarFill")
+width = 256
+height = 8
+
+[node name="PlayField" type="Control" unique_id=1310220001]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PlatformArt" type="TextureRect" parent="." unique_id=158231656]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 70.0
+offset_top = 712.0
+offset_right = 342.0
+offset_bottom = 769.0
+mouse_filter = 2
+texture = ExtResource("9_platform")
+expand_mode = 1
+script = ExtResource("3b_backgroundparallax")
+parallax_ratio = 1.0
+instant = true
+
+[node name="TowerStack" type="Control" parent="." unique_id=1556131207]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 70.0
+offset_top = 111.0
+offset_right = 342.0
+offset_bottom = 731.0
+mouse_filter = 2
+script = ExtResource("3_towerstack")
+
+[node name="TowerDropZone" type="Control" parent="." unique_id=1969328060]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 10.0
+offset_top = 111.0
+offset_right = 342.0
+offset_bottom = 815.0
+mouse_filter = 2
+
+[node name="HamburgerCircle" type="Panel" parent="." unique_id=1310223001]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 62.0
+offset_right = 62.0
+offset_bottom = 100.0
+mouse_filter = 2
+theme_type_variation = &"CircleButtonPanel"
+
+[node name="HamburgerButton" type="TextureButton" parent="." unique_id=745964074]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 27.0
+offset_top = 65.0
+offset_right = 59.0
+offset_bottom = 97.0
+texture_normal = ExtResource("10_menu")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ConnectionBanner" type="PanelContainer" parent="." unique_id=401001001]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 70.0
+offset_top = 5.0
+offset_right = 342.0
+offset_bottom = 37.0
+mouse_filter = 2
+theme_type_variation = &"WhiteCardPanel"
+
+[node name="ConnectionMargin" type="MarginContainer" parent="ConnectionBanner" unique_id=401001002]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+
+[node name="StatusLabel" type="Label" parent="ConnectionBanner/ConnectionMargin" unique_id=546576960]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"CardMetaLabel"
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+theme_override_font_sizes/font_size = 11
+text = "DISCONNECTED"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DemoModeLabel" type="Label" parent="." unique_id=1310221500]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 6.0
+offset_top = 2.0
+offset_right = 406.0
+offset_bottom = 40.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 11
+text = "Demo build — your teammates are bots. The real game is 3 human players."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="RoundTimeBadge" type="Control" parent="." unique_id=1351152604]
+layout_mode = 0
+offset_left = 110.5
+offset_top = 44.0
+offset_right = 302.5
+offset_bottom = 124.0
+mouse_filter = 2
+
+[node name="RoundTimeTexture" type="TextureRect" parent="RoundTimeBadge" unique_id=286087668]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_roundtime")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="TimerLabel" type="Label" parent="RoundTimeBadge" unique_id=1614056574]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 26.0
+offset_right = 192.0
+offset_bottom = 58.0
+theme_override_colors/font_color = Color(0.06, 0.06, 0.06, 1)
+theme_override_font_sizes/font_size = 28
+text = "00:00"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LevelBadge" type="Control" parent="." unique_id=23158317]
+layout_mode = 0
+offset_left = 331.0
+offset_top = 49.0
+offset_right = 407.0
+offset_bottom = 121.0
+mouse_filter = 2
+
+[node name="LevelBadgeTexture" type="TextureRect" parent="LevelBadge" unique_id=76970094]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_level")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="LevelLabel" type="Label" parent="LevelBadge" unique_id=628644062]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 20.0
+offset_top = 8.0
+offset_right = 56.0
+offset_bottom = 36.0
+theme_override_colors/font_color = Color(0.06, 0.06, 0.06, 1)
+theme_override_font_sizes/font_size = 20
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TopIndicatorRow" type="Control" parent="." unique_id=1135729857]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 128.0
+offset_right = 404.0
+offset_bottom = 164.0
+mouse_filter = 2
+
+[node name="TopIndicatorFrame" type="Panel" parent="TopIndicatorRow" unique_id=831164527]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"TopBarFramePanel"
+
+[node name="TopIndicatorTrack" type="Panel" parent="TopIndicatorRow/TopIndicatorFrame" unique_id=1712004411]
+clip_children = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"TopBarTrackPanel"
+
+[node name="TopIndicatorFill" type="TextureRect" parent="TopIndicatorRow/TopIndicatorFrame/TopIndicatorTrack" unique_id=1316656720]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 9
+anchor_right = 0.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_TopBarFill")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="TopIndicatorLabel" type="Label" parent="TopIndicatorRow" unique_id=778896618]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 16
+text = "TOP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TowerStabilityLabel" type="Label" parent="." unique_id=1117939618]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 90.0
+offset_top = 164.0
+offset_right = 322.0
+offset_bottom = 184.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.7, 1, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 11
+text = "STABLE · 100%"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ActionRow" type="HBoxContainer" parent="." unique_id=1790326432]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 827.0
+offset_right = 402.0
+offset_bottom = 907.0
+theme_override_constants/separation = 6
+
+[node name="TeamInventoryPanel" type="PanelContainer" parent="." unique_id=1310221200]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 10.0
+offset_top = 774.0
+offset_right = 294.0
+offset_bottom = 812.0
+mouse_filter = 2
+theme_type_variation = &"WhiteCardPanel"
+
+[node name="TeamInventoryMargin" type="MarginContainer" parent="TeamInventoryPanel" unique_id=1310221201]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 4
+
+[node name="TeamInventoryRow" type="HBoxContainer" parent="TeamInventoryPanel/TeamInventoryMargin" unique_id=1310221202]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 0
+
+[node name="DrawPilePreview" type="Control" parent="TeamInventoryPanel/TeamInventoryMargin/TeamInventoryRow" unique_id=1310221203]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("2_blockpreview")
+
+[node name="DrawPileNameLabel" type="Label" parent="TeamInventoryPanel/TeamInventoryMargin/TeamInventoryRow" unique_id=1310221204]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"CardMetaLabel"
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+text = "Next Draw"
+vertical_alignment = 1
+
+[node name="TeamInventorySeparator" type="VSeparator" parent="TeamInventoryPanel/TeamInventoryMargin/TeamInventoryRow" unique_id=1310221205]
+layout_mode = 2
+
+[node name="DrawPileCountLabel" type="Label" parent="TeamInventoryPanel/TeamInventoryMargin/TeamInventoryRow" unique_id=1310221206]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"CardMetaLabel"
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+text = "0 left"
+vertical_alignment = 1
+
+[node name="QuickChatTriggerCircle" type="Panel" parent="." unique_id=1310221262]
+layout_mode = 0
+offset_left = 301.0
+offset_top = 774.0
+offset_right = 339.0
+offset_bottom = 812.0
+mouse_filter = 2
+theme_type_variation = &"CircleButtonPanel"
+
+[node name="QuickChatTrigger" type="TextureButton" parent="." unique_id=1310222262]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 304.0
+offset_top = 777.0
+offset_right = 336.0
+offset_bottom = 809.0
+texture_normal = ExtResource("21_chat")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="PowerTriggerCircle" type="Panel" parent="." unique_id=1310221378]
+layout_mode = 0
+offset_left = 359.0
+offset_top = 774.0
+offset_right = 397.0
+offset_bottom = 812.0
+mouse_filter = 2
+theme_type_variation = &"CircleButtonPanel"
+
+[node name="PowerTrigger" type="TextureButton" parent="." unique_id=1310222378]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 362.0
+offset_top = 777.0
+offset_right = 394.0
+offset_bottom = 809.0
+texture_normal = ExtResource("22_power")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="QuestChip" type="TextureButton" parent="." unique_id=1310220005]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 5.0
+offset_top = 175.0
+offset_right = 81.0
+offset_bottom = 245.5
+texture_normal = ExtResource("18_queststate1")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="QuestBadge" type="TextureRect" parent="QuestChip" unique_id=1310220006]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 48.5
+offset_top = 6.0
+offset_right = 60.5
+offset_bottom = 18.0
+mouse_filter = 2
+texture = ExtResource("20_indicator")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="PlayerRailBox" type="VBoxContainer" parent="." unique_id=1576617832]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 13.0
+offset_top = 247.0
+offset_right = 72.0
+offset_bottom = 737.0
+theme_override_constants/separation = 10
+alignment = 0
+
+[node name="ImpactTrack" type="VBoxContainer" parent="." unique_id=1310220002]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 352.0
+offset_top = 194.0
+offset_right = 388.0
+offset_bottom = 1024.0
+mouse_filter = 2
+theme_override_constants/separation = 0
+alignment = 0
+
+[node name="ImpactPill" type="TextureRect" parent="." unique_id=1310220003]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 328.0
+offset_top = 170.0
+offset_right = 412.0
+offset_bottom = 212.0
+mouse_filter = 2
+texture = ExtResource("19_impacttext")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="PlaceBlockButton1" type="Button" parent="ActionRow" unique_id=169731104]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(127, 80)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"WhiteCardButton"
+
+[node name="CooldownOverlay" type="Control" parent="ActionRow/PlaceBlockButton1" unique_id=1729639853]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_cooldown")
+
+[node name="CardMargin" type="MarginContainer" parent="ActionRow/PlaceBlockButton1" unique_id=716931399]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 6
+
+[node name="CardRows" type="VBoxContainer" parent="ActionRow/PlaceBlockButton1/CardMargin" unique_id=1195819121]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="BlockPreview1" type="Control" parent="ActionRow/PlaceBlockButton1/CardMargin/CardRows" unique_id=1941618900]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(70, 30)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("2_blockpreview")
+
+[node name="PlaceBlockButton2" type="Button" parent="ActionRow" unique_id=1688257059]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(127, 80)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"WhiteCardButton"
+
+[node name="CooldownOverlay" type="Control" parent="ActionRow/PlaceBlockButton2" unique_id=1796180633]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_cooldown")
+
+[node name="CardMargin" type="MarginContainer" parent="ActionRow/PlaceBlockButton2" unique_id=951159880]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 6
+
+[node name="CardRows" type="VBoxContainer" parent="ActionRow/PlaceBlockButton2/CardMargin" unique_id=1121205579]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="BlockPreview2" type="Control" parent="ActionRow/PlaceBlockButton2/CardMargin/CardRows" unique_id=1547697295]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(70, 30)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("2_blockpreview")
+
+[node name="PlaceBlockButton3" type="Button" parent="ActionRow" unique_id=1361965894]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(127, 80)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"WhiteCardButton"
+
+[node name="CooldownOverlay" type="Control" parent="ActionRow/PlaceBlockButton3" unique_id=1415790811]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_cooldown")
+
+[node name="CardMargin" type="MarginContainer" parent="ActionRow/PlaceBlockButton3" unique_id=983207920]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 6
+
+[node name="CardRows" type="VBoxContainer" parent="ActionRow/PlaceBlockButton3/CardMargin" unique_id=1646897227]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="BlockPreview3" type="Control" parent="ActionRow/PlaceBlockButton3/CardMargin/CardRows" unique_id=1640407898]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(70, 30)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("2_blockpreview")

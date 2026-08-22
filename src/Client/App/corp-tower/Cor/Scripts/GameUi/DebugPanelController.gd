@@ -2,256 +2,18 @@ extends Node
 
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
 const AccessibilitySettingsScript = preload("res://Cor/Scripts/GameUi/AccessibilitySettings.gd")
-const BOT_STRATEGY_COOPERATIVE := "cooperative"
-const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
-const TOWER_FEEDBACK_MODES := ["warnings_only", "meter_only", "live_preview"]
-const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Meter Only", "Live Preview"]
-const DEBUG_CATEGORY_NAMES := [
-	"Bots", "Round", "UI", "Supply", "Scoring", "Impact", "Tower", "Power", "Parallax", "Placement",
-	"Hooks", "Sign In"
-]
-const DEBUG_CONTEXT_LOBBY := "lobby"
-const DEBUG_CONTEXT_PLAY := "play"
-
-const DEBUG_TOOLTIPS := {
-	"TowerStabilityDifficultyLabel": {
-		"title": "Stability Difficulty",
-		"body": "The single dial for how punishing the tower is. Everything else — overhang weight, collapse threshold, slenderness band, support tolerance, the maturity ramp — is derived from it.\n\npressure = (this / 100) x (0.25 + 0.75 x min(1, level / 30))\n\nThreat also ramps with LEVEL, so the same setting is gentle early and dangerous late: at 90, level 1 sits near 87% stability and never collapses, while level 30+ punishes a careless column hard.\n\n0 = stability effectively off (score multiplier only). 90 = shipping default. 100 = brutal, greedy play fails the Impact gate.",
-	},
-	"TowerMaxTiltLabel": {
-		"title": "Max Tilt Angle",
-		"body": "Visual only. The lean in degrees drawn when tilt score reaches 1.0. Does not change when the tower collapses — that is derived from Stability Difficulty.\n\nHigher = drama. Lower = subtle.",
-	},
-	"TowerSiteSlendernessLabel": {
-		"title": "Site Slenderness Target",
-		"body": "Sets how wide the buildable site is for a given target height.\n\nsite width = even round-up(target height / this), clamped to Site Width Min..Max.\n\nAt 6.75 the site runs 6 columns on levels 1-28 (the Site Width Min floor), then 8 from level 29 — landing at full width just as stability pressure peaks at level 30.\n\nLower = wider site, easier. The site is also what slenderness is measured against — building on the full site width is always penalty-free, so widening the site widens the safe zone too.",
-	},
-	"TowerSiteWidthMinLabel": {
-		"title": "Site Width Min",
-		"body": "Narrowest the buildable site may get, in columns. Floors the formula above.",
-	},
-	"TowerSiteWidthMaxLabel": {
-		"title": "Site Width Max",
-		"body": "Widest the buildable site may get, in columns.\n\nHard ceiling is 8: the tower viewport is 272px at a 34px brick, so columns outside that are drawn off-screen and the player never sees those bricks.",
-	},
-	"TowerWarningThresholdLabel": {
-		"title": "Warning Threshold",
-		"body": "Stability % at or below which the \"Tower Wobbling\" cue fires. Display only — no gameplay effect.",
-	},
-	"TowerCriticalThresholdLabel": {
-		"title": "Critical Threshold",
-		"body": "Stability % at or below which the \"Tower Critical\" cue fires. Display only, and clamped to never exceed Warning.",
-	},
-	"TowerMoodThresholdLabel": {
-		"title": "Brick Mood Threshold",
-		"body": "How far a placement must move the tower toward or away from centre before the brick's face reacts.\n\nbalance delta = (lean before - lean after) / collapse threshold x 100\n\ndelta >= this = smiley, delta <= -this = worried, in between = disbelief. Display only, no gameplay effect.\n\nThis is NOT the change in the Stability %. That score is min(lean, integrity) and sags as the tower grows, so a perfectly centred brick read as a loss and straightening a lean was masked whenever integrity was the lower axis. This reads the lean alone, so a centred brick scores 0 at every height and pulling the tower back upright always scores positive.\n\nEach brick's delta is fixed at placement, but this compares against it live — dragging the slider restyles the whole standing tower immediately.\n\nMeasured mix across levels 1-30: at 1 roughly 29/58/13 smiley/worried/disbelief, at 3 about 17/33/50, at 5 about 12/18/70.\n\nBricks with no face at all mean the server is older than this feature and is not sending a delta.",
-	},
-	"TowerFeedbackModeLabel": {
-		"title": "Stability Feedback",
-		"body": "How stability is surfaced: warning popups only, a numeric meter, or a live preview. Presentation only.",
-	},
-	"ImpactIntervalLabel": {
-		"title": "Impact Interval",
-		"body": "How many levels between Impacts. 1 = every level must be banked to advance, and a failure replays only that level.\n\nLarger = longer runs between checkpoints, so a rollback costs more.",
-	},
-	"ImpactScoreLabel": {
-		"title": "Min Contribution Share",
-		"body": "The share of a level's expected placement score EACH player must personally earn to advance.\n\nrequired = share x target height x level x Placement Score/Height\n\nWith 3 players, share x 3 is how much of the pool must be split evenly — above ~0.30 the gate becomes nearly impossible. 0 disables it.",
-	},
-	"ImpactScoreFloorLabel": {
-		"title": "Impact Flat Floor",
-		"body": "Legacy absolute score floor per player, applied alongside the share.\n\nrequirement = max(this, share-derived requirement)\n\nLeave at 0 unless you specifically want a fixed number rather than a percentage.",
-	},
-	"LevelSupplyMinLabel": {
-		"title": "Supply Min Surplus",
-		"body": "Lowest total brick height a level may be dealt, above the amount needed.\n\nrequired = ceil(target height / packing efficiency), then this is added.\n\nRaise to guarantee slack; too low and levels run out of bricks.",
-	},
-	"LevelSupplyMaxLabel": {
-		"title": "Supply Max Surplus",
-		"body": "Highest total brick height above the requirement. Widens the accepted band so the generator can find a valid hand.\n\nHigher = more spare bricks, more overbuild and easier exact finishes.",
-	},
-	"MinPrecisionBlocksLabel": {
-		"title": "Min Precision Bricks",
-		"body": "How many height-1 or height-2 bricks a level's supply must contain. These are what let a team land an exact finish rather than overbuilding.\n\nRaise if Perfect Build feels luck-based.",
-	},
-	"MaxTeamCarryOverLabel": {
-		"title": "Team Carry-Over",
-		"body": "How many unused bricks survive into the next level, smallest first. Discarded entirely when a level fails.\n\nHigher = leftover precision bricks bank up between levels.",
-	},
-	"RefreshMinUsefulHeightLabel": {
-		"title": "Refresh Useful Height",
-		"body": "Minimum brick height a Refresh tries to hand you when the team's remaining height allows it, so a reroll is not wasted on tiny bricks.",
-	},
-	"SupplyEffectiveWidthLabel": {
-		"title": "Supply Effective Width",
-		"body": "How much of the site a tower is assumed to actually occupy when sizing supply.\n\nefficiency = cells per brick / (avg brick height x (site width x this + 0.5))\n\nLower = assumes a narrow tower, deals fewer bricks. Raise if levels run dry.",
-	},
-	"PlacementScoreLabel": {
-		"title": "Placement Score / Height",
-		"body": "The core earner, paid per unit of height your brick actually added.\n\npoints = effective height x level x this x stability multiplier\n\nEffective height is capped by the height still missing, so late placements pay less.",
-	},
-	"PlacementStabilityFloorLabel": {
-		"title": "Placement Stability Floor",
-		"body": "The multiplier on placement score when the tower is at 0 stability.\n\nmultiplier = floor + (1 - floor) x (stability before your placement / 100)\n\n0.5 = a wobbling tower halves your take. 1.0 = stability does not affect scoring at all.",
-	},
-	"ReinforceIntegrityLabel": {
-		"title": "Reinforce / Integrity",
-		"body": "Paid when your placement raises the tower's integrity — widening the base or reducing unsupported cells.\n\npoints += integrity gained x this x level\n\nThis is the reward for fixing the tower instead of racing. Raise to make repair competitive with grabbing height.",
-	},
-	"ReinforceLeanLabel": {
-		"title": "Reinforce / Lean",
-		"body": "Paid when your placement straightens a leaning tower.\n\npoints += (|lean before| - |lean after|) x this x level\n\nLean is roughly 0..collapse threshold, so this multiplier is large relative to the integrity one.",
-	},
-	"FinisherBonusLabel": {
-		"title": "Finisher Bonus / Level",
-		"body": "Flat reward to whoever places the final brick, exact or not.\n\npoints = level x this\n\nDefault 0 on purpose: overbuilding to steal the finish should earn nothing.",
-	},
-	"PrecisionBonusLabel": {
-		"title": "Precision Bonus / Level",
-		"body": "Paid only to the player who finishes the tower at EXACTLY the target height.\n\npoints = level x this\n\nThe main individual prize for a Perfect Build.",
-	},
-	"TeamExactBonusLabel": {
-		"title": "Team Exact Bonus / Level",
-		"body": "Paid to EVERY player on an exact finish.\n\npoints = level x this\n\nThe cooperative counterweight to the Precision bonus, and a big help toward each player's Impact share.",
-	},
-	"AssistBonusLabel": {
-		"title": "Assist Bonus / Level",
-		"body": "Optional reward for players who cleared the assist threshold but did not finish.\n\npoints = level x this\n\nDisabled at 0 by default.",
-	},
-	"AssistThresholdLabel": {
-		"title": "Assist Threshold",
-		"body": "Minimum contribution share needed to qualify for the Assist bonus. Only matters when Assist Bonus is above 0.",
-	},
-
-	"PowerReplenishShareLabel": {
-		"title": "Replenish Share",
-		"body": "How many bricks the Replenish power adds to the shared draw pile.\n\nbricks = max(1, round(this x the level's STARTING draw pile size))\n\nThe starting pile is team carry-over plus the generated reserve, so this scales itself with target height, site width and brick weights instead of being a flat number. At 25% a level dealt 20 bricks replenishes 5.\n\nNew bricks are appended, never shuffled in — the \"Next Draw\" preview all three players can see stays put.\n\nReplenish is the side-quest reward and the only power that can rescue a level short on supply: holding one defers the not-enough-height failure.",
-	},
-
-	"HooksAboutButton": {
-		"title": "Visual Hooks",
-		"body": "The end-of-level flourishes every player in the room sees together, not client-local cosmetics.\n\nImpact Beat: the camera pulls back so the whole tower is visible while each placed brick flips to its placer's pass/fail face, then holds there through the level summary and snaps back once the summary closes. Plays once per level result. Skipped entirely on a collapse — there are no standing bricks left to wave across.\n\nScreen Shake: a jolt on a failed Impact or any negative verdict. Fires alongside a collapse instead of the beat.\n\nBoth toggles and every duration below round-trip through the server — a beat only reads as a shared moment if all three clients play it in lockstep, so this is not a Parallax-style client-local row.",
-	},
-	"ImpactBeatZoomOutLabel": {
-		"title": "Impact Beat / Zoom Out",
-		"body": "First phase of the beat: how long the camera takes to pull back to the wide framing that shows the whole tower.\n\nLonger = a slower, more deliberate reveal. Shorter = snaps out almost instantly.",
-	},
-	"ImpactBeatWaveLabel": {
-		"title": "Impact Beat / Wave",
-		"body": "Second phase: how long the pass/fail face sweep takes to travel bottom-to-top across every placed brick, once the camera has finished pulling back.\n\nLonger = each brick's verdict is easier to read as it flips. Shorter = reads as a flash rather than a sweep.\n\nZoom Out + Wave run in sequence and their sum is added to the level-summary wait, so a longer beat delays the score screen by the same amount.",
-	},
-	"ImpactBeatHoldLabel": {
-		"title": "Impact Beat / Hold",
-		"body": "Third phase: how long the camera stays at the wide framing, verdict faces held, before the level summary appears. There is no separate zoom-in -- the beat keeps holding through the summary itself and the camera only snaps back to normal play framing once the summary closes.",
-	},
-	"ScreenShakeDurationLabel": {
-		"title": "Screen Shake Duration",
-		"body": "How long the failure shake decays for, in ms. Only the tower and its debris shake — the HUD and buttons never move.\n\nFires on a failed Impact or any negative verdict, and also on a collapse (which skips the Impact Beat itself).",
-	},
-}
-
-const PARALLAX_TARGET_TOWER := "tower"
-const PARALLAX_TARGET_SKY := "sky"
-const PARALLAX_TARGET_GROUND := "ground"
-
-const PARALLAX_ROWS := [
-	{
-		"key": "ScrollStartRatio", "target": PARALLAX_TARGET_TOWER, "property": "scroll_start_ratio",
-		"label": "Scroll Start Ratio", "min": 0.0, "max": 100.0, "step": 5.0, "percent": true,
-		"tooltip": "How full the screen has to feel before the camera starts panning at all. Lower = camera starts helping earlier (shorter towers). Higher = camera waits longer before it starts helping.",
-	},
-	{
-		"key": "ScrollEasePower", "target": PARALLAX_TARGET_TOWER, "property": "scroll_ease_power",
-		"label": "Scroll Ease Power", "min": 1.0, "max": 6.0, "step": 0.5, "decimals": 1,
-		"tooltip": "The \"holding back\" curve. Higher = camera stays almost still for most of the climb and only rushes to the bar in the last few bricks. Lower toward 1 = a steady, even approach the whole way.",
-	},
-	{
-		"key": "TopIndicatorClearance", "target": PARALLAX_TARGET_TOWER, "property": "top_indicator_clearance_units",
-		"label": "Top Indicator Clearance", "min": 0.0, "max": 4.0, "step": 1.0, "is_int": true, "suffix": " bricks",
-		"tooltip": "How much daylight is left between the top brick and the bar at a perfect finish. Bigger = more visible gap at 100%. 0 = try to touch it exactly.",
-	},
-	{
-		"key": "BrickUnitSize", "target": PARALLAX_TARGET_TOWER, "property": "brick_unit_size",
-		"label": "Brick Unit Size", "min": 20.0, "max": 48.0, "step": 1.0, "is_int": true, "suffix": "px",
-		"tooltip": "Physical size of a brick on screen. Bigger bricks = fewer visible at once, chunkier/bolder tower; also changes how many bricks fit before scrolling is needed at all.",
-	},
-	{
-		"key": "DropDuration", "target": PARALLAX_TARGET_TOWER, "property": "drop_duration",
-		"label": "Drop Duration", "min": 0.05, "max": 1.0, "step": 0.05, "decimals": 2, "suffix": " sec",
-		"tooltip": "How long a freshly placed brick takes to animate down into its slot. Longer = floatier, more weighty landing. Shorter = snappier, more immediate.",
-	},
-	{
-		"key": "TiltEaseSpeed", "target": PARALLAX_TARGET_TOWER, "property": "tilt_ease_speed",
-		"label": "Tilt Ease Speed", "min": 1.0, "max": 15.0, "step": 0.5, "decimals": 1,
-		"tooltip": "How quickly the tower's lean animation catches up to the server's actual tilt reading. Higher = tower reacts to instability sharply/immediately. Lower = a slower, more organic sway.",
-	},
-	{
-		"key": "CollapseTiltDeg", "target": PARALLAX_TARGET_TOWER, "property": "collapse_tilt_deg",
-		"label": "Collapse Tilt", "min": 10.0, "max": 90.0, "step": 5.0, "is_int": true, "suffix": "°",
-		"tooltip": "How far over the tower visually keels when it actually collapses — a pure \"sell the failure\" flourish, doesn't affect live play.",
-	},
-	{
-		"key": "TopPadding", "target": PARALLAX_TARGET_TOWER, "property": "top_padding",
-		"label": "Top Padding", "min": 0.0, "max": 40.0, "step": 2.0, "is_int": true, "suffix": "px",
-		"tooltip": "Small reserved margin at the very top of the tower's drawing area — mostly invisible headroom, rarely worth touching.",
-	},
-	{
-		"key": "BottomPadding", "target": PARALLAX_TARGET_TOWER, "property": "bottom_padding",
-		"label": "Bottom Padding", "min": 0.0, "max": 40.0, "step": 2.0, "is_int": true, "suffix": "px",
-		"tooltip": "Small reserved margin at the bottom of the tower's drawing area, above the ground line.",
-	},
-	{
-		"key": "SkyParallaxRatio", "target": PARALLAX_TARGET_SKY, "property": "parallax_ratio",
-		"label": "Sky Parallax Ratio", "min": 0.0, "max": 100.0, "step": 5.0, "percent": true,
-		"tooltip": "How fast the sky moves relative to the tower's own scroll. Lower = feels farther away/slower (distant sky). Higher = feels closer/faster.",
-	},
-	{
-		"key": "SkyEaseSpeed", "target": PARALLAX_TARGET_SKY, "property": "ease_speed",
-		"label": "Sky Ease Speed", "min": 1.0, "max": 10.0, "step": 0.5, "decimals": 1,
-		"tooltip": "How snappily the sky catches up whenever the scroll target changes. Higher = tight, immediate follow. Lower = a laggy, dreamy trail.",
-	},
-	{
-		"key": "GroundParallaxRatio", "target": PARALLAX_TARGET_GROUND, "property": "parallax_ratio",
-		"label": "Ground Parallax Ratio", "min": 0.0, "max": 200.0, "step": 5.0, "percent": true,
-		"tooltip": "How fast the ground platform moves relative to the tower's own scroll. Higher = feels closer/faster (keeps the ground glued to the tower's base instead of lagging behind as it recedes).",
-	},
-	{
-		"key": "GroundEaseSpeed", "target": PARALLAX_TARGET_GROUND, "property": "ease_speed",
-		"label": "Ground Ease Speed", "min": 1.0, "max": 10.0, "step": 0.5, "decimals": 1,
-		"tooltip": "How snappily the ground platform catches up whenever the scroll target changes. Higher = tight, immediate follow. Lower = laggy trail.",
-	},
-]
-
-const PLACEMENT_ROWS := [
-	{
-		"key": "SnapRadius", "target": PARALLAX_TARGET_TOWER, "property": "snap_radius_units",
-		"label": "Snap Radius", "min": 0.5, "max": 6.0, "step": 0.1, "decimals": 1, "suffix": " bricks",
-		"tooltip": "How close a dragged brick's corner has to get to a snap point before it locks on. Higher = very forgiving, the brick jumps to points from far away. Lower = you have to aim, and drags far from the tower fall back to plain column aiming.",
-	},
-	{
-		"key": "DragGripOffset", "target": PARALLAX_TARGET_TOWER, "property": "drag_grip_offset_units",
-		"label": "Drag Grip Lift", "min": 0.0, "max": 4.0, "step": 0.1, "decimals": 1, "suffix": " bricks",
-		"tooltip": "How far above the finger the dragged brick floats, so the thumb doesn't cover it. Higher = brick sits well clear of the hand but feels detached. 0 = brick sits right under the finger and gets hidden by it on a phone.",
-	},
-	{
-		"key": "GhostAlpha", "target": PARALLAX_TARGET_TOWER, "property": "ghost_alpha",
-		"label": "Landing Ghost Opacity", "min": 0.0, "max": 100.0, "step": 5.0, "percent": true,
-		"tooltip": "How solid the preview of the brick's landing spot looks. Higher = reads as an almost-placed brick. Lower = a faint hint that's easier to see the tower through.",
-	},
-	{
-		"key": "SnapDotRadius", "target": PARALLAX_TARGET_TOWER, "property": "snap_dot_radius",
-		"label": "Snap Dot Size", "min": 1.0, "max": 8.0, "step": 0.5, "decimals": 1, "suffix": "px",
-		"tooltip": "Size of the small rings marking every available snap point while dragging. Bigger = easier to see on a phone but busier over the tower.",
-	},
-	{
-		"key": "SnapTargetRadius", "target": PARALLAX_TARGET_TOWER, "property": "snap_target_radius",
-		"label": "Snap Target Size", "min": 4.0, "max": 18.0, "step": 0.5, "decimals": 1, "suffix": "px",
-		"tooltip": "Size of the highlight ring around the point the brick is currently locked onto. Bigger = the chosen target stands out further from its neighbours.",
-	},
-]
-
-static func tunable_rows() -> Array:
-	return PARALLAX_ROWS + PLACEMENT_ROWS
+const DebugPanelCatalogScript = preload("res://Cor/Scripts/GameUi/DebugPanelCatalog.gd")
+const BOT_STRATEGY_COOPERATIVE := DebugPanelCatalogScript.BOT_STRATEGY_COOPERATIVE
+const BOT_STRATEGY_MVP_GREEDY := DebugPanelCatalogScript.BOT_STRATEGY_MVP_GREEDY
+const TOWER_FEEDBACK_MODES := DebugPanelCatalogScript.TOWER_FEEDBACK_MODES
+const TOWER_FEEDBACK_MODE_TITLES := DebugPanelCatalogScript.TOWER_FEEDBACK_MODE_TITLES
+const DEBUG_CATEGORY_NAMES := DebugPanelCatalogScript.DEBUG_CATEGORY_NAMES
+const DEBUG_CONTEXT_LOBBY := DebugPanelCatalogScript.DEBUG_CONTEXT_LOBBY
+const DEBUG_CONTEXT_PLAY := DebugPanelCatalogScript.DEBUG_CONTEXT_PLAY
+const DEBUG_TOOLTIPS := DebugPanelCatalogScript.DEBUG_TOOLTIPS
+const PARALLAX_TARGET_TOWER := DebugPanelCatalogScript.PARALLAX_TARGET_TOWER
+const PARALLAX_TARGET_SKY := DebugPanelCatalogScript.PARALLAX_TARGET_SKY
+const PARALLAX_TARGET_GROUND := DebugPanelCatalogScript.PARALLAX_TARGET_GROUND
 
 var tuning
 var network
@@ -367,7 +129,7 @@ var screen_shake_duration_label: Control
 var screen_shake_duration_slider: HSlider
 var accessibility
 var on_tutorial_requested: Callable = Callable()
-var debug_context := DEBUG_CONTEXT_PLAY
+var debug_context := DebugPanelCatalogScript.DEBUG_CONTEXT_PLAY
 
 func bind_nodes(binder) -> void:
 	debug_overlay = binder.optional_node("DebugOverlay") as Control
@@ -389,11 +151,11 @@ func bind_nodes(binder) -> void:
 		"Sign In": null,
 	}
 	parallax_targets = {
-		PARALLAX_TARGET_TOWER: binder.optional_node("TowerStack"),
-		PARALLAX_TARGET_SKY: binder.optional_node("BgArt"),
-		PARALLAX_TARGET_GROUND: binder.optional_node("PlatformArt"),
+		DebugPanelCatalogScript.PARALLAX_TARGET_TOWER: binder.optional_node("TowerStack"),
+		DebugPanelCatalogScript.PARALLAX_TARGET_SKY: binder.optional_node("BgArt"),
+		DebugPanelCatalogScript.PARALLAX_TARGET_GROUND: binder.optional_node("PlatformArt"),
 	}
-	for row in tunable_rows():
+	for row in DebugPanelCatalogScript.tunable_rows():
 		parallax_buttons[row.key] = binder.optional_node(row.key + "Button") as Button
 		parallax_sliders[row.key] = binder.optional_node(row.key + "Slider") as HSlider
 	reset_debug_button = binder.optional_node("ResetDebugButton") as Button
@@ -596,8 +358,8 @@ func setup(
 
 	if tower_feedback_mode_button != null:
 		tower_feedback_mode_button.clear()
-		for i in range(TOWER_FEEDBACK_MODES.size()):
-			tower_feedback_mode_button.add_item(TOWER_FEEDBACK_MODE_TITLES[i], i)
+		for i in range(DebugPanelCatalogScript.TOWER_FEEDBACK_MODES.size()):
+			tower_feedback_mode_button.add_item(DebugPanelCatalogScript.TOWER_FEEDBACK_MODE_TITLES[i], i)
 		tower_feedback_mode_button.item_selected.connect(on_tower_feedback_mode_selected)
 
 	setup_category_dropdown()
@@ -610,8 +372,8 @@ func setup_category_dropdown() -> void:
 		return
 
 	category_dropdown.clear()
-	for i in range(DEBUG_CATEGORY_NAMES.size()):
-		category_dropdown.add_item(DEBUG_CATEGORY_NAMES[i], i)
+	for i in range(DebugPanelCatalogScript.DEBUG_CATEGORY_NAMES.size()):
+		category_dropdown.add_item(DebugPanelCatalogScript.DEBUG_CATEGORY_NAMES[i], i)
 
 	category_dropdown.item_selected.connect(on_category_selected)
 	select_first_enabled_category()
@@ -622,32 +384,32 @@ func set_screen_context(context: String) -> void:
 	if category_dropdown == null:
 		return
 
-	for i in range(DEBUG_CATEGORY_NAMES.size()):
-		category_dropdown.set_item_disabled(i, not is_category_enabled(DEBUG_CATEGORY_NAMES[i]))
+	for i in range(DebugPanelCatalogScript.DEBUG_CATEGORY_NAMES.size()):
+		category_dropdown.set_item_disabled(i, not is_category_enabled(DebugPanelCatalogScript.DEBUG_CATEGORY_NAMES[i]))
 
 	select_first_enabled_category()
 
 func is_category_enabled(category_name: String) -> bool:
-	if debug_context == DEBUG_CONTEXT_LOBBY:
+	if debug_context == DebugPanelCatalogScript.DEBUG_CONTEXT_LOBBY:
 		return category_name == "Bots"
 
-	return debug_context == DEBUG_CONTEXT_PLAY and category_name != "Sign In"
+	return debug_context == DebugPanelCatalogScript.DEBUG_CONTEXT_PLAY and category_name != "Sign In"
 
 func select_first_enabled_category() -> void:
 	if category_dropdown == null:
 		return
 
-	for i in range(DEBUG_CATEGORY_NAMES.size()):
-		if is_category_enabled(DEBUG_CATEGORY_NAMES[i]):
+	for i in range(DebugPanelCatalogScript.DEBUG_CATEGORY_NAMES.size()):
+		if is_category_enabled(DebugPanelCatalogScript.DEBUG_CATEGORY_NAMES[i]):
 			category_dropdown.select(i)
 			on_category_selected(i)
 			return
 
 func on_category_selected(index: int) -> void:
-	if index < 0 or index >= DEBUG_CATEGORY_NAMES.size():
+	if index < 0 or index >= DebugPanelCatalogScript.DEBUG_CATEGORY_NAMES.size():
 		return
 
-	var selected_name: String = DEBUG_CATEGORY_NAMES[index]
+	var selected_name: String = DebugPanelCatalogScript.DEBUG_CATEGORY_NAMES[index]
 	if not is_category_enabled(selected_name):
 		select_first_enabled_category()
 		return
@@ -657,7 +419,7 @@ func on_category_selected(index: int) -> void:
 			panel.visible = (category_name == selected_name)
 
 func setup_parallax_controls() -> void:
-	for row in tunable_rows():
+	for row in DebugPanelCatalogScript.tunable_rows():
 		var target_node = parallax_targets.get(row.target)
 		var slider: HSlider = parallax_sliders.get(row.key)
 		var button: Button = parallax_buttons.get(row.key)
@@ -739,11 +501,11 @@ func set_debug_label_text(label: Control, text: String) -> void:
 func bind_tooltip_row(row_binder, node_name: String) -> Control:
 	var node: Control = row_binder.optional_node(node_name) as Control
 
-	if node == null or not DEBUG_TOOLTIPS.has(node_name):
+	if node == null or not DebugPanelCatalogScript.DEBUG_TOOLTIPS.has(node_name):
 		return node
 
 	if node.has_signal("pressed"):
-		var info: Dictionary = DEBUG_TOOLTIPS[node_name]
+		var info: Dictionary = DebugPanelCatalogScript.DEBUG_TOOLTIPS[node_name]
 		node.connect("pressed", func(): open_debug_tooltip(info.title, info.body))
 
 	return node
@@ -824,9 +586,9 @@ func on_bot_strategy_selected(index: int) -> void:
 	if is_syncing_debug_config:
 		return
 
-	var strategy: String = BOT_STRATEGY_COOPERATIVE
+	var strategy: String = DebugPanelCatalogScript.BOT_STRATEGY_COOPERATIVE
 	if index == 1:
-		strategy = BOT_STRATEGY_MVP_GREEDY
+		strategy = DebugPanelCatalogScript.BOT_STRATEGY_MVP_GREEDY
 
 	network.update_config("debugBotStrategy", strategy)
 
@@ -834,10 +596,10 @@ func on_tower_feedback_mode_selected(index: int) -> void:
 	if is_syncing_debug_config:
 		return
 
-	if index < 0 or index >= TOWER_FEEDBACK_MODES.size():
+	if index < 0 or index >= DebugPanelCatalogScript.TOWER_FEEDBACK_MODES.size():
 		return
 
-	network.update_config("towerStabilityFeedbackMode", TOWER_FEEDBACK_MODES[index])
+	network.update_config("towerStabilityFeedbackMode", DebugPanelCatalogScript.TOWER_FEEDBACK_MODES[index])
 
 func send_debug_int(key: String, value: float) -> void:
 	if is_syncing_debug_config:
@@ -879,8 +641,8 @@ func apply_config(config) -> void:
 			bool(config.get("visualHookScreenShake", true))
 		)
 	if bot_strategy_button != null:
-		var strategy: String = str(config.get("debugBotStrategy", BOT_STRATEGY_COOPERATIVE))
-		var selected_strategy_index: int = 1 if strategy == BOT_STRATEGY_MVP_GREEDY else 0
+		var strategy: String = str(config.get("debugBotStrategy", DebugPanelCatalogScript.BOT_STRATEGY_COOPERATIVE))
+		var selected_strategy_index: int = 1 if strategy == DebugPanelCatalogScript.BOT_STRATEGY_MVP_GREEDY else 0
 		bot_strategy_button.select(selected_strategy_index)
 	set_slider_no_signal(bot_count_slider, float(config.get("debugBotCount", 0)))
 	set_slider_no_signal(bot_delay_min_slider, float(config.get("debugBotDelayMin", 2000)))
@@ -980,8 +742,8 @@ func apply_config(config) -> void:
 		float(config.get("towerStabilityMoodThreshold", 3))
 	)
 	if tower_feedback_mode_button != null:
-		var feedback_mode: String = str(config.get("towerStabilityFeedbackMode", TOWER_FEEDBACK_MODES[0]))
-		var feedback_mode_index: int = TOWER_FEEDBACK_MODES.find(feedback_mode)
+		var feedback_mode: String = str(config.get("towerStabilityFeedbackMode", DebugPanelCatalogScript.TOWER_FEEDBACK_MODES[0]))
+		var feedback_mode_index: int = DebugPanelCatalogScript.TOWER_FEEDBACK_MODES.find(feedback_mode)
 		tower_feedback_mode_button.select(max(feedback_mode_index, 0))
 	set_slider_no_signal(power_unlock_level_slider, float(config.get("powerUnlockLevel", 4)))
 	set_slider_no_signal(power_max_slots_slider, float(config.get("powerMaxSlots", 3)))

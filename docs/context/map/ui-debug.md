@@ -7,6 +7,163 @@ The `Does` column IS hand-authored and is carried forward on regeneration.
 `path:line` and purpose, so it feeds straight into a `Read` with no second
 lookup. Loading the whole map costs thousands and gives you the same one row.
 
+### src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn — 1029 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:6 | DebugLayer · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:9 | %DebugOverlay · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:20 | %DebugDimLayer · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:30 | %DebugPanel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:66 | %ResetDebugButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:72 | %RestartLevelButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:78 | %CloseDebugButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:84 | %DebugCategoryDropdown · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:88 | %DebugCategoryPanels · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:106 | %BotsToggle · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:111 | %BotStrategyLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:116 | %BotStrategyButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:120 | %BotCountLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:125 | %BotCountSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:129 | %BotDelayMinLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:134 | %BotDelayMinSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:138 | %BotDelayMaxLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:143 | %BotDelayMaxSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:160 | %DebugStartLevelLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:165 | %DebugStartLevelSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:169 | %CooldownLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:174 | %CooldownSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:178 | %LevelTimeLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:183 | %LevelTimeSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:187 | %StartDelayLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:192 | %StartDelaySlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:196 | %TargetMultiplierLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:201 | %TargetMultiplierSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:218 | %PlacementPopupDurationLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:223 | %PlacementPopupDurationSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:227 | %FinishPopupDurationLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:232 | %FinishPopupDurationSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:236 | %LevelSummaryDelayLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:241 | %LevelSummaryDelaySlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:245 | %TutorialLaunchButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:251 | %ParallelPlacementButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:270 | %LevelSupplyMinLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:277 | %LevelSupplyMinSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:281 | %LevelSupplyMaxLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:288 | %LevelSupplyMaxSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:292 | %MinPrecisionBlocksLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:299 | %MinPrecisionBlocksSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:303 | %MaxTeamCarryOverLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:310 | %MaxTeamCarryOverSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:314 | %RefreshMinUsefulHeightLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:321 | %RefreshMinUsefulHeightSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:325 | %SupplyEffectiveWidthLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:332 | %SupplyEffectiveWidthSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:349 | %PlacementScoreLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:356 | %PlacementScoreSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:360 | %FinisherBonusLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:367 | %FinisherBonusSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:371 | %PrecisionBonusLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:378 | %PrecisionBonusSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:382 | %TeamExactBonusLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:389 | %TeamExactBonusSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:393 | %AssistBonusLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:400 | %AssistBonusSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:404 | %AssistThresholdLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:411 | %AssistThresholdSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:415 | %PlacementStabilityFloorLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:422 | %PlacementStabilityFloorSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:426 | %ReinforceIntegrityLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:433 | %ReinforceIntegritySlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:437 | %ReinforceLeanLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:444 | %ReinforceLeanSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:461 | %TowerStabilityDifficultyLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:468 | %TowerStabilityDifficultySlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:472 | %TowerMaxTiltLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:479 | %TowerMaxTiltSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:483 | %TowerWarningThresholdLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:490 | %TowerWarningThresholdSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:494 | %TowerCriticalThresholdLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:501 | %TowerCriticalThresholdSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:505 | %TowerMoodThresholdLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:512 | %TowerMoodThresholdSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:516 | %TowerFeedbackModeLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:521 | %TowerFeedbackModeButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:525 | %TowerSiteSlendernessLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:532 | %TowerSiteSlendernessSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:536 | %TowerSiteWidthMinLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:543 | %TowerSiteWidthMinSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:547 | %TowerSiteWidthMaxLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:554 | %TowerSiteWidthMaxSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:570 | %ImpactScoreLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:577 | %ImpactScoreSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:581 | %ImpactIntervalLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:588 | %ImpactIntervalSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:592 | %ImpactScoreFloorLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:599 | %ImpactScoreFloorSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:616 | %PowerUnlockLevelLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:621 | %PowerUnlockLevelSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:625 | %PowerMaxSlotsLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:630 | %PowerMaxSlotsSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:634 | %PowerCooldownLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:639 | %PowerCooldownSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:643 | %PowerReplenishShareLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:650 | %PowerReplenishShareSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:667 | %ScrollStartRatioButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:674 | %ScrollStartRatioSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:678 | %ScrollEasePowerButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:685 | %ScrollEasePowerSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:689 | %TopIndicatorClearanceButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:696 | %TopIndicatorClearanceSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:700 | %BrickUnitSizeButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:707 | %BrickUnitSizeSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:711 | %DropDurationButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:718 | %DropDurationSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:722 | %DropHeightUnitsButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:729 | %DropHeightUnitsSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:733 | %TiltEaseSpeedButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:740 | %TiltEaseSpeedSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:744 | %CollapseTiltDegButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:751 | %CollapseTiltDegSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:755 | %TopPaddingButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:762 | %TopPaddingSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:766 | %BottomPaddingButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:773 | %BottomPaddingSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:777 | %SkyParallaxRatioButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:784 | %SkyParallaxRatioSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:788 | %SkyEaseSpeedButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:795 | %SkyEaseSpeedSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:799 | %GroundParallaxRatioButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:806 | %GroundParallaxRatioSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:810 | %GroundEaseSpeedButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:817 | %GroundEaseSpeedSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:835 | %SnapRadiusButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:842 | %SnapRadiusSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:846 | %DragGripOffsetButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:853 | %DragGripOffsetSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:857 | %GhostAlphaButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:864 | %GhostAlphaSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:868 | %SnapDotRadiusButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:875 | %SnapDotRadiusSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:879 | %SnapTargetRadiusButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:886 | %SnapTargetRadiusSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:904 | %HooksAboutButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:911 | %ImpactBeatToggle · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:916 | %ScreenShakeToggle · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:921 | %ImpactBeatZoomOutLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:928 | %ImpactBeatZoomOutSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:932 | %ImpactBeatWaveLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:939 | %ImpactBeatWaveSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:943 | %ImpactBeatHoldLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:950 | %ImpactBeatHoldSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:954 | %ScreenShakeDurationLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:961 | %ScreenShakeDurationSlider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:965 | %DebugTooltip · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:976 | %TooltipDimLayer · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:986 | %TooltipCard · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:1014 | %TooltipTitleLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:1023 | %TooltipBodyLabel · unique node | scene node exposed for name-based controller binding |
+
 ### src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd — 21 ln
 
 | File:Ln | Symbol | Does |
@@ -26,62 +183,78 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/DebugTooltip.gd:24 | close | hide and emit dismissed |
 | src/Client/App/corp-tower/Cor/Scripts/DebugTooltip.gd:30 | _on_dim_layer_gui_input | tap-outside close, after the grace window |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd — 1182 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd — 253 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:5 | BOT_STRATEGY_COOPERATIVE · const | `cooperative`, the wire value behind dropdown index 0 |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:6 | BOT_STRATEGY_MVP_GREEDY · const | `mvp_greedy`, the wire value behind dropdown index 1 |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:7 | TOWER_FEEDBACK_MODES · const | the three wire values: `warnings_only`, `meter_only`, `live_preview` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:8 | TOWER_FEEDBACK_MODE_TITLES · const | display titles, **index-aligned with `TOWER_FEEDBACK_MODES`** — reorder one and you must reorder both |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:9 | DEBUG_CATEGORY_NAMES · const | 12 selector categories; gameplay entries remain panel node names, while Sign In belongs to its own overlay |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:13 | DEBUG_CONTEXT_LOBBY · const | context that enables Bots only |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:14 | DEBUG_CONTEXT_PLAY · const | context that enables all gameplay categories |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:16 | DEBUG_TOOLTIPS · const | node name to `{title, body}`. **This is where the tuning is actually documented** — the formulas, defaults and trade-offs behind each dial. `bind_tooltip_row` wires them to the ⓘ buttons |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:153 | PARALLAX_TARGET_TOWER · const | `tower`, keying `parallax_targets` to the `TowerStack` node |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:154 | PARALLAX_TARGET_SKY · const | `sky`, keying `parallax_targets` to the `BgArt` node |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:155 | PARALLAX_TARGET_GROUND · const | `ground`, keying `parallax_targets` to the `PlatformArt` node |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:157 | PARALLAX_ROWS · const | 13 camera and art rows. **Client-local: these write a node property directly and never touch the server**, unlike every slider in `setup` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:225 | PLACEMENT_ROWS · const | 5 more client-local rows for drag and snap feel — snap radius, grip lift, ghost alpha and the two dot sizes |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:253 | tunable_rows · static func | `PARALLAX_ROWS + PLACEMENT_ROWS` — the single list both `bind_nodes` and `setup_parallax_controls` walk, so a new row needs no other edit |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:372 | bind_nodes | resolves every panel node as optional, and **derives slider and button names from each row key** as `<key>Slider` and `<key>Button` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:501 | setup | **the one place every server-backed dial's range, step and config key is written**; also wires the toggles, dropdowns and buttons, then paints labels once |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:608 | setup_category_dropdown | fills the dropdown from `DEBUG_CATEGORY_NAMES` and selects index 0 so a panel is always showing |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:619 | set_screen_context | disables categories that cannot act on the active screen |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:630 | is_category_enabled | lobby permits Bots; play permits gameplay categories but never Sign In |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:636 | select_first_enabled_category | selects the first permitted category after a context change |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:646 | on_category_selected | shows exactly one panel by **name equality** against `category_panels` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:659 | setup_parallax_controls | seeds each slider from the **live node property**, scaling by 100 for percent rows, then wires the change handler and the ⓘ tooltip |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:681 | on_parallax_slider_changed | **writes straight to the node property** and calls `refresh_visuals` when the node has it — no server round-trip, so these do not survive a reload |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:696 | update_parallax_button_text | `<label>: <value><suffix>  ⓘ`, honouring the row's `decimals` and `percent` flags |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:712 | open_debug_tooltip | forwards title and body to the tooltip node's `open`, when the scene has one |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:716 | configure_slider | range, step and change callback in one null-safe call — how `setup` stays a flat list |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:725 | set_slider_no_signal | assigns without firing `value_changed`. **This is what stops `apply_config` echoing the server's own value back at it** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:729 | get_slider_value | the slider value, or the fallback when that slider is absent from the scene |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:735 | set_debug_label_text | null-safe `text` write through `set()`, so it works on a Label or a Button alike |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:739 | bind_tooltip_row | binds the node and, when it has a `pressed` signal **and** a `DEBUG_TOOLTIPS` entry, wires the ⓘ press; returns the node either way |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:751 | toggle | prefers the overlay's own `toggle` method, falling back to flipping `visible` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:760 | set_open | prefers the overlay's `set_open`, else sets `visible`. **Closing also closes the tooltip**, so it cannot outlive the panel |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:772 | is_open | true when the overlay exists and is visible |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:775 | on_debug_dim_layer_input | any mouse press on the dim closes the panel — the tap-outside-to-dismiss path |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:779 | on_bots_toggle | sends `debugBotsEnabled`, skipped while `is_syncing_debug_config` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:784 | on_impact_beat_toggle | sends `visualHookImpactBeat`, skipped while syncing |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:789 | on_screen_shake_toggle | sends `visualHookScreenShake`, skipped while syncing |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:794 | on_reset_debug_pressed | sends `resetDebugConfig`; **the server owns the reset**, this does not clear anything locally |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:797 | on_restart_level_pressed | sends `restartLevel`, then closes the panel so the restart is visible |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:801 | _on_tutorial_launch_pressed | closes the panel, then calls `on_tutorial_requested` — the only entry point into the tutorial |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:806 | _on_parallel_placement_pressed | toggles the accessibility flag. **A device-local setting, never sent to the server** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:812 | refresh_accessibility_row | repaints the button as `Parallel Placement: ON` or `OFF` from the stored flag |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:823 | on_bot_strategy_selected | maps index 1 to `mvp_greedy` and everything else to `cooperative`, then sends `debugBotStrategy` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:833 | on_tower_feedback_mode_selected | bounds-checks the index, then sends the matching `towerStabilityFeedbackMode` value |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:842 | send_debug_int | **one of the two outbound paths** — no-op while syncing, repaint labels, then `network.update_config` with an int |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:848 | send_debug_float | the float twin of `send_debug_int`; percent sliders divide by 100 at the call site, not here |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:854 | on_placement_popup_duration_changed | **writes local `tuning` first, then the server**, so popup length changes without waiting for the broadcast |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:858 | on_finish_popup_duration_changed | same local-then-server order for `finishScorePopupDurationMs` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:862 | on_level_summary_delay_changed | same local-then-server order for `levelSummaryDelayMs`, which `LevelSummaryController` reads |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:866 | apply_config | **the inbound path** — raises `is_syncing_debug_config`, then pushes every server value into its slider with no signal, so nothing echoes back. Returns early when the panel is not bound |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:997 | update_debug_labels | repaints every label from current slider values; called on setup and after each send |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:3 | BOT_STRATEGY_COOPERATIVE · const | cooperative bot strategy wire value |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:4 | BOT_STRATEGY_MVP_GREEDY · const | score-greedy bot strategy wire value |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:5 | TOWER_FEEDBACK_MODES · const | ordered tower feedback wire values |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:6 | TOWER_FEEDBACK_MODE_TITLES · const | labels aligned with tower feedback modes |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:7 | DEBUG_CATEGORY_NAMES · const | stable dropdown category order shared with sign-in debug UI |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:11 | DEBUG_CONTEXT_LOBBY · const | lobby category-filter context |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:12 | DEBUG_CONTEXT_PLAY · const | gameplay category-filter context |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:14 | DEBUG_TOOLTIPS · const | title/body catalog for debug help rows |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:151 | PARALLAX_TARGET_TOWER · const | local tuning target key for TowerStack |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:152 | PARALLAX_TARGET_SKY · const | local tuning target key for background parallax |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:153 | PARALLAX_TARGET_GROUND · const | local tuning target key for platform parallax |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:155 | PARALLAX_ROWS · const | immutable local parallax tuning-row definitions |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:223 | PLACEMENT_ROWS · const | immutable local placement-feedback tuning rows |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:251 | tunable_rows · static func | combined ordered local tuning catalog |
+
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd — 944 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:6 | BOT_STRATEGY_COOPERATIVE · const | `cooperative`, the wire value behind dropdown index 0 |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:7 | BOT_STRATEGY_MVP_GREEDY · const | `mvp_greedy`, the wire value behind dropdown index 1 |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:8 | TOWER_FEEDBACK_MODES · const | the three wire values: `warnings_only`, `meter_only`, `live_preview` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:9 | TOWER_FEEDBACK_MODE_TITLES · const | display titles, **index-aligned with `TOWER_FEEDBACK_MODES`** — reorder one and you must reorder both |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:10 | DEBUG_CATEGORY_NAMES · const | 12 selector categories; gameplay entries remain panel node names, while Sign In belongs to its own overlay |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:11 | DEBUG_CONTEXT_LOBBY · const | context that enables Bots only |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:12 | DEBUG_CONTEXT_PLAY · const | context that enables all gameplay categories |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:13 | DEBUG_TOOLTIPS · const | node name to `{title, body}`. **This is where the tuning is actually documented** — the formulas, defaults and trade-offs behind each dial. `bind_tooltip_row` wires them to the ⓘ buttons |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:14 | PARALLAX_TARGET_TOWER · const | `tower`, keying `parallax_targets` to the `TowerStack` node |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:15 | PARALLAX_TARGET_SKY · const | `sky`, keying `parallax_targets` to the `BgArt` node |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:16 | PARALLAX_TARGET_GROUND · const | `ground`, keying `parallax_targets` to the `PlatformArt` node |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:134 | bind_nodes | resolves every panel node as optional, and **derives slider and button names from each row key** as `<key>Slider` and `<key>Button` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:263 | setup | **the one place every server-backed dial's range, step and config key is written**; also wires the toggles, dropdowns and buttons, then paints labels once |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:370 | setup_category_dropdown | fills the dropdown from `DEBUG_CATEGORY_NAMES` and selects index 0 so a panel is always showing |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:381 | set_screen_context | disables categories that cannot act on the active screen |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:392 | is_category_enabled | lobby permits Bots; play permits gameplay categories but never Sign In |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:398 | select_first_enabled_category | selects the first permitted category after a context change |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:408 | on_category_selected | shows exactly one panel by **name equality** against `category_panels` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:421 | setup_parallax_controls | seeds each slider from the **live node property**, scaling by 100 for percent rows, then wires the change handler and the ⓘ tooltip |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:443 | on_parallax_slider_changed | **writes straight to the node property** and calls `refresh_visuals` when the node has it — no server round-trip, so these do not survive a reload |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:458 | update_parallax_button_text | `<label>: <value><suffix>  ⓘ`, honouring the row's `decimals` and `percent` flags |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:474 | open_debug_tooltip | forwards title and body to the tooltip node's `open`, when the scene has one |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:478 | configure_slider | range, step and change callback in one null-safe call — how `setup` stays a flat list |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:487 | set_slider_no_signal | assigns without firing `value_changed`. **This is what stops `apply_config` echoing the server's own value back at it** |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:491 | get_slider_value | the slider value, or the fallback when that slider is absent from the scene |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:497 | set_debug_label_text | null-safe `text` write through `set()`, so it works on a Label or a Button alike |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:501 | bind_tooltip_row | binds the node and, when it has a `pressed` signal **and** a `DEBUG_TOOLTIPS` entry, wires the ⓘ press; returns the node either way |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:513 | toggle | prefers the overlay's own `toggle` method, falling back to flipping `visible` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:522 | set_open | prefers the overlay's `set_open`, else sets `visible`. **Closing also closes the tooltip**, so it cannot outlive the panel |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:534 | is_open | true when the overlay exists and is visible |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:537 | on_debug_dim_layer_input | any mouse press on the dim closes the panel — the tap-outside-to-dismiss path |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:541 | on_bots_toggle | sends `debugBotsEnabled`, skipped while `is_syncing_debug_config` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:546 | on_impact_beat_toggle | sends `visualHookImpactBeat`, skipped while syncing |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:551 | on_screen_shake_toggle | sends `visualHookScreenShake`, skipped while syncing |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:556 | on_reset_debug_pressed | sends `resetDebugConfig`; **the server owns the reset**, this does not clear anything locally |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:559 | on_restart_level_pressed | sends `restartLevel`, then closes the panel so the restart is visible |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:563 | _on_tutorial_launch_pressed | closes the panel, then calls `on_tutorial_requested` — the only entry point into the tutorial |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:568 | _on_parallel_placement_pressed | toggles the accessibility flag. **A device-local setting, never sent to the server** |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:574 | refresh_accessibility_row | repaints the button as `Parallel Placement: ON` or `OFF` from the stored flag |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:585 | on_bot_strategy_selected | maps index 1 to `mvp_greedy` and everything else to `cooperative`, then sends `debugBotStrategy` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:595 | on_tower_feedback_mode_selected | bounds-checks the index, then sends the matching `towerStabilityFeedbackMode` value |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:604 | send_debug_int | **one of the two outbound paths** — no-op while syncing, repaint labels, then `network.update_config` with an int |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:610 | send_debug_float | the float twin of `send_debug_int`; percent sliders divide by 100 at the call site, not here |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:616 | on_placement_popup_duration_changed | **writes local `tuning` first, then the server**, so popup length changes without waiting for the broadcast |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:620 | on_finish_popup_duration_changed | same local-then-server order for `finishScorePopupDurationMs` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:624 | on_level_summary_delay_changed | same local-then-server order for `levelSummaryDelayMs`, which `LevelSummaryController` reads |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:628 | apply_config | **the inbound path** — raises `is_syncing_debug_config`, then pushes every server value into its slider with no signal, so nothing echoes back. Returns early when the panel is not bound |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:759 | update_debug_labels | repaints every label from current slider values; called on setup and after each send |
 
 ---
 
-3 files · 60 symbols · 0 awaiting a `Does` line.
+5 files · 223 symbols · 0 awaiting a `Does` line.

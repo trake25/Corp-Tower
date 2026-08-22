@@ -1,0 +1,1028 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://vxbr68uclvp4" path="res://Cor/Scripts/DebugOverlay.gd" id="4_debugoverlay"]
+[ext_resource type="Script" path="res://Cor/Scripts/DebugTooltip.gd" id="4b_debugtooltip"]
+
+[node name="DebugLayer" type="CanvasLayer" unique_id=1157871814]
+layer = 5
+
+[node name="DebugOverlay" type="Control" parent="." unique_id=1666106004]
+unique_name_in_owner = true
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_debugoverlay")
+
+[node name="DebugDimLayer" type="ColorRect" parent="DebugOverlay" unique_id=2503172]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="DebugPanel" type="PanelContainer" parent="DebugOverlay" unique_id=682526209]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(382, 0)
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -398.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -72.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_type_variation = &"HudPanel"
+
+[node name="DebugMargin" type="MarginContainer" parent="DebugOverlay/DebugPanel" unique_id=1562878086]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="DebugOuterRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin" unique_id=1516476987]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="DebugHeader" type="HBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows" unique_id=70378753]
+layout_mode = 2
+
+[node name="DebugTitle" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader" unique_id=834076282]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "Debug Tuning"
+
+[node name="ResetDebugButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader" unique_id=644048044]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(92, 34)
+layout_mode = 2
+text = "Reset"
+
+[node name="RestartLevelButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader" unique_id=644048045]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 34)
+layout_mode = 2
+text = "Restart"
+
+[node name="CloseDebugButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugHeader" unique_id=1808011100]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 34)
+layout_mode = 2
+text = "X"
+
+[node name="DebugCategoryDropdown" type="OptionButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows" unique_id=668842451]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DebugCategoryPanels" type="Control" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows" unique_id=668842452]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Bots" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=1510574939]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BotsRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots" unique_id=1571193449]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="BotsToggle" type="CheckButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots/BotsRows" unique_id=968013586]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Bots"
+
+[node name="BotStrategyLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots/BotsRows" unique_id=290450912]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Bot Strategy"
+
+[node name="BotStrategyButton" type="OptionButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots/BotsRows" unique_id=59447071]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BotCountLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots/BotsRows" unique_id=1781783485]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Bot Count: 0"
+
+[node name="BotCountSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots/BotsRows" unique_id=114794480]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BotDelayMinLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots/BotsRows" unique_id=1594808286]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Bot Delay Min: 0 ms"
+
+[node name="BotDelayMinSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots/BotsRows" unique_id=719477356]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BotDelayMaxLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots/BotsRows" unique_id=2078800852]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Bot Delay Max: 0 ms"
+
+[node name="BotDelayMaxSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots/BotsRows" unique_id=1227952984]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Round" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=1408585364]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RoundRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Round" unique_id=233870292]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="DebugStartLevelLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Round/RoundRows" unique_id=580939467]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Start Level: 1"
+
+[node name="DebugStartLevelSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Round/RoundRows" unique_id=1642970222]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CooldownLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Round/RoundRows" unique_id=615705880]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Placement Cooldown: 0 ms"
+
+[node name="CooldownSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Round/RoundRows" unique_id=1982550019]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LevelTimeLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Round/RoundRows" unique_id=1487808310]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Level Time: 0 sec"
+
+[node name="LevelTimeSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Round/RoundRows" unique_id=1835656855]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="StartDelayLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Round/RoundRows" unique_id=992849455]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Start Delay: 0 ms"
+
+[node name="StartDelaySlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Round/RoundRows" unique_id=411157870]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TargetMultiplierLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Round/RoundRows" unique_id=346562521]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Target Multiplier: 0"
+
+[node name="TargetMultiplierSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Round/RoundRows" unique_id=483799854]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="UI" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=9569995]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="UIRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/UI" unique_id=463126846]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="PlacementPopupDurationLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/UI/UIRows" unique_id=220601865]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Placement Popups: 3000 ms"
+
+[node name="PlacementPopupDurationSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/UI/UIRows" unique_id=2120894656]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FinishPopupDurationLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/UI/UIRows" unique_id=186831508]
+unique_name_in_owner = true
+layout_mode = 2
+text = "MVP / Perfect / Team Popups: 3000 ms"
+
+[node name="FinishPopupDurationSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/UI/UIRows" unique_id=294896845]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LevelSummaryDelayLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/UI/UIRows" unique_id=653248227]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Level Score Summary: 3000 ms"
+
+[node name="LevelSummaryDelaySlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/UI/UIRows" unique_id=804780835]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TutorialLaunchButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/UI/UIRows" unique_id=950000101]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ActionButton"
+text = "How to Play"
+
+[node name="ParallelPlacementButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/UI/UIRows" unique_id=950000102]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ActionButton"
+text = "Parallel Placement: OFF"
+
+[node name="Supply" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=1426294074]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SupplyRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply" unique_id=1455163486]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="LevelSupplyMinLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=631111006]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Supply Min Surplus: 0"
+
+[node name="LevelSupplyMinSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=486544706]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LevelSupplyMaxLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=637280422]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Supply Max Surplus: 0"
+
+[node name="LevelSupplyMaxSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=1629212750]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MinPrecisionBlocksLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=245163706]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Precision Blocks: 0"
+
+[node name="MinPrecisionBlocksSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=1246278065]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MaxTeamCarryOverLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=1635849830]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Carry-Over Blocks: 0"
+
+[node name="MaxTeamCarryOverSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=1088790391]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RefreshMinUsefulHeightLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=573564990]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Refresh Useful Height: 0"
+
+[node name="RefreshMinUsefulHeightSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=487856901]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SupplyEffectiveWidthLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=3311000201]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Supply Effective Width: 50%"
+
+[node name="SupplyEffectiveWidthSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Supply/SupplyRows" unique_id=3311000202]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Scoring" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=1598351355]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ScoringRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring" unique_id=753479048]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="PlacementScoreLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=352407178]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Placement Score/Height: 0"
+
+[node name="PlacementScoreSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1024438532]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FinisherBonusLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=139808929]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Finisher Bonus/Level: 0"
+
+[node name="FinisherBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1807352692]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PrecisionBonusLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1710362908]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Precision Bonus/Level: 8"
+
+[node name="PrecisionBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1462440336]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TeamExactBonusLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=2039693562]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Team Exact Bonus/Level: 6"
+
+[node name="TeamExactBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1929465846]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AssistBonusLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1213208760]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Assist Bonus/Level: Off"
+
+[node name="AssistBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=798699984]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AssistThresholdLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1469810237]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Assist Threshold: 0%"
+
+[node name="AssistThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1297854840]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PlacementStabilityFloorLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000301]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Placement Stability Floor: 50%"
+
+[node name="PlacementStabilityFloorSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000302]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ReinforceIntegrityLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000303]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Reinforce / Integrity: 1"
+
+[node name="ReinforceIntegritySlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000304]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ReinforceLeanLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000305]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Reinforce / Lean: 20"
+
+[node name="ReinforceLeanSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000306]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Tower" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=1828240395]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TowerRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower" unique_id=1044242845]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="TowerStabilityDifficultyLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000121]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Stability Difficulty: 90"
+
+[node name="TowerStabilityDifficultySlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000122]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerMaxTiltLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=899188429]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Max Tilt Angle: 24°"
+
+[node name="TowerMaxTiltSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=716228579]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerWarningThresholdLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1461938673]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Warning Threshold: 60%"
+
+[node name="TowerWarningThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=810871450]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerCriticalThresholdLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1295051467]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Critical Threshold: 30%"
+
+[node name="TowerCriticalThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1282531320]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerMoodThresholdLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000501]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Brick Mood Threshold: ±3"
+
+[node name="TowerMoodThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000502]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerFeedbackModeLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=2065074815]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Stability Feedback"
+
+[node name="TowerFeedbackModeButton" type="OptionButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=1040232117]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerSiteSlendernessLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000109]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Site Slenderness Target: 2.0"
+
+[node name="TowerSiteSlendernessSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000110]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerSiteWidthMinLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000111]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Site Width Min: 6"
+
+[node name="TowerSiteWidthMinSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000112]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TowerSiteWidthMaxLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000113]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Site Width Max: 8"
+
+[node name="TowerSiteWidthMaxSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000114]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Impact" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=3311000401]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ImpactRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact" unique_id=3311000402]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ImpactScoreLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=595048624]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Impact Share: 30%"
+
+[node name="ImpactScoreSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=1818947184]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ImpactIntervalLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000403]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Impact Interval: 1"
+
+[node name="ImpactIntervalSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000404]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ImpactScoreFloorLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000407]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Impact Flat Floor: 0"
+
+[node name="ImpactScoreFloorSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Impact/ImpactRows" unique_id=3311000408]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Power" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=703822891]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PowerRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Power" unique_id=36922153]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="PowerUnlockLevelLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Power/PowerRows" unique_id=1416400272]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Power Unlock Level: 4"
+
+[node name="PowerUnlockLevelSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Power/PowerRows" unique_id=605786371]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PowerMaxSlotsLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Power/PowerRows" unique_id=1397039025]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Power Slots: 3"
+
+[node name="PowerMaxSlotsSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Power/PowerRows" unique_id=1862095730]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PowerCooldownLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Power/PowerRows" unique_id=582603513]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Power Cooldown: 3.0 sec"
+
+[node name="PowerCooldownSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Power/PowerRows" unique_id=1169427666]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PowerReplenishShareLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Power/PowerRows" unique_id=1284470695]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Replenish Share: 25%"
+
+[node name="PowerReplenishShareSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Power/PowerRows" unique_id=1793526018]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Parallax" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=900000000]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ParallaxRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax" unique_id=900000029]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="ScrollStartRatioButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000001]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Scroll Start Ratio"
+
+[node name="ScrollStartRatioSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000002]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ScrollEasePowerButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000003]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Scroll Ease Power"
+
+[node name="ScrollEasePowerSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000004]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TopIndicatorClearanceButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000005]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Top Indicator Clearance"
+
+[node name="TopIndicatorClearanceSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000006]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BrickUnitSizeButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000007]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Brick Unit Size"
+
+[node name="BrickUnitSizeSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000008]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DropDurationButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000009]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Drop Duration"
+
+[node name="DropDurationSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000010]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DropHeightUnitsButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000011]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Drop Height"
+
+[node name="DropHeightUnitsSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000012]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TiltEaseSpeedButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000013]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Tilt Ease Speed"
+
+[node name="TiltEaseSpeedSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000014]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CollapseTiltDegButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000015]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Collapse Tilt"
+
+[node name="CollapseTiltDegSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000016]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TopPaddingButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000017]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Top Padding"
+
+[node name="TopPaddingSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000018]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BottomPaddingButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000019]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Bottom Padding"
+
+[node name="BottomPaddingSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000020]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkyParallaxRatioButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000021]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Sky Parallax Ratio"
+
+[node name="SkyParallaxRatioSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000022]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkyEaseSpeedButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000023]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Sky Ease Speed"
+
+[node name="SkyEaseSpeedSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000024]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GroundParallaxRatioButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000025]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Ground Parallax Ratio"
+
+[node name="GroundParallaxRatioSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000026]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GroundEaseSpeedButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000027]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Ground Ease Speed"
+
+[node name="GroundEaseSpeedSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Parallax/ParallaxRows" unique_id=900000028]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Placement" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=900000030]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PlacementRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement" unique_id=900000031]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="SnapRadiusButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000032]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Snap Radius"
+
+[node name="SnapRadiusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000033]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DragGripOffsetButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000034]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Drag Grip Lift"
+
+[node name="DragGripOffsetSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000035]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GhostAlphaButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000036]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Landing Ghost Opacity"
+
+[node name="GhostAlphaSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000037]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SnapDotRadiusButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000038]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Snap Dot Size"
+
+[node name="SnapDotRadiusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000039]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SnapTargetRadiusButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000040]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Snap Target Size"
+
+[node name="SnapTargetRadiusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Placement/PlacementRows" unique_id=900000041]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Hooks" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=900000060]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HooksRows" type="VBoxContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks" unique_id=900000061]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="HooksAboutButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000064]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "ⓘ About Hooks"
+
+[node name="ImpactBeatToggle" type="CheckButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000062]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Impact Beat"
+
+[node name="ScreenShakeToggle" type="CheckButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000063]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Screen Shake"
+
+[node name="ImpactBeatZoomOutLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000065]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Zoom Out: 900 ms"
+
+[node name="ImpactBeatZoomOutSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000066]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ImpactBeatWaveLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000067]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Wave: 1100 ms"
+
+[node name="ImpactBeatWaveSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000068]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ImpactBeatHoldLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000069]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Hold: 0 ms"
+
+[node name="ImpactBeatHoldSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000070]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ScreenShakeDurationLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000073]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Screen Shake Duration: 260 ms"
+
+[node name="ScreenShakeDurationSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Hooks/HooksRows" unique_id=900000074]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DebugTooltip" type="Control" parent="DebugOverlay" unique_id=900001000]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4b_debugtooltip")
+
+[node name="TooltipDimLayer" type="ColorRect" parent="DebugOverlay/DebugTooltip" unique_id=900001001]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="TooltipCard" type="PanelContainer" parent="DebugOverlay/DebugTooltip" unique_id=900001002]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = -80.0
+offset_right = 140.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"WhiteCardPanel"
+
+[node name="TooltipMargin" type="MarginContainer" parent="DebugOverlay/DebugTooltip/TooltipCard" unique_id=900001003]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="TooltipRows" type="VBoxContainer" parent="DebugOverlay/DebugTooltip/TooltipCard/TooltipMargin" unique_id=900001004]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TooltipTitleLabel" type="Label" parent="DebugOverlay/DebugTooltip/TooltipCard/TooltipMargin/TooltipRows" unique_id=900001005]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"PopoverTitleLabel"
+text = "Title"
+
+[node name="TooltipRule" type="HSeparator" parent="DebugOverlay/DebugTooltip/TooltipCard/TooltipMargin/TooltipRows" unique_id=900001006]
+layout_mode = 2
+
+[node name="TooltipBodyLabel" type="Label" parent="DebugOverlay/DebugTooltip/TooltipCard/TooltipMargin/TooltipRows" unique_id=900001007]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"PopoverBodyLabel"
+autowrap_mode = 3
+text = "Body"

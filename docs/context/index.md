@@ -21,7 +21,8 @@ Flow: client connects to its build-injected endpoint → **Server Entry** accept
 routes → **Lobby Manager** queues, creates or resumes a 3-seat room, starts a
 **Game Engine** for it → the engine owns level lifecycle, timers, placement
 validation and Power, delegating supply/scoring/Impacts to `engine/` modules and
-grid physics to the pure **Tower Stability** → **Redis State** backs shared
+placement/tower evaluation to `engine/Placement.js` and pure **Tower Stability** →
+**Redis State** backs shared
 matchmaking and room snapshots so any worker can recover a session → the engine
 broadcasts `game_state` on every change.
 
@@ -35,8 +36,9 @@ flowchart LR
   NM[NetworkManager] --> MUC["Main.gd + GameUi family"]
   subgraph Server["Node.js worker"]
     SE[Server Entry] --> LM[Lobby Manager] --> GE[Game Engine]
-    GE --> BS[Block Supply] & SC[Scoring] & IM[Impacts]
-    GE --> TS["Tower Stability (pure)"]
+    GE --> BS[Block Supply] & PL[Placement] & SC[Scoring] & IM[Impacts]
+    BS --> BG["Block Geometry (pure)"]
+    PL --> TS["Tower Stability (pure)"]
     GE --> BM[Bot Manager]
     GE -. reads .-> GC[Game Config]
     LM --> RS[Redis State]
@@ -56,7 +58,9 @@ flowchart LR
 | Godot client screens, navigation, shell, network bootstrap | [ui.md](./ui.md) | [map/ui-screens.md](./map/ui-screens.md) |
 | Godot client HUD, stack rendering, popovers, debug panel | [ui-hud.md](./ui-hud.md) | [map/ui-hud.md](./map/ui-hud.md) · [map/ui-debug.md](./map/ui-debug.md) |
 | Godot client tutorial layer | [ui-tutorial.md](./ui-tutorial.md) | [map/ui-tutorial.md](./map/ui-tutorial.md) |
-| Deploy, EKS, backup machine, infra, runbook | [deployment.md](./deployment.md) | [map/infra.md](./map/infra.md) |
+| Shared deploy overview and secrets | [deployment.md](./deployment.md) | [map/infra.md](./map/infra.md) |
+| EKS topology, Terraform and production deploys | [deployment-eks.md](./deployment-eks.md) | [map/infra.md](./map/infra.md) |
+| Physical backup host, demo deploys and recovery | [deployment-backup.md](./deployment-backup.md) | [map/infra.md](./map/infra.md) |
 | CI build, Android, HTML5, private art pipeline | [build.md](./build.md) | [map/infra.md](./map/infra.md) |
 | Tests, balance simulator, CI gates | [testing.md](./testing.md) | — |
 | "Which file does X?" | — | the matching map |

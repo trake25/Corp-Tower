@@ -10,8 +10,8 @@ All modules under `src/Server/app/`.
 
 ## Engine module delegation pattern
 
-`Game_Engine.js` is the facade for one room. Block supply, scoring and Impact
-logic live in separate `engine/` modules, each the same shape:
+`Game_Engine.js` is the facade for one room. Placement, block supply, scoring and
+Impact logic live in separate `engine/` modules, each the same shape:
 
 - Every export is a **plain function whose first argument is the owning
   `GameEngine` instance** — `Scoring.addPlacementScore(engine, player, …)`.
@@ -24,9 +24,15 @@ logic live in separate `engine/` modules, each the same shape:
 A new engine-owned system gets its own `engine/` module in this shape rather than
 growing `Game_Engine.js`.
 
+`engine/Block_Geometry.js` is the pure exception: cell transforms and measurements
+take geometry only. `Block_Supply` imports it; production callers still use the
+`GameEngine` facade.
+
 ## Lobby Manager
 
-`Lobby_Manager.js` — matchmaking, room lifecycle, runtime debug-config coordinator.
+`Lobby_Manager.js` — matchmaking, room lifecycle and runtime debug coordination.
+`Debug_Config.js` owns the exposed snapshot, startup defaults and clamp policy;
+the lobby owns the bot/room reconciliation and broadcasts caused by a change.
 
 Maintains active rooms through shared Redis state; seats players into open
 3-participant rooms, filling with debug bots when allowed; lets real players resume
@@ -59,10 +65,10 @@ exists**. Missing or unavailable records use a deterministic `WORD_LIST` name;
 `status` is carried, not enforced. Schema and RLS:
 `src/Server/migrations/0002_player_accounts.sql`, applied by hand.
 
-### `updateDebugConfig` — the authoritative validation
+### `Debug_Config` — the authoritative validation
 
-This is where every debug key is clamped. [gameplay.md](./gameplay.md) covers what
-each variable *means*; the ranges live here.
+This module clamps every debug key. [gameplay.md](./gameplay.md) covers what each
+variable *means*; the ranges live here.
 
 - Unknown keys rejected; numeric values clamped to safe ranges.
 - Popup durations clamp 500–10000 ms; `levelSummaryDelayMs` 1000–10000 ms.
@@ -124,14 +130,14 @@ and no one can ever join it. `claimOpenRoom` retries at most
 
 ## Game Engine
 
-`Game_Engine.js` — authoritative rules and level lifecycle for one room.
+`Game_Engine.js` — authoritative room facade and level lifecycle for one room.
 
 Creates room state and assigns blocks; builds and deals the draw pile; maintains
-placed-block history; resolves settling and stability before completion; runs
-start-delay, timer and tick broadcasts; validates placement, quick chat and Power;
-runs the side quest and item activation; scores; detects success or failure and
-advances or rolls back; notifies Lobby Manager for persistence and demo stats
-(bot-only rooms excluded). **This file never talks to Redis.**
+placed-block history; runs start-delay, timer and tick broadcasts; validates quick
+chat and Power; advances or rolls back; and notifies Lobby Manager for persistence
+and demo stats (bot-only rooms excluded). `engine/Placement.js` owns settling,
+placement execution, stability evaluation and placement-driven win/fail checks
+behind same-named facade methods. **The engine never talks to Redis.**
 
 Level states: `waiting` · `starting` · `playing` · `finished` · `failed` ·
 `game_completed` · `closed`.
@@ -190,8 +196,9 @@ broadcast-only, never persisted — do not infer scoring UI from score diffs.
 
 ## Block Supply
 
-`engine/Block_Supply.js` — block creation, shared draw pile, opening hands,
-refresh generation.
+`engine/Block_Supply.js` — block creation, shared draw pile, opening hands and
+refresh policy. Pure cell transforms, orientations, height and cell counts live in
+`engine/Block_Geometry.js`.
 
 Bricks are the **5 fixed 4-cell shapes** (`I`/`O`/`L`/`T`/`Z`), weighted, all
 available from level 1. Each gets a **random orientation at creation**:

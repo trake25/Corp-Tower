@@ -10,7 +10,8 @@ All paths under `src/Client/App/corp-tower/` unless noted.
 ## Tutorial
 
 `Cor/Scripts/GameUi/Tutorial/` — a lesson-based coach-mark layer, entirely
-client-side, rendered over the real Game UI Scene. Six modules following the
+client-side, rendered through `Cor/Scenes/TutorialLayer.tscn` over the real Game
+UI Scene. Six modules following the
 module-family shape: `TutorialLessons` (the 12-lesson catalog plus `DEFAULTS`),
 `TutorialGates` (the closed gate set and its pure predicate), `TutorialScene` (an
 offline "fake server" that expands a lesson seed into the same calls live

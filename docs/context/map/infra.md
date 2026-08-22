@@ -642,7 +642,7 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/build-file-map.mjs — 341 ln
+### scripts/build-file-map.mjs — 373 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -661,12 +661,13 @@ _no extracted symbols_
 | scripts/build-file-map.mjs:161 | symbolsTf · fn | resource, module, variable, output, data and provider blocks, named `type.name` |
 | scripts/build-file-map.mjs:170 | symbolsYml · fn | top-level keys plus job names under `jobs:`, which is the routable unit of a workflow |
 | scripts/build-file-map.mjs:186 | symbolsSh · fn | shell function definitions |
-| scripts/build-file-map.mjs:195 | extract · fn | dispatches to the per-language extractor by extension and returns line count with symbols |
-| scripts/build-file-map.mjs:211 | readAuthored · fn | **carry-forward**: parses the existing map so hand-written `Does` prose survives regeneration, keyed on `path#symbol` and never on line number; accepts both the old bare-number and the current `path:line` first cell |
-| scripts/build-file-map.mjs:239 | readAuthoredAll · fn | merges carry-forward across **every** existing map file, not just the one an area is about to overwrite, so authored `Does` prose survives an area being split (same `path#symbol` key space) |
-| scripts/build-file-map.mjs:251 | render · fn | emits the markdown; each row carries its own `path:line` so one grep hit needs no follow-up lookup |
-| scripts/build-file-map.mjs:291 | build · fn | walks every area, reads each file, and renders against the `Does` prose already in the map |
-| scripts/build-file-map.mjs:309 | main · fn | `--check` exits 1 on a stale map without writing; `--quiet` prints the summary line only |
+| scripts/build-file-map.mjs:195 | symbolsTscn · fn | indexes a scene root and every `unique_name_in_owner` node |
+| scripts/build-file-map.mjs:221 | extract · fn | dispatches to the per-language extractor by extension and returns line count with symbols |
+| scripts/build-file-map.mjs:238 | readAuthored · fn | **carry-forward**: parses the existing map so hand-written `Does` prose survives regeneration, keyed on `path#symbol` and never on line number; accepts both the old bare-number and the current `path:line` first cell |
+| scripts/build-file-map.mjs:266 | readAuthoredAll · fn | merges carry-forward across **every** existing map file, not just the one an area is about to overwrite, so authored `Does` prose survives an area being split (same `path#symbol` key space) |
+| scripts/build-file-map.mjs:278 | render · fn | emits the markdown; each row carries its own `path:line` so one grep hit needs no follow-up lookup |
+| scripts/build-file-map.mjs:323 | build · fn | walks every area, reads each file, and renders against the `Does` prose already in the map |
+| scripts/build-file-map.mjs:341 | main · fn | `--check` exits 1 on a stale map without writing; `--quiet` prints the summary line only |
 
 ### scripts/context.mjs — 84 ln
 
@@ -714,26 +715,27 @@ _no extracted symbols_
 | scripts/install-git-hooks.mjs:6 | root · const | resolves the repository supplied on the command line or the current directory |
 | scripts/install-git-hooks.mjs:7 | hooks · const | resolves the versioned hook directory whose pre-commit entry must exist |
 
-### scripts/lib/context-routing.mjs — 150 ln
+### scripts/lib/context-routing.mjs — 165 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | scripts/lib/context-routing.mjs:4 | CLIENT · const | client constant used by context-routing |
 | scripts/lib/context-routing.mjs:5 | tutorialRoot · const | tutorial root constant used by context-routing |
-| scripts/lib/context-routing.mjs:6 | debugFiles · const | debug files constant used by context-routing |
-| scripts/lib/context-routing.mjs:11 | hudFiles · const | hud files constant used by context-routing |
-| scripts/lib/context-routing.mjs:22 | MAP_AREAS · const | map areas constant used by context-routing |
-| scripts/lib/context-routing.mjs:54 | ROUTE_RULES · const | route rules constant used by context-routing |
-| scripts/lib/context-routing.mjs:87 | AREA_ALIASES · const | area aliases constant used by context-routing |
-| scripts/lib/context-routing.mjs:102 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
-| scripts/lib/context-routing.mjs:108 | mapOwnerForPath · fn | returns the generated map that owns a source path |
-| scripts/lib/context-routing.mjs:112 | IGNORE_DIR · const | ignore dir constant used by context-routing |
-| scripts/lib/context-routing.mjs:113 | IGNORE_PATH · const | ignore path constant used by context-routing |
-| scripts/lib/context-routing.mjs:114 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
-| scripts/lib/context-routing.mjs:115 | norm · const | norm constant used by context-routing |
-| scripts/lib/context-routing.mjs:117 | walk · fn | walk operation implemented by context-routing |
-| scripts/lib/context-routing.mjs:128 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
-| scripts/lib/context-routing.mjs:149 | isExempt · const | reports whether a first-party path is exempt from map coverage |
+| scripts/lib/context-routing.mjs:6 | tutorialScenes · const | tutorial scenes routed to the tutorial feature map |
+| scripts/lib/context-routing.mjs:9 | debugFiles · const | debug files constant used by context-routing |
+| scripts/lib/context-routing.mjs:16 | hudFiles · const | hud files constant used by context-routing |
+| scripts/lib/context-routing.mjs:33 | MAP_AREAS · const | map areas constant used by context-routing |
+| scripts/lib/context-routing.mjs:65 | ROUTE_RULES · const | route rules constant used by context-routing |
+| scripts/lib/context-routing.mjs:102 | AREA_ALIASES · const | area aliases constant used by context-routing |
+| scripts/lib/context-routing.mjs:117 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
+| scripts/lib/context-routing.mjs:123 | mapOwnerForPath · fn | returns the generated map that owns a source path |
+| scripts/lib/context-routing.mjs:127 | IGNORE_DIR · const | ignore dir constant used by context-routing |
+| scripts/lib/context-routing.mjs:128 | IGNORE_PATH · const | ignore path constant used by context-routing |
+| scripts/lib/context-routing.mjs:129 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
+| scripts/lib/context-routing.mjs:130 | norm · const | norm constant used by context-routing |
+| scripts/lib/context-routing.mjs:132 | walk · fn | walk operation implemented by context-routing |
+| scripts/lib/context-routing.mjs:143 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
+| scripts/lib/context-routing.mjs:164 | isExempt · const | reports whether a first-party path is exempt from map coverage |
 
 ### scripts/qa-gate.mjs — 128 ln
 
@@ -800,6 +802,10 @@ _no extracted symbols_
 | scripts/task-report.mjs:61 | value · const | value constant used by task-report |
 | scripts/task-report.mjs:62 | required · const | required constant used by task-report |
 | scripts/task-report.mjs:77 | row · const | row constant used by task-report |
+
+### scripts/tests/build-file-map.test.mjs — 36 ln
+
+_no extracted symbols_
 
 ### scripts/validate-agent-config.mjs — 58 ln
 
@@ -881,4 +887,4 @@ _no extracted symbols_
 
 ---
 
-95 files · 428 symbols · 0 awaiting a `Does` line.
+96 files · 430 symbols · 0 awaiting a `Does` line.

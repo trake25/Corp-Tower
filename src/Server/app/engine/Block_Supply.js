@@ -1,4 +1,5 @@
 const GameConfig = require("../Game_Config");
+const BlockGeometry = require("./Block_Geometry");
 
 function getNextDrawBlock(engine) {
     const drawPile = engine.room?.drawPile || [];
@@ -15,40 +16,15 @@ function createBlockId(engine) {
 }
 
 function cloneCells(engine, cells) {
-    return cells.map(cell => [Number(cell[0]), Number(cell[1])]);
+    return BlockGeometry.cloneCells(cells);
 }
 
 function getBlockHeight(engine, block) {
-    if (typeof block === "number") {
-        return block;
-    }
-
-    if (!block || typeof block !== "object") {
-        return 0;
-    }
-
-    if (Number.isFinite(Number(block.height))) {
-        return Number(block.height);
-    }
-
-    if (!Array.isArray(block.cells) || block.cells.length === 0) {
-        return 0;
-    }
-
-    const rows = block.cells.map(cell => Number(cell[1]));
-    return Math.max(...rows) - Math.min(...rows) + 1;
+    return BlockGeometry.getBlockHeight(block);
 }
 
 function getBlockCellCount(engine, block) {
-    if (typeof block === "number") {
-        return block;
-    }
-
-    if (Array.isArray(block?.cells)) {
-        return block.cells.length;
-    }
-
-    return engine.getBlockHeight(block);
+    return BlockGeometry.getBlockCellCount(block);
 }
 
 function pickWeightedShape(engine, excludedShapeId = null) {
@@ -84,67 +60,6 @@ function pickWeightedShape(engine, excludedShapeId = null) {
     return weightedPool[Math.floor(Math.random() * weightedPool.length)];
 }
 
-function normalizeCells(cells) {
-    const minX = Math.min(...cells.map(cell => Number(cell[0])));
-    const minY = Math.min(...cells.map(cell => Number(cell[1])));
-    return cells.map(cell => [Number(cell[0]) - minX, Number(cell[1]) - minY]);
-}
-
-function rotateCellsCW(cells) {
-    return normalizeCells(cells.map(cell => [Number(cell[1]), -Number(cell[0])]));
-}
-
-function reflectCellsX(cells) {
-    return normalizeCells(cells.map(cell => [-Number(cell[0]), Number(cell[1])]));
-}
-
-function getRotations(cells) {
-    const rotations = [];
-    const seen = new Set();
-    let current = normalizeCells(cells);
-
-    for (let i = 0; i < 4; i++) {
-        const rotationKey = current
-            .map(cell => cell.join(","))
-            .sort()
-            .join("|");
-
-        if (!seen.has(rotationKey)) {
-            seen.add(rotationKey);
-            rotations.push(current);
-        }
-
-        current = rotateCellsCW(current);
-    }
-
-    return rotations;
-}
-
-function getOrientations(cells) {
-    const orientations = [];
-    const seen = new Set();
-
-    [cells, reflectCellsX(cells)].forEach(startCells => {
-        let current = normalizeCells(startCells);
-
-        for (let i = 0; i < 4; i++) {
-            const orientationKey = current
-                .map(cell => cell.join(","))
-                .sort()
-                .join("|");
-
-            if (!seen.has(orientationKey)) {
-                seen.add(orientationKey);
-                orientations.push(current);
-            }
-
-            current = rotateCellsCW(current);
-        }
-    });
-
-    return orientations;
-}
-
 function createBlock(engine, shapeId = null, excludedShapeId = null) {
     const shapes = GameConfig.brickShapes || [];
     let shape = shapeId
@@ -159,7 +74,7 @@ function createBlock(engine, shapeId = null, excludedShapeId = null) {
         return null;
     }
 
-    const orientations = getOrientations(shape.cells);
+    const orientations = BlockGeometry.getOrientations(shape.cells);
     const orientation = orientations[Math.floor(Math.random() * orientations.length)];
     const cells = engine.cloneCells(orientation);
 
@@ -211,7 +126,7 @@ function getAverageBrickHeight(engine) {
 
     shapes.forEach(shape => {
         const weight = Number(GameConfig.brickWeights?.[shape.shapeId] ?? 1);
-        const rotations = getRotations(shape.cells);
+        const rotations = BlockGeometry.getRotations(shape.cells);
         const rotationHeight = rotations.reduce((total, cells) => {
             return total + engine.getBlockHeight({ cells: cells });
         }, 0);

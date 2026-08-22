@@ -74,7 +74,9 @@ func test_top_indicator_uses_only_approved_copy() -> void:
 
 func test_demo_game_state_uses_the_shared_hud_contract() -> void:
 	harness.main.demo_mode_label.visible = true
-	harness.main.update_game_state(GAME_STATE_FIXTURE)
+	var state: Dictionary = GAME_STATE_FIXTURE.duplicate(true)
+	state["impactScoreStatus"] = IMPACT_STATUS_FIXTURE
+	harness.main.update_game_state(state)
 	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP (2/12)")
 	assert_eq(harness.main.roster.player_rail_entries.size(), 3)
 	assert_eq(harness.main.roster.impact_bars.size(), 3)

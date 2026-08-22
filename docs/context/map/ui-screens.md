@@ -7,6 +7,87 @@ The `Does` column IS hand-authored and is carried forward on regeneration.
 `path:line` and purpose, so it feeds straight into a `Read` with no second
 lookup. Loading the whole map costs thousands and gives you the same one row.
 
+### src/Client/App/corp-tower/Cor/Scenes/ConfirmModal.tscn — 105 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/ConfirmModal.tscn:8 | ConfirmModal · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/ConfirmModal.tscn:18 | %ModalDimLayer · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ConfirmModal.tscn:54 | %ModalTitleLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ConfirmModal.tscn:62 | %ModalBodyLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ConfirmModal.tscn:70 | %ModalButtonRow · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ConfirmModal.tscn:76 | %ModalCloseButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ConfirmModal.tscn:91 | %ModalContinueButton · unique node | scene node exposed for name-based controller binding |
+
+### src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn — 131 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:22 | FindMatchScreen · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:76 | %StatusLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:90 | %QueueProgressBar · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:111 | %CancelButton · unique node | scene node exposed for name-based controller binding |
+
+### src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn — 257 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:14 | HomeScreen · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:73 | %PrivateServerButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:111 | %JoinServerButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:142 | %JoinServerLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:150 | %TutorialButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:192 | %CircleRow · unique node | scene node exposed for name-based controller binding |
+
+### src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn — 262 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:34 | JoinScreen · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:85 | %BackButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:243 | %FindMatchButton · unique node | scene node exposed for name-based controller binding |
+
+### src/Client/App/corp-tower/Cor/Scenes/Main.tscn — 37 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/Main.tscn:7 | Main · scene root | root of this reusable Godot scene |
+
+### src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn — 62 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn:6 | PlayLoaderScreen · scene root | root of this reusable Godot scene |
+
+### src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn — 261 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:38 | PublicLobbyScreen · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:89 | %BackButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:141 | %PlayerRows · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:150 | %PlayerRow0Name · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:159 | %PlayerRow0Check · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:172 | %PlayerRow1Name · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:181 | %PlayerRow1Check · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:194 | %PlayerRow2Name · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:203 | %PlayerRow2Check · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:222 | %ReadyButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:229 | %ReadyGradientFill · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:242 | %ReadyLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:257 | %LeaveLobbyModal · unique node | scene node exposed for name-based controller binding |
+
+### src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn — 189 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn:12 | SignInScreen · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn:76 | %SocialRow · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn:106 | %OrDivider · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn:130 | %GuestButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn:162 | %GuestLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn:170 | %ErrorLabel · unique node | scene node exposed for name-based controller binding |
+
 ### src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd — 112 ln
 
 | File:Ln | Symbol | Does |
@@ -209,16 +290,15 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:68 | show_error | reveal ErrorLabel; unknown reasons fall back to the generic message |
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:72 | toggle_debug_overlay | floating debug-button entry for the local sign-in overlay |
 
-### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 692 ln
+### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 666 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:3 | SESSION_FILE · const | persisted Supabase session — tokens and expiry |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:4 | VERIFIER_FILE · const | PKCE verifier, on disk because the web redirect restarts the app |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:5 | WEB_VERIFIER_KEY · const | same-tab session-storage key for the web PKCE verifier |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:6 | REFRESH_MARGIN_SECONDS · const | refresh this far ahead of expiry |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:7 | REFRESH_CHECK_INTERVAL_SECONDS · const | background timer period |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:8 | REQUEST_TIMEOUT_SECONDS · const | per-request cap on every auth call |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:4 | SESSION_FILE · const | persisted Supabase session — tokens and expiry |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:5 | VERIFIER_FILE · const | PKCE verifier, on disk because the web redirect restarts the app |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:6 | WEB_VERIFIER_KEY · const | same-tab session-storage key for the web PKCE verifier |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:7 | REFRESH_MARGIN_SECONDS · const | refresh this far ahead of expiry |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:8 | REFRESH_CHECK_INTERVAL_SECONDS · const | background timer period |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:9 | NATIVE_FACEBOOK_TIMEOUT_SECONDS · const | cap before a missing native callback releases the sign-in screen |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:10 | VERIFIER_BYTES · const | 32 → a 43-char base64url verifier, the RFC 7636 minimum |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:11 | OAUTH_RESUME_GRACE_SECONDS · const | wait after resume before calling a flow abandoned |
@@ -234,66 +314,78 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:24 | REASON_BROWSER · const | the system browser would not open |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:26 | NATIVE_CODE_CANCELLED · const | native code cancelled constant used by Auth_Manager |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:28 | oauth_completed · signal | Android flow finished; carries a reason, empty on success |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:47 | _ready | load the stored session; arm the refresh timer only when enabled |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:63 | _setup_deeplink | Android only: instantiate the vendored Deeplink node and listen |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:82 | _setup_native_google | creates and configures the native Google sign-in bridge |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:102 | _native_google_ready | returns whether the native Google bridge can be used |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:105 | is_native_google_enabled | exposes the default-on native Google preference |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:108 | set_native_google_enabled | persists whether Android Google may use the native bridge |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:111 | is_native_facebook_enabled | exposes the default-on native Facebook preference |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:114 | set_native_facebook_enabled | persists whether Android Facebook may use the native bridge |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:117 | _setup_native_facebook | Android-only Facebook setup from build-injected App ID and Client Token |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:141 | _native_facebook_ready | native Facebook singleton is configured and available |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:144 | redirect_android_scheme | scheme half of `REDIRECT_ANDROID` |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:147 | redirect_android_host | host half, path stripped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:155 | _on_deeplink_received | callback arrived while the app stayed alive → exchange |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:170 | is_enabled | **both URL and anon key must be set**, else auth is off and the build behaves as it did pre-Supabase |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:173 | is_signed_in | enabled and holding a refresh token |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:176 | access_token | token for the wire; **returns empty once expired** rather than sending a stale one |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:185 | connection_access_token | native Facebook token first, otherwise a fresh Supabase JWT |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:191 | connection_auth_provider | labels the accompanying handshake token, never guessing from token shape |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:200 | restore_session | splash-time check — true routes to Home, false to Sign-in |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:217 | consume_web_callback | web only: read `?code` off the URL, exchange it, then scrub the URL |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:239 | take_oauth_error | one-shot read so Sign-in can explain a failed web return |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:244 | _save_verifier | persist the verifier before leaving for the browser |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:258 | _load_verifier | read it back on return |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:269 | _clear_verifier | single-use: cleared on exchange, cancel and sign-out |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:279 | sign_in_guest | anonymous sign-up; returns a reason code, empty on success |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:293 | is_oauth_enabled | needs auth on, the flag, **and a redirect this platform can receive** |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:296 | redirect_uri | web → build-injected origin · Android → custom scheme · else empty |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:305 | sign_in_with_provider | mint verifier → open authorize URL; returns a *launch* reason only |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:320 | _sign_in_with_native_google | starts native Google sign-in on supported Android builds |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:325 | _on_google_sign_in_success | exchanges a successful native Google result for a game session |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:329 | _on_google_sign_in_failed | normalizes and reports a native Google sign-in failure |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:341 | _sign_in_with_native_facebook | starts the plugin only if it accepts the request, then arms the callback cap |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:351 | _on_facebook_sign_in_success | stores the native token and expiry for the verified server handshake |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:360 | _on_facebook_sign_in_failed | reports the native failure without opening browser OAuth |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:372 | _expire_native_facebook_sign_in | emits a bounded rejected result if Android does not return a callback |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:381 | _sign_in_with_browser | starts the browser PKCE sign-in flow |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:398 | _expire_oauth_after_grace | resumed with no callback → cancel, so the screen cannot stick busy |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:408 | _build_authorize_url | authorize URL with the encoded redirect and **`s256`, never `plain`** |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:416 | _generate_code_verifier | 32 crypto-random bytes, base64url |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:419 | _code_challenge | SHA-256 → base64url; checked against the RFC 7636 vector |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:425 | _base64url | base64 → url-safe alphabet, padding stripped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:428 | _parse_callback_query | pull `code`/`error` off a callback query; junk pairs skipped |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:445 | _exchange_code | `grant_type=pkce` swap of code + verifier for a session |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:465 | _build_id_token_body | provider-specific Supabase token exchange body; Google adds client_id |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:473 | _exchange_id_token | exchange Google ID token or Facebook access token for a session |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:489 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:518 | sign_out | clear memory and delete the session file |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:532 | seconds_until_expiry | 0 when no session is held |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:538 | _has_facebook_access_token | checks whether a usable native Facebook token is stored |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:541 | _apply_facebook_session | applies a verified Facebook session to client auth state |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:549 | _store_facebook_session | persists the verified Facebook session fields |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:556 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:565 | _notification | refresh on app resume when the token went stale in the background |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:580 | _auth_url | join the project URL to an auth path |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:583 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:621 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:640 | _store_session | apply, then persist |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:647 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:660 | _save_session | write the session JSON to `user://` |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:676 | _load_session | read it back on boot; malformed content is ignored |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:48 | _ready | load the stored session; arm the refresh timer only when enabled |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:67 | _setup_deeplink | Android only: instantiate the vendored Deeplink node and listen |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:86 | _setup_native_google | creates and configures the native Google sign-in bridge |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:106 | _native_google_ready | returns whether the native Google bridge can be used |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:109 | is_native_google_enabled | exposes the default-on native Google preference |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:112 | set_native_google_enabled | persists whether Android Google may use the native bridge |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:115 | is_native_facebook_enabled | exposes the default-on native Facebook preference |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:118 | set_native_facebook_enabled | persists whether Android Facebook may use the native bridge |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:121 | _setup_native_facebook | Android-only Facebook setup from build-injected App ID and Client Token |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:145 | _native_facebook_ready | native Facebook singleton is configured and available |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:148 | redirect_android_scheme | scheme half of `REDIRECT_ANDROID` |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:151 | redirect_android_host | host half, path stripped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:159 | _on_deeplink_received | callback arrived while the app stayed alive → exchange |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:174 | is_enabled | **both URL and anon key must be set**, else auth is off and the build behaves as it did pre-Supabase |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:177 | is_signed_in | enabled and holding a refresh token |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:180 | access_token | token for the wire; **returns empty once expired** rather than sending a stale one |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:189 | connection_access_token | native Facebook token first, otherwise a fresh Supabase JWT |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:195 | connection_auth_provider | labels the accompanying handshake token, never guessing from token shape |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:204 | restore_session | splash-time check — true routes to Home, false to Sign-in |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:221 | consume_web_callback | web only: read `?code` off the URL, exchange it, then scrub the URL |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:243 | take_oauth_error | one-shot read so Sign-in can explain a failed web return |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:248 | _save_verifier | persist the verifier before leaving for the browser |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:262 | _load_verifier | read it back on return |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:273 | _clear_verifier | single-use: cleared on exchange, cancel and sign-out |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:283 | sign_in_guest | anonymous sign-up; returns a reason code, empty on success |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:297 | is_oauth_enabled | needs auth on, the flag, **and a redirect this platform can receive** |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:300 | redirect_uri | web → build-injected origin · Android → custom scheme · else empty |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:309 | sign_in_with_provider | mint verifier → open authorize URL; returns a *launch* reason only |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:324 | _sign_in_with_native_google | starts native Google sign-in on supported Android builds |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:329 | _on_google_sign_in_success | exchanges a successful native Google result for a game session |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:333 | _on_google_sign_in_failed | normalizes and reports a native Google sign-in failure |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:345 | _sign_in_with_native_facebook | starts the plugin only if it accepts the request, then arms the callback cap |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:355 | _on_facebook_sign_in_success | stores the native token and expiry for the verified server handshake |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:364 | _on_facebook_sign_in_failed | reports the native failure without opening browser OAuth |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:376 | _expire_native_facebook_sign_in | emits a bounded rejected result if Android does not return a callback |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:385 | _sign_in_with_browser | starts the browser PKCE sign-in flow |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:402 | _expire_oauth_after_grace | resumed with no callback → cancel, so the screen cannot stick busy |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:412 | _build_authorize_url | authorize URL with the encoded redirect and **`s256`, never `plain`** |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:420 | _generate_code_verifier | 32 crypto-random bytes, base64url |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:423 | _code_challenge | SHA-256 → base64url; checked against the RFC 7636 vector |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:429 | _base64url | base64 → url-safe alphabet, padding stripped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:432 | _parse_callback_query | pull `code`/`error` off a callback query; junk pairs skipped |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:449 | _exchange_code | `grant_type=pkce` swap of code + verifier for a session |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:469 | _build_id_token_body | provider-specific Supabase token exchange body; Google adds client_id |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:477 | _exchange_id_token | exchange Google ID token or Facebook access token for a session |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:493 | ensure_fresh_token | refresh when inside the margin; a refusal signs out |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:522 | sign_out | clear memory and delete the session file |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:536 | seconds_until_expiry | 0 when no session is held |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:542 | _has_facebook_access_token | checks whether a usable native Facebook token is stored |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:545 | _apply_facebook_session | applies a verified Facebook session to client auth state |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:553 | _store_facebook_session | persists the verified Facebook session fields |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:560 | _on_refresh_timer_timeout | keeps the token fresh so the connect path never has to await |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:569 | _notification | refresh on app resume when the token went stale in the background |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:584 | _auth_url | join the project URL to an auth path |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:587 | _post_auth | one-shot HTTPRequest carrying the anon key; maps failures to reason codes |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:595 | _apply_session | parse a token response into memory; no file IO, so tests can drive it |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:614 | _store_session | apply, then persist |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:621 | _resolve_expiry | absolute `expires_at` wins, else `expires_in` from now, else 0 |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:634 | _save_session | write the session JSON to `user://` |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:650 | _load_session | read it back on boot; malformed content is ignored |
+
+### src/Client/App/corp-tower/Sys/Auth/Auth_Request_Transport.gd — 59 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Sys/Auth/Auth_Request_Transport.gd:3 | REQUEST_TIMEOUT_SECONDS · const | per-request Supabase timeout |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Request_Transport.gd:4 | REASON_NONE · const | successful auth transport result code |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Request_Transport.gd:5 | REASON_UNREACHABLE · const | request creation or network failure result code |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Request_Transport.gd:6 | REASON_REJECTED · const | HTTP or payload rejection result code |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Request_Transport.gd:12 | bind_nodes | host node that owns one-shot HTTPRequest children |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Request_Transport.gd:15 | setup | normalizes the Supabase base URL and anonymous key |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Request_Transport.gd:19 | post | authenticated JSON POST with normalized reason/data result |
 
 ### src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd — 14 ln
 
@@ -354,4 +446,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-14 files · 275 symbols · 0 awaiting a `Does` line.
+23 files · 322 symbols · 0 awaiting a `Does` line.

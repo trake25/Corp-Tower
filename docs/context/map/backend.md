@@ -68,13 +68,26 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Bot_Manager.js:294 | chooseBotPlacement | column × release-row search, two-stage proxy then `evaluate()` |
 | src/Server/app/Bot_Manager.js:430 | chooseBotAction | returns `{type:"place"}` or **`{type:"wait"}`**; callers must handle both |
 
+### src/Server/app/Debug_Config.js — 184 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Server/app/Debug_Config.js:3 | FIELD_PATHS · const | exposed debug keys mapped to their owning config object and property |
+| src/Server/app/Debug_Config.js:57 | RULES · const | authoritative type, range and allowlist policy for debug updates |
+| src/Server/app/Debug_Config.js:111 | target · fn | resolves a root, scoring or visual-hooks config owner |
+| src/Server/app/Debug_Config.js:115 | snapshot · fn | serializable debug configuration sent to clients |
+| src/Server/app/Debug_Config.js:121 | DEFAULTS · const | startup snapshot restored by resetDebugConfig |
+| src/Server/app/Debug_Config.js:123 | applyDefaults · fn | restores every exposed debug value to its startup setting |
+| src/Server/app/Debug_Config.js:130 | resolveBound · fn | evaluates static or GameConfig-derived clamp bounds |
+| src/Server/app/Debug_Config.js:134 | applyValue · fn | validates, clamps and applies one exposed debug value |
+
 ### src/Server/app/Game_Config.js — 155 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Server/app/Game_Config.js:1 | GameConfig · const | **every tuning value in one object** — read this file, not a prose copy |
 
-### src/Server/app/Game_Engine.js — 1187 ln
+### src/Server/app/Game_Engine.js — 884 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -112,80 +125,65 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Game_Engine.js:597 | clampLevel | clamp to 1..`maxLevel` |
 | src/Server/app/Game_Engine.js:604 | restartAtConfiguredStartLevel | debug restart at the configured start level |
 | src/Server/app/Game_Engine.js:610 | restartAtLevel | restart every room at a level, optionally preserving score |
-| src/Server/app/Game_Engine.js:651 | getSupplyPackingEfficiency | cells per brick ÷ (height × effective width) |
-| src/Server/app/Game_Engine.js:667 | getSupplySiteWidthEstimate | site width estimate used for supply sizing |
-| src/Server/app/Game_Engine.js:682 | getSiteWidthForHeight | derives the even, viewport-clamped site from target height |
-| src/Server/app/Game_Engine.js:702 | getPlaceableColumnRange | broadcast `placeableColumnMin`/`Max` for the level |
-| src/Server/app/Game_Engine.js:719 | getPlaceableOriginRange | legal origin span for one brick's footprint |
-| src/Server/app/Game_Engine.js:731 | resolveColumnOriginX | clamps requested column into the placeable origin range |
-| src/Server/app/Game_Engine.js:742 | resolvePlacementOrigin | release-row legality and gap threading; `Number(null)` trap |
-| src/Server/app/Game_Engine.js:757 | placeBlock | authoritative placement: validate → settle → score → broadcast |
-| src/Server/app/Game_Engine.js:861 | getStabilityPressure | difficulty × level ramp → pressure scalar |
-| src/Server/app/Game_Engine.js:878 | resolveStabilityConfig | lerps stability anchors by pressure; every `evaluate()` caller sources here |
-| src/Server/app/Game_Engine.js:900 | recalculateTowerStability | re-runs Tower Stability over `entries` |
-| src/Server/app/Game_Engine.js:914 | checkWinCondition | target height reached, exact finish vs overbuild |
-| src/Server/app/Game_Engine.js:922 | checkFailCondition | impossibility test; uses the raw bound, never packing efficiency |
-| src/Server/app/Game_Engine.js:961 | anyPlayerCanRescueSupply | a held Replenish defers not-enough-height failure |
-| src/Server/app/Game_Engine.js:969 | completeLevel | bank scores, carry-over, summary, MVP, Impact gate |
-| src/Server/app/Game_Engine.js:1037 | failLevel | level failure, discard carry-over, Impact rollback |
-| src/Server/app/Game_Engine.js:1082 | nextLevel | advance level or finish the match at `maxLevel` |
+| src/Server/app/Game_Engine.js:666 | completeLevel | bank scores, carry-over, summary, MVP, Impact gate |
+| src/Server/app/Game_Engine.js:734 | failLevel | level failure, discard carry-over, Impact rollback |
+| src/Server/app/Game_Engine.js:779 | nextLevel | advance level or finish the match at `maxLevel` |
 
-### src/Server/app/Lobby_Manager.js — 1482 ln
+### src/Server/app/Lobby_Manager.js — 1128 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/app/Lobby_Manager.js:6 | MAX_OPEN_ROOM_CLAIM_ATTEMPTS · const | max open room claim attempts constant used by Lobby_Manager |
-| src/Server/app/Lobby_Manager.js:8 | DEFAULT_DEBUG_CONFIG · const | startup snapshot every debug reset restores to |
-| src/Server/app/Lobby_Manager.js:62 | LobbyManager · class | matchmaking, room lifecycle, reconnect, debug-config coordinator |
-| src/Server/app/Lobby_Manager.js:73 | start | boot: Redis wiring, assignment subscription |
-| src/Server/app/Lobby_Manager.js:88 | handlePlayerAssignment | cross-pod handoff receiver; adopts a player assigned elsewhere |
-| src/Server/app/Lobby_Manager.js:102 | resolveIdentityFields | **a verified `sub` outranks the client's `profileId`**; no identity falls back to it |
-| src/Server/app/Lobby_Manager.js:116 | createPlayer | socket → player, applies a `reconnect` request |
-| src/Server/app/Lobby_Manager.js:168 | addPlayer | enqueue for matchmaking; enqueues *before* taking the lock |
-| src/Server/app/Lobby_Manager.js:174 | resumePlayer | rejoin an existing room after disconnect |
-| src/Server/app/Lobby_Manager.js:240 | removePlayer | disconnect handling, reconnect grace window |
-| src/Server/app/Lobby_Manager.js:272 | scheduleRoomReconnectExpiry | arm the room-abandon timer |
-| src/Server/app/Lobby_Manager.js:292 | cancelRoomReconnectExpiry | disarm on successful rejoin |
-| src/Server/app/Lobby_Manager.js:303 | handleRoomReconnectExpired | close a room nobody came back to |
-| src/Server/app/Lobby_Manager.js:328 | resetParticipantState | clear per-room state off a player |
-| src/Server/app/Lobby_Manager.js:339 | isConnectedRealPlayer | excludes bots and dead sockets |
-| src/Server/app/Lobby_Manager.js:347 | sendPlayer | single-socket send guard |
-| src/Server/app/Lobby_Manager.js:353 | closeRoom | room teardown, roster notify, Redis cleanup |
-| src/Server/app/Lobby_Manager.js:397 | resetBotCounterIfIdle | bot naming counter reset |
-| src/Server/app/Lobby_Manager.js:407 | getRealPlayers | non-bot connected players |
-| src/Server/app/Lobby_Manager.js:432 | broadcastDebugConfig | push `debug_config` to every client |
-| src/Server/app/Lobby_Manager.js:443 | getDebugConfig | current debug-tunable snapshot for the wire |
-| src/Server/app/Lobby_Manager.js:505 | applyDefaultDebugConfig | write `DEFAULT_DEBUG_CONFIG` back into `GameConfig` |
-| src/Server/app/Lobby_Manager.js:593 | resetDebugConfigToDefaults | restore every exposed tunable, then rebroadcast |
-| src/Server/app/Lobby_Manager.js:620 | updateDebugConfig | **the authoritative clamp**: every debug key's range and allowlist |
-| src/Server/app/Lobby_Manager.js:813 | restartRoomsAtDebugStartLevel | apply `debugStartLevel` to live rooms |
-| src/Server/app/Lobby_Manager.js:827 | restartRoomsAtCurrentLevel | `restartLevel` action; preserves total score |
-| src/Server/app/Lobby_Manager.js:843 | createBot | debug bot participant |
-| src/Server/app/Lobby_Manager.js:852 | fillRoomWithBotsIfNeeded | fills vacant lobby seats with bots when the mode requires it |
-| src/Server/app/Lobby_Manager.js:867 | syncRoomBots | reconciles lobby bot seats with the live room roster |
-| src/Server/app/Lobby_Manager.js:908 | refreshMatchmaking | re-run matching after queue change |
-| src/Server/app/Lobby_Manager.js:922 | joinOrCreateRoom | joins a claimable room or creates a new lobby |
-| src/Server/app/Lobby_Manager.js:934 | claimOpenRoom | atomically claims an advertised open room for a player |
-| src/Server/app/Lobby_Manager.js:987 | addPlayerToRoom | adds a player to the room roster and persisted assignment |
-| src/Server/app/Lobby_Manager.js:1015 | createRoom | 3-seat room, engine start, Redis publish |
-| src/Server/app/Lobby_Manager.js:1077 | buildRoomJoinedPayload | builds the authoritative room-joined wire payload |
-| src/Server/app/Lobby_Manager.js:1097 | getLobbySecondsRemaining | returns the bounded ready-up time remaining |
-| src/Server/app/Lobby_Manager.js:1108 | buildLobbyPayload | builds the lobby state broadcast payload |
-| src/Server/app/Lobby_Manager.js:1116 | broadcastLobbyUpdate | broadcasts the current lobby roster and ready state |
-| src/Server/app/Lobby_Manager.js:1131 | toggleLobbyReady | toggles a player ready state and evaluates match start |
-| src/Server/app/Lobby_Manager.js:1156 | startMatch | transitions a ready lobby into an active game engine |
-| src/Server/app/Lobby_Manager.js:1199 | leaveLobby | handles a voluntary lobby departure |
-| src/Server/app/Lobby_Manager.js:1209 | evictLobbyPlayer | removes a disconnected or timed-out lobby player |
-| src/Server/app/Lobby_Manager.js:1236 | scheduleLobbyReadyTimeout | starts the lobby ready-up timeout |
-| src/Server/app/Lobby_Manager.js:1258 | cancelLobbyReadyTimeout | cancels the active lobby ready-up timeout |
-| src/Server/app/Lobby_Manager.js:1269 | handleLobbyReadyTimeout | resolves a lobby whose ready-up timer expired |
-| src/Server/app/Lobby_Manager.js:1288 | buildRoomRoster | roster payload with profiles and colours |
-| src/Server/app/Lobby_Manager.js:1302 | createEngine | construct Game Engine with persist/broadcast callbacks |
-| src/Server/app/Lobby_Manager.js:1324 | hydrateRoom | rebuild a room this pod did not create |
-| src/Server/app/Lobby_Manager.js:1397 | subscribeRoom | listen on `room:<id>:actions` |
-| src/Server/app/Lobby_Manager.js:1433 | isRoomOwner | lease check; **removing it makes every pod write divergent state** |
-| src/Server/app/Lobby_Manager.js:1437 | dispatchRoomAction | run locally if owner, else republish to the lease owner |
-| src/Server/app/Lobby_Manager.js:1455 | runRoomAction | execute a room action against the live engine |
+| src/Server/app/Lobby_Manager.js:7 | MAX_OPEN_ROOM_CLAIM_ATTEMPTS · const | max open room claim attempts constant used by Lobby_Manager |
+| src/Server/app/Lobby_Manager.js:9 | LobbyManager · class | matchmaking, room lifecycle, reconnect, debug-config coordinator |
+| src/Server/app/Lobby_Manager.js:20 | start | boot: Redis wiring, assignment subscription |
+| src/Server/app/Lobby_Manager.js:35 | handlePlayerAssignment | cross-pod handoff receiver; adopts a player assigned elsewhere |
+| src/Server/app/Lobby_Manager.js:49 | resolveIdentityFields | **a verified `sub` outranks the client's `profileId`**; no identity falls back to it |
+| src/Server/app/Lobby_Manager.js:63 | createPlayer | socket → player, applies a `reconnect` request |
+| src/Server/app/Lobby_Manager.js:115 | addPlayer | enqueue for matchmaking; enqueues *before* taking the lock |
+| src/Server/app/Lobby_Manager.js:121 | resumePlayer | rejoin an existing room after disconnect |
+| src/Server/app/Lobby_Manager.js:187 | removePlayer | disconnect handling, reconnect grace window |
+| src/Server/app/Lobby_Manager.js:219 | scheduleRoomReconnectExpiry | arm the room-abandon timer |
+| src/Server/app/Lobby_Manager.js:239 | cancelRoomReconnectExpiry | disarm on successful rejoin |
+| src/Server/app/Lobby_Manager.js:250 | handleRoomReconnectExpired | close a room nobody came back to |
+| src/Server/app/Lobby_Manager.js:275 | resetParticipantState | clear per-room state off a player |
+| src/Server/app/Lobby_Manager.js:286 | isConnectedRealPlayer | excludes bots and dead sockets |
+| src/Server/app/Lobby_Manager.js:294 | sendPlayer | single-socket send guard |
+| src/Server/app/Lobby_Manager.js:300 | closeRoom | room teardown, roster notify, Redis cleanup |
+| src/Server/app/Lobby_Manager.js:344 | resetBotCounterIfIdle | bot naming counter reset |
+| src/Server/app/Lobby_Manager.js:354 | getRealPlayers | non-bot connected players |
+| src/Server/app/Lobby_Manager.js:379 | broadcastDebugConfig | push `debug_config` to every client |
+| src/Server/app/Lobby_Manager.js:390 | getDebugConfig | current debug-tunable snapshot for the wire |
+| src/Server/app/Lobby_Manager.js:394 | applyDefaultDebugConfig | write `DEFAULT_DEBUG_CONFIG` back into `GameConfig` |
+| src/Server/app/Lobby_Manager.js:398 | resetDebugConfigToDefaults | restore every exposed tunable, then rebroadcast |
+| src/Server/app/Lobby_Manager.js:425 | updateDebugConfig | **the authoritative clamp**: every debug key's range and allowlist |
+| src/Server/app/Lobby_Manager.js:459 | restartRoomsAtDebugStartLevel | apply `debugStartLevel` to live rooms |
+| src/Server/app/Lobby_Manager.js:473 | restartRoomsAtCurrentLevel | `restartLevel` action; preserves total score |
+| src/Server/app/Lobby_Manager.js:489 | createBot | debug bot participant |
+| src/Server/app/Lobby_Manager.js:498 | fillRoomWithBotsIfNeeded | fills vacant lobby seats with bots when the mode requires it |
+| src/Server/app/Lobby_Manager.js:513 | syncRoomBots | reconciles lobby bot seats with the live room roster |
+| src/Server/app/Lobby_Manager.js:554 | refreshMatchmaking | re-run matching after queue change |
+| src/Server/app/Lobby_Manager.js:568 | joinOrCreateRoom | joins a claimable room or creates a new lobby |
+| src/Server/app/Lobby_Manager.js:580 | claimOpenRoom | atomically claims an advertised open room for a player |
+| src/Server/app/Lobby_Manager.js:633 | addPlayerToRoom | adds a player to the room roster and persisted assignment |
+| src/Server/app/Lobby_Manager.js:661 | createRoom | 3-seat room, engine start, Redis publish |
+| src/Server/app/Lobby_Manager.js:723 | buildRoomJoinedPayload | builds the authoritative room-joined wire payload |
+| src/Server/app/Lobby_Manager.js:743 | getLobbySecondsRemaining | returns the bounded ready-up time remaining |
+| src/Server/app/Lobby_Manager.js:754 | buildLobbyPayload | builds the lobby state broadcast payload |
+| src/Server/app/Lobby_Manager.js:762 | broadcastLobbyUpdate | broadcasts the current lobby roster and ready state |
+| src/Server/app/Lobby_Manager.js:777 | toggleLobbyReady | toggles a player ready state and evaluates match start |
+| src/Server/app/Lobby_Manager.js:802 | startMatch | transitions a ready lobby into an active game engine |
+| src/Server/app/Lobby_Manager.js:845 | leaveLobby | handles a voluntary lobby departure |
+| src/Server/app/Lobby_Manager.js:855 | evictLobbyPlayer | removes a disconnected or timed-out lobby player |
+| src/Server/app/Lobby_Manager.js:882 | scheduleLobbyReadyTimeout | starts the lobby ready-up timeout |
+| src/Server/app/Lobby_Manager.js:904 | cancelLobbyReadyTimeout | cancels the active lobby ready-up timeout |
+| src/Server/app/Lobby_Manager.js:915 | handleLobbyReadyTimeout | resolves a lobby whose ready-up timer expired |
+| src/Server/app/Lobby_Manager.js:934 | buildRoomRoster | roster payload with profiles and colours |
+| src/Server/app/Lobby_Manager.js:948 | createEngine | construct Game Engine with persist/broadcast callbacks |
+| src/Server/app/Lobby_Manager.js:970 | hydrateRoom | rebuild a room this pod did not create |
+| src/Server/app/Lobby_Manager.js:1043 | subscribeRoom | listen on `room:<id>:actions` |
+| src/Server/app/Lobby_Manager.js:1079 | isRoomOwner | lease check; **removing it makes every pod write divergent state** |
+| src/Server/app/Lobby_Manager.js:1083 | dispatchRoomAction | run locally if owner, else republish to the lease owner |
+| src/Server/app/Lobby_Manager.js:1101 | runRoomAction | execute a room action against the live engine |
 
 ### src/Server/app/Profile_Store.js — 169 ln
 
@@ -281,49 +279,57 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Tower_Stability.js:233 | structuralLean · fn | CoM offset + column imbalance + new-brick overhang |
 | src/Server/app/Tower_Stability.js:238 | balanceDelta · fn | per-placement lean movement; drives brick mood faces, **lean only** |
 
-### src/Server/app/engine/Block_Supply.js — 623 ln
+### src/Server/app/engine/Block_Geometry.js — 109 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/app/engine/Block_Supply.js:3 | getNextDrawBlock · fn | shared "Next Draw" preview head |
-| src/Server/app/engine/Block_Supply.js:13 | createBlockId · fn | unique block id |
-| src/Server/app/engine/Block_Supply.js:17 | cloneCells · fn | copy cells so orientations never alias |
-| src/Server/app/engine/Block_Supply.js:21 | getBlockHeight · fn | vertical footprint at this orientation, not cell count |
-| src/Server/app/engine/Block_Supply.js:42 | getBlockCellCount · fn | occupied cell count |
-| src/Server/app/engine/Block_Supply.js:54 | pickWeightedShape · fn | weighted draw across the 5 brick shapes |
-| src/Server/app/engine/Block_Supply.js:87 | normalizeCells · fn | shift cells to origin after transform |
-| src/Server/app/engine/Block_Supply.js:93 | rotateCellsCW · fn | 90° rotation; `BlockData` mirrors this maths |
-| src/Server/app/engine/Block_Supply.js:97 | reflectCellsX · fn | mirror; client mirrors via UV winding instead |
-| src/Server/app/engine/Block_Supply.js:101 | getRotations · fn | distinct rotations of a shape |
-| src/Server/app/engine/Block_Supply.js:123 | getOrientations · fn | the 19 reachable rotate+mirror orientations |
-| src/Server/app/engine/Block_Supply.js:148 | createBlock · fn | block with random orientation at generation |
-| src/Server/app/engine/Block_Supply.js:174 | getRandomBlock · fn | one weighted random block |
-| src/Server/app/engine/Block_Supply.js:178 | getBlocksPerPlayer · fn | hand size; refill targets this |
-| src/Server/app/engine/Block_Supply.js:190 | buildDrawPile · fn | carry-over + generated reserve, shuffled |
-| src/Server/app/engine/Block_Supply.js:207 | getAverageBrickHeight · fn | drives supply sizing and the reinforce cap |
-| src/Server/app/engine/Block_Supply.js:226 | getAverageBrickCellCount · fn | numerator of packing efficiency |
-| src/Server/app/engine/Block_Supply.js:241 | getLevelSupplyMaxSurplus · fn | flat amount **plus** a share of the requirement |
-| src/Server/app/engine/Block_Supply.js:248 | getSupplyCoverageShare · fn | coverage lerp start→end by `levelSupplyCoverageFullLevel` |
-| src/Server/app/engine/Block_Supply.js:258 | getSuppliedBrickHeight · fn | `ceil(targetHeight / efficiency)` × coverage |
-| src/Server/app/engine/Block_Supply.js:262 | getGeneratedDrawPileBlockCount · fn | reserve size; `maxGeneratedDrawPileBlocks` is a sanity ceiling only |
-| src/Server/app/engine/Block_Supply.js:288 | generateDrawPileBlocks · fn | fill the reserve |
-| src/Server/app/engine/Block_Supply.js:298 | generateSolvableOpeningHandBlocks · fn | retry until the opening hand can reach target |
-| src/Server/app/engine/Block_Supply.js:333 | isLevelBlockSupplyValid · fn | solvability check over a candidate supply |
-| src/Server/app/engine/Block_Supply.js:357 | getTotalBlockHeight · fn | summed vertical footprint of a block set |
-| src/Server/app/engine/Block_Supply.js:363 | countPrecisionBlocks · fn | blocks of height ≤ 2, for `minPrecisionBlocksPerLevel` |
-| src/Server/app/engine/Block_Supply.js:369 | hasExactHeightCombination · fn | subset-sum for an exact finish; **returns on first hit**, O(blocks × targetHeight) |
-| src/Server/app/engine/Block_Supply.js:399 | shuffleBlocks · fn | pile shuffle |
-| src/Server/app/engine/Block_Supply.js:410 | dealOpeningHands · fn | opening hands bypass the pile; calls `trimInventory` via the facade |
-| src/Server/app/engine/Block_Supply.js:427 | drawBlockFromPile · fn | pop the shared pile |
-| src/Server/app/engine/Block_Supply.js:435 | refillPlayerBlock · fn | top a hand to `getBlocksPerPlayer` from the pile |
-| src/Server/app/engine/Block_Supply.js:447 | trimInventory · fn | cap a hand at `maxActiveBlocks` |
-| src/Server/app/engine/Block_Supply.js:468 | generateRefreshBlocks · fn | Refresh power: reroll a hand toward remaining height |
-| src/Server/app/engine/Block_Supply.js:499 | getReplenishBlockCount · fn | `powerReplenishPileShare` × `drawPileStartCount`, min 1 |
-| src/Server/app/engine/Block_Supply.js:511 | generateReplenishBlocks · fn | append to the pile; caller then refills every hand |
-| src/Server/app/engine/Block_Supply.js:525 | createRefreshBlock · fn | one replacement block, avoiding the current shape |
-| src/Server/app/engine/Block_Supply.js:532 | isRefreshBlockSetUseful · fn | `refreshMinUsefulBlockHeight` gate on a reroll |
-| src/Server/app/engine/Block_Supply.js:548 | scoreRefreshBlockSet · fn | rank candidate reroll sets |
-| src/Server/app/engine/Block_Supply.js:563 | prepareTeamCarryOverBlocks · fn | carry-over on completion, precision first; **discarded on failure** |
+| src/Server/app/engine/Block_Geometry.js:1 | cloneCells · fn | numeric deep copy of a brick cell array |
+| src/Server/app/engine/Block_Geometry.js:5 | getBlockHeight · fn | vertical footprint from stored height or cell rows |
+| src/Server/app/engine/Block_Geometry.js:26 | getBlockCellCount · fn | occupied-cell count with legacy numeric fallback |
+| src/Server/app/engine/Block_Geometry.js:38 | normalizeCells · fn | shifts cells so minimum x and y are zero |
+| src/Server/app/engine/Block_Geometry.js:44 | rotateCellsCW · fn | normalized clockwise quarter-turn |
+| src/Server/app/engine/Block_Geometry.js:48 | reflectCellsX · fn | normalized horizontal reflection |
+| src/Server/app/engine/Block_Geometry.js:52 | getRotations · fn | unique rotations without reflections for supply sizing |
+| src/Server/app/engine/Block_Geometry.js:74 | getOrientations · fn | unique rotations and reflections used when creating blocks |
+
+### src/Server/app/engine/Block_Supply.js — 538 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Server/app/engine/Block_Supply.js:4 | getNextDrawBlock · fn | shared "Next Draw" preview head |
+| src/Server/app/engine/Block_Supply.js:14 | createBlockId · fn | unique block id |
+| src/Server/app/engine/Block_Supply.js:18 | cloneCells · fn | copy cells so orientations never alias |
+| src/Server/app/engine/Block_Supply.js:22 | getBlockHeight · fn | vertical footprint at this orientation, not cell count |
+| src/Server/app/engine/Block_Supply.js:26 | getBlockCellCount · fn | occupied cell count |
+| src/Server/app/engine/Block_Supply.js:30 | pickWeightedShape · fn | weighted draw across the 5 brick shapes |
+| src/Server/app/engine/Block_Supply.js:63 | createBlock · fn | block with random orientation at generation |
+| src/Server/app/engine/Block_Supply.js:89 | getRandomBlock · fn | one weighted random block |
+| src/Server/app/engine/Block_Supply.js:93 | getBlocksPerPlayer · fn | hand size; refill targets this |
+| src/Server/app/engine/Block_Supply.js:105 | buildDrawPile · fn | carry-over + generated reserve, shuffled |
+| src/Server/app/engine/Block_Supply.js:122 | getAverageBrickHeight · fn | drives supply sizing and the reinforce cap |
+| src/Server/app/engine/Block_Supply.js:141 | getAverageBrickCellCount · fn | numerator of packing efficiency |
+| src/Server/app/engine/Block_Supply.js:156 | getLevelSupplyMaxSurplus · fn | flat amount **plus** a share of the requirement |
+| src/Server/app/engine/Block_Supply.js:163 | getSupplyCoverageShare · fn | coverage lerp start→end by `levelSupplyCoverageFullLevel` |
+| src/Server/app/engine/Block_Supply.js:173 | getSuppliedBrickHeight · fn | `ceil(targetHeight / efficiency)` × coverage |
+| src/Server/app/engine/Block_Supply.js:177 | getGeneratedDrawPileBlockCount · fn | reserve size; `maxGeneratedDrawPileBlocks` is a sanity ceiling only |
+| src/Server/app/engine/Block_Supply.js:203 | generateDrawPileBlocks · fn | fill the reserve |
+| src/Server/app/engine/Block_Supply.js:213 | generateSolvableOpeningHandBlocks · fn | retry until the opening hand can reach target |
+| src/Server/app/engine/Block_Supply.js:248 | isLevelBlockSupplyValid · fn | solvability check over a candidate supply |
+| src/Server/app/engine/Block_Supply.js:272 | getTotalBlockHeight · fn | summed vertical footprint of a block set |
+| src/Server/app/engine/Block_Supply.js:278 | countPrecisionBlocks · fn | blocks of height ≤ 2, for `minPrecisionBlocksPerLevel` |
+| src/Server/app/engine/Block_Supply.js:284 | hasExactHeightCombination · fn | subset-sum for an exact finish; **returns on first hit**, O(blocks × targetHeight) |
+| src/Server/app/engine/Block_Supply.js:314 | shuffleBlocks · fn | pile shuffle |
+| src/Server/app/engine/Block_Supply.js:325 | dealOpeningHands · fn | opening hands bypass the pile; calls `trimInventory` via the facade |
+| src/Server/app/engine/Block_Supply.js:342 | drawBlockFromPile · fn | pop the shared pile |
+| src/Server/app/engine/Block_Supply.js:350 | refillPlayerBlock · fn | top a hand to `getBlocksPerPlayer` from the pile |
+| src/Server/app/engine/Block_Supply.js:362 | trimInventory · fn | cap a hand at `maxActiveBlocks` |
+| src/Server/app/engine/Block_Supply.js:383 | generateRefreshBlocks · fn | Refresh power: reroll a hand toward remaining height |
+| src/Server/app/engine/Block_Supply.js:414 | getReplenishBlockCount · fn | `powerReplenishPileShare` × `drawPileStartCount`, min 1 |
+| src/Server/app/engine/Block_Supply.js:426 | generateReplenishBlocks · fn | append to the pile; caller then refills every hand |
+| src/Server/app/engine/Block_Supply.js:440 | createRefreshBlock · fn | one replacement block, avoiding the current shape |
+| src/Server/app/engine/Block_Supply.js:447 | isRefreshBlockSetUseful · fn | `refreshMinUsefulBlockHeight` gate on a reroll |
+| src/Server/app/engine/Block_Supply.js:463 | scoreRefreshBlockSet · fn | rank candidate reroll sets |
+| src/Server/app/engine/Block_Supply.js:478 | prepareTeamCarryOverBlocks · fn | carry-over on completion, precision first; **discarded on failure** |
 
 ### src/Server/app/engine/Impacts.js — 322 ln
 
@@ -350,6 +356,25 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/engine/Impacts.js:217 | hasMetImpactScoreRequirement · fn | single-player gate check; simulator routes here |
 | src/Server/app/engine/Impacts.js:221 | failImpactScoreRequirement · fn | gate failure → rollback |
 | src/Server/app/engine/Impacts.js:281 | rollbackToImpact · fn | restore scores and powers to the last passed Impact |
+
+### src/Server/app/engine/Placement.js — 332 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Server/app/engine/Placement.js:4 | getSupplyPackingEfficiency · fn | cells per brick divided by height and effective site width |
+| src/Server/app/engine/Placement.js:20 | getSupplySiteWidthEstimate · fn | continuous site-width estimate used for supply sizing |
+| src/Server/app/engine/Placement.js:35 | getSiteWidthForHeight · fn | even viewport-clamped buildable width for a target height |
+| src/Server/app/engine/Placement.js:55 | getPlaceableColumnRange · fn | centred buildable site range broadcast to clients |
+| src/Server/app/engine/Placement.js:72 | getPlaceableOriginRange · fn | legal origin-x range for a brick footprint |
+| src/Server/app/engine/Placement.js:84 | resolveColumnOriginX · fn | clamps a requested brick origin into the current site |
+| src/Server/app/engine/Placement.js:95 | resolvePlacementOrigin · fn | validates a release row and settles the authoritative landing |
+| src/Server/app/engine/Placement.js:110 | placeBlock · fn | validates, settles, scores and broadcasts one authoritative placement |
+| src/Server/app/engine/Placement.js:211 | getStabilityPressure · fn | level-ramped share of configured stability difficulty |
+| src/Server/app/engine/Placement.js:228 | resolveStabilityConfig · fn | derives the physics config shared by placement evaluators |
+| src/Server/app/engine/Placement.js:250 | recalculateTowerStability · fn | evaluates the tower and queues threshold display events |
+| src/Server/app/engine/Placement.js:264 | checkWinCondition · fn | completes a level once current height reaches target |
+| src/Server/app/engine/Placement.js:272 | checkFailCondition · fn | authoritative supply-impossibility and all-blocks-used checks |
+| src/Server/app/engine/Placement.js:308 | anyPlayerCanRescueSupply · fn | detects a held Replenish that defers supply failure |
 
 ### src/Server/app/engine/Scoring.js — 364 ln
 
@@ -424,4 +449,4 @@ _no extracted symbols_
 
 ---
 
-17 files · 332 symbols · 0 awaiting a `Does` line.
+20 files · 342 symbols · 0 awaiting a `Does` line.

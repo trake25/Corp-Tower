@@ -1,0 +1,191 @@
+[gd_scene format=3]
+
+[node name="TutorialLayer" type="CanvasLayer" unique_id=950000001]
+layer = 4
+
+[node name="TutorialOverlay" type="Control" parent="." unique_id=950000002]
+unique_name_in_owner = true
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="DimTop" type="ColorRect" parent="TutorialOverlay" unique_id=950000003]
+unique_name_in_owner = true
+layout_mode = 0
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="DimBottom" type="ColorRect" parent="TutorialOverlay" unique_id=950000004]
+unique_name_in_owner = true
+layout_mode = 0
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="DimLeft" type="ColorRect" parent="TutorialOverlay" unique_id=950000005]
+unique_name_in_owner = true
+layout_mode = 0
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="DimRight" type="ColorRect" parent="TutorialOverlay" unique_id=950000006]
+unique_name_in_owner = true
+layout_mode = 0
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="TutorialCard" type="PanelContainer" parent="TutorialOverlay" unique_id=950000007]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 230)
+layout_mode = 0
+anchors_preset = 0
+theme_type_variation = &"HudPanel"
+
+[node name="TutorialCardMargin" type="MarginContainer" parent="TutorialOverlay/TutorialCard" unique_id=950000008]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="TutorialCardRows" type="VBoxContainer" parent="TutorialOverlay/TutorialCard/TutorialCardMargin" unique_id=950000009]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="TutorialTitleLabel" type="Label" parent="TutorialOverlay/TutorialCard/TutorialCardMargin/TutorialCardRows" unique_id=950000010]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"PopoverTitleLabel"
+text = "Title"
+
+[node name="TutorialBodyLabel" type="Label" parent="TutorialOverlay/TutorialCard/TutorialCardMargin/TutorialCardRows" unique_id=950000011]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(272, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"PopoverBodyLabel"
+autowrap_mode = 3
+text = "Body"
+
+[node name="TutorialStepDots" type="HBoxContainer" parent="TutorialOverlay/TutorialCard/TutorialCardMargin/TutorialCardRows" unique_id=950000012]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="TutorialButtonRow" type="HBoxContainer" parent="TutorialOverlay/TutorialCard/TutorialCardMargin/TutorialCardRows" unique_id=950000013]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="TutorialBackButton" type="Button" parent="TutorialOverlay/TutorialCard/TutorialCardMargin/TutorialCardRows/TutorialButtonRow" unique_id=950000014]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ActionButton"
+text = "Back"
+
+[node name="TutorialSkipStepButton" type="Button" parent="TutorialOverlay/TutorialCard/TutorialCardMargin/TutorialCardRows/TutorialButtonRow" unique_id=950000015]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ActionButton"
+text = "Skip"
+
+[node name="TutorialSkipLessonButton" type="Button" parent="TutorialOverlay/TutorialCard/TutorialCardMargin/TutorialCardRows/TutorialButtonRow" unique_id=950000016]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ActionButton"
+text = "Skip Lesson"
+
+[node name="TutorialNextButton" type="Button" parent="TutorialOverlay/TutorialCard/TutorialCardMargin/TutorialCardRows/TutorialButtonRow" unique_id=950000017]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Next"
+
+[node name="TutorialExitButton" type="Button" parent="TutorialOverlay/TutorialCard/TutorialCardMargin/TutorialCardRows/TutorialButtonRow" unique_id=950000018]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ActionButton"
+text = "Exit"
+
+[node name="TutorialMenuDim" type="ColorRect" parent="." unique_id=950000028]
+unique_name_in_owner = true
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="TutorialMenu" type="PanelContainer" parent="." unique_id=950000019]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -320.0
+offset_right = 180.0
+offset_bottom = 320.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"HudPanel"
+
+[node name="TutorialMenuMargin" type="MarginContainer" parent="TutorialMenu" unique_id=950000020]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="TutorialMenuRows" type="VBoxContainer" parent="TutorialMenu/TutorialMenuMargin" unique_id=950000021]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TutorialMenuTitleLabel" type="Label" parent="TutorialMenu/TutorialMenuMargin/TutorialMenuRows" unique_id=950000022]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 20
+text = "How to Play"
+horizontal_alignment = 1
+
+[node name="TutorialMenuScroll" type="ScrollContainer" parent="TutorialMenu/TutorialMenuMargin/TutorialMenuRows" unique_id=950000023]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TutorialMenuList" type="VBoxContainer" parent="TutorialMenu/TutorialMenuMargin/TutorialMenuRows/TutorialMenuScroll" unique_id=950000024]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="TutorialMenuButtonRow" type="HBoxContainer" parent="TutorialMenu/TutorialMenuMargin/TutorialMenuRows" unique_id=950000025]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TutorialMenuStartButton" type="Button" parent="TutorialMenu/TutorialMenuMargin/TutorialMenuRows/TutorialMenuButtonRow" unique_id=950000026]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"PrimaryButton"
+text = "Start"
+
+[node name="TutorialMenuExitButton" type="Button" parent="TutorialMenu/TutorialMenuMargin/TutorialMenuRows/TutorialMenuButtonRow" unique_id=950000027]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ActionButton"
+text = "Exit"

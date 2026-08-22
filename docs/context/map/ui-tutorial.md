@@ -7,6 +7,31 @@ The `Does` column IS hand-authored and is carried forward on regeneration.
 `path:line` and purpose, so it feeds straight into a `Read` with no second
 lookup. Loading the whole map costs thousands and gives you the same one row.
 
+### src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn — 192 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:3 | TutorialLayer · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:6 | %TutorialOverlay · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:17 | %DimTop · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:23 | %DimBottom · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:29 | %DimLeft · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:35 | %DimRight · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:41 | %TutorialCard · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:61 | %TutorialTitleLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:68 | %TutorialBodyLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:77 | %TutorialStepDots · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:89 | %TutorialBackButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:95 | %TutorialSkipStepButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:101 | %TutorialSkipLessonButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:107 | %TutorialNextButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:113 | %TutorialExitButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:119 | %TutorialMenuDim · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:131 | %TutorialMenu · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:170 | %TutorialMenuList · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:180 | %TutorialMenuStartButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/TutorialLayer.tscn:187 | %TutorialMenuExitButton · unique node | scene node exposed for name-based controller binding |
+
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialController.gd — 379 ln
 
 | File:Ln | Symbol | Does |
@@ -126,4 +151,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-6 files · 87 symbols · 0 awaiting a `Does` line.
+7 files · 107 symbols · 0 awaiting a `Does` line.

@@ -16,6 +16,8 @@ All paths under `src/Client/App/corp-tower/` unless noted. **The client renders
 - `project.godot` autoloads NetworkManager and `AuthManager` (`Sys/Auth/`), which
   owns the Supabase session in `user://` and refreshes it on a timer so the
   connect path never awaits — NetworkManager just reads `access_token()`.
+  `Auth_Request_Transport.gd` owns one-shot Supabase HTTP request lifetime,
+  headers and response parsing; the autoload retains session and provider state.
 - Display: 412×917 portrait design size, `canvas_items` stretch, `keep` aspect
   on web (`.web`, pillarboxed), `expand` on mobile (`.mobile`) to fill device
   edges — `GameUI.tscn`'s fixed-offset HUD sits under `PlayField`'s origin, so

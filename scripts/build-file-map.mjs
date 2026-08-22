@@ -192,10 +192,37 @@ function symbolsSh(lines) {
   return out;
 }
 
-function extract(rel, text) {
+function symbolsTscn(lines) {
+  const nodes = [];
+  let current = null;
+
+  lines.forEach((raw, i) => {
+    const node = /^\[node\s+name="([^"]+)"/.exec(raw);
+    if (node) {
+      current = { ln: i + 1, name: node[1], unique: false };
+      nodes.push(current);
+      return;
+    }
+
+    if (current && /^unique_name_in_owner\s*=\s*true\s*$/.test(raw)) {
+      current.unique = true;
+    }
+  });
+
+  if (nodes.length === 0) return [];
+
+  const out = [{ ln: nodes[0].ln, name: nodes[0].name, kind: 'scene root' }];
+  nodes.forEach(node => {
+    if (node.unique) out.push({ ln: node.ln, name: `%${node.name}`, kind: 'unique node' });
+  });
+  return out;
+}
+
+export function extract(rel, text) {
   const lines = text.split(/\r?\n/);
   let syms;
-  if (rel.endsWith('.gd')) syms = symbolsGd(lines);
+  if (rel.endsWith('.tscn')) syms = symbolsTscn(lines);
+  else if (rel.endsWith('.gd')) syms = symbolsGd(lines);
   else if (rel.endsWith('.tf')) syms = symbolsTf(lines);
   else if (rel.endsWith('.yml') || rel.endsWith('.yaml')) syms = symbolsYml(lines);
   else if (rel.endsWith('.sh')) syms = symbolsSh(lines);
@@ -273,7 +300,12 @@ function render(area, files, authored) {
     L.push('|---|---|---|');
     for (const s of syms) {
       const key = `${rel}#${s.name}`;
-      const d = authored.does.get(key) || 'TODO';
+      const scenePurpose = s.kind === 'scene root'
+        ? 'root of this reusable Godot scene'
+        : s.kind === 'unique node'
+          ? 'scene node exposed for name-based controller binding'
+          : null;
+      const d = authored.does.get(key) || scenePurpose || 'TODO';
       if (d === 'TODO') todo++;
       rows++;
       const sym = s.kind === 'func' || s.kind === 'method' ? s.name : `${s.name} · ${s.kind}`;

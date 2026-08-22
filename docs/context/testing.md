@@ -42,8 +42,8 @@ full affected-domain suite.
 Nothing under `tests/` or `tools/` ships in the image. `npm test` runs syntax
 checks and every Node test; targeted local runs use the files above.
 
-The engine contracts are split by failure signal: `Placement_Geometry.test.js`,
-`Stability_Scoring.test.js`, `Gameplay_Events.test.js` and
+The engine contracts are split by failure signal: `Block_Geometry.test.js`,
+`Placement_Geometry.test.js`, `Stability_Scoring.test.js`, `Gameplay_Events.test.js` and
 `Debug_State_Contracts.test.js`. `helpers/Game_Engine_Fixture.js` owns pinned
 configuration, engine construction and cleanup. Geometry/stability cases must
 use `useFixedGrid()`/`fixedStabilityConfig()` instead of live tunables.

@@ -115,7 +115,7 @@ guaranteed each lands in *some* room. Same-pod joins always share the open one.
 | `place_block` | Valid room, player, state, cooldown, inventory, block index. See below |
 | `activate_power` | Valid room, player, held item at `slot`, shared cooldown. **No target field** — the effect is room-wide, caster included |
 | `send_quick_chat` | Valid active room, template slot `0..2`, server-authoritative per-player cooldown |
-| `update_config` | Key allowlist and value ranges — the exact clamps live in [backend.md](./backend.md#updatedebugconfig--the-authoritative-validation) |
+| `update_config` | Key allowlist and value ranges — the exact clamps live in [backend.md](./backend.md#debug_config--the-authoritative-validation) |
 
 ### `place_block` carries two placement fields
 
