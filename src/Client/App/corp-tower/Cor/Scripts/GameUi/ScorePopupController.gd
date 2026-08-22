@@ -8,6 +8,7 @@ const SCORE_POPUP_MIN_FADE_SECONDS := 0.35
 const SCORE_POPUP_MAX_FADE_SECONDS := 2.0
 const SCORE_POPUP_MIN_HOLD_SECONDS := 0.05
 const FINISH_SCORE_POPUP_MIN_HOLD_RATIO := 0.08
+const POWER_TOAST_CENTER_Y_RATIO := 0.793
 
 var players_ctx
 var match_state
@@ -78,6 +79,7 @@ func show_score_event_popup(
 	var popup_size: Vector2 = get_score_popup_size(event_type)
 	var popup: PanelContainer = PanelContainer.new()
 
+	popup.name = "PowerToast" if event_type == "power_activated" else "ScorePopup"
 	popup.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	popup.z_index = 20
 	popup.custom_minimum_size = popup_size
@@ -91,12 +93,14 @@ func show_score_event_popup(
 	)
 
 	var margin: MarginContainer = MarginContainer.new()
+	margin.name = "ToastMargin" if is_glass_toast else "PopupMargin"
 	margin.add_theme_constant_override("margin_left", 10)
 	margin.add_theme_constant_override("margin_top", 6)
 	margin.add_theme_constant_override("margin_right", 10)
 	margin.add_theme_constant_override("margin_bottom", 6)
 
 	var label: Label = Label.new()
+	label.name = "ToastLabel" if is_glass_toast else "PopupLabel"
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -107,7 +111,9 @@ func show_score_event_popup(
 		label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.72))
 		label.add_theme_constant_override("outline_size", 4)
 	label.add_theme_font_size_override("font_size", get_score_popup_font_size(event_type))
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if is_glass_toast else TextServer.AUTOWRAP_OFF
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	label.clip_text = is_glass_toast
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS if is_glass_toast else TextServer.OVERRUN_NO_TRIMMING
 
 	margin.add_child(label)
 	popup.add_child(margin)
@@ -239,7 +245,7 @@ func is_emphasis_score_event(event_type: String) -> bool:
 
 func get_score_popup_size(event_type: String) -> Vector2:
 	if event_type == "power_activated":
-		return Vector2(330, 72)
+		return Vector2(330, 64)
 
 	if event_type == "quick_chat":
 		return Vector2(218, 56)
@@ -251,7 +257,7 @@ func get_score_popup_size(event_type: String) -> Vector2:
 
 func get_score_popup_font_size(event_type: String) -> int:
 	if event_type == "power_activated":
-		return 18
+		return 16
 
 	if event_type == "mvp" or event_type == "impact_failed":
 		return 20
@@ -291,7 +297,7 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.25)
 
 	if event_type == "power_activated":
-		return Vector2(layer_size.x * 0.5, layer_size.y * 0.808)
+		return Vector2(layer_size.x * 0.5, layer_size.y * POWER_TOAST_CENTER_Y_RATIO)
 
 	if event_type == "impact_failed":
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.4)

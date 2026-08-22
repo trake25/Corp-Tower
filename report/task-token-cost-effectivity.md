@@ -73,7 +73,8 @@ metadata cannot recover the variant.
 | 2 | Make Android CI select its embedded WebSocket target | 2 | A | 2 | 4 | ~5,000 | ~10,000 | ~16,000 | ~16,000 | ! | ok | gpt-5 (variant unrecorded) | medium | infra-engineer,qa-engineer,docs-steward,update-docs |
 | 3 | Enable browser social sign-in for backup dev web builds | 3 | A | 3 | 5 | ~8,000 | ~13,000 | ~21,000 | ~21,000 | ! | ok | gpt-5 (variant unrecorded) | medium | fullstack-coordinator,server-engineer,client-engineer,infra-engineer,qa-engineer,docs-steward,update-docs |
 | 4 | Implement Play screen Art v7 migration and glass HUD refresh | 5 | B | 1 | 27 | ~80,000 | ~90,000 | ~135,000 | ~135,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 5 -->
+| 5 | Fix Android Play alignment, Impact fill, power toast and parallax seam | 3 | B | 1 | 16 | ~15,000 | ~28,000 | ~40,000 | ~40,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
+<!-- next: row 6 -->
 
 ## Cycle 4 (closed)
 

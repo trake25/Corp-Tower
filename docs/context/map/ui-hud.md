@@ -7,27 +7,27 @@ The `Does` column IS hand-authored and is carried forward on regeneration.
 `path:line` and purpose, so it feeds straight into a `Read` with no second
 lookup. Loading the whole map costs thousands and gives you the same one row.
 
-### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 115 ln
+### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 123 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:14 | GameUI · scene root | root of this reusable Godot scene |
 | src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:32 | %BgArt · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:50 | %DragPreview · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:62 | %ScorePopupLayer · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:73 | %ChatPopover · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:85 | %PowerPopover · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:97 | %QuestPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:58 | %DragPreview · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:70 | %ScorePopupLayer · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:81 | %ChatPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:93 | %PowerPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:105 | %QuestPopover · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn — 101 ln
+### src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn — 108 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:28 | ImpactBar · scene root | root of this reusable Godot scene |
-| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:53 | %ImpactBarFill · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:66 | %ImpactAvatarMarker · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:75 | %ImpactAvatarRing · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:86 | %ImpactAvatarTexture · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:35 | ImpactBar · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:60 | %ImpactBarFill · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:72 | %ImpactAvatarMarker · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:82 | %ImpactAvatarRing · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:93 | %ImpactAvatarTexture · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn — 104 ln
 
@@ -43,7 +43,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:84 | %LevelSummaryCountdownLabel · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:94 | %LevelSummaryQuestLabel · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn — 558 ln
+### src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn — 540 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -60,23 +60,22 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:173 | %LevelBadgeTexture · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:186 | %LevelLabel · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:235 | %TopIndicatorFill · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:263 | %TowerStabilityLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:288 | %TeamInventoryPanel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:312 | %DrawPilePreview · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:320 | %DrawPileNameLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:332 | %DrawPileCountLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:350 | %QuickChatTrigger · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:370 | %PowerTrigger · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:381 | %QuestChip · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:392 | %PlayerRailBox · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:402 | %ImpactTrack · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:413 | %ImpactPill · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:433 | %PlaceBlockButton1 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:467 | %BlockPreview1 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:475 | %PlaceBlockButton2 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:509 | %BlockPreview2 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:517 | %PlaceBlockButton3 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:551 | %BlockPreview3 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:265 | %TowerStabilityLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:290 | %TeamInventoryPanel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:314 | %DrawPilePreview · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:322 | %DrawPileNameLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:334 | %DrawPileCountLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:352 | %QuickChatTrigger · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:372 | %PowerTrigger · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:383 | %QuestChip · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:394 | %PlayerRailBox · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:404 | %ImpactTrack · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:415 | %PlaceBlockButton1 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:449 | %BlockPreview1 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:457 | %PlaceBlockButton2 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:491 | %BlockPreview2 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:499 | %PlaceBlockButton3 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:533 | %BlockPreview3 · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scenes/PlayerRailEntry.tscn — 88 ln
 
@@ -99,16 +98,18 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:60 | %RowsBox · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:65 | %CloseTimer · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd — 26 ln
+### src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd — 55 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:3 | parallax_ratio · export | pan rate vs tower scroll; PlatformArt must stay 1.0 |
 | src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:4 | ease_speed · export | lerp speed for eased layers (BgArt) |
 | src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:5 | instant · export | snap in the same frame as the brick redraw; required for PlatformArt |
-| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:11 | _ready | cache start offset |
-| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:14 | set_scroll_pixels | receives TowerStack scroll, drives the pan |
-| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:20 | _process | eased approach toward the target offset |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:6 | sync_revealed_background · export | opt BgArt into matching the revealed backdrop to its currently visible sky edge |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:14 | _ready | cache start offset |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:21 | _sync_revealed_sky | sample the covered texture's visible top row and apply it to the sibling Background panel |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:43 | set_scroll_pixels | receives TowerStack scroll, drives the pan |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:49 | _process | eased approach toward the target offset |
 
 ### src/Client/App/corp-tower/Cor/Scripts/BlockPreview.gd — 247 ln
 
@@ -409,7 +410,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:147 | flash_impact_bars | Impact Beat bar flash |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:173 | _impact_glow_tint | flash colour |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 331 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 337 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -420,20 +421,21 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:8 | SCORE_POPUP_MAX_FADE_SECONDS · const | fade ceiling |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:9 | SCORE_POPUP_MIN_HOLD_SECONDS · const | minimum readable hold |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:10 | FINISH_SCORE_POPUP_MIN_HOLD_RATIO · const | finish popups hold longer |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:18 | bind_nodes | declare the nodes this module needs |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:23 | setup | wire player context and tuning |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:28 | process_score_events | **consumes `scoreEvents` from `game_state`**; displayOnly events are dropped here |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:61 | show_score_event_popup | spawn one popup |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:144 | get_score_popup_fade_duration_seconds | resolved fade time |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:177 | clear_score_popups | remove all popups |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:184 | get_score_event_text | **event type to label** — add a new score event here |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:213 | get_score_event_color | event type to colour |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:234 | is_emphasis_score_event | which events render large |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:240 | get_score_popup_size | popup box size, 128px wide |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:252 | get_score_popup_font_size | popup font size |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:261 | make_score_popup_style | popup stylebox |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:282 | get_score_popup_position | lane x 0.16-0.84; lanes must clear the 128px width |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:323 | get_score_event_popup_duration_seconds | per-event duration |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:11 | POWER_TOAST_CENTER_Y_RATIO · const | keep the fixed power toast just above the inventory controls at every overlay height |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:19 | bind_nodes | declare the nodes this module needs |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:24 | setup | wire player context and tuning |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:29 | process_score_events | **consumes `scoreEvents` from `game_state`**; displayOnly events are dropped here |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:62 | show_score_event_popup | spawn one popup |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:150 | get_score_popup_fade_duration_seconds | resolved fade time |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:183 | clear_score_popups | remove all popups |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:190 | get_score_event_text | **event type to label** — add a new score event here |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:219 | get_score_event_color | event type to colour |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:240 | is_emphasis_score_event | which events render large |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:246 | get_score_popup_size | popup box size, 128px wide |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:258 | get_score_popup_font_size | popup font size |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:267 | make_score_popup_style | popup stylebox |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:288 | get_score_popup_position | lane x 0.16-0.84; lanes must clear the 128px width |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:329 | get_score_event_popup_duration_seconds | per-event duration |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd — 331 ln
 
@@ -540,12 +542,11 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:70 | on_level_result | fires the beat once and returns the wait it costs; false when empty, off or collapsing |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:114 | _should_shake | shake on failure; a collapse gets the shake and no beat |
 
-### src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd — 47 ln
+### src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd — 34 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd:14 | _ready | style the fill |
-| src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd:28 | set_bar | seat colour and Impact progress ratio |
+| src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd:11 | set_bar | seat colour and Impact progress ratio |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PlayerColors.gd — 26 ln
 
@@ -704,4 +705,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-35 files · 520 symbols · 0 awaiting a `Does` line.
+35 files · 521 symbols · 0 awaiting a `Does` line.

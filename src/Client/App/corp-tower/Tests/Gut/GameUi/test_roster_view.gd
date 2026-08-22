@@ -69,5 +69,22 @@ func test_progressing_impact_bar_shows_player_avatar_marker() -> void:
 		"players": [{"id": "P1", "bandScore": 20, "requiredBandScore": 40}]
 	})
 	var bar: Control = roster().impact_bars["P1"]
+	var fill: Panel = bar.get_node("%ImpactBarFill") as Panel
+	var track: Panel = bar.get_node("ImpactBarTrack") as Panel
+	assert_true(fill.visible, "A progressing Impact bar should render its runtime fill.")
+	assert_almost_eq(fill.anchor_top, 0.5, 0.001, "The Impact fill height should match the player's progress ratio.")
+	assert_eq(track.clip_children, CanvasItem.CLIP_CHILDREN_DISABLED, "The Impact track must draw its runtime fill instead of masking it behind the frame.")
+	assert_gt(track.z_index, (bar.get_node("BarTexture") as TextureRect).z_index, "The runtime fill should draw above the frame's opaque track interior.")
 	assert_true((bar.get_node("%ImpactAvatarMarker") as Control).visible, "A progressing Impact bar should show the guide's avatar marker.")
 	assert_true((bar.get_node("%ImpactAvatarTexture") as TextureRect).texture.resource_path.ends_with("/9-Play/avatar-duck.png"), "The marker should use the player's mapped avatar.")
+
+func test_empty_impact_bar_hides_fill_and_avatar_marker() -> void:
+	harness.main.players_ctx.roster = [{"id": "P1", "avatarId": "avatar_1"}]
+	roster().update_impact_status_ui({
+		"requiredBandScore": 40,
+		"nextImpactLevel": 3,
+		"players": [{"id": "P1", "bandScore": 0, "requiredBandScore": 40}]
+	})
+	var bar: Control = roster().impact_bars["P1"]
+	assert_false((bar.get_node("%ImpactBarFill") as Panel).visible, "An empty Impact bar should not show a fill.")
+	assert_false((bar.get_node("%ImpactAvatarMarker") as Control).visible, "An empty Impact bar should not show an avatar marker.")

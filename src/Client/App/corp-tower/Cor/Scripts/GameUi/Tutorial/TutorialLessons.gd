@@ -330,7 +330,7 @@ static func _catalog() -> Array:
 					"id": &"every_level",
 					"title": "Every 2 levels is an Impact",
 					"body": "Every 2nd level gates on Impact: each player must personally clear their own share of the score banked since the last one, not just the team total.",
-					"target": &"ImpactPill",
+					"target": &"ImpactTrack",
 					"card": "below",
 					"gate": TutorialGatesScript.INFO
 				},

@@ -42,8 +42,16 @@ texture = ExtResource("8_bg")
 expand_mode = 1
 stretch_mode = 6
 script = ExtResource("3b_backgroundparallax")
+sync_revealed_background = true
 
 [node name="PlayField" parent="." unique_id=1310220001 instance=ExtResource("23_playfield")]
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -206.0
+offset_right = 206.0
+grow_horizontal = 2
 
 [node name="LevelSummaryOverlay" parent="." unique_id=959750494 instance=ExtResource("24_summary")]
 

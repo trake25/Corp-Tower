@@ -112,6 +112,6 @@ func get_power_toast_text(event: Dictionary) -> String:
 		return "Team inventory replenished"
 
 	if power_id == "refresh":
-		return "All players inventory refreshed"
+		return "Team inventory has been refreshed."
 
 	return str(event.get("label", "Power")) + " activated for everyone"

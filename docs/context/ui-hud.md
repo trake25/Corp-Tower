@@ -121,6 +121,9 @@ All live Play textures come from `Cor/Art/9-Play/`: the full-height 4x
 background, platform, HUD icons and state frames, brick faces, mood emoji and
 flat avatar files. `PlayerRailEntry` owns the explicit `avatar_0`–`avatar_5` to
 named-avatar mapping used by the rail, Impact markers and Level Summary.
+`PlayField` keeps the guide's fixed 412-unit width and centres inside the
+full-rect `GameUI` root; the background and transient overlay layers continue to
+fill the expanded root.
 
 `TeamInventoryPanel` is a **permanently visible** bar showing the shared draw pile,
 not a popover. It reuses the `DrawPilePreview`/`DrawPileNameLabel`/
@@ -135,10 +138,11 @@ height progress. The tower's physical lean is the normal stability cue;
 the numeric `TowerStabilityLabel` stays hidden unless the debug-only Stability
 Feedback selector is set to Meter Only or Live Preview. Inventory cards use only
 their brick preview and enabled, empty, or locked card state; no text metadata
-duplicates that state. The Impact pill and its per-player bars are the sole
-server-fed readiness presentation; each bar keeps a static 9-Play frame around a
-runtime gradient fill and positions the player's avatar at the live fill edge.
-There is no expandable details panel. `QuestChip` has exactly two room-wide
+duplicates that state. The per-player Impact bars are the sole server-fed
+readiness presentation; the heading is omitted, and each bar keeps a
+static 9-Play frame around a runtime solid seat-colour fill. Its avatar sits at
+the live fill edge only after progress is greater than zero. There is no
+expandable details panel. `QuestChip` has exactly two room-wide
 visual states: active until `claimedBy` is populated, completed afterwards.
 
 Node contract highlights: `TowerDropZone` (full-rect drag-release validator),
@@ -166,6 +170,9 @@ and a header does not scale with it.
 anchored glass card (title, rule, row list) behind every tap-triggered popover.
 `UiStyles.glass_panel()` gives runtime chat and power toasts the same translucent
 white edge, rounded corners and restrained shadow as these cards and the summary.
+The power toast is a fixed `330x64` single-line card centred at 79.3% of the
+full overlay height; its label clips with an ellipsis instead of resizing the
+glass surface.
 
 - Auto-closes after `auto_close_seconds` (default 4s), on outside tap via the
   full-screen `OutsideCatcher`, or when the owner closes it. Never pauses
@@ -189,8 +196,8 @@ self-dismiss mid-freeze, and restoring it when the window ends.
 | Block Preview | `Cor/Scripts/BlockPreview.gd` | Rotated/mirrored textured quad at inventory or tower scale, plus the drag ghost's own snap-point rings |
 | Tower Stack | `Cor/Scripts/TowerStack.gd` | The whole tower render: bricks, drag overlay, drop/tilt animation, mood faces, collapse sequence, Impact Beat |
 | Collapse Sim | `Cor/Scripts/GameUi/CollapseSim.gd` | Node-free debris physics, seeded so every client renders it identically |
-| Background Parallax | `Cor/Scripts/BackgroundParallax.gd` | Pans `BgArt` and `PlatformArt` against Tower Stack's scroll |
-| Impact Bar | `Cor/Scripts/ImpactBar.gd` | Per-player gradient progress fill and avatar marker inside the 9-Play frame |
+| Background Parallax | `Cor/Scripts/BackgroundParallax.gd` | Pans `BgArt` and `PlatformArt` against Tower Stack's scroll and samples the visible sky edge for the revealed backdrop |
+| Impact Bar | `Cor/Scripts/ImpactBar.gd` | Per-player runtime seat-colour progress fill and progress-only avatar marker inside the 9-Play frame |
 | Cooldown Overlay | `Cor/Scripts/CooldownOverlay.gd` | Radial per-card cooldown |
 | Debug Overlay | `Cor/Scripts/DebugOverlay.gd` | Show/hide shell only |
 | Debug Tooltip | `Cor/Scripts/DebugTooltip.gd` | Dimmed modal explainer for debug rows |
@@ -303,9 +310,10 @@ pile reads as wreckage, not a live verdict.
 - **Camera follow during a collapse is deliberately out of scope.** On a scrolled
   level the debris lands below the viewport, so Collapse Sim is invisible on most
   failures.
-- **The revealed sky is a placeholder** — the solid `Background` panel stands in.
-  A flat colour has no edge so it pans any distance; a real replacement must be
-  **seamlessly vertically-tileable**, not merely a taller image.
+- **`BgArt` synchronises the `Background` panel to its visible top texture row.**
+  `KEEP_ASPECT_COVERED` crops a different source row on wider Android canvases,
+  so a single hard-coded sky colour creates a seam as soon as parallax reveals
+  the panel.
 - **Labels on a white card need an explicit dark `font_color` override.** The
   `CardMetaLabel` theme variation defines none and falls through to a near-white
   default, invisible on `WhiteCardPanel`.
@@ -314,6 +322,10 @@ pile reads as wreckage, not a live verdict.
 - **Node order in `PlayField.tscn` is deliberate.** `TopIndicatorRow` draws after
   `TowerStack`, so overbuild bricks tuck under the indicator instead of covering
   it. Ordering it before the tower makes the tower draw over the bar.
-- **`PlayField` stays full-rect on Android.** Narrowing or centering only that
-  child shifts the Play controls away from root-anchored background, overlays and
-  popovers when the system-bar canvas expands beyond the 412-wide design area.
+- **`PlayField` is a centred 412-unit canvas on Android.** Mobile uses stretch
+  aspect `expand`, so system-bar devices can expose a wider logical root. Keep
+  `BgArt`, score popups and summary full-rect, centre only `PlayField`, and
+  position popover cards from their triggers' global rectangles.
+- **Impact progress draws above the frame's opaque track interior.** Keep
+  `ImpactBarTrack.clip_children` disabled and its z-index above `BarTexture`, or
+  avatars move while the runtime fill is completely hidden.

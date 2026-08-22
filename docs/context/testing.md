@@ -137,7 +137,9 @@ Synthetic inventory taps reset `last_tap_ms` or the 60 ms de-dupe window swallow
 them.
 
 Gameplay HUD coverage pins the two-state quest art, legacy-ID avatar mapping,
-Impact avatar markers, shared glass popovers and the summary countdown/quest rows.
+visible Impact fills and progress-only avatar markers, shared glass popovers,
+power-toast text and size, Android expanded-width centring, and the summary
+countdown/quest rows.
 
 **Landmine — `SnapGrid`'s range is `static var` state**, so `before_each` and
 `after_all` must call `reset_placeable_range()`. Omit it and tests leak grid state

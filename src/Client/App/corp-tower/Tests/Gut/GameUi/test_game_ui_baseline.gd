@@ -120,6 +120,8 @@ func test_impact_status_renders_track() -> void:
 	harness.main.roster.update_impact_status_ui(IMPACT_STATUS_FIXTURE)
 	assert_eq(harness.main.roster.impact_bars.size(), 3, "Each impact player status should get a track bar.")
 	assert_null(harness.find("ImpactStatusPanel"), "Impact readiness should not duplicate the player bars in a details panel.")
+	assert_null(harness.find("ImpactPill"), "The retired Impact heading should not remain above the bars.")
+	assert_null(harness.find("ImpactLabel"), "Impact bars should not duplicate their meaning as text.")
 
 func test_empty_impact_status_hides_track() -> void:
 	harness.main.roster.update_impact_status_ui(IMPACT_STATUS_FIXTURE)

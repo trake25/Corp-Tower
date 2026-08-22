@@ -4,6 +4,7 @@ const HarnessScript = preload("res://Tests/Gut/Helpers/GameUiHarness.gd")
 
 const DESIGN_SIZE := Vector2(412, 917)
 const EXPANDED_SIZE := Vector2(480, 1067)
+const ANDROID_EXPANDED_SIZE := Vector2(484, 917)
 
 var harness
 
@@ -83,6 +84,32 @@ func test_score_popup_positions_scale_with_layer_size() -> void:
 	var expanded_position: Vector2 = harness.main.score_popups.get_score_popup_position({"type": "mvp"})
 	assert_almost_eq(expanded_position.x, EXPANDED_SIZE.x * 0.5, 0.5, "MVP popups should keep centering horizontally when the layer grows.")
 	assert_almost_eq(expanded_position.y, EXPANDED_SIZE.y * 0.25, 0.5, "MVP popups should keep their proportional height when the layer grows.")
+
+func test_play_canvas_centers_inside_android_expanded_width() -> void:
+	await mount_at(ANDROID_EXPANDED_SIZE)
+	var play_rect: Rect2 = (harness.find("PlayField") as Control).get_global_rect()
+	var background_rect: Rect2 = (harness.find("BgArt") as Control).get_global_rect()
+	assert_almost_eq(play_rect.position.x, 36.0, 0.5, "The 412-wide Play canvas should center inside Android's expanded root.")
+	assert_almost_eq(play_rect.size.x, DESIGN_SIZE.x, 0.5, "Android expansion should not stretch the fixed Play HUD coordinates.")
+	assert_almost_eq(background_rect.position.x, 0.0, 0.5, "The Play background should continue covering the complete Android root.")
+	assert_almost_eq(background_rect.size.x, ANDROID_EXPANDED_SIZE.x, 0.5, "The Play background should fill Android's extra width.")
+	var background_style: StyleBoxFlat = (harness.find("Background") as Panel).get_theme_stylebox("panel")
+	assert_gt(background_style.bg_color.g, 0.85, "The revealed parallax backdrop should sample the visible sky instead of using the mismatched legacy blue.")
+
+func test_power_event_builds_a_visible_text_toast() -> void:
+	await mount_at(DESIGN_SIZE)
+	harness.main.power.process_power_events([{
+		"id": "power-refresh-1",
+		"powerId": "refresh"
+	}], [])
+	await get_tree().process_frame
+	var layer: Control = harness.find("ScorePopupLayer") as Control
+	var popup: PanelContainer = layer.get_node("PowerToast") as PanelContainer
+	var label: Label = popup.get_node("ToastMargin/ToastLabel") as Label
+	assert_eq(label.text, "Team inventory has been refreshed.", "The power toast should carry the guide copy.")
+	assert_true(label.is_visible_in_tree(), "The glass power toast must render its text, not only its card.")
+	assert_almost_eq(popup.size.x, 330.0, 0.5, "The power toast should retain the guide width.")
+	assert_almost_eq(popup.size.y, 64.0, 0.5, "The power toast should retain the guide height.")
 
 func test_placement_popup_lane_positions_interpolate_across_players() -> void:
 	await mount_at(DESIGN_SIZE)
