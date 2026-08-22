@@ -65,7 +65,7 @@ global floating debug button.
 - `AutoDismissModal` (`Main.tscn`, third child) also covers an unexpected
   disconnect while `find_match_active`. Both cases tear the screen underneath
   down only on dismiss, so it stays visible behind the modal's 3s countdown.
-- No status bar is drawn — the OS supplies its own on mobile; web has none.
+- Android exports keep the OS status bar visible above the 412×917 content area; web has no status bar.
 - Instantiates `PlayScreenScene` on entering Find Match or the lobby, frees it on
   close.
 - Debug button: tap vs drag via `DEBUG_BUTTON_DRAG_THRESHOLD`; *visible* from

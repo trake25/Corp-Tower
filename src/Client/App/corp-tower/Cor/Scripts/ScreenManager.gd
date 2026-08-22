@@ -31,6 +31,7 @@ var debug_button_drag_distance := 0.0
 var debug_context := DEBUG_CONTEXT_NONE
 
 func _ready() -> void:
+	_show_runtime_android_system_bars()
 	NetworkManager.room_joined.connect(_on_room_joined)
 	NetworkManager.match_started.connect(_on_match_started)
 	NetworkManager.room_closed.connect(_on_room_closed)
@@ -40,6 +41,12 @@ func _ready() -> void:
 	debug_button.visible = EndpointConfig.DEBUG_UI_ENABLED
 	reset_debug_button_position()
 	show_sign_in_screen()
+
+func _show_runtime_android_system_bars() -> void:
+	if OS.get_name() != "Android":
+		return
+
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 
 func _on_status_changed(text: String) -> void:
 	update_debug_button_availability()

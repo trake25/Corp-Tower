@@ -56,13 +56,13 @@ layout_mode = 2
 theme_override_constants/separation = 0
 
 [node name="TopSpacer" type="Control" parent="SafeArea/Root"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 284)
 layout_mode = 2
 
 [node name="StatusRows" type="VBoxContainer" parent="SafeArea/Root"]
 layout_mode = 2
 size_flags_vertical = 0
-theme_override_constants/separation = 18
+theme_override_constants/separation = 12
 
 [node name="StatusLabel" type="Label" parent="SafeArea/Root/StatusRows"]
 unique_name_in_owner = true

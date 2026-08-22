@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://Cor/Scripts/JoinScreen.gd" id="1_joinscreen"]
 [ext_resource type="Texture2D" path="res://Cor/Art/6-Join-server/btn-circular-back.png" id="2_back"]
-[ext_resource type="Texture2D" path="res://Cor/Art/6-Join-server/ic-eye-close.png" id="3_eye"]
+[ext_resource type="Texture2D" path="res://Cor/Art/6-Join-server/ic-eye-open.png" id="3_eye"]
 [ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="4_presstint"]
 [ext_resource type="Shader" path="res://Cor/Shaders/VerticalGradientFill.gdshader" id="5_gradientshader"]
 [ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Bold.ttf" id="6_poppinsbold"]
@@ -59,9 +59,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 16
+theme_override_constants/margin_left = 22
 theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
+theme_override_constants/margin_right = 22
 theme_override_constants/margin_bottom = 16
 
 [node name="Root" type="VBoxContainer" parent="SafeArea"]
@@ -109,7 +109,7 @@ layout_mode = 2
 theme_override_constants/separation = 20
 
 [node name="PlayerNameEdit" type="LineEdit" parent="SafeArea/Root/FieldsColumn"]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_type_variation = &"JoinLineEdit"
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
@@ -118,7 +118,7 @@ editable = false
 placeholder_text = "Enter your name"
 
 [node name="ServerIdEdit" type="LineEdit" parent="SafeArea/Root/FieldsColumn"]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_type_variation = &"JoinLineEdit"
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
@@ -131,7 +131,7 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="PasswordEdit" type="LineEdit" parent="SafeArea/Root/FieldsColumn/PasswordRow"]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"JoinLineEdit"
@@ -142,7 +142,7 @@ placeholder_text = "Server password"
 secret = true
 
 [node name="PasswordVisibilityButton" type="TextureButton" parent="SafeArea/Root/FieldsColumn/PasswordRow"]
-custom_minimum_size = Vector2(24, 24)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
 script = ExtResource("4_presstint")
@@ -156,8 +156,8 @@ layout_mode = 2
 
 [node name="JoinButtonMargin" type="MarginContainer" parent="SafeArea/Root"]
 layout_mode = 2
-theme_override_constants/margin_left = 32
-theme_override_constants/margin_right = 32
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_right = 24
 
 [node name="JoinButton" type="Button" parent="SafeArea/Root/JoinButtonMargin"]
 custom_minimum_size = Vector2(0, 46)

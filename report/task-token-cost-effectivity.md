@@ -65,7 +65,15 @@ metadata cannot recover the variant.
 `Effort` reasoning effort level in effect (low/medium/high/xhigh/max).
 `Skills` skills loaded during the task, comma-separated.
 
-## Cycle 4 (open)
+## Cycle 5 (open)
+
+| # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+<!-- next: row 1 -->
+
+## Cycle 4 (closed)
+
+Cycle 4 improved client screen fidelity and Android launch behavior while keeping retrieval correct through role skills, file-map regeneration, and targeted QA. The main regression risk was changing immersive mode globally, which the build notes exposed as a splash crop flaw; the fix restores immersive mode and requests runtime system bars instead. A remaining process flaw is that visual Android-device validation is not available in this environment. Recommendation: keep the immersive splash setting protected by the build note and validate the runtime bar transition on a physical Android device before release.
 
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -87,7 +95,8 @@ metadata cannot recover the variant.
 | 16 | Restore Top indicator height counts and audit hidden legacy HUD | 2 | B | 1 | 4 | late estimate ~1,500 | ~2,500 | ~5,500 | ~5,500 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer, qa-engineer, docs-steward |
 | 17 | Decompose server/client ownership, compose GameUI subscenes, and split deployment routing | 5 | B | 4 | 40 | late estimate ~25,000 | ~55,000 | ~120,000 | ~120,000 | ✓ | ok | gpt-5.6-sol | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
 | 18 | Refresh PNG UI art and screen layouts for Sign-in, Home, Join, Match, Lobby, and reusable Loader | 3 | B | 2 | 12 | late estimate ~12,000 | ~22,000 | ~42,000 | ~42,000 | ~ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward |
-<!-- next: row 19 -->
+| 19 | Correct Android status bar and guide-aligned Sign-in, Home, Join, and Find Match layouts | 3 | B | 2 | 9 | late estimate ~7,000 | ~12,000 | ~23,000 | ~23,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,fullstack-coordinator,qa-engineer,docs-steward |
+| 20 | Preserve immersive splash while restoring Android system bars after runtime startup | 2 | B | 2 | 5 | late estimate ~3,000 | ~6,000 | ~12,000 | ~12,000 | ~ | ok | gpt-5 (variant unrecorded) | high | client-engineer,fullstack-coordinator,qa-engineer,docs-steward |
 
 ## Cycle 3 (closed)
 

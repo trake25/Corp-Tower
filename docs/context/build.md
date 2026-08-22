@@ -134,7 +134,9 @@ the status and nav bars inset the window to roughly 0.52 aspect, and
 `boot_splash/stretch_mode.mobile=4` (Cover) crops ~257 image px per side — enough
 to cut the tagline, which sits 205 px above the image's bottom edge. Immersive
 restores the full-screen 0.474 aspect, where Cover crops only ~94 px and clears
-the tagline. Turning it off silently reintroduces the crop.
+the tagline. The running Android client then requests windowed mode after boot so
+the OS status and navigation bars are visible on runtime screens. Turning
+immersive mode off globally silently reintroduces the splash crop.
 
 **Validation gates:** the AAB must be non-empty, pass zip integrity, contain the
 expected bundle config and base manifest, include `arm64-v8a` native libs, exclude

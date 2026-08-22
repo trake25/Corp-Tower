@@ -37,9 +37,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
+theme_override_constants/margin_left = 46
 theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 24
+theme_override_constants/margin_right = 46
 theme_override_constants/margin_bottom = 16
 
 [node name="Root" type="VBoxContainer" parent="SafeArea"]
@@ -47,9 +47,8 @@ layout_mode = 2
 theme_override_constants/separation = 14
 
 [node name="TopSpacer" type="Control" parent="SafeArea/Root"]
-custom_minimum_size = Vector2(0, 8)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="Avatar" type="TextureRect" parent="SafeArea/Root"]
 custom_minimum_size = Vector2(86, 86)
@@ -62,6 +61,7 @@ stretch_mode = 5
 [node name="TitleLabel" type="Label" parent="SafeArea/Root"]
 layout_mode = 2
 theme_type_variation = &"PopoverTitleLabel"
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
 theme_override_font_sizes/font_size = 22
 horizontal_alignment = 1
 text = "Sign in to continue"
@@ -69,6 +69,8 @@ text = "Sign in to continue"
 [node name="SubtitleLabel" type="Label" parent="SafeArea/Root"]
 layout_mode = 2
 theme_type_variation = &"InfoLabel"
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 autowrap_mode = 2
 text = "Link your social account to save your progress and keep your stats."
@@ -117,7 +119,8 @@ color = Color(0, 0, 0, 0.15)
 
 [node name="OrLabel" type="Label" parent="SafeArea/Root/OrDivider"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+theme_override_font_sizes/font_size = 18
 text = "OR"
 
 [node name="LineRight" type="ColorRect" parent="SafeArea/Root/OrDivider"]
@@ -129,7 +132,7 @@ color = Color(0, 0, 0, 0.15)
 
 [node name="GuestButton" type="Button" parent="SafeArea/Root"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 theme_type_variation = &"MenuCardButton"
 text = ""
@@ -180,6 +183,8 @@ text = ""
 [node name="FootnoteLabel" type="Label" parent="SafeArea/Root"]
 layout_mode = 2
 theme_type_variation = &"InfoLabel"
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
+theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 text = "link your account later in Settings."
 

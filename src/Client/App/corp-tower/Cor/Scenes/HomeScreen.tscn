@@ -39,9 +39,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
+theme_override_constants/margin_left = 46
 theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 24
+theme_override_constants/margin_right = 46
 theme_override_constants/margin_bottom = 20
 
 [node name="Root" type="VBoxContainer" parent="SafeArea"]
@@ -49,12 +49,11 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="TopSpacer" type="Control" parent="SafeArea/Root"]
-custom_minimum_size = Vector2(0, 8)
+custom_minimum_size = Vector2(0, 74)
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="Logo" type="TextureRect" parent="SafeArea/Root"]
-custom_minimum_size = Vector2(170, 170)
+custom_minimum_size = Vector2(230, 230)
 layout_mode = 2
 size_flags_horizontal = 4
 texture = ExtResource("3_logo")
@@ -62,7 +61,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="MenuSpacer" type="Control" parent="SafeArea/Root"]
-custom_minimum_size = Vector2(0, 8)
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -72,7 +71,7 @@ theme_override_constants/separation = 10
 
 [node name="PrivateServerButton" type="Button" parent="SafeArea/Root/MenuColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_type_variation = &"MenuCardButton"
 text = ""
@@ -91,12 +90,14 @@ theme_override_constants/margin_right = 18
 [node name="Row" type="HBoxContainer" parent="SafeArea/Root/MenuColumn/PrivateServerButton/Margin"]
 mouse_filter = 2
 layout_mode = 2
+alignment = 1
 theme_override_constants/separation = 14
 
 [node name="Icon" type="TextureRect" parent="SafeArea/Root/MenuColumn/PrivateServerButton/Margin/Row"]
 mouse_filter = 2
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
+size_flags_vertical = 4
 texture = ExtResource("4_private")
 expand_mode = 1
 stretch_mode = 5
@@ -104,13 +105,14 @@ stretch_mode = 5
 [node name="Label" type="Label" parent="SafeArea/Root/MenuColumn/PrivateServerButton/Margin/Row"]
 mouse_filter = 2
 layout_mode = 2
+size_flags_vertical = 4
 theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
 text = "Private Server"
 
 [node name="JoinServerButton" type="Button" parent="SafeArea/Root/MenuColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_type_variation = &"MenuCardButton"
 text = ""
@@ -129,12 +131,14 @@ theme_override_constants/margin_right = 18
 [node name="Row" type="HBoxContainer" parent="SafeArea/Root/MenuColumn/JoinServerButton/Margin"]
 mouse_filter = 2
 layout_mode = 2
+alignment = 1
 theme_override_constants/separation = 14
 
 [node name="Icon" type="TextureRect" parent="SafeArea/Root/MenuColumn/JoinServerButton/Margin/Row"]
 mouse_filter = 2
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
+size_flags_vertical = 4
 texture = ExtResource("5_join")
 expand_mode = 1
 stretch_mode = 5
@@ -143,13 +147,14 @@ stretch_mode = 5
 unique_name_in_owner = true
 mouse_filter = 2
 layout_mode = 2
+size_flags_vertical = 4
 theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
 text = "Join Server"
 
 [node name="TutorialButton" type="Button" parent="SafeArea/Root/MenuColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_type_variation = &"MenuCardButton"
 text = ""
@@ -168,12 +173,14 @@ theme_override_constants/margin_right = 18
 [node name="Row" type="HBoxContainer" parent="SafeArea/Root/MenuColumn/TutorialButton/Margin"]
 mouse_filter = 2
 layout_mode = 2
+alignment = 1
 theme_override_constants/separation = 14
 
 [node name="Icon" type="TextureRect" parent="SafeArea/Root/MenuColumn/TutorialButton/Margin/Row"]
 mouse_filter = 2
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
+size_flags_vertical = 4
 texture = ExtResource("6_tutorial")
 expand_mode = 1
 stretch_mode = 5
@@ -181,6 +188,7 @@ stretch_mode = 5
 [node name="Label" type="Label" parent="SafeArea/Root/MenuColumn/TutorialButton/Margin/Row"]
 mouse_filter = 2
 layout_mode = 2
+size_flags_vertical = 4
 theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
 text = "Game Tutorial"
@@ -211,6 +219,7 @@ stretch_mode = 5
 
 [node name="RankingsLabel" type="Label" parent="SafeArea/Root/CircleRow/RankingsColumn"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
 theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 text = "Rankings"
@@ -231,6 +240,7 @@ stretch_mode = 5
 
 [node name="SettingsLabel" type="Label" parent="SafeArea/Root/CircleRow/SettingsColumn"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
 theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 text = "Settings"
@@ -251,6 +261,7 @@ stretch_mode = 5
 
 [node name="ProfileLabel" type="Label" parent="SafeArea/Root/CircleRow/ProfileColumn"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
 theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 text = "Profile"
