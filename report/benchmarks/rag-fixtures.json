@@ -4,7 +4,7 @@
     { "id": "P1", "area": "hud", "queries": [{ "map": "ui-hud", "query": "auto_close_seconds", "expects": "PopoverPanel.gd" }] },
     { "id": "P2", "area": "hud", "queries": [{ "map": "ui-hud", "query": "emoji_mood_for_delta", "expects": "BlockData.gd" }] },
     { "id": "P3", "area": "backend", "queries": [{ "map": "backend", "query": "updateDebugConfig", "expects": "Lobby_Manager.js" }] },
-    { "id": "P4", "area": "networking", "queries": [{ "map": "ui-hud", "query": "snap_radius_units", "expects": "TowerStack.gd" }, { "map": "backend", "query": "resolveColumnOriginX", "expects": "Game_Engine.js" }] },
+    { "id": "P4", "area": "networking", "queries": [{ "map": "ui-hud", "query": "snap_radius_units", "expects": "TowerStack.gd" }, { "map": "backend", "query": "resolveColumnOriginX", "expects": "Placement.js" }] },
     { "id": "P5", "area": "networking", "queries": [{ "map": "backend", "query": "createScoreEvent", "expects": "Scoring.js" }, { "map": "ui-hud", "query": "process_score_events", "expects": "ScorePopupController.gd" }] },
     { "id": "P6", "area": "backend", "queries": [{ "map": "backend", "query": "dispatchRoomAction", "expects": "Lobby_Manager.js" }, { "map": "backend", "query": "isRoomOwner", "expects": "Redis_State.js" }] }
   ],
