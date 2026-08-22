@@ -70,7 +70,8 @@ metadata cannot recover the variant.
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | Restore session startup and center Android Play canvas | 2 | B | 2 | 4 | ~2,000 | ~3,500 | ~8,000 | ~8,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward |
-<!-- next: row 2 -->
+| 2 | Make Android CI select its embedded WebSocket target | 2 | A | 2 | 4 | ~5,000 | ~10,000 | ~16,000 | ~16,000 | ! | ok | gpt-5 (variant unrecorded) | medium | infra-engineer,qa-engineer,docs-steward,update-docs |
+<!-- next: row 3 -->
 
 ## Cycle 4 (closed)
 

@@ -104,9 +104,11 @@ explicitly re-imported.
 ## Android Deploy wstodplay workflow
 
 `.github/workflows/Android-Deploy-wstodplay.yml` — manual `workflow_dispatch`
-build, test and sign for Google Play internal testing, endpoint fixed to
-`wstodplay` with debug UI enabled. **EKS is session-scoped**, so a build is only
-reachable while an EKS session is up.
+build, test and sign for Google Play internal testing. Its `websocket_target`
+choice embeds `wstodplay`, `devwstod1`, or `devwstod2`; each dev target uses the
+other dev server as failover. The version name is always
+`<resolved-version-code>-<websocket-target>`. **EKS is session-scoped**, so a
+`wstodplay` build is only reachable while an EKS session is up.
 
 **Sequence:** fetch private art → write the endpoint config → download Godot
 `4.6.2.stable` → install the Android SDK → resolve the next version code from

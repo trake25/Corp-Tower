@@ -8,11 +8,15 @@ on:
         required: false
         default: ""
         type: string
-      version_name:
-        description: "Human-readable version name."
+      websocket_target:
+        description: "Game WebSocket environment embedded in the Android build."
         required: true
-        default: "0.0.1-internal"
-        type: string
+        default: wstodplay
+        type: choice
+        options:
+          - wstodplay
+          - devwstod1
+          - devwstod2
       upload_to_play:
         description: "Upload the signed AAB to Google Play internal testing."
         required: true
@@ -61,10 +65,31 @@ jobs:
           secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           version-override: ${{ inputs.art_version_override }}
 
+      - name: Resolve WebSocket target
+        run: |
+          set -euo pipefail
+          case "${{ inputs.websocket_target }}" in
+            wstodplay)
+              echo "CORP_TOWER_WS_PRIMARY=wss://wstodplay.galaxxigames.com" >> "$GITHUB_ENV"
+              echo "CORP_TOWER_WS_FAILOVER=" >> "$GITHUB_ENV"
+              ;;
+            devwstod1)
+              echo "CORP_TOWER_WS_PRIMARY=wss://devwstod1.galaxxigames.com" >> "$GITHUB_ENV"
+              echo "CORP_TOWER_WS_FAILOVER=wss://devwstod2.galaxxigames.com" >> "$GITHUB_ENV"
+              ;;
+            devwstod2)
+              echo "CORP_TOWER_WS_PRIMARY=wss://devwstod2.galaxxigames.com" >> "$GITHUB_ENV"
+              echo "CORP_TOWER_WS_FAILOVER=wss://devwstod1.galaxxigames.com" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "::error::Unknown WebSocket target '${{ inputs.websocket_target }}'."
+              exit 1
+              ;;
+          esac
+          echo "ANDROID_WEBSOCKET_TARGET=${{ inputs.websocket_target }}" >> "$GITHUB_ENV"
+
       - name: Write client endpoint config
         env:
-          CORP_TOWER_WS_PRIMARY: wss://wstodplay.galaxxigames.com
-          CORP_TOWER_WS_FAILOVER: ""
           CORP_TOWER_DEBUG_UI: ${{ inputs.debug_ui }}
           # The anon key is public by design — it ships inside the binary — but
           # it comes from a secret so it never lands in the committed config.
@@ -255,10 +280,10 @@ jobs:
           } > "$HOME/.config/godot/editor_settings-4.6.tres"
 
       - name: Create CI export preset
-        env:
-          VERSION_NAME: ${{ inputs.version_name }}
         run: |
           set -euo pipefail
+          VERSION_NAME="${ANDROID_VERSION_CODE}-${ANDROID_WEBSOCKET_TARGET}"
+          export VERSION_NAME
           cp .github/godot/export_presets.android.ci.cfg "$GODOT_PROJECT_PATH/export_presets.cfg"
           python3 <<'PY'
           import json
@@ -360,6 +385,8 @@ jobs:
             echo "- Path: \`$AAB_PATH\`"
             echo "- Size: \`${AAB_SIZE_BYTES} bytes\`"
             echo "- Version code: \`$ANDROID_VERSION_CODE\`"
+            echo "- Version name: \`${ANDROID_VERSION_CODE}-${ANDROID_WEBSOCKET_TARGET}\`"
+            echo "- WebSocket target: \`$CORP_TOWER_WS_PRIMARY\`"
             echo "- Zip integrity: passed"
             echo "- Signature verification: passed"
             echo "- Native architecture: \`arm64-v8a\` only"
