@@ -61,6 +61,9 @@ func test_bottom_popovers_share_fixed_size_and_baseline() -> void:
 		assert_almost_eq(rect.size.x, 260.0, 0.5, "The %s popover card should render at the fixed design width." % entry[0])
 		assert_almost_eq(rect.size.y, 163.0, 0.5, "The %s popover card should render at the fixed design height shared by every bottom-row popover." % entry[0])
 	assert_almost_eq(chat_rect.position.y + chat_rect.size.y, power_rect.position.y + power_rect.size.y, 0.5, "The chat popover should share the power popover's bottom-edge baseline.")
+	assert_eq(StringName(card_of("ChatPopover").theme_type_variation), &"GlassPanel", "Quick Chat should use the shared glass surface.")
+	assert_eq(StringName(card_of("PowerPopover").theme_type_variation), &"GlassPanel", "Power should use the shared glass surface.")
+	assert_eq(StringName(card_of("QuestPopover").theme_type_variation), &"GlassPanel", "Quest should use the shared glass surface.")
 
 func test_quest_card_stays_fixed_size_with_overlong_label() -> void:
 	await mount_at(DESIGN_SIZE)

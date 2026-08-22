@@ -35,7 +35,7 @@ offset_right = -16.0
 offset_bottom = 200.0
 grow_horizontal = 0
 mouse_filter = 1
-theme_type_variation = &"WhiteCardPanel"
+theme_type_variation = &"GlassPanel"
 
 [node name="CardMargin" type="MarginContainer" parent="Card"]
 layout_mode = 2

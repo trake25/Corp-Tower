@@ -1,6 +1,7 @@
 extends GutTest
 
 const HarnessScript = preload("res://Tests/Gut/Helpers/GameUiHarness.gd")
+const PlayerRailEntryScript = preload("res://Cor/Scripts/PlayerRailEntry.gd")
 
 const PLAYERS_FIXTURE := [
 	{"id": "P1", "score": 10, "levelScore": 4},
@@ -45,3 +46,28 @@ func test_impact_bars_follow_status_membership() -> void:
 		"players": [{"id": "P1", "met": true}]
 	})
 	assert_eq(roster().impact_bars.size(), 1, "A player who leaves the status should lose their impact bar.")
+
+func test_legacy_avatar_ids_map_to_flat_9_play_assets() -> void:
+	var expected := {
+		"avatar_0": "avatar-lion.png",
+		"avatar_1": "avatar-duck.png",
+		"avatar_2": "avatar-hippo.png",
+		"avatar_3": "avatar-fox.png",
+		"avatar_4": "avatar-penguin.png",
+		"avatar_5": "avatar-elephant.png"
+	}
+	for avatar_id in expected:
+		var texture := PlayerRailEntryScript.load_avatar_texture(avatar_id)
+		assert_not_null(texture, "%s should resolve to a 9-Play avatar." % avatar_id)
+		assert_true(texture.resource_path.ends_with("/9-Play/" + expected[avatar_id]), "%s should preserve its existing character mapping." % avatar_id)
+
+func test_progressing_impact_bar_shows_player_avatar_marker() -> void:
+	harness.main.players_ctx.roster = [{"id": "P1", "avatarId": "avatar_1"}]
+	roster().update_impact_status_ui({
+		"requiredBandScore": 40,
+		"nextImpactLevel": 3,
+		"players": [{"id": "P1", "bandScore": 20, "requiredBandScore": 40}]
+	})
+	var bar: Control = roster().impact_bars["P1"]
+	assert_true((bar.get_node("%ImpactAvatarMarker") as Control).visible, "A progressing Impact bar should show the guide's avatar marker.")
+	assert_true((bar.get_node("%ImpactAvatarTexture") as TextureRect).texture.resource_path.ends_with("/9-Play/avatar-duck.png"), "The marker should use the player's mapped avatar.")

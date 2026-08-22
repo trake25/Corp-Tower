@@ -1,5 +1,6 @@
 extends Node
 
+const UiStylesScript = preload("res://Cor/Scripts/GameUi/UiStyles.gd")
 const SCORE_POPUP_FLOAT_DISTANCE := 64.0
 const SCORE_POPUP_INTRO_SECONDS := 0.16
 const SCORE_POPUP_FADE_RATIO := 0.28
@@ -73,6 +74,7 @@ func show_score_event_popup(
 
 	var text_color: Color = get_score_event_color(event)
 	var is_emphasis: bool = is_emphasis_score_event(event_type)
+	var is_glass_toast: bool = event_type == "power_activated" or event_type == "quick_chat"
 	var popup_size: Vector2 = get_score_popup_size(event_type)
 	var popup: PanelContainer = PanelContainer.new()
 
@@ -83,7 +85,10 @@ func show_score_event_popup(
 	popup.pivot_offset = popup_size * 0.5
 	popup.modulate.a = 0.0
 	popup.scale = Vector2(0.82, 0.82) if is_emphasis else Vector2(0.92, 0.92)
-	popup.add_theme_stylebox_override("panel", make_score_popup_style(text_color, is_emphasis))
+	popup.add_theme_stylebox_override(
+		"panel",
+		make_score_popup_style(text_color, is_emphasis, event_type)
+	)
 
 	var margin: MarginContainer = MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 10)
@@ -98,9 +103,11 @@ func show_score_event_popup(
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	label.add_theme_color_override("font_color", text_color)
-	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.72))
-	label.add_theme_constant_override("outline_size", 4)
+	if !is_glass_toast:
+		label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.72))
+		label.add_theme_constant_override("outline_size", 4)
 	label.add_theme_font_size_override("font_size", get_score_popup_font_size(event_type))
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if is_glass_toast else TextServer.AUTOWRAP_OFF
 
 	margin.add_child(label)
 	popup.add_child(margin)
@@ -207,6 +214,9 @@ func get_score_event_color(event: Dictionary) -> Color:
 	var event_type: String = str(event.get("type", ""))
 	var player_id: String = str(event.get("playerId", ""))
 
+	if event_type == "power_activated" or event_type == "quick_chat":
+		return Color(0.08, 0.08, 0.09, 1.0)
+
 	if player_id != "" and players_ctx.color_map.has(player_id):
 		return players_ctx.color_map[player_id]
 
@@ -229,7 +239,10 @@ func is_emphasis_score_event(event_type: String) -> bool:
 
 func get_score_popup_size(event_type: String) -> Vector2:
 	if event_type == "power_activated":
-		return Vector2(300, 36)
+		return Vector2(330, 72)
+
+	if event_type == "quick_chat":
+		return Vector2(218, 56)
 
 	if event_type == "mvp" or event_type == "impact_failed":
 		return Vector2(220, 48)
@@ -237,12 +250,22 @@ func get_score_popup_size(event_type: String) -> Vector2:
 	return Vector2(128, 38)
 
 func get_score_popup_font_size(event_type: String) -> int:
+	if event_type == "power_activated":
+		return 18
+
 	if event_type == "mvp" or event_type == "impact_failed":
 		return 20
 
 	return 16
 
-func make_score_popup_style(accent_color: Color, is_emphasis: bool) -> StyleBoxFlat:
+func make_score_popup_style(
+	accent_color: Color,
+	is_emphasis: bool,
+	event_type: String = ""
+) -> StyleBoxFlat:
+	if event_type == "power_activated" or event_type == "quick_chat":
+		return UiStylesScript.glass_panel(18)
+
 	var style: StyleBoxFlat = StyleBoxFlat.new()
 	style.bg_color = Color(0.03, 0.035, 0.045, 0.88 if is_emphasis else 0.78)
 	style.border_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.95)
@@ -268,7 +291,7 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.25)
 
 	if event_type == "power_activated":
-		return Vector2(layer_size.x * 0.5, layer_size.y * 0.816)
+		return Vector2(layer_size.x * 0.5, layer_size.y * 0.808)
 
 	if event_type == "impact_failed":
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.4)

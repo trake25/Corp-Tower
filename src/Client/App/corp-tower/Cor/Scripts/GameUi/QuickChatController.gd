@@ -1,7 +1,8 @@
 extends Node
 
-const CHAT_BUBBLE_MAX_WIDTH := 240.0
+const CHAT_BUBBLE_MAX_WIDTH := 194.0
 const ScorePopupControllerScript = preload("res://Cor/Scripts/GameUi/ScorePopupController.gd")
+const UiStylesScript = preload("res://Cor/Scripts/GameUi/UiStyles.gd")
 
 var match_state
 var network
@@ -127,9 +128,9 @@ func show_quick_chat_bubble(player_id: String, text: String, duration_seconds: f
 
 	var margin: MarginContainer = MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_top", 14)
 	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_bottom", 8)
+	margin.add_theme_constant_override("margin_bottom", 14)
 
 	var label: Label = Label.new()
 	label.text = text
@@ -164,13 +165,4 @@ func show_quick_chat_bubble(player_id: String, text: String, duration_seconds: f
 	tween.tween_callback(Callable(bubble, "queue_free"))
 
 func make_chat_bubble_style() -> StyleBoxFlat:
-	var style: StyleBoxFlat = StyleBoxFlat.new()
-	style.bg_color = Color(1, 1, 1, 1)
-	style.corner_radius_top_left = 14
-	style.corner_radius_top_right = 14
-	style.corner_radius_bottom_right = 14
-	style.corner_radius_bottom_left = 4
-	style.shadow_color = Color(0.42, 0.55, 0.6, 0.22)
-	style.shadow_size = 8
-	style.shadow_offset = Vector2(0, 4)
-	return style
+	return UiStylesScript.glass_panel(16)

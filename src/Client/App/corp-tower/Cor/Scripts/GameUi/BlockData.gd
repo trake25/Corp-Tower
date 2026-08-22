@@ -9,17 +9,17 @@ const BRICK_SHAPES := {
 }
 
 const BRICK_TEXTURE_PATHS := {
-	"I": "res://Cor/Art/Bricks/brick_i.png",
-	"O": "res://Cor/Art/Bricks/brick_o.png",
-	"L": "res://Cor/Art/Bricks/brick_l.png",
-	"T": "res://Cor/Art/Bricks/brick_t.png",
-	"Z": "res://Cor/Art/Bricks/brick_z.png"
+	"I": "res://Cor/Art/9-Play/brick_i.png",
+	"O": "res://Cor/Art/9-Play/brick_o.png",
+	"L": "res://Cor/Art/9-Play/brick_l.png",
+	"T": "res://Cor/Art/9-Play/brick_t.png",
+	"Z": "res://Cor/Art/9-Play/brick_z.png"
 }
 
 const EMOJI_TEXTURE_PATHS := {
-	"positive": "res://Cor/Art/Static/emoji-smiley.png",
-	"negative": "res://Cor/Art/Static/emoji-worried.png",
-	"neutral": "res://Cor/Art/Static/emoji-disbelief.png"
+	"positive": "res://Cor/Art/9-Play/emoji-smiley.png",
+	"negative": "res://Cor/Art/9-Play/emoji-worried.png",
+	"neutral": "res://Cor/Art/9-Play/emoji-disbelief.png"
 }
 
 const DEFAULT_EMOJI_MOOD := "neutral"

@@ -131,7 +131,12 @@ func update_impact_track(player_statuses: Array, _next_impact_level: int) -> voi
 		if required > 0:
 			ratio = clampf(float(current) / float(required), 0.0, 1.0)
 
-		bar.call("set_bar", players_ctx.seat_color(player_id), ratio)
+		bar.call(
+			"set_bar",
+			players_ctx.seat_color(player_id),
+			ratio,
+			players_ctx.avatar_id(player_id)
+		)
 		slot += 1
 
 	for player_id in impact_bars.keys():

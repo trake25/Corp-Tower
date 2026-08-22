@@ -41,8 +41,8 @@ enabled=PackedStringArray("res://addons/DeeplinkPlugin/plugin.cfg", "res://addon
 [importer_defaults]
 
 texture={
-"svg/scale": 4.0,
-"mipmaps/generate": true
+"mipmaps/generate": true,
+"svg/scale": 4.0
 }
 
 [physics]

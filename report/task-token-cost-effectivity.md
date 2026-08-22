@@ -72,7 +72,8 @@ metadata cannot recover the variant.
 | 1 | Restore session startup and center Android Play canvas | 2 | B | 2 | 4 | ~2,000 | ~3,500 | ~8,000 | ~8,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward |
 | 2 | Make Android CI select its embedded WebSocket target | 2 | A | 2 | 4 | ~5,000 | ~10,000 | ~16,000 | ~16,000 | ! | ok | gpt-5 (variant unrecorded) | medium | infra-engineer,qa-engineer,docs-steward,update-docs |
 | 3 | Enable browser social sign-in for backup dev web builds | 3 | A | 3 | 5 | ~8,000 | ~13,000 | ~21,000 | ~21,000 | ! | ok | gpt-5 (variant unrecorded) | medium | fullstack-coordinator,server-engineer,client-engineer,infra-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 4 -->
+| 4 | Implement Play screen Art v7 migration and glass HUD refresh | 5 | B | 1 | 27 | ~80,000 | ~90,000 | ~135,000 | ~135,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
+<!-- next: row 5 -->
 
 ## Cycle 4 (closed)
 

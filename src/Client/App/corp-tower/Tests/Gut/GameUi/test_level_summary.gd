@@ -81,10 +81,24 @@ func test_scene_summary_shows_and_dedupes_by_key() -> void:
 	scene_summary.queue_level_summary_after_score_popups(SUMMARY_FIXTURE, "finished", 0.0)
 	var overlay: Control = harness.find("LevelSummaryOverlay") as Control
 	assert_true(overlay.visible, "A queued summary with no popup wait should show immediately.")
-	assert_eq((harness.find("LevelSummaryTitleLabel") as Label).text, "Level 3 Complete", "The summary title should show the completed level.")
+	assert_eq((harness.find("LevelSummaryTitleLabel") as Label).text, "Level 3 Completed", "The summary title should show the completed level.")
 	assert_eq((harness.find("LevelSummaryPlayersBox") as VBoxContainer).get_child_count(), 2, "Each summarized player should get a row.")
+	assert_true((harness.find("LevelSummaryCountdownLabel") as Label).text.begins_with("Next level is starting in "), "The summary should expose its live next-level countdown.")
 	scene_summary.queue_level_summary_after_score_popups(SUMMARY_FIXTURE, "finished", 0.0)
 	assert_true(overlay.visible, "Requeueing the same summary key must not restart or hide the overlay.")
+
+func test_scene_summary_places_next_level_quest_after_countdown() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(412, 917))
+	var fixture: Dictionary = SUMMARY_FIXTURE.duplicate(true)
+	fixture["sideQuest"] = {
+		"label": "Reach the top and earn special power.",
+		"rewardId": "refresh"
+	}
+	harness.main.summary.show_level_summary(fixture, "finished")
+	var quest_label := harness.find("LevelSummaryQuestLabel") as Label
+	assert_true(quest_label.visible, "An authoritative next-level quest should be visible in the summary.")
+	assert_true(quest_label.text.begins_with("Next Level Quest\n"), "The quest should replace the deferred Leave Game action.")
 
 func test_scene_summary_waits_for_popup_window() -> void:
 	var harness = HarnessScript.new()

@@ -7,73 +7,76 @@ The `Does` column IS hand-authored and is carried forward on regeneration.
 `path:line` and purpose, so it feeds straight into a `Read` with no second
 lookup. Loading the whole map costs thousands and gives you the same one row.
 
-### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 116 ln
+### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 115 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:14 | GameUI · scene root | root of this reusable Godot scene |
 | src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:32 | %BgArt · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:51 | %DragPreview · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:63 | %ScorePopupLayer · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:74 | %ChatPopover · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:86 | %PowerPopover · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:98 | %QuestPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:50 | %DragPreview · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:62 | %ScorePopupLayer · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:73 | %ChatPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:85 | %PowerPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:97 | %QuestPopover · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn — 50 ln
+### src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn — 101 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:13 | ImpactBar · scene root | root of this reusable Godot scene |
-| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:38 | %ImpactBarFill · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:28 | ImpactBar · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:53 | %ImpactBarFill · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:66 | %ImpactAvatarMarker · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:75 | %ImpactAvatarRing · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:86 | %ImpactAvatarTexture · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn — 94 ln
+### src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn — 104 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:3 | LevelSummaryOverlay · scene root | root of this reusable Godot scene |
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:3 | %LevelSummaryOverlay · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:52 | %LevelSummaryTitleLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:59 | %LevelSummaryResultLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:67 | %LevelSummaryTeamLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:74 | %LevelSummaryMvpLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:81 | %LevelSummaryQuestLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:89 | %LevelSummaryPlayersBox · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:63 | %LevelSummaryResultLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:68 | %LevelSummaryTeamLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:73 | %LevelSummaryMvpLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:78 | %LevelSummaryPlayersBox · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:84 | %LevelSummaryCountdownLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:94 | %LevelSummaryQuestLabel · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn — 562 ln
+### src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn — 558 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:25 | PlayField · scene root | root of this reusable Godot scene |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:34 | %PlatformArt · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:48 | %TowerStack · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:58 | %TowerDropZone · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:76 | %HamburgerButton · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:87 | %ConnectionBanner · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:105 | %StatusLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:115 | %DemoModeLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:141 | %RoundTimeTexture · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:154 | %TimerLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:174 | %LevelBadgeTexture · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:187 | %LevelLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:23 | PlayField · scene root | root of this reusable Godot scene |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:32 | %PlatformArt · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:46 | %TowerStack · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:56 | %TowerDropZone · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:74 | %HamburgerButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:85 | %ConnectionBanner · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:103 | %StatusLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:113 | %DemoModeLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:139 | %RoundTimeTexture · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:152 | %TimerLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:173 | %LevelBadgeTexture · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:186 | %LevelLabel · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:235 | %TopIndicatorFill · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:262 | %TowerStabilityLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:287 | %TeamInventoryPanel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:311 | %DrawPilePreview · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:319 | %DrawPileNameLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:331 | %DrawPileCountLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:349 | %QuickChatTrigger · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:369 | %PowerTrigger · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:380 | %QuestChip · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:391 | %QuestBadge · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:404 | %PlayerRailBox · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:414 | %ImpactTrack · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:425 | %ImpactPill · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:437 | %PlaceBlockButton1 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:471 | %BlockPreview1 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:479 | %PlaceBlockButton2 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:513 | %BlockPreview2 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:521 | %PlaceBlockButton3 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:555 | %BlockPreview3 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:263 | %TowerStabilityLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:288 | %TeamInventoryPanel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:312 | %DrawPilePreview · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:320 | %DrawPileNameLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:332 | %DrawPileCountLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:350 | %QuickChatTrigger · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:370 | %PowerTrigger · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:381 | %QuestChip · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:392 | %PlayerRailBox · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:402 | %ImpactTrack · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:413 | %ImpactPill · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:433 | %PlaceBlockButton1 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:467 | %BlockPreview1 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:475 | %PlaceBlockButton2 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:509 | %BlockPreview2 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:517 | %PlaceBlockButton3 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:551 | %BlockPreview3 · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scenes/PlayerRailEntry.tscn — 88 ln
 
@@ -274,29 +277,32 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:728 | _selected_block_id | currently selected block |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:734 | update_draw_pile_ui | shared draw pile bar; reuses the DrawPile* nodes |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd — 385 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd — 479 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:22 | _ready | builds the two one-shot timers as children — show fires `show_pending_level_summary`, hide fires `hide_level_summary` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:33 | bind_nodes | six required nodes; **only the quest label is optional**, so a scene missing any other summary node fails loudly at bind time |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:42 | setup | injects players_ctx for names and colours, match_state for the fallback level number, and tuning for the hide delay |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:47 | is_overlay_visible | true only when the overlay exists and is visible; other controllers use it to suppress input |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:50 | queue_level_summary_after_score_popups | **the dedupe and delay gate** — drops a repeat of the visible key or a re-queue while the show timer runs, then waits out the score popups with the overlay hidden, else shows now |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:95 | show_pending_level_summary | **clears the pending slot before rendering**, so a second timer fire cannot show the same summary twice |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:108 | cancel_pending_level_summary | stops the show timer and drops the pending summary; how a level change cancels a summary still waiting |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:116 | show_level_summary | title, result, MVP, quest row, and one row per player **sorted by `levelScore` descending**; fades in 0.16s and arms the hide timer at `tuning.level_summary_delay_ms`, **clamped to 1..10s** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:166 | hide_level_summary | stops the timer, hides, restores alpha to 1 for the next show, then calls `on_summary_ended` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:177 | get_level_summary_key | **the dedupe identity** — level, result, teamLevelScore, mvpId, exactFinish and overbuildHeight joined by `:`. Two summaries agreeing on all six are treated as the same one |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:187 | get_level_summary_result_text | completed gives `Perfect Fit` or `Overbuilt +N` plus the finisher; failed routes `impact_score_requirement` to the impact readout and anything else to the formatted reason |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:204 | get_impact_failure_summary_text | the per-player impact readout — `Impact L<n>` with a ready count, your score against your requirement, and the other players targets. **Falls back when the status has no players** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:265 | get_impact_failure_fallback_text | reads `impactScoreFailures` instead of the status block, and degrades to a bare `Impact L<n> failed` when that is empty too |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:284 | update_level_summary_quest_row | delegates the text to `quest_text_provider` and **hides the row when it returns empty**, so no quest leaves no gap |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:296 | get_level_summary_mvp_text | `MVP -` when the server named no mvpId, otherwise the display name and the MVP score |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:304 | create_level_summary_player_row | one panel row: name (MVP-prefixed and player-coloured when mvp), this level's score, and the running total |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:351 | make_summary_row_style | MVP rows take the player's colour at 0.18 fill and 0.72 border; every other row gets the neutral dark panel |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:373 | clear_children | `queue_free`s every child, which is how the player box is rebuilt rather than appended to |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:380 | format_summary_reason | maps `impact_score_requirement` to prose; every other reason becomes underscores-to-spaces, capitalised |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:28 | _ready | builds the two one-shot timers as children — show fires `show_pending_level_summary`, hide fires `hide_level_summary` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:39 | _process | Refreshes the visible Level Summary countdown from its live deadline. |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:42 | bind_nodes | six required nodes; **only the quest label is optional**, so a scene missing any other summary node fails loudly at bind time |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:52 | setup | injects players_ctx for names and colours, match_state for the fallback level number, and tuning for the hide delay |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:57 | is_overlay_visible | true only when the overlay exists and is visible; other controllers use it to suppress input |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:60 | queue_level_summary_after_score_popups | **the dedupe and delay gate** — drops a repeat of the visible key or a re-queue while the show timer runs, then waits out the score popups with the overlay hidden, else shows now |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:105 | show_pending_level_summary | **clears the pending slot before rendering**, so a second timer fire cannot show the same summary twice |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:118 | cancel_pending_level_summary | stops the show timer and drops the pending summary; how a level change cancels a summary still waiting |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:126 | show_level_summary | title, result, MVP, quest row, and one row per player **sorted by `levelScore` descending**; fades in 0.16s and arms the hide timer at `tuning.level_summary_delay_ms`, **clamped to 1..10s** |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:185 | hide_level_summary | stops the timer, hides, restores alpha to 1 for the next show, then calls `on_summary_ended` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:199 | get_level_summary_key | **the dedupe identity** — level, result, teamLevelScore, mvpId, exactFinish and overbuildHeight joined by `:`. Two summaries agreeing on all six are treated as the same one |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:209 | get_level_summary_result_text | completed gives `Perfect Fit` or `Overbuilt +N` plus the finisher; failed routes `impact_score_requirement` to the impact readout and anything else to the formatted reason |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:226 | get_impact_failure_summary_text | the per-player impact readout — `Impact L<n>` with a ready count, your score against your requirement, and the other players targets. **Falls back when the status has no players** |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:287 | get_impact_failure_fallback_text | reads `impactScoreFailures` instead of the status block, and degrades to a bare `Impact L<n> failed` when that is empty too |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:306 | update_level_summary_quest_row | delegates the text to `quest_text_provider` and **hides the row when it returns empty**, so no quest leaves no gap |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:318 | update_summary_countdown | Rewrites the next-level countdown only when its displayed second changes. |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:339 | get_level_summary_mvp_text | `MVP -` when the server named no mvpId, otherwise the display name and the MVP score |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:347 | create_level_summary_player_row | one panel row: name (MVP-prefixed and player-coloured when mvp), this level's score, and the running total |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:428 | make_summary_row_style | MVP rows take the player's colour at 0.18 fill and 0.72 border; every other row gets the neutral dark panel |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:453 | make_summary_avatar_style | Builds the seat-colour avatar ring and MVP border used by summary rows. |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:467 | clear_children | `queue_free`s every child, which is how the player box is rebuilt rather than appended to |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:474 | format_summary_reason | maps `impact_score_requirement` to prose; every other reason becomes underscores-to-spaces, capitalised |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/MatchState.gd — 11 ln
 
@@ -354,39 +360,39 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/PowerController.gd:82 | process_power_events | **dedupes on event id** via `seen_power_event_ids`, so a re-broadcast of the same state cannot toast twice; each new event becomes a 3.0s popup |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/PowerController.gd:99 | get_power_toast_text | replenish reports `meta.blocksAdded` when above zero, refresh is fixed text, and anything unrecognised falls back to the event's `label` |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd — 171 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd — 155 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:19 | REWARD_LABELS · const | quest reward display names |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:26 | bind_nodes | declare the nodes this module needs |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:33 | setup | wire context and popover coordinator |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:39 | update_quest_chip | side-quest chip state |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:58 | get_quest_claimed_by | who claimed the quest this level |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:62 | get_reward_label | reward id to label |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:68 | get_quest_summary_text | quest text for the summary |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:85 | update_freeze_quest_popover | quest popover during the freeze countdown |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:100 | reset_freeze_quest_popover | clear it |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:104 | open_freeze_quest_popover | show it |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:114 | close_freeze_quest_popover | hide it |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:125 | on_quest_chip_pressed | **trigger wires its own signal** and calls should_block_popovers() |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:138 | open_quest_popover | present the quest card |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:163 | position_quest_popover_card | anchor the 260x140 Quest card |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:16 | REWARD_LABELS · const | quest reward display names |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:23 | bind_nodes | declare the nodes this module needs |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:29 | setup | wire context and popover coordinator |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:35 | update_quest_chip | side-quest chip state |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:47 | get_quest_claimed_by | who claimed the quest this level |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:51 | get_reward_label | reward id to label |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:57 | get_quest_summary_text | quest text for the summary |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:74 | update_freeze_quest_popover | quest popover during the freeze countdown |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:89 | reset_freeze_quest_popover | clear it |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:93 | open_freeze_quest_popover | show it |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:101 | close_freeze_quest_popover | hide it |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:112 | on_quest_chip_pressed | **trigger wires its own signal** and calls should_block_popovers() |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:122 | open_quest_popover | present the quest card |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd:147 | position_quest_popover_card | anchor the 260x140 Quest card |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd — 177 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd — 169 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:20 | bind_nodes | resolves QuickChatTrigger and ChatPopover as **optional** nodes and wires the trigger to `open_quick_chat_popover` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:26 | setup | injects match_state, network, popovers, roster and score_popups, plus `popover_blocked` for the tutorial lock and `tutorial_action_hook` for gate reporting |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:38 | on_quick_chat_pressed | **four guards in order**: slot bounds, tutorial mode (reports to the hook and **never sends**), connected and `playing`, then the `quick_chat_cooldown_ms` limit — which is client-side only |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:54 | open_quick_chat_popover | **toggles** — pressing while open closes it. Rebuilds rows from `quick_chat_templates` and shows `No quick chat available` when the server sent none |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:84 | position_chat_popover_card | pins the card's bottom-right to the trigger at +2 x, -13 y, matching `PowerController` so both popovers open identically |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:94 | process_quick_chat_events | **dedupes on event id** via `seen_quick_chat_event_ids`, so a re-broadcast cannot repeat a bubble; each new event becomes a 3.0s bubble |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:109 | show_quick_chat_bubble | **falls back to a score popup when the speaker has no rail entry**, otherwise builds a bubble anchored 8px right of the rail at that row's vertical centre, tweened intro then hold then fade |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:166 | make_chat_bubble_style | white card, 14px corners except bottom-left at 4 — the square corner is the tail pointing back at the rail row |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:21 | bind_nodes | resolves QuickChatTrigger and ChatPopover as **optional** nodes and wires the trigger to `open_quick_chat_popover` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:27 | setup | injects match_state, network, popovers, roster and score_popups, plus `popover_blocked` for the tutorial lock and `tutorial_action_hook` for gate reporting |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:39 | on_quick_chat_pressed | **four guards in order**: slot bounds, tutorial mode (reports to the hook and **never sends**), connected and `playing`, then the `quick_chat_cooldown_ms` limit — which is client-side only |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:55 | open_quick_chat_popover | **toggles** — pressing while open closes it. Rebuilds rows from `quick_chat_templates` and shows `No quick chat available` when the server sent none |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:85 | position_chat_popover_card | pins the card's bottom-right to the trigger at +2 x, -13 y, matching `PowerController` so both popovers open identically |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:95 | process_quick_chat_events | **dedupes on event id** via `seen_quick_chat_event_ids`, so a re-broadcast cannot repeat a bubble; each new event becomes a 3.0s bubble |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:110 | show_quick_chat_bubble | **falls back to a score popup when the speaker has no rail entry**, otherwise builds a bubble anchored 8px right of the rail at that row's vertical centre, tweened intro then hold then fade |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:167 | make_chat_bubble_style | white card, 14px corners except bottom-left at 4 — the square corner is the tail pointing back at the rail row |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd — 177 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd — 182 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -400,34 +406,34 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:32 | update_score_lines | **adds live levelScore while is_playing()**, else banked only |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:74 | update_impact_status_ui | per-player Impact standing |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:94 | update_impact_track | Impact bar fill; resets to 0% when a band closes |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:142 | flash_impact_bars | Impact Beat bar flash |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:168 | _impact_glow_tint | flash colour |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:147 | flash_impact_bars | Impact Beat bar flash |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:173 | _impact_glow_tint | flash colour |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 308 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 331 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:3 | SCORE_POPUP_FLOAT_DISTANCE · const | how far a popup drifts up |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:4 | SCORE_POPUP_INTRO_SECONDS · const | fade-in time |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:5 | SCORE_POPUP_FADE_RATIO · const | fade share of total duration |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:6 | SCORE_POPUP_MIN_FADE_SECONDS · const | fade floor |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:7 | SCORE_POPUP_MAX_FADE_SECONDS · const | fade ceiling |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:8 | SCORE_POPUP_MIN_HOLD_SECONDS · const | minimum readable hold |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:9 | FINISH_SCORE_POPUP_MIN_HOLD_RATIO · const | finish popups hold longer |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:17 | bind_nodes | declare the nodes this module needs |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:22 | setup | wire player context and tuning |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:27 | process_score_events | **consumes `scoreEvents` from `game_state`**; displayOnly events are dropped here |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:60 | show_score_event_popup | spawn one popup |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:137 | get_score_popup_fade_duration_seconds | resolved fade time |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:170 | clear_score_popups | remove all popups |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:177 | get_score_event_text | **event type to label** — add a new score event here |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:206 | get_score_event_color | event type to colour |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:224 | is_emphasis_score_event | which events render large |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:230 | get_score_popup_size | popup box size, 128px wide |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:239 | get_score_popup_font_size | popup font size |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:245 | make_score_popup_style | popup stylebox |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:259 | get_score_popup_position | lane x 0.16-0.84; lanes must clear the 128px width |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:300 | get_score_event_popup_duration_seconds | per-event duration |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:4 | SCORE_POPUP_FLOAT_DISTANCE · const | how far a popup drifts up |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:5 | SCORE_POPUP_INTRO_SECONDS · const | fade-in time |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:6 | SCORE_POPUP_FADE_RATIO · const | fade share of total duration |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:7 | SCORE_POPUP_MIN_FADE_SECONDS · const | fade floor |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:8 | SCORE_POPUP_MAX_FADE_SECONDS · const | fade ceiling |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:9 | SCORE_POPUP_MIN_HOLD_SECONDS · const | minimum readable hold |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:10 | FINISH_SCORE_POPUP_MIN_HOLD_RATIO · const | finish popups hold longer |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:18 | bind_nodes | declare the nodes this module needs |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:23 | setup | wire player context and tuning |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:28 | process_score_events | **consumes `scoreEvents` from `game_state`**; displayOnly events are dropped here |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:61 | show_score_event_popup | spawn one popup |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:144 | get_score_popup_fade_duration_seconds | resolved fade time |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:177 | clear_score_popups | remove all popups |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:184 | get_score_event_text | **event type to label** — add a new score event here |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:213 | get_score_event_color | event type to colour |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:234 | is_emphasis_score_event | which events render large |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:240 | get_score_popup_size | popup box size, 128px wide |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:252 | get_score_popup_font_size | popup font size |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:261 | make_score_popup_style | popup stylebox |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:282 | get_score_popup_position | lane x 0.16-0.84; lanes must clear the 128px width |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:323 | get_score_event_popup_duration_seconds | per-event duration |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd — 331 ln
 
@@ -490,6 +496,12 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd:9 | require_node | missing node is a contract failure the smoke test catches |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd:17 | optional_node | missing node degrades quietly |
 
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/UiStyles.gd — 19 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/UiStyles.gd:3 | glass_panel · static func | Builds the shared translucent glass surface for runtime toasts. |
+
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/UiTuning.gd — 10 ln
 
 | File:Ln | Symbol | Does |
@@ -528,12 +540,12 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:70 | on_level_result | fires the beat once and returns the wait it costs; false when empty, off or collapsing |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:114 | _should_shake | shake on failure; a collapse gets the shake and no beat |
 
-### src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd — 27 ln
+### src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd — 47 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd:8 | _ready | style the fill |
-| src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd:22 | set_bar | seat colour and Impact progress ratio |
+| src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd:14 | _ready | style the fill |
+| src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd:28 | set_bar | seat colour and Impact progress ratio |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PlayerColors.gd — 26 ln
 
@@ -692,4 +704,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-34 files · 513 symbols · 0 awaiting a `Does` line.
+35 files · 520 symbols · 0 awaiting a `Does` line.

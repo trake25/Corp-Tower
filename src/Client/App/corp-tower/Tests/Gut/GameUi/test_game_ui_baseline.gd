@@ -72,6 +72,14 @@ func test_top_indicator_uses_only_approved_copy() -> void:
 	harness.main.top_bar.set_top_indicator_progress(13, 12)
 	assert_eq(label.text, "OVER BUILD (13/12)")
 
+func test_quest_chip_uses_only_active_and_completed_art() -> void:
+	var quest_chip := harness.find("QuestChip") as TextureButton
+	harness.main.quest.update_quest_chip({"label": "Reach the top"})
+	assert_true(quest_chip.texture_normal.resource_path.ends_with("/9-Play/play-quest-active.png"), "An unclaimed quest should use the active 9-Play state.")
+	harness.main.quest.update_quest_chip({"label": "Reach the top", "claimedBy": "P2"})
+	assert_true(quest_chip.texture_normal.resource_path.ends_with("/9-Play/play-quest-completed.png"), "A room-wide claim should use the completed 9-Play state.")
+	assert_null(harness.find("QuestBadge"), "The retired unread-dot state should not remain in the scene.")
+
 func test_demo_game_state_uses_the_shared_hud_contract() -> void:
 	harness.main.demo_mode_label.visible = true
 	var state: Dictionary = GAME_STATE_FIXTURE.duplicate(true)

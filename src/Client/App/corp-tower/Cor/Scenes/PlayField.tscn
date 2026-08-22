@@ -4,15 +4,13 @@
 [ext_resource type="Script" uid="uid://0lvf4bd13i4n" path="res://Cor/Scripts/TowerStack.gd" id="3_towerstack"]
 [ext_resource type="Script" path="res://Cor/Scripts/BackgroundParallax.gd" id="3b_backgroundparallax"]
 [ext_resource type="Script" uid="uid://ck4u6fflu3cy3" path="res://Cor/Scripts/CooldownOverlay.gd" id="6_cooldown"]
-[ext_resource type="Texture2D" uid="uid://bypg06jvodky3" path="res://Cor/Art/Static/bg-platform.png" id="9_platform"]
-[ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-menu.png" id="10_menu"]
-[ext_resource type="Texture2D" uid="uid://c03udqp6kbfm8" path="res://Cor/Art/Static/timer-round-time.png" id="11_roundtime"]
-[ext_resource type="Texture2D" uid="uid://3q1arbtnnf4x" path="res://Cor/Art/Static/level.png" id="13_level"]
-[ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-quest-state1.png" id="18_queststate1"]
-[ext_resource type="Texture2D" path="res://Cor/Art/Static/impact-text.png" id="19_impacttext"]
-[ext_resource type="Texture2D" path="res://Cor/Art/Static/indicator.png" id="20_indicator"]
-[ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-chat.png" id="21_chat"]
-[ext_resource type="Texture2D" path="res://Cor/Art/Static/ic-power.png" id="22_power"]
+[ext_resource type="Texture2D" path="res://Cor/Art/9-Play/bg-platform.png" id="9_platform"]
+[ext_resource type="Texture2D" path="res://Cor/Art/9-Play/ic-menu.png" id="10_menu"]
+[ext_resource type="Texture2D" path="res://Cor/Art/9-Play/play-timer-round.png" id="11_roundtime"]
+[ext_resource type="Texture2D" path="res://Cor/Art/9-Play/play-level-badge.png" id="13_level"]
+[ext_resource type="Texture2D" path="res://Cor/Art/9-Play/play-quest-active.png" id="18_queststate1"]
+[ext_resource type="Texture2D" path="res://Cor/Art/9-Play/ic-chat.png" id="21_chat"]
+[ext_resource type="Texture2D" path="res://Cor/Art/9-Play/ic-power.png" id="22_power"]
 
 [sub_resource type="Gradient" id="Gradient_TopBarFill"]
 colors = PackedColorArray(0.192, 0.725, 0.271, 1, 0.714, 0.992, 0.29, 1)
@@ -157,6 +155,7 @@ layout_mode = 0
 offset_top = 26.0
 offset_right = 192.0
 offset_bottom = 58.0
+theme_type_variation = &"BoldLabel"
 theme_override_colors/font_color = Color(0.06, 0.06, 0.06, 1)
 theme_override_font_sizes/font_size = 28
 text = "00:00"
@@ -191,6 +190,7 @@ offset_left = 20.0
 offset_top = 8.0
 offset_right = 56.0
 offset_bottom = 36.0
+theme_type_variation = &"BoldLabel"
 theme_override_colors/font_color = Color(0.06, 0.06, 0.06, 1)
 theme_override_font_sizes/font_size = 20
 text = "-"
@@ -253,6 +253,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_type_variation = &"BoldLabel"
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 16
 text = "TOP"
@@ -388,19 +389,6 @@ texture_normal = ExtResource("18_queststate1")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="QuestBadge" type="TextureRect" parent="QuestChip" unique_id=1310220006]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 48.5
-offset_top = 6.0
-offset_right = 60.5
-offset_bottom = 18.0
-mouse_filter = 2
-texture = ExtResource("20_indicator")
-expand_mode = 1
-stretch_mode = 0
-
 [node name="PlayerRailBox" type="VBoxContainer" parent="." unique_id=1576617832]
 unique_name_in_owner = true
 layout_mode = 0
@@ -422,17 +410,25 @@ mouse_filter = 2
 theme_override_constants/separation = 0
 alignment = 0
 
-[node name="ImpactPill" type="TextureRect" parent="." unique_id=1310220003]
+[node name="ImpactPill" type="PanelContainer" parent="." unique_id=1310220003]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 328.0
-offset_top = 170.0
-offset_right = 412.0
-offset_bottom = 212.0
+offset_left = 342.0
+offset_top = 176.0
+offset_right = 407.0
+offset_bottom = 198.0
 mouse_filter = 2
-texture = ExtResource("19_impacttext")
-expand_mode = 1
-stretch_mode = 0
+theme_type_variation = &"GreenPillPanel"
+
+[node name="ImpactLabel" type="Label" parent="ImpactPill"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"BoldLabel"
+theme_override_colors/font_color = Color(0.06, 0.06, 0.06, 1)
+theme_override_font_sizes/font_size = 13
+text = "Impact"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="PlaceBlockButton1" type="Button" parent="ActionRow" unique_id=169731104]
 unique_name_in_owner = true

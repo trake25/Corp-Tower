@@ -1,17 +1,14 @@
 extends Node
 
-const QuestIdleTexture = preload("res://Cor/Art/Static/ic-quest-state1.png")
-const QuestUnseenTexture = preload("res://Cor/Art/Static/ic-quest-state2.png")
-const QuestClearedTexture = preload("res://Cor/Art/Static/ic-quest-state3.png")
+const QuestActiveTexture = preload("res://Cor/Art/9-Play/play-quest-active.png")
+const QuestCompletedTexture = preload("res://Cor/Art/9-Play/play-quest-completed.png")
 
 var players_ctx
 var match_state
 var popovers
 var popover_blocked: Callable = Callable()
 var quest_chip: TextureButton
-var quest_badge: TextureRect
 var quest_popover: Control
-var quest_seen_level: int = -1
 var last_side_quest: Dictionary = {}
 var freeze_popover_active: bool = false
 var freeze_popover_prev_auto_close: float = -1.0
@@ -25,7 +22,6 @@ const REWARD_LABELS := {
 
 func bind_nodes(binder) -> void:
 	quest_chip = binder.optional_node("QuestChip") as TextureButton
-	quest_badge = binder.optional_node("QuestBadge") as TextureRect
 	quest_popover = binder.optional_node("QuestPopover") as Control
 	if quest_chip != null:
 		quest_chip.pressed.connect(on_quest_chip_pressed)
@@ -42,17 +38,10 @@ func update_quest_chip(raw_side_quest: Variant) -> void:
 
 	var side_quest: Dictionary = raw_side_quest if typeof(raw_side_quest) == TYPE_DICTIONARY else {}
 	last_side_quest = side_quest
-	var is_unlocked: bool = str(side_quest.get("label", "")) != ""
 	var is_cleared: bool = get_quest_claimed_by(side_quest) != ""
-	var is_seen: bool = quest_seen_level == match_state.current_level
 
 	quest_chip.visible = true
-	if is_cleared:
-		quest_chip.texture_normal = QuestClearedTexture
-	elif is_unlocked and !is_seen:
-		quest_chip.texture_normal = QuestUnseenTexture
-	else:
-		quest_chip.texture_normal = QuestIdleTexture
+	quest_chip.texture_normal = QuestCompletedTexture if is_cleared else QuestActiveTexture
 	quest_chip.tooltip_text = str(side_quest.get("label", ""))
 
 func get_quest_claimed_by(side_quest: Dictionary) -> String:
@@ -107,8 +96,6 @@ func open_freeze_quest_popover() -> void:
 
 	freeze_popover_prev_auto_close = float(quest_popover.get("auto_close_seconds"))
 	quest_popover.set("auto_close_seconds", 0.0)
-	quest_seen_level = match_state.current_level
-	update_quest_chip(last_side_quest)
 	open_quest_popover()
 
 func close_freeze_quest_popover() -> void:
@@ -125,9 +112,6 @@ func close_freeze_quest_popover() -> void:
 func on_quest_chip_pressed() -> void:
 	if popover_blocked.is_valid() and bool(popover_blocked.call()):
 		return
-
-	quest_seen_level = match_state.current_level
-	update_quest_chip(last_side_quest)
 
 	if popovers.is_open(quest_popover):
 		popovers.close_active()

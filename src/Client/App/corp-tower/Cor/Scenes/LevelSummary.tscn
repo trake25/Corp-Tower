@@ -19,75 +19,85 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0, 0, 0, 0.18)
+color = Color(0, 0, 0, 0.08)
 
 [node name="LevelSummaryPanel" type="PanelContainer" parent="." unique_id=1114412928]
-custom_minimum_size = Vector2(340, 0)
+custom_minimum_size = Vector2(360, 488)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -170.0
-offset_top = -156.0
-offset_right = 170.0
-offset_bottom = 152.0
+offset_left = -180.0
+offset_top = -180.0
+offset_right = 180.0
+offset_bottom = 308.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_type_variation = &"HudPanel"
+theme_type_variation = &"GlassPanel"
 
 [node name="LevelSummaryMargin" type="MarginContainer" parent="LevelSummaryPanel" unique_id=1521839363]
 layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
 
 [node name="LevelSummaryRows" type="VBoxContainer" parent="LevelSummaryPanel/LevelSummaryMargin" unique_id=76000954]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
 [node name="LevelSummaryTitleLabel" type="Label" parent="LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=935464998]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "Level Complete"
+theme_type_variation = &"BoldLabel"
+theme_override_colors/font_color = Color(0.08, 0.08, 0.09, 1)
+theme_override_font_sizes/font_size = 28
+text = "Level 1 Completed"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="LevelSummaryResultLabel" type="Label" parent="LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1908294111]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
-theme_override_font_sizes/font_size = 15
-text = "Perfect Fit"
-horizontal_alignment = 1
-autowrap_mode = 3
 
 [node name="LevelSummaryTeamLabel" type="Label" parent="LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1289834528]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
-horizontal_alignment = 1
 
 [node name="LevelSummaryMvpLabel" type="Label" parent="LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1481643262]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 15
-text = "MVP -"
-horizontal_alignment = 1
-
-[node name="LevelSummaryQuestLabel" type="Label" parent="LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1730044981]
 visible = false
-unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
-autowrap_mode = 3
 
 [node name="LevelSummaryPlayersBox" type="VBoxContainer" parent="LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1912707215]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 4
+theme_override_constants/separation = 7
+
+[node name="LevelSummaryCountdownLabel" type="Label" parent="LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.02, 0.68, 0.98, 1)
+theme_override_font_sizes/font_size = 18
+text = "Next level is starting in 3s..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LevelSummaryQuestLabel" type="Label" parent="LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1730044981]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.09, 1)
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3

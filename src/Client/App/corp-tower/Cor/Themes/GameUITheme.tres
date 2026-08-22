@@ -1,6 +1,7 @@
-[gd_resource type="Theme" load_steps=22 format=3 uid="uid://u7rmxm0gc7i3"]
+[gd_resource type="Theme" load_steps=27 format=3 uid="uid://u7rmxm0gc7i3"]
 
 [ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Regular.ttf" id="1_poppins"]
+[ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Bold.ttf" id="2_poppins_bold"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ActionButton"]
 bg_color = Color(0.16, 0.19, 0.23, 1)
@@ -39,6 +40,21 @@ shadow_color = Color(0, 0, 0, 0.16)
 shadow_size = 3
 shadow_offset = Vector2(0, 2)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_GlassPanel"]
+bg_color = Color(0.88, 0.965, 1, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.96)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.12, 0.28, 0.34, 0.22)
+shadow_size = 10
+shadow_offset = Vector2(0, 5)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_MenuCardNormal"]
 bg_color = Color(1, 1, 1, 1)
 corner_radius_top_left = 16
@@ -68,6 +84,22 @@ corner_radius_bottom_left = 16
 shadow_color = Color(0.42, 0.55, 0.6, 0.22)
 shadow_size = 8
 shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_PopoverRow"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_PopoverRowHover"]
+bg_color = Color(1, 1, 1, 0.22)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_PopoverRowPressed"]
+bg_color = Color(0.518, 0.902, 0.976, 0.7)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_JoinLineEditNormal"]
 content_margin_left = 20.0
@@ -234,6 +266,8 @@ CircleButtonPanel/base_type = &"Panel"
 CircleButtonPanel/styles/panel = SubResource("StyleBoxFlat_CircleButton")
 GreenPillPanel/base_type = &"PanelContainer"
 GreenPillPanel/styles/panel = SubResource("StyleBoxFlat_GreenPill")
+GlassPanel/base_type = &"PanelContainer"
+GlassPanel/styles/panel = SubResource("StyleBoxFlat_GlassPanel")
 HudPanel/base_type = &"PanelContainer"
 HudPanel/styles/panel = SubResource("StyleBoxFlat_Panel")
 InfoLabel/base_type = &"Label"
@@ -251,9 +285,16 @@ Panel/styles/panel = SubResource("StyleBoxFlat_Background")
 PopoverBodyLabel/base_type = &"Label"
 PopoverBodyLabel/colors/font_color = Color(0.1, 0.1, 0.12, 1)
 PopoverBodyLabel/font_sizes/font_size = 16
+PopoverRowButton/base_type = &"Button"
+PopoverRowButton/colors/font_color = Color(0.1, 0.1, 0.12, 1)
+PopoverRowButton/font_sizes/font_size = 16
+PopoverRowButton/styles/normal = SubResource("StyleBoxEmpty_PopoverRow")
+PopoverRowButton/styles/hover = SubResource("StyleBoxFlat_PopoverRowHover")
+PopoverRowButton/styles/pressed = SubResource("StyleBoxFlat_PopoverRowPressed")
 PopoverTitleLabel/base_type = &"Label"
 PopoverTitleLabel/colors/font_color = Color(0.1, 0.1, 0.12, 1)
 PopoverTitleLabel/font_sizes/font_size = 20
+PopoverTitleLabel/fonts/font = ExtResource("2_poppins_bold")
 PrimaryButton/base_type = &"Button"
 PrimaryButton/styles/normal = SubResource("StyleBoxFlat_PrimaryButton")
 RailNameLabel/base_type = &"Label"
@@ -262,6 +303,9 @@ RailNameLabel/font_sizes/font_size = 13
 RailScoreLabel/base_type = &"Label"
 RailScoreLabel/colors/font_color = Color(0.1, 0.1, 0.12, 1)
 RailScoreLabel/font_sizes/font_size = 15
+RailScoreLabel/fonts/font = ExtResource("2_poppins_bold")
+BoldLabel/base_type = &"Label"
+BoldLabel/fonts/font = ExtResource("2_poppins_bold")
 ScorePillPanel/base_type = &"PanelContainer"
 ScorePillPanel/styles/panel = SubResource("StyleBoxFlat_ScorePill")
 TopBarFrameAchievedPanel/base_type = &"Panel"

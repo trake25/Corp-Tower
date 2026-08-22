@@ -1,14 +1,29 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/ImpactBar.gd" id="1_impactbar"]
-[ext_resource type="Texture2D" path="res://Cor/Art/Static/impact-bar.png" id="2_impactbar_art"]
+[ext_resource type="Texture2D" path="res://Cor/Art/9-Play/play-impact-bar-frame.png" id="2_impactbar_art"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ImpactCapsule"]
-bg_color = Color(1, 1, 1, 1)
+bg_color = Color(1, 1, 1, 0)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ImpactAvatarRing"]
+bg_color = Color(0.6, 0.6, 0.6, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 17
+corner_radius_top_right = 17
+corner_radius_bottom_right = 17
+corner_radius_bottom_left = 17
+shadow_color = Color(0, 0, 0, 0.18)
+shadow_size = 3
+shadow_offset = Vector2(0, 2)
 
 [node name="ImpactBar" type="Control"]
 custom_minimum_size = Vector2(36, 166)
@@ -47,3 +62,39 @@ grow_vertical = 0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 0
+
+[node name="ImpactAvatarMarker" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 1.0
+offset_right = 35.0
+offset_bottom = 34.0
+mouse_filter = 2
+
+[node name="ImpactAvatarRing" type="Panel" parent="ImpactAvatarMarker"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ImpactAvatarRing")
+
+[node name="ImpactAvatarTexture" type="TextureRect" parent="ImpactAvatarMarker"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = -3.0
+offset_bottom = -3.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5

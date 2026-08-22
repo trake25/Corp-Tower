@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://Cor/Scripts/BackgroundParallax.gd" id="3b_backgroundparallax"]
 [ext_resource type="Theme" uid="uid://u7rmxm0gc7i3" path="res://Cor/Themes/GameUITheme.tres" id="5_theme"]
 [ext_resource type="Script" uid="uid://dwvcruandm3c" path="res://Cor/Scripts/Main.gd" id="7_main"]
-[ext_resource type="Texture2D" uid="uid://b0dlpjeh71j0c" path="res://Cor/Art/Static/bg.png" id="8_bg"]
+[ext_resource type="Texture2D" path="res://Cor/Art/9-Play/play-bg-@4x.png" id="8_bg"]
 [ext_resource type="PackedScene" path="res://Cor/Scenes/PopoverPanel.tscn" id="16_popover"]
 [ext_resource type="PackedScene" path="res://Cor/Scenes/PlayField.tscn" id="23_playfield"]
 [ext_resource type="PackedScene" path="res://Cor/Scenes/LevelSummary.tscn" id="24_summary"]
@@ -35,7 +35,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 122.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2

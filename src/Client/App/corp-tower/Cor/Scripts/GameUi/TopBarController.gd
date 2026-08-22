@@ -1,9 +1,9 @@
 extends Node
 
-const LevelBadgeNormalTexture = preload("res://Cor/Art/Static/level.png")
-const LevelBadgeSafeTexture = preload("res://Cor/Art/Static/safe.png")
-const RoundTimeNormalTexture = preload("res://Cor/Art/Static/timer-round-time.png")
-const RoundTimeFreezeTexture = preload("res://Cor/Art/Static/timer-freeze-time.png")
+const LevelBadgeNormalTexture = preload("res://Cor/Art/9-Play/play-level-badge.png")
+const LevelBadgeSafeTexture = preload("res://Cor/Art/9-Play/play-safe-badge.png")
+const RoundTimeNormalTexture = preload("res://Cor/Art/9-Play/play-timer-round.png")
+const RoundTimeFreezeTexture = preload("res://Cor/Art/9-Play/play-timer-freeze.png")
 const TopIndicatorFillOverTexture = preload("res://Cor/Themes/TopIndicatorFillOver.tres")
 const FREEZE_BLINK_HALF_SECONDS := 0.35
 const FREEZE_BLINK_COLOR := Color(0.82, 0.12, 0.12, 1.0)

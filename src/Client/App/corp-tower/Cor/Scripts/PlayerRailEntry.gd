@@ -1,8 +1,21 @@
 extends Control
 
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
-const AVATAR_BASE_PATH := "res://Cor/Art/Cosmetics/avatar/"
 const FALLBACK_AVATAR_ID := "avatar_0"
+const AVATAR_TEXTURE_PATHS := {
+	"avatar_0": "res://Cor/Art/9-Play/avatar-lion.png",
+	"avatar_1": "res://Cor/Art/9-Play/avatar-duck.png",
+	"avatar_2": "res://Cor/Art/9-Play/avatar-hippo.png",
+	"avatar_3": "res://Cor/Art/9-Play/avatar-fox.png",
+	"avatar_4": "res://Cor/Art/9-Play/avatar-penguin.png",
+	"avatar_5": "res://Cor/Art/9-Play/avatar-elephant.png",
+	"duck": "res://Cor/Art/9-Play/avatar-duck.png",
+	"elephant": "res://Cor/Art/9-Play/avatar-elephant.png",
+	"fox": "res://Cor/Art/9-Play/avatar-fox.png",
+	"hippo": "res://Cor/Art/9-Play/avatar-hippo.png",
+	"lion": "res://Cor/Art/9-Play/avatar-lion.png",
+	"penguin": "res://Cor/Art/9-Play/avatar-penguin.png"
+}
 
 @onready var avatar_ring: Panel = %AvatarRing
 @onready var avatar_texture: TextureRect = %AvatarTexture
@@ -32,11 +45,14 @@ func format_score(score: int) -> String:
 
 	return ("-" + grouped) if score < 0 else grouped
 
-func load_avatar_texture(avatar_id: String) -> Texture2D:
+static func load_avatar_texture(avatar_id: String) -> Texture2D:
 	var clean_id := avatar_id if avatar_id != "" else FALLBACK_AVATAR_ID
-	var texture_path := AVATAR_BASE_PATH + clean_id + "/avatar.png"
+	var texture_path: String = str(AVATAR_TEXTURE_PATHS.get(
+		clean_id,
+		AVATAR_TEXTURE_PATHS[FALLBACK_AVATAR_ID]
+	))
 
 	if not ResourceLoader.exists(texture_path):
-		texture_path = AVATAR_BASE_PATH + FALLBACK_AVATAR_ID + "/avatar.png"
+		texture_path = str(AVATAR_TEXTURE_PATHS[FALLBACK_AVATAR_ID])
 
 	return load(texture_path) as Texture2D

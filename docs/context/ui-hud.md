@@ -24,7 +24,7 @@ Two shapes only:
 - **Shared services** (`RefCounted`) — stateless or shared data, instantiable in
   GUT with no scene tree: `UiTuning`, `MatchState`, `PlayerContext`,
   `UiNodeBinder`, `PointerEvents`, `AccessibilitySettings`, `VisualHooks`,
-  `PopoverCoordinator`, `BlockData`, `SnapGrid`, `DebugPanelCatalog`.
+  `PopoverCoordinator`, `BlockData`, `SnapGrid`, `DebugPanelCatalog`, `UiStyles`.
 - **View controllers** (`Node`, `add_child`-ed by Main so they share the scene
   lifecycle and can own `Tween`s/`Timer`s): `DebugPanelController`,
   `ScorePopupController`, `LevelSummaryController`, `RosterViewController`,
@@ -117,6 +117,11 @@ once a match is found. Default font is Poppins via `Theme.default_font` there an
 is inherited by every subscene; a heavier weight is a per-`Label` override. There
 is no skin system.
 
+All live Play textures come from `Cor/Art/9-Play/`: the full-height 4x
+background, platform, HUD icons and state frames, brick faces, mood emoji and
+flat avatar files. `PlayerRailEntry` owns the explicit `avatar_0`–`avatar_5` to
+named-avatar mapping used by the rail, Impact markers and Level Summary.
+
 `TeamInventoryPanel` is a **permanently visible** bar showing the shared draw pile,
 not a popover. It reuses the `DrawPilePreview`/`DrawPileNameLabel`/
 `DrawPileCountLabel` nodes verbatim, so `InventoryController` needs no logic for
@@ -131,13 +136,19 @@ the numeric `TowerStabilityLabel` stays hidden unless the debug-only Stability
 Feedback selector is set to Meter Only or Live Preview. Inventory cards use only
 their brick preview and enabled, empty, or locked card state; no text metadata
 duplicates that state. The Impact pill and its per-player bars are the sole
-server-fed readiness presentation; there is no expandable details panel.
+server-fed readiness presentation; each bar keeps a static 9-Play frame around a
+runtime gradient fill and positions the player's avatar at the live fill edge.
+There is no expandable details panel. `QuestChip` has exactly two room-wide
+visual states: active until `claimedBy` is populated, completed afterwards.
 
 Node contract highlights: `TowerDropZone` (full-rect drag-release validator),
 `DragPreview` (a hidden Block Preview shown while dragging *outside* the drop
 zone), `DebugCategoryPanels/*` (one `ScrollContainer` per category, exactly one
 visible), `LevelSummaryQuestLabel` and `ParallelPlacementButton` (both bound
-`optional_node`, so a scene missing one degrades quietly). There is no
+`optional_node`, so a scene missing one degrades quietly), and the required
+`LevelSummaryCountdownLabel`. Level Summary is a centered glass card composed at
+runtime from avatar/name/score rows, an MVP treatment, the next-level countdown
+and next-level quest. There is no
 start-level popup — the freeze countdown is the top bar's own blinking round timer.
 
 The three [Popover Panel](#popover-panel) instances each override their `Card` with
@@ -152,7 +163,9 @@ and a header does not scale with it.
 ## Popover Panel
 
 `Cor/Scripts/PopoverPanel.gd`, scene `Cor/Scenes/PopoverPanel.tscn` — the reusable
-anchored card (title, rule, row list) behind every tap-triggered popover.
+anchored glass card (title, rule, row list) behind every tap-triggered popover.
+`UiStyles.glass_panel()` gives runtime chat and power toasts the same translucent
+white edge, rounded corners and restrained shadow as these cards and the summary.
 
 - Auto-closes after `auto_close_seconds` (default 4s), on outside tap via the
   full-screen `OutsideCatcher`, or when the owner closes it. Never pauses
@@ -177,7 +190,7 @@ self-dismiss mid-freeze, and restoring it when the window ends.
 | Tower Stack | `Cor/Scripts/TowerStack.gd` | The whole tower render: bricks, drag overlay, drop/tilt animation, mood faces, collapse sequence, Impact Beat |
 | Collapse Sim | `Cor/Scripts/GameUi/CollapseSim.gd` | Node-free debris physics, seeded so every client renders it identically |
 | Background Parallax | `Cor/Scripts/BackgroundParallax.gd` | Pans `BgArt` and `PlatformArt` against Tower Stack's scroll |
-| Impact Bar | `Cor/Scripts/ImpactBar.gd` | Per-player Impact-progress fill |
+| Impact Bar | `Cor/Scripts/ImpactBar.gd` | Per-player gradient progress fill and avatar marker inside the 9-Play frame |
 | Cooldown Overlay | `Cor/Scripts/CooldownOverlay.gd` | Radial per-card cooldown |
 | Debug Overlay | `Cor/Scripts/DebugOverlay.gd` | Show/hide shell only |
 | Debug Tooltip | `Cor/Scripts/DebugTooltip.gd` | Dimmed modal explainer for debug rows |
@@ -301,3 +314,6 @@ pile reads as wreckage, not a live verdict.
 - **Node order in `PlayField.tscn` is deliberate.** `TopIndicatorRow` draws after
   `TowerStack`, so overbuild bricks tuck under the indicator instead of covering
   it. Ordering it before the tower makes the tower draw over the bar.
+- **`PlayField` stays full-rect on Android.** Narrowing or centering only that
+  child shifts the Play controls away from root-anchored background, overlays and
+  popovers when the system-bar canvas expands beyond the 412-wide design area.
