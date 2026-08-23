@@ -47,7 +47,7 @@ func test_impact_bars_follow_status_membership() -> void:
 	})
 	assert_eq(roster().impact_bars.size(), 1, "A player who leaves the status should lose their impact bar.")
 
-func test_impact_bars_leave_room_for_avatar_markers() -> void:
+func test_impact_bars_follow_the_compact_guide_spacing() -> void:
 	roster().update_impact_status_ui({
 		"requiredBandScore": 40,
 		"players": [
@@ -58,8 +58,11 @@ func test_impact_bars_leave_room_for_avatar_markers() -> void:
 	await get_tree().process_frame
 	var first_bar: Control = roster().impact_bars["P1"]
 	var second_bar: Control = roster().impact_bars["P2"]
-	assert_almost_eq(first_bar.custom_minimum_size.y, 187.0, 0.5, "Each Impact slot should reserve the complete frame height.")
-	assert_almost_eq(second_bar.position.y - first_bar.position.y, 195.0, 0.5, "Impact frames should keep an eight-unit gap for their avatar markers.")
+	assert_almost_eq(first_bar.custom_minimum_size.y, 176.0, 0.5, "Each Impact slot should follow the guide's compact vertical cadence.")
+	assert_almost_eq(second_bar.position.y - first_bar.position.y, 180.0, 0.5, "Impact frames should use the guide cadence with a small four-unit separation.")
+	var marker: Control = first_bar.get_node("%ImpactAvatarMarker") as Control
+	assert_almost_eq(marker.size.x, 27.2, 0.1, "Impact avatars should be twenty percent smaller than the previous 34-unit marker.")
+	assert_almost_eq(marker.position.x, 4.4, 0.1, "The reduced Impact avatar should remain centered on its frame.")
 
 func test_legacy_avatar_ids_map_to_flat_9_play_assets() -> void:
 	var expected := {

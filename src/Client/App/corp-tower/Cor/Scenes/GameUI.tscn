@@ -46,10 +46,11 @@ sync_revealed_background = true
 
 [node name="PlayField" parent="." unique_id=1310220001 instance=ExtResource("23_playfield")]
 layout_mode = 1
-anchor_right = 0.0
+anchors_preset = 15
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = 412.0
 grow_horizontal = 2
+grow_vertical = 2
 
 [node name="LevelSummaryOverlay" parent="." unique_id=959750494 instance=ExtResource("24_summary")]
 

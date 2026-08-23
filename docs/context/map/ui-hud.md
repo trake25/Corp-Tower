@@ -7,17 +7,17 @@ The `Does` column IS hand-authored and is carried forward on regeneration.
 `path:line` and purpose, so it feeds straight into a `Read` with no second
 lookup. Loading the whole map costs thousands and gives you the same one row.
 
-### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 122 ln
+### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 123 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:14 | GameUI · scene root | root of this reusable Godot scene |
 | src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:32 | %BgArt · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:56 | %DragPreview · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:68 | %ScorePopupLayer · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:80 | %ChatPopover · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:92 | %PowerPopover · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:104 | %QuestPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:57 | %DragPreview · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:69 | %ScorePopupLayer · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:81 | %ChatPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:93 | %PowerPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:105 | %QuestPopover · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn — 108 ln
 
@@ -43,39 +43,39 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:85 | %LevelSummaryCountdownLabel · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:95 | %LevelSummaryQuestLabel · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn — 540 ln
+### src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn — 630 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:23 | PlayField · scene root | root of this reusable Godot scene |
 | src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:32 | %PlatformArt · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:46 | %TowerStack · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:56 | %TowerDropZone · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:74 | %HamburgerButton · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:85 | %ConnectionBanner · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:103 | %StatusLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:113 | %DemoModeLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:139 | %RoundTimeTexture · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:152 | %TimerLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:173 | %LevelBadgeTexture · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:186 | %LevelLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:235 | %TopIndicatorFill · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:265 | %TowerStabilityLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:290 | %TeamInventoryPanel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:314 | %DrawPilePreview · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:322 | %DrawPileNameLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:334 | %DrawPileCountLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:352 | %QuickChatTrigger · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:372 | %PowerTrigger · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:383 | %QuestChip · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:394 | %PlayerRailBox · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:404 | %ImpactTrack · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:415 | %PlaceBlockButton1 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:449 | %BlockPreview1 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:457 | %PlaceBlockButton2 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:491 | %BlockPreview2 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:499 | %PlaceBlockButton3 · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:533 | %BlockPreview3 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:52 | %TowerStack · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:68 | %TowerDropZone · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:92 | %HamburgerButton · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:103 | %ConnectionBanner · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:127 | %StatusLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:137 | %DemoModeLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:175 | %RoundTimeTexture · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:188 | %TimerLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:215 | %LevelBadgeTexture · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:228 | %LevelLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:283 | %TopIndicatorFill · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:313 | %TowerStabilityLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:350 | %TeamInventoryPanel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:374 | %DrawPilePreview · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:382 | %DrawPileNameLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:394 | %DrawPileCountLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:418 | %QuickChatTrigger · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:450 | %PowerTrigger · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:467 | %QuestChip · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:478 | %PlayerRailBox · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:488 | %ImpactTrack · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:505 | %PlaceBlockButton1 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:539 | %BlockPreview1 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:547 | %PlaceBlockButton2 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:581 | %BlockPreview2 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:589 | %PlaceBlockButton3 · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:623 | %BlockPreview3 · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scenes/PlayerRailEntry.tscn — 88 ln
 

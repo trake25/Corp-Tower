@@ -121,9 +121,11 @@ All live Play textures come from `Cor/Art/9-Play/`: the full-height 4x
 background, platform, HUD icons and state frames, brick faces, mood emoji and
 flat avatar files. `PlayerRailEntry` owns the explicit `avatar_0`–`avatar_5` to
 named-avatar mapping used by the rail, Impact markers and Level Summary.
-`PlayField` keeps the guide's authored 412-unit coordinate width and scales that
-width from the left edge to fill `GameUI` when Android exposes a wider logical
-root. The background and transient overlay layers remain full-rect and unscaled.
+`PlayField` fills `GameUI` at `Vector2.ONE` scale. On Android's wider logical
+root, fixed artwork and circular controls retain their authored size and aspect:
+tower/platform/timer groups center, edge HUD groups anchor to their edge, and
+only runtime-drawn surfaces such as the Top Indicator expand horizontally. The
+background and transient overlay layers remain full-rect.
 
 `TeamInventoryPanel` is a **permanently visible** bar showing the shared draw pile,
 not a popover. It reuses the `DrawPilePreview`/`DrawPileNameLabel`/
@@ -141,9 +143,10 @@ their brick preview and enabled, empty, or locked card state; no text metadata
 duplicates that state. The per-player Impact bars are the sole server-fed
 readiness presentation; the heading is omitted, and each bar keeps a
 static 9-Play frame around a runtime solid seat-colour fill. Its avatar sits at
-the live fill edge only after progress is greater than zero. Each slot reserves
-the complete 187-unit frame plus eight units between siblings, preventing marker
-overlap. There is no expandable details panel. `QuestChip` has exactly two room-wide
+the live fill edge only after progress is greater than zero. The guide cadence is
+a 176-unit slot plus four units between siblings; the 187-unit frame art extends
+through that compact cadence, while the centered avatar marker is 27.2 units.
+There is no expandable details panel. `QuestChip` has exactly two room-wide
 visual states: active until `claimedBy` is populated, completed afterwards.
 
 Node contract highlights: `TowerDropZone` (full-rect drag-release validator),

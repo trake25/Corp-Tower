@@ -138,9 +138,9 @@ them.
 
 Gameplay HUD coverage pins the two-state quest art, legacy-ID avatar mapping,
 visible Impact fills and progress-only avatar markers, shared glass popovers,
-Impact slot spacing and overlay ordering, power-toast text and size, Android
-expanded-width scaling, startup splash continuity, and the summary countdown/
-quest rows.
+the compact Impact cadence and 20%-reduced marker, overlay ordering, power-toast
+text and size, Android responsive anchors with fixed artwork proportions, startup
+splash continuity, and the summary countdown/quest rows.
 
 **Landmine — `SnapGrid`'s range is `static var` state**, so `before_each` and
 `after_all` must call `reset_placeable_range()`. Omit it and tests leak grid state

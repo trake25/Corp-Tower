@@ -75,7 +75,8 @@ metadata cannot recover the variant.
 | 4 | Implement Play screen Art v7 migration and glass HUD refresh | 5 | B | 1 | 27 | ~80,000 | ~90,000 | ~135,000 | ~135,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
 | 5 | Fix Android Play alignment, Impact fill, power toast and parallax seam | 3 | B | 1 | 16 | ~15,000 | ~28,000 | ~40,000 | ~40,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
 | 6 | Fix Play overlay layers, Android width scaling and post-update startup gap | 3 | B | 2 | 17 | ~18,000 | ~24,000 | ~35,000 | ~35,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 7 -->
+| 7 | Preserve Android Play aspect and tighten Impact bar layout | 3 | B | 1 | 12 | late estimate ~8,000 | ~15,000 | ~28,000 | ~28,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
+<!-- next: row 8 -->
 
 ## Cycle 4 (closed)
 

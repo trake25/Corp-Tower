@@ -21,7 +21,6 @@ const VisualHooksScript = preload("res://Cor/Scripts/GameUi/VisualHooks.gd")
 const VisualHooksControllerScript = preload("res://Cor/Scripts/GameUi/VisualHooksController.gd")
 const TutorialControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialController.gd")
 const TutorialMenuControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialMenuController.gd")
-const PLAYFIELD_DESIGN_WIDTH := 412.0
 
 signal tutorial_requested(lesson_id: StringName)
 signal tutorial_exited
@@ -49,7 +48,6 @@ var tutorial
 var tutorial_menu
 
 var tower_stack: Control
-var play_field: Control
 var background_parallax: Control
 var platform_parallax: Control
 var demo_mode_label: Label
@@ -89,9 +87,6 @@ func _ready() -> void:
 
 	if !prepare_ui():
 		return
-
-	resized.connect(_layout_play_field)
-	_layout_play_field()
 
 	demo_mode_label.visible = EndpointConfig.DEMO_MODE_ENABLED
 
@@ -168,7 +163,6 @@ func prepare_ui() -> bool:
 
 func bind_ui_nodes() -> void:
 	var binder = UiNodeBinderScript.new(ui_root)
-	play_field = binder.require_node("PlayField") as Control
 	tower_stack = binder.require_node("TowerStack") as Control
 	background_parallax = binder.require_node("BgArt") as Control
 	platform_parallax = binder.require_node("PlatformArt") as Control
@@ -186,12 +180,6 @@ func bind_ui_nodes() -> void:
 	tutorial.bind_nodes(binder)
 	tutorial_menu.bind_nodes(binder)
 	missing_required_nodes = binder.missing
-
-func _layout_play_field() -> void:
-	if play_field == null or size.x <= 0.0:
-		return
-
-	play_field.scale = Vector2(size.x / PLAYFIELD_DESIGN_WIDTH, 1.0)
 
 func reset_ui() -> void:
 	top_bar.reset_indicators()

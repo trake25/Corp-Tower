@@ -71,8 +71,9 @@ global floating debug button.
   disconnect while `find_match_active`. Both cases tear the screen underneath
   down only on dismiss, so it stays visible behind the modal's 3s countdown.
 - Android exports keep the OS status bar visible above the 412×917 authored
-  content area. When the resulting logical canvas is wider, Play scales its
-  horizontal guide coordinates across that width; Web keeps the 412-wide aspect.
+  content area. When the resulting logical canvas is wider, Play fills it without
+  scaling the scene: fixed art keeps its aspect while centered and edge-anchored
+  HUD groups reposition responsively. Web keeps the 412-wide aspect.
 - Instantiates `PlayScreenScene` on entering Find Match or the lobby, frees it on
   close.
 - Debug button: tap vs drag via `DEBUG_BUTTON_DRAG_THRESHOLD`; *visible* from
