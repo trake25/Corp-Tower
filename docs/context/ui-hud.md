@@ -125,7 +125,10 @@ named-avatar mapping used by the rail, Impact markers and Level Summary.
 root, fixed artwork and circular controls retain their authored size and aspect:
 tower/platform/timer groups center, edge HUD groups anchor to their edge, and
 only runtime-drawn surfaces such as the Top Indicator expand horizontally. The
-background and transient overlay layers remain full-rect.
+background parallax container and transient overlay layers remain full-rect.
+`BgArt` clips a covered-image child whose 720.5-unit ground anchor stays at its
+authored height: wider roots extend that child upward by twice the covered-crop
+delta, while the 412×917 Web crop and the platform/tower geometry do not move.
 
 `TeamInventoryPanel` is a **permanently visible** bar showing the shared draw pile,
 not a popover. It reuses the `DrawPilePreview`/`DrawPileNameLabel`/
@@ -204,7 +207,7 @@ self-dismiss mid-freeze, and restoring it when the window ends.
 | Block Preview | `Cor/Scripts/BlockPreview.gd` | Rotated/mirrored textured quad at inventory or tower scale, plus the drag ghost's own snap-point rings |
 | Tower Stack | `Cor/Scripts/TowerStack.gd` | The whole tower render: bricks, drag overlay, drop/tilt animation, mood faces, collapse sequence, Impact Beat |
 | Collapse Sim | `Cor/Scripts/GameUi/CollapseSim.gd` | Node-free debris physics, seeded so every client renders it identically |
-| Background Parallax | `Cor/Scripts/BackgroundParallax.gd` | Pans `BgArt` and `PlatformArt` against Tower Stack's scroll and samples the visible sky edge for the revealed backdrop |
+| Background Parallax | `Cor/Scripts/BackgroundParallax.gd` | Pans `BgArt` and `PlatformArt`, ground-aligns covered background art on wide roots, and samples its visible sky edge for the revealed backdrop |
 | Impact Bar | `Cor/Scripts/ImpactBar.gd` | Per-player runtime seat-colour progress fill and progress-only avatar marker inside the 9-Play frame |
 | Cooldown Overlay | `Cor/Scripts/CooldownOverlay.gd` | Radial per-card cooldown |
 | Debug Overlay | `Cor/Scripts/DebugOverlay.gd` | Show/hide shell only |

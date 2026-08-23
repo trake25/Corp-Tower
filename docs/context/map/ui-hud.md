@@ -7,17 +7,17 @@ The `Does` column IS hand-authored and is carried forward on regeneration.
 `path:line` and purpose, so it feeds straight into a `Read` with no second
 lookup. Loading the whole map costs thousands and gives you the same one row.
 
-### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 123 ln
+### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 135 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:14 | GameUI · scene root | root of this reusable Godot scene |
 | src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:32 | %BgArt · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:57 | %DragPreview · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:69 | %ScorePopupLayer · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:81 | %ChatPopover · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:93 | %PowerPopover · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:105 | %QuestPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:69 | %DragPreview · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:81 | %ScorePopupLayer · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:93 | %ChatPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:105 | %PowerPopover · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:117 | %QuestPopover · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn — 108 ln
 
@@ -98,7 +98,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:61 | %RowsBox · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/PopoverPanel.tscn:66 | %CloseTimer · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd — 55 ln
+### src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd — 104 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -106,10 +106,15 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:4 | ease_speed · export | lerp speed for eased layers (BgArt) |
 | src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:5 | instant · export | snap in the same frame as the brick redraw; required for PlatformArt |
 | src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:6 | sync_revealed_background · export | opt BgArt into matching the revealed backdrop to its currently visible sky edge |
-| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:14 | _ready | cache start offset |
-| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:21 | _sync_revealed_sky | sample the covered texture's visible top row and apply it to the sibling Background panel |
-| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:43 | set_scroll_pixels | receives TowerStack scroll, drives the pan |
-| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:49 | _process | eased approach toward the target offset |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:7 | ground_aligned_art_path · export | optional covered-image child aligned independently inside the parallax container |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:8 | design_viewport_size · export | reference viewport for recovering the background source anchor |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:9 | design_ground_anchor_y · export | authored ground-line height preserved across wider covered crops |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:18 | _ready | align optional covered art and cache the parallax start offset |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:30 | _sync_revealed_sky | sample the covered texture's visible top row and apply it to the sibling Background panel |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:58 | _align_ground_art | extend covered art upward without moving its parallax container or bottom edge |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:72 | covered_anchor_shift · static func | covered-crop delta needed to keep the design ground anchor at its authored height |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:92 | set_scroll_pixels | receives TowerStack scroll, drives the pan |
+| src/Client/App/corp-tower/Cor/Scripts/BackgroundParallax.gd:98 | _process | eased approach toward the target offset |
 
 ### src/Client/App/corp-tower/Cor/Scripts/BlockPreview.gd — 247 ln
 
@@ -706,4 +711,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-35 files · 522 symbols · 0 awaiting a `Does` line.
+35 files · 527 symbols · 0 awaiting a `Does` line.

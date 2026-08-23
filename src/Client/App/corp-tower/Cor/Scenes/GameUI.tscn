@@ -38,11 +38,23 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+clip_contents = true
+script = ExtResource("3b_backgroundparallax")
+sync_revealed_background = true
+ground_aligned_art_path = NodePath("Image")
+design_ground_anchor_y = 720.5
+
+[node name="Image" type="TextureRect" parent="BgArt"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 texture = ExtResource("8_bg")
 expand_mode = 1
 stretch_mode = 6
-script = ExtResource("3b_backgroundparallax")
-sync_revealed_background = true
 
 [node name="PlayField" parent="." unique_id=1310220001 instance=ExtResource("23_playfield")]
 layout_mode = 1
