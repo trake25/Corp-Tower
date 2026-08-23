@@ -96,7 +96,7 @@ func _ready() -> void:
 	score_popups.setup(players_ctx, match_state, tuning)
 	summary.setup(players_ctx, match_state, tuning)
 	roster.setup(players_ctx, match_state)
-	visual_fx.setup(tower_stack, roster, players_ctx, visual_hooks)
+	visual_fx.setup(tower_stack, roster, players_ctx, visual_hooks, platform_parallax)
 
 	if tower_stack.has_method("set_visual_hooks"):
 		tower_stack.call("set_visual_hooks", visual_hooks)
@@ -122,9 +122,6 @@ func _ready() -> void:
 		tower_stack.connect("scroll_offset_changed", Callable(background_parallax, "set_scroll_pixels"))
 		tower_stack.connect("scroll_offset_changed", Callable(platform_parallax, "set_scroll_pixels"))
 
-	if tower_stack.has_signal("camera_zoom_changed"):
-		tower_stack.connect("camera_zoom_changed", Callable(self, "apply_camera_zoom"))
-
 	accessibility.changed.connect(apply_accessibility)
 	apply_accessibility()
 
@@ -136,13 +133,6 @@ func apply_accessibility() -> void:
 		accessibility.is_enabled(AccessibilitySettingsScript.PARALLEL_PLACEMENT)
 	)
 	debug_panel.refresh_accessibility_row()
-
-func apply_camera_zoom(zoom: float) -> void:
-	if platform_parallax == null:
-		return
-
-	platform_parallax.pivot_offset = Vector2(platform_parallax.size.x * 0.5, 0.0)
-	platform_parallax.scale = Vector2(zoom, zoom)
 
 func should_block_popovers() -> bool:
 	return (

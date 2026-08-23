@@ -7,13 +7,45 @@ var tower_stack: Control
 var roster
 var players_ctx
 var hooks
+var platform_parallax: Control
+var tower_stack_base_position_y: float = 0.0
+var platform_ground_depth: float = 0.0
 var last_beat_key: String = ""
 
-func setup(tower_stack_ref: Control, roster_ref, players_ctx_ref, hooks_ref) -> void:
+func setup(tower_stack_ref: Control, roster_ref, players_ctx_ref, hooks_ref, platform_ref: Control = null) -> void:
 	tower_stack = tower_stack_ref
 	roster = roster_ref
 	players_ctx = players_ctx_ref
 	hooks = hooks_ref
+	platform_parallax = platform_ref
+
+	if platform_parallax == null or tower_stack == null:
+		return
+
+	tower_stack_base_position_y = tower_stack.position.y
+	var tower_baseline_y: float = (
+		tower_stack.position.y + tower_stack.size.y - float(tower_stack.get("bottom_padding"))
+	)
+	var platform_contact_y: float = tower_baseline_y - platform_parallax.position.y
+	platform_ground_depth = maxf(0.0, platform_parallax.size.y - platform_contact_y)
+
+	var zoom_callable := Callable(self, "apply_camera_zoom")
+	if tower_stack.has_signal("camera_zoom_changed") and not tower_stack.is_connected("camera_zoom_changed", zoom_callable):
+		tower_stack.connect("camera_zoom_changed", zoom_callable)
+
+func apply_camera_zoom(zoom: float) -> void:
+	if platform_parallax == null or tower_stack == null:
+		return
+
+	var resolved_zoom: float = clampf(zoom, 0.0, 1.0)
+	platform_parallax.pivot_offset = Vector2(
+		platform_parallax.size.x * 0.5,
+		platform_parallax.size.y
+	)
+	platform_parallax.scale = Vector2(resolved_zoom, resolved_zoom)
+	tower_stack.position.y = (
+		tower_stack_base_position_y + platform_ground_depth * (1.0 - resolved_zoom)
+	)
 
 func reset() -> void:
 	last_beat_key = ""

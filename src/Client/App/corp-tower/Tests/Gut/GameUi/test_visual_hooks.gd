@@ -3,6 +3,7 @@ extends GutTest
 const VisualHooks := preload("res://Cor/Scripts/GameUi/VisualHooks.gd")
 const VisualHooksController := preload("res://Cor/Scripts/GameUi/VisualHooksController.gd")
 const TowerStackScript := preload("res://Cor/Scripts/TowerStack.gd")
+const HarnessScript := preload("res://Tests/Gut/Helpers/GameUiHarness.gd")
 
 const O_BLOCK := { "shapeId": "O", "cells": [[0, 0], [1, 0], [0, 1], [1, 1]], "height": 2 }
 
@@ -217,6 +218,31 @@ func test_cancelling_the_beat_restores_the_camera() -> void:
 	assert_eq(tower._camera_zoom, 1.0, "Cancelling must return the camera to full zoom.")
 	assert_eq(tower._beat_phase, TowerStackScript.BEAT_NONE, "Cancelling must clear the beat phase.")
 	assert_lt(tower._wave_progress, 0.0, "Cancelling must retire the wave.")
+
+func test_hook_zoom_preserves_platform_aspect_and_ground_contact() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(412, 917))
+	var platform: Control = harness.find("PlatformArt") as Control
+	var tower: Control = harness.find("TowerStack") as Control
+	var original_rect: Rect2 = platform.get_global_rect()
+	var bottom_padding: float = float(tower.get("bottom_padding"))
+	var contact_y: float = tower.position.y + tower.size.y - bottom_padding - platform.position.y
+
+	tower._set_camera_zoom(0.5)
+	var zoomed_rect: Rect2 = platform.get_global_rect()
+	var contact_global_y: float = (platform.get_global_transform() * Vector2(platform.size.x * 0.5, contact_y)).y
+	var tower_baseline_global_y: float = tower.global_position.y + tower.size.y - bottom_padding
+
+	assert_eq(platform.scale, Vector2(0.5, 0.5), "Hook Zoom should preserve the platform PNG's aspect ratio.")
+	assert_almost_eq(zoomed_rect.size.x, original_rect.size.x * 0.5, 0.01, "Hook Zoom should scale the platform width with the tower.")
+	assert_almost_eq(zoomed_rect.size.y, original_rect.size.y * 0.5, 0.01, "Hook Zoom should scale the platform height by the same ratio.")
+	assert_almost_eq(zoomed_rect.end.y, original_rect.end.y, 0.01, "Hook Zoom should keep the platform bottom anchored to the ground.")
+	assert_almost_eq(tower_baseline_global_y, contact_global_y, 0.01, "Hook Zoom should keep the tower seated on the platform's contact line.")
+	assert_almost_eq(zoomed_rect.get_center().x, original_rect.get_center().x, 0.01, "Hook Zoom should keep the platform centered below the tower.")
+
+	tower._set_camera_zoom(1.0)
+	assert_eq(platform.scale, Vector2.ONE, "Ending Hook Zoom should restore the platform scale.")
+	assert_almost_eq(tower.position.y, harness.main.visual_fx.tower_stack_base_position_y, 0.01, "Ending Hook Zoom should restore the tower's authored vertical position.")
 
 func test_completion_verdicts_default_every_player_to_positive() -> void:
 	var summary := {

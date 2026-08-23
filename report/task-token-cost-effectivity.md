@@ -76,7 +76,8 @@ metadata cannot recover the variant.
 | 5 | Fix Android Play alignment, Impact fill, power toast and parallax seam | 3 | B | 1 | 16 | ~15,000 | ~28,000 | ~40,000 | ~40,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
 | 6 | Fix Play overlay layers, Android width scaling and post-update startup gap | 3 | B | 2 | 17 | ~18,000 | ~24,000 | ~35,000 | ~35,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
 | 7 | Preserve Android Play aspect and tighten Impact bar layout | 3 | B | 1 | 12 | late estimate ~8,000 | ~15,000 | ~28,000 | ~28,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 8 -->
+| 8 | Keep Hook Zoom platform grounded and tower attached | 3 | B | 1 | 8 | late estimate ~6,000 | ~12,000 | ~24,000 | ~24,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
+<!-- next: row 9 -->
 
 ## Cycle 4 (closed)
 

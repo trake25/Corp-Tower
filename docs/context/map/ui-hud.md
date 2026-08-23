@@ -527,20 +527,21 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooks.gd:40 | impact_beat_total_ms | summed beat duration the caller waits |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooks.gd:43 | impact_beat_total_seconds | same in seconds |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd — 119 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd — 151 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:3 | VERDICT_POSITIVE · const | met the Impact share this level |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:4 | VERDICT_NEGATIVE · const | fell short this level |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:12 | setup | wire TowerStack, roster and hooks config |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:18 | reset | clear beat state between levels |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:22 | end_beat | cancel the beat and snap back to full zoom |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:26 | build_verdicts · static func | per-player verdict map for the wave |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:48 | build_completion_verdicts · static func | verdicts on level completion |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:62 | level_result_key · static func | **de-dupe key**; one beat per level result |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:70 | on_level_result | fires the beat once and returns the wait it costs; false when empty, off or collapsing |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:114 | _should_shake | shake on failure; a collapse gets the shake and no beat |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:15 | setup | wire TowerStack, roster and hooks config |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:36 | apply_camera_zoom | aspect-preserving platform ground contact and tower contact during Hook Zoom |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:50 | reset | clear beat state between levels |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:54 | end_beat | cancel the beat and snap back to full zoom |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:58 | build_verdicts · static func | per-player verdict map for the wave |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:80 | build_completion_verdicts · static func | verdicts on level completion |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:94 | level_result_key · static func | **de-dupe key**; one beat per level result |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:102 | on_level_result | fires the beat once and returns the wait it costs; false when empty, off or collapsing |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/VisualHooksController.gd:146 | _should_shake | shake on failure; a collapse gets the shake and no beat |
 
 ### src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd — 34 ln
 
@@ -705,4 +706,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-35 files · 521 symbols · 0 awaiting a `Does` line.
+35 files · 522 symbols · 0 awaiting a `Does` line.

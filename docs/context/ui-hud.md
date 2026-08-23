@@ -309,8 +309,11 @@ pile reads as wreckage, not a live verdict.
   `clip_contents`, and `_is_rect_visible()`'s bottom bound extends to the real
   screen bottom, so old bricks are hidden by later-drawn siblings rather than
   vanishing at the Control's own boundary.
-- **`apply_camera_zoom()` must pivot `PlatformArt` on its top centre** before
-  scaling, or the ground shrinks away from the bricks resting on it.
+- **`VisualHooksController` keeps Hook Zoom attached at both ends.** It scales
+  `PlatformArt` uniformly around its bottom centre, then shifts `TowerStack` by
+  the platform's measured ground-depth compensation. The PNG keeps its aspect,
+  its bottom stays on the ground and the tower baseline stays on its contact line;
+  zoom `1.0` restores both transforms.
 - **`PlatformArt` runs `parallax_ratio = 1.0` with `instant = true`**, snapping in
   the same frame as the brick redraw. It must stay aligned to the bricks, and no
   constant ratio can cancel an easing-induced lag — the residual gap grows with
