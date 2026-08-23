@@ -139,7 +139,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | back_requested · signal | return to Home Screen |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:6 | _ready | wire buttons |
 
-### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 400 ln
+### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 401 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -164,7 +164,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:275 | request_tutorial | emit tutorial_requested |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:278 | _on_tutorial_menu_exit | leave the lesson menu |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:284 | update_game_state | **the main render entry** — fans `game_state` out to every controller |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:390 | update_debug_config | apply a `debug_config` broadcast |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:391 | update_debug_config | apply a `debug_config` broadcast |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd — 21 ln
 

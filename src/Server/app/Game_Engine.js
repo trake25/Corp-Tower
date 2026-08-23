@@ -66,6 +66,7 @@ class GameEngine {
             visualHooks: { ...(GameConfig.visualHooks || {}) },
             towerStability: this.room.towerStability ?? 100,
             towerStabilityDiagnostics: this.room.towerStabilityDiagnostics || {},
+            towerStructuralPose: this.room.towerStructuralPose || [],
             sideQuest: this.room.sideQuest || null,
             powerEvents: this.consumePowerEvents(),
             towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode,
@@ -121,6 +122,7 @@ class GameEngine {
             towerBlocks: [],
             towerStability: 100,
             towerStabilityDiagnostics: {},
+            towerStructuralPose: [],
             state: "waiting",
             startsAt: 0,
             endsAt: 0,
@@ -185,6 +187,7 @@ class GameEngine {
             towerBlocks: snapshot.state.towerBlocks || [],
             towerStability: snapshot.state.towerStability ?? 100,
             towerStabilityDiagnostics: snapshot.state.towerStabilityDiagnostics || {},
+            towerStructuralPose: snapshot.state.towerStructuralPose || [],
             state: snapshot.state.state,
             startsAt: snapshot.state.startsAt,
             endsAt: snapshot.state.endsAt,
@@ -422,6 +425,7 @@ class GameEngine {
         this.room.towerBlocks = [];
         this.room.towerStability = 100;
         this.room.towerStabilityDiagnostics = {};
+        this.room.towerStructuralPose = [];
         this.room.targetHeight =
             this.getTargetHeightForLevel(this.room.level);
         this.room.startsAt = Date.now() + GameConfig.startDelayMs;

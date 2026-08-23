@@ -206,6 +206,7 @@ self-dismiss mid-freeze, and restoring it when the window ends.
 |---|---|---|
 | Block Preview | `Cor/Scripts/BlockPreview.gd` | Rotated/mirrored textured quad at inventory or tower scale, plus the drag ghost's own snap-point rings |
 | Tower Stack | `Cor/Scripts/TowerStack.gd` | The whole tower render: bricks, drag overlay, drop/tilt animation, mood faces, collapse sequence, Impact Beat |
+| Structural Pose | `Cor/Scripts/GameUi/StructuralPose.gd` | Per-block server-pose targets, deterministic weighted blending, and damped display state |
 | Collapse Sim | `Cor/Scripts/GameUi/CollapseSim.gd` | Node-free debris physics, seeded so every client renders it identically |
 | Background Parallax | `Cor/Scripts/BackgroundParallax.gd` | Pans `BgArt` and `PlatformArt`, ground-aligns covered background art on wide roots, and samples its visible sky edge for the revealed backdrop |
 | Impact Bar | `Cor/Scripts/ImpactBar.gd` | Per-player runtime seat-colour progress fill and progress-only avatar marker inside the 9-Play frame |
@@ -234,6 +235,12 @@ Panning is a **scalar correction, not a camera.** The client is `Control`-based 
 Tower Stack draws via raw `_draw()`, so there are no `Node2D` children for a
 `Camera2D` to move; anything camera-shaped means re-architecting three scripts and
 the drag hit-testing maths.
+
+`towerStructuralPose` drives per-brick draw transforms through `StructuralPose`.
+The placed brick and its face share that transform; the snap layer, ghost, contact
+highlight, `grid_to_local`, and `local_to_grid` stay in the undeformed grid space.
+Collapse seeds start from the displayed per-brick transform and give high
+`failureWeight` pieces the strongest initial impulse.
 
 **Placement resolution is a 2-D pairing** in `SnapGrid`: for every outline vertex
 of the dragged brick × every snap point on the platform and on every placed brick,
@@ -267,10 +274,8 @@ needed, because every scroll term already reads the zoomed unit.
 **Brick faces are classified in the view, never on the server.** The entry carries
 `balanceDelta` (lean-only) and the client compares it to the live
 `towerStabilityMoodThreshold` at draw time, so moving the knob restyles the whole
-standing tower. Faces lean and scroll with the tower but are **never rotated to
-match the brick texture** — an upside-down smile reads as a frown. The one
-exception is FALL/SETTLED debris, whose faces spin with their piece: a tumbling
-pile reads as wreckage, not a live verdict.
+standing tower. Faces follow their brick's structural transform and scroll with
+the tower. FALL/SETTLED debris continues to spin faces with each piece.
 
 ## Landmines
 

@@ -89,8 +89,10 @@ func test_verdicts_tolerate_a_missing_or_malformed_status() -> void:
 	)
 
 func _tower_entry(player_id: String, origin_y: int) -> Dictionary:
+	var block: Dictionary = O_BLOCK.duplicate(true)
+	block["id"] = "%s-%s" % [player_id, origin_y]
 	return {
-		"block": O_BLOCK.duplicate(true),
+		"block": block,
 		"originX": 3,
 		"originY": origin_y,
 		"playerId": player_id,
@@ -143,6 +145,21 @@ func test_the_beat_is_skipped_while_the_tower_is_collapsing() -> void:
 		tower.play_impact_beat({ "P1": "positive" }),
 		"A collapsing tower must not start the Impact beat."
 	)
+
+func test_collapse_seeds_begin_from_the_displayed_structural_pose() -> void:
+	var tower: Control = _mounted_tower()
+	var entry: Dictionary = _tower_entry("P1", 0)
+	var block_id: String = str(entry.block.id)
+	tower.set_tower(
+		[entry], 2, 30, 0,
+		{"collapsed": true, "criticalSupport": {"direction": "right"}},
+		[{"blockId": block_id, "offsetXUnits": 1.0, "offsetYUnits": -0.25, "rotationDeg": 14.0, "failureWeight": 1.0}]
+	)
+	tower._begin_collapse()
+	var piece: Dictionary = tower._collapse_sim.pieces[0]
+
+	assert_almost_eq(float(piece.angle), deg_to_rad(14.0), 0.001, "Collapse inherits the displayed block rotation.")
+	assert_gt(float(piece.vel.x), 0.0, "The critical pose seeds a rightward initial impulse.")
 
 func test_the_beat_arms_the_camera_and_the_wave() -> void:
 	var tower: Control = _mounted_tower()

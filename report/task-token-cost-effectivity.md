@@ -78,7 +78,9 @@ metadata cannot recover the variant.
 | 7 | Preserve Android Play aspect and tighten Impact bar layout | 3 | B | 1 | 12 | late estimate ~8,000 | ~15,000 | ~28,000 | ~28,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
 | 8 | Keep Hook Zoom platform grounded and tower attached | 3 | B | 1 | 8 | late estimate ~6,000 | ~12,000 | ~24,000 | ~24,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
 | 9 | Align covered Android Play background ground with platform | 3 | B | 1 | 7 | late estimate ~5,000 | ~14,000 | ~28,000 | ~28,000 | ~ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 10 -->
+| 10 | Finalize Tower Stability, Scoring, and Impact redesign implementation plans | 5 | B | 4 | 3 | late estimate ~30,000 | ~55,000 | ~90,000 | ~90,000 | ~ | ok | gpt-5 (variant unrecorded) | high | server-engineer,fullstack-coordinator,client-engineer,qa-engineer,docs-steward |
+| 11 | Implement graph-based tower stability and structural poses | 5 | B | 5 | 26 | late estimate ~55,000 | ~78,000 | ~125,000 | ~125,000 | ~ | ok | gpt-5 (variant unrecorded) | high | server-engineer,fullstack-coordinator,client-engineer,qa-engineer,docs-steward,update-docs |
+<!-- next: row 12 -->
 
 ## Cycle 4 (closed)
 

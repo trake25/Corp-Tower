@@ -78,10 +78,9 @@ syntax-checked only. Run `npm run balance:simulate -- <levels> <runs>`.
 - Runs **both strategies** per level so the comparison is directly readable.
 - **Stability sweep:** `npm run balance:stability` re-runs every level at
   difficulty 0/50/75/95/100 and prints `avgStability`, `minStability`,
-  `avgIntegrity`, `avgLean`, `avgSiteUsage`, `avgSupportDeficit`, and
-  `integrityBinding` — the share of placements where integrity, not lean, is the
-  lower axis, which is what names the anchor to move. Sampled at **every
-  placement**, not just level end.
+  `avgBalance`, `avgIntegrity`, critical carried-load share, path concentration,
+  weakest-interface height, and evaluator time. Sampled at **every placement**,
+  not just level end.
 
 `gatePassed` is the number that matters most under a per-level Impact rule — a
 level can complete and still roll the team back. It routes through the engine's
@@ -111,11 +110,10 @@ balance problem:
   who create messes under time pressure; validating it needs playtests.
 
 `src/Server/tools/Stability_Probe.js` (`npm run balance:probe`) covers that second
-blind spot: max-stability bots never build the wide-base/narrow-spire or overhang
-shapes that show whether a bad tower degrades. It hand-builds five archetypes
-across heights and levels through `resolveStabilityConfig(level)`, and **asserts a
-single opening brick never collapses at any sampled level** — the guard for the
-site-usage-worst-at-the-first-brick landmine.
+blind spot with narrow bottlenecks, wide crowns, redundant supports, disconnected
+stacks, and gap-repair geometry across heights and levels through
+`resolveStabilityConfig(level)`. It asserts a single opening brick never collapses
+at any sampled level.
 
 Both are tuning aids, not gameplay authorities.
 

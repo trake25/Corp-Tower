@@ -96,6 +96,25 @@ func test_no_piece_starts_moving_upward() -> void:
 			"A collapsing brick must only ever be kicked downward, never up: got %f." % piece.vel.y
 		)
 
+func test_failure_weight_concentrates_the_initial_collapse_impulse() -> void:
+	var weighted: Array = [
+		{"pos": Vector2.ZERO, "height_ratio": 1.0, "failure_weight": 0.0, "footprint": O_FOOTPRINT},
+		{"pos": Vector2.ZERO, "height_ratio": 1.0, "failure_weight": 1.0, "footprint": O_FOOTPRINT}
+	]
+	var sim = CollapseSimScript.new()
+	sim.begin(weighted, params({"lateral_spread": 0.0}))
+	var stable_piece: Dictionary = sim.pieces[0]
+	var failing_piece: Dictionary = sim.pieces[1]
+
+	assert_gt(
+		float(failing_piece.vel.x), float(stable_piece.vel.x),
+		"The critical dependent section must receive the stronger lateral collapse impulse."
+	)
+	assert_gte(
+		float(failing_piece.vel.y), float(stable_piece.vel.y),
+		"The critical dependent section must not receive a weaker downward kick."
+	)
+
 func test_every_piece_settles_inside_the_transition_window() -> void:
 	var sim = started_sim()
 	var steps: int = run_to_settled(sim)

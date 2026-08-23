@@ -58,15 +58,17 @@ func begin(seeds: Array, params: Dictionary) -> void:
 	for seed_value in seeds:
 		var seed_data: Dictionary = seed_value
 		var height_ratio: float = clampf(float(seed_data.get("height_ratio", 0.0)), 0.0, 1.0)
+		var failure_weight: float = clampf(float(seed_data.get("failure_weight", 0.0)), 0.0, 1.0)
 		var footprint: Vector2 = seed_data.get("footprint", Vector2.ONE)
-		var spin_scale: float = 0.35 + height_ratio
+		var impulse_scale: float = lerpf(0.35, 1.0, failure_weight)
+		var spin_scale: float = (0.35 + height_ratio) * impulse_scale
 
 		pieces.append({
 			"pos": Vector2(seed_data.get("pos", Vector2.ZERO)),
 			"vel": Vector2(
-				lean_sign * lean_push * height_ratio
+				lean_sign * lean_push * height_ratio * impulse_scale
 					+ rng.randf_range(-lateral_spread, lateral_spread),
-				rng.randf_range(0.0, drop_kick)
+				rng.randf_range(0.0, drop_kick * impulse_scale)
 			),
 			"spin": lean_sign * rng.randf_range(-spin_max * 0.35, spin_max) * spin_scale,
 			"angle": float(seed_data.get("angle", 0.0)),

@@ -103,11 +103,12 @@ function simulateSmartPlay(engine, strategy) {
         samples: 0,
         stabilitySum: 0,
         minStability: 100,
+        balanceSum: 0,
         integritySum: 0,
-        leanSum: 0,
-        siteUsageSum: 0,
-        supportDeficitSum: 0,
-        integrityBinding: 0
+        carriedLoadShareSum: 0,
+        pathConcentrationSum: 0,
+        weakestInterfaceHeightSum: 0,
+        evaluatorMsSum: 0
     };
 
     const outcome = extra => ({
@@ -130,26 +131,28 @@ function simulateSmartPlay(engine, strategy) {
         ...extra
     });
 
-    const sampleStability = (structure, stabilityConfig) => {
+    const sampleStability = (structure, evaluatorMs) => {
         const d = structure.diagnostics || {};
-        const collapseThreshold = Math.max(
-            0.0001, Number(stabilityConfig.towerCollapseTiltScore) || 0.0001
-        );
-        const lean = Math.round(
-            (1 - Math.min(1, Math.abs(Number(d.tiltScore) || 0) / collapseThreshold)) * 100
-        );
-        const integrity = Number(d.integrity ?? 100);
+        const groups = Array.isArray(structure.analysis?.groups) ? structure.analysis.groups : [];
+        const critical = groups.slice().sort((left, right) => {
+            const leftRisk = Number(left.balanceRisk || 0) + Number(left.integrityRisk || 0);
+            const rightRisk = Number(right.balanceRisk || 0) + Number(right.integrityRisk || 0);
+            if (rightRisk !== leftRisk) return rightRisk - leftRisk;
+            if (Number(right.carriedLoadShare || 0) !== Number(left.carriedLoadShare || 0)) {
+                return Number(right.carriedLoadShare || 0) - Number(left.carriedLoadShare || 0);
+            }
+            return String(left.key || "").localeCompare(String(right.key || ""));
+        })[0] || {};
 
         telemetry.samples += 1;
         telemetry.stabilitySum += structure.stability;
         telemetry.minStability = Math.min(telemetry.minStability, structure.stability);
-        telemetry.integritySum += integrity;
-        telemetry.leanSum += lean;
-        telemetry.siteUsageSum += Number(d.slenderness) || 0;
-        telemetry.supportDeficitSum += 1 - Number(d.supportRatio ?? 1);
-        if (integrity < lean) {
-            telemetry.integrityBinding += 1;
-        }
+        telemetry.balanceSum += Number(d.balance ?? 100);
+        telemetry.integritySum += Number(d.integrity ?? 100);
+        telemetry.carriedLoadShareSum += Number(critical.carriedLoadShare || 0);
+        telemetry.pathConcentrationSum += Number(critical.pathConcentration || 0);
+        telemetry.weakestInterfaceHeightSum += Number(critical.pivotY || 0);
+        telemetry.evaluatorMsSum += evaluatorMs;
     };
 
     const cooldown = Math.max(0, Number(GameConfig.placementCooldown) || 0);
@@ -213,10 +216,13 @@ function simulateSmartPlay(engine, strategy) {
         brickHeightPlaced += blockHeight;
         engine.room.towerBlocks.push({ playerId: placement.player.id, block, ...placementPosition });
         const stabilityConfig = engine.resolveStabilityConfig();
+        const evaluationStartedAt = process.hrtime.bigint();
         const structure = TowerStability.evaluate(engine.room.towerBlocks, stabilityConfig);
+        const evaluatorMs = Number(process.hrtime.bigint() - evaluationStartedAt) / 1000000;
         engine.room.towerStability = structure.stability;
         engine.room.towerStabilityDiagnostics = structure.diagnostics;
-        sampleStability(structure, stabilityConfig);
+        engine.room.towerStructuralPose = structure.structuralPose;
+        sampleStability(structure, evaluatorMs);
         if (structure.stability <= 0) {
             return outcome({ collapsed: true, placements: placements + 1 });
         }
@@ -297,11 +303,12 @@ function runLevel(level, runs, strategy = "cooperative") {
         samples: 0,
         stabilitySum: 0,
         minStability: 100,
+        balanceSum: 0,
         integritySum: 0,
-        leanSum: 0,
-        siteUsageSum: 0,
-        supportDeficitSum: 0,
-        integrityBinding: 0
+        carriedLoadShareSum: 0,
+        pathConcentrationSum: 0,
+        weakestInterfaceHeightSum: 0,
+        evaluatorMsSum: 0
     };
 
     for (let i = 0; i < runs; i++) {
@@ -349,11 +356,12 @@ function runLevel(level, runs, strategy = "cooperative") {
         const t = result.telemetry;
         stats.samples += t.samples;
         stats.stabilitySum += t.stabilitySum;
+        stats.balanceSum += t.balanceSum;
         stats.integritySum += t.integritySum;
-        stats.leanSum += t.leanSum;
-        stats.siteUsageSum += t.siteUsageSum;
-        stats.supportDeficitSum += t.supportDeficitSum;
-        stats.integrityBinding += t.integrityBinding;
+        stats.carriedLoadShareSum += t.carriedLoadShareSum;
+        stats.pathConcentrationSum += t.pathConcentrationSum;
+        stats.weakestInterfaceHeightSum += t.weakestInterfaceHeightSum;
+        stats.evaluatorMsSum += t.evaluatorMsSum;
         if (t.samples > 0) {
             stats.minStability = Math.min(stats.minStability, t.minStability);
         }
@@ -367,11 +375,12 @@ function runLevel(level, runs, strategy = "cooperative") {
         difficulty: Number(GameConfig.towerStabilityDifficulty) || 0,
         averageStability: perSample(stats.stabilitySum),
         minStability: stats.minStability,
+        averageBalance: perSample(stats.balanceSum),
         averageIntegrity: perSample(stats.integritySum),
-        averageLean: perSample(stats.leanSum),
-        averageSiteUsage: perSample(stats.siteUsageSum),
-        averageSupportDeficit: perSample(stats.supportDeficitSum),
-        integrityBindingRate: perSample(stats.integrityBinding),
+        averageCriticalCarriedLoadShare: perSample(stats.carriedLoadShareSum),
+        averagePathConcentration: perSample(stats.pathConcentrationSum),
+        averageWeakestInterfaceHeight: perSample(stats.weakestInterfaceHeightSum),
+        averageEvaluatorMs: perSample(stats.evaluatorMsSum),
         targetHeight: stats.targetHeight,
         averagePileBlocks: stats.averagePileBlocks / runs,
         averageDrawPileAfterDeal: stats.averageDrawPileAfterDeal / runs,
@@ -487,11 +496,12 @@ function printStabilityResults(results) {
             "gatePassed",
             "avgStability",
             "minStability",
+            "avgBalance",
             "avgIntegrity",
-            "avgLean",
-            "avgSiteUsage",
-            "avgSupportDeficit",
-            "integrityBinding",
+            "avgCriticalLoadShare",
+            "avgPathConcentration",
+            "avgWeakestInterfaceHeight",
+            "avgEvaluatorMs",
             "avgTeamScore",
             "avgMvpScore"
         ].join(",")
@@ -509,11 +519,12 @@ function printStabilityResults(results) {
                 percent(result.gateMetRate),
                 result.averageStability.toFixed(1),
                 result.minStability,
+                result.averageBalance.toFixed(1),
                 result.averageIntegrity.toFixed(1),
-                result.averageLean.toFixed(1),
-                result.averageSiteUsage.toFixed(2),
-                result.averageSupportDeficit.toFixed(3),
-                percent(result.integrityBindingRate),
+                result.averageCriticalCarriedLoadShare.toFixed(3),
+                result.averagePathConcentration.toFixed(3),
+                result.averageWeakestInterfaceHeight.toFixed(2),
+                result.averageEvaluatorMs.toFixed(3),
                 result.averageTeamLevelScore.toFixed(1),
                 result.averageMvpLevelScore.toFixed(1)
             ].join(",")

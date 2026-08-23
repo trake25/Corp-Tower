@@ -77,6 +77,7 @@ function stripRuntimeRoom(room) {
             towerBlocks: engineRoom.towerBlocks || [],
             towerStability: engineRoom.towerStability ?? 100,
             towerStabilityDiagnostics: engineRoom.towerStabilityDiagnostics || {},
+            towerStructuralPose: engineRoom.towerStructuralPose || [],
             sideQuest: engineRoom.sideQuest || null,
             state: engineRoom.state || "waiting",
             startsAt: engineRoom.startsAt || 0,

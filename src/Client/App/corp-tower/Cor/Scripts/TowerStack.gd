@@ -4,6 +4,7 @@ const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 const SnapGridScript = preload("res://Cor/Scripts/GameUi/SnapGrid.gd")
 const CollapseSimScript = preload("res://Cor/Scripts/GameUi/CollapseSim.gd")
+const StructuralPoseScript = preload("res://Cor/Scripts/GameUi/StructuralPose.gd")
 
 const COLLAPSE_NONE := 0
 const COLLAPSE_LEAN := 1
@@ -57,6 +58,7 @@ const ARMED_PULSE_SPEED := 5.0
 @export var collapse_pile_layer_units: float = 0.55
 @export var collapse_span_ratio: float = 0.82
 @export var tilt_ease_speed: float = 6.0
+@export var structural_pose_ease_speed: float = 9.0
 @export var drop_duration: float = 0.28
 @export var snap_radius_units: float = 2.2
 @export var snap_dot_radius: float = 3.5
@@ -76,6 +78,7 @@ var tower_stability: int = 100
 var tower_tilt_deg: float = 0.0
 var displayed_tilt_deg: float = 0.0
 var tower_collapsed: bool = false
+var structural_pose = StructuralPoseScript.new()
 var _last_scroll_pixels: float = 0.0
 var snap_preview_active: bool = false
 var drag_cells: Array = []
@@ -109,25 +112,30 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		queue_redraw()
 
-func set_tower(blocks: Array, new_current_height: int, new_target_height: int, new_stability: int = 100, diagnostics: Dictionary = {}) -> void:
+func set_tower(blocks: Array, new_current_height: int, new_target_height: int, new_stability: int = 100, diagnostics: Dictionary = {}, pose_entries: Array = []) -> void:
 	var previous_global_height: int = current_height
+	var previous_block_count: int = tower_blocks.size()
+	var direct_pose_replace: bool = blocks.size() != previous_block_count and blocks.size() != previous_block_count + 1
 	tower_blocks = blocks
 	current_height = max(0, new_current_height)
 	target_height = max(0, new_target_height)
 	tower_stability = clampi(new_stability, 0, 100)
+	structural_pose.replace_targets(pose_entries, direct_pose_replace)
 
 	tower_collapsed = bool(diagnostics.get("collapsed", false))
 	var reported_tilt: float = float(diagnostics.get("tiltAngleDeg", 0.0))
+	var critical_support: Dictionary = diagnostics.get("criticalSupport", {})
+	var critical_direction: String = str(critical_support.get("direction", ""))
 
 	if tower_collapsed:
-		var lean_sign: float = 1.0 if reported_tilt >= 0.0 else -1.0
+		var lean_sign: float = 1.0 if critical_direction == "right" or (critical_direction == "" and reported_tilt >= 0.0) else -1.0
 		tower_tilt_deg = lean_sign * collapse_tilt_deg
 
 		if _collapse_phase == COLLAPSE_NONE:
 			_collapse_phase = COLLAPSE_LEAN
 			_collapse_lean_elapsed = 0.0
 	else:
-		tower_tilt_deg = reported_tilt
+		tower_tilt_deg = 0.0 if structural_pose.has_targets() else reported_tilt
 		_reset_collapse()
 
 	_maybe_start_drop_animation(previous_global_height)
@@ -302,11 +310,10 @@ func grid_to_local(lattice: Vector2) -> Vector2:
 
 func local_to_grid(local: Vector2) -> Vector2:
 	var unit: float = _unit_size()
-	var untilted: Vector2 = _untilt(local)
 
 	return Vector2(
-		(untilted.x - size.x * 0.5) / unit + SnapGridScript.grid_center_col() + 0.5,
-		((size.y - bottom_padding) - untilted.y) / unit + float(_scroll_offset_units(unit))
+		(local.x - size.x * 0.5) / unit + SnapGridScript.grid_center_col() + 0.5,
+		((size.y - bottom_padding) - local.y) / unit + float(_scroll_offset_units(unit))
 	)
 
 func global_to_grid(global_pos: Vector2) -> Vector2:
@@ -319,17 +326,6 @@ func _lattice_to_local(
 		base_x + (lattice.x - SnapGridScript.grid_center_col() - 0.5) * unit,
 		baseline - (lattice.y - float(scroll_offset_units)) * unit
 	)
-
-func _tilt_pivot() -> Vector2:
-	return Vector2(size.x * 0.5, size.y - bottom_padding)
-
-func _untilt(local: Vector2) -> Vector2:
-	if tower_blocks.is_empty() or is_zero_approx(displayed_tilt_deg):
-		return local
-
-	var pivot: Vector2 = _tilt_pivot()
-
-	return pivot + (local - pivot).rotated(-deg_to_rad(displayed_tilt_deg))
 
 func _maybe_start_drop_animation(previous_global_height: int) -> void:
 	var new_count: int = tower_blocks.size()
@@ -401,6 +397,9 @@ func _drop_ease(t: float) -> float:
 func _process(delta: float) -> void:
 	var needs_redraw: bool = false
 
+	if structural_pose.step(delta, structural_pose_ease_speed):
+		needs_redraw = true
+
 	if absf(displayed_tilt_deg - tower_tilt_deg) > 0.01:
 		displayed_tilt_deg = lerpf(displayed_tilt_deg, tower_tilt_deg, minf(1.0, tilt_ease_speed * delta))
 		needs_redraw = true
@@ -449,6 +448,7 @@ func clear_tower() -> void:
 	_prev_block_count = 0
 	_drop_anim_id = ""
 	tower_collapsed = false
+	structural_pose.clear()
 	_reset_collapse()
 	cancel_impact_beat()
 	_update_scroll_offset()
@@ -464,7 +464,7 @@ func _begin_collapse() -> void:
 	var base_x: float = size.x * 0.5
 	var baseline: float = size.y - bottom_padding
 	var scroll_px: float = float(_scroll_offset_units(unit)) * unit
-	var pivot: Vector2 = _tilt_pivot()
+	var pivot: Vector2 = Vector2(base_x, baseline)
 	var lean_rad: float = deg_to_rad(displayed_tilt_deg)
 	var top_units: float = maxf(1.0, float(SnapGridScript.top_height(tower_blocks)))
 	var seeds: Array = []
@@ -490,7 +490,7 @@ func _begin_collapse() -> void:
 	_collapse_sim.begin(seeds, {
 		"seed": _collapse_seed(),
 		"gravity": collapse_gravity_units * unit,
-		"lean_sign": 1.0 if displayed_tilt_deg >= 0.0 else -1.0,
+		"lean_sign": 1.0 if tower_tilt_deg >= 0.0 else -1.0,
 		"lean_push": collapse_lean_push_units * unit,
 		"lateral_spread": collapse_lateral_spread_units * unit,
 		"drop_kick": collapse_drop_kick_units * unit,
@@ -531,7 +531,14 @@ func _build_collapse_seed(
 	var origin_y: int = int(entry.get("originY", entry.get("baseHeight", 0)))
 	var box: Rect2 = _footprint_box(origin_x, origin_y, cells, unit, base_x, baseline, 0)
 	var center: Vector2 = box.position + box.size * 0.5
+	var pose: Dictionary = structural_pose.pose_for(_entry_block_id(entry))
+	var has_pose: bool = !pose.is_empty()
 	var leaned: Vector2 = pivot + (center + Vector2(0.0, scroll_px) - pivot).rotated(lean_rad)
+	var pose_angle: float = deg_to_rad(float(pose.get("rotationDeg", 0.0)))
+	var posed_center: Vector2 = center + Vector2(
+		float(pose.get("offsetXUnits", 0.0)) * unit,
+		-float(pose.get("offsetYUnits", 0.0)) * unit
+	)
 	var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
 	var center_units: float = float(origin_y) + (float(bounds.min_y) + float(bounds.max_y) + 1.0) * 0.5
 	var texture: Texture2D = BlockDataScript.brick_texture(shape_id)
@@ -570,8 +577,8 @@ func _build_collapse_seed(
 		) - center
 
 	return {
-		"pos": leaned - Vector2(0.0, scroll_px),
-		"angle": lean_rad,
+		"pos": (posed_center if has_pose else leaned) - Vector2(0.0, scroll_px),
+		"angle": pose_angle if has_pose else lean_rad,
 		"height_ratio": clampf(center_units / top_units, 0.0, 1.0),
 		"footprint": box.size,
 		"quad_size": quad_size,
@@ -580,7 +587,8 @@ func _build_collapse_seed(
 		"texture": texture,
 		"color": _player_color(entry),
 		"emoji_texture": emoji_texture,
-		"emoji_offset": emoji_offset
+		"emoji_offset": emoji_offset,
+		"failure_weight": float(pose.get("failureWeight", 0.0)) if has_pose else 0.0
 	}
 
 func _collapse_seed() -> int:
@@ -665,8 +673,14 @@ func _draw() -> void:
 	var scroll_offset_units: int = _scroll_offset_units(unit)
 	var tower_units: int = max(target_height, current_height, 1)
 
+	var has_structural_pose: bool = structural_pose.has_targets()
 	var pivot: Vector2 = Vector2(base_x, baseline)
-	draw_set_transform(pivot, deg_to_rad(displayed_tilt_deg), Vector2.ONE)
+	var draw_origin: Vector2 = Vector2.ZERO if has_structural_pose else pivot
+
+	if has_structural_pose:
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	else:
+		draw_set_transform(pivot, deg_to_rad(displayed_tilt_deg), Vector2.ONE)
 
 	for i in range(tower_blocks.size()):
 		var entry: Dictionary = tower_blocks[i]
@@ -686,10 +700,39 @@ func _draw() -> void:
 		if !_is_rect_visible(box_rect):
 			continue
 
-		var center: Vector2 = box_rect.position + box_rect.size * 0.5 - pivot
+		var center: Vector2 = box_rect.position + box_rect.size * 0.5 - draw_origin
 		var texture: Texture2D = BlockDataScript.brick_texture(shape_id)
+		var pose: Dictionary = structural_pose.pose_for(_entry_block_id(entry))
 
-		if texture == null:
+		if has_structural_pose and !pose.is_empty():
+			var posed_center: Vector2 = center + Vector2(
+				float(pose.get("offsetXUnits", 0.0)) * unit,
+				-float(pose.get("offsetYUnits", 0.0)) * unit
+			)
+			draw_set_transform(posed_center, deg_to_rad(float(pose.get("rotationDeg", 0.0))), Vector2.ONE)
+
+			if texture == null:
+				_draw_fallback_block(Vector2.ZERO, box_rect.size, color)
+			else:
+				var posed_orientation: Dictionary = BlockDataScript.detect_orientation(shape_id, cells)
+				var posed_canonical_bounds: Dictionary = BlockDataScript.cell_bounds(BlockDataScript.BRICK_SHAPES[shape_id])
+				var posed_canonical_size: Vector2 = Vector2(
+					float(posed_canonical_bounds.max_x - posed_canonical_bounds.min_x + 1) * unit,
+					float(posed_canonical_bounds.max_y - posed_canonical_bounds.min_y + 1) * unit
+				)
+				var posed_points: PackedVector2Array = BlockDataScript.brick_quad_points(
+					Vector2.ZERO, posed_canonical_size, int(posed_orientation.steps), bool(posed_orientation.flipped)
+				)
+				var posed_colors: PackedColorArray = BlockDataScript.brick_quad_colors(color, posed_points)
+
+				draw_primitive(posed_points, posed_colors, BlockDataScript.brick_quad_uvs(), texture)
+
+			_draw_posed_block_emoji(
+				entry, cells, origin_x, base_height, unit, base_x, baseline, scroll_offset_units,
+				drop_offset, box_rect.position + box_rect.size * 0.5
+			)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		elif texture == null:
 			_draw_fallback_block(center, box_rect.size, color)
 		else:
 			var orientation: Dictionary = BlockDataScript.detect_orientation(shape_id, cells)
@@ -705,11 +748,12 @@ func _draw() -> void:
 
 			draw_primitive(points, colors, BlockDataScript.brick_quad_uvs(), texture)
 
-		_draw_block_emoji(
-			entry, cells, origin_x, base_height, unit, base_x, baseline, scroll_offset_units, drop_offset, pivot
-		)
+		if !has_structural_pose or pose.is_empty():
+			_draw_block_emoji(
+				entry, cells, origin_x, base_height, unit, base_x, baseline, scroll_offset_units, drop_offset, draw_origin
+			)
 
-	_draw_snap_layer(unit, base_x, baseline, pivot)
+	_draw_snap_layer(unit, base_x, baseline, draw_origin)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -765,6 +809,54 @@ func _draw_block_emoji(
 	var box_size: Vector2 = Vector2.ONE * unit * emoji_unit_scale * pop_scale
 
 	draw_texture_rect(texture, Rect2(center - box_size * 0.5, box_size), false)
+
+func _draw_posed_block_emoji(
+	entry: Dictionary,
+	cells: Array,
+	origin_x: int,
+	origin_y: int,
+	unit: float,
+	base_x: float,
+	baseline: float,
+	scroll_offset_units: int,
+	drop_offset: float,
+	block_center: Vector2
+) -> void:
+	if cells.is_empty():
+		return
+
+	var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+	var brick_top_units: float = float(origin_y + int(bounds.max_y) + 1)
+	var verdict_mood: String = _verdict_mood_for(entry, brick_top_units)
+	var mood: String = verdict_mood
+
+	if mood == "":
+		if not entry.has(BlockDataScript.BALANCE_DELTA_KEY):
+			return
+
+		mood = BlockDataScript.emoji_mood_for_delta(
+			int(entry.get(BlockDataScript.BALANCE_DELTA_KEY, 0)), mood_threshold
+		)
+
+	var texture: Texture2D = BlockDataScript.emoji_texture(mood)
+
+	if texture == null:
+		return
+
+	var pop_scale: float = 1.0
+	if verdict_mood != "":
+		pop_scale += WAVE_POP_SCALE * _wave_pop_factor(brick_top_units)
+
+	var anchor: Vector2 = BlockDataScript.emoji_anchor(cells)
+	var local_anchor: Vector2 = _lattice_to_local(
+		Vector2(float(origin_x) + anchor.x, float(origin_y) + anchor.y + drop_offset),
+		unit,
+		base_x,
+		baseline,
+		scroll_offset_units
+	) - block_center
+	var box_size: Vector2 = Vector2.ONE * unit * emoji_unit_scale * pop_scale
+	draw_texture_rect(texture, Rect2(local_anchor - box_size * 0.5, box_size), false)
 
 func _verdict_mood_for(entry: Dictionary, brick_top_units: float) -> String:
 	if _wave_progress < 0.0 or _verdict_by_player.is_empty():

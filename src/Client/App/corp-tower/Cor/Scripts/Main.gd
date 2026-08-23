@@ -344,7 +344,8 @@ func update_game_state(data) -> void:
 	tower_stack.set_tower(
 		data.get("towerBlocks", []), current_height, target_height,
 		int(data.get("towerStability", 100)),
-		data.get("towerStabilityDiagnostics", {})
+		data.get("towerStabilityDiagnostics", {}),
+		data.get("towerStructuralPose", [])
 	)
 	inventory.update_draw_pile_ui(
 		int(data.get("drawPileCount", 0)),

@@ -122,24 +122,95 @@ const ARCHETYPES = {
         }
 
         return entries;
+    },
+
+    narrowBottleneck: (siteWidth, height) => {
+        const entries = [];
+        const center = centeredOriginX(siteWidth, 1);
+        const baseRows = Math.max(1, Math.min(2, height - 2));
+
+        for (let y = 0; y < baseRows; y++) {
+            entries.push(rowEntry(siteWidth, 0, y));
+        }
+
+        if (height > baseRows) {
+            entries.push(rowEntry(1, center, baseRows));
+        }
+        if (height > baseRows + 1) {
+            entries.push(rowEntry(siteWidth, 0, baseRows + 1));
+        }
+
+        return entries;
+    },
+
+    wideCrown: (siteWidth, height) => {
+        const entries = [rowEntry(1, centeredOriginX(siteWidth, 1), 0)];
+
+        for (let y = 1; y < height; y++) {
+            entries.push(rowEntry(siteWidth, 0, y));
+        }
+
+        return entries;
+    },
+
+    redundantSupport: (siteWidth, height) => {
+        const left = centeredOriginX(siteWidth, 2);
+        const entries = [rowEntry(1, left, 0), rowEntry(1, left + 1, 0)];
+
+        for (let y = 1; y < height; y++) {
+            entries.push(rowEntry(siteWidth, 0, y));
+        }
+
+        return entries;
+    },
+
+    disconnectedStacks: (siteWidth, height) => {
+        const entries = [];
+
+        for (let y = 0; y < height; y++) {
+            entries.push(rowEntry(1, 0, y));
+            entries.push(rowEntry(1, Math.max(0, siteWidth - 1), y));
+        }
+
+        return entries;
+    },
+
+    gapRepair: (siteWidth, height) => {
+        const left = centeredOriginX(siteWidth, 2);
+        const entries = [
+            rowEntry(1, left, 0),
+            rowEntry(siteWidth, 0, 1),
+            rowEntry(1, left + 1, 0)
+        ];
+
+        for (let y = 2; y < height; y++) {
+            entries.push(rowEntry(siteWidth, 0, y));
+        }
+
+        return entries;
     }
 };
 
-function leanScore(diagnostics, config) {
-    const collapseThreshold = Math.max(
-        0.0001, Number(config.towerCollapseTiltScore) || 0.0001
-    );
+function criticalAnalysis(result) {
+    const groups = Array.isArray(result.analysis?.groups) ? result.analysis.groups : [];
 
-    return Math.round(
-        (1 - Math.min(1, Math.abs(Number(diagnostics.tiltScore) || 0) / collapseThreshold)) * 100
-    );
+    return groups.slice().sort((left, right) => {
+        const leftRisk = Number(left.balanceRisk || 0) + Number(left.integrityRisk || 0);
+        const rightRisk = Number(right.balanceRisk || 0) + Number(right.integrityRisk || 0);
+        if (rightRisk !== leftRisk) return rightRisk - leftRisk;
+        if (Number(right.carriedLoadShare || 0) !== Number(left.carriedLoadShare || 0)) {
+            return Number(right.carriedLoadShare || 0) - Number(left.carriedLoadShare || 0);
+        }
+        return String(left.key || "").localeCompare(String(right.key || ""));
+    })[0] || {};
 }
 
 function run() {
     console.log(
         [
             "archetype", "level", "target", "siteWidth", "height", "heightFraction",
-            "stability", "integrity", "lean", "slenderness", "heightProgress", "collapsed"
+            "stability", "balance", "integrity", "criticalLoadShare", "pathCount",
+            "pathConcentration", "weakestInterfaceHeight", "evaluatorMs", "collapsed"
         ].join(",")
     );
 
@@ -153,8 +224,11 @@ function run() {
             for (const fraction of HEIGHT_FRACTIONS) {
                 const height = Math.max(1, Math.round(targetHeight * fraction));
                 const entries = build(siteWidth, height);
+                const startedAt = process.hrtime.bigint();
                 const result = TowerStability.evaluate(entries, config);
+                const evaluatorMs = Number(process.hrtime.bigint() - startedAt) / 1000000;
                 const d = result.diagnostics;
+                const critical = criticalAnalysis(result);
 
                 console.log(
                     [
@@ -165,10 +239,13 @@ function run() {
                         height,
                         fraction.toFixed(2),
                         result.stability,
+                        d.balance,
                         d.integrity,
-                        leanScore(d, config),
-                        d.slenderness.toFixed(2),
-                        d.heightProgress.toFixed(2),
+                        Number(critical.carriedLoadShare || 0).toFixed(3),
+                        Number(d.criticalSupport?.pathCount || 0),
+                        Number(critical.pathConcentration || 0).toFixed(3),
+                        Number(critical.pivotY || 0).toFixed(2),
+                        evaluatorMs.toFixed(3),
                         d.collapsed
                     ].join(",")
                 );
@@ -209,7 +286,7 @@ if (require.main === module) {
 
 module.exports = {
     ARCHETYPES,
+    criticalAnalysis,
     createEngineForLevel,
-    leanScore,
     rowEntry
 };

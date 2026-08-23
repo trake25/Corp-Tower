@@ -232,6 +232,8 @@ function resolveStabilityConfig(engine, level) {
     const pressure = engine.getStabilityPressure(level);
     const resolved = {
         towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
+        towerPoseMaxAngleDeg: GameConfig.towerStructuralPoseMaxAngleDeg,
+        towerPoseMaxDipUnits: GameConfig.towerStructuralPoseMaxDipUnits,
         towerBaseHalfWidthFloor: GameConfig.towerBaseHalfWidthFloor,
         towerSiteWidth: engine.getSiteWidthForHeight(engine.room?.targetHeight),
         towerTargetHeight: engine.room?.targetHeight,
@@ -254,6 +256,7 @@ function recalculateTowerStability(engine) {
     const previous = engine.room.towerStability ?? 100;
     engine.room.towerStability = result.stability;
     engine.room.towerStabilityDiagnostics = result.diagnostics;
+    engine.room.towerStructuralPose = result.structuralPose;
     if (previous > GameConfig.towerStabilityCriticalThreshold && result.stability <= GameConfig.towerStabilityCriticalThreshold) {
         engine.queueScoreEvent("tower_critical", { label: "Tower Critical", displayOnly: true });
     } else if (previous > GameConfig.towerStabilityWarningThreshold && result.stability <= GameConfig.towerStabilityWarningThreshold) {

@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { afterEach, test } = require("node:test");
 
 const TowerStability = require("../app/Tower_Stability");
+const { stripRuntimeRoom } = require("../app/Redis_State");
 const {
     GameConfig,
     createBlock,
@@ -15,12 +16,13 @@ const {
 
 afterEach(resetFixtures);
 
-test("a slender spire collapses on integrity even when perfectly symmetrical", () => {
+function stabilityEntry(id, cells, originX, originY) {
+    return { block: { id, cells }, originX, originY };
+}
+
+test("a centered narrow spire loses Integrity without inventing a direction", () => {
     const entries = [];
     const oBlock = { cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
-    // A 2-wide stack on a 6-wide site: site usage 3.0, past the pinned Max of 2.5.
-    // The maturity floor sits above the short tower's height so the ramp is still
-    // protecting it there, which is what makes the short-vs-tall contrast the point.
     const config = fixedStabilityConfig({
         towerSiteWidth: 6,
         towerStabilityMinHeight: 20
@@ -43,11 +45,10 @@ test("a slender spire collapses on integrity even when perfectly symmetrical", (
 
     const tall = TowerStability.evaluate(entries, config);
 
-    // zero lean the whole way up -- only the slenderness term can fail this
     assert.equal(tall.diagnostics.tiltScore, 0);
-    assert.equal(tall.diagnostics.integrity, 0);
-    assert.equal(tall.diagnostics.collapsed, true);
-    assert.equal(tall.stability, 0);
+    assert.equal(tall.diagnostics.balance, 100);
+    assert.equal(tall.diagnostics.leanDirection, "center");
+    assert.ok(tall.diagnostics.integrity < short.diagnostics.integrity);
 });
 
 test("the same tower is less stable at a high level than at level 1", () => {
@@ -118,6 +119,98 @@ test("a narrow spire on a wide base is no longer free -- slenderness reads mean 
         `expected the spire above a wide floor to read slender, got ${result.diagnostics.slenderness}`
     );
     assert.ok(result.diagnostics.integrity <= 50);
+});
+
+test("a wide crown on redundant supports is safer than the same crown on one support", () => {
+    const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
+    const cell = [[0, 0]];
+    const crown = [[0, 0], [1, 0], [2, 0], [3, 0]];
+    const weak = [
+        stabilityEntry("L", cell, 2, 0),
+        stabilityEntry("C", crown, 1, 1)
+    ];
+    const redundant = [
+        stabilityEntry("L", cell, 2, 0),
+        stabilityEntry("R", cell, 3, 0),
+        stabilityEntry("C", crown, 1, 1)
+    ];
+    const weakResult = TowerStability.evaluate(weak, config);
+    const redundantResult = TowerStability.evaluate(redundant, config);
+    const crownAnalysis = redundantResult.analysis.groups.find(group => group.key.includes("1:1"));
+
+    assert.ok(redundantResult.stability > weakResult.stability);
+    assert.equal(crownAnalysis.pathConcentration, 0.5);
+    assert.equal(redundantResult.diagnostics.balance, 100);
+    assert.equal(redundantResult.diagnostics.leanDirection, "center");
+});
+
+test("a gap fill repairs its matched support interface without accumulated damage", () => {
+    const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
+    const cell = [[0, 0]];
+    const crown = [[0, 0], [1, 0], [2, 0], [3, 0]];
+    const before = TowerStability.evaluate([
+        stabilityEntry("L", cell, 2, 0),
+        stabilityEntry("C", crown, 1, 1)
+    ], config);
+    const repaired = TowerStability.evaluate([
+        stabilityEntry("L", cell, 2, 0),
+        stabilityEntry("R", cell, 3, 0),
+        stabilityEntry("C", crown, 1, 1)
+    ], config);
+
+    assert.ok(repaired.diagnostics.integrity > before.diagnostics.integrity);
+    assert.ok(repaired.diagnostics.criticalRisk < before.diagnostics.criticalRisk);
+});
+
+test("disconnected stacks are evaluated independently and unsupported stacks collapse", () => {
+    const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
+    const cell = [[0, 0]];
+    const disconnected = TowerStability.evaluate([
+        stabilityEntry("A", cell, 0, 0),
+        stabilityEntry("B", cell, 5, 0)
+    ], config);
+    const hanging = TowerStability.evaluate([
+        stabilityEntry("H", cell, 2, 3)
+    ], config);
+
+    assert.equal(disconnected.analysis.groups.length, 2);
+    assert.ok(disconnected.analysis.groups.every(group => group.carriedLoadShare === 1));
+    assert.equal(hanging.diagnostics.collapsed, true);
+    assert.equal(hanging.stability, 0);
+});
+
+test("geometry, diagnostics, and structural pose are independent of entry ordering", () => {
+    const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
+    const cell = [[0, 0]];
+    const crown = [[0, 0], [1, 0], [2, 0], [3, 0]];
+    const entries = [
+        stabilityEntry("L", cell, 2, 0),
+        stabilityEntry("R", cell, 3, 0),
+        stabilityEntry("C", crown, 1, 1)
+    ];
+    const first = TowerStability.evaluate(entries, config);
+    const second = TowerStability.evaluate(entries.slice().reverse(), config);
+    const sortPose = pose => pose.slice().sort((left, right) => left.blockId.localeCompare(right.blockId));
+
+    assert.deepEqual(first.diagnostics, second.diagnostics);
+    assert.deepEqual(sortPose(first.structuralPose), sortPose(second.structuralPose));
+});
+
+test("structural evaluation scales to a representative tall snapshot", () => {
+    const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
+    const entries = [];
+    const row = [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0]];
+
+    for (let y = 0; y < 99; y++) {
+        entries.push(stabilityEntry(`B${y}`, row, 0, y));
+    }
+
+    const startedAt = process.hrtime.bigint();
+    const result = TowerStability.evaluate(entries, config);
+    const elapsedMs = Number(process.hrtime.bigint() - startedAt) / 1000000;
+
+    assert.equal(result.structuralPose.length, entries.length);
+    assert.ok(elapsedMs < 500, `expected a linear tall-snapshot evaluation, got ${elapsedMs.toFixed(2)}ms`);
 });
 
 test("height pressure grades an identical tower harder as it nears target, without disturbing balance delta", () => {
@@ -392,54 +485,16 @@ test("a centred placement scores a zero balance delta at every height", () => {
     );
 });
 
-test("straightening a lean scores positive and worsening it scores negative", () => {
+test("balance delta follows only the directional Balance axis", () => {
     const config = fixedStabilityConfig();
-    const stack = (spec) => {
-        const entries = [];
-        for (const column of spec) {
-            const block = { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
-            entries.push({
-                playerId: "P1",
-                block,
-                ...TowerStability.settleBlock(entries, block, column)
-            });
-        }
-        return entries;
-    };
-    const deltaFor = (entries, column) => {
-        const before = TowerStability.evaluate(entries, config);
-        const block = { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
-        const settled = TowerStability.settleBlock(entries, block, column);
-        const after = TowerStability.evaluate(
-            [...entries, { playerId: "P1", block, ...settled }], config
-        );
-        return TowerStability.balanceDelta(
-            before.diagnostics, after.diagnostics, config
-        );
-    };
-
-    // Wide base spanning columns 2-5, then two bricks stacked out to the right.
-    const leaningRight = stack([2, 4, 4, 4]);
 
     assert.ok(
-        deltaFor(leaningRight, 2) > 0,
-        "a brick on the light side should score positive"
+        TowerStability.balanceDelta({ tiltScore: 0.8 }, { tiltScore: 0.2 }, config) > 0,
+        "reducing directional Balance risk pays a positive delta"
     );
     assert.ok(
-        deltaFor(leaningRight, 4) < 0,
-        "a brick on the heavy side should score negative"
-    );
-
-    // Mirrored, so the sign follows the correction and not a fixed direction.
-    const leaningLeft = stack([2, 4, 2, 2]);
-
-    assert.ok(
-        deltaFor(leaningLeft, 4) > 0,
-        "correcting a left lean should also score positive"
-    );
-    assert.ok(
-        deltaFor(leaningLeft, 2) < 0,
-        "worsening a left lean should also score negative"
+        TowerStability.balanceDelta({ tiltScore: 0.2 }, { tiltScore: 0.8 }, config) < 0,
+        "increasing directional Balance risk pays a negative delta"
     );
 });
 
@@ -490,4 +545,19 @@ test("a placed brick carries the balance delta it caused", () => {
         broadcast.towerBlocks[1].balanceDelta,
         engine.room.towerBlocks[1].balanceDelta
     );
+    assert.equal(broadcast.towerStructuralPose.length, engine.room.towerBlocks.length);
+    assert.deepEqual(
+        Object.keys(broadcast.towerStructuralPose[0]).sort(),
+        ["blockId", "failureWeight", "offsetXUnits", "offsetYUnits", "rotationDeg"]
+    );
+    assert.equal(Object.hasOwn(broadcast, "analysis"), false);
+
+    const snapshot = stripRuntimeRoom({
+        id: "TEST",
+        players: [],
+        state: engine.room
+    });
+
+    assert.deepEqual(snapshot.state.towerStructuralPose, engine.room.towerStructuralPose);
+    assert.equal(Object.hasOwn(snapshot.state, "analysis"), false);
 });

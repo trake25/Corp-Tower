@@ -63,6 +63,25 @@ func test_game_state_renders_rail_and_top_bar() -> void:
 	assert_false((harness.find("TowerStabilityLabel") as Label).is_visible_in_tree(), "Tower stability should stay hidden outside the debug meter modes.")
 	assert_eq((harness.find("LevelLabel") as Label).text, "1", "The level label should reflect the payload level.")
 
+func test_game_state_passes_structural_pose_to_the_tower_stack() -> void:
+	var state: Dictionary = GAME_STATE_FIXTURE.duplicate(true)
+	state["towerBlocks"] = [{
+		"playerId": "P1",
+		"block": {"id": "B1", "shapeId": "O", "cells": [[0, 0], [1, 0], [0, 1], [1, 1]], "height": 2},
+		"originX": 3,
+		"originY": 0
+	}]
+	state["towerStructuralPose"] = [{
+		"blockId": "B1",
+		"offsetXUnits": 0.5,
+		"offsetYUnits": -0.1,
+		"rotationDeg": 8.0,
+		"failureWeight": 0.7
+	}]
+	harness.main.update_game_state(state)
+	var tower: Control = harness.find("TowerStack") as Control
+	assert_true(tower.structural_pose.has_pose("B1"), "The TowerStack must receive the server pose alongside towerBlocks.")
+
 func test_top_indicator_uses_only_approved_copy() -> void:
 	var label: Label = harness.find("TopIndicatorLabel") as Label
 	harness.main.top_bar.set_top_indicator_progress(0, 12)

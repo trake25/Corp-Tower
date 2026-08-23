@@ -35,13 +35,14 @@ function fixedStabilityConfig(overrides = {}) {
         towerSiteWidth: 6,
         towerBaseHalfWidthFloor: 1.0,
         towerMaxTiltAngleDeg: 24,
-        towerOverhangWeight: 0.18,
-        towerLaneImbalanceWeight: 0.15,
         towerCollapseTiltScore: 1.0,
-        towerSlendernessSafe: 1.2,
-        towerSlendernessMax: 2.5,
-        towerSupportDeficitMax: 0.35,
+        towerBalanceSafeOffsetShare: 0.8,
+        towerBalanceCollapseOffsetShare: 1.15,
+        towerStructuralLoadExponent: 0.8,
+        towerRedundancyBonus: 0.45,
+        towerStructuralSeverity: 1.0,
         towerStabilityMinHeight: 6,
+        towerStabilityPressureApplied: 1,
         ...overrides
     };
 }

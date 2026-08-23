@@ -37,8 +37,9 @@ the lobby owns the bot/room reconciliation and broadcasts caused by a change.
 Maintains active rooms through shared Redis state; seats players into open
 3-participant rooms, filling with debug bots when allowed; lets real players resume
 within the reconnect TTL and destroys rooms when it expires with no connected real
-players. Hydrated snapshots include `towerBlocks`, so non-owner workers and
-reconnecting clients redraw the tower without recomputing it.
+players. Hydrated snapshots include `towerBlocks` and the compact structural pose;
+the lease owner recomputes stability before restoring timers, while non-owners relay
+the cached presentation state without evaluating gameplay.
 
 `RECONNECT_TTL_SECONDS` is **not settled for production**; the deploy overrides
 the code default.
@@ -296,74 +297,46 @@ level's first broadcast.
 
 ## Tower Stability
 
-`Tower_Stability.js` — pure, deterministic grid physics. **Zero dependencies,
-internal or external.**
-
-**Must stay pure.** `settleBlock()` and `evaluate()` are deterministic functions of
-the `entries` array — no history, randomness or hidden state. The Balance Simulator
-re-runs `evaluate()` thousands of times and needs reproducible results, and the
-client re-derives tilt from a `game_state` snapshot after reconnecting rather than
-replaying placement history. Any change here must preserve determinism.
+`Tower_Stability.js` — pure, deterministic support-graph analysis. **Zero
+dependencies, internal or external.** `evaluate()` builds one rigid node per
+placed brick, contacts under its exposed lower cells, condenses support cycles, and
+propagates cell mass and horizontal moment down every support path.
 
 - `settleBlock(entries, block, originX, fromY)` — gravity, drop-to-first-contact,
   no auto-centering. `fromY` is the **release row**: omitted, the brick spawns
-  above the tower and falls the whole way; given, it falls from there, which is
-  what lets a brick be threaded into a gap without hanging.
+  above the tower and falls the whole way; given, it falls from there.
 - `isPlacementLegal` — on or above the platform, not inside an occupied cell.
-  **Support is deliberately not part of it** — an unsupported release is not
-  refused, it falls.
-- `supportedCellsGained` — must be called **before** the entry is pushed.
-- `evaluate(entries, config)` — the two-axis score.
-- `balanceDelta(before, after, config)` — how far one placement moved the tower
-  toward centre, in points of the collapse budget. **Lean only, not the change in
-  stability.** Feeds the brick faces and nothing else.
+  Support is not a legality rule; an unsupported release falls.
+- `supportedCellsGained` — called before the entry is pushed for scoring
+  compatibility.
+- `evaluate(entries, config)` — returns Stability, public diagnostics, one compact
+  presentation pose per block, and in-process graph analysis for bots/tools.
+- `balanceDelta(before, after, config)` — directional Balance improvement only;
+  Integrity does not affect brick faces.
 
-**Landmine — passing raw `GameConfig` to `evaluate()` still runs.** The derived
-keys are simply absent, so it silently falls back to defaults and to a
-`towerSiteWidth` equal to the ground width, which **disables the slenderness
-penalty entirely**. `config` must be the resolved set from
-`resolveStabilityConfig()`. Tests pin their own resolved set.
+`resolveStabilityConfig()` is mandatory for every production evaluator caller: it
+injects level pressure, site width, target height, and cosmetic pose limits. A raw
+`GameConfig` falls back to evaluator defaults and grades a different rule.
 
 ### Two axes
 
-`stability = min(leanStability, integrity)`; `collapsed` when either fails.
+`stability = min(balance, integrity)` and collapses when either interface risk is
+`1`. Balance measures carried-load center against the contact span; Integrity
+compares normalized carried-load demand to contact width, then rewards independent
+paths through deterministic load-share concentration. A centered bottleneck can
+lose Integrity without a false direction.
 
-```
-slenderness        = siteWidth / meanRowWidth      # whole tower, not the ground row
-slendernessPenalty = clamp01((slenderness − Safe) / (Max − Safe)) × severity
-supportPenalty     = clamp01((unsupported / all cells) / supportDeficitMax) × severity
-integrity          = round(100 × (1 − clamp01(slendernessPenalty + supportPenalty)))
+Difficulty `0` yields zero gameplay risk while retaining topology diagnostics. The
+maturity and target-height ramps apply to both axes, so opening bricks survive
+without shape exceptions. The critical interface is selected by combined risk,
+carried-load share, then geometry key; `criticalSupport` exposes its pivot,
+direction, risks, effective width, and path count.
 
-pressure       = (difficulty / 100) × (floor + (1 − floor) × min(1, level / fullPressureLevel))
-heightPressure = 1 + heightPressureGain × min(1, height / targetHeight)
-severity       = maturity × heightPressure
-```
-
-**Lean** (signed) = whole-tower CoM offset + height-weighted column imbalance + the
-just-placed brick's overhang, normalised by base half-width. Overhang reacts to
-only the new entry, so a bad placement reads as bad immediately without
-re-penalising settled overhangs every later turn.
-
-**Integrity cannot be folded back into Lean.** Every Lean term measures *asymmetry*
-normalised by the tower's own footprint, so none of them sees slenderness: a
-centred 2-wide, 40-tall spire scores `stability 100, tiltScore 0.000` on Lean
-alone, making the height-optimal play also the stability-optimal one.
-
-**Landmine — small towers make every ratio degenerate.** With 4 cells placed, a
-lone `T` on its stem is 50% unsupported and an `L`/`Z` leans ~10° immediately; both
-are the *intended* hook at scale. The single maturity ramp
-`min(1, height / towerStabilityMinHeight)` covers this on **all** penalty terms —
-never add per-shape special cases. `heightPressure` is deliberately excluded from
-the lean terms so `balanceDelta` stays free of height drift.
-
-**Landmine — `towerBaseHalfWidthFloor` is a divide-by-zero guard, not a difficulty
-lever.** Raised above the site's real half-width it pins lean's divisor, and
-`tiltScore` can no longer reach its threshold at all — the lean axis silently stops
-discriminating.
-
-Integrity is recomputed from `entries` on every call, never accumulated — that is
-what lets a persistent-*feeling* score stay a pure function, and why adding
-well-supported bricks raises it, which is what makes repair a payable action.
+`towerStructuralPose` is cosmetic: each record has a block id, unit offsets,
+rotation, and failure weight. It never changes coordinates, gravity, placement, or
+the collapse verdict. `tiltScore`, `tiltAngleDeg`, `leanDirection`, `integrity`,
+`collapsed`, `balanceDelta`, and `supportedCellsGained` remain compatibility fields
+for the scoring and fallback-client migrations.
 
 ## Bot Manager
 
@@ -409,9 +382,10 @@ hand-tuned playtest values that intentionally differ from the design reference.
   nothing in `src/Server` reads them. The real post-level delay is
   `getPostLevelTransitionDelayMs()`. `generatedDrawPileScaling` was **removed**,
   not deprecated in place; the reserve count is derived.
-- Retune stability via `towerStabilityDifficulty` and the anchor sets, never by
-  reintroducing per-constant knobs. The anchors are authored so `tiltScore` `1.0`
-  means the physical "CoM left the base".
+- Retune stability via `towerStabilityDifficulty` and its Balance/Integrity anchor
+  sets, never by adding debug physics controls. `towerStructuralPoseMaxAngleDeg`
+  and `towerStructuralPoseMaxDipUnits` are presentation limits, separate from
+  gameplay collapse risk.
 - `powerCatalog` entries carry an `active: boolean`; only `active: true` entries
   are eligible for the Impact-MVP draw. Only `replenish` is active — supply, not
   hand quality, is what actually strands a team.
@@ -438,11 +412,12 @@ only when a real connection is attempted.
 - Demo stats: `recordDemoOutcome`/`getDemoStats` — lifetime counters.
 
 **Only the first `DRAW_PILE_SNAPSHOT_LIMIT` (16) pile bricks are persisted**, plus
-a hidden count that `hydrateRoom` regenerates. The pile scales with target height
-and `persistRoom()` runs on every placement, so writing all of it would push a
-snapshot past 140 KB at level 40 against ~3.4 KB truncated. The regenerated tail is
-fresh random bricks rather than the originals, which is invisible — only the next
-draw is ever shown.
+a hidden count that `hydrateRoom` regenerates. The compact `towerStructuralPose`
+is persisted with `towerBlocks`; full structural analysis is never serialized. The
+pile scales with target height and `persistRoom()` runs on every placement, so
+writing all of it would push a snapshot past 140 KB at level 40 against ~3.4 KB
+truncated. The regenerated tail is fresh random bricks rather than the originals,
+which is invisible — only the next draw is ever shown.
 
 The connection retry loop's final `client.disconnect()` is wrapped in a try/catch
 that intentionally swallows errors: best-effort cleanup after an already-failed

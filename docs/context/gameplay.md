@@ -326,7 +326,7 @@ categories round-trip to the server and which write straight to live nodes →
 The three most load-bearing knobs: `towerStabilityDifficulty` (all of stability),
 `impactMinContributionShare` (the per-level gate), and
 `towerSiteSlendernessTarget` (reshapes the whole aspect ratio, and with it the
-site usage stability is measured against).
+support width the structural rule is measured against).
 
 ## Bot behaviour
 

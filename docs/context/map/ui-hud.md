@@ -209,18 +209,18 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:276 | _cell_x · static func | cell column accessor |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:282 | _cell_y · static func | cell row accessor |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd — 217 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd — 219 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:22 | begin | seed the debris pile; same seed renders identically on every client |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:93 | is_settled | has the pile come to rest |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:96 | step | one physics tick: gravity, bounce, flatten |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:140 | _reserve_floor | claim floor space so pieces do not stack through each other |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:153 | _apply_walls | keep pieces inside their span |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:175 | _resolve_landing | settle a piece onto the pile |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:195 | flat_rest_angle · static func | final lie-flat angle |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:215 | _flatten_ease | easing into the resting angle |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:95 | is_settled | has the pile come to rest |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:98 | step | one physics tick: gravity, bounce, flatten |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:142 | _reserve_floor | claim floor space so pieces do not stack through each other |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:155 | _apply_walls | keep pieces inside their span |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:177 | _resolve_landing | settle a piece onto the pile |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:197 | flat_rest_angle · static func | final lie-flat angle |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd:217 | _flatten_ease | easing into the resting angle |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd — 753 ln
 
@@ -477,6 +477,23 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:320 | cell_x · static func | cell column accessor |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:326 | cell_y · static func | cell row accessor |
 
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd — 119 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:3 | EPSILON · const | pose-settling equality tolerance |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:8 | clear | discard all pose state |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:12 | replace_targets | adopt server pose targets |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:35 | step | damp current transforms toward targets |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:51 | pose_for | current pose lookup by block id |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:54 | has_pose | test for a block pose |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:57 | has_targets | test for a structural-pose snapshot |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:60 | target_for | target pose lookup by block id |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:63 | blend | interpolate two transforms |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:73 | weighted_blend | compose weighted supporter transforms |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:103 | _normalize | coerce wire pose fields |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:112 | _matches | target-settling comparison |
+
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 163 ln
 
 | File:Ln | Symbol | Does |
@@ -590,125 +607,125 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd:4 | NORMAL_TINT · const | white, restores modulate on release |
 | src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd:6 | _ready | tint bare icon TextureButtons cyan on press, no StyleBox to swap |
 
-### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1032 ln
+### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1124 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:8 | COLLAPSE_NONE · const | collapse phase: not collapsing |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:9 | COLLAPSE_LEAN · const | collapse phase: tipping over |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:10 | COLLAPSE_FALL · const | collapse phase: debris falling |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:11 | COLLAPSE_SETTLED · const | collapse phase: pile at rest |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:13 | BEAT_NONE · const | Impact Beat phase: idle |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:14 | BEAT_ZOOM_OUT · const | Impact Beat phase: pulling back |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:15 | BEAT_WAVE · const | Impact Beat phase: verdict wave running |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:16 | BEAT_HOLD · const | Impact Beat phase: **no timed exit**, waits for cancel_impact_beat() |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:18 | WAVE_POP_BAND_UNITS · const | height band the wave pops at once |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:19 | WAVE_POP_SCALE · const | brick scale bump as the wave passes |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:20 | MIN_CAMERA_ZOOM · const | hard zoom floor |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:21 | VERDICT_POSITIVE · const | met the Impact share |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:22 | VERDICT_NEGATIVE · const | fell short |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:24 | GRID_COLOR · const | untextured grid colour |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:25 | FALLBACK_COLOR · const | brick colour when art is missing |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:28 | SNAP_DOT_COLOR · const | snap point ring |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:29 | SNAP_TARGET_HALO_ALPHA · const | active snap target halo |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:30 | BAND_FILL_COLOR · const | placeable band fill |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:31 | BAND_EDGE_COLOR · const | placeable band edge |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:32 | BAND_HEADROOM_UNITS · const | band height above the tower |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:33 | GHOST_OUTLINE_COLOR · const | landing ghost outline |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:34 | ARMED_GHOST_ALPHA_BOOST · const | armed parallel-placement ghost is more opaque |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:35 | ARMED_PULSE_SPEED · const | armed ghost pulse rate |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:37 | brick_unit_size · export | **fixed brick size**; the view pans instead of shrinking bricks |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:38 | top_padding · export | top inset |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:39 | bottom_padding · export | bottom inset |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:40 | scroll_start_ratio · export | no scroll below this fraction of visible capacity |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:41 | scroll_ease_power · export | pow() ease toward the flush row |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:42 | top_indicator_clearance_units · export | keeps overbuild bricks tucked under the indicator |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:43 | collapse_tilt_deg · export | lean angle at which the tower commits to collapsing |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:44 | collapse_lean_seconds · export | lean phase duration |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:45 | collapse_gravity_units · export | debris gravity |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:46 | collapse_lean_push_units · export | sideways push as it tips |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:47 | collapse_lateral_spread_units · export | debris spread |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:48 | collapse_drop_kick_units · export | initial downward kick |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:49 | collapse_spin_max_deg · export | max debris spin |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:50 | collapse_air_drag · export | debris air drag |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:51 | collapse_restitution · export | bounce elasticity |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:52 | collapse_floor_friction · export | floor friction |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:53 | collapse_bounce_min_units · export | bounce cutoff |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:54 | collapse_max_bounces · export | bounce count cap |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:55 | collapse_flatten_seconds · export | lie-flat duration |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:56 | collapse_pile_layers · export | debris pile depth |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:57 | collapse_pile_layer_units · export | pile layer thickness |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:58 | collapse_span_ratio · export | pile width vs site |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:59 | tilt_ease_speed · export | tilt animation speed |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:60 | drop_duration · export | brick drop animation length |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:61 | snap_radius_units · export | **client snap radius**, 2.2 bricks; beyond it, nearest-column fallback |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:62 | snap_dot_radius · export | snap point ring size |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:63 | snap_target_radius · export | active snap target size |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:64 | ghost_alpha · export | landing ghost opacity |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:65 | drag_grip_offset_units · export | **grip lift in brick units** so a thumb never covers the aim point |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:66 | emoji_unit_scale · export | mood face size vs brick |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:68 | scroll_offset_changed · signal | drives BackgroundParallax |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:69 | camera_zoom_changed · signal | drives Main.apply_camera_zoom |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:108 | _notification | redraw on resize |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:112 | set_tower | **render entry**: replace the placed-brick list from `game_state` |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:137 | refresh_visuals | force redraw without changing data |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:141 | set_mood_threshold | live mood band; restyles the standing tower |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:150 | set_visual_hooks | apply the Impact Beat config |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:153 | play_impact_beat | start ZOOM_OUT then WAVE then HOLD |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:171 | cancel_impact_beat | **the only HOLD exit** — snaps to full zoom, no eased return |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:182 | shake | screen shake; offsets local base only, never _lattice_to_local |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:192 | _impact_beat_zoom | derived per level; impactBeatMinZoom is a floor |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:201 | _set_camera_zoom | single zoom value every transform reads |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:211 | _beat_ease | beat easing curve |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:216 | _step_impact_beat | beat phase machine tick |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:242 | _step_shake | shake decay tick |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:258 | drag_grip_offset | resolved grip lift in pixels |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:261 | begin_snap_drag | start a drag; snap preview state |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:269 | resolve_snap | ask SnapGrid for the landing origin |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:274 | is_placement_still_legal | re-check an armed spot after a broadcast |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:277 | set_snap_state | update aim, ghost and active snap point |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:286 | clear_snap_preview | **must stay separate from end_snap_drag** or drag state dies on first move |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:291 | end_snap_drag | finish the drag |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:296 | grid_to_local | lattice to control pixels |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:303 | local_to_grid | control pixels to lattice; **applies _untilt** |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:312 | global_to_grid | screen to lattice |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:315 | _lattice_to_local | the single lattice-to-pixel transform; shake must never enter here |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:323 | _tilt_pivot | tilt pivot point |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:326 | _untilt | inverse lean, so aiming at a leaning tower resolves the right column |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:334 | _maybe_start_drop_animation | spawn-height-driven drop for a new brick |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:350 | _compute_drop_fall_units | fall distance for the drop animation |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:360 | _drop_clearance_units | clearance above the tower to drop from |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:391 | _entry_block_id | stable id for a placed entry |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:397 | _drop_ease | drop easing |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:401 | _process | per-frame tilt, drop, beat, shake and scroll stepping |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:441 | set_player_color_map | seat colours for placed bricks |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:445 | clear_tower | empty the tower |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:9 | COLLAPSE_NONE · const | collapse phase: not collapsing |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:10 | COLLAPSE_LEAN · const | collapse phase: tipping over |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:11 | COLLAPSE_FALL · const | collapse phase: debris falling |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:12 | COLLAPSE_SETTLED · const | collapse phase: pile at rest |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:14 | BEAT_NONE · const | Impact Beat phase: idle |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:15 | BEAT_ZOOM_OUT · const | Impact Beat phase: pulling back |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:16 | BEAT_WAVE · const | Impact Beat phase: verdict wave running |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:17 | BEAT_HOLD · const | Impact Beat phase: **no timed exit**, waits for cancel_impact_beat() |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:19 | WAVE_POP_BAND_UNITS · const | height band the wave pops at once |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:20 | WAVE_POP_SCALE · const | brick scale bump as the wave passes |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:21 | MIN_CAMERA_ZOOM · const | hard zoom floor |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:22 | VERDICT_POSITIVE · const | met the Impact share |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:23 | VERDICT_NEGATIVE · const | fell short |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:25 | GRID_COLOR · const | untextured grid colour |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:26 | FALLBACK_COLOR · const | brick colour when art is missing |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:29 | SNAP_DOT_COLOR · const | snap point ring |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:30 | SNAP_TARGET_HALO_ALPHA · const | active snap target halo |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:31 | BAND_FILL_COLOR · const | placeable band fill |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:32 | BAND_EDGE_COLOR · const | placeable band edge |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:33 | BAND_HEADROOM_UNITS · const | band height above the tower |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:34 | GHOST_OUTLINE_COLOR · const | landing ghost outline |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:35 | ARMED_GHOST_ALPHA_BOOST · const | armed parallel-placement ghost is more opaque |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:36 | ARMED_PULSE_SPEED · const | armed ghost pulse rate |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:38 | brick_unit_size · export | **fixed brick size**; the view pans instead of shrinking bricks |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:39 | top_padding · export | top inset |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:40 | bottom_padding · export | bottom inset |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:41 | scroll_start_ratio · export | no scroll below this fraction of visible capacity |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:42 | scroll_ease_power · export | pow() ease toward the flush row |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:43 | top_indicator_clearance_units · export | keeps overbuild bricks tucked under the indicator |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:44 | collapse_tilt_deg · export | lean angle at which the tower commits to collapsing |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:45 | collapse_lean_seconds · export | lean phase duration |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:46 | collapse_gravity_units · export | debris gravity |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:47 | collapse_lean_push_units · export | sideways push as it tips |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:48 | collapse_lateral_spread_units · export | debris spread |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:49 | collapse_drop_kick_units · export | initial downward kick |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:50 | collapse_spin_max_deg · export | max debris spin |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:51 | collapse_air_drag · export | debris air drag |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:52 | collapse_restitution · export | bounce elasticity |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:53 | collapse_floor_friction · export | floor friction |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:54 | collapse_bounce_min_units · export | bounce cutoff |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:55 | collapse_max_bounces · export | bounce count cap |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:56 | collapse_flatten_seconds · export | lie-flat duration |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:57 | collapse_pile_layers · export | debris pile depth |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:58 | collapse_pile_layer_units · export | pile layer thickness |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:59 | collapse_span_ratio · export | pile width vs site |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:60 | tilt_ease_speed · export | tilt animation speed |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:61 | structural_pose_ease_speed · export | pose animation damping speed |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:62 | drop_duration · export | brick drop animation length |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:63 | snap_radius_units · export | **client snap radius**, 2.2 bricks; beyond it, nearest-column fallback |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:64 | snap_dot_radius · export | snap point ring size |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:65 | snap_target_radius · export | active snap target size |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:66 | ghost_alpha · export | landing ghost opacity |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:67 | drag_grip_offset_units · export | **grip lift in brick units** so a thumb never covers the aim point |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:68 | emoji_unit_scale · export | mood face size vs brick |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:70 | scroll_offset_changed · signal | drives BackgroundParallax |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:71 | camera_zoom_changed · signal | drives Main.apply_camera_zoom |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:111 | _notification | redraw on resize |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:115 | set_tower | **render entry**: replace the placed-brick list from `game_state` |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:145 | refresh_visuals | force redraw without changing data |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:149 | set_mood_threshold | live mood band; restyles the standing tower |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:158 | set_visual_hooks | apply the Impact Beat config |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:161 | play_impact_beat | start ZOOM_OUT then WAVE then HOLD |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:179 | cancel_impact_beat | **the only HOLD exit** — snaps to full zoom, no eased return |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:190 | shake | screen shake; offsets local base only, never _lattice_to_local |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:200 | _impact_beat_zoom | derived per level; impactBeatMinZoom is a floor |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:209 | _set_camera_zoom | single zoom value every transform reads |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:219 | _beat_ease | beat easing curve |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:224 | _step_impact_beat | beat phase machine tick |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:250 | _step_shake | shake decay tick |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:266 | drag_grip_offset | resolved grip lift in pixels |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:269 | begin_snap_drag | start a drag; snap preview state |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:277 | resolve_snap | ask SnapGrid for the landing origin |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:282 | is_placement_still_legal | re-check an armed spot after a broadcast |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:285 | set_snap_state | update aim, ghost and active snap point |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:294 | clear_snap_preview | **must stay separate from end_snap_drag** or drag state dies on first move |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:299 | end_snap_drag | finish the drag |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:304 | grid_to_local | lattice to control pixels |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:311 | local_to_grid | control pixels to lattice; **applies _untilt** |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:319 | global_to_grid | screen to lattice |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:322 | _lattice_to_local | the single lattice-to-pixel transform; shake must never enter here |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:330 | _maybe_start_drop_animation | spawn-height-driven drop for a new brick |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:346 | _compute_drop_fall_units | fall distance for the drop animation |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:356 | _drop_clearance_units | clearance above the tower to drop from |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:387 | _entry_block_id | stable id for a placed entry |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:393 | _drop_ease | drop easing |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:397 | _process | per-frame tilt, drop, beat, shake and scroll stepping |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:440 | set_player_color_map | seat colours for placed bricks |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:444 | clear_tower | empty the tower |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:457 | _reset_collapse | clear collapse state |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:462 | _begin_collapse | start the lean-fall-settle sequence |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:513 | _build_collapse_seed | deterministic seed; every client renders the same debris |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:586 | _collapse_seed | seed accessor |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:597 | _draw_debris | draw the settling pile |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:641 | _update_scroll_offset | scroll ramp, frozen once target height is reached |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:651 | _draw | **the whole tower render**; ghost is emitted inside the tilt block |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:719 | _draw_block_emoji | mood faces; **balanceDelta guard sits below the verdict branch** |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:769 | _verdict_mood_for | verdict wave face for a placer |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:787 | _wave_pop_factor | scale bump as the wave passes a brick |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:795 | _footprint_box | pixel box of a placed entry |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:811 | _height_to_pixel_y | grid height to screen Y |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:814 | _draw_snap_layer | snap points and active target |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:827 | _band_top_units | top of the placeable band |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:838 | _draw_placeable_band | the legal drop zone overlay |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:870 | _draw_drag_ghost | docked landing ghost at the **aim**, not the settled row |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:933 | _draw_snap_points | snap point rings |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:951 | _draw_fallback_block | untextured brick |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:956 | _draw_fallback_stack | untextured tower |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:978 | _unit_size | brick_unit_size × camera zoom; every transform derives from this |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:981 | _scroll_offset_units | current scroll in grid units |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1005 | _visible_unit_capacity | how many grid units fit on screen |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1009 | _is_rect_visible | **bottom bound extends to the real screen bottom**, not the Control rect |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1022 | _normalize_block_entry | server entry to draw entry |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1025 | _player_color | seat colour for a placer |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:594 | _collapse_seed | seed accessor |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:605 | _draw_debris | draw the settling pile |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:649 | _update_scroll_offset | scroll ramp, frozen once target height is reached |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:659 | _draw | **the whole tower render**; ghost is emitted inside the tilt block |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:763 | _draw_block_emoji | mood faces; **balanceDelta guard sits below the verdict branch** |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:813 | _draw_posed_block_emoji | face draw in a block-local structural transform |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:861 | _verdict_mood_for | verdict wave face for a placer |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:879 | _wave_pop_factor | scale bump as the wave passes a brick |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:887 | _footprint_box | pixel box of a placed entry |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:903 | _height_to_pixel_y | grid height to screen Y |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:906 | _draw_snap_layer | snap points and active target |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:919 | _band_top_units | top of the placeable band |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:930 | _draw_placeable_band | the legal drop zone overlay |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:962 | _draw_drag_ghost | docked landing ghost at the **aim**, not the settled row |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1025 | _draw_snap_points | snap point rings |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1043 | _draw_fallback_block | untextured brick |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1048 | _draw_fallback_stack | untextured tower |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1070 | _unit_size | brick_unit_size × camera zoom; every transform derives from this |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1073 | _scroll_offset_units | current scroll in grid units |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1097 | _visible_unit_capacity | how many grid units fit on screen |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1101 | _is_rect_visible | **bottom bound extends to the real screen bottom**, not the Control rect |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1114 | _normalize_block_entry | server entry to draw entry |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1117 | _player_color | seat colour for a placer |
 
 ---
 
-35 files · 527 symbols · 0 awaiting a `Does` line.
+36 files · 539 symbols · 0 awaiting a `Does` line.

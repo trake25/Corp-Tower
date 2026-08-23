@@ -157,6 +157,7 @@ beyond-snap-radius aim leaves the row to the server. `target_point` and
 | `towerGridWidth` | Authoritative grid width. **The client derives its render centre from this** — a hardcoded centre draws the whole tower off-centre the moment the grid is retuned |
 | `placeableColumnMin` / `Max` | The level's buildable site, derived server-side from target height. Sent every tick; the client feeds them to `SnapGrid.set_placeable_range` so snap points, origin ranges and the placeable band all follow |
 | `towerStability` / `towerStabilityDiagnostics` | Score plus the diagnostics object |
+| `towerStructuralPose[]` | Presentation-only `{ blockId, offsetXUnits, offsetYUnits, rotationDeg, failureWeight }`; clients never apply it to aiming or legality |
 | `impactScoreStatus` | Next Impact level, ready-count inputs, per-player score goals |
 
 Legacy numeric block values are still tolerated by the client as vertical fallback
@@ -191,8 +192,8 @@ already shows that state live during play.
 ## Persisted room state (Redis)
 
 Snapshots include `impactScores`, `impactPowers`, `drawPile`,
-`teamCarryOverBlocks`, `towerBlocks`, timers, level state, and serializable player
-fields.
+`teamCarryOverBlocks`, `towerBlocks`, `towerStructuralPose`, timers, level state,
+and serializable player fields.
 
 - `impactScores` restores leaderboard totals during rollback, so reconnect and
   multi-worker recovery **cannot reintroduce score farming**. `impactPowers` does
@@ -200,6 +201,8 @@ fields.
 - `drawPile` is persisted so a reconnecting client sees the same refill queue — but
   **only the first 16 bricks**, plus a hidden count the engine regenerates. Only
   the next draw is client-visible, so the regenerated tail is invisible.
+- The pose is a compact relay cache: the owner recomputes it from `towerBlocks`
+  during hydration, while a non-owner does not evaluate actions.
 
 ## Server Entry
 
