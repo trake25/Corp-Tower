@@ -60,7 +60,9 @@ global floating debug button.
   Sign-in, while Play Loader remains reusable and unwired. Tutorial exit → Home,
   room-close → Join Screen, except terminal `failure_limit_reached` closes and an
   explicit `destination: "home"` route Home. Demo skips Sign-in: Play Demo +
-  Tutorial on Home, room-close → Home. Buttons:
+  Tutorial on Home, room-close → Home. A final room close clears client
+  matchmaking state and disconnects before navigation, so the next Find Match
+  action creates a fresh WebSocket session. Buttons:
   [map/ui-screens.md](./map/ui-screens.md).
 - Routes `room_joined` on `matchStarted` (false → Public Lobby); `match_started`
   enters the game → [networking.md](./networking.md). **Demo skips the Public

@@ -11,6 +11,7 @@ func before_each() -> void:
 	await get_tree().process_frame
 
 func test_terminal_room_close_routes_home() -> void:
+	screen_manager.find_match_active = true
 	screen_manager._on_room_closed({
 		"reason": "failure_limit_reached",
 		"destination": "home"
@@ -18,6 +19,10 @@ func test_terminal_room_close_routes_home() -> void:
 	assert_true(
 		screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"),
 		"Terminal Impact closes must return every build to Home."
+	)
+	assert_false(
+		screen_manager.find_match_active,
+		"A closed room must not leave stale matchmaking state behind."
 	)
 
 func test_ordinary_room_close_still_routes_join() -> void:

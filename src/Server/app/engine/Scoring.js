@@ -391,6 +391,7 @@ function addLevelScoreToLeaderboard(engine) {
         player.score += player.levelScore;
         player.impactContribution = Number(player.impactContribution || 0) +
             Number(player.levelImpactContribution || 0);
+        player.levelImpactContribution = 0;
         console.log(`${player.id} level score (${player.levelScore}) added to leaderboard score. New total: ${player.score}`);
     });
 }

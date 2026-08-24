@@ -423,7 +423,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/engine/Placement.js:295 | checkFailCondition · fn | authoritative supply-impossibility and all-blocks-used checks |
 | src/Server/app/engine/Placement.js:331 | anyPlayerCanRescueSupply · fn | detects a held Replenish that defers supply failure |
 
-### src/Server/app/engine/Scoring.js — 430 ln
+### src/Server/app/engine/Scoring.js — 431 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -450,7 +450,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/engine/Scoring.js:367 | getBonusScoreEventType · fn | bonus → wire event type |
 | src/Server/app/engine/Scoring.js:378 | getBonusScoreEventLabel · fn | bonus → display label |
 | src/Server/app/engine/Scoring.js:389 | addLevelScoreToLeaderboard · fn | **the only banking step**; failed levels never bank |
-| src/Server/app/engine/Scoring.js:398 | getLevelMVP · fn | highest level score; display only |
+| src/Server/app/engine/Scoring.js:399 | getLevelMVP · fn | highest level score; display only |
 
 ### src/Server/migrations/0001_profiles.sql — 46 ln
 

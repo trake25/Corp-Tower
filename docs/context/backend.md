@@ -306,6 +306,9 @@ enter that pool or a player's contribution.
 `bandContribution`, `requiredContribution`, `remainingContribution`, and `met`.
 It also carries retry state. Score-named aliases remain only for mixed-version
 wire compatibility; new logic must use the contribution-named values.
+When a level completes, its eligible live contribution moves to the banked band
+in the same state update, keeping `bandContribution` stable across the level
+transition.
 
 Every ordinary failure and an Impact shortfall call `resolveCheckpointFailure()`.
 The resolver increments once, freezes the failed attempt, restores the checkpoint

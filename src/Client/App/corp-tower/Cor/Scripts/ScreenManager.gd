@@ -90,6 +90,7 @@ func _on_room_closed(data) -> void:
 	if tutorial_active:
 		return
 
+	find_match_active = false
 	var reason := str(data.get("reason", ""))
 	var destination := str(data.get("destination", ""))
 
@@ -97,7 +98,10 @@ func _on_room_closed(data) -> void:
 		auto_dismiss_modal.open_time_expired()
 		return
 
+	NetworkManager.disconnect_server()
+
 	if EndpointConfig.DEMO_MODE_ENABLED or destination == "home" or reason == "failure_limit_reached":
+		_teardown_play_instance()
 		show_home_screen()
 	else:
 		show_join_screen()

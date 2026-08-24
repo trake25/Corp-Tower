@@ -142,15 +142,38 @@ test("a qualified Critical Save claims its interface and banks eligible contribu
     assert.equal(player.levelImpactContribution, transaction.points);
     engine.addLevelScoreToLeaderboard();
     assert.equal(player.impactContribution, transaction.points);
+    assert.equal(player.levelImpactContribution, 0);
     const snapshot = stripRuntimeRoom({
         id: "TEST",
         players: engine.room.players,
         state: engine.room
     });
 
-    assert.equal(snapshot.players[0].levelImpactContribution, transaction.points);
+    assert.equal(snapshot.players[0].levelImpactContribution, 0);
     assert.equal(snapshot.players[0].impactContribution, transaction.points);
     assert.equal(snapshot.state.criticalSaveClaimKeys["support:C"], true);
+});
+
+test("banking a completed level preserves Impact progress without live double-counting", () => {
+    const { engine } = createPlayingEngine(2, 20);
+    const player = engine.room.players[0];
+
+    GameConfig.impactInterval = 2;
+    GameConfig.impactScoreRequirement = 0;
+    GameConfig.impactMinContributionShare = 0;
+    engine.room.impactLevel = 1;
+    engine.room.impactContributions = { P1: 10, P2: 0, P3: 0 };
+    player.impactContribution = 10;
+    player.levelImpactContribution = 25;
+
+    const before = engine.getImpactScoreStatus(3).players.find(entry => entry.id === player.id);
+    engine.addLevelScoreToLeaderboard();
+    const after = engine.getImpactScoreStatus(3).players.find(entry => entry.id === player.id);
+
+    assert.equal(before.bandContribution, 25);
+    assert.equal(after.bankedBandContribution, 25);
+    assert.equal(after.liveLevelContribution, 0);
+    assert.equal(after.bandContribution, before.bandContribution);
 });
 
 test("refresh rerolls blocks into the five-brick set", () => {
