@@ -139,6 +139,50 @@ static func _is_legal(
 
 	return true
 
+static func snap_point_owners(tower_blocks: Array) -> Dictionary:
+	var owners: Dictionary = {}
+
+	for column in range(placeable_column_min, placeable_column_max + 2):
+		var platform_point := Vector2i(column, 0)
+		owners[platform_point] = [{
+			"block_id": "",
+			"center": Vector2.ZERO,
+			"outline_corner": Vector2i.ZERO
+		}]
+
+	for entry in tower_blocks:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+
+		var block: Dictionary = entry_block(entry)
+		var origin: Vector2i = entry_origin(entry)
+		var bounds: Dictionary = BlockDataScript.cell_bounds(block.get("cells", []))
+		var center := Vector2(
+			float(origin.x) + (float(bounds.min_x) + float(bounds.max_x) + 1.0) * 0.5,
+			float(origin.y) + (float(bounds.min_y) + float(bounds.max_y) + 1.0) * 0.5
+		)
+
+		for corner in BlockDataScript.outline_corners(block.get("cells", [])):
+			var point := Vector2i(origin.x + corner.x, origin.y + corner.y)
+
+			if point.x < placeable_column_min or point.x > placeable_column_max + 1:
+				continue
+
+			if !owners.has(point):
+				owners[point] = []
+
+			var point_owners: Array = owners[point]
+			point_owners.append({
+				"block_id": str(block.get("id", "")),
+				"center": center,
+				"outline_corner": corner
+			})
+			point_owners.sort_custom(func(first: Dictionary, second: Dictionary) -> bool:
+				return _owner_sort_key(first) < _owner_sort_key(second)
+			)
+
+	return owners
+
 static func tower_snap_points(tower_blocks: Array) -> Array:
 	var seen: Dictionary = {}
 	var points: Array = []
@@ -168,6 +212,14 @@ static func tower_snap_points(tower_blocks: Array) -> Array:
 			points.append(point)
 
 	return points
+
+static func _owner_sort_key(owner: Dictionary) -> String:
+	var corner: Vector2i = owner.get("outline_corner", Vector2i.ZERO)
+	return "%s:%06d:%06d" % [
+		str(owner.get("block_id", "")),
+		corner.x + 100000,
+		corner.y + 100000
+	]
 
 static func ghost_snap_points(cells: Array) -> Array:
 	return BlockDataScript.outline_corners(cells)
@@ -225,16 +277,30 @@ static func resolve(
 			"aim_origin_y": 0
 		}
 
+	var best_distance_sq: float = INF
+	var best_candidate: Dictionary = {}
+
+	for candidate in exact_candidates(tower_blocks, cells, ghost_center):
+		var distance_sq: float = float(candidate.get("distance_sq", INF))
+
+		if distance_sq >= best_distance_sq:
+			continue
+
+		best_distance_sq = distance_sq
+		best_candidate = candidate
+
+	if best_distance_sq <= snap_radius_units * snap_radius_units:
+		return resolve_exact_candidate(tower_blocks, cells, best_candidate)
+
+	return resolve_fallback(tower_blocks, cells, ghost_center)
+
+static func exact_candidates(tower_blocks: Array, cells: Array, ghost_center: Vector2) -> Array:
 	var range_x: Vector2i = origin_range(cells)
 	var centroid: Vector2 = footprint_centroid(cells)
 	var points: Array = tower_snap_points(tower_blocks)
+	var owners: Dictionary = snap_point_owners(tower_blocks)
 	var occupied: Dictionary = occupied_cells(tower_blocks)
-
-	var best_distance_sq: float = INF
-	var best_column: int = range_x.x
-	var best_origin_y: int = 0
-	var best_point := Vector2i.ZERO
-	var best_vertex := Vector2i.ZERO
+	var candidates: Array = []
 
 	for vertex in ghost_snap_points(cells):
 		var vertex_position: Vector2 = ghost_center + Vector2(vertex) - centroid
@@ -245,38 +311,43 @@ static func resolve(
 			if column < range_x.x or column > range_x.y:
 				continue
 
-			var distance_sq: float = vertex_position.distance_squared_to(Vector2(point))
-
-			if distance_sq >= best_distance_sq:
-				continue
-
 			var origin_y: int = point.y - vertex.y
 
 			if !_is_legal(occupied, cells, column, origin_y):
 				continue
 
-			best_distance_sq = distance_sq
-			best_column = column
-			best_origin_y = origin_y
-			best_point = point
-			best_vertex = vertex
+			candidates.append({
+				"column": column,
+				"aim_origin_y": origin_y,
+				"point": point,
+				"vertex": vertex,
+				"distance_sq": vertex_position.distance_squared_to(Vector2(point)),
+				"owners": owners.get(point, [])
+			})
 
-	if best_distance_sq <= snap_radius_units * snap_radius_units:
-		var settled_y: int = _settle_from(occupied, cells, best_column, best_origin_y)
-		var contact: Dictionary = contact_pair(points, cells, best_column, settled_y)
+	return candidates
 
-		return {
-			"valid": true,
-			"snapped": true,
-			"exact": true,
-			"column": best_column,
-			"origin_y": settled_y,
-			"target_point": contact.get("point", best_point),
-			"matched_vertex": contact.get("vertex", best_vertex),
-			"aim_point": best_point,
-			"aim_origin_y": best_origin_y
-		}
+static func resolve_exact_candidate(tower_blocks: Array, cells: Array, candidate: Dictionary) -> Dictionary:
+	var column: int = int(candidate.get("column", placeable_column_min))
+	var aim_origin_y: int = int(candidate.get("aim_origin_y", 0))
+	var point: Vector2i = candidate.get("point", Vector2i.ZERO)
+	var vertex: Vector2i = candidate.get("vertex", Vector2i.ZERO)
+	var settled_y: int = settle_origin_y(tower_blocks, cells, column, aim_origin_y)
+	var contact: Dictionary = contact_pair(tower_snap_points(tower_blocks), cells, column, settled_y)
 
+	return {
+		"valid": true,
+		"snapped": true,
+		"exact": true,
+		"column": column,
+		"origin_y": settled_y,
+		"target_point": contact.get("point", point),
+		"matched_vertex": contact.get("vertex", vertex),
+		"aim_point": point,
+		"aim_origin_y": aim_origin_y
+	}
+
+static func resolve_fallback(tower_blocks: Array, cells: Array, ghost_center: Vector2) -> Dictionary:
 	var fallback_column: int = nearest_column(cells, ghost_center.x)
 	var fallback_origin_y: int = settle_origin_y(tower_blocks, cells, fallback_column)
 

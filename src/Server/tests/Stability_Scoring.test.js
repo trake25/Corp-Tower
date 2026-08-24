@@ -340,6 +340,18 @@ test("structural pose bends weak interfaces while rigid upper sections remain se
     assert.ok(Math.abs(posedUpperNext.y - posedUpper.y - Math.cos(angle)) < 0.0001);
 });
 
+test("structural pose caps the final inherited section angle", () => {
+    const result = TowerStability.evaluate(loadedBottleneckEntries(), fixedStabilityConfig({
+        towerStabilityMinHeight: 1,
+        towerTargetHeight: 9,
+        towerHeightPressureGain: 1,
+        towerPoseMaxAngleDeg: 0.5
+    }));
+
+    assert.ok(result.structuralPose.some(pose => Math.abs(pose.rotationDeg) > 0));
+    assert.ok(result.structuralPose.every(pose => Math.abs(pose.rotationDeg) <= 0.5));
+});
+
 test("structural evaluation scales to a representative tall snapshot", () => {
     const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
     const entries = [];

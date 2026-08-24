@@ -17,8 +17,8 @@ const DEBUG_TOOLTIPS := {
 		"body": "The single dial for how punishing the tower is. Everything else — overhang weight, collapse threshold, slenderness band, support tolerance, and the maturity ramp — is derived from it.\n\nThreat rises with both this dial and level. Low values keep ordinary towers forgiving, while high values make careless narrow structures dangerous.\n\n0 disables stability. The upper end is intentionally severe.",
 	},
 	"TowerMaxTiltLabel": {
-		"title": "Max Tilt Angle",
-		"body": "Visual only. The lean in degrees drawn when tilt score reaches 1.0. Does not change when the tower collapses — that is derived from Stability Difficulty.\n\nHigher = drama. Lower = subtle.",
+		"title": "Structural Pose Cap",
+		"body": "Visual only. Caps the final standing rotation of a rigid tower section after inherited bends are composed. It does not affect stability, collapse, or legal placement.\n\nHigher = more visible sway. Lower = more room for support placement.",
 	},
 	"TowerSiteSlendernessLabel": {
 		"title": "Site Slenderness Target",

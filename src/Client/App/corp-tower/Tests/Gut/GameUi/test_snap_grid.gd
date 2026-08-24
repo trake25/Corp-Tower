@@ -80,6 +80,18 @@ func test_tower_snap_points_add_placed_brick_corners_without_duplicates() -> voi
 		"The brick's two ground corners already exist as platform points and must not repeat."
 	)
 
+func test_snap_point_owners_keep_the_rendered_brick_contact() -> void:
+	var tower_blocks := [{
+		"block": {"id": "support", "cells": O_CELLS},
+		"originX": 4,
+		"originY": 0
+	}]
+	var owners: Dictionary = SnapGridScript.snap_point_owners(tower_blocks)
+	var top_owners: Array = owners.get(Vector2i(4, 2), [])
+
+	assert_eq(top_owners.size(), 1, "An exposed top corner should retain its brick owner.")
+	assert_eq(str(top_owners[0].get("block_id", "")), "support")
+
 func test_tower_snap_points_exclude_unplaceable_columns() -> void:
 	var points: Array = SnapGridScript.tower_snap_points([entry(O_CELLS, 0, 0)])
 	for point in points:

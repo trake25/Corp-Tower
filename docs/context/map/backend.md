@@ -267,7 +267,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Server.js:44 | main · fn | WebSocket entry point, connection accept, first `reconnect` |
 | src/Server/app/Server.js:108 | handleMessage · fn | **the message router** — every client message type dispatches here |
 
-### src/Server/app/Tower_Stability.js — 598 ln
+### src/Server/app/Tower_Stability.js — 601 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -293,10 +293,10 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Tower_Stability.js:413 | rotatePoint · fn | rotate an authoritative grid point for a cosmetic section transform |
 | src/Server/app/Tower_Stability.js:417 | cosmeticSign · fn | stable cosmetic sway direction for centered Integrity weakness |
 | src/Server/app/Tower_Stability.js:421 | buildStructuralPose · fn | compose weak-interface section bends into per-block cosmetic transforms |
-| src/Server/app/Tower_Stability.js:484 | selectCritical · fn | deterministic weakest-interface selection |
-| src/Server/app/Tower_Stability.js:496 | evaluate · fn | **the pure stability function** — lean, integrity, slenderness, support deficit, collapse |
-| src/Server/app/Tower_Stability.js:578 | structuralLean · fn | CoM offset + column imbalance + new-brick overhang |
-| src/Server/app/Tower_Stability.js:586 | balanceDelta · fn | per-placement lean movement; drives brick mood faces, **lean only** |
+| src/Server/app/Tower_Stability.js:487 | selectCritical · fn | deterministic weakest-interface selection |
+| src/Server/app/Tower_Stability.js:499 | evaluate · fn | **the pure stability function** — lean, integrity, slenderness, support deficit, collapse |
+| src/Server/app/Tower_Stability.js:581 | structuralLean · fn | CoM offset + column imbalance + new-brick overhang |
+| src/Server/app/Tower_Stability.js:589 | balanceDelta · fn | per-placement lean movement; drives brick mood faces, **lean only** |
 
 ### src/Server/app/Tower_Structure_Assessment.js — 180 ln
 

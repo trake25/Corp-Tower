@@ -18,6 +18,7 @@ const CONFIG_FIXTURE := {
 	"targetHeightMultiplier": 5,
 	"towerStabilityFeedbackMode": "meter_only",
 	"towerStabilityMoodThreshold": 12,
+	"towerStructuralPoseMaxAngleDeg": 7,
 	"visualHookImpactBeat": false,
 	"visualHookScreenShake": false,
 	"visualHookZoomOutMs": 500,
@@ -46,6 +47,7 @@ func test_apply_config_syncs_sliders_toggles_and_options() -> void:
 	assert_true((harness.find("BotsToggle") as CheckButton).button_pressed, "The bots toggle should sync from the config payload.")
 	assert_eq((harness.find("BotStrategyButton") as OptionButton).selected, 1, "The MVP greedy strategy should select the second option.")
 	assert_eq((harness.find("TowerFeedbackModeButton") as OptionButton).selected, 1, "The meter_only mode should select the second option.")
+	assert_eq((harness.find("TowerMaxTiltSlider") as HSlider).value, 7.0, "The pose cap should sync from the config payload.")
 
 func test_lobby_debug_context_enables_only_bots() -> void:
 	harness.main.set_debug_context("lobby")

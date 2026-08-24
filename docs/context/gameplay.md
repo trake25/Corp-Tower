@@ -301,7 +301,7 @@ Power · Scoring · Parallax · Placement · Hooks**. Read `Game_Config.js` for 
 and current values rather than maintaining a prose copy.
 
 `towerSiteWidthMax` is hard-capped at 8 by the viewport, and the two feedback
-warning thresholds are display-only with critical clamped below warning. Which
+warning thresholds and the structural-pose cap are display-only. Which
 categories round-trip to the server and which write straight to live nodes →
 [ui-hud.md](./ui-hud.md#module-notes-that-are-not-derivable-from-the-source).
 

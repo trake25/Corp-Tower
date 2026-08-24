@@ -5,6 +5,7 @@ const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 const SnapGridScript = preload("res://Cor/Scripts/GameUi/SnapGrid.gd")
 const CollapseSimScript = preload("res://Cor/Scripts/GameUi/CollapseSim.gd")
 const StructuralPoseScript = preload("res://Cor/Scripts/GameUi/StructuralPose.gd")
+const PlacementProjectionScript = preload("res://Cor/Scripts/GameUi/PlacementProjection.gd")
 
 const COLLAPSE_NONE := 0
 const COLLAPSE_LEAN := 1
@@ -79,6 +80,7 @@ var tower_tilt_deg: float = 0.0
 var displayed_tilt_deg: float = 0.0
 var tower_collapsed: bool = false
 var structural_pose = StructuralPoseScript.new()
+var placement_projection = PlacementProjectionScript.new()
 var _last_scroll_pixels: float = 0.0
 var snap_preview_active: bool = false
 var drag_cells: Array = []
@@ -275,8 +277,19 @@ func begin_snap_drag(block: Dictionary, color: Color) -> void:
 	queue_redraw()
 
 func resolve_snap(cells: Array, ghost_global_pos: Vector2) -> Dictionary:
-	return SnapGridScript.resolve(
-		tower_blocks, cells, global_to_grid(ghost_global_pos), snap_radius_units
+	var local: Vector2 = get_global_transform().affine_inverse() * ghost_global_pos
+	var unit: float = _unit_size()
+	return placement_projection.resolve(
+		tower_blocks,
+		cells,
+		local_to_grid(local),
+		local,
+		snap_radius_units,
+		unit,
+		size.x * 0.5,
+		size.y - bottom_padding,
+		_scroll_offset_units(unit),
+		structural_pose
 	)
 
 func is_placement_still_legal(cells: Array, column: int, origin_y: int) -> bool:
@@ -300,6 +313,74 @@ func end_snap_drag() -> void:
 	drag_cells = []
 	drag_shape_id = ""
 	clear_snap_preview()
+
+func is_placement_frame_active() -> bool:
+	return snap_preview_active and structural_pose.has_targets() and _collapse_phase == COLLAPSE_NONE
+
+func placement_visual_bounds() -> Rect2:
+	var unit: float = _unit_size()
+	var base_x: float = size.x * 0.5
+	var baseline: float = size.y - bottom_padding
+	var scroll_offset_units: int = _scroll_offset_units(unit)
+	var bounds := Rect2()
+	var has_bounds := false
+	var active_bounds := Rect2()
+	var has_active_bounds := false
+
+	for entry_value in tower_blocks:
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+
+		var entry: Dictionary = entry_value
+		var block: Dictionary = _normalize_block_entry(entry)
+		var cells: Array = block.get("cells", [])
+		var origin_x: int = int(entry.get("originX", 0))
+		var origin_y: int = int(entry.get("originY", entry.get("baseHeight", 0)))
+		var box: Rect2 = _footprint_box(
+			origin_x, origin_y, cells, unit, base_x, baseline, scroll_offset_units
+		)
+		var center: Vector2 = box.get_center()
+		var rotation: float = 0.0
+		var pose_bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+		var pose: Dictionary = structural_pose.pose_for_grid(
+			_entry_block_id(entry),
+			Vector2(
+				float(origin_x) + (float(pose_bounds.min_x) + float(pose_bounds.max_x) + 1.0) * 0.5,
+				float(origin_y) + (float(pose_bounds.min_y) + float(pose_bounds.max_y) + 1.0) * 0.5
+			)
+		)
+
+		if !pose.is_empty():
+			center += Vector2(
+				float(pose.get("offsetXUnits", 0.0)) * unit,
+				-float(pose.get("offsetYUnits", 0.0)) * unit
+			)
+			rotation = float(pose.get("rotationDeg", 0.0))
+
+		var extents := _rotated_half_extents(box.size * 0.5, rotation)
+		var brick_bounds := Rect2(center - extents, extents * 2.0)
+		bounds = brick_bounds if !has_bounds else bounds.merge(brick_bounds)
+		has_bounds = true
+
+	if active_snap.has("visual_ghost_center_local") and !drag_cells.is_empty():
+		var column: int = int(active_snap.get("column", SnapGridScript.placeable_column_min))
+		var origin_y: int = int(active_snap.get("aim_origin_y", active_snap.get("origin_y", 0)))
+		var ghost_box: Rect2 = _footprint_box(
+			column, origin_y, drag_cells, unit, base_x, baseline, scroll_offset_units
+		)
+		var ghost_center: Vector2 = active_snap.get("visual_ghost_center_local", ghost_box.get_center())
+		var ghost_extents := _rotated_half_extents(
+			ghost_box.size * 0.5, float(active_snap.get("visual_rotation_deg", 0.0))
+		)
+		var ghost_bounds := Rect2(ghost_center - ghost_extents, ghost_extents * 2.0)
+		bounds = ghost_bounds if !has_bounds else bounds.merge(ghost_bounds)
+		has_bounds = true
+		active_bounds = ghost_bounds.grow(unit)
+		has_active_bounds = true
+
+	if has_active_bounds:
+		return active_bounds
+	return bounds if has_bounds else Rect2(Vector2.ZERO, size)
 
 func grid_to_local(lattice: Vector2) -> Vector2:
 	var unit: float = _unit_size()
@@ -914,6 +995,13 @@ func _footprint_box(origin_x: int, origin_y: int, cells: Array, unit: float, bas
 func _height_to_pixel_y(height_units: float, unit: float, baseline: float, scroll_offset_units: int) -> float:
 	return _lattice_to_local(Vector2(0.0, height_units), unit, 0.0, baseline, scroll_offset_units).y
 
+func _rotated_half_extents(half_size: Vector2, rotation: float) -> Vector2:
+	var radians: float = deg_to_rad(rotation)
+	return Vector2(
+		absf(cos(radians)) * half_size.x + absf(sin(radians)) * half_size.y,
+		absf(sin(radians)) * half_size.x + absf(cos(radians)) * half_size.y
+	)
+
 func _draw_snap_layer(unit: float, base_x: float, baseline: float, pivot: Vector2) -> void:
 	if !snap_preview_active:
 		return
@@ -997,11 +1085,21 @@ func _draw_drag_ghost(
 
 	var fill: Color = Color(drag_color.r, drag_color.g, drag_color.b, alpha)
 	var texture: Texture2D = BlockDataScript.brick_texture(drag_shape_id)
+	var has_visual_ghost: bool = active_snap.has("visual_ghost_center_local")
+	var center: Vector2 = box.get_center() - pivot
+
+	if has_visual_ghost:
+		center = active_snap.get("visual_ghost_center_local", box.get_center())
+		draw_set_transform(
+			center,
+			deg_to_rad(float(active_snap.get("visual_rotation_deg", 0.0))),
+			Vector2.ONE
+		)
+		center = Vector2.ZERO
 
 	if texture == null:
-		draw_rect(Rect2(box.position - pivot, box.size), fill, true)
+		draw_rect(Rect2(center - box.size * 0.5, box.size), fill, true)
 	else:
-		var center: Vector2 = box.position + box.size * 0.5 - pivot
 		var orientation: Dictionary = BlockDataScript.detect_orientation(drag_shape_id, drag_cells)
 		var canonical_bounds: Dictionary = BlockDataScript.cell_bounds(
 			BlockDataScript.BRICK_SHAPES[drag_shape_id]
@@ -1029,23 +1127,49 @@ func _draw_drag_ghost(
 			scroll_offset_units
 		)
 
-		draw_rect(
-			Rect2(cell_top_left - pivot, Vector2(unit, unit)), outline, false, outline_width
-		)
+		var cell_origin: Vector2 = cell_top_left - pivot
+		if has_visual_ghost:
+			cell_origin = cell_top_left - box.get_center()
+
+		draw_rect(Rect2(cell_origin, Vector2(unit, unit)), outline, false, outline_width)
+
+	if has_visual_ghost:
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_snap_points(
 	unit: float, base_x: float, baseline: float, scroll_offset_units: int, pivot: Vector2
 ) -> void:
 	var snapped: bool = bool(active_snap.get("snapped", false))
 	var target_point: Vector2i = active_snap.get("target_point", Vector2i.ZERO)
+	var visual_point: Vector2i = active_snap.get("visual_aim_point", target_point)
 	var halo: Color = Color(drag_color.r, drag_color.g, drag_color.b, SNAP_TARGET_HALO_ALPHA)
+	var owners: Dictionary = SnapGridScript.snap_point_owners(tower_blocks)
 
 	for point in SnapGridScript.tower_snap_points(tower_blocks):
 		var local: Vector2 = _lattice_to_local(
 			Vector2(point), unit, base_x, baseline, scroll_offset_units
-		) - pivot
+		)
 
-		if snapped and point == target_point:
+		if structural_pose.has_targets():
+			var point_owners: Array = owners.get(point, [])
+			if !point_owners.is_empty():
+				var projected: Dictionary = placement_projection.project_point(
+					point_owners[0], Vector2(point), structural_pose
+				)
+				local = _lattice_to_local(
+					Vector2(projected.get("point", Vector2(point))),
+					unit,
+					base_x,
+					baseline,
+					scroll_offset_units
+				)
+
+		if snapped and point == visual_point and active_snap.has("visual_target_local"):
+			local = active_snap.get("visual_target_local", local)
+
+		local -= pivot
+
+		if snapped and point == visual_point:
 			draw_arc(local, snap_target_radius, 0.0, TAU, 24, halo, 2.5, true)
 			draw_circle(local, snap_dot_radius + 1.0, halo)
 		else:

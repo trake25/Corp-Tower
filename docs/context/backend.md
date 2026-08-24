@@ -341,7 +341,8 @@ propagates cell mass and horizontal moment down every support path.
   bot shortlist and geometry contracts; it does not award score.
 - `evaluate(entries, config)` — returns Stability, public diagnostics, one compact
   presentation pose per block, and in-process graph analysis for bots/tools. Pose
-  records retain per-block offsets and add a section id/origin shared by rigid members.
+  records retain per-block offsets and add a section id/origin shared by rigid members;
+  the final standing-section angle is cosmetically bounded after inherited bends compose.
 - `balanceDelta(before, after, config)` — directional Balance improvement only;
   Integrity does not affect brick faces.
 
@@ -415,7 +416,8 @@ hand-tuned playtest values that intentionally differ from the design reference.
 - Retune stability via `towerStabilityDifficulty` and its Balance/Integrity anchor
   sets, never by adding debug physics controls. The dial linearly blends thresholds
   but applies risk with `towerStabilityPressure.difficultyCurvePower`; pose rigidity
-  and Integrity sway stay presentation-only and separate from collapse risk.
+  and Integrity sway stay presentation-only and separate from collapse risk. The
+  debug pose-cap control bounds final standing rotation only.
 - Scoring configuration defines useful-height reward, dangerous-height retention,
   structural action value, transaction caps and Critical Save qualification. The
   debug surface exposes only the action-level controls required for playtesting.

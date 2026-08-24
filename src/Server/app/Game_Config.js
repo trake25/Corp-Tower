@@ -38,7 +38,7 @@ const GameConfig = {
     towerSiteWidthMin: 8,
     towerSiteWidthMax: 8,
     towerMaxTiltAngleDeg: 18,
-    towerStructuralPoseMaxAngleDeg: 12,
+    towerStructuralPoseMaxAngleDeg: 10,
     towerStructuralPoseMaxDipUnits: 0.18,
     towerStructuralPoseRigidRisk: 0.08,
     towerStructuralPoseIntegritySwayShare: 0.45,

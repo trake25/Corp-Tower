@@ -107,6 +107,30 @@ func pose_for_grid(block_id: String, center: Vector2) -> Dictionary:
 	resolved.failureWeight = float(section.get("failureWeight", pose.get("failureWeight", 0.0)))
 	return resolved
 
+func transform_grid_point(block_id: String, center: Vector2, point: Vector2) -> Dictionary:
+	var pose: Dictionary = pose_for(block_id)
+	var section_id: String = str(pose.get("sectionId", ""))
+
+	if bool(pose.get("hasSectionTransform", false)) and _section_current.has(section_id):
+		var section: Dictionary = _section_current[section_id]
+		var angle: float = float(section.get("rotationDeg", 0.0))
+		return {
+			"point": Vector2(
+				float(section.get("sectionOriginXUnits", 0.0)),
+				float(section.get("sectionOriginYUnits", 0.0))
+			) + _rotate_grid_point(point, angle),
+			"rotationDeg": angle
+		}
+
+	var angle: float = float(pose.get("rotationDeg", 0.0))
+	return {
+		"point": center + _rotate_grid_point(point - center, angle) + Vector2(
+			float(pose.get("offsetXUnits", 0.0)),
+			float(pose.get("offsetYUnits", 0.0))
+		),
+		"rotationDeg": angle
+	}
+
 func has_pose(block_id: String) -> bool:
 	return _current.has(block_id)
 
@@ -159,6 +183,9 @@ func weighted_blend(poses: Array, weights: Array) -> Dictionary:
 		blended.failureWeight /= total
 
 	return blended
+
+func _rotate_grid_point(point: Vector2, angle: float) -> Vector2:
+	return point.rotated(deg_to_rad(-angle))
 
 func _normalize(value: Dictionary) -> Dictionary:
 	return {

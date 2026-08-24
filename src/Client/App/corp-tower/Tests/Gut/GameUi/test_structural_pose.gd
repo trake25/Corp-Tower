@@ -79,6 +79,19 @@ func test_section_pose_preserves_rigid_contacts_while_smoothing_a_bend() -> void
 	assert_almost_eq((upper_center - lower_center).x, expected_delta.x, 0.001)
 	assert_almost_eq((upper_center - lower_center).y, expected_delta.y, 0.001)
 
+func test_point_transform_uses_the_same_section_pose_as_the_brick() -> void:
+	var pose := StructuralPose.new()
+	pose.replace_targets([
+		_section_pose("A", "upper", Vector2(0.5, -0.25), 10.0, 0.8)
+	], true)
+	var point := Vector2(3.0, 4.0)
+	var transformed: Dictionary = pose.transform_grid_point("A", Vector2(3.0, 3.5), point)
+	var expected := Vector2(0.5, -0.25) + point.rotated(deg_to_rad(-10.0))
+
+	assert_almost_eq((transformed.point as Vector2).x, expected.x, 0.001)
+	assert_almost_eq((transformed.point as Vector2).y, expected.y, 0.001)
+	assert_almost_eq(float(transformed.rotationDeg), 10.0, 0.001)
+
 func test_coordinate_conversion_ignores_visible_structural_pose() -> void:
 	SnapGridScript.reset_placeable_range()
 	SnapGridScript.set_grid_width(8)

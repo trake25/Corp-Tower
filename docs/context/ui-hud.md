@@ -129,6 +129,8 @@ background parallax container and transient overlay layers remain full-rect.
 `BgArt` clips a covered-image child whose 720.5-unit ground anchor stays at its
 authored height: wider roots extend that child upward by twice the covered-crop
 delta, while the 412×917 Web crop and the platform/tower geometry do not move.
+`PlacementWorldFrame` keeps the platform, Tower Stack and drop zone in one bounded
+lateral presentation frame while a posed support is being aimed.
 
 `TeamInventoryPanel` is a **permanently visible** bar showing the shared draw pile,
 not a popover. It reuses the `DrawPilePreview`/`DrawPileNameLabel`/
@@ -248,10 +250,10 @@ Tower Stack draws via raw `_draw()`, so there are no `Node2D` children for a
 the drag hit-testing maths.
 
 `towerStructuralPose` drives per-brick draw transforms through `StructuralPose`.
-The placed brick and its face share that transform; the snap layer, ghost, contact
-highlight, `grid_to_local`, and `local_to_grid` stay in the undeformed grid space.
-Collapse seeds start from the displayed per-brick transform and give high
-`failureWeight` pieces the strongest initial impulse.
+`PlacementProjection` scores exact snap candidates at their source brick's current
+displayed contact, so the docked ghost and target ring share its rigid transform;
+the returned column/origin, fallback aim, `grid_to_local` and `local_to_grid` remain
+canonical grid operations. Collapse seeds start from displayed per-brick transforms.
 
 **Placement resolution is a 2-D pairing** in `SnapGrid`: for every outline vertex
 of the dragged brick × every snap point on the platform and on every placed brick,
@@ -311,9 +313,9 @@ the tower. FALL/SETTLED debris continues to spin faces with each piece.
 - **Draw calls under the tilt transform must subtract `pivot` first**, since the
   transform auto-offsets subsequent draws. The ghost is emitted inside that same
   block precisely so it inherits tilt, scroll and scale and cannot desync.
-- **`local_to_grid` applies `_untilt`**, the inverse lean about the same pivot, or
-  aiming at a point on a leaning tower resolves to the column it would have had
-  upright — a real error at the live-play tilt cap.
+- **Never inverse a whole-tower tilt for placement.** Piecewise structural pose has
+  no single inverse; `PlacementProjection` selects the rendered support contact
+  but returns the canonical candidate for server validation.
 - **`shake()` offsets only the local `base_x`/`baseline` inside `_draw()`**, never
   threaded through `_lattice_to_local`: `_build_collapse_seed` passes scroll `0`
   through that same function, and a shake term there corrupts the collapse seeds.

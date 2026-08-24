@@ -322,7 +322,7 @@ func setup(
 	configure_slider(impact_interval_slider, 1, 10, 1, func(value): send_debug_int("impactInterval", value))
 	configure_slider(impact_score_floor_slider, 0, 5000, 50, func(value): send_debug_int("impactScoreRequirement", value))
 	configure_slider(tower_stability_difficulty_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityDifficulty", value))
-	configure_slider(tower_max_tilt_slider, 5, 60, 1, func(value): send_debug_int("towerMaxTiltAngleDeg", value))
+	configure_slider(tower_max_tilt_slider, 2, 20, 1, func(value): send_debug_int("towerStructuralPoseMaxAngleDeg", value))
 	configure_slider(tower_site_slenderness_slider, 1.0, 12.0, 0.25, func(value): send_debug_float("towerSiteSlendernessTarget", value))
 	configure_slider(tower_site_width_min_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMin", value))
 	configure_slider(tower_site_width_max_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMax", value))
@@ -726,7 +726,7 @@ func apply_config(config) -> void:
 		tower_stability_difficulty_slider,
 		float(config.get("towerStabilityDifficulty", 90))
 	)
-	set_slider_no_signal(tower_max_tilt_slider, float(config.get("towerMaxTiltAngleDeg", 24)))
+	set_slider_no_signal(tower_max_tilt_slider, float(config.get("towerStructuralPoseMaxAngleDeg", 10)))
 	set_slider_no_signal(
 		tower_site_slenderness_slider,
 		float(config.get("towerSiteSlendernessTarget", 6.75))
@@ -916,7 +916,7 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		tower_max_tilt_label,
-		"Max Tilt Angle: " + str(int(get_slider_value(tower_max_tilt_slider, 24))) + "°"
+		"Structural Pose Cap: " + str(int(get_slider_value(tower_max_tilt_slider, 10))) + "°"
 	)
 	set_debug_label_text(
 		tower_warning_threshold_label,

@@ -451,7 +451,10 @@ function buildStructuralPose(groups, config) {
         pivotY /= total;
         anchoredX /= total;
         anchoredY /= total;
-        const angle = inheritedAngle / total + localBend / total * poseMaxAngle;
+        const angle = Math.max(
+            -poseMaxAngle,
+            Math.min(poseMaxAngle, inheritedAngle / total + localBend / total * poseMaxAngle)
+        );
         const rotatedPivot = rotatePoint(pivotX, pivotY, angle);
         const transform = { originX: anchoredX - rotatedPivot.x, originY: anchoredY - rotatedPivot.y, angle, failureWeight };
         transforms.set(section, transform);

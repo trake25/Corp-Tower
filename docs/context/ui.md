@@ -24,6 +24,8 @@ All paths under `src/Client/App/corp-tower/` unless noted. **The client renders
   extra canvas only adds background beneath it.
 - `Main.tscn` is the app root and owns [Screen Manager](#screen-manager); there is
   no static UI root scene.
+- `PlayField` owns a `PlacementWorldFrame` for the platform, Tower Stack and drop
+  zone; its lateral shift is presentation-only and the HUD remains anchored to the root.
 - `export_presets.cfg` is gitignored; CI uses a non-secret preset →
   [build.md](./build.md#android-deploy-wstodplay-workflow).
 - Build-time flags from `EndpointConfig`, written per build by

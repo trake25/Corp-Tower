@@ -166,6 +166,17 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:284 | update_game_state | **the main render entry** — fans `game_state` out to every controller |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:391 | update_debug_config | apply a `debug_config` broadcast |
 
+### src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd — 49 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd:3 | horizontal_padding · export | safe viewport inset for framed placement |
+| src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd:4 | max_offset · export | largest lateral frame shift |
+| src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd:5 | ease_speed · export | frame-shift smoothing rate |
+| src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd:9 | _ready | capture the authored frame position |
+| src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd:12 | _process | follow the active placement bounds |
+| src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd:22 | _target_offset_for | minimally correct visual bounds into the safe rectangle |
+
 ### src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd — 21 ln
 
 | File:Ln | Symbol | Does |
@@ -450,4 +461,4 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 
 ---
 
-23 files · 326 symbols · 0 awaiting a `Does` line.
+24 files · 332 symbols · 0 awaiting a `Does` line.
