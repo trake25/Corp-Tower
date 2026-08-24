@@ -153,7 +153,7 @@ test("the difficulty dial is forgiving at 5 and ramps a loaded bottleneck smooth
 test("well-supported tall towers remain viable at every difficulty", () => {
     const { engine } = createPlayingEngine(8, 10);
     const original = GameConfig.towerStabilityDifficulty;
-    const row = Array.from({ length: 6 }, (_, x) => [x, 0]);
+    const row = Array.from({ length: 8 }, (_, x) => [x, 0]);
     const entries = Array.from({ length: 10 }, (_, y) => stabilityEntry("R" + y, row, 0, y));
 
     try {
