@@ -460,6 +460,22 @@ _no extracted symbols_
 
 _no extracted symbols_
 
+### src/Server/tools/Balance_Run.js — 217 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Server/tools/Balance_Run.js:8 | SERVER · const | server working directory for direct tool subprocesses |
+| src/Server/tools/Balance_Run.js:9 | ROOT · const | repository root anchoring captured output in ignored task material |
+| src/Server/tools/Balance_Run.js:10 | ARTIFACTS · const | ignored balance-output directory for captured sampling results |
+| src/Server/tools/Balance_Run.js:11 | HEARTBEAT_SECONDS · const | progress cadence emitted while a sampling child is still running |
+| src/Server/tools/Balance_Run.js:13 | positiveInteger · fn | rejects zero, negative and non-integer CLI limits before a child is spawned |
+| src/Server/tools/Balance_Run.js:21 | hostProfile · fn | classifies Windows/Linux hardware by logical CPUs and RAM, then supplies workload and deadline caps |
+| src/Server/tools/Balance_Run.js:34 | parseCli · fn | parses a tool kind, optional samples and the explicit expensive-run/deadline opt-ins |
+| src/Server/tools/Balance_Run.js:72 | planRun · fn | turns a request into raw tool arguments and rejects work beyond the host budget without both opt-ins |
+| src/Server/tools/Balance_Run.js:119 | artifactPaths · fn | allocates unique ignored stdout/stderr files for one sampling run |
+| src/Server/tools/Balance_Run.js:129 | runPlan · fn | supervises the raw Node child, streams heartbeats, captures output and kills it at the hard deadline |
+| src/Server/tools/Balance_Run.js:204 | main · fn | plans the package-command request and returns its supervised process status |
+
 ### src/Server/tools/Balance_Simulator.js — 740 ln
 
 | File:Ln | Symbol | Does |
@@ -501,26 +517,27 @@ _no extracted symbols_
 | src/Server/tools/Impact_Balance_Probe.js:215 | printImpactProbe · fn | writes the probe's CSV table |
 | src/Server/tools/Impact_Balance_Probe.js:267 | main · fn | parses CLI sample sizes and prints the probe |
 
-### src/Server/tools/Stability_Probe.js — 416 ln
+### src/Server/tools/Stability_Probe.js — 420 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/tools/Stability_Probe.js:8 | LEVELS · const | levels probed |
-| src/Server/tools/Stability_Probe.js:9 | HEIGHT_FRACTIONS · const | tower heights sampled per archetype |
-| src/Server/tools/Stability_Probe.js:10 | DIFFICULTIES · const | representative stability-dial sweep points |
-| src/Server/tools/Stability_Probe.js:12 | createPlayers · fn | synthetic roster |
-| src/Server/tools/Stability_Probe.js:20 | withMutedConsole · fn | silence engine logging |
-| src/Server/tools/Stability_Probe.js:32 | createEngineForLevel · fn | engine without lobby, Redis or socket |
-| src/Server/tools/Stability_Probe.js:45 | rowEntry · fn | build one placed-brick row |
-| src/Server/tools/Stability_Probe.js:55 | centeredOriginX · fn | centre a shape on the site |
-| src/Server/tools/Stability_Probe.js:59 | ARCHETYPES · const | hand-built towers: spire, wide base, overhang — deterministic, unlike bot play |
-| src/Server/tools/Stability_Probe.js:196 | criticalAnalysis · fn | select the probe's weakest graph interface |
-| src/Server/tools/Stability_Probe.js:210 | run · fn | probe entry; prints stability per archetype × height |
-| src/Server/tools/Stability_Probe.js:268 | assertOpeningBrickSurvives · fn | **regression guard**: one narrow opening brick must not collapse at any level |
-| src/Server/tools/Stability_Probe.js:301 | scoringResult · fn | synthetic stability result for a deterministic score probe |
-| src/Server/tools/Stability_Probe.js:309 | scoringAssessment · fn | synthetic direct-interface comparison for a score probe |
-| src/Server/tools/Stability_Probe.js:322 | assertScoringScenarios · fn | assert transaction rewards, caps, Critical Save and claims |
+| src/Server/tools/Stability_Probe.js:8 | PILOT · const | selects the small representative stability matrix the guarded package command runs by default |
+| src/Server/tools/Stability_Probe.js:9 | LEVELS · const | levels probed |
+| src/Server/tools/Stability_Probe.js:10 | HEIGHT_FRACTIONS · const | tower heights sampled per archetype |
+| src/Server/tools/Stability_Probe.js:11 | DIFFICULTIES · const | representative stability-dial sweep points |
+| src/Server/tools/Stability_Probe.js:13 | createPlayers · fn | synthetic roster |
+| src/Server/tools/Stability_Probe.js:21 | withMutedConsole · fn | silence engine logging |
+| src/Server/tools/Stability_Probe.js:33 | createEngineForLevel · fn | engine without lobby, Redis or socket |
+| src/Server/tools/Stability_Probe.js:46 | rowEntry · fn | build one placed-brick row |
+| src/Server/tools/Stability_Probe.js:56 | centeredOriginX · fn | centre a shape on the site |
+| src/Server/tools/Stability_Probe.js:60 | ARCHETYPES · const | hand-built towers: spire, wide base, overhang — deterministic, unlike bot play |
+| src/Server/tools/Stability_Probe.js:197 | criticalAnalysis · fn | select the probe's weakest graph interface |
+| src/Server/tools/Stability_Probe.js:211 | run · fn | probe entry; prints stability per archetype × height |
+| src/Server/tools/Stability_Probe.js:272 | assertOpeningBrickSurvives · fn | **regression guard**: one narrow opening brick must not collapse at any level |
+| src/Server/tools/Stability_Probe.js:305 | scoringResult · fn | synthetic stability result for a deterministic score probe |
+| src/Server/tools/Stability_Probe.js:313 | scoringAssessment · fn | synthetic direct-interface comparison for a score probe |
+| src/Server/tools/Stability_Probe.js:326 | assertScoringScenarios · fn | assert transaction rewards, caps, Critical Save and claims |
 
 ---
 
-22 files · 406 symbols · 0 awaiting a `Does` line.
+23 files · 418 symbols · 0 awaiting a `Does` line.

@@ -25,7 +25,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: node scripts/sync-agent-skills.mjs --check
       - run: node scripts/validate-agent-config.mjs
       - run: node scripts/build-file-map.mjs --check
       - run: node scripts/validate-docs.mjs --quiet

@@ -9,14 +9,18 @@ This file is the vendor-neutral repository contract. Load one role skill from
    `fullstack-coordinator`, `infra-engineer`, `qa-engineer`, `web-designer`,
    `editorial`, or `docs-steward`. Workflows are `update-docs` and
    `compact-docs`. Load the matching `SKILL.md` before editing.
-2. Route with `node scripts/context.mjs route <area-or-path>`. Game knowledge
-   starts at `docs/context/index.md`; portfolio knowledge at
+2. For an implementation, begin with `task-close prepare` and its explicit
+   task-owned paths. Its intake is the canonical role route, KB/map, QA and
+   documentation scope. For an assessment that needs no manifest, use
+   `node scripts/context.mjs route` or `scope <task-owned-path>...`. Game
+   knowledge starts at `docs/context/index.md`; portfolio knowledge at
    `site/docs/index.md`.
-3. Inspect headings with `node scripts/context.mjs outline <doc>`, then read one
-   bounded section with `node scripts/context.mjs section <doc> <heading>`.
-4. Query generated maps with `node scripts/context.mjs symbol <map> <query>`.
-   Refine a query that returns more than eight rows. Read source at the returned
-   `path:line`; do not sweep the repository.
+3. Use the CLI's `search` or `filter` before an arbitrary KB read; it returns at
+   most eight provenance-bearing KB/map results. Use `outline`, `section` or
+   `symbol` only when the target is already known, then read source at the
+   returned `path:line`.
+4. The CLI's `bundle` writes the bounded, upload-safe KB/map handoff under
+   ignored `task/`. The protocol and limits are in `docs/context/automation.md`.
 
 A miss is a knowledge-base defect. Repair its route or map purpose in the same
 task under `docs-steward`, unless the correct behavior needs a user decision.
@@ -40,9 +44,10 @@ automatic reflex.
 - Product source under the server app and Godot client has no comments.
   `scripts/`, `.github/`, and `site/` retain useful comments; never remove a
   `SAFETY EXCEPTION` comment.
-- After source edits run `node scripts/build-file-map.mjs`. Validate the game KB
-  with `node scripts/validate-docs.mjs` and the site KB with
-  `cd site && npm run docs:check` when that KB is in scope.
+- Finish repository changes through that manifest: record the documentation
+  decision, then `verify` and `report`. It owns QA selection, map generation,
+  relevant KB checks and report schema validation; it never reads a shared dirty
+  worktree for scope.
 - Files over 600 lines are decomposition candidates. Propose a split; do not
   expand the current task without approval.
 - Do not deploy, commit, push, pull, compare remotes, create branches, or perform
@@ -58,6 +63,6 @@ parallel work; higher-level agent policies and user instructions control it.
 
 ## Completion
 
-Run the relevant `qa-engineer` gate, then `docs-steward`. Append the required
-analytics row through `node scripts/task-report.mjs append ...`; the helper
-enforces the open-cycle schema and plain-English cycle close-out.
+Use the passing `task-close` receipt as the QA/docs-steward handoff, then append
+through its `report` command. The report helper still enforces the open-cycle
+schema and plain-English cycle close-out.

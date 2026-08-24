@@ -91,12 +91,18 @@ export const ROUTE_RULES = [
   { pattern: /^scripts\/(art-|ADDING-ART)/, skill: 'infra-engineer', docs: ['build.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/backup\//, skill: 'infra-engineer', docs: ['deployment-backup.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/write-endpoint-config/, skill: 'fullstack-coordinator', docs: ['networking.md', 'build.md'], map: 'infra.md', read: 'hunk' },
-  { pattern: /^scripts\/(validate-docs|docs-scope|build-file-map|context|sync-agent-skills|validate-agent-config|task-report|benchmark-rag)\.mjs$/, skill: 'docs-steward', docs: [], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/(context|task-close|benchmark-rag|docs-scope)\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/lib\/context-routing\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/lib\/context-query\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/(validate-docs|build-file-map|sync-agent-skills|validate-agent-config|task-report)\.mjs$/, skill: 'docs-steward', docs: [], map: 'infra.md', read: 'hunk' },
+  { pattern: /^report\/task-token-cost-effectivity\.md$/, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },
   { pattern: /^scripts\/install-git-hooks\.mjs$/, skill: 'infra-engineer', docs: [], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/qa-gate\.mjs$/, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\//, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^(AGENTS\.md|CLAUDE\.md|\.agents\/skills\/|\.claude\/skills\/)/, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },
   { pattern: /^site\/src\/content\//, skill: 'editorial', docs: ['site/docs/content.md'], map: null, read: 'hunk' },
   { pattern: /^site\//, skill: 'web-designer', docs: ['site/docs/design.md'], map: null, read: 'hunk' },
+  { pattern: /^docs\/context\/(automation\.md|retrieval-aliases\.json)$/, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },
 ];
 
 export const AREA_ALIASES = {
@@ -109,6 +115,7 @@ export const AREA_ALIASES = {
   infra: { skill: 'infra-engineer', docs: ['docs/context/deployment.md', 'docs/context/deployment-eks.md', 'docs/context/deployment-backup.md'], maps: ['docs/context/map/infra.md'] },
   build: { skill: 'infra-engineer', docs: ['docs/context/build.md'], maps: ['docs/context/map/infra.md'] },
   testing: { skill: 'qa-engineer', docs: ['docs/context/testing.md'], maps: [] },
+  automation: { skill: 'docs-steward', docs: ['docs/context/automation.md'], maps: ['docs/context/map/infra.md'] },
   'site-design': { skill: 'web-designer', docs: ['site/docs/design.md'], maps: ['site/docs/index.md'] },
   'site-content': { skill: 'editorial', docs: ['site/docs/content.md'], maps: ['site/docs/index.md'] },
   docs: { skill: 'docs-steward', docs: ['docs/context/index.md'], maps: [] },

@@ -5,14 +5,6 @@ description: Godot client work — any *.gd under src/Client/App/corp-tower/Cor 
 
 # Client engineer
 
-**Route:** run `node scripts/context.mjs route <path>`. Screens and navigation use
-[`ui.md`](../../../docs/context/ui.md) with `ui-screens.md`; gameplay HUD and
-debug use [`ui-hud.md`](../../../docs/context/ui-hud.md) with `ui-hud.md` or
-`ui-debug.md`; tutorials use [`ui-tutorial.md`](../../../docs/context/ui-tutorial.md)
-with `ui-tutorial.md`. Query the returned map through `scripts/context.mjs`, then
-read a bounded range around its `path:line`.
-Wire payloads are [`networking.md`](../../../docs/context/networking.md), not yours to change alone.
-
 ## Policy
 
 - **The client renders `game_state`. It never computes an outcome.** No scoring,
@@ -31,26 +23,22 @@ Wire payloads are [`networking.md`](../../../docs/context/networking.md), not yo
 ## Always
 
 - **Escalate, don't reach.** Anything outside `Cor/` and `Sys/` → `fullstack-coordinator`.
-- **Done =** `qa-engineer` gate, then `docs-steward`.
-- **Art asset conventions** (format, import defaults, naming, artist
-  handoff per kind) → [`build.md`](../../../docs/context/build.md) §
-  Asset Format & Import Conventions.
-- **Pressed state:** bare `TextureButton`s have no StyleBox — attach
-  `Cor/Scripts/PressTintButton.gd`. Card `Button`s get a `styles/pressed`
-  StyleBox. One color everywhere: `Color(0.518, 0.902, 0.976, 1)`
-  (`StyleBoxFlat_MenuCardPressed` in `GameUITheme.tres`).
-- Strictly follow the UI Design guide or reference when it is provided. The colors, gradients, shadows, spacings, texts, fonts, boxes, sizes, gaps must all be close to the guide as much as possible.
-- Glass card treatment: use a light translucent panel with an 80% light pass, zero refraction, depth 100, dispersion 100, frost 25 and splay 0. In Godot, approximate unsupported refraction/depth/dispersion with a translucent white fill, soft screen-space frost/blur when practical, a white edge, rounded corners and a restrained shadow.
-- The local Godot executable is in the repository root on Windows and Linux;
-  `qa-engineer` owns platform discovery and headless commands. Complex UI,
-  screen, scene/autoload and asset integration must pass that headless gate
-  before the rendered comparison below.
+- **Wire payloads are not yours to change alone.** Load `fullstack-coordinator`
+  when a client edit moves a payload or action.
+- **Art assets** use the routed `build.md` asset-import section.
+- When a UI reference is supplied, match its visible design decisions closely.
+
+## Conditional visual specs
+
+Read [pressed-state.md](references/pressed-state.md) only when changing a button
+or card's pressed treatment. Read [glass-card-treatment.md](references/glass-card-treatment.md)
+only when the task calls for a glass, frosted or translucent card. Do not load
+either reference for ordinary client work.
 
 ## Rendered verification
 
-For visual comparison on a Linux/X11 host, read
-[`references/ui-screenshots.md`](references/ui-screenshots.md). Use it only for
-the application and visual state named by the task, after the headless gate
-passes, and when the user has not prohibited GUI execution. A missing `DISPLAY`
-inside a sandbox is not proof that the host display is unavailable; follow the
-reference's guarded diagnostic before deferring rendered verification.
+For visual comparison, read
+[`references/ui-screenshots.md`](references/ui-screenshots.md) only for the
+application and state named by the task, after the headless gate passes. Its
+guarded diagnostic distinguishes a sandbox's missing `DISPLAY` from an
+unavailable host display.

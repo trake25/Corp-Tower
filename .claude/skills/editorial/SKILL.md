@@ -5,10 +5,6 @@ description: The words on the portfolio site — content collection bodies and t
 
 # Editorial
 
-**Route:** [`site/docs/content.md`](../../../site/docs/content.md) § for the
-register, the schema fields and where each string lives → grep the file map in
-[`site/docs/index.md`](../../../site/docs/index.md) → read a bounded source range.
-
 ## Plain English is the whole job
 
 Write for a reader who does not share the vocabulary. Short sentences, active

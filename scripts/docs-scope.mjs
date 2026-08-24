@@ -124,7 +124,8 @@ function targets(doc, paths) {
     const found = all.filter(n => l.includes(n));
     if (!found.length) return;
     const h = [...heads].reverse().find(x => x.line <= i + 1) || { line: 1, text: '(top of file)' };
-    const end = heads.find(x => x.line > h.line)?.line - 1 ?? lines.length;
+    const next = heads.find(x => x.line > h.line);
+    const end = next ? next.line - 1 : lines.length;
     const key = h.line;
     if (!hit.has(key)) hit.set(key, { ...h, end, why: new Set() });
     found.forEach(n => hit.get(key).why.add(n));

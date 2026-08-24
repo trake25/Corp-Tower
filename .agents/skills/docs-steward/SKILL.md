@@ -5,28 +5,10 @@ description: Owns the two knowledge bases — docs/context/** for the game and s
 
 # Docs steward
 
-Every other role ends here. The knowledge base is the thing that makes the next
-task cheap, so it is maintained on the way out, not in a cleanup pass later.
-
-## The doc-worthy gate — before any file is opened
-
-A change earns an edit only if it alters a **number, a wire contract, a rule, a
-file's role, or a term**. A pure refactor with none of those produces **no doc
-change** — say so, validate, stop. Do not manufacture an entry to show work.
-
-What survives an edit, and how it is written, is the retention test in
-[`update-docs`](../update-docs/SKILL.md). That skill is its only home;
-a second copy here is the exact drift this KB exists to prevent.
-
-**A fixed bug does not by itself earn a landmine.** A landmine is for a trap
-still genuinely reachable in the code's current shape, with no compiler or test
-signal to catch it — not a record that something was once broken. Default to
-folding the resulting behaviour into the relevant section's normal description
-(how the system works now, stated so the next agent can reuse it) instead of
-appending a landmine bullet; reach for a landmine only when the failure would
-otherwise be silent. These docs are not a session log or a scratchpad — nothing
-here should read as a trace of what a session did, only as the mechanism as it
-now stands.
+Every other role ends here. The knowledge base is maintained on the way out, not
+in a cleanup pass later. [`update-docs`](../update-docs/SKILL.md) is the only
+home for the doc-worthy gate, prose retention and landmine policy; this skill
+owns budget decisions and repair when retrieval fails.
 
 ## Budgets
 
@@ -69,24 +51,13 @@ apply.
 
 ## Close-out
 
-Game KB:
+`task-close verify` is the normal receipt: it regenerates maps for source paths,
+validates the relevant game/site KB and records exact command evidence before
+the report can append. It never replaces the doc-worthy decision or authoring;
+the agent records that decision through the manifest before verification.
 
-```bash
-node scripts/build-file-map.mjs && node scripts/validate-docs.mjs
-```
-
-Regenerate the map after **any** source edit — line numbers move, and the
-authored `Does` column carries forward by `file#symbol`, so it costs one command
-and no re-authoring.
-
-Site KB (`site/docs/`) — four docs, no generator, and the file map is a
-hand-authored table in `site/docs/index.md` that the validator checks both ways:
-
-```bash
-cd site && npm run docs:check
-```
-
-Fix every validator error before reporting done. Receipt is one line:
+Regenerated maps preserve authored `Does` by `file#symbol`. Fix every validator
+error before reporting done. Receipt is one line:
 `docs: gameplay.md, backend.md (+4/−31) · validate PASS`.
 
 **Do not commit unless explicitly told to.**

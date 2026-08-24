@@ -5,11 +5,6 @@ description: Infrastructure and CI work — infra/ Terraform, .github/workflows 
 
 # Infra engineer
 
-**Route:** [`deployment.md`](../../../docs/context/deployment.md) § for the
-running estate, [`build.md`](../../../docs/context/build.md) § for how source
-becomes an artifact → query `docs/context/map/infra.md` with
-`node scripts/context.mjs symbol infra <query>`, then read a bounded source range.
-
 ## Policy
 
 - **Never deploy without an explicit instruction.** Running a deploy, an apply,
@@ -27,10 +22,8 @@ becomes an artifact → query `docs/context/map/infra.md` with
 
 ## Always
 
-- **Workflow files run long — never load one whole.** Query the map for the job or
-  resource, then read a bounded range around the returned line.
+- **Workflow files run long — never load one whole.** Use the manifest's map for
+  the job or resource, then read a bounded range around the returned line.
 - **Escalate, don't reach.** Game behaviour is not yours → `server-engineer`.
   The portfolio's own build and deploy path is `site/docs/deploy.md`, and its
   page is `web-designer`.
-- **Done =** `qa-engineer` gate if any server or client file moved, then
-  `docs-steward`.

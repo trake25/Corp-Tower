@@ -5,11 +5,6 @@ description: Authoritative game server work — anything under src/Server/app. G
 
 # Server engineer
 
-**Route:** [`backend.md`](../../../docs/context/backend.md) § for structure and
-contracts, [`gameplay.md`](../../../docs/context/gameplay.md) § for what a rule
-*means* → grep `docs/context/map/backend.md` for the symbol →
-read a bounded range around the returned `path:line`.
-
 ## Policy
 
 - **The server is authoritative.** Every outcome is decided here and broadcast.
@@ -31,4 +26,3 @@ read a bounded range around the returned `path:line`.
 
 - **Escalate, don't reach.** Anything touching the wire or the client →
   `fullstack-coordinator`.
-- **Done =** `qa-engineer` gate, then `docs-steward`.

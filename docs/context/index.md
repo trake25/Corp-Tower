@@ -63,6 +63,7 @@ flowchart LR
 | Physical backup host, demo deploys and recovery | [deployment-backup.md](./deployment-backup.md) | [map/infra.md](./map/infra.md) |
 | CI build, Android, HTML5, private art pipeline | [build.md](./build.md) | [map/infra.md](./map/infra.md) |
 | Tests, balance simulator, CI gates | [testing.md](./testing.md) | — |
+| Agent retrieval, context bundles and automated task close-out | [automation.md](./automation.md) | — |
 | "Which file does X?" | — | the matching map |
 | Editing these docs | `update-docs` · `compact-docs` skills | — |
 | `site/` — the portfolio, a separate Worker and its own KB | [`site/docs/index.md`](../../site/docs/index.md) | — |

@@ -3,10 +3,13 @@ name: update-docs
 description: Diff-driven update of docs/context to match code changes. Run only after a goal is confirmed reached.
 ---
 
-Update `docs/context/` to reflect the code changes just completed. Run only after
-the user confirms the goal is fully reached — never speculatively mid-task. Run it
-in the session that made the change: it already holds the diff, the intent, and
-the alternatives that were rejected, none of which a cold agent could recover.
+Update `docs/context/` after the current goal is fully reached — never
+speculatively mid-task. Run it in the session that made the change: it already
+holds the diff, intent and current constraints a cold agent cannot recover.
+
+`task-close` owns manifest scope, generated maps, validators and the final report.
+This workflow owns the agentic part only: applying the doc-worthy gate and writing
+current, compact prose before the manifest records its documentation decision.
 
 ## The one rule
 
@@ -23,6 +26,9 @@ the code **today**. Two forms qualify:
 
 Write both in the **present tense, as how the system behaves and why it cannot
 behave otherwise.** Never as a story about how it got that way.
+
+A landmine is only a currently reachable silent trap. Fold a fixed bug into the
+normal behaviour; do not preserve it as task history.
 
 Everything else goes: chronology, who found what, how many passes it took, what a
 thing "used to" be — and **any alternative that was tried and abandoned**. A
@@ -44,11 +50,10 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
 
 ## Procedure — the gate comes before any file is opened
 
-1. **Scope to the task, not the tree.**
-   `node scripts/docs-scope.mjs <the paths you changed for this goal>`. The working
-   tree is not the scope — it also holds other agents' in-flight work. Add
-   `--range <sha>^..<sha>` if the task is already committed. `--from-git` scopes to
-   the whole tree and is right only when you know the tree is all one task.
+1. **Scope to the task manifest, not the tree.** Use the explicit paths from
+   `task-close prepare`; its manifest already contains the exact `docs-scope`
+   output. `--from-git` is not a close-out fallback because it can include
+   concurrent work.
 
 2. **Doc-worthy gate.** A change earns an edit only if it alters a **number, a wire
    contract, a rule, a file's role, a term, or a rationale a future session would
@@ -64,12 +69,12 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
    a doc in full to change a few lines. A doc with no printed ranges is getting a
    new entry: pick the insertion point from the printed outline.
 
-5. **Regenerate the map** if any source file changed:
-   `node scripts/build-file-map.mjs`. Line numbers move on every edit; the authored
-   `Does` column carries forward by symbol, so this costs one command.
+5. **Verify through the manifest.** `task-close verify` regenerates maps for every
+   source path and carries authored `Does` by symbol.
 
-6. **Validate.** `node scripts/validate-docs.mjs --quiet`; fix every error, re-run
-   without `--quiet` for detail.
+6. **Fix every validator error.** The same verification receipt validates the game
+   KB and, when in scope, the site KB; rerun the individual validator only to read
+   its full failure detail.
 
 7. **Receipt.** One line: `docs: gameplay.md, backend.md (+4/−31) · validate PASS`.
    Commit only if explicitly instructed.

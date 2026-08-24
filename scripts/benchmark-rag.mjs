@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { AREA_ALIASES, routeSourcePath } from './lib/context-routing.mjs';
+import { scopeContext, searchContext } from './lib/context-query.mjs';
 
 const ROOT = resolve(process.argv.find((argument, index) => index > 1 && !argument.startsWith('-')) || '.');
 const CHECK = process.argv.includes('--check');
@@ -53,6 +54,35 @@ const skills = fixtures.skills.map(fixture => {
   };
 });
 
+const protocol = (fixtures.protocol || []).map(fixture => {
+  const start = performance.now();
+  if (fixture.command === 'search') {
+    const result = searchContext(ROOT, fixture.query, fixture.options);
+    const correct = result.results.some(item => item.path === fixture.expects.path && item.title === fixture.expects.title);
+    return {
+      id: fixture.id,
+      command: fixture.command,
+      correct,
+      returned: result.results.length,
+      bytes: result.limits.returned_bytes,
+      wall_time_ms: Number((performance.now() - start).toFixed(3)),
+    };
+  }
+  if (fixture.command === 'scope') {
+    const result = scopeContext(fixture.paths);
+    const correct = result.routes.some(route => route.skill === fixture.expects.skill) && result.qa.server_tests.includes(fixture.expects.test);
+    return {
+      id: fixture.id,
+      command: fixture.command,
+      correct,
+      returned: result.changed_paths.length,
+      bytes: Buffer.byteLength(JSON.stringify(result)),
+      wall_time_ms: Number((performance.now() - start).toFixed(3)),
+    };
+  }
+  return { id: fixture.id, command: fixture.command, correct: false, returned: 0, bytes: 0, wall_time_ms: Number((performance.now() - start).toFixed(3)) };
+});
+
 const result = {
   schema_version: 1,
   generated_at: started,
@@ -64,17 +94,19 @@ const result = {
   provider_cost_usd: null,
   retrieval,
   skills,
+  protocol,
 };
 
 const correct = retrieval.filter(item => item.correctness).length;
 const first = retrieval.filter(item => item.first_route_hit).length;
 const median = [...retrieval].sort((a, b) => a.estimated_tokens - b.estimated_tokens)[Math.floor(retrieval.length / 2)].estimated_tokens;
 const skillCorrect = skills.filter(item => item.correct).length;
-const markdown = `# RAG benchmark — latest\n\nGenerated ${started}. This deterministic run tests the shared router and bounded map queries; it does not claim provider token usage or prove that a particular agent UI auto-loaded a skill.\n\n- Retrieval correctness: ${correct}/${retrieval.length}\n- First-route hit: ${first}/${retrieval.length}\n- Repository fallbacks: 0\n- Whole-document reads: 0\n- Median estimated retrieval cost: ${median} tokens\n- Expected skill routes: ${skillCorrect}/${skills.length}\n- Exact provider usage: unavailable (recorded as null)\n\n## Flaws and recommendations\n\nThis run cannot observe model-side skill activation, cache use, or provider billing because the local router exposes none of those fields. Run the same fixtures through fresh Codex and Claude sessions when their authenticated clients are available, keep raw JSONL under the ignored raw directory, and normalize those results without replacing null values with estimates.\n`;
+const protocolCorrect = protocol.filter(item => item.correct).length;
+const markdown = `# RAG benchmark — latest\n\nGenerated ${started}. This deterministic run tests the shared router, bounded map queries, and the portable context protocol; it does not claim provider token usage or prove that a particular agent UI auto-loaded a skill.\n\n- Retrieval correctness: ${correct}/${retrieval.length}\n- First-route hit: ${first}/${retrieval.length}\n- Repository fallbacks: 0\n- Whole-document reads: 0\n- Median estimated retrieval cost: ${median} tokens\n- Expected skill routes: ${skillCorrect}/${skills.length}\n- Protocol fixtures: ${protocolCorrect}/${protocol.length}\n- Exact provider usage: unavailable (recorded as null)\n\n## Flaws and recommendations\n\nThis run cannot observe model-side skill activation, cache use, or provider billing because the local router exposes none of those fields. Run the same fixtures through fresh Codex and Claude sessions when their authenticated clients are available, keep raw JSONL under the ignored raw directory, and normalize those results without replacing null values with estimates.\n`;
 if (!CHECK) {
   writeFileSync(join(ROOT, 'report/benchmarks/latest.json'), `${JSON.stringify(result, null, 2)}\n`);
   writeFileSync(join(ROOT, 'report/benchmarks/latest.md'), markdown);
 }
-const passed = correct === retrieval.length && skillCorrect === skills.length;
-console.log(`${passed ? 'PASS' : 'FAIL'} — retrieval ${correct}/${retrieval.length}, skills ${skillCorrect}/${skills.length}, median ~${median} tok`);
+const passed = correct === retrieval.length && skillCorrect === skills.length && protocolCorrect === protocol.length;
+console.log(`${passed ? 'PASS' : 'FAIL'} — retrieval ${correct}/${retrieval.length}, skills ${skillCorrect}/${skills.length}, protocol ${protocolCorrect}/${protocol.length}, median ~${median} tok`);
 if (!passed) process.exit(1);

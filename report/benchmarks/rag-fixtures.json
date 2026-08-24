@@ -17,5 +17,20 @@
     { "id": "docs", "path": "scripts/validate-docs.mjs", "expects": "docs-steward" },
     { "id": "web", "path": "site/src/components/diagrams/QaLoopDiagram.astro", "expects": "web-designer" },
     { "id": "editorial", "path": "site/src/content/cards/qa.md", "expects": "editorial" }
+  ],
+  "protocol": [
+    {
+      "id": "search-symbol",
+      "command": "search",
+      "query": "updateDebugConfig",
+      "options": { "kinds": ["symbol"] },
+      "expects": { "path": "docs/context/map/backend.md", "title": "updateDebugConfig" }
+    },
+    {
+      "id": "scope-server",
+      "command": "scope",
+      "paths": ["src/Server/app/engine/Scoring.js"],
+      "expects": { "skill": "server-engineer", "test": "Stability_Scoring.test.js" }
+    }
   ]
 }

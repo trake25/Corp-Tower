@@ -5,17 +5,15 @@ description: The verification loop — src/Server/tests, the Godot GUT suites un
 
 # QA engineer
 
-**Route:** [`testing.md`](../../../docs/context/testing.md) — it is inside budget
-and holds the suite-by-suite coverage map. Read the section for the suite you are
-touching, not the file.
-
-Most tasks invoke this skill as their **gate**, not as standalone work.
+Most tasks invoke this skill as their **gate**, not as standalone work. The
+manifest supplies the testing context and final QA selection; run `qa-gate`
+directly only for iterative feedback before close-out.
 
 ## The gate
 
-Verify the files owned by this task, not every pre-existing dirty file. The
-source→suite matrix and full-domain fallback paths live in `testing.md` § Local
-selection matrix.
+Verify the files owned by this task, not every pre-existing dirty file.
+`qa-gate --plan --json` is the shared deterministic selection used by
+`task-close`; do not recreate the mapping in an agent response.
 
 For a changed-source task, run `node scripts/qa-gate.mjs --changed <task-owned-path>...`
 with every task-owned changed path stated explicitly. It selects this matrix,

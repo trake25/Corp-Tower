@@ -5,11 +5,6 @@ description: Portfolio site UI, UX and structure — site/src/components/** incl
 
 # Web designer
 
-**Route:** [`site/docs/design.md`](../../../site/docs/design.md) § for the visual
-system and behaviour → grep the file map in
-[`site/docs/index.md`](../../../site/docs/index.md) → read a bounded source range.
-Schema field meanings are [`content.md`](../../../site/docs/content.md).
-
 ## Policy
 
 - **The two colours do different jobs.** `--accent` marks state and category;

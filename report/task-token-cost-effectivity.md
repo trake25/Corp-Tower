@@ -65,7 +65,23 @@ metadata cannot recover the variant.
 `Effort` reasoning effort level in effect (low/medium/high/xhigh/max).
 `Skills` skills loaded during the task, comma-separated.
 
-## Cycle 5 (open)
+## Cycle 6 (open)
+
+| # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Implement manifest-driven automated task close-out | 4 | A | 1 | 5 | late estimate ~12,000 | ~18,000 | ~42,000 | ~42,000 | ✓ | ok | gpt-5 (variant unrecorded) | medium | qa-engineer,docs-steward,update-docs |
+| 2 | Implement bounded portable context retrieval protocol | 5 | A | 1 | 10 | late estimate ~18,000 | ~25,000 | ~52,000 | ~52,000 | ✓ | ok | gpt-5 (variant unrecorded) | medium | docs-steward,qa-engineer,update-docs |
+| 3 | Split conditional client visual specs from default skill | 3 | A | 2 | 9 | late estimate ~5,000 | ~8,000 | ~18,000 | ~18,000 | ! | ok | gpt-5 (variant unrecorded) | medium | client-engineer,skill-creator,qa-engineer,docs-steward |
+| 4 | Automate documentation scope in task manifest | 3 | A | 2 | 6 | late estimate ~4,000 | ~6,000 | ~15,000 | ~15,000 | ! | ok | gpt-5 (variant unrecorded) | medium | client-engineer,skill-creator,qa-engineer,docs-steward,update-docs |
+| 5 | Consolidate skill intake and close-out contracts | 4 | A | 3 | 22 | late estimate ~9,000 | ~13,000 | ~32,000 | ~32,000 | ! | ok | gpt-5 (variant unrecorded) | medium | skill-creator,infra-engineer,docs-steward,update-docs |
+| 6 | Deduplicate documentation validation CI gate | 2 | A | 2 | 2 | late estimate ~3,500 | ~5,000 | ~12,000 | ~12,000 | ! | ok | gpt-5 (variant unrecorded) | medium | infra-engineer,docs-steward,update-docs |
+| 7 | Guard balance sampling against constrained hosts | 4 | A | 2 | 6 | late estimate ~10,000 | ~24,000 | ~55,000 | ~55,000 | ! | ok | gpt-5 (variant unrecorded) | medium | qa-engineer,docs-steward,update-docs |
+| 8 | Route task report retrieval through automation context | 2 | A | 1 | 3 | late estimate ~2,000 | ~5,000 | ~13,000 | ~13,000 | ! | ok | gpt-5 (variant unrecorded) | medium | infra-engineer,docs-steward,update-docs |
+<!-- next: row 9 -->
+
+## Cycle 5 (closed)
+
+This cycle's improvement is more disciplined task close-out and context retrieval planning. The remaining regression risk is treating green automation as proof of semantic correctness. The main flaw is that prior helpers are separate and require repeated agent orchestration. Recommendation: ship the manifest and JSON retrieval layers with fixtures before adding a remote service or embeddings.
 
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -88,7 +104,7 @@ metadata cannot recover the variant.
 | 17 | Sync Impact bars to authoritative contribution and raise default share | 2 | B | 3 | 5 | late estimate ~4,000 | ~10,000 | ~18,000 | ~18,000 | ! | ok | gpt-5 (variant unrecorded) | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
 | 18 | Route terminal Impact closes Home and suppress duplicate checkpoint summaries | 3 | B | 3 | 7 | late estimate ~8,000 | ~17,000 | ~30,000 | ~30,000 | ! | ok | gpt-5 (variant unrecorded) | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
 | 19 | Repair terminal matchmaking reconnect and Impact banking | 3 | B | 3 | 8 | late estimate ~6,000 | ~13,000 | ~43,000 | ~43,000 | ! | ok | gpt-5 (variant unrecorded) | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 20 -->
+| 20 | Create QA/docs/report automation and portable retrieval plans | 3 | A | 1 | 4 | late estimate ~8,000 | ~12,000 | ~24,000 | ~24,000 | ~ | ok | gpt-5 (variant unrecorded) | medium | docs-steward,qa-engineer |
 
 ## Cycle 4 (closed)
 

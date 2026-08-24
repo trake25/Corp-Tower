@@ -37,6 +37,10 @@ and prints captured test output only on failure. Pass every task-owned changed
 path explicitly; the command widens unknown or shared runtime changes to the
 full affected-domain suite.
 
+`qa-gate --plan --json` returns the same deterministic test selection without
+running it. The manifest, documentation and report lifecycle is owned by
+[automation.md](./automation.md); it never derives scope from the working tree.
+
 ## Server tests
 
 Nothing under `tests/` or `tools/` ships in the image. `npm test` runs syntax
@@ -70,8 +74,21 @@ dedicated behavioural tests.
 
 ## Balance CLIs
 
-`src/Server/tools/Balance_Simulator.js` — offline balance sampling, CI
-syntax-checked only. Run `npm run balance:simulate -- <levels> <runs>`.
+`src/Server/tools/Balance_Run.js` is the required host-aware entrypoint for all
+offline balance tools; CI syntax-checks them only. Every `npm run balance:*`
+command starts with a small pilot, detects the current OS/CPU/RAM tier, emits a
+heartbeat every five seconds, saves verbose CSV to ignored task material, and
+kills the child at a hard deadline. A constrained host is four or fewer logical
+CPUs or under 8 GiB RAM: it allows 24 work units and 45 seconds by default, never
+more than 180 seconds. The standard and performance tiers raise those limits but
+retain a deadline.
+
+Run `npm run balance:simulate`, `balance:stability`, `balance:probe` or
+`impact:probe` with no arguments first. Numeric samples remain available after
+`--`; a request above the host budget fails before spawning. `--allow-expensive`
+and an explicit `--max-seconds N` are both required to exceed it. A timed-out run
+is evidence of an expensive configuration, not a passing result; inspect its
+captured artifact or reduce the sample before deciding on tuning.
 
 - Instantiates [Game Engine](./backend.md#game-engine) directly — no lobby, no
   Redis, no socket.

@@ -5,9 +5,10 @@ const GameEngine = require("../app/Game_Engine");
 const TowerStability = require("../app/Tower_Stability");
 const GameConfig = require("../app/Game_Config");
 
-const LEVELS = [1, 5, 15, 25];
-const HEIGHT_FRACTIONS = [0.1, 0.3, 0.6, 0.9, 1.0];
-const DIFFICULTIES = [0, 5, 25, 50, 75, 100];
+const PILOT = process.env.BALANCE_RUN_PROFILE === "pilot";
+const LEVELS = PILOT ? [1] : [1, 5, 15, 25];
+const HEIGHT_FRACTIONS = PILOT ? [0.5, 1.0] : [0.1, 0.3, 0.6, 0.9, 1.0];
+const DIFFICULTIES = PILOT ? [0, 50] : [0, 5, 25, 50, 75, 100];
 
 function createPlayers() {
     return [
@@ -226,7 +227,10 @@ function run() {
                 const siteWidth = engine.getSiteWidthForHeight(targetHeight);
                 const config = engine.resolveStabilityConfig(level);
 
-                for (const [name, build] of Object.entries(ARCHETYPES)) {
+                const archetypes = PILOT
+                    ? Object.entries(ARCHETYPES).filter(([name]) => ["modelTypical", "narrowBottleneck", "gapRepair"].includes(name))
+                    : Object.entries(ARCHETYPES);
+                for (const [name, build] of archetypes) {
                     for (const fraction of HEIGHT_FRACTIONS) {
                         const height = Math.max(1, Math.round(targetHeight * fraction));
                         const entries = build(siteWidth, height);
