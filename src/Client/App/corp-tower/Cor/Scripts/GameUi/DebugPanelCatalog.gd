@@ -14,7 +14,7 @@ const DEBUG_CONTEXT_PLAY := "play"
 const DEBUG_TOOLTIPS := {
 	"TowerStabilityDifficultyLabel": {
 		"title": "Stability Difficulty",
-		"body": "The single dial for how punishing the tower is. Everything else — overhang weight, collapse threshold, slenderness band, support tolerance, the maturity ramp — is derived from it.\n\npressure = (this / 100) x (0.25 + 0.75 x min(1, level / 30))\n\nThreat also ramps with LEVEL, so the same setting is gentle early and dangerous late: at 90, level 1 sits near 87% stability and never collapses, while level 30+ punishes a careless column hard.\n\n0 = stability effectively off (score multiplier only). 90 = shipping default. 100 = brutal, greedy play fails the Impact gate.",
+		"body": "The single dial for how punishing the tower is. Everything else — overhang weight, collapse threshold, slenderness band, support tolerance, and the maturity ramp — is derived from it.\n\nThreat rises with both this dial and level. Low values keep ordinary towers forgiving, while high values make careless narrow structures dangerous.\n\n0 disables stability. The upper end is intentionally severe.",
 	},
 	"TowerMaxTiltLabel": {
 		"title": "Max Tilt Angle",
@@ -22,7 +22,7 @@ const DEBUG_TOOLTIPS := {
 	},
 	"TowerSiteSlendernessLabel": {
 		"title": "Site Slenderness Target",
-		"body": "Sets how wide the buildable site is for a given target height.\n\nsite width = even round-up(target height / this), clamped to Site Width Min..Max.\n\nAt 6.75 the site runs 6 columns on levels 1-28 (the Site Width Min floor), then 8 from level 29 — landing at full width just as stability pressure peaks at level 30.\n\nLower = wider site, easier. The site is also what slenderness is measured against — building on the full site width is always penalty-free, so widening the site widens the safe zone too.",
+		"body": "Sets how wide the buildable site is for a given target height.\n\nsite width = even round-up(target height / this), clamped to Site Width Min..Max.\n\nLower = wider site, easier. The site is also what slenderness is measured against — building on the full site width is always penalty-free, so widening the site widens the safe zone too.",
 	},
 	"TowerSiteWidthMinLabel": {
 		"title": "Site Width Min",
@@ -86,19 +86,19 @@ const DEBUG_TOOLTIPS := {
 	},
 	"PlacementScoreLabel": {
 		"title": "Placement Score / Height",
-		"body": "The core earner, paid per unit of height your brick actually added.\n\npoints = effective height x level x this x stability multiplier\n\nEffective height is capped by the height still missing, so late placements pay less.",
+		"body": "The core earner, paid per unit of useful height your brick adds.\n\nThe server scores useful height and one matched structural improvement as a single transaction. A risky height gain is reduced by the risk this brick added, while a direct repair can earn structural value.\n\nEffective height is capped by the height still missing, so late placements pay less.",
 	},
 	"PlacementStabilityFloorLabel": {
-		"title": "Placement Stability Floor",
-		"body": "The multiplier on placement score when the tower is at 0 stability.\n\nmultiplier = floor + (1 - floor) x (stability before your placement / 100)\n\n0.5 = a wobbling tower halves your take. 1.0 = stability does not affect scoring at all.",
+		"title": "Dangerous Height Floor",
+		"body": "The lowest share of clean height points a risky placement can keep.\n\nThe server grades the risk this brick adds, not the tower it inherited.\n\nLower makes dangerous height less rewarding; it never changes collapse rules.",
 	},
 	"ReinforceIntegrityLabel": {
-		"title": "Reinforce / Integrity",
-		"body": "Paid when your placement raises the tower's integrity — widening the base or reducing unsupported cells.\n\npoints += integrity gained x this x level\n\nThis is the reward for fixing the tower instead of racing. Raise to make repair competitive with grabbing height.",
+		"title": "Strong Reinforcement",
+		"body": "The share of one average useful-height action awarded for a strong, direct structural repair.\n\nThe server pays one matched support improvement, so Integrity, lean, and repaired cells cannot stack for the same fix.",
 	},
 	"ReinforceLeanLabel": {
-		"title": "Reinforce / Lean",
-		"body": "Paid when your placement straightens a leaning tower.\n\npoints += (|lean before| - |lean after|) x this x level\n\nLean is roughly 0..collapse threshold, so this multiplier is large relative to the integrity one.",
+		"title": "Normal Combined Cap",
+		"body": "The largest normal placement total in average-action units, unless its useful height already exceeds that limit.\n\nThis constrains height plus structural value once, after both components are computed.",
 	},
 	"FinisherBonusLabel": {
 		"title": "Finisher Bonus / Level",

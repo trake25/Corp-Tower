@@ -171,6 +171,11 @@ height do not share a bottom edge.
 Debug categories are a **dropdown**, not a tab header — the category count grows
 and a header does not scale with it.
 
+`ScorePopupLayer` renders one popup per server score event. Placement appearance
+comes from `meta.classification`; a `critical_save` is an emphasized finish-style
+toast, and popup centers are constrained by their rendered size so player lanes
+cannot clip it at mobile widths.
+
 ## Popover Panel
 
 `Cor/Scripts/PopoverPanel.gd`, scene `Cor/Scenes/PopoverPanel.tscn` — the reusable

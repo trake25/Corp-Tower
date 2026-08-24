@@ -88,6 +88,39 @@ test("stability difficulty is the only exposed stability tunable", async () => {
     }
 });
 
+test("transaction scoring controls replace the retired scoring formulas", async () => {
+    const lobbyManager = new LobbyManager();
+    const original = {
+        dangerousHeightFloor: GameConfig.scoring.dangerousHeightFloor,
+        strongReinforcementActionShare: GameConfig.scoring.strongReinforcementActionShare,
+        normalCombinedCapActionShare: GameConfig.scoring.normalCombinedCapActionShare
+    };
+
+    try {
+        await lobbyManager.updateDebugConfig("dangerousHeightFloor", 0);
+        await lobbyManager.updateDebugConfig("strongReinforcementActionShare", 2);
+        await lobbyManager.updateDebugConfig("normalCombinedCapActionShare", 10);
+
+        assert.equal(GameConfig.scoring.dangerousHeightFloor, 0.1);
+        assert.equal(GameConfig.scoring.strongReinforcementActionShare, 1);
+        assert.equal(GameConfig.scoring.normalCombinedCapActionShare, 3);
+
+        for (const key of [
+            "placementStabilityFloor",
+            "reinforceScorePerIntegrity",
+            "reinforceScorePerLean",
+            "reinforceScorePerSupportedCell",
+            "reinforceScoreCapShare",
+            "reinforceScoreCapShareAtTarget"
+        ]) {
+            assert.equal(await lobbyManager.updateDebugConfig(key, 1), false, key);
+            assert.equal(GameConfig.scoring[key], undefined, key);
+        }
+    } finally {
+        Object.assign(GameConfig.scoring, original);
+    }
+});
+
 test("the brick mood threshold is exposed and clamped in debug config", async () => {
     const lobbyManager = new LobbyManager();
 
@@ -200,4 +233,3 @@ test("visual hook toggles and durations round-trip through debug config and rese
         GameConfig.visualHooks.screenShakeMs = previousShakeMs;
     }
 });
-

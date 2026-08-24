@@ -54,7 +54,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Auth_Verifier.js:84 | verifyAccessToken | routes a handshake token to its configured provider and never throws |
 | src/Server/app/Auth_Verifier.js:122 | verifyFacebookAccessToken | checks Meta `debug_token`, binds app id, and returns the provider subject |
 
-### src/Server/app/Bot_Manager.js — 503 ln
+### src/Server/app/Bot_Manager.js — 475 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -66,7 +66,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Bot_Manager.js:192 | getVoidReleaseRows | gap-filling release-row candidates |
 | src/Server/app/Bot_Manager.js:248 | rankByStrategy | cooperative vs mvp_greedy ordering; **never rank by `heightGain`** |
 | src/Server/app/Bot_Manager.js:294 | chooseBotPlacement | column × release-row search, two-stage proxy then `evaluate()` |
-| src/Server/app/Bot_Manager.js:430 | chooseBotAction | returns `{type:"place"}` or **`{type:"wait"}`**; callers must handle both |
+| src/Server/app/Bot_Manager.js:402 | chooseBotAction | returns `{type:"place"}` or **`{type:"wait"}`**; callers must handle both |
 
 ### src/Server/app/Debug_Config.js — 184 ln
 
@@ -81,53 +81,53 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Debug_Config.js:130 | resolveBound · fn | evaluates static or GameConfig-derived clamp bounds |
 | src/Server/app/Debug_Config.js:134 | applyValue · fn | validates, clamps and applies one exposed debug value |
 
-### src/Server/app/Game_Config.js — 158 ln
+### src/Server/app/Game_Config.js — 161 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Server/app/Game_Config.js:1 | GameConfig · const | **every tuning value in one object** — read this file, not a prose copy |
 
-### src/Server/app/Game_Engine.js — 888 ln
+### src/Server/app/Game_Engine.js — 911 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Server/app/Game_Engine.js:8 | GameEngine · class | room facade; owns level lifecycle, timers, placement validation, Power |
 | src/Server/app/Game_Engine.js:20 | getRemainingMs | round clock remaining against `endsAt` |
 | src/Server/app/Game_Engine.js:40 | broadcastGameState | builds and sends the whole `game_state` payload clients render |
-| src/Server/app/Game_Engine.js:107 | createRoom | new room state, seat assignment, start level, first deal |
-| src/Server/app/Game_Engine.js:144 | initializePlayerForRoom | creates the per-player engine state used by a room |
-| src/Server/app/Game_Engine.js:157 | removePlayerFromRoom | removes a player and their room-owned engine state |
-| src/Server/app/Game_Engine.js:171 | hydrateRoom | rebuild room from a Redis snapshot on reconnect or pod handoff |
-| src/Server/app/Game_Engine.js:214 | restoreTimersFromState | restart level/tick timers after hydrate |
-| src/Server/app/Game_Engine.js:256 | persistRoom | notify Lobby Manager to snapshot; engine never writes Redis itself |
-| src/Server/app/Game_Engine.js:266 | recordLevelOutcome | records the completed level result for progression and reporting |
-| src/Server/app/Game_Engine.js:280 | queueQuickChat | quick chat cooldown check and event queue |
-| src/Server/app/Game_Engine.js:313 | consumeQuickChatEvents | drain pending quick chat for the next broadcast |
-| src/Server/app/Game_Engine.js:321 | consumePowerEvents | drain pending power-activation events for broadcast |
-| src/Server/app/Game_Engine.js:327 | clonePowerInventory | deep copy so snapshots don't alias live inventory |
-| src/Server/app/Game_Engine.js:331 | setupSideQuest | per-level shared side quest, gated by `powerUnlockLevel` |
-| src/Server/app/Game_Engine.js:337 | grantDefaultPowers | `powerGuaranteedBaseline` path, off by default |
-| src/Server/app/Game_Engine.js:348 | tryCompleteSideQuest | first exact finish claims the quest reward |
-| src/Server/app/Game_Engine.js:358 | activatePower | Power effects: replenish, refresh, score cap, copy score |
-| src/Server/app/Game_Engine.js:392 | getPostLevelTransitionDelayMs | popup duration + level summary delay |
-| src/Server/app/Game_Engine.js:399 | getPlacementScorePopupDurationMs | placement popup duration, clamped |
-| src/Server/app/Game_Engine.js:406 | getFinishScorePopupDurationMs | finish popup duration, clamped |
-| src/Server/app/Game_Engine.js:413 | getMaxScorePopupDurationMs | longest popup, sets the transition wait |
-| src/Server/app/Game_Engine.js:420 | startLevel | level init: target height, clock, quest, draw pile, opening hands |
-| src/Server/app/Game_Engine.js:462 | beginPlaying | `starting` → `playing`, arms the round clock |
-| src/Server/app/Game_Engine.js:483 | clearTimers | cancel start/level/tick timers |
-| src/Server/app/Game_Engine.js:495 | closeRoom | teardown, stop bots, clear timers |
-| src/Server/app/Game_Engine.js:516 | stopBots | delegate to Bot Manager |
-| src/Server/app/Game_Engine.js:520 | buildTargetHeightCurve | growing-step target height curve, cached |
-| src/Server/app/Game_Engine.js:550 | getTargetHeightForLevel | cached curve lookup per level |
-| src/Server/app/Game_Engine.js:561 | getLevelTimeLimitMs | derived round clock: slack ramp × cooldown, floored by `levelTimeLimitMs` |
-| src/Server/app/Game_Engine.js:597 | getConfiguredStartLevel | `debugStartLevel`, clamped |
-| src/Server/app/Game_Engine.js:601 | clampLevel | clamp to 1..`maxLevel` |
-| src/Server/app/Game_Engine.js:608 | restartAtConfiguredStartLevel | debug restart at the configured start level |
-| src/Server/app/Game_Engine.js:614 | restartAtLevel | restart every room at a level, optionally preserving score |
-| src/Server/app/Game_Engine.js:670 | completeLevel | bank scores, carry-over, summary, MVP, Impact gate |
-| src/Server/app/Game_Engine.js:738 | failLevel | level failure, discard carry-over, Impact rollback |
-| src/Server/app/Game_Engine.js:783 | nextLevel | advance level or finish the match at `maxLevel` |
+| src/Server/app/Game_Engine.js:109 | createRoom | new room state, seat assignment, start level, first deal |
+| src/Server/app/Game_Engine.js:149 | initializePlayerForRoom | creates the per-player engine state used by a room |
+| src/Server/app/Game_Engine.js:164 | removePlayerFromRoom | removes a player and their room-owned engine state |
+| src/Server/app/Game_Engine.js:178 | hydrateRoom | rebuild room from a Redis snapshot on reconnect or pod handoff |
+| src/Server/app/Game_Engine.js:227 | restoreTimersFromState | restart level/tick timers after hydrate |
+| src/Server/app/Game_Engine.js:269 | persistRoom | notify Lobby Manager to snapshot; engine never writes Redis itself |
+| src/Server/app/Game_Engine.js:279 | recordLevelOutcome | records the completed level result for progression and reporting |
+| src/Server/app/Game_Engine.js:293 | queueQuickChat | quick chat cooldown check and event queue |
+| src/Server/app/Game_Engine.js:326 | consumeQuickChatEvents | drain pending quick chat for the next broadcast |
+| src/Server/app/Game_Engine.js:334 | consumePowerEvents | drain pending power-activation events for broadcast |
+| src/Server/app/Game_Engine.js:340 | clonePowerInventory | deep copy so snapshots don't alias live inventory |
+| src/Server/app/Game_Engine.js:344 | setupSideQuest | per-level shared side quest, gated by `powerUnlockLevel` |
+| src/Server/app/Game_Engine.js:350 | grantDefaultPowers | `powerGuaranteedBaseline` path, off by default |
+| src/Server/app/Game_Engine.js:361 | tryCompleteSideQuest | first exact finish claims the quest reward |
+| src/Server/app/Game_Engine.js:371 | activatePower | Power effects: replenish, refresh, score cap, copy score |
+| src/Server/app/Game_Engine.js:405 | getPostLevelTransitionDelayMs | popup duration + level summary delay |
+| src/Server/app/Game_Engine.js:412 | getPlacementScorePopupDurationMs | placement popup duration, clamped |
+| src/Server/app/Game_Engine.js:419 | getFinishScorePopupDurationMs | finish popup duration, clamped |
+| src/Server/app/Game_Engine.js:426 | getMaxScorePopupDurationMs | longest popup, sets the transition wait |
+| src/Server/app/Game_Engine.js:433 | startLevel | level init: target height, clock, quest, draw pile, opening hands |
+| src/Server/app/Game_Engine.js:478 | beginPlaying | `starting` → `playing`, arms the round clock |
+| src/Server/app/Game_Engine.js:499 | clearTimers | cancel start/level/tick timers |
+| src/Server/app/Game_Engine.js:511 | closeRoom | teardown, stop bots, clear timers |
+| src/Server/app/Game_Engine.js:532 | stopBots | delegate to Bot Manager |
+| src/Server/app/Game_Engine.js:536 | buildTargetHeightCurve | growing-step target height curve, cached |
+| src/Server/app/Game_Engine.js:566 | getTargetHeightForLevel | cached curve lookup per level |
+| src/Server/app/Game_Engine.js:577 | getLevelTimeLimitMs | derived round clock: slack ramp × cooldown, floored by `levelTimeLimitMs` |
+| src/Server/app/Game_Engine.js:613 | getConfiguredStartLevel | `debugStartLevel`, clamped |
+| src/Server/app/Game_Engine.js:617 | clampLevel | clamp to 1..`maxLevel` |
+| src/Server/app/Game_Engine.js:624 | restartAtConfiguredStartLevel | debug restart at the configured start level |
+| src/Server/app/Game_Engine.js:630 | restartAtLevel | restart every room at a level, optionally preserving score |
+| src/Server/app/Game_Engine.js:690 | completeLevel | bank scores, carry-over, summary, MVP, Impact gate |
+| src/Server/app/Game_Engine.js:758 | failLevel | level failure, discard carry-over, Impact rollback |
+| src/Server/app/Game_Engine.js:803 | nextLevel | advance level or finish the match at `maxLevel` |
 
 ### src/Server/app/Lobby_Manager.js — 1131 ln
 
@@ -204,7 +204,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Profile_Store.js:147 | insertRow | create a missing row; `ignore-duplicates` so a racing pod cannot clobber it |
 | src/Server/app/Profile_Store.js:159 | patchRow | stamp `last_login_at`, and backfill a name only when the row has none |
 
-### src/Server/app/Redis_State.js — 546 ln
+### src/Server/app/Redis_State.js — 550 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -216,37 +216,37 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Redis_State.js:20 | positiveNumberFromEnv · fn | env override parsing with a floor |
 | src/Server/app/Redis_State.js:26 | sleep · fn | retry delay helper |
 | src/Server/app/Redis_State.js:30 | stripRuntimePlayer · fn | drop sockets/timers before a player is serialised |
-| src/Server/app/Redis_State.js:51 | DRAW_PILE_SNAPSHOT_LIMIT · const | cap on pile entries written to a snapshot |
-| src/Server/app/Redis_State.js:53 | stripRuntimeRoom · fn | drop non-serialisable room state before persist |
-| src/Server/app/Redis_State.js:91 | RedisState · class | shared-state adapter; in-memory fallback when no `REDIS_URL` |
-| src/Server/app/Redis_State.js:111 | connect | connect or fall back to in-memory maps |
-| src/Server/app/Redis_State.js:140 | connectRedisClients | main + subscriber clients with retry |
-| src/Server/app/Redis_State.js:192 | closeRedisClient | teardown |
-| src/Server/app/Redis_State.js:208 | getPodId | this pod's id |
-| src/Server/app/Redis_State.js:212 | getReconnectTtlSeconds | resolved reconnect TTL |
-| src/Server/app/Redis_State.js:216 | nextPlayerId | id allocation |
-| src/Server/app/Redis_State.js:225 | nextRoomId | id allocation |
-| src/Server/app/Redis_State.js:233 | recordDemoOutcome | increments durable demo attempt and completion counters |
-| src/Server/app/Redis_State.js:246 | getDemoStats | reads durable demo attempt and completion counters |
-| src/Server/app/Redis_State.js:268 | createReconnectToken | token a client presents to resume |
-| src/Server/app/Redis_State.js:272 | saveSession | persist player session for reconnect |
-| src/Server/app/Redis_State.js:301 | getSession | look up a session by reconnect token |
-| src/Server/app/Redis_State.js:314 | markSessionDisconnected | start the reconnect grace window |
-| src/Server/app/Redis_State.js:332 | markRoomOpen | advertises a room as available for an atomic claim |
-| src/Server/app/Redis_State.js:341 | removeOpenRoom | removes a room from the open-room index |
-| src/Server/app/Redis_State.js:350 | claimOpenRoomId | atomically claims one room id from the open-room index |
-| src/Server/app/Redis_State.js:366 | withMatchmakingLock | cross-pod matchmaking mutex |
-| src/Server/app/Redis_State.js:392 | saveRoom | room snapshot write |
-| src/Server/app/Redis_State.js:423 | claimRoomLease | take/renew room ownership; basis of `isRoomOwner` |
-| src/Server/app/Redis_State.js:436 | getRoomLeaseOwner | which pod owns this room |
-| src/Server/app/Redis_State.js:444 | getRoom | room snapshot read |
-| src/Server/app/Redis_State.js:457 | deleteRoom | snapshot + lease cleanup |
-| src/Server/app/Redis_State.js:471 | publishRoom | broadcast room state to other pods |
-| src/Server/app/Redis_State.js:485 | subscribeToRoom | receive other pods' room broadcasts |
-| src/Server/app/Redis_State.js:495 | publishRoomAction | send an action to the lease-owning pod |
-| src/Server/app/Redis_State.js:509 | subscribeToRoomActions | receive actions for rooms this pod owns |
-| src/Server/app/Redis_State.js:519 | publishPlayerAssignment | hand a player to another pod |
-| src/Server/app/Redis_State.js:530 | subscribeToPlayerAssignments | receive handed-off players |
+| src/Server/app/Redis_State.js:53 | DRAW_PILE_SNAPSHOT_LIMIT · const | cap on pile entries written to a snapshot |
+| src/Server/app/Redis_State.js:55 | stripRuntimeRoom · fn | drop non-serialisable room state before persist |
+| src/Server/app/Redis_State.js:95 | RedisState · class | shared-state adapter; in-memory fallback when no `REDIS_URL` |
+| src/Server/app/Redis_State.js:115 | connect | connect or fall back to in-memory maps |
+| src/Server/app/Redis_State.js:144 | connectRedisClients | main + subscriber clients with retry |
+| src/Server/app/Redis_State.js:196 | closeRedisClient | teardown |
+| src/Server/app/Redis_State.js:212 | getPodId | this pod's id |
+| src/Server/app/Redis_State.js:216 | getReconnectTtlSeconds | resolved reconnect TTL |
+| src/Server/app/Redis_State.js:220 | nextPlayerId | id allocation |
+| src/Server/app/Redis_State.js:229 | nextRoomId | id allocation |
+| src/Server/app/Redis_State.js:237 | recordDemoOutcome | increments durable demo attempt and completion counters |
+| src/Server/app/Redis_State.js:250 | getDemoStats | reads durable demo attempt and completion counters |
+| src/Server/app/Redis_State.js:272 | createReconnectToken | token a client presents to resume |
+| src/Server/app/Redis_State.js:276 | saveSession | persist player session for reconnect |
+| src/Server/app/Redis_State.js:305 | getSession | look up a session by reconnect token |
+| src/Server/app/Redis_State.js:318 | markSessionDisconnected | start the reconnect grace window |
+| src/Server/app/Redis_State.js:336 | markRoomOpen | advertises a room as available for an atomic claim |
+| src/Server/app/Redis_State.js:345 | removeOpenRoom | removes a room from the open-room index |
+| src/Server/app/Redis_State.js:354 | claimOpenRoomId | atomically claims one room id from the open-room index |
+| src/Server/app/Redis_State.js:370 | withMatchmakingLock | cross-pod matchmaking mutex |
+| src/Server/app/Redis_State.js:396 | saveRoom | room snapshot write |
+| src/Server/app/Redis_State.js:427 | claimRoomLease | take/renew room ownership; basis of `isRoomOwner` |
+| src/Server/app/Redis_State.js:440 | getRoomLeaseOwner | which pod owns this room |
+| src/Server/app/Redis_State.js:448 | getRoom | room snapshot read |
+| src/Server/app/Redis_State.js:461 | deleteRoom | snapshot + lease cleanup |
+| src/Server/app/Redis_State.js:475 | publishRoom | broadcast room state to other pods |
+| src/Server/app/Redis_State.js:489 | subscribeToRoom | receive other pods' room broadcasts |
+| src/Server/app/Redis_State.js:499 | publishRoomAction | send an action to the lease-owning pod |
+| src/Server/app/Redis_State.js:513 | subscribeToRoomActions | receive actions for rooms this pod owns |
+| src/Server/app/Redis_State.js:523 | publishPlayerAssignment | hand a player to another pod |
+| src/Server/app/Redis_State.js:534 | subscribeToPlayerAssignments | receive handed-off players |
 
 ### src/Server/app/Server.js — 182 ln
 
@@ -262,36 +262,49 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Server.js:44 | main · fn | WebSocket entry point, connection accept, first `reconnect` |
 | src/Server/app/Server.js:108 | handleMessage · fn | **the message router** — every client message type dispatches here |
 
-### src/Server/app/Tower_Stability.js — 600 ln
+### src/Server/app/Tower_Stability.js — 598 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/app/Tower_Stability.js:2 | cellsFor · fn | absolute grid cells for one placed entry |
-| src/Server/app/Tower_Stability.js:10 | key · fn | `x,y` cell key for occupancy sets |
-| src/Server/app/Tower_Stability.js:11 | clamp01 · fn | clamp helper used by every penalty term |
-| src/Server/app/Tower_Stability.js:12 | number · fn | numeric config fallback helper |
-| src/Server/app/Tower_Stability.js:16 | topHeight · fn | current tower height from entries |
-| src/Server/app/Tower_Stability.js:19 | cellsForEntries · fn | occupancy set across the whole tower |
-| src/Server/app/Tower_Stability.js:20 | settleBlock · fn | **gravity settle**; `SnapGrid.settle_origin_y` mirrors this line for line |
-| src/Server/app/Tower_Stability.js:32 | blockCells · fn | cells of a block at an origin |
-| src/Server/app/Tower_Stability.js:38 | isPlacementLegal · fn | overlap / below-platform / site bounds; **`SnapGrid.is_placement_legal` mirrors it** |
-| src/Server/app/Tower_Stability.js:52 | supportedCellsGained · fn | cells put back on solid ground; what Reinforce pays for |
-| src/Server/app/Tower_Stability.js:75 | canonicalKey · fn | geometry sort key for deterministic graph order |
-| src/Server/app/Tower_Stability.js:78 | blockId · fn | wire join id for a placed block |
-| src/Server/app/Tower_Stability.js:81 | buildNodes · fn | rigid nodes from placed-brick geometry |
-| src/Server/app/Tower_Stability.js:101 | buildContacts · fn | lower exposed-cell support contacts |
-| src/Server/app/Tower_Stability.js:129 | condense · fn | deterministic strongly connected support groups |
-| src/Server/app/Tower_Stability.js:181 | buildGroups · fn | group graph, components, and load state |
-| src/Server/app/Tower_Stability.js:263 | interfaceFor · fn | Balance and Integrity risk for one interface |
-| src/Server/app/Tower_Stability.js:341 | analyseGroups · fn | dependent-to-supporter load propagation |
-| src/Server/app/Tower_Stability.js:372 | visualSections · fn | merge low-risk support interfaces into rigid cosmetic sections |
-| src/Server/app/Tower_Stability.js:412 | rotatePoint · fn | rotate an authoritative grid point for a cosmetic section transform |
-| src/Server/app/Tower_Stability.js:416 | cosmeticSign · fn | stable cosmetic sway direction for centered Integrity weakness |
-| src/Server/app/Tower_Stability.js:420 | buildStructuralPose · fn | compose weak-interface section bends into per-block cosmetic transforms |
-| src/Server/app/Tower_Stability.js:483 | selectCritical · fn | deterministic weakest-interface selection |
-| src/Server/app/Tower_Stability.js:495 | evaluate · fn | **the pure stability function** — lean, integrity, slenderness, support deficit, collapse |
-| src/Server/app/Tower_Stability.js:580 | structuralLean · fn | CoM offset + column imbalance + new-brick overhang |
-| src/Server/app/Tower_Stability.js:588 | balanceDelta · fn | per-placement lean movement; drives brick mood faces, **lean only** |
+| src/Server/app/Tower_Stability.js:3 | cellsFor · fn | absolute grid cells for one placed entry |
+| src/Server/app/Tower_Stability.js:11 | key · fn | `x,y` cell key for occupancy sets |
+| src/Server/app/Tower_Stability.js:12 | clamp01 · fn | clamp helper used by every penalty term |
+| src/Server/app/Tower_Stability.js:13 | number · fn | numeric config fallback helper |
+| src/Server/app/Tower_Stability.js:17 | topHeight · fn | current tower height from entries |
+| src/Server/app/Tower_Stability.js:20 | cellsForEntries · fn | occupancy set across the whole tower |
+| src/Server/app/Tower_Stability.js:21 | settleBlock · fn | **gravity settle**; `SnapGrid.settle_origin_y` mirrors this line for line |
+| src/Server/app/Tower_Stability.js:33 | blockCells · fn | cells of a block at an origin |
+| src/Server/app/Tower_Stability.js:39 | isPlacementLegal · fn | overlap / below-platform / site bounds; **`SnapGrid.is_placement_legal` mirrors it** |
+| src/Server/app/Tower_Stability.js:53 | supportedCellsGained · fn | cells put back on solid ground; what Reinforce pays for |
+| src/Server/app/Tower_Stability.js:76 | canonicalKey · fn | geometry sort key for deterministic graph order |
+| src/Server/app/Tower_Stability.js:79 | blockId · fn | wire join id for a placed block |
+| src/Server/app/Tower_Stability.js:82 | buildNodes · fn | rigid nodes from placed-brick geometry |
+| src/Server/app/Tower_Stability.js:102 | buildContacts · fn | lower exposed-cell support contacts |
+| src/Server/app/Tower_Stability.js:130 | condense · fn | deterministic strongly connected support groups |
+| src/Server/app/Tower_Stability.js:182 | buildGroups · fn | group graph, components, and load state |
+| src/Server/app/Tower_Stability.js:264 | interfaceFor · fn | Balance and Integrity risk for one interface |
+| src/Server/app/Tower_Stability.js:342 | analyseGroups · fn | dependent-to-supporter load propagation |
+| src/Server/app/Tower_Stability.js:373 | visualSections · fn | merge low-risk support interfaces into rigid cosmetic sections |
+| src/Server/app/Tower_Stability.js:413 | rotatePoint · fn | rotate an authoritative grid point for a cosmetic section transform |
+| src/Server/app/Tower_Stability.js:417 | cosmeticSign · fn | stable cosmetic sway direction for centered Integrity weakness |
+| src/Server/app/Tower_Stability.js:421 | buildStructuralPose · fn | compose weak-interface section bends into per-block cosmetic transforms |
+| src/Server/app/Tower_Stability.js:484 | selectCritical · fn | deterministic weakest-interface selection |
+| src/Server/app/Tower_Stability.js:496 | evaluate · fn | **the pure stability function** — lean, integrity, slenderness, support deficit, collapse |
+| src/Server/app/Tower_Stability.js:578 | structuralLean · fn | CoM offset + column imbalance + new-brick overhang |
+| src/Server/app/Tower_Stability.js:586 | balanceDelta · fn | per-placement lean movement; drives brick mood faces, **lean only** |
+
+### src/Server/app/Tower_Structure_Assessment.js — 180 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Server/app/Tower_Structure_Assessment.js:3 | clamp01 · fn | normalize a fractional structural value |
+| src/Server/app/Tower_Structure_Assessment.js:7 | interfaceRisk · fn | combine Balance and Integrity risk for one interface |
+| src/Server/app/Tower_Structure_Assessment.js:11 | describeGroups · fn | serialize support groups into pure comparison records |
+| src/Server/app/Tower_Structure_Assessment.js:41 | overlapCount · fn | count shared members between two interface records |
+| src/Server/app/Tower_Structure_Assessment.js:48 | matchInterface · fn | deterministically match a before interface to its after counterpart |
+| src/Server/app/Tower_Structure_Assessment.js:66 | supportShareToPlaced · fn | trace post-placement support paths to the placed group |
+| src/Server/app/Tower_Structure_Assessment.js:91 | comparisonInterface · fn | retain the public details of a selected interface |
+| src/Server/app/Tower_Structure_Assessment.js:105 | comparePlacement · fn | pure direct-interface structural assessment for one placement |
 
 ### src/Server/app/engine/Block_Geometry.js — 109 ln
 
@@ -345,33 +358,36 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/engine/Block_Supply.js:463 | scoreRefreshBlockSet · fn | rank candidate reroll sets |
 | src/Server/app/engine/Block_Supply.js:478 | prepareTeamCarryOverBlocks · fn | carry-over on completion, precision first; **discarded on failure** |
 
-### src/Server/app/engine/Impacts.js — 322 ln
+### src/Server/app/engine/Impacts.js — 358 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Server/app/engine/Impacts.js:3 | saveImpactScores · fn | snapshot leaderboard scores at an Impact |
 | src/Server/app/engine/Impacts.js:15 | saveImpactPowers · fn | snapshot Power inventories (`powerLifetime: impact`) |
-| src/Server/app/engine/Impacts.js:28 | saveImpactState · fn | both snapshots together |
-| src/Server/app/engine/Impacts.js:33 | ensureImpactScores · fn | lazily create the score snapshot |
-| src/Server/app/engine/Impacts.js:42 | ensureImpactPowers · fn | lazily create the power snapshot |
-| src/Server/app/engine/Impacts.js:51 | ensureImpactState · fn | lazily create both |
-| src/Server/app/engine/Impacts.js:56 | restoreImpactScores · fn | roll scores back to the last passed Impact |
-| src/Server/app/engine/Impacts.js:64 | restoreImpactPowers · fn | roll inventories back; stops farming by repeated failure |
-| src/Server/app/engine/Impacts.js:78 | awardImpactPower · fn | Impact-MVP grant path, off by default |
-| src/Server/app/engine/Impacts.js:107 | isImpactLevel · fn | is this level an Impact boundary (`impactInterval`) |
-| src/Server/app/engine/Impacts.js:113 | getImpactScoreRequirement · fn | optional flat floor |
-| src/Server/app/engine/Impacts.js:117 | getImpactMinContributionShare · fn | per-player share of the pool |
-| src/Server/app/engine/Impacts.js:127 | getExpectedPlacementScoreForLevel · fn | expected pay per level, incl. the 0.85 stability discount |
-| src/Server/app/engine/Impacts.js:138 | getExpectedPlacementScoreForImpactBand · fn | summed across the band |
-| src/Server/app/engine/Impacts.js:154 | getImpactBandScoreRequirement · fn | **the gate value** each player must reach |
-| src/Server/app/engine/Impacts.js:167 | getImpactScoreFailures · fn | who missed the gate |
-| src/Server/app/engine/Impacts.js:172 | getNextImpactLevel · fn | next Impact boundary |
-| src/Server/app/engine/Impacts.js:183 | getImpactScoreStatus · fn | per-player standing; reads **banked** `score`, so callers add live `levelScore` |
-| src/Server/app/engine/Impacts.js:217 | hasMetImpactScoreRequirement · fn | single-player gate check; simulator routes here |
-| src/Server/app/engine/Impacts.js:221 | failImpactScoreRequirement · fn | gate failure → rollback |
-| src/Server/app/engine/Impacts.js:281 | rollbackToImpact · fn | restore scores and powers to the last passed Impact |
+| src/Server/app/engine/Impacts.js:28 | saveImpactContributions · fn | snapshot banked transaction contributions at an Impact |
+| src/Server/app/engine/Impacts.js:40 | saveImpactState · fn | both snapshots together |
+| src/Server/app/engine/Impacts.js:46 | ensureImpactScores · fn | lazily create the score snapshot |
+| src/Server/app/engine/Impacts.js:55 | ensureImpactPowers · fn | lazily create the power snapshot |
+| src/Server/app/engine/Impacts.js:64 | ensureImpactContributions · fn | lazily create the contribution snapshot |
+| src/Server/app/engine/Impacts.js:73 | ensureImpactState · fn | lazily create both |
+| src/Server/app/engine/Impacts.js:79 | restoreImpactScores · fn | roll scores back to the last passed Impact |
+| src/Server/app/engine/Impacts.js:87 | restoreImpactPowers · fn | roll inventories back; stops farming by repeated failure |
+| src/Server/app/engine/Impacts.js:101 | restoreImpactContributions · fn | restore contributions and clear live level contribution on rollback |
+| src/Server/app/engine/Impacts.js:109 | awardImpactPower · fn | Impact-MVP grant path, off by default |
+| src/Server/app/engine/Impacts.js:138 | isImpactLevel · fn | is this level an Impact boundary (`impactInterval`) |
+| src/Server/app/engine/Impacts.js:144 | getImpactScoreRequirement · fn | optional flat floor |
+| src/Server/app/engine/Impacts.js:148 | getImpactMinContributionShare · fn | per-player share of the pool |
+| src/Server/app/engine/Impacts.js:158 | getExpectedPlacementScoreForLevel · fn | expected pay per level, incl. the 0.85 stability discount |
+| src/Server/app/engine/Impacts.js:169 | getExpectedPlacementScoreForImpactBand · fn | summed across the band |
+| src/Server/app/engine/Impacts.js:185 | getImpactBandScoreRequirement · fn | **the gate value** each player must reach |
+| src/Server/app/engine/Impacts.js:198 | getImpactScoreFailures · fn | who missed the gate |
+| src/Server/app/engine/Impacts.js:203 | getNextImpactLevel · fn | next Impact boundary |
+| src/Server/app/engine/Impacts.js:214 | getImpactScoreStatus · fn | per-player standing; reads **banked** `score`, so callers add live `levelScore` |
+| src/Server/app/engine/Impacts.js:248 | hasMetImpactScoreRequirement · fn | single-player gate check; simulator routes here |
+| src/Server/app/engine/Impacts.js:252 | failImpactScoreRequirement · fn | gate failure → rollback |
+| src/Server/app/engine/Impacts.js:312 | rollbackToImpact · fn | restore scores and powers to the last passed Impact |
 
-### src/Server/app/engine/Placement.js — 351 ln
+### src/Server/app/engine/Placement.js — 356 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -383,36 +399,42 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/engine/Placement.js:84 | resolveColumnOriginX · fn | clamps a requested brick origin into the current site |
 | src/Server/app/engine/Placement.js:95 | resolvePlacementOrigin · fn | validates a release row and settles the authoritative landing |
 | src/Server/app/engine/Placement.js:110 | placeBlock · fn | validates, settles, scores and broadcasts one authoritative placement |
-| src/Server/app/engine/Placement.js:211 | getStabilityPressure · fn | level-ramped anchor blend share of configured stability difficulty |
-| src/Server/app/engine/Placement.js:228 | getStabilityRiskScale · fn | quadratic difficulty scale applied to structural risk |
-| src/Server/app/engine/Placement.js:239 | resolveStabilityConfig · fn | derives the physics config shared by placement evaluators |
-| src/Server/app/engine/Placement.js:267 | recalculateTowerStability · fn | evaluates the tower and queues threshold display events |
-| src/Server/app/engine/Placement.js:282 | checkWinCondition · fn | completes a level once current height reaches target |
-| src/Server/app/engine/Placement.js:290 | checkFailCondition · fn | authoritative supply-impossibility and all-blocks-used checks |
-| src/Server/app/engine/Placement.js:326 | anyPlayerCanRescueSupply · fn | detects a held Replenish that defers supply failure |
+| src/Server/app/engine/Placement.js:213 | getStabilityPressure · fn | level-ramped anchor blend share of configured stability difficulty |
+| src/Server/app/engine/Placement.js:230 | getStabilityRiskScale · fn | quadratic difficulty scale applied to structural risk |
+| src/Server/app/engine/Placement.js:241 | resolveStabilityConfig · fn | derives the physics config shared by placement evaluators |
+| src/Server/app/engine/Placement.js:269 | recalculateTowerStability · fn | evaluates the tower and queues threshold display events |
+| src/Server/app/engine/Placement.js:287 | checkWinCondition · fn | completes a level once current height reaches target |
+| src/Server/app/engine/Placement.js:295 | checkFailCondition · fn | authoritative supply-impossibility and all-blocks-used checks |
+| src/Server/app/engine/Placement.js:331 | anyPlayerCanRescueSupply · fn | detects a held Replenish that defers supply failure |
 
-### src/Server/app/engine/Scoring.js — 364 ln
+### src/Server/app/engine/Scoring.js — 428 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/app/engine/Scoring.js:3 | createScoreEvent · fn | **start here for a new score event type** — builds the wire shape |
-| src/Server/app/engine/Scoring.js:22 | queueScoreEvent · fn | queue a score event for the next broadcast |
-| src/Server/app/engine/Scoring.js:34 | consumeScoreEvents · fn | drain queued events into `game_state` |
-| src/Server/app/engine/Scoring.js:45 | getPlayerScoreMap · fn | per-player score lookup |
-| src/Server/app/engine/Scoring.js:55 | getTeamLevelScore · fn | summed level score |
-| src/Server/app/engine/Scoring.js:61 | getPlayerBonusBreakdown · fn | bonus components per player |
-| src/Server/app/engine/Scoring.js:74 | buildLevelSummary · fn | end-of-level summary payload, MVP, breakdowns |
-| src/Server/app/engine/Scoring.js:117 | recordScoreBreakdown · fn | accumulate per-category score for the summary |
-| src/Server/app/engine/Scoring.js:123 | getPlacementStabilityMultiplier · fn | `placementStabilityFloor` lerp on **inherited** stability |
-| src/Server/app/engine/Scoring.js:145 | addPlacementScore · fn | the core earner; height × level × multiplier |
-| src/Server/app/engine/Scoring.js:175 | getReinforceScoreCap · fn | repair ceiling from `avgBrickHeight`; re-prices with the brick mix |
-| src/Server/app/engine/Scoring.js:198 | addReinforceScore · fn | integrity gain, lean correction, supported cells |
-| src/Server/app/engine/Scoring.js:245 | awardCompletionBonuses · fn | precision and team-exact bonuses |
-| src/Server/app/engine/Scoring.js:284 | addBonusScore · fn | apply one bonus and emit its event |
-| src/Server/app/engine/Scoring.js:303 | getBonusScoreEventType · fn | bonus → wire event type |
-| src/Server/app/engine/Scoring.js:314 | getBonusScoreEventLabel · fn | bonus → display label |
-| src/Server/app/engine/Scoring.js:325 | addLevelScoreToLeaderboard · fn | **the only banking step**; failed levels never bank |
-| src/Server/app/engine/Scoring.js:332 | getLevelMVP · fn | highest level score; display only |
+| src/Server/app/engine/Scoring.js:4 | createScoreEvent · fn | **start here for a new score event type** — builds the wire shape |
+| src/Server/app/engine/Scoring.js:23 | queueScoreEvent · fn | queue a score event for the next broadcast |
+| src/Server/app/engine/Scoring.js:35 | consumeScoreEvents · fn | drain queued events into `game_state` |
+| src/Server/app/engine/Scoring.js:46 | getPlayerScoreMap · fn | per-player score lookup |
+| src/Server/app/engine/Scoring.js:56 | getTeamLevelScore · fn | summed level score |
+| src/Server/app/engine/Scoring.js:62 | getPlayerBonusBreakdown · fn | bonus components per player |
+| src/Server/app/engine/Scoring.js:76 | buildLevelSummary · fn | end-of-level summary payload, MVP, breakdowns |
+| src/Server/app/engine/Scoring.js:121 | recordScoreBreakdown · fn | accumulate per-category score for the summary |
+| src/Server/app/engine/Scoring.js:127 | clamp01 · fn | normalize a scoring ratio |
+| src/Server/app/engine/Scoring.js:131 | positive · fn | coerce a non-negative scoring input |
+| src/Server/app/engine/Scoring.js:135 | getActionUnit · fn | average useful-height action score at a level |
+| src/Server/app/engine/Scoring.js:141 | getExpectedNormalUsefulScoreForLevel · fn | useful-height baseline for a level |
+| src/Server/app/engine/Scoring.js:149 | getStructuralAssessment · fn | normalize direct structural utility from the pure comparator |
+| src/Server/app/engine/Scoring.js:168 | getCriticalSavePreview · fn | validate direct critical-interface rescue and its claim limits |
+| src/Server/app/engine/Scoring.js:194 | classifyPlacement · fn | server-owned placement semantic for score presentation |
+| src/Server/app/engine/Scoring.js:206 | applyPlacementCap · fn | cap a transaction without reducing useful-height points |
+| src/Server/app/engine/Scoring.js:221 | previewPlacementScore · fn | pure one-event useful-height, structural and Critical Save quote |
+| src/Server/app/engine/Scoring.js:272 | addPlacementScore · fn | award one placement transaction and emit its semantic event |
+| src/Server/app/engine/Scoring.js:307 | awardCompletionBonuses · fn | precision and team-exact bonuses |
+| src/Server/app/engine/Scoring.js:346 | addBonusScore · fn | apply one bonus and emit its event |
+| src/Server/app/engine/Scoring.js:365 | getBonusScoreEventType · fn | bonus → wire event type |
+| src/Server/app/engine/Scoring.js:376 | getBonusScoreEventLabel · fn | bonus → display label |
+| src/Server/app/engine/Scoring.js:387 | addLevelScoreToLeaderboard · fn | **the only banking step**; failed levels never bank |
+| src/Server/app/engine/Scoring.js:396 | getLevelMVP · fn | highest level score; display only |
 
 ### src/Server/migrations/0001_profiles.sql — 46 ln
 
@@ -422,7 +444,7 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### src/Server/tools/Balance_Simulator.js — 587 ln
+### src/Server/tools/Balance_Simulator.js — 736 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -434,35 +456,39 @@ _no extracted symbols_
 | src/Server/tools/Balance_Simulator.js:14 | createPlayers · fn | synthetic 3-seat roster |
 | src/Server/tools/Balance_Simulator.js:22 | createEngineForLevel · fn | constructs Game Engine directly — no lobby, Redis or socket |
 | src/Server/tools/Balance_Simulator.js:38 | withMutedConsole · fn | silence engine logging during sampling |
-| src/Server/tools/Balance_Simulator.js:50 | nextPlayerToAct · fn | **the cooldown clock**: earliest-ready player; omitting it fakes the gate rate |
-| src/Server/tools/Balance_Simulator.js:68 | chooseSmartPlacement · fn | delegates to the shipped Bot Manager, not a parallel heuristic |
-| src/Server/tools/Balance_Simulator.js:94 | simulateSmartPlay · fn | one full level simulation |
-| src/Server/tools/Balance_Simulator.js:258 | getScoreSummary · fn | per-run score aggregation |
-| src/Server/tools/Balance_Simulator.js:272 | meetsImpactGate · fn | routes through the engine's real gate check |
-| src/Server/tools/Balance_Simulator.js:276 | runLevel · fn | sample one level across both strategies |
-| src/Server/tools/Balance_Simulator.js:413 | percent · fn | rate formatting |
-| src/Server/tools/Balance_Simulator.js:417 | printResults · fn | completion, gate, MVP table |
-| src/Server/tools/Balance_Simulator.js:487 | printStabilityResults · fn | `avgStability`, `integrityBinding`, per-placement spread |
-| src/Server/tools/Balance_Simulator.js:535 | runSweep · fn | `balance:stability` difficulty sweep |
-| src/Server/tools/Balance_Simulator.js:556 | main · fn | CLI entry |
+| src/Server/tools/Balance_Simulator.js:50 | percentile · fn | deterministic payout quantile from a sampled distribution |
+| src/Server/tools/Balance_Simulator.js:61 | nextPlayerToAct · fn | **the cooldown clock**: earliest-ready player; omitting it fakes the gate rate |
+| src/Server/tools/Balance_Simulator.js:79 | chooseSmartPlacement · fn | delegates to the shipped Bot Manager, not a parallel heuristic |
+| src/Server/tools/Balance_Simulator.js:105 | simulateSmartPlay · fn | one full level simulation |
+| src/Server/tools/Balance_Simulator.js:298 | getScoreSummary · fn | per-run score aggregation |
+| src/Server/tools/Balance_Simulator.js:333 | meetsImpactGate · fn | routes through the engine's real gate check |
+| src/Server/tools/Balance_Simulator.js:337 | runLevel · fn | sample one level across both strategies |
+| src/Server/tools/Balance_Simulator.js:518 | percent · fn | rate formatting |
+| src/Server/tools/Balance_Simulator.js:522 | printResults · fn | completion, gate, MVP table |
+| src/Server/tools/Balance_Simulator.js:614 | printStabilityResults · fn | stability and transaction telemetry for each difficulty sample |
+| src/Server/tools/Balance_Simulator.js:684 | runSweep · fn | `balance:stability` difficulty sweep |
+| src/Server/tools/Balance_Simulator.js:705 | main · fn | CLI entry |
 
-### src/Server/tools/Stability_Probe.js — 311 ln
+### src/Server/tools/Stability_Probe.js — 416 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/tools/Stability_Probe.js:7 | LEVELS · const | levels probed |
-| src/Server/tools/Stability_Probe.js:8 | HEIGHT_FRACTIONS · const | tower heights sampled per archetype |
-| src/Server/tools/Stability_Probe.js:9 | DIFFICULTIES · const | representative stability-dial sweep points |
-| src/Server/tools/Stability_Probe.js:11 | createPlayers · fn | synthetic roster |
-| src/Server/tools/Stability_Probe.js:19 | withMutedConsole · fn | silence engine logging |
-| src/Server/tools/Stability_Probe.js:31 | createEngineForLevel · fn | engine without lobby, Redis or socket |
-| src/Server/tools/Stability_Probe.js:44 | rowEntry · fn | build one placed-brick row |
-| src/Server/tools/Stability_Probe.js:54 | centeredOriginX · fn | centre a shape on the site |
-| src/Server/tools/Stability_Probe.js:58 | ARCHETYPES · const | hand-built towers: spire, wide base, overhang — deterministic, unlike bot play |
-| src/Server/tools/Stability_Probe.js:195 | criticalAnalysis · fn | select the probe's weakest graph interface |
-| src/Server/tools/Stability_Probe.js:209 | run · fn | probe entry; prints stability per archetype × height |
-| src/Server/tools/Stability_Probe.js:267 | assertOpeningBrickSurvives · fn | **regression guard**: one narrow opening brick must not collapse at any level |
+| src/Server/tools/Stability_Probe.js:8 | LEVELS · const | levels probed |
+| src/Server/tools/Stability_Probe.js:9 | HEIGHT_FRACTIONS · const | tower heights sampled per archetype |
+| src/Server/tools/Stability_Probe.js:10 | DIFFICULTIES · const | representative stability-dial sweep points |
+| src/Server/tools/Stability_Probe.js:12 | createPlayers · fn | synthetic roster |
+| src/Server/tools/Stability_Probe.js:20 | withMutedConsole · fn | silence engine logging |
+| src/Server/tools/Stability_Probe.js:32 | createEngineForLevel · fn | engine without lobby, Redis or socket |
+| src/Server/tools/Stability_Probe.js:45 | rowEntry · fn | build one placed-brick row |
+| src/Server/tools/Stability_Probe.js:55 | centeredOriginX · fn | centre a shape on the site |
+| src/Server/tools/Stability_Probe.js:59 | ARCHETYPES · const | hand-built towers: spire, wide base, overhang — deterministic, unlike bot play |
+| src/Server/tools/Stability_Probe.js:196 | criticalAnalysis · fn | select the probe's weakest graph interface |
+| src/Server/tools/Stability_Probe.js:210 | run · fn | probe entry; prints stability per archetype × height |
+| src/Server/tools/Stability_Probe.js:268 | assertOpeningBrickSurvives · fn | **regression guard**: one narrow opening brick must not collapse at any level |
+| src/Server/tools/Stability_Probe.js:301 | scoringResult · fn | synthetic stability result for a deterministic score probe |
+| src/Server/tools/Stability_Probe.js:309 | scoringAssessment · fn | synthetic direct-interface comparison for a score probe |
+| src/Server/tools/Stability_Probe.js:322 | assertScoringScenarios · fn | assert transaction rewards, caps, Critical Save and claims |
 
 ---
 
-20 files · 358 symbols · 0 awaiting a `Does` line.
+21 files · 379 symbols · 0 awaiting a `Does` line.

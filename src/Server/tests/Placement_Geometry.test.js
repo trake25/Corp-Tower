@@ -172,27 +172,23 @@ test("a placement with no aimed row still settles from above", () => {
     assert.equal(placed.originY, 2, "gravity still stops it on the lid, above the void");
 });
 
-test("reinforce pays for the cells a gap fill puts back on solid ground", () => {
+test("a direct gap fill emits one structural placement transaction", () => {
     useFixedGrid();
     const { engine, messages } = createPlayingEngine(1, 12);
-
-    GameConfig.scoring.reinforceScorePerSupportedCell = 5;
-    GameConfig.scoring.reinforceScorePerIntegrity = 0;
-    GameConfig.scoring.reinforceScorePerLean = 0;
 
     buildTowerWithVoid(engine);
     engine.placeBlock("P1", 0, 5, 0);
 
-    const reinforce = latestMessage(messages).scoreEvents.find(
-        event => event.type === "reinforce"
+    const event = latestMessage(messages).scoreEvents.find(
+        scoreEvent => scoreEvent.type === "placement"
     );
 
-    assert.ok(reinforce, "filling a void is a repair and must emit a reinforce event");
+    assert.ok(event, "filling a void is a scored placement");
+    assert.ok(event.meta.structuralPoints > 0, "the direct support repair earns structural value");
     assert.equal(
-        reinforce.meta.supportedCells, 1, "the lid cell above the void is now supported"
+        latestMessage(messages).scoreEvents.some(scoreEvent => scoreEvent.type === "reinforce"),
+        false
     );
-    // 1 cell x 5 per cell x level 1, with the other two terms zeroed out
-    assert.equal(reinforce.points, 5);
 });
 
 test("stacking on top of the tower supports nothing and pays no repair", () => {
@@ -240,32 +236,23 @@ test("a brick released with nothing under it falls", () => {
     assert.equal(placed.originY, 0, "nothing holds it up, so it lands on the platform");
 });
 
-test("a repair can never out-earn an average height claim", () => {
+test("a normal structural transaction stays below the combined cap", () => {
     const { engine } = createPlayingEngine(3, 40);
-    const player = engine.room.players[0];
+    const transaction = engine.previewPlacementScore({
+        effectiveHeight: engine.getAverageBrickHeight(),
+        beforeResult: { stability: 100, diagnostics: { collapsed: false, criticalRisk: 0 }, analysis: { height: 20, groups: [] } },
+        afterResult: { stability: 100, diagnostics: { collapsed: false, criticalRisk: 0 }, analysis: { height: 20, groups: [] } },
+        assessment: {
+            riskIncrease: 0,
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 1,
+            benefitedLoadShare: 1,
+            criticalRiskReduction: 0,
+            criticalSaveCandidate: false,
+            repairClaimKey: null
+        }
+    });
 
-    GameConfig.scoring.reinforceScoreCapShare = 1;
-
-    const cap = Math.round(
-        engine.getAverageBrickHeight()
-            * GameConfig.scoring.placementScorePerHeight
-            * engine.room.level
-    );
-    const huge = engine.addReinforceScore(
-        player, { integrity: 0, tiltScore: 1.5 }, { integrity: 100, tiltScore: 0 }
-    );
-
-    assert.equal(huge, cap, "the ceiling scales with the level exactly as a claim does");
-
-    // Under the ceiling the terms still pay their raw sum, so ordinary repairs
-    // stay proportional to how much they actually fixed.
-    GameConfig.scoring.reinforceScorePerIntegrity = 2;
-    GameConfig.scoring.reinforceScorePerLean = 0;
-
-    const small = engine.addReinforceScore(
-        player, { integrity: 90, tiltScore: 0 }, { integrity: 93, tiltScore: 0 }
-    );
-
-    assert.equal(small, 18, "+3 integrity x 2 per point x level 3");
-    assert.ok(small < cap);
+    assert.equal(transaction.capHit, true);
+    assert.equal(transaction.points, transaction.cap);
 });

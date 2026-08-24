@@ -25,9 +25,22 @@ function saveImpactPowers(engine) {
     });
 }
 
+function saveImpactContributions(engine) {
+    if (!engine.room) {
+        return;
+    }
+
+    engine.room.impactContributions = {};
+
+    engine.room.players.forEach(player => {
+        engine.room.impactContributions[player.id] = player.impactContribution || 0;
+    });
+}
+
 function saveImpactState(engine) {
     engine.saveImpactScores();
     engine.saveImpactPowers();
+    engine.saveImpactContributions();
 }
 
 function ensureImpactScores(engine) {
@@ -48,9 +61,19 @@ function ensureImpactPowers(engine) {
     }
 }
 
+function ensureImpactContributions(engine) {
+    if (
+        !engine.room.impactContributions ||
+        Object.keys(engine.room.impactContributions).length === 0
+    ) {
+        engine.saveImpactContributions();
+    }
+}
+
 function ensureImpactState(engine) {
     engine.ensureImpactScores();
     engine.ensureImpactPowers();
+    engine.ensureImpactContributions();
 }
 
 function restoreImpactScores(engine) {
@@ -72,6 +95,14 @@ function restoreImpactPowers(engine) {
         player.powerInventory = engine.clonePowerInventory(
             impactPowers[player.id] || []
         );
+    });
+}
+
+function restoreImpactContributions(engine) {
+    const contributions = engine.room.impactContributions || {};
+
+    engine.room.players.forEach(player => {
+        player.impactContribution = Number(contributions[player.id] || 0);
     });
 }
 
@@ -284,10 +315,12 @@ function rollbackToImpact(engine) {
     engine.room.teamCarryOverBlocks = [];
     engine.restoreImpactScores();
     engine.restoreImpactPowers();
+    engine.restoreImpactContributions();
 
     engine.room.players.forEach(player => {
         player.blocks = [];
         player.levelScore = 0;
+        player.levelImpactContribution = 0;
         player.scoreBreakdown = {};
         player.contributedHeight = 0;
     });
@@ -299,12 +332,15 @@ function rollbackToImpact(engine) {
 module.exports = {
     saveImpactScores,
     saveImpactPowers,
+    saveImpactContributions,
     saveImpactState,
     ensureImpactScores,
     ensureImpactPowers,
+    ensureImpactContributions,
     ensureImpactState,
     restoreImpactScores,
     restoreImpactPowers,
+    restoreImpactContributions,
     awardImpactPower,
     isImpactLevel,
     getImpactScoreRequirement,

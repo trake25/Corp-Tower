@@ -1,4 +1,5 @@
 "use strict";
+const { describeGroups, comparePlacement } = require("./Tower_Structure_Assessment");
 function cellsFor(entry) {
     const block = entry.block || {};
     const cells = Array.isArray(block.cells) ? block.cells : [];
@@ -565,13 +566,10 @@ function evaluate(entries, config = {}) {
         },
         structuralPose: buildStructuralPose(groups, config),
         analysis: {
-            groups: groups.map(group => ({
-                key: group.key,
-                carriedLoadShare: group.interface.carriedLoadShare,
-                pathConcentration: group.interface.pathConcentration,
-                pivotY: group.interface.pivotY,
-                balanceRisk: group.interface.balanceRisk,
-                integrityRisk: group.interface.integrityRisk
+            height,
+            groups: describeGroups(groups).map(group => ({
+                ...group,
+                pathConcentration: groups.find(candidate => candidate.key === group.key)?.interface.pathConcentration || 0
             }))
         }
     };
@@ -595,5 +593,5 @@ function balanceDelta(before, after, config) {
 
 module.exports = {
     cellsFor, topHeight, settleBlock, isPlacementLegal, supportedCellsGained,
-    evaluate, structuralLean, balanceDelta
+    evaluate, structuralLean, balanceDelta, comparePlacement
 };

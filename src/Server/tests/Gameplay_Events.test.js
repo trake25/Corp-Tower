@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const { afterEach, test } = require("node:test");
+const { stripRuntimeRoom } = require("../app/Redis_State");
 
 const {
     GameConfig,
@@ -79,6 +80,75 @@ test("overbuild winning placement emits overbuild finish without exact bonuses",
     assert.equal(message.lastLevelSummary.exactFinish, false);
     assert.equal(message.lastLevelSummary.overbuildHeight, 1);
 
+});
+
+test("a placement emits one authoritative score transaction and contribution", () => {
+    const { engine, messages } = createPlayingEngine(2, 10);
+
+    engine.room.players[0].blocks = [createBlock(2)];
+    engine.placeBlock("P1", 0);
+
+    const message = messageWithScoreEvents(messages);
+    const placementEvents = message.scoreEvents.filter(event => event.type === "placement");
+    const player = engine.room.players[0];
+
+    assert.equal(placementEvents.length, 1);
+    assert.equal(message.scoreEvents.some(event => event.type === "reinforce"), false);
+    assert.deepEqual(
+        Object.keys(placementEvents[0].meta).sort(),
+        [
+            "benefitedLoadShare", "classification", "criticalSavePoints", "effectiveHeight",
+            "heightPoints", "heightQuality", "structuralPoints", "structuralValue"
+        ]
+    );
+    assert.equal(player.levelImpactContribution, placementEvents[0].points);
+    assert.equal(
+        message.players.find(entry => entry.id === player.id).levelImpactContribution,
+        player.levelImpactContribution
+    );
+});
+
+test("a qualified Critical Save claims its interface and banks eligible contribution", () => {
+    const { engine, messages } = createPlayingEngine(1, 20);
+    const player = engine.room.players[0];
+    const input = {
+        effectiveHeight: 0,
+        beforeResult: { stability: 40, diagnostics: { collapsed: false, criticalRisk: 0.8 }, analysis: { height: 20, groups: [] } },
+        afterResult: { stability: 80, diagnostics: { collapsed: false, criticalRisk: 0.2 }, analysis: { height: 20, groups: [] } },
+        assessment: {
+            riskIncrease: 0,
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 1,
+            benefitedLoadShare: 0.5,
+            criticalRiskReduction: 0.5,
+            criticalSaveCandidate: true,
+            repairClaimKey: "support:C"
+        },
+        stabilityConfig: { towerStabilityMinHeight: 1 }
+    };
+
+    const transaction = engine.addPlacementScore(player, input);
+    engine.broadcastGameState();
+
+    const event = latestMessage(messages).scoreEvents.find(scoreEvent => {
+        return scoreEvent.type === "critical_save";
+    });
+
+    assert.equal(transaction.criticalSave, true);
+    assert.ok(event);
+    assert.equal(engine.room.criticalSaveClaimKeys["support:C"], true);
+    assert.equal(player.levelImpactContribution, transaction.points);
+    engine.addLevelScoreToLeaderboard();
+    assert.equal(player.impactContribution, transaction.points);
+    const snapshot = stripRuntimeRoom({
+        id: "TEST",
+        players: engine.room.players,
+        state: engine.room
+    });
+
+    assert.equal(snapshot.players[0].levelImpactContribution, transaction.points);
+    assert.equal(snapshot.players[0].impactContribution, transaction.points);
+    assert.equal(snapshot.state.criticalSaveClaimKeys["support:C"], true);
 });
 
 test("refresh rerolls blocks into the five-brick set", () => {
@@ -254,7 +324,7 @@ test("failed level summary does not bank level score into final totals", () => {
 
     engine.room.players[0].score = 100;
     engine.room.players[0].levelScore = 40;
-    engine.room.players[0].scoreBreakdown = { placement: 40 };
+    engine.room.players[0].scoreBreakdown = { height: 40 };
 
     engine.failLevel("time_expired");
 
@@ -312,4 +382,3 @@ test("saveImpactPowers captures each player's current inventory", () => {
     ]);
     assert.deepEqual(engine.room.impactPowers.P3, []);
 });
-

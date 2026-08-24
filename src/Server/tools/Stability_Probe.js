@@ -1,5 +1,6 @@
 "use strict";
 
+const assert = require("node:assert/strict");
 const GameEngine = require("../app/Game_Engine");
 const TowerStability = require("../app/Tower_Stability");
 const GameConfig = require("../app/Game_Config");
@@ -297,14 +298,118 @@ function assertOpeningBrickSurvives() {
     console.log("\nOK: single opening brick never collapses at any sampled level.");
 }
 
+function scoringResult(stability = 100, criticalRisk = 0, height = 20) {
+    return {
+        stability,
+        diagnostics: { collapsed: false, criticalRisk },
+        analysis: { height, groups: [] }
+    };
+}
+
+function scoringAssessment(overrides = {}) {
+    return {
+        riskIncrease: 0,
+        rawStructuralUtility: 0,
+        directSupportShare: 0,
+        benefitedLoadShare: 0,
+        criticalRiskReduction: 0,
+        criticalSaveCandidate: false,
+        repairClaimKey: null,
+        ...overrides
+    };
+}
+
+function assertScoringScenarios() {
+    const engine = createEngineForLevel(8);
+    const averageHeight = engine.getAverageBrickHeight();
+    const actionUnit = engine.getActionUnit();
+    const preview = overrides => engine.previewPlacementScore({
+        effectiveHeight: 0,
+        beforeResult: scoringResult(),
+        afterResult: scoringResult(),
+        assessment: scoringAssessment(),
+        stabilityConfig: { towerStabilityMinHeight: 1 },
+        ...overrides
+    });
+    const clean = preview({ effectiveHeight: averageHeight });
+    const strong = preview({
+        assessment: scoringAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 1
+        })
+    });
+    const small = preview({
+        assessment: scoringAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement * 0.25,
+            directSupportShare: 1
+        })
+    });
+    const dangerous = preview({
+        effectiveHeight: averageHeight,
+        assessment: scoringAssessment({ riskIncrease: GameConfig.scoring.fullDangerRiskIncrease })
+    });
+    const zero = preview({});
+    const combined = preview({
+        effectiveHeight: averageHeight,
+        assessment: scoringAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 1
+        })
+    });
+    const criticalInput = {
+        beforeResult: scoringResult(40, 0.8),
+        afterResult: scoringResult(80, 0.2),
+        assessment: scoringAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 1,
+            benefitedLoadShare: 0.5,
+            criticalRiskReduction: 0.5,
+            criticalSaveCandidate: true,
+            repairClaimKey: "probe-critical"
+        })
+    };
+    const critical = preview(criticalInput);
+    const thresholdOnly = preview({
+        ...criticalInput,
+        afterResult: scoringResult(74, 0.2)
+    });
+    const indirect = preview({
+        assessment: scoringAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 0
+        })
+    });
+    const repeated = preview({
+        ...criticalInput,
+        claimedKeys: { "probe-critical": true }
+    });
+
+    assert.equal(clean.heightPoints, Math.round(actionUnit));
+    assert.ok(strong.structuralPoints >= actionUnit * 0.8);
+    assert.ok(strong.structuralPoints <= actionUnit * 0.9);
+    assert.ok(small.structuralPoints >= actionUnit * 0.1);
+    assert.ok(small.structuralPoints <= actionUnit * 0.4);
+    assert.ok(dangerous.points > 0 && dangerous.points < clean.points);
+    assert.equal(zero.points, 0);
+    assert.equal(combined.capHit, true);
+    assert.equal(critical.criticalSave, true);
+    assert.equal(thresholdOnly.criticalSave, false);
+    assert.equal(indirect.structuralPoints, 0);
+    assert.equal(repeated.criticalSaveRejection, "claimed");
+
+    console.log("OK: scoring scenarios cover clean, structural, danger, caps, Critical Save, and claims.");
+}
+
 if (require.main === module) {
     run();
     assertOpeningBrickSurvives();
+    assertScoringScenarios();
 }
 
 module.exports = {
     ARCHETYPES,
     criticalAnalysis,
     createEngineForLevel,
-    rowEntry
+    rowEntry,
+    assertScoringScenarios
 };

@@ -341,9 +341,9 @@ func setup(
 	configure_slider(tower_site_width_min_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMin", value))
 	configure_slider(tower_site_width_max_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMax", value))
 	configure_slider(supply_effective_width_slider, 10, 200, 5, func(value): send_debug_float("supplyEffectiveWidthRatio", value / 100.0))
-	configure_slider(placement_stability_floor_slider, 0, 100, 5, func(value): send_debug_float("placementStabilityFloor", value / 100.0))
-	configure_slider(reinforce_integrity_slider, 0, 25, 1, func(value): send_debug_float("reinforceScorePerIntegrity", value))
-	configure_slider(reinforce_lean_slider, 0, 200, 5, func(value): send_debug_float("reinforceScorePerLean", value))
+	configure_slider(placement_stability_floor_slider, 10, 100, 5, func(value): send_debug_float("dangerousHeightFloor", value / 100.0))
+	configure_slider(reinforce_integrity_slider, 10, 100, 5, func(value): send_debug_float("strongReinforcementActionShare", value / 100.0))
+	configure_slider(reinforce_lean_slider, 100, 300, 10, func(value): send_debug_float("normalCombinedCapActionShare", value / 100.0))
 	configure_slider(tower_warning_threshold_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityWarningThreshold", value))
 	configure_slider(tower_critical_threshold_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityCriticalThreshold", value))
 	configure_slider(tower_mood_threshold_slider, 1, 50, 1, func(value): send_debug_int("towerStabilityMoodThreshold", value))
@@ -719,15 +719,15 @@ func apply_config(config) -> void:
 	)
 	set_slider_no_signal(
 		placement_stability_floor_slider,
-		float(config.get("placementStabilityFloor", 0.5)) * 100.0
+		float(config.get("dangerousHeightFloor", 0.35)) * 100.0
 	)
 	set_slider_no_signal(
 		reinforce_integrity_slider,
-		float(config.get("reinforceScorePerIntegrity", 1))
+		float(config.get("strongReinforcementActionShare", 0.85)) * 100.0
 	)
 	set_slider_no_signal(
 		reinforce_lean_slider,
-		float(config.get("reinforceScorePerLean", 20))
+		float(config.get("normalCombinedCapActionShare", 1.60)) * 100.0
 	)
 	set_slider_no_signal(
 		tower_warning_threshold_slider,
@@ -834,15 +834,15 @@ func update_debug_labels() -> void:
 	)
 	set_debug_label_text(
 		placement_stability_floor_label,
-		"Placement Stability Floor: " + str(int(get_slider_value(placement_stability_floor_slider, 50))) + "%"
+		"Dangerous Height Floor: " + str(int(get_slider_value(placement_stability_floor_slider, 35))) + "%"
 	)
 	set_debug_label_text(
 		reinforce_integrity_label,
-		"Reinforce / Integrity: " + str(int(get_slider_value(reinforce_integrity_slider, 1)))
+		"Strong Reinforcement: " + str(int(get_slider_value(reinforce_integrity_slider, 85))) + "%"
 	)
 	set_debug_label_text(
 		reinforce_lean_label,
-		"Reinforce / Lean: " + str(int(get_slider_value(reinforce_lean_slider, 20)))
+		"Normal Combined Cap: " + str(int(get_slider_value(reinforce_lean_slider, 160))) + "%"
 	)
 	set_debug_label_text(
 		tower_site_slenderness_label,

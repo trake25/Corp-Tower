@@ -303,8 +303,6 @@ class BotManager {
         const currentHeight = engine.room.currentHeight;
         const releaseRows = this.getVoidReleaseRows(entries, min, max);
         const perHeight = Number(GameConfig.scoring.placementScorePerHeight) || 0;
-        const perSupportedCell =
-            Number(GameConfig.scoring.reinforceScorePerSupportedCell) || 0;
 
         const seen = new Set();
         const cheapCandidates = [];
@@ -344,18 +342,13 @@ class BotManager {
                 const effectiveHeight = Math.max(
                     0, Math.min(heightGain, targetHeight - currentHeight)
                 );
-                const proxy =
-                    effectiveHeight * perHeight +
-                    supportedCells * perSupportedCell;
-
                 cheapCandidates.push({
                     column: column,
                     originX: placement.originX,
                     originY: placement.originY,
                     heightGain: heightGain,
                     effectiveHeight: effectiveHeight,
-                    supportedCells: supportedCells,
-                    proxy: proxy,
+                    proxy: effectiveHeight * perHeight + supportedCells,
                     projected: projected
                 });
             }
@@ -369,15 +362,10 @@ class BotManager {
             .sort((a, b) => b.proxy - a.proxy)
             .slice(0, 8);
 
-        const stabilityBefore = engine.room.towerStability ?? 100;
-        const structureBefore = engine.room.towerStabilityDiagnostics || {};
         const stabilityConfig = engine.resolveStabilityConfig();
-        const placementMultiplier =
-            engine.getPlacementStabilityMultiplier(stabilityBefore, previousHeight);
-        const level = engine.room.level;
-        const perIntegrity =
-            Number(GameConfig.scoring.reinforceScorePerIntegrity) || 0;
-        const perLean = Number(GameConfig.scoring.reinforceScorePerLean) || 0;
+        const structureBefore = engine.room.towerStabilityResult || TowerStability.evaluate(
+            entries, stabilityConfig
+        );
 
         const scored = [];
 
@@ -388,31 +376,15 @@ class BotManager {
                 continue;
             }
 
-            const integrityGain = Math.max(
-                0,
-                Number(result.diagnostics.integrity ?? 100) -
-                    Number(structureBefore.integrity ?? 100)
-            );
-            const leanCorrection = Math.max(
-                0,
-                Math.abs(Number(structureBefore.tiltScore) || 0) -
-                    Math.abs(Number(result.diagnostics.tiltScore) || 0)
-            );
-            const placementPoints = Math.round(
-                candidate.effectiveHeight * level * perHeight * placementMultiplier
-            );
-            const reinforceCap = engine.getReinforceScoreCap(
-                previousHeight + candidate.heightGain
-            );
-            const reinforcePoints = Math.min(
-                reinforceCap,
-                Math.round(
-                    (integrityGain * perIntegrity +
-                        leanCorrection * perLean +
-                        candidate.supportedCells * perSupportedCell) *
-                    level
-                )
-            );
+            const placedEntry = candidate.projected[candidate.projected.length - 1];
+            const transaction = engine.previewPlacementScore({
+                block,
+                effectiveHeight: candidate.effectiveHeight,
+                placedEntry,
+                beforeResult: structureBefore,
+                afterResult: result,
+                stabilityConfig
+            });
 
             scored.push({
                 column: candidate.column,
@@ -420,7 +392,7 @@ class BotManager {
                 originY: candidate.originY,
                 heightGain: candidate.heightGain,
                 stability: result.stability,
-                points: placementPoints + reinforcePoints
+                points: transaction.points
             });
         }
 

@@ -39,6 +39,38 @@ function poseById(result, id) {
     return result.structuralPose.find(pose => pose.blockId === id);
 }
 
+function scoreResult(stability = 100, criticalRisk = 0, height = 20) {
+    return {
+        stability,
+        diagnostics: { collapsed: false, criticalRisk },
+        analysis: { height, groups: [] }
+    };
+}
+
+function scoreAssessment(overrides = {}) {
+    return {
+        riskIncrease: 0,
+        rawStructuralUtility: 0,
+        directSupportShare: 0,
+        benefitedLoadShare: 0,
+        criticalRiskReduction: 0,
+        criticalSaveCandidate: false,
+        repairClaimKey: null,
+        ...overrides
+    };
+}
+
+function previewScore(engine, overrides = {}) {
+    return engine.previewPlacementScore({
+        effectiveHeight: 0,
+        beforeResult: scoreResult(),
+        afterResult: scoreResult(),
+        assessment: scoreAssessment(),
+        stabilityConfig: fixedStabilityConfig({ towerStabilityMinHeight: 1 }),
+        ...overrides
+    });
+}
+
 test("a centered narrow spire loses Integrity without inventing a direction", () => {
     const entries = [];
     const oBlock = { cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
@@ -373,52 +405,85 @@ test("height pressure grades an identical tower harder as it nears target, witho
     assert.equal(deltaFar, 0, "and the same brick still scores zero balance delta far from target height");
 });
 
-test("placement stability multiplier's floor descends toward target height", () => {
-    const { engine } = createPlayingEngine(1, 100);
+test("clean average height earns one action unit while dangerous height stays positive", () => {
+    const { engine } = createPlayingEngine(3, 100);
+    const averageHeight = engine.getAverageBrickHeight();
+    const actionUnit = engine.getActionUnit();
+    const clean = previewScore(engine, { effectiveHeight: averageHeight });
+    const dangerous = previewScore(engine, {
+        effectiveHeight: averageHeight,
+        assessment: scoreAssessment({
+            riskIncrease: GameConfig.scoring.fullDangerRiskIncrease
+        })
+    });
 
-    GameConfig.scoring.placementStabilityFloor = 0.5;
-    GameConfig.scoring.placementStabilityFloorAtTarget = 0.1;
-
-    const atGround = engine.getPlacementStabilityMultiplier(0, 0);
-    const atTarget = engine.getPlacementStabilityMultiplier(0, 100);
-    const midway = engine.getPlacementStabilityMultiplier(0, 50);
-
-    assert.equal(atGround, 0.5, "floor at height 0 is placementStabilityFloor");
-    assert.ok(
-        Math.abs(atTarget - 0.1) < 1e-9,
-        "floor at target height is placementStabilityFloorAtTarget"
-    );
-    assert.ok(midway < atGround && midway > atTarget, "the floor lerps between the two");
-
-    // The single-argument form defaults heightBefore to the tower's current
-    // height, so a caller that only cares about the ground-floor rate can still
-    // call this with one argument -- room.currentHeight is 0 in a fresh engine.
-    assert.equal(engine.getPlacementStabilityMultiplier(0), atGround);
+    assert.equal(clean.heightPoints, Math.round(actionUnit));
+    assert.equal(clean.points, clean.heightPoints);
+    assert.equal(clean.classification, "useful_height");
+    assert.equal(dangerous.heightQuality, GameConfig.scoring.dangerousHeightFloor);
+    assert.ok(dangerous.heightPoints > 0);
+    assert.ok(dangerous.heightPoints < clean.heightPoints);
+    assert.equal(dangerous.classification, "dangerous_height");
 });
 
-test("reinforce score cap's share rises toward target height", () => {
-    const { engine } = createPlayingEngine(5, 100);
+test("structural comparison pays one direct repair and keeps indirect repair at zero", () => {
+    const { engine } = createPlayingEngine(1, 20);
+    const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
+    const cell = [[0, 0]];
+    const crown = [[0, 0], [1, 0], [2, 0], [3, 0]];
+    const before = TowerStability.evaluate([
+        stabilityEntry("L", cell, 2, 0),
+        stabilityEntry("C", crown, 1, 1)
+    ], config);
+    const placedEntry = stabilityEntry("R", cell, 3, 0);
+    const after = TowerStability.evaluate([
+        stabilityEntry("L", cell, 2, 0),
+        placedEntry,
+        stabilityEntry("C", crown, 1, 1)
+    ], config);
+    const assessment = TowerStability.comparePlacement(before, after, placedEntry);
+    const direct = previewScore(engine, {
+        beforeResult: before,
+        afterResult: after,
+        placedEntry,
+        assessment,
+        stabilityConfig: config
+    });
+    const indirect = previewScore(engine, {
+        assessment: scoreAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 0
+        })
+    });
 
-    GameConfig.scoring.reinforceScoreCapShare = 1;
-    GameConfig.scoring.reinforceScoreCapShareAtTarget = 2;
+    assert.ok(assessment.rawStructuralUtility > 0);
+    assert.ok(assessment.directSupportShare > 0);
+    assert.ok(direct.structuralPoints > 0);
+    assert.equal(indirect.structuralPoints, 0);
+    assert.equal(indirect.classification, "low_value");
+});
 
-    const atGround = engine.getReinforceScoreCap(0);
-    const atTarget = engine.getReinforceScoreCap(100);
-    const expectedAtGround = Math.round(
-        1 * engine.getAverageBrickHeight()
-            * GameConfig.scoring.placementScorePerHeight * engine.room.level
-    );
-    const expectedAtTarget = Math.round(
-        2 * engine.getAverageBrickHeight()
-            * GameConfig.scoring.placementScorePerHeight * engine.room.level
-    );
+test("strong and small reinforcement stay in their action-unit bands", () => {
+    const { engine } = createPlayingEngine(2, 40);
+    const actionUnit = engine.getActionUnit();
+    const strong = previewScore(engine, {
+        assessment: scoreAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 1
+        })
+    });
+    const small = previewScore(engine, {
+        assessment: scoreAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement * 0.25,
+            directSupportShare: 1
+        })
+    });
 
-    assert.equal(atGround, expectedAtGround);
-    assert.equal(atTarget, expectedAtTarget);
-    assert.ok(atTarget > atGround, "the cap should rise as the tower nears its target");
-
-    // heightAfter defaults to room.currentHeight, which is 0 in a fresh engine.
-    assert.equal(engine.getReinforceScoreCap(), atGround);
+    assert.ok(strong.structuralPoints >= actionUnit * 0.8);
+    assert.ok(strong.structuralPoints <= actionUnit * 0.9);
+    assert.ok(small.structuralPoints >= actionUnit * 0.1);
+    assert.ok(small.structuralPoints <= actionUnit * 0.4);
+    assert.equal(strong.classification, "reinforcement");
 });
 
 test("round-clock slack lerps down from levelTimeSlack to levelTimeSlackMin across levelTimeSlackFullLevel", () => {
@@ -505,65 +570,96 @@ test("supply coverage runs a surplus at level 1 and flattens by levelSupplyCover
     assert.equal(fullCount, pastFullCount, "coverage stays flat past levelSupplyCoverageFullLevel");
 });
 
-test("placement score scales with the stability the placer inherited", () => {
-    const { engine } = createPlayingEngine(1, 10);
+test("combined and Critical Save caps conserve the component breakdown", () => {
+    const { engine } = createPlayingEngine(2, 40);
+    const averageHeight = engine.getAverageBrickHeight();
+    const combined = previewScore(engine, {
+        effectiveHeight: averageHeight,
+        assessment: scoreAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 1
+        })
+    });
+    const critical = previewScore(engine, {
+        effectiveHeight: averageHeight,
+        beforeResult: scoreResult(40, 0.8, 20),
+        afterResult: scoreResult(80, 0.2, 20),
+        assessment: scoreAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 1,
+            benefitedLoadShare: 0.5,
+            criticalRiskReduction: 0.5,
+            criticalSaveCandidate: true,
+            repairClaimKey: "critical-interface"
+        }),
+        stabilityConfig: fixedStabilityConfig({ towerStabilityMinHeight: 1 })
+    });
 
-    GameConfig.scoring.placementStabilityFloor = 0.5;
-
-    const full = engine.getPlacementStabilityMultiplier(100);
-    const half = engine.getPlacementStabilityMultiplier(50);
-    const none = engine.getPlacementStabilityMultiplier(0);
-
-    assert.equal(full, 1);
-    assert.equal(half, 0.75);
-    assert.equal(none, 0.5);
-
-    engine.room.players[0].blocks = [createBlock(2)];
-    engine.room.towerStability = 0;
-    engine.placeBlock("P1", 0);
-
-    // 2 height x level 1 x 10 per height x 0.5 floor multiplier
-    assert.equal(engine.room.players[0].levelScore, 10);
+    assert.equal(
+        combined.points,
+        combined.heightPoints + combined.structuralPoints + combined.criticalSavePoints
+    );
+    assert.equal(combined.capHit, true);
+    assert.equal(critical.criticalSave, true);
+    assert.equal(
+        critical.points,
+        critical.heightPoints + critical.structuralPoints + critical.criticalSavePoints
+    );
+    assert.equal(critical.points, critical.cap);
 });
 
-test("reinforce pays for widening a slender tower's base", () => {
-    const { engine } = createPlayingEngine(1, 40);
-    const before = { integrity: 40, tiltScore: 0.8 };
+test("Critical Save qualification enforces claim and per-level limits", () => {
+    const { engine } = createPlayingEngine(1, 20);
+    const base = {
+        beforeResult: scoreResult(40, 0.8, 20),
+        afterResult: scoreResult(80, 0.2, 20),
+        assessment: scoreAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 1,
+            benefitedLoadShare: 0.5,
+            criticalRiskReduction: 0.5,
+            criticalSaveCandidate: true,
+            repairClaimKey: "critical-interface"
+        }),
+        stabilityConfig: fixedStabilityConfig({ towerStabilityMinHeight: 1 })
+    };
+    const qualified = previewScore(engine, base);
+    const claimed = previewScore(engine, {
+        ...base,
+        claimedKeys: { "critical-interface": true }
+    });
+    const capped = previewScore(engine, { ...base, criticalSaveCount: 2 });
+    const shallow = previewScore(engine, {
+        ...base,
+        assessment: scoreAssessment({
+            ...base.assessment,
+            criticalRiskReduction: 0.1
+        })
+    });
+
+    assert.equal(qualified.criticalSave, true);
+    assert.equal(claimed.criticalSaveRejection, "claimed");
+    assert.equal(capped.criticalSaveRejection, "level_cap");
+    assert.equal(shallow.criticalSaveRejection, "risk_reduction");
+});
+
+test("the first brick has no phantom structural value and preview equals award", () => {
+    const { engine } = createPlayingEngine(1, 10);
     const player = engine.room.players[0];
+    const input = {
+        effectiveHeight: engine.getAverageBrickHeight(),
+        beforeResult: scoreResult(),
+        afterResult: scoreResult(),
+        assessment: scoreAssessment()
+    };
+    const preview = engine.previewPlacementScore(input);
+    const awarded = engine.addPlacementScore(player, input);
 
-    GameConfig.scoring.reinforceScorePerIntegrity = 1;
-    GameConfig.scoring.reinforceScorePerLean = 20;
-
-    const gained = engine.addReinforceScore(
-        player, before, { integrity: 60, tiltScore: 0.3 }
-    );
-
-    // +20 integrity x 1 and +0.5 lean correction x 20 is 30 raw, held to the
-    // repair ceiling: one average brick's height claim at this level.
-    const cap = Math.round(
-        engine.getAverageBrickHeight() * GameConfig.scoring.placementScorePerHeight
-    );
-
-    assert.equal(gained, cap);
-    assert.equal(player.scoreBreakdown.reinforce, cap);
-
-    // a placement that makes the tower worse pays nothing
-    assert.equal(
-        engine.addReinforceScore(player, before, { integrity: 10, tiltScore: 1.5 }),
-        0
-    );
-});
-
-test("an empty tower's first placement earns no phantom reinforce", () => {
-    const { engine } = createPlayingEngine(1, 10);
-
-    engine.room.players[0].blocks = [createBlock(2)];
-    engine.placeBlock("P1", 0);
-
-    assert.equal(
-        Number(engine.room.players[0].scoreBreakdown.reinforce || 0),
-        0
-    );
+    assert.equal(preview.structuralPoints, 0);
+    assert.equal(preview.criticalSavePoints, 0);
+    assert.deepEqual(awarded, preview);
+    assert.equal(player.levelScore, preview.points);
+    assert.equal(player.levelImpactContribution, preview.impactEligiblePoints);
 });
 
 test("a centred placement scores a zero balance delta at every height", () => {

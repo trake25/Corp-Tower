@@ -194,9 +194,14 @@ func get_score_event_text(event: Dictionary, _players: Array) -> String:
 
 	match event_type:
 		"placement":
+			var meta: Dictionary = event.get("meta", {})
+			if str(meta.get("classification", "")) == "reinforcement":
+				return "REINFORCE +" + str(points)
 			return "+" + str(points)
 		"reinforce":
 			return "REINFORCE +" + str(points)
+		"critical_save":
+			return "CRITICAL SAVE +" + str(points)
 		"finisher_bonus":
 			return "FINISH +" + str(points)
 		"precision_bonus":
@@ -222,6 +227,8 @@ func get_score_event_color(event: Dictionary) -> Color:
 
 	if event_type == "power_activated" or event_type == "quick_chat":
 		return Color(0.08, 0.08, 0.09, 1.0)
+	if event_type == "critical_save":
+		return Color(1.0, 0.78, 0.22, 1.0)
 
 	if player_id != "" and players_ctx.color_map.has(player_id):
 		return players_ctx.color_map[player_id]
@@ -240,7 +247,8 @@ func get_score_event_color(event: Dictionary) -> Color:
 func is_emphasis_score_event(event_type: String) -> bool:
 	return (
 		event_type == "mvp" or
-		event_type == "impact_failed"
+		event_type == "impact_failed" or
+		event_type == "critical_save"
 	)
 
 func get_score_popup_size(event_type: String) -> Vector2:
@@ -250,7 +258,7 @@ func get_score_popup_size(event_type: String) -> Vector2:
 	if event_type == "quick_chat":
 		return Vector2(218, 56)
 
-	if event_type == "mvp" or event_type == "impact_failed":
+	if event_type == "mvp" or event_type == "impact_failed" or event_type == "critical_save":
 		return Vector2(220, 48)
 
 	return Vector2(128, 38)
@@ -259,7 +267,7 @@ func get_score_popup_font_size(event_type: String) -> int:
 	if event_type == "power_activated":
 		return 16
 
-	if event_type == "mvp" or event_type == "impact_failed":
+	if event_type == "mvp" or event_type == "impact_failed" or event_type == "critical_save":
 		return 20
 
 	return 16
@@ -314,9 +322,13 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 	if lane_count > 1:
 		x = lerpf(layer_size.x * 0.16, layer_size.x * 0.84, float(lane_index) / float(lane_count - 1))
 
+	var popup_width: float = get_score_popup_size(event_type).x
+	x = clampf(x, popup_width * 0.5, layer_size.x - popup_width * 0.5)
+
 	var y_offsets: Dictionary = {
 		"placement": 0.58,
 		"reinforce": 0.64,
+		"critical_save": 0.48,
 		"finisher_bonus": 0.5,
 		"precision_bonus": 0.44,
 		"team_exact_bonus": 0.38,

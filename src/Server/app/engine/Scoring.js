@@ -1,4 +1,5 @@
 const GameConfig = require("../Game_Config");
+const TowerStability = require("../Tower_Stability");
 
 function createScoreEvent(engine, type, options = {}) {
     engine.room.scoreEventSeq = (engine.room.scoreEventSeq || 0) + 1;
@@ -62,8 +63,9 @@ function getPlayerBonusBreakdown(engine, player) {
     const breakdown = player.scoreBreakdown || {};
 
     return {
-        placement: Number(breakdown.placement || 0),
-        reinforce: Number(breakdown.reinforce || 0),
+        height: Number(breakdown.height || 0),
+        structural: Number(breakdown.structural || 0),
+        criticalSave: Number(breakdown.criticalSave || 0),
         finisher: Number(breakdown.finisher || 0),
         precision: Number(breakdown.precision || 0),
         teamExact: Number(breakdown.team || 0),
@@ -107,6 +109,8 @@ function buildLevelSummary(engine, options) {
                 previousTotalScore: previousTotalScore,
                 finalTotalScore: Number(player.score || 0),
                 contributedHeight: Number(player.contributedHeight || 0),
+                levelImpactContribution: Number(player.levelImpactContribution || 0),
+                impactContribution: Number(player.impactContribution || 0),
                 isMvp: player.id === mvp?.id,
                 bonusBreakdown: engine.getPlayerBonusBreakdown(player)
             };
@@ -120,126 +124,184 @@ function recordScoreBreakdown(engine, player, key, points) {
         Number(player.scoreBreakdown[key] || 0) + Number(points || 0);
 }
 
-function getPlacementStabilityMultiplier(engine, stabilityBefore, heightBefore) {
-    const floorAtGround = Math.max(
-        0, Math.min(1, Number(GameConfig.scoring.placementStabilityFloor ?? 1) || 0)
-    );
-    const floorAtTarget = Math.max(
-        0,
-        Math.min(
-            1,
-            Number(GameConfig.scoring.placementStabilityFloorAtTarget ?? floorAtGround) || 0
-        )
-    );
-    const targetHeight = Math.max(0, Number(engine.room?.targetHeight) || 0);
-    const height = Math.max(
-        0, Number(heightBefore ?? engine.room?.currentHeight) || 0
-    );
-    const heightProgress = targetHeight > 0 ? Math.min(1, height / targetHeight) : 0;
-    const floor = floorAtGround + (floorAtTarget - floorAtGround) * heightProgress;
-    const stability = Math.max(0, Math.min(100, Number(stabilityBefore ?? 100)));
-
-    return floor + (1 - floor) * (stability / 100);
+function clamp01(value) {
+    return Math.max(0, Math.min(1, Number(value) || 0));
 }
 
-function addPlacementScore(engine, player, block, effectiveHeight, stabilityBefore, heightBefore) {
-    const scorePerHeight =
-        Number(GameConfig.scoring.placementScorePerHeight) || 1;
-    const multiplier =
-        engine.getPlacementStabilityMultiplier(stabilityBefore, heightBefore);
-    const points = Math.round(
-        effectiveHeight *
-            engine.room.level *
-            scorePerHeight *
-            multiplier
-    );
-
-    player.levelScore += points;
-    engine.recordScoreBreakdown(player, "placement", points);
-    engine.queueScoreEvent("placement", {
-        playerId: player.id,
-        points: points,
-        label: "Placement",
-        meta: {
-            effectiveHeight: effectiveHeight,
-            blockHeight: engine.getBlockHeight(block),
-            stabilityMultiplier: multiplier,
-            block: block
-        }
-    });
-
-    console.log(`${player.id} gained ${points} score`);
-    return points;
+function positive(value, fallback = 0) {
+    return Math.max(0, Number(value) || fallback);
 }
 
-function getReinforceScoreCap(engine, heightAfter) {
-    const shareAtGround = Math.max(0, Number(GameConfig.scoring.reinforceScoreCapShare) || 0);
-    const shareAtTarget = Math.max(
-        0,
-        Number(GameConfig.scoring.reinforceScoreCapShareAtTarget ?? shareAtGround) || 0
-    );
-    const targetHeight = Math.max(0, Number(engine.room?.targetHeight) || 0);
-    const height = Math.max(
-        0, Number(heightAfter ?? engine.room?.currentHeight) || 0
-    );
-    const heightProgress = targetHeight > 0 ? Math.min(1, height / targetHeight) : 0;
-    const share = shareAtGround + (shareAtTarget - shareAtGround) * heightProgress;
+function getActionUnit(engine, level = engine.room?.level) {
+    return Math.max(0, Number(level) || 0) *
+        positive(GameConfig.scoring?.placementScorePerHeight, 1) *
+        Math.max(1, Number(engine.getAverageBrickHeight()) || 1);
+}
 
-    if (share <= 0) {
-        return Infinity;
-    }
+function getExpectedNormalUsefulScoreForLevel(engine, level) {
+    return Math.round(
+        Math.max(0, Number(engine.getTargetHeightForLevel(level)) || 0) *
+        Math.max(0, Number(level) || 0) *
+        positive(GameConfig.scoring?.placementScorePerHeight, 1)
+    );
+}
 
+function getStructuralAssessment(input) {
+    const comparison = input.assessment || TowerStability.comparePlacement(
+        input.beforeResult, input.afterResult, input.placedEntry
+    );
+    const reference = Math.max(
+        0.0001, positive(GameConfig.scoring?.strongStructuralImprovement, 1)
+    );
+
+    const rawStructuralUtility = Number(comparison.directSupportShare || 0) > 0
+        ? Number(comparison.rawStructuralUtility || 0)
+        : 0;
+
+    return {
+        ...comparison,
+        rawStructuralUtility,
+        structuralValue: clamp01(rawStructuralUtility / reference)
+    };
+}
+
+function getCriticalSavePreview(engine, input, assessment) {
+    const claims = input.claimedKeys || engine.room?.criticalSaveClaimKeys || {};
+    const beforeStability = Number(input.beforeResult?.stability ?? 100);
+    const afterStability = Number(input.afterResult?.stability ?? 100);
+    const stabilityConfig = input.stabilityConfig || engine.resolveStabilityConfig();
+    const maturityHeight = Number(input.afterResult?.analysis?.height || 0);
+    const maxClaims = Math.max(
+        0, Math.floor(positive(GameConfig.scoring?.criticalSaveMaxPerLevel, 0))
+    );
+    const claimCount = Number(input.criticalSaveCount ?? Object.keys(claims).length) || 0;
+    const reject = reason => ({ eligible: false, reason });
+
+    if (Boolean(input.beforeResult?.diagnostics?.collapsed)) return reject("already_collapsed");
+    if (beforeStability > Number(GameConfig.towerStabilityCriticalThreshold || 0)) return reject("not_critical");
+    if (afterStability < Number(GameConfig.towerStabilityWarningThreshold || 0)) return reject("still_warning");
+    if (!assessment.criticalSaveCandidate) return reject("no_direct_repair");
+    if (assessment.criticalRiskReduction < positive(GameConfig.scoring?.criticalSaveMinRiskReduction)) return reject("risk_reduction");
+    if (assessment.benefitedLoadShare < positive(GameConfig.scoring?.criticalSaveMinLoadShare)) return reject("load_share");
+    if (assessment.directSupportShare <= 0) return reject("indirect_repair");
+    if (maturityHeight < positive(stabilityConfig.towerStabilityMinHeight, 1)) return reject("opening");
+    if (!assessment.repairClaimKey || claims[assessment.repairClaimKey]) return reject("claimed");
+    if (claimCount >= maxClaims) return reject("level_cap");
+
+    return { eligible: true, reason: null };
+}
+
+function classifyPlacement(heightPoints, structuralPoints, heightQuality, actionUnit) {
+    const material = Math.max(1, Math.round(actionUnit * 0.1));
+    const hasHeight = heightPoints >= material;
+    const hasStructural = structuralPoints >= material;
+
+    if (hasHeight && heightQuality < 0.9) return "dangerous_height";
+    if (hasHeight && hasStructural) return "combined";
+    if (hasHeight) return "useful_height";
+    if (hasStructural) return "reinforcement";
+    return "low_value";
+}
+
+function applyPlacementCap(heightPoints, structuralPoints, criticalSavePoints, cap) {
+    const total = heightPoints + structuralPoints + criticalSavePoints;
+    const excess = Math.max(0, total - cap);
+    const critical = Math.max(0, criticalSavePoints - excess);
+    const structural = Math.max(0, structuralPoints - Math.max(0, excess - criticalSavePoints));
+
+    return {
+        heightPoints,
+        structuralPoints: structural,
+        criticalSavePoints: critical,
+        points: heightPoints + structural + critical,
+        capHit: excess > 0
+    };
+}
+
+function previewPlacementScore(engine, input = {}) {
+    const level = Math.max(1, Number(engine.room?.level) || 1);
+    const actionUnit = getActionUnit(engine, level);
     const averageHeight = Math.max(1, Number(engine.getAverageBrickHeight()) || 1);
-    const scorePerHeight = Number(GameConfig.scoring.placementScorePerHeight) || 0;
+    const effectiveHeight = positive(input.effectiveHeight);
+    const assessment = getStructuralAssessment(input);
+    const danger = clamp01(
+        assessment.riskIncrease / Math.max(0.0001, positive(GameConfig.scoring?.fullDangerRiskIncrease, 1))
+    );
+    const heightQuality = 1 - (1 - clamp01(GameConfig.scoring?.dangerousHeightFloor)) * danger;
+    const heightPoints = Math.round(actionUnit * (effectiveHeight / averageHeight) * heightQuality);
+    const structuralPoints = Math.round(
+        actionUnit * positive(GameConfig.scoring?.strongReinforcementActionShare) * assessment.structuralValue
+    );
+    const criticalSave = getCriticalSavePreview(engine, input, assessment);
+    const criticalSavePoints = criticalSave.eligible
+        ? Math.round(actionUnit * positive(GameConfig.scoring?.criticalSaveBonusActionShare))
+        : 0;
+    const capShare = criticalSave.eligible
+        ? positive(GameConfig.scoring?.criticalCombinedCapActionShare)
+        : positive(GameConfig.scoring?.normalCombinedCapActionShare);
+    const cap = Math.round(Math.max(
+        heightPoints,
+        actionUnit * capShare
+    ));
+    const capped = applyPlacementCap(
+        heightPoints, structuralPoints, criticalSavePoints, cap
+    );
 
-    return Math.round(share * averageHeight * scorePerHeight * engine.room.level);
+    return {
+        ...capped,
+        actionUnit,
+        cap,
+        effectiveHeight,
+        heightQuality,
+        danger,
+        structuralValue: assessment.structuralValue,
+        benefitedLoadShare: assessment.benefitedLoadShare,
+        directSupportShare: assessment.directSupportShare,
+        riskIncrease: assessment.riskIncrease,
+        classification: classifyPlacement(
+            capped.heightPoints, capped.structuralPoints, heightQuality, actionUnit
+        ),
+        criticalSave: criticalSave.eligible,
+        criticalSaveRejection: criticalSave.reason,
+        repairClaimKey: criticalSave.eligible ? assessment.repairClaimKey : null,
+        impactEligiblePoints: capped.points,
+        assessment
+    };
 }
 
-function addReinforceScore(engine, player, before, after, supportedCells = 0) {
-    const integrityGain = Math.max(
-        0,
-        Number(after?.integrity ?? 100) - Number(before?.integrity ?? 100)
-    );
-    const leanGain = Math.max(
-        0,
-        Math.abs(Number(before?.tiltScore ?? 0)) -
-            Math.abs(Number(after?.tiltScore ?? 0))
-    );
-    const repairedCells = Math.max(0, Number(supportedCells) || 0);
-    const perIntegrity =
-        Number(GameConfig.scoring.reinforceScorePerIntegrity) || 0;
-    const perLean = Number(GameConfig.scoring.reinforceScorePerLean) || 0;
-    const perSupportedCell =
-        Number(GameConfig.scoring.reinforceScorePerSupportedCell) || 0;
-    const points = Math.min(
-        getReinforceScoreCap(engine),
-        Math.round(
-            (integrityGain * perIntegrity +
-                leanGain * perLean +
-                repairedCells * perSupportedCell) *
-                engine.room.level
-        )
-    );
+function addPlacementScore(engine, player, input = {}) {
+    const transaction = engine.previewPlacementScore(input);
 
-    if (points <= 0) {
-        return 0;
+    player.levelScore += transaction.points;
+    player.levelImpactContribution = Number(player.levelImpactContribution || 0) +
+        transaction.impactEligiblePoints;
+    engine.recordScoreBreakdown(player, "height", transaction.heightPoints);
+    engine.recordScoreBreakdown(player, "structural", transaction.structuralPoints);
+    engine.recordScoreBreakdown(player, "criticalSave", transaction.criticalSavePoints);
+
+    if (transaction.repairClaimKey) {
+        engine.room.criticalSaveClaimKeys = engine.room.criticalSaveClaimKeys || {};
+        engine.room.criticalSaveClaimKeys[transaction.repairClaimKey] = true;
     }
 
-    player.levelScore += points;
-    engine.recordScoreBreakdown(player, "reinforce", points);
-    engine.queueScoreEvent("reinforce", {
+    engine.queueScoreEvent(transaction.criticalSave ? "critical_save" : "placement", {
         playerId: player.id,
-        points: points,
-        label: "Reinforce",
+        points: transaction.points,
+        label: transaction.criticalSave ? "Critical Save" : "Placement",
         meta: {
-            integrityGain: integrityGain,
-            leanGain: leanGain,
-            supportedCells: repairedCells
+            classification: transaction.classification,
+            heightPoints: transaction.heightPoints,
+            structuralPoints: transaction.structuralPoints,
+            criticalSavePoints: transaction.criticalSavePoints,
+            effectiveHeight: transaction.effectiveHeight,
+            heightQuality: transaction.heightQuality,
+            structuralValue: transaction.structuralValue,
+            benefitedLoadShare: transaction.benefitedLoadShare
         }
     });
 
-    console.log(`${player.id} gained ${points} reinforce score`);
-    return points;
+    console.log(`${player.id} gained ${transaction.points} score`);
+    return transaction;
 }
 
 function awardCompletionBonuses(engine, finisher, exactFinish) {
@@ -325,6 +387,8 @@ function getBonusScoreEventLabel(engine, label) {
 function addLevelScoreToLeaderboard(engine) {
     engine.room.players.forEach(player => {
         player.score += player.levelScore;
+        player.impactContribution = Number(player.impactContribution || 0) +
+            Number(player.levelImpactContribution || 0);
         console.log(`${player.id} level score (${player.levelScore}) added to leaderboard score. New total: ${player.score}`);
     });
 }
@@ -350,10 +414,10 @@ module.exports = {
     getPlayerBonusBreakdown,
     buildLevelSummary,
     recordScoreBreakdown,
+    getActionUnit,
+    getExpectedNormalUsefulScoreForLevel,
+    previewPlacementScore,
     addPlacementScore,
-    addReinforceScore,
-    getPlacementStabilityMultiplier,
-    getReinforceScoreCap,
     awardCompletionBonuses,
     addBonusScore,
     getBonusScoreEventType,

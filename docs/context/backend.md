@@ -258,13 +258,19 @@ why a failed level's score doesn't count — **and why anything reading live Imp
 standing mid-level must add `levelScore` to the banked band score itself.** Both
 the client's Impact bar and Bot Manager's yield check do exactly that.
 
-`addPlacementScore` takes the stability and height the placer **inherited**, both
-captured before settling. `addReinforceScore` takes diagnostics from before and
-after, plus the `supportedCells` count measured *before* the entry was pushed, and
-is held to `getReinforceScoreCap(heightAfter)`. The cap is derived from
-`avgBrickHeight`, so it **re-prices itself when the brick mix is retuned**.
-Why the two are priced against each other →
-[gameplay.md](./gameplay.md#scoring-system).
+Each placement produces one server-authoritative transaction after settling and
+evaluating stability. Useful-height points are reduced only by risk the new entry
+adds. `TowerStability.comparePlacement(before, after, entry)` performs a pure
+matched-interface comparison; a direct repair earns structural value from the
+improved interface's risk, load share and support path. It cannot pay from an
+indirect improvement or inherited instability.
+
+The transaction caps combined normal rewards in average-action units without
+reducing useful-height points. A qualifying direct repair of a mature critical
+interface can add a Critical Save component; interface claims and the per-level
+limit make that reward single-use. `previewPlacementScore` and
+`addPlacementScore` share the same calculation, so bot ranking, tuning tools and
+the award path cannot quote different rewards.
 
 **Repair must stay a paid action.** If only height gained pays, widening the base
 or correcting a lean earns nothing and collapse is a flat team-wide loss — the
@@ -272,9 +278,9 @@ game's defining tension loses its mechanical surface. A *personal* collapse stak
 is not the alternative: it needs per-player blame attribution the pure stability
 function cannot produce.
 
-**An empty tower has no `integrity` field, so a missing before/after integrity
-defaults to 100, not 0** — otherwise the first brick of every level would pay a
-full phantom Reinforce.
+`levelImpactContribution` receives transaction points only and transfers to
+`impactContribution` when the level is banked. Both fields and Critical Save
+claims are room state so reconnect and rollback preserve the scoring contract.
 
 ## Impacts
 
@@ -285,10 +291,9 @@ awards a Power item to the band leader when an Impact opens; decides whether eac
 player met the minimum contribution share; builds the per-player status payload;
 fails the room and rolls back when the gate isn't met.
 
-`getExpectedPlacementScoreForLevel` multiplies by
-`impactExpectedStabilityMultiplier` — the formula otherwise assumes every
-placement pays a perfect 1.0 stability multiplier, so this keeps the gate's
-expectation honest as the real multiplier's floor descends with height.
+The current Impact gate remains distinct from the placement transaction. The
+engine preserves transaction-only contribution fields alongside its existing
+Impact snapshot and restore state.
 
 `rollbackToImpact()` calls `startLevel()` directly at the end, so the room
 re-enters `starting` in the same call rather than on a separate tick.
@@ -308,8 +313,8 @@ propagates cell mass and horizontal moment down every support path.
   above the tower and falls the whole way; given, it falls from there.
 - `isPlacementLegal` — on or above the platform, not inside an occupied cell.
   Support is not a legality rule; an unsupported release falls.
-- `supportedCellsGained` — called before the entry is pushed for scoring
-  compatibility.
+- `supportedCellsGained` — a pre-placement topology estimate retained for the
+  bot shortlist and geometry contracts; it does not award score.
 - `evaluate(entries, config)` — returns Stability, public diagnostics, one compact
   presentation pose per block, and in-process graph analysis for bots/tools. Pose
   records retain per-block offsets and add a section id/origin shared by rigid members.
@@ -352,11 +357,9 @@ every column in the brick's valid range with every release-row candidate
 (drop-from-above plus up to `debugBotGapCandidates` void floors), dedupes on the
 settled `(originX, originY)`, and ranks by strategy.
 
-Candidates are scored with the engine's **own reward formulas**, because both
-earners scale with height: the placement multiplier uses the shared pre-turn
-height, while the reinforce cap is recomputed per candidate off its own projected
-post-placement height — otherwise bots grade columns on cap economics the server
-never pays.
+Candidates use `previewPlacementScore` with their own before/after structural
+results, so the ranked transaction is the exact reward the authoritative
+placement path will award.
 
 Search cost is bounded two-stage: a cheap proxy pass narrows to the top 8, and only
 survivors pay for a full `evaluate()`. Naive enumeration is 3 bricks × 8 columns ×
@@ -389,6 +392,9 @@ hand-tuned playtest values that intentionally differ from the design reference.
   sets, never by adding debug physics controls. The dial linearly blends thresholds
   but applies risk with `towerStabilityPressure.difficultyCurvePower`; pose rigidity
   and Integrity sway stay presentation-only and separate from collapse risk.
+- Scoring configuration defines useful-height reward, dangerous-height retention,
+  structural action value, transaction caps and Critical Save qualification. The
+  debug surface exposes only the action-level controls required for playtesting.
 - `powerCatalog` entries carry an `active: boolean`; only `active: true` entries
   are eligible for the Impact-MVP draw. Only `replenish` is active — supply, not
   hand quality, is what actually strands a team.
@@ -416,11 +422,11 @@ only when a real connection is attempted.
 
 **Only the first `DRAW_PILE_SNAPSHOT_LIMIT` (16) pile bricks are persisted**, plus
 a hidden count that `hydrateRoom` regenerates. The compact `towerStructuralPose`
-is persisted with `towerBlocks`; full structural analysis is never serialized. The
-pile scales with target height and `persistRoom()` runs on every placement, so
-writing all of it would push a snapshot past 140 KB at level 40 against ~3.4 KB
-truncated. The regenerated tail is fresh random bricks rather than the originals,
-which is invisible — only the next draw is ever shown.
+is persisted with `towerBlocks`; full structural analysis is never serialized.
+Critical Save claims and transaction contribution fields are serializable room
+state, so a recovered room retains claim and Impact-accounting continuity. The
+regenerated pile tail is fresh random bricks because only the next draw is
+client-visible.
 
 The connection retry loop's final `client.disconnect()` is wrapped in a try/catch
 that intentionally swallows errors: best-effort cleanup after an already-failed

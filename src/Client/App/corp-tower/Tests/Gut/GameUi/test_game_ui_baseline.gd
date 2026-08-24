@@ -121,6 +121,32 @@ func test_score_events_deduplicate_by_id() -> void:
 	assert_eq(second_wait, 0.0, "Replayed score events must not report a popup wait time.")
 	assert_eq(layer.get_child_count(), popup_count_after_first, "Replayed score events must not spawn duplicate popups.")
 
+func test_score_popups_use_server_structural_classification() -> void:
+	var score_popups = harness.main.score_popups
+	var reinforced_placement := {"id": "structural-1", "type": "placement", "playerId": "P1", "points": 12, "meta": {"classification": "reinforcement"}}
+	var combined_placement := {"id": "combined-1", "type": "placement", "playerId": "P1", "points": 14, "meta": {"classification": "combined"}}
+	var critical_save := {"id": "critical-1", "type": "critical_save", "playerId": "P1", "points": 20}
+	var legacy_reinforce := {"id": "legacy-1", "type": "reinforce", "playerId": "P1", "points": 8}
+
+	assert_eq(score_popups.get_score_event_text(reinforced_placement, PLAYERS_FIXTURE), "REINFORCE +12")
+	assert_eq(score_popups.get_score_event_text(combined_placement, PLAYERS_FIXTURE), "+14")
+	assert_eq(score_popups.get_score_event_text(legacy_reinforce, PLAYERS_FIXTURE), "REINFORCE +8")
+	assert_eq(score_popups.get_score_event_text(critical_save, PLAYERS_FIXTURE), "CRITICAL SAVE +20")
+	assert_true(score_popups.is_emphasis_score_event("critical_save"))
+	assert_eq(score_popups.get_score_popup_size("critical_save"), Vector2(220, 48))
+	assert_eq(score_popups.get_score_popup_font_size("critical_save"), 20)
+	assert_eq(score_popups.get_score_event_color(critical_save), Color(1.0, 0.78, 0.22, 1.0))
+	assert_eq(score_popups.get_score_event_popup_duration_seconds(critical_save), score_popups.get_score_event_popup_duration_seconds({"type": "finisher_bonus"}))
+	var critical_position: Vector2 = score_popups.get_score_popup_position(critical_save)
+	var critical_size: Vector2 = score_popups.get_score_popup_size("critical_save")
+	assert_gte(critical_position.x - critical_size.x * 0.5, 0.0)
+	assert_lte(critical_position.x + critical_size.x * 0.5, (harness.find("ScorePopupLayer") as Control).size.x)
+
+	var layer: Control = harness.find("ScorePopupLayer") as Control
+	var before_count: int = layer.get_child_count()
+	score_popups.process_score_events([combined_placement], PLAYERS_FIXTURE)
+	assert_eq(layer.get_child_count(), before_count + 1, "One server placement event must produce one popup.")
+
 func test_team_total_events_never_spawn_popups() -> void:
 	var layer: Control = harness.find("ScorePopupLayer") as Control
 	var before_count: int = layer.get_child_count()

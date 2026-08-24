@@ -172,10 +172,13 @@ same tower.
 | `quickChatEvents[]` | Transient: `id`, `playerId`, `slot`, `text`, `createdAt`. **Never persisted or replayed after reconnect** |
 | `lastLevelSummary` | `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, `sideQuest`, and `players[]`. Impact failures also include `impactScoreStatus` |
 
-Event types: `placement`, `reinforce`, `precision_bonus`, `team_exact_bonus`,
-`exact_finish`, `overbuild_finish`, `mvp`, `tower_warning`, `tower_critical`. The
-`finisher_bonus`/`assist_bonus` types exist but both multipliers default to 0, so
-no event is emitted.
+Event types include `placement`, `critical_save`, `precision_bonus`,
+`team_exact_bonus`, `exact_finish`, `overbuild_finish`, `mvp`, `tower_warning`,
+and `tower_critical`. A placement transaction carries `meta.classification`,
+useful-height, structural and Critical Save components, effective height, height
+quality, structural value and benefited load share. Clients render those server
+semantics directly and tolerate legacy `reinforce` events during mixed-version
+reconnects. The `finisher_bonus`/`assist_bonus` types emit only when configured.
 
 **`exact_finish` and `overbuild_finish` are sent but never rendered** —
 `ScorePopupController` drops them before building a popup, since the Top Indicator
@@ -183,21 +186,22 @@ already shows that state live during play.
 
 - **Clients track seen event ids per level and never infer scoring UI from
   aggregate score diffs.**
-- Placement **and `reinforce`** use the placement popup duration, since reinforce
-  fires alongside a placement; MVP, Impact and bonus events use the finish
-  duration. Both are total popup lifetime including fade-out.
+- Placement and legacy `reinforce` use the placement popup duration; Critical
+  Save, MVP, Impact and bonus events use the finish duration. Both are total
+  popup lifetime including fade-out.
 - Level summaries queue until the current popup batch fades. Completed summaries
   bank level score into final totals; **failed summaries keep previous == final.**
 
 ## Persisted room state (Redis)
 
-Snapshots include `impactScores`, `impactPowers`, `drawPile`,
-`teamCarryOverBlocks`, `towerBlocks`, `towerStructuralPose`, timers, level state,
-and serializable player fields.
+Snapshots include `impactScores`, `impactPowers`, transaction contribution
+fields, Critical Save claims, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`,
+`towerStructuralPose`, timers, level state, and serializable player fields.
 
 - `impactScores` restores leaderboard totals during rollback, so reconnect and
   multi-worker recovery **cannot reintroduce score farming**. `impactPowers` does
-  the same for Power inventory.
+  the same for Power inventory; transaction contributions and claims restore with
+  that same boundary.
 - `drawPile` is persisted so a reconnecting client sees the same refill queue — but
   **only the first 16 bricks**, plus a hidden count the engine regenerates. Only
   the next draw is client-visible, so the regenerated tail is invisible.

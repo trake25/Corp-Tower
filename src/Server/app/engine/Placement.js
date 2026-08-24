@@ -145,12 +145,11 @@ function placeBlock(engine, playerId, blockIndex, column = null, originY = null)
     const block = player.blocks.splice(blockIndex, 1)[0];
     const blockHeight = engine.getBlockHeight(block);
     const previousHeight = engine.room.currentHeight;
-    const stabilityBefore = engine.room.towerStability ?? 100;
-    const structureBefore = engine.room.towerStabilityDiagnostics || {};
-    const placement = engine.resolvePlacementOrigin(block, column, originY);
-    const supportedCells = TowerStability.supportedCellsGained(
-        engine.room.towerBlocks || [], block, placement.originX, placement.originY
+    const stabilityConfig = engine.resolveStabilityConfig();
+    const structureBefore = engine.room.towerStabilityResult || TowerStability.evaluate(
+        engine.room.towerBlocks || [], stabilityConfig
     );
+    const placement = engine.resolvePlacementOrigin(block, column, originY);
     const projectedBlocks = [...(engine.room.towerBlocks || []), {
         playerId: player.id, block, originX: placement.originX, originY: placement.originY
     }];
@@ -177,22 +176,25 @@ function placeBlock(engine, playerId, blockIndex, column = null, originY = null)
     engine.room.towerBlocks.push(placedEntry);
     engine.refillPlayerBlock(player);
 
-    engine.addPlacementScore(player, block, effectiveHeight, stabilityBefore, previousHeight);
-    engine.tryCompleteSideQuest(player, block, engine.room.currentHeight === engine.room.targetHeight);
-
     console.log(`${player.id} placed block (${blockHeight})`);
 
-    engine.recalculateTowerStability();
+    const structureAfter = engine.recalculateTowerStability();
 
     placedEntry.balanceDelta = TowerStability.balanceDelta(
-        structureBefore,
-        engine.room.towerStabilityDiagnostics || {},
-        engine.resolveStabilityConfig()
+        structureBefore.diagnostics,
+        structureAfter.diagnostics,
+        stabilityConfig
     );
 
-    engine.addReinforceScore(
-        player, structureBefore, engine.room.towerStabilityDiagnostics || {}, supportedCells
-    );
+    engine.addPlacementScore(player, {
+        block,
+        effectiveHeight,
+        placedEntry,
+        beforeResult: structureBefore,
+        afterResult: structureAfter,
+        stabilityConfig
+    });
+    engine.tryCompleteSideQuest(player, block, engine.room.currentHeight === engine.room.targetHeight);
 
     if (engine.room.towerStability <= 0) {
         engine.failLevel("tower_collapsed");
@@ -272,11 +274,14 @@ function recalculateTowerStability(engine) {
     engine.room.towerStability = result.stability;
     engine.room.towerStabilityDiagnostics = result.diagnostics;
     engine.room.towerStructuralPose = result.structuralPose;
+    engine.room.towerStabilityResult = result;
     if (previous > GameConfig.towerStabilityCriticalThreshold && result.stability <= GameConfig.towerStabilityCriticalThreshold) {
         engine.queueScoreEvent("tower_critical", { label: "Tower Critical", displayOnly: true });
     } else if (previous > GameConfig.towerStabilityWarningThreshold && result.stability <= GameConfig.towerStabilityWarningThreshold) {
         engine.queueScoreEvent("tower_warning", { label: "Tower Wobbling", displayOnly: true });
     }
+
+    return result;
 }
 
 function checkWinCondition(engine, finisher, finishingBlock) {

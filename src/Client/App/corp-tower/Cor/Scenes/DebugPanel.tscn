@@ -417,7 +417,7 @@ unique_name_in_owner = true
 layout_mode = 2
 flat = true
 alignment = 0
-text = "Placement Stability Floor: 50%"
+text = "Dangerous Height Floor: 35%"
 
 [node name="PlacementStabilityFloorSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000302]
 unique_name_in_owner = true
@@ -428,7 +428,7 @@ unique_name_in_owner = true
 layout_mode = 2
 flat = true
 alignment = 0
-text = "Reinforce / Integrity: 1"
+text = "Strong Reinforcement: 85%"
 
 [node name="ReinforceIntegritySlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000304]
 unique_name_in_owner = true
@@ -439,7 +439,7 @@ unique_name_in_owner = true
 layout_mode = 2
 flat = true
 alignment = 0
-text = "Reinforce / Lean: 20"
+text = "Normal Combined Cap: 160%"
 
 [node name="ReinforceLeanSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000306]
 unique_name_in_owner = true
@@ -463,7 +463,7 @@ unique_name_in_owner = true
 layout_mode = 2
 flat = true
 alignment = 0
-text = "Stability Difficulty: 90"
+text = "Stability Difficulty: 60"
 
 [node name="TowerStabilityDifficultySlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000122]
 unique_name_in_owner = true
@@ -538,7 +538,7 @@ unique_name_in_owner = true
 layout_mode = 2
 flat = true
 alignment = 0
-text = "Site Width Min: 6"
+text = "Site Width Min: 8"
 
 [node name="TowerSiteWidthMinSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Tower/TowerRows" unique_id=3311000112]
 unique_name_in_owner = true

@@ -47,6 +47,17 @@ function withMutedConsole(callback) {
     }
 }
 
+function percentile(values, ratio) {
+    if (!values.length) {
+        return 0;
+    }
+
+    const sorted = values.slice().sort((left, right) => left - right);
+    const index = Math.min(sorted.length - 1, Math.max(0, Math.round((sorted.length - 1) * ratio)));
+
+    return sorted[index];
+}
+
 function nextPlayerToAct(engine, clock) {
     let next = null;
 
@@ -96,8 +107,7 @@ function simulateSmartPlay(engine, strategy) {
     let finisher = null;
     let finishingBlock = null;
     let brickHeightPlaced = 0;
-    let gapPlacements = 0;
-    let supportedCellsTotal = 0;
+    let structuralPlacements = 0;
 
     const telemetry = {
         samples: 0,
@@ -108,7 +118,19 @@ function simulateSmartPlay(engine, strategy) {
         carriedLoadShareSum: 0,
         pathConcentrationSum: 0,
         weakestInterfaceHeightSum: 0,
-        evaluatorMsSum: 0
+        evaluatorMsSum: 0,
+        score: {
+            heightPoints: 0,
+            structuralPoints: 0,
+            criticalSavePoints: 0,
+            classifications: {},
+            actionPayouts: [],
+            criticalSaves: 0,
+            criticalSaveRejections: {},
+            combinedCapHits: 0,
+            dangerousHeightCount: 0,
+            dangerousHeightPoints: 0
+        }
     };
 
     const outcome = extra => ({
@@ -119,8 +141,7 @@ function simulateSmartPlay(engine, strategy) {
         starved: false,
         placements: placements,
         brickHeightPlaced: brickHeightPlaced,
-        gapPlacements: gapPlacements,
-        supportedCells: supportedCellsTotal,
+        structuralPlacements,
         clockMs: clock,
         efficiency:
             brickHeightPlaced > 0
@@ -153,6 +174,28 @@ function simulateSmartPlay(engine, strategy) {
         telemetry.pathConcentrationSum += Number(critical.pathConcentration || 0);
         telemetry.weakestInterfaceHeightSum += Number(critical.pivotY || 0);
         telemetry.evaluatorMsSum += evaluatorMs;
+    };
+
+    const sampleScore = transaction => {
+        const score = telemetry.score;
+        const classification = String(transaction.classification || "low_value");
+        const rejection = String(transaction.criticalSaveRejection || "none");
+
+        score.heightPoints += transaction.heightPoints;
+        score.structuralPoints += transaction.structuralPoints;
+        score.criticalSavePoints += transaction.criticalSavePoints;
+        score.classifications[classification] = Number(score.classifications[classification] || 0) + 1;
+        score.actionPayouts.push(
+            transaction.actionUnit > 0 ? transaction.points / transaction.actionUnit : 0
+        );
+        score.criticalSaves += transaction.criticalSave ? 1 : 0;
+        score.criticalSaveRejections[rejection] =
+            Number(score.criticalSaveRejections[rejection] || 0) + 1;
+        score.combinedCapHits += transaction.capHit ? 1 : 0;
+        score.dangerousHeightCount += classification === "dangerous_height" ? 1 : 0;
+        score.dangerousHeightPoints += classification === "dangerous_height"
+            ? transaction.points
+            : 0;
     };
 
     const cooldown = Math.max(0, Number(GameConfig.placementCooldown) || 0);
@@ -191,16 +234,12 @@ function simulateSmartPlay(engine, strategy) {
         const block = placement.player.blocks.splice(placement.blockIndex, 1)[0];
         const blockHeight = engine.getBlockHeight(block);
         const previousHeight = engine.room.currentHeight;
-        const stabilityBefore = engine.room.towerStability ?? 100;
-        const structureBefore = engine.room.towerStabilityDiagnostics || {};
+        const stabilityConfig = engine.resolveStabilityConfig();
+        const structureBefore = engine.room.towerStabilityResult || TowerStability.evaluate(
+            engine.room.towerBlocks || [], stabilityConfig
+        );
         const placementPosition = engine.resolvePlacementOrigin(
             block, placement.column, placement.originY
-        );
-        const supportedCells = TowerStability.supportedCellsGained(
-            engine.room.towerBlocks || [],
-            block,
-            placementPosition.originX,
-            placementPosition.originY
         );
         const projected = [...(engine.room.towerBlocks || []), {
             playerId: placement.player.id, block, ...placementPosition
@@ -214,28 +253,29 @@ function simulateSmartPlay(engine, strategy) {
         placement.player.contributedHeight += effectiveHeight;
         engine.room.currentHeight = newHeight;
         brickHeightPlaced += blockHeight;
-        engine.room.towerBlocks.push({ playerId: placement.player.id, block, ...placementPosition });
-        const stabilityConfig = engine.resolveStabilityConfig();
+        const placedEntry = { playerId: placement.player.id, block, ...placementPosition };
+        engine.room.towerBlocks.push(placedEntry);
         const evaluationStartedAt = process.hrtime.bigint();
         const structure = TowerStability.evaluate(engine.room.towerBlocks, stabilityConfig);
         const evaluatorMs = Number(process.hrtime.bigint() - evaluationStartedAt) / 1000000;
         engine.room.towerStability = structure.stability;
         engine.room.towerStabilityDiagnostics = structure.diagnostics;
         engine.room.towerStructuralPose = structure.structuralPose;
+        engine.room.towerStabilityResult = structure;
         sampleStability(structure, evaluatorMs);
+        const transaction = engine.addPlacementScore(placement.player, {
+            block,
+            effectiveHeight,
+            placedEntry,
+            beforeResult: structureBefore,
+            afterResult: structure,
+            stabilityConfig
+        });
+        sampleScore(transaction);
         if (structure.stability <= 0) {
             return outcome({ collapsed: true, placements: placements + 1 });
         }
-        engine.addPlacementScore(
-            placement.player, block, effectiveHeight, stabilityBefore
-        );
-        engine.addReinforceScore(
-            placement.player, structureBefore, structure.diagnostics, supportedCells
-        );
-        if (supportedCells > 0) {
-            gapPlacements += 1;
-        }
-        supportedCellsTotal += supportedCells;
+        structuralPlacements += transaction.structuralPoints > 0 ? 1 : 0;
         placements += 1;
         finisher = placement.player;
         finishingBlock = block;
@@ -257,14 +297,35 @@ function simulateSmartPlay(engine, strategy) {
 
 function getScoreSummary(engine) {
     const scores = engine.room.players.map(player => player.levelScore || 0);
+    const contributions = engine.room.players.map(player => {
+        return Number(player.levelImpactContribution || 0);
+    });
+    const breakdown = engine.room.players.reduce((total, player) => {
+        const score = player.scoreBreakdown || {};
+
+        total.heightPoints += Number(score.height || 0);
+        total.structuralPoints += Number(score.structural || 0);
+        total.criticalSavePoints += Number(score.criticalSave || 0);
+        return total;
+    }, { heightPoints: 0, structuralPoints: 0, criticalSavePoints: 0 });
     const totalScore = scores.reduce((total, score) => total + score, 0);
     const mvpScore = Math.max(...scores);
     const minScore = Math.min(...scores);
+    const expectedNormalUsefulScore = engine.getExpectedNormalUsefulScoreForLevel(
+        engine.room.level
+    );
 
     return {
         teamLevelScore: totalScore,
         mvpLevelScore: mvpScore,
         scoreSpread: mvpScore - minScore,
+        scoreHeightPoints: breakdown.heightPoints,
+        scoreStructuralPoints: breakdown.structuralPoints,
+        scoreCriticalSavePoints: breakdown.criticalSavePoints,
+        teamScorePoolRatio: expectedNormalUsefulScore > 0
+            ? totalScore / expectedNormalUsefulScore
+            : 0,
+        impactContributionSpread: Math.max(...contributions) - Math.min(...contributions),
         gateMet: meetsImpactGate(engine)
     };
 }
@@ -297,9 +358,13 @@ function runLevel(level, runs, strategy = "cooperative") {
         modelEfficiency: 0,
         pileClipped: 0,
         supplyValid: 0,
-        averageGapPlacements: 0,
-        averageSupportedCells: 0,
+        averageStructuralPlacements: 0,
         averageClockUsedS: 0,
+        averageScoreHeightPoints: 0,
+        averageScoreStructuralPoints: 0,
+        averageScoreCriticalSavePoints: 0,
+        averageTeamScorePoolRatio: 0,
+        averageImpactContributionSpread: 0,
         samples: 0,
         stabilitySum: 0,
         minStability: 100,
@@ -308,7 +373,14 @@ function runLevel(level, runs, strategy = "cooperative") {
         carriedLoadShareSum: 0,
         pathConcentrationSum: 0,
         weakestInterfaceHeightSum: 0,
-        evaluatorMsSum: 0
+        evaluatorMsSum: 0,
+        scoreClassifications: {},
+        criticalSaveRejections: {},
+        actionPayouts: [],
+        criticalSaves: 0,
+        combinedCapHits: 0,
+        dangerousHeightCount: 0,
+        dangerousHeightPoints: 0
     };
 
     for (let i = 0; i < runs; i++) {
@@ -342,9 +414,13 @@ function runLevel(level, runs, strategy = "cooperative") {
         stats.averageTeamLevelScore += result.teamLevelScore;
         stats.averageMvpLevelScore += result.mvpLevelScore;
         stats.averageScoreSpread += result.scoreSpread;
-        stats.averageGapPlacements += result.gapPlacements;
-        stats.averageSupportedCells += result.supportedCells;
+        stats.averageStructuralPlacements += result.structuralPlacements;
         stats.averageClockUsedS += result.clockMs / 1000;
+        stats.averageScoreHeightPoints += result.scoreHeightPoints;
+        stats.averageScoreStructuralPoints += result.scoreStructuralPoints;
+        stats.averageScoreCriticalSavePoints += result.scoreCriticalSavePoints;
+        stats.averageTeamScorePoolRatio += result.teamScorePoolRatio;
+        stats.averageImpactContributionSpread += result.impactContributionSpread;
 
         stats.requiredBrickHeight = Math.ceil(
             engine.room.targetHeight / engine.getSupplyPackingEfficiency()
@@ -362,6 +438,17 @@ function runLevel(level, runs, strategy = "cooperative") {
         stats.pathConcentrationSum += t.pathConcentrationSum;
         stats.weakestInterfaceHeightSum += t.weakestInterfaceHeightSum;
         stats.evaluatorMsSum += t.evaluatorMsSum;
+        Object.entries(t.score.classifications).forEach(([key, value]) => {
+            stats.scoreClassifications[key] = Number(stats.scoreClassifications[key] || 0) + value;
+        });
+        Object.entries(t.score.criticalSaveRejections).forEach(([key, value]) => {
+            stats.criticalSaveRejections[key] = Number(stats.criticalSaveRejections[key] || 0) + value;
+        });
+        stats.actionPayouts.push(...t.score.actionPayouts);
+        stats.criticalSaves += t.score.criticalSaves;
+        stats.combinedCapHits += t.score.combinedCapHits;
+        stats.dangerousHeightCount += t.score.dangerousHeightCount;
+        stats.dangerousHeightPoints += t.score.dangerousHeightPoints;
         if (t.samples > 0) {
             stats.minStability = Math.min(stats.minStability, t.minStability);
         }
@@ -404,9 +491,27 @@ function runLevel(level, runs, strategy = "cooperative") {
         modelEfficiency: stats.modelEfficiency,
         pileClippedRate: stats.pileClipped / runs,
         supplyValidRate: stats.supplyValid / runs,
-        averageGapPlacements: stats.averageGapPlacements / runs,
-        averageSupportedCells: stats.averageSupportedCells / runs,
-        averageClockUsedS: stats.averageClockUsedS / runs
+        averageStructuralPlacements: stats.averageStructuralPlacements / runs,
+        averageClockUsedS: stats.averageClockUsedS / runs,
+        averageScoreHeightPoints: stats.averageScoreHeightPoints / runs,
+        averageScoreStructuralPoints: stats.averageScoreStructuralPoints / runs,
+        averageScoreCriticalSavePoints: stats.averageScoreCriticalSavePoints / runs,
+        averageTeamScorePoolRatio: stats.averageTeamScorePoolRatio / runs,
+        averageImpactContributionSpread: stats.averageImpactContributionSpread / runs,
+        actionPayoutP50: percentile(stats.actionPayouts, 0.5),
+        actionPayoutP90: percentile(stats.actionPayouts, 0.9),
+        classifications: stats.scoreClassifications,
+        criticalSaveRejections: stats.criticalSaveRejections,
+        criticalSaveCount: stats.criticalSaves,
+        combinedCapHitRate: stats.actionPayouts.length > 0
+            ? stats.combinedCapHits / stats.actionPayouts.length
+            : 0,
+        dangerousHeightRate: stats.actionPayouts.length > 0
+            ? stats.dangerousHeightCount / stats.actionPayouts.length
+            : 0,
+        dangerousHeightAveragePoints: stats.dangerousHeightCount > 0
+            ? stats.dangerousHeightPoints / stats.dangerousHeightCount
+            : 0
     };
 }
 
@@ -440,8 +545,19 @@ function printResults(results) {
             "avgOverbuild",
             "avgPlacements",
             "clockUsedS",
-            "gapPlacements",
-            "supportedCells",
+            "structuralPlacements",
+            "heightPoints",
+            "structuralPoints",
+            "criticalSavePoints",
+            "teamScorePool",
+            "actionP50",
+            "actionP90",
+            "criticalSaves",
+            "combinedCapHits",
+            "dangerousHeightRate",
+            "dangerousHeightPoints",
+            "classificationCounts",
+            "criticalSaveRejects",
             "avgTeamScore",
             "avgMvpScore",
             "avgScoreSpread"
@@ -474,8 +590,19 @@ function printResults(results) {
                 result.averageOverbuild.toFixed(2),
                 result.averagePlacements.toFixed(1),
                 result.averageClockUsedS.toFixed(1),
-                result.averageGapPlacements.toFixed(2),
-                result.averageSupportedCells.toFixed(2),
+                result.averageStructuralPlacements.toFixed(2),
+                result.averageScoreHeightPoints.toFixed(1),
+                result.averageScoreStructuralPoints.toFixed(1),
+                result.averageScoreCriticalSavePoints.toFixed(1),
+                result.averageTeamScorePoolRatio.toFixed(3),
+                result.actionPayoutP50.toFixed(3),
+                result.actionPayoutP90.toFixed(3),
+                result.criticalSaveCount,
+                percent(result.combinedCapHitRate),
+                percent(result.dangerousHeightRate),
+                result.dangerousHeightAveragePoints.toFixed(1),
+                JSON.stringify(result.classifications),
+                JSON.stringify(result.criticalSaveRejections),
                 result.averageTeamLevelScore.toFixed(1),
                 result.averageMvpLevelScore.toFixed(1),
                 result.averageScoreSpread.toFixed(1)
@@ -502,6 +629,17 @@ function printStabilityResults(results) {
             "avgPathConcentration",
             "avgWeakestInterfaceHeight",
             "avgEvaluatorMs",
+            "heightPoints",
+            "structuralPoints",
+            "criticalSavePoints",
+            "actionP50",
+            "actionP90",
+            "criticalSaves",
+            "combinedCapHits",
+            "dangerousHeightRate",
+            "classificationCounts",
+            "criticalSaveRejects",
+            "teamScorePool",
             "avgTeamScore",
             "avgMvpScore"
         ].join(",")
@@ -525,6 +663,17 @@ function printStabilityResults(results) {
                 result.averagePathConcentration.toFixed(3),
                 result.averageWeakestInterfaceHeight.toFixed(2),
                 result.averageEvaluatorMs.toFixed(3),
+                result.averageScoreHeightPoints.toFixed(1),
+                result.averageScoreStructuralPoints.toFixed(1),
+                result.averageScoreCriticalSavePoints.toFixed(1),
+                result.actionPayoutP50.toFixed(3),
+                result.actionPayoutP90.toFixed(3),
+                result.criticalSaveCount,
+                percent(result.combinedCapHitRate),
+                percent(result.dangerousHeightRate),
+                JSON.stringify(result.classifications),
+                JSON.stringify(result.criticalSaveRejections),
+                result.averageTeamScorePoolRatio.toFixed(3),
                 result.averageTeamLevelScore.toFixed(1),
                 result.averageMvpLevelScore.toFixed(1)
             ].join(",")

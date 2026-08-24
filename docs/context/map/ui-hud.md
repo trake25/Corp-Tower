@@ -415,7 +415,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:147 | flash_impact_bars | Impact Beat bar flash |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:173 | _impact_glow_tint | flash colour |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 337 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 349 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -434,13 +434,13 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:150 | get_score_popup_fade_duration_seconds | resolved fade time |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:183 | clear_score_popups | remove all popups |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:190 | get_score_event_text | **event type to label** — add a new score event here |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:219 | get_score_event_color | event type to colour |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:240 | is_emphasis_score_event | which events render large |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:246 | get_score_popup_size | popup box size, 128px wide |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:258 | get_score_popup_font_size | popup font size |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:267 | make_score_popup_style | popup stylebox |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:288 | get_score_popup_position | lane x 0.16-0.84; lanes must clear the 128px width |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:329 | get_score_event_popup_duration_seconds | per-event duration |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:224 | get_score_event_color | event type to colour |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:247 | is_emphasis_score_event | which events render large |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:254 | get_score_popup_size | popup box size, 128px wide |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:266 | get_score_popup_font_size | popup font size |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:275 | make_score_popup_style | popup stylebox |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:296 | get_score_popup_position | lane x 0.16-0.84; lanes must clear the 128px width |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:341 | get_score_event_popup_duration_seconds | per-event duration |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd — 331 ln
 

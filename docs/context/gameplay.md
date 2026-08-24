@@ -5,9 +5,8 @@ Implementation → [backend.md](./backend.md). Wire contract →
 [networking.md](./networking.md). Update this file for design, scoring, balance,
 progression, debug-tuning semantics and bot behaviour.
 
-> **Live tuning in progress.** Numbers here are the design's reference values.
-> `Game_Config.js` carries hand-tuned playtest values that deliberately differ.
-> **This doc is what each knob means; `Game_Config.js` is its current value.**
+> **Live tuning:** this doc defines knob semantics; `Game_Config.js` holds every
+> current value.
 
 ## Core concept
 
@@ -314,8 +313,8 @@ auth before public release.
 
 Every row carries its own in-app explainer with its formula. The categories are
 **Bots · Round · UI · Impact · Supply · Tower (stability / site / feedback) ·
-Power · Scoring · Parallax · Placement · Hooks**; `Game_Config.js` is 152 lines
-and holds the keys and current values, so read it rather than a prose copy.
+Power · Scoring · Parallax · Placement · Hooks**. Read `Game_Config.js` for keys
+and current values rather than maintaining a prose copy.
 
 `towerSiteWidthMax` is hard-capped at 8 by the viewport, and the two feedback
 warning thresholds are display-only with critical clamped below warning. Which
@@ -326,6 +325,10 @@ The three most load-bearing knobs: `towerStabilityDifficulty` (all of stability)
 `impactMinContributionShare` (the per-level gate), and
 `towerSiteSlendernessTarget` (reshapes the whole aspect ratio, and with it the
 support width the structural rule is measured against).
+
+The Scoring controls tune dangerous useful-height retention, strong direct
+structural action value and the normal combined transaction cap. They do not
+alter collapse rules or create a second reinforcement reward.
 
 ## Bot behaviour
 

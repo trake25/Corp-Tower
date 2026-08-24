@@ -50,7 +50,7 @@ use `useFixedGrid()`/`fixedStabilityConfig()` instead of live tunables.
 
 Keep these paired signals: centred `balanceDelta === 0` while raw stability sags;
 a symmetric slender spire collapses with zero tilt; the first brick earns no
-phantom Reinforce; unknown derived/debug keys are positively rejected. An
+phantom structural value; unknown derived/debug keys are positively rejected. An
 off-centre scoring case that asserts exact event types must zero live stability
 difficulty in `try`/`finally` or an unrelated warning joins the event list.
 
@@ -79,8 +79,9 @@ syntax-checked only. Run `npm run balance:simulate -- <levels> <runs>`.
 - **Stability sweep:** `npm run balance:stability` re-runs every level at
   difficulty 0/5/25/50/75/100 and prints `avgStability`, `minStability`,
   `avgBalance`, `avgIntegrity`, critical carried-load share, path concentration,
-  weakest-interface height, and evaluator time. Sampled at **every placement**,
-  not just level end.
+  weakest-interface height, evaluator time, and transaction components,
+  classifications, caps and Critical Save rejections. Sampled at **every
+  placement**, not just level end.
 
 `gatePassed` is the number that matters most under a per-level Impact rule — a
 level can complete and still roll the team back. It routes through the engine's
@@ -113,7 +114,9 @@ balance problem:
 blind spot with narrow bottlenecks, wide crowns, redundant supports, disconnected
 stacks, and gap-repair geometry across heights and levels through
 `resolveStabilityConfig(level)` at every sweep difficulty. It asserts a single
-opening brick never collapses at any sampled level or difficulty.
+opening brick never collapses at any sampled level or difficulty, and probes
+clean height, direct repairs, dangerous height, transaction caps, Critical Saves
+and claim reuse.
 
 Both are tuning aids, not gameplay authorities.
 

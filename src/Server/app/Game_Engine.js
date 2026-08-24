@@ -85,6 +85,8 @@ class GameEngine {
                 isBot: Boolean(player.isBot),
                 score: player.score,
                 levelScore: player.levelScore,
+                levelImpactContribution: player.levelImpactContribution,
+                impactContribution: player.impactContribution,
                 contributedHeight: player.contributedHeight,
                 blocks: player.blocks,
                 powerInventory: player.powerInventory || []
@@ -114,6 +116,7 @@ class GameEngine {
             impactLevel: startLevel,
             impactScores: {},
             impactPowers: {},
+            impactContributions: {},
             targetHeight: this.getTargetHeightForLevel(startLevel),
             currentHeight: 0,
             drawPile: [],
@@ -123,6 +126,7 @@ class GameEngine {
             towerStability: 100,
             towerStabilityDiagnostics: {},
             towerStructuralPose: [],
+            towerStabilityResult: null,
             state: "waiting",
             startsAt: 0,
             endsAt: 0,
@@ -132,6 +136,7 @@ class GameEngine {
             pendingQuickChatEvents: [],
             pendingPowerEvents: [],
             sideQuest: null,
+            criticalSaveClaimKeys: {},
             scoreEventSeq: 0
         };
 
@@ -144,6 +149,8 @@ class GameEngine {
     initializePlayerForRoom(player) {
         player.score = player.score || 0;
         player.levelScore = 0;
+        player.levelImpactContribution = 0;
+        player.impactContribution = player.impactContribution || 0;
         player.scoreBreakdown = {};
         player.contributedHeight = 0;
         player.blocks = [];
@@ -178,6 +185,7 @@ class GameEngine {
             impactLevel: snapshot.state.impactLevel,
             impactScores: snapshot.state.impactScores || {},
             impactPowers: snapshot.state.impactPowers || {},
+            impactContributions: snapshot.state.impactContributions || {},
             targetHeight: snapshot.state.targetHeight,
             currentHeight: snapshot.state.currentHeight,
             drawPile: snapshot.state.drawPile || [],
@@ -197,8 +205,13 @@ class GameEngine {
             pendingQuickChatEvents: [],
             pendingPowerEvents: [],
             sideQuest: snapshot.state.sideQuest || null,
+            criticalSaveClaimKeys: snapshot.state.criticalSaveClaimKeys || {},
             scoreEventSeq: 0
         };
+        this.room.players.forEach(player => {
+            player.levelImpactContribution = Number(player.levelImpactContribution || 0);
+            player.impactContribution = Number(player.impactContribution || 0);
+        });
         const hiddenCount = Math.max(0, Number(snapshot.state.drawPileHiddenCount) || 0);
 
         if (hiddenCount > 0) {
@@ -426,6 +439,7 @@ class GameEngine {
         this.room.towerStability = 100;
         this.room.towerStabilityDiagnostics = {};
         this.room.towerStructuralPose = [];
+        this.room.towerStabilityResult = null;
         this.room.targetHeight =
             this.getTargetHeightForLevel(this.room.level);
         this.room.startsAt = Date.now() + GameConfig.startDelayMs;
@@ -433,11 +447,13 @@ class GameEngine {
         this.room.endsAt = this.room.startsAt + this.room.levelDurationMs;
         this.room.lastLevelSummary = null;
         this.room.pendingScoreEvents = this.room.pendingScoreEvents || [];
+        this.room.criticalSaveClaimKeys = {};
         this.setupSideQuest();
         this.grantDefaultPowers();
 
         this.room.players.forEach(player => {
             player.levelScore = 0;
+            player.levelImpactContribution = 0;
             player.scoreBreakdown = {};
             player.contributedHeight = 0;
             player.blocks = [];
@@ -629,18 +645,22 @@ class GameEngine {
         this.room.currentHeight = 0;
         this.room.towerStability = 100;
         this.room.towerStabilityDiagnostics = {};
+        this.room.towerStabilityResult = null;
         this.room.targetHeight = this.getTargetHeightForLevel(targetLevel);
         this.room.lastLevelSummary = null;
         this.room.pendingScoreEvents = [];
+        this.room.criticalSaveClaimKeys = {};
         this.room.scoreEventSeq = 0;
 
         this.room.players.forEach(player => {
             if (options.resetScores) {
                 player.score = 0;
+                player.impactContribution = 0;
                 player.powerInventory = [];
             }
 
             player.levelScore = 0;
+            player.levelImpactContribution = 0;
             player.scoreBreakdown = {};
             player.contributedHeight = 0;
             player.blocks = [];
@@ -850,10 +870,10 @@ class GameEngine {
     getPlayerBonusBreakdown(player) { return Scoring.getPlayerBonusBreakdown(this, player); }
     buildLevelSummary(options) { return Scoring.buildLevelSummary(this, options); }
     recordScoreBreakdown(player, key, points) { return Scoring.recordScoreBreakdown(this, player, key, points); }
-    addPlacementScore(player, block, effectiveHeight, stabilityBefore, heightBefore) { return Scoring.addPlacementScore(this, player, block, effectiveHeight, stabilityBefore, heightBefore); }
-    addReinforceScore(player, before, after, supportedCells = 0) { return Scoring.addReinforceScore(this, player, before, after, supportedCells); }
-    getPlacementStabilityMultiplier(stabilityBefore, heightBefore) { return Scoring.getPlacementStabilityMultiplier(this, stabilityBefore, heightBefore); }
-    getReinforceScoreCap(heightAfter) { return Scoring.getReinforceScoreCap(this, heightAfter); }
+    getActionUnit(level) { return Scoring.getActionUnit(this, level); }
+    getExpectedNormalUsefulScoreForLevel(level) { return Scoring.getExpectedNormalUsefulScoreForLevel(this, level); }
+    previewPlacementScore(input) { return Scoring.previewPlacementScore(this, input); }
+    addPlacementScore(player, input) { return Scoring.addPlacementScore(this, player, input); }
     awardCompletionBonuses(finisher, exactFinish) { return Scoring.awardCompletionBonuses(this, finisher, exactFinish); }
     addBonusScore(player, points, label) { return Scoring.addBonusScore(this, player, points, label); }
     getBonusScoreEventType(label) { return Scoring.getBonusScoreEventType(this, label); }
@@ -863,12 +883,15 @@ class GameEngine {
 
     saveImpactScores() { return Impacts.saveImpactScores(this); }
     saveImpactPowers() { return Impacts.saveImpactPowers(this); }
+    saveImpactContributions() { return Impacts.saveImpactContributions(this); }
     saveImpactState() { return Impacts.saveImpactState(this); }
     ensureImpactScores() { return Impacts.ensureImpactScores(this); }
     ensureImpactPowers() { return Impacts.ensureImpactPowers(this); }
+    ensureImpactContributions() { return Impacts.ensureImpactContributions(this); }
     ensureImpactState() { return Impacts.ensureImpactState(this); }
     restoreImpactScores() { return Impacts.restoreImpactScores(this); }
     restoreImpactPowers() { return Impacts.restoreImpactPowers(this); }
+    restoreImpactContributions() { return Impacts.restoreImpactContributions(this); }
     awardImpactPower() { return Impacts.awardImpactPower(this); }
     isImpactLevel(level) { return Impacts.isImpactLevel(this, level); }
     getImpactScoreRequirement() { return Impacts.getImpactScoreRequirement(this); }
