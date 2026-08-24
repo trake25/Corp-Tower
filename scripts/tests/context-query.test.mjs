@@ -32,6 +32,20 @@ test('task cost report routes to the automation protocol', () => {
   assert.equal(result.read, 'hunk');
 });
 
+test('working folders route to explicit plan and reference guidance', () => {
+  const plan = routeContext('plan/example.md');
+  assert.equal(plan.skill, 'docs-steward');
+  assert.deepEqual(plan.workspace, {
+    name: 'plan',
+    purpose: 'Task plans. Read existing plans for context; save new plans here.',
+    policy: 'Existing plans are read-only unless the user explicitly authorizes an edit.',
+  });
+  const reference = routeContext('reference/play-screen-guides/Bugs/crash.png');
+  assert.equal(reference.skill, 'client-engineer');
+  assert.equal(reference.workspace.name, 'reference');
+  assert.match(reference.workspace.purpose, /screen guides and bug screenshots/);
+});
+
 test('scope derives routing, map, and QA selection from explicit paths', () => {
   const result = scopeContext(['src/Server/app/engine/Scoring.js']);
 

@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mapOwnerForPath, routeSourcePath } from './lib/context-routing.mjs';
+import { isUnrecordedModel } from './lib/task-report-schema.mjs';
 import { selectQa } from './qa-gate.mjs';
 
 const ROOT = resolve(process.env.TASK_CLOSE_ROOT || '.');
@@ -86,7 +88,7 @@ function domainFor(path) {
   return 'repository';
 }
 
-export function createManifest({ task, changedPaths }) {
+export function createManifest({ task, changedPaths, estimate = null, runtime = null }) {
   if (!task || task.length > 120) throw new Error('task must be present and at most 120 characters');
   const changed = [...new Set(changedPaths)].sort();
   if (!changed.length) throw new Error('one or more changed paths are required');
@@ -106,6 +108,7 @@ export function createManifest({ task, changedPaths }) {
       docs: route?.docs || [],
       map: route?.map ? `docs/context/map/${route.map}` : null,
       read: route?.read || null,
+      workspace: route?.purpose ? { name: route.name, purpose: route.purpose, policy: route.policy } : null,
     })),
     qa: selectQa(changed),
     documentation: {
@@ -117,9 +120,33 @@ export function createManifest({ task, changedPaths }) {
       documented_paths: [],
       scope: null,
     },
+    estimate,
+    runtime,
     verification: null,
     report: null,
   };
+}
+
+function manifestFingerprint(manifest) {
+  const copy = JSON.parse(JSON.stringify(manifest));
+  if (copy.estimate) copy.estimate.manifest_hash = null;
+  return createHash('sha256').update(JSON.stringify(copy)).digest('hex');
+}
+
+function intakeEstimate(values) {
+  const raw = one(values, 'r-est', true);
+  const tokens = Number(String(raw).replaceAll(',', ''));
+  if (!Number.isInteger(tokens) || tokens < 0) fail('--r-est must be a non-negative integer token estimate');
+  const basis = one(values, 'r-est-basis', true).trim();
+  if (!basis) fail('--r-est-basis must explain the estimate');
+  return { tokens, timing: 'pre-read', basis, recorded_at: new Date().toISOString(), route_count: null, manifest_hash: null };
+}
+
+function intakeRuntime(values) {
+  if (values.get('model')) fail('--model is not an intake option; use --model-variant with task-close prepare');
+  const model = one(values, 'model-variant', true).trim();
+  if (isUnrecordedModel(model)) fail('--model-variant must be the exact implementing runtime variant');
+  return { model, recorded_at: new Date().toISOString() };
 }
 
 export function applyDocumentationDecision(manifest, { decision, reason, documentedPaths = [] }) {
@@ -147,6 +174,8 @@ export function intakeForManifest(manifest, manifestFile) {
     manifest: manifestFile,
     intake: {
       task_owned_paths: manifest.changed_paths,
+      estimate: manifest.estimate,
+      runtime: manifest.runtime,
       routes: manifest.routes,
       qa: manifest.qa,
       documentation: {
@@ -241,10 +270,15 @@ function verify(manifest, manifestFile) {
 
 function report(manifest, manifestFile, values) {
   if (manifest.verification?.status !== 'passed') fail('verification must pass before reporting', 1);
-  const required = ['complexity', 'mode', 'r-est', 'r-act', 'total', 'main', 'hit', 'verdict', 'model', 'effort', 'skills'];
+  if (values.get('r-est') || values.get('r-est-basis')) fail('estimate flags are intake-only; record them with task-close prepare before retrieval', 1);
+  if (values.get('model') || values.get('model-variant')) fail('model variant is intake-only; record it with task-close prepare before retrieval', 1);
+  if (!manifest.estimate || manifest.estimate.timing !== 'pre-read' || !Number.isInteger(manifest.estimate.tokens)) fail('manifest has no valid pre-read estimate; rerun task-close prepare with --r-est and --r-est-basis', 1);
+  if (!manifest.runtime || isUnrecordedModel(manifest.runtime.model)) fail('manifest has no exact model variant; rerun task-close prepare with --model-variant', 1);
+  if (!manifest.verification.receipt) fail('verification receipt is missing; rerun task-close verify', 1);
+  const required = ['complexity', 'mode', 'r-act', 'total', 'main', 'hit', 'verdict', 'effort', 'skills'];
   for (const key of required) one(values, key, true);
   const files = new Set([...manifest.changed_paths, ...manifest.documentation.documented_paths]);
-  const args = ['scripts/task-report.mjs', 'append', '--task', manifest.task, '--domains', String(manifest.domains.length), '--files', String(files.size)];
+  const args = ['scripts/task-report.mjs', 'append', '--manifest', displayPath(manifestFile), '--receipt', manifest.verification.receipt, '--domains', String(manifest.domains.length), '--files', String(files.size)];
   for (const key of required) args.push(`--${key}`, one(values, key, true));
   const summary = one(values, 'summary');
   if (summary) args.push('--summary', summary);
@@ -261,12 +295,14 @@ function main() {
   const values = parseArgs(args);
   if (command === 'prepare') {
     const manifestFile = safePath(one(values, 'output') || one(values, 'manifest') || DEFAULT_MANIFEST, '--output');
-    const manifest = createManifest({ task: one(values, 'task', true), changedPaths: normalizePaths(many(values, 'changed')) });
+    const manifest = createManifest({ task: one(values, 'task', true), changedPaths: normalizePaths(many(values, 'changed')), estimate: intakeEstimate(values), runtime: intakeRuntime(values) });
+    manifest.estimate.route_count = manifest.routes.length;
     if (manifest.documentation.source_changed) {
       const scope = runStep('documentation scope', ['scripts/docs-scope.mjs', ...manifest.changed_paths], true);
       if (scope.status !== 0) fail(`FAIL — ${scope.name}: ${scope.summary || 'no summary'}`, 1);
       manifest.documentation.scope = { command: scope.command, output: scope.output, summary: scope.summary };
     }
+    manifest.estimate.manifest_hash = manifestFingerprint(manifest);
     writeManifest(manifestFile, manifest);
     console.log(JSON.stringify(intakeForManifest(manifest, displayPath(manifestFile)), null, 2));
     return;

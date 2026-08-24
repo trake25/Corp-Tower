@@ -102,6 +102,11 @@ function main() {
         console.log(`docs: ${result.docs.length ? result.docs.join(', ') : 'none'}`);
         console.log(`maps: ${result.maps.length ? result.maps.join(', ') : 'none'}`);
         if (result.read) console.log(`source-read: ${result.read}`);
+        if (result.workspace) {
+          console.log(`workspace: ${result.workspace.name}`);
+          console.log(`purpose: ${result.workspace.purpose}`);
+          console.log(`policy: ${result.workspace.policy}`);
+        }
       }
       return;
     }

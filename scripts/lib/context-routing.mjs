@@ -94,7 +94,9 @@ export const ROUTE_RULES = [
   { pattern: /^scripts\/(context|task-close|benchmark-rag|docs-scope)\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/lib\/context-routing\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/lib\/context-query\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
-  { pattern: /^scripts\/(validate-docs|build-file-map|sync-agent-skills|validate-agent-config|task-report)\.mjs$/, skill: 'docs-steward', docs: [], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/(validate-docs|build-file-map|sync-agent-skills|validate-agent-config)\.mjs$/, skill: 'docs-steward', docs: [], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/task-report\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/lib\/task-report-.*\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^report\/task-token-cost-effectivity\.md$/, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },
   { pattern: /^scripts\/install-git-hooks\.mjs$/, skill: 'infra-engineer', docs: [], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/qa-gate\.mjs$/, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },
@@ -121,8 +123,27 @@ export const AREA_ALIASES = {
   docs: { skill: 'docs-steward', docs: ['docs/context/index.md'], maps: [] },
 };
 
+export const WORKSPACE_RULES = [
+  {
+    name: 'plan',
+    pattern: /^plan(?:\/|$)/,
+    skill: 'docs-steward',
+    purpose: 'Task plans. Read existing plans for context; save new plans here.',
+    policy: 'Existing plans are read-only unless the user explicitly authorizes an edit.',
+  },
+  {
+    name: 'reference',
+    pattern: /^reference(?:\/|$)/,
+    skill: 'client-engineer',
+    purpose: 'Human-managed screen guides and bug screenshots.',
+    policy: 'Humans may upload, modify, or delete these files; agents treat them as reference material.',
+  },
+];
+
 export function routeSourcePath(path) {
   const normalized = path.replace(/^\.\//, '').replaceAll('\\', '/');
+  const workspace = WORKSPACE_RULES.find(item => item.pattern.test(normalized));
+  if (workspace) return { ...workspace, path: normalized, pattern: undefined };
   const rule = ROUTE_RULES.find(item => item.test ? item.test(normalized) : item.pattern.test(normalized));
   return rule ? { ...rule, path: normalized, pattern: undefined, test: undefined } : null;
 }

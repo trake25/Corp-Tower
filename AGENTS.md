@@ -25,6 +25,20 @@ This file is the vendor-neutral repository contract. Load one role skill from
 A miss is a knowledge-base defect. Repair its route or map purpose in the same
 task under `docs-steward`, unless the correct behavior needs a user decision.
 
+## Working material
+
+The gitignored `plan/` folder is the place to look for existing task plans and
+the place to save a new plan. Agents may read an existing plan for context, but
+must not modify it unless the user instructs the edit or the agent asks and the
+user approves it. Start a separate plan file when no edit approval exists.
+
+The gitignored `reference/` folder contains human-managed screen guides and bug
+screenshots. Agents may read these references when the route calls for them;
+humans may upload, modify, or delete the files there. Do not treat either
+folder as tracked source, KB evidence, or a reason to search the whole repo.
+Use `node scripts/context.mjs route plan/` or `route reference/` for the
+standard workspace guidance.
+
 ### Skill reuse
 
 Load each selected role skill once per active context window, then reuse it for
@@ -48,6 +62,10 @@ automatic reflex.
   decision, then `verify` and `report`. It owns QA selection, map generation,
   relevant KB checks and report schema validation; it never reads a shared dirty
   worktree for scope.
+- Standard task records are append-only JSONL facts rendered to Markdown. A
+  report cannot append without a passed receipt, an intake pre-read estimate,
+  and the exact implementing model variant recorded by `prepare`;
+  `variant unrecorded` is invalid.
 - Files over 600 lines are decomposition candidates. Propose a split; do not
   expand the current task without approval.
 - Do not deploy, commit, push, pull, compare remotes, create branches, or perform

@@ -74,3 +74,25 @@ test('a documentation-only manifest does not request an unnecessary source decis
   assert.equal(manifest.documentation.source_changed, false);
   assert.equal(manifest.documentation.decision, 'not-needed');
 });
+
+test('an intake estimate is carried into the manifest handoff', () => {
+  const manifest = createManifest({
+    task: 'Record an intake estimate',
+    changedPaths: ['scripts/task-report.mjs'],
+    estimate: { tokens: 2400, timing: 'pre-read', basis: 'route and map', recorded_at: '2026-08-25T00:00:00.000Z', route_count: 1, manifest_hash: 'fixture' },
+  });
+
+  const intake = intakeForManifest(manifest, 'task/report.json');
+  assert.deepEqual(intake.intake.estimate, manifest.estimate);
+});
+
+test('an exact model variant is carried into the manifest handoff', () => {
+  const manifest = createManifest({
+    task: 'Record an intake model',
+    changedPaths: ['scripts/task-report.mjs'],
+    runtime: { model: 'gpt-5.6-terra', recorded_at: '2026-08-25T00:00:00.000Z' },
+  });
+
+  const intake = intakeForManifest(manifest, 'task/report.json');
+  assert.deepEqual(intake.intake.runtime, manifest.runtime);
+});

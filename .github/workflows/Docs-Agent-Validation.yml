@@ -30,4 +30,5 @@ jobs:
       - run: node scripts/validate-docs.mjs --quiet
       - run: node site/tools/validate-site-docs.mjs --quiet
       - run: node scripts/task-report.mjs validate
+      - run: node --test scripts/tests/*.mjs
       - run: node scripts/benchmark-rag.mjs --check

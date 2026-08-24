@@ -92,9 +92,16 @@ export function routeContext(input) {
   const alias = AREA_ALIASES[normalize(input)];
   const routed = alias || routeSourcePath(input);
   if (!routed) throw new Error(`unmapped route: ${input}`);
-  const docs = alias ? alias.docs : routed.docs.map(doc => doc.startsWith('site/') ? doc : `docs/context/${doc}`);
+  const docs = alias ? alias.docs : (routed.docs || []).map(doc => doc.startsWith('site/') ? doc : `docs/context/${doc}`);
   const maps = alias ? alias.maps : (routed.map ? [`docs/context/map/${routed.map}`] : []);
-  return { input, skill: routed.skill, docs, maps, read: routed.read || null };
+  return {
+    input,
+    skill: routed.skill,
+    docs,
+    maps,
+    read: routed.read || null,
+    ...(routed.purpose ? { workspace: { name: routed.name, purpose: routed.purpose, policy: routed.policy } } : {}),
+  };
 }
 
 function walkMarkdown(dir, root, files) {

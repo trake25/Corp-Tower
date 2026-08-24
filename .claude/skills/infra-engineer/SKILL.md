@@ -12,6 +12,10 @@ description: Infrastructure and CI work — infra/ Terraform, .github/workflows 
   the next run.
 - **Extend the shared composite actions**, do not re-implement a step per
   workflow. `.github/actions/*` exists so a fix lands once.
+- **Task reporting is structured and receipt-linked.** Enter through
+  `task-close prepare --model-variant ... --r-est ... --r-est-basis ...`;
+  standard report rows read the exact variant from intake. `GPT-5`, `gpt-5.6`, and
+  `variant unrecorded` are not acceptable substitutes.
 - **Terraform validates through Actions, not local runs.** The plan/validate
   workflows hold the credentials and the backend config; a local run is a
   different environment answering a different question.
