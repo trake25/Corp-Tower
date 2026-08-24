@@ -173,7 +173,8 @@ visible Impact fills and progress-only avatar markers, shared glass popovers,
 the compact Impact cadence and 20%-reduced marker, overlay ordering, power-toast
 text and size, Android responsive anchors with fixed artwork proportions, startup
 splash continuity, Android covered-background ground alignment, Hook Zoom platform
-aspect/ground/tower contact, and the summary countdown/quest rows.
+aspect/ground/tower contact, the summary countdown/quest rows, failure retry text,
+and the terminal Home countdown.
 
 **Landmine — `SnapGrid`'s range is `static var` state**, so `before_each` and
 `after_all` must call `reset_placeable_range()`. Omit it and tests leak grid state

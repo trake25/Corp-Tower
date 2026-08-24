@@ -59,6 +59,17 @@ func test_completed_result_text_shows_overbuild() -> void:
 func test_failed_result_text_formats_reason() -> void:
 	assert_eq(controller.get_level_summary_result_text({"reason": "time_expired"}, "failed"), "Reason: Time Expired", "Failure reasons should be humanized.")
 
+func test_failed_result_text_shows_remaining_failures() -> void:
+	var fixture: Dictionary = {
+		"reason": "time_expired",
+		"failureStatus": {"failureCount": 1, "retriesRemaining": 2, "gameOver": false}
+	}
+	assert_eq(
+		controller.get_level_summary_result_text(fixture, "failed"),
+		"Reason: Time Expired\nFailures remaining: 2",
+		"A failed summary should show the authoritative retries remaining."
+	)
+
 func test_impact_failure_text_lists_ready_count_local_line_and_goals() -> void:
 	var text: String = controller.get_impact_failure_summary_text(IMPACT_FAILURE_FIXTURE)
 	var text_lines: PackedStringArray = text.split("\n")
@@ -118,3 +129,23 @@ func test_cancel_pending_stops_queued_summary() -> void:
 	scene_summary.cancel_pending_level_summary()
 	await get_tree().create_timer(0.4).timeout
 	assert_false((harness.find("LevelSummaryOverlay") as Control).visible, "A cancelled pending summary must never show.")
+
+func test_terminal_failure_shows_glass_home_countdown() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(412, 917))
+	var fixture: Dictionary = {
+		"level": 4,
+		"result": "game_over",
+		"reason": "failure_limit_reached",
+		"failureStatus": {
+			"failureCount": 4,
+			"recoverableFailureLimit": 3,
+			"retriesRemaining": 0,
+			"gameOver": true
+		}
+	}
+	harness.main.summary.show_level_summary(fixture, "game_over")
+	assert_true((harness.find("TerminalFailureOverlay") as Control).visible, "The fourth failure should show the terminal glass popup.")
+	assert_eq((harness.find("TerminalFailureTitleLabel") as Label).text, "Team Failed", "The terminal popup should identify the team failure.")
+	assert_eq((harness.find("TerminalFailureBodyLabel") as Label).text, "Your team failed and will be sent Home.", "The terminal popup should explain the Home transition.")
+	assert_eq((harness.find("TerminalFailureCountdownLabel") as Label).text, "Returning Home in 3s...", "The terminal popup should start a three-second countdown.")

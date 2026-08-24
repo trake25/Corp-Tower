@@ -76,6 +76,8 @@ global floating debug button.
 - `AutoDismissModal` (`Main.tscn`, third child) also covers an unexpected
   disconnect while `find_match_active`. Both cases tear the screen underneath
   down only on dismiss, so it stays visible behind the modal's 3s countdown.
+- Play's terminal `game_over` state keeps the level summary path active so its
+  glass failure card counts down three seconds before the authoritative Home close.
 - Android exports keep the OS status bar visible above the 412×917 authored
   content area. When the resulting logical canvas is wider, Play fills it without
   scaling the scene: fixed art keeps its aspect while centered and edge-anchored

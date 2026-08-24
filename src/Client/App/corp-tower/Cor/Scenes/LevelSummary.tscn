@@ -102,3 +102,79 @@ theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
+
+[node name="TerminalFailureOverlay" type="Control" parent="." unique_id=1730044990]
+unique_name_in_owner = true
+visible = false
+z_index = 10
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="TerminalFailureDim" type="ColorRect" parent="TerminalFailureOverlay" unique_id=1730044991]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.04, 0.12, 0.16, 0.18)
+
+[node name="TerminalFailurePanel" type="PanelContainer" parent="TerminalFailureOverlay" unique_id=1730044992]
+custom_minimum_size = Vector2(344, 198)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -172.0
+offset_top = -99.0
+offset_right = 172.0
+offset_bottom = 99.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"GlassPanel"
+
+[node name="TerminalFailureMargin" type="MarginContainer" parent="TerminalFailureOverlay/TerminalFailurePanel" unique_id=1730044993]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 18
+
+[node name="TerminalFailureRows" type="VBoxContainer" parent="TerminalFailureOverlay/TerminalFailurePanel/TerminalFailureMargin" unique_id=1730044994]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TerminalFailureTitleLabel" type="Label" parent="TerminalFailureOverlay/TerminalFailurePanel/TerminalFailureMargin/TerminalFailureRows" unique_id=1730044995]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"BoldLabel"
+theme_override_colors/font_color = Color(0.08, 0.08, 0.09, 1)
+theme_override_font_sizes/font_size = 24
+text = "Team Failed"
+horizontal_alignment = 1
+
+[node name="TerminalFailureBodyLabel" type="Label" parent="TerminalFailureOverlay/TerminalFailurePanel/TerminalFailureMargin/TerminalFailureRows" unique_id=1730044996]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.09, 1)
+theme_override_font_sizes/font_size = 16
+text = "Your team failed and will be sent Home."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="TerminalFailureCountdownLabel" type="Label" parent="TerminalFailureOverlay/TerminalFailurePanel/TerminalFailureMargin/TerminalFailureRows" unique_id=1730044997]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.02, 0.68, 0.98, 1)
+theme_override_font_sizes/font_size = 20
+text = "Returning Home in 3s..."
+horizontal_alignment = 1

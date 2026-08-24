@@ -14,6 +14,10 @@ var level_summary_mvp_label: Label
 var level_summary_quest_label: Label
 var level_summary_countdown_label: Label
 var level_summary_players_box: VBoxContainer
+var terminal_failure_overlay: Control
+var terminal_failure_title_label: Label
+var terminal_failure_body_label: Label
+var terminal_failure_countdown_label: Label
 var quest_text_provider: Callable = Callable()
 var on_summary_ended: Callable = Callable()
 var last_level_summary_key: String = ""
@@ -24,6 +28,8 @@ var summary_show_timer: Timer
 var summary_hide_timer: Timer
 var summary_deadline_ms: int = 0
 var summary_countdown_last: int = -1
+var terminal_failure_deadline_ms: int = 0
+var terminal_failure_countdown_last: int = -1
 
 func _ready() -> void:
 	summary_show_timer = Timer.new()
@@ -38,6 +44,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	update_summary_countdown()
+	update_terminal_failure_countdown()
 
 func bind_nodes(binder) -> void:
 	level_summary_overlay = binder.require_node("LevelSummaryOverlay") as Control
@@ -48,6 +55,10 @@ func bind_nodes(binder) -> void:
 	level_summary_quest_label = binder.optional_node("LevelSummaryQuestLabel") as Label
 	level_summary_countdown_label = binder.require_node("LevelSummaryCountdownLabel") as Label
 	level_summary_players_box = binder.require_node("LevelSummaryPlayersBox") as VBoxContainer
+	terminal_failure_overlay = binder.require_node("TerminalFailureOverlay") as Control
+	terminal_failure_title_label = binder.require_node("TerminalFailureTitleLabel") as Label
+	terminal_failure_body_label = binder.require_node("TerminalFailureBodyLabel") as Label
+	terminal_failure_countdown_label = binder.require_node("TerminalFailureCountdownLabel") as Label
 
 func setup(players_ref, match_state_ref, tuning_ref) -> void:
 	players_ctx = players_ref
@@ -146,12 +157,13 @@ func show_level_summary(summary_value: Variant, state: String) -> void:
 	var level_number: int = int(summary.get("level", match_state.current_level))
 	level_summary_title_label.text = "Level " + str(level_number) + (" Completed" if result == "completed" else " Failed")
 	level_summary_result_label.text = get_level_summary_result_text(summary, result)
-	level_summary_result_label.visible = false
+	level_summary_result_label.visible = result != "completed"
 	level_summary_team_label.visible = false
 	level_summary_team_label.text = ""
 	level_summary_mvp_label.text = get_level_summary_mvp_text(summary)
 	level_summary_mvp_label.visible = false
 	update_level_summary_quest_row(summary)
+	show_terminal_failure_popup(summary, result)
 
 	clear_children(level_summary_players_box)
 
@@ -190,6 +202,8 @@ func hide_level_summary() -> void:
 		level_summary_overlay.visible = false
 		level_summary_overlay.modulate.a = 1.0
 
+	hide_terminal_failure_popup()
+
 	summary_deadline_ms = 0
 	summary_countdown_last = -1
 
@@ -197,7 +211,7 @@ func hide_level_summary() -> void:
 		on_summary_ended.call()
 
 func get_level_summary_key(summary: Dictionary) -> String:
-	return (
+	var key := (
 		str(summary.get("level", match_state.current_level)) + ":" +
 		str(summary.get("result", "")) + ":" +
 		str(summary.get("teamLevelScore", 0)) + ":" +
@@ -205,6 +219,12 @@ func get_level_summary_key(summary: Dictionary) -> String:
 		str(summary.get("exactFinish", false)) + ":" +
 		str(summary.get("overbuildHeight", 0))
 	)
+	var failure_status: Dictionary = get_failure_status(summary)
+
+	if !failure_status.is_empty():
+		key += ":" + str(failure_status.get("failureCount", -1)) + ":" + str(failure_status.get("retriesRemaining", -1))
+
+	return key
 
 func get_level_summary_result_text(summary: Dictionary, result: String) -> String:
 	if result == "completed":
@@ -219,9 +239,40 @@ func get_level_summary_result_text(summary: Dictionary, result: String) -> Strin
 	var reason: String = str(summary.get("reason", "failed"))
 
 	if reason == "impact_score_requirement":
-		return get_impact_failure_summary_text(summary)
+		return append_failure_status_text(get_impact_failure_summary_text(summary), summary)
 
-	return "Reason: " + format_summary_reason(reason)
+	return append_failure_status_text("Reason: " + format_summary_reason(reason), summary)
+
+func get_failure_status(summary: Dictionary) -> Dictionary:
+	var raw_status: Variant = summary.get("failureStatus", {})
+
+	if typeof(raw_status) == TYPE_DICTIONARY and !raw_status.is_empty():
+		return raw_status
+
+	raw_status = summary.get("impactScoreStatus", {})
+
+	if typeof(raw_status) == TYPE_DICTIONARY:
+		var impact_status: Dictionary = raw_status
+		if impact_status.has("retriesRemaining"):
+			return impact_status
+
+	return {}
+
+func get_failure_status_text(summary: Dictionary) -> String:
+	var failure_status: Dictionary = get_failure_status(summary)
+
+	if !failure_status.has("retriesRemaining"):
+		return ""
+
+	return "Failures remaining: " + str(int(failure_status.get("retriesRemaining", 0)))
+
+func append_failure_status_text(text: String, summary: Dictionary) -> String:
+	var failure_status_text: String = get_failure_status_text(summary)
+
+	if failure_status_text == "":
+		return text
+
+	return text + "\n" + failure_status_text
 
 func get_impact_failure_summary_text(summary: Dictionary) -> String:
 	var status: Dictionary = {}
@@ -335,6 +386,60 @@ func update_summary_countdown() -> void:
 	level_summary_countdown_label.text = (
 		"Next level is starting in " + str(remaining_seconds) + "s..."
 	)
+
+func show_terminal_failure_popup(summary: Dictionary, result: String) -> void:
+	if terminal_failure_overlay == null:
+		return
+
+	var failure_status: Dictionary = get_failure_status(summary)
+	var is_terminal_failure: bool = result == "game_over" or bool(failure_status.get("gameOver", false))
+
+	if !is_terminal_failure:
+		hide_terminal_failure_popup()
+		return
+
+	terminal_failure_title_label.text = "Team Failed"
+	terminal_failure_body_label.text = "Your team failed and will be sent Home."
+	terminal_failure_overlay.visible = true
+	terminal_failure_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	terminal_failure_overlay.modulate.a = 0.0
+	terminal_failure_deadline_ms = Time.get_ticks_msec() + 3000
+	terminal_failure_countdown_last = -1
+	update_terminal_failure_countdown()
+
+	var tween: Tween = create_tween()
+	tween.tween_property(terminal_failure_overlay, "modulate:a", 1.0, 0.16)
+
+func hide_terminal_failure_popup() -> void:
+	if terminal_failure_overlay != null:
+		terminal_failure_overlay.visible = false
+		terminal_failure_overlay.modulate.a = 1.0
+
+	terminal_failure_deadline_ms = 0
+	terminal_failure_countdown_last = -1
+
+func update_terminal_failure_countdown() -> void:
+	if (
+		terminal_failure_countdown_label == null or
+		terminal_failure_overlay == null or
+		!terminal_failure_overlay.visible or
+		terminal_failure_deadline_ms <= 0
+	):
+		return
+
+	var remaining_seconds: int = maxi(0, int(ceil(
+		float(terminal_failure_deadline_ms - Time.get_ticks_msec()) / 1000.0
+	)))
+
+	if remaining_seconds <= 0:
+		hide_terminal_failure_popup()
+		return
+
+	if remaining_seconds == terminal_failure_countdown_last:
+		return
+
+	terminal_failure_countdown_last = remaining_seconds
+	terminal_failure_countdown_label.text = "Returning Home in " + str(remaining_seconds) + "s..."
 
 func get_level_summary_mvp_text(summary: Dictionary) -> String:
 	var mvp_id: String = str(summary.get("mvpId", ""))

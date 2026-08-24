@@ -318,7 +318,7 @@ func update_game_state(data) -> void:
 		power.seen_power_event_ids.clear()
 		visual_fx.reset()
 		summary.cancel_pending_level_summary()
-		if state != "finished" and state != "failed":
+		if state != "finished" and state != "failed" and state != "game_over":
 			summary.hide_level_summary()
 
 	players_ctx.update_from_players(players)
@@ -378,7 +378,7 @@ func update_game_state(data) -> void:
 
 	var score_popup_wait_seconds: float = score_popups.process_score_events(data.get("scoreEvents", []), players)
 
-	if state == "finished" or state == "failed":
+	if state == "finished" or state == "failed" or state == "game_over":
 		summary.queue_level_summary_after_score_popups(
 			data.get("lastLevelSummary", {}),
 			state,
