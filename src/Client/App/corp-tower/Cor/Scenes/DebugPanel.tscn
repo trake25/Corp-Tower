@@ -625,6 +625,11 @@ text = "Replenish Share: 25%"
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="PowerLastChanceToggle" type="CheckButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Power/PowerRows" unique_id=900000010]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Last Chance: OFF"
+
 [node name="Parallax" type="ScrollContainer" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels" unique_id=900000000]
 layout_mode = 1
 anchors_preset = 15

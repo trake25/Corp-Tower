@@ -79,6 +79,8 @@ triggers the same way.
   Hooks category's beat durations **do** round-trip despite being cosmetic — all
   three players must read the same faces and play the beat in lockstep. Per-symbol
   detail for its debug-only source → [map/ui-debug.md](./map/ui-debug.md).
+  The Power category's `PowerLastChanceToggle` also round-trips; the client never
+  determines whether the server grants or consumes its rescue.
   `DebugPanelCatalog` owns the immutable tooltip and local tuning-row definitions;
   the controller retains binding, synchronization and presentation lifecycle.
 - The game debug selector receives its screen context from `ScreenManager`: lobby

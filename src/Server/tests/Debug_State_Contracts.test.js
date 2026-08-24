@@ -88,6 +88,18 @@ test("stability difficulty is the only exposed stability tunable", async () => {
     }
 });
 
+test("Last Chance power toggle round-trips through debug config and resets", async () => {
+    const lobbyManager = new LobbyManager();
+
+    assert.equal(lobbyManager.getDebugConfig().powerLastChanceEnabled, false);
+    await lobbyManager.updateDebugConfig("powerLastChanceEnabled", true);
+    assert.equal(GameConfig.powerLastChanceEnabled, true);
+    assert.equal(lobbyManager.getDebugConfig().powerLastChanceEnabled, true);
+
+    await lobbyManager.updateDebugConfig("resetDebugConfig", true);
+    assert.equal(GameConfig.powerLastChanceEnabled, false);
+});
+
 test("transaction scoring controls replace the retired scoring formulas", async () => {
     const lobbyManager = new LobbyManager();
     const original = {

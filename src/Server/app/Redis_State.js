@@ -87,6 +87,8 @@ function stripRuntimeRoom(room) {
             towerStability: engineRoom.towerStability ?? 100,
             towerStabilityDiagnostics: engineRoom.towerStabilityDiagnostics || {},
             towerStructuralPose: engineRoom.towerStructuralPose || [],
+            lastChanceRescuePending: Boolean(engineRoom.lastChanceRescuePending),
+            lastChanceRescueUsed: Boolean(engineRoom.lastChanceRescueUsed),
             criticalSaveClaimKeys: engineRoom.criticalSaveClaimKeys || {},
             sideQuest: engineRoom.sideQuest || null,
             state: engineRoom.state || "waiting",

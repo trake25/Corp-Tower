@@ -1,6 +1,7 @@
 const GameConfig = require("./Game_Config");
 const BotManager = require("./Bot_Manager");
 const BlockSupply = require("./engine/Block_Supply");
+const LastChance = require("./engine/Last_Chance");
 const Placement = require("./engine/Placement");
 const Scoring = require("./engine/Scoring");
 const Impacts = require("./engine/Impacts");
@@ -138,6 +139,8 @@ class GameEngine {
             towerStabilityDiagnostics: {},
             towerStructuralPose: [],
             towerStabilityResult: null,
+            lastChanceRescuePending: false,
+            lastChanceRescueUsed: false,
             state: "waiting",
             startsAt: 0,
             endsAt: 0,
@@ -213,6 +216,8 @@ class GameEngine {
             towerStability: snapshot.state.towerStability ?? 100,
             towerStabilityDiagnostics: snapshot.state.towerStabilityDiagnostics || {},
             towerStructuralPose: snapshot.state.towerStructuralPose || [],
+            lastChanceRescuePending: Boolean(snapshot.state.lastChanceRescuePending),
+            lastChanceRescueUsed: Boolean(snapshot.state.lastChanceRescueUsed),
             state: snapshot.state.state,
             startsAt: snapshot.state.startsAt,
             endsAt: snapshot.state.endsAt,
@@ -469,6 +474,7 @@ class GameEngine {
         this.room.towerStabilityDiagnostics = {};
         this.room.towerStructuralPose = [];
         this.room.towerStabilityResult = null;
+        this.resetLastChanceRescue();
         this.room.targetHeight =
             this.getTargetHeightForLevel(this.room.level);
         this.room.startsAt = Date.now() + GameConfig.startDelayMs;
@@ -704,6 +710,7 @@ class GameEngine {
         this.room.towerStability = 100;
         this.room.towerStabilityDiagnostics = {};
         this.room.towerStabilityResult = null;
+        this.resetLastChanceRescue();
         this.room.targetHeight = this.getTargetHeightForLevel(targetLevel);
         this.room.lastLevelSummary = null;
         this.room.pendingScoreEvents = [];
@@ -743,7 +750,9 @@ class GameEngine {
     placeBlock(playerId, blockIndex, column = null, originY = null) { return Placement.placeBlock(this, playerId, blockIndex, column, originY); }
     getStabilityPressure(level) { return Placement.getStabilityPressure(this, level); }
     resolveStabilityConfig(level) { return Placement.resolveStabilityConfig(this, level); }
-    recalculateTowerStability() { return Placement.recalculateTowerStability(this); }
+    resolveLastChance(result, advancesRescue = false) { return LastChance.resolve(this, result, advancesRescue); }
+    resetLastChanceRescue() { return LastChance.reset(this); }
+    recalculateTowerStability(advancesLastChance = false) { return Placement.recalculateTowerStability(this, advancesLastChance); }
     checkWinCondition(finisher, finishingBlock) { return Placement.checkWinCondition(this, finisher, finishingBlock); }
     checkFailCondition() { return Placement.checkFailCondition(this); }
     anyPlayerCanRescueSupply() { return Placement.anyPlayerCanRescueSupply(this); }

@@ -314,6 +314,10 @@ The Scoring controls tune dangerous useful-height retention, strong direct
 structural action value and the normal combined transaction cap. They do not
 alter collapse rules or create a second reinforcement reward.
 
+**Last Chance** is a debug-only Power toggle, off by default. It converts one
+would-collapse placement per level to 1%; the next placement must restore above
+1% or the tower collapses.
+
 ## Bot behaviour
 
 QA and local-test helpers only, not production AI. They fill rooms only when a real

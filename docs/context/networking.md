@@ -196,7 +196,7 @@ already shows that state live during play.
 
 Snapshots include `impactScores`, `impactPowers`, `impactContributions`,
 transaction contribution fields, Critical Save claims, retry and terminal-close
-state, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`, `towerStructuralPose`,
+state, `lastChanceRescueUsed`, `lastChanceRescuePending`, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`, `towerStructuralPose`,
 timers, level state, and serializable player fields.
 
 - `impactScores` and `impactContributions` restore leaderboard totals and eligible

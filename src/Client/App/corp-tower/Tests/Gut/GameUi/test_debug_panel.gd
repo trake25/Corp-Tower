@@ -18,6 +18,7 @@ const CONFIG_FIXTURE := {
 	"targetHeightMultiplier": 5,
 	"towerStabilityFeedbackMode": "meter_only",
 	"towerStabilityMoodThreshold": 12,
+	"powerLastChanceEnabled": true,
 	"towerStructuralPoseMaxAngleDeg": 7,
 	"visualHookImpactBeat": false,
 	"visualHookScreenShake": false,
@@ -48,6 +49,7 @@ func test_apply_config_syncs_sliders_toggles_and_options() -> void:
 	assert_eq((harness.find("BotStrategyButton") as OptionButton).selected, 1, "The MVP greedy strategy should select the second option.")
 	assert_eq((harness.find("TowerFeedbackModeButton") as OptionButton).selected, 1, "The meter_only mode should select the second option.")
 	assert_eq((harness.find("TowerMaxTiltSlider") as HSlider).value, 7.0, "The pose cap should sync from the config payload.")
+	assert_true((harness.find("PowerLastChanceToggle") as CheckButton).button_pressed, "Last Chance should sync from the config payload.")
 
 func test_lobby_debug_context_enables_only_bots() -> void:
 	harness.main.set_debug_context("lobby")
@@ -70,6 +72,15 @@ func test_apply_config_falls_back_to_defaults_for_missing_keys() -> void:
 	assert_eq((harness.find("BotDelayMinSlider") as HSlider).value, 2000.0, "A missing bot delay min should fall back to its default.")
 	assert_eq((harness.find("LevelTimeSlider") as HSlider).value, 30000.0, "A missing level time should fall back to its default.")
 	assert_false((harness.find("BotsToggle") as CheckButton).button_pressed, "A missing bots flag should fall back to disabled.")
+	assert_false((harness.find("PowerLastChanceToggle") as CheckButton).button_pressed, "A missing Last Chance flag should fall back to disabled.")
+
+func test_last_chance_toggle_lives_in_the_power_category() -> void:
+	var toggle: Node = harness.find("PowerLastChanceToggle")
+	var rows: Node = harness.find("PowerRows")
+
+	assert_eq(toggle.get_parent(), rows, "Last Chance belongs to the Power category rows.")
+	assert_eq(rows.get_parent().name, StringName("Power"), "PowerRows should sit under the Power category panel.")
+	assert_eq((toggle as CheckButton).text, "Last Chance: OFF", "Last Chance should label its default disabled state.")
 
 func test_apply_config_refreshes_value_labels() -> void:
 	harness.main.update_debug_config(CONFIG_FIXTURE)

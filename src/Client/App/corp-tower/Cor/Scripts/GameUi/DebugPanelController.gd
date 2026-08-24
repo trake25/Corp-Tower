@@ -111,6 +111,7 @@ var power_cooldown_label: Label
 var power_cooldown_slider: HSlider
 var power_replenish_share_label: Control
 var power_replenish_share_slider: HSlider
+var power_last_chance_toggle: CheckButton
 var tutorial_launch_button: Button
 var parallel_placement_button: Button
 var impact_beat_toggle: CheckButton
@@ -250,6 +251,7 @@ func bind_nodes(binder) -> void:
 	power_cooldown_slider = binder.optional_node("PowerCooldownSlider") as HSlider
 	power_replenish_share_label = bind_tooltip_row(binder, "PowerReplenishShareLabel")
 	power_replenish_share_slider = binder.optional_node("PowerReplenishShareSlider") as HSlider
+	power_last_chance_toggle = binder.optional_node("PowerLastChanceToggle") as CheckButton
 
 func setup(
 	tuning_ref,
@@ -294,6 +296,9 @@ func setup(
 
 	if screen_shake_toggle != null:
 		screen_shake_toggle.toggled.connect(on_screen_shake_toggle)
+
+	if power_last_chance_toggle != null:
+		power_last_chance_toggle.toggled.connect(on_power_last_chance_toggle)
 
 	if bot_strategy_button != null:
 		bot_strategy_button.clear()
@@ -587,6 +592,11 @@ func on_screen_shake_toggle(enabled: bool) -> void:
 		return
 	network.update_config("visualHookScreenShake", enabled)
 
+func on_power_last_chance_toggle(enabled: bool) -> void:
+	if is_syncing_debug_config:
+		return
+	network.update_config("powerLastChanceEnabled", enabled)
+
 func on_reset_debug_pressed() -> void:
 	network.update_config("resetDebugConfig", true)
 
@@ -783,6 +793,8 @@ func apply_config(config) -> void:
 	set_slider_no_signal(power_max_slots_slider, float(config.get("powerMaxSlots", 3)))
 	set_slider_no_signal(power_cooldown_slider, float(config.get("powerActivationCooldownMs", 3000)))
 	set_slider_no_signal(power_replenish_share_slider, float(config.get("powerReplenishPileShare", 0.25)) * 100.0)
+	if power_last_chance_toggle != null:
+		power_last_chance_toggle.button_pressed = bool(config.get("powerLastChanceEnabled", false))
 	set_slider_no_signal(impact_beat_zoom_out_slider, float(config.get("visualHookZoomOutMs", 900)))
 	set_slider_no_signal(impact_beat_wave_slider, float(config.get("visualHookWaveMs", 1100)))
 	set_slider_no_signal(impact_beat_hold_slider, float(config.get("visualHookHoldMs", 0)))
@@ -946,6 +958,8 @@ func update_debug_labels() -> void:
 		power_replenish_share_label,
 		"Replenish Share: " + str(int(get_slider_value(power_replenish_share_slider, 25))) + "%"
 	)
+	if power_last_chance_toggle != null:
+		power_last_chance_toggle.text = "Last Chance: " + ("ON" if power_last_chance_toggle.button_pressed else "OFF")
 	set_debug_label_text(
 		impact_beat_zoom_out_label,
 		"Zoom Out: " + str(int(get_slider_value(impact_beat_zoom_out_slider, 900))) + " ms"

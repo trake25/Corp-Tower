@@ -178,7 +178,7 @@ function placeBlock(engine, playerId, blockIndex, column = null, originY = null)
 
     console.log(`${player.id} placed block (${blockHeight})`);
 
-    const structureAfter = engine.recalculateTowerStability();
+    const structureAfter = engine.recalculateTowerStability(true);
 
     placedEntry.balanceDelta = TowerStability.balanceDelta(
         structureBefore.diagnostics,
@@ -266,10 +266,11 @@ function resolveStabilityConfig(engine, level) {
     return resolved;
 }
 
-function recalculateTowerStability(engine) {
-    const result = TowerStability.evaluate(
+function recalculateTowerStability(engine, advancesLastChance = false) {
+    const evaluated = TowerStability.evaluate(
         engine.room.towerBlocks || [], engine.resolveStabilityConfig()
     );
+    const result = engine.resolveLastChance(evaluated, advancesLastChance);
     const previous = engine.room.towerStability ?? 100;
     engine.room.towerStability = result.stability;
     engine.room.towerStabilityDiagnostics = result.diagnostics;

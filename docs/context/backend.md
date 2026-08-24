@@ -92,6 +92,7 @@ variable *means*; the ranges live here.
 - Impact keys (`impactInterval` 1–10, `impactMinContributionShare` 0–1,
   `impactScoreRequirement`), `powerReplenishPileShare` 0–1, and the
   stability/scoring keys route through the same clamp helpers.
+  `powerLastChanceEnabled` is a boolean toggle.
   `reinforceScorePerSupportedCell`/`reinforceScoreCapShare` are **not** exposed.
 - `towerStabilityDifficulty` clamps to **0–100** and is the only accepted stability
   key. The derived physics constants have no setters, so a stale client sending a
@@ -164,6 +165,11 @@ the lowest gap that fits.
 `getPlaceableOriginRange(block)` — the sole placement-validation step, since a
 full-footprint clamp already guarantees the brick stays inside the site.
 `getSiteWidthForHeight(targetHeight)` derives the even, viewport-clamped site.
+
+`engine/Last_Chance.js` applies the debug-only rescue after a placement evaluation:
+the first result at 0% becomes 1%, and the immediately following placement must
+evaluate above 1% or is forced to collapse. Its used/pending room state persists,
+but a passive recalculation never spends the rescue.
 
 ### Derived curves
 

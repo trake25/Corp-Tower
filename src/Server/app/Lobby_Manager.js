@@ -1071,6 +1071,8 @@ class LobbyManager {
                 towerStability: snapshot.state.towerStability ?? 100,
                 towerStabilityDiagnostics: snapshot.state.towerStabilityDiagnostics || {},
                 towerStructuralPose: snapshot.state.towerStructuralPose || [],
+                lastChanceRescuePending: Boolean(snapshot.state.lastChanceRescuePending),
+                lastChanceRescueUsed: Boolean(snapshot.state.lastChanceRescueUsed),
                 state: snapshot.state.state,
                 startsAt: snapshot.state.startsAt,
                 endsAt: snapshot.state.endsAt,

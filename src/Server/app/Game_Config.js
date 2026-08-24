@@ -76,6 +76,7 @@ const GameConfig = {
     powerUnlockLevel: 1,
     powerMaxSlots: 3,
     powerActivationCooldownMs: 3000,
+    powerLastChanceEnabled: false,
     powerLifetime: "impact",
     powerGuaranteedBaseline: false,
     powerImpactMvpReward: false,

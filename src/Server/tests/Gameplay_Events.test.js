@@ -23,6 +23,79 @@ test("createBlock no longer assigns an anchorX field", () => {
     assert.equal(Object.prototype.hasOwnProperty.call(block, "anchorX"), false);
 });
 
+test("Last Chance saves one collapse, requires a reinforcement, and persists its pending state", () => {
+    const { engine } = createPlayingEngine(1, 8);
+    const collapse = {
+        stability: 0,
+        diagnostics: { collapsed: true },
+        structuralPose: [],
+        analysis: { groups: [] }
+    };
+    const reinforcement = {
+        stability: 2,
+        diagnostics: { collapsed: false },
+        structuralPose: [],
+        analysis: { groups: [] }
+    };
+
+    GameConfig.powerLastChanceEnabled = true;
+    const saved = engine.resolveLastChance(collapse, true);
+
+    assert.equal(saved.stability, 1);
+    assert.equal(saved.diagnostics.collapsed, false);
+    assert.equal(saved.diagnostics.lastChanceRescuePending, true);
+    assert.equal(engine.room.lastChanceRescuePending, true);
+    assert.equal(engine.room.lastChanceRescueUsed, true);
+
+    const snapshot = stripRuntimeRoom({
+        id: "TEST",
+        players: engine.room.players,
+        state: engine.room
+    });
+    assert.equal(snapshot.state.lastChanceRescuePending, true);
+    assert.equal(snapshot.state.lastChanceRescueUsed, true);
+
+    const held = engine.resolveLastChance(collapse);
+    assert.equal(held.stability, 1);
+    assert.equal(engine.room.lastChanceRescuePending, true);
+
+    const recovered = engine.resolveLastChance(reinforcement, true);
+    assert.equal(recovered.stability, 2);
+    assert.equal(engine.room.lastChanceRescuePending, false);
+    assert.equal(engine.resolveLastChance(collapse, true).stability, 0);
+});
+
+test("Last Chance collapses on an unsuccessful follow-up placement and resets per level", () => {
+    const { engine } = createPlayingEngine(1, 8);
+    const collapse = {
+        stability: 0,
+        diagnostics: { collapsed: true },
+        structuralPose: [],
+        analysis: { groups: [] }
+    };
+
+    GameConfig.powerLastChanceEnabled = true;
+    engine.resolveLastChance(collapse, true);
+    const failedFollowUp = engine.resolveLastChance({
+        ...collapse,
+        stability: 1,
+        diagnostics: { collapsed: false }
+    }, true);
+
+    assert.equal(failedFollowUp.stability, 0);
+    assert.equal(failedFollowUp.diagnostics.collapsed, true);
+    assert.equal(engine.room.lastChanceRescuePending, false);
+
+    engine.resetLastChanceRescue();
+    assert.equal(engine.room.lastChanceRescuePending, false);
+    assert.equal(engine.room.lastChanceRescueUsed, false);
+
+    GameConfig.powerLastChanceEnabled = false;
+    const disabled = engine.resolveLastChance(collapse, true);
+    assert.equal(disabled.stability, 0);
+    assert.equal(engine.room.lastChanceRescuePending, false);
+});
+
 test("quick chat broadcasts a transient event and enforces the player cooldown", () => {
     const { engine, messages } = createPlayingEngine(1, 5);
     const player = engine.room.players[0];

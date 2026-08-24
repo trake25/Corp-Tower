@@ -9,6 +9,7 @@ const originalGameConfig = {
     ,quickChatCooldownMs: GameConfig.quickChatCooldownMs
     ,powerLifetime: GameConfig.powerLifetime
     ,powerReplenishPileShare: GameConfig.powerReplenishPileShare
+    ,powerLastChanceEnabled: GameConfig.powerLastChanceEnabled
     ,towerStabilityWarningThreshold: GameConfig.towerStabilityWarningThreshold
     ,towerStabilityCriticalThreshold: GameConfig.towerStabilityCriticalThreshold
     ,towerStabilityMoodThreshold: GameConfig.towerStabilityMoodThreshold
@@ -68,6 +69,8 @@ function resetFixtures() {
     GameConfig.powerLifetime = originalGameConfig.powerLifetime;
     GameConfig.powerReplenishPileShare =
         originalGameConfig.powerReplenishPileShare;
+    GameConfig.powerLastChanceEnabled =
+        originalGameConfig.powerLastChanceEnabled;
     GameConfig.towerStabilityWarningThreshold =
         originalGameConfig.towerStabilityWarningThreshold;
     GameConfig.towerStabilityCriticalThreshold =
