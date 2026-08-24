@@ -87,7 +87,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 |---|---|---|
 | src/Server/app/Game_Config.js:1 | GameConfig · const | **every tuning value in one object** — read this file, not a prose copy |
 
-### src/Server/app/Game_Engine.js — 943 ln
+### src/Server/app/Game_Engine.js — 955 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -127,8 +127,8 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Game_Engine.js:672 | restartAtConfiguredStartLevel | debug restart at the configured start level |
 | src/Server/app/Game_Engine.js:679 | restartAtLevel | restart every room at a level, optionally preserving score |
 | src/Server/app/Game_Engine.js:751 | completeLevel | bank scores, carry-over, summary, MVP, Impact gate |
-| src/Server/app/Game_Engine.js:819 | failLevel | level failure, discard carry-over, Impact rollback |
-| src/Server/app/Game_Engine.js:823 | nextLevel | advance level or finish the match at `maxLevel` |
+| src/Server/app/Game_Engine.js:831 | failLevel | level failure, discard carry-over, Impact rollback |
+| src/Server/app/Game_Engine.js:835 | nextLevel | advance level or finish the match at `maxLevel` |
 
 ### src/Server/app/Lobby_Manager.js — 1223 ln
 

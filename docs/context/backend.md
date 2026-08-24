@@ -314,6 +314,9 @@ checkpoint is the only in-run reset. Once the configured recovery budget is
 exhausted, it restores checkpoint score, contribution, and Power, clears
 provisional attempt state, broadcasts terminal `game_over`, and requests a Lobby
 close with `failure_limit_reached` and destination `home` after the summary delay.
+When a completed level would fail the next checkpoint, the engine resolves that
+shortfall before broadcasting a completion summary, so players receive one failed
+summary rather than a completed-then-failed pair.
 
 `rollbackToImpact()` calls `startLevel()` directly at the end, so the room
 re-enters `starting` in the same call. Hydration restores only the timer matching

@@ -86,7 +86,8 @@ metadata cannot recover the variant.
 | 15 | Align Debug Scoring controls with player payout table | 4 | B | 3 | 11 | late estimate ~18,000 | ~38,000 | ~55,000 | ~45,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
 | 16 | Implement server Impact contribution, retry, terminal cleanup, and balance probe | 5 | B | 3 | 19 | late estimate ~25,000 | ~42,000 | ~72,000 | ~72,000 | ! | ok | gpt-5 (variant unrecorded) | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
 | 17 | Sync Impact bars to authoritative contribution and raise default share | 2 | B | 3 | 5 | late estimate ~4,000 | ~10,000 | ~18,000 | ~18,000 | ! | ok | gpt-5 (variant unrecorded) | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 18 -->
+| 18 | Route terminal Impact closes Home and suppress duplicate checkpoint summaries | 3 | B | 3 | 7 | late estimate ~8,000 | ~17,000 | ~30,000 | ~30,000 | ! | ok | gpt-5 (variant unrecorded) | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
+<!-- next: row 19 -->
 
 ## Cycle 4 (closed)
 

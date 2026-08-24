@@ -438,6 +438,26 @@ test("Impact contribution excludes completion bonuses and cannot be carried by t
     assert.equal(engine.hasMetImpactScoreRequirement(2), false);
 });
 
+test("an Impact shortfall replaces the completion summary at the checkpoint", () => {
+    const { engine, messages } = createPlayingEngine(2, 1);
+
+    GameConfig.impactInterval = 2;
+    GameConfig.impactMinContributionShare = 0;
+    GameConfig.impactScoreRequirement = 1;
+    engine.room.impactLevel = 1;
+    engine.room.players[0].blocks = [createBlock(1)];
+
+    engine.placeBlock("P1", 0);
+
+    assert.equal(engine.room.state, "failed");
+    assert.equal(engine.room.lastLevelSummary.result, "failed");
+    assert.equal(engine.room.lastLevelSummary.reason, "impact_score_requirement");
+    assert.equal(
+        messages.some(message => message.lastLevelSummary?.result === "completed"),
+        false
+    );
+});
+
 test("cooperative bots use authoritative Impact contribution status", () => {
     const { engine } = createPlayingEngine(1, 10);
     const [first, second, third] = engine.room.players;

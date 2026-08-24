@@ -210,7 +210,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:114 | _on_back_pressed | opens confirmation before leaving the lobby |
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:117 | _on_leave_confirmed | leaves the lobby after modal confirmation |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 381 ln
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 382 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -230,39 +230,39 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:79 | _on_match_started | routes a match-start broadcast into gameplay |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:82 | _enter_play_instance | switches screen state into the active play instance |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:89 | _on_room_closed | tear the play instance down via Join Screen; in demo, back to Home instead |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:104 | _on_auto_dismiss_modal_dismissed | restores navigation after an automatic modal closes |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:109 | show_play_loader_screen | splash before join |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:114 | _on_play_loader_finished | advance to Sign-in; in demo, straight to Home |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:124 | show_sign_in_screen | Play as Guest is the only wired control |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:136 | _on_guest_login_requested | advance to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:148 | _on_provider_login_requested | launch the provider flow, then **await `oauth_completed`** — except on web, where the page is already navigating away |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:169 | _set_sign_in_busy | duck-typed busy toggle on whichever sign-in screen is mounted |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:173 | _show_sign_in_error | surface a reason, but only if that screen is still the live overlay |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:180 | show_home_screen | Private Server / Join Server / Game Tutorial menu |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:187 | _on_home_join_server_requested | advance to the join screen; in demo, `connect_server()` directly |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:193 | _on_home_tutorial_requested | start the Tutorial from Home |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:196 | show_join_screen | join / matchmaking entry screen, no tutorial button |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:204 | _on_join_screen_back_requested | return to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:207 | start_tutorial | mount the Tutorial over the real HUD |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:220 | _on_play_instance_tutorial_requested | Tutorial requested from inside play |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:223 | _on_play_instance_tutorial_exited | return from Tutorial to Home Screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:227 | show_find_match_screen | matchmaking wait screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:236 | _on_find_match_requested | enter the queue |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:240 | _on_cancel_requested | leave the queue |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:244 | show_public_lobby_screen | shows the public lobby using the latest room payload |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:253 | _on_leave_lobby_requested | opens the leave-lobby confirmation flow |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:259 | _ensure_play_instance | instantiate PlayScreenScene once per room |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:273 | _teardown_play_instance | free the play instance on room close |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:280 | _set_debug_context | updates the trigger and forwards lobby/play restrictions to Main |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:286 | _set_overlay | mount a screen in ScreenContainer |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:292 | _clear_overlay | unmount the current screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:300 | update_debug_button_availability | enabled only with a live instance and a connection |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:319 | reset_debug_button_position | runs on ready and room join, never after a manual drag |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:325 | _on_debug_button_gui_input | tap-vs-drag discrimination |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:350 | _begin_debug_button_gesture | start tracking a pointer |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:355 | _end_debug_button_gesture | stop tracking |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:363 | _move_debug_button | drag the floating button, clamped on screen |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:373 | _on_debug_button_tapped | calls Main by duck typing; no static dependency |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:105 | _on_auto_dismiss_modal_dismissed | restores navigation after an automatic modal closes |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:110 | show_play_loader_screen | splash before join |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:115 | _on_play_loader_finished | advance to Sign-in; in demo, straight to Home |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:125 | show_sign_in_screen | Play as Guest is the only wired control |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:137 | _on_guest_login_requested | advance to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:149 | _on_provider_login_requested | launch the provider flow, then **await `oauth_completed`** — except on web, where the page is already navigating away |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:170 | _set_sign_in_busy | duck-typed busy toggle on whichever sign-in screen is mounted |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:174 | _show_sign_in_error | surface a reason, but only if that screen is still the live overlay |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:181 | show_home_screen | Private Server / Join Server / Game Tutorial menu |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:188 | _on_home_join_server_requested | advance to the join screen; in demo, `connect_server()` directly |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:194 | _on_home_tutorial_requested | start the Tutorial from Home |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:197 | show_join_screen | join / matchmaking entry screen, no tutorial button |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:205 | _on_join_screen_back_requested | return to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:208 | start_tutorial | mount the Tutorial over the real HUD |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:221 | _on_play_instance_tutorial_requested | Tutorial requested from inside play |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:224 | _on_play_instance_tutorial_exited | return from Tutorial to Home Screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:228 | show_find_match_screen | matchmaking wait screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:237 | _on_find_match_requested | enter the queue |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:241 | _on_cancel_requested | leave the queue |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:245 | show_public_lobby_screen | shows the public lobby using the latest room payload |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:254 | _on_leave_lobby_requested | opens the leave-lobby confirmation flow |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:260 | _ensure_play_instance | instantiate PlayScreenScene once per room |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:274 | _teardown_play_instance | free the play instance on room close |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:281 | _set_debug_context | updates the trigger and forwards lobby/play restrictions to Main |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:287 | _set_overlay | mount a screen in ScreenContainer |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:293 | _clear_overlay | unmount the current screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:301 | update_debug_button_availability | enabled only with a live instance and a connection |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:320 | reset_debug_button_position | runs on ready and room join, never after a manual drag |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:326 | _on_debug_button_gui_input | tap-vs-drag discrimination |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:351 | _begin_debug_button_gesture | start tracking a pointer |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:356 | _end_debug_button_gesture | stop tracking |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:364 | _move_debug_button | drag the floating button, clamped on screen |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:374 | _on_debug_button_tapped | calls Main by duck typing; no static dependency |
 
 ### src/Client/App/corp-tower/Cor/Scripts/SignInDebugOverlay.gd — 120 ln
 

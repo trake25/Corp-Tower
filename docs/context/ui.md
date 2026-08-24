@@ -58,15 +58,17 @@ global floating debug button.
   exposing the empty grey root.
 - Flow: Splash → Sign-in → Home → Join Screen; a restored session skips
   Sign-in, while Play Loader remains reusable and unwired. Tutorial exit → Home,
-  room-close → Join Screen. Demo skips Sign-in: Play Demo + Tutorial on Home,
-  room-close → Home. Buttons:
+  room-close → Join Screen, except terminal `failure_limit_reached` closes and an
+  explicit `destination: "home"` route Home. Demo skips Sign-in: Play Demo +
+  Tutorial on Home, room-close → Home. Buttons:
   [map/ui-screens.md](./map/ui-screens.md).
 - Routes `room_joined` on `matchStarted` (false → Public Lobby); `match_started`
   enters the game → [networking.md](./networking.md). **Demo skips the Public
   Lobby**: it enters play immediately and calls `send_ready()` itself, since bots
   pre-ready every other seat. `room_closed: lobby_timeout` opens
-  `AutoDismissModal` over the current screen instead of swapping it away; other
-  reasons → Join Screen (Home in demo).
+  `AutoDismissModal` over the current screen instead of swapping it away; terminal
+  `failure_limit_reached` or destination `home` → Home; other reasons → Join
+  Screen (Home in demo).
 - `AutoDismissModal` (`Main.tscn`, third child) also covers an unexpected
   disconnect while `find_match_active`. Both cases tear the screen underneath
   down only on dismiss, so it stays visible behind the modal's 3s countdown.

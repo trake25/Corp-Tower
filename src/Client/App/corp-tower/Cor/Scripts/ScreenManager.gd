@@ -91,12 +91,13 @@ func _on_room_closed(data) -> void:
 		return
 
 	var reason := str(data.get("reason", ""))
+	var destination := str(data.get("destination", ""))
 
 	if reason == "lobby_timeout":
 		auto_dismiss_modal.open_time_expired()
 		return
 
-	if EndpointConfig.DEMO_MODE_ENABLED:
+	if EndpointConfig.DEMO_MODE_ENABLED or destination == "home" or reason == "failure_limit_reached":
 		show_home_screen()
 	else:
 		show_join_screen()

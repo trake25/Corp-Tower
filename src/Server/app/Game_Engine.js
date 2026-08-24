@@ -754,7 +754,6 @@ class GameEngine {
             Date.now() + this.getPostLevelTransitionDelayMs() + GameConfig.startDelayMs;
         clearTimeout(this.levelTimer);
         clearInterval(this.tickTimer);
-        this.recordLevelOutcome("completed");
 
         const exactFinish =
             this.room.currentHeight === this.room.targetHeight;
@@ -786,6 +785,18 @@ class GameEngine {
 
         this.awardCompletionBonuses(finisher, exactFinish);
         this.addLevelScoreToLeaderboard();
+
+        const nextLevel = this.room.level + 1;
+
+        if (
+            nextLevel <= GameConfig.maxLevel &&
+            this.isImpactLevel(nextLevel) &&
+            !this.hasMetImpactScoreRequirement(nextLevel)
+        ) {
+            this.failImpactScoreRequirement(nextLevel);
+            return;
+        }
+
         const carriedBlockCount = this.prepareTeamCarryOverBlocks();
 
         const mvp = this.getLevelMVP();
@@ -797,6 +808,7 @@ class GameEngine {
             displayOnly: true
         });
 
+        this.recordLevelOutcome("completed");
         this.room.lastLevelSummary = this.buildLevelSummary({
             result: "completed",
             exactFinish: exactFinish,
