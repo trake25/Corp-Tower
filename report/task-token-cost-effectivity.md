@@ -79,7 +79,8 @@ metadata cannot recover the variant.
 | 8 | Route task report retrieval through automation context | 2 | A | 1 | 3 | late estimate ~2,000 | ~5,000 | ~13,000 | ~13,000 | ! | ok | gpt-5 (variant unrecorded) | medium | infra-engineer,docs-steward,update-docs |
 | 9 | Align placement with structural pose and contain tower tilt | 3 | B | 2 | 22 | ~8,000 | ~34,000 | ~57,000 | ~47,000 | ! | ok | variant unrecorded | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
 | 10 | Show remaining failures and terminal Home countdown in level summary | 3 | A | 1 | 7 | late estimate ~7,000 | ~20,000 | ~34,000 | ~34,000 | ~ | ok | gpt-5 (variant unrecorded) | medium | client-engineer,docs-steward,update-docs |
-<!-- next: row 11 -->
+| 11 | Add debug Last Chance collapse rescue | 4 | B | 3 | 17 | late estimate ~6,000 | ~17,000 | ~27,000 | ~27,000 | ~ | ok | gpt-5 (variant unrecorded) | medium | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
+<!-- next: row 12 -->
 
 ## Cycle 5 (closed)
 
