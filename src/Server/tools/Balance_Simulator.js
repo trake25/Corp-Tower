@@ -8,7 +8,7 @@ const STRATEGIES = ["cooperative", "mvp_greedy"];
 const DEFAULT_LEVELS = 20;
 const DEFAULT_RUNS = 100;
 
-const SWEEP_DIFFICULTIES = [0, 50, 75, 95, 100];
+const SWEEP_DIFFICULTIES = [0, 5, 25, 50, 75, 100];
 const SWEEP_LEVEL_STEP = 5;
 
 function createPlayers() {

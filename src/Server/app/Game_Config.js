@@ -40,10 +40,13 @@ const GameConfig = {
     towerMaxTiltAngleDeg: 18,
     towerStructuralPoseMaxAngleDeg: 12,
     towerStructuralPoseMaxDipUnits: 0.18,
+    towerStructuralPoseRigidRisk: 0.08,
+    towerStructuralPoseIntegritySwayShare: 0.45,
     towerStabilityDifficulty: 90,
     towerStabilityPressure: {
         floor: 0.55,
-        fullPressureLevel: 8
+        fullPressureLevel: 8,
+        difficultyCurvePower: 2
     },
     towerStabilityAnchors: {
         forgiving: {

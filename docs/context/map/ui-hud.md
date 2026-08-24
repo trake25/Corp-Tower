@@ -477,22 +477,23 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:320 | cell_x · static func | cell column accessor |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:326 | cell_y · static func | cell row accessor |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd — 119 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd — 189 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:3 | EPSILON · const | pose-settling equality tolerance |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:8 | clear | discard all pose state |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:12 | replace_targets | adopt server pose targets |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:35 | step | damp current transforms toward targets |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:51 | pose_for | current pose lookup by block id |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:54 | has_pose | test for a block pose |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:57 | has_targets | test for a structural-pose snapshot |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:60 | target_for | target pose lookup by block id |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:63 | blend | interpolate two transforms |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:73 | weighted_blend | compose weighted supporter transforms |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:103 | _normalize | coerce wire pose fields |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:112 | _matches | target-settling comparison |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:10 | clear | discard all pose state |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:16 | replace_targets | adopt server pose targets |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:53 | step | damp current transforms toward targets |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:82 | pose_for | current pose lookup by block id |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:85 | pose_for_grid | derive a block pose from its smoothed rigid section transform |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:110 | has_pose | test for a block pose |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:113 | has_targets | test for a structural-pose snapshot |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:116 | target_for | target pose lookup by block id |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:119 | blend | interpolate two transforms |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:133 | weighted_blend | compose weighted supporter transforms |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:163 | _normalize | coerce wire pose fields |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:180 | _matches | target-settling comparison |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 163 ln
 
@@ -607,7 +608,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd:4 | NORMAL_TINT · const | white, restores modulate on release |
 | src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd:6 | _ready | tint bare icon TextureButtons cyan on press, no StyleBox to swap |
 
-### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1124 ln
+### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1135 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -702,30 +703,30 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:457 | _reset_collapse | clear collapse state |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:462 | _begin_collapse | start the lean-fall-settle sequence |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:513 | _build_collapse_seed | deterministic seed; every client renders the same debris |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:594 | _collapse_seed | seed accessor |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:605 | _draw_debris | draw the settling pile |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:649 | _update_scroll_offset | scroll ramp, frozen once target height is reached |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:659 | _draw | **the whole tower render**; ghost is emitted inside the tilt block |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:763 | _draw_block_emoji | mood faces; **balanceDelta guard sits below the verdict branch** |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:813 | _draw_posed_block_emoji | face draw in a block-local structural transform |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:861 | _verdict_mood_for | verdict wave face for a placer |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:879 | _wave_pop_factor | scale bump as the wave passes a brick |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:887 | _footprint_box | pixel box of a placed entry |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:903 | _height_to_pixel_y | grid height to screen Y |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:906 | _draw_snap_layer | snap points and active target |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:919 | _band_top_units | top of the placeable band |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:930 | _draw_placeable_band | the legal drop zone overlay |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:962 | _draw_drag_ghost | docked landing ghost at the **aim**, not the settled row |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1025 | _draw_snap_points | snap point rings |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1043 | _draw_fallback_block | untextured brick |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1048 | _draw_fallback_stack | untextured tower |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1070 | _unit_size | brick_unit_size × camera zoom; every transform derives from this |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1073 | _scroll_offset_units | current scroll in grid units |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1097 | _visible_unit_capacity | how many grid units fit on screen |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1101 | _is_rect_visible | **bottom bound extends to the real screen bottom**, not the Control rect |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1114 | _normalize_block_entry | server entry to draw entry |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1117 | _player_color | seat colour for a placer |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:598 | _collapse_seed | seed accessor |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:609 | _draw_debris | draw the settling pile |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:653 | _update_scroll_offset | scroll ramp, frozen once target height is reached |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:663 | _draw | **the whole tower render**; ghost is emitted inside the tilt block |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:774 | _draw_block_emoji | mood faces; **balanceDelta guard sits below the verdict branch** |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:824 | _draw_posed_block_emoji | face draw in a block-local structural transform |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:872 | _verdict_mood_for | verdict wave face for a placer |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:890 | _wave_pop_factor | scale bump as the wave passes a brick |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:898 | _footprint_box | pixel box of a placed entry |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:914 | _height_to_pixel_y | grid height to screen Y |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:917 | _draw_snap_layer | snap points and active target |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:930 | _band_top_units | top of the placeable band |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:941 | _draw_placeable_band | the legal drop zone overlay |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:973 | _draw_drag_ghost | docked landing ghost at the **aim**, not the settled row |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1036 | _draw_snap_points | snap point rings |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1054 | _draw_fallback_block | untextured brick |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1059 | _draw_fallback_stack | untextured tower |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1081 | _unit_size | brick_unit_size × camera zoom; every transform derives from this |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1084 | _scroll_offset_units | current scroll in grid units |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1108 | _visible_unit_capacity | how many grid units fit on screen |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1112 | _is_rect_visible | **bottom bound extends to the real screen bottom**, not the Control rect |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1125 | _normalize_block_entry | server entry to draw entry |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:1128 | _player_color | seat colour for a placer |
 
 ---
 
-36 files · 539 symbols · 0 awaiting a `Does` line.
+36 files · 540 symbols · 0 awaiting a `Does` line.

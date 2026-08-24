@@ -531,7 +531,12 @@ func _build_collapse_seed(
 	var origin_y: int = int(entry.get("originY", entry.get("baseHeight", 0)))
 	var box: Rect2 = _footprint_box(origin_x, origin_y, cells, unit, base_x, baseline, 0)
 	var center: Vector2 = box.position + box.size * 0.5
-	var pose: Dictionary = structural_pose.pose_for(_entry_block_id(entry))
+	var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+	var grid_center: Vector2 = Vector2(
+		float(origin_x) + (float(bounds.min_x) + float(bounds.max_x) + 1.0) * 0.5,
+		float(origin_y) + (float(bounds.min_y) + float(bounds.max_y) + 1.0) * 0.5
+	)
+	var pose: Dictionary = structural_pose.pose_for_grid(_entry_block_id(entry), grid_center)
 	var has_pose: bool = !pose.is_empty()
 	var leaned: Vector2 = pivot + (center + Vector2(0.0, scroll_px) - pivot).rotated(lean_rad)
 	var pose_angle: float = deg_to_rad(float(pose.get("rotationDeg", 0.0)))
@@ -539,8 +544,7 @@ func _build_collapse_seed(
 		float(pose.get("offsetXUnits", 0.0)) * unit,
 		-float(pose.get("offsetYUnits", 0.0)) * unit
 	)
-	var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
-	var center_units: float = float(origin_y) + (float(bounds.min_y) + float(bounds.max_y) + 1.0) * 0.5
+	var center_units: float = grid_center.y
 	var texture: Texture2D = BlockDataScript.brick_texture(shape_id)
 	var quad_size: Vector2 = box.size
 	var rotation_steps: int = 0
@@ -702,7 +706,14 @@ func _draw() -> void:
 
 		var center: Vector2 = box_rect.position + box_rect.size * 0.5 - draw_origin
 		var texture: Texture2D = BlockDataScript.brick_texture(shape_id)
-		var pose: Dictionary = structural_pose.pose_for(_entry_block_id(entry))
+		var pose_bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+		var pose: Dictionary = structural_pose.pose_for_grid(
+			_entry_block_id(entry),
+			Vector2(
+				float(origin_x) + (float(pose_bounds.min_x) + float(pose_bounds.max_x) + 1.0) * 0.5,
+				float(base_height) + (float(pose_bounds.min_y) + float(pose_bounds.max_y) + 1.0) * 0.5
+			)
+		)
 
 		if has_structural_pose and !pose.is_empty():
 			var posed_center: Vector2 = center + Vector2(

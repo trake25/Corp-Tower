@@ -77,7 +77,7 @@ syntax-checked only. Run `npm run balance:simulate -- <levels> <runs>`.
   every level past the earliest as a false timeout.
 - Runs **both strategies** per level so the comparison is directly readable.
 - **Stability sweep:** `npm run balance:stability` re-runs every level at
-  difficulty 0/50/75/95/100 and prints `avgStability`, `minStability`,
+  difficulty 0/5/25/50/75/100 and prints `avgStability`, `minStability`,
   `avgBalance`, `avgIntegrity`, critical carried-load share, path concentration,
   weakest-interface height, and evaluator time. Sampled at **every placement**,
   not just level end.
@@ -112,8 +112,8 @@ balance problem:
 `src/Server/tools/Stability_Probe.js` (`npm run balance:probe`) covers that second
 blind spot with narrow bottlenecks, wide crowns, redundant supports, disconnected
 stacks, and gap-repair geometry across heights and levels through
-`resolveStabilityConfig(level)`. It asserts a single opening brick never collapses
-at any sampled level.
+`resolveStabilityConfig(level)` at every sweep difficulty. It asserts a single
+opening brick never collapses at any sampled level or difficulty.
 
 Both are tuning aids, not gameplay authorities.
 

@@ -6,6 +6,7 @@ const GameConfig = require("../app/Game_Config");
 
 const LEVELS = [1, 5, 15, 25];
 const HEIGHT_FRACTIONS = [0.1, 0.3, 0.6, 0.9, 1.0];
+const DIFFICULTIES = [0, 5, 25, 50, 75, 100];
 
 function createPlayers() {
     return [
@@ -208,68 +209,85 @@ function criticalAnalysis(result) {
 function run() {
     console.log(
         [
-            "archetype", "level", "target", "siteWidth", "height", "heightFraction",
+            "difficulty", "archetype", "level", "target", "siteWidth", "height", "heightFraction",
             "stability", "balance", "integrity", "criticalLoadShare", "pathCount",
             "pathConcentration", "weakestInterfaceHeight", "evaluatorMs", "collapsed"
         ].join(",")
     );
 
-    for (const level of LEVELS) {
-        const engine = createEngineForLevel(level);
-        const targetHeight = engine.room.targetHeight;
-        const siteWidth = engine.getSiteWidthForHeight(targetHeight);
-        const config = engine.resolveStabilityConfig(level);
+    const originalDifficulty = GameConfig.towerStabilityDifficulty;
+    try {
+        for (const difficulty of DIFFICULTIES) {
+            GameConfig.towerStabilityDifficulty = difficulty;
+            for (const level of LEVELS) {
+                const engine = createEngineForLevel(level);
+                const targetHeight = engine.room.targetHeight;
+                const siteWidth = engine.getSiteWidthForHeight(targetHeight);
+                const config = engine.resolveStabilityConfig(level);
 
-        for (const [name, build] of Object.entries(ARCHETYPES)) {
-            for (const fraction of HEIGHT_FRACTIONS) {
-                const height = Math.max(1, Math.round(targetHeight * fraction));
-                const entries = build(siteWidth, height);
-                const startedAt = process.hrtime.bigint();
-                const result = TowerStability.evaluate(entries, config);
-                const evaluatorMs = Number(process.hrtime.bigint() - startedAt) / 1000000;
-                const d = result.diagnostics;
-                const critical = criticalAnalysis(result);
+                for (const [name, build] of Object.entries(ARCHETYPES)) {
+                    for (const fraction of HEIGHT_FRACTIONS) {
+                        const height = Math.max(1, Math.round(targetHeight * fraction));
+                        const entries = build(siteWidth, height);
+                        const startedAt = process.hrtime.bigint();
+                        const result = TowerStability.evaluate(entries, config);
+                        const evaluatorMs = Number(process.hrtime.bigint() - startedAt) / 1000000;
+                        const d = result.diagnostics;
+                        const critical = criticalAnalysis(result);
 
-                console.log(
-                    [
-                        name,
-                        level,
-                        targetHeight,
-                        siteWidth,
-                        height,
-                        fraction.toFixed(2),
-                        result.stability,
-                        d.balance,
-                        d.integrity,
-                        Number(critical.carriedLoadShare || 0).toFixed(3),
-                        Number(d.criticalSupport?.pathCount || 0),
-                        Number(critical.pathConcentration || 0).toFixed(3),
-                        Number(critical.pivotY || 0).toFixed(2),
-                        evaluatorMs.toFixed(3),
-                        d.collapsed
-                    ].join(",")
-                );
+                        console.log(
+                            [
+                                difficulty,
+                                name,
+                                level,
+                                targetHeight,
+                                siteWidth,
+                                height,
+                                fraction.toFixed(2),
+                                result.stability,
+                                d.balance,
+                                d.integrity,
+                                Number(critical.carriedLoadShare || 0).toFixed(3),
+                                Number(d.criticalSupport?.pathCount || 0),
+                                Number(critical.pathConcentration || 0).toFixed(3),
+                                Number(critical.pivotY || 0).toFixed(2),
+                                evaluatorMs.toFixed(3),
+                                d.collapsed
+                            ].join(",")
+                        );
+                    }
+                }
             }
         }
+    } finally {
+        GameConfig.towerStabilityDifficulty = originalDifficulty;
     }
 }
 
 function assertOpeningBrickSurvives() {
     let failures = 0;
 
-    for (const level of LEVELS) {
-        const engine = createEngineForLevel(level);
-        const config = engine.resolveStabilityConfig(level);
-        const entries = [rowEntry(1, 0, 0)];
-        const result = TowerStability.evaluate(entries, config);
+    const originalDifficulty = GameConfig.towerStabilityDifficulty;
+    try {
+        for (const difficulty of DIFFICULTIES) {
+            GameConfig.towerStabilityDifficulty = difficulty;
+            for (const level of LEVELS) {
+                const engine = createEngineForLevel(level);
+                const config = engine.resolveStabilityConfig(level);
+                const entries = [rowEntry(1, 0, 0)];
+                const result = TowerStability.evaluate(entries, config);
 
-        if (result.diagnostics.collapsed) {
-            failures += 1;
-            console.error(
-                `FAIL: single opening brick collapses at level ${level} ` +
-                `(stability ${result.stability})`
-            );
+                if (result.diagnostics.collapsed) {
+                    failures += 1;
+                    console.error(
+                        `FAIL: single opening brick collapses at difficulty ${difficulty}, level ${level} ` +
+                        `(stability ${result.stability})`
+                    );
+                }
+            }
         }
+    } finally {
+        GameConfig.towerStabilityDifficulty = originalDifficulty;
     }
 
     if (failures > 0) {

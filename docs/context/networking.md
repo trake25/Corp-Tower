@@ -157,7 +157,7 @@ beyond-snap-radius aim leaves the row to the server. `target_point` and
 | `towerGridWidth` | Authoritative grid width. **The client derives its render centre from this** — a hardcoded centre draws the whole tower off-centre the moment the grid is retuned |
 | `placeableColumnMin` / `Max` | The level's buildable site, derived server-side from target height. Sent every tick; the client feeds them to `SnapGrid.set_placeable_range` so snap points, origin ranges and the placeable band all follow |
 | `towerStability` / `towerStabilityDiagnostics` | Score plus the diagnostics object |
-| `towerStructuralPose[]` | Presentation-only `{ blockId, offsetXUnits, offsetYUnits, rotationDeg, failureWeight }`; clients never apply it to aiming or legality |
+| `towerStructuralPose[]` | Presentation-only per-block offsets plus optional `sectionId` and section origin for rigid transform smoothing; clients never apply it to aiming or legality |
 | `impactScoreStatus` | Next Impact level, ready-count inputs, per-player score goals |
 
 Legacy numeric block values are still tolerated by the client as vertical fallback

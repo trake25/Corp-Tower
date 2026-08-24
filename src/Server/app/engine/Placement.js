@@ -225,19 +225,34 @@ function getStabilityPressure(engine, level) {
     return (difficulty / 100) * (floor + (1 - floor) * levelRamp);
 }
 
+function getStabilityRiskScale() {
+    const difficulty = Math.max(
+        0,
+        Math.min(100, Number(GameConfig.towerStabilityDifficulty) || 0)
+    ) / 100;
+    const curve = GameConfig.towerStabilityPressure || {};
+    const power = Math.max(1, Number(curve.difficultyCurvePower) || 2);
+
+    return Math.pow(difficulty, power);
+}
+
 function resolveStabilityConfig(engine, level) {
     const anchors = GameConfig.towerStabilityAnchors || {};
     const forgiving = anchors.forgiving || {};
     const harsh = anchors.harsh || {};
     const pressure = engine.getStabilityPressure(level);
+    const riskScale = getStabilityRiskScale();
     const resolved = {
         towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
         towerPoseMaxAngleDeg: GameConfig.towerStructuralPoseMaxAngleDeg,
         towerPoseMaxDipUnits: GameConfig.towerStructuralPoseMaxDipUnits,
         towerBaseHalfWidthFloor: GameConfig.towerBaseHalfWidthFloor,
+        towerStructuralPoseRigidRisk: GameConfig.towerStructuralPoseRigidRisk,
+        towerStructuralPoseIntegritySwayShare: GameConfig.towerStructuralPoseIntegritySwayShare,
         towerSiteWidth: engine.getSiteWidthForHeight(engine.room?.targetHeight),
         towerTargetHeight: engine.room?.targetHeight,
-        towerStabilityPressureApplied: pressure
+        towerStabilityPressureApplied: pressure,
+        towerStabilityRiskScaleApplied: riskScale
     };
 
     for (const key of Object.keys(forgiving)) {
@@ -326,6 +341,7 @@ module.exports = {
     resolvePlacementOrigin,
     placeBlock,
     getStabilityPressure,
+    getStabilityRiskScale,
     resolveStabilityConfig,
     recalculateTowerStability,
     checkWinCondition,

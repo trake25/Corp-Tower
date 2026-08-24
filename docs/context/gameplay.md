@@ -176,12 +176,11 @@ level alone. Axis definitions and the collapse conditions →
 [backend.md](./backend.md#two-axes).
 
 **`towerStabilityDifficulty` (0–100) is the only stability tunable.** `pressure`
-interpolates every constant above between the **forgiving** and **harsh** anchor
-sets, so threat ramps with level *and* with how close the tower is to its own
-target height. `0` leaves stability inert — score multiplier only, no collapse. At
-the shipped default (**95**) a narrow build can fail from level 1, while a
-full-width base stays safe at every level, since slenderness measures the whole
-tower rather than just its footprint.
+interpolates the forgiving and harsh anchor sets while its quadratic risk scale
+makes 5 extremely forgiving, 25 forgiving, 50 moderate, 75 harsh, and 100
+extreme. `0` leaves stability inert — score multiplier only, no collapse. Level,
+maturity, and target-height pressure still make weak bottlenecks progressively
+dangerous while a full-width tower stays viable.
 
 **Do not re-expose the nine raw constants as individual knobs.** Their units are
 not comparable — three cannot reach their thresholds at all — and because the site

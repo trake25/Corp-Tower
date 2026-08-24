@@ -20,6 +20,25 @@ function stabilityEntry(id, cells, originX, originY) {
     return { block: { id, cells }, originX, originY };
 }
 
+function loadedBottleneckEntries() {
+    const row = width => Array.from({ length: width }, (_, x) => [x, 0]);
+    return [
+        stabilityEntry("B0", row(6), 0, 0),
+        stabilityEntry("B1", row(6), 0, 1),
+        stabilityEntry("N", row(1), 2, 2),
+        stabilityEntry("U3", row(6), 0, 3),
+        stabilityEntry("U4", row(6), 0, 4),
+        stabilityEntry("U5", row(6), 0, 5),
+        stabilityEntry("U6", row(6), 0, 6),
+        stabilityEntry("U7", row(6), 0, 7),
+        stabilityEntry("U8", row(6), 0, 8)
+    ];
+}
+
+function poseById(result, id) {
+    return result.structuralPose.find(pose => pose.blockId === id);
+}
+
 test("a centered narrow spire loses Integrity without inventing a direction", () => {
     const entries = [];
     const oBlock = { cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
@@ -93,6 +112,57 @@ test("stability difficulty 0 leaves the same tower unpenalised", () => {
 
         assert.ok(off.stability > on.stability);
         assert.equal(off.diagnostics.collapsed, false);
+    } finally {
+        GameConfig.towerStabilityDifficulty = original;
+    }
+});
+
+test("the difficulty dial is forgiving at 5 and ramps a loaded bottleneck smoothly", () => {
+    const { engine } = createPlayingEngine(8, 10);
+    const original = GameConfig.towerStabilityDifficulty;
+    const results = new Map();
+
+    try {
+        for (const difficulty of [0, 5, 25, 50, 75, 100]) {
+            GameConfig.towerStabilityDifficulty = difficulty;
+            results.set(
+                difficulty,
+                TowerStability.evaluate(loadedBottleneckEntries(), engine.resolveStabilityConfig(8))
+            );
+        }
+    } finally {
+        GameConfig.towerStabilityDifficulty = original;
+    }
+
+    assert.equal(results.get(0).stability, 100);
+    assert.equal(results.get(0).diagnostics.collapsed, false);
+    assert.ok(results.get(5).stability >= 99, "difficulty 5 must be extremely forgiving");
+    assert.ok(results.get(25).stability > 90, "difficulty 25 remains forgiving");
+    assert.ok(results.get(50).stability < results.get(25).stability);
+    assert.ok(results.get(75).stability < results.get(50).stability);
+    assert.equal(results.get(100).diagnostics.collapsed, true);
+
+    for (const [previous, difficulty] of [[0, 5], [5, 25], [25, 50], [50, 75], [75, 100]]) {
+        assert.ok(
+            results.get(difficulty).diagnostics.criticalRisk >= results.get(previous).diagnostics.criticalRisk,
+            "difficulty " + difficulty + " must not reduce bottleneck risk"
+        );
+    }
+});
+
+test("well-supported tall towers remain viable at every difficulty", () => {
+    const { engine } = createPlayingEngine(8, 10);
+    const original = GameConfig.towerStabilityDifficulty;
+    const row = Array.from({ length: 6 }, (_, x) => [x, 0]);
+    const entries = Array.from({ length: 10 }, (_, y) => stabilityEntry("R" + y, row, 0, y));
+
+    try {
+        for (const difficulty of [0, 5, 25, 50, 75, 100]) {
+            GameConfig.towerStabilityDifficulty = difficulty;
+            const result = TowerStability.evaluate(entries, engine.resolveStabilityConfig(8));
+            assert.equal(result.stability, 100, "full support must stay viable at " + difficulty);
+            assert.equal(result.diagnostics.collapsed, false);
+        }
     } finally {
         GameConfig.towerStabilityDifficulty = original;
     }
@@ -194,6 +264,48 @@ test("geometry, diagnostics, and structural pose are independent of entry orderi
 
     assert.deepEqual(first.diagnostics, second.diagnostics);
     assert.deepEqual(sortPose(first.structuralPose), sortPose(second.structuralPose));
+});
+
+test("structural pose bends weak interfaces while rigid upper sections remain seamless", () => {
+    const config = fixedStabilityConfig({
+        towerStabilityMinHeight: 1,
+        towerTargetHeight: 9,
+        towerHeightPressureGain: 1,
+        towerStructuralPoseRigidRisk: 0.08,
+        towerStructuralPoseIntegritySwayShare: 0.45
+    });
+    const result = TowerStability.evaluate(loadedBottleneckEntries(), config);
+    const base = poseById(result, "B0");
+    const bottleneck = poseById(result, "N");
+    const upper = poseById(result, "U3");
+    const upperNext = poseById(result, "U4");
+    const reinforced = TowerStability.evaluate(
+        loadedBottleneckEntries().map(entry => entry.block.id === "N"
+            ? stabilityEntry("N", Array.from({ length: 6 }, (_, x) => [x, 0]), 0, 2)
+            : entry
+        ),
+        config
+    );
+    const reinforcedUpper = poseById(reinforced, "U3");
+    const angle = -upper.rotationDeg * Math.PI / 180;
+    const upperCenter = { x: 3, y: 3.5 };
+    const upperNextCenter = { x: 3, y: 4.5 };
+    const posedUpper = {
+        x: upperCenter.x + upper.offsetXUnits,
+        y: upperCenter.y + upper.offsetYUnits
+    };
+    const posedUpperNext = {
+        x: upperNextCenter.x + upperNext.offsetXUnits,
+        y: upperNextCenter.y + upperNext.offsetYUnits
+    };
+
+    assert.equal(upper.sectionId, upperNext.sectionId);
+    assert.equal(upper.rotationDeg, upperNext.rotationDeg);
+    assert.ok(Math.abs(upper.rotationDeg) > Math.abs(bottleneck.rotationDeg));
+    assert.ok(Math.abs(upper.rotationDeg) > Math.abs(base.rotationDeg));
+    assert.ok(Math.abs(reinforcedUpper.rotationDeg) < Math.abs(upper.rotationDeg));
+    assert.ok(Math.abs(posedUpperNext.x - posedUpper.x + Math.sin(angle)) < 0.0001);
+    assert.ok(Math.abs(posedUpperNext.y - posedUpper.y - Math.cos(angle)) < 0.0001);
 });
 
 test("structural evaluation scales to a representative tall snapshot", () => {
@@ -548,7 +660,10 @@ test("a placed brick carries the balance delta it caused", () => {
     assert.equal(broadcast.towerStructuralPose.length, engine.room.towerBlocks.length);
     assert.deepEqual(
         Object.keys(broadcast.towerStructuralPose[0]).sort(),
-        ["blockId", "failureWeight", "offsetXUnits", "offsetYUnits", "rotationDeg"]
+        [
+            "blockId", "failureWeight", "offsetXUnits", "offsetYUnits", "rotationDeg",
+            "sectionId", "sectionOriginXUnits", "sectionOriginYUnits"
+        ]
     );
     assert.equal(Object.hasOwn(broadcast, "analysis"), false);
 

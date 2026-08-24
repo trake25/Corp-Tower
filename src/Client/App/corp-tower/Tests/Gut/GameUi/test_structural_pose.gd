@@ -13,6 +13,13 @@ func _pose(block_id: String, offset_x: float, offset_y: float, rotation: float, 
 		"failureWeight": failure
 	}
 
+func _section_pose(block_id: String, section_id: String, origin: Vector2, rotation: float, failure: float) -> Dictionary:
+	var pose: Dictionary = _pose(block_id, 0.0, 0.0, rotation, failure)
+	pose["sectionId"] = section_id
+	pose["sectionOriginXUnits"] = origin.x
+	pose["sectionOriginYUnits"] = origin.y
+	return pose
+
 func _entry(block_id: String, origin_x: int, origin_y: int) -> Dictionary:
 	return {
 		"playerId": "P1",
@@ -46,6 +53,31 @@ func test_nonconsecutive_snapshot_replaces_pose_directly() -> void:
 
 	pose.replace_targets([_pose("A", -3.0, 1.0, -8.0, 0.5)], true)
 	assert_eq(pose.pose_for("A"), pose.target_for("A"))
+
+func test_section_pose_preserves_rigid_contacts_while_smoothing_a_bend() -> void:
+	var pose := StructuralPose.new()
+	var lower := Vector2(3.0, 3.5)
+	var upper := Vector2(3.0, 4.5)
+	var initial: Array = [
+		_section_pose("A", "upper", Vector2.ZERO, 0.0, 0.4),
+		_section_pose("B", "upper", Vector2.ZERO, 0.0, 0.4)
+	]
+	var target: Array = [
+		_section_pose("A", "upper", Vector2(0.4, -0.2), 12.0, 0.8),
+		_section_pose("B", "upper", Vector2(0.4, -0.2), 12.0, 0.8)
+	]
+	pose.replace_targets(initial, true)
+	pose.replace_targets(target, false)
+	pose.step(0.05, 2.0)
+	var lower_pose: Dictionary = pose.pose_for_grid("A", lower)
+	var upper_pose: Dictionary = pose.pose_for_grid("B", upper)
+	var lower_center := lower + Vector2(lower_pose.offsetXUnits, lower_pose.offsetYUnits)
+	var upper_center := upper + Vector2(upper_pose.offsetXUnits, upper_pose.offsetYUnits)
+	var expected_delta := (upper - lower).rotated(deg_to_rad(-float(lower_pose.rotationDeg)))
+
+	assert_almost_eq(float(lower_pose.rotationDeg), float(upper_pose.rotationDeg), 0.001)
+	assert_almost_eq((upper_center - lower_center).x, expected_delta.x, 0.001)
+	assert_almost_eq((upper_center - lower_center).y, expected_delta.y, 0.001)
 
 func test_coordinate_conversion_ignores_visible_structural_pose() -> void:
 	SnapGridScript.reset_placeable_range()

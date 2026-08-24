@@ -206,7 +206,7 @@ self-dismiss mid-freeze, and restoring it when the window ends.
 |---|---|---|
 | Block Preview | `Cor/Scripts/BlockPreview.gd` | Rotated/mirrored textured quad at inventory or tower scale, plus the drag ghost's own snap-point rings |
 | Tower Stack | `Cor/Scripts/TowerStack.gd` | The whole tower render: bricks, drag overlay, drop/tilt animation, mood faces, collapse sequence, Impact Beat |
-| Structural Pose | `Cor/Scripts/GameUi/StructuralPose.gd` | Per-block server-pose targets, deterministic weighted blending, and damped display state |
+| Structural Pose | `Cor/Scripts/GameUi/StructuralPose.gd` | Section-transform targets, legacy per-block fallback, and damped rigid display state |
 | Collapse Sim | `Cor/Scripts/GameUi/CollapseSim.gd` | Node-free debris physics, seeded so every client renders it identically |
 | Background Parallax | `Cor/Scripts/BackgroundParallax.gd` | Pans `BgArt` and `PlatformArt`, ground-aligns covered background art on wide roots, and samples its visible sky edge for the revealed backdrop |
 | Impact Bar | `Cor/Scripts/ImpactBar.gd` | Per-player runtime seat-colour progress fill and progress-only avatar marker inside the 9-Play frame |

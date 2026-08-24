@@ -1,5 +1,4 @@
 "use strict";
-
 function cellsFor(entry) {
     const block = entry.block || {};
     const cells = Array.isArray(block.cells) ? block.cells : [];
@@ -8,22 +7,16 @@ function cellsFor(entry) {
         y: Number(cell[1] ?? cell.y ?? 0) + Number(entry.originY ?? entry.baseHeight ?? 0)
     }));
 }
-
 function key(x, y) { return `${x},${y}`; }
-
 function clamp01(value) { return Math.max(0, Math.min(1, value)); }
-
 function number(value, fallback) {
     const resolved = Number(value);
     return Number.isFinite(resolved) ? resolved : fallback;
 }
-
 function topHeight(entries) {
     return cellsForEntries(entries).reduce((top, cell) => Math.max(top, cell.y + 1), 0);
 }
-
 function cellsForEntries(entries) { return entries.flatMap(cellsFor); }
-
 function settleBlock(entries, block, originX, fromY = null) {
     const cells = (block.cells || []).map(cell => ({ x: Number(cell[0]), y: Number(cell[1]) }));
     const anchoredX = Math.round(Number(originX) || 0);
@@ -36,14 +29,12 @@ function settleBlock(entries, block, originX, fromY = null) {
     while (originY > 0 && !collides(originY - 1)) originY -= 1;
     return { originX: anchoredX, originY };
 }
-
 function blockCells(block) {
     return (block?.cells || []).map(cell => ({
         x: Number(cell[0] ?? cell.x ?? 0),
         y: Number(cell[1] ?? cell.y ?? 0)
     }));
 }
-
 function isPlacementLegal(entries, block, originX, originY) {
     const cells = blockCells(block);
 
@@ -58,7 +49,6 @@ function isPlacementLegal(entries, block, originX, originY) {
     const occupied = new Set(cellsForEntries(entries).map(cell => key(cell.x, cell.y)));
     return !cells.some(cell => occupied.has(key(cell.x + originX, cell.y + originY)));
 }
-
 function supportedCellsGained(entries, block, originX, originY) {
     const cells = blockCells(block);
 
@@ -82,15 +72,12 @@ function supportedCellsGained(entries, block, originX, originY) {
 
     return gained;
 }
-
 function canonicalKey(cells) {
     return cells.map(cell => `${cell.y}:${cell.x}`).sort().join(",");
 }
-
 function blockId(entry) {
     return String(entry?.block?.id ?? entry?.blockId ?? "");
 }
-
 function buildNodes(entries) {
     return entries.map((entry, entryIndex) => {
         const cells = cellsFor(entry);
@@ -111,7 +98,6 @@ function buildNodes(entries) {
         };
     }).filter(node => node.mass > 0).sort((left, right) => left.key.localeCompare(right.key));
 }
-
 function buildContacts(nodes) {
     const occupancy = new Map();
 
@@ -140,7 +126,6 @@ function buildContacts(nodes) {
         }
     }
 }
-
 function condense(nodes) {
     let nextIndex = 0;
     const stack = [];
@@ -193,7 +178,6 @@ function condense(nodes) {
     return components.map(members => ({ members, key: members[0].key }))
         .sort((left, right) => left.key.localeCompare(right.key));
 }
-
 function buildGroups(nodes) {
     buildContacts(nodes);
     const components = condense(nodes);
@@ -276,7 +260,6 @@ function buildGroups(nodes) {
     });
     return groups;
 }
-
 function interfaceFor(group, config, height, disabled) {
     const contactsBySupporter = new Map();
     for (const contact of group.contacts) {
@@ -299,7 +282,10 @@ function interfaceFor(group, config, height, disabled) {
     const targetHeight = Math.max(0, number(config.towerTargetHeight, 0));
     const heightProgress = targetHeight > 0 ? clamp01(height / targetHeight) : 0;
     const heightPressure = 1 + Math.max(0, number(config.towerHeightPressureGain, 0)) * heightProgress;
-    const severity = disabled ? 0 : maturity * heightPressure * Math.max(0, number(config.towerStructuralSeverity, 1));
+    const difficultyScale = disabled ? 0 : clamp01(number(config.towerStabilityRiskScaleApplied, 1));
+    const severity = disabled
+        ? 0
+        : maturity * heightPressure * Math.max(0, number(config.towerStructuralSeverity, 1)) * difficultyScale;
     const balanceRisk = contactWidth === 0
         ? (disabled ? 0 : 1)
         : clamp01(((Math.abs(signedOffsetShare) - safeBalance) / (collapseBalance - safeBalance)) * severity);
@@ -352,7 +338,6 @@ function interfaceFor(group, config, height, disabled) {
         heightProgress
     };
 }
-
 function analyseGroups(groups, config, height, disabled) {
     const compare = (left, right) => right.maxY - left.maxY || left.key.localeCompare(right.key);
     const queue = groups.filter(group => group.pendingDependents === 0).sort(compare);
@@ -384,81 +369,117 @@ function analyseGroups(groups, config, height, disabled) {
         }
     }
 }
-
+function visualSections(groups, config) {
+    const parent = new Map(groups.map(group => [group, group]));
+    const find = group => parent.get(group) === group ? group : parent.set(group, find(parent.get(group))).get(group);
+    const join = (left, right) => {
+        left = find(left); right = find(right);
+        if (left !== right) parent.set(right, left);
+    };
+    const rigidRisk = clamp01(number(config.towerStructuralPoseRigidRisk, 0.08));
+    groups.forEach(group => {
+        if (Math.max(group.interface.balanceRisk, group.interface.integrityRisk) <= rigidRisk) {
+            group.supportLinks.forEach(link => { if (link.supporter) join(group, link.supporter); });
+        }
+    });
+    const sectionsByRoot = new Map();
+    groups.forEach(group => {
+        const root = find(group);
+        if (!sectionsByRoot.has(root)) sectionsByRoot.set(root, { groups: [], boundaries: [] });
+        sectionsByRoot.get(root).groups.push(group);
+    });
+    const sections = Array.from(sectionsByRoot.values()).sort((left, right) => {
+        const leftKey = left.groups.map(group => group.key).sort()[0];
+        const rightKey = right.groups.map(group => group.key).sort()[0];
+        return leftKey.localeCompare(rightKey);
+    });
+    const sectionForGroup = new Map();
+    sections.forEach((section, index) => {
+        section.id = `section-${index}`;
+        section.groups.forEach(group => sectionForGroup.set(group, section));
+        section.groups.forEach(group => group.supportLinks.forEach(link => {
+                const supporterSection = link.supporter ? sectionForGroup.get(link.supporter) : null;
+                if (!supporterSection || supporterSection !== section) {
+                    section.boundaries.push({ group, link, supporterSection });
+                }
+            }));
+        if (section.boundaries.length === 0) {
+            section.boundaries.push({ group: section.groups[0], link: { weight: 1 }, supporterSection: null });
+        }
+    });
+    return { sections, rigidRisk };
+}
+function rotatePoint(x, y, angle) {
+    const radians = -angle * Math.PI / 180;
+    return { x: x * Math.cos(radians) - y * Math.sin(radians), y: x * Math.sin(radians) + y * Math.cos(radians) };
+}
+function cosmeticSign(group) {
+    const hash = group.key.split("").reduce((value, character) => (value * 31 + character.charCodeAt(0)) >>> 0, 7);
+    return hash % 2 === 0 ? 1 : -1;
+}
 function buildStructuralPose(groups, config) {
+    const { sections, rigidRisk } = visualSections(groups, config);
     const transforms = new Map();
     const poseMaxAngle = Math.max(0, number(config.towerPoseMaxAngleDeg, config.towerMaxTiltAngleDeg ?? 18));
-    const poseMaxDip = Math.max(0, number(config.towerPoseMaxDipUnits, 0.18));
+    const integritySway = clamp01(number(config.towerStructuralPoseIntegritySwayShare, 0.45));
 
-    const transformFor = group => {
-        if (transforms.has(group)) {
-            return transforms.get(group);
+    const transformFor = section => {
+        if (transforms.has(section)) return transforms.get(section);
+        let total = 0, pivotX = 0, pivotY = 0, anchoredX = 0, anchoredY = 0;
+        let inheritedAngle = 0, localBend = 0, failureWeight = 0;
+        for (const boundary of section.boundaries) {
+            const weight = Math.max(0.0001, boundary.group.loadMass * number(boundary.link.weight, 1));
+            const parentTransform = boundary.supporterSection ? transformFor(boundary.supporterSection) : { originX: 0, originY: 0, angle: 0, failureWeight: 0 };
+            const pivot = boundary.group.interface;
+            const anchored = rotatePoint(pivot.pivotX, pivot.pivotY, parentTransform.angle);
+            const risk = Math.max(pivot.balanceRisk, pivot.integrityRisk);
+            const visualRisk = clamp01((risk - rigidRisk) / Math.max(0.0001, 1 - rigidRisk));
+            const signedBalance = pivot.signedBalanceRisk;
+            const direction = Math.abs(signedBalance) > 0.0001 ? Math.sign(signedBalance) : cosmeticSign(boundary.group);
+            const bend = direction * Math.max(Math.abs(signedBalance), pivot.integrityRisk * integritySway) * visualRisk;
+            total += weight;
+            pivotX += pivot.pivotX * weight;
+            pivotY += pivot.pivotY * weight;
+            anchoredX += (parentTransform.originX + anchored.x) * weight;
+            anchoredY += (parentTransform.originY + anchored.y) * weight;
+            inheritedAngle += parentTransform.angle * weight;
+            localBend += bend * weight;
+            failureWeight = Math.max(failureWeight, parentTransform.failureWeight, risk);
         }
-        let offsetX = 0;
-        let offsetY = 0;
-        let angle = 0;
-        let failureWeight = 0;
-        let totalWeight = 0;
-        for (const link of group.supportLinks || []) {
-            if (!link.supporter) {
-                continue;
-            }
-            const supporter = transformFor(link.supporter);
-            offsetX += supporter.offsetX * link.weight;
-            offsetY += supporter.offsetY * link.weight;
-            angle += supporter.angle * link.weight;
-            failureWeight += supporter.failureWeight * link.weight;
-            totalWeight += link.weight;
-        }
-        if (totalWeight > 0) {
-            offsetX /= totalWeight;
-            offsetY /= totalWeight;
-            angle /= totalWeight;
-            failureWeight /= totalWeight;
-        }
-        const localAngle = group.interface.signedBalanceRisk * poseMaxAngle;
-        const localDip = group.interface.integrityRisk * poseMaxDip;
-        const centerX = group.mass > 0 ? group.moment / group.mass : group.interface.pivotX;
-        const centerY = (group.minY + group.maxY + 1) * 0.5;
-        const radians = -localAngle * Math.PI / 180;
-        const dx = centerX - group.interface.pivotX;
-        const dy = centerY - group.interface.pivotY;
-        const rotatedX = dx * Math.cos(radians) - dy * Math.sin(radians);
-        const rotatedY = dx * Math.sin(radians) + dy * Math.cos(radians);
-        const transform = {
-            offsetX: offsetX + rotatedX - dx,
-            offsetY: offsetY + rotatedY - dy - localDip,
-            angle: angle + localAngle,
-            failureWeight: Math.max(failureWeight, group.interface.balanceRisk, group.interface.integrityRisk)
-        };
-        transforms.set(group, transform);
+        pivotX /= total;
+        pivotY /= total;
+        anchoredX /= total;
+        anchoredY /= total;
+        const angle = inheritedAngle / total + localBend / total * poseMaxAngle;
+        const rotatedPivot = rotatePoint(pivotX, pivotY, angle);
+        const transform = { originX: anchoredX - rotatedPivot.x, originY: anchoredY - rotatedPivot.y, angle, failureWeight };
+        transforms.set(section, transform);
         return transform;
     };
 
     const poseByEntry = new Map();
-    for (const group of groups) {
-        const transform = transformFor(group);
-        for (const member of group.members) {
-            const centerX = member.mass > 0 ? member.moment / member.mass : 0;
-            const centerY = (member.minY + member.maxY + 1) * 0.5;
-            const radians = -transform.angle * Math.PI / 180;
-            const dx = centerX - group.interface.pivotX;
-            const dy = centerY - group.interface.pivotY;
-            const rotatedX = dx * Math.cos(radians) - dy * Math.sin(radians);
-            const rotatedY = dx * Math.sin(radians) + dy * Math.cos(radians);
-            poseByEntry.set(member.entryIndex, {
-                blockId: blockId(member.entry),
-                offsetXUnits: transform.offsetX + rotatedX - dx,
-                offsetYUnits: transform.offsetY + rotatedY - dy,
-                rotationDeg: transform.angle,
-                failureWeight: transform.failureWeight
-            });
+    for (const section of sections) {
+        const transform = transformFor(section);
+        for (const group of section.groups) {
+            for (const member of group.members) {
+                const centerX = member.mass > 0 ? member.moment / member.mass : 0;
+                const centerY = (member.minY + member.maxY + 1) * 0.5;
+                const posedCenter = rotatePoint(centerX, centerY, transform.angle);
+                poseByEntry.set(member.entryIndex, {
+                    blockId: blockId(member.entry),
+                    sectionId: section.id,
+                    sectionOriginXUnits: transform.originX,
+                    sectionOriginYUnits: transform.originY,
+                    offsetXUnits: transform.originX + posedCenter.x - centerX,
+                    offsetYUnits: transform.originY + posedCenter.y - centerY,
+                    rotationDeg: transform.angle,
+                    failureWeight: transform.failureWeight
+                });
+            }
         }
     }
-
     return Array.from(poseByEntry.entries()).sort((left, right) => left[0] - right[0]).map(([, pose]) => pose);
 }
-
 function selectCritical(groups) {
     return groups.slice().sort((left, right) => {
         const leftRisk = left.interface.balanceRisk + left.interface.integrityRisk;

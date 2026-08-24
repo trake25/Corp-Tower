@@ -177,7 +177,8 @@ counting real time-to-resume instead of a stale round clock.
 ### Stability config
 
 `resolveStabilityConfig(level)` lerps `towerStabilityAnchors` by
-`getStabilityPressure(level)` and injects the level's `towerSiteWidth`. **Every
+`getStabilityPressure(level)`, injects a quadratic `towerStabilityRiskScaleApplied`
+from the difficulty dial, and supplies the level's `towerSiteWidth`. **Every
 `evaluate()` caller — engine, Bot Manager, Balance Simulator — must source its
 config here**, or bots grade columns on different physics than the server scores
 them with.
@@ -310,13 +311,15 @@ propagates cell mass and horizontal moment down every support path.
 - `supportedCellsGained` — called before the entry is pushed for scoring
   compatibility.
 - `evaluate(entries, config)` — returns Stability, public diagnostics, one compact
-  presentation pose per block, and in-process graph analysis for bots/tools.
+  presentation pose per block, and in-process graph analysis for bots/tools. Pose
+  records retain per-block offsets and add a section id/origin shared by rigid members.
 - `balanceDelta(before, after, config)` — directional Balance improvement only;
   Integrity does not affect brick faces.
 
 `resolveStabilityConfig()` is mandatory for every production evaluator caller: it
-injects level pressure, site width, target height, and cosmetic pose limits. A raw
-`GameConfig` falls back to evaluator defaults and grades a different rule.
+injects level pressure, the quadratic difficulty risk scale, site width, target
+height, and cosmetic pose limits. A raw `GameConfig` falls back to evaluator
+defaults and grades a different rule.
 
 ### Two axes
 
@@ -383,9 +386,9 @@ hand-tuned playtest values that intentionally differ from the design reference.
   `getPostLevelTransitionDelayMs()`. `generatedDrawPileScaling` was **removed**,
   not deprecated in place; the reserve count is derived.
 - Retune stability via `towerStabilityDifficulty` and its Balance/Integrity anchor
-  sets, never by adding debug physics controls. `towerStructuralPoseMaxAngleDeg`
-  and `towerStructuralPoseMaxDipUnits` are presentation limits, separate from
-  gameplay collapse risk.
+  sets, never by adding debug physics controls. The dial linearly blends thresholds
+  but applies risk with `towerStabilityPressure.difficultyCurvePower`; pose rigidity
+  and Integrity sway stay presentation-only and separate from collapse risk.
 - `powerCatalog` entries carry an `active: boolean`; only `active: true` entries
   are eligible for the Impact-MVP draw. Only `replenish` is active — supply, not
   hand quality, is what actually strands a team.

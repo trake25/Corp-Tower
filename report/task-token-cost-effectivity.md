@@ -80,7 +80,8 @@ metadata cannot recover the variant.
 | 9 | Align covered Android Play background ground with platform | 3 | B | 1 | 7 | late estimate ~5,000 | ~14,000 | ~28,000 | ~28,000 | ~ | ok | gpt-5 (variant unrecorded) | high | client-engineer,qa-engineer,docs-steward,update-docs |
 | 10 | Finalize Tower Stability, Scoring, and Impact redesign implementation plans | 5 | B | 4 | 3 | late estimate ~30,000 | ~55,000 | ~90,000 | ~90,000 | ~ | ok | gpt-5 (variant unrecorded) | high | server-engineer,fullstack-coordinator,client-engineer,qa-engineer,docs-steward |
 | 11 | Implement graph-based tower stability and structural poses | 5 | B | 5 | 26 | late estimate ~55,000 | ~78,000 | ~125,000 | ~125,000 | ~ | ok | gpt-5 (variant unrecorded) | high | server-engineer,fullstack-coordinator,client-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 12 -->
+| 12 | Retune tower stability dial and rigid structural pose | 5 | B | 3 | 16 | ~18,000 | ~55,000 | ~95,000 | ~95,000 | ✓ | ok | gpt-5 (variant unrecorded) | high | fullstack,server,client,qa,docs |
+<!-- next: row 13 -->
 
 ## Cycle 4 (closed)
 

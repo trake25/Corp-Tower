@@ -81,7 +81,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Debug_Config.js:130 | resolveBound · fn | evaluates static or GameConfig-derived clamp bounds |
 | src/Server/app/Debug_Config.js:134 | applyValue · fn | validates, clamps and applies one exposed debug value |
 
-### src/Server/app/Game_Config.js — 155 ln
+### src/Server/app/Game_Config.js — 158 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -262,33 +262,36 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Server.js:44 | main · fn | WebSocket entry point, connection accept, first `reconnect` |
 | src/Server/app/Server.js:108 | handleMessage · fn | **the message router** — every client message type dispatches here |
 
-### src/Server/app/Tower_Stability.js — 579 ln
+### src/Server/app/Tower_Stability.js — 600 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/app/Tower_Stability.js:3 | cellsFor · fn | absolute grid cells for one placed entry |
-| src/Server/app/Tower_Stability.js:12 | key · fn | `x,y` cell key for occupancy sets |
-| src/Server/app/Tower_Stability.js:14 | clamp01 · fn | clamp helper used by every penalty term |
-| src/Server/app/Tower_Stability.js:16 | number · fn | numeric config fallback helper |
-| src/Server/app/Tower_Stability.js:21 | topHeight · fn | current tower height from entries |
-| src/Server/app/Tower_Stability.js:25 | cellsForEntries · fn | occupancy set across the whole tower |
-| src/Server/app/Tower_Stability.js:27 | settleBlock · fn | **gravity settle**; `SnapGrid.settle_origin_y` mirrors this line for line |
-| src/Server/app/Tower_Stability.js:40 | blockCells · fn | cells of a block at an origin |
-| src/Server/app/Tower_Stability.js:47 | isPlacementLegal · fn | overlap / below-platform / site bounds; **`SnapGrid.is_placement_legal` mirrors it** |
-| src/Server/app/Tower_Stability.js:62 | supportedCellsGained · fn | cells put back on solid ground; what Reinforce pays for |
-| src/Server/app/Tower_Stability.js:86 | canonicalKey · fn | geometry sort key for deterministic graph order |
-| src/Server/app/Tower_Stability.js:90 | blockId · fn | wire join id for a placed block |
-| src/Server/app/Tower_Stability.js:94 | buildNodes · fn | rigid nodes from placed-brick geometry |
-| src/Server/app/Tower_Stability.js:115 | buildContacts · fn | lower exposed-cell support contacts |
-| src/Server/app/Tower_Stability.js:144 | condense · fn | deterministic strongly connected support groups |
-| src/Server/app/Tower_Stability.js:197 | buildGroups · fn | group graph, components, and load state |
-| src/Server/app/Tower_Stability.js:280 | interfaceFor · fn | Balance and Integrity risk for one interface |
-| src/Server/app/Tower_Stability.js:356 | analyseGroups · fn | dependent-to-supporter load propagation |
-| src/Server/app/Tower_Stability.js:388 | buildStructuralPose · fn | compact per-block cosmetic transforms |
-| src/Server/app/Tower_Stability.js:462 | selectCritical · fn | deterministic weakest-interface selection |
-| src/Server/app/Tower_Stability.js:474 | evaluate · fn | **the pure stability function** — lean, integrity, slenderness, support deficit, collapse |
-| src/Server/app/Tower_Stability.js:559 | structuralLean · fn | CoM offset + column imbalance + new-brick overhang |
-| src/Server/app/Tower_Stability.js:567 | balanceDelta · fn | per-placement lean movement; drives brick mood faces, **lean only** |
+| src/Server/app/Tower_Stability.js:2 | cellsFor · fn | absolute grid cells for one placed entry |
+| src/Server/app/Tower_Stability.js:10 | key · fn | `x,y` cell key for occupancy sets |
+| src/Server/app/Tower_Stability.js:11 | clamp01 · fn | clamp helper used by every penalty term |
+| src/Server/app/Tower_Stability.js:12 | number · fn | numeric config fallback helper |
+| src/Server/app/Tower_Stability.js:16 | topHeight · fn | current tower height from entries |
+| src/Server/app/Tower_Stability.js:19 | cellsForEntries · fn | occupancy set across the whole tower |
+| src/Server/app/Tower_Stability.js:20 | settleBlock · fn | **gravity settle**; `SnapGrid.settle_origin_y` mirrors this line for line |
+| src/Server/app/Tower_Stability.js:32 | blockCells · fn | cells of a block at an origin |
+| src/Server/app/Tower_Stability.js:38 | isPlacementLegal · fn | overlap / below-platform / site bounds; **`SnapGrid.is_placement_legal` mirrors it** |
+| src/Server/app/Tower_Stability.js:52 | supportedCellsGained · fn | cells put back on solid ground; what Reinforce pays for |
+| src/Server/app/Tower_Stability.js:75 | canonicalKey · fn | geometry sort key for deterministic graph order |
+| src/Server/app/Tower_Stability.js:78 | blockId · fn | wire join id for a placed block |
+| src/Server/app/Tower_Stability.js:81 | buildNodes · fn | rigid nodes from placed-brick geometry |
+| src/Server/app/Tower_Stability.js:101 | buildContacts · fn | lower exposed-cell support contacts |
+| src/Server/app/Tower_Stability.js:129 | condense · fn | deterministic strongly connected support groups |
+| src/Server/app/Tower_Stability.js:181 | buildGroups · fn | group graph, components, and load state |
+| src/Server/app/Tower_Stability.js:263 | interfaceFor · fn | Balance and Integrity risk for one interface |
+| src/Server/app/Tower_Stability.js:341 | analyseGroups · fn | dependent-to-supporter load propagation |
+| src/Server/app/Tower_Stability.js:372 | visualSections · fn | merge low-risk support interfaces into rigid cosmetic sections |
+| src/Server/app/Tower_Stability.js:412 | rotatePoint · fn | rotate an authoritative grid point for a cosmetic section transform |
+| src/Server/app/Tower_Stability.js:416 | cosmeticSign · fn | stable cosmetic sway direction for centered Integrity weakness |
+| src/Server/app/Tower_Stability.js:420 | buildStructuralPose · fn | compose weak-interface section bends into per-block cosmetic transforms |
+| src/Server/app/Tower_Stability.js:483 | selectCritical · fn | deterministic weakest-interface selection |
+| src/Server/app/Tower_Stability.js:495 | evaluate · fn | **the pure stability function** — lean, integrity, slenderness, support deficit, collapse |
+| src/Server/app/Tower_Stability.js:580 | structuralLean · fn | CoM offset + column imbalance + new-brick overhang |
+| src/Server/app/Tower_Stability.js:588 | balanceDelta · fn | per-placement lean movement; drives brick mood faces, **lean only** |
 
 ### src/Server/app/engine/Block_Geometry.js — 109 ln
 
@@ -368,7 +371,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/engine/Impacts.js:221 | failImpactScoreRequirement · fn | gate failure → rollback |
 | src/Server/app/engine/Impacts.js:281 | rollbackToImpact · fn | restore scores and powers to the last passed Impact |
 
-### src/Server/app/engine/Placement.js — 335 ln
+### src/Server/app/engine/Placement.js — 351 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -380,12 +383,13 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/engine/Placement.js:84 | resolveColumnOriginX · fn | clamps a requested brick origin into the current site |
 | src/Server/app/engine/Placement.js:95 | resolvePlacementOrigin · fn | validates a release row and settles the authoritative landing |
 | src/Server/app/engine/Placement.js:110 | placeBlock · fn | validates, settles, scores and broadcasts one authoritative placement |
-| src/Server/app/engine/Placement.js:211 | getStabilityPressure · fn | level-ramped share of configured stability difficulty |
-| src/Server/app/engine/Placement.js:228 | resolveStabilityConfig · fn | derives the physics config shared by placement evaluators |
-| src/Server/app/engine/Placement.js:252 | recalculateTowerStability · fn | evaluates the tower and queues threshold display events |
-| src/Server/app/engine/Placement.js:267 | checkWinCondition · fn | completes a level once current height reaches target |
-| src/Server/app/engine/Placement.js:275 | checkFailCondition · fn | authoritative supply-impossibility and all-blocks-used checks |
-| src/Server/app/engine/Placement.js:311 | anyPlayerCanRescueSupply · fn | detects a held Replenish that defers supply failure |
+| src/Server/app/engine/Placement.js:211 | getStabilityPressure · fn | level-ramped anchor blend share of configured stability difficulty |
+| src/Server/app/engine/Placement.js:228 | getStabilityRiskScale · fn | quadratic difficulty scale applied to structural risk |
+| src/Server/app/engine/Placement.js:239 | resolveStabilityConfig · fn | derives the physics config shared by placement evaluators |
+| src/Server/app/engine/Placement.js:267 | recalculateTowerStability · fn | evaluates the tower and queues threshold display events |
+| src/Server/app/engine/Placement.js:282 | checkWinCondition · fn | completes a level once current height reaches target |
+| src/Server/app/engine/Placement.js:290 | checkFailCondition · fn | authoritative supply-impossibility and all-blocks-used checks |
+| src/Server/app/engine/Placement.js:326 | anyPlayerCanRescueSupply · fn | detects a held Replenish that defers supply failure |
 
 ### src/Server/app/engine/Scoring.js — 364 ln
 
@@ -442,22 +446,23 @@ _no extracted symbols_
 | src/Server/tools/Balance_Simulator.js:535 | runSweep · fn | `balance:stability` difficulty sweep |
 | src/Server/tools/Balance_Simulator.js:556 | main · fn | CLI entry |
 
-### src/Server/tools/Stability_Probe.js — 293 ln
+### src/Server/tools/Stability_Probe.js — 311 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Server/tools/Stability_Probe.js:7 | LEVELS · const | levels probed |
 | src/Server/tools/Stability_Probe.js:8 | HEIGHT_FRACTIONS · const | tower heights sampled per archetype |
-| src/Server/tools/Stability_Probe.js:10 | createPlayers · fn | synthetic roster |
-| src/Server/tools/Stability_Probe.js:18 | withMutedConsole · fn | silence engine logging |
-| src/Server/tools/Stability_Probe.js:30 | createEngineForLevel · fn | engine without lobby, Redis or socket |
-| src/Server/tools/Stability_Probe.js:43 | rowEntry · fn | build one placed-brick row |
-| src/Server/tools/Stability_Probe.js:53 | centeredOriginX · fn | centre a shape on the site |
-| src/Server/tools/Stability_Probe.js:57 | ARCHETYPES · const | hand-built towers: spire, wide base, overhang — deterministic, unlike bot play |
-| src/Server/tools/Stability_Probe.js:194 | criticalAnalysis · fn | select the probe's weakest graph interface |
-| src/Server/tools/Stability_Probe.js:208 | run · fn | probe entry; prints stability per archetype × height |
-| src/Server/tools/Stability_Probe.js:257 | assertOpeningBrickSurvives · fn | **regression guard**: one narrow opening brick must not collapse at any level |
+| src/Server/tools/Stability_Probe.js:9 | DIFFICULTIES · const | representative stability-dial sweep points |
+| src/Server/tools/Stability_Probe.js:11 | createPlayers · fn | synthetic roster |
+| src/Server/tools/Stability_Probe.js:19 | withMutedConsole · fn | silence engine logging |
+| src/Server/tools/Stability_Probe.js:31 | createEngineForLevel · fn | engine without lobby, Redis or socket |
+| src/Server/tools/Stability_Probe.js:44 | rowEntry · fn | build one placed-brick row |
+| src/Server/tools/Stability_Probe.js:54 | centeredOriginX · fn | centre a shape on the site |
+| src/Server/tools/Stability_Probe.js:58 | ARCHETYPES · const | hand-built towers: spire, wide base, overhang — deterministic, unlike bot play |
+| src/Server/tools/Stability_Probe.js:195 | criticalAnalysis · fn | select the probe's weakest graph interface |
+| src/Server/tools/Stability_Probe.js:209 | run · fn | probe entry; prints stability per archetype × height |
+| src/Server/tools/Stability_Probe.js:267 | assertOpeningBrickSurvives · fn | **regression guard**: one narrow opening brick must not collapse at any level |
 
 ---
 
-20 files · 353 symbols · 0 awaiting a `Does` line.
+20 files · 358 symbols · 0 awaiting a `Does` line.
