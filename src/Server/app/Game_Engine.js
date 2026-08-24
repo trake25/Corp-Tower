@@ -15,6 +15,7 @@ class GameEngine {
         this.onRoomChanged = options.onRoomChanged || null;
         this.onRoomMessage = options.onRoomMessage || null;
         this.onLevelOutcome = options.onLevelOutcome || null;
+        this.onRoomCloseRequested = options.onRoomCloseRequested || null;
     }
 
     getRemainingMs() {
@@ -28,6 +29,10 @@ class GameEngine {
 
         if (this.room.state === "finished" || this.room.state === "failed") {
             return Math.max(0, (this.room.freezeEndsAt || 0) - Date.now());
+        }
+
+        if (this.room.state === "game_over") {
+            return Math.max(0, (this.room.terminalCloseAt || 0) - Date.now());
         }
 
         if (!this.room.endsAt) {
@@ -117,6 +122,12 @@ class GameEngine {
             impactScores: {},
             impactPowers: {},
             impactContributions: {},
+            impactFailureCount: 0,
+            lastImpactFailureReason: null,
+            failureTransitionCommitted: false,
+            terminalCloseAt: 0,
+            terminalFailureReason: null,
+            terminalCloseRequested: false,
             targetHeight: this.getTargetHeightForLevel(startLevel),
             currentHeight: 0,
             drawPile: [],
@@ -186,6 +197,12 @@ class GameEngine {
             impactScores: snapshot.state.impactScores || {},
             impactPowers: snapshot.state.impactPowers || {},
             impactContributions: snapshot.state.impactContributions || {},
+            impactFailureCount: snapshot.state.impactFailureCount || 0,
+            lastImpactFailureReason: snapshot.state.lastImpactFailureReason || null,
+            failureTransitionCommitted: Boolean(snapshot.state.failureTransitionCommitted),
+            terminalCloseAt: snapshot.state.terminalCloseAt || 0,
+            terminalFailureReason: snapshot.state.terminalFailureReason || null,
+            terminalCloseRequested: Boolean(snapshot.state.terminalCloseRequested),
             targetHeight: snapshot.state.targetHeight,
             currentHeight: snapshot.state.currentHeight,
             drawPile: snapshot.state.drawPile || [],
@@ -255,14 +272,21 @@ class GameEngine {
         if (this.room.state === "finished") {
             this.nextLevelTimer = setTimeout(() => {
                 this.nextLevel();
-            }, this.getPostLevelTransitionDelayMs());
+            }, Math.max(0, this.room.freezeEndsAt - Date.now()));
             return;
         }
 
         if (this.room.state === "failed") {
-            this.nextLevelTimer = setTimeout(() => {
-                this.rollbackToImpact();
-            }, this.getPostLevelTransitionDelayMs());
+            this.scheduleCheckpointRecovery(
+                Math.max(0, this.room.freezeEndsAt - Date.now())
+            );
+            return;
+        }
+
+        if (this.room.state === "game_over") {
+            this.scheduleTerminalRoomClose(
+                Math.max(0, this.room.terminalCloseAt - Date.now())
+            );
         }
     }
 
@@ -431,8 +455,13 @@ class GameEngine {
     }
 
     startLevel() {
+        if (!this.room || this.room.state === "game_over") {
+            return false;
+        }
+
         this.clearTimers();
 
+        this.room.failureTransitionCommitted = false;
         this.room.state = "starting";
         this.room.currentHeight = 0;
         this.room.towerBlocks = [];
@@ -473,6 +502,8 @@ class GameEngine {
         this.startTimer = setTimeout(() => {
             this.beginPlaying();
         }, GameConfig.startDelayMs);
+
+        return true;
     }
 
     beginPlaying() {
@@ -508,7 +539,7 @@ class GameEngine {
         this.tickTimer = null;
     }
 
-    closeRoom(reason) {
+    closeRoom(reason, persist = true) {
         if (!this.room) {
             return;
         }
@@ -526,7 +557,24 @@ class GameEngine {
         });
 
         console.log(`Room closed: ${reason}`);
-        this.persistRoom();
+        if (persist) {
+            this.persistRoom();
+        }
+    }
+
+    requestRoomClose(reason, destination = null) {
+        if (!this.room || this.room.terminalCloseRequested || !this.onRoomCloseRequested) {
+            return false;
+        }
+
+        this.room.terminalCloseRequested = true;
+        Promise.resolve(
+            this.onRoomCloseRequested(this.room.id, reason, destination)
+        ).catch(error => {
+            console.error("Room close request failed:", error.message);
+        });
+
+        return true;
     }
 
     stopBots() {
@@ -623,7 +671,8 @@ class GameEngine {
 
     restartAtConfiguredStartLevel() {
         this.restartAtLevel(this.getConfiguredStartLevel(), {
-            resetScores: true
+            resetScores: true,
+            newRun: true
         });
     }
 
@@ -636,9 +685,18 @@ class GameEngine {
         this.clearTimers();
 
         const targetLevel = this.clampLevel(level);
+        const newRun = Boolean(options.newRun);
 
         this.room.level = targetLevel;
-        this.room.impactLevel = targetLevel;
+        if (newRun) {
+            this.room.impactLevel = targetLevel;
+            this.room.impactFailureCount = 0;
+            this.room.lastImpactFailureReason = null;
+            this.room.failureTransitionCommitted = false;
+            this.room.terminalCloseAt = 0;
+            this.room.terminalFailureReason = null;
+            this.room.terminalCloseRequested = false;
+        }
         this.room.drawPile = [];
         this.room.teamCarryOverBlocks = [];
         this.room.towerBlocks = [];
@@ -668,7 +726,10 @@ class GameEngine {
             player.botLoopLevel = null;
         });
 
-        this.saveImpactState();
+        if (newRun) {
+            this.saveImpactState();
+        }
+
         this.startLevel();
     }
 
@@ -756,51 +817,14 @@ class GameEngine {
     }
 
     failLevel(reason) {
-        if (
-            this.room.state !== "playing" &&
-            this.room.state !== "starting"
-        ) {
-            return;
-        }
-
-        this.room.state = "failed";
-        this.room.freezeEndsAt =
-            Date.now() + this.getPostLevelTransitionDelayMs() + GameConfig.startDelayMs;
-        this.clearTimers();
-        this.recordLevelOutcome("failed");
-
-        const mvp = this.getLevelMVP();
-        const previousTotalScores = this.getPlayerScoreMap();
-
-        this.queueScoreEvent("mvp", {
-            playerId: mvp.id,
-            points: mvp.levelScore,
-            label: "MVP",
-            displayOnly: true
-        });
-
-        this.room.lastLevelSummary = this.buildLevelSummary({
-            result: "failed",
-            reason: reason,
-            exactFinish: false,
-            overbuildHeight: 0,
-            finisher: null,
-            finishingBlock: null,
-            carriedBlockCount: 0,
-            mvp: mvp,
-            previousTotalScores: previousTotalScores
-        });
-
-        console.log(`Level FAILED: ${reason}`);
-        this.persistRoom();
-        this.broadcastGameState();
-
-        this.nextLevelTimer = setTimeout(() => {
-            this.rollbackToImpact();
-        }, this.getPostLevelTransitionDelayMs());
+        return this.resolveCheckpointFailure({ reason });
     }
 
     nextLevel() {
+        if (!this.room || this.room.state !== "finished") {
+            return;
+        }
+
         if (this.room.level >= GameConfig.maxLevel) {
             this.room.state = "game_completed";
             this.persistRoom();
@@ -822,9 +846,11 @@ class GameEngine {
         this.room.level = nextLevel;
 
         if (opensImpact) {
-            this.awardImpactPower();
             this.room.impactLevel = this.room.level;
+            this.secureImpactCheckpoint();
+            this.awardImpactPower();
             this.saveImpactState();
+            this.persistRoom();
         }
 
         this.startLevel();
@@ -889,9 +915,11 @@ class GameEngine {
     ensureImpactPowers() { return Impacts.ensureImpactPowers(this); }
     ensureImpactContributions() { return Impacts.ensureImpactContributions(this); }
     ensureImpactState() { return Impacts.ensureImpactState(this); }
+    normalizeImpactFailureState() { return Impacts.normalizeImpactFailureState(this); }
     restoreImpactScores() { return Impacts.restoreImpactScores(this); }
     restoreImpactPowers() { return Impacts.restoreImpactPowers(this); }
     restoreImpactContributions() { return Impacts.restoreImpactContributions(this); }
+    secureImpactCheckpoint() { return Impacts.secureImpactCheckpoint(this); }
     awardImpactPower() { return Impacts.awardImpactPower(this); }
     isImpactLevel(level) { return Impacts.isImpactLevel(this, level); }
     getImpactScoreRequirement() { return Impacts.getImpactScoreRequirement(this); }
@@ -899,10 +927,14 @@ class GameEngine {
     getExpectedPlacementScoreForLevel(level) { return Impacts.getExpectedPlacementScoreForLevel(this, level); }
     getExpectedPlacementScoreForImpactBand(blockedLevel) { return Impacts.getExpectedPlacementScoreForImpactBand(this, blockedLevel); }
     getImpactBandScoreRequirement(blockedLevel) { return Impacts.getImpactBandScoreRequirement(this, blockedLevel); }
+    getImpactFailureStatus() { return Impacts.getImpactFailureStatus(this); }
     getImpactScoreFailures(blockedLevel) { return Impacts.getImpactScoreFailures(this, blockedLevel); }
     getNextImpactLevel() { return Impacts.getNextImpactLevel(this); }
     getImpactScoreStatus(blockedLevel = null) { return Impacts.getImpactScoreStatus(this, blockedLevel); }
     hasMetImpactScoreRequirement(blockedLevel) { return Impacts.hasMetImpactScoreRequirement(this, blockedLevel); }
+    resolveCheckpointFailure(options) { return Impacts.resolveCheckpointFailure(this, options); }
+    scheduleCheckpointRecovery(delayMs = null) { return Impacts.scheduleCheckpointRecovery(this, delayMs); }
+    scheduleTerminalRoomClose(delayMs = null) { return Impacts.scheduleTerminalRoomClose(this, delayMs); }
     failImpactScoreRequirement(blockedLevel) { return Impacts.failImpactScoreRequirement(this, blockedLevel); }
     rollbackToImpact() { return Impacts.rollbackToImpact(this); }
 }

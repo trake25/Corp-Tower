@@ -4,10 +4,11 @@
   "main": "app/Server.js",
   "scripts": {
     "start": "node app/Server.js",
-    "test": "node --check app/Server.js && node --check app/Lobby_Manager.js && node --check app/Debug_Config.js && node --check app/Game_Engine.js && node --check app/engine/Block_Geometry.js && node --check app/engine/Block_Supply.js && node --check app/engine/Placement.js && node --check app/engine/Scoring.js && node --check app/engine/Impacts.js && node --check app/Game_Config.js && node --check app/Bot_Manager.js && node --check app/Redis_State.js && node --check app/Tower_Stability.js && node --check app/Auth_Verifier.js && node --check app/Account_Store.js && node --check app/Profile_Store.js && node --check tools/Balance_Simulator.js && node --check tools/Stability_Probe.js && node --test tests/Block_Geometry.test.js tests/Placement_Geometry.test.js tests/Stability_Scoring.test.js tests/Gameplay_Events.test.js tests/Debug_State_Contracts.test.js tests/Matchmaking_Queue.test.js tests/Auth_Verifier.test.js tests/Account_Store.test.js tests/Profile_Store.test.js",
+    "test": "node --check app/Server.js && node --check app/Lobby_Manager.js && node --check app/Debug_Config.js && node --check app/Game_Engine.js && node --check app/engine/Block_Geometry.js && node --check app/engine/Block_Supply.js && node --check app/engine/Placement.js && node --check app/engine/Scoring.js && node --check app/engine/Impacts.js && node --check app/Game_Config.js && node --check app/Bot_Manager.js && node --check app/Redis_State.js && node --check app/Tower_Stability.js && node --check app/Auth_Verifier.js && node --check app/Account_Store.js && node --check app/Profile_Store.js && node --check tools/Balance_Simulator.js && node --check tools/Impact_Balance_Probe.js && node --check tools/Stability_Probe.js && node --test tests/Block_Geometry.test.js tests/Placement_Geometry.test.js tests/Stability_Scoring.test.js tests/Gameplay_Events.test.js tests/Debug_State_Contracts.test.js tests/Matchmaking_Queue.test.js tests/Auth_Verifier.test.js tests/Account_Store.test.js tests/Profile_Store.test.js",
     "balance:simulate": "node tools/Balance_Simulator.js",
     "balance:stability": "node tools/Balance_Simulator.js sweep",
-    "balance:probe": "node tools/Stability_Probe.js"
+    "balance:probe": "node tools/Stability_Probe.js",
+    "impact:probe": "node tools/Impact_Balance_Probe.js"
   },
   "keywords": [],
   "author": "",

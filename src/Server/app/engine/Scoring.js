@@ -81,6 +81,8 @@ function buildLevelSummary(engine, options) {
     return {
         result: options.result,
         reason: options.reason || null,
+        failureReason: options.failureReason || null,
+        failureStatus: options.failureStatus || null,
         level: engine.room.level,
         blockedLevel: options.blockedLevel || null,
         impactScoreRequirement:

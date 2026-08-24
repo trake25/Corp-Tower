@@ -297,7 +297,7 @@ class LobbyManager {
         }
     }
 
-    async closeRoom(room, reason) {
+    async closeRoom(room, reason, destination = null) {
         if (!room) {
             return;
         }
@@ -309,10 +309,24 @@ class LobbyManager {
             return;
         }
 
+        const closeMessage = {
+            type: "room_closed",
+            reason
+        };
+
+        if (destination) {
+            closeMessage.destination = destination;
+        }
+
         console.log(`Closing room ${room.id}: ${reason}`);
         this.cancelRoomReconnectExpiry(room.id);
         this.cancelLobbyReadyTimeout(room.id);
-        room.engine.closeRoom(reason);
+
+        if (this.isRoomOwner(existingRoom)) {
+            await this.stateStore.publishRoom(room.id, closeMessage);
+        }
+
+        room.engine.closeRoom(reason, false);
 
         this.rooms = this.rooms.filter(
             activeRoom => activeRoom.id !== room.id
@@ -320,6 +334,12 @@ class LobbyManager {
 
         await this.stateStore.deleteRoom(room.id);
         await this.stateStore.removeOpenRoom(room.id);
+
+        await Promise.all(room.players.map(roomPlayer => {
+            return roomPlayer.isBot || !this.stateStore.clearSessionRoom
+                ? null
+                : this.stateStore.clearSessionRoom(roomPlayer.sessionId);
+        }));
 
         room.players.forEach(roomPlayer => {
             const shouldNotify = this.isConnectedRealPlayer(roomPlayer);
@@ -331,12 +351,17 @@ class LobbyManager {
             }
 
             if (shouldNotify) {
-                this.sendPlayer(roomPlayer, {
-                    type: "room_closed",
-                    reason: reason
-                });
+                this.sendPlayer(roomPlayer, closeMessage);
             }
         });
+
+        if (this.stateStore.unsubscribeFromRoom) {
+            await this.stateStore.unsubscribeFromRoom(room.id);
+        }
+
+        if (this.stateStore.unsubscribeFromRoomActions) {
+            await this.stateStore.unsubscribeFromRoomActions(room.id);
+        }
 
         this.resetBotCounterIfIdle();
     }
@@ -963,6 +988,15 @@ class LobbyManager {
             },
             onLevelOutcome: async outcome => {
                 await this.stateStore.recordDemoOutcome(outcome);
+            },
+            onRoomCloseRequested: async (roomId, reason, destination) => {
+                const room = this.rooms.find(activeRoom => activeRoom.id === roomId);
+
+                if (!room || !this.isRoomOwner(room)) {
+                    return;
+                }
+
+                await this.closeRoom(room, reason, destination);
             }
         });
     }
@@ -1020,10 +1054,18 @@ class LobbyManager {
                 impactLevel: snapshot.state.impactLevel,
                 impactScores: snapshot.state.impactScores || {},
                 impactPowers: snapshot.state.impactPowers || {},
+                impactContributions: snapshot.state.impactContributions || {},
+                impactFailureCount: snapshot.state.impactFailureCount || 0,
+                lastImpactFailureReason: snapshot.state.lastImpactFailureReason || null,
+                failureTransitionCommitted: Boolean(snapshot.state.failureTransitionCommitted),
+                terminalCloseAt: snapshot.state.terminalCloseAt || 0,
+                terminalFailureReason: snapshot.state.terminalFailureReason || null,
+                terminalCloseRequested: Boolean(snapshot.state.terminalCloseRequested),
                 targetHeight: snapshot.state.targetHeight,
                 currentHeight: snapshot.state.currentHeight,
                 drawPile: snapshot.state.drawPile || [],
                 drawPileStartCount: snapshot.state.drawPileStartCount || 0,
+                levelDurationMs: snapshot.state.levelDurationMs || 0,
                 teamCarryOverBlocks: snapshot.state.teamCarryOverBlocks || [],
                 towerBlocks: snapshot.state.towerBlocks || [],
                 towerStability: snapshot.state.towerStability ?? 100,
@@ -1032,8 +1074,13 @@ class LobbyManager {
                 state: snapshot.state.state,
                 startsAt: snapshot.state.startsAt,
                 endsAt: snapshot.state.endsAt,
+                freezeEndsAt: snapshot.state.freezeEndsAt || 0,
                 lastLevelSummary: snapshot.state.lastLevelSummary,
                 pendingScoreEvents: [],
+                pendingQuickChatEvents: [],
+                pendingPowerEvents: [],
+                sideQuest: snapshot.state.sideQuest || null,
+                criticalSaveClaimKeys: snapshot.state.criticalSaveClaimKeys || {},
                 scoreEventSeq: 0
             };
         }
@@ -1041,6 +1088,44 @@ class LobbyManager {
         this.rooms.push(room);
         await this.subscribeRoom(room.id);
         return room;
+    }
+
+    async handleRemoteRoomClosed(roomId, message) {
+        const room = this.rooms.find(activeRoom => activeRoom.id === roomId);
+
+        if (!room) {
+            return;
+        }
+
+        this.cancelRoomReconnectExpiry(roomId);
+        this.cancelLobbyReadyTimeout(roomId);
+        this.rooms = this.rooms.filter(activeRoom => activeRoom.id !== roomId);
+        room.engine.closeRoom(message.reason, false);
+
+        await Promise.all(room.players.map(roomPlayer => {
+            return roomPlayer.isBot || !this.stateStore.clearSessionRoom
+                ? null
+                : this.stateStore.clearSessionRoom(roomPlayer.sessionId);
+        }));
+
+        room.players.forEach(roomPlayer => {
+            const shouldNotify = this.isConnectedRealPlayer(roomPlayer);
+            this.resetParticipantState(roomPlayer);
+
+            if (!roomPlayer.isBot && shouldNotify) {
+                this.sendPlayer(roomPlayer, message);
+            }
+        });
+
+        if (this.stateStore.unsubscribeFromRoom) {
+            await this.stateStore.unsubscribeFromRoom(roomId);
+        }
+
+        if (this.stateStore.unsubscribeFromRoomActions) {
+            await this.stateStore.unsubscribeFromRoomActions(roomId);
+        }
+
+        this.resetBotCounterIfIdle();
     }
 
     async subscribeRoom(roomId) {
@@ -1053,6 +1138,13 @@ class LobbyManager {
                 this.rooms.find(activeRoom => activeRoom.id === roomId);
 
             if (!room) {
+                return;
+            }
+
+            if (message.type === "room_closed") {
+                this.handleRemoteRoomClosed(roomId, message).catch(error => {
+                    console.error("Remote room close failed:", error.message);
+                });
                 return;
             }
 

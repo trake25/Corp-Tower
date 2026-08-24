@@ -166,26 +166,18 @@ class BotManager {
     hasClearedShareWhileTeammateShort(bot, engine) {
         const status = engine.getImpactScoreStatus();
 
-        if (!status || status.requiredBandScore <= 0) {
+        if (!status || status.requiredContribution <= 0) {
             return false;
         }
 
-        const liveBandScore = player => {
-            const banked = Number(
-                status.players.find(entry => entry.id === player.id)?.bandScore || 0
-            );
+        const self = status.players.find(player => player.id === bot.id);
 
-            return banked + Number(player.levelScore || 0);
-        };
-        const required = Number(status.requiredBandScore);
-        const self = engine.room.players.find(player => player.id === bot.id);
-
-        if (!self || liveBandScore(self) < required) {
+        if (!self || !self.met) {
             return false;
         }
 
-        return engine.room.players.some(player => {
-            return player.id !== bot.id && liveBandScore(player) < required;
+        return status.players.some(player => {
+            return player.id !== bot.id && !player.met;
         });
     }
 

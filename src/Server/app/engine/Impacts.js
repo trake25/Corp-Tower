@@ -1,24 +1,22 @@
 const GameConfig = require("../Game_Config");
 
+function number(value) {
+    return Number(value) || 0;
+}
+
 function saveImpactScores(engine) {
-    if (!engine.room) {
-        return;
-    }
+    if (!engine.room) return;
 
     engine.room.impactScores = {};
-
     engine.room.players.forEach(player => {
-        engine.room.impactScores[player.id] = player.score || 0;
+        engine.room.impactScores[player.id] = number(player.score);
     });
 }
 
 function saveImpactPowers(engine) {
-    if (!engine.room) {
-        return;
-    }
+    if (!engine.room) return;
 
     engine.room.impactPowers = {};
-
     engine.room.players.forEach(player => {
         engine.room.impactPowers[player.id] =
             engine.clonePowerInventory(player.powerInventory || []);
@@ -26,14 +24,12 @@ function saveImpactPowers(engine) {
 }
 
 function saveImpactContributions(engine) {
-    if (!engine.room) {
-        return;
-    }
+    if (!engine.room) return;
 
     engine.room.impactContributions = {};
-
     engine.room.players.forEach(player => {
-        engine.room.impactContributions[player.id] = player.impactContribution || 0;
+        engine.room.impactContributions[player.id] =
+            number(player.impactContribution);
     });
 }
 
@@ -44,51 +40,62 @@ function saveImpactState(engine) {
 }
 
 function ensureImpactScores(engine) {
-    if (
-        !engine.room.impactScores ||
-        Object.keys(engine.room.impactScores).length === 0
-    ) {
+    if (!engine.room.impactScores || Object.keys(engine.room.impactScores).length === 0) {
         engine.saveImpactScores();
     }
 }
 
 function ensureImpactPowers(engine) {
-    if (
-        !engine.room.impactPowers ||
-        Object.keys(engine.room.impactPowers).length === 0
-    ) {
+    if (!engine.room.impactPowers || Object.keys(engine.room.impactPowers).length === 0) {
         engine.saveImpactPowers();
     }
 }
 
 function ensureImpactContributions(engine) {
-    if (
-        !engine.room.impactContributions ||
-        Object.keys(engine.room.impactContributions).length === 0
-    ) {
+    if (!engine.room.impactContributions || Object.keys(engine.room.impactContributions).length === 0) {
         engine.saveImpactContributions();
     }
+}
+
+function getImpactRecoverableFailureLimit() {
+    const configured = Number(GameConfig.impactRecoverableFailures);
+
+    return Number.isFinite(configured)
+        ? Math.max(0, Math.floor(configured))
+        : 3;
+}
+
+function normalizeImpactFailureState(engine) {
+    if (!engine.room) return;
+
+    const limit = getImpactRecoverableFailureLimit();
+    engine.room.impactFailureCount = Math.max(
+        0,
+        Math.min(limit + 1, Math.floor(number(engine.room.impactFailureCount)))
+    );
+    engine.room.lastImpactFailureReason = engine.room.lastImpactFailureReason || null;
+    engine.room.failureTransitionCommitted = Boolean(engine.room.failureTransitionCommitted);
+    engine.room.terminalCloseAt = Math.max(0, number(engine.room.terminalCloseAt));
+    engine.room.terminalFailureReason = engine.room.terminalFailureReason || null;
+    engine.room.terminalCloseRequested = Boolean(engine.room.terminalCloseRequested);
 }
 
 function ensureImpactState(engine) {
     engine.ensureImpactScores();
     engine.ensureImpactPowers();
     engine.ensureImpactContributions();
+    normalizeImpactFailureState(engine);
 }
 
 function restoreImpactScores(engine) {
     const impactScores = engine.room.impactScores || {};
 
     engine.room.players.forEach(player => {
-        player.score = Number(impactScores[player.id] || 0);
+        player.score = number(impactScores[player.id]);
     });
 }
 
 function restoreImpactPowers(engine) {
-    if (GameConfig.powerLifetime !== "impact") {
-        return;
-    }
-
     const impactPowers = engine.room.impactPowers || {};
 
     engine.room.players.forEach(player => {
@@ -102,68 +109,70 @@ function restoreImpactContributions(engine) {
     const contributions = engine.room.impactContributions || {};
 
     engine.room.players.forEach(player => {
-        player.impactContribution = Number(contributions[player.id] || 0);
+        player.impactContribution = number(contributions[player.id]);
     });
 }
 
+function secureImpactCheckpoint(engine) {
+    if (!engine.room) return;
+
+    engine.room.impactFailureCount = 0;
+    engine.room.lastImpactFailureReason = null;
+    engine.room.failureTransitionCommitted = false;
+    engine.room.terminalCloseAt = 0;
+    engine.room.terminalFailureReason = null;
+    engine.room.terminalCloseRequested = false;
+}
+
 function awardImpactPower(engine) {
-    if (!GameConfig.powerImpactMvpReward) {
-        return;
-    }
+    if (!GameConfig.powerImpactMvpReward) return;
 
     const winner = engine.room.players.reduce((best, player) => {
-        return !best || Number(player.score || 0) > Number(best.score || 0)
-            ? player
-            : best;
+        return !best || number(player.score) > number(best.score) ? player : best;
     }, null);
+
     if (!winner || (winner.powerInventory || []).length >= GameConfig.powerMaxSlots) {
         return;
     }
+
     const catalog = GameConfig.powerCatalog || {};
     const ids = Object.keys(catalog).filter(id => catalog[id].active);
+
     if (ids.length === 0) return;
+
     const powerId = ids[Math.floor(Math.random() * ids.length)];
     winner.powerInventory = winner.powerInventory || [];
-    winner.powerInventory.push({ id: powerId, earnedLevel: engine.room.level, source: "impact_mvp" });
+    winner.powerInventory.push({
+        id: powerId,
+        earnedLevel: engine.room.level,
+        source: "impact_mvp"
+    });
     engine.room.pendingPowerEvents = engine.room.pendingPowerEvents || [];
     engine.room.pendingPowerEvents.push({
         id: `${engine.room.level}:impact-power:${winner.id}`,
         type: "power_impact_reward",
         playerId: winner.id,
-        powerId: powerId,
+        powerId,
         label: "Impact Power"
     });
 }
 
 function isImpactLevel(engine, level) {
-    const interval = Math.max(1, Number(GameConfig.impactInterval) || 1);
+    const interval = Math.max(1, Math.floor(number(GameConfig.impactInterval) || 1));
 
     return (level - 1) % interval === 0;
 }
 
-function getImpactScoreRequirement(engine) {
-    return Math.max(0, Number(GameConfig.impactScoreRequirement) || 0);
+function getImpactScoreRequirement() {
+    return Math.max(0, number(GameConfig.impactScoreRequirement));
 }
 
-function getImpactMinContributionShare(engine) {
-    return Math.max(
-        0,
-        Math.min(
-            1,
-            Number(GameConfig.impactMinContributionShare) || 0
-        )
-    );
+function getImpactMinContributionShare() {
+    return Math.max(0, Math.min(1, number(GameConfig.impactMinContributionShare)));
 }
 
 function getExpectedPlacementScoreForLevel(engine, level) {
-    const scorePerHeight =
-        Number(GameConfig.scoring?.placementScorePerHeight) || 1;
-    const stabilityMultiplier = Math.max(
-        0.05,
-        Math.min(1, Number(GameConfig.impactExpectedStabilityMultiplier) || 1)
-    );
-
-    return engine.getTargetHeightForLevel(level) * level * scorePerHeight * stabilityMultiplier;
+    return engine.getExpectedNormalUsefulScoreForLevel(level);
 }
 
 function getExpectedPlacementScoreForImpactBand(engine, blockedLevel) {
@@ -183,139 +192,98 @@ function getExpectedPlacementScoreForImpactBand(engine, blockedLevel) {
 }
 
 function getImpactBandScoreRequirement(engine, blockedLevel) {
-    const share = engine.getImpactMinContributionShare();
-    const bandRequirement = Math.round(
-        engine.getExpectedPlacementScoreForImpactBand(blockedLevel) *
-            share
-    );
-
     return Math.max(
         engine.getImpactScoreRequirement(),
-        bandRequirement
+        Math.round(
+            engine.getExpectedPlacementScoreForImpactBand(blockedLevel) *
+            engine.getImpactMinContributionShare()
+        )
     );
 }
 
-function getImpactScoreFailures(engine, blockedLevel) {
-    return engine.getImpactScoreStatus(blockedLevel).players
-        .filter(player => !player.met);
-}
-
-function getNextImpactLevel(engine) {
-    const interval = Math.max(1, Number(GameConfig.impactInterval) || 1);
-    const currentLevel = engine.room?.level || 1;
-    const offset = (currentLevel - 1) % interval;
-
-    return Math.min(
-        GameConfig.maxLevel,
-        currentLevel + interval - offset
+function getImpactFailureStatus(engine) {
+    const limit = getImpactRecoverableFailureLimit();
+    const failureCount = Math.max(
+        0,
+        Math.min(limit + 1, Math.floor(number(engine.room?.impactFailureCount)))
     );
+
+    return {
+        failureCount,
+        recoverableFailureLimit: limit,
+        retriesRemaining: Math.max(0, limit - failureCount),
+        lastChance: failureCount === limit,
+        gameOver: failureCount > limit,
+        lastFailureReason: engine.room?.lastImpactFailureReason || null
+    };
 }
 
 function getImpactScoreStatus(engine, blockedLevel = null) {
-    const nextImpactLevel =
-        blockedLevel || engine.getNextImpactLevel();
-    const requirement =
-        engine.getImpactBandScoreRequirement(nextImpactLevel);
-    const impactScores = engine.room?.impactScores || {};
+    const nextImpactLevel = blockedLevel || engine.getNextImpactLevel();
+    const requirement = engine.getImpactBandScoreRequirement(nextImpactLevel);
+    const checkpointContributions = engine.room?.impactContributions || {};
+    const failureStatus = engine.getImpactFailureStatus();
 
     return {
-        requiredScore: requirement,
+        requiredContribution: requirement,
         requiredBandScore: requirement,
+        requiredScore: requirement,
         minContributionShare: engine.getImpactMinContributionShare(),
         impactLevel: engine.room?.impactLevel || 1,
-        nextImpactLevel: nextImpactLevel,
+        nextImpactLevel,
+        ...failureStatus,
         players: (engine.room?.players || []).map(player => {
-            const score = Number(player.score || 0);
-            const impactScore =
-                Number(impactScores[player.id] || 0);
-            const requiredScore = impactScore + requirement;
-            const bandScore = Math.max(0, score - impactScore);
+            const checkpointContribution = number(checkpointContributions[player.id]);
+            const bankedBandContribution = Math.max(
+                0,
+                number(player.impactContribution) - checkpointContribution
+            );
+            const liveLevelContribution = number(player.levelImpactContribution);
+            const bandContribution = bankedBandContribution + liveLevelContribution;
+            const remainingContribution = Math.max(0, requirement - bandContribution);
 
             return {
                 id: player.id,
-                score: score,
-                impactScore: impactScore,
-                bandScore: bandScore,
-                requiredScore: requiredScore,
+                checkpointContribution,
+                bankedBandContribution,
+                liveLevelContribution,
+                bandContribution,
+                requiredContribution: requirement,
+                remainingContribution,
+                met: requirement <= 0 || bandContribution >= requirement,
+                score: number(player.score),
+                impactScore: checkpointContribution,
+                bandScore: bankedBandContribution,
+                requiredScore: requirement,
                 requiredBandScore: requirement,
-                remainingScore: Math.max(0, requiredScore - score),
-                met: requirement <= 0 || score >= requiredScore
+                remainingScore: remainingContribution
             };
         })
     };
+}
+
+function getImpactScoreFailures(engine, blockedLevel) {
+    return engine.getImpactScoreStatus(blockedLevel).players.filter(player => !player.met);
+}
+
+function getNextImpactLevel(engine) {
+    const interval = Math.max(1, Math.floor(number(GameConfig.impactInterval) || 1));
+    const currentLevel = engine.room?.level || 1;
+    const offset = (currentLevel - 1) % interval;
+
+    return Math.min(GameConfig.maxLevel, currentLevel + interval - offset);
 }
 
 function hasMetImpactScoreRequirement(engine, blockedLevel) {
     return engine.getImpactScoreFailures(blockedLevel).length === 0;
 }
 
-function failImpactScoreRequirement(engine, blockedLevel) {
-    engine.room.state = "failed";
-    engine.clearTimers();
-
-    const mvp = engine.getLevelMVP();
-    const previousTotalScores = engine.getPlayerScoreMap();
-    const impactScoreStatus =
-        engine.getImpactScoreStatus(blockedLevel);
-    const failures = impactScoreStatus.players.filter(player => {
-        return !player.met;
-    });
-    const requirement = impactScoreStatus.requiredBandScore;
-
-    engine.queueScoreEvent("impact_failed", {
-        label: "Impact Failed",
-        displayOnly: true,
-        meta: {
-            blockedLevel: blockedLevel,
-            impactScoreRequirement: requirement,
-            impactMinContributionShare:
-                engine.getImpactMinContributionShare(),
-            impactScoreFailures: failures
-        }
-    });
-    engine.queueScoreEvent("mvp", {
-        playerId: mvp.id,
-        points: mvp.levelScore,
-        label: "MVP",
-        displayOnly: true
-    });
-
-    engine.room.lastLevelSummary = engine.buildLevelSummary({
-        result: "failed",
-        reason: "impact_score_requirement",
-        blockedLevel: blockedLevel,
-        exactFinish: false,
-        overbuildHeight: 0,
-        finisher: null,
-        finishingBlock: null,
-        carriedBlockCount: 0,
-        mvp: mvp,
-        previousTotalScores: previousTotalScores,
-        impactScoreRequirement: requirement,
-        impactMinContributionShare:
-            engine.getImpactMinContributionShare(),
-        impactScoreStatus: impactScoreStatus,
-        impactScoreFailures: failures
-    });
-
-    console.log(
-        `Impact score requirement failed before level ${blockedLevel}`
-    );
-    engine.persistRoom();
-    engine.broadcastGameState();
-
-    engine.nextLevelTimer = setTimeout(() => {
-        engine.rollbackToImpact();
-    }, engine.getPostLevelTransitionDelayMs());
-}
-
-function rollbackToImpact(engine) {
-    engine.room.level = engine.room.impactLevel;
+function clearAttemptState(engine) {
     engine.room.drawPile = [];
+    engine.room.drawPileStartCount = 0;
     engine.room.teamCarryOverBlocks = [];
-    engine.restoreImpactScores();
-    engine.restoreImpactPowers();
-    engine.restoreImpactContributions();
+    engine.room.criticalSaveClaimKeys = {};
+    engine.room.sideQuest = null;
 
     engine.room.players.forEach(player => {
         player.blocks = [];
@@ -323,10 +291,182 @@ function rollbackToImpact(engine) {
         player.levelImpactContribution = 0;
         player.scoreBreakdown = {};
         player.contributedHeight = 0;
+        player.scoreCap = null;
+        player.scoreCapCasterId = null;
+    });
+}
+
+function buildFailureSummary(engine, options) {
+    return engine.buildLevelSummary({
+        result: options.result,
+        reason: options.reason,
+        failureReason: options.failureReason || options.reason,
+        blockedLevel: options.blockedLevel,
+        exactFinish: false,
+        overbuildHeight: 0,
+        finisher: null,
+        finishingBlock: null,
+        carriedBlockCount: 0,
+        mvp: options.mvp,
+        previousTotalScores: options.previousTotalScores,
+        impactScoreRequirement: options.impactScoreStatus.requiredContribution,
+        impactMinContributionShare: engine.getImpactMinContributionShare(),
+        impactScoreStatus: options.impactScoreStatus,
+        impactScoreFailures: options.impactScoreFailures,
+        failureStatus: options.failureStatus
+    });
+}
+
+function queueFailureEvents(engine, options) {
+    if (options.reason === "impact_score_requirement") {
+        engine.queueScoreEvent("impact_failed", {
+            label: "Impact Failed",
+            displayOnly: true,
+            meta: {
+                blockedLevel: options.blockedLevel,
+                impactScoreRequirement: options.impactScoreStatus.requiredContribution,
+                impactMinContributionShare: engine.getImpactMinContributionShare(),
+                impactScoreFailures: options.impactScoreFailures
+            }
+        });
+    }
+
+    if (options.mvp) {
+        engine.queueScoreEvent("mvp", {
+            playerId: options.mvp.id,
+            points: number(options.mvp.levelScore),
+            label: "MVP",
+            displayOnly: true
+        });
+    }
+}
+
+function scheduleCheckpointRecovery(engine, delayMs = null) {
+    if (!engine.room || engine.room.state !== "failed") return;
+
+    const delay = delayMs === null
+        ? engine.getPostLevelTransitionDelayMs()
+        : Math.max(0, number(delayMs));
+
+    engine.nextLevelTimer = setTimeout(() => {
+        engine.rollbackToImpact();
+    }, delay);
+}
+
+function scheduleTerminalRoomClose(engine, delayMs = null) {
+    if (!engine.room || engine.room.state !== "game_over") return;
+
+    const delay = delayMs === null
+        ? Math.max(0, number(engine.room.terminalCloseAt) - Date.now())
+        : Math.max(0, number(delayMs));
+
+    engine.nextLevelTimer = setTimeout(() => {
+        engine.requestRoomClose("failure_limit_reached", "home");
+    }, delay);
+}
+
+function resolveCheckpointFailure(engine, options = {}) {
+    if (!engine.room || engine.room.failureTransitionCommitted) return false;
+
+    const reason = options.reason || "unknown_failure";
+    const fromImpactGate = Boolean(options.fromImpactGate);
+    const validState = fromImpactGate
+        ? engine.room.state === "finished"
+        : engine.room.state === "playing" || engine.room.state === "starting";
+
+    if (!validState) return false;
+
+    engine.room.failureTransitionCommitted = true;
+    engine.room.impactFailureCount = Math.min(
+        getImpactRecoverableFailureLimit() + 1,
+        Math.max(0, Math.floor(number(engine.room.impactFailureCount))) + 1
+    );
+    engine.room.lastImpactFailureReason = reason;
+    engine.clearTimers();
+    engine.stopBots();
+
+    const blockedLevel = options.blockedLevel || null;
+    const impactScoreStatus = engine.getImpactScoreStatus(blockedLevel);
+    const impactScoreFailures = impactScoreStatus.players.filter(player => !player.met);
+    const failureStatus = engine.getImpactFailureStatus();
+    const mvp = engine.getLevelMVP();
+    const previousTotalScores = engine.getPlayerScoreMap();
+    const transitionDelay = engine.getPostLevelTransitionDelayMs();
+
+    engine.recordLevelOutcome("failed");
+    queueFailureEvents(engine, {
+        reason,
+        blockedLevel,
+        impactScoreStatus,
+        impactScoreFailures,
+        mvp
     });
 
-    console.log(`Rolling back to impact level ${engine.room.level}`);
+    if (failureStatus.gameOver) {
+        engine.room.state = "game_over";
+        engine.room.freezeEndsAt = 0;
+        engine.room.terminalFailureReason = reason;
+        engine.room.terminalCloseAt = Date.now() + transitionDelay;
+        engine.room.terminalCloseRequested = false;
+        engine.restoreImpactScores();
+        engine.restoreImpactPowers();
+        engine.restoreImpactContributions();
+        clearAttemptState(engine);
+        engine.room.lastLevelSummary = buildFailureSummary(engine, {
+            result: "game_over",
+            reason: "failure_limit_reached",
+            failureReason: reason,
+            blockedLevel,
+            impactScoreStatus,
+            impactScoreFailures,
+            failureStatus,
+            mvp,
+            previousTotalScores: engine.getPlayerScoreMap()
+        });
+        engine.persistRoom();
+        engine.broadcastGameState();
+        scheduleTerminalRoomClose(engine);
+        return true;
+    }
+
+    engine.room.state = "failed";
+    engine.room.freezeEndsAt = Date.now() + transitionDelay;
+    engine.room.lastLevelSummary = buildFailureSummary(engine, {
+        result: "failed",
+        reason,
+        blockedLevel,
+        impactScoreStatus,
+        impactScoreFailures,
+        failureStatus,
+        mvp,
+        previousTotalScores
+    });
+    engine.persistRoom();
+    engine.broadcastGameState();
+    scheduleCheckpointRecovery(engine);
+
+    return true;
+}
+
+function failImpactScoreRequirement(engine, blockedLevel) {
+    return resolveCheckpointFailure(engine, {
+        reason: "impact_score_requirement",
+        blockedLevel,
+        fromImpactGate: true
+    });
+}
+
+function rollbackToImpact(engine) {
+    if (!engine.room || engine.room.state !== "failed") return false;
+
+    engine.room.level = engine.room.impactLevel;
+    engine.restoreImpactScores();
+    engine.restoreImpactPowers();
+    engine.restoreImpactContributions();
+    clearAttemptState(engine);
     engine.startLevel();
+
+    return true;
 }
 
 module.exports = {
@@ -338,9 +478,11 @@ module.exports = {
     ensureImpactPowers,
     ensureImpactContributions,
     ensureImpactState,
+    normalizeImpactFailureState,
     restoreImpactScores,
     restoreImpactPowers,
     restoreImpactContributions,
+    secureImpactCheckpoint,
     awardImpactPower,
     isImpactLevel,
     getImpactScoreRequirement,
@@ -348,10 +490,15 @@ module.exports = {
     getExpectedPlacementScoreForLevel,
     getExpectedPlacementScoreForImpactBand,
     getImpactBandScoreRequirement,
+    getImpactFailureStatus,
     getImpactScoreFailures,
     getNextImpactLevel,
     getImpactScoreStatus,
     hasMetImpactScoreRequirement,
+    clearAttemptState,
+    resolveCheckpointFailure,
+    scheduleCheckpointRecovery,
+    scheduleTerminalRoomClose,
     failImpactScoreRequirement,
     rollbackToImpact
 };

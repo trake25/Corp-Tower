@@ -16,6 +16,10 @@ const originalGameConfig = {
     ,towerSiteWidthMin: GameConfig.towerSiteWidthMin
     ,towerSiteWidthMax: GameConfig.towerSiteWidthMax
     ,towerSiteSlendernessTarget: GameConfig.towerSiteSlendernessTarget
+    ,impactInterval: GameConfig.impactInterval
+    ,impactScoreRequirement: GameConfig.impactScoreRequirement
+    ,impactMinContributionShare: GameConfig.impactMinContributionShare
+    ,impactRecoverableFailures: GameConfig.impactRecoverableFailures
 };
 
 // Placement geometry is designer-tunable, so these tests pin the grid they
@@ -75,6 +79,13 @@ function resetFixtures() {
     GameConfig.towerSiteWidthMax = originalGameConfig.towerSiteWidthMax;
     GameConfig.towerSiteSlendernessTarget =
         originalGameConfig.towerSiteSlendernessTarget;
+    GameConfig.impactInterval = originalGameConfig.impactInterval;
+    GameConfig.impactScoreRequirement =
+        originalGameConfig.impactScoreRequirement;
+    GameConfig.impactMinContributionShare =
+        originalGameConfig.impactMinContributionShare;
+    GameConfig.impactRecoverableFailures =
+        originalGameConfig.impactRecoverableFailures;
     GameConfig.scoring = { ...originalScoringConfig };
 }
 
@@ -95,12 +106,13 @@ function createBlock(height, id = "B1") {
     };
 }
 
-function createPlayingEngine(level = 1, targetHeight = 5) {
+function createPlayingEngine(level = 1, targetHeight = 5, options = {}) {
     const messages = [];
     const engine = new GameEngine({
         onRoomMessage: (_roomId, message) => {
             messages.push(JSON.parse(JSON.stringify(message)));
-        }
+        },
+        onRoomCloseRequested: options.onRoomCloseRequested || null
     });
 
     GameConfig.placementCooldown = 0;

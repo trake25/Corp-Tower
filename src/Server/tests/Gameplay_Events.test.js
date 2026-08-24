@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
 const { afterEach, test } = require("node:test");
 const { stripRuntimeRoom } = require("../app/Redis_State");
+const GameEngine = require("../app/Game_Engine");
+const BotManager = require("../app/Bot_Manager");
 
 const {
     GameConfig,
@@ -381,4 +383,218 @@ test("saveImpactPowers captures each player's current inventory", () => {
         { id: "copy_score", earnedLevel: 5 }
     ]);
     assert.deepEqual(engine.room.impactPowers.P3, []);
+});
+
+test("Impact measures scored contribution with live points counted once", () => {
+    const { engine } = createPlayingEngine(1, 10);
+    const [first, second, third] = engine.room.players;
+
+    GameConfig.impactInterval = 1;
+    GameConfig.impactMinContributionShare = 0.25;
+    GameConfig.impactScoreRequirement = 0;
+    engine.room.impactContributions = { P1: 30, P2: 0, P3: 0 };
+    first.impactContribution = 55;
+    first.levelImpactContribution = 12;
+    second.impactContribution = 300;
+    third.impactContribution = 300;
+
+    const status = engine.getImpactScoreStatus(2);
+    const firstStatus = status.players.find(player => player.id === first.id);
+    const expected = Math.round(
+        engine.getExpectedNormalUsefulScoreForLevel(1) * 0.25
+    );
+
+    assert.equal(status.requiredContribution, expected);
+    assert.equal(firstStatus.checkpointContribution, 30);
+    assert.equal(firstStatus.bankedBandContribution, 25);
+    assert.equal(firstStatus.liveLevelContribution, 12);
+    assert.equal(firstStatus.bandContribution, 37);
+    assert.equal(firstStatus.bandScore, 25);
+    assert.equal(firstStatus.remainingContribution, Math.max(0, expected - 37));
+});
+
+test("Impact contribution excludes completion bonuses and cannot be carried by teammates", () => {
+    const { engine } = createPlayingEngine(1, 10);
+    const [first, second, third] = engine.room.players;
+
+    GameConfig.impactScoreRequirement = 50;
+    GameConfig.impactMinContributionShare = 0;
+    engine.addBonusScore(first, 90, "precision");
+    first.levelImpactContribution = 50;
+    second.levelImpactContribution = 0;
+    third.levelImpactContribution = 500;
+
+    const status = engine.getImpactScoreStatus(2);
+
+    assert.equal(first.levelImpactContribution, 50);
+    assert.equal(first.levelScore, 90);
+    assert.equal(status.players.find(player => player.id === first.id).met, true);
+    assert.equal(status.players.find(player => player.id === second.id).met, false);
+    assert.equal(status.players.find(player => player.id === third.id).met, true);
+    assert.equal(engine.hasMetImpactScoreRequirement(2), false);
+});
+
+test("cooperative bots use authoritative Impact contribution status", () => {
+    const { engine } = createPlayingEngine(1, 10);
+    const [first, second, third] = engine.room.players;
+
+    GameConfig.impactScoreRequirement = 20;
+    GameConfig.impactMinContributionShare = 0;
+    first.levelImpactContribution = 20;
+    second.levelImpactContribution = 19;
+    third.levelImpactContribution = 20;
+
+    assert.equal(BotManager.hasClearedShareWhileTeammateShort(first, engine), true);
+    assert.equal(BotManager.hasClearedShareWhileTeammateShort(second, engine), false);
+
+    second.levelImpactContribution = 20;
+
+    assert.equal(BotManager.hasClearedShareWhileTeammateShort(first, engine), false);
+});
+
+test("every rollback-worthy failure increments once and schedules a checkpoint recovery", () => {
+    const reasons = [
+        "tower_collapsed",
+        "time_expired",
+        "all_blocks_used",
+        "not_enough_height_remaining"
+    ];
+
+    reasons.forEach(reason => {
+        const { engine } = createPlayingEngine(1, 5);
+
+        assert.equal(engine.failLevel(reason), true);
+        assert.equal(engine.room.state, "failed");
+        assert.equal(engine.room.impactFailureCount, 1);
+        assert.equal(engine.getImpactFailureStatus().retriesRemaining, 2);
+        assert.ok(engine.nextLevelTimer);
+        assert.equal(engine.failLevel(reason), false);
+        assert.equal(engine.room.impactFailureCount, 1);
+    });
+
+    const { engine } = createPlayingEngine(1, 5);
+    engine.room.state = "finished";
+
+    assert.equal(engine.failImpactScoreRequirement(2), true);
+    assert.equal(engine.room.impactFailureCount, 1);
+    assert.equal(engine.failImpactScoreRequirement(2), false);
+});
+
+test("rollback preserves retries and restores checkpoint score, contribution, and power", () => {
+    const { engine } = createPlayingEngine(4, 10);
+    const first = engine.room.players[0];
+
+    engine.room.impactLevel = 3;
+    engine.room.impactScores = { P1: 41, P2: 0, P3: 0 };
+    engine.room.impactContributions = { P1: 31, P2: 0, P3: 0 };
+    engine.room.impactPowers = { P1: [{ id: "replenish", earnedLevel: 3 }], P2: [], P3: [] };
+    first.score = 99;
+    first.impactContribution = 88;
+    first.levelScore = 20;
+    first.levelImpactContribution = 19;
+    first.powerInventory = [{ id: "refresh", earnedLevel: 4 }];
+
+    assert.equal(engine.failLevel("time_expired"), true);
+    assert.equal(engine.rollbackToImpact(), true);
+    assert.equal(engine.room.state, "starting");
+    assert.equal(engine.room.level, 3);
+    assert.equal(engine.room.impactFailureCount, 1);
+    assert.equal(engine.room.failureTransitionCommitted, false);
+    assert.equal(first.score, 41);
+    assert.equal(first.impactContribution, 31);
+    assert.equal(first.levelScore, 0);
+    assert.equal(first.levelImpactContribution, 0);
+    assert.deepEqual(first.powerInventory, [{ id: "replenish", earnedLevel: 3 }]);
+});
+
+test("a secured checkpoint is the only path that resets retry state", () => {
+    const { engine } = createPlayingEngine(1, 10);
+
+    GameConfig.impactInterval = 1;
+    GameConfig.impactMinContributionShare = 0;
+    engine.room.state = "finished";
+    engine.room.impactFailureCount = 3;
+    engine.room.lastImpactFailureReason = "time_expired";
+    engine.room.players[0].impactContribution = 17;
+
+    engine.nextLevel();
+
+    assert.equal(engine.room.level, 2);
+    assert.equal(engine.room.impactLevel, 2);
+    assert.equal(engine.room.impactFailureCount, 0);
+    assert.equal(engine.room.lastImpactFailureReason, null);
+    assert.equal(engine.room.impactContributions.P1, 17);
+
+    engine.room.impactFailureCount = 2;
+    engine.room.impactLevel = 1;
+    engine.room.impactScores = { P1: 7, P2: 0, P3: 0 };
+    engine.restartAtLevel(2, { resetScores: false });
+
+    assert.equal(engine.room.impactFailureCount, 2);
+    assert.equal(engine.room.impactLevel, 1);
+    assert.equal(engine.room.impactScores.P1, 7);
+});
+
+test("the fourth failure enters Game Over, restores checkpoint totals, and closes once", async () => {
+    const closeRequests = [];
+    const { engine } = createPlayingEngine(4, 10, {
+        onRoomCloseRequested: (roomId, reason, destination) => {
+            closeRequests.push({ roomId, reason, destination });
+        }
+    });
+    const first = engine.room.players[0];
+
+    engine.room.impactFailureCount = 3;
+    engine.room.impactScores = { P1: 12, P2: 0, P3: 0 };
+    engine.room.impactContributions = { P1: 9, P2: 0, P3: 0 };
+    engine.room.impactPowers = { P1: [{ id: "replenish", earnedLevel: 3 }], P2: [], P3: [] };
+    first.score = 80;
+    first.impactContribution = 60;
+    first.levelScore = 30;
+    first.levelImpactContribution = 25;
+    first.powerInventory = [{ id: "refresh", earnedLevel: 4 }];
+
+    assert.equal(engine.failLevel("tower_collapsed"), true);
+    assert.equal(engine.room.state, "game_over");
+    assert.equal(engine.room.impactFailureCount, 4);
+    assert.equal(engine.room.lastLevelSummary.result, "game_over");
+    assert.equal(engine.room.lastLevelSummary.failureReason, "tower_collapsed");
+    assert.equal(engine.rollbackToImpact(), false);
+    assert.equal(first.score, 12);
+    assert.equal(first.impactContribution, 9);
+    assert.equal(first.levelScore, 0);
+    assert.equal(first.levelImpactContribution, 0);
+    assert.deepEqual(first.powerInventory, [{ id: "replenish", earnedLevel: 3 }]);
+
+    engine.clearTimers();
+    engine.scheduleTerminalRoomClose(0);
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.deepEqual(closeRequests, [{
+        roomId: "TEST",
+        reason: "failure_limit_reached",
+        destination: "home"
+    }]);
+    assert.equal(engine.requestRoomClose("failure_limit_reached", "home"), false);
+});
+
+test("hydrated Game Over restores only its terminal close timer", () => {
+    const { engine } = createPlayingEngine(2, 10);
+
+    engine.room.state = "game_over";
+    engine.room.impactFailureCount = 4;
+    engine.room.terminalCloseAt = Date.now() + 10000;
+    const snapshot = stripRuntimeRoom({
+        id: "TEST",
+        players: engine.room.players,
+        state: engine.room
+    });
+    const resumed = new GameEngine({ onRoomCloseRequested: () => {} });
+
+    resumed.hydrateRoom(snapshot, snapshot.players.map(player => ({ ...player })));
+
+    assert.equal(resumed.startTimer, null);
+    assert.equal(resumed.levelTimer, null);
+    assert.ok(resumed.nextLevelTimer);
+    resumed.clearTimers();
 });

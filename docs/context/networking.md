@@ -42,7 +42,7 @@ and the two thin adapters that sit directly on the wire. Gameplay meaning →
 | `lobby_update` | `roomId`, `roster`, `readyPlayerIds`, `readySecondsRemaining`, `timerActive` — sent on every join, leave, or ready toggle |
 | `game_state` | Authoritative live state — fields below |
 | `debug_config` | Authoritative debug state; meanings → [gameplay.md](./gameplay.md#debug-menu-and-live-tuning) |
-| `room_closed` | Teardown `reason`, sent to connected real players |
+| `room_closed` | Teardown `reason` and optional `destination`, sent to connected real players |
 
 **Every new connection triggers a `debug_config` broadcast to all connected real
 players on its first message**, not only on config changes.
@@ -158,7 +158,7 @@ beyond-snap-radius aim leaves the row to the server. `target_point` and
 | `placeableColumnMin` / `Max` | The level's buildable site, derived server-side from target height. Sent every tick; the client feeds them to `SnapGrid.set_placeable_range` so snap points, origin ranges and the placeable band all follow |
 | `towerStability` / `towerStabilityDiagnostics` | Score plus the diagnostics object |
 | `towerStructuralPose[]` | Presentation-only per-block offsets plus optional `sectionId` and section origin for rigid transform smoothing; clients never apply it to aiming or legality |
-| `impactScoreStatus` | Next Impact level, ready-count inputs, per-player score goals |
+| `impactScoreStatus` | Authoritative checkpoint, personal eligible-contribution requirement, live/banked contribution, `met`, and retry status. Score-named aliases remain compatibility fields only |
 
 Legacy numeric block values are still tolerated by the client as vertical fallback
 blocks. Redis persists the structural fields, so a recovered room reproduces the
@@ -170,7 +170,7 @@ same tower.
 |---|---|
 | `scoreEvents[]` | Transient, broadcast-only. Each carries a stable `id`, `type`, `level`, and optional `playerId`/`points`/`label`/`displayOnly`/`meta` |
 | `quickChatEvents[]` | Transient: `id`, `playerId`, `slot`, `text`, `createdAt`. **Never persisted or replayed after reconnect** |
-| `lastLevelSummary` | `result`, `reason`, `teamLevelScore`, `mvpId`, `mvpScore`, `exactFinish`, `overbuildHeight`, `finisherId`, `finishingBlock`, `carriedBlockCount`, `sideQuest`, and `players[]`. Impact failures also include `impactScoreStatus` |
+| `lastLevelSummary` | Normal summary fields plus `failureReason`/`failureStatus`; Impact and terminal `game_over` summaries include captured `impactScoreStatus` |
 
 Event types include `placement`, `critical_save`, `precision_bonus`,
 `team_exact_bonus`, `exact_finish`, `overbuild_finish`, `mvp`, `tower_warning`,
@@ -194,14 +194,15 @@ already shows that state live during play.
 
 ## Persisted room state (Redis)
 
-Snapshots include `impactScores`, `impactPowers`, transaction contribution
-fields, Critical Save claims, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`,
-`towerStructuralPose`, timers, level state, and serializable player fields.
+Snapshots include `impactScores`, `impactPowers`, `impactContributions`,
+transaction contribution fields, Critical Save claims, retry and terminal-close
+state, `drawPile`, `teamCarryOverBlocks`, `towerBlocks`, `towerStructuralPose`,
+timers, level state, and serializable player fields.
 
-- `impactScores` restores leaderboard totals during rollback, so reconnect and
-  multi-worker recovery **cannot reintroduce score farming**. `impactPowers` does
-  the same for Power inventory; transaction contributions and claims restore with
-  that same boundary.
+- `impactScores` and `impactContributions` restore leaderboard totals and eligible
+  contribution during rollback, so reconnect and multi-worker recovery **cannot
+  reintroduce score farming**. `impactPowers` does the same for Power inventory;
+  transaction contributions and claims restore with that same boundary.
 - `drawPile` is persisted so a reconnecting client sees the same refill queue — but
   **only the first 16 bricks**, plus a hidden count the engine regenerates. Only
   the next draw is client-visible, so the regenerated tail is invisible.

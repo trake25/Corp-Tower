@@ -231,54 +231,37 @@ Impact.
 
 ## Scoring system
 
-The scorable height per level is exactly `targetHeight` — finite and contested,
-which is the selfish pressure. Two mechanisms make cooperating individually
-rational at the right moments: your placement pays less on a wobbling tower, and
-fixing the tower pays directly.
+Each settled placement produces one server-authoritative transaction. Useful
+height pays from the usable height gained, with an introduced-risk discount;
+direct structural repair pays from its normalized utility; a qualifying repair of
+a mature critical interface can add a Critical Save. The combined placement award
+is capped in action units. Completion and presentation bonuses remain score-only.
 
-| Component | Formula |
-|---|---|
-| Contribution | `effective_height × level × placementScorePerHeight` (default **10**) **× stability multiplier** — the core earner, and what the Impact gate measures |
-| Stability multiplier | `floor(height) + (1 − floor(height)) × stabilityBefore/100`, where `floor` lerps from **0.5** at the ground to **0.15** at target height |
-| Reinforce | `min(cap, round((integrity_gain × perIntegrity + lean_correction × perLean + supported_cells × perSupportedCell) × level))` |
-| Repair ceiling | `cap = share(height) × avgBrickHeight × placementScorePerHeight × level`, `share` lerping from **1** at the ground to **3** at target height |
-| Precision Bonus (finisher) | `level × precisionBonusPerLevel` (default **20**) |
-| Team Exact Bonus (everyone) | `level × teamExactBonusPerLevel` (default **15**) |
-| Finisher / Assist Bonus | `0` — overbuild finishing earns nothing beyond banked contribution |
-
-The multiplier uses the stability the placer **inherited** and the height *before*
-their placement, so it rewards fixing-then-claiming instead of paying you for your
-own overhang. **Repair and height are priced against each other, not
-independently:** at share `1` a maximal repair equals an average height claim; near
-the top a repair can out-earn one, since little height is left to claim there.
-
-- **Reinforce counts toward the Impact gate** — helping means building *or*
-  stabilising.
-- The pool is **front-loaded**: `effective_height` is capped by the height still
-  missing, so late placements are worth little and a slow start may be
-  uncatchable. Deliberate urgency.
-- MVP is the highest level score that level, display-only. Leaderboard score is
-  snapshotted at each Impact and restored on rollback.
+The transaction's useful components are the sole eligible Impact contribution:
+useful height, reinforcement, and Critical Save count after the cap. Precision,
+team-exact, MVP, Power, and other completion bonuses never count. This makes a
+support specialist capable of progressing without matching another player's height
+claim, while one player's excess cannot cover a teammate's deficit.
 
 **The Impact gate.**
 
 ```
-required = impactMinContributionShare × targetHeight × level
-           × placementScorePerHeight × impactExpectedStabilityMultiplier
+expectedBandUsefulScore = sum(expectedNormalUsefulScore(level))
+requiredContribution = max(flatFloor,
+                           round(expectedBandUsefulScore × personalShare))
 ```
 
-per player, with `impactScoreRequirement` as an optional flat floor. Default share
-**30%**; `0` disables. The **0.85** expected-stability multiplier discounts the
-formula's implicit perfect-stability assumption toward what a real placement
-actually pays.
+The normal pool is Scoring's clean useful-height baseline, not an expected
+stability-adjusted payout and not a team total. Each player must meet the
+requirement using their own banked and live eligible contribution. The server
+includes live contribution exactly once in its status; clients and bots do not
+recalculate it from score fields.
 
-**The share is bounded by arithmetic, not taste.** Three players × the share is
-the fraction of the pool that must split near-evenly; at 30% that is 90%, measured
-as the ceiling natural distributions reach. The default sits exactly there, so
-watch gate-pass rate for regressions.
-
-Gate-pass rate is only meaningful from a simulator that models the per-player
-placement cooldown → [testing.md](./testing.md#balance-clis).
+Leaderboard score and eligible contribution are snapshotted together at each
+checkpoint. A recoverable failure restores both; a terminal failure also restores
+them before its final state is broadcast. Gate-pass rate is meaningful only from a
+simulator that models the per-player placement cooldown →
+[testing.md](./testing.md#balance-clis).
 
 ## Progression
 
@@ -289,13 +272,14 @@ placement cooldown → [testing.md](./testing.md#balance-clis).
 | Brick complexity | All 5 from L1 — difficulty comes from height, timer, stability and site, not unlocks |
 | Inventory | 2 slots @L1, 3 @L3 |
 | Power / side quest | Unlocked from L1 |
-| Impacts | **Every level** |
+| Impacts | Configured checkpoint bands |
 
-**Every level is an Impact**, so filling the Impact bar *is* the per-level
-objective. Rollback correspondingly replays the level just played instead of
-discarding up to three — that gentler failure is what makes a per-level gate
-viable at all. Opening hands carry solvability constraints, so random supply can't
-make a level impossible before player decisions happen.
+Each Impact band begins at a secured checkpoint and ends before the next one.
+Rollback replays the whole active band from its checkpoint, restoring its score,
+eligible contribution, and Power snapshot. The retry budget survives that replay;
+a secured next checkpoint is its only reset. Opening hands carry solvability
+constraints, so random supply cannot make a level impossible before player
+decisions happen.
 
 **Design pillars:** Simplicity · Tension · Fairness · Replayability.
 
@@ -355,15 +339,15 @@ of supply and loses to greedy on completion.
 discriminating entirely once stability is tuned forgiving enough that every column
 reads healthy, which is exactly the live tuning state.
 
-**Yielding is the cooperative act that matters under a per-level Impact.** A bot
+**Yielding is the cooperative act that matters in an Impact band.** A bot
 that has banked its own share prefers a **zero-height repair**, leaving contested
 height to a teammate whose shortfall would fail everyone while still earning
 Reinforce. It returns `wait` only when no repair exists, and a bot that is short
 can never take that branch, so a room can't deadlock.
 
-**Landmine — the yield check reads banked `score`**, which only absorbs
-`levelScore` at level end. Mid-level every player reads as short and the yield
-never fires without the same live-score correction the client's Impact bar applies.
+**The yield check reads `impactScoreStatus`.** Its personal `met` values already
+include live eligible contribution, so a cooperative bot never reconstructs a
+standing from banked or display-score fields.
 
 **Landmine — bot collapse rate cannot calibrate stability.** `chooseBotPlacement`
 skips collapsing placements, so simulated collapse reads ~0% across wildly
@@ -380,7 +364,7 @@ risk-averse about.
 Not yet exposed: `brickWeights`, `inventoryScaling`, the target-height curve knobs,
 the clock group, the supply coverage curve, per-shape generation pools, the bot
 tolerance keys, the reinforce cap keys, `placementStabilityFloorAtTarget`,
-`impactExpectedStabilityMultiplier`, and the stability anchor and pressure sets.
+and the stability anchor and pressure sets.
 
 - **Exact-finish runs high** (~55–80% simulated), so "PERFECT BUILD" fires often.
 - **The front-loaded pool** can make a slow start mathematically uncatchable; worth

@@ -32,17 +32,18 @@ take geometry only. `Block_Supply` imports it; production callers still use the
 
 `Lobby_Manager.js` — matchmaking, room lifecycle and runtime debug coordination.
 `Debug_Config.js` owns the exposed snapshot, startup defaults and clamp policy;
-the lobby owns the bot/room reconciliation and broadcasts caused by a change.
-Its live scoring surface is limited to the useful-height rate, full-risk floor,
-direct-repair share, normal transaction cap, Critical Save bonus, and Critical
-Save cap; completion bonuses remain authored configuration.
+the lobby owns bot/room reconciliation and resulting broadcasts.
 
-Maintains active rooms through shared Redis state; seats players into open
-3-participant rooms, filling with debug bots when allowed; lets real players resume
-within the reconnect TTL and destroys rooms when it expires with no connected real
-players. Hydrated snapshots include `towerBlocks` and the compact structural pose;
-the lease owner recomputes stability before restoring timers, while non-owners relay
-the cached presentation state without evaluating gameplay.
+Maintains shared 3-participant rooms, filling with debug bots when allowed; real
+players can resume within the reconnect TTL. Hydrated snapshots include tower and
+pose state; only the lease owner recomputes stability or restores timers, while
+non-owners relay the cached presentation state without evaluating gameplay.
+
+The engine requests terminal close through an injected callback. The lease owner
+publishes `room_closed` before deletion, sends same-pod sockets, clears real-player
+session room ids, and unsubscribes. A remote subscriber forwards it once, discards
+its frozen replica without deleting owner state, and unsubscribes. Teardown tells
+the engine not to persist, preventing late callbacks from resurrecting a room.
 
 `RECONNECT_TTL_SECONDS` is **not settled for production**; the deploy overrides
 the code default.
@@ -144,7 +145,8 @@ placement execution, stability evaluation and placement-driven win/fail checks
 behind same-named facade methods. **The engine never talks to Redis.**
 
 Level states: `waiting` · `starting` · `playing` · `finished` · `failed` ·
-`game_completed` · `closed`.
+`game_over` · `game_completed` · `closed`. `game_over` is terminal: it accepts no
+gameplay action and counts down only to its room-close request.
 
 ### Placement
 
@@ -173,9 +175,10 @@ slack multiplier that itself lerps by level; `startLevel()` stamps the result on
 `room.levelDurationMs` so `endsAt` and the fail timer cannot disagree.
 
 `getRemainingMs()` is **state-dependent, not one `endsAt` clock**: it counts down
-to `startsAt` during `starting`, to `freezeEndsAt` during `finished`/`failed`, and
-to `endsAt` only during `playing`. That keeps the client's frozen-timer display
-counting real time-to-resume instead of a stale round clock.
+to `startsAt` during `starting`, to `freezeEndsAt` during `finished`/`failed`, to
+`terminalCloseAt` during `game_over`, and to `endsAt` only during `playing`. That
+keeps frozen states counting down their actual next transition rather than a stale
+round clock.
 
 ### Stability config
 
@@ -257,9 +260,10 @@ banking, MVP, level summaries.
 
 **Score banking is two-stage.** Points accumulate in `player.levelScore` during a
 level; only `addLevelScoreToLeaderboard()` moves that into `player.score`. That is
-why a failed level's score doesn't count — **and why anything reading live Impact
-standing mid-level must add `levelScore` to the banked band score itself.** Both
-the client's Impact bar and Bot Manager's yield check do exactly that.
+why a failed level's score does not count. Impact eligibility is separate:
+`levelImpactContribution` receives only the capped useful placement transaction,
+then becomes `impactContribution` when the level banks. Consumers read the server
+status rather than reconstructing it from either score field.
 
 Each placement produces one server-authoritative transaction after settling and
 evaluating stability. Useful-height points are reduced only by risk the new entry
@@ -281,28 +285,39 @@ game's defining tension loses its mechanical surface. A *personal* collapse stak
 is not the alternative: it needs per-player blame attribution the pure stability
 function cannot produce.
 
-`levelImpactContribution` receives transaction points only and transfers to
-`impactContribution` when the level is banked. Both fields and Critical Save
-claims are room state so reconnect and rollback preserve the scoring contract.
+Both contribution fields and Critical Save claims are room state so reconnect and
+rollback preserve the scoring contract.
 
 ## Impacts
 
-`engine/Impacts.js` — snapshots, restore and rollback, and the Impact score gate.
+`engine/Impacts.js` owns checkpoint snapshots, personal contribution status, and
+the unified rollback lifecycle. It never evaluates support geometry or invents a
+second score: its eligible input is Scoring's capped useful-height, reinforcement,
+and Critical Save placement points.
 
-Snapshots score and Power inventory at the start of a band; restores on rollback;
-awards a Power item to the band leader when an Impact opens; decides whether each
-player met the minimum contribution share; builds the per-player status payload;
-fails the room and rolls back when the gate isn't met.
+At a secured checkpoint it snapshots each player's leaderboard score, eligible
+contribution, and Power inventory. The next checkpoint requirement is the optional
+flat floor or each player's configurable share of Scoring's summed normal useful
+pool for the levels in the band, whichever is greater. Completion bonuses do not
+enter that pool or a player's contribution.
 
-The current Impact gate remains distinct from the placement transaction. The
-engine preserves transaction-only contribution fields alongside its existing
-Impact snapshot and restore state.
+`impactScoreStatus` is authoritative. Its canonical player values are
+`checkpointContribution`, `bankedBandContribution`, `liveLevelContribution`,
+`bandContribution`, `requiredContribution`, `remainingContribution`, and `met`.
+It also carries retry state. Score-named aliases remain only for mixed-version
+wire compatibility; new logic must use the contribution-named values.
+
+Every ordinary failure and an Impact shortfall call `resolveCheckpointFailure()`.
+The resolver increments once, freezes the failed attempt, restores the checkpoint
+on a recoverable retry, and preserves the counter across rollback. A successful
+checkpoint is the only in-run reset. Once the configured recovery budget is
+exhausted, it restores checkpoint score, contribution, and Power, clears
+provisional attempt state, broadcasts terminal `game_over`, and requests a Lobby
+close with `failure_limit_reached` and destination `home` after the summary delay.
 
 `rollbackToImpact()` calls `startLevel()` directly at the end, so the room
-re-enters `starting` in the same call rather than on a separate tick.
-`startLevel()` **preserves** already-queued `pendingScoreEvents` instead of
-clearing them, so events queued before an Impact transition still reach the next
-level's first broadcast.
+re-enters `starting` in the same call. Hydration restores only the timer matching
+the persisted state; only the lease owner can execute that timer.
 
 ## Tower Stability
 
@@ -426,10 +441,13 @@ only when a real connection is attempted.
 **Only the first `DRAW_PILE_SNAPSHOT_LIMIT` (16) pile bricks are persisted**, plus
 a hidden count that `hydrateRoom` regenerates. The compact `towerStructuralPose`
 is persisted with `towerBlocks`; full structural analysis is never serialized.
-Critical Save claims and transaction contribution fields are serializable room
-state, so a recovered room retains claim and Impact-accounting continuity. The
+Critical Save claims, transaction contribution fields, checkpoint contribution
+snapshots, retry transition fields, and terminal-close deadline are serializable
+room state, so a recovered room retains accounting and lifecycle continuity. The
 regenerated pile tail is fresh random bricks because only the next draw is
-client-visible.
+client-visible. `clearSessionRoom()` removes a terminal room assignment, and the
+scoped room/action unsubscribe helpers let a non-owner discard its replica after a
+remote close.
 
 The connection retry loop's final `client.disconnect()` is wrapped in a try/catch
 that intentionally swallows errors: best-effort cleanup after an already-failed

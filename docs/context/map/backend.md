@@ -54,7 +54,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Auth_Verifier.js:84 | verifyAccessToken | routes a handshake token to its configured provider and never throws |
 | src/Server/app/Auth_Verifier.js:122 | verifyFacebookAccessToken | checks Meta `debug_token`, binds app id, and returns the provider subject |
 
-### src/Server/app/Bot_Manager.js — 475 ln
+### src/Server/app/Bot_Manager.js — 467 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -62,11 +62,11 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Bot_Manager.js:8 | startBots | start per-bot action loops |
 | src/Server/app/Bot_Manager.js:38 | stopBots | stop every bot in the room |
 | src/Server/app/Bot_Manager.js:60 | stopBot | stop one bot's timer; closed rooms must not keep ticking |
-| src/Server/app/Bot_Manager.js:166 | hasClearedShareWhileTeammateShort | yield precondition; reads **banked** `score` |
-| src/Server/app/Bot_Manager.js:192 | getVoidReleaseRows | gap-filling release-row candidates |
-| src/Server/app/Bot_Manager.js:248 | rankByStrategy | cooperative vs mvp_greedy ordering; **never rank by `heightGain`** |
-| src/Server/app/Bot_Manager.js:294 | chooseBotPlacement | column × release-row search, two-stage proxy then `evaluate()` |
-| src/Server/app/Bot_Manager.js:402 | chooseBotAction | returns `{type:"place"}` or **`{type:"wait"}`**; callers must handle both |
+| src/Server/app/Bot_Manager.js:166 | hasClearedShareWhileTeammateShort | yield precondition from authoritative personal contribution status |
+| src/Server/app/Bot_Manager.js:184 | getVoidReleaseRows | gap-filling release-row candidates |
+| src/Server/app/Bot_Manager.js:240 | rankByStrategy | cooperative vs mvp_greedy ordering; **never rank by `heightGain`** |
+| src/Server/app/Bot_Manager.js:286 | chooseBotPlacement | column × release-row search, two-stage proxy then `evaluate()` |
+| src/Server/app/Bot_Manager.js:394 | chooseBotAction | returns `{type:"place"}` or **`{type:"wait"}`**; callers must handle both |
 
 ### src/Server/app/Debug_Config.js — 178 ln
 
@@ -87,49 +87,50 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 |---|---|---|
 | src/Server/app/Game_Config.js:1 | GameConfig · const | **every tuning value in one object** — read this file, not a prose copy |
 
-### src/Server/app/Game_Engine.js — 911 ln
+### src/Server/app/Game_Engine.js — 943 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Server/app/Game_Engine.js:8 | GameEngine · class | room facade; owns level lifecycle, timers, placement validation, Power |
-| src/Server/app/Game_Engine.js:20 | getRemainingMs | round clock remaining against `endsAt` |
-| src/Server/app/Game_Engine.js:40 | broadcastGameState | builds and sends the whole `game_state` payload clients render |
-| src/Server/app/Game_Engine.js:109 | createRoom | new room state, seat assignment, start level, first deal |
-| src/Server/app/Game_Engine.js:149 | initializePlayerForRoom | creates the per-player engine state used by a room |
-| src/Server/app/Game_Engine.js:164 | removePlayerFromRoom | removes a player and their room-owned engine state |
-| src/Server/app/Game_Engine.js:178 | hydrateRoom | rebuild room from a Redis snapshot on reconnect or pod handoff |
-| src/Server/app/Game_Engine.js:227 | restoreTimersFromState | restart level/tick timers after hydrate |
-| src/Server/app/Game_Engine.js:269 | persistRoom | notify Lobby Manager to snapshot; engine never writes Redis itself |
-| src/Server/app/Game_Engine.js:279 | recordLevelOutcome | records the completed level result for progression and reporting |
-| src/Server/app/Game_Engine.js:293 | queueQuickChat | quick chat cooldown check and event queue |
-| src/Server/app/Game_Engine.js:326 | consumeQuickChatEvents | drain pending quick chat for the next broadcast |
-| src/Server/app/Game_Engine.js:334 | consumePowerEvents | drain pending power-activation events for broadcast |
-| src/Server/app/Game_Engine.js:340 | clonePowerInventory | deep copy so snapshots don't alias live inventory |
-| src/Server/app/Game_Engine.js:344 | setupSideQuest | per-level shared side quest, gated by `powerUnlockLevel` |
-| src/Server/app/Game_Engine.js:350 | grantDefaultPowers | `powerGuaranteedBaseline` path, off by default |
-| src/Server/app/Game_Engine.js:361 | tryCompleteSideQuest | first exact finish claims the quest reward |
-| src/Server/app/Game_Engine.js:371 | activatePower | Power effects: replenish, refresh, score cap, copy score |
-| src/Server/app/Game_Engine.js:405 | getPostLevelTransitionDelayMs | popup duration + level summary delay |
-| src/Server/app/Game_Engine.js:412 | getPlacementScorePopupDurationMs | placement popup duration, clamped |
-| src/Server/app/Game_Engine.js:419 | getFinishScorePopupDurationMs | finish popup duration, clamped |
-| src/Server/app/Game_Engine.js:426 | getMaxScorePopupDurationMs | longest popup, sets the transition wait |
-| src/Server/app/Game_Engine.js:433 | startLevel | level init: target height, clock, quest, draw pile, opening hands |
-| src/Server/app/Game_Engine.js:478 | beginPlaying | `starting` → `playing`, arms the round clock |
-| src/Server/app/Game_Engine.js:499 | clearTimers | cancel start/level/tick timers |
-| src/Server/app/Game_Engine.js:511 | closeRoom | teardown, stop bots, clear timers |
-| src/Server/app/Game_Engine.js:532 | stopBots | delegate to Bot Manager |
-| src/Server/app/Game_Engine.js:536 | buildTargetHeightCurve | growing-step target height curve, cached |
-| src/Server/app/Game_Engine.js:566 | getTargetHeightForLevel | cached curve lookup per level |
-| src/Server/app/Game_Engine.js:577 | getLevelTimeLimitMs | derived round clock: slack ramp × cooldown, floored by `levelTimeLimitMs` |
-| src/Server/app/Game_Engine.js:613 | getConfiguredStartLevel | `debugStartLevel`, clamped |
-| src/Server/app/Game_Engine.js:617 | clampLevel | clamp to 1..`maxLevel` |
-| src/Server/app/Game_Engine.js:624 | restartAtConfiguredStartLevel | debug restart at the configured start level |
-| src/Server/app/Game_Engine.js:630 | restartAtLevel | restart every room at a level, optionally preserving score |
-| src/Server/app/Game_Engine.js:690 | completeLevel | bank scores, carry-over, summary, MVP, Impact gate |
-| src/Server/app/Game_Engine.js:758 | failLevel | level failure, discard carry-over, Impact rollback |
-| src/Server/app/Game_Engine.js:803 | nextLevel | advance level or finish the match at `maxLevel` |
+| src/Server/app/Game_Engine.js:21 | getRemainingMs | round clock remaining against `endsAt` |
+| src/Server/app/Game_Engine.js:45 | broadcastGameState | builds and sends the whole `game_state` payload clients render |
+| src/Server/app/Game_Engine.js:114 | createRoom | new room state, seat assignment, start level, first deal |
+| src/Server/app/Game_Engine.js:160 | initializePlayerForRoom | creates the per-player engine state used by a room |
+| src/Server/app/Game_Engine.js:175 | removePlayerFromRoom | removes a player and their room-owned engine state |
+| src/Server/app/Game_Engine.js:189 | hydrateRoom | rebuild room from a Redis snapshot on reconnect or pod handoff |
+| src/Server/app/Game_Engine.js:244 | restoreTimersFromState | restart level/tick timers after hydrate |
+| src/Server/app/Game_Engine.js:293 | persistRoom | notify Lobby Manager to snapshot; engine never writes Redis itself |
+| src/Server/app/Game_Engine.js:303 | recordLevelOutcome | records the completed level result for progression and reporting |
+| src/Server/app/Game_Engine.js:317 | queueQuickChat | quick chat cooldown check and event queue |
+| src/Server/app/Game_Engine.js:350 | consumeQuickChatEvents | drain pending quick chat for the next broadcast |
+| src/Server/app/Game_Engine.js:358 | consumePowerEvents | drain pending power-activation events for broadcast |
+| src/Server/app/Game_Engine.js:364 | clonePowerInventory | deep copy so snapshots don't alias live inventory |
+| src/Server/app/Game_Engine.js:368 | setupSideQuest | per-level shared side quest, gated by `powerUnlockLevel` |
+| src/Server/app/Game_Engine.js:374 | grantDefaultPowers | `powerGuaranteedBaseline` path, off by default |
+| src/Server/app/Game_Engine.js:385 | tryCompleteSideQuest | first exact finish claims the quest reward |
+| src/Server/app/Game_Engine.js:395 | activatePower | Power effects: replenish, refresh, score cap, copy score |
+| src/Server/app/Game_Engine.js:429 | getPostLevelTransitionDelayMs | popup duration + level summary delay |
+| src/Server/app/Game_Engine.js:436 | getPlacementScorePopupDurationMs | placement popup duration, clamped |
+| src/Server/app/Game_Engine.js:443 | getFinishScorePopupDurationMs | finish popup duration, clamped |
+| src/Server/app/Game_Engine.js:450 | getMaxScorePopupDurationMs | longest popup, sets the transition wait |
+| src/Server/app/Game_Engine.js:457 | startLevel | level init: target height, clock, quest, draw pile, opening hands |
+| src/Server/app/Game_Engine.js:509 | beginPlaying | `starting` → `playing`, arms the round clock |
+| src/Server/app/Game_Engine.js:530 | clearTimers | cancel start/level/tick timers |
+| src/Server/app/Game_Engine.js:542 | closeRoom | teardown, stop bots, clear timers |
+| src/Server/app/Game_Engine.js:565 | requestRoomClose | forwards one terminal close request to Lobby Manager |
+| src/Server/app/Game_Engine.js:580 | stopBots | delegate to Bot Manager |
+| src/Server/app/Game_Engine.js:584 | buildTargetHeightCurve | growing-step target height curve, cached |
+| src/Server/app/Game_Engine.js:614 | getTargetHeightForLevel | cached curve lookup per level |
+| src/Server/app/Game_Engine.js:625 | getLevelTimeLimitMs | derived round clock: slack ramp × cooldown, floored by `levelTimeLimitMs` |
+| src/Server/app/Game_Engine.js:661 | getConfiguredStartLevel | `debugStartLevel`, clamped |
+| src/Server/app/Game_Engine.js:665 | clampLevel | clamp to 1..`maxLevel` |
+| src/Server/app/Game_Engine.js:672 | restartAtConfiguredStartLevel | debug restart at the configured start level |
+| src/Server/app/Game_Engine.js:679 | restartAtLevel | restart every room at a level, optionally preserving score |
+| src/Server/app/Game_Engine.js:751 | completeLevel | bank scores, carry-over, summary, MVP, Impact gate |
+| src/Server/app/Game_Engine.js:819 | failLevel | level failure, discard carry-over, Impact rollback |
+| src/Server/app/Game_Engine.js:823 | nextLevel | advance level or finish the match at `maxLevel` |
 
-### src/Server/app/Lobby_Manager.js — 1131 ln
+### src/Server/app/Lobby_Manager.js — 1223 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -149,41 +150,42 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Lobby_Manager.js:286 | isConnectedRealPlayer | excludes bots and dead sockets |
 | src/Server/app/Lobby_Manager.js:294 | sendPlayer | single-socket send guard |
 | src/Server/app/Lobby_Manager.js:300 | closeRoom | room teardown, roster notify, Redis cleanup |
-| src/Server/app/Lobby_Manager.js:344 | resetBotCounterIfIdle | bot naming counter reset |
-| src/Server/app/Lobby_Manager.js:354 | getRealPlayers | non-bot connected players |
-| src/Server/app/Lobby_Manager.js:379 | broadcastDebugConfig | push `debug_config` to every client |
-| src/Server/app/Lobby_Manager.js:390 | getDebugConfig | current debug-tunable snapshot for the wire |
-| src/Server/app/Lobby_Manager.js:394 | applyDefaultDebugConfig | write `DEFAULT_DEBUG_CONFIG` back into `GameConfig` |
-| src/Server/app/Lobby_Manager.js:398 | resetDebugConfigToDefaults | restore every exposed tunable, then rebroadcast |
-| src/Server/app/Lobby_Manager.js:425 | updateDebugConfig | **the authoritative clamp**: every debug key's range and allowlist |
-| src/Server/app/Lobby_Manager.js:459 | restartRoomsAtDebugStartLevel | apply `debugStartLevel` to live rooms |
-| src/Server/app/Lobby_Manager.js:473 | restartRoomsAtCurrentLevel | `restartLevel` action; preserves total score |
-| src/Server/app/Lobby_Manager.js:489 | createBot | debug bot participant |
-| src/Server/app/Lobby_Manager.js:498 | fillRoomWithBotsIfNeeded | fills vacant lobby seats with bots when the mode requires it |
-| src/Server/app/Lobby_Manager.js:513 | syncRoomBots | reconciles lobby bot seats with the live room roster |
-| src/Server/app/Lobby_Manager.js:554 | refreshMatchmaking | re-run matching after queue change |
-| src/Server/app/Lobby_Manager.js:568 | joinOrCreateRoom | joins a claimable room or creates a new lobby |
-| src/Server/app/Lobby_Manager.js:580 | claimOpenRoom | atomically claims an advertised open room for a player |
-| src/Server/app/Lobby_Manager.js:633 | addPlayerToRoom | adds a player to the room roster and persisted assignment |
-| src/Server/app/Lobby_Manager.js:661 | createRoom | 3-seat room, engine start, Redis publish |
-| src/Server/app/Lobby_Manager.js:723 | buildRoomJoinedPayload | builds the authoritative room-joined wire payload |
-| src/Server/app/Lobby_Manager.js:743 | getLobbySecondsRemaining | returns the bounded ready-up time remaining |
-| src/Server/app/Lobby_Manager.js:754 | buildLobbyPayload | builds the lobby state broadcast payload |
-| src/Server/app/Lobby_Manager.js:762 | broadcastLobbyUpdate | broadcasts the current lobby roster and ready state |
-| src/Server/app/Lobby_Manager.js:777 | toggleLobbyReady | toggles a player ready state and evaluates match start |
-| src/Server/app/Lobby_Manager.js:802 | startMatch | transitions a ready lobby into an active game engine |
-| src/Server/app/Lobby_Manager.js:845 | leaveLobby | handles a voluntary lobby departure |
-| src/Server/app/Lobby_Manager.js:855 | evictLobbyPlayer | removes a disconnected or timed-out lobby player |
-| src/Server/app/Lobby_Manager.js:882 | scheduleLobbyReadyTimeout | starts the lobby ready-up timeout |
-| src/Server/app/Lobby_Manager.js:904 | cancelLobbyReadyTimeout | cancels the active lobby ready-up timeout |
-| src/Server/app/Lobby_Manager.js:915 | handleLobbyReadyTimeout | resolves a lobby whose ready-up timer expired |
-| src/Server/app/Lobby_Manager.js:934 | buildRoomRoster | roster payload with profiles and colours |
-| src/Server/app/Lobby_Manager.js:948 | createEngine | construct Game Engine with persist/broadcast callbacks |
-| src/Server/app/Lobby_Manager.js:970 | hydrateRoom | rebuild a room this pod did not create |
-| src/Server/app/Lobby_Manager.js:1046 | subscribeRoom | listen on `room:<id>:actions` |
-| src/Server/app/Lobby_Manager.js:1082 | isRoomOwner | lease check; **removing it makes every pod write divergent state** |
-| src/Server/app/Lobby_Manager.js:1086 | dispatchRoomAction | run locally if owner, else republish to the lease owner |
-| src/Server/app/Lobby_Manager.js:1104 | runRoomAction | execute a room action against the live engine |
+| src/Server/app/Lobby_Manager.js:369 | resetBotCounterIfIdle | bot naming counter reset |
+| src/Server/app/Lobby_Manager.js:379 | getRealPlayers | non-bot connected players |
+| src/Server/app/Lobby_Manager.js:404 | broadcastDebugConfig | push `debug_config` to every client |
+| src/Server/app/Lobby_Manager.js:415 | getDebugConfig | current debug-tunable snapshot for the wire |
+| src/Server/app/Lobby_Manager.js:419 | applyDefaultDebugConfig | write `DEFAULT_DEBUG_CONFIG` back into `GameConfig` |
+| src/Server/app/Lobby_Manager.js:423 | resetDebugConfigToDefaults | restore every exposed tunable, then rebroadcast |
+| src/Server/app/Lobby_Manager.js:450 | updateDebugConfig | **the authoritative clamp**: every debug key's range and allowlist |
+| src/Server/app/Lobby_Manager.js:484 | restartRoomsAtDebugStartLevel | apply `debugStartLevel` to live rooms |
+| src/Server/app/Lobby_Manager.js:498 | restartRoomsAtCurrentLevel | `restartLevel` action; preserves total score |
+| src/Server/app/Lobby_Manager.js:514 | createBot | debug bot participant |
+| src/Server/app/Lobby_Manager.js:523 | fillRoomWithBotsIfNeeded | fills vacant lobby seats with bots when the mode requires it |
+| src/Server/app/Lobby_Manager.js:538 | syncRoomBots | reconciles lobby bot seats with the live room roster |
+| src/Server/app/Lobby_Manager.js:579 | refreshMatchmaking | re-run matching after queue change |
+| src/Server/app/Lobby_Manager.js:593 | joinOrCreateRoom | joins a claimable room or creates a new lobby |
+| src/Server/app/Lobby_Manager.js:605 | claimOpenRoom | atomically claims an advertised open room for a player |
+| src/Server/app/Lobby_Manager.js:658 | addPlayerToRoom | adds a player to the room roster and persisted assignment |
+| src/Server/app/Lobby_Manager.js:686 | createRoom | 3-seat room, engine start, Redis publish |
+| src/Server/app/Lobby_Manager.js:748 | buildRoomJoinedPayload | builds the authoritative room-joined wire payload |
+| src/Server/app/Lobby_Manager.js:768 | getLobbySecondsRemaining | returns the bounded ready-up time remaining |
+| src/Server/app/Lobby_Manager.js:779 | buildLobbyPayload | builds the lobby state broadcast payload |
+| src/Server/app/Lobby_Manager.js:787 | broadcastLobbyUpdate | broadcasts the current lobby roster and ready state |
+| src/Server/app/Lobby_Manager.js:802 | toggleLobbyReady | toggles a player ready state and evaluates match start |
+| src/Server/app/Lobby_Manager.js:827 | startMatch | transitions a ready lobby into an active game engine |
+| src/Server/app/Lobby_Manager.js:870 | leaveLobby | handles a voluntary lobby departure |
+| src/Server/app/Lobby_Manager.js:880 | evictLobbyPlayer | removes a disconnected or timed-out lobby player |
+| src/Server/app/Lobby_Manager.js:907 | scheduleLobbyReadyTimeout | starts the lobby ready-up timeout |
+| src/Server/app/Lobby_Manager.js:929 | cancelLobbyReadyTimeout | cancels the active lobby ready-up timeout |
+| src/Server/app/Lobby_Manager.js:940 | handleLobbyReadyTimeout | resolves a lobby whose ready-up timer expired |
+| src/Server/app/Lobby_Manager.js:959 | buildRoomRoster | roster payload with profiles and colours |
+| src/Server/app/Lobby_Manager.js:973 | createEngine | construct Game Engine with persist/broadcast callbacks |
+| src/Server/app/Lobby_Manager.js:1004 | hydrateRoom | rebuild a room this pod did not create |
+| src/Server/app/Lobby_Manager.js:1093 | handleRemoteRoomClosed | forwards a remote close and discards the frozen replica |
+| src/Server/app/Lobby_Manager.js:1131 | subscribeRoom | listen on `room:<id>:actions` |
+| src/Server/app/Lobby_Manager.js:1174 | isRoomOwner | lease check; **removing it makes every pod write divergent state** |
+| src/Server/app/Lobby_Manager.js:1178 | dispatchRoomAction | run locally if owner, else republish to the lease owner |
+| src/Server/app/Lobby_Manager.js:1196 | runRoomAction | execute a room action against the live engine |
 
 ### src/Server/app/Profile_Store.js — 169 ln
 
@@ -204,7 +206,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Profile_Store.js:147 | insertRow | create a missing row; `ignore-duplicates` so a racing pod cannot clobber it |
 | src/Server/app/Profile_Store.js:159 | patchRow | stamp `last_login_at`, and backfill a name only when the row has none |
 
-### src/Server/app/Redis_State.js — 550 ln
+### src/Server/app/Redis_State.js — 586 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -218,35 +220,38 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Redis_State.js:30 | stripRuntimePlayer · fn | drop sockets/timers before a player is serialised |
 | src/Server/app/Redis_State.js:53 | DRAW_PILE_SNAPSHOT_LIMIT · const | cap on pile entries written to a snapshot |
 | src/Server/app/Redis_State.js:55 | stripRuntimeRoom · fn | drop non-serialisable room state before persist |
-| src/Server/app/Redis_State.js:95 | RedisState · class | shared-state adapter; in-memory fallback when no `REDIS_URL` |
-| src/Server/app/Redis_State.js:115 | connect | connect or fall back to in-memory maps |
-| src/Server/app/Redis_State.js:144 | connectRedisClients | main + subscriber clients with retry |
-| src/Server/app/Redis_State.js:196 | closeRedisClient | teardown |
-| src/Server/app/Redis_State.js:212 | getPodId | this pod's id |
-| src/Server/app/Redis_State.js:216 | getReconnectTtlSeconds | resolved reconnect TTL |
-| src/Server/app/Redis_State.js:220 | nextPlayerId | id allocation |
-| src/Server/app/Redis_State.js:229 | nextRoomId | id allocation |
-| src/Server/app/Redis_State.js:237 | recordDemoOutcome | increments durable demo attempt and completion counters |
-| src/Server/app/Redis_State.js:250 | getDemoStats | reads durable demo attempt and completion counters |
-| src/Server/app/Redis_State.js:272 | createReconnectToken | token a client presents to resume |
-| src/Server/app/Redis_State.js:276 | saveSession | persist player session for reconnect |
-| src/Server/app/Redis_State.js:305 | getSession | look up a session by reconnect token |
-| src/Server/app/Redis_State.js:318 | markSessionDisconnected | start the reconnect grace window |
-| src/Server/app/Redis_State.js:336 | markRoomOpen | advertises a room as available for an atomic claim |
-| src/Server/app/Redis_State.js:345 | removeOpenRoom | removes a room from the open-room index |
-| src/Server/app/Redis_State.js:354 | claimOpenRoomId | atomically claims one room id from the open-room index |
-| src/Server/app/Redis_State.js:370 | withMatchmakingLock | cross-pod matchmaking mutex |
-| src/Server/app/Redis_State.js:396 | saveRoom | room snapshot write |
-| src/Server/app/Redis_State.js:427 | claimRoomLease | take/renew room ownership; basis of `isRoomOwner` |
-| src/Server/app/Redis_State.js:440 | getRoomLeaseOwner | which pod owns this room |
-| src/Server/app/Redis_State.js:448 | getRoom | room snapshot read |
-| src/Server/app/Redis_State.js:461 | deleteRoom | snapshot + lease cleanup |
-| src/Server/app/Redis_State.js:475 | publishRoom | broadcast room state to other pods |
-| src/Server/app/Redis_State.js:489 | subscribeToRoom | receive other pods' room broadcasts |
-| src/Server/app/Redis_State.js:499 | publishRoomAction | send an action to the lease-owning pod |
-| src/Server/app/Redis_State.js:513 | subscribeToRoomActions | receive actions for rooms this pod owns |
-| src/Server/app/Redis_State.js:523 | publishPlayerAssignment | hand a player to another pod |
-| src/Server/app/Redis_State.js:534 | subscribeToPlayerAssignments | receive handed-off players |
+| src/Server/app/Redis_State.js:101 | RedisState · class | shared-state adapter; in-memory fallback when no `REDIS_URL` |
+| src/Server/app/Redis_State.js:121 | connect | connect or fall back to in-memory maps |
+| src/Server/app/Redis_State.js:150 | connectRedisClients | main + subscriber clients with retry |
+| src/Server/app/Redis_State.js:202 | closeRedisClient | teardown |
+| src/Server/app/Redis_State.js:218 | getPodId | this pod's id |
+| src/Server/app/Redis_State.js:222 | getReconnectTtlSeconds | resolved reconnect TTL |
+| src/Server/app/Redis_State.js:226 | nextPlayerId | id allocation |
+| src/Server/app/Redis_State.js:235 | nextRoomId | id allocation |
+| src/Server/app/Redis_State.js:243 | recordDemoOutcome | increments durable demo attempt and completion counters |
+| src/Server/app/Redis_State.js:256 | getDemoStats | reads durable demo attempt and completion counters |
+| src/Server/app/Redis_State.js:278 | createReconnectToken | token a client presents to resume |
+| src/Server/app/Redis_State.js:282 | saveSession | persist player session for reconnect |
+| src/Server/app/Redis_State.js:311 | getSession | look up a session by reconnect token |
+| src/Server/app/Redis_State.js:324 | markSessionDisconnected | start the reconnect grace window |
+| src/Server/app/Redis_State.js:342 | clearSessionRoom | removes a terminal room assignment from a reconnect session |
+| src/Server/app/Redis_State.js:356 | markRoomOpen | advertises a room as available for an atomic claim |
+| src/Server/app/Redis_State.js:365 | removeOpenRoom | removes a room from the open-room index |
+| src/Server/app/Redis_State.js:374 | claimOpenRoomId | atomically claims one room id from the open-room index |
+| src/Server/app/Redis_State.js:390 | withMatchmakingLock | cross-pod matchmaking mutex |
+| src/Server/app/Redis_State.js:416 | saveRoom | room snapshot write |
+| src/Server/app/Redis_State.js:447 | claimRoomLease | take/renew room ownership; basis of `isRoomOwner` |
+| src/Server/app/Redis_State.js:460 | getRoomLeaseOwner | which pod owns this room |
+| src/Server/app/Redis_State.js:468 | getRoom | room snapshot read |
+| src/Server/app/Redis_State.js:481 | deleteRoom | snapshot + lease cleanup |
+| src/Server/app/Redis_State.js:495 | publishRoom | broadcast room state to other pods |
+| src/Server/app/Redis_State.js:509 | subscribeToRoom | receive other pods' room broadcasts |
+| src/Server/app/Redis_State.js:519 | unsubscribeFromRoom | removes this pod's room-event subscription |
+| src/Server/app/Redis_State.js:527 | publishRoomAction | send an action to the lease-owning pod |
+| src/Server/app/Redis_State.js:541 | subscribeToRoomActions | receive actions for rooms this pod owns |
+| src/Server/app/Redis_State.js:551 | unsubscribeFromRoomActions | removes this pod's routed-action subscription |
+| src/Server/app/Redis_State.js:559 | publishPlayerAssignment | hand a player to another pod |
+| src/Server/app/Redis_State.js:570 | subscribeToPlayerAssignments | receive handed-off players |
 
 ### src/Server/app/Server.js — 182 ln
 
@@ -358,34 +363,45 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/engine/Block_Supply.js:463 | scoreRefreshBlockSet · fn | rank candidate reroll sets |
 | src/Server/app/engine/Block_Supply.js:478 | prepareTeamCarryOverBlocks · fn | carry-over on completion, precision first; **discarded on failure** |
 
-### src/Server/app/engine/Impacts.js — 358 ln
+### src/Server/app/engine/Impacts.js — 505 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| src/Server/app/engine/Impacts.js:3 | saveImpactScores · fn | snapshot leaderboard scores at an Impact |
-| src/Server/app/engine/Impacts.js:15 | saveImpactPowers · fn | snapshot Power inventories (`powerLifetime: impact`) |
-| src/Server/app/engine/Impacts.js:28 | saveImpactContributions · fn | snapshot banked transaction contributions at an Impact |
-| src/Server/app/engine/Impacts.js:40 | saveImpactState · fn | both snapshots together |
-| src/Server/app/engine/Impacts.js:46 | ensureImpactScores · fn | lazily create the score snapshot |
-| src/Server/app/engine/Impacts.js:55 | ensureImpactPowers · fn | lazily create the power snapshot |
-| src/Server/app/engine/Impacts.js:64 | ensureImpactContributions · fn | lazily create the contribution snapshot |
-| src/Server/app/engine/Impacts.js:73 | ensureImpactState · fn | lazily create both |
-| src/Server/app/engine/Impacts.js:79 | restoreImpactScores · fn | roll scores back to the last passed Impact |
-| src/Server/app/engine/Impacts.js:87 | restoreImpactPowers · fn | roll inventories back; stops farming by repeated failure |
-| src/Server/app/engine/Impacts.js:101 | restoreImpactContributions · fn | restore contributions and clear live level contribution on rollback |
-| src/Server/app/engine/Impacts.js:109 | awardImpactPower · fn | Impact-MVP grant path, off by default |
-| src/Server/app/engine/Impacts.js:138 | isImpactLevel · fn | is this level an Impact boundary (`impactInterval`) |
-| src/Server/app/engine/Impacts.js:144 | getImpactScoreRequirement · fn | optional flat floor |
-| src/Server/app/engine/Impacts.js:148 | getImpactMinContributionShare · fn | per-player share of the pool |
-| src/Server/app/engine/Impacts.js:158 | getExpectedPlacementScoreForLevel · fn | expected pay per level, incl. the 0.85 stability discount |
-| src/Server/app/engine/Impacts.js:169 | getExpectedPlacementScoreForImpactBand · fn | summed across the band |
-| src/Server/app/engine/Impacts.js:185 | getImpactBandScoreRequirement · fn | **the gate value** each player must reach |
-| src/Server/app/engine/Impacts.js:198 | getImpactScoreFailures · fn | who missed the gate |
-| src/Server/app/engine/Impacts.js:203 | getNextImpactLevel · fn | next Impact boundary |
-| src/Server/app/engine/Impacts.js:214 | getImpactScoreStatus · fn | per-player standing; reads **banked** `score`, so callers add live `levelScore` |
-| src/Server/app/engine/Impacts.js:248 | hasMetImpactScoreRequirement · fn | single-player gate check; simulator routes here |
-| src/Server/app/engine/Impacts.js:252 | failImpactScoreRequirement · fn | gate failure → rollback |
-| src/Server/app/engine/Impacts.js:312 | rollbackToImpact · fn | restore scores and powers to the last passed Impact |
+| src/Server/app/engine/Impacts.js:3 | number · fn | coerces an optional numeric value to zero |
+| src/Server/app/engine/Impacts.js:7 | saveImpactScores · fn | snapshot leaderboard scores at an Impact |
+| src/Server/app/engine/Impacts.js:16 | saveImpactPowers · fn | snapshot Power inventories (`powerLifetime: impact`) |
+| src/Server/app/engine/Impacts.js:26 | saveImpactContributions · fn | snapshot banked transaction contributions at an Impact |
+| src/Server/app/engine/Impacts.js:36 | saveImpactState · fn | both snapshots together |
+| src/Server/app/engine/Impacts.js:42 | ensureImpactScores · fn | lazily create the score snapshot |
+| src/Server/app/engine/Impacts.js:48 | ensureImpactPowers · fn | lazily create the power snapshot |
+| src/Server/app/engine/Impacts.js:54 | ensureImpactContributions · fn | lazily create the contribution snapshot |
+| src/Server/app/engine/Impacts.js:60 | getImpactRecoverableFailureLimit · fn | reads the configured retry budget with a safe fallback |
+| src/Server/app/engine/Impacts.js:68 | normalizeImpactFailureState · fn | clamps hydrated retry and terminal lifecycle state |
+| src/Server/app/engine/Impacts.js:83 | ensureImpactState · fn | lazily create both |
+| src/Server/app/engine/Impacts.js:90 | restoreImpactScores · fn | roll scores back to the last passed Impact |
+| src/Server/app/engine/Impacts.js:98 | restoreImpactPowers · fn | roll inventories back; stops farming by repeated failure |
+| src/Server/app/engine/Impacts.js:108 | restoreImpactContributions · fn | restore contributions and clear live level contribution on rollback |
+| src/Server/app/engine/Impacts.js:116 | secureImpactCheckpoint · fn | resets retry and terminal fields when a checkpoint succeeds |
+| src/Server/app/engine/Impacts.js:127 | awardImpactPower · fn | Impact-MVP grant path, off by default |
+| src/Server/app/engine/Impacts.js:160 | isImpactLevel · fn | is this level an Impact boundary (`impactInterval`) |
+| src/Server/app/engine/Impacts.js:166 | getImpactScoreRequirement · fn | optional flat floor |
+| src/Server/app/engine/Impacts.js:170 | getImpactMinContributionShare · fn | per-player share of the pool |
+| src/Server/app/engine/Impacts.js:174 | getExpectedPlacementScoreForLevel · fn | expected pay per level, incl. the 0.85 stability discount |
+| src/Server/app/engine/Impacts.js:178 | getExpectedPlacementScoreForImpactBand · fn | summed across the band |
+| src/Server/app/engine/Impacts.js:194 | getImpactBandScoreRequirement · fn | **the gate value** each player must reach |
+| src/Server/app/engine/Impacts.js:204 | getImpactFailureStatus · fn | exposes failure count, remaining retries, last chance, and terminal state |
+| src/Server/app/engine/Impacts.js:221 | getImpactScoreStatus · fn | per-player standing; reads **banked** `score`, so callers add live `levelScore` |
+| src/Server/app/engine/Impacts.js:265 | getImpactScoreFailures · fn | who missed the gate |
+| src/Server/app/engine/Impacts.js:269 | getNextImpactLevel · fn | next Impact boundary |
+| src/Server/app/engine/Impacts.js:277 | hasMetImpactScoreRequirement · fn | single-player gate check; simulator routes here |
+| src/Server/app/engine/Impacts.js:281 | clearAttemptState · fn | discards provisional blocks, contribution, claims, and level score |
+| src/Server/app/engine/Impacts.js:299 | buildFailureSummary · fn | builds a failed or terminal summary from captured Impact status |
+| src/Server/app/engine/Impacts.js:320 | queueFailureEvents · fn | queues Impact failure and attempt MVP presentation events |
+| src/Server/app/engine/Impacts.js:344 | scheduleCheckpointRecovery · fn | schedules rollback after the failed-summary delay |
+| src/Server/app/engine/Impacts.js:356 | scheduleTerminalRoomClose · fn | schedules the terminal Lobby close request |
+| src/Server/app/engine/Impacts.js:368 | resolveCheckpointFailure · fn | single guarded increment and recoverable-or-terminal failure transition |
+| src/Server/app/engine/Impacts.js:451 | failImpactScoreRequirement · fn | gate failure → rollback |
+| src/Server/app/engine/Impacts.js:459 | rollbackToImpact · fn | restore scores and powers to the last passed Impact |
 
 ### src/Server/app/engine/Placement.js — 356 ln
 
@@ -407,7 +423,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/engine/Placement.js:295 | checkFailCondition · fn | authoritative supply-impossibility and all-blocks-used checks |
 | src/Server/app/engine/Placement.js:331 | anyPlayerCanRescueSupply · fn | detects a held Replenish that defers supply failure |
 
-### src/Server/app/engine/Scoring.js — 428 ln
+### src/Server/app/engine/Scoring.js — 430 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -418,23 +434,23 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/engine/Scoring.js:56 | getTeamLevelScore · fn | summed level score |
 | src/Server/app/engine/Scoring.js:62 | getPlayerBonusBreakdown · fn | bonus components per player |
 | src/Server/app/engine/Scoring.js:76 | buildLevelSummary · fn | end-of-level summary payload, MVP, breakdowns |
-| src/Server/app/engine/Scoring.js:121 | recordScoreBreakdown · fn | accumulate per-category score for the summary |
-| src/Server/app/engine/Scoring.js:127 | clamp01 · fn | normalize a scoring ratio |
-| src/Server/app/engine/Scoring.js:131 | positive · fn | coerce a non-negative scoring input |
-| src/Server/app/engine/Scoring.js:135 | getActionUnit · fn | average useful-height action score at a level |
-| src/Server/app/engine/Scoring.js:141 | getExpectedNormalUsefulScoreForLevel · fn | useful-height baseline for a level |
-| src/Server/app/engine/Scoring.js:149 | getStructuralAssessment · fn | normalize direct structural utility from the pure comparator |
-| src/Server/app/engine/Scoring.js:168 | getCriticalSavePreview · fn | validate direct critical-interface rescue and its claim limits |
-| src/Server/app/engine/Scoring.js:194 | classifyPlacement · fn | server-owned placement semantic for score presentation |
-| src/Server/app/engine/Scoring.js:206 | applyPlacementCap · fn | cap a transaction without reducing useful-height points |
-| src/Server/app/engine/Scoring.js:221 | previewPlacementScore · fn | pure one-event useful-height, structural and Critical Save quote |
-| src/Server/app/engine/Scoring.js:272 | addPlacementScore · fn | award one placement transaction and emit its semantic event |
-| src/Server/app/engine/Scoring.js:307 | awardCompletionBonuses · fn | precision and team-exact bonuses |
-| src/Server/app/engine/Scoring.js:346 | addBonusScore · fn | apply one bonus and emit its event |
-| src/Server/app/engine/Scoring.js:365 | getBonusScoreEventType · fn | bonus → wire event type |
-| src/Server/app/engine/Scoring.js:376 | getBonusScoreEventLabel · fn | bonus → display label |
-| src/Server/app/engine/Scoring.js:387 | addLevelScoreToLeaderboard · fn | **the only banking step**; failed levels never bank |
-| src/Server/app/engine/Scoring.js:396 | getLevelMVP · fn | highest level score; display only |
+| src/Server/app/engine/Scoring.js:123 | recordScoreBreakdown · fn | accumulate per-category score for the summary |
+| src/Server/app/engine/Scoring.js:129 | clamp01 · fn | normalize a scoring ratio |
+| src/Server/app/engine/Scoring.js:133 | positive · fn | coerce a non-negative scoring input |
+| src/Server/app/engine/Scoring.js:137 | getActionUnit · fn | average useful-height action score at a level |
+| src/Server/app/engine/Scoring.js:143 | getExpectedNormalUsefulScoreForLevel · fn | useful-height baseline for a level |
+| src/Server/app/engine/Scoring.js:151 | getStructuralAssessment · fn | normalize direct structural utility from the pure comparator |
+| src/Server/app/engine/Scoring.js:170 | getCriticalSavePreview · fn | validate direct critical-interface rescue and its claim limits |
+| src/Server/app/engine/Scoring.js:196 | classifyPlacement · fn | server-owned placement semantic for score presentation |
+| src/Server/app/engine/Scoring.js:208 | applyPlacementCap · fn | cap a transaction without reducing useful-height points |
+| src/Server/app/engine/Scoring.js:223 | previewPlacementScore · fn | pure one-event useful-height, structural and Critical Save quote |
+| src/Server/app/engine/Scoring.js:274 | addPlacementScore · fn | award one placement transaction and emit its semantic event |
+| src/Server/app/engine/Scoring.js:309 | awardCompletionBonuses · fn | precision and team-exact bonuses |
+| src/Server/app/engine/Scoring.js:348 | addBonusScore · fn | apply one bonus and emit its event |
+| src/Server/app/engine/Scoring.js:367 | getBonusScoreEventType · fn | bonus → wire event type |
+| src/Server/app/engine/Scoring.js:378 | getBonusScoreEventLabel · fn | bonus → display label |
+| src/Server/app/engine/Scoring.js:389 | addLevelScoreToLeaderboard · fn | **the only banking step**; failed levels never bank |
+| src/Server/app/engine/Scoring.js:398 | getLevelMVP · fn | highest level score; display only |
 
 ### src/Server/migrations/0001_profiles.sql — 46 ln
 
@@ -444,7 +460,7 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### src/Server/tools/Balance_Simulator.js — 736 ln
+### src/Server/tools/Balance_Simulator.js — 740 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -469,6 +485,22 @@ _no extracted symbols_
 | src/Server/tools/Balance_Simulator.js:684 | runSweep · fn | `balance:stability` difficulty sweep |
 | src/Server/tools/Balance_Simulator.js:705 | main · fn | CLI entry |
 
+### src/Server/tools/Impact_Balance_Probe.js — 282 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| src/Server/tools/Impact_Balance_Probe.js:9 | STRATEGIES · const | simulator strategies compared by the Impact probe |
+| src/Server/tools/Impact_Balance_Probe.js:10 | DEFAULT_START_LEVELS · const | default number of starting levels sampled |
+| src/Server/tools/Impact_Balance_Probe.js:11 | DEFAULT_RUNS · const | default number of runs per band and strategy |
+| src/Server/tools/Impact_Balance_Probe.js:13 | number · fn | coerces optional metrics to zero |
+| src/Server/tools/Impact_Balance_Probe.js:17 | prepareLevel · fn | starts one timer-free simulation level |
+| src/Server/tools/Impact_Balance_Probe.js:24 | failureReason · fn | maps simulator outcomes to authoritative failure reasons |
+| src/Server/tools/Impact_Balance_Probe.js:31 | recordAttemptFailure · fn | accumulates retry, Last Chance, and terminal metrics |
+| src/Server/tools/Impact_Balance_Probe.js:40 | runImpactBand · fn | simulates one complete checkpoint band with real lifecycle recovery |
+| src/Server/tools/Impact_Balance_Probe.js:138 | runImpactProbe · fn | aggregates multi-band contribution and retry distributions |
+| src/Server/tools/Impact_Balance_Probe.js:215 | printImpactProbe · fn | writes the probe's CSV table |
+| src/Server/tools/Impact_Balance_Probe.js:267 | main · fn | parses CLI sample sizes and prints the probe |
+
 ### src/Server/tools/Stability_Probe.js — 416 ln
 
 | File:Ln | Symbol | Does |
@@ -491,4 +523,4 @@ _no extracted symbols_
 
 ---
 
-21 files · 379 symbols · 0 awaiting a `Does` line.
+22 files · 406 symbols · 0 awaiting a `Does` line.

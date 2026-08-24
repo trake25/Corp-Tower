@@ -41,10 +41,12 @@ function createSharedFakeCluster() {
         openRooms: new Set(),
         sessions: new Map(),
         rooms: new Map(),
+        leases: new Map(),
         playerCounter: 1,
         roomCounter: 1,
         lockChain: Promise.resolve(),
-        assignmentSubscribers: []
+        assignmentSubscribers: [],
+        roomSubscribers: new Map()
     };
 
     function makeStore(podId) {
@@ -104,13 +106,19 @@ function createSharedFakeCluster() {
                 const payload = JSON.parse(JSON.stringify(stripRuntimeRoom(room)));
                 await tick();
                 shared.rooms.set(payload.id, payload);
+                shared.leases.set(payload.id, payload.ownerPodId);
                 return payload;
             },
-            async claimRoomLease() {
+            async claimRoomLease(roomId) {
+                const owner = shared.leases.get(roomId);
+                if (owner && owner !== podId) {
+                    return false;
+                }
+                shared.leases.set(roomId, podId);
                 return true;
             },
-            async getRoomLeaseOwner() {
-                return null;
+            async getRoomLeaseOwner(roomId) {
+                return shared.leases.get(roomId) || null;
             },
             async getRoom(roomId) {
                 await tick();
@@ -118,11 +126,40 @@ function createSharedFakeCluster() {
             },
             async deleteRoom(roomId) {
                 shared.rooms.delete(roomId);
+                shared.leases.delete(roomId);
             },
-            async publishRoom() {},
-            async subscribeToRoom() {},
+            async publishRoom(roomId, message) {
+                await tick();
+                const subscribers = shared.roomSubscribers.get(roomId) || [];
+                subscribers.forEach(subscriber => {
+                    subscriber.handler({ ...message, sourcePodId: podId });
+                });
+            },
+            async subscribeToRoom(roomId, handler) {
+                const subscribers = shared.roomSubscribers.get(roomId) || [];
+                subscribers.push({ podId, handler });
+                shared.roomSubscribers.set(roomId, subscribers);
+            },
+            async unsubscribeFromRoom(roomId) {
+                const subscribers = shared.roomSubscribers.get(roomId) || [];
+                shared.roomSubscribers.set(
+                    roomId,
+                    subscribers.filter(subscriber => subscriber.podId !== podId)
+                );
+            },
             async publishRoomAction() {},
             async subscribeToRoomActions() {},
+            async unsubscribeFromRoomActions() {},
+            async clearSessionRoom(sessionId) {
+                const session = shared.sessions.get(sessionId);
+                if (session) {
+                    shared.sessions.set(sessionId, {
+                        ...session,
+                        connected: false,
+                        roomId: null
+                    });
+                }
+            },
             async publishPlayerAssignment(playerId, roomId) {
                 await tick();
                 shared.assignmentSubscribers.forEach(subscriber => {
@@ -138,7 +175,7 @@ function createSharedFakeCluster() {
         };
     }
 
-    return { makeStore };
+    return { makeStore, shared };
 }
 
 // Brings three players on one pod all the way to a formed room, which now means
@@ -549,4 +586,61 @@ test("players connecting to different pods each land in a room, even without a s
         );
         assert.ok(gotAssignment, "each player's own socket should receive a room assignment message");
     });
+});
+
+test("terminal close publishes Home routing and clears owner and remote replicas once", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobbyA = new LobbyManager(cluster.makeStore("podA"));
+    const lobbyB = new LobbyManager(cluster.makeStore("podB"));
+
+    activeLobbies.push(lobbyA, lobbyB);
+    await lobbyA.start();
+    await lobbyB.start();
+
+    const sockets = [createFakeWs(), createFakeWs(), createFakeWs()];
+    const players = [];
+
+    for (const ws of sockets) {
+        const player = await lobbyA.createPlayer(ws, {});
+        players.push(player);
+        await lobbyA.addPlayer(player);
+    }
+
+    for (let i = 0; i < 8; i++) {
+        await tick();
+    }
+
+    const room = players[0].room;
+    const remoteWs = createFakeWs();
+    lobbyB.connectedPlayers.set(players[1].id, {
+        id: players[1].id,
+        ws: remoteWs
+    });
+    const remoteRoom = await lobbyB.hydrateRoom(room.id);
+
+    assert.ok(remoteRoom);
+    assert.equal(lobbyB.isRoomOwner(remoteRoom), false);
+
+    await lobbyA.closeRoom(room, "failure_limit_reached", "home");
+
+    for (let i = 0; i < 8; i++) {
+        await tick();
+    }
+
+    sockets.forEach(ws => {
+        const closed = messagesOfType(ws, "room_closed");
+        assert.equal(closed.length, 1);
+        assert.equal(closed[0].reason, "failure_limit_reached");
+        assert.equal(closed[0].destination, "home");
+    });
+    const remoteClosed = messagesOfType(remoteWs, "room_closed");
+    assert.equal(remoteClosed.length, 1);
+    assert.equal(remoteClosed[0].destination, "home");
+    assert.equal(lobbyA.rooms.length, 0);
+    assert.equal(lobbyB.rooms.length, 0);
+    assert.equal(cluster.shared.rooms.has(room.id), false);
+    assert.equal(cluster.shared.sessions.get(players[1].sessionId).roomId, null);
+
+    await lobbyA.closeRoom(room, "failure_limit_reached", "home");
+    assert.equal(messagesOfType(sockets[0], "room_closed").length, 1);
 });

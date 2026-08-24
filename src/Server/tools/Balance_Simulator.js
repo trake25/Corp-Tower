@@ -731,5 +731,9 @@ if (require.main === module) {
 
 module.exports = {
     runLevel,
-    runSweep
+    runSweep,
+    createEngineForLevel,
+    simulateSmartPlay,
+    percentile,
+    withMutedConsole
 };

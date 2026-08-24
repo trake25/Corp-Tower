@@ -68,6 +68,12 @@ function stripRuntimeRoom(room) {
             impactScores: engineRoom.impactScores || {},
             impactPowers: engineRoom.impactPowers || {},
             impactContributions: engineRoom.impactContributions || {},
+            impactFailureCount: engineRoom.impactFailureCount || 0,
+            lastImpactFailureReason: engineRoom.lastImpactFailureReason || null,
+            failureTransitionCommitted: Boolean(engineRoom.failureTransitionCommitted),
+            terminalCloseAt: engineRoom.terminalCloseAt || 0,
+            terminalFailureReason: engineRoom.terminalFailureReason || null,
+            terminalCloseRequested: Boolean(engineRoom.terminalCloseRequested),
             targetHeight: engineRoom.targetHeight || 0,
             currentHeight: engineRoom.currentHeight || 0,
             drawPile: (engineRoom.drawPile || []).slice(0, DRAW_PILE_SNAPSHOT_LIMIT),
@@ -333,6 +339,20 @@ class RedisState {
         });
     }
 
+    async clearSessionRoom(sessionId) {
+        const session = await this.getSession(sessionId);
+
+        if (!session) {
+            return;
+        }
+
+        await this.saveSession({
+            ...session,
+            connected: false,
+            roomId: null
+        });
+    }
+
     async markRoomOpen(roomId) {
         if (!this.enabled) {
             this.memoryOpenRooms.add(roomId);
@@ -496,6 +516,14 @@ class RedisState {
         });
     }
 
+    async unsubscribeFromRoom(roomId) {
+        if (!this.enabled || !roomId) {
+            return;
+        }
+
+        await this.subscriber.unsubscribe(`room:${roomId}:events`);
+    }
+
     async publishRoomAction(roomId, payload) {
         if (!this.enabled) {
             return;
@@ -518,6 +546,14 @@ class RedisState {
         await this.subscriber.subscribe(`room:${roomId}:actions`, raw => {
             handler(JSON.parse(raw));
         });
+    }
+
+    async unsubscribeFromRoomActions(roomId) {
+        if (!this.enabled || !roomId) {
+            return;
+        }
+
+        await this.subscriber.unsubscribe(`room:${roomId}:actions`);
     }
 
     async publishPlayerAssignment(playerId, roomId) {

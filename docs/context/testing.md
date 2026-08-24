@@ -59,7 +59,10 @@ controls and rejects retired scoring dials. The Debug Panel GUT suite checks tha
 the dynamic payout table reflects those controls, including a critical-cap value
 that must not be rounded by its slider.
 
-`Matchmaking_Queue.test.js` covers the Redis-locked multi-pod seating race.
+`Matchmaking_Queue.test.js` covers the Redis-locked multi-pod seating race and
+owner-published terminal close: both pods receive one `room_closed`, remote
+replicas and session room assignments are cleared, and a deleted room cannot be
+persisted back by engine teardown.
 `Profile_Store.test.js` covers offline PostgREST fallback, racing insert and
 header-only credentials. `Auth_Verifier.test.js` verifies JWT/Meta identity and
 rejections offline. Bot Manager, balance tools and Server Entry still have no
@@ -88,12 +91,10 @@ syntax-checked only. Run `npm run balance:simulate -- <levels> <runs>`.
   classifications, caps and Critical Save rejections. Sampled at **every
   placement**, not just level end.
 
-`gatePassed` is the number that matters most under a per-level Impact rule — a
-level can complete and still roll the team back. It routes through the engine's
-real `hasMetImpactScoreRequirement` rather than a simplified formula, so it reads
-the gate the server enforces. The intended shape is cooperative winning on
-completion and gate while greedy wins on MVP score; if greedy wins both, stability
-is tuned too forgiving for collapse to punish it.
+`gatePassed` is a useful single-level signal, but checkpoint progression is decided
+over a full Impact band. It routes through the engine's real
+`hasMetImpactScoreRequirement` rather than a simplified formula, so it reads the
+gate the server enforces. Use `impact:probe` for retry and terminal distributions.
 
 **Landmine — the cooldown model is not just pacing.** Drop it and one player
 places unboundedly in a row, which makes contribution read lopsided and the Impact
@@ -122,6 +123,14 @@ stacks, and gap-repair geometry across heights and levels through
 opening brick never collapses at any sampled level or difficulty, and probes
 clean height, direct repairs, dangerous height, transaction caps, Critical Saves
 and claim reuse.
+
+`src/Server/tools/Impact_Balance_Probe.js` (`npm run impact:probe -- <start-levels>
+<runs>`) drives full checkpoint bands through the shipped simulator decisions. It
+reports each strategy's personal contribution and expected-pool-share percentiles,
+all-player pass and checkpoint-reset rates, shortfalls, rollback distribution,
+Last Chance and terminal rates, Critical Save frequency, and whether failure paths
+restored checkpoint score and contribution. It is a tuning probe, not a second
+authority.
 
 Both are tuning aids, not gameplay authorities.
 
