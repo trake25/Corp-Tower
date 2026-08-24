@@ -398,7 +398,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:110 | show_quick_chat_bubble | **falls back to a score popup when the speaker has no rail entry**, otherwise builds a bubble anchored 8px right of the rail at that row's vertical centre, tweened intro then hold then fade |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:167 | make_chat_bubble_style | white card, 14px corners except bottom-left at 4 — the square corner is the tail pointing back at the rail row |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd — 182 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd — 180 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -412,8 +412,8 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:32 | update_score_lines | **adds live levelScore while is_playing()**, else banked only |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:74 | update_impact_status_ui | per-player Impact standing |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:94 | update_impact_track | Impact bar fill; resets to 0% when a band closes |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:147 | flash_impact_bars | Impact Beat bar flash |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:173 | _impact_glow_tint | flash colour |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:145 | flash_impact_bars | Impact Beat bar flash |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:171 | _impact_glow_tint | flash colour |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 349 ln
 

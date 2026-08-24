@@ -385,6 +385,10 @@ test("saveImpactPowers captures each player's current inventory", () => {
     assert.deepEqual(engine.room.impactPowers.P3, []);
 });
 
+test("Impact defaults each player's contribution share to thirty percent", () => {
+    assert.equal(GameConfig.impactMinContributionShare, 0.30);
+});
+
 test("Impact measures scored contribution with live points counted once", () => {
     const { engine } = createPlayingEngine(1, 10);
     const [first, second, third] = engine.room.players;

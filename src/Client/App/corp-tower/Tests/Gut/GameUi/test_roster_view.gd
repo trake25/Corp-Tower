@@ -95,6 +95,27 @@ func test_progressing_impact_bar_shows_player_avatar_marker() -> void:
 	assert_true((bar.get_node("%ImpactAvatarMarker") as Control).visible, "A progressing Impact bar should show the guide's avatar marker.")
 	assert_true((bar.get_node("%ImpactAvatarTexture") as TextureRect).texture.resource_path.ends_with("/9-Play/avatar-duck.png"), "The marker should use the player's mapped avatar.")
 
+func test_impact_bar_uses_authoritative_contribution_without_live_score_addition() -> void:
+	harness.main.players_ctx.roster = [{"id": "P1", "avatarId": "avatar_1"}]
+	roster().update_score_lines([{"id": "P1", "score": 0, "levelScore": 40}])
+	harness.main.match_state.current_match_state = "playing"
+	roster().update_impact_status_ui({
+		"requiredContribution": 40,
+		"requiredBandScore": 40,
+		"nextImpactLevel": 3,
+		"players": [{
+			"id": "P1",
+			"bandContribution": 20,
+			"bandScore": 0,
+			"requiredContribution": 40,
+			"requiredBandScore": 40,
+			"met": false
+		}]
+	})
+	var bar: Control = roster().impact_bars["P1"]
+	var fill: Panel = bar.get_node("%ImpactBarFill") as Panel
+	assert_almost_eq(fill.anchor_top, 0.5, 0.001, "The bar must use the server's 20/40 contribution instead of adding level score.")
+
 func test_empty_impact_bar_hides_fill_and_avatar_marker() -> void:
 	harness.main.players_ctx.roster = [{"id": "P1", "avatarId": "avatar_1"}]
 	roster().update_impact_status_ui({

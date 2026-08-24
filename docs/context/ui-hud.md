@@ -96,12 +96,12 @@ The `exact_finish`/`overbuild_finish` wire events arrive `displayOnly` and are
 **dropped before a popup is built** — the Top Indicator already shows that state
 live. Handle them only if you want a callout the indicator does not already give.
 
-**Live-score correction.** Each rail player's total and Impact Bar fill add the
-locally-tracked live `levelScore` **only while `is_playing()`** — total is
-`score` + live, bar is `bandScore / requiredBandScore` + live. This avoids
-double-counting a just-completed level during the finished/failed transition. The
-bar snapping to 0% right after a level that closes an Impact band is expected: it
-now tracks the next band's requirement.
+**Live-score correction.** Rail totals add locally-tracked live `levelScore` only
+while `is_playing()`. Impact bars instead use the server's canonical
+`bandContribution / requiredContribution`, which already includes live eligible
+contribution exactly once. The score-named fields remain an old-server fallback;
+the bar snapping to 0% after a checkpoint is expected because it now tracks the
+next band's requirement.
 
 **The round timer ticks locally every frame** off the deadline in the most recent
 broadcast, in every state — that local tick is why it still counts down through

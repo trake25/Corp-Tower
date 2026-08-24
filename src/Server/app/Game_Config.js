@@ -29,7 +29,7 @@ const GameConfig = {
     levelSummaryDelayMs: 4000,
     impactInterval: 2,
     impactScoreRequirement: 0,
-    impactMinContributionShare: 0.25,
+    impactMinContributionShare: 0.30,
     impactRecoverableFailures: 3,
     towerGridWidth: 8,
     placeableColumnMin: 2,

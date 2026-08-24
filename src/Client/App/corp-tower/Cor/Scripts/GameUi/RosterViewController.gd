@@ -78,8 +78,8 @@ func update_impact_status_ui(raw_status: Variant) -> void:
 
 	var status: Dictionary = raw_status
 	var required_band_score: int = int(status.get(
-		"requiredBandScore",
-		status.get("requiredScore", 0)
+		"requiredContribution",
+		status.get("requiredBandScore", status.get("requiredScore", 0))
 	))
 
 	if required_band_score <= 0:
@@ -117,15 +117,13 @@ func update_impact_track(player_statuses: Array, _next_impact_level: int) -> voi
 		bar.get_parent().move_child(bar, slot)
 
 		var required: int = int(player_status.get(
-			"requiredBandScore",
-			player_status.get("requiredScore", 0)
+			"requiredContribution",
+			player_status.get("requiredBandScore", player_status.get("requiredScore", 0))
 		))
 		var current: int = int(player_status.get(
-			"bandScore",
-			player_status.get("score", 0)
+			"bandContribution",
+			player_status.get("bandScore", player_status.get("score", 0))
 		))
-		if match_state.current_match_state == "playing":
-			current += int(player_level_scores.get(player_id, 0))
 		var ratio: float = 1.0 if bool(player_status.get("met", false)) else 0.0
 
 		if required > 0:

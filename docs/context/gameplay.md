@@ -306,7 +306,7 @@ categories round-trip to the server and which write straight to live nodes →
 [ui-hud.md](./ui-hud.md#module-notes-that-are-not-derivable-from-the-source).
 
 The three most load-bearing knobs: `towerStabilityDifficulty` (all of stability),
-`impactMinContributionShare` (the per-level gate), and
+`impactMinContributionShare` (the personal checkpoint requirement), and
 `towerSiteSlendernessTarget` (reshapes the whole aspect ratio, and with it the
 support width the structural rule is measured against).
 
