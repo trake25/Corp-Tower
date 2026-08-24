@@ -33,6 +33,9 @@ take geometry only. `Block_Supply` imports it; production callers still use the
 `Lobby_Manager.js` — matchmaking, room lifecycle and runtime debug coordination.
 `Debug_Config.js` owns the exposed snapshot, startup defaults and clamp policy;
 the lobby owns the bot/room reconciliation and broadcasts caused by a change.
+Its live scoring surface is limited to the useful-height rate, full-risk floor,
+direct-repair share, normal transaction cap, Critical Save bonus, and Critical
+Save cap; completion bonuses remain authored configuration.
 
 Maintains active rooms through shared Redis state; seats players into open
 3-participant rooms, filling with debug bots when allowed; lets real players resume

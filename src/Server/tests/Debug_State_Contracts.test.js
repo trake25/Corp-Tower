@@ -93,17 +93,23 @@ test("transaction scoring controls replace the retired scoring formulas", async 
     const original = {
         dangerousHeightFloor: GameConfig.scoring.dangerousHeightFloor,
         strongReinforcementActionShare: GameConfig.scoring.strongReinforcementActionShare,
-        normalCombinedCapActionShare: GameConfig.scoring.normalCombinedCapActionShare
+        normalCombinedCapActionShare: GameConfig.scoring.normalCombinedCapActionShare,
+        criticalSaveBonusActionShare: GameConfig.scoring.criticalSaveBonusActionShare,
+        criticalCombinedCapActionShare: GameConfig.scoring.criticalCombinedCapActionShare
     };
 
     try {
         await lobbyManager.updateDebugConfig("dangerousHeightFloor", 0);
         await lobbyManager.updateDebugConfig("strongReinforcementActionShare", 2);
         await lobbyManager.updateDebugConfig("normalCombinedCapActionShare", 10);
+        await lobbyManager.updateDebugConfig("criticalSaveBonusActionShare", 10);
+        await lobbyManager.updateDebugConfig("criticalCombinedCapActionShare", 10);
 
         assert.equal(GameConfig.scoring.dangerousHeightFloor, 0.1);
         assert.equal(GameConfig.scoring.strongReinforcementActionShare, 1);
         assert.equal(GameConfig.scoring.normalCombinedCapActionShare, 3);
+        assert.equal(GameConfig.scoring.criticalSaveBonusActionShare, 2);
+        assert.equal(GameConfig.scoring.criticalCombinedCapActionShare, 3);
 
         for (const key of [
             "placementStabilityFloor",
@@ -115,6 +121,16 @@ test("transaction scoring controls replace the retired scoring formulas", async 
         ]) {
             assert.equal(await lobbyManager.updateDebugConfig(key, 1), false, key);
             assert.equal(GameConfig.scoring[key], undefined, key);
+        }
+
+        for (const key of [
+            "finisherBonusPerLevel",
+            "precisionBonusPerLevel",
+            "teamExactBonusPerLevel",
+            "assistBonusPerLevel",
+            "assistContributionThreshold"
+        ]) {
+            assert.equal(await lobbyManager.updateDebugConfig(key, 1), false, key);
         }
     } finally {
         Object.assign(GameConfig.scoring, original);

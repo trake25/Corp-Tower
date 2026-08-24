@@ -54,6 +54,11 @@ phantom structural value; unknown derived/debug keys are positively rejected. An
 off-centre scoring case that asserts exact event types must zero live stability
 difficulty in `try`/`finally` or an unrelated warning joins the event list.
 
+`Debug_State_Contracts.test.js` also clamps the six live scoring transaction
+controls and rejects retired scoring dials. The Debug Panel GUT suite checks that
+the dynamic payout table reflects those controls, including a critical-cap value
+that must not be rounded by its slider.
+
 `Matchmaking_Queue.test.js` covers the Redis-locked multi-pod seating race.
 `Profile_Store.test.js` covers offline PostgREST fallback, racing insert and
 header-only credentials. `Auth_Verifier.test.js` verifies JWT/Meta identity and

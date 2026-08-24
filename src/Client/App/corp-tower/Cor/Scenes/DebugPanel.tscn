@@ -346,6 +346,13 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
+[node name="PlacementScoreTableLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows"]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Placement Score Table  ⓘ"
+
 [node name="PlacementScoreLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=352407178]
 unique_name_in_owner = true
 layout_mode = 2
@@ -354,61 +361,6 @@ alignment = 0
 text = "Placement Score/Height: 0"
 
 [node name="PlacementScoreSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1024438532]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="FinisherBonusLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=139808929]
-unique_name_in_owner = true
-layout_mode = 2
-flat = true
-alignment = 0
-text = "Finisher Bonus/Level: 0"
-
-[node name="FinisherBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1807352692]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="PrecisionBonusLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1710362908]
-unique_name_in_owner = true
-layout_mode = 2
-flat = true
-alignment = 0
-text = "Precision Bonus/Level: 8"
-
-[node name="PrecisionBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1462440336]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="TeamExactBonusLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=2039693562]
-unique_name_in_owner = true
-layout_mode = 2
-flat = true
-alignment = 0
-text = "Team Exact Bonus/Level: 6"
-
-[node name="TeamExactBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1929465846]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="AssistBonusLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1213208760]
-unique_name_in_owner = true
-layout_mode = 2
-flat = true
-alignment = 0
-text = "Assist Bonus/Level: Off"
-
-[node name="AssistBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=798699984]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="AssistThresholdLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1469810237]
-unique_name_in_owner = true
-layout_mode = 2
-flat = true
-alignment = 0
-text = "Assist Threshold: 0%"
-
-[node name="AssistThresholdSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=1297854840]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -428,7 +380,7 @@ unique_name_in_owner = true
 layout_mode = 2
 flat = true
 alignment = 0
-text = "Strong Reinforcement: 85%"
+text = "Strong Direct Repair: 85% action"
 
 [node name="ReinforceIntegritySlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000304]
 unique_name_in_owner = true
@@ -439,9 +391,31 @@ unique_name_in_owner = true
 layout_mode = 2
 flat = true
 alignment = 0
-text = "Normal Combined Cap: 160%"
+text = "Normal Transaction Cap: 160% action"
 
 [node name="ReinforceLeanSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows" unique_id=3311000306]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CriticalSaveBonusLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows"]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Critical Save Bonus: 100% action"
+
+[node name="CriticalSaveBonusSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CriticalSaveCapLabel" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows"]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+text = "Critical Save Cap: 225% action"
+
+[node name="CriticalSaveCapSlider" type="HSlider" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Scoring/ScoringRows"]
 unique_name_in_owner = true
 layout_mode = 2
 

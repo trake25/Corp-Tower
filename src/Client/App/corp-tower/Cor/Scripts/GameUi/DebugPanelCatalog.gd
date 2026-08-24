@@ -85,40 +85,28 @@ const DEBUG_TOOLTIPS := {
 		"body": "How much of the site a tower is assumed to actually occupy when sizing supply.\n\nefficiency = cells per brick / (avg brick height x (site width x this + 0.5))\n\nLower = assumes a narrow tower, deals fewer bricks. Raise if levels run dry.",
 	},
 	"PlacementScoreLabel": {
-		"title": "Placement Score / Height",
-		"body": "The core earner, paid per unit of useful height your brick adds.\n\nThe server scores useful height and one matched structural improvement as a single transaction. A risky height gain is reduced by the risk this brick added, while a direct repair can earn structural value.\n\nEffective height is capped by the height still missing, so late placements pay less.",
+		"title": "Useful Height Rate",
+		"body": "The clean score for each unit the top of the tower rises.\n\nclean points = this x level x effective height\n\nOpen Placement Score Table for the current player-facing values across representative levels.",
 	},
 	"PlacementStabilityFloorLabel": {
 		"title": "Dangerous Height Floor",
 		"body": "The lowest share of clean height points a risky placement can keep.\n\nThe server grades the risk this brick adds, not the tower it inherited.\n\nLower makes dangerous height less rewarding; it never changes collapse rules.",
 	},
 	"ReinforceIntegrityLabel": {
-		"title": "Strong Reinforcement",
+		"title": "Strong Direct Repair",
 		"body": "The share of one average useful-height action awarded for a strong, direct structural repair.\n\nThe server pays one matched support improvement, so Integrity, lean, and repaired cells cannot stack for the same fix.",
 	},
 	"ReinforceLeanLabel": {
-		"title": "Normal Combined Cap",
+		"title": "Normal Transaction Cap",
 		"body": "The largest normal placement total in average-action units, unless its useful height already exceeds that limit.\n\nThis constrains height plus structural value once, after both components are computed.",
 	},
-	"FinisherBonusLabel": {
-		"title": "Finisher Bonus / Level",
-		"body": "Flat reward to whoever places the final brick, exact or not.\n\npoints = level x this\n\nDefault 0 on purpose: overbuilding to steal the finish should earn nothing.",
+	"CriticalSaveBonusLabel": {
+		"title": "Critical Save Bonus",
+		"body": "The extra average-action share awarded when a direct repair moves a mature tower from critical to safe.\n\nIt is limited by the Critical Save cap and can only be claimed once per repaired interface.",
 	},
-	"PrecisionBonusLabel": {
-		"title": "Precision Bonus / Level",
-		"body": "Paid only to the player who finishes the tower at EXACTLY the target height.\n\npoints = level x this\n\nThe main individual prize for a Perfect Build.",
-	},
-	"TeamExactBonusLabel": {
-		"title": "Team Exact Bonus / Level",
-		"body": "Paid to EVERY player on an exact finish.\n\npoints = level x this\n\nThe cooperative counterweight to the Precision bonus, and a big help toward each player's Impact share.",
-	},
-	"AssistBonusLabel": {
-		"title": "Assist Bonus / Level",
-		"body": "Optional reward for players who cleared the assist threshold but did not finish.\n\npoints = level x this\n\nDisabled at 0 by default.",
-	},
-	"AssistThresholdLabel": {
-		"title": "Assist Threshold",
-		"body": "Minimum contribution share needed to qualify for the Assist bonus. Only matters when Assist Bonus is above 0.",
+	"CriticalSaveCapLabel": {
+		"title": "Critical Save Cap",
+		"body": "The highest total for a placement that includes a Critical Save, in average-action units. Useful-height points are always retained before this cap trims other components.",
 	},
 
 	"PowerReplenishShareLabel": {

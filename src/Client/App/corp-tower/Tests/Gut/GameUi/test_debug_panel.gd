@@ -23,7 +23,13 @@ const CONFIG_FIXTURE := {
 	"visualHookZoomOutMs": 500,
 	"visualHookWaveMs": 300,
 	"visualHookHoldMs": 200,
-	"visualHookShakeMs": 340
+	"visualHookShakeMs": 340,
+	"placementScorePerHeight": 12,
+	"dangerousHeightFloor": 0.4,
+	"strongReinforcementActionShare": 0.9,
+	"normalCombinedCapActionShare": 1.7,
+	"criticalSaveBonusActionShare": 1.1,
+	"criticalCombinedCapActionShare": 2.25
 }
 
 var harness
@@ -68,6 +74,29 @@ func test_apply_config_refreshes_value_labels() -> void:
 	assert_eq((harness.find("CooldownLabel") as Label).text, "Placement Cooldown: 1500 ms", "The cooldown label should reflect the synced slider value.")
 	assert_eq((harness.find("LevelTimeLabel") as Label).text, "Level Time: 45 sec", "The level time label should reflect the synced slider value.")
 	assert_eq((harness.find("BotCountLabel") as Label).text, "Bot Count: 2", "The bot count label should reflect the synced slider value.")
+
+func test_scoring_table_uses_the_transaction_controls() -> void:
+	harness.main.update_debug_config(CONFIG_FIXTURE)
+	var rows: Node = harness.find("ScoringRows")
+	var table_button: Button = harness.find("PlacementScoreTableLabel") as Button
+
+	assert_eq(table_button.get_parent(), rows, "The score table opener belongs to the Scoring category.")
+	assert_eq((harness.find("PlacementScoreSlider") as HSlider).value, 12.0)
+	assert_eq((harness.find("CriticalSaveBonusSlider") as HSlider).value, 110.0)
+	assert_eq((harness.find("CriticalSaveCapSlider") as HSlider).value, 225.0)
+	assert_eq((harness.find("PlacementScoreLabel") as Button).text, "Useful Height Rate: 12")
+	assert_eq((harness.find("CriticalSaveBonusLabel") as Button).text, "Critical Save Bonus: 110% action")
+	assert_null(harness.find("FinisherBonusLabel"), "Completion bonuses are not placement transaction knobs.")
+
+	table_button.pressed.emit()
+
+	assert_true((harness.find("DebugTooltip") as Control).visible, "The score table opens in the shared debug tooltip.")
+	var body: String = (harness.find("TooltipBodyLabel") as Label).text
+	assert_true(body.contains("CLEAN: +1 / +2 / +3 / +4 HEIGHT"))
+	assert_true(body.contains("L1:12/24/36/48"))
+	assert_true(body.contains("REPAIR MAX / SAVE"))
+	assert_true(body.contains("Full new-risk: 40% clean score."))
+	assert_true(body.contains("Critical cap: 225% action."))
 
 func test_apply_config_updates_popup_and_summary_durations() -> void:
 	harness.main.update_debug_config(CONFIG_FIXTURE)

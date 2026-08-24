@@ -171,6 +171,12 @@ height do not share a bottom edge.
 Debug categories are a **dropdown**, not a tab header — the category count grows
 and a header does not scale with it.
 
+The Scoring category begins with a `Placement Score Table` tooltip. It derives
+clean useful-height payouts for representative levels, direct-repair and eligible
+Critical Save payouts for a standard brick, the full-risk floor, and the normal
+and Critical Save caps from the six live scoring transaction controls. Completion
+bonuses remain authored configuration rather than debug dials.
+
 `ScorePopupLayer` renders one popup per server score event. Placement appearance
 comes from `meta.classification`; a `critical_save` is an emphasized finish-style
 toast, and popup centers are constrained by their rendered size so player lanes

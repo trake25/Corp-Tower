@@ -68,18 +68,18 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Bot_Manager.js:294 | chooseBotPlacement | column × release-row search, two-stage proxy then `evaluate()` |
 | src/Server/app/Bot_Manager.js:402 | chooseBotAction | returns `{type:"place"}` or **`{type:"wait"}`**; callers must handle both |
 
-### src/Server/app/Debug_Config.js — 184 ln
+### src/Server/app/Debug_Config.js — 178 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Server/app/Debug_Config.js:3 | FIELD_PATHS · const | exposed debug keys mapped to their owning config object and property |
-| src/Server/app/Debug_Config.js:57 | RULES · const | authoritative type, range and allowlist policy for debug updates |
-| src/Server/app/Debug_Config.js:111 | target · fn | resolves a root, scoring or visual-hooks config owner |
-| src/Server/app/Debug_Config.js:115 | snapshot · fn | serializable debug configuration sent to clients |
-| src/Server/app/Debug_Config.js:121 | DEFAULTS · const | startup snapshot restored by resetDebugConfig |
-| src/Server/app/Debug_Config.js:123 | applyDefaults · fn | restores every exposed debug value to its startup setting |
-| src/Server/app/Debug_Config.js:130 | resolveBound · fn | evaluates static or GameConfig-derived clamp bounds |
-| src/Server/app/Debug_Config.js:134 | applyValue · fn | validates, clamps and applies one exposed debug value |
+| src/Server/app/Debug_Config.js:54 | RULES · const | authoritative type, range and allowlist policy for debug updates |
+| src/Server/app/Debug_Config.js:105 | target · fn | resolves a root, scoring or visual-hooks config owner |
+| src/Server/app/Debug_Config.js:109 | snapshot · fn | serializable debug configuration sent to clients |
+| src/Server/app/Debug_Config.js:115 | DEFAULTS · const | startup snapshot restored by resetDebugConfig |
+| src/Server/app/Debug_Config.js:117 | applyDefaults · fn | restores every exposed debug value to its startup setting |
+| src/Server/app/Debug_Config.js:124 | resolveBound · fn | evaluates static or GameConfig-derived clamp bounds |
+| src/Server/app/Debug_Config.js:128 | applyValue · fn | validates, clamps and applies one exposed debug value |
 
 ### src/Server/app/Game_Config.js — 161 ln
 
