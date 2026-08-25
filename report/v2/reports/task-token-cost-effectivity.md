@@ -1,13 +1,13 @@
 # Task token cost & effectivity
 
-<!-- GENERATED FILE. Source: report/task-records.jsonl and report/task-cycle-reviews.jsonl. Run node scripts/task-report.mjs render. -->
+<!-- GENERATED FILE. Source: report/v2/data/task-records.jsonl and report/v2/data/task-cycle-reviews.jsonl. Run node scripts/task-report.mjs render. -->
 
 This report is generated from structured task records. Historical records retain
 their legacy source and warnings; unavailable measurements are not guessed.
 
 ## Definitions
 
-The table uses R-est for the intake estimate, R-act for source-read tokens, Tot for all observed tokens, and Main for main-thread tokens. A tilde marks an estimated measurement.
+The table uses R-est for the intake estimate, R-act for source-read tokens, Tot for all observed tokens, and Main for main-thread tokens. New v2 rows estimate total_tokens; legacy rows preserve their source-read estimate target. A tilde marks an estimated measurement.
 
 | Retrieval result | Definition |
 |---|---|
@@ -20,7 +20,7 @@ Model is the exact implementing runtime variant for standard records. Legacy row
 
 ## Cycle 6 (open)
 
-Current cycle: 17 recorded row(s); next row is 18.
+Current cycle: 18 recorded row(s); next row is 19.
 
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -41,7 +41,8 @@ Current cycle: 17 recorded row(s); next row is 18.
 | 15 | Add push-only backup branch mode | 2 | implementation | 3 | 4 | ~700 | 700 | 2,800 | 2,100 | ✓ | pass | gpt-5-codex | moderate | infra-engineer,docs-steward |
 | 16 | Relocate machine task automation state | 3 | implementation | 3 | 8 | ~2,200 | 2,200 | 6,200 | 4,300 | ✓ | pass | gpt-5-codex | high | infra-engineer,docs-steward |
 | 17 | Route completed plans to plan done | 1 | policy | 3 | 3 | ~700 | 700 | 1,800 | 1,400 | ✓ | pass | gpt-5-codex | low | docs-steward |
-<!-- next: row 18 -->
+| 18 | Implement task reporting v3 plan | 3 | implementation | 3 | 21 | ~30,000 | unavailable | 6,877,080 | 6,877,080 | ✓ | pass | gpt-5.6-luna | xhigh | infra-engineer,docs-steward,qa-engineer,update-docs |
+<!-- next: row 19 -->
 
 ## Cycle 5 (closed)
 

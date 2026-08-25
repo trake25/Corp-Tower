@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mapOwnerForPath, routeSourcePath } from './lib/context-routing.mjs';
 import { isUnrecordedModel } from './lib/task-report-schema.mjs';
+import { estimateFromBucket, hashSession, readV3Samples } from './lib/task-report-v3.mjs';
+import { readRuntimeMetadata } from './lib/task-report-runtime.mjs';
 import { selectQa } from './qa-gate.mjs';
 
 const ROOT = resolve(process.env.TASK_CLOSE_ROOT || '.');
@@ -88,7 +90,7 @@ function domainFor(path) {
   return 'repository';
 }
 
-export function createManifest({ task, changedPaths, estimate = null, runtime = null }) {
+export function createManifest({ task, changedPaths, estimate = null, runtime = null, complexity = null, session = null, runId = null, taskStartedAt = null, usageBaseline = null }) {
   if (!task || task.length > 120) throw new Error('task must be present and at most 120 characters');
   const changed = [...new Set(changedPaths)].sort();
   if (!changed.length) throw new Error('one or more changed paths are required');
@@ -122,6 +124,11 @@ export function createManifest({ task, changedPaths, estimate = null, runtime = 
     },
     estimate,
     runtime,
+    complexity: complexity === null ? null : { estimated: complexity },
+    session: session ? { hash: session.hash || hashSession(session.id), fresh: Boolean(session.fresh), provenance: session.provenance || 'adapter' } : null,
+    run_id: runId || randomUUID(),
+    task_started_at: taskStartedAt || null,
+    usage_baseline: usageBaseline || null,
     verification: null,
     report: null,
   };
@@ -133,20 +140,31 @@ function manifestFingerprint(manifest) {
   return createHash('sha256').update(JSON.stringify(copy)).digest('hex');
 }
 
-function intakeEstimate(values) {
-  const raw = one(values, 'r-est', true);
-  const tokens = Number(String(raw).replaceAll(',', ''));
+function intakeEstimate(values, { samples = [], model = null, effort = null, complexity = null } = {}) {
+  const raw = one(values, 'r-est');
+  const bucketMedian = raw === undefined && model && effort && complexity ? estimateFromBucket(samples, { model, effort, estimatedComplexity: complexity, freshSession: Boolean(one(values, 'fresh-session') === 'true') }) : null;
+  if (raw === undefined && bucketMedian === null) fail('--r-est is required until a matching closed v3 bucket median is available');
+  const tokens = Number(String(raw === undefined ? bucketMedian : raw).replaceAll(',', ''));
   if (!Number.isInteger(tokens) || tokens < 0) fail('--r-est must be a non-negative integer token estimate');
-  const basis = one(values, 'r-est-basis', true).trim();
-  if (!basis) fail('--r-est-basis must explain the estimate');
-  return { tokens, timing: 'pre-read', basis, recorded_at: new Date().toISOString(), route_count: null, manifest_hash: null };
+  const basis = bucketMedian === null ? 'manual' : 'bucket-median';
+  return { tokens, timing: 'pre-read', basis, source: bucketMedian === null ? 'manual' : 'bucket-median', recorded_at: new Date().toISOString(), route_count: null, manifest_hash: null };
 }
 
-function intakeRuntime(values) {
+function intakeRuntime(values, metadata = {}) {
   if (values.get('model')) fail('--model is not an intake option; use --model-variant with task-close prepare');
-  const model = one(values, 'model-variant', true).trim();
+  const model = String(metadata.model || one(values, 'model-variant') || '').trim();
+  if (!model) fail('active runtime model is unavailable; supply --model-variant as the validated fallback');
   if (isUnrecordedModel(model)) fail('--model-variant must be the exact implementing runtime variant');
-  return { model, recorded_at: new Date().toISOString() };
+  const effort = String(metadata.effort || one(values, 'effort') || '').trim();
+  if (!effort) fail('active runtime effort is unavailable; supply --effort as the validated fallback');
+  return { model, effort, adapter: metadata.adapter || 'explicit-fallback', provenance: metadata.provenance || 'explicit-fallback', recorded_at: new Date().toISOString() };
+}
+
+function intakeComplexity(values) {
+  const raw = one(values, 'complexity', true);
+  const complexity = Number(raw);
+  if (!Number.isInteger(complexity) || complexity < 1 || complexity > 5) fail('--complexity must be an integer from 1 to 5');
+  return complexity;
 }
 
 export function applyDocumentationDecision(manifest, { decision, reason, documentedPaths = [] }) {
@@ -176,6 +194,12 @@ export function intakeForManifest(manifest, manifestFile) {
       task_owned_paths: manifest.changed_paths,
       estimate: manifest.estimate,
       runtime: manifest.runtime,
+      complexity: manifest.complexity,
+      session: manifest.session,
+      run_id: manifest.run_id,
+      task_started_at: manifest.task_started_at,
+      task_started_at_source: manifest.task_started_at_source || null,
+      usage_baseline: manifest.usage_baseline,
       routes: manifest.routes,
       qa: manifest.qa,
       documentation: {
@@ -272,30 +296,55 @@ function report(manifest, manifestFile, values) {
   if (manifest.verification?.status !== 'passed') fail('verification must pass before reporting', 1);
   if (values.get('r-est') || values.get('r-est-basis')) fail('estimate flags are intake-only; record them with task-close prepare before retrieval', 1);
   if (values.get('model') || values.get('model-variant')) fail('model variant is intake-only; record it with task-close prepare before retrieval', 1);
-  if (!manifest.estimate || manifest.estimate.timing !== 'pre-read' || !Number.isInteger(manifest.estimate.tokens)) fail('manifest has no valid pre-read estimate; rerun task-close prepare with --r-est and --r-est-basis', 1);
-  if (!manifest.runtime || isUnrecordedModel(manifest.runtime.model)) fail('manifest has no exact model variant; rerun task-close prepare with --model-variant', 1);
+  if (!manifest.estimate || manifest.estimate.timing !== 'pre-read' || !Number.isInteger(manifest.estimate.tokens)) fail('manifest has no valid pre-read estimate; rerun task-close prepare with --r-est', 1);
+  if (!manifest.runtime || isUnrecordedModel(manifest.runtime.model)) fail('manifest has no exact model variant; rerun task-close prepare with the runtime adapter or --model-variant', 1);
   if (!manifest.verification.receipt) fail('verification receipt is missing; rerun task-close verify', 1);
-  const required = ['complexity', 'mode', 'r-act', 'total', 'main', 'hit', 'verdict', 'effort', 'skills'];
+  const required = ['complexity', 'mode', 'hit', 'verdict', 'effort', 'skills'];
+  if (!manifest.usage_baseline) required.push('r-act', 'total', 'main');
   for (const key of required) one(values, key, true);
+  if (String(one(values, 'complexity')) !== String(manifest.complexity?.estimated ?? one(values, 'complexity'))) fail('estimated complexity is intake-only and cannot change after prepare');
+  if (String(one(values, 'effort')) !== String(manifest.runtime.effort)) fail('runtime effort is intake-only and cannot change after prepare');
   const files = new Set([...manifest.changed_paths, ...manifest.documentation.documented_paths]);
-  const args = ['scripts/task-report.mjs', 'append', '--manifest', displayPath(manifestFile), '--receipt', manifest.verification.receipt, '--domains', String(manifest.domains.length), '--files', String(files.size)];
+  const args = ['scripts/task-report.mjs', 'append', '--stage', '--manifest', displayPath(manifestFile), '--receipt', manifest.verification.receipt, '--domains', String(manifest.domains.length), '--files', String(files.size)];
   for (const key of required) args.push(`--${key}`, one(values, key, true));
   const summary = one(values, 'summary');
   if (summary) args.push('--summary', summary);
+  const optionalV3 = ['actual-complexity', 'complexity-reason', 'input-tokens', 'cached-input-tokens', 'cache-write-input-tokens', 'output-tokens', 'reasoning-output-tokens', 'aggregate-worker-tokens', 'workers', 'active-agent-seconds', 'wall-duration-seconds', 'task-started-at', 'finalized-at', 'total-kind', 'main-kind', 'token-provenance'];
+  for (const key of optionalV3) {
+    const current = one(values, key);
+    if (values.has(key)) args.push(`--${key}`, current);
+  }
   const step = runStep('task report append', args);
   if (step.status !== 0) fail(`FAIL — ${step.name}: ${step.summary || 'no summary'}`, 1);
-  manifest.report = { status: 'appended', summary: step.summary };
+  manifest.report = { status: 'staged', summary: step.summary };
   writeManifest(manifestFile, manifest);
   console.log(`PASS — ${step.summary}`);
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   const command = args.shift();
   const values = parseArgs(args);
   if (command === 'prepare') {
     const manifestFile = safePath(one(values, 'output') || one(values, 'manifest') || DEFAULT_MANIFEST, '--output');
-    const manifest = createManifest({ task: one(values, 'task', true), changedPaths: normalizePaths(many(values, 'changed')), estimate: intakeEstimate(values), runtime: intakeRuntime(values) });
+    const task = one(values, 'task', true);
+    const complexity = intakeComplexity(values);
+    const runtimeMetadata = await readRuntimeMetadata({ env: process.env, task, samples: readV3Samples(ROOT) });
+    const runtime = intakeRuntime(values, runtimeMetadata);
+    const estimate = intakeEstimate(values, { samples: readV3Samples(ROOT), model: runtime.model, effort: runtime.effort, complexity });
+    const manifest = createManifest({
+      task,
+      changedPaths: normalizePaths(many(values, 'changed')),
+      estimate,
+      runtime,
+      complexity,
+      session: { hash: runtimeMetadata.session_hash, fresh: runtimeMetadata.fresh_session, provenance: runtimeMetadata.provenance },
+      taskStartedAt: runtimeMetadata.task_started_at || new Date().toISOString(),
+      usageBaseline: runtimeMetadata.usage_baseline,
+    });
+    manifest.task_started_at_source = runtimeMetadata.task_started_at ? 'first-user-event' : 'prepare-fallback';
+    manifest.runtime.transcript = runtimeMetadata.transcript || null;
+    manifest.runtime.session_hash = runtimeMetadata.session_hash || null;
     manifest.estimate.route_count = manifest.routes.length;
     if (manifest.documentation.source_changed) {
       const scope = runStep('documentation scope', ['scripts/docs-scope.mjs', ...manifest.changed_paths], true);
@@ -331,4 +380,4 @@ function main() {
   fail('usage: node scripts/task-close.mjs <prepare|decide|verify|report> ...');
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main().catch(error => fail(error.message));

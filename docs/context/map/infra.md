@@ -770,7 +770,7 @@ _no extracted symbols_
 | scripts/lib/context-query.mjs:309 | selectedText · fn | reopens only selected evidence while assembling a context bundle |
 | scripts/lib/context-query.mjs:318 | contextBundle · fn | writes a hard-bounded Markdown handoff with selected evidence and provenance |
 
-### scripts/lib/context-routing.mjs — 201 ln
+### scripts/lib/context-routing.mjs — 203 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -781,17 +781,17 @@ _no extracted symbols_
 | scripts/lib/context-routing.mjs:16 | hudFiles · const | hud files constant used by context-routing |
 | scripts/lib/context-routing.mjs:33 | MAP_AREAS · const | map areas constant used by context-routing |
 | scripts/lib/context-routing.mjs:65 | ROUTE_RULES · const | route rules constant used by context-routing |
-| scripts/lib/context-routing.mjs:111 | AREA_ALIASES · const | area aliases constant used by context-routing |
-| scripts/lib/context-routing.mjs:127 | WORKSPACE_RULES · const | routes plan and reference working folders with explicit read/write policy |
-| scripts/lib/context-routing.mjs:151 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
-| scripts/lib/context-routing.mjs:159 | mapOwnerForPath · fn | returns the generated map that owns a source path |
-| scripts/lib/context-routing.mjs:163 | IGNORE_DIR · const | ignore dir constant used by context-routing |
-| scripts/lib/context-routing.mjs:164 | IGNORE_PATH · const | ignore path constant used by context-routing |
-| scripts/lib/context-routing.mjs:165 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
-| scripts/lib/context-routing.mjs:166 | norm · const | norm constant used by context-routing |
-| scripts/lib/context-routing.mjs:168 | walk · fn | walk operation implemented by context-routing |
-| scripts/lib/context-routing.mjs:179 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
-| scripts/lib/context-routing.mjs:200 | isExempt · const | reports whether a first-party path is exempt from map coverage |
+| scripts/lib/context-routing.mjs:113 | AREA_ALIASES · const | area aliases constant used by context-routing |
+| scripts/lib/context-routing.mjs:129 | WORKSPACE_RULES · const | routes plan and reference working folders with explicit read/write policy |
+| scripts/lib/context-routing.mjs:153 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
+| scripts/lib/context-routing.mjs:161 | mapOwnerForPath · fn | returns the generated map that owns a source path |
+| scripts/lib/context-routing.mjs:165 | IGNORE_DIR · const | ignore dir constant used by context-routing |
+| scripts/lib/context-routing.mjs:166 | IGNORE_PATH · const | ignore path constant used by context-routing |
+| scripts/lib/context-routing.mjs:167 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
+| scripts/lib/context-routing.mjs:168 | norm · const | norm constant used by context-routing |
+| scripts/lib/context-routing.mjs:170 | walk · fn | walk operation implemented by context-routing |
+| scripts/lib/context-routing.mjs:181 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
+| scripts/lib/context-routing.mjs:202 | isExempt · const | reports whether a first-party path is exempt from map coverage |
 
 ### scripts/lib/task-report-analysis.mjs — 144 ln
 
@@ -827,6 +827,23 @@ _no extracted symbols_
 | scripts/lib/task-report-render.mjs:53 | renderReport · fn | renders cycles and rows in stable order from JSONL records and reviews |
 | scripts/lib/task-report-render.mjs:84 | readGeneratedHeader · fn | reads the bounded generated-file header for freshness tooling |
 
+### scripts/lib/task-report-runtime.mjs — 164 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/lib/task-report-runtime.mjs:8 | filesUnder · fn | walks a bounded runtime-session directory for matching transcripts |
+| scripts/lib/task-report-runtime.mjs:20 | timestamp · fn | normalizes transcript timestamps to milliseconds |
+| scripts/lib/task-report-runtime.mjs:29 | payloadFor · fn | selects the event payload envelope |
+| scripts/lib/task-report-runtime.mjs:33 | effectiveContext · fn | applies collaboration-mode model and effort precedence |
+| scripts/lib/task-report-runtime.mjs:43 | resolveTranscriptPath · fn | resolves the active Codex transcript from a thread id or explicit path |
+| scripts/lib/task-report-runtime.mjs:54 | metadataFile · fn | locates the host-written runtime metadata contract |
+| scripts/lib/task-report-runtime.mjs:59 | parseMetadataFile · fn | parses optional host metadata without exposing values |
+| scripts/lib/task-report-runtime.mjs:63 | readTranscript · fn | streams runtime context, usage, and timing events from a transcript |
+| scripts/lib/task-report-runtime.mjs:91 | readRuntimeMetadata · fn | returns adapter provenance, effective runtime, session hash, baseline, and events |
+| scripts/lib/task-report-runtime.mjs:121 | usageDelta · fn | subtracts cumulative runtime counters at task close |
+| scripts/lib/task-report-runtime.mjs:127 | completionTiming · fn | sums active model/tool intervals and wall duration |
+| scripts/lib/task-report-runtime.mjs:160 | taskStartFromEvents · fn | finds the first matching user task event with a fallback |
+
 ### scripts/lib/task-report-schema.mjs — 172 ln
 
 | File:Ln | Symbol | Does |
@@ -850,7 +867,7 @@ _no extracted symbols_
 | scripts/lib/task-report-schema.mjs:155 | parseMeasurement · fn | normalizes Markdown measurement text with provenance kind |
 | scripts/lib/task-report-schema.mjs:163 | parseEstimate · fn | normalizes legacy estimate timing and token value without guessing |
 
-### scripts/lib/task-report-storage.mjs — 75 ln
+### scripts/lib/task-report-storage.mjs — 86 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -858,14 +875,66 @@ _no extracted symbols_
 | scripts/lib/task-report-storage.mjs:5 | DEFAULT_REVIEWS_FILE · const | names the cycle review JSONL file |
 | scripts/lib/task-report-storage.mjs:6 | DEFAULT_STATE_FILE · const | names the open-cycle state file |
 | scripts/lib/task-report-storage.mjs:7 | DEFAULT_REPORT_FILE · const | names the generated Markdown presentation |
-| scripts/lib/task-report-storage.mjs:9 | rootPath · fn | resolves reporting artifacts under the configured root |
-| scripts/lib/task-report-storage.mjs:13 | readJsonl · fn | parses newline-delimited JSON with line-specific errors |
-| scripts/lib/task-report-storage.mjs:21 | jsonl · fn | serializes records as stable newline-delimited JSON |
-| scripts/lib/task-report-storage.mjs:25 | writeJsonl · fn | writes a JSONL artifact and creates its parent directory |
-| scripts/lib/task-report-storage.mjs:30 | readJson · fn | reads an optional JSON artifact with a fallback |
-| scripts/lib/task-report-storage.mjs:35 | writeJson · fn | writes formatted JSON state |
-| scripts/lib/task-report-storage.mjs:40 | atomicWrites · fn | stages and renames related reporting artifacts together |
-| scripts/lib/task-report-storage.mjs:56 | stateFromRecords · fn | derives open-cycle and next-row state for migration or fixtures |
+| scripts/lib/task-report-storage.mjs:8 | LEGACY_RECORDS_FILE · const | names the pre-migration v2 record path used by fixture compatibility |
+| scripts/lib/task-report-storage.mjs:9 | LEGACY_REVIEWS_FILE · const | names the pre-migration v2 review path used by fixture compatibility |
+| scripts/lib/task-report-storage.mjs:10 | LEGACY_STATE_FILE · const | names the pre-migration v2 state path used by fixture compatibility |
+| scripts/lib/task-report-storage.mjs:11 | LEGACY_REPORT_FILE · const | names the pre-migration v2 report path used by fixture compatibility |
+| scripts/lib/task-report-storage.mjs:13 | rootPath · fn | resolves reporting artifacts under the configured root |
+| scripts/lib/task-report-storage.mjs:17 | resolveReportPath · fn | selects an explicit, migrated, or legacy-compatible report artifact |
+| scripts/lib/task-report-storage.mjs:25 | readJsonl · fn | parses newline-delimited JSON with line-specific errors |
+| scripts/lib/task-report-storage.mjs:33 | jsonl · fn | serializes records as stable newline-delimited JSON |
+| scripts/lib/task-report-storage.mjs:37 | writeJsonl · fn | writes a JSONL artifact and creates its parent directory |
+| scripts/lib/task-report-storage.mjs:42 | readJson · fn | reads an optional JSON artifact with a fallback |
+| scripts/lib/task-report-storage.mjs:47 | writeJson · fn | writes formatted JSON state |
+| scripts/lib/task-report-storage.mjs:52 | atomicWrites · fn | stages and renames related reporting artifacts together |
+| scripts/lib/task-report-storage.mjs:68 | stateFromRecords · fn | derives open-cycle and next-row state for migration or fixtures |
+
+### scripts/lib/task-report-v3.mjs — 389 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/lib/task-report-v3.mjs:7 | V3_SCHEMA_VERSION · const | versions v3 samples independently from v2 records |
+| scripts/lib/task-report-v3.mjs:8 | V3_CYCLE_SIZE · const | fixes every bucket cycle at twelve samples |
+| scripts/lib/task-report-v3.mjs:9 | V3_SAMPLES_FILE · const | names the append-only v3 sample store |
+| scripts/lib/task-report-v3.mjs:10 | V3_INDEX_FILE · const | names the compact v3 dashboard |
+| scripts/lib/task-report-v3.mjs:11 | V3_REPORT_ROOT · const | names the per-model effort and complexity report root |
+| scripts/lib/task-report-v3.mjs:12 | COMPLEXITY_RUBRIC · const | defines the five intake and calibration complexity levels |
+| scripts/lib/task-report-v3.mjs:20 | MEASUREMENT_FIELDS · const | lists runtime token counters captured with provenance |
+| scripts/lib/task-report-v3.mjs:30 | COMPLEXITY_REASONS · const | constrains reasons for realized complexity changes |
+| scripts/lib/task-report-v3.mjs:31 | RETRIEVAL_RESULTS · const | constrains normalized retrieval outcomes |
+| scripts/lib/task-report-v3.mjs:33 | object · fn | identifies JSON objects for v3 validation |
+| scripts/lib/task-report-v3.mjs:37 | text · fn | validates bounded text fields |
+| scripts/lib/task-report-v3.mjs:42 | integer · fn | validates bounded integer fields |
+| scripts/lib/task-report-v3.mjs:47 | number · fn | validates bounded duration fields |
+| scripts/lib/task-report-v3.mjs:52 | measurement · fn | normalizes exact, estimated, or unavailable runtime counters |
+| scripts/lib/task-report-v3.mjs:59 | hashSession · fn | hashes a runtime session identifier without storing the raw id |
+| scripts/lib/task-report-v3.mjs:64 | normalizeSegment · fn | creates readable safe report path segments |
+| scripts/lib/task-report-v3.mjs:68 | bucketKey · fn | identifies an exact model, effort, and estimated-complexity bucket |
+| scripts/lib/task-report-v3.mjs:72 | bucketPath · fn | resolves one human-readable bucket report path |
+| scripts/lib/task-report-v3.mjs:76 | sampleBucket · fn | derives a sample bucket key |
+| scripts/lib/task-report-v3.mjs:80 | bucketParts · fn | groups samples into independently ordered buckets |
+| scripts/lib/task-report-v3.mjs:91 | median · fn | calculates a rounded median for bounded metrics |
+| scripts/lib/task-report-v3.mjs:100 | percentile · fn | calculates an interpolated percentile for bounded metrics |
+| scripts/lib/task-report-v3.mjs:109 | values · fn | selects numeric measurements by field and provenance |
+| scripts/lib/task-report-v3.mjs:113 | ratio · fn | returns a rounded percentage ratio |
+| scripts/lib/task-report-v3.mjs:117 | validateV3Sample · fn | validates v3 identity, calibration, usage, timing, receipt and scope fields |
+| scripts/lib/task-report-v3.mjs:165 | nextBucketPosition · fn | derives cycle and row from a bucket sample count |
+| scripts/lib/task-report-v3.mjs:171 | estimateFromBucket · fn | obtains a matching closed-bucket median estimate |
+| scripts/lib/task-report-v3.mjs:177 | createV3Sample · fn | freezes one receipt-linked v3 sample from intake and close values |
+| scripts/lib/task-report-v3.mjs:228 | readV3Samples · fn | reads the v3 append-only JSONL store |
+| scripts/lib/task-report-v3.mjs:232 | format · fn | renders compact nullable dashboard values |
+| scripts/lib/task-report-v3.mjs:237 | tableValue · fn | renders a measurement with provenance marker |
+| scripts/lib/task-report-v3.mjs:242 | cacheRatio · fn | calculates cache coverage from input counters |
+| scripts/lib/task-report-v3.mjs:248 | analyzeV3 · fn | builds bucket rollups for dashboard and comparisons |
+| scripts/lib/task-report-v3.mjs:283 | dashboardRow · fn | renders one compact v3 dashboard row |
+| scripts/lib/task-report-v3.mjs:288 | sampleRow · fn | renders one closed-bucket sample row |
+| scripts/lib/task-report-v3.mjs:298 | renderV3Index · fn | renders the compact v3 dashboard |
+| scripts/lib/task-report-v3.mjs:308 | renderV3Bucket · fn | renders closed 12-row and open bucket tables |
+| scripts/lib/task-report-v3.mjs:326 | renderV3Files · fn | prepares v3 sample and generated report writes |
+| scripts/lib/task-report-v3.mjs:332 | validateV3Store · fn | validates v3 samples, bucket order and report freshness |
+| scripts/lib/task-report-v3.mjs:360 | writeV3Store · fn | atomically writes v3 samples and reports |
+| scripts/lib/task-report-v3.mjs:365 | compareV3 · fn | compares closed compatible buckets without composite ranking |
+| scripts/lib/task-report-v3.mjs:382 | runtimeDiagnose · fn | reports adapter provenance and field availability only |
 
 ### scripts/qa-gate.mjs — 158 ln
 
@@ -911,76 +980,87 @@ _no extracted symbols_
 | scripts/sync-agent-skills.mjs:22 | skillMirrorDrift · fn | lists canonical and Claude skill-mirror differences |
 | scripts/sync-agent-skills.mjs:26 | main · fn | main operation implemented by sync-agent-skills |
 
-### scripts/task-close.mjs — 335 ln
+### scripts/task-close.mjs — 384 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| scripts/task-close.mjs:11 | ROOT · const | resolves the repository root, optionally from `TASK_CLOSE_ROOT` |
-| scripts/task-close.mjs:12 | DEFAULT_MANIFEST · const | places the default manifest in the ignored task workspace |
-| scripts/task-close.mjs:13 | SCHEMA_VERSION · const | versions the manifest and verification receipt contract |
-| scripts/task-close.mjs:15 | fail · fn | reports a command error with its caller-selected exit status |
-| scripts/task-close.mjs:20 | underRoot · fn | checks whether an absolute path remains within the repository root |
-| scripts/task-close.mjs:24 | safePath · fn | resolves a supplied path and rejects paths outside the repository |
-| scripts/task-close.mjs:31 | displayPath · fn | converts an absolute repository path to portable slash-separated form |
-| scripts/task-close.mjs:35 | parseArgs · fn | collects repeatable CLI options while requiring a value for each one |
-| scripts/task-close.mjs:50 | one · fn | returns one option value and rejects duplicate singleton options |
-| scripts/task-close.mjs:57 | many · fn | returns every value supplied for a repeatable option |
-| scripts/task-close.mjs:61 | normalizePaths · fn | requires and canonicalizes the explicit task-owned changed-path list |
-| scripts/task-close.mjs:66 | normalizeOptionalPaths · fn | canonicalizes optional repository-relative path lists |
-| scripts/task-close.mjs:73 | sourcePath · fn | identifies paths whose change requires generated-map and KB verification |
-| scripts/task-close.mjs:77 | agentConfigPath · fn | identifies root contracts and canonical/mirrored skill paths needing agent-configuration validation |
-| scripts/task-close.mjs:81 | domainFor · fn | groups a path into the report's server, client, site, tooling or infrastructure domain |
-| scripts/task-close.mjs:91 | createManifest · fn | derives routes, QA scope, documentation candidates and validation requirements from explicit paths |
-| scripts/task-close.mjs:130 | manifestFingerprint · fn | hashes the manifest draft while excluding the self-referential hash field |
-| scripts/task-close.mjs:136 | intakeEstimate · fn | validates and records the required pre-read token estimate and basis |
-| scripts/task-close.mjs:145 | intakeRuntime · fn | validates and records the exact model variant before retrieval begins |
-| scripts/task-close.mjs:152 | applyDocumentationDecision · fn | records an agent's documented or not-needed decision with required rationale and document paths |
-| scripts/task-close.mjs:171 | intakeForManifest · fn | creates the bounded prepare response: explicit paths, routed context, QA plan and documentation scope |
-| scripts/task-close.mjs:191 | manifestPath · fn | resolves the chosen manifest or its ignored default location |
-| scripts/task-close.mjs:195 | writeManifest · fn | creates the artifact directory and writes formatted manifest JSON |
-| scripts/task-close.mjs:200 | readManifest · fn | loads and schema-checks a close-out manifest |
-| scripts/task-close.mjs:212 | receiptPath · fn | names the verification receipt adjacent to its manifest |
-| scripts/task-close.mjs:216 | compactOutput · fn | retains only the final nonblank line from a successful child command |
-| scripts/task-close.mjs:220 | runStep · fn | runs one Node helper and records compact evidence, retaining full scope output only when the manifest needs it |
-| scripts/task-close.mjs:232 | requireDocumentationDecision · fn | blocks source close-out until an agent records an actionable documentation result |
-| scripts/task-close.mjs:242 | verify · fn | runs scoped QA, map generation, documentation checks and report validation into a receipt |
-| scripts/task-close.mjs:271 | report · fn | requires a passing receipt before forwarding deterministic manifest fields to the report helper |
-| scripts/task-close.mjs:292 | main · fn | dispatches manifest preparation, documentation decision, verification and report append commands |
+| scripts/task-close.mjs:13 | ROOT · const | resolves the repository root, optionally from `TASK_CLOSE_ROOT` |
+| scripts/task-close.mjs:14 | DEFAULT_MANIFEST · const | places the default manifest in the ignored task workspace |
+| scripts/task-close.mjs:15 | SCHEMA_VERSION · const | versions the manifest and verification receipt contract |
+| scripts/task-close.mjs:17 | fail · fn | reports a command error with its caller-selected exit status |
+| scripts/task-close.mjs:22 | underRoot · fn | checks whether an absolute path remains within the repository root |
+| scripts/task-close.mjs:26 | safePath · fn | resolves a supplied path and rejects paths outside the repository |
+| scripts/task-close.mjs:33 | displayPath · fn | converts an absolute repository path to portable slash-separated form |
+| scripts/task-close.mjs:37 | parseArgs · fn | collects repeatable CLI options while requiring a value for each one |
+| scripts/task-close.mjs:52 | one · fn | returns one option value and rejects duplicate singleton options |
+| scripts/task-close.mjs:59 | many · fn | returns every value supplied for a repeatable option |
+| scripts/task-close.mjs:63 | normalizePaths · fn | requires and canonicalizes the explicit task-owned changed-path list |
+| scripts/task-close.mjs:68 | normalizeOptionalPaths · fn | canonicalizes optional repository-relative path lists |
+| scripts/task-close.mjs:75 | sourcePath · fn | identifies paths whose change requires generated-map and KB verification |
+| scripts/task-close.mjs:79 | agentConfigPath · fn | identifies root contracts and canonical/mirrored skill paths needing agent-configuration validation |
+| scripts/task-close.mjs:83 | domainFor · fn | groups a path into the report's server, client, site, tooling or infrastructure domain |
+| scripts/task-close.mjs:93 | createManifest · fn | derives routes, QA scope, documentation candidates and validation requirements from explicit paths |
+| scripts/task-close.mjs:137 | manifestFingerprint · fn | hashes the manifest draft while excluding the self-referential hash field |
+| scripts/task-close.mjs:143 | intakeEstimate · fn | validates and records the required pre-read token estimate and basis |
+| scripts/task-close.mjs:153 | intakeRuntime · fn | validates and records the exact model variant before retrieval begins |
+| scripts/task-close.mjs:163 | intakeComplexity · fn | validates the frozen five-level estimated task complexity |
+| scripts/task-close.mjs:170 | applyDocumentationDecision · fn | records an agent's documented or not-needed decision with required rationale and document paths |
+| scripts/task-close.mjs:189 | intakeForManifest · fn | creates the bounded prepare response: explicit paths, routed context, QA plan and documentation scope |
+| scripts/task-close.mjs:215 | manifestPath · fn | resolves the chosen manifest or its ignored default location |
+| scripts/task-close.mjs:219 | writeManifest · fn | creates the artifact directory and writes formatted manifest JSON |
+| scripts/task-close.mjs:224 | readManifest · fn | loads and schema-checks a close-out manifest |
+| scripts/task-close.mjs:236 | receiptPath · fn | names the verification receipt adjacent to its manifest |
+| scripts/task-close.mjs:240 | compactOutput · fn | retains only the final nonblank line from a successful child command |
+| scripts/task-close.mjs:244 | runStep · fn | runs one Node helper and records compact evidence, retaining full scope output only when the manifest needs it |
+| scripts/task-close.mjs:256 | requireDocumentationDecision · fn | blocks source close-out until an agent records an actionable documentation result |
+| scripts/task-close.mjs:266 | verify · fn | runs scoped QA, map generation, documentation checks and report validation into a receipt |
+| scripts/task-close.mjs:295 | report · fn | requires a passing receipt before forwarding deterministic manifest fields to the report helper |
+| scripts/task-close.mjs:324 | main · fn | dispatches manifest preparation, documentation decision, verification and report append commands |
 
-### scripts/task-report.mjs — 383 ln
+### scripts/task-report-stop.mjs — 11 ln
+
+_no extracted symbols_
+
+### scripts/task-report.mjs — 516 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| scripts/task-report.mjs:10 | ROOT · const | resolves the reporting root from the environment or current directory |
-| scripts/task-report.mjs:11 | argv · const | captures the public reporting CLI arguments |
-| scripts/task-report.mjs:12 | command · const | selects the reporting subcommand |
-| scripts/task-report.mjs:14 | localOnlyReceipt · fn | identifies ignored local receipt paths that must not block clean-clone validation |
-| scripts/task-report.mjs:18 | options · fn | parses singleton and repeatable CLI options |
-| scripts/task-report.mjs:36 | one · fn | returns one option and rejects duplicate singleton values |
-| scripts/task-report.mjs:43 | many · fn | returns all repeatable values for one option |
-| scripts/task-report.mjs:48 | fail · fn | emits a deterministic CLI error and exits |
-| scripts/task-report.mjs:53 | file · fn | resolves a configured reporting artifact path |
-| scripts/task-report.mjs:57 | relativePath · fn | formats an artifact path relative to the reporting root |
-| scripts/task-report.mjs:61 | recordsFile · fn | resolves the canonical task-record JSONL path |
-| scripts/task-report.mjs:62 | reviewsFile · fn | resolves the cycle-review JSONL path |
-| scripts/task-report.mjs:63 | stateFile · fn | resolves the cycle-state JSON path |
-| scripts/task-report.mjs:64 | reportFile · fn | resolves the generated Markdown path |
-| scripts/task-report.mjs:66 | load · fn | loads records, reviews, state, and presentation paths |
-| scripts/task-report.mjs:76 | asInteger · fn | validates bounded numeric CLI fields |
-| scripts/task-report.mjs:86 | normalizeHit · fn | maps legacy retrieval marks to normalized outcomes |
-| scripts/task-report.mjs:93 | parseSkills · fn | normalizes comma-separated skill names |
-| scripts/task-report.mjs:98 | exactModel · fn | rejects missing, family-only, and unrecorded model variants |
-| scripts/task-report.mjs:103 | receiptFor · fn | requires a passed receipt linked to the supplied manifest |
-| scripts/task-report.mjs:114 | parseLegacyRows · fn | extracts cycles and legacy table rows without changing source text |
-| scripts/task-report.mjs:137 | legacyRecord · fn | normalizes one historical Markdown row with warnings |
-| scripts/task-report.mjs:164 | importLegacy · fn | atomically imports legacy rows, reviews, state, and generated report |
-| scripts/task-report.mjs:191 | append · fn | validates intake evidence and receipt before atomically appending one record |
-| scripts/task-report.mjs:243 | start · fn | writes a pre-read estimate draft, route count, timestamp, and fingerprint |
-| scripts/task-report.mjs:260 | validate · fn | checks schema, uniqueness, receipts, state, legacy warnings, and render freshness |
-| scripts/task-report.mjs:315 | render · fn | regenerates Markdown from structured JSONL without changing records |
-| scripts/task-report.mjs:322 | analyze · fn | emits bounded aggregate metrics for closed cycles |
-| scripts/task-report.mjs:332 | closeCycle · fn | atomically closes twenty valid rows and opens the next cycle |
-| scripts/task-report.mjs:368 | main · fn | dispatches the public task-report commands |
+| scripts/task-report.mjs:12 | ROOT · const | resolves the reporting root from the environment or current directory |
+| scripts/task-report.mjs:13 | argv · const | captures the public reporting CLI arguments |
+| scripts/task-report.mjs:17 | localOnlyReceipt · fn | identifies ignored local receipt paths that must not block clean-clone validation |
+| scripts/task-report.mjs:21 | options · fn | parses singleton and repeatable CLI options |
+| scripts/task-report.mjs:39 | one · fn | returns one option and rejects duplicate singleton values |
+| scripts/task-report.mjs:46 | many · fn | returns all repeatable values for one option |
+| scripts/task-report.mjs:51 | fail · fn | emits a deterministic CLI error and exits |
+| scripts/task-report.mjs:56 | file · fn | resolves a configured reporting artifact path |
+| scripts/task-report.mjs:60 | relativePath · fn | formats an artifact path relative to the reporting root |
+| scripts/task-report.mjs:64 | recordsFile · fn | resolves the canonical task-record JSONL path |
+| scripts/task-report.mjs:65 | reviewsFile · fn | resolves the cycle-review JSONL path |
+| scripts/task-report.mjs:66 | stateFile · fn | resolves the cycle-state JSON path |
+| scripts/task-report.mjs:67 | reportFile · fn | resolves the generated Markdown path |
+| scripts/task-report.mjs:76 | load · fn | loads records, reviews, state, and presentation paths |
+| scripts/task-report.mjs:88 | asInteger · fn | validates bounded numeric CLI fields |
+| scripts/task-report.mjs:98 | normalizeHit · fn | maps legacy retrieval marks to normalized outcomes |
+| scripts/task-report.mjs:105 | parseSkills · fn | normalizes comma-separated skill names |
+| scripts/task-report.mjs:110 | exactModel · fn | rejects missing, family-only, and unrecorded model variants |
+| scripts/task-report.mjs:115 | receiptFor · fn | requires a passed receipt linked to the supplied manifest |
+| scripts/task-report.mjs:126 | parseLegacyRows · fn | extracts cycles and legacy table rows without changing source text |
+| scripts/task-report.mjs:149 | legacyRecord · fn | normalizes one historical Markdown row with warnings |
+| scripts/task-report.mjs:176 | importLegacy · fn | atomically imports legacy rows, reviews, state, and generated report |
+| scripts/task-report.mjs:204 | PENDING_FILE · const | names the recoverable staged task-report transaction |
+| scripts/task-report.mjs:206 | stageAppend · fn | validates and writes an idempotent pending dual-write transaction |
+| scripts/task-report.mjs:227 | finalizePending · fn | reads final runtime counters and commits the staged transaction |
+| scripts/task-report.mjs:245 | append · fn | validates intake evidence and receipt before atomically appending one record |
+| scripts/task-report.mjs:336 | start · fn | writes a pre-read estimate draft, route count, timestamp, and fingerprint |
+| scripts/task-report.mjs:353 | validate · fn | checks schema, uniqueness, receipts, state, legacy warnings, and render freshness |
+| scripts/task-report.mjs:413 | render · fn | regenerates Markdown from structured JSONL without changing records |
+| scripts/task-report.mjs:420 | viewV3 · fn | prints one full v3 bucket table on demand |
+| scripts/task-report.mjs:430 | analyzeV3Command · fn | emits v3 bucket rollups in text or JSON |
+| scripts/task-report.mjs:436 | compareV3Command · fn | emits compatible closed-bucket evidence matrices |
+| scripts/task-report.mjs:444 | runtimeDiagnoseCommand · fn | emits runtime provenance and field availability without values |
+| scripts/task-report.mjs:450 | analyze · fn | emits bounded aggregate metrics for closed cycles |
+| scripts/task-report.mjs:460 | closeCycle · fn | atomically closes twenty valid rows and opens the next cycle |
+| scripts/task-report.mjs:496 | main · fn | dispatches the public task-report commands |
 
 ### scripts/tests/build-file-map.test.mjs — 36 ln
 
@@ -995,6 +1075,13 @@ _no extracted symbols_
 ### scripts/tests/task-close.test.mjs — 99 ln
 
 _no extracted symbols_
+
+### scripts/tests/task-report-v3.test.mjs — 85 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/tests/task-report-v3.test.mjs:9 | manifest · fn | builds a frozen runtime and complexity intake fixture |
+| scripts/tests/task-report-v3.test.mjs:22 | sample · fn | builds a receipt-linked v3 sample fixture |
 
 ### scripts/tests/task-report.test.mjs — 169 ln
 
@@ -1086,4 +1173,4 @@ _no extracted symbols_
 
 ---
 
-106 files · 580 symbols · 0 awaiting a `Does` line.
+110 files · 648 symbols · 0 awaiting a `Does` line.

@@ -20,12 +20,13 @@ source, environment files, secrets, or the working-tree diff.
 | `scope <task-owned-path>...` | returns routes, docs, maps and the QA selection for explicit task paths |
 | `bundle <task>` | writes selected KB/map evidence to ignored `.agent-state/automation/` state |
 
-`report/task-token-cost-effectivity.md` routes to this protocol; retrieve it with
-`route` before analysing closed-cycle rows. The canonical task data is the
-append-only `report/task-records.jsonl`, with cycle findings in
-`report/task-cycle-reviews.jsonl` and lifecycle state in
-`report/task-cycle-state.json`. The Markdown file is generated presentation;
-never parse or hand-edit it for metrics.
+`report/v2/reports/task-token-cost-effectivity.md` routes to this protocol;
+retrieve it with `route` before analysing v2 rows. V2 data is append-only under
+`report/v2/data/`. V3 data is append-only under `report/v3/data/samples.jsonl`,
+with a compact dashboard at `report/v3/reports/index.md` and one generated
+table per exact model, effort and estimated complexity under
+`report/v3/reports/by-model/`. Markdown is generated presentation; never parse
+or hand-edit it for metrics.
 
 The gitignored working folders have explicit routes but are not searched as KB
 content. `plan/` is where agents look for existing task plans and save new ones;
@@ -56,41 +57,55 @@ a dirty working tree. Start an implementation with `prepare`: its JSON intake
 returns each route, QA plan, documentation candidates, map ownership and exact
 documentation scope, so no separate `context scope` call is needed.
 
-1. `prepare --model-variant <exact-runtime-id> --r-est <tokens>
-   --r-est-basis <plain-English basis>` records the exact model variant,
-   pre-read estimate, timestamps, manifest hash and route count before scoped
-   retrieval. It also returns routing, QA selection, documentation candidates,
-   exact `docs-scope` output and map ownership in ignored JSON. Missing,
-   family-only, late, or unavailable values are rejected before work starts.
+1. `prepare --complexity <1-5> --r-est <tokens>` records the effective model
+   and effort from the active runtime transcript/host adapter, a structured
+   estimate source, hashed session freshness, task start, run id and cumulative
+   usage baseline before scoped retrieval. `--model-variant` and `--effort` are
+   validated fallbacks when no adapter exists. A matching closed v3 bucket can
+   supply `--r-est` automatically from its median. No free-text estimate basis
+   is required. It also returns routing, QA selection, documentation candidates,
+   exact `docs-scope` output and map ownership in ignored JSON.
 2. The agent updates KB prose only when the doc-worthy gate applies, then
    `decide` records `updated` with the edited document or `not-needed` with a
    rationale. This is an agent decision, not a human checkpoint.
 3. `verify` runs selected QA, file-map generation for source paths, relevant KB
    validation, agent-configuration validation for skill or entry-contract edits,
    and `task-report validate` into a receipt under `.agent-state/automation/`.
-4. `report` can append only after a passing receipt. It reads the intake model
-   variant, estimate, and verification receipt from the manifest, copies
-   path/domain counts, and accepts no end-of-task model override. Values such as
-   `GPT-5` or `variant unrecorded` are invalid for standard records.
+4. `report` can stage only after a passing receipt. It reads the frozen model,
+   effort, complexity, estimate and session from the manifest, copies path and
+   domain counts, and accepts no end-of-task runtime override. A Stop hook runs
+   `scripts/task-report-stop.mjs` to read final transcript counters and active /
+   wall timing, then commits v2 and v3 together. A failed hook leaves the
+   ignored pending transaction for retry. Values such as `GPT-5` or `variant
+   unrecorded` are invalid for standard records.
 
 ## Structured task reporting
 
-`node scripts/task-report.mjs start` is the low-level intake writer and requires
-the exact model variant; `task-close prepare` is the normal entry point.
-`append` requires a passed receipt and reads the exact runtime variant and
-pre-read estimate from the manifest. Source-read, total, and main-thread measurements carry `exact`,
-`estimated`, or `unavailable` provenance; provider token usage is never inferred
-from local tool output.
+`node scripts/task-report.mjs start` remains the low-level v2 intake writer;
+`task-close prepare` is the normal entry point. `append` requires a passed
+receipt and reads the exact runtime variant, effort, complexity and pre-read
+estimate from the manifest. Source-read, total, and v3 input/cache/output/
+reasoning measurements carry `exact`, `estimated`, or `unavailable` provenance;
+provider token usage is never inferred from local tool output.
+
+V3 uses active agent seconds as its primary completion-efficiency measure and
+wall duration as operational context. Active time excludes human or approval
+waits; wall duration includes them. Complexity is estimated at intake and
+realized at close; a changed rating requires a compact reason code and never
+changes the selected bucket.
 
 Receipts referenced by open-cycle records are local-only evidence under
 `.agent-state/automation/`; validation does not require those ignored files to exist
 in a clean clone. Public report data remains in `report/`.
 
-Use `analyze --from <cycle> --to last-closed --json` for bounded metrics. It
-emits counts beside percentages, separates measurement kinds, and marks
-unsupported comparisons as `insufficient-data`. `render` regenerates the
-Markdown presentation. `validate` checks record schema, uniqueness and order,
-receipt linkage, cycle state, legacy warnings, and render freshness.
+Use `analyze --from <cycle> --to last-closed --json` for v2 metrics. V3 adds
+`v3-analyze`, `compare`, `view --model ... --effort ... --complexity ...`, and
+`runtime-diagnose`. V3 buckets close automatically at 12 samples and sample 13
+opens the next cycle. `render` regenerates both presentations. `validate` checks
+both stores, one-to-one dual-write linkage, receipts, cycle state, generated
+freshness, legacy warnings and v3 table shape. V3 comparisons keep estimated
+complexity, freshness and worker-count coverage separate and provide evidence
+for a choice without generating a composite winner.
 
 `import` is the one-time legacy-Markdown migration path. It preserves missing
 metadata and warnings, including the Cycle 2 four-versus-six estimate

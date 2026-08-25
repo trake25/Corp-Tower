@@ -1,15 +1,18 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, unlinkSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, relative } from 'node:path';
-import { atomicWrites, DEFAULT_RECORDS_FILE, DEFAULT_REPORT_FILE, DEFAULT_REVIEWS_FILE, DEFAULT_STATE_FILE, jsonl, readJson, readJsonl, rootPath, stateFromRecords, writeJson } from './lib/task-report-storage.mjs';
+import { atomicWrites, DEFAULT_RECORDS_FILE, DEFAULT_REPORT_FILE, DEFAULT_REVIEWS_FILE, DEFAULT_STATE_FILE, LEGACY_RECORDS_FILE, LEGACY_REPORT_FILE, LEGACY_REVIEWS_FILE, LEGACY_STATE_FILE, jsonl, readJson, readJsonl, resolveReportPath, rootPath, stateFromRecords, writeJson } from './lib/task-report-storage.mjs';
 import { analyzeRecords, factualReview } from './lib/task-report-analysis.mjs';
 import { isUnrecordedModel, parseEstimate, parseMeasurement, validateCycleReview, validateCycleState, validateTaskRecord } from './lib/task-report-schema.mjs';
 import { renderReport } from './lib/task-report-render.mjs';
+import { V3_INDEX_FILE, V3_SAMPLES_FILE, analyzeV3, bucketPath, compareV3, createV3Sample, readV3Samples, renderV3Files, runtimeDiagnose, validateV3Sample, validateV3Store, writeV3Store } from './lib/task-report-v3.mjs';
+import { completionTiming, readRuntimeMetadata, usageDelta } from './lib/task-report-runtime.mjs';
 
 const ROOT = resolve(process.env.TASK_REPORT_ROOT || '.');
 const argv = process.argv.slice(2);
-const command = argv.shift() || 'validate';
+let command = argv.shift() || 'validate';
+if (command === 'v3') command = `v3-${argv.shift() || 'validate'}`;
 
 function localOnlyReceipt(path) {
   return path.startsWith('task/') || path.startsWith('.agent-state/automation/');
@@ -58,10 +61,17 @@ function relativePath(path) {
   return relative(ROOT, path).replaceAll('\\', '/');
 }
 
-function recordsFile(value) { return file(value, 'records', DEFAULT_RECORDS_FILE); }
-function reviewsFile(value) { return file(value, 'reviews', DEFAULT_REVIEWS_FILE); }
-function stateFile(value) { return file(value, 'state', DEFAULT_STATE_FILE); }
-function reportFile(value) { return file(value, 'report', DEFAULT_REPORT_FILE); }
+function recordsFile(value) { return resolveReportPath(ROOT, one(value, 'records'), DEFAULT_RECORDS_FILE, LEGACY_RECORDS_FILE); }
+function reviewsFile(value) { return resolveReportPath(ROOT, one(value, 'reviews'), DEFAULT_REVIEWS_FILE, LEGACY_REVIEWS_FILE); }
+function stateFile(value) { return resolveReportPath(ROOT, one(value, 'state'), DEFAULT_STATE_FILE, LEGACY_STATE_FILE); }
+function reportFile(value) {
+  const requested = one(value, 'report');
+  if (requested) return rootPath(ROOT, requested);
+  const modern = rootPath(ROOT, DEFAULT_REPORT_FILE);
+  if (existsSync(modern)) return modern;
+  if (existsSync(rootPath(ROOT, LEGACY_RECORDS_FILE))) return rootPath(ROOT, LEGACY_REPORT_FILE);
+  return modern;
+}
 
 function load(value) {
   const recordsPath = recordsFile(value);
@@ -70,7 +80,9 @@ function load(value) {
   const records = readJsonl(recordsPath);
   const reviews = readJsonl(reviewsPath);
   const state = readJson(statePath, stateFromRecords(records));
-  return { recordsPath, reviewsPath, statePath, reportPath: reportFile(value), records, reviews, state };
+  const samplesPath = rootPath(ROOT, one(value, 'v3-samples') || V3_SAMPLES_FILE);
+  const samples = readJsonl(samplesPath);
+  return { recordsPath, reviewsPath, statePath, reportPath: reportFile(value), samplesPath, indexPath: rootPath(ROOT, one(value, 'v3-index') || V3_INDEX_FILE), records, reviews, state, samples };
 }
 
 function asInteger(value, key, { required = true, min = 0 } = {}) {
@@ -184,11 +196,54 @@ function importLegacy(value) {
     { file: destination.reviewsPath, content: jsonl(reviews) },
     { file: destination.statePath, content: `${JSON.stringify(state, null, 2)}\n` },
     { file: destination.reportPath, content: report },
+    ...renderV3Files(ROOT, []),
   ]);
   console.log(`PASS — imported ${records.length} legacy records across ${cycles.length} cycles; warnings preserved`);
 }
 
+const PENDING_FILE = '.agent-state/automation/task-report-pending.json';
+
+function stageAppend(value) {
+  const manifestPath = rootPath(ROOT, one(value, 'manifest', { required: true }));
+  if (!existsSync(manifestPath)) fail(`manifest not found: ${relativePath(manifestPath)}`);
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const receipt = receiptFor(value, manifestPath);
+  exactModel(manifest.runtime?.model);
+  if (!manifest.estimate || manifest.estimate.timing !== 'pre-read' || !Number.isInteger(manifest.estimate.tokens)) fail('manifest must contain a valid pre-read estimate from task-close prepare');
+  const pendingPath = rootPath(ROOT, one(value, 'pending') || PENDING_FILE);
+  const options = JSON.parse(JSON.stringify(value));
+  delete options.stage;
+  const pending = { schema_version: 1, manifest: relativePath(manifestPath), receipt: receipt.path, options, staged_at: new Date().toISOString() };
+  if (existsSync(pendingPath)) {
+    const existing = JSON.parse(readFileSync(pendingPath, 'utf8'));
+    if (existing.manifest !== pending.manifest || JSON.stringify(existing.options) !== JSON.stringify(pending.options)) fail('a different task-report transaction is already pending');
+    console.log(`PASS — task-report transaction already staged in ${relativePath(pendingPath)}`);
+    return;
+  }
+  writeJson(pendingPath, pending);
+  console.log(`PASS — staged task-report transaction in ${relativePath(pendingPath)}`);
+}
+
+async function finalizePending(value) {
+  const pendingPath = rootPath(ROOT, one(value, 'pending') || PENDING_FILE);
+  if (!existsSync(pendingPath)) fail(`pending task-report transaction not found: ${relativePath(pendingPath)}`);
+  const pending = JSON.parse(readFileSync(pendingPath, 'utf8'));
+  const manifestPath = rootPath(ROOT, pending.manifest);
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const metadata = await readRuntimeMetadata({ env: process.env, task: manifest.task, samples: readV3Samples(ROOT) });
+  const delta = usageDelta(manifest.usage_baseline, metadata.usage_baseline);
+  if (!delta || !Number.isFinite(delta.total_tokens)) fail('runtime usage finalization is unavailable; pending transaction preserved');
+  const timing = completionTiming(metadata.events, { taskStartedAt: manifest.task_started_at, finalizedAt: new Date().toISOString() });
+  const options = { ...pending.options, total: String(delta.total_tokens), main: String(delta.total_tokens), 'input-tokens': String(delta.input_tokens), 'cached-input-tokens': String(delta.cached_input_tokens), 'cache-write-input-tokens': String(delta.cache_write_input_tokens), 'output-tokens': String(delta.output_tokens), 'reasoning-output-tokens': String(delta.reasoning_output_tokens), 'active-agent-seconds': timing.active_agent_seconds === null ? undefined : String(timing.active_agent_seconds), 'wall-duration-seconds': timing.wall_duration_seconds === null ? undefined : String(timing.wall_duration_seconds), 'finalized-at': new Date().toISOString() };
+  delete options.stage;
+  append(options);
+  manifest.report = { status: 'appended', summary: 'Finalized runtime usage and completion timing; committed v2 and v3.' };
+  writeJson(manifestPath, manifest);
+  unlinkSync(pendingPath);
+}
+
 function append(value) {
+  if (value.stage) return stageAppend(value);
   if (value['r-est'] !== undefined) fail('--r-est is intake-only; task-close report must read the pre-read estimate from the manifest');
   if (value.model !== undefined || value['model-variant'] !== undefined) fail('model variant is intake-only; task-close prepare must record it in the manifest');
   const manifestPath = rootPath(ROOT, one(value, 'manifest', { required: true }));
@@ -203,6 +258,8 @@ function append(value) {
   const model = exactModel(manifest.runtime?.model);
   const estimate = manifest.estimate;
   if (!estimate || estimate.timing !== 'pre-read' || !Number.isInteger(estimate.tokens) || estimate.tokens < 0) fail('manifest must contain a valid pre-read estimate from task-close prepare');
+  if (manifest.complexity?.estimated !== undefined && Number(one(value, 'complexity')) !== Number(manifest.complexity.estimated)) fail('estimated complexity is intake-only and cannot change after prepare');
+  if (manifest.runtime?.effort && String(one(value, 'effort')) !== String(manifest.runtime.effort)) fail('runtime effort is intake-only and cannot change after prepare');
   const record = {
     schema_version: 1,
     task_id: `c${data.state.open_cycle}-r${row}`,
@@ -212,7 +269,7 @@ function append(value) {
     complexity: asInteger(one(value, 'complexity'), 'complexity', { min: 1 }),
     mode: one(value, 'mode', { required: true }),
     scope: { domains: asInteger(one(value, 'domains'), 'domains'), files: asInteger(one(value, 'files'), 'files'), manifest: relativePath(manifestPath) },
-    estimate: { tokens: estimate.tokens, timing: estimate.timing, basis: estimate.basis, recorded_at: estimate.recorded_at, manifest_hash: estimate.manifest_hash, route_count: estimate.route_count },
+    estimate: { tokens: estimate.tokens, timing: estimate.timing, basis: estimate.basis, metric: 'total_tokens', recorded_at: estimate.recorded_at, manifest_hash: estimate.manifest_hash, route_count: estimate.route_count },
     observed: {
       source_read_tokens: parseMeasurement(one(value, 'r-act')),
       total_tokens: parseMeasurement(one(value, 'total')),
@@ -232,12 +289,48 @@ function append(value) {
   const nextState = { ...data.state, next_row: row + 1 };
   const nextRecords = [...data.records, record];
   const report = renderReport({ records: nextRecords, reviews: data.reviews, state: nextState });
+  const v3Values = {
+    complexity: record.complexity,
+    actualComplexity: one(value, 'actual-complexity'),
+    complexityReason: one(value, 'complexity-reason') || null,
+    effort: record.runtime.effort,
+    domains: record.scope.domains,
+    files: record.scope.files,
+    hit: record.retrieval.result,
+    verdict: record.outcome.verdict,
+    summary: record.outcome.summary,
+    receipt: receipt.path,
+    skills: record.skills,
+    total: one(value, 'total'),
+    main: one(value, 'main'),
+    provenance: one(value, 'token-provenance') || 'exact',
+    totalKind: one(value, 'total-kind') || (String(one(value, 'total') || '').includes('~') ? 'estimated' : 'exact'),
+    mainKind: one(value, 'main-kind') || (String(one(value, 'main') || '').includes('~') ? 'estimated' : 'exact'),
+    input: one(value, 'input-tokens'),
+    cached_input_tokens: one(value, 'cached-input-tokens'),
+    cache_write_input_tokens: one(value, 'cache-write-input-tokens'),
+    output_tokens: one(value, 'output-tokens'),
+    reasoning_output_tokens: one(value, 'reasoning-output-tokens'),
+    aggregate_worker_tokens: one(value, 'aggregate-worker-tokens'),
+    workerCount: one(value, 'workers'),
+    contextBytes: one(value, 'context-bytes'),
+    toolCalls: one(value, 'tool-calls'),
+    activeAgentSeconds: one(value, 'active-agent-seconds'),
+    wallDurationSeconds: one(value, 'wall-duration-seconds'),
+    taskStartedAt: one(value, 'task-started-at'),
+    finalizedAt: one(value, 'finalized-at'),
+  };
+  const v3Sample = createV3Sample({ manifest: { ...manifest, complexity: { estimated: record.complexity }, runtime: { ...manifest.runtime, effort: record.runtime.effort }, domains: manifest.domains, changed_paths: manifest.changed_paths }, values: v3Values, samples: data.samples, v2TaskId: record.task_id });
+  const v3Errors = validateV3Sample(v3Sample);
+  if (v3Errors.length) fail(v3Errors.join('; '));
+  const nextSamples = [...data.samples, v3Sample];
   atomicWrites([
     { file: data.recordsPath, content: jsonl(nextRecords) },
     { file: data.statePath, content: `${JSON.stringify(nextState, null, 2)}\n` },
     { file: data.reportPath, content: report },
+    ...renderV3Files(ROOT, nextSamples),
   ]);
-  console.log(row === 20 ? 'PASS — appended row 20; run close-cycle with the semantic review' : `PASS — appended ${record.task_id}`);
+  console.log(row === 20 ? `PASS — appended row 20 and v3 ${v3Sample.sample_id}; run close-cycle with the semantic review` : `PASS — appended ${record.task_id} and v3 ${v3Sample.sample_id}`);
 }
 
 function start(value) {
@@ -263,6 +356,11 @@ function validate(value) {
   data.records.forEach((record, index) => validateTaskRecord(record).forEach(error => errors.push(`record ${index + 1}: ${error}`)));
   data.reviews.forEach((review, index) => validateCycleReview(review).forEach(error => errors.push(`review ${index + 1}: ${error}`)));
   validateCycleState(data.state).forEach(error => errors.push(error));
+  validateV3Store(ROOT, data.samples).forEach(error => errors.push(error));
+  const standardRecordIds = new Set(data.records.filter(record => record.source !== 'legacy-markdown' && record.estimate?.metric === 'total_tokens').map(record => record.task_id));
+  const v3TaskIds = new Set(data.samples.map(sample => sample.v2_task_id).filter(Boolean));
+  data.records.filter(record => record.source !== 'legacy-markdown' && record.estimate?.metric === 'total_tokens' && record.receipt && !v3TaskIds.has(record.task_id)).forEach(record => errors.push(`${record.task_id} is missing its v3 sample`));
+  data.samples.filter(sample => sample.v2_task_id && !standardRecordIds.has(sample.v2_task_id)).forEach(sample => errors.push(`${sample.sample_id} has no matching v2 record`));
   const ids = new Set();
   const rows = new Set();
   const byCycle = new Map();
@@ -273,7 +371,7 @@ function validate(value) {
     rows.add(`${record.cycle}:${record.row}`);
     if (!byCycle.has(record.cycle)) byCycle.set(record.cycle, []);
     byCycle.get(record.cycle).push(record.row);
-    if (record.source !== 'legacy-markdown' && record.receipt) {
+    if (record.source !== 'legacy-markdown' && record.estimate?.metric === 'total_tokens' && record.receipt) {
       const receiptPath = rootPath(ROOT, record.receipt);
       if (!existsSync(receiptPath)) {
         if (!localOnlyReceipt(record.receipt)) errors.push(`${record.task_id} receipt not found: ${record.receipt}`);
@@ -315,8 +413,38 @@ function validate(value) {
 function render(value) {
   const data = load(value);
   const output = renderReport({ records: data.records, reviews: data.reviews, state: data.state });
-  atomicWrites([{ file: data.reportPath, content: output }]);
-  console.log(`PASS — rendered ${relativePath(data.reportPath)}`);
+  atomicWrites([{ file: data.reportPath, content: output }, ...renderV3Files(ROOT, data.samples)]);
+  console.log(`PASS — rendered ${relativePath(data.reportPath)} and v3 reports`);
+}
+
+function viewV3(value) {
+  const model = one(value, 'model', { required: true });
+  const effort = one(value, 'effort', { required: true });
+  const complexity = asInteger(one(value, 'complexity', { required: true }), 'complexity', { min: 1 });
+  const rows = readV3Samples(ROOT).filter(sample => sample.model === model && sample.effort === effort && sample.estimated_complexity === complexity);
+  if (!rows.length) fail('v3 bucket has no samples');
+  const bucket = renderV3Files(ROOT, rows).find(write => write.file === bucketPath(model, effort, complexity, ROOT));
+  console.log(bucket?.content || '');
+}
+
+function analyzeV3Command(value) {
+  const result = analyzeV3(readV3Samples(ROOT));
+  if (value.json) console.log(JSON.stringify(result, null, 2));
+  else console.log(`PASS — ${result.bucket_count} v3 buckets; ${result.buckets.reduce((sum, bucket) => sum + bucket.closed_cycles, 0)} closed cycles`);
+}
+
+function compareV3Command(value) {
+  const freshness = one(value, 'fresh');
+  const workers = one(value, 'workers');
+  const result = compareV3(readV3Samples(ROOT), { freshness: freshness === undefined ? null : freshness === 'true' || freshness === 'fresh', workers: workers === undefined ? null : workers });
+  if (value.json) console.log(JSON.stringify(result, null, 2));
+  else console.log(`PASS — v3 comparison ${result.status}; ${result.matrix.length} complexity matrix row(s)`);
+}
+
+async function runtimeDiagnoseCommand(value) {
+  const metadata = await readRuntimeMetadata({ env: process.env, task: one(value, 'task') });
+  const result = runtimeDiagnose(metadata);
+  console.log(JSON.stringify(result, null, 2));
 }
 
 function analyze(value) {
@@ -336,7 +464,7 @@ function closeCycle(value) {
   if (current.length !== 20 || current.some(record => record.source === 'legacy-markdown' || record.receipt === null)) fail(`cycle ${cycle} must contain exactly 20 receipt-linked standard records before close-cycle`);
   const recordErrors = current.flatMap(record => validateTaskRecord(record).map(error => `${record.task_id}: ${error}`));
   if (recordErrors.length) fail(recordErrors.join('; '));
-  for (const record of current) {
+  for (const record of current.filter(item => item.estimate?.metric === 'total_tokens')) {
     const receiptPath = rootPath(ROOT, record.receipt);
     if (!existsSync(receiptPath)) {
       if (!localOnlyReceipt(record.receipt)) fail(`${record.task_id} receipt not found: ${record.receipt}`);
@@ -365,18 +493,23 @@ function closeCycle(value) {
   console.log(`PASS — closed cycle ${cycle}, opened cycle ${cycle + 1}; first-try ${analysis.aggregate.retrieval['first-try'].count}/${analysis.aggregate.retrieval['first-try'].total}`);
 }
 
-function main() {
+async function main() {
   const value = options(argv);
   if (command === 'import' || command === 'legacy-import') return importLegacy(value);
   if (command === 'start') return start(value);
   if (command === 'append') return append(value);
-  if (command === 'validate') return validate(value);
-  if (command === 'render') return render(value);
+  if (command === 'finalize') return finalizePending(value);
+  if (command === 'validate' || command === 'v3-validate') return validate(value);
+  if (command === 'render' || command === 'v3-render') return render(value);
   if (command === 'analyze') return analyze(value);
   if (command === 'close-cycle') return closeCycle(value);
-  fail('usage: node scripts/task-report.mjs <start|append|analyze|close-cycle|validate|render|import> [--field value ...]', 2);
+  if (command === 'v3-analyze' || command === 'analyze-v3') return analyzeV3Command(value);
+  if (command === 'v3-compare' || command === 'compare') return compareV3Command(value);
+  if (command === 'v3-view' || command === 'view') return viewV3(value);
+  if (command === 'runtime-diagnose') return runtimeDiagnoseCommand(value);
+  fail('usage: node scripts/task-report.mjs <start|append|finalize|analyze|close-cycle|validate|render|import|v3-analyze|compare|view|runtime-diagnose> [--field value ...]', 2);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname)) main();
+if (process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname)) main().catch(error => fail(error.message));
 
-export { append, analyze, closeCycle, importLegacy, parseLegacyRows, start, validate };
+export { append, analyze, closeCycle, finalizePending, importLegacy, parseLegacyRows, start, validate };

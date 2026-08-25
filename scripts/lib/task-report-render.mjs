@@ -3,7 +3,7 @@ import { analyzeRecords, factualReview } from './task-report-analysis.mjs';
 
 const HEADER = `# Task token cost & effectivity
 
-<!-- GENERATED FILE. Source: report/task-records.jsonl and report/task-cycle-reviews.jsonl. Run node scripts/task-report.mjs render. -->
+<!-- GENERATED FILE. Source: report/v2/data/task-records.jsonl and report/v2/data/task-cycle-reviews.jsonl. Run node scripts/task-report.mjs render. -->
 
 This report is generated from structured task records. Historical records retain
 their legacy source and warnings; unavailable measurements are not guessed.
@@ -54,7 +54,7 @@ export function renderReport({ records, reviews = [], state }) {
   const openCycle = state.open_cycle;
   const cycles = [...new Set(records.map(record => record.cycle).concat(openCycle))].sort((a, b) => b - a);
   const reviewMap = new Map(reviews.map(review => [review.cycle, review]));
-  let output = `${HEADER}The table uses R-est for the intake estimate, R-act for source-read tokens, Tot for all observed tokens, and Main for main-thread tokens. A tilde marks an estimated measurement.
+  let output = `${HEADER}The table uses R-est for the intake estimate, R-act for source-read tokens, Tot for all observed tokens, and Main for main-thread tokens. New v2 rows estimate total_tokens; legacy rows preserve their source-read estimate target. A tilde marks an estimated measurement.
 
 | Retrieval result | Definition |
 |---|---|
