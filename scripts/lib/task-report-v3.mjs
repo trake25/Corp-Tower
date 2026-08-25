@@ -137,8 +137,15 @@ export function validateV3Sample(sample) {
   if (!object(sample.estimate)) errors.push('sample.estimate must be an object');
   else {
     integer(sample.estimate.tokens, 'sample.estimate.tokens', errors, { min: 0 });
-    if (!['manual', 'bucket-median'].includes(sample.estimate.source)) errors.push('sample.estimate.source must be manual or bucket-median');
-    if (sample.estimate.timing !== 'pre-read') errors.push('sample.estimate.timing must be pre-read');
+    if (!['manual', 'bucket-median', 'context-plus-change'].includes(sample.estimate.source)) errors.push('sample.estimate.source must be manual, bucket-median, or context-plus-change');
+    if (!['pre-read', 'pre-change'].includes(sample.estimate.timing)) errors.push('sample.estimate.timing must be pre-read or pre-change');
+    if (sample.estimate.timing === 'pre-change') {
+      integer(sample.estimate.context_tokens, 'sample.estimate.context_tokens', errors, { nullable: true, min: 0 });
+      integer(sample.estimate.modification_tokens, 'sample.estimate.modification_tokens', errors, { nullable: true, min: 0 });
+      if (sample.estimate.context_tokens === null || sample.estimate.modification_tokens === null) errors.push('pre-change estimates require context_tokens and modification_tokens');
+      if (Number.isInteger(sample.estimate.context_tokens) && Number.isInteger(sample.estimate.modification_tokens) && sample.estimate.tokens !== sample.estimate.context_tokens + sample.estimate.modification_tokens)
+        errors.push('sample.estimate.tokens must equal context_tokens + modification_tokens');
+    }
   }
   if (!object(sample.observed)) errors.push('sample.observed must be an object');
   else for (const field of MEASUREMENT_FIELDS) {
@@ -170,7 +177,7 @@ export function nextBucketPosition(samples, model, effort, estimatedComplexity) 
 
 export function estimateFromBucket(samples, { model, effort, estimatedComplexity, freshSession }) {
   const matching = samples.filter(sample => sample.model === model && sample.effort === effort && sample.estimated_complexity === estimatedComplexity && sample.fresh_session === freshSession && sample.cycle <= Math.floor(samples.filter(item => sampleBucket(item) === sampleBucket(sample)).length / V3_CYCLE_SIZE));
-  const estimates = matching.map(sample => sample.observed?.total_tokens).filter(value => value?.kind === 'exact' && Number.isFinite(value.value)).map(value => value.value);
+  const estimates = matching.map(sample => sample.estimate?.modification_tokens ?? sample.estimate?.tokens).filter(value => Number.isFinite(value)).map(value => value);
   return median(estimates);
 }
 
@@ -206,7 +213,7 @@ export function createV3Sample({ manifest, values: input = {}, samples = [], v2T
     complexity_reason: reason,
     session_hash: sessionHash,
     fresh_session: Boolean(manifest.session?.fresh),
-    estimate: { tokens: Number(manifest.estimate?.tokens), timing: 'pre-read', source: manifest.estimate?.source || 'manual', recorded_at: manifest.estimate?.recorded_at || now },
+    estimate: { tokens: Number(manifest.estimate?.tokens), timing: manifest.estimate?.timing || 'pre-read', source: manifest.estimate?.source || 'manual', context_tokens: manifest.estimate?.context_tokens ?? null, modification_tokens: manifest.estimate?.modification_tokens ?? null, recorded_at: manifest.estimate?.recorded_at || now },
     observed,
     scope: { domains: Number(input.domains ?? manifest.domains?.length ?? 0), files: Number(input.files ?? manifest.changed_paths?.length ?? 0) },
     context_bytes: input.contextBytes === undefined ? null : Number(input.contextBytes),
@@ -234,9 +241,36 @@ function format(value, fallback = '—') {
   return typeof value === 'number' ? value.toLocaleString('en-US') : String(value);
 }
 
+function compactNumber(value, suffix, decimals = 3) {
+  const rounded = Number((value / suffix).toFixed(decimals));
+  return `${rounded}${suffix === 1e6 ? 'm' : 'k'}`;
+}
+
+export function formatTokens(value, fallback = '—') {
+  if (value === null || value === undefined || value === '' || !Number.isFinite(Number(value))) return fallback;
+  const numeric = Number(value);
+  const sign = numeric < 0 ? '-' : '';
+  const absolute = Math.abs(numeric);
+  if (absolute >= 1e6) return `${sign}${compactNumber(absolute, 1e6)}`;
+  if (absolute >= 1e3) return `${sign}${compactNumber(absolute, 1e3)}`;
+  return `${sign}${Math.round(absolute)}`;
+}
+
+export function formatMinutes(seconds, fallback = '—') {
+  if (seconds === null || seconds === undefined || seconds === '' || !Number.isFinite(Number(seconds))) return fallback;
+  return `${(Number(seconds) / 60).toFixed(1)} min`;
+}
+
 function tableValue(value, kind = false) {
   if (!value || !Number.isFinite(value.value)) return '—';
-  return `${kind && value.kind === 'estimated' ? '~' : ''}${format(value.value)}`;
+  return `${kind && value.kind === 'estimated' ? '~' : ''}${formatTokens(value.value)}`;
+}
+
+function estimateLabel(estimate) {
+  if (!estimate) return '—';
+  if (estimate.timing === 'pre-change' && Number.isFinite(estimate.context_tokens) && Number.isFinite(estimate.modification_tokens))
+    return `${formatTokens(estimate.context_tokens)} + ${formatTokens(estimate.modification_tokens)} = ${formatTokens(estimate.tokens)}`;
+  return estimate.timing === 'pre-read' ? `legacy ${formatTokens(estimate.tokens)}` : formatTokens(estimate.tokens);
 }
 
 function cacheRatio(samples) {
@@ -282,26 +316,26 @@ export function analyzeV3(samples) {
 
 function dashboardRow(bucket) {
   const freshness = `${bucket.fresh.fresh}/${bucket.fresh.continued}`;
-  return `| ${bucket.model} | ${bucket.effort} | ${bucket.estimated_complexity} | ${bucket.closed_cycles} | ${bucket.open_count}/12 | ${freshness} | ${format(bucket.median_total)} | ${format(bucket.median_active_time)} | ${format(bucket.median_wall_time)} | ${bucket.cache_percent === null ? '—' : `${bucket.cache_percent}%`} | ${format(bucket.p90_total)} | ${format(bucket.median_absolute_estimate_error)} | ${bucket.first_try.percentage === null ? '—' : `${bucket.first_try.percentage}%`} |`;
+  return `| ${bucket.model} | ${bucket.effort} | ${bucket.estimated_complexity} | ${bucket.closed_cycles} | ${bucket.open_count}/12 | ${freshness} | ${formatTokens(bucket.median_total)} | ${formatMinutes(bucket.median_active_time)} | ${formatMinutes(bucket.median_wall_time)} | ${bucket.cache_percent === null ? '—' : `${bucket.cache_percent}%`} | ${formatTokens(bucket.p90_total)} | ${formatTokens(bucket.median_absolute_estimate_error)} | ${bucket.first_try.percentage === null ? '—' : `${bucket.first_try.percentage}%`} |`;
 }
 
 function sampleRow(sample) {
   const hit = { 'first-try': '✓', 'second-document': '~', 'repository-fallback': '✗', 'doc-source-conflict': '!', unavailable: '—' }[sample.retrieval?.result] || '—';
-  const scope = `${format(sample.scope?.domains)}/${format(sample.scope?.files)}`;
+  const scope = `${format(sample.scope?.domains)} domains / ${format(sample.scope?.files)} files`;
   const input = sample.observed?.input_tokens?.value;
   const cached = sample.observed?.cached_input_tokens?.value;
   const cachePercent = Number.isFinite(input) && input > 0 && Number.isFinite(cached) ? `${ratio(cached, input)}%` : '—';
-  const timing = Number.isFinite(sample.active_agent_seconds) || Number.isFinite(sample.wall_duration_seconds) ? `${format(sample.active_agent_seconds)}/${format(sample.wall_duration_seconds)}` : '—';
-  return `| ${sample.row} | ${String(sample.task).replaceAll('|', '\\|')} | ${sample.fresh_session ? 'fresh' : 'continued'} | ${format(sample.actual_complexity)} | ${scope} | ${format(sample.estimate?.tokens)} | ${tableValue(sample.observed?.total_tokens, true)} | ${Number.isFinite(sample.estimate?.tokens) && Number.isFinite(sample.observed?.total_tokens?.value) ? format(sample.observed.total_tokens.value - sample.estimate.tokens) : '—'} | ${cachePercent} | ${timing} | ${hit} | ${format(sample.outcome?.verdict)} |`;
+  const timing = Number.isFinite(sample.active_agent_seconds) || Number.isFinite(sample.wall_duration_seconds) ? `${formatMinutes(sample.active_agent_seconds)} / ${formatMinutes(sample.wall_duration_seconds)}` : '—';
+  return `| ${sample.row} | ${String(sample.task).replaceAll('|', '\\|')} | ${sample.fresh_session ? 'first' : 'continued'} | ${format(sample.actual_complexity)} | ${scope} | ${estimateLabel(sample.estimate)} | ${tableValue(sample.observed?.total_tokens, true)} | ${Number.isFinite(sample.estimate?.tokens) && Number.isFinite(sample.observed?.total_tokens?.value) ? formatTokens(sample.observed.total_tokens.value - sample.estimate.tokens) : '—'} | ${cachePercent} | ${timing} | ${hit} | ${format(sample.outcome?.verdict)} |`;
 }
 
 export function renderV3Index(samples) {
   const analysis = analyzeV3(samples);
   let output = '# Task reporting v3\n\n';
-  output += 'Compact dashboard. Each bucket is exact model × effort × estimated complexity; cycles close every 12 verified samples. Pricing is intentionally absent.\n\n';
-  output += '| Model | Effort | Est Cx | Closed cycles | Open n/12 | Fresh/continued | Median total | Median active time | Median wall time | Cache % | P90 | Median absolute estimate error | First-try |\n|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n';
+  output += 'Each bucket is exact model × effort × estimated complexity; cycles close every 12 verified samples. Token values use k/m units; time values are minutes. Pricing is intentionally absent.\n\n';
+  output += '| Model | Effort | Estimated complexity | Closed cycles | Open rows/12 | First/continued sample | Median actual pool tokens | Median active (min) | Median wall (min) | Cache ratio | P90 actual pool tokens | Median absolute pool delta | First-try retrieval |\n|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n';
   output += analysis.buckets.map(dashboardRow).join('\n') || '| — | — | — | 0 | 0/12 | — | — | — | — | — | — | — | — |';
-  output += `\n\nDefinitions: active time excludes human or approval waits; wall time includes them. Cache % is cached input ÷ input. First-try is receipt-linked retrieval. Complexity: ${Object.entries(COMPLEXITY_RUBRIC).map(([key, value]) => `${key}=${value}`).join('; ')}.\n`;
+  output += `\n\nDefinitions: estimated pool tokens are measured provider usage from context retrieval plus planned file changes; actual pool tokens are the provider-reported total-token delta consumed from the usage pool over the task interval. Input, cached input, output, and reasoning breakdowns remain in the JSONL. A row marked legacy used the older pre-read estimate and is not pool-comparable. Wall time runs from the matching user instruction to task completion. First means the first v3 sample recorded in this runtime session; continued means another sample already existed. Active time excludes human or approval waits. Cache ratio is cached input ÷ input; — means unavailable. First-try is receipt-linked retrieval. Complexity: ${Object.entries(COMPLEXITY_RUBRIC).map(([key, value]) => `${key}=${value}`).join('; ')}.\n`;
   return output;
 }
 
@@ -317,7 +351,7 @@ export function renderV3Bucket(rows) {
   for (const [cycle, cycleRows] of groups) {
     const closed = cycleRows.length === V3_CYCLE_SIZE;
     output += `## Cycle ${cycle} (${closed ? 'closed' : 'open'})\n\n`;
-    output += '| # | Task | Fresh | Actual Cx | Scope D/F | Est total | Actual total | Error | Cache % | Active/Wall | Hit | Result |\n|---:|---|---|---:|---|---:|---:|---:|---:|---:|---|---|\n';
+  output += '| # | Task | Session sample | Actual complexity | Scope (domains / files) | Estimated pool tokens | Actual pool tokens | Pool delta | Cache ratio | Active / wall (min) | Retrieval | Result |\n|---:|---|---|---:|---|---:|---:|---:|---:|---:|---|---|\n';
     output += cycleRows.sort((a, b) => a.row - b.row).map(sampleRow).join('\n') + '\n\n';
   }
   return output.trimEnd() + '\n';
@@ -383,6 +417,6 @@ export function runtimeDiagnose(metadata = {}) {
   return {
     adapter: metadata.adapter || 'unavailable',
     provenance: metadata.provenance || 'none',
-    fields: Object.fromEntries(['model', 'effort', 'session_id', 'session_hash', 'fresh_session', 'usage_baseline', 'task_started_at', 'transcript'].map(field => [field, metadata[field] !== undefined && metadata[field] !== null])),
+    fields: Object.fromEntries(['model', 'effort', 'session_id', 'session_hash', 'fresh_session', 'usage_baseline', 'usage_current', 'task_usage_baseline', 'task_usage_final', 'usage_at_task_start', 'usage_at_task_complete', 'task_started_at', 'task_completed_at', 'task_turn_id', 'transcript'].map(field => [field, metadata[field] !== undefined && metadata[field] !== null])),
   };
 }

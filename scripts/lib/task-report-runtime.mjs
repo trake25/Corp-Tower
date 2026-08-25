@@ -60,16 +60,48 @@ function parseMetadataFile(path) {
   try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return {}; }
 }
 
+function usageAtOrBefore(events, boundary) {
+  const limit = timestamp(boundary);
+  const candidates = (events || []).filter(event => event.type === 'token_count' && event.usage && Number.isFinite(event.at) && (limit === null || event.at <= limit)).sort((a, b) => a.at - b.at);
+  return candidates.at(-1)?.usage || null;
+}
+
+const USAGE_FIELDS = ['input_tokens', 'cached_input_tokens', 'cache_write_input_tokens', 'output_tokens', 'reasoning_output_tokens', 'total_tokens'];
+
+function usageSum(start, events, { from = null, through = null } = {}) {
+  if (!start) return null;
+  const lower = timestamp(from);
+  const upper = timestamp(through);
+  const selected = (events || [])
+    .filter(event => event.type === 'token_count' && event.usage && Number.isFinite(event.at))
+    .filter(event => (lower === null || event.at > lower) && (upper === null || event.at <= upper))
+    .sort((a, b) => a.at - b.at);
+  if (!selected.length) return Object.fromEntries(USAGE_FIELDS.map(field => [field, 0]));
+  const totals = Object.fromEntries(USAGE_FIELDS.map(field => [field, 0]));
+  let previous = start;
+  for (const event of selected) {
+    for (const field of USAGE_FIELDS) {
+      const current = Number(event.usage[field] || 0);
+      const prior = Number(previous[field] || 0);
+      totals[field] += current >= prior ? current - prior : current;
+    }
+    previous = event.usage;
+  }
+  return totals;
+}
+
 async function readTranscript(path, taskText = null) {
-  if (!path || !existsSync(path)) return { events: [], context: null, usage: null, taskStartedAt: null, finalAt: null };
+  if (!path || !existsSync(path)) return { events: [], context: null, usage: null, usageAtTaskStart: null, usageAtTaskComplete: null, taskStartedAt: null, taskCompletedAt: null, taskTurnId: null, finalAt: null };
   const stream = createInterface({ input: (await import('node:fs')).createReadStream(path), crlfDelay: Infinity });
   const events = [];
   let context = null;
   let usage = null;
   let taskStartedAt = null;
+  let taskCompletedAt = null;
+  let taskTurnId = null;
   let finalAt = null;
   for await (const line of stream) {
-    if (!line.includes('turn_context') && !line.includes('thread_settings_applied') && !line.includes('token_count') && !line.includes('task_started') && !line.includes('item_started') && !line.includes('item_completed') && !line.includes('"role":"user"')) continue;
+    if (!line.includes('turn_context') && !line.includes('thread_settings_applied') && !line.includes('token_count') && !line.includes('task_started') && !line.includes('task_complete') && !line.includes('item_started') && !line.includes('item_completed') && !line.includes('"role":"user"')) continue;
     let event;
     try { event = JSON.parse(line); } catch { continue; }
     const payload = payloadFor(event);
@@ -77,18 +109,40 @@ async function readTranscript(path, taskText = null) {
     const at = timestamp(event.timestamp) || timestamp(payload.started_at_ms) || timestamp(payload.completed_at_ms);
     if (type === 'turn_context' || type === 'thread_settings_applied') context = { ...effectiveContext(payload), timestamp: event.timestamp || null };
     if (type === 'token_count' && payload.info?.total_token_usage) usage = { ...payload.info.total_token_usage, timestamp: event.timestamp || null };
-    if (type === 'task_started') taskStartedAt = taskStartedAt || (at ? new Date(at).toISOString() : null);
+    if (type === 'task_started') {
+      taskStartedAt = at ? new Date(at).toISOString() : taskStartedAt;
+      taskTurnId = payload.turn_id || event.turn_id || taskTurnId;
+      taskCompletedAt = null;
+    }
+    if (type === 'task_complete' && (!taskTurnId || payload.turn_id === taskTurnId)) {
+      taskCompletedAt = at ? new Date(at).toISOString() : taskCompletedAt;
+    }
     if (payload.type === 'message' && payload.role === 'user') {
       const content = Array.isArray(payload.content) ? payload.content.map(part => part.text || part.input_text || '').join(' ') : String(payload.content || '');
-      if (!taskStartedAt && (!taskText || content.includes(taskText))) taskStartedAt = at ? new Date(at).toISOString() : null;
+      if (!taskText || content.includes(taskText)) {
+        taskStartedAt = at ? new Date(at).toISOString() : taskStartedAt;
+        taskTurnId = payload.turn_id || event.turn_id || taskTurnId;
+      }
     }
     if (at) finalAt = new Date(at).toISOString();
-    if (type === 'task_started' || type === 'item_started' || type === 'item_completed' || type === 'task_completed' || type === 'token_count') events.push({ type, payload, at });
+    if (type === 'task_started' || type === 'task_complete' || type === 'item_started' || type === 'item_completed' || type === 'task_completed' || type === 'token_count') {
+      events.push({ type, payload, at, turn_id: payload.turn_id || event.turn_id || null, usage: type === 'token_count' ? usage : null });
+    }
   }
-  return { events, context, usage, taskStartedAt, finalAt };
+  return {
+    events,
+    context,
+    usage,
+    usageAtTaskStart: usageAtOrBefore(events, taskStartedAt),
+    usageAtTaskComplete: usageAtOrBefore(events, taskCompletedAt),
+    taskStartedAt,
+    taskCompletedAt,
+    taskTurnId,
+    finalAt,
+  };
 }
 
-export async function readRuntimeMetadata({ env = process.env, task = null, samples = [] } = {}) {
+export async function readRuntimeMetadata({ env = process.env, task = null, samples = [], taskStartedAt = null } = {}) {
   const threadId = env.CODEX_THREAD_ID || env.CODEX_SESSION_ID || null;
   const path = resolveTranscriptPath({ threadId, env });
   const hostPath = metadataFile(env);
@@ -100,8 +154,10 @@ export async function readRuntimeMetadata({ env = process.env, task = null, samp
   const session = host.session_id || threadId || null;
   const sessionHash = host.session_hash || hashSession(session);
   const previous = samples.filter(sample => sample.session_hash && sample.session_hash === sessionHash);
-  const usage = host.usage_baseline || transcript.usage || null;
-  const taskStartedAt = host.task_started_at || transcript.taskStartedAt || null;
+  const usage = host.usage_current || transcript.usage || null;
+  const taskUsageBaseline = host.task_usage_baseline || host.usage_baseline || transcript.usageAtTaskStart || null;
+  const taskUsageFinal = host.task_usage_final || transcript.usageAtTaskComplete || null;
+  const resolvedTaskStartedAt = taskStartedAt || host.task_started_at || transcript.taskStartedAt || null;
   return {
     adapter: path ? 'codex-transcript' : hostPath ? 'host-json' : model || effort ? 'environment' : 'unavailable',
     provenance: path ? 'transcript-runtime-events' : hostPath ? 'host-json-contract' : model || effort ? 'environment-contract' : 'none',
@@ -111,8 +167,15 @@ export async function readRuntimeMetadata({ env = process.env, task = null, samp
     session_id: session,
     session_hash: sessionHash,
     fresh_session: Boolean(sessionHash && previous.length === 0),
-    usage_baseline: usage,
-    task_started_at: taskStartedAt,
+    usage_baseline: taskUsageBaseline,
+    usage_current: usage,
+    task_usage_baseline: taskUsageBaseline,
+    task_usage_final: taskUsageFinal,
+    usage_at_task_start: transcript.usageAtTaskStart || null,
+    usage_at_task_complete: transcript.usageAtTaskComplete || null,
+    task_started_at: resolvedTaskStartedAt,
+    task_completed_at: host.task_completed_at || transcript.taskCompletedAt || null,
+    task_turn_id: transcript.taskTurnId || null,
     transcript_final_at: transcript.finalAt,
     events: transcript.events,
   };
@@ -120,14 +183,18 @@ export async function readRuntimeMetadata({ env = process.env, task = null, samp
 
 export function usageDelta(start, end) {
   if (!start || !end) return null;
-  const fields = ['input_tokens', 'cached_input_tokens', 'cache_write_input_tokens', 'output_tokens', 'reasoning_output_tokens', 'total_tokens'];
-  return Object.fromEntries(fields.map(field => [field, Math.max(0, Number(end[field] || 0) - Number(start[field] || 0))]));
+  return Object.fromEntries(USAGE_FIELDS.map(field => [field, Math.max(0, Number(end[field] || 0) - Number(start[field] || 0))]));
 }
 
+export { usageSum };
+
 export function completionTiming(events, { taskStartedAt = null, finalizedAt = null } = {}) {
+  const startBoundary = timestamp(taskStartedAt);
+  const endBoundary = timestamp(finalizedAt);
+  const bounded = (events || []).filter(event => Number.isFinite(event.at) && (startBoundary === null || event.at >= startBoundary) && (endBoundary === null || event.at <= endBoundary));
   const starts = new Map();
   const intervals = [];
-  for (const event of events || []) {
+  for (const event of bounded) {
     if (!Number.isFinite(event.at)) continue;
     if (event.type === 'item_started') starts.set(event.payload?.item?.id || event.payload?.id || event.payload?.turn_id, event.at);
     if (event.type === 'item_completed') {
@@ -141,19 +208,8 @@ export function completionTiming(events, { taskStartedAt = null, finalizedAt = n
     }
   }
   let active = intervals.sort((a, b) => a[0] - b[0]).reduce((sum, [start, end]) => sum + Math.max(0, end - start), 0);
-  if (!active) {
-    const ordered = [...(events || [])].filter(event => Number.isFinite(event.at)).sort((a, b) => a.at - b.at);
-    const startsAt = ordered.map((event, index) => event.type === 'task_started' ? index : -1).filter(index => index >= 0);
-    for (let position = 0; position < startsAt.length; position++) {
-      const startIndex = startsAt[position];
-      const endIndex = startsAt[position + 1] ?? ordered.length;
-      const start = ordered[startIndex].at;
-      const lastCompleted = ordered.slice(startIndex + 1, endIndex).filter(event => event.type === 'item_completed' || event.type === 'task_completed').map(event => event.at).filter(at => at >= start).at(-1);
-      if (Number.isFinite(lastCompleted)) active += Math.max(0, lastCompleted - start);
-    }
-  }
-  const start = timestamp(taskStartedAt);
-  const end = timestamp(finalizedAt) || events?.map(event => event.at).filter(Number.isFinite).at(-1) || null;
+  const start = startBoundary;
+  const end = endBoundary || bounded.map(event => event.at).filter(Number.isFinite).at(-1) || null;
   return { active_agent_seconds: active ? Number((active / 1000).toFixed(3)) : null, wall_duration_seconds: start !== null && end !== null ? Number(Math.max(0, end - start) / 1000).toFixed(3) * 1 : null, intervals: intervals.length, provenance: active ? 'runtime-events' : 'unavailable' };
 }
 

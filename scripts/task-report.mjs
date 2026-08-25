@@ -7,7 +7,7 @@ import { analyzeRecords, factualReview } from './lib/task-report-analysis.mjs';
 import { isUnrecordedModel, parseEstimate, parseMeasurement, validateCycleReview, validateCycleState, validateTaskRecord } from './lib/task-report-schema.mjs';
 import { renderReport } from './lib/task-report-render.mjs';
 import { V3_INDEX_FILE, V3_SAMPLES_FILE, analyzeV3, bucketPath, compareV3, createV3Sample, readV3Samples, renderV3Files, runtimeDiagnose, validateV3Sample, validateV3Store, writeV3Store } from './lib/task-report-v3.mjs';
-import { completionTiming, readRuntimeMetadata, usageDelta } from './lib/task-report-runtime.mjs';
+import { completionTiming, readRuntimeMetadata, usageDelta, usageSum } from './lib/task-report-runtime.mjs';
 
 const ROOT = resolve(process.env.TASK_REPORT_ROOT || '.');
 const argv = process.argv.slice(2);
@@ -209,7 +209,7 @@ function stageAppend(value) {
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   const receipt = receiptFor(value, manifestPath);
   exactModel(manifest.runtime?.model);
-  if (!manifest.estimate || manifest.estimate.timing !== 'pre-read' || !Number.isInteger(manifest.estimate.tokens)) fail('manifest must contain a valid pre-read estimate from task-close prepare');
+  if (!manifest.estimate || !['pre-read', 'pre-change'].includes(manifest.estimate.timing) || !Number.isInteger(manifest.estimate.tokens)) fail('manifest must contain a valid context-plus-change estimate from task-close prepare');
   const pendingPath = rootPath(ROOT, one(value, 'pending') || PENDING_FILE);
   const options = JSON.parse(JSON.stringify(value));
   delete options.stage;
@@ -230,11 +230,12 @@ async function finalizePending(value) {
   const pending = JSON.parse(readFileSync(pendingPath, 'utf8'));
   const manifestPath = rootPath(ROOT, pending.manifest);
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  const metadata = await readRuntimeMetadata({ env: process.env, task: manifest.task, samples: readV3Samples(ROOT) });
-  const delta = usageDelta(manifest.usage_baseline, metadata.usage_baseline);
+  const metadata = await readRuntimeMetadata({ env: process.env, task: manifest.task, taskStartedAt: manifest.task_started_at, samples: readV3Samples(ROOT) });
+  const finalizedAt = metadata.task_completed_at && Date.parse(metadata.task_completed_at) >= Date.parse(manifest.task_started_at || '') ? metadata.task_completed_at : new Date().toISOString();
+  const delta = usageSum(manifest.usage_baseline, metadata.events, { from: manifest.task_started_at, through: finalizedAt }) || usageDelta(manifest.usage_baseline, metadata.task_usage_final || metadata.usage_at_task_complete || metadata.usage_current || metadata.usage_baseline);
   if (!delta || !Number.isFinite(delta.total_tokens)) fail('runtime usage finalization is unavailable; pending transaction preserved');
-  const timing = completionTiming(metadata.events, { taskStartedAt: manifest.task_started_at, finalizedAt: new Date().toISOString() });
-  const options = { ...pending.options, total: String(delta.total_tokens), main: String(delta.total_tokens), 'input-tokens': String(delta.input_tokens), 'cached-input-tokens': String(delta.cached_input_tokens), 'cache-write-input-tokens': String(delta.cache_write_input_tokens), 'output-tokens': String(delta.output_tokens), 'reasoning-output-tokens': String(delta.reasoning_output_tokens), 'active-agent-seconds': timing.active_agent_seconds === null ? undefined : String(timing.active_agent_seconds), 'wall-duration-seconds': timing.wall_duration_seconds === null ? undefined : String(timing.wall_duration_seconds), 'finalized-at': new Date().toISOString() };
+  const timing = completionTiming(metadata.events, { taskStartedAt: manifest.task_started_at, finalizedAt });
+  const options = { ...pending.options, total: String(delta.total_tokens), main: String(delta.total_tokens), 'input-tokens': String(delta.input_tokens), 'cached-input-tokens': String(delta.cached_input_tokens), 'cache-write-input-tokens': String(delta.cache_write_input_tokens), 'output-tokens': String(delta.output_tokens), 'reasoning-output-tokens': String(delta.reasoning_output_tokens), 'active-agent-seconds': timing.active_agent_seconds === null ? undefined : String(timing.active_agent_seconds), 'wall-duration-seconds': timing.wall_duration_seconds === null ? undefined : String(timing.wall_duration_seconds), 'finalized-at': finalizedAt };
   delete options.stage;
   append(options);
   manifest.report = { status: 'appended', summary: 'Finalized runtime usage and completion timing; committed v2 and v3.' };
@@ -244,7 +245,7 @@ async function finalizePending(value) {
 
 function append(value) {
   if (value.stage) return stageAppend(value);
-  if (value['r-est'] !== undefined) fail('--r-est is intake-only; task-close report must read the pre-read estimate from the manifest');
+  if (value['r-est'] !== undefined || value['r-change-est'] !== undefined) fail('estimate flags are intake-only; task-close report must read the context-plus-change estimate from the manifest');
   if (value.model !== undefined || value['model-variant'] !== undefined) fail('model variant is intake-only; task-close prepare must record it in the manifest');
   const manifestPath = rootPath(ROOT, one(value, 'manifest', { required: true }));
   if (!existsSync(manifestPath)) fail(`manifest not found: ${relativePath(manifestPath)}`);
@@ -257,7 +258,7 @@ function append(value) {
   if (row > 20) fail('open cycle already has 20 rows; close the cycle before appending');
   const model = exactModel(manifest.runtime?.model);
   const estimate = manifest.estimate;
-  if (!estimate || estimate.timing !== 'pre-read' || !Number.isInteger(estimate.tokens) || estimate.tokens < 0) fail('manifest must contain a valid pre-read estimate from task-close prepare');
+  if (!estimate || !['pre-read', 'pre-change'].includes(estimate.timing) || !Number.isInteger(estimate.tokens) || estimate.tokens < 0) fail('manifest must contain a valid context-plus-change estimate from task-close prepare');
   if (manifest.complexity?.estimated !== undefined && Number(one(value, 'complexity')) !== Number(manifest.complexity.estimated)) fail('estimated complexity is intake-only and cannot change after prepare');
   if (manifest.runtime?.effort && String(one(value, 'effort')) !== String(manifest.runtime.effort)) fail('runtime effort is intake-only and cannot change after prepare');
   const record = {
@@ -269,7 +270,7 @@ function append(value) {
     complexity: asInteger(one(value, 'complexity'), 'complexity', { min: 1 }),
     mode: one(value, 'mode', { required: true }),
     scope: { domains: asInteger(one(value, 'domains'), 'domains'), files: asInteger(one(value, 'files'), 'files'), manifest: relativePath(manifestPath) },
-    estimate: { tokens: estimate.tokens, timing: estimate.timing, basis: estimate.basis, metric: 'total_tokens', recorded_at: estimate.recorded_at, manifest_hash: estimate.manifest_hash, route_count: estimate.route_count },
+    estimate: { tokens: estimate.tokens, timing: estimate.timing, basis: estimate.basis, metric: 'total_tokens', context_tokens: estimate.context_tokens ?? null, modification_tokens: estimate.modification_tokens ?? null, recorded_at: estimate.recorded_at, manifest_hash: estimate.manifest_hash, route_count: estimate.route_count },
     observed: {
       source_read_tokens: parseMeasurement(one(value, 'r-act')),
       total_tokens: parseMeasurement(one(value, 'total')),

@@ -3,7 +3,7 @@ export const REVIEW_SCHEMA_VERSION = 1;
 export const STATE_SCHEMA_VERSION = 1;
 
 const MEASUREMENT_KINDS = new Set(['exact', 'estimated', 'unavailable']);
-const ESTIMATE_TIMINGS = new Set(['pre-read', 'late', 'unavailable']);
+const ESTIMATE_TIMINGS = new Set(['pre-read', 'pre-change', 'late', 'unavailable']);
 const RETRIEVAL_RESULTS = new Set(['first-try', 'second-document', 'repository-fallback', 'doc-source-conflict', 'unavailable']);
 
 function isObject(value) {
@@ -89,7 +89,13 @@ export function validateTaskRecord(record, { legacy = record?.source === 'legacy
     integer(errors, record.estimate.tokens, 'estimate.tokens', { nullable: true, min: 0 });
     if (!ESTIMATE_TIMINGS.has(record.estimate.timing)) errors.push('estimate.timing is invalid');
     string(errors, record.estimate.basis, 'estimate.basis', { nullable: true, max: 500 });
-    if (!legacy && (record.estimate.timing !== 'pre-read' || record.estimate.tokens === null)) errors.push('new records require a pre-read estimate');
+    if (!legacy && (!['pre-read', 'pre-change'].includes(record.estimate.timing) || record.estimate.tokens === null)) errors.push('new records require a context-plus-change estimate');
+    if (!legacy && record.estimate.timing === 'pre-change') {
+      integer(errors, record.estimate.context_tokens, 'estimate.context_tokens', { min: 0 });
+      integer(errors, record.estimate.modification_tokens, 'estimate.modification_tokens', { min: 0 });
+      if (Number.isInteger(record.estimate.context_tokens) && Number.isInteger(record.estimate.modification_tokens) && record.estimate.tokens !== record.estimate.context_tokens + record.estimate.modification_tokens)
+        errors.push('estimate.tokens must equal context_tokens + modification_tokens');
+    }
   }
 
   if (!isObject(record.observed)) errors.push('observed must be an object');

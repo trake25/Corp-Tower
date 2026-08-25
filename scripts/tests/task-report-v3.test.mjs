@@ -3,8 +3,8 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { completionTiming, readRuntimeMetadata, usageDelta } from '../lib/task-report-runtime.mjs';
-import { bucketKey, createV3Sample, nextBucketPosition, renderV3Bucket, validateV3Sample } from '../lib/task-report-v3.mjs';
+import { completionTiming, readRuntimeMetadata, usageDelta, usageSum } from '../lib/task-report-runtime.mjs';
+import { bucketKey, createV3Sample, formatMinutes, formatTokens, nextBucketPosition, renderV3Bucket, validateV3Sample } from '../lib/task-report-v3.mjs';
 
 function manifest(overrides = {}) {
   return {
@@ -39,12 +39,23 @@ test('realized complexity cannot relocate a sample and requires a reason', () =>
   assert.equal(valid.actual_complexity, 4);
 });
 
+test('pre-change estimate records context usage plus file-change estimate', () => {
+  const row = sample(1);
+  row.estimate = { tokens: 7000, timing: 'pre-change', source: 'context-plus-change', context_tokens: 5000, modification_tokens: 2000, recorded_at: '2026-08-25T00:00:00.000Z' };
+  assert.deepEqual(validateV3Sample(row), []);
+  row.estimate.tokens = 7001;
+  assert.match(validateV3Sample(row).join('\n'), /context_tokens \+ modification_tokens/);
+});
+
 test('closed bucket rendering uses the compact twelve-row table', () => {
   const rows = Array.from({ length: 12 }, (_, index) => ({ ...sample(index), cycle: 1, row: index + 1 }));
   const report = renderV3Bucket(rows);
   assert.match(report, /## Cycle 1 \(closed\)/);
   assert.equal((report.match(/^\| \d+ \|/gm) || []).length, 12);
-  assert.match(report, /Est total \| Actual total \| Error \| Cache % \| Active\/Wall/);
+  assert.match(report, /Estimated pool tokens \| Actual pool tokens \| Pool delta \| Cache ratio \| Active \/ wall \(min\)/);
+  assert.equal(formatTokens(30000), '30k');
+  assert.equal(formatTokens(6847080), '6.847m');
+  assert.equal(formatMinutes(1743.096), '29.1 min');
 });
 
 test('runtime adapter gives collaboration settings precedence and hashes the session', async () => {
@@ -54,7 +65,11 @@ test('runtime adapter gives collaboration settings precedence and hashes the ses
     mkdirSync(root, { recursive: true });
     writeFileSync(transcript, [
       JSON.stringify({ timestamp: '2026-08-25T00:00:00.000Z', type: 'turn_context', payload: { model: 'gpt-5.6-terra', reasoning_effort: 'medium', collaboration_mode: { settings: { model: 'gpt-5.6-sol', reasoning_effort: 'xhigh' } } } }),
-      JSON.stringify({ timestamp: '2026-08-25T00:00:01.000Z', type: 'event_msg', payload: { type: 'task_started', started_at: 1787616001 } }),
+      JSON.stringify({ timestamp: '2026-08-25T00:00:01.000Z', type: 'event_msg', payload: { type: 'task_started', turn_id: 'old-turn', started_at: 1787616001 } }),
+      JSON.stringify({ timestamp: '2026-08-25T00:01:00.000Z', type: 'event_msg', payload: { type: 'task_started', turn_id: 'current-turn', started_at: 1787616060 } }),
+      JSON.stringify({ timestamp: '2026-08-25T00:01:03.000Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { input_tokens: 15, cached_input_tokens: 8, output_tokens: 3, reasoning_output_tokens: 2, total_tokens: 20 } } } }),
+      JSON.stringify({ timestamp: '2026-08-25T00:01:05.000Z', type: 'event_msg', payload: { type: 'task_complete', turn_id: 'current-turn', completed_at: 1787616065 } }),
+      JSON.stringify({ timestamp: '2026-08-25T00:01:06.000Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { input_tokens: 25, cached_input_tokens: 18, output_tokens: 4, reasoning_output_tokens: 2, total_tokens: 30 } } } }),
       JSON.stringify({ timestamp: '2026-08-25T00:00:02.000Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { input_tokens: 10, cached_input_tokens: 4, output_tokens: 2, reasoning_output_tokens: 1, total_tokens: 12 } } } }),
     ].join('\n'));
     const metadata = await readRuntimeMetadata({ env: { CODEX_THREAD_ID: 'thread-fixture', CODEX_TRANSCRIPT_PATH: transcript }, samples: [] });
@@ -63,6 +78,13 @@ test('runtime adapter gives collaboration settings precedence and hashes the ses
     assert.match(metadata.session_hash, /^[a-f0-9]{64}$/);
     assert.equal(metadata.session_id, 'thread-fixture');
     assert.equal(metadata.usage_baseline.total_tokens, 12);
+    assert.equal(metadata.task_usage_baseline.total_tokens, 12);
+    assert.equal(metadata.usage_at_task_start.total_tokens, 12);
+    assert.equal(metadata.task_usage_final.total_tokens, 20);
+    assert.equal(metadata.usage_at_task_complete.total_tokens, 20);
+    assert.equal(metadata.task_started_at, '2026-08-25T00:01:00.000Z');
+    assert.equal(metadata.task_completed_at, '2026-08-25T00:01:05.000Z');
+    assert.equal(metadata.task_turn_id, 'current-turn');
     assert.equal(JSON.stringify(metadata), JSON.stringify(metadata).replace('thread-fixture', metadata.session_id));
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -81,4 +103,34 @@ test('usage deltas and active timing exclude human or approval waits', () => {
   ], { taskStartedAt: '1970-01-01T00:00:01.000Z', finalizedAt: '1970-01-01T00:00:20.000Z' });
   assert.equal(timing.active_agent_seconds, 4);
   assert.equal(timing.wall_duration_seconds, 19);
+});
+
+test('usage sum handles per-turn counter resets inside one task interval', () => {
+  const start = { input_tokens: 100, cached_input_tokens: 80, output_tokens: 10, reasoning_output_tokens: 5, total_tokens: 110 };
+  const events = [
+    { type: 'token_count', at: 2000, usage: { input_tokens: 150, cached_input_tokens: 120, output_tokens: 12, reasoning_output_tokens: 6, total_tokens: 162 } },
+    { type: 'token_count', at: 3000, usage: { input_tokens: 20, cached_input_tokens: 15, output_tokens: 2, reasoning_output_tokens: 1, total_tokens: 22 } },
+    { type: 'token_count', at: 4000, usage: { input_tokens: 30, cached_input_tokens: 22, output_tokens: 4, reasoning_output_tokens: 2, total_tokens: 34 } },
+  ];
+  assert.deepEqual(usageSum(start, events, { from: '1970-01-01T00:00:01.000Z', through: '1970-01-01T00:00:05.000Z' }), {
+    input_tokens: 80,
+    cached_input_tokens: 62,
+    cache_write_input_tokens: 0,
+    output_tokens: 6,
+    reasoning_output_tokens: 3,
+    total_tokens: 86,
+  });
+});
+
+test('completion timing is bounded to the task interval', () => {
+  const timing = completionTiming([
+    { type: 'item_started', at: 1000, payload: { item: { id: 'old', type: 'Reasoning' } } },
+    { type: 'item_completed', at: 3000, payload: { item: { id: 'old', type: 'Reasoning' } } },
+    { type: 'item_started', at: 5000, payload: { item: { id: 'current', type: 'CommandExecution' } } },
+    { type: 'item_completed', at: 7000, payload: { item: { id: 'current', type: 'CommandExecution' } } },
+    { type: 'item_started', at: 9000, payload: { item: { id: 'future', type: 'Reasoning' } } },
+    { type: 'item_completed', at: 11000, payload: { item: { id: 'future', type: 'Reasoning' } } },
+  ], { taskStartedAt: '1970-01-01T00:00:05.000Z', finalizedAt: '1970-01-01T00:00:09.000Z' });
+  assert.equal(timing.active_agent_seconds, 2);
+  assert.equal(timing.wall_duration_seconds, 4);
 });

@@ -9,9 +9,11 @@ This file is the vendor-neutral repository contract. Load one role skill from
    `fullstack-coordinator`, `infra-engineer`, `qa-engineer`, `web-designer`,
    `editorial`, or `docs-steward`. Workflows are `update-docs` and
    `compact-docs`. Load the matching `SKILL.md` before editing.
-2. For an implementation, begin with `task-close prepare` and its explicit
-   task-owned paths. Its intake is the canonical role route, KB/map, QA and
-   documentation scope. For an assessment that needs no manifest, use
+2. For an implementation, begin the task-close run with its explicit
+   task-owned paths; record the context-plus-change estimate with `prepare`
+   after bounded context retrieval and before the first file edit. Its intake is
+   the canonical role route, KB/map, QA and documentation scope. For an
+   assessment that needs no manifest, use
    `node scripts/context.mjs route` or `scope <task-owned-path>...`. Game
    knowledge starts at `docs/context/index.md`; portfolio knowledge at
    `site/docs/index.md`.
@@ -66,8 +68,9 @@ automatic reflex.
   relevant KB checks and report schema validation; it never reads a shared dirty
   worktree for scope.
 - Standard task records are append-only JSONL facts rendered to Markdown. A
-  report cannot append without a passed receipt, an intake pre-read estimate,
-  and the exact implementing model variant recorded by `prepare`;
+  report cannot append without a passed receipt, a context-plus-change usage-pool estimate
+  recorded after bounded context retrieval and before file edits, and the exact
+  implementing model variant recorded by `prepare`;
   `variant unrecorded` is invalid.
 - Files over 600 lines are decomposition candidates. Propose a split; do not
   expand the current task without approval.

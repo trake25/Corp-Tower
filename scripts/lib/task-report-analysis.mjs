@@ -43,8 +43,8 @@ function countBy(records, getter) {
 function errorStats(records) {
   const errors = records.map(record => {
     const estimate = record.estimate?.tokens;
-    const actual = record.observed?.source_read_tokens;
-    if (record.estimate?.timing !== 'pre-read' || !Number.isFinite(estimate) || !Number.isFinite(actual?.value)) return null;
+    const actual = record.estimate?.timing === 'pre-change' ? record.observed?.total_tokens : record.observed?.source_read_tokens;
+    if (!['pre-read', 'pre-change'].includes(record.estimate?.timing) || !Number.isFinite(estimate) || !Number.isFinite(actual?.value)) return null;
     return actual.value - estimate;
   }).filter(value => value !== null);
   return { ...statistics(errors), comparable_records: errors.length };
@@ -71,7 +71,7 @@ function cycleRollup(records) {
       main_thread_tokens: groupedStatistics(records, 'main_thread_tokens'),
     },
     estimates: {
-      coverage: percentage(records.filter(record => record.estimate?.timing === 'pre-read' && Number.isFinite(record.estimate.tokens)).length, records.length),
+      coverage: percentage(records.filter(record => ['pre-read', 'pre-change'].includes(record.estimate?.timing) && Number.isFinite(record.estimate.tokens)).length, records.length),
       error: errorStats(records),
     },
     scope: {
@@ -92,7 +92,7 @@ function comparison(records, from, to) {
   if (current.length < 2 || prior.length < 2) return { status: 'insufficient-data', reason: 'both cycles need at least two comparable records' };
   const currentStats = cycleRollup(current).measurements.total_tokens.estimated;
   const priorStats = cycleRollup(prior).measurements.total_tokens.estimated;
-  if (!currentStats.count || !priorStats.count) return { status: 'insufficient-data', reason: 'total-token measurement provenance does not overlap' };
+  if (!currentStats.count || !priorStats.count) return { status: 'insufficient-data', reason: 'usage-pool measurement provenance does not overlap' };
   return {
     status: 'comparable',
     current_cycle: to,
@@ -116,8 +116,8 @@ export function analyzeRecords(records, { from = 1, to, closedCycles = [] } = {}
       repository_fallback: 'retrieval.result=repository-fallback',
       doc_source_conflict: 'retrieval.result=doc-source-conflict',
       statistics: 'median, mean and p90 are calculated separately for exact and estimated measurements; unavailable values are excluded',
-      estimate_error: 'source_read_tokens.value minus estimate.tokens, only when estimate.timing=pre-read and source-read value is numeric',
-      outlier_threshold: 'total-token values at or above the inclusive p90 threshold, maximum eight task ids',
+      estimate_error: 'actual usage-pool tokens minus estimate.tokens for pre-change rows; legacy source-read value minus estimate.tokens for pre-read rows',
+      outlier_threshold: 'usage-pool token values at or above the inclusive p90 threshold, maximum eight task ids',
     },
     aggregate: cycleRollup(selected),
     cycles: byCycle,
@@ -130,7 +130,7 @@ export function factualReview(analysis, finding = null, recommendation = null) {
   const firstTry = aggregate.retrieval['first-try'];
   const estimateCoverage = aggregate.estimates.coverage;
   const improvement = firstTry.count ? `Retrieval first-try coverage was ${firstTry.count}/${firstTry.total} (${firstTry.percentage}%).` : 'No retrieval result measurements were available.';
-  const regression = aggregate.measurements.total_tokens.estimated.count ? `Estimated total-token measurements have a median of ${aggregate.measurements.total_tokens.estimated.median}.` : 'No comparable total-token measurements were available.';
+  const regression = aggregate.measurements.total_tokens.estimated.count ? `Estimated usage-pool measurements have a median of ${aggregate.measurements.total_tokens.estimated.median}.` : 'No comparable usage-pool measurements were available.';
   const flaw = estimateCoverage.count ? `Pre-read estimates cover ${estimateCoverage.count}/${estimateCoverage.total} records (${estimateCoverage.percentage}%).` : 'Pre-read estimate coverage is 0/0 because no comparable records were available.';
   return {
     improvement,
@@ -140,4 +140,3 @@ export function factualReview(analysis, finding = null, recommendation = null) {
     recommendation: recommendation || null,
   };
 }
-
