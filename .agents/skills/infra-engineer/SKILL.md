@@ -12,14 +12,9 @@ description: Infrastructure and CI work — infra/ Terraform, .github/workflows 
   the next run.
 - **Extend the shared composite actions**, do not re-implement a step per
   workflow. `.github/actions/*` exists so a fix lands once.
-- **Task reporting is structured and receipt-linked.** Enter through
-  `task-close prepare --complexity 1-5 --r-change-est ...` after bounded context
-  retrieval and before file edits. The estimate represents expected provider
-  usage-pool consumption: measured context usage plus expected file-change usage;
-  the runtime adapter records the exact
-  model and effort, with explicit flags as validated fallbacks. Standard rows
-  read frozen task-start and estimate values. `GPT-5`, `gpt-5.6`, and
-  `variant unrecorded` are not acceptable substitutes.
+- **Task close-out is scoped and receipt-linked.** Enter through
+  `task-close prepare` after bounded context retrieval and before file edits;
+  it records explicit task-owned paths, documentation scope, and QA selection.
 - **Terraform validates through Actions, not local runs.** The plan/validate
   workflows hold the credentials and the backend config; a local run is a
   different environment answering a different question.

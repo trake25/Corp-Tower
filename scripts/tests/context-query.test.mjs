@@ -23,15 +23,6 @@ test('search filters by an existing domain and asks for refinement when bounded'
   assert.ok(result.warnings.some(warning => warning.startsWith('refine query:')));
 });
 
-test('task cost report routes to the automation protocol', () => {
-  const result = routeContext('report/task-token-cost-effectivity.md');
-
-  assert.equal(result.skill, 'docs-steward');
-  assert.deepEqual(result.docs, ['docs/context/automation.md']);
-  assert.deepEqual(result.maps, []);
-  assert.equal(result.read, 'hunk');
-});
-
 test('working folders route to explicit plan and reference guidance', () => {
   const plan = routeContext('plan/example.md');
   assert.equal(plan.skill, 'docs-steward');

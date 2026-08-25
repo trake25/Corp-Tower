@@ -10,9 +10,9 @@ This file is the vendor-neutral repository contract. Load one role skill from
    `editorial`, or `docs-steward`. Workflows are `update-docs` and
    `compact-docs`. Load the matching `SKILL.md` before editing.
 2. For an implementation, begin the task-close run with its explicit
-   task-owned paths; record the context-plus-change estimate with `prepare`
-   after bounded context retrieval and before the first file edit. Its intake is
-   the canonical role route, KB/map, QA and documentation scope. For an
+   task-owned paths after bounded context retrieval and before the first file
+   edit. Its intake is the canonical role route, KB/map, QA and documentation
+   scope. For an
    assessment that needs no manifest, use
    `node scripts/context.mjs route` or `scope <task-owned-path>...`. Game
    knowledge starts at `docs/context/index.md`; portfolio knowledge at
@@ -64,14 +64,8 @@ automatic reflex.
   `scripts/`, `.github/`, and `site/` retain useful comments; never remove a
   `SAFETY EXCEPTION` comment.
 - Finish repository changes through that manifest: record the documentation
-  decision, then `verify` and `report`. It owns QA selection, map generation,
-  relevant KB checks and report schema validation; it never reads a shared dirty
-  worktree for scope.
-- Standard task records are append-only JSONL facts rendered to Markdown. A
-  report cannot append without a passed receipt, a context-plus-change usage-pool estimate
-  recorded after bounded context retrieval and before file edits, and the exact
-  implementing model variant recorded by `prepare`;
-  `variant unrecorded` is invalid.
+  decision, then `verify`. It owns QA selection, map generation and relevant KB
+  checks; it never reads a shared dirty worktree for scope.
 - Files over 600 lines are decomposition candidates. Propose a split; do not
   expand the current task without approval.
 - Do not deploy, commit, push, pull, compare remotes, create branches, or perform
@@ -101,6 +95,4 @@ parallel work; higher-level agent policies and user instructions control it.
 
 ## Completion
 
-Use the passing `task-close` receipt as the QA/docs-steward handoff, then append
-through its `report` command. The report helper still enforces the open-cycle
-schema and plain-English cycle close-out.
+Use the passing `task-close` receipt as the QA/docs-steward handoff.

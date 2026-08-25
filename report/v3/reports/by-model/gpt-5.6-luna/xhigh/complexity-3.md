@@ -1,9 +1,0 @@
-# gpt-5.6-luna · xhigh · estimated complexity 3
-
-Rows are assigned by estimated complexity. Actual complexity is calibration only. Closed cycles contain exactly 12 rows.
-
-## Cycle 1 (open)
-
-| # | Task | Session sample | Actual complexity | Scope (domains / files) | Estimated pool tokens | Actual pool tokens | Pool delta | Cache ratio | Active / wall (min) | Retrieval | Result |
-|---:|---|---|---:|---|---:|---:|---:|---:|---:|---|---|
-| 1 | Implement task reporting v3 plan | first | 3 | 3 domains / 21 files | legacy 30k | 6.877m | 6.847m | — | — / 29.1 min | ✓ | pass |

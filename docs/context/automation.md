@@ -20,14 +20,6 @@ source, environment files, secrets, or the working-tree diff.
 | `scope <task-owned-path>...` | returns routes, docs, maps and the QA selection for explicit task paths |
 | `bundle <task>` | writes selected KB/map evidence to ignored `.agent-state/automation/` state |
 
-`report/v2/reports/task-token-cost-effectivity.md` routes to this protocol;
-retrieve it with `route` before analysing v2 rows. V2 data is append-only under
-`report/v2/data/`. V3 data is append-only under `report/v3/data/samples.jsonl`,
-with a compact dashboard at `report/v3/reports/index.md` and one generated
-table per exact model, effort and estimated complexity under
-`report/v3/reports/by-model/`. Markdown is generated presentation; never parse
-or hand-edit it for metrics.
-
 The gitignored working folders have explicit routes but are not searched as KB
 content. `plan/` is where agents look for existing task plans and save new ones;
 existing plans are read-only until the user explicitly instructs or approves an
@@ -57,78 +49,22 @@ a dirty working tree. Start an implementation with `prepare`: its JSON intake
 returns each route, QA plan, documentation candidates, map ownership and exact
 documentation scope, so no separate `context scope` call is needed.
 
-1. `prepare --complexity <1-5> --r-change-est <tokens>` records the effective
-   model and effort from the active runtime transcript/host adapter, the matching
-   user-instruction start boundary, hashed session freshness, and an immutable
-   task-start usage baseline. Run it after bounded context retrieval and before
-   the first file edit. The estimate is `measured context usage + estimated file
-   changes`; this is the expected provider usage-pool consumption before work.
-   `--model-variant` and `--effort` are validated fallbacks when no
-   adapter exists. Legacy `--r-est` remains accepted as a pre-read estimate.
-   The command also returns routing, QA selection, documentation candidates,
-   exact `docs-scope` output and map ownership in ignored JSON. Never rerun it
-   against the same manifest; start a new `--output` run instead.
+1. `prepare` records explicit task-owned paths after bounded context retrieval
+   and before the first file edit. It returns routing, QA selection,
+   documentation candidates, exact `docs-scope` output and map ownership in
+   ignored JSON. Never rerun it against the same manifest; start a new `--output`
+   run instead.
 2. The agent updates KB prose only when the doc-worthy gate applies, then
    `decide` records `updated` with the edited document or `not-needed` with a
    rationale. This is an agent decision, not a human checkpoint.
 3. `verify` runs selected QA, file-map generation for source paths, relevant KB
-   validation, agent-configuration validation for skill or entry-contract edits,
-   and `task-report validate` into a receipt under `.agent-state/automation/`.
-4. `report` appends v2 and v3 together after a passing receipt. It reads the
-   frozen model, effort, complexity, context-plus-change estimate and session
-   from the manifest, copies path and domain counts, and resolves the provider
-   token delta and active / elapsed time for the completed task. When a runtime
-   baseline is unavailable, `--total` and `--main` provide the required measured
-   totals. Values such as `GPT-5` or `variant unrecorded` are invalid for
-   standard records.
-
-## Structured task reporting
-
-`node scripts/task-report.mjs start` remains the low-level v2 intake writer;
-`task-close prepare` is the normal entry point. `task-close report` is the
-normal single-command append. `append` requires a passed
-receipt and reads the exact runtime variant, effort, complexity and frozen
-context-plus-change estimate from the manifest. Source-read, provider usage-pool
-total, and v3 input/cache/output/reasoning measurements carry `exact`,
-`estimated`, or `unavailable` provenance; provider pool usage is never inferred
-from local tool output.
+   validation, and agent-configuration validation for skill or entry-contract
+   edits into a receipt under `.agent-state/automation/`.
 
 Verification receipts retain command output for audit, but the console summary is
 bounded: step name, exit code or signal, and the first failure marker or
 file/line location. An empty child stream is reported as `process exited without
 output`, never as an unexplained `no summary`.
-
-V3 uses active agent seconds as its primary completion-efficiency measure and
-wall duration as operational context. Active time excludes human or approval
-waits; wall duration and actual usage-pool tokens are measured from the matching
-user instruction to task completion. Human reports show token values in `k`/`m` units and time in
-minutes; the JSONL source keeps exact token and second values. The first v3
-sample in a runtime session is labelled `first`; later samples are `continued`.
-Complexity is estimated at intake and realized at close; a changed rating
-requires a compact reason code and never changes the selected bucket.
-
-Receipts referenced by open-cycle records are local-only evidence under
-`.agent-state/automation/`; validation does not require those ignored files to exist
-in a clean clone. Public report data remains in `report/`.
-
-Use `analyze --from <cycle> --to last-closed --json` for v2 metrics. V3 adds
-`v3-analyze`, `compare`, `view --model ... --effort ... --complexity ...`, and
-`runtime-diagnose`. V3 buckets close automatically at 12 samples and sample 13
-opens the next cycle. `render` regenerates both presentations. `validate` checks
-both stores, one-to-one dual-write linkage, receipts, cycle state, generated
-freshness, legacy warnings and v3 table shape. V3 comparisons keep estimated
-complexity, freshness and worker-count coverage separate and provide evidence
-for a choice without generating a composite winner.
-
-`import` is the one-time legacy-Markdown migration path. It preserves missing
-metadata and warnings, including the Cycle 2 four-versus-six estimate
-discrepancy. `close-cycle` accepts exactly twenty receipt-linked standard rows,
-writes the review and factual rollup, opens the next cycle, renders once, and
-leaves records untouched if validation fails.
-
-Human involvement is limited to testing that requires a real rendered/device
-comparison and the final product pass. Green deterministic checks do not replace
-an agent's documentation, coverage, or root-cause judgement.
 
 ## Authorized Git automation
 

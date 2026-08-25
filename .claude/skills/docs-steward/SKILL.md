@@ -52,12 +52,12 @@ apply.
 ## Close-out
 
 `task-close verify` is the normal receipt: it regenerates maps for source paths,
-validates the relevant game/site KB and records exact command evidence before
-the report can append. It never replaces the doc-worthy decision or authoring;
-the agent records that decision through the manifest before verification.
+validates the relevant game/site KB and records exact command evidence. It never
+replaces the doc-worthy decision or authoring; the agent records that decision
+through the manifest before verification.
 
 Regenerated maps preserve authored `Does` by `file#symbol`. Fix every validator
-error before reporting done. Receipt is one line:
+error before completion. Receipt is one line:
 `docs: gameplay.md, backend.md (+4/−31) · validate PASS`.
 
 **Do not commit unless explicitly told to.**
