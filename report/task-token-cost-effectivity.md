@@ -20,7 +20,7 @@ Model is the exact implementing runtime variant for standard records. Legacy row
 
 ## Cycle 6 (open)
 
-Current cycle: 11 recorded row(s); next row is 12.
+Current cycle: 15 recorded row(s); next row is 16.
 
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -35,7 +35,11 @@ Current cycle: 11 recorded row(s); next row is 12.
 | 9 | Align placement with structural pose and contain tower tilt | 3 | B | 2 | 22 | ~8,000 | ~34,000 | ~57,000 | ~47,000 | ! | ok | variant unrecorded | high | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
 | 10 | Show remaining failures and terminal Home countdown in level summary | 3 | A | 1 | 7 | late estimate ~7,000 | ~20,000 | ~34,000 | ~34,000 | ~ | ok | gpt-5 (variant unrecorded) | medium | client-engineer,docs-steward,update-docs |
 | 11 | Add debug Last Chance collapse rescue | 4 | B | 3 | 17 | late estimate ~6,000 | ~17,000 | ~27,000 | ~27,000 | ~ | ok | gpt-5 (variant unrecorded) | medium | fullstack-coordinator,server-engineer,client-engineer,qa-engineer,docs-steward,update-docs |
-<!-- next: row 12 -->
+| 12 | Add guarded Git sync commit push automation | 2 | implementation | 3 | 4 | ~1,800 | 1,800 | 5,000 | 3,200 | ✓ | pass | gpt-5-codex | moderate | infra-engineer,docs-steward |
+| 13 | Make Git automation infer task scope and keywords | 2 | implementation | 3 | 4 | ~900 | 900 | 3,000 | 2,200 | ✓ | pass | gpt-5-codex | moderate | infra-engineer,docs-steward |
+| 14 | Add main branch safety to Git automation | 2 | implementation | 3 | 4 | ~1,200 | 1,200 | 3,500 | 2,600 | ✓ | pass | gpt-5-codex | moderate | infra-engineer,docs-steward |
+| 15 | Add push-only backup branch mode | 2 | implementation | 3 | 4 | ~700 | 700 | 2,800 | 2,100 | ✓ | pass | gpt-5-codex | moderate | infra-engineer,docs-steward |
+<!-- next: row 16 -->
 
 ## Cycle 5 (closed)
 

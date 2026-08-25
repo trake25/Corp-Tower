@@ -99,6 +99,7 @@ export const ROUTE_RULES = [
   { pattern: /^scripts\/lib\/task-report-.*\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^report\/task-token-cost-effectivity\.md$/, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },
   { pattern: /^scripts\/install-git-hooks\.mjs$/, skill: 'infra-engineer', docs: [], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/git-sync-commit-push\.mjs$/, skill: 'infra-engineer', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/qa-gate\.mjs$/, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\//, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^(AGENTS\.md|CLAUDE\.md|\.agents\/skills\/|\.claude\/skills\/)/, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },
