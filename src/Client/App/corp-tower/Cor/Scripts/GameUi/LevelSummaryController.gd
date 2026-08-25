@@ -8,7 +8,6 @@ var match_state
 var tuning
 var level_summary_overlay: Control
 var level_summary_title_label: Label
-var level_summary_result_label: Label
 var level_summary_team_label: Label
 var level_summary_mvp_label: Label
 var level_summary_quest_label: Label
@@ -49,7 +48,6 @@ func _process(_delta: float) -> void:
 func bind_nodes(binder) -> void:
 	level_summary_overlay = binder.require_node("LevelSummaryOverlay") as Control
 	level_summary_title_label = binder.require_node("LevelSummaryTitleLabel") as Label
-	level_summary_result_label = binder.require_node("LevelSummaryResultLabel") as Label
 	level_summary_team_label = binder.require_node("LevelSummaryTeamLabel") as Label
 	level_summary_mvp_label = binder.require_node("LevelSummaryMvpLabel") as Label
 	level_summary_quest_label = binder.optional_node("LevelSummaryQuestLabel") as Label
@@ -156,8 +154,6 @@ func show_level_summary(summary_value: Variant, state: String) -> void:
 	var result: String = str(summary.get("result", state))
 	var level_number: int = int(summary.get("level", match_state.current_level))
 	level_summary_title_label.text = "Level " + str(level_number) + (" Completed" if result == "completed" else " Failed")
-	level_summary_result_label.text = get_level_summary_result_text(summary, result)
-	level_summary_result_label.visible = result != "completed"
 	level_summary_team_label.visible = false
 	level_summary_team_label.text = ""
 	level_summary_mvp_label.text = get_level_summary_mvp_text(summary)
@@ -226,23 +222,6 @@ func get_level_summary_key(summary: Dictionary) -> String:
 
 	return key
 
-func get_level_summary_result_text(summary: Dictionary, result: String) -> String:
-	if result == "completed":
-		var result_text: String = "Perfect Fit" if bool(summary.get("exactFinish", false)) else "Overbuilt +" + str(int(summary.get("overbuildHeight", 0)))
-		var finisher_id: String = str(summary.get("finisherId", ""))
-
-		if finisher_id != "":
-			result_text += " | Finisher " + players_ctx.display_name(finisher_id)
-
-		return result_text
-
-	var reason: String = str(summary.get("reason", "failed"))
-
-	if reason == "impact_score_requirement":
-		return append_failure_status_text(get_impact_failure_summary_text(summary), summary)
-
-	return append_failure_status_text("Reason: " + format_summary_reason(reason), summary)
-
 func get_failure_status(summary: Dictionary) -> Dictionary:
 	var raw_status: Variant = summary.get("failureStatus", {})
 
@@ -257,102 +236,6 @@ func get_failure_status(summary: Dictionary) -> Dictionary:
 			return impact_status
 
 	return {}
-
-func get_failure_status_text(summary: Dictionary) -> String:
-	var failure_status: Dictionary = get_failure_status(summary)
-
-	if !failure_status.has("retriesRemaining"):
-		return ""
-
-	return "Failures remaining: " + str(int(failure_status.get("retriesRemaining", 0)))
-
-func append_failure_status_text(text: String, summary: Dictionary) -> String:
-	var failure_status_text: String = get_failure_status_text(summary)
-
-	if failure_status_text == "":
-		return text
-
-	return text + "\n" + failure_status_text
-
-func get_impact_failure_summary_text(summary: Dictionary) -> String:
-	var status: Dictionary = {}
-	var raw_status: Variant = summary.get("impactScoreStatus", {})
-
-	if typeof(raw_status) == TYPE_DICTIONARY:
-		status = raw_status
-
-	var blocked_level: int = int(summary.get(
-		"blockedLevel",
-		status.get("nextImpactLevel", 0)
-	))
-	var player_statuses: Array = status.get("players", [])
-	var player_count: int = 0
-	var ready_count: int = 0
-	var local_status: Dictionary = {}
-	var goal_texts: Array[String] = []
-
-	for raw_player_status in player_statuses:
-		if typeof(raw_player_status) != TYPE_DICTIONARY:
-			continue
-
-		var player_status: Dictionary = raw_player_status
-		var player_id: String = str(player_status.get("id", ""))
-		var is_local_player: bool = players_ctx.is_local(player_id)
-		player_count += 1
-
-		if is_local_player:
-			local_status = player_status
-
-		if bool(player_status.get("met", false)):
-			ready_count += 1
-			continue
-
-		if !is_local_player:
-			goal_texts.append(
-				players_ctx.display_name(player_id) +
-				" " + str(int(player_status.get("requiredScore", 0)))
-			)
-
-	if player_count == 0:
-		return get_impact_failure_fallback_text(summary, blocked_level)
-
-	var lines: Array[String] = [
-		"Impact L" + str(blocked_level) + "  |  " + str(ready_count) + "/" + str(player_count) + " ready"
-	]
-
-	if !local_status.is_empty():
-		lines.append(
-			"You: " +
-			str(int(local_status.get("score", 0))) +
-			" / " +
-			str(int(local_status.get("requiredScore", 0)))
-		)
-
-	if !goal_texts.is_empty():
-		lines.append("Goals: " + ", ".join(goal_texts))
-	elif ready_count == player_count:
-		lines.append("All ready")
-
-	return "\n".join(lines)
-
-func get_impact_failure_fallback_text(summary: Dictionary, blocked_level: int) -> String:
-	var failure_texts: Array[String] = []
-
-	for raw_failure in summary.get("impactScoreFailures", []):
-		if typeof(raw_failure) != TYPE_DICTIONARY:
-			continue
-
-		var failure: Dictionary = raw_failure
-		var player_id: String = str(failure.get("id", ""))
-		failure_texts.append(
-			players_ctx.display_name(player_id) +
-			" " + str(int(failure.get("requiredScore", 0)))
-		)
-
-	if failure_texts.is_empty():
-		return "Impact L" + str(blocked_level) + " failed"
-
-	return "Impact L" + str(blocked_level) + "\nGoals: " + ", ".join(failure_texts)
 
 func update_level_summary_quest_row(summary: Dictionary) -> void:
 	if level_summary_quest_label == null:
@@ -575,9 +458,3 @@ func clear_children(container: Node) -> void:
 
 	for child in container.get_children():
 		child.queue_free()
-
-func format_summary_reason(reason: String) -> String:
-	if reason == "impact_score_requirement":
-		return "Impact contribution requirement"
-
-	return reason.replace("_", " ").capitalize()

@@ -21,21 +21,6 @@ const SUMMARY_FIXTURE := {
 	]
 }
 
-const IMPACT_FAILURE_FIXTURE := {
-	"level": 4,
-	"result": "failed",
-	"reason": "impact_score_requirement",
-	"blockedLevel": 4,
-	"impactScoreStatus": {
-		"nextImpactLevel": 4,
-		"players": [
-			{"id": "P1", "met": false, "score": 12, "requiredScore": 40},
-			{"id": "P2", "met": true, "score": 44, "requiredScore": 40},
-			{"id": "P3", "met": false, "score": 5, "requiredScore": 40}
-		]
-	}
-}
-
 var controller
 
 func before_each() -> void:
@@ -49,38 +34,6 @@ func before_each() -> void:
 func test_summary_key_composes_identity_fields() -> void:
 	assert_eq(controller.get_level_summary_key(SUMMARY_FIXTURE), "3:completed:42:P2:true:0", "The summary key should compose level, result, score, mvp, exact and overbuild fields.")
 
-func test_completed_result_text_shows_perfect_fit_and_finisher() -> void:
-	assert_eq(controller.get_level_summary_result_text(SUMMARY_FIXTURE, "completed"), "Perfect Fit | Finisher Rocket", "An exact finish should read Perfect Fit with the finisher name.")
-
-func test_completed_result_text_shows_overbuild() -> void:
-	var overbuilt: Dictionary = {"exactFinish": false, "overbuildHeight": 2, "finisherId": ""}
-	assert_eq(controller.get_level_summary_result_text(overbuilt, "completed"), "Overbuilt +2", "A non exact finish should read the overbuild height.")
-
-func test_failed_result_text_formats_reason() -> void:
-	assert_eq(controller.get_level_summary_result_text({"reason": "time_expired"}, "failed"), "Reason: Time Expired", "Failure reasons should be humanized.")
-
-func test_failed_result_text_shows_remaining_failures() -> void:
-	var fixture: Dictionary = {
-		"reason": "time_expired",
-		"failureStatus": {"failureCount": 1, "retriesRemaining": 2, "gameOver": false}
-	}
-	assert_eq(
-		controller.get_level_summary_result_text(fixture, "failed"),
-		"Reason: Time Expired\nFailures remaining: 2",
-		"A failed summary should show the authoritative retries remaining."
-	)
-
-func test_impact_failure_text_lists_ready_count_local_line_and_goals() -> void:
-	var text: String = controller.get_impact_failure_summary_text(IMPACT_FAILURE_FIXTURE)
-	var text_lines: PackedStringArray = text.split("\n")
-	assert_eq(text_lines[0], "Impact L4  |  1/3 ready", "The first line should show the blocked level and ready count.")
-	assert_eq(text_lines[1], "You: 12 / 40", "The second line should show the local player's progress.")
-	assert_eq(text_lines[2], "Goals: Crane 40", "The goals line should list only unmet non-local players.")
-
-func test_impact_failure_falls_back_to_failure_list_without_statuses() -> void:
-	var fixture: Dictionary = {"blockedLevel": 5, "impactScoreFailures": [{"id": "P3", "requiredScore": 55}]}
-	assert_eq(controller.get_impact_failure_summary_text(fixture), "Impact L5\nGoals: Crane 55", "Without player statuses the failure list should drive the goals text.")
-
 func test_mvp_text_resolves_name_and_score() -> void:
 	assert_eq(controller.get_level_summary_mvp_text(SUMMARY_FIXTURE), "MVP Rocket +18", "The MVP line should resolve the display name and score.")
 	assert_eq(controller.get_level_summary_mvp_text({}), "MVP -", "A missing MVP should read as a dash.")
@@ -93,6 +46,7 @@ func test_scene_summary_shows_and_dedupes_by_key() -> void:
 	var overlay: Control = harness.find("LevelSummaryOverlay") as Control
 	assert_true(overlay.visible, "A queued summary with no popup wait should show immediately.")
 	assert_eq((harness.find("LevelSummaryTitleLabel") as Label).text, "Level 3 Completed", "The summary title should show the completed level.")
+	assert_null(harness.find("LevelSummaryResultLabel"), "The legacy result text must not be part of the summary popup.")
 	assert_eq((harness.find("LevelSummaryPlayersBox") as VBoxContainer).get_child_count(), 2, "Each summarized player should get a row.")
 	assert_true((harness.find("LevelSummaryCountdownLabel") as Label).text.begins_with("Next level is starting in "), "The summary should expose its live next-level countdown.")
 	scene_summary.queue_level_summary_after_score_popups(SUMMARY_FIXTURE, "finished", 0.0)
