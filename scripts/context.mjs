@@ -81,9 +81,9 @@ function lines(value) {
 }
 
 function safeBundlePath(input) {
-  const file = resolve(ROOT, input || 'task/context-bundle.md');
-  const taskRoot = resolve(ROOT, 'task');
-  if (!file.startsWith(taskRoot + sep) || !file.endsWith('.md')) fail('--output must be a Markdown file under ignored task/');
+  const file = resolve(ROOT, input || '.agent-state/automation/context-bundle.md');
+  const automationRoot = resolve(ROOT, '.agent-state/automation');
+  if (!file.startsWith(automationRoot + sep) || !file.endsWith('.md')) fail('--output must be a Markdown file under ignored .agent-state/automation/');
   return file;
 }
 
@@ -175,7 +175,7 @@ function main() {
     if (command === 'bundle') {
       checkOptions(options, ['json', 'domain', 'kind', 'path-prefix', 'require', 'max-results', 'max-bytes', 'output']);
       const task = positionals.join(' ').trim();
-      if (!task) fail('usage: node scripts/context.mjs bundle <task> [search filters] [--output task/file.md]');
+      if (!task) fail('usage: node scripts/context.mjs bundle <task> [search filters] [--output .agent-state/automation/file.md]');
       const result = contextBundle(ROOT, task, searchOptions(options));
       const output = safeBundlePath(option(options, 'output'));
       mkdirSync(dirname(output), { recursive: true });

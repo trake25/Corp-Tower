@@ -9,7 +9,7 @@ import { isUnrecordedModel } from './lib/task-report-schema.mjs';
 import { selectQa } from './qa-gate.mjs';
 
 const ROOT = resolve(process.env.TASK_CLOSE_ROOT || '.');
-const DEFAULT_MANIFEST = 'task/close-out.json';
+const DEFAULT_MANIFEST = '.agent-state/automation/close-out.json';
 const SCHEMA_VERSION = 1;
 
 function fail(message, code = 2) {

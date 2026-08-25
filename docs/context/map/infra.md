@@ -770,7 +770,7 @@ _no extracted symbols_
 | scripts/lib/context-query.mjs:309 | selectedText · fn | reopens only selected evidence while assembling a context bundle |
 | scripts/lib/context-query.mjs:318 | contextBundle · fn | writes a hard-bounded Markdown handoff with selected evidence and provenance |
 
-### scripts/lib/context-routing.mjs — 194 ln
+### scripts/lib/context-routing.mjs — 201 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -783,15 +783,15 @@ _no extracted symbols_
 | scripts/lib/context-routing.mjs:65 | ROUTE_RULES · const | route rules constant used by context-routing |
 | scripts/lib/context-routing.mjs:111 | AREA_ALIASES · const | area aliases constant used by context-routing |
 | scripts/lib/context-routing.mjs:127 | WORKSPACE_RULES · const | routes plan and reference working folders with explicit read/write policy |
-| scripts/lib/context-routing.mjs:144 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
-| scripts/lib/context-routing.mjs:152 | mapOwnerForPath · fn | returns the generated map that owns a source path |
-| scripts/lib/context-routing.mjs:156 | IGNORE_DIR · const | ignore dir constant used by context-routing |
-| scripts/lib/context-routing.mjs:157 | IGNORE_PATH · const | ignore path constant used by context-routing |
-| scripts/lib/context-routing.mjs:158 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
-| scripts/lib/context-routing.mjs:159 | norm · const | norm constant used by context-routing |
-| scripts/lib/context-routing.mjs:161 | walk · fn | walk operation implemented by context-routing |
-| scripts/lib/context-routing.mjs:172 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
-| scripts/lib/context-routing.mjs:193 | isExempt · const | reports whether a first-party path is exempt from map coverage |
+| scripts/lib/context-routing.mjs:151 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
+| scripts/lib/context-routing.mjs:159 | mapOwnerForPath · fn | returns the generated map that owns a source path |
+| scripts/lib/context-routing.mjs:163 | IGNORE_DIR · const | ignore dir constant used by context-routing |
+| scripts/lib/context-routing.mjs:164 | IGNORE_PATH · const | ignore path constant used by context-routing |
+| scripts/lib/context-routing.mjs:165 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
+| scripts/lib/context-routing.mjs:166 | norm · const | norm constant used by context-routing |
+| scripts/lib/context-routing.mjs:168 | walk · fn | walk operation implemented by context-routing |
+| scripts/lib/context-routing.mjs:179 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
+| scripts/lib/context-routing.mjs:200 | isExempt · const | reports whether a first-party path is exempt from map coverage |
 
 ### scripts/lib/task-report-analysis.mjs — 144 ln
 
@@ -947,39 +947,40 @@ _no extracted symbols_
 | scripts/task-close.mjs:271 | report · fn | requires a passing receipt before forwarding deterministic manifest fields to the report helper |
 | scripts/task-close.mjs:292 | main · fn | dispatches manifest preparation, documentation decision, verification and report append commands |
 
-### scripts/task-report.mjs — 375 ln
+### scripts/task-report.mjs — 383 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | scripts/task-report.mjs:10 | ROOT · const | resolves the reporting root from the environment or current directory |
 | scripts/task-report.mjs:11 | argv · const | captures the public reporting CLI arguments |
 | scripts/task-report.mjs:12 | command · const | selects the reporting subcommand |
-| scripts/task-report.mjs:14 | options · fn | parses singleton and repeatable CLI options |
-| scripts/task-report.mjs:32 | one · fn | returns one option and rejects duplicate singleton values |
-| scripts/task-report.mjs:39 | many · fn | returns all repeatable values for one option |
-| scripts/task-report.mjs:44 | fail · fn | emits a deterministic CLI error and exits |
-| scripts/task-report.mjs:49 | file · fn | resolves a configured reporting artifact path |
-| scripts/task-report.mjs:53 | relativePath · fn | formats an artifact path relative to the reporting root |
-| scripts/task-report.mjs:57 | recordsFile · fn | resolves the canonical task-record JSONL path |
-| scripts/task-report.mjs:58 | reviewsFile · fn | resolves the cycle-review JSONL path |
-| scripts/task-report.mjs:59 | stateFile · fn | resolves the cycle-state JSON path |
-| scripts/task-report.mjs:60 | reportFile · fn | resolves the generated Markdown path |
-| scripts/task-report.mjs:62 | load · fn | loads records, reviews, state, and presentation paths |
-| scripts/task-report.mjs:72 | asInteger · fn | validates bounded numeric CLI fields |
-| scripts/task-report.mjs:82 | normalizeHit · fn | maps legacy retrieval marks to normalized outcomes |
-| scripts/task-report.mjs:89 | parseSkills · fn | normalizes comma-separated skill names |
-| scripts/task-report.mjs:94 | exactModel · fn | rejects missing, family-only, and unrecorded model variants |
-| scripts/task-report.mjs:99 | receiptFor · fn | requires a passed receipt linked to the supplied manifest |
-| scripts/task-report.mjs:110 | parseLegacyRows · fn | extracts cycles and legacy table rows without changing source text |
-| scripts/task-report.mjs:133 | legacyRecord · fn | normalizes one historical Markdown row with warnings |
-| scripts/task-report.mjs:160 | importLegacy · fn | atomically imports legacy rows, reviews, state, and generated report |
-| scripts/task-report.mjs:187 | append · fn | validates intake evidence and receipt before atomically appending one record |
-| scripts/task-report.mjs:239 | start · fn | writes a pre-read estimate draft, route count, timestamp, and fingerprint |
-| scripts/task-report.mjs:256 | validate · fn | checks schema, uniqueness, receipts, state, legacy warnings, and render freshness |
-| scripts/task-report.mjs:310 | render · fn | regenerates Markdown from structured JSONL without changing records |
-| scripts/task-report.mjs:317 | analyze · fn | emits bounded aggregate metrics for closed cycles |
-| scripts/task-report.mjs:327 | closeCycle · fn | atomically closes twenty valid rows and opens the next cycle |
-| scripts/task-report.mjs:360 | main · fn | dispatches the public task-report commands |
+| scripts/task-report.mjs:14 | localOnlyReceipt · fn | identifies ignored local receipt paths that must not block clean-clone validation |
+| scripts/task-report.mjs:18 | options · fn | parses singleton and repeatable CLI options |
+| scripts/task-report.mjs:36 | one · fn | returns one option and rejects duplicate singleton values |
+| scripts/task-report.mjs:43 | many · fn | returns all repeatable values for one option |
+| scripts/task-report.mjs:48 | fail · fn | emits a deterministic CLI error and exits |
+| scripts/task-report.mjs:53 | file · fn | resolves a configured reporting artifact path |
+| scripts/task-report.mjs:57 | relativePath · fn | formats an artifact path relative to the reporting root |
+| scripts/task-report.mjs:61 | recordsFile · fn | resolves the canonical task-record JSONL path |
+| scripts/task-report.mjs:62 | reviewsFile · fn | resolves the cycle-review JSONL path |
+| scripts/task-report.mjs:63 | stateFile · fn | resolves the cycle-state JSON path |
+| scripts/task-report.mjs:64 | reportFile · fn | resolves the generated Markdown path |
+| scripts/task-report.mjs:66 | load · fn | loads records, reviews, state, and presentation paths |
+| scripts/task-report.mjs:76 | asInteger · fn | validates bounded numeric CLI fields |
+| scripts/task-report.mjs:86 | normalizeHit · fn | maps legacy retrieval marks to normalized outcomes |
+| scripts/task-report.mjs:93 | parseSkills · fn | normalizes comma-separated skill names |
+| scripts/task-report.mjs:98 | exactModel · fn | rejects missing, family-only, and unrecorded model variants |
+| scripts/task-report.mjs:103 | receiptFor · fn | requires a passed receipt linked to the supplied manifest |
+| scripts/task-report.mjs:114 | parseLegacyRows · fn | extracts cycles and legacy table rows without changing source text |
+| scripts/task-report.mjs:137 | legacyRecord · fn | normalizes one historical Markdown row with warnings |
+| scripts/task-report.mjs:164 | importLegacy · fn | atomically imports legacy rows, reviews, state, and generated report |
+| scripts/task-report.mjs:191 | append · fn | validates intake evidence and receipt before atomically appending one record |
+| scripts/task-report.mjs:243 | start · fn | writes a pre-read estimate draft, route count, timestamp, and fingerprint |
+| scripts/task-report.mjs:260 | validate · fn | checks schema, uniqueness, receipts, state, legacy warnings, and render freshness |
+| scripts/task-report.mjs:315 | render · fn | regenerates Markdown from structured JSONL without changing records |
+| scripts/task-report.mjs:322 | analyze · fn | emits bounded aggregate metrics for closed cycles |
+| scripts/task-report.mjs:332 | closeCycle · fn | atomically closes twenty valid rows and opens the next cycle |
+| scripts/task-report.mjs:368 | main · fn | dispatches the public task-report commands |
 
 ### scripts/tests/build-file-map.test.mjs — 36 ln
 
@@ -1085,4 +1086,4 @@ _no extracted symbols_
 
 ---
 
-106 files · 579 symbols · 0 awaiting a `Does` line.
+106 files · 580 symbols · 0 awaiting a `Does` line.

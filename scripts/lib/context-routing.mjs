@@ -126,6 +126,13 @@ export const AREA_ALIASES = {
 
 export const WORKSPACE_RULES = [
   {
+    name: 'plan-done',
+    pattern: /^plan\/done(?:\/|$)/,
+    skill: 'docs-steward',
+    purpose: 'Completed implementation plans kept as read-only history.',
+    policy: 'Completed plans are archival records; do not edit them.',
+  },
+  {
     name: 'plan',
     pattern: /^plan(?:\/|$)/,
     skill: 'docs-steward',

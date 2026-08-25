@@ -20,7 +20,8 @@ This file is the vendor-neutral repository contract. Load one role skill from
    `symbol` only when the target is already known, then read source at the
    returned `path:line`.
 4. The CLI's `bundle` writes the bounded, upload-safe KB/map handoff under
-   ignored `task/`. The protocol and limits are in `docs/context/automation.md`.
+   ignored `.agent-state/automation/`. The protocol and limits are in
+   `docs/context/automation.md`.
 
 A miss is a knowledge-base defect. Repair its route or map purpose in the same
 task under `docs-steward`, unless the correct behavior needs a user decision.
@@ -30,7 +31,9 @@ task under `docs-steward`, unless the correct behavior needs a user decision.
 The gitignored `plan/` folder is the place to look for existing task plans and
 the place to save a new plan. Agents may read an existing plan for context, but
 must not modify it unless the user instructs the edit or the agent asks and the
-user approves it. Start a separate plan file when no edit approval exists.
+user approves it. Start a separate plan file when no edit approval exists. Once
+the implementation is completely verified and closed, move its plan Markdown
+file to `plan/done/`; never archive an unfinished plan.
 
 The gitignored `reference/` folder contains human-managed screen guides and bug
 screenshots. Agents may read these references when the route calls for them;
@@ -76,14 +79,15 @@ automatic reflex.
   staging, commits, and pushes. It requires the current branch to be `main` by
   default; a different branch requires an explicitly supplied `--branch` and
   `--switch`, plus the user's approval to switch and push that branch. It reads
-  `task/close-out.json` by default and
+  `.agent-state/automation/close-out.json` by default and
   stages only its `changed_paths`; it derives at most three commit keywords from
   the manifest task title. Its commit format is those keywords followed by
   `v0.01`; related commits increment by `0.01`.
   For an explicitly approved branch backup publication, use `--push-only` with
   `--branch` and `--remote-branch`; this publishes only the existing local ref
   and never stages, commits, or switches the dirty worktree.
-- `plan/`, `task/`, and `reference/` are isolated working material. They cannot
+- `plan/`, `task/`, and `reference/` are human-maintained working material. They
+  cannot
   satisfy documentation citations or become knowledge-base dependencies.
 
 ## Delegation

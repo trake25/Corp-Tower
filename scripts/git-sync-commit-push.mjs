@@ -12,7 +12,7 @@ function fail(message) {
 }
 
 function usage() {
-  console.error('usage: node scripts/git-sync-commit-push.mjs --approve [--manifest task/close-out.json] [--branch <branch> --switch] [--push-only --remote-branch <branch>]');
+  console.error('usage: node scripts/git-sync-commit-push.mjs --approve [--manifest .agent-state/automation/close-out.json] [--branch <branch> --switch] [--push-only --remote-branch <branch>]');
   process.exit(2);
 }
 
@@ -78,7 +78,7 @@ function branchName(input, label) {
 }
 
 function taskScope(manifestInput) {
-  const manifestPath = repoPath(manifestInput || 'task/close-out.json');
+  const manifestPath = repoPath(manifestInput || '.agent-state/automation/close-out.json');
   if (!existsSync(resolve(ROOT, manifestPath))) fail(`manifest does not exist: ${manifestPath}`);
   let manifest;
   try {

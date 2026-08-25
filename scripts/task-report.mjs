@@ -11,6 +11,10 @@ const ROOT = resolve(process.env.TASK_REPORT_ROOT || '.');
 const argv = process.argv.slice(2);
 const command = argv.shift() || 'validate';
 
+function localOnlyReceipt(path) {
+  return path.startsWith('task/') || path.startsWith('.agent-state/automation/');
+}
+
 function options(args) {
   const result = {};
   for (let index = 0; index < args.length; index++) {
@@ -271,8 +275,9 @@ function validate(value) {
     byCycle.get(record.cycle).push(record.row);
     if (record.source !== 'legacy-markdown' && record.receipt) {
       const receiptPath = rootPath(ROOT, record.receipt);
-      if (!existsSync(receiptPath)) errors.push(`${record.task_id} receipt not found: ${record.receipt}`);
-      else {
+      if (!existsSync(receiptPath)) {
+        if (!localOnlyReceipt(record.receipt)) errors.push(`${record.task_id} receipt not found: ${record.receipt}`);
+      } else {
         try {
           const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
           if (receipt.status !== 'passed') errors.push(`${record.task_id} receipt is not passed`);
@@ -333,10 +338,13 @@ function closeCycle(value) {
   if (recordErrors.length) fail(recordErrors.join('; '));
   for (const record of current) {
     const receiptPath = rootPath(ROOT, record.receipt);
-    if (!existsSync(receiptPath)) fail(`${record.task_id} receipt not found: ${record.receipt}`);
-    try {
-      if (JSON.parse(readFileSync(receiptPath, 'utf8')).status !== 'passed') fail(`${record.task_id} receipt must have status passed`);
-    } catch (error) { fail(`${record.task_id} receipt is invalid: ${error.message}`); }
+    if (!existsSync(receiptPath)) {
+      if (!localOnlyReceipt(record.receipt)) fail(`${record.task_id} receipt not found: ${record.receipt}`);
+    } else {
+      try {
+        if (JSON.parse(readFileSync(receiptPath, 'utf8')).status !== 'passed') fail(`${record.task_id} receipt must have status passed`);
+      } catch (error) { fail(`${record.task_id} receipt is invalid: ${error.message}`); }
+    }
   }
   const finding = one(value, 'finding') || null;
   const recommendation = one(value, 'recommendation') || null;

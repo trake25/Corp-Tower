@@ -18,7 +18,7 @@ source, environment files, secrets, or the working-tree diff.
 | `filter <query> ...` | narrows a fresh deterministic search by area, kind, path or required term |
 | `outline` / `section` / `symbol` | reads one known KB structure, section or generated-map row set |
 | `scope <task-owned-path>...` | returns routes, docs, maps and the QA selection for explicit task paths |
-| `bundle <task>` | writes selected KB/map evidence to an ignored `task/` handoff artifact |
+| `bundle <task>` | writes selected KB/map evidence to ignored `.agent-state/automation/` state |
 
 `report/task-token-cost-effectivity.md` routes to this protocol; retrieve it with
 `route` before analysing closed-cycle rows. The canonical task data is the
@@ -30,11 +30,12 @@ never parse or hand-edit it for metrics.
 The gitignored working folders have explicit routes but are not searched as KB
 content. `plan/` is where agents look for existing task plans and save new ones;
 existing plans are read-only until the user explicitly instructs or approves an
-edit. `reference/` is human-managed screen-guide and bug-screenshot material;
+edit. After complete verification and close-out, move the implemented plan
+Markdown file into `plan/done/`. `reference/` is human-managed screen-guide and bug-screenshot material;
 humans may upload, modify, or delete those files. Use `route plan/` or `route
-reference/` when task context points to either folder. `task/` remains the
-location for generated bundles, manifests, receipts, and other ephemeral
-handoffs.
+reference/` when task context points to either folder. `plan/`, `task/`, and
+`reference/` are human-maintained working folders. Machine-generated bundles,
+manifests, and receipts belong under ignored `.agent-state/automation/`.
 
 Search returns at most eight results and 24 KB. A broad or empty result is a KB
 repair signal: add a precise route, map `Does` purpose, or retrieval alias rather
@@ -66,7 +67,7 @@ documentation scope, so no separate `context scope` call is needed.
    rationale. This is an agent decision, not a human checkpoint.
 3. `verify` runs selected QA, file-map generation for source paths, relevant KB
    validation, agent-configuration validation for skill or entry-contract edits,
-   and `task-report validate` into a receipt.
+   and `task-report validate` into a receipt under `.agent-state/automation/`.
 4. `report` can append only after a passing receipt. It reads the intake model
    variant, estimate, and verification receipt from the manifest, copies
    path/domain counts, and accepts no end-of-task model override. Values such as
@@ -80,6 +81,10 @@ the exact model variant; `task-close prepare` is the normal entry point.
 pre-read estimate from the manifest. Source-read, total, and main-thread measurements carry `exact`,
 `estimated`, or `unavailable` provenance; provider token usage is never inferred
 from local tool output.
+
+Receipts referenced by open-cycle records are local-only evidence under
+`.agent-state/automation/`; validation does not require those ignored files to exist
+in a clean clone. Public report data remains in `report/`.
 
 Use `analyze --from <cycle> --to last-closed --json` for bounded metrics. It
 emits counts beside percentages, separates measurement kinds, and marks

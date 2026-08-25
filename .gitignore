@@ -19,8 +19,8 @@ infra/eks/terraform/eks-lab.tfvars
 # stay local-only. Machine-local permissions are the one part that does not
 # travel. plan/ and reference/ hold working material, not contract.
 .claude/settings.local.json
+.agent-state/automation/
 plan/
-task/
 reference/
 report/benchmarks/raw/
 *.x86_64

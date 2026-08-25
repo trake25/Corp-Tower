@@ -20,7 +20,7 @@ Model is the exact implementing runtime variant for standard records. Legacy row
 
 ## Cycle 6 (open)
 
-Current cycle: 15 recorded row(s); next row is 16.
+Current cycle: 17 recorded row(s); next row is 18.
 
 | # | Task | Cx | Mode | Dom | F | R-est | R-act | Tot | Main | Hit | V | Model | Effort | Skills |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -39,7 +39,9 @@ Current cycle: 15 recorded row(s); next row is 16.
 | 13 | Make Git automation infer task scope and keywords | 2 | implementation | 3 | 4 | ~900 | 900 | 3,000 | 2,200 | ✓ | pass | gpt-5-codex | moderate | infra-engineer,docs-steward |
 | 14 | Add main branch safety to Git automation | 2 | implementation | 3 | 4 | ~1,200 | 1,200 | 3,500 | 2,600 | ✓ | pass | gpt-5-codex | moderate | infra-engineer,docs-steward |
 | 15 | Add push-only backup branch mode | 2 | implementation | 3 | 4 | ~700 | 700 | 2,800 | 2,100 | ✓ | pass | gpt-5-codex | moderate | infra-engineer,docs-steward |
-<!-- next: row 16 -->
+| 16 | Relocate machine task automation state | 3 | implementation | 3 | 8 | ~2,200 | 2,200 | 6,200 | 4,300 | ✓ | pass | gpt-5-codex | high | infra-engineer,docs-steward |
+| 17 | Route completed plans to plan done | 1 | policy | 3 | 3 | ~700 | 700 | 1,800 | 1,400 | ✓ | pass | gpt-5-codex | low | docs-steward |
+<!-- next: row 18 -->
 
 ## Cycle 5 (closed)
 
