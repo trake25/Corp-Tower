@@ -25,12 +25,12 @@ const GAME_STATE_FIXTURE := {
 }
 
 const IMPACT_STATUS_FIXTURE := {
-	"requiredBandScore": 40,
+	"requiredContribution": 40,
 	"nextImpactLevel": 3,
 	"players": [
-		{"id": "P1", "met": true, "bandScore": 40, "requiredBandScore": 40, "requiredScore": 40},
-		{"id": "P2", "met": false, "bandScore": 10, "requiredBandScore": 40, "requiredScore": 40},
-		{"id": "P3", "met": false, "bandScore": 0, "requiredBandScore": 40, "requiredScore": 40}
+		{"id": "P1", "met": true, "bandContribution": 40, "requiredContribution": 40},
+		{"id": "P2", "met": false, "bandContribution": 10, "requiredContribution": 40},
+		{"id": "P3", "met": false, "bandContribution": 0, "requiredContribution": 40}
 	]
 }
 

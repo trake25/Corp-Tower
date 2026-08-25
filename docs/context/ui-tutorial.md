@@ -24,11 +24,21 @@ Screen's How to Play button and a debug row reachable from a live match. The
 latter disconnects first, and Screen Manager guards `_on_room_closed()` while
 `tutorial_active` so a race with a server-sent close cannot kill the run.
 
-- **Drift — the tutorial's level-1 numbers no longer match the server curve.**
-  `TutorialLessons` states target height 16 and Impact requirement 48 against the
-  shipped curve's 30 / 90 ([gameplay.md](./gameplay.md)). Resyncing is not a
-  `DEFAULTS` edit: lesson copy quotes both figures verbatim and the exact-finish
-  lesson seeds a filler tower so the scripted brick lands on 16.
+- `TutorialLessons.DEFAULTS` is the hand-maintained level-1 copy: target 30,
+  grid 8, site columns 2–5, three active slots, 60 seconds, and the first
+  Impact requirement of 90 at the 30% personal share. Resyncing is not a
+  `DEFAULTS`-only edit: the lesson copy, exact-finish seed (28 + an `O` brick),
+  and Impact-status seed all quote the same contract.
+- `TutorialScene` stays scripted; it must not evaluate legality, stability, or
+  scoring. Its structural demonstration passes authored `towerStructuralPose`
+  records to `TowerStack`, and its Impact seed uses canonical
+  `requiredContribution`/`bandContribution` fields rather than compatibility
+  score aliases. The scripted support repair clears that pose to demonstrate a
+  straighter section, not a client-side verdict.
+- The placement lesson teaches a release row: a legal aimed row chooses where a
+  brick begins falling, then gravity resolves first contact. A reachable gap can
+  therefore be repaired; a tutorial must never claim that every void is
+  unfillable from above.
 - **`is_satisfied(info, …)` is always true by design.** The *controller*, not the
   predicate, must refuse to dispatch to an `info` step at all — otherwise any
   incidental action, a stray placement or an unrelated popover, silently skips it.

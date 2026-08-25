@@ -58,7 +58,8 @@ remain in Supabase's allow list.
 down — with the demo always running, it effectively never stops on its own.
 
 **The demo differs from the dev instances in four ways**, all resolved from the
-instance index: bots enabled (it fills every seat), debug UI off, demo mode on
+instance index: cooperative bots enabled (it fills every seat while respecting
+personal Impact contribution), debug UI off, demo mode on
 (the client's bots-disclosure label), and its own dispatchers carrying **no push
 trigger**, so a routine push can never redeploy it.
 The demo is deliberately off the push path: it is a link on a résumé, and a routine

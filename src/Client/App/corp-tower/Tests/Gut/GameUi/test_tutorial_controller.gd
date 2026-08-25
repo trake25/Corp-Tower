@@ -37,7 +37,7 @@ func test_start_lesson_enters_the_first_step() -> void:
 	await tutorial().start_lesson(&"basics")
 	assert_true(tutorial().is_active(), "Starting a lesson should make the tutorial active.")
 	assert_eq(tutorial().current_step_index, 0, "A freshly started lesson must begin at step 0.")
-	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP (0/16)", "Tutorial state should use the shared top indicator contract.")
+	assert_eq((harness.find("TopIndicatorLabel") as Label).text, "TOP (0/30)", "Tutorial state should use the shared top indicator contract.")
 
 func test_back_is_disabled_on_step_zero_and_enabled_after() -> void:
 	await tutorial().start_lesson(&"basics")
@@ -104,28 +104,36 @@ func test_info_gate_only_advances_via_next_not_incidental_actions() -> void:
 	tutorial().advance()
 	assert_eq(tutorial().current_step_index, 1, "Only the Next button should advance an info-gated step.")
 
-func test_stability_lesson_tilt_direction_follows_the_actual_drop_column() -> void:
+func test_stability_lesson_structural_pose_direction_follows_the_actual_drop_column() -> void:
 	await tutorial().start_lesson(&"stability")
 	var tower_stack: Node = harness.find("TowerStack")
-	assert_almost_eq(float(tower_stack.get("tower_tilt_deg")), 0.0, 0.01, "The seeded tower should start untilted.")
+	assert_false(tower_stack.structural_pose.has_targets(), "The seeded tower should start without a scripted structural pose.")
 
-	# Site is columns 1..6 (site_center 4.0); an "L" brick (width 2) at column 1
+	# Site is columns 2..5 (site_center 4.0); an "L" brick (width 2) at column 2
 	# lands left of centre.
-	tutorial().on_tutorial_place(0, 1)
+	tutorial().on_tutorial_place(0, 2)
 	assert_almost_eq(
-		float(tower_stack.get("tower_tilt_deg")), -8.0, 0.01,
-		"Dropping the brick left of centre must lean the tower left (negative), not a fixed direction."
+		float(tower_stack.structural_pose.pose_for("tut-stability-1").get("rotationDeg", 0.0)), -8.0, 0.01,
+		"Dropping the brick left of centre must bend the scripted weak section left (negative), not rotate the whole tower."
 	)
+	assert_almost_eq(float(tower_stack.get("tower_tilt_deg")), 0.0, 0.01, "Standing structural poses must not use the retired whole-tower tilt.")
 
 	await tutorial().start_lesson(&"stability")
 	tower_stack = harness.find("TowerStack")
 
-	# Column 5 is the brick's rightmost valid origin on this site -- lands right of centre.
-	tutorial().on_tutorial_place(0, 5)
+	# Column 4 is the brick's rightmost valid origin on this site -- lands right of centre.
+	tutorial().on_tutorial_place(0, 4)
 	assert_almost_eq(
-		float(tower_stack.get("tower_tilt_deg")), 8.0, 0.01,
-		"Dropping the same brick right of centre must lean the tower right (positive)."
+		float(tower_stack.structural_pose.pose_for("tut-stability-1").get("rotationDeg", 0.0)), 8.0, 0.01,
+		"Dropping the same brick right of centre must bend the scripted weak section right (positive)."
 	)
+
+func test_stability_repair_clears_the_scripted_weak_section_pose() -> void:
+	await tutorial().start_lesson(&"stability")
+	tutorial().on_tutorial_place(0, 2)
+	tutorial().on_tutorial_place(0, 4)
+
+	assert_false((harness.find("TowerStack") as Node).structural_pose.has_targets(), "The scripted direct repair should straighten the displayed weak section.")
 
 func test_observe_gate_shows_a_manual_continue_button() -> void:
 	await tutorial().start_lesson(&"collapse")

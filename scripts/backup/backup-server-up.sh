@@ -59,7 +59,7 @@ AUTH_ARGS=(
   -e "PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION=${PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION:-0}"
 )
 if [ "$INSTANCE" = "3" ]; then
-  BOTS_ARGS=(-e CORP_TOWER_BOTS_ENABLED=true)
+  BOTS_ARGS=(-e CORP_TOWER_BOTS_ENABLED=true -e CORP_TOWER_BOT_STRATEGY=cooperative)
   # The public demo counters (stats:demo:*) must survive this script's own
   # container recreate, not just a crash, so instance 3 alone gets a real,
   # persistent Redis instead of Redis_State.js's in-memory fallback.

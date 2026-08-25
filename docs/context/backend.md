@@ -405,6 +405,10 @@ release rows without also changing the objective function measurably does nothin
 shapes.
 
 Timer tracking exists specifically so a closed room's bots don't keep running.
+`debugBotStrategy` defaults to `mvp_greedy`; a process may opt into cooperative
+play only with `CORP_TOWER_BOT_STRATEGY=cooperative`. The public demo does so,
+so its bot-only seats prioritise the authoritative repair and personal-Impact
+logic rather than competing for display score.
 
 ## Game Config
 
@@ -427,6 +431,8 @@ hand-tuned playtest values that intentionally differ from the design reference.
 - Scoring configuration defines useful-height reward, dangerous-height retention,
   structural action value, transaction caps and Critical Save qualification. The
   debug surface exposes only the action-level controls required for playtesting.
+- `CORP_TOWER_BOT_STRATEGY=cooperative` is a process-start demo override; any
+  other or absent value resolves to the MVP-greedy debug default.
 - `powerCatalog` entries carry an `active: boolean`; only `active: true` entries
   are eligible for the Impact-MVP draw. Only `replenish` is active — supply, not
   hand quality, is what actually strands a team.

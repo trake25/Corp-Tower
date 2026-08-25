@@ -20,6 +20,23 @@ func test_lesson_ids_are_unique() -> void:
 
 	assert_eq(ids.size(), 12, "The catalog is specified as a 12-lesson set.")
 
+func test_defaults_match_the_shipped_level_one_contract() -> void:
+	assert_eq(TutorialLessonsScript.DEFAULTS.target_height, 30, "The tutorial must teach the live level-one target.")
+	assert_eq(TutorialLessonsScript.DEFAULTS.placeable_min, 2, "The tutorial must use the live site minimum.")
+	assert_eq(TutorialLessonsScript.DEFAULTS.placeable_max, 5, "The tutorial must use the live site maximum.")
+	assert_eq(TutorialLessonsScript.DEFAULTS.hand_slots_level_1, 3, "The tutorial must use the live opening hand size.")
+	assert_eq(TutorialLessonsScript.DEFAULTS.level_time_limit_ms, 60000, "The tutorial must use the live time floor.")
+	assert_eq(TutorialLessonsScript.DEFAULTS.impact_requirement_score, 90, "The tutorial must teach the live first Impact requirement.")
+
+func test_impact_lesson_uses_canonical_contribution_fields() -> void:
+	var lesson: Dictionary = TutorialLessonsScript.lesson_by_id(&"impact")
+	var status: Dictionary = lesson.get("seed", {}).get("impact_status", {})
+
+	assert_true(status.has("requiredContribution"), "The tutorial must seed the canonical Impact requirement field.")
+	assert_false(status.has("requiredBandScore"), "The tutorial must not teach a compatibility-only Impact field.")
+	for player_status in status.get("players", []):
+		assert_true(player_status.has("bandContribution"), "The tutorial must use canonical personal contribution values.")
+
 func test_every_lesson_has_at_least_one_step() -> void:
 	for lesson in TutorialLessonsScript.all_lessons():
 		var steps: Array = lesson.get("steps", [])

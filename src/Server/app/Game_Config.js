@@ -153,7 +153,9 @@ const GameConfig = {
     debugBotCount: 2,
     debugBotDelayMin: 1500,
     debugBotDelayMax: 6000,
-    debugBotStrategy: "mvp_greedy",
+    debugBotStrategy: process.env.CORP_TOWER_BOT_STRATEGY === "cooperative"
+        ? "cooperative"
+        : "mvp_greedy",
     debugBotStabilityTolerance: 5,
     debugBotGapCandidates: 6,
 };

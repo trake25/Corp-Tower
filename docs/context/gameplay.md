@@ -169,39 +169,28 @@ second authored table drifts from the height curve. One knob reshapes both.
 
 ### Tower stability (design view)
 
-Two independent axes — **Lean** (signed, drives the visual tilt) and **Integrity**
-(0–100). Reported `towerStability` is the **lower** of the two, so either fails a
-level alone. Axis definitions and the collapse conditions →
-[backend.md](./backend.md#two-axes).
+Two independent support-graph axes — **Balance** and **Integrity** — produce
+`towerStability = min(balance, integrity)`, so either can collapse a level. Balance
+measures carried load against the immediate contact span. Integrity measures whether
+the span is adequate for its carried load and rewards independent support paths; a
+centred bottleneck can therefore be structurally weak without a false left/right
+warning. The exact evaluator and collapse contract → [backend.md](./backend.md#two-axes).
 
-**`towerStabilityDifficulty` (0–100) is the only stability tunable.** `pressure`
-interpolates the forgiving and harsh anchor sets while its quadratic risk scale
-makes 5 extremely forgiving, 25 forgiving, 50 moderate, 75 harsh, and 100
-extreme. `0` leaves stability inert — score multiplier only, no collapse. Level,
-maturity, and target-height pressure still make weak bottlenecks progressively
-dangerous while a full-width tower stays viable.
+**`towerStabilityDifficulty` (0–100) is the only gameplay stability tunable.** It
+interpolates forgiving and harsh anchors and applies quadratic risk pressure. At 0,
+gameplay risk is inert while diagnostics remain available. Maturity and target-height
+pressure forgive openings but make a weak bottleneck progressively dangerous.
 
-**Do not re-expose the nine raw constants as individual knobs.** Their units are
-not comparable — three cannot reach their thresholds at all — and because the site
-is capped per level, no absolute height÷width threshold both fires late enough and
-spares a perfectly played tall level.
-
-- **Maturity ramp.** `severity` scales every penalty by
-  `min(1, height / towerStabilityMinHeight)`, so the opening brick is always safe
-  regardless of how tight the anchors are tuned.
-- **Landmine — site usage is worst at the very first brick.** One narrow brick
-  alone on the ground is maximal `siteWidth / groundWidth`, so the opening
-  placement is the harshest point on the curve, not the calmest. **Any harshening
-  must be re-checked against the opening brick, not just steady-state play.**
-- **Slenderness is measured as site usage**, so a full-width base is free at every
-  level and only the level ramp scales difficulty. Widening the site therefore
-  widens the safe zone — **the site knobs and the stability dial are coupled**, and
-  `towerSiteSlendernessTarget` is tuned so the site reaches its max around the
-  level full pressure arrives, not independently of it.
-- **Every term is repairable at its source.** Widening the base or straightening a
-  lean improves Integrity directly, and support deficit is fixable too: a brick
-  released into a void puts the cells above it back on solid ground instead of only
-  diluting the ratio. This is what Reinforce pays for.
+- **Placement is release-row based.** A legal aimed row chooses where the brick
+  starts falling; gravity then resolves first contact. Support is not a legality
+  rule, so a reachable gap can be repaired rather than being treated as permanently
+  inaccessible.
+- **Structural pose is presentation only.** `towerStructuralPose` bends the weak
+  rigid section, but never changes coordinates, snap targets, gravity, or the
+  authoritative outcome.
+- **Every risk is repairable at its source.** A direct support repair can reduce
+  load-path risk, earn structural value, and at a mature critical interface qualify
+  for a capped Critical Save.
 
 ## Timer, quick chat, failure conditions
 
@@ -346,7 +335,7 @@ reads healthy, which is exactly the live tuning state.
 **Yielding is the cooperative act that matters in an Impact band.** A bot
 that has banked its own share prefers a **zero-height repair**, leaving contested
 height to a teammate whose shortfall would fail everyone while still earning
-Reinforce. It returns `wait` only when no repair exists, and a bot that is short
+structural-repair value. It returns `wait` only when no repair exists, and a bot that is short
 can never take that branch, so a room can't deadlock.
 
 **The yield check reads `impactScoreStatus`.** Its personal `met` values already

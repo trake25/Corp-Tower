@@ -87,22 +87,22 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialGates.gd:18 | is_gate · static func | membership test against `ALL`, which validates a lesson step's declared gate |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialGates.gd:21 | is_satisfied · static func | **the gate table**: INFO passes with no action, every other gate needs a matching action `type`, and PLACE_BLOCK_AT also compares `column`. An empty action fails everything except INFO |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd — 464 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd — 465 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:6 | LOCAL_PLAYER_ID · const | `local` — the stand-in player id, because a lesson runs with no server session and no real id to use |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:8 | DEFAULTS · const | tuning the scripted lessons assume — target height 16, grid 8 wide, placeable 1..6, 30s limit. **A client-side copy for offline play; `Game_Config.js` is authoritative and this does not track it** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:26 | _brick · static func | builds a block from a `BlockData.BRICK_SHAPES` id, deriving `height` from the cells so a shape edit propagates here |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:36 | _scored_brick · static func | a `_brick` carrying `scriptedPoints` and `scriptedEventType` — **what makes `apply_placement` fire a score popup** with no server event |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:42 | _tilting_brick · static func | a `_brick` carrying `scriptedTiltAngleDeg`, which drives the lean the stability lessons demonstrate |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:47 | _filler_tower · static func | stacks `O` bricks in one column until `total_height` is reached — the pre-built tower a lesson opens on, all owned by the local player |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:69 | _default_players · static func | the fixed three-seat roster every lesson uses — You, Ari and Sam — so teammate rows exist without a lobby |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:76 | _base_seed · static func | the default `game_state` a lesson starts from; `overrides` shallow-merge on top, so a lesson names only what it changes |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:104 | _catalog · static func | **the whole lesson script** — 12 lessons: basics, bricks, placement, gravity, stability, collapse, scoring, perfect_build, impact, team_supply, quest_power, pressure |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:450 | lesson_ids · static func | ids in catalog order, which is both the menu order and the order `Resume` walks |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:456 | lesson_by_id · static func | linear scan of the catalog, returning `{}` for an unknown id rather than failing |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:462 | all_lessons · static func | the whole catalog. **`_catalog()` rebuilds the array on every call**, and these three accessors each call it, so hold the result rather than re-querying in a loop |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:8 | DEFAULTS · const | offline level-one copy: target 30, grid 8, site 2..5, three slots, 60s and first Impact requirement 90; `Game_Config.js` remains authoritative |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:25 | _brick · static func | builds a block from a `BlockData.BRICK_SHAPES` id, deriving `height` from the cells so a shape edit propagates here |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:35 | _scored_brick · static func | a `_brick` carrying `scriptedPoints` and `scriptedEventType` — **what makes `apply_placement` fire a score popup** with no server event |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:41 | _support_brick · static func | creates a scripted Balance-face delta plus a pose magnitude for the support-graph lesson; `TutorialScene` supplies its displayed direction |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:46 | _filler_tower · static func | stacks `O` bricks in one column until `total_height` is reached — the pre-built tower a lesson opens on, all owned by the local player |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:68 | _default_players · static func | the fixed three-seat roster every lesson uses — You, Ari and Sam — so teammate rows exist without a lobby |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:75 | _base_seed · static func | the default `game_state` a lesson starts from; `overrides` shallow-merge on top, so a lesson names only what it changes |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:103 | _catalog · static func | **the whole lesson script** — 12 lessons: basics, bricks, placement, gravity, stability, collapse, scoring, perfect_build, impact, team_supply, quest_power, pressure |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:451 | lesson_ids · static func | ids in catalog order, which is both the menu order and the order `Resume` walks |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:457 | lesson_by_id · static func | linear scan of the catalog, returning `{}` for an unknown id rather than failing |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd:463 | all_lessons · static func | the whole catalog. **`_catalog()` rebuilds the array on every call**, and these three accessors each call it, so hold the result rather than re-querying in a loop |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialMenuController.gd — 144 ln
 
@@ -137,17 +137,17 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialProgress.gd:40 | completed_ids | raw key list, counted for the menu header |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialProgress.gd:43 | _save | rewrites the whole section from `_complete` on every call, so a removed key really disappears |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd — 248 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd — 267 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:6 | LOCAL_PLAYER_ID · const | `local`, matching `TutorialLessons` — every scripted block and score event is attributed to it |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:43 | setup | injects the nine live controllers, so a lesson drives the **real** game UI rather than a mock of it |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:57 | load_seed | **deep-copies the seed** so replays start clean, splits `hand` into visible slots and a pool, sets `SnapGrid` width and placeable range, and **overrides `players_ctx.get_local_id`** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:96 | teardown | restores the saved `get_local_id`. **Skipping it leaves the real session resolving every local id to `local`** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:101 | push_state | **the offline stand-in for a server broadcast** — fans local state out to tower_stack, inventory, top_bar, roster, quest, power and chat, each null-guarded |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:130 | apply_placement | the offline placement rule: clamps the column into placeable range, settles via **`SnapGrid.settle_origin_y`, the same call the live client makes**, applies scripted tilt, draws from `hand_pool` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:212 | apply_script | dispatcher for a step's scripted effect — `score_popup`, `set_diagnostics`, `set_tower`, `refresh_hand` and `quick_chat`; an unrecognised type is silently ignored |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:44 | setup | injects the nine live controllers, so a lesson drives the **real** game UI rather than a mock of it |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:58 | load_seed | **deep-copies the seed** so replays start clean, splits `hand` into visible slots and a pool, sets `SnapGrid` width and placeable range, and **overrides `players_ctx.get_local_id`** |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:98 | teardown | restores the saved `get_local_id`. **Skipping it leaves the real session resolving every local id to `local`** |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:103 | push_state | **the offline stand-in for a server broadcast** — fans local state out to tower_stack, inventory, top_bar, roster, quest, power and chat, each null-guarded |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:132 | apply_placement | clamps the column, settles through `SnapGrid.settle_origin_y`, applies only authored lesson pose/diagnostic state, then draws from `hand_pool` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd:231 | apply_script | dispatcher for a step's scripted effect — `score_popup`, `set_diagnostics`, `set_tower`, `refresh_hand` and `quick_chat`; an unrecognised type is silently ignored |
 
 ---
 

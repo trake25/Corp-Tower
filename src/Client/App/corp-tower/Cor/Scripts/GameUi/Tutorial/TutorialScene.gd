@@ -23,6 +23,7 @@ var level: int = 1
 var target_height: int = 0
 var stability: int = 100
 var diagnostics: Dictionary = {}
+var structural_pose: Array = []
 var players: Array = []
 var side_quest: Dictionary = {}
 var power_inventory: Array = []
@@ -67,6 +68,7 @@ func load_seed(seed: Dictionary) -> void:
 	target_height = int(seed.get("target_height", 0))
 	stability = int(seed.get("stability", 100))
 	diagnostics = (seed.get("diagnostics", {}) as Dictionary).duplicate(true)
+	structural_pose = (seed.get("structural_pose", []) as Array).duplicate(true)
 	players = (seed.get("players", []) as Array).duplicate(true)
 	side_quest = (seed.get("side_quest", {}) as Dictionary).duplicate(true)
 	power_inventory = (seed.get("power_inventory", []) as Array).duplicate(true)
@@ -102,7 +104,7 @@ func push_state() -> void:
 	var current_height: int = SnapGridScript.top_height(tower_blocks)
 
 	if tower_stack != null:
-		tower_stack.set_tower(tower_blocks, current_height, target_height, stability, diagnostics)
+		tower_stack.set_tower(tower_blocks, current_height, target_height, stability, diagnostics, structural_pose)
 
 	if inventory != null:
 		inventory.update_inventory_ui(hand, active_slots)
@@ -154,9 +156,9 @@ func apply_placement(index: int, column: int, requested_origin_y: int = -1) -> D
 	)
 	var balance_delta: int = int(block.get("scriptedBalanceDelta", 0))
 
-	if block.has("scriptedTiltAngleDeg"):
-		var magnitude: float = absf(float(block.get("scriptedTiltAngleDeg", 0.0)))
-		var tilt: float = 0.0
+	if block.has("scriptedPoseMagnitudeDeg"):
+		var magnitude: float = absf(float(block.get("scriptedPoseMagnitudeDeg", 0.0)))
+		var rotation: float = 0.0
 		var lean_direction: String = "center"
 
 		if !is_zero_approx(magnitude):
@@ -166,16 +168,33 @@ func apply_placement(index: int, column: int, requested_origin_y: int = -1) -> D
 
 			if footprint_center > site_center:
 				lean_direction = "right"
-				tilt = magnitude
+				rotation = magnitude
 			elif footprint_center < site_center:
 				lean_direction = "left"
-				tilt = -magnitude
+				rotation = -magnitude
 
 		diagnostics = diagnostics.duplicate(true)
-		diagnostics["tiltAngleDeg"] = tilt
+		diagnostics["balance"] = 72 if lean_direction != "center" else 100
+		diagnostics["integrity"] = 88
 		diagnostics["leanDirection"] = lean_direction
-		if block.has("scriptedStability"):
-			stability = int(block.get("scriptedStability", stability))
+		diagnostics["criticalSupport"] = {"direction": lean_direction}
+		structural_pose = [{
+			"blockId": str(block.get("id", "")),
+			"offsetXUnits": 0.10 if lean_direction == "right" else -0.10 if lean_direction == "left" else 0.0,
+			"offsetYUnits": -0.04,
+			"rotationDeg": rotation,
+			"failureWeight": 0.65
+		}]
+		stability = 72 if lean_direction != "center" else stability
+
+	if bool(block.get("scriptedPoseClear", false)):
+		structural_pose = []
+
+	if block.has("scriptedDiagnostics"):
+		diagnostics = (block.get("scriptedDiagnostics", {}) as Dictionary).duplicate(true)
+
+	if block.has("scriptedStability"):
+		stability = int(block.get("scriptedStability", stability))
 
 	tower_blocks.append({
 		"block": {
@@ -226,7 +245,7 @@ func apply_script(script: Dictionary) -> void:
 			stability = int(script.get("stability", stability))
 			if tower_stack != null:
 				var current_height: int = SnapGridScript.top_height(tower_blocks)
-				tower_stack.set_tower(tower_blocks, current_height, target_height, stability, diagnostics)
+				tower_stack.set_tower(tower_blocks, current_height, target_height, stability, diagnostics, structural_pose)
 		"set_tower":
 			tower_blocks = (script.get("tower_blocks", tower_blocks) as Array).duplicate(true)
 			push_state()

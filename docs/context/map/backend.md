@@ -81,7 +81,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Server/app/Debug_Config.js:126 | resolveBound · fn | evaluates static or GameConfig-derived clamp bounds |
 | src/Server/app/Debug_Config.js:130 | applyValue · fn | validates, clamps and applies one exposed debug value |
 
-### src/Server/app/Game_Config.js — 162 ln
+### src/Server/app/Game_Config.js — 164 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|

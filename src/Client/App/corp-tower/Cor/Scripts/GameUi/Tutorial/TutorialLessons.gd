@@ -7,19 +7,18 @@ const LOCAL_PLAYER_ID := "local"
 
 const DEFAULTS := {
 	"level": 1,
-	"target_height": 16,
+	"target_height": 30,
 	"grid_width": 8,
-	"site_width": 6,
-	"placeable_min": 1,
-	"placeable_max": 6,
-	"hand_slots_level_1": 2,
+	"site_width": 4,
+	"placeable_min": 2,
+	"placeable_max": 5,
+	"hand_slots_level_1": 3,
 	"hand_slots_level_3": 3,
-	"placement_cooldown_ms": 1000,
-	"level_time_limit_ms": 30000,
+	"placement_cooldown_ms": 1500,
+	"level_time_limit_ms": 60000,
 	"impact_min_contribution_share": 0.30,
-	"impact_requirement_score": 48,
+	"impact_requirement_score": 90,
 	"impact_interval": 2,
-	"stability_pressure": 0.26,
 	"power_unlock_level": 1,
 }
 
@@ -39,9 +38,9 @@ static func _scored_brick(id: String, shape_id: String, points: int, event_type:
 	block["scriptedEventType"] = event_type
 	return block
 
-static func _tilting_brick(id: String, shape_id: String, balance_delta: int, tilt_deg: float) -> Dictionary:
+static func _support_brick(id: String, shape_id: String, balance_delta: int, pose_magnitude_deg: float) -> Dictionary:
 	var block: Dictionary = _brick(id, shape_id, balance_delta)
-	block["scriptedTiltAngleDeg"] = tilt_deg
+	block["scriptedPoseMagnitudeDeg"] = pose_magnitude_deg
 	return block
 
 static func _filler_tower(total_height: int, column: int) -> Array:
@@ -119,8 +118,8 @@ static func _catalog() -> Array:
 				},
 				{
 					"id": &"target_height",
-					"title": "Target height 16",
-					"body": "Level 1's target is 16 bricks tall. Reach it exactly for a Perfect Build -- short and the level isn't done, over and the extra height is wasted.",
+					"title": "Target height 30",
+					"body": "Level 1's target is 30 bricks tall. Reach it exactly for a Perfect Build -- short and the level isn't done, over and the extra height is wasted.",
 					"target": &"TowerStack",
 					"card": "auto",
 					"gate": TutorialGatesScript.INFO
@@ -145,8 +144,8 @@ static func _catalog() -> Array:
 				},
 				{
 					"id": &"hand_size",
-					"title": "2 slots now, 3 from Level 3",
-					"body": "A brick of height 2 or less is a precision brick -- perfect for landing an exact finish. You hold 2 bricks at once at Level 1, 3 from Level 3 on.",
+					"title": "3 slots from Level 1",
+					"body": "A brick of height 2 or less is a precision brick -- perfect for landing an exact finish. You hold 3 bricks at once, so the team has choices before the next draw.",
 					"target": &"ActionRow",
 					"card": "above",
 					"gate": TutorialGatesScript.INFO
@@ -174,7 +173,7 @@ static func _catalog() -> Array:
 		{
 			"id": &"gravity",
 			"title": "Gravity and cantilevers",
-			"blurb": "Snapping only picks the column -- gravity decides the row.",
+			"blurb": "Your release row starts the drop; gravity decides where it settles.",
 			"seed": _base_seed({
 				"tower_blocks": _filler_tower(4, 3),
 				"hand": [_brick("tut-gravity-1", "T")]
@@ -182,8 +181,8 @@ static func _catalog() -> Array:
 			"steps": [
 				{
 					"id": &"column_only",
-					"title": "Snapping only picks the column",
-					"body": "A snap point fixes which column your brick lands in. Drop it anywhere over the site -- it always falls until it hits something.",
+					"title": "Aim a legal release row",
+					"body": "A snap point chooses the column and the row you release from. The brick can start inside a legal gap, then falls from there until it makes first contact.",
 					"target": &"PlayField",
 					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
@@ -192,7 +191,7 @@ static func _catalog() -> Array:
 				{
 					"id": &"watch_settle",
 					"title": "Falls to first contact",
-					"body": "The brick fell until it touched the stack -- an overhang is possible, but a void can never be filled from above.",
+					"body": "The brick fell from the aimed row until it touched the stack. That lets a carefully aimed brick repair a reachable gap instead of only stacking on top.",
 					"target": &"TowerStack",
 					"card": "auto",
 					"gate": TutorialGatesScript.OBSERVE,
@@ -202,20 +201,20 @@ static func _catalog() -> Array:
 		},
 		{
 			"id": &"stability",
-			"title": "Lean and Integrity",
-			"blurb": "Two independent axes, and the faces that react to them.",
+			"title": "Balance and Integrity",
+			"blurb": "Two support-graph risks, plus a cosmetic bend that never moves the snap grid.",
 			"seed": _base_seed({
 				"tower_blocks": _filler_tower(6, 3),
 				"hand": [
-					_tilting_brick("tut-stability-1", "L", -5, 8.0),
-					_tilting_brick("tut-stability-2", "L", 5, 0.0)
+					_support_brick("tut-stability-1", "L", -5, 8.0),
+					{"id": "tut-stability-2", "shapeId": "L", "cells": BlockDataScript.BRICK_SHAPES["L"], "height": 3, "scriptedBalanceDelta": 5, "scriptedPoseClear": true, "scriptedStability": 94, "scriptedDiagnostics": {"balance": 94, "integrity": 96, "leanDirection": "center"}}
 				]
 			}),
 			"steps": [
 				{
 					"id": &"off_center",
-					"title": "Lean vs. Integrity",
-					"body": "Lean is side-to-side asymmetry -- you can see it as a visible tilt. Integrity is site usage and support underneath. Place this one off to the side and watch the brick's face.",
+					"title": "Balance vs. Integrity",
+					"body": "Balance checks the carried load over its contact span. Integrity checks whether that support path is wide and redundant. Place this off-centre: the weak section bends, but aiming stays on the straight snap grid.",
 					"target": &"PlayField",
 					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
@@ -223,8 +222,8 @@ static func _catalog() -> Array:
 				},
 				{
 					"id": &"straighten",
-					"title": "Straighten it back up",
-					"body": "Now place one that pulls the tower back toward centre -- a smiley face means you improved the lean.",
+					"title": "Repair the support path",
+					"body": "Now add a direct support. A repair can straighten the displayed section, improve a brick face, and make the same carried load safer through a wider path.",
 					"target": &"PlayField",
 					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
@@ -260,8 +259,8 @@ static func _catalog() -> Array:
 		},
 		{
 			"id": &"scoring",
-			"title": "Scoring and Reinforce",
-			"blurb": "Contribution pays for height; Reinforce pays for fixing.",
+			"title": "Scoring and support",
+			"blurb": "Useful Height pays for progress; structural repair pays for fixing.",
 			"seed": _base_seed({
 				"tower_blocks": _filler_tower(4, 3),
 				"hand": [_scored_brick("tut-scoring-1", "I", 40, "placement")]
@@ -269,22 +268,22 @@ static func _catalog() -> Array:
 			"steps": [
 				{
 					"id": &"contribution",
-					"title": "Contribution = height x level x 10",
-					"body": "Placing height scores Contribution, scaled by the level and by the tower's stability at the moment you placed. Try one.",
+					"title": "Useful Height",
+					"body": "Useful Height rewards the part of a placement that still helps reach the target. A placement that adds danger keeps less of that reward. Try one.",
 					"target": &"PlayField",
 					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK
 				},
 				{
-					"id": &"reinforce",
-					"title": "Reinforce pays for fixing",
-					"body": "Straightening a lean or widening the base also pays Reinforce points, front-loaded so early repairs are worth the most.",
+					"id": &"structural_value",
+					"title": "Structural Value and Critical Save",
+					"body": "A direct repair pays Structural Value from the risk and load it improves. Repairing a mature critical support can also earn a capped Critical Save -- all three useful rewards count for Impact.",
 					"target": &"PlayerRailBox",
 					"card": "auto",
 					"gate": TutorialGatesScript.INFO,
 					"on_enter": {
 						"type": "score_popup",
-						"event": {"type": "reinforce", "points": 22, "playerId": LOCAL_PLAYER_ID},
+						"event": {"type": "placement", "points": 22, "playerId": LOCAL_PLAYER_ID, "meta": {"classification": "reinforcement"}},
 						"duration": 2.0
 					}
 				}
@@ -295,14 +294,14 @@ static func _catalog() -> Array:
 			"title": "Perfect Build",
 			"blurb": "An exact finish pays every player; overbuilding wastes the excess.",
 			"seed": _base_seed({
-				"tower_blocks": _filler_tower(14, 3),
+				"tower_blocks": _filler_tower(28, 3),
 				"hand": [_scored_brick("tut-perfect-1", "O", 20, "team_exact_bonus")]
 			}),
 			"steps": [
 				{
 					"id": &"finish_exact",
 					"title": "Land it exactly",
-					"body": "This brick finishes the tower at exactly 16. An exact finish pays the finisher a Precision bonus and pays EVERY player a Team Exact bonus -- overbuilding past the target forfeits both.",
+					"body": "This brick finishes the tower at exactly 30. An exact finish pays the finisher a Precision bonus and pays EVERY player a Team Exact bonus -- overbuilding past the target forfeits both.",
 					"target": &"PlayField",
 					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,
@@ -313,15 +312,17 @@ static func _catalog() -> Array:
 		{
 			"id": &"impact",
 			"title": "Impact",
-			"blurb": "Every 2 levels, the whole team's contribution is checked.",
+			"blurb": "Every 2 levels, each player’s eligible contribution is checked.",
 			"seed": _base_seed({
 				"impact_status": {
-					"requiredBandScore": DEFAULTS.impact_requirement_score,
-					"nextImpactLevel": 1,
+					"requiredContribution": DEFAULTS.impact_requirement_score,
+					"minContributionShare": DEFAULTS.impact_min_contribution_share,
+					"impactLevel": 1,
+					"nextImpactLevel": 2,
 					"players": [
-						{"id": LOCAL_PLAYER_ID, "met": false, "bandScore": 10, "requiredBandScore": DEFAULTS.impact_requirement_score, "requiredScore": DEFAULTS.impact_requirement_score},
-						{"id": "teammate-1", "met": true, "bandScore": 48, "requiredBandScore": DEFAULTS.impact_requirement_score, "requiredScore": DEFAULTS.impact_requirement_score},
-						{"id": "teammate-2", "met": false, "bandScore": 6, "requiredBandScore": DEFAULTS.impact_requirement_score, "requiredScore": DEFAULTS.impact_requirement_score}
+						{"id": LOCAL_PLAYER_ID, "met": false, "bandContribution": 30, "requiredContribution": DEFAULTS.impact_requirement_score},
+						{"id": "teammate-1", "met": true, "bandContribution": 90, "requiredContribution": DEFAULTS.impact_requirement_score},
+						{"id": "teammate-2", "met": false, "bandContribution": 18, "requiredContribution": DEFAULTS.impact_requirement_score}
 					]
 				}
 			}),
@@ -329,7 +330,7 @@ static func _catalog() -> Array:
 				{
 					"id": &"every_level",
 					"title": "Every 2 levels is an Impact",
-					"body": "Every 2nd level gates on Impact: each player must personally clear their own share of the score banked since the last one, not just the team total.",
+					"body": "Every 2nd level gates on Impact: each player must personally clear their own eligible contribution, including the current level. A teammate's extra score cannot cover your share.",
 					"target": &"ImpactTrack",
 					"card": "below",
 					"gate": TutorialGatesScript.INFO
@@ -337,7 +338,7 @@ static func _catalog() -> Array:
 				{
 					"id": &"your_share",
 					"title": "Your share, by Level 2",
-					"body": "At Level 1's pace that's 48 points each by the time the Impact check lands. Fall short and the WHOLE team rolls back to replay the band -- not just you.",
+					"body": "At Level 1's clean pace, the first check is 90 eligible points each: 30% of the 300-point useful-height baseline. Fall short and the whole team retries the band; repeated failures exhaust the shared recovery budget.",
 					"target": &"PlayerRailBox",
 					"card": "auto",
 					"gate": TutorialGatesScript.INFO
@@ -413,7 +414,7 @@ static func _catalog() -> Array:
 			"steps": [
 				{
 					"id": &"round_timer",
-					"title": "30 seconds a level",
+					"title": "60 seconds a level",
 					"body": "Each level runs on a shared clock. Run out of time mid-build and the level fails -- coordinate fast.",
 					"target": &"RoundTimeBadge",
 					"card": "below",
