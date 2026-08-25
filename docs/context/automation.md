@@ -74,19 +74,19 @@ documentation scope, so no separate `context scope` call is needed.
 3. `verify` runs selected QA, file-map generation for source paths, relevant KB
    validation, agent-configuration validation for skill or entry-contract edits,
    and `task-report validate` into a receipt under `.agent-state/automation/`.
-4. `report` can stage only after a passing receipt. It reads the frozen model,
-   effort, complexity, context-plus-change estimate and session from the
-   manifest, copies path and domain counts, and accepts no end-of-task runtime
-   override. A Stop hook runs `scripts/task-report-stop.mjs` to read counters
-   from the user instruction through the matching `task_complete` event and
-   active / wall timing, then commits v2 and v3 together. A failed hook leaves the
-   ignored pending transaction for retry. Values such as `GPT-5` or `variant
-   unrecorded` are invalid for standard records.
+4. `report` appends v2 and v3 together after a passing receipt. It reads the
+   frozen model, effort, complexity, context-plus-change estimate and session
+   from the manifest, copies path and domain counts, and resolves the provider
+   token delta and active / elapsed time for the completed task. When a runtime
+   baseline is unavailable, `--total` and `--main` provide the required measured
+   totals. Values such as `GPT-5` or `variant unrecorded` are invalid for
+   standard records.
 
 ## Structured task reporting
 
 `node scripts/task-report.mjs start` remains the low-level v2 intake writer;
-`task-close prepare` is the normal entry point. `append` requires a passed
+`task-close prepare` is the normal entry point. `task-close report` is the
+normal single-command append. `append` requires a passed
 receipt and reads the exact runtime variant, effort, complexity and frozen
 context-plus-change estimate from the manifest. Source-read, provider usage-pool
 total, and v3 input/cache/output/reasoning measurements carry `exact`,

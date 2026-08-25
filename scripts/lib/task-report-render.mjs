@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { analyzeRecords, factualReview } from './task-report-analysis.mjs';
 
-const HEADER = `# Task token cost & effectivity
+const HEADER = `# Task reporting v2
 
 <!-- GENERATED FILE. Source: report/v2/data/task-records.jsonl and report/v2/data/task-cycle-reviews.jsonl. Run node scripts/task-report.mjs render. -->
 
-This report is generated from structured task records. Historical records retain
-their legacy source and warnings; unavailable measurements are not guessed.
+This report is generated from structured task records. Archived runs preserve
+their original values; unavailable measurements are shown as unavailable.
 
 ## Definitions
 
@@ -44,7 +44,7 @@ function formatMeasurement(measurement) {
 
 function row(record) {
   const context = Number.isFinite(record.estimate?.context_tokens) ? formatTokens(record.estimate.context_tokens) : formatMeasurement(record.observed?.source_read_tokens);
-  return `| ${record.row} | ${record.task.replaceAll('|', '\\|')} | ${display(record.complexity)} | ${display(record.mode)} | ${display(record.scope?.domains)} | ${display(record.scope?.files)} | ${formatEstimate(record.estimate)} | ${context} | ${formatMeasurement(record.observed?.total_tokens)} | ${formatMeasurement(record.observed?.main_thread_tokens)} | ${display({ 'first-try': '✓', 'second-document': '~', 'repository-fallback': '✗', 'doc-source-conflict': '!', unavailable: '—' }[record.retrieval?.result])} | ${display(record.outcome?.verdict)} | ${model(record)} | ${display(record.runtime?.effort)} | ${record.skills?.length ? record.skills.join(',') : '—'} |`;
+  return `| ${record.row} | ${record.task.replaceAll('|', '\\|')} | ${display(record.complexity)} | ${display(record.mode)} | ${display(record.scope?.domains)} | ${display(record.scope?.files)} | ${formatEstimate(record.estimate)} | ${context} | ${formatMeasurement(record.observed?.total_tokens)} | ${formatMeasurement(record.observed?.main_thread_tokens)} | ${display({ 'first-try': '✓', 'second-document': '~', 'repository-fallback': '✗', 'doc-source-conflict': '!', unavailable: '—' }[record.retrieval?.result])} | ${display(record.outcome?.verdict)} | ${model(record)} | ${display(record.runtime?.effort)} | ${record.skills?.length ? record.skills.join(', ') : '—'} |`;
 }
 
 function summary(rollup) {
@@ -64,7 +64,7 @@ export function renderReport({ records, reviews = [], state }) {
   const openCycle = state.open_cycle;
   const cycles = [...new Set(records.map(record => record.cycle).concat(openCycle))].sort((a, b) => b - a);
   const reviewMap = new Map(reviews.map(review => [review.cycle, review]));
-  let output = `${HEADER}The table uses Estimated pool tokens (measured context plus planned change), Context pool used, Actual pool tokens consumed from the provider usage counter, and Main pool tokens for the main thread. Legacy rows preserve their original source-read estimate target and are not pool-comparable. A tilde marks an estimated measurement.
+  let output = `${HEADER}Estimated tokens are the context-plus-change budget recorded before edits. Context used is the provider usage consumed before the first edit. Actual tokens are the provider counter delta for the completed task; Main-thread tokens exclude delegated workers. A tilde marks an estimated measurement.
 
 | Retrieval result | Definition |
 |---|---|
@@ -83,7 +83,7 @@ Model is the exact implementing runtime variant for standard records. Legacy row
     output += `## Cycle ${cycle} (${isOpen ? 'open' : 'closed'})\n\n`;
     if (isOpen) output += `Current cycle: ${cycleRecords.length} recorded row(s); next row is ${state.next_row}.\n\n`;
     else output += `${reviewText(reviewMap.get(cycle), rollup)}\n\n${summary(rollup)}\n\n`;
-    output += '| # | Task | Cx | Mode | Dom | F | Estimated pool tokens | Context pool used | Actual pool tokens | Main pool tokens | Hit | V | Model | Effort | Skills |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n';
+    output += '| Row | Task | Complexity | Work mode | Domains | Files | Estimated tokens | Context used | Actual tokens | Main-thread tokens | Retrieval | Result | Model | Effort | Skills |\n|---:|---|---:|---|---:|---:|---:|---:|---:|---:|---|---|---|---|---|\n';
     output += cycleRecords.map(row).join('\n');
     if (isOpen) output += `\n<!-- next: row ${state.next_row} -->`;
     output += '\n\n';

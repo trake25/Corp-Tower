@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync, unlinkSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, relative } from 'node:path';
 import { atomicWrites, DEFAULT_RECORDS_FILE, DEFAULT_REPORT_FILE, DEFAULT_REVIEWS_FILE, DEFAULT_STATE_FILE, LEGACY_RECORDS_FILE, LEGACY_REPORT_FILE, LEGACY_REVIEWS_FILE, LEGACY_STATE_FILE, jsonl, readJson, readJsonl, resolveReportPath, rootPath, stateFromRecords, writeJson } from './lib/task-report-storage.mjs';
@@ -7,7 +7,6 @@ import { analyzeRecords, factualReview } from './lib/task-report-analysis.mjs';
 import { isUnrecordedModel, parseEstimate, parseMeasurement, validateCycleReview, validateCycleState, validateTaskRecord } from './lib/task-report-schema.mjs';
 import { renderReport } from './lib/task-report-render.mjs';
 import { V3_INDEX_FILE, V3_SAMPLES_FILE, analyzeV3, bucketPath, compareV3, createV3Sample, readV3Samples, renderV3Files, runtimeDiagnose, validateV3Sample, validateV3Store, writeV3Store } from './lib/task-report-v3.mjs';
-import { completionTiming, readRuntimeMetadata, usageDelta, usageSum } from './lib/task-report-runtime.mjs';
 
 const ROOT = resolve(process.env.TASK_REPORT_ROOT || '.');
 const argv = process.argv.slice(2);
@@ -201,50 +200,8 @@ function importLegacy(value) {
   console.log(`PASS — imported ${records.length} legacy records across ${cycles.length} cycles; warnings preserved`);
 }
 
-const PENDING_FILE = '.agent-state/automation/task-report-pending.json';
-
-function stageAppend(value) {
-  const manifestPath = rootPath(ROOT, one(value, 'manifest', { required: true }));
-  if (!existsSync(manifestPath)) fail(`manifest not found: ${relativePath(manifestPath)}`);
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  const receipt = receiptFor(value, manifestPath);
-  exactModel(manifest.runtime?.model);
-  if (!manifest.estimate || !['pre-read', 'pre-change'].includes(manifest.estimate.timing) || !Number.isInteger(manifest.estimate.tokens)) fail('manifest must contain a valid context-plus-change estimate from task-close prepare');
-  const pendingPath = rootPath(ROOT, one(value, 'pending') || PENDING_FILE);
-  const options = JSON.parse(JSON.stringify(value));
-  delete options.stage;
-  const pending = { schema_version: 1, manifest: relativePath(manifestPath), receipt: receipt.path, options, staged_at: new Date().toISOString() };
-  if (existsSync(pendingPath)) {
-    const existing = JSON.parse(readFileSync(pendingPath, 'utf8'));
-    if (existing.manifest !== pending.manifest || JSON.stringify(existing.options) !== JSON.stringify(pending.options)) fail('a different task-report transaction is already pending');
-    console.log(`PASS — task-report transaction already staged in ${relativePath(pendingPath)}`);
-    return;
-  }
-  writeJson(pendingPath, pending);
-  console.log(`PASS — staged task-report transaction in ${relativePath(pendingPath)}`);
-}
-
-async function finalizePending(value) {
-  const pendingPath = rootPath(ROOT, one(value, 'pending') || PENDING_FILE);
-  if (!existsSync(pendingPath)) fail(`pending task-report transaction not found: ${relativePath(pendingPath)}`);
-  const pending = JSON.parse(readFileSync(pendingPath, 'utf8'));
-  const manifestPath = rootPath(ROOT, pending.manifest);
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  const metadata = await readRuntimeMetadata({ env: process.env, task: manifest.task, taskStartedAt: manifest.task_started_at, samples: readV3Samples(ROOT) });
-  const finalizedAt = metadata.task_completed_at && Date.parse(metadata.task_completed_at) >= Date.parse(manifest.task_started_at || '') ? metadata.task_completed_at : new Date().toISOString();
-  const delta = usageSum(manifest.usage_baseline, metadata.events, { from: manifest.task_started_at, through: finalizedAt }) || usageDelta(manifest.usage_baseline, metadata.task_usage_final || metadata.usage_at_task_complete || metadata.usage_current || metadata.usage_baseline);
-  if (!delta || !Number.isFinite(delta.total_tokens)) fail('runtime usage finalization is unavailable; pending transaction preserved');
-  const timing = completionTiming(metadata.events, { taskStartedAt: manifest.task_started_at, finalizedAt });
-  const options = { ...pending.options, total: String(delta.total_tokens), main: String(delta.total_tokens), 'input-tokens': String(delta.input_tokens), 'cached-input-tokens': String(delta.cached_input_tokens), 'cache-write-input-tokens': String(delta.cache_write_input_tokens), 'output-tokens': String(delta.output_tokens), 'reasoning-output-tokens': String(delta.reasoning_output_tokens), 'active-agent-seconds': timing.active_agent_seconds === null ? undefined : String(timing.active_agent_seconds), 'wall-duration-seconds': timing.wall_duration_seconds === null ? undefined : String(timing.wall_duration_seconds), 'finalized-at': finalizedAt };
-  delete options.stage;
-  append(options);
-  manifest.report = { status: 'appended', summary: 'Finalized runtime usage and completion timing; committed v2 and v3.' };
-  writeJson(manifestPath, manifest);
-  unlinkSync(pendingPath);
-}
-
 function append(value) {
-  if (value.stage) return stageAppend(value);
+  if (value.stage) fail('staged reporting was removed; use task-close report to append v2 and v3 together');
   if (value['r-est'] !== undefined || value['r-change-est'] !== undefined) fail('estimate flags are intake-only; task-close report must read the context-plus-change estimate from the manifest');
   if (value.model !== undefined || value['model-variant'] !== undefined) fail('model variant is intake-only; task-close prepare must record it in the manifest');
   const manifestPath = rootPath(ROOT, one(value, 'manifest', { required: true }));
@@ -499,7 +456,6 @@ async function main() {
   if (command === 'import' || command === 'legacy-import') return importLegacy(value);
   if (command === 'start') return start(value);
   if (command === 'append') return append(value);
-  if (command === 'finalize') return finalizePending(value);
   if (command === 'validate' || command === 'v3-validate') return validate(value);
   if (command === 'render' || command === 'v3-render') return render(value);
   if (command === 'analyze') return analyze(value);
@@ -508,9 +464,9 @@ async function main() {
   if (command === 'v3-compare' || command === 'compare') return compareV3Command(value);
   if (command === 'v3-view' || command === 'view') return viewV3(value);
   if (command === 'runtime-diagnose') return runtimeDiagnoseCommand(value);
-  fail('usage: node scripts/task-report.mjs <start|append|finalize|analyze|close-cycle|validate|render|import|v3-analyze|compare|view|runtime-diagnose> [--field value ...]', 2);
+  fail('usage: node scripts/task-report.mjs <start|append|analyze|close-cycle|validate|render|import|v3-analyze|compare|view|runtime-diagnose> [--field value ...]', 2);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname)) main().catch(error => fail(error.message));
 
-export { append, analyze, closeCycle, finalizePending, importLegacy, parseLegacyRows, start, validate };
+export { append, analyze, closeCycle, importLegacy, parseLegacyRows, start, validate };

@@ -52,7 +52,7 @@ test('closed bucket rendering uses the compact twelve-row table', () => {
   const report = renderV3Bucket(rows);
   assert.match(report, /## Cycle 1 \(closed\)/);
   assert.equal((report.match(/^\| \d+ \|/gm) || []).length, 12);
-  assert.match(report, /Estimated pool tokens \| Actual pool tokens \| Pool delta \| Cache ratio \| Active \/ wall \(min\)/);
+  assert.match(report, /Estimated tokens \| Actual tokens \| Difference \| Cache hit rate \| Active \/ elapsed time/);
   assert.equal(formatTokens(30000), '30k');
   assert.equal(formatTokens(6847080), '6.847m');
   assert.equal(formatMinutes(1743.096), '29.1 min');
@@ -86,6 +86,21 @@ test('runtime adapter gives collaboration settings precedence and hashes the ses
     assert.equal(metadata.task_completed_at, '2026-08-25T00:01:05.000Z');
     assert.equal(metadata.task_turn_id, 'current-turn');
     assert.equal(JSON.stringify(metadata), JSON.stringify(metadata).replace('thread-fixture', metadata.session_id));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runtime adapter starts a new transcript task from an exact zero counter', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-tower-runtime-zero-'));
+  try {
+    const transcript = join(root, 'rollout.jsonl');
+    writeFileSync(transcript, [
+      JSON.stringify({ timestamp: '2026-08-25T00:01:00.000Z', type: 'event_msg', payload: { type: 'task_started', turn_id: 'first-turn', started_at: 1787616060 } }),
+      JSON.stringify({ timestamp: '2026-08-25T00:01:03.000Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { input_tokens: 15, cached_input_tokens: 8, output_tokens: 3, reasoning_output_tokens: 2, total_tokens: 20 } } } }),
+    ].join('\n'));
+    const metadata = await readRuntimeMetadata({ env: { CODEX_THREAD_ID: 'thread-fixture', CODEX_TRANSCRIPT_PATH: transcript }, samples: [] });
+    assert.deepEqual(metadata.task_usage_baseline, { input_tokens: 0, cached_input_tokens: 0, cache_write_input_tokens: 0, output_tokens: 0, reasoning_output_tokens: 0, total_tokens: 0 });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

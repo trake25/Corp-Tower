@@ -326,16 +326,16 @@ function sampleRow(sample) {
   const cached = sample.observed?.cached_input_tokens?.value;
   const cachePercent = Number.isFinite(input) && input > 0 && Number.isFinite(cached) ? `${ratio(cached, input)}%` : '—';
   const timing = Number.isFinite(sample.active_agent_seconds) || Number.isFinite(sample.wall_duration_seconds) ? `${formatMinutes(sample.active_agent_seconds)} / ${formatMinutes(sample.wall_duration_seconds)}` : '—';
-  return `| ${sample.row} | ${String(sample.task).replaceAll('|', '\\|')} | ${sample.fresh_session ? 'first' : 'continued'} | ${format(sample.actual_complexity)} | ${scope} | ${estimateLabel(sample.estimate)} | ${tableValue(sample.observed?.total_tokens, true)} | ${Number.isFinite(sample.estimate?.tokens) && Number.isFinite(sample.observed?.total_tokens?.value) ? formatTokens(sample.observed.total_tokens.value - sample.estimate.tokens) : '—'} | ${cachePercent} | ${timing} | ${hit} | ${format(sample.outcome?.verdict)} |`;
+  return `| ${sample.row} | ${String(sample.task).replaceAll('|', '\\|')} | ${sample.fresh_session ? 'First in session' : 'Continued session'} | ${format(sample.actual_complexity)} | ${scope} | ${estimateLabel(sample.estimate)} | ${tableValue(sample.observed?.total_tokens, true)} | ${Number.isFinite(sample.estimate?.tokens) && Number.isFinite(sample.observed?.total_tokens?.value) ? formatTokens(sample.observed.total_tokens.value - sample.estimate.tokens) : '—'} | ${cachePercent} | ${timing} | ${hit} | ${format(sample.outcome?.verdict)} |`;
 }
 
 export function renderV3Index(samples) {
   const analysis = analyzeV3(samples);
   let output = '# Task reporting v3\n\n';
-  output += 'Each bucket is exact model × effort × estimated complexity; cycles close every 12 verified samples. Token values use k/m units; time values are minutes. Pricing is intentionally absent.\n\n';
-  output += '| Model | Effort | Estimated complexity | Closed cycles | Open rows/12 | First/continued sample | Median actual pool tokens | Median active (min) | Median wall (min) | Cache ratio | P90 actual pool tokens | Median absolute pool delta | First-try retrieval |\n|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n';
+  output += 'Each bucket groups one exact model, reasoning effort, and estimated complexity. A cycle closes after 12 verified samples. Token values use k/m units and time values use minutes; pricing is intentionally absent.\n\n';
+  output += '| Model | Reasoning effort | Estimated complexity | Completed cycles | Current rows (of 12) | First / continued sessions | Median actual tokens | Median active time | Median elapsed time | Cache hit rate | P90 actual tokens | Median estimate difference | First-try retrieval |\n|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n';
   output += analysis.buckets.map(dashboardRow).join('\n') || '| — | — | — | 0 | 0/12 | — | — | — | — | — | — | — | — |';
-  output += `\n\nDefinitions: estimated pool tokens are measured provider usage from context retrieval plus planned file changes; actual pool tokens are the provider-reported total-token delta consumed from the usage pool over the task interval. Input, cached input, output, and reasoning breakdowns remain in the JSONL. A row marked legacy used the older pre-read estimate and is not pool-comparable. Wall time runs from the matching user instruction to task completion. First means the first v3 sample recorded in this runtime session; continued means another sample already existed. Active time excludes human or approval waits. Cache ratio is cached input ÷ input; — means unavailable. First-try is receipt-linked retrieval. Complexity: ${Object.entries(COMPLEXITY_RUBRIC).map(([key, value]) => `${key}=${value}`).join('; ')}.\n`;
+  output += `\n\nDefinitions: estimated tokens are the provider usage recorded during context retrieval plus planned file changes. Actual tokens are the provider counter delta from the user instruction through close-out. Detailed input, cache, output, and reasoning measurements remain in the JSONL. Elapsed time runs from the user instruction to completion; active time excludes approval and human waits. Cache hit rate is cached input ÷ input. First-try retrieval is receipt-linked. — means unavailable. Complexity: ${Object.entries(COMPLEXITY_RUBRIC).map(([key, value]) => `${key}=${value}`).join('; ')}.\n`;
   return output;
 }
 
@@ -351,7 +351,7 @@ export function renderV3Bucket(rows) {
   for (const [cycle, cycleRows] of groups) {
     const closed = cycleRows.length === V3_CYCLE_SIZE;
     output += `## Cycle ${cycle} (${closed ? 'closed' : 'open'})\n\n`;
-  output += '| # | Task | Session sample | Actual complexity | Scope (domains / files) | Estimated pool tokens | Actual pool tokens | Pool delta | Cache ratio | Active / wall (min) | Retrieval | Result |\n|---:|---|---|---:|---|---:|---:|---:|---:|---:|---|---|\n';
+  output += '| Row | Task | Session | Actual complexity | Scope (domains / files) | Estimated tokens | Actual tokens | Difference | Cache hit rate | Active / elapsed time | Retrieval | Outcome |\n|---:|---|---|---:|---|---:|---:|---:|---:|---:|---|---|\n';
     output += cycleRows.sort((a, b) => a.row - b.row).map(sampleRow).join('\n') + '\n\n';
   }
   return output.trimEnd() + '\n';

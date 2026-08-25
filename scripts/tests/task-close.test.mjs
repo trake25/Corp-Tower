@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { selectQa } from '../qa-gate.mjs';
-import { applyDocumentationDecision, createManifest, intakeForManifest } from '../task-close.mjs';
+import { applyDocumentationDecision, createManifest, intakeForManifest, reportAppendArgs } from '../task-close.mjs';
 
 test('QA planner preserves targeted server and client selection', () => {
   const plan = selectQa([
@@ -95,4 +95,19 @@ test('an exact model variant is carried into the manifest handoff', () => {
 
   const intake = intakeForManifest(manifest, 'task/report.json');
   assert.deepEqual(intake.intake.runtime, manifest.runtime);
+});
+
+test('report arguments append directly and never stage a pending transaction', () => {
+  const manifest = createManifest({
+    task: 'Direct report fixture',
+    changedPaths: ['scripts/task-report.mjs'],
+  });
+  manifest.verification = { status: 'passed', receipt: 'task/manifest.receipt.json' };
+  const args = reportAppendArgs(manifest, '/workspace/task/manifest.json', new Map([
+    ['complexity', ['2']], ['mode', ['maintenance']], ['hit', ['first-try']], ['verdict', ['pass']], ['effort', ['medium']], ['skills', ['infra-engineer']], ['total', ['2500']], ['main', ['2500']],
+  ]), ['complexity', 'mode', 'hit', 'verdict', 'effort', 'skills', 'total', 'main']);
+  assert.deepEqual(args.slice(0, 2), ['scripts/task-report.mjs', 'append']);
+  assert.equal(args.includes('--stage'), false);
+  assert.equal(args.includes('--total'), true);
+  assert.equal(args.includes('--main'), true);
 });

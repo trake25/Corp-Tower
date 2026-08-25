@@ -68,6 +68,10 @@ function usageAtOrBefore(events, boundary) {
 
 const USAGE_FIELDS = ['input_tokens', 'cached_input_tokens', 'cache_write_input_tokens', 'output_tokens', 'reasoning_output_tokens', 'total_tokens'];
 
+function zeroUsage() {
+  return Object.fromEntries(USAGE_FIELDS.map(field => [field, 0]));
+}
+
 function usageSum(start, events, { from = null, through = null } = {}) {
   if (!start) return null;
   const lower = timestamp(from);
@@ -155,7 +159,7 @@ export async function readRuntimeMetadata({ env = process.env, task = null, samp
   const sessionHash = host.session_hash || hashSession(session);
   const previous = samples.filter(sample => sample.session_hash && sample.session_hash === sessionHash);
   const usage = host.usage_current || transcript.usage || null;
-  const taskUsageBaseline = host.task_usage_baseline || host.usage_baseline || transcript.usageAtTaskStart || null;
+  const taskUsageBaseline = host.task_usage_baseline || host.usage_baseline || transcript.usageAtTaskStart || (transcript.taskStartedAt ? zeroUsage() : null);
   const taskUsageFinal = host.task_usage_final || transcript.usageAtTaskComplete || null;
   const resolvedTaskStartedAt = taskStartedAt || host.task_started_at || transcript.taskStartedAt || null;
   return {

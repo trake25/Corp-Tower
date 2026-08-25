@@ -106,6 +106,8 @@ test('append requires a passed receipt, intake estimate, and exact model variant
     writeFileSync(join(root, 'task/manifest.json'), JSON.stringify({ schema_version: 1, task: 'Fixture task', estimate: { tokens: 1000, timing: 'pre-read', basis: 'fixture route and map' }, runtime: { model: 'gpt-5.6-terra' } }));
     const appended = run(root, args);
     assert.equal(appended.status, 0, appended.stderr);
+    const staged = run(root, [...args, '--stage']);
+    assert.notEqual(staged.status, 0);
     const validated = run(root, ['validate']);
     assert.equal(validated.status, 0, validated.stderr);
   } finally {

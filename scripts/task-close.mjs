@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { mapOwnerForPath, routeSourcePath } from './lib/context-routing.mjs';
 import { isUnrecordedModel } from './lib/task-report-schema.mjs';
 import { estimateFromBucket, hashSession, readV3Samples } from './lib/task-report-v3.mjs';
-import { readRuntimeMetadata, usageDelta } from './lib/task-report-runtime.mjs';
+import { completionTiming, readRuntimeMetadata, usageDelta, usageSum } from './lib/task-report-runtime.mjs';
 import { selectQa } from './qa-gate.mjs';
 
 const ROOT = resolve(process.env.TASK_CLOSE_ROOT || '.');
@@ -328,31 +328,56 @@ function verify(manifest, manifestFile) {
   console.log(`PASS — ${steps.map(step => `${step.name}: ${step.summary}`).join('; ')}`);
 }
 
-function report(manifest, manifestFile, values) {
+export function reportAppendArgs(manifest, manifestFile, reportValues, required) {
+  const files = new Set([...manifest.changed_paths, ...manifest.documentation.documented_paths]);
+  const args = ['scripts/task-report.mjs', 'append', '--manifest', displayPath(manifestFile), '--receipt', manifest.verification.receipt, '--domains', String(manifest.domains.length), '--files', String(files.size)];
+  for (const key of required) args.push(`--${key}`, one(reportValues, key, true));
+  const summary = one(reportValues, 'summary');
+  if (summary) args.push('--summary', summary);
+  const optionalV3 = ['actual-complexity', 'complexity-reason', 'input-tokens', 'cached-input-tokens', 'cache-write-input-tokens', 'output-tokens', 'reasoning-output-tokens', 'aggregate-worker-tokens', 'workers', 'active-agent-seconds', 'wall-duration-seconds', 'task-started-at', 'finalized-at', 'total-kind', 'main-kind', 'token-provenance'];
+  for (const key of optionalV3) {
+    const current = one(reportValues, key);
+    if (reportValues.has(key)) args.push(`--${key}`, current);
+  }
+  return args;
+}
+
+async function report(manifest, manifestFile, values) {
   if (manifest.verification?.status !== 'passed') fail('verification must pass before reporting', 1);
   if (values.get('r-est') || values.get('r-change-est') || values.get('r-est-basis')) fail('estimate flags are intake-only; record them with task-close prepare after context retrieval', 1);
   if (values.get('model') || values.get('model-variant')) fail('model variant is intake-only; record it with task-close prepare', 1);
   if (!manifest.estimate || !['pre-read', 'pre-change'].includes(manifest.estimate.timing) || !Number.isInteger(manifest.estimate.tokens)) fail('manifest has no valid context-plus-change estimate; run task-close prepare before file changes', 1);
   if (!manifest.runtime || isUnrecordedModel(manifest.runtime.model)) fail('manifest has no exact model variant; rerun task-close prepare with the runtime adapter or --model-variant', 1);
   if (!manifest.verification.receipt) fail('verification receipt is missing; rerun task-close verify', 1);
-  const required = ['complexity', 'mode', 'hit', 'verdict', 'effort', 'skills'];
-  if (!manifest.usage_baseline) required.push('r-act', 'total', 'main');
-  for (const key of required) one(values, key, true);
-  if (String(one(values, 'complexity')) !== String(manifest.complexity?.estimated ?? one(values, 'complexity'))) fail('estimated complexity is intake-only and cannot change after prepare');
-  if (String(one(values, 'effort')) !== String(manifest.runtime.effort)) fail('runtime effort is intake-only and cannot change after prepare');
-  const files = new Set([...manifest.changed_paths, ...manifest.documentation.documented_paths]);
-  const args = ['scripts/task-report.mjs', 'append', '--stage', '--manifest', displayPath(manifestFile), '--receipt', manifest.verification.receipt, '--domains', String(manifest.domains.length), '--files', String(files.size)];
-  for (const key of required) args.push(`--${key}`, one(values, key, true));
-  const summary = one(values, 'summary');
-  if (summary) args.push('--summary', summary);
-  const optionalV3 = ['actual-complexity', 'complexity-reason', 'input-tokens', 'cached-input-tokens', 'cache-write-input-tokens', 'output-tokens', 'reasoning-output-tokens', 'aggregate-worker-tokens', 'workers', 'active-agent-seconds', 'wall-duration-seconds', 'task-started-at', 'finalized-at', 'total-kind', 'main-kind', 'token-provenance'];
-  for (const key of optionalV3) {
-    const current = one(values, key);
-    if (values.has(key)) args.push(`--${key}`, current);
+  const reportValues = new Map(values);
+  const metadata = await readRuntimeMetadata({ env: process.env, task: manifest.task, taskStartedAt: manifest.task_started_at, samples: readV3Samples(ROOT) });
+  const finalizedAt = metadata.task_completed_at && Date.parse(metadata.task_completed_at) >= Date.parse(manifest.task_started_at || '') ? metadata.task_completed_at : new Date().toISOString();
+  const delta = usageSum(manifest.usage_baseline, metadata.events, { from: manifest.task_started_at, through: finalizedAt }) || usageDelta(manifest.usage_baseline, metadata.task_usage_final || metadata.usage_at_task_complete || metadata.usage_current);
+  if (delta && Number.isFinite(delta.total_tokens)) {
+    const runtimeMeasurements = {
+      total: delta.total_tokens,
+      main: delta.total_tokens,
+      'input-tokens': delta.input_tokens,
+      'cached-input-tokens': delta.cached_input_tokens,
+      'cache-write-input-tokens': delta.cache_write_input_tokens,
+      'output-tokens': delta.output_tokens,
+      'reasoning-output-tokens': delta.reasoning_output_tokens,
+      'active-agent-seconds': completionTiming(metadata.events, { taskStartedAt: manifest.task_started_at, finalizedAt }).active_agent_seconds,
+      'wall-duration-seconds': completionTiming(metadata.events, { taskStartedAt: manifest.task_started_at, finalizedAt }).wall_duration_seconds,
+      'finalized-at': finalizedAt,
+    };
+    for (const [key, measurement] of Object.entries(runtimeMeasurements)) {
+      if (!reportValues.has(key) && measurement !== null && measurement !== undefined) reportValues.set(key, [String(measurement)]);
+    }
   }
+  const required = ['complexity', 'mode', 'hit', 'verdict', 'effort', 'skills', 'total', 'main'];
+  for (const key of required) one(reportValues, key, true);
+  if (String(one(reportValues, 'complexity')) !== String(manifest.complexity?.estimated ?? one(reportValues, 'complexity'))) fail('estimated complexity is intake-only and cannot change after prepare');
+  if (String(one(reportValues, 'effort')) !== String(manifest.runtime.effort)) fail('runtime effort is intake-only and cannot change after prepare');
+  const args = reportAppendArgs(manifest, manifestFile, reportValues, required);
   const step = runStep('task report append', args);
   if (step.status !== 0) fail(`FAIL — ${step.name}: ${step.summary || 'no summary'}`, 1);
-  manifest.report = { status: 'staged', summary: step.summary };
+  manifest.report = { status: 'appended', summary: step.summary };
   writeManifest(manifestFile, manifest);
   console.log(`PASS — ${step.summary}`);
 }
@@ -413,7 +438,7 @@ async function main() {
   }
   if (command === 'report') {
     const manifestFile = manifestPath(values);
-    report(readManifest(manifestFile), manifestFile, values);
+    await report(readManifest(manifestFile), manifestFile, values);
     return;
   }
   fail('usage: node scripts/task-close.mjs <prepare|decide|verify|report> ...');
