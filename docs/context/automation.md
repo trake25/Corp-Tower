@@ -96,3 +96,24 @@ leaves records untouched if validation fails.
 Human involvement is limited to testing that requires a real rendered/device
 comparison and the final product pass. Green deterministic checks do not replace
 an agent's documentation, coverage, or root-cause judgement.
+
+## Authorized Git automation
+
+`node scripts/git-sync-commit-push.mjs` is an opt-in local tool for the complete
+Git sync, stage, commit and push sequence. It is load-on-demand: an agent must
+have explicit user authorization and pass `--approve`. It reads the task
+manifest by default, derives commit keywords from the manifest task title, and
+stages only the manifest's `changed_paths`. It fetches the configured `origin`
+branch and runs `git pull --ff-only` before staging any local changes, then
+pushes the current branch after the commit succeeds. By default the current
+branch must be `main`; selecting another branch requires both `--branch` and
+`--switch`, and the worktree must be clean before switching.
+An explicitly authorized backup publication may use `--push-only` with a local
+`--branch` and new `--remote-branch`; that mode fetches `origin/main` and pushes
+only the existing local ref, without staging, committing, or switching.
+
+Commit subjects contain no more than three keywords and a version suffix, for
+example `Fix Lobby Sync v0.01`. The tool finds the highest matching local
+history version and increments it by `0.01`; unrelated keyword groups start at
+`v0.01`. It refuses detached HEADs, pre-staged changes, invalid paths, and empty
+staging results.

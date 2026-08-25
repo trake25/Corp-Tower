@@ -714,6 +714,22 @@ _no extracted symbols_
 | scripts/docs-scope.mjs:149 | order · const | docs sorted by how many paths route into them, heaviest first |
 | scripts/docs-scope.mjs:170 | maps · const | the distinct map files needing regeneration after this task |
 
+### scripts/git-sync-commit-push.mjs — 160 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/git-sync-commit-push.mjs:7 | ROOT · const | repository root used for every guarded Git command |
+| scripts/git-sync-commit-push.mjs:9 | fail · fn | fails closed with a concise actionable error |
+| scripts/git-sync-commit-push.mjs:14 | usage · fn | documents the explicit approval, keyword and path contract |
+| scripts/git-sync-commit-push.mjs:19 | parseArgs · fn | parses the load-on-demand approval gate and explicit path scope |
+| scripts/git-sync-commit-push.mjs:58 | git · fn | runs Git commands in the repository and surfaces command failures |
+| scripts/git-sync-commit-push.mjs:68 | repoPath · fn | rejects missing or repository-escaping paths before staging |
+| scripts/git-sync-commit-push.mjs:74 | branchName · fn | rejects unsafe branch names before any fetch, switch, commit, or push |
+| scripts/git-sync-commit-push.mjs:80 | taskScope · fn | reads the task title and exact task-owned paths from the close-out manifest |
+| scripts/git-sync-commit-push.mjs:94 | keywordsFor · fn | derives no more than three commit keywords from the task title |
+| scripts/git-sync-commit-push.mjs:102 | versionFor · fn | finds the highest matching commit version for the next 0.01 suffix |
+| scripts/git-sync-commit-push.mjs:114 | main · fn | fetches and fast-forward pulls before staging, committing and pushing |
+
 ### scripts/install-git-hooks.mjs — 16 ln
 
 | File:Ln | Symbol | Does |
@@ -754,7 +770,7 @@ _no extracted symbols_
 | scripts/lib/context-query.mjs:309 | selectedText · fn | reopens only selected evidence while assembling a context bundle |
 | scripts/lib/context-query.mjs:318 | contextBundle · fn | writes a hard-bounded Markdown handoff with selected evidence and provenance |
 
-### scripts/lib/context-routing.mjs — 193 ln
+### scripts/lib/context-routing.mjs — 194 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -765,17 +781,17 @@ _no extracted symbols_
 | scripts/lib/context-routing.mjs:16 | hudFiles · const | hud files constant used by context-routing |
 | scripts/lib/context-routing.mjs:33 | MAP_AREAS · const | map areas constant used by context-routing |
 | scripts/lib/context-routing.mjs:65 | ROUTE_RULES · const | route rules constant used by context-routing |
-| scripts/lib/context-routing.mjs:110 | AREA_ALIASES · const | area aliases constant used by context-routing |
-| scripts/lib/context-routing.mjs:126 | WORKSPACE_RULES · const | routes plan and reference working folders with explicit read/write policy |
-| scripts/lib/context-routing.mjs:143 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
-| scripts/lib/context-routing.mjs:151 | mapOwnerForPath · fn | returns the generated map that owns a source path |
-| scripts/lib/context-routing.mjs:155 | IGNORE_DIR · const | ignore dir constant used by context-routing |
-| scripts/lib/context-routing.mjs:156 | IGNORE_PATH · const | ignore path constant used by context-routing |
-| scripts/lib/context-routing.mjs:157 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
-| scripts/lib/context-routing.mjs:158 | norm · const | norm constant used by context-routing |
-| scripts/lib/context-routing.mjs:160 | walk · fn | walk operation implemented by context-routing |
-| scripts/lib/context-routing.mjs:171 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
-| scripts/lib/context-routing.mjs:192 | isExempt · const | reports whether a first-party path is exempt from map coverage |
+| scripts/lib/context-routing.mjs:111 | AREA_ALIASES · const | area aliases constant used by context-routing |
+| scripts/lib/context-routing.mjs:127 | WORKSPACE_RULES · const | routes plan and reference working folders with explicit read/write policy |
+| scripts/lib/context-routing.mjs:144 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
+| scripts/lib/context-routing.mjs:152 | mapOwnerForPath · fn | returns the generated map that owns a source path |
+| scripts/lib/context-routing.mjs:156 | IGNORE_DIR · const | ignore dir constant used by context-routing |
+| scripts/lib/context-routing.mjs:157 | IGNORE_PATH · const | ignore path constant used by context-routing |
+| scripts/lib/context-routing.mjs:158 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
+| scripts/lib/context-routing.mjs:159 | norm · const | norm constant used by context-routing |
+| scripts/lib/context-routing.mjs:161 | walk · fn | walk operation implemented by context-routing |
+| scripts/lib/context-routing.mjs:172 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
+| scripts/lib/context-routing.mjs:193 | isExempt · const | reports whether a first-party path is exempt from map coverage |
 
 ### scripts/lib/task-report-analysis.mjs — 144 ln
 
@@ -1069,4 +1085,4 @@ _no extracted symbols_
 
 ---
 
-105 files · 568 symbols · 0 awaiting a `Does` line.
+106 files · 579 symbols · 0 awaiting a `Does` line.

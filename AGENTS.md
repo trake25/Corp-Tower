@@ -70,6 +70,19 @@ automatic reflex.
   expand the current task without approval.
 - Do not deploy, commit, push, pull, compare remotes, create branches, or perform
   destructive operations unless the user authorizes that action.
+- `scripts/git-sync-commit-push.mjs` is a load-on-demand Git automation tool. An
+  agent may invoke it only after the user explicitly authorizes the operation and
+  the command includes `--approve`; it fetches and fast-forward pulls before
+  staging, commits, and pushes. It requires the current branch to be `main` by
+  default; a different branch requires an explicitly supplied `--branch` and
+  `--switch`, plus the user's approval to switch and push that branch. It reads
+  `task/close-out.json` by default and
+  stages only its `changed_paths`; it derives at most three commit keywords from
+  the manifest task title. Its commit format is those keywords followed by
+  `v0.01`; related commits increment by `0.01`.
+  For an explicitly approved branch backup publication, use `--push-only` with
+  `--branch` and `--remote-branch`; this publishes only the existing local ref
+  and never stages, commits, or switches the dirty worktree.
 - `plan/`, `task/`, and `reference/` are isolated working material. They cannot
   satisfy documentation citations or become knowledge-base dependencies.
 
