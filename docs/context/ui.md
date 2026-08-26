@@ -56,8 +56,9 @@ global floating debug button.
   signals and NetworkManager's `room_joined` / `match_started` / `room_closed`.
 - `StartupSplash` reuses the boot splash texture behind `ScreenContainer` while
   the initial `restore_session()` await is unresolved, then hides when Home or
-  Sign-in is attached. This prevents a cold post-update token refresh from
-  exposing the empty grey root.
+  Sign-in is attached. Its centered aspect-fit scaling preserves the full
+  portrait art on expanded Android and web canvases, preventing a cold
+  post-update token refresh from exposing the empty grey root.
 - Flow: Splash → Sign-in → Home → Join Screen; a restored session skips
   Sign-in, while Play Loader remains reusable and unwired. Tutorial exit → Home,
   room-close → Join Screen, except terminal `failure_limit_reached` closes and an

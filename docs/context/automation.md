@@ -36,6 +36,13 @@ than reading the repository broadly. `retrieval-aliases.json` supplies the small
 validated vocabulary bridge for common product terms; it is not an open-ended tag
 taxonomy.
 
+**Retrieval guardrail:** `search` uses every query token as a required match. An
+agent starts with one stable product anchor — a named screen, node, signal, file,
+or feature — then refines an empty narrative query once with that anchor and uses
+`filter` for an overfull result. `rg` is a source-reading fallback only after a
+routed target, an unavailable CLI, or an unresolved anchor refinement; a
+confirmed miss repairs the route, map purpose, or alias in the same task.
+
 Cloud coding agents use the same command through a read-only tool adapter. A
 cloud chat session without local-tool access receives only a deliberately made
 `bundle`; it cannot execute a repository-local command or gain source access from

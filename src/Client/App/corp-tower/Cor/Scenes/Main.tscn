@@ -26,7 +26,7 @@ grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("4_splash")
 expand_mode = 1
-stretch_mode = 6
+stretch_mode = 5
 
 [node name="ScreenContainer" type="Control" parent="." unique_id=160675656]
 layout_mode = 1

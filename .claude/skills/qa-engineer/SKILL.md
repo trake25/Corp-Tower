@@ -41,8 +41,10 @@ The local Godot binary is in the repository root on both platforms. Select the
 newest host-matching file — `Godot_v*_linux.x86_64` on Linux or
 `Godot_v*_win64.exe` on Windows — and never hardcode its version or silently use
 a system Godot. Stop with the missing pattern if no match exists. On restricted
-Linux hosts, prefix the command with an `XDG_DATA_HOME` under `/tmp` if Godot
-cannot write `user://logs`.
+Linux hosts, request the host execution boundary before the first Godot-based
+gate when sandbox execution is known to be unavailable; do not spend a failing
+sandbox attempt to rediscover that constraint. Prefix the approved command with
+an `XDG_DATA_HOME` under `/tmp` if Godot cannot write `user://logs`.
 
 Test process time does not spend model tokens; retained stdout/stderr does.
 Compact successful runs, then rerun a failure with normal output and report it

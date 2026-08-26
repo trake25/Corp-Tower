@@ -30,10 +30,13 @@ unavailable:
 
 1. Inspect `DISPLAY`, `XAUTHORITY`, `DBUS_SESSION_BUS_ADDRESS`, `id`, and
    `/tmp/.X11-unix`. Do not print cookie contents.
-2. If `DISPLAY` is set, run `xdpyinfo` in the current environment.
-3. If that fails, or `DISPLAY` is empty while an X socket exists, resolve the
-   active display and the current user's Xauthority path. Common local values are
-   `:0` and the current user's `.Xauthority`, but verify rather than assuming.
+2. If the active environment is known to block X11 sockets or repository GUI
+   execution, skip the sandbox probe and request the host execution boundary
+   now; do not spend a failing probe to rediscover that constraint. Otherwise,
+   if `DISPLAY` is set, run `xdpyinfo` in the current environment.
+3. If `xdpyinfo` fails, or `DISPLAY` is empty while an X socket exists, resolve
+   the active display and the current user's Xauthority path. Common local values
+   are `:0` and the current user's `.Xauthority`, but verify rather than assuming.
 4. With user approval, use the environment's host-level or unsandboxed execution
    mechanism for only this probe, passing explicit values:
 

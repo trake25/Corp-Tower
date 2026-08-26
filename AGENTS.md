@@ -8,7 +8,8 @@ This file is the vendor-neutral repository contract. Load one role skill from
 1. Select a role from the task: `client-engineer`, `server-engineer`,
    `fullstack-coordinator`, `infra-engineer`, `qa-engineer`, `web-designer`,
    `editorial`, or `docs-steward`. Workflows are `update-docs` and
-   `compact-docs`. Load the matching `SKILL.md` before editing.
+   `compact-docs`. Load only the role needed for the current phase; bring in QA
+   or documentation workflow skills when the task reaches that phase.
 2. For an implementation, begin the task-close run with its explicit
    task-owned paths after bounded context retrieval and before the first file
    edit. Its intake is the canonical role route, KB/map, QA and documentation
@@ -17,16 +18,22 @@ This file is the vendor-neutral repository contract. Load one role skill from
    `node scripts/context.mjs route` or `scope <task-owned-path>...`. Game
    knowledge starts at `docs/context/index.md`; portfolio knowledge at
    `site/docs/index.md`.
-3. Use the CLI's `search` or `filter` before an arbitrary KB read; it returns at
-   most eight provenance-bearing KB/map results. Use `outline`, `section` or
-   `symbol` only when the target is already known, then read source at the
-   returned `path:line`.
-4. The CLI's `bundle` writes the bounded, upload-safe KB/map handoff under
+3. Treat `context.mjs` as the primary retrieval tool. Start `search` with one
+   stable product anchor — a named screen, node, signal, file, or feature — not
+   a narrative symptom sentence: every query term must match one result. Refine
+   an empty narrative query once with its single canonical anchor, and use
+   `filter` for an overfull result before reading source.
+4. Use `rg` only after the context CLI returns a routed source target, or when
+   the CLI is unavailable or an anchor refinement still cannot locate the
+   target. Record that fallback trigger and repair the KB route, map purpose or
+   alias in the same task when it is a retrieval miss.
+5. The CLI's `bundle` writes the bounded, upload-safe KB/map handoff under
    ignored `.agent-state/automation/`. The protocol and limits are in
    `docs/context/automation.md`.
 
-A miss is a knowledge-base defect. Repair its route or map purpose in the same
-task under `docs-steward`, unless the correct behavior needs a user decision.
+A confirmed retrieval miss is a knowledge-base defect. Repair its route or map
+purpose in the same task under `docs-steward`, unless the correct behavior needs
+a user decision.
 
 ## Working material
 

@@ -130,6 +130,8 @@ func check_main_scene_ready(main_instance: Node) -> void:
 		failures.append("Main scene is missing StartupSplash continuity art.")
 	elif startup_splash.texture == null or !startup_splash.texture.resource_path.ends_with("/0-Splash/splash.png"):
 		failures.append("Main scene StartupSplash must reuse the boot splash texture.")
+	elif startup_splash.stretch_mode != TextureRect.STRETCH_KEEP_ASPECT_CENTERED:
+		failures.append("StartupSplash must keep the full splash art aspect-safe on expanded canvases.")
 	if screen_container == null:
 		failures.append("Main scene is missing ScreenContainer.")
 	elif screen_container.get_child_count() == 0:
