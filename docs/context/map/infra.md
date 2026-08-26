@@ -615,26 +615,33 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/benchmark-rag.mjs — 113 ln
+### scripts/benchmark-rag.mjs — 183 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| scripts/benchmark-rag.mjs:8 | ROOT · const | root constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:9 | CHECK · const | prevents benchmark check mode from rewriting committed normalized results |
-| scripts/benchmark-rag.mjs:10 | fixtures · const | fixtures constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:11 | started · const | started constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:13 | queryMap · fn | returns at most eight matching self-contained map rows |
-| scripts/benchmark-rag.mjs:19 | retrieval · const | retrieval constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:44 | skills · const | skills constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:57 | protocol · const | runs fixture checks for JSON search and explicit-path scope alongside legacy routing fixtures |
-| scripts/benchmark-rag.mjs:86 | result · const | result constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:100 | correct · const | correct constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:101 | first · const | first constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:102 | median · const | median constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:103 | skillCorrect · const | skill correct constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:104 | protocolCorrect · const | counts passing portable-context protocol fixtures |
-| scripts/benchmark-rag.mjs:105 | markdown · const | markdown constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:110 | passed · const | requires all retrieval and skill-routing fixtures to pass |
+| scripts/benchmark-rag.mjs:16 | ROOT · const | root constant used by benchmark-rag |
+| scripts/benchmark-rag.mjs:17 | CHECK · const | prevents benchmark check mode from rewriting committed normalized results |
+| scripts/benchmark-rag.mjs:18 | fixtures · const | fixtures constant used by benchmark-rag |
+| scripts/benchmark-rag.mjs:19 | started · const | started constant used by benchmark-rag |
+| scripts/benchmark-rag.mjs:21 | queryMap · fn | returns at most eight matching self-contained map rows |
+| scripts/benchmark-rag.mjs:27 | matchesExpectation · fn | validates retrieval status, provenance, source target, next action and fallback policy against one fixture |
+| scripts/benchmark-rag.mjs:37 | retrieval · const | retrieval constant used by benchmark-rag |
+| scripts/benchmark-rag.mjs:62 | skills · const | skills constant used by benchmark-rag |
+| scripts/benchmark-rag.mjs:75 | protocol · const | runs fixture checks for JSON search and explicit-path scope alongside legacy routing fixtures |
+| scripts/benchmark-rag.mjs:104 | sessions · const | measures complete route/search recovery sessions using the exact compact provider-facing text |
+| scripts/benchmark-rag.mjs:135 | correct · const | correct constant used by benchmark-rag |
+| scripts/benchmark-rag.mjs:136 | first · const | first constant used by benchmark-rag |
+| scripts/benchmark-rag.mjs:137 | legacyMedian · const | retains the map-row token proxy for continuity with the checked legacy benchmark |
+| scripts/benchmark-rag.mjs:138 | skillCorrect · const | skill correct constant used by benchmark-rag |
+| scripts/benchmark-rag.mjs:139 | protocolCorrect · const | counts passing portable-context protocol fixtures |
+| scripts/benchmark-rag.mjs:140 | sessionCorrect · const | counts complete multi-command sessions that satisfy every expected retrieval state and target |
+| scripts/benchmark-rag.mjs:141 | providerMedianBytes · const | median exact compact-text bytes across the complete retrieval session fixtures |
+| scripts/benchmark-rag.mjs:142 | baselineBytes · const | checked pre-change median used as the provider-facing reduction baseline |
+| scripts/benchmark-rag.mjs:143 | reductionPercent · const | percentage decrease from the checked byte baseline to the current session median |
+| scripts/benchmark-rag.mjs:144 | reductionTargetMet · const | hard pass gate requiring at least the planned 30 percent provider-facing reduction |
+| scripts/benchmark-rag.mjs:146 | result · const | result constant used by benchmark-rag |
+| scripts/benchmark-rag.mjs:174 | markdown · const | markdown constant used by benchmark-rag |
+| scripts/benchmark-rag.mjs:180 | passed · const | requires all retrieval and skill-routing fixtures to pass |
 
 ### scripts/build-android-plugin.sh — 23 ln
 
@@ -671,21 +678,23 @@ _no extracted symbols_
 | scripts/build-file-map.mjs:323 | build · fn | walks every area, reads each file, and renders against the `Does` prose already in the map |
 | scripts/build-file-map.mjs:341 | main · fn | `--check` exits 1 on a stale map without writing; `--quiet` prints the summary line only |
 
-### scripts/context.mjs — 200 ln
+### scripts/context.mjs — 217 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| scripts/context.mjs:16 | ROOT · const | root constant used by context |
-| scripts/context.mjs:18 | fail · fn | fail operation implemented by context |
-| scripts/context.mjs:23 | parseArgs · fn | separates positional text from repeatable and singleton CLI options without shell evaluation |
-| scripts/context.mjs:46 | option · fn | reads one option value and rejects repeated singleton flags |
-| scripts/context.mjs:52 | optionsList · fn | returns every supplied value for a repeatable search filter |
-| scripts/context.mjs:56 | checkOptions · fn | rejects command options outside the command's stable protocol |
-| scripts/context.mjs:60 | searchOptions · fn | translates CLI search filters and limits into the query library contract |
-| scripts/context.mjs:71 | json · fn | emits the versioned JSON result only when the caller requests it |
-| scripts/context.mjs:79 | lines · fn | formats an optional provenance line range for compact text output |
-| scripts/context.mjs:83 | safeBundlePath · fn | confines generated Markdown bundles to ignored task artifacts |
-| scripts/context.mjs:90 | main · fn | dispatches backward-compatible reads plus bounded search, filter, scope and bundle commands |
+| scripts/context.mjs:21 | ROOT · const | root constant used by context |
+| scripts/context.mjs:23 | fail · fn | fail operation implemented by context |
+| scripts/context.mjs:28 | parseArgs · fn | separates positional text from repeatable and singleton CLI options without shell evaluation |
+| scripts/context.mjs:51 | option · fn | reads one option value and rejects repeated singleton flags |
+| scripts/context.mjs:57 | optionsList · fn | returns every supplied value for a repeatable search filter |
+| scripts/context.mjs:61 | checkOptions · fn | rejects command options outside the command's stable protocol |
+| scripts/context.mjs:65 | searchOptions · fn | translates CLI search filters and limits into the query library contract |
+| scripts/context.mjs:78 | json · fn | emits the versioned JSON result only when the caller requests it |
+| scripts/context.mjs:86 | envelope · fn | wraps direct reads in schema 2 and measures their formatted JSON byte count to a fixed point |
+| scripts/context.mjs:99 | printLines · fn | emits compact text with an exact self-inclusive byte total |
+| scripts/context.mjs:103 | lines · fn | formats an optional provenance line range for compact text output |
+| scripts/context.mjs:107 | safeBundlePath · fn | confines generated Markdown bundles to ignored task artifacts |
+| scripts/context.mjs:114 | main · fn | dispatches backward-compatible reads plus bounded search, filter, scope and bundle commands |
 
 ### scripts/docs-scope.mjs — 180 ln
 
@@ -714,7 +723,7 @@ _no extracted symbols_
 | scripts/docs-scope.mjs:149 | order · const | docs sorted by how many paths route into them, heaviest first |
 | scripts/docs-scope.mjs:170 | maps · const | the distinct map files needing regeneration after this task |
 
-### scripts/git-sync-commit-push.mjs — 160 ln
+### scripts/git-sync-commit-push.mjs — 178 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -725,10 +734,11 @@ _no extracted symbols_
 | scripts/git-sync-commit-push.mjs:58 | git · fn | runs Git commands in the repository and surfaces command failures |
 | scripts/git-sync-commit-push.mjs:68 | repoPath · fn | rejects missing or repository-escaping paths before staging |
 | scripts/git-sync-commit-push.mjs:74 | branchName · fn | rejects unsafe branch names before any fetch, switch, commit, or push |
-| scripts/git-sync-commit-push.mjs:80 | taskScope · fn | reads the task title and exact task-owned paths from the close-out manifest |
-| scripts/git-sync-commit-push.mjs:94 | keywordsFor · fn | derives no more than three commit keywords from the task title |
-| scripts/git-sync-commit-push.mjs:102 | versionFor · fn | finds the highest matching commit version for the next 0.01 suffix |
-| scripts/git-sync-commit-push.mjs:114 | main · fn | fetches and fast-forward pulls before staging, committing and pushing |
+| scripts/git-sync-commit-push.mjs:80 | manifestScope · fn | selects verified schema-2 `publish_paths` or the explicit schema-1 `changed_paths` compatibility scope |
+| scripts/git-sync-commit-push.mjs:94 | taskScope · fn | reads the task title and exact task-owned paths from the close-out manifest |
+| scripts/git-sync-commit-push.mjs:112 | keywordsFor · fn | derives no more than three commit keywords from the task title |
+| scripts/git-sync-commit-push.mjs:120 | versionFor · fn | finds the highest matching commit version for the next 0.01 suffix |
+| scripts/git-sync-commit-push.mjs:132 | main · fn | fetches and fast-forward pulls before staging, committing and pushing |
 
 ### scripts/install-git-hooks.mjs — 16 ln
 
@@ -737,40 +747,62 @@ _no extracted symbols_
 | scripts/install-git-hooks.mjs:6 | root · const | resolves the repository supplied on the command line or the current directory |
 | scripts/install-git-hooks.mjs:7 | hooks · const | resolves the versioned hook directory whose pre-commit entry must exist |
 
-### scripts/lib/context-query.mjs — 343 ln
+### scripts/lib/context-query.mjs — 601 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
 | scripts/lib/context-query.mjs:6 | DEFAULT_MAX_RESULTS · const | caps every deterministic search response at eight results |
-| scripts/lib/context-query.mjs:7 | DEFAULT_MAX_BYTES · const | caps search JSON and bundles at 24 KB of selected material |
-| scripts/lib/context-query.mjs:8 | MAX_SECTION_BYTES · const | bounds a direct known-heading extraction below the protocol maximum |
-| scripts/lib/context-query.mjs:10 | normalize · const | lowercases and normalizes slash form before deterministic matching |
-| scripts/lib/context-query.mjs:11 | tokens · const | extracts unique two-character-or-longer query terms |
-| scripts/lib/context-query.mjs:12 | relativePath · const | returns portable repository-relative provenance paths |
-| scripts/lib/context-query.mjs:14 | inside · fn | verifies that a resolved file stays inside an allowed root |
-| scripts/lib/context-query.mjs:18 | docRoots · fn | names the game and site documentation roots allowed to the query protocol |
-| scripts/lib/context-query.mjs:22 | markdownSections · fn | indexes Markdown headings into exact start/end ranges |
-| scripts/lib/context-query.mjs:35 | resolveDocument · fn | resolves a requested KB document or map while rejecting paths outside allowed roots |
-| scripts/lib/context-query.mjs:51 | documentOutline · fn | returns structured heading ranges for one resolved KB document |
-| scripts/lib/context-query.mjs:59 | documentSection · fn | returns one unambiguous heading range within the configured byte bound |
-| scripts/lib/context-query.mjs:74 | mapSymbols · fn | returns bounded generated-map rows matching an exact symbol query |
-| scripts/lib/context-query.mjs:91 | routeContext · fn | adapts area aliases and source routes into portable docs/maps/skill evidence |
-| scripts/lib/context-query.mjs:107 | walkMarkdown · fn | recursively collects Markdown files from an allowed documentation root |
-| scripts/lib/context-query.mjs:121 | searchableDocuments · fn | lists authored KB Markdown while excluding generated maps from section search |
-| scripts/lib/context-query.mjs:128 | searchableMaps · fn | lists only generated map Markdown for row-level symbol search |
-| scripts/lib/context-query.mjs:134 | aliases · fn | loads matching terms from the small repository-owned retrieval alias vocabulary |
-| scripts/lib/context-query.mjs:149 | phraseScore · fn | applies fixed phrase, token, path and alias scoring with an explainable reason |
-| scripts/lib/context-query.mjs:182 | excerpt · fn | extracts a bounded whitespace-normalized match excerpt around a query term |
-| scripts/lib/context-query.mjs:191 | areaPaths · fn | resolves a domain filter to its authoritative docs and generated maps |
-| scripts/lib/context-query.mjs:197 | constrained · fn | applies domain, result-kind, path-prefix and required-term filters before ranking |
-| scripts/lib/context-query.mjs:214 | bounded · fn | selects ranked results within both result-count and serialized-byte limits |
-| scripts/lib/context-query.mjs:228 | limits · fn | validates protocol result and byte limits against fixed safety ceilings |
-| scripts/lib/context-query.mjs:238 | searchContext · fn | ranks bounded KB sections and map rows without LLM, network or raw-source access |
-| scripts/lib/context-query.mjs:292 | scopeContext · fn | derives route, docs, maps and QA plan from explicit task-owned paths |
-| scripts/lib/context-query.mjs:309 | selectedText · fn | reopens only selected evidence while assembling a context bundle |
-| scripts/lib/context-query.mjs:318 | contextBundle · fn | writes a hard-bounded Markdown handoff with selected evidence and provenance |
+| scripts/lib/context-query.mjs:7 | MAX_RESULTS · const | hard deterministic search ceiling of eight results even when the caller raises the default |
+| scripts/lib/context-query.mjs:8 | DEFAULT_MAX_BYTES · const | caps search JSON and bundles at 24 KB of selected material |
+| scripts/lib/context-query.mjs:9 | MAX_BYTES · const | 24 KiB hard ceiling shared by explicit large search, artifact scope and bundle requests |
+| scripts/lib/context-query.mjs:10 | DEFAULT_SECTION_BYTES · const | 6 KiB default for a direct known-heading read |
+| scripts/lib/context-query.mjs:11 | MAX_SECTION_BYTES · const | bounds a direct known-heading extraction below the protocol maximum |
+| scripts/lib/context-query.mjs:12 | DEFAULT_BUNDLE_BYTES · const | 12 KiB default for the deliberate cloud handoff artifact |
+| scripts/lib/context-query.mjs:13 | DIAGNOSTIC_MAX_BYTES · const | 2 KiB ceiling for anchor and filter next-action metadata |
+| scripts/lib/context-query.mjs:14 | DIAGNOSTIC_MAX_RESULTS · const | at most three exact next actions in a retrieval diagnostic |
+| scripts/lib/context-query.mjs:15 | ANCHOR_STOP_WORDS · const | excludes narrative glue and protocol words from stable-anchor suggestions |
+| scripts/lib/context-query.mjs:17 | normalize · const | lowercases and normalizes slash form before deterministic matching |
+| scripts/lib/context-query.mjs:18 | tokens · const | extracts unique two-character-or-longer query terms |
+| scripts/lib/context-query.mjs:19 | relativePath · const | returns portable repository-relative provenance paths |
+| scripts/lib/context-query.mjs:21 | command · fn | returns machine-safe argv plus a compact copyable display form |
+| scripts/lib/context-query.mjs:25 | contextCommand · const | prefixes an exact next action with the shared context CLI executable |
+| scripts/lib/context-query.mjs:27 | measured · fn | computes a schema payload's pretty-JSON byte count including its own reported value |
+| scripts/lib/context-query.mjs:39 | measuredText · fn | computes compact CLI text and its self-inclusive provider-facing byte count |
+| scripts/lib/context-query.mjs:51 | parseMapRow · fn | extracts source path, line, symbol, purpose and a bounded `sed` read from one generated map row |
+| scripts/lib/context-query.mjs:64 | inside · fn | verifies that a resolved file stays inside an allowed root |
+| scripts/lib/context-query.mjs:68 | docRoots · fn | names the game and site documentation roots allowed to the query protocol |
+| scripts/lib/context-query.mjs:72 | markdownSections · fn | indexes Markdown headings into exact start/end ranges |
+| scripts/lib/context-query.mjs:85 | resolveDocument · fn | resolves a requested KB document or map while rejecting paths outside allowed roots |
+| scripts/lib/context-query.mjs:101 | documentOutline · fn | returns structured heading ranges for one resolved KB document |
+| scripts/lib/context-query.mjs:109 | documentSection · fn | returns one unambiguous heading range within the configured byte bound |
+| scripts/lib/context-query.mjs:124 | mapSymbols · fn | returns bounded generated-map rows matching an exact symbol query |
+| scripts/lib/context-query.mjs:141 | routeContext · fn | adapts area aliases and source routes into portable docs/maps/skill evidence |
+| scripts/lib/context-query.mjs:157 | routeTextLines · fn | renders the compact role, KB, map and workspace route response |
+| scripts/lib/context-query.mjs:164 | walkMarkdown · fn | recursively collects Markdown files from an allowed documentation root |
+| scripts/lib/context-query.mjs:178 | searchableDocuments · fn | lists authored KB Markdown while excluding generated maps from section search |
+| scripts/lib/context-query.mjs:185 | searchableMaps · fn | lists only generated map Markdown for row-level symbol search |
+| scripts/lib/context-query.mjs:191 | aliases · fn | loads matching terms from the small repository-owned retrieval alias vocabulary |
+| scripts/lib/context-query.mjs:206 | phraseScore · fn | applies fixed phrase, token, path and alias scoring with an explainable reason |
+| scripts/lib/context-query.mjs:239 | excerpt · fn | extracts a bounded whitespace-normalized match excerpt around a query term |
+| scripts/lib/context-query.mjs:248 | areaPaths · fn | resolves a domain filter to its authoritative docs and generated maps |
+| scripts/lib/context-query.mjs:254 | constrained · fn | applies domain, result-kind, path-prefix and required-term filters before ranking |
+| scripts/lib/context-query.mjs:271 | bounded · fn | selects ranked results within both result-count and serialized-byte limits |
+| scripts/lib/context-query.mjs:285 | limits · fn | validates protocol result and byte limits against fixed safety ceilings |
+| scripts/lib/context-query.mjs:295 | searchEntries · fn | indexes authored KB sections and generated map rows once per deterministic query |
+| scripts/lib/context-query.mjs:316 | rankedEntries · fn | applies strict ranking while keeping searchable text internal unless an excerpt is explicit |
+| scripts/lib/context-query.mjs:335 | optionArgs · fn | carries active filters into an exact suggested retry command |
+| scripts/lib/context-query.mjs:344 | boundedActions · fn | caps next actions by both count and serialized diagnostic bytes |
+| scripts/lib/context-query.mjs:356 | anchorSuggestions · fn | ranks matched individual terms by specificity and returns exact `search --anchor` retries |
+| scripts/lib/context-query.mjs:377 | filterSuggestions · fn | returns a direct bounded read plus deterministic kind/path refinements for overflow |
+| scripts/lib/context-query.mjs:405 | fitPayload · fn | trims evidence/actions until the complete schema response fits its selected byte budget |
+| scripts/lib/context-query.mjs:420 | searchContext · fn | ranks bounded KB sections and map rows without LLM, network or raw-source access |
+| scripts/lib/context-query.mjs:494 | searchTextLines · fn | renders only status, compact provenance/source targets, next actions and fallback policy |
+| scripts/lib/context-query.mjs:506 | scopeContext · fn | derives route, docs, maps and QA plan from explicit task-owned paths |
+| scripts/lib/context-query.mjs:541 | scopeTextLines · fn | renders explicit paths, docs, maps, QA and exact verification commands without artifact detail |
+| scripts/lib/context-query.mjs:551 | selectedText · fn | reopens only selected evidence while assembling a context bundle |
+| scripts/lib/context-query.mjs:563 | contextBundle · fn | writes a hard-bounded Markdown handoff with selected evidence and provenance |
 
-### scripts/lib/context-routing.mjs — 198 ln
+### scripts/lib/context-routing.mjs — 199 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -781,17 +813,17 @@ _no extracted symbols_
 | scripts/lib/context-routing.mjs:16 | hudFiles · const | hud files constant used by context-routing |
 | scripts/lib/context-routing.mjs:33 | MAP_AREAS · const | map areas constant used by context-routing |
 | scripts/lib/context-routing.mjs:65 | ROUTE_RULES · const | route rules constant used by context-routing |
-| scripts/lib/context-routing.mjs:108 | AREA_ALIASES · const | area aliases constant used by context-routing |
-| scripts/lib/context-routing.mjs:124 | WORKSPACE_RULES · const | routes plan and reference working folders with explicit read/write policy |
-| scripts/lib/context-routing.mjs:148 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
-| scripts/lib/context-routing.mjs:156 | mapOwnerForPath · fn | returns the generated map that owns a source path |
-| scripts/lib/context-routing.mjs:160 | IGNORE_DIR · const | ignore dir constant used by context-routing |
-| scripts/lib/context-routing.mjs:161 | IGNORE_PATH · const | ignore path constant used by context-routing |
-| scripts/lib/context-routing.mjs:162 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
-| scripts/lib/context-routing.mjs:163 | norm · const | norm constant used by context-routing |
-| scripts/lib/context-routing.mjs:165 | walk · fn | walk operation implemented by context-routing |
-| scripts/lib/context-routing.mjs:176 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
-| scripts/lib/context-routing.mjs:197 | isExempt · const | reports whether a first-party path is exempt from map coverage |
+| scripts/lib/context-routing.mjs:109 | AREA_ALIASES · const | area aliases constant used by context-routing |
+| scripts/lib/context-routing.mjs:125 | WORKSPACE_RULES · const | routes plan and reference working folders with explicit read/write policy |
+| scripts/lib/context-routing.mjs:149 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
+| scripts/lib/context-routing.mjs:157 | mapOwnerForPath · fn | returns the generated map that owns a source path |
+| scripts/lib/context-routing.mjs:161 | IGNORE_DIR · const | ignore dir constant used by context-routing |
+| scripts/lib/context-routing.mjs:162 | IGNORE_PATH · const | ignore path constant used by context-routing |
+| scripts/lib/context-routing.mjs:163 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
+| scripts/lib/context-routing.mjs:164 | norm · const | norm constant used by context-routing |
+| scripts/lib/context-routing.mjs:166 | walk · fn | walk operation implemented by context-routing |
+| scripts/lib/context-routing.mjs:177 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
+| scripts/lib/context-routing.mjs:198 | isExempt · const | reports whether a first-party path is exempt from map coverage |
 
 ### scripts/qa-gate.mjs — 158 ln
 
@@ -837,53 +869,77 @@ _no extracted symbols_
 | scripts/sync-agent-skills.mjs:22 | skillMirrorDrift · fn | lists canonical and Claude skill-mirror differences |
 | scripts/sync-agent-skills.mjs:26 | main · fn | main operation implemented by sync-agent-skills |
 
-### scripts/task-close.mjs — 284 ln
+### scripts/task-close.mjs — 598 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| scripts/task-close.mjs:10 | ROOT · const | resolves the repository root, optionally from `TASK_CLOSE_ROOT` |
-| scripts/task-close.mjs:11 | DEFAULT_MANIFEST · const | places the default manifest in the ignored task workspace |
-| scripts/task-close.mjs:12 | SCHEMA_VERSION · const | versions the manifest and verification receipt contract |
-| scripts/task-close.mjs:14 | fail · fn | reports a command error with its caller-selected exit status |
-| scripts/task-close.mjs:19 | underRoot · fn | checks whether an absolute path remains within the repository root |
-| scripts/task-close.mjs:23 | safePath · fn | resolves a supplied path and rejects paths outside the repository |
-| scripts/task-close.mjs:30 | displayPath · fn | converts an absolute repository path to portable slash-separated form |
-| scripts/task-close.mjs:34 | parseArgs · fn | collects repeatable CLI options while requiring a value for each one |
-| scripts/task-close.mjs:49 | one · fn | returns one option value and rejects duplicate singleton options |
-| scripts/task-close.mjs:56 | many · fn | returns every value supplied for a repeatable option |
-| scripts/task-close.mjs:60 | normalizePaths · fn | requires and canonicalizes the explicit task-owned changed-path list |
-| scripts/task-close.mjs:65 | normalizeOptionalPaths · fn | canonicalizes optional repository-relative path lists |
-| scripts/task-close.mjs:69 | sourcePath · fn | identifies paths whose change requires generated-map and KB verification |
-| scripts/task-close.mjs:73 | agentConfigPath · fn | identifies root contracts and canonical/mirrored skill paths needing agent-configuration validation |
-| scripts/task-close.mjs:77 | domainFor · fn | groups a path into the server, client, site, tooling or infrastructure domain |
-| scripts/task-close.mjs:87 | createManifest · fn | derives routes, QA scope, documentation candidates and validation requirements from explicit paths |
-| scripts/task-close.mjs:124 | applyDocumentationDecision · fn | records an agent's documented or not-needed decision with required rationale and document paths |
-| scripts/task-close.mjs:142 | intakeForManifest · fn | creates the bounded prepare response: explicit paths, routed context, QA plan and documentation scope |
-| scripts/task-close.mjs:160 | manifestPath · fn | resolves the chosen manifest or its ignored default location |
-| scripts/task-close.mjs:164 | writeManifest · fn | creates the artifact directory and writes formatted manifest JSON |
-| scripts/task-close.mjs:169 | readManifest · fn | loads and schema-checks a close-out manifest |
-| scripts/task-close.mjs:181 | receiptPath · fn | names the verification receipt adjacent to its manifest |
-| scripts/task-close.mjs:185 | diagnosticLine · fn | extracts the first failure marker or file/line locator from bounded command output |
-| scripts/task-close.mjs:192 | compactOutput · fn | reports exit or signal plus one bounded diagnostic line |
-| scripts/task-close.mjs:198 | boundedOutput · fn | limits failed-step receipt output while retaining short head and tail evidence |
-| scripts/task-close.mjs:204 | runStep · fn | runs one Node helper and records compact evidence, retaining full scope output only when the manifest needs it |
-| scripts/task-close.mjs:219 | requireDocumentationDecision · fn | blocks source close-out until an agent records an actionable documentation result |
-| scripts/task-close.mjs:228 | verify · fn | runs scoped QA, map generation and documentation checks into a receipt |
-| scripts/task-close.mjs:247 | main · fn | dispatches manifest preparation, documentation decision and verification |
+| scripts/task-close.mjs:11 | ROOT · const | resolves the repository root, optionally from `TASK_CLOSE_ROOT` |
+| scripts/task-close.mjs:12 | DEFAULT_MANIFEST · const | places the default manifest in the ignored task workspace |
+| scripts/task-close.mjs:13 | SCHEMA_VERSION · const | versions the manifest and verification receipt contract |
+| scripts/task-close.mjs:14 | INTAKE_MAX_BYTES · const | 8 KiB ceiling for provider-facing prepare and review summaries |
+| scripts/task-close.mjs:16 | fail · fn | reports a command error with its caller-selected exit status |
+| scripts/task-close.mjs:21 | underRoot · fn | checks whether an absolute path remains within the repository root |
+| scripts/task-close.mjs:25 | safePath · fn | resolves a supplied path and rejects paths outside the repository |
+| scripts/task-close.mjs:32 | displayPath · fn | converts an absolute repository path to portable slash-separated form |
+| scripts/task-close.mjs:36 | parseArgs · fn | collects repeatable CLI options while requiring a value for each one |
+| scripts/task-close.mjs:51 | checkOptions · fn | rejects command flags outside the selected lifecycle action's stable protocol |
+| scripts/task-close.mjs:55 | one · fn | returns one option value and rejects duplicate singleton options |
+| scripts/task-close.mjs:62 | many · fn | returns every value supplied for a repeatable option |
+| scripts/task-close.mjs:66 | normalizePaths · fn | requires and canonicalizes the explicit task-owned changed-path list |
+| scripts/task-close.mjs:71 | normalizeOptionalPaths · fn | canonicalizes optional repository-relative path lists |
+| scripts/task-close.mjs:75 | sourcePath · fn | identifies paths whose change requires generated-map and KB verification |
+| scripts/task-close.mjs:79 | agentConfigPath · fn | identifies root contracts and canonical/mirrored skill paths needing agent-configuration validation |
+| scripts/task-close.mjs:83 | domainFor · fn | groups a path into the server, client, site, tooling or infrastructure domain |
+| scripts/task-close.mjs:93 | command · fn | stores exact argv and its compact display form in intake artifacts |
+| scripts/task-close.mjs:100 | fingerprint · fn | creates deterministic SHA-256 input identities for review and idempotent closeout |
+| scripts/task-close.mjs:104 | fileHash · fn | hashes an existing deterministic output without consulting Git state |
+| scripts/task-close.mjs:108 | mapHashes · fn | snapshots every generated map so review-to-close content changes are attributable |
+| scripts/task-close.mjs:117 | pathChanges · fn | returns paths whose recorded content hash changed between review and close |
+| scripts/task-close.mjs:121 | publishPathsFor · fn | deduplicates explicit, documented and generated paths into authorized publication scope |
+| scripts/task-close.mjs:125 | documentationFor · fn | initializes candidate docs/maps and the fail-closed decision state for a scoped path set |
+| scripts/task-close.mjs:137 | createManifest · fn | derives routes, QA scope, documentation candidates and validation requirements from explicit paths |
+| scripts/task-close.mjs:162 | upgradeManifest · fn | converts an active schema-1 explicit path manifest into schema-2 ownership state |
+| scripts/task-close.mjs:168 | amendManifest · fn | owns newly discovered paths and invalidates review only when added source can change its result |
+| scripts/task-close.mjs:193 | reviewManifest · fn | records explicit final paths, post-edit docs scope, final QA and the map hash baseline |
+| scripts/task-close.mjs:216 | decisionValues · fn | validates the documentation decision, rationale and scoped Markdown paths |
+| scripts/task-close.mjs:226 | applyDocumentationDecision · fn | records an agent's documented or not-needed decision with required rationale and document paths |
+| scripts/task-close.mjs:261 | recordFallback · fn | records only permitted fallback classes with routed root and required repair fixture |
+| scripts/task-close.mjs:273 | intakeForManifest · fn | creates the bounded prepare response: explicit paths, routed context, QA plan and documentation scope |
+| scripts/task-close.mjs:311 | reviewForManifest · fn | emits the bounded post-edit QA/docs handoff and exact close command |
+| scripts/task-close.mjs:332 | manifestPath · fn | resolves the chosen manifest or its ignored default location |
+| scripts/task-close.mjs:336 | writeManifest · fn | creates the artifact directory and writes formatted manifest JSON |
+| scripts/task-close.mjs:341 | readManifest · fn | loads and schema-checks a close-out manifest |
+| scripts/task-close.mjs:353 | receiptPath · fn | names the verification receipt adjacent to its manifest |
+| scripts/task-close.mjs:357 | diagnosticLine · fn | extracts the first failure marker or file/line locator from bounded command output |
+| scripts/task-close.mjs:364 | compactOutput · fn | reports exit or signal plus one bounded diagnostic line |
+| scripts/task-close.mjs:370 | runStep · fn | captures one Node helper through a private ignored log so full receipt evidence survives hosts that swallow nested pipes |
+| scripts/task-close.mjs:395 | requireDocumentationDecision · fn | blocks source close-out until an agent records an actionable documentation result |
+| scripts/task-close.mjs:404 | requireFallbackFixtures · fn | blocks close when a recorded source fallback lacks a checked benchmark fixture |
+| scripts/task-close.mjs:418 | verifyV1 · fn | retains schema-1 QA/map/KB verification compatibility |
+| scripts/task-close.mjs:433 | finishVerification · fn | writes manifest and receipt status, publication paths and concise actionable console output |
+| scripts/task-close.mjs:457 | verifyV2 · fn | runs fallback benchmark, final-path QA, review-based map hashing and scoped validators |
+| scripts/task-close.mjs:494 | main · fn | dispatches manifest preparation, documentation decision and verification |
 
 ### scripts/tests/build-file-map.test.mjs — 36 ln
 
 _no extracted symbols_
 
-### scripts/tests/context-query.test.mjs — 61 ln
+### scripts/tests/context-query.test.mjs — 158 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| scripts/tests/context-query.test.mjs:6 | ROOT · const | resolves the repository fixture root for deterministic protocol tests |
+| scripts/tests/context-query.test.mjs:8 | ROOT · const | resolves the repository fixture root for deterministic protocol tests |
 
-### scripts/tests/task-close.test.mjs — 42 ln
+### scripts/tests/git-sync-commit-push.test.mjs — 38 ln
 
 _no extracted symbols_
+
+### scripts/tests/task-close.test.mjs — 107 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/tests/task-close.test.mjs:14 | SOURCE · const | representative routed server source used by manifest lifecycle tests |
+| scripts/tests/task-close.test.mjs:15 | DOC · const | representative candidate KB document used by pre-edit ownership tests |
 
 ### scripts/validate-agent-config.mjs — 58 ln
 
@@ -965,4 +1021,4 @@ _no extracted symbols_
 
 ---
 
-100 files · 489 symbols · 0 awaiting a `Does` line.
+101 files · 540 symbols · 0 awaiting a `Does` line.

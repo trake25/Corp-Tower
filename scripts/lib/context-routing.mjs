@@ -100,6 +100,7 @@ export const ROUTE_RULES = [
   { pattern: /^scripts\/qa-gate\.mjs$/, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\//, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^(AGENTS\.md|CLAUDE\.md|\.agents\/skills\/|\.claude\/skills\/)/, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },
+  { pattern: /^report\/benchmarks\//, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },
   { pattern: /^site\/src\/content\//, skill: 'editorial', docs: ['site/docs/content.md'], map: null, read: 'hunk' },
   { pattern: /^site\//, skill: 'web-designer', docs: ['site/docs/design.md'], map: null, read: 'hunk' },
   { pattern: /^docs\/context\/(automation\.md|retrieval-aliases\.json)$/, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },

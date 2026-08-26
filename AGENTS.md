@@ -12,7 +12,7 @@ This file is the vendor-neutral repository contract. Load one role skill from
    or documentation workflow skills when the task reaches that phase.
 2. For an implementation, begin the task-close run with its explicit
    task-owned paths after bounded context retrieval and before the first file
-   edit. Its intake is the canonical role route, KB/map, QA and documentation
+   edit. Its intake is the canonical role route, KB/map, QA, validator and tool
    scope. For an
    assessment that needs no manifest, use
    `node scripts/context.mjs route` or `scope <task-owned-path>...`. Game
@@ -20,20 +20,20 @@ This file is the vendor-neutral repository contract. Load one role skill from
    `site/docs/index.md`.
 3. Treat `context.mjs` as the primary retrieval tool. Start `search` with one
    stable product anchor — a named screen, node, signal, file, or feature — not
-   a narrative symptom sentence: every query term must match one result. Refine
-   an empty narrative query once with its single canonical anchor, and use
-   `filter` for an overfull result before reading source.
-4. Use `rg` only after the context CLI returns a routed source target, or when
-   the CLI is unavailable or an anchor refinement still cannot locate the
-   target. Record that fallback trigger and repair the KB route, map purpose or
-   alias in the same task when it is a retrieval miss.
+   a narrative symptom sentence: every query term must match one result. Use
+   `search <anchor> --anchor` when the anchor is known. Otherwise obey the exact
+   command returned by `needs-anchor` or `needs-filter` before reading source.
+4. `rg` source fallback is allowed only for `retrieval-defect` or `tool-error`,
+   starting in the smallest routed root. Record the fallback in the manifest and
+   repair the route, map purpose, alias, budget or tool in the same task with a
+   passing benchmark fixture. Unfamiliar CLI usage is never a fallback trigger.
 5. The CLI's `bundle` writes the bounded, upload-safe KB/map handoff under
    ignored `.agent-state/automation/`. The protocol and limits are in
    `docs/context/automation.md`.
 
-A confirmed retrieval miss is a knowledge-base defect. Repair its route or map
-purpose in the same task under `docs-steward`, unless the correct behavior needs
-a user decision.
+A confirmed retrieval miss, suggestion loop, invalid source target or budget
+breach is a retrieval-system defect. Repair it in the same task under
+`docs-steward`, unless the correct behavior needs a user decision.
 
 ## Working material
 
@@ -70,9 +70,10 @@ automatic reflex.
 - Product source under the server app and Godot client has no comments.
   `scripts/`, `.github/`, and `site/` retain useful comments; never remove a
   `SAFETY EXCEPTION` comment.
-- Finish repository changes through that manifest: record the documentation
-  decision, then `verify`. It owns QA selection, map generation and relevant KB
-  checks; it never reads a shared dirty worktree for scope.
+- Finish repository changes through that manifest: `review` the explicit final
+  paths after source edits, own and update any selected KB docs, then `close`
+  with the documentation decision. It owns QA selection, map generation and
+  relevant KB checks; it never reads a shared dirty worktree for scope.
 - Files over 600 lines are decomposition candidates. Propose a split; do not
   expand the current task without approval.
 - Do not deploy, commit, push, pull, compare remotes, create branches, or perform
@@ -84,8 +85,9 @@ automatic reflex.
   default; a different branch requires an explicitly supplied `--branch` and
   `--switch`, plus the user's approval to switch and push that branch. It reads
   `.agent-state/automation/close-out.json` by default and
-  stages only its `changed_paths`; it derives at most three commit keywords from
-  the manifest task title. Its commit format is those keywords followed by
+  stages only a passing schema-2 manifest's `publish_paths` (schema 1 uses
+  `changed_paths`); it derives at most three commit keywords from the manifest
+  task title. Its commit format is those keywords followed by
   `v0.01`; related commits increment by `0.01`.
   For an explicitly approved branch backup publication, use `--push-only` with
   `--branch` and `--remote-branch`; this publishes only the existing local ref

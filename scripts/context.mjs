@@ -2,15 +2,20 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve, sep } from 'node:path';
 import {
-  DEFAULT_MAX_BYTES,
+  DEFAULT_BUNDLE_BYTES,
   DEFAULT_MAX_RESULTS,
+  DEFAULT_SECTION_BYTES,
   contextBundle,
   documentOutline,
   documentSection,
   mapSymbols,
+  measuredText,
   routeContext,
+  routeTextLines,
   scopeContext,
+  scopeTextLines,
   searchContext,
+  searchTextLines,
 } from './lib/context-query.mjs';
 
 const ROOT = resolve(process.env.CONTEXT_ROOT || '.');
@@ -30,7 +35,7 @@ function parseArgs(args) {
       continue;
     }
     const key = arg.slice(2);
-    if (key === 'json') {
+    if (['anchor', 'include-excerpt', 'json'].includes(key)) {
       options.set(key, ['true']);
       continue;
     }
@@ -63,8 +68,10 @@ function searchOptions(options) {
     kinds: optionsList(options, 'kind'),
     pathPrefix: option(options, 'path-prefix'),
     require: option(options, 'require'),
-    maxResults: option(options, 'max-results', String(DEFAULT_MAX_RESULTS)),
-    maxBytes: option(options, 'max-bytes', String(DEFAULT_MAX_BYTES)),
+    maxResults: option(options, 'max-results') || undefined,
+    maxBytes: option(options, 'max-bytes') || undefined,
+    anchor: options.has('anchor'),
+    includeExcerpt: options.has('include-excerpt'),
   };
 }
 
@@ -74,6 +81,23 @@ function json(options, value) {
     return true;
   }
   return false;
+}
+
+function envelope(query, result) {
+  const value = { schema_version: 2, query, result, limits: { returned_bytes: 0 } };
+  let bytes = 0;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    value.limits.returned_bytes = bytes;
+    const next = Buffer.byteLength(JSON.stringify(value, null, 2)) + 1;
+    if (next === bytes) break;
+    bytes = next;
+  }
+  value.limits.returned_bytes = bytes;
+  return value;
+}
+
+function printLines(lines) {
+  process.stdout.write(measuredText(lines).output);
 }
 
 function lines(value) {
@@ -97,16 +121,8 @@ function main() {
       const input = positionals.join(' ').trim();
       if (!input) fail('usage: node scripts/context.mjs route <area-or-path>');
       const result = routeContext(input);
-      if (!json(options, { schema_version: 1, query: { kind: 'route', text: input }, result })) {
-        console.log(`skill: ${result.skill}`);
-        console.log(`docs: ${result.docs.length ? result.docs.join(', ') : 'none'}`);
-        console.log(`maps: ${result.maps.length ? result.maps.join(', ') : 'none'}`);
-        if (result.read) console.log(`source-read: ${result.read}`);
-        if (result.workspace) {
-          console.log(`workspace: ${result.workspace.name}`);
-          console.log(`purpose: ${result.workspace.purpose}`);
-          console.log(`policy: ${result.workspace.policy}`);
-        }
+      if (!json(options, envelope({ kind: 'route', text: input }, result))) {
+        printLines(routeTextLines(result));
       }
       return;
     }
@@ -115,9 +131,8 @@ function main() {
       const input = positionals[0];
       if (!input) fail('usage: node scripts/context.mjs outline <doc>');
       const result = documentOutline(ROOT, input);
-      if (!json(options, { schema_version: 1, query: { kind: 'outline', document: input }, result })) {
-        console.log(`# ${result.path}`);
-        result.sections.forEach(section => console.log(`${section.start}-${section.end}\t${'#'.repeat(section.level)} ${section.heading}`));
+      if (!json(options, envelope({ kind: 'outline', document: input }, result))) {
+        printLines([`# ${result.path}`, ...result.sections.map(section => `${section.start}-${section.end}\t${'#'.repeat(section.level)} ${section.heading}`)]);
       }
       return;
     }
@@ -126,10 +141,9 @@ function main() {
       const input = positionals.shift();
       const heading = positionals.join(' ').trim();
       if (!input || !heading) fail('usage: node scripts/context.mjs section <doc> <heading>');
-      const result = documentSection(ROOT, input, heading, Number(option(options, 'max-bytes', String(12 * 1024))));
-      if (!json(options, { schema_version: 1, query: { kind: 'section', document: input, heading }, result })) {
-        console.log(`<!-- ${result.path}:${result.lines[0]}-${result.lines[1]} -->`);
-        console.log(result.text);
+      const result = documentSection(ROOT, input, heading, Number(option(options, 'max-bytes', String(DEFAULT_SECTION_BYTES))));
+      if (!json(options, envelope({ kind: 'section', document: input, heading }, result))) {
+        printLines([`<!-- ${result.path}:${result.lines[0]}-${result.lines[1]} -->`, result.text]);
       }
       return;
     }
@@ -139,14 +153,14 @@ function main() {
       const query = positionals.join(' ').trim();
       if (!input || !query) fail('usage: node scripts/context.mjs symbol <map> <query>');
       const result = mapSymbols(ROOT, input, query, Number(option(options, 'max-results', String(DEFAULT_MAX_RESULTS))));
-      if (!json(options, { schema_version: 1, query: { kind: 'symbol', map: input, text: query }, result })) {
-        result.rows.forEach(row => console.log(row.text));
+      if (!json(options, envelope({ kind: 'symbol', map: input, text: query }, result))) {
+        printLines(result.rows.map(row => row.text));
         if (result.overflow) fail(`${result.total} matches; showing ${result.rows.length}. Refine the query before reading source.`, 1);
       }
       return;
     }
     if (command === 'search' || command === 'filter') {
-      checkOptions(options, ['json', 'domain', 'kind', 'path-prefix', 'require', 'max-results', 'max-bytes']);
+      checkOptions(options, ['json', 'anchor', 'include-excerpt', 'domain', 'kind', 'path-prefix', 'require', 'max-results', 'max-bytes']);
       const query = positionals.join(' ').trim();
       if (!query) fail(`usage: node scripts/context.mjs ${command} <query> [--domain <area>] [--kind <route|section|symbol>]`);
       if (command === 'filter' && !['domain', 'kind', 'path-prefix', 'require'].some(key => options.has(key)))
@@ -154,21 +168,17 @@ function main() {
       const result = searchContext(ROOT, query, searchOptions(options));
       result.query.kind = command;
       if (!json(options, result)) {
-        result.results.forEach(item => console.log(`${item.score}\t${item.kind}\t${item.path}${lines(item)}\t${item.title}\t${item.reason}`));
-        result.warnings.forEach(warning => console.log(`! ${warning}`));
+        printLines(searchTextLines(result));
       }
+      if (result.status === 'tool-error') process.exitCode = 1;
       return;
     }
     if (command === 'scope') {
       checkOptions(options, ['json']);
       if (!positionals.length) fail('usage: node scripts/context.mjs scope <task-owned-path>...');
       const result = scopeContext(positionals);
-      if (!json(options, result)) {
-        console.log(`paths: ${result.changed_paths.join(', ')}`);
-        console.log(`docs: ${result.docs.length ? result.docs.join(', ') : 'none'}`);
-        console.log(`maps: ${result.maps.length ? result.maps.join(', ') : 'none'}`);
-        console.log(`qa: ${result.qa.applies ? 'runtime QA applies' : 'no runtime QA applies'}`);
-        if (result.unmapped.length) console.log(`unmapped: ${result.unmapped.join(', ')}`);
+      if (!json(options, envelope({ kind: 'scope', paths: positionals }, result))) {
+        printLines(scopeTextLines(result));
       }
       return;
     }
@@ -176,7 +186,14 @@ function main() {
       checkOptions(options, ['json', 'domain', 'kind', 'path-prefix', 'require', 'max-results', 'max-bytes', 'output']);
       const task = positionals.join(' ').trim();
       if (!task) fail('usage: node scripts/context.mjs bundle <task> [search filters] [--output .agent-state/automation/file.md]');
-      const result = contextBundle(ROOT, task, searchOptions(options));
+      const bundleOptions = searchOptions(options);
+      if (!bundleOptions.maxBytes) bundleOptions.maxBytes = DEFAULT_BUNDLE_BYTES;
+      const result = contextBundle(ROOT, task, bundleOptions);
+      if (result.status !== 'matched') {
+        if (!json(options, result)) printLines(searchTextLines(result));
+        process.exitCode = 1;
+        return;
+      }
       const output = safeBundlePath(option(options, 'output'));
       mkdirSync(dirname(output), { recursive: true });
       writeFileSync(output, result.bundle);
@@ -187,7 +204,7 @@ function main() {
         limits: result.limits,
         warnings: result.warnings,
       };
-      if (!json(options, response)) console.log(`Created: ${response.bundle} (${result.results.length} evidence item(s), ${result.limits.returned_bytes} retrieval bytes)`);
+      if (!json(options, envelope({ kind: 'bundle', task }, response))) printLines([`Created: ${response.bundle} (${result.results.length} evidence item(s), ${result.limits.returned_bytes} retrieval bytes)`]);
       return;
     }
     fail('usage: node scripts/context.mjs <route|outline|section|symbol|search|filter|scope|bundle> ...');

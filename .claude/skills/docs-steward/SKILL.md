@@ -51,10 +51,11 @@ apply.
 
 ## Close-out
 
-`task-close verify` is the normal receipt: it regenerates maps for source paths,
-validates the relevant game/site KB and records exact command evidence. It never
-replaces the doc-worthy decision or authoring; the agent records that decision
-through the manifest before verification.
+`task-close review` is the post-edit handoff: it recomputes the exact
+documentation scope and QA plan from explicit final paths. After the agent owns
+and edits any selected candidate docs, `task-close close` records the doc-worthy
+decision, regenerates content-changed maps, validates the relevant game/site KB
+and writes exact command evidence.
 
 Regenerated maps preserve authored `Does` by `file#symbol`. Fix every validator
 error before completion. Receipt is one line:

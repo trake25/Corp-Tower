@@ -6,14 +6,14 @@ description: The verification loop — src/Server/tests, the Godot GUT suites un
 # QA engineer
 
 Most tasks invoke this skill as their **gate**, not as standalone work. The
-manifest supplies the testing context and final QA selection; run `qa-gate`
-directly only for iterative feedback before close-out.
+manifest's post-edit `review` supplies the final-path testing context and QA
+selection; run `qa-gate` directly only for iterative feedback before `close`.
 
 ## The gate
 
 Verify the files owned by this task, not every pre-existing dirty file.
 `qa-gate --plan --json` is the shared deterministic selection used by
-`task-close`; do not recreate the mapping in an agent response.
+`task-close close`; do not recreate the mapping in an agent response.
 
 For a changed-source task, run `node scripts/qa-gate.mjs --changed <task-owned-path>...`
 with every task-owned changed path stated explicitly. It selects this matrix,

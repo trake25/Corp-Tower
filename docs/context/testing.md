@@ -193,6 +193,16 @@ state, not a regression.**
 | Android Deploy wstodplay | `CiSmokeTest.gd` + required GUT suites | Yes — before signed export |
 | EKS Deploy (game server) | `npm test` | Yes — before image build/push |
 
+## Automation protocol tests
+
+`scripts/tests/context-query.test.mjs` covers strict retrieval states, bounded
+diagnostics and source targets; `task-close.test.mjs` covers manifest ownership,
+review and documentation decisions. `git-sync-commit-push.test.mjs` validates
+schema-specific publication scope without invoking Git or the network. Run all
+three with `node --test scripts/tests/{context-query,task-close,git-sync-commit-push}.test.mjs`,
+then run `node scripts/benchmark-rag.mjs --check` for end-to-end retrieval
+correctness and provider-facing byte thresholds.
+
 ## Known coverage gaps
 
 - `checkFailCondition()`'s all-blocks-used branch and the Power side-quest flow

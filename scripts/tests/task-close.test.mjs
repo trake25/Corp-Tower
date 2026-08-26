@@ -1,41 +1,106 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { selectQa } from '../qa-gate.mjs';
-import { applyDocumentationDecision, createManifest, intakeForManifest } from '../task-close.mjs';
+import {
+  amendManifest,
+  applyDocumentationDecision,
+  createManifest,
+  intakeForManifest,
+  publishPathsFor,
+  recordFallback,
+  reviewManifest,
+} from '../task-close.mjs';
+
+const SOURCE = 'src/Server/app/engine/Scoring.js';
+const DOC = 'docs/context/backend.md';
 
 test('QA planner preserves targeted server and client selection', () => {
-  const plan = selectQa(['src/Server/app/engine/Scoring.js', 'src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd']);
+  const plan = selectQa([SOURCE, 'src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd']);
   assert.equal(plan.full_server, false);
   assert.deepEqual(plan.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
   assert.equal(plan.client_runtime, true);
   assert.deepEqual(plan.client_tests, ['test_snap_grid.gd']);
 });
 
-test('close-out manifest derives scoped verification without reporting metadata', () => {
-  const manifest = createManifest({ task: 'Verify scoring close-out', changedPaths: ['src/Server/app/engine/Scoring.js'] });
-  assert.equal(manifest.schema_version, 1);
-  assert.deepEqual(manifest.domains, ['server']);
-  assert.equal(manifest.qa.full_server, false);
-  assert.deepEqual(manifest.documentation.candidate_docs, ['backend.md']);
-  assert.deepEqual(manifest.documentation.maps_to_regenerate, ['docs/context/map/backend.md']);
-  assert.equal('estimate' in manifest, false);
-  assert.equal('runtime' in manifest, false);
-  const intake = intakeForManifest(manifest, 'task/close-out.json');
-  assert.deepEqual(intake.intake.routes, manifest.routes);
-  assert.equal('estimate' in intake.intake, false);
+test('prepare creates a compact schema-v2 ownership manifest and intake', () => {
+  const manifest = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE] });
+
+  assert.equal(manifest.schema_version, 2);
+  assert.equal(manifest.phase, 'prepared');
+  assert.deepEqual(manifest.owned_paths, [SOURCE]);
+  assert.deepEqual(manifest.changed_paths, []);
+  assert.deepEqual(manifest.intake.docs, [DOC]);
+  assert.deepEqual(manifest.intake.maps, ['docs/context/map/backend.md']);
+  assert.deepEqual(manifest.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
+  assert.ok(manifest.intake.tools.some(tool => tool.name === 'QA'));
+  const intake = intakeForManifest(manifest, '.agent-state/automation/task.json');
+  assert.deepEqual(intake.owned_paths, [SOURCE]);
+  assert.ok(Buffer.byteLength(JSON.stringify(intake, null, 2)) + 1 <= 8 * 1024);
 });
 
-test('documentation decisions require an agent rationale and a concrete doc after an update', () => {
-  const manifest = createManifest({ task: 'Verify scoring close-out', changedPaths: ['src/Server/app/engine/Scoring.js'] });
-  assert.throws(() => applyDocumentationDecision(manifest, { decision: 'updated', reason: 'Scoring behavior changed.' }), /doc-path/);
-  assert.throws(() => applyDocumentationDecision(manifest, { decision: 'not-needed', reason: '' }), /plain-English reason/);
-  const updated = applyDocumentationDecision(manifest, { decision: 'updated', reason: 'Scoring behavior changed.', documentedPaths: ['docs/context/backend.md'] });
+test('review accepts only owned final paths and refreshes docs and QA from them', () => {
+  const manifest = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE, 'scripts/context.mjs'] });
+
+  assert.throws(() => reviewManifest(manifest, { changedPaths: ['src/Server/app/Game_Engine.js'] }), /not owned/);
+  const reviewed = reviewManifest(manifest, { changedPaths: [SOURCE], scope: { status: 0, output: 'backend.md:10-20' }, mapBaseline: { 'docs/context/map/backend.md': 'before' } });
+  assert.equal(reviewed.phase, 'reviewed');
+  assert.deepEqual(reviewed.changed_paths, [SOURCE]);
+  assert.deepEqual(reviewed.documentation.candidate_docs, [DOC]);
+  assert.deepEqual(reviewed.review.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
+  assert.equal(reviewed.documentation.scope.output, 'backend.md:10-20');
+  assert.deepEqual(reviewed.review.map_hashes, { 'docs/context/map/backend.md': 'before' });
+  const repeated = reviewManifest(reviewed, { changedPaths: [SOURCE], scope: reviewed.documentation.scope, mapBaseline: { 'docs/context/map/backend.md': 'after' } });
+  assert.deepEqual(repeated.review.map_hashes, { 'docs/context/map/backend.md': 'before' });
+});
+
+test('amend preserves reviewed source scope for a candidate doc and invalidates it for new source', () => {
+  const prepared = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE] });
+  const reviewed = reviewManifest(prepared, { changedPaths: [SOURCE], scope: { status: 0, output: 'backend.md:10-20' } });
+  const withDoc = amendManifest(reviewed, [DOC]);
+
+  assert.equal(withDoc.phase, 'reviewed');
+  assert.equal(withDoc.review.input_fingerprint, reviewed.review.input_fingerprint);
+  assert.ok(withDoc.owned_paths.includes(DOC));
+
+  const withSource = amendManifest(withDoc, ['src/Server/app/Game_Engine.js']);
+  assert.equal(withSource.phase, 'prepared');
+  assert.equal(withSource.review, null);
+  assert.deepEqual(withSource.changed_paths, []);
+});
+
+test('documentation decisions require rationale, scope, and pre-edit ownership', () => {
+  const prepared = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE] });
+  const reviewed = reviewManifest(prepared, { changedPaths: [SOURCE], scope: { status: 0, output: 'backend.md:10-20' } });
+
+  assert.throws(() => applyDocumentationDecision(reviewed, { decision: 'updated', reason: 'Scoring behavior changed.' }), /doc-path/);
+  assert.throws(() => applyDocumentationDecision(reviewed, { decision: 'not-needed', reason: '', documentedPaths: [] }), /plain-English reason/);
+  assert.throws(() => applyDocumentationDecision(reviewed, { decision: 'updated', reason: 'Scoring behavior changed.', documentedPaths: [DOC] }), /owned/);
+
+  const owned = amendManifest(reviewed, [DOC]);
+  const updated = applyDocumentationDecision(owned, { decision: 'updated', reason: 'Scoring behavior changed.', documentedPaths: [DOC] });
   assert.equal(updated.documentation.decision, 'updated');
-  assert.deepEqual(updated.documentation.documented_paths, ['docs/context/backend.md']);
+  assert.deepEqual(updated.documented_paths, [DOC]);
+  assert.deepEqual(updated.publish_paths, [DOC, SOURCE]);
 });
 
-test('a documentation-only manifest does not request an unnecessary source decision', () => {
-  const manifest = createManifest({ task: 'Validate documentation only', changedPaths: ['docs/context/testing.md'] });
-  assert.equal(manifest.documentation.source_changed, false);
-  assert.equal(manifest.documentation.decision, 'not-needed');
+test('fallback recording is restricted and deduplicated', () => {
+  const manifest = createManifest({ task: 'Repair retrieval', ownedPaths: ['scripts/context.mjs'] });
+  assert.throws(() => recordFallback(manifest, { query: 'splash', classification: 'usage-error', searchedRoot: 'src', fixture: 'anchor-retry' }), /classification/);
+  const recorded = recordFallback(manifest, { query: 'splash', classification: 'retrieval-defect', searchedRoot: 'src/Client', fixture: 'anchor-retry' });
+  const duplicate = recordFallback(recorded, { query: 'splash', classification: 'retrieval-defect', searchedRoot: 'src/Client', fixture: 'anchor-retry' });
+  assert.equal(duplicate.retrieval.fallbacks.length, 1);
+});
+
+test('publication scope includes explicit, documented, and content-derived paths', () => {
+  assert.deepEqual(
+    publishPathsFor([SOURCE], [DOC], ['docs/context/map/backend.md', SOURCE]),
+    [DOC, 'docs/context/map/backend.md', SOURCE],
+  );
+});
+
+test('a documentation-only review does not request a source documentation decision', () => {
+  const manifest = createManifest({ task: 'Validate documentation only', ownedPaths: ['docs/context/testing.md'] });
+  const reviewed = reviewManifest(manifest, { changedPaths: ['docs/context/testing.md'] });
+  assert.equal(reviewed.documentation.source_changed, false);
+  assert.equal(reviewed.documentation.decision, 'not-needed');
 });

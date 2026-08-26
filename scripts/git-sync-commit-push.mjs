@@ -77,6 +77,20 @@ function branchName(input, label) {
   return input;
 }
 
+export function manifestScope(manifest) {
+  if (!manifest.task) throw new Error('manifest must contain a task');
+  if (manifest.schema_version === 2) {
+    if (manifest.phase !== 'closed' || manifest.verification?.status !== 'passed')
+      throw new Error('schema-v2 manifest must have passing closeout verification');
+    if (!Array.isArray(manifest.publish_paths) || !manifest.publish_paths.length)
+      throw new Error('schema-v2 manifest must contain publish_paths');
+    return { task: manifest.task, paths: [...new Set(manifest.publish_paths)] };
+  }
+  if (!Array.isArray(manifest.changed_paths) || !manifest.changed_paths.length)
+    throw new Error('schema-v1 manifest must contain changed_paths');
+  return { task: manifest.task, paths: [...new Set(manifest.changed_paths)] };
+}
+
 function taskScope(manifestInput) {
   const manifestPath = repoPath(manifestInput || '.agent-state/automation/close-out.json');
   if (!existsSync(resolve(ROOT, manifestPath))) fail(`manifest does not exist: ${manifestPath}`);
@@ -86,9 +100,13 @@ function taskScope(manifestInput) {
   } catch {
     fail(`manifest is not valid JSON: ${manifestPath}`);
   }
-  if (!manifest.task || !Array.isArray(manifest.changed_paths) || !manifest.changed_paths.length)
-    fail(`manifest must contain a task and changed_paths: ${manifestPath}`);
-  return { task: manifest.task, paths: [...new Set(manifest.changed_paths.map(repoPath))] };
+  let scope;
+  try {
+    scope = manifestScope(manifest);
+  } catch (error) {
+    fail(`${error.message}: ${manifestPath}`);
+  }
+  return { task: scope.task, paths: scope.paths.map(repoPath) };
 }
 
 function keywordsFor(task) {
@@ -156,4 +174,4 @@ function main() {
   console.log(`PASS — pushed ${message} from ${branch}`);
 }
 
-main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

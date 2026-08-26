@@ -1,0 +1,48 @@
+[1mdiff --git a/scripts/git-sync-commit-push.mjs b/scripts/git-sync-commit-push.mjs[m
+[1mindex ef2f8c8..9e37aa1 100644[m
+[1m--- a/scripts/git-sync-commit-push.mjs[m
+[1m+++ b/scripts/git-sync-commit-push.mjs[m
+[36m@@ -77,6 +77,20 @@[m [mfunction branchName(input, label) {[m
+   return input;[m
+ }[m
+ [m
+[32m+[m[32mexport function manifestScope(manifest) {[m
+[32m+[m[32m  if (!manifest.task) throw new Error('manifest must contain a task');[m
+[32m+[m[32m  if (manifest.schema_version === 2) {[m
+[32m+[m[32m    if (manifest.phase !== 'closed' || manifest.verification?.status !== 'passed')[m
+[32m+[m[32m      throw new Error('schema-v2 manifest must have passing closeout verification');[m
+[32m+[m[32m    if (!Array.isArray(manifest.publish_paths) || !manifest.publish_paths.length)[m
+[32m+[m[32m      throw new Error('schema-v2 manifest must contain publish_paths');[m
+[32m+[m[32m    return { task: manifest.task, paths: [...new Set(manifest.publish_paths)] };[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if (!Array.isArray(manifest.changed_paths) || !manifest.changed_paths.length)[m
+[32m+[m[32m    throw new Error('schema-v1 manifest must contain changed_paths');[m
+[32m+[m[32m  return { task: manifest.task, paths: [...new Set(manifest.changed_paths)] };[m
+[32m+[m[32m}[m
+[32m+[m
+ function taskScope(manifestInput) {[m
+   const manifestPath = repoPath(manifestInput || '.agent-state/automation/close-out.json');[m
+   if (!existsSync(resolve(ROOT, manifestPath))) fail(`manifest does not exist: ${manifestPath}`);[m
+[36m@@ -86,9 +100,13 @@[m [mfunction taskScope(manifestInput) {[m
+   } catch {[m
+     fail(`manifest is not valid JSON: ${manifestPath}`);[m
+   }[m
+[31m-  if (!manifest.task || !Array.isArray(manifest.changed_paths) || !manifest.changed_paths.length)[m
+[31m-    fail(`manifest must contain a task and changed_paths: ${manifestPath}`);[m
+[31m-  return { task: manifest.task, paths: [...new Set(manifest.changed_paths.map(repoPath))] };[m
+[32m+[m[32m  let scope;[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    scope = manifestScope(manifest);[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    fail(`${error.message}: ${manifestPath}`);[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return { task: scope.task, paths: scope.paths.map(repoPath) };[m
+ }[m
+ [m
+ function keywordsFor(task) {[m
+[36m@@ -156,4 +174,4 @@[m [mfunction main() {[m
+   console.log(`PASS — pushed ${message} from ${branch}`);[m
+ }[m
+ [m
+[31m-main();[m
+[32m+[m[32mif (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();[m

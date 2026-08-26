@@ -50,9 +50,9 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
 
 ## Procedure — the gate comes before any file is opened
 
-1. **Scope to the task manifest, not the tree.** Use the explicit paths from
-   `task-close prepare`; its manifest already contains the exact `docs-scope`
-   output. `--from-git` is not a close-out fallback because it can include
+1. **Scope to the task manifest, not the tree.** Use the exact post-edit ranges
+   from `task-close review`, which runs `docs-scope` against explicit final
+   paths. `--from-git` is not a close-out fallback because it can include
    concurrent work.
 
 2. **Doc-worthy gate.** A change earns an edit only if it alters a **number, a wire
@@ -69,8 +69,10 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
    a doc in full to change a few lines. A doc with no printed ranges is getting a
    new entry: pick the insertion point from the printed outline.
 
-5. **Verify through the manifest.** `task-close verify` regenerates maps for every
-   source path and carries authored `Does` by symbol.
+5. **Verify through the manifest.** Own each selected candidate doc through
+   `task-close amend` before editing it, then `task-close close` records the
+   decision, regenerates content-changed maps and carries authored `Does` by
+   symbol.
 
 6. **Fix every validator error.** The same verification receipt validates the game
    KB and, when in scope, the site KB; rerun the individual validator only to read

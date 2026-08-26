@@ -3,13 +3,63 @@ import { basename, join, relative, resolve, sep } from 'node:path';
 import { AREA_ALIASES, mapOwnerForPath, routeSourcePath } from './context-routing.mjs';
 import { selectQa } from '../qa-gate.mjs';
 
-export const DEFAULT_MAX_RESULTS = 8;
-export const DEFAULT_MAX_BYTES = 24 * 1024;
-const MAX_SECTION_BYTES = 12 * 1024;
+export const DEFAULT_MAX_RESULTS = 5;
+export const MAX_RESULTS = 8;
+export const DEFAULT_MAX_BYTES = 6 * 1024;
+export const MAX_BYTES = 24 * 1024;
+export const DEFAULT_SECTION_BYTES = 6 * 1024;
+export const MAX_SECTION_BYTES = 12 * 1024;
+export const DEFAULT_BUNDLE_BYTES = 12 * 1024;
+const DIAGNOSTIC_MAX_BYTES = 2 * 1024;
+const DIAGNOSTIC_MAX_RESULTS = 3;
+const ANCHOR_STOP_WORDS = new Set(['add', 'agent', 'agentic', 'change', 'context', 'find', 'fix', 'from', 'help', 'into', 'make', 'need', 'needs', 'repo', 'repository', 'search', 'the', 'this', 'tool', 'use', 'with']);
 
 const normalize = value => value.toLowerCase().replaceAll('\\', '/');
 const tokens = value => [...new Set((normalize(value).match(/[a-z0-9_]+/g) || []).filter(token => token.length > 1))];
 const relativePath = (root, file) => relative(root, file).replaceAll('\\', '/');
+
+function command(argv) {
+  return { argv, display: argv.map(part => /^[a-z0-9_./,:-]+$/i.test(part) ? part : JSON.stringify(part)).join(' ') };
+}
+
+const contextCommand = parts => command(['node', 'scripts/context.mjs', ...parts]);
+
+function measured(value) {
+  let bytes = 0;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    value.limits.returned_bytes = bytes;
+    const next = Buffer.byteLength(JSON.stringify(value, null, 2)) + 1;
+    if (next === bytes) break;
+    bytes = next;
+  }
+  value.limits.returned_bytes = bytes;
+  return bytes;
+}
+
+export function measuredText(lines) {
+  const body = lines.join('\n');
+  let bytes = 0, output = '';
+  for (let attempt = 0; attempt < 4; attempt++) {
+    output = `${body}\nbytes: ${bytes}\n`;
+    const next = Buffer.byteLength(output);
+    if (next === bytes) break;
+    bytes = next;
+  }
+  return { output, bytes };
+}
+
+function parseMapRow(line) {
+  const cells = line.split('|').slice(1, -1).map(cell => cell.trim());
+  const location = cells[0]?.replaceAll('`', '') || '';
+  const match = /^(.*):(\d+)$/.exec(location);
+  if (!match) return null;
+  const sourceLine = Number(match[2]);
+  const start = Math.max(1, sourceLine - 12);
+  const end = sourceLine + 20;
+  const symbol = cells[1] || '';
+  return { source_path: match[1], source_line: sourceLine, symbol: symbol.replace(/\s+·\s+.*$/, ''), purpose: cells[2] || '',
+    read: { path: match[1], lines: [start, end], command: command(['sed', '-n', `${start},${end}p`, match[1]]) } };
+}
 
 function inside(root, file) {
   return file === root || file.startsWith(root + sep);
@@ -56,9 +106,9 @@ export function documentOutline(root, input) {
   };
 }
 
-export function documentSection(root, input, query, maxBytes = MAX_SECTION_BYTES) {
-  if (!Number.isInteger(maxBytes) || maxBytes < 1024 || maxBytes > DEFAULT_MAX_BYTES)
-    throw new Error(`--max-bytes must be an integer from 1024 to ${DEFAULT_MAX_BYTES}`);
+export function documentSection(root, input, query, maxBytes = DEFAULT_SECTION_BYTES) {
+  if (!Number.isInteger(maxBytes) || maxBytes < 1024 || maxBytes > MAX_SECTION_BYTES)
+    throw new Error(`--max-bytes must be an integer from 1024 to ${MAX_SECTION_BYTES}`);
   const file = resolveDocument(root, input);
   const requested = normalize(query);
   if (!requested) throw new Error('a heading is required');
@@ -67,13 +117,13 @@ export function documentSection(root, input, query, maxBytes = MAX_SECTION_BYTES
   if (matches.length !== 1) throw new Error(matches.length ? `heading is ambiguous (${matches.length} matches); use a longer query` : `heading not found: ${query}`);
   const match = matches[0];
   const text = readFileSync(file, 'utf8').split(/\r?\n/).slice(match.start - 1, match.end).join('\n');
-  if (Buffer.byteLength(text) > maxBytes) throw new Error(`section exceeds ${maxBytes} byte limit; narrow the heading or raise --max-bytes up to ${DEFAULT_MAX_BYTES}`);
+  if (Buffer.byteLength(text) > maxBytes) throw new Error(`section exceeds ${maxBytes} byte limit; narrow the heading or raise --max-bytes up to ${MAX_SECTION_BYTES}`);
   return { path: relativePath(root, file), lines: [match.start, match.end], heading: match.heading, text };
 }
 
 export function mapSymbols(root, input, query, limit = DEFAULT_MAX_RESULTS) {
-  if (!Number.isInteger(limit) || limit < 1 || limit > DEFAULT_MAX_RESULTS)
-    throw new Error(`--max-results must be an integer from 1 to ${DEFAULT_MAX_RESULTS}`);
+  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_RESULTS)
+    throw new Error(`--max-results must be an integer from 1 to ${MAX_RESULTS}`);
   const file = resolveDocument(root, input, true);
   const requested = normalize(query);
   if (!requested) throw new Error('a symbol query is required');
@@ -82,7 +132,7 @@ export function mapSymbols(root, input, query, limit = DEFAULT_MAX_RESULTS) {
   if (!rows.length) throw new Error(`no symbol rows match "${query}" in ${basename(file)}`);
   return {
     path: relativePath(root, file),
-    rows: rows.slice(0, limit).map(item => ({ line: item.number, text: item.line })),
+    rows: rows.slice(0, limit).map(item => ({ line: item.number, text: item.line, source: parseMapRow(item.line) })),
     overflow: rows.length > limit,
     total: rows.length,
   };
@@ -102,6 +152,13 @@ export function routeContext(input) {
     read: routed.read || null,
     ...(routed.purpose ? { workspace: { name: routed.name, purpose: routed.purpose, policy: routed.policy } } : {}),
   };
+}
+
+export function routeTextLines(result) {
+  const output = [`skill: ${result.skill}`, `docs: ${result.docs.length ? result.docs.join(', ') : 'none'}`, `maps: ${result.maps.length ? result.maps.join(', ') : 'none'}`];
+  if (result.read) output.push(`source-read: ${result.read}`);
+  if (result.workspace) output.push(`workspace: ${result.workspace.name}`, `purpose: ${result.workspace.purpose}`, `policy: ${result.workspace.policy}`);
+  return output;
 }
 
 function walkMarkdown(dir, root, files) {
@@ -206,7 +263,7 @@ function constrained(results, options) {
     if (allowed && !allowed.has(result.path)) return false;
     if (kinds.length && !kinds.includes(result.kind)) return false;
     if (prefix && !normalize(result.path).startsWith(prefix)) return false;
-    if (required.length && !required.every(token => normalize(`${result.title}\n${result.excerpt || ''}\n${result.path}`).includes(token))) return false;
+    if (required.length && !required.every(token => normalize(`${result.title}\n${result._search_text || result.excerpt || ''}\n${result.path}`).includes(token))) return false;
     return true;
   });
 }
@@ -228,37 +285,21 @@ function bounded(results, maxResults, maxBytes) {
 function limits(options) {
   const maxResults = Number(options.maxResults || DEFAULT_MAX_RESULTS);
   const maxBytes = Number(options.maxBytes || DEFAULT_MAX_BYTES);
-  if (!Number.isInteger(maxResults) || maxResults < 1 || maxResults > DEFAULT_MAX_RESULTS)
-    throw new Error(`--max-results must be an integer from 1 to ${DEFAULT_MAX_RESULTS}`);
-  if (!Number.isInteger(maxBytes) || maxBytes < 1024 || maxBytes > DEFAULT_MAX_BYTES)
-    throw new Error(`--max-bytes must be an integer from 1024 to ${DEFAULT_MAX_BYTES}`);
+  if (!Number.isInteger(maxResults) || maxResults < 1 || maxResults > MAX_RESULTS)
+    throw new Error(`--max-results must be an integer from 1 to ${MAX_RESULTS}`);
+  if (!Number.isInteger(maxBytes) || maxBytes < 1024 || maxBytes > MAX_BYTES)
+    throw new Error(`--max-bytes must be an integer from 1024 to ${MAX_BYTES}`);
   return { maxResults, maxBytes };
 }
 
-export function searchContext(root, query, options = {}) {
-  const requested = normalize(query).trim();
-  const queryTokens = tokens(requested);
-  if (!queryTokens.length) throw new Error('search query needs at least one two-character term');
-  const relatedAliases = aliases(root, queryTokens);
-  const results = [];
-  const exactArea = AREA_ALIASES[requested];
-  if (exactArea) {
-    for (const path of [...exactArea.docs, ...exactArea.maps]) results.push({
-      kind: 'route', path, lines: null, title: `${requested} route`, score: 200,
-      reason: 'exact route or area alias',
-    });
-  }
+function searchEntries(root) {
+  const entries = [];
   for (const path of searchableDocuments(root)) {
     const file = resolve(root, path);
     const body = readFileSync(file, 'utf8');
     for (const section of markdownSections(body)) {
       const text = body.split(/\r?\n/).slice(section.start - 1, section.end).join('\n');
-      const match = phraseScore({ title: section.heading, text, path, query: requested, queryTokens, kind: 'section', relatedAliases });
-      if (!match) continue;
-      results.push({
-        kind: 'section', path, lines: [section.start, section.end], title: section.heading,
-        score: match.score, reason: match.reason, excerpt: excerpt(text, queryTokens),
-      });
+      entries.push({ kind: 'section', path, lines: [section.start, section.end], title: section.heading, text });
     }
   }
   for (const path of searchableMaps(root)) {
@@ -266,44 +307,245 @@ export function searchContext(root, query, options = {}) {
     readFileSync(file, 'utf8').split(/\r?\n/).forEach((line, index) => {
       if (!/^\|\s*[^|]+:\d+\s*\|/.test(line)) return;
       const cells = line.split('|').slice(1, -1).map(cell => cell.trim());
-      const match = phraseScore({ title: cells[1] || '', text: line, path, query: requested, queryTokens, kind: 'symbol', relatedAliases });
-      if (!match) return;
-      results.push({
-        kind: 'symbol', path, lines: [index + 1, index + 1], title: cells[1] || path,
-        score: match.score, reason: match.reason, excerpt: line,
-      });
+      entries.push({ kind: 'symbol', path, lines: [index + 1, index + 1], title: cells[1] || path, text: line, source: parseMapRow(line) });
     });
   }
-  const filtered = constrained(results, options).sort((left, right) => right.score - left.score || left.path.localeCompare(right.path) || (left.lines?.[0] || 0) - (right.lines?.[0] || 0));
-  const { maxResults, maxBytes } = limits(options);
-  const { selected, bytes } = bounded(filtered, maxResults, maxBytes);
-  const warnings = [];
-  if (!selected.length) warnings.push('no deterministic match; refine the query or repair the KB alias/route');
-  if (filtered.length > selected.length) warnings.push(`refine query: ${filtered.length} matches exceed the selected result budget`);
-  return {
-    schema_version: 1,
-    query: { kind: 'search', text: query },
-    results: selected,
-    limits: { max_results: maxResults, max_bytes: maxBytes, returned_bytes: bytes },
-    warnings,
-  };
+  return entries;
 }
 
-export function scopeContext(paths) {
+function rankedEntries(entries, requested, relatedAliases, includeExcerpt = false) {
+  const queryTokens = tokens(requested);
+  return entries.flatMap(entry => {
+    const match = phraseScore({ ...entry, query: requested, queryTokens, relatedAliases });
+    if (!match) return [];
+    return [{
+      kind: entry.kind,
+      path: entry.path,
+      lines: entry.lines,
+      title: entry.title,
+      score: match.score,
+      reason: match.reason,
+      _search_text: entry.text,
+      ...(entry.source ? { source: entry.source } : {}),
+      ...(includeExcerpt ? { excerpt: excerpt(entry.text, queryTokens) } : {}),
+    }];
+  });
+}
+
+function optionArgs(options) {
+  const args = [];
+  for (const domain of options.domains || []) args.push('--domain', domain);
+  for (const kind of options.kinds || []) args.push('--kind', kind);
+  if (options.pathPrefix) args.push('--path-prefix', options.pathPrefix);
+  if (options.require) args.push('--require', options.require);
+  return args;
+}
+
+function boundedActions(actions) {
+  const selected = [];
+  let bytes = 0;
+  for (const action of actions) {
+    const size = Buffer.byteLength(JSON.stringify(action));
+    if (selected.length === DIAGNOSTIC_MAX_RESULTS || bytes + size > DIAGNOSTIC_MAX_BYTES) break;
+    selected.push(action);
+    bytes += size;
+  }
+  return { actions: selected, bytes };
+}
+
+function anchorSuggestions(root, entries, queryTokens, options) {
+  const candidates = queryTokens
+    .filter(token => token.length > 2 && !ANCHOR_STOP_WORDS.has(token))
+    .flatMap(anchor => {
+      const ranked = constrained(rankedEntries(entries, anchor, aliases(root, [anchor])), options)
+        .sort((left, right) => right.score - left.score || left.path.localeCompare(right.path) || (left.lines?.[0] || 0) - (right.lines?.[0] || 0));
+      if (!ranked.length) return [];
+      return [{
+        type: 'retry-anchor',
+        anchor,
+        matches: ranked.length,
+        top: { kind: ranked[0].kind, path: ranked[0].path, lines: ranked[0].lines, title: ranked[0].title },
+        command: contextCommand(['search', anchor, '--anchor', ...optionArgs(options)]),
+        score: ranked[0].score,
+      }];
+    })
+    .sort((left, right) => left.matches - right.matches || right.score - left.score || right.anchor.length - left.anchor.length || left.anchor.localeCompare(right.anchor))
+    .map(({ score, ...candidate }) => candidate);
+  return boundedActions(candidates);
+}
+
+function filterSuggestions(results, query, options) {
+  if (!results.length) return { actions: [], bytes: 0 };
+  const top = results[0];
+  const base = ['filter', query, ...optionArgs(options)];
+  const actions = [];
+  if (top.kind === 'section') actions.push({
+    type: 'read-section',
+    command: contextCommand(['section', top.path, top.title]),
+  });
+  if (top.kind === 'symbol' && top.source) actions.push({
+    type: 'read-symbol',
+    command: contextCommand(['symbol', top.path, top.source.symbol]),
+  });
+  if (!(options.kinds || []).length) actions.push({
+    type: 'filter-kind',
+    command: contextCommand([...base, '--kind', top.kind]),
+  });
+  if (!options.pathPrefix) actions.push({
+    type: 'filter-path',
+    command: contextCommand([...base, '--path-prefix', top.path]),
+  });
+  if (!options.require && top.title) actions.push({
+    type: 'filter-required-term',
+    command: contextCommand([...base, '--require', top.title.replace(/\s+·\s+.*$/, '')]),
+  });
+  return boundedActions(actions);
+}
+
+function fitPayload(payload, maxBytes) {
+  while (measured(payload) > maxBytes) {
+    if (payload.results.length > 1) payload.results.pop();
+    else if (payload.next_actions.length > 1) payload.next_actions.pop();
+    else if (payload.results[0]?.source?.read?.command?.argv) delete payload.results[0].source.read.command.argv;
+    else if (payload.results[0]?.source?.purpose) delete payload.results[0].source.purpose;
+    else if (payload.results[0]?.reason) delete payload.results[0].reason;
+    else if (payload.results[0] && 'score' in payload.results[0]) delete payload.results[0].score;
+    else throw new Error(`search response metadata exceeds ${maxBytes} byte limit`);
+  }
+  payload.limits.evidence_bytes = payload.results.reduce((total, result) => total + Buffer.byteLength(JSON.stringify(result)), 0);
+  measured(payload);
+  return payload;
+}
+
+export function searchContext(root, query, options = {}) {
+  const requested = normalize(query).trim();
+  const queryTokens = tokens(requested);
+  if (!queryTokens.length) throw new Error('search query needs at least one two-character term');
+  const { maxResults, maxBytes } = limits(options);
+  let entries;
+  let relatedAliases;
+  try {
+    entries = searchEntries(root);
+    relatedAliases = aliases(root, queryTokens);
+  } catch (error) {
+    return fitPayload({
+      schema_version: 2,
+      query: { kind: 'search', text: query, anchor: Boolean(options.anchor) },
+      status: 'tool-error',
+      results: [],
+      next_actions: [],
+      fallback: { allowed: true, reason: 'retrieval tool failure' },
+      limits: { max_results: maxResults, max_bytes: maxBytes, evidence_bytes: 0, diagnostic_bytes: 0, returned_bytes: 0 },
+      warnings: [error.message],
+    }, maxBytes);
+  }
+  const results = rankedEntries(entries, requested, relatedAliases, Boolean(options.includeExcerpt));
+  const exactArea = AREA_ALIASES[requested];
+  if (exactArea) {
+    for (const path of [...exactArea.docs, ...exactArea.maps]) results.push({
+      kind: 'route', path, lines: null, title: `${requested} route`, score: 200,
+      reason: 'exact route or area alias',
+    });
+  }
+  const filtered = constrained(results, options)
+    .sort((left, right) => right.score - left.score || left.path.localeCompare(right.path) || (left.lines?.[0] || 0) - (right.lines?.[0] || 0))
+    .map(({ _search_text, ...result }) => result);
+  const { selected, bytes } = bounded(filtered, maxResults, maxBytes);
+  const weakNarrative = !options.anchor && queryTokens.length > 1 && filtered.length && filtered.every(result => result.score <= 80);
+  const confidentTop = filtered.length > 1 && filtered[0].score - filtered[1].score >= 30 && /exact (?:heading|symbol) phrase/.test(filtered[0].reason);
+  const needsFilter = filtered.length > selected.length && !confidentTop;
+  const presented = confidentTop || needsFilter ? selected.slice(0, 1) : selected;
+  const presentedBytes = presented.reduce((total, result) => total + Buffer.byteLength(JSON.stringify(result)), 0);
+  let status = 'matched';
+  let diagnostic = { actions: [], bytes: 0 };
+  const warnings = [];
+  if (weakNarrative) {
+    status = 'needs-anchor';
+    diagnostic = anchorSuggestions(root, entries, queryTokens, options);
+    warnings.push('query matched only broad body text; retry one suggested stable anchor before reading evidence');
+  } else if (!filtered.length && options.anchor) {
+    status = 'retrieval-defect';
+    warnings.push('confirmed anchor has no deterministic match; use the smallest routed source fallback and repair retrieval');
+  } else if (!filtered.length) {
+    status = 'needs-anchor';
+    diagnostic = anchorSuggestions(root, entries, queryTokens, options);
+    warnings.push(diagnostic.actions.length ? 'retry one suggested stable anchor; source fallback is not allowed' : 'retry one stable product anchor with --anchor; source fallback is not allowed');
+  } else if (needsFilter) {
+    status = 'needs-filter';
+    diagnostic = filterSuggestions(filtered, query, options);
+    warnings.push(`refine query: ${filtered.length} matches exceed the selected result budget`);
+  }
+  const payload = {
+    schema_version: 2,
+    query: { kind: 'search', text: query, anchor: Boolean(options.anchor) },
+    status,
+    results: weakNarrative ? [] : presented,
+    next_actions: diagnostic.actions,
+    fallback: {
+      allowed: status === 'retrieval-defect',
+      reason: status === 'retrieval-defect' ? 'confirmed retrieval defect' : null,
+    },
+    limits: { max_results: maxResults, max_bytes: maxBytes, evidence_bytes: weakNarrative ? 0 : presentedBytes || bytes, diagnostic_bytes: diagnostic.bytes, returned_bytes: 0 },
+    warnings,
+  };
+  return fitPayload(payload, maxBytes);
+}
+
+export function searchTextLines(result) {
+  const output = [`status: ${result.status}`];
+  result.results.forEach(item => {
+    if (item.source) output.push(`evidence: ${item.path}:${item.lines[0]} -> ${item.source.source_path}:${item.source.source_line} · ${item.source.symbol}`, `read: ${item.source.read.command.display}`);
+    else output.push(`evidence: ${item.path}${item.lines ? `:${item.lines[0]}-${item.lines[1]}` : ''} · ${item.title}`);
+  });
+  result.next_actions.forEach(action => output.push(`next: ${action.command.display}`));
+  result.warnings.forEach(warning => output.push(`! ${warning}`));
+  output.push(`fallback: ${result.fallback.allowed ? result.fallback.reason : 'no'}`);
+  return output;
+}
+
+export function scopeContext(paths, options = {}) {
   if (!paths.length) throw new Error('scope needs one or more explicit task-owned paths');
   const changed = [...new Set(paths.map(path => path.replace(/^\.\//, '')))].sort();
   const routes = changed.map(path => ({ path, route: routeSourcePath(path) }));
   const docs = [...new Set(routes.flatMap(({ route }) => route?.docs || []).map(doc => doc.startsWith('site/') ? doc : `docs/context/${doc}`))].sort();
   const maps = [...new Set(changed.map(mapOwnerForPath).filter(Boolean).map(map => `docs/context/map/${map}`))].sort();
-  return {
-    schema_version: 1,
-    changed_paths: changed,
-    routes: routes.map(({ path, route }) => ({ path, skill: route?.skill || null, docs: route?.docs || [], map: route?.map || null, read: route?.read || null })),
-    docs,
-    maps,
-    qa: selectQa(changed),
+  const qa = selectQa(changed);
+  const tools = [{ name: 'QA', command: command(['node', 'scripts/qa-gate.mjs', '--changed', ...changed]) }];
+  const automationProtocol = changed.some(path => /^(scripts\/(?:context|task-close|benchmark-rag|git-sync-commit-push)\.mjs|scripts\/lib\/context-(?:query|routing)\.mjs|scripts\/tests\/(?:context-query|task-close|git-sync-commit-push)\.test\.mjs|report\/benchmarks\/)/.test(path));
+  if (automationProtocol) {
+    tools.push({ name: 'automation protocol', command: command(['node', '--test', 'scripts/tests/context-query.test.mjs', 'scripts/tests/task-close.test.mjs', 'scripts/tests/git-sync-commit-push.test.mjs']) });
+    tools.push({ name: 'retrieval benchmark', command: command(['node', 'scripts/benchmark-rag.mjs', '--check']) });
+  }
+  if (maps.length) tools.push({ name: 'file map', command: command(['node', 'scripts/build-file-map.mjs']) });
+  if (maps.length || docs.some(path => path.startsWith('docs/context/')) || changed.some(path => path.startsWith('docs/context/')))
+    tools.push({ name: 'game KB', command: command(['node', 'scripts/validate-docs.mjs']) });
+  if (docs.some(path => path.startsWith('site/docs/')) || changed.some(path => path.startsWith('site/')))
+    tools.push({ name: 'site KB', command: command(['npm', 'run', 'docs:check', '--prefix', 'site']) });
+  if (changed.some(path => /^(AGENTS\.md|CLAUDE\.md|\.agents\/skills\/|\.claude\/skills\/)/.test(path)))
+    tools.push({ name: 'agent config', command: command(['node', 'scripts/validate-agent-config.mjs']) });
+  const maxBytes = options.artifact ? MAX_BYTES : 8 * 1024;
+  const result = {
+    schema_version: 2,
+    task_paths: changed,
+    routes: routes.map(({ path, route }) => ({ path, skill: route?.skill || null,
+      docs: (route?.docs || []).map(doc => doc.startsWith('site/') ? doc : `docs/context/${doc}`),
+      map: route?.map ? `docs/context/map/${route.map}` : null, read: route?.read || null })),
+    docs, maps, qa, tools,
     unmapped: routes.filter(({ route }) => !route).map(({ path }) => path),
+    limits: { max_bytes: maxBytes, returned_bytes: 0 },
   };
+  if (measured(result) > result.limits.max_bytes) throw new Error(`scope response exceeds ${result.limits.max_bytes} bytes; split the explicit path set`);
+  return result;
+}
+
+export function scopeTextLines(result) {
+  const output = [`paths: ${result.task_paths.join(', ')}`,
+    `docs: ${result.docs.length ? result.docs.join(', ') : 'none'}`,
+    `maps: ${result.maps.length ? result.maps.join(', ') : 'none'}`,
+    `qa: ${result.qa.applies ? 'runtime QA applies' : 'no runtime QA applies'}`,
+    ...result.tools.map(tool => `tool: ${tool.name} — ${tool.command.display}`)];
+  if (result.unmapped.length) output.push(`unmapped: ${result.unmapped.join(', ')}`);
+  return output;
 }
 
 function selectedText(root, result) {
@@ -311,22 +553,27 @@ function selectedText(root, result) {
     const section = documentSection(root, result.path, result.title, MAX_SECTION_BYTES);
     return section.text;
   }
-  if (result.kind === 'symbol') return result.excerpt;
+  if (result.kind === 'symbol') {
+    const file = resolveDocument(root, result.path, true);
+    return readFileSync(file, 'utf8').split(/\r?\n/)[result.lines[0] - 1] || '';
+  }
   return '';
 }
 
 export function contextBundle(root, task, options = {}) {
-  const search = searchContext(root, task, options);
-  const maxBytes = Number(options.maxBytes || DEFAULT_MAX_BYTES);
+  const maxBytes = Number(options.maxBytes || DEFAULT_BUNDLE_BYTES);
+  if (!Number.isInteger(maxBytes) || maxBytes < 1024 || maxBytes > MAX_BYTES)
+    throw new Error(`--max-bytes must be an integer from 1024 to ${MAX_BYTES}`);
+  const search = searchContext(root, task, { ...options, maxBytes: Math.max(maxBytes, DEFAULT_MAX_BYTES) });
   const lines = ['# Context bundle', '', `## Task`, task, '', '## Selected evidence'];
   const included = [];
-  const trailer = items => [
+  const trailer = (items, reportedBytes = 'pending') => [
     '## Provenance',
     ...items.map(result => `- ${result.path}${result.lines ? `:${result.lines[0]}-${result.lines[1]}` : ''}`),
     '',
     '## Retrieval limits',
     `- Results: ${items.length}/${search.results.length}`,
-    `- Bytes: pending/${maxBytes}`,
+    `- Bytes: ${reportedBytes}/${maxBytes}`,
     ...(search.warnings.length ? ['', '## Warnings', ...search.warnings.map(warning => `- ${warning}`)] : []),
   ];
   for (const result of search.results) {
@@ -336,7 +583,18 @@ export function contextBundle(root, task, options = {}) {
     lines.push(block);
     included.push(result);
   }
-  const assembled = [...lines, ...trailer(included)].join('\n').trimEnd() + '\n';
-  const bytes = Buffer.byteLength(assembled);
-  return { ...search, results: included, bundle: assembled.replace('Bytes: pending/', `Bytes: ${bytes}/`) };
+  let assembled = '';
+  let bytes = 0;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    assembled = [...lines, ...trailer(included, bytes)].join('\n').trimEnd() + '\n';
+    const next = Buffer.byteLength(assembled);
+    if (next === bytes) break;
+    bytes = next;
+  }
+  return {
+    ...search,
+    results: included,
+    limits: { ...search.limits, returned_bytes: bytes },
+    bundle: assembled,
+  };
 }

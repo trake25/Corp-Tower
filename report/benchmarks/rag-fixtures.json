@@ -1,5 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "baseline": {
+    "generated_at": "2026-08-21T01:55:35.614Z",
+    "median_provider_facing_bytes": 452,
+    "median_estimated_tokens": 113,
+    "source": "checked legacy benchmark result"
+  },
   "retrieval": [
     { "id": "P1", "area": "hud", "queries": [{ "map": "ui-hud", "query": "auto_close_seconds", "expects": "PopoverPanel.gd" }] },
     { "id": "P2", "area": "hud", "queries": [{ "map": "ui-hud", "query": "emoji_mood_for_delta", "expects": "BlockData.gd" }] },
@@ -23,14 +29,74 @@
       "id": "search-symbol",
       "command": "search",
       "query": "updateDebugConfig",
-      "options": { "kinds": ["symbol"] },
-      "expects": { "path": "docs/context/map/backend.md", "title": "updateDebugConfig" }
+      "options": { "anchor": true, "kinds": ["symbol"] },
+      "expects": { "status": "matched", "path": "docs/context/map/backend.md", "title": "updateDebugConfig", "source": "src/Server/app/Lobby_Manager.js" }
+    },
+    {
+      "id": "narrative-anchor",
+      "command": "search",
+      "query": "show startup splash screen",
+      "options": {},
+      "expects": { "status": "needs-anchor", "anchor": "splash", "fallback": false }
+    },
+    {
+      "id": "overflow-filter",
+      "command": "search",
+      "query": "splash",
+      "options": { "anchor": true, "domains": ["screens"] },
+      "expects": { "status": "needs-filter", "action": "filter", "fallback": false }
+    },
+    {
+      "id": "confirmed-defect",
+      "command": "search",
+      "query": "impossible_anchor_xyz",
+      "options": { "anchor": true },
+      "expects": { "status": "retrieval-defect", "fallback": true }
     },
     {
       "id": "scope-server",
       "command": "scope",
       "paths": ["src/Server/app/engine/Scoring.js"],
       "expects": { "skill": "server-engineer", "test": "Stability_Scoring.test.js" }
+    }
+  ],
+  "sessions": [
+    {
+      "id": "backend-symbol",
+      "route": "backend",
+      "steps": [
+        { "query": "updateDebugConfig", "options": { "anchor": true, "kinds": ["symbol"] }, "expects": { "status": "matched", "source": "src/Server/app/Lobby_Manager.js" } }
+      ]
+    },
+    {
+      "id": "hud-symbol",
+      "route": "hud",
+      "steps": [
+        { "query": "auto_close_seconds", "options": { "anchor": true, "kinds": ["symbol"] }, "expects": { "status": "matched", "source": "src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd" } }
+      ]
+    },
+    {
+      "id": "scoring-symbol",
+      "route": "backend",
+      "steps": [
+        { "query": "createScoreEvent", "options": { "anchor": true, "kinds": ["symbol"] }, "expects": { "status": "matched", "source": "src/Server/app/engine/Scoring.js" } }
+      ]
+    },
+    {
+      "id": "narrative-recovery",
+      "route": "screens",
+      "steps": [
+        { "query": "show startup splash screen", "options": {}, "expects": { "status": "needs-anchor", "anchor": "splash" } },
+        { "query": "splash", "options": { "anchor": true, "domains": ["screens"] }, "expects": { "status": "needs-filter", "action": "read-symbol" } },
+        { "query": "%StartupSplash", "options": { "anchor": true, "kinds": ["symbol"] }, "expects": { "status": "matched", "source": "src/Client/App/corp-tower/Cor/Scenes/Main.tscn" } }
+      ]
+    },
+    {
+      "id": "confirmed-miss",
+      "route": "automation",
+      "steps": [
+        { "query": "impossible_anchor_xyz", "options": { "anchor": true }, "expects": { "status": "retrieval-defect", "fallback": true } }
+      ]
     }
   ]
 }

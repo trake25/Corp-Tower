@@ -7,17 +7,18 @@ how agents find bounded evidence and record completion.
 ## Context protocol
 
 `scripts/context.mjs` is the shared local-tool protocol for Codex, Claude Code,
-and local LLM runners. Its JSON envelope is versioned, returns repository-relative
-provenance, and searches only the KB and generated maps; it never exposes raw
-source, environment files, secrets, or the working-tree diff.
+and local LLM runners. Schema 2 returns repository-relative provenance, stable
+result states, exact next commands and provider-visible byte counts. Search reads
+only the KB and generated maps; it never exposes raw source, environment files,
+secrets or the working-tree diff.
 
 | Command | Role |
 |---|---|
 | `route <area-or-path>` | selects skill, docs, map and bounded source-read strategy |
-| `search <query>` | ranks KB sections and map rows with fixed scoring |
+| `search <query> [--anchor]` | ranks strict KB/map matches; `--anchor` confirms a canonical retry |
 | `filter <query> ...` | narrows a fresh deterministic search by area, kind, path or required term |
 | `outline` / `section` / `symbol` | reads one known KB structure, section or generated-map row set |
-| `scope <task-owned-path>...` | returns routes, docs, maps and the QA selection for explicit task paths |
+| `scope <task-owned-path>...` | returns routes, docs, maps, QA and exact verification tools for explicit paths |
 | `bundle <task>` | writes selected KB/map evidence to ignored `.agent-state/automation/` state |
 
 The gitignored working folders have explicit routes but are not searched as KB
@@ -30,18 +31,27 @@ reference/` when task context points to either folder. `plan/`, `task/`, and
 `reference/` are human-maintained working folders. Machine-generated bundles,
 manifests, and receipts belong under ignored `.agent-state/automation/`.
 
-Search returns at most eight results and 24 KB. A broad or empty result is a KB
-repair signal: add a precise route, map `Does` purpose, or retrieval alias rather
-than reading the repository broadly. `retrieval-aliases.json` supplies the small,
-validated vocabulary bridge for common product terms; it is not an open-ended tag
-taxonomy.
+Search uses every query token as a required match. A weak narrative match returns
+`needs-anchor` with at most three exact retries and no evidence; overflow returns
+`needs-filter` with a direct section/symbol read and exact filter commands.
+`matched` evidence exposes map provenance plus a structured candidate source
+path, line and bounded `sed` range. An empty `search --anchor` returns
+`retrieval-defect`. Only `retrieval-defect` and `tool-error` allow source
+fallback; unfamiliar syntax, `needs-anchor` and `needs-filter` do not. Search the
+smallest routed root first, record a real fallback through `task-close fallback`,
+and add a passing benchmark fixture with the route, map purpose or alias repair.
+A suggestion loop, invalid source target or budget breach is also a retrieval
+defect even when the process exits zero.
 
-**Retrieval guardrail:** `search` uses every query token as a required match. An
-agent starts with one stable product anchor — a named screen, node, signal, file,
-or feature — then refines an empty narrative query once with that anchor and uses
-`filter` for an overfull result. `rg` is a source-reading fallback only after a
-routed target, an unavailable CLI, or an unresolved anchor refinement; a
-confirmed miss repairs the route, map purpose, or alias in the same task.
+Interactive search/filter defaults to five results and 6 KiB; the hard ceilings
+are eight and 24 KiB. Diagnostics are three actions/2 KiB, sections default to 6
+KiB with a 12 KiB ceiling, and bundles default to 12 KiB with a 24 KiB ceiling.
+Public `scope` and task intake stay within 8 KiB; task-close stores larger route
+detail only in its ignored manifest. Search JSON omits excerpts unless explicitly
+requested. `retrieval-aliases.json` remains a small fixture-proven vocabulary
+bridge, not a tag index. `report/benchmarks/` owns the checked correctness,
+fallback, whole-read and provider-facing byte measurements; exact provider usage
+stays null unless a provider client reports it.
 
 Cloud coding agents use the same command through a read-only tool adapter. A
 cloud chat session without local-tool access receives only a deliberately made
@@ -52,26 +62,39 @@ the bundle path.
 
 `scripts/task-close.mjs` owns deterministic task closure. Its manifest is the
 scope authority and always names paths explicitly; it never discovers scope from
-a dirty working tree. Start an implementation with `prepare`: its JSON intake
-returns each route, QA plan, documentation candidates, map ownership and exact
-documentation scope, so no separate `context scope` call is needed.
+a dirty working tree. Schema 2 separates authorized ownership from the final
+change set and retains full routes, child output and fingerprints locally while
+keeping console responses below the intake budget.
 
-1. `prepare` records explicit task-owned paths after bounded context retrieval
-   and before the first file edit. It returns routing, QA selection,
-   documentation candidates, exact `docs-scope` output and map ownership in
-   ignored JSON. Never rerun it against the same manifest; start a new `--output`
-   run instead.
-2. The agent updates KB prose only when the doc-worthy gate applies, then
-   `decide` records `updated` with the edited document or `not-needed` with a
-   rationale. This is an agent decision, not a human checkpoint.
-3. `verify` runs selected QA, file-map generation for source paths, relevant KB
-   validation, and agent-configuration validation for skill or entry-contract
-   edits into a receipt under `.agent-state/automation/`.
+1. `prepare --task ... --path ...` records `owned_paths` after bounded retrieval
+   and before the first edit. Intake reuses `scopeContext` to name roles, docs,
+   maps, selected tests, validators and the next command. `--changed` remains an
+   accepted schema-1-compatible alias for `--path`.
+2. `amend --path ...` owns a later-discovered file before its edit. Adding source
+   after review invalidates review; adding a reviewed candidate doc preserves the
+   source review.
+3. `review --changed ...` records only the explicit final authored/source paths,
+   recomputes QA, and runs `docs-scope` after edits so it can return the exact KB
+   ranges made falsifiable by the diff. No Git working-tree discovery supplies
+   path scope.
+4. Apply the doc-worthy gate, own each selected candidate doc through `amend`,
+   edit only its returned ranges, then run
+   `close --decision <updated|not-needed> --reason ... [--doc-path ...]`.
+5. `close` validates the decision, runs QA/map/KB/agent-config checks, detects
+   generated maps by before/after content hash, rejects out-of-scope map output,
+   and writes a resumable receipt. `publish_paths` is the union of explicit
+   changes, documented paths and content-changed generated maps.
 
-Verification receipts retain command output for audit, but the console summary is
-bounded: step name, exit code or signal, and the first failure marker or
-file/line location. An empty child stream is reported as `process exited without
-output`, never as an unexplained `no summary`.
+`fallback --query ... --classification <retrieval-defect|tool-error> --root ...
+--fixture ...` records permitted source fallback. Closeout requires the named
+fixture and a passing retrieval benchmark. Schema-1 `decide` and `verify` remain
+compatibility commands; schema 2 uses `prepare → review → close`.
+
+Child stdout/stderr is captured through a private ignored log file before being
+embedded in the receipt, which preserves diagnostics on hosts that swallow
+nested pipes. A passing close prints one line. A failure prints the step,
+exit/signal, first actionable diagnostic and receipt path; identical close inputs
+reuse the passing receipt.
 
 ## Authorized Git automation
 
@@ -79,7 +102,8 @@ output`, never as an unexplained `no summary`.
 Git sync, stage, commit and push sequence. It is load-on-demand: an agent must
 have explicit user authorization and pass `--approve`. It reads the task
 manifest by default, derives commit keywords from the manifest task title, and
-stages only the manifest's `changed_paths`. It fetches the configured `origin`
+requires a passing closed schema-2 manifest before staging its `publish_paths`.
+Schema-1 manifests retain the explicit `changed_paths` fallback. It fetches the configured `origin`
 branch and runs `git pull --ff-only` before staging any local changes, then
 pushes the current branch after the commit succeeds. By default the current
 branch must be `main`; selecting another branch requires both `--branch` and
