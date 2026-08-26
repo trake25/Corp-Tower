@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { manifestScope } from '../git-sync-commit-push.mjs';
+import { manifestScope, requireManifest } from '../git-sync-commit-push.mjs';
+
+test('Git publication requires an explicit close-out manifest', () => {
+	assert.throws(() => requireManifest(), /explicit manifest required/);
+	assert.equal(requireManifest('.agent-state/automation/current.json'), '.agent-state/automation/current.json');
+});
 
 test('schema-v2 Git scope uses only publish paths from a passing closed manifest', () => {
   const scope = manifestScope({

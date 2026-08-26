@@ -736,7 +736,7 @@ _no extracted symbols_
 | scripts/docs-scope.mjs:147 | order · const | docs sorted by how many paths route into them, heaviest first |
 | scripts/docs-scope.mjs:168 | maps · const | the distinct map files needing regeneration after this task |
 
-### scripts/git-sync-commit-push.mjs — 178 ln
+### scripts/git-sync-commit-push.mjs — 188 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -748,10 +748,11 @@ _no extracted symbols_
 | scripts/git-sync-commit-push.mjs:68 | repoPath · fn | rejects missing or repository-escaping paths before staging |
 | scripts/git-sync-commit-push.mjs:74 | branchName · fn | rejects unsafe branch names before any fetch, switch, commit, or push |
 | scripts/git-sync-commit-push.mjs:80 | manifestScope · fn | selects verified schema-2 `publish_paths` or the explicit schema-1 `changed_paths` compatibility scope |
-| scripts/git-sync-commit-push.mjs:94 | taskScope · fn | reads the task title and exact task-owned paths from the close-out manifest |
-| scripts/git-sync-commit-push.mjs:112 | keywordsFor · fn | derives no more than three commit keywords from the task title |
-| scripts/git-sync-commit-push.mjs:120 | versionFor · fn | finds the highest matching commit version for the next 0.01 suffix |
-| scripts/git-sync-commit-push.mjs:132 | main · fn | fetches and fast-forward pulls before staging, committing and pushing |
+| scripts/git-sync-commit-push.mjs:94 | requireManifest · fn | rejects an implicit publish manifest so staging scope always names the intended close-out receipt |
+| scripts/git-sync-commit-push.mjs:99 | taskScope · fn | reads the task title and exact task-owned paths from the close-out manifest |
+| scripts/git-sync-commit-push.mjs:117 | keywordsFor · fn | derives no more than three commit keywords from the task title |
+| scripts/git-sync-commit-push.mjs:125 | versionFor · fn | finds the highest matching commit version for the next 0.01 suffix |
+| scripts/git-sync-commit-push.mjs:137 | main · fn | fetches and fast-forward pulls before staging, committing and pushing |
 
 ### scripts/install-git-hooks.mjs — 16 ln
 
@@ -1089,7 +1090,7 @@ _no extracted symbols_
 |---|---|---|
 | scripts/tests/context-query.test.mjs:9 | ROOT · const | resolves the repository fixture root for deterministic protocol tests |
 
-### scripts/tests/git-sync-commit-push.test.mjs — 38 ln
+### scripts/tests/git-sync-commit-push.test.mjs — 43 ln
 
 _no extracted symbols_
 
@@ -1180,4 +1181,4 @@ _no extracted symbols_
 
 ---
 
-110 files · 654 symbols · 0 awaiting a `Does` line.
+110 files · 655 symbols · 0 awaiting a `Does` line.

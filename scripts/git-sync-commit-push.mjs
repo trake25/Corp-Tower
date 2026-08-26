@@ -12,7 +12,7 @@ function fail(message) {
 }
 
 function usage() {
-  console.error('usage: node scripts/git-sync-commit-push.mjs --approve [--manifest .agent-state/automation/close-out.json] [--branch <branch> --switch] [--push-only --remote-branch <branch>]');
+	console.error('usage: node scripts/git-sync-commit-push.mjs --approve --manifest <passing-closeout.json> [--branch <branch> --switch] [--push-only --remote-branch <branch>]');
   process.exit(2);
 }
 
@@ -91,8 +91,13 @@ export function manifestScope(manifest) {
   return { task: manifest.task, paths: [...new Set(manifest.changed_paths)] };
 }
 
+export function requireManifest(manifestInput) {
+	if (!manifestInput) throw new Error('explicit manifest required: pass --manifest <passing-closeout.json>');
+	return manifestInput;
+}
+
 function taskScope(manifestInput) {
-  const manifestPath = repoPath(manifestInput || '.agent-state/automation/close-out.json');
+	const manifestPath = repoPath(requireManifest(manifestInput));
   if (!existsSync(resolve(ROOT, manifestPath))) fail(`manifest does not exist: ${manifestPath}`);
   let manifest;
   try {
@@ -130,9 +135,14 @@ function versionFor(keywords) {
 }
 
 function main() {
-  const values = parseArgs(process.argv.slice(2));
-  if (!values.approve) fail('explicit approval required: pass --approve');
-  const scope = taskScope(values.manifest);
+	const values = parseArgs(process.argv.slice(2));
+	if (!values.approve) fail('explicit approval required: pass --approve');
+	let scope;
+	try {
+		scope = taskScope(values.manifest);
+	} catch (error) {
+		fail(error.message);
+	}
   const keywords = keywordsFor(scope.task);
   const paths = scope.paths;
   const currentBranch = git(['branch', '--show-current'], { quiet: true });

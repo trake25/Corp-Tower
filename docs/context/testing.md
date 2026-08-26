@@ -198,7 +198,8 @@ state, not a regression.**
 `scripts/tests/context-query.test.mjs` covers strict retrieval states, bounded
 diagnostics and source targets; `task-close.test.mjs` covers manifest ownership,
 review and documentation decisions. `git-sync-commit-push.test.mjs` validates
-schema-specific publication scope without invoking Git or the network.
+explicit manifest selection and schema-specific publication scope without
+invoking Git or the network.
 `agent-observability.test.mjs` covers adapter gates, exact-inclusive arithmetic,
 lifecycle, privacy, race-safe state, bounded flagging/reporting, analytics and
 public export. Run `node --test` over those four files, then run `node

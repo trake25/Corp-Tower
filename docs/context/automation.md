@@ -119,9 +119,10 @@ alone writes a rounded, cohort-suppressed report under `report/observability/`.
 
 `node scripts/git-sync-commit-push.mjs` is an opt-in local tool for the complete
 Git sync, stage, commit and push sequence. It is load-on-demand: an agent must
-have explicit user authorization and pass `--approve`. It reads the task
-manifest by default, derives commit keywords from the manifest task title, and
-requires a passing closed schema-2 manifest before staging its `publish_paths`.
+have explicit user authorization, pass `--approve`, and name its passing
+close-out receipt with `--manifest`. It derives commit keywords from the
+manifest task title and requires a passing closed schema-2 manifest before
+staging its `publish_paths`.
 Schema-1 manifests retain the explicit `changed_paths` fallback. It fetches the configured `origin`
 branch and runs `git pull --ff-only` before staging any local changes, then
 pushes the current branch after the commit succeeds. By default the current
