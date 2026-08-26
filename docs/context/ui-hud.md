@@ -162,9 +162,10 @@ zone), `DebugCategoryPanels/*` (one `ScrollContainer` per category, exactly one
 visible), `LevelSummaryQuestLabel` and `ParallelPlacementButton` (both bound
 `optional_node`, so a scene missing one degrades quietly), and the required
 `LevelSummaryCountdownLabel`. Level Summary is a centered glass card composed at
-runtime from avatar/name/score rows, an MVP treatment, the next-level countdown
-and next-level quest; terminal `game_over` summaries add a three-second glass
-Home countdown. There is no
+runtime from avatar/name/score rows, a next-level countdown and quest; a failed
+level instead shows centered black `Tower Collapse` and `Failures remaining: N`
+status lines from the authoritative retry state. Terminal `game_over` summaries
+add a three-second glass Home countdown. There is no
 start-level popup — the freeze countdown is the top bar's own blinking round timer.
 
 The three [Popover Panel](#popover-panel) instances each override their `Card` with

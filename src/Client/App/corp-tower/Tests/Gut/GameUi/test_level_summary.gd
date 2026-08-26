@@ -65,6 +65,22 @@ func test_scene_summary_places_next_level_quest_after_countdown() -> void:
 	assert_true(quest_label.visible, "An authoritative next-level quest should be visible in the summary.")
 	assert_true(quest_label.text.begins_with("Next Level Quest\n"), "The quest should replace the deferred Leave Game action.")
 
+func test_failed_summary_shows_centered_black_collapse_status() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(412, 917))
+	var fixture: Dictionary = SUMMARY_FIXTURE.duplicate(true)
+	fixture["result"] = "failed"
+	fixture["failureStatus"] = {"retriesRemaining": 2}
+	harness.main.summary.show_level_summary(fixture, "failed")
+	var collapse_label := harness.find("LevelSummaryTeamLabel") as Label
+	var failures_label := harness.find("LevelSummaryMvpLabel") as Label
+	assert_eq(collapse_label.text, "Tower Collapse", "Failed summaries should name the collapse without a Reason prefix.")
+	assert_eq(collapse_label.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER, "The collapse status should be centered.")
+	assert_eq(collapse_label.get_theme_color("font_color"), Color(0.08, 0.08, 0.09, 1), "The collapse status should use black text.")
+	assert_eq(failures_label.text, "Failures remaining: 2", "Failed summaries should show the authoritative remaining failures.")
+	assert_eq(failures_label.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER, "The failures status should be centered.")
+	assert_eq(failures_label.get_theme_color("font_color"), Color(0.08, 0.08, 0.09, 1), "The failures status should use black text.")
+
 func test_scene_summary_waits_for_popup_window() -> void:
 	var harness = HarnessScript.new()
 	await harness.mount(self, Vector2(412, 917))

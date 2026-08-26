@@ -29,7 +29,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:82 | %ImpactAvatarRing · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn:93 | %ImpactAvatarTexture · unique node | scene node exposed for name-based controller binding |
 
-### src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn — 176 ln
+### src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn — 182 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -37,14 +37,14 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:3 | %LevelSummaryOverlay · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:53 | %LevelSummaryTitleLabel · unique node | scene node exposed for name-based controller binding |
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:64 | %LevelSummaryTeamLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:69 | %LevelSummaryMvpLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:74 | %LevelSummaryPlayersBox · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:80 | %LevelSummaryCountdownLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:90 | %LevelSummaryQuestLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:101 | %TerminalFailureOverlay · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:151 | %TerminalFailureTitleLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:160 | %TerminalFailureBodyLabel · unique node | scene node exposed for name-based controller binding |
-| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:169 | %TerminalFailureCountdownLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:72 | %LevelSummaryMvpLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:80 | %LevelSummaryPlayersBox · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:86 | %LevelSummaryCountdownLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:96 | %LevelSummaryQuestLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:107 | %TerminalFailureOverlay · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:157 | %TerminalFailureTitleLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:166 | %TerminalFailureBodyLabel · unique node | scene node exposed for name-based controller binding |
+| src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:175 | %TerminalFailureCountdownLabel · unique node | scene node exposed for name-based controller binding |
 
 ### src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn — 641 ln
 
@@ -286,7 +286,7 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:728 | _selected_block_id | currently selected block |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:734 | update_draw_pile_ui | shared draw pile bar; reuses the DrawPile* nodes |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd — 461 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd — 462 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -299,19 +299,19 @@ lookup. Loading the whole map costs thousands and gives you the same one row.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:114 | show_pending_level_summary | **clears the pending slot before rendering**, so a second timer fire cannot show the same summary twice |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:127 | cancel_pending_level_summary | stops the show timer and drops the pending summary; how a level change cancels a summary still waiting |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:135 | show_level_summary | title, MVP, quest row, and one row per player **sorted by `levelScore` descending**; fades in 0.16s and arms the hide timer at `tuning.level_summary_delay_ms`, **clamped to 1..10s** |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:193 | hide_level_summary | stops the timer, hides, restores alpha to 1 for the next show, then calls `on_summary_ended` |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:209 | get_level_summary_key | **the dedupe identity** — level, result, score, mvp, finish shape, and retry count; a retry-count change produces a fresh summary |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:225 | get_failure_status | resolves retry state from `failureStatus`, falling back to `impactScoreStatus` for mixed-version payloads |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:240 | update_level_summary_quest_row | delegates the text to `quest_text_provider` and **hides the row when it returns empty**, so no quest leaves no gap |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:252 | update_summary_countdown | Rewrites the next-level countdown only when its displayed second changes. |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:273 | show_terminal_failure_popup | shows the non-interactive glass team-failed card for `game_over`/terminal retry state and starts its three-second Home deadline |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:296 | hide_terminal_failure_popup | hides the terminal card and clears its countdown deadline on expiry or room teardown |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:304 | update_terminal_failure_countdown | refreshes the Home countdown once per displayed second and hides the card at zero |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:327 | get_level_summary_mvp_text | `MVP -` when the server named no mvpId, otherwise the display name and the MVP score |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:335 | create_level_summary_player_row | one panel row: name (MVP-prefixed and player-coloured when mvp), this level's score, and the running total |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:416 | make_summary_row_style | MVP rows take the player's colour at 0.18 fill and 0.72 border; every other row gets the neutral dark panel |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:441 | make_summary_avatar_style | Builds the seat-colour avatar ring and MVP border used by summary rows. |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:455 | clear_children | `queue_free`s every child, which is how the player box is rebuilt rather than appended to |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:194 | hide_level_summary | stops the timer, hides, restores alpha to 1 for the next show, then calls `on_summary_ended` |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:210 | get_level_summary_key | **the dedupe identity** — level, result, score, mvp, finish shape, and retry count; a retry-count change produces a fresh summary |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:226 | get_failure_status | resolves `failureStatus.retriesRemaining`, falling back to `impactScoreStatus` for mixed-version payloads |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:241 | update_level_summary_quest_row | delegates the text to `quest_text_provider` and **hides the row when it returns empty**, so no quest leaves no gap |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:253 | update_summary_countdown | Rewrites the next-level countdown only when its displayed second changes. |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:274 | show_terminal_failure_popup | shows the non-interactive glass team-failed card for `game_over`/terminal retry state and starts its three-second Home deadline |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:297 | hide_terminal_failure_popup | hides the terminal card and clears its countdown deadline on expiry or room teardown |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:305 | update_terminal_failure_countdown | refreshes the Home countdown once per displayed second and hides the card at zero |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:328 | get_level_summary_mvp_text | `MVP -` when the server named no mvpId, otherwise the display name and the MVP score |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:336 | create_level_summary_player_row | one panel row: name (MVP-prefixed and player-coloured when mvp), this level's score, and the running total |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:417 | make_summary_row_style | MVP rows take the player's colour at 0.18 fill and 0.72 border; every other row gets the neutral dark panel |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:442 | make_summary_avatar_style | Builds the seat-colour avatar ring and MVP border used by summary rows. |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd:456 | clear_children | `queue_free`s every child, which is how the player box is rebuilt rather than appended to |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/MatchState.gd — 11 ln
 

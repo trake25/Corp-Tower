@@ -65,11 +65,17 @@ vertical_alignment = 1
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.09, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
 
 [node name="LevelSummaryMvpLabel" type="Label" parent="LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1481643262]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.09, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
 
 [node name="LevelSummaryPlayersBox" type="VBoxContainer" parent="LevelSummaryPanel/LevelSummaryMargin/LevelSummaryRows" unique_id=1912707215]
 unique_name_in_owner = true

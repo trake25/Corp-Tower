@@ -153,11 +153,12 @@ func show_level_summary(summary_value: Variant, state: String) -> void:
 
 	var result: String = str(summary.get("result", state))
 	var level_number: int = int(summary.get("level", match_state.current_level))
+	var failure_status: Dictionary = get_failure_status(summary)
 	level_summary_title_label.text = "Level " + str(level_number) + (" Completed" if result == "completed" else " Failed")
-	level_summary_team_label.visible = false
-	level_summary_team_label.text = ""
-	level_summary_mvp_label.text = get_level_summary_mvp_text(summary)
-	level_summary_mvp_label.visible = false
+	level_summary_team_label.text = "Tower Collapse" if result != "completed" else ""
+	level_summary_team_label.visible = result != "completed"
+	level_summary_mvp_label.text = "Failures remaining: " + str(failure_status.get("retriesRemaining", 0)) if result != "completed" else ""
+	level_summary_mvp_label.visible = result != "completed"
 	update_level_summary_quest_row(summary)
 	show_terminal_failure_popup(summary, result)
 
