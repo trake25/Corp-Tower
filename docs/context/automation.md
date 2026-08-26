@@ -29,7 +29,11 @@ Markdown file into `plan/done/`. `reference/` is human-managed screen-guide and 
 humans may upload, modify, or delete those files. Use `route plan/` or `route
 reference/` when task context points to either folder. `plan/`, `task/`, and
 `reference/` are human-maintained working folders. Machine-generated bundles,
-manifests, and receipts belong under ignored `.agent-state/automation/`.
+manifests, receipts, and retrieval-benchmark output belong under ignored
+`.agent-state/automation/`. Private workflow telemetry belongs under ignored
+`.agent-state/telemetry/`. All `report/**` paths are excluded from normal
+retrieval and indexing; only their owning tool or an explicit human request may
+read them.
 
 Search uses every query token as a required match. A weak narrative match returns
 `needs-anchor` with at most three exact retries and no evidence; overflow returns
@@ -49,9 +53,11 @@ KiB with a 12 KiB ceiling, and bundles default to 12 KiB with a 24 KiB ceiling.
 Public `scope` and task intake stay within 8 KiB; task-close stores larger route
 detail only in its ignored manifest. Search JSON omits excerpts unless explicitly
 requested. `retrieval-aliases.json` remains a small fixture-proven vocabulary
-bridge, not a tag index. `report/benchmarks/` owns the checked correctness,
-fallback, whole-read and provider-facing byte measurements; exact provider usage
-stays null unless a provider client reports it.
+bridge, not a tag index. `scripts/fixtures/context-retrieval.json` owns checked
+correctness, fallback, whole-read and provider-facing byte cases;
+`benchmark-rag.mjs` writes non-check output to ignored
+`.agent-state/automation/rag-benchmark/`. Exact provider usage stays null unless
+a provider client reports it.
 
 Cloud coding agents use the same command through a read-only tool adapter. A
 cloud chat session without local-tool access receives only a deliberately made
@@ -95,6 +101,19 @@ embedded in the receipt, which preserves diagnostics on hosts that swallow
 nested pipes. A passing close prints one line. A failure prints the step,
 exit/signal, first actionable diagnostic and receipt path; identical close inputs
 reuse the passing receipt.
+
+`scripts/agent-observability.mjs` provides `start`, `event`, `candidate`,
+`flag`, `close`, `finalize`, `render`, `analyze`, `export-public`, and `doctor`.
+State resolves from `--state-dir`, then `CORP_TOWER_OBSERVABILITY_DIR`, then
+`.agent-state/telemetry/v2/`. Exact mode requires stable disjoint event IDs,
+child attribution and usage, settled counters, and a terminal callback; otherwise
+finalization is visibly partial. The inclusive provider total counts every
+settled root, child, retry, summary, observability, analytics, and terminal event
+once; observability usage is a non-additive subset. Hosts use `--best-effort` so
+collection never retries or fails user work. Formal flagging is current-run,
+high-effort, allowlisted, capped, and permitted only inside an already-required
+provider turn. Private flat weekly reports are local; `export-public --approve`
+alone writes a rounded, cohort-suppressed report under `report/observability/`.
 
 ## Authorized Git automation
 

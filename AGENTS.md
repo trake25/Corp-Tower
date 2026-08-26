@@ -8,8 +8,10 @@ This file is the vendor-neutral repository contract. Load one role skill from
 1. Select a role from the task: `client-engineer`, `server-engineer`,
    `fullstack-coordinator`, `infra-engineer`, `qa-engineer`, `web-designer`,
    `editorial`, or `docs-steward`. Workflows are `update-docs` and
-   `compact-docs`. Load only the role needed for the current phase; bring in QA
-   or documentation workflow skills when the task reaches that phase.
+   `compact-docs`; `workflow-inefficiency-flagging` is conditional and may load
+   only after its current-run eligibility gate. Load only the role needed for
+   the current phase; bring in QA or documentation workflow skills when the
+   task reaches that phase.
 2. For an implementation, begin the task-close run with its explicit
    task-owned paths after bounded context retrieval and before the first file
    edit. Its intake is the canonical role route, KB/map, QA, validator and tool
@@ -50,6 +52,13 @@ humans may upload, modify, or delete the files there. Do not treat either
 folder as tracked source, KB evidence, or a reason to search the whole repo.
 Use `node scripts/context.mjs route plan/` or `route reference/` for the
 standard workspace guidance.
+
+Generated observability state belongs under ignored
+`.agent-state/telemetry/`. `report/**` is non-context output: normal retrieval,
+indexing, file discovery and broad-search fallback must exclude it. Only
+observability tooling or an explicit human request may read reports. The host
+collects telemetry locally; agents never create a provider call solely to
+record it or read historical reports during ordinary work.
 
 ### Skill reuse
 

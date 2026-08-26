@@ -91,7 +91,10 @@ export const ROUTE_RULES = [
   { pattern: /^scripts\/(art-|ADDING-ART)/, skill: 'infra-engineer', docs: ['build.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/backup\//, skill: 'infra-engineer', docs: ['deployment-backup.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/write-endpoint-config/, skill: 'fullstack-coordinator', docs: ['networking.md', 'build.md'], map: 'infra.md', read: 'hunk' },
-  { pattern: /^scripts\/(context|task-close|benchmark-rag|docs-scope)\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/benchmark-rag\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk', doc_anchors: ['report/benchmarks/', 'context-retrieval.json'] },
+  { pattern: /^scripts\/fixtures\/context-retrieval\.json$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk', doc_anchors: ['report/benchmarks/', 'context-retrieval.json'] },
+  { pattern: /^scripts\/(context|task-close|docs-scope)\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/(?:agent-observability\.mjs|lib\/agent-observability\/)/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/lib\/context-routing\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/lib\/context-query\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/(validate-docs|build-file-map|sync-agent-skills|validate-agent-config)\.mjs$/, skill: 'docs-steward', docs: [], map: 'infra.md', read: 'hunk' },
@@ -100,7 +103,6 @@ export const ROUTE_RULES = [
   { pattern: /^scripts\/qa-gate\.mjs$/, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\//, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^(AGENTS\.md|CLAUDE\.md|\.agents\/skills\/|\.claude\/skills\/)/, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },
-  { pattern: /^report\/benchmarks\//, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },
   { pattern: /^site\/src\/content\//, skill: 'editorial', docs: ['site/docs/content.md'], map: null, read: 'hunk' },
   { pattern: /^site\//, skill: 'web-designer', docs: ['site/docs/design.md'], map: null, read: 'hunk' },
   { pattern: /^docs\/context\/(automation\.md|retrieval-aliases\.json)$/, skill: 'docs-steward', docs: ['automation.md'], map: null, read: 'hunk' },
@@ -122,7 +124,19 @@ export const AREA_ALIASES = {
   docs: { skill: 'docs-steward', docs: ['docs/context/index.md'], maps: [] },
 };
 
+export function isNormalContextExcludedPath(path) {
+  const normalized = path.replaceAll('\\', '/').replace(/^(?:\.\/)+/, '');
+  return /^(?:report|plan|reference|task|\.agent-state)(?:\/|$)/.test(normalized);
+}
+
 export const WORKSPACE_RULES = [
+  {
+    name: 'report',
+    pattern: /^report(?:\/|$)/,
+    skill: 'docs-steward',
+    purpose: 'Generated observability output excluded from normal repository context.',
+    policy: 'Never use reports as implementation, architecture, requirements, or ordinary task context.',
+  },
   {
     name: 'plan-done',
     pattern: /^plan\/done(?:\/|$)/,
@@ -152,6 +166,17 @@ export function routeSourcePath(path) {
   if (workspace) return { ...workspace, path: normalized, pattern: undefined };
   const rule = ROUTE_RULES.find(item => item.test ? item.test(normalized) : item.pattern.test(normalized));
   return rule ? { ...rule, path: normalized, pattern: undefined, test: undefined } : null;
+}
+
+export function documentationNeedlesForPath(path) {
+  const normalized = path.replaceAll('\\', '/').replace(/^(?:\.\/)+/, '');
+  const route = routeSourcePath(normalized);
+  return [...new Set([
+    normalized.split('/').at(-1),
+    normalized,
+    normalized.startsWith(`${CLIENT}/`) ? normalized.slice(CLIENT.length + 1) : null,
+    ...(route?.doc_anchors || []),
+  ].filter(Boolean))];
 }
 
 export function mapOwnerForPath(path) {
@@ -187,7 +212,7 @@ export function firstPartyFiles(root) {
     }
     for (const file of area.files || []) if (existsSync(join(root, file))) found.push(norm(file));
     for (const rel of [...new Set(found)].sort()) {
-      if (claimed.has(rel) || !area.exts.some(ext => rel.endsWith(ext)) || IGNORE_PATH.some(re => re.test(rel))) continue;
+      if (claimed.has(rel) || !area.exts.some(ext => rel.endsWith(ext)) || IGNORE_PATH.some(re => re.test(rel)) || isNormalContextExcludedPath(rel)) continue;
       claimed.add(rel);
       result.push({ area: area.name, rel });
     }

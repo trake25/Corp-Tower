@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { contextBundle, documentSection, mapSymbols, routeContext, scopeContext, searchContext } from '../lib/context-query.mjs';
+import { documentationNeedlesForPath, isNormalContextExcludedPath } from '../lib/context-routing.mjs';
 
 const ROOT = resolve('.');
 
@@ -86,13 +87,42 @@ test('working folders route to explicit plan and reference guidance', () => {
   assert.match(reference.workspace.purpose, /screen guides and bug screenshots/);
 });
 
-test('checked retrieval benchmarks route to the automation contract', () => {
+test('legacy retrieval benchmark reports remain non-context output', () => {
   const route = routeContext('report/benchmarks/latest.json');
 
   assert.equal(route.skill, 'docs-steward');
-  assert.deepEqual(route.docs, ['docs/context/automation.md']);
+  assert.deepEqual(route.docs, []);
   assert.deepEqual(route.maps, []);
-  assert.equal(route.read, 'hunk');
+  assert.equal(route.workspace.name, 'report');
+});
+
+test('observability reports route as explicit non-context output', () => {
+  const route = routeContext('report/archive/v2/data/task-records.jsonl');
+
+  assert.equal(route.skill, 'docs-steward');
+  assert.deepEqual(route.docs, []);
+  assert.equal(route.workspace.name, 'report');
+  assert.match(route.workspace.policy, /Never use reports/);
+  assert.equal(isNormalContextExcludedPath('report/observability/2026-W35.md'), true);
+  assert.equal(isNormalContextExcludedPath('./.agent-state/telemetry/v2/tasks/a.json'), true);
+  assert.equal(isNormalContextExcludedPath('.\\report\\observability\\2026-W35.md'), true);
+  assert.equal(isNormalContextExcludedPath('scripts/agent-observability.mjs'), false);
+});
+
+test('observability source routes to the automation contract', () => {
+  const route = routeContext('scripts/lib/agent-observability/usage.mjs');
+
+  assert.equal(route.skill, 'docs-steward');
+  assert.deepEqual(route.docs, ['docs/context/automation.md']);
+  assert.deepEqual(route.maps, ['docs/context/map/infra.md']);
+});
+
+test('documentation scope follows routed anchors when a source file moves its artifact', () => {
+  const needles = documentationNeedlesForPath('scripts/fixtures/context-retrieval.json');
+  const automation = readFileSync(join(ROOT, 'docs/context/automation.md'), 'utf8');
+
+  assert.ok(needles.includes('report/benchmarks/'));
+  assert.ok(needles.some(needle => automation.includes(needle)));
 });
 
 test('scope derives routing, map, and QA selection from explicit paths', () => {
@@ -117,6 +147,7 @@ test('automation scope selects the protocol suite and retrieval benchmark', () =
   const result = scopeContext(['scripts/context.mjs', 'scripts/task-close.mjs']);
 
   assert.ok(result.tools.some(tool => tool.name === 'automation protocol' && tool.command.argv.includes('scripts/tests/task-close.test.mjs')));
+  assert.ok(result.tools.some(tool => tool.name === 'automation protocol' && tool.command.argv.includes('scripts/tests/agent-observability.test.mjs')));
   assert.ok(result.tools.some(tool => tool.name === 'retrieval benchmark' && tool.command.argv.at(-1) === '--check'));
 });
 

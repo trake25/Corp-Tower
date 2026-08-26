@@ -7,7 +7,7 @@ import { skillMirrorDrift } from './sync-agent-skills.mjs';
 const ROOT = resolve(process.argv[2] || '.');
 const SKILLS = join(ROOT, '.agents/skills');
 const errors = [];
-const expected = ['client-engineer', 'compact-docs', 'docs-steward', 'editorial', 'fullstack-coordinator', 'infra-engineer', 'qa-engineer', 'server-engineer', 'update-docs', 'web-designer'];
+const expected = ['client-engineer', 'compact-docs', 'docs-steward', 'editorial', 'fullstack-coordinator', 'infra-engineer', 'qa-engineer', 'server-engineer', 'update-docs', 'web-designer', 'workflow-inefficiency-flagging'];
 
 const skillNames = existsSync(SKILLS) ? readdirSync(SKILLS, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name).sort() : [];
 if (skillNames.join('\n') !== expected.join('\n')) errors.push(`canonical skills differ: expected ${expected.join(', ')}; found ${skillNames.join(', ')}`);

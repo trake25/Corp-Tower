@@ -20,6 +20,7 @@ infra/eks/terraform/eks-lab.tfvars
 # travel. plan/ and reference/ hold working material, not contract.
 .claude/settings.local.json
 .agent-state/automation/
+.agent-state/telemetry/
 plan/
 reference/
 report/benchmarks/raw/

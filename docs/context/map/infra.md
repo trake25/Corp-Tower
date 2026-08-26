@@ -545,6 +545,21 @@ _no extracted symbols_
 |---|---|---|
 | infra/eks/terraform/versions.tf:24 | aws · provider | AWS ~> 5.0 and tls ~> 4.0, Terraform >= 1.10; **S3 backend `eks-lab/terraform.tfstate` with `use_lockfile`**, and default_tags stamping Project/Environment/Stack/ManagedBy on everything |
 
+### scripts/agent-observability.mjs — 242 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/agent-observability.mjs:38 | parseArgs · fn | parses the dependency-free observability CLI flags and values |
+| scripts/agent-observability.mjs:56 | inputDocument · fn | reads one JSON command payload from an argument, file or stdin |
+| scripts/agent-observability.mjs:67 | stateFor · fn | resolves the CLI state directory with explicit and environment precedence |
+| scripts/agent-observability.mjs:71 | compact · fn | serializes compact one-line CLI success output |
+| scripts/agent-observability.mjs:75 | pendingFinal · fn | creates the pre-settlement final record without claiming an exact total |
+| scripts/agent-observability.mjs:95 | assertEvidence · fn | rejects formal flags whose event evidence is outside the current task |
+| scripts/agent-observability.mjs:101 | executeCommand · fn | dispatches validated collection, finalization, reporting and export commands |
+| scripts/agent-observability.mjs:197 | executeBestEffort · fn | converts telemetry failures into a no-retry skipped result for host integration |
+| scripts/agent-observability.mjs:205 | skippedTelemetry · fn | returns the bounded fail-open telemetry result without sensitive diagnostics |
+| scripts/agent-observability.mjs:214 | main · fn | runs the CLI, including best-effort error handling and compact output |
+
 ### scripts/art-common.sh — 68 ln
 
 | File:Ln | Symbol | Does |
@@ -615,7 +630,7 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/benchmark-rag.mjs — 183 ln
+### scripts/benchmark-rag.mjs — 185 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -641,7 +656,7 @@ _no extracted symbols_
 | scripts/benchmark-rag.mjs:144 | reductionTargetMet · const | hard pass gate requiring at least the planned 30 percent provider-facing reduction |
 | scripts/benchmark-rag.mjs:146 | result · const | result constant used by benchmark-rag |
 | scripts/benchmark-rag.mjs:174 | markdown · const | markdown constant used by benchmark-rag |
-| scripts/benchmark-rag.mjs:180 | passed · const | requires all retrieval and skill-routing fixtures to pass |
+| scripts/benchmark-rag.mjs:182 | passed · const | requires all retrieval and skill-routing fixtures to pass |
 
 ### scripts/build-android-plugin.sh — 23 ln
 
@@ -651,7 +666,7 @@ _no extracted symbols_
 
 _no extracted symbols_
 
-### scripts/build-file-map.mjs — 373 ln
+### scripts/build-file-map.mjs — 372 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -667,16 +682,16 @@ _no extracted symbols_
 | scripts/build-file-map.mjs:97 | JS_KEYWORD · const | words that look like a method signature but are control flow; keeps `if (...) {` out of the map |
 | scripts/build-file-map.mjs:102 | symbolsJs · fn | class, function, exports., top-level const and class-body method; **`const X = require(...)` is skipped** — an import cannot answer which file does X |
 | scripts/build-file-map.mjs:132 | symbolsGd · fn | class_name, signal, const, static var, `@export` var and func; **plain and `@onready` var are skipped** as node plumbing nothing routes to |
-| scripts/build-file-map.mjs:161 | symbolsTf · fn | resource, module, variable, output, data and provider blocks, named `type.name` |
-| scripts/build-file-map.mjs:170 | symbolsYml · fn | top-level keys plus job names under `jobs:`, which is the routable unit of a workflow |
-| scripts/build-file-map.mjs:186 | symbolsSh · fn | shell function definitions |
-| scripts/build-file-map.mjs:195 | symbolsTscn · fn | indexes a scene root and every `unique_name_in_owner` node |
-| scripts/build-file-map.mjs:221 | extract · fn | dispatches to the per-language extractor by extension and returns line count with symbols |
-| scripts/build-file-map.mjs:238 | readAuthored · fn | **carry-forward**: parses the existing map so hand-written `Does` prose survives regeneration, keyed on `path#symbol` and never on line number; accepts both the old bare-number and the current `path:line` first cell |
-| scripts/build-file-map.mjs:266 | readAuthoredAll · fn | merges carry-forward across **every** existing map file, not just the one an area is about to overwrite, so authored `Does` prose survives an area being split (same `path#symbol` key space) |
-| scripts/build-file-map.mjs:278 | render · fn | emits the markdown; each row carries its own `path:line` so one grep hit needs no follow-up lookup |
-| scripts/build-file-map.mjs:323 | build · fn | walks every area, reads each file, and renders against the `Does` prose already in the map |
-| scripts/build-file-map.mjs:341 | main · fn | `--check` exits 1 on a stale map without writing; `--quiet` prints the summary line only |
+| scripts/build-file-map.mjs:160 | symbolsTf · fn | resource, module, variable, output, data and provider blocks, named `type.name` |
+| scripts/build-file-map.mjs:169 | symbolsYml · fn | top-level keys plus job names under `jobs:`, which is the routable unit of a workflow |
+| scripts/build-file-map.mjs:185 | symbolsSh · fn | shell function definitions |
+| scripts/build-file-map.mjs:194 | symbolsTscn · fn | indexes a scene root and every `unique_name_in_owner` node |
+| scripts/build-file-map.mjs:220 | extract · fn | dispatches to the per-language extractor by extension and returns line count with symbols |
+| scripts/build-file-map.mjs:237 | readAuthored · fn | **carry-forward**: parses the existing map so hand-written `Does` prose survives regeneration, keyed on `path#symbol` and never on line number; accepts both the old bare-number and the current `path:line` first cell |
+| scripts/build-file-map.mjs:265 | readAuthoredAll · fn | merges carry-forward across **every** existing map file, not just the one an area is about to overwrite, so authored `Does` prose survives an area being split (same `path#symbol` key space) |
+| scripts/build-file-map.mjs:277 | render · fn | emits the markdown; each row carries its own `path:line` so one grep hit needs no follow-up lookup |
+| scripts/build-file-map.mjs:322 | build · fn | walks every area, reads each file, and renders against the `Does` prose already in the map |
+| scripts/build-file-map.mjs:340 | main · fn | `--check` exits 1 on a stale map without writing; `--quiet` prints the summary line only |
 
 ### scripts/context.mjs — 217 ln
 
@@ -696,7 +711,7 @@ _no extracted symbols_
 | scripts/context.mjs:107 | safeBundlePath · fn | confines generated Markdown bundles to ignored task artifacts |
 | scripts/context.mjs:114 | main · fn | dispatches backward-compatible reads plus bounded search, filter, scope and bundle commands |
 
-### scripts/docs-scope.mjs — 180 ln
+### scripts/docs-scope.mjs — 178 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -706,22 +721,20 @@ _no extracted symbols_
 | scripts/docs-scope.mjs:24 | RANGE · const | git range to diff against; defaults to HEAD, set to `<sha>^..<sha>` when the task is already committed |
 | scripts/docs-scope.mjs:26 | ROOT · const | repo root, overridable via DOCS_SCOPE_ROOT for testing |
 | scripts/docs-scope.mjs:27 | CTX · const | the docs/context directory this tool routes into |
-| scripts/docs-scope.mjs:28 | CLIENT · const | Godot project prefix, stripped to form a second search needle per path |
-| scripts/docs-scope.mjs:29 | git · const | execFileSync git wrapper with stderr discarded |
-| scripts/docs-scope.mjs:34 | IGNORE · const | binary, generated and out-of-KB paths — including `docs/context/` itself, plan/, task/ and reference/ |
-| scripts/docs-scope.mjs:44 | given · const | the explicit paths passed by the caller, minus the --range value |
-| scripts/docs-scope.mjs:54 | paths · const | deduped candidate set before the ignore map is applied |
-| scripts/docs-scope.mjs:66 | dropped · const | paths removed by IGNORE, reported as a count so a wrong ignore is visible |
-| scripts/docs-scope.mjs:67 | scoped · const | the surviving doc-relevant paths |
-| scripts/docs-scope.mjs:82 | churn · const | per-path `+adds/-dels`, or `new`, `deleted`, or **`no diff vs RANGE`** — the last means the task is already committed and needs --range |
-| scripts/docs-scope.mjs:89 | tracked · const | git ls-files probe distinguishing an untracked new file from an unchanged one |
-| scripts/docs-scope.mjs:99 | byDoc · const | owning doc to the paths that route into it, the report's primary grouping |
-| scripts/docs-scope.mjs:100 | unmapped · const | paths no ROUTES rule matched; the fix is a new rule, not a hand-route |
-| scripts/docs-scope.mjs:114 | needles · const | basename, full path, and client-relative path — the three forms a doc might use to name a file |
-| scripts/docs-scope.mjs:115 | targets · fn | **the falsification set**: only sections mentioning a changed file can have been made false, so step 4 reads those line ranges instead of the whole doc |
-| scripts/docs-scope.mjs:137 | outline · fn | `##` headings with line numbers, so a new entry can be placed without opening the doc |
-| scripts/docs-scope.mjs:149 | order · const | docs sorted by how many paths route into them, heaviest first |
-| scripts/docs-scope.mjs:170 | maps · const | the distinct map files needing regeneration after this task |
+| scripts/docs-scope.mjs:28 | git · const | execFileSync git wrapper with stderr discarded |
+| scripts/docs-scope.mjs:33 | IGNORE · const | binary, generated and out-of-KB paths — including `docs/context/` itself, plan/, task/ and reference/ |
+| scripts/docs-scope.mjs:43 | given · const | the explicit paths passed by the caller, minus the --range value |
+| scripts/docs-scope.mjs:53 | paths · const | deduped candidate set before the ignore map is applied |
+| scripts/docs-scope.mjs:65 | dropped · const | paths removed by IGNORE, reported as a count so a wrong ignore is visible |
+| scripts/docs-scope.mjs:66 | scoped · const | the surviving doc-relevant paths |
+| scripts/docs-scope.mjs:81 | churn · const | per-path `+adds/-dels`, or `new`, `deleted`, or **`no diff vs RANGE`** — the last means the task is already committed and needs --range |
+| scripts/docs-scope.mjs:88 | tracked · const | git ls-files probe distinguishing an untracked new file from an unchanged one |
+| scripts/docs-scope.mjs:98 | byDoc · const | owning doc to the paths that route into it, the report's primary grouping |
+| scripts/docs-scope.mjs:99 | unmapped · const | paths no ROUTES rule matched; the fix is a new rule, not a hand-route |
+| scripts/docs-scope.mjs:113 | targets · fn | **the falsification set**: only sections mentioning a changed file can have been made false, so step 4 reads those line ranges instead of the whole doc |
+| scripts/docs-scope.mjs:135 | outline · fn | `##` headings with line numbers, so a new entry can be placed without opening the doc |
+| scripts/docs-scope.mjs:147 | order · const | docs sorted by how many paths route into them, heaviest first |
+| scripts/docs-scope.mjs:168 | maps · const | the distinct map files needing regeneration after this task |
 
 ### scripts/git-sync-commit-push.mjs — 178 ln
 
@@ -746,6 +759,138 @@ _no extracted symbols_
 |---|---|---|
 | scripts/install-git-hooks.mjs:6 | root · const | resolves the repository supplied on the command line or the current directory |
 | scripts/install-git-hooks.mjs:7 | hooks · const | resolves the versioned hook directory whose pre-commit entry must exist |
+
+### scripts/lib/agent-observability/analytics.mjs — 157 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/lib/agent-observability/analytics.mjs:5 | percentile · fn | returns a deterministic nearest-rank percentile for local token metrics |
+| scripts/lib/agent-observability/analytics.mjs:11 | runtimeKey · fn | groups a task by provider, model and effort without cross-provider equivalence |
+| scripts/lib/agent-observability/analytics.mjs:16 | cohortKey · fn | keys comparable tasks by type, complexity and domain |
+| scripts/lib/agent-observability/analytics.mjs:20 | summarize · fn | computes verified cohort usage, stage, retrieval, retry and recurrence metrics |
+| scripts/lib/agent-observability/analytics.mjs:71 | buildAnalytics · fn | builds exact-only weekly cohorts and attaches the overhead budget state |
+| scripts/lib/agent-observability/analytics.mjs:90 | overheadCircuitBreaker · fn | disables optional flagging after a single or rolling provider-overhead breach |
+| scripts/lib/agent-observability/analytics.mjs:114 | boundedAnalyticsAggregate · fn | removes runtime detail and truncates cohorts to the 8 KiB interpretation bound |
+| scripts/lib/agent-observability/analytics.mjs:128 | compareWindows · fn | compares sufficiently sized same-cohort windows without overstating cross-provider tokens |
+
+### scripts/lib/agent-observability/flagging.mjs — 142 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/lib/agent-observability/flagging.mjs:15 | ALLOWED_FAMILIES · const | allowlists model families permitted to make a formal current-run judgment |
+| scripts/lib/agent-observability/flagging.mjs:16 | EFFORT_RANK · const | orders effort levels for the high-or-greater eligibility gate |
+| scripts/lib/agent-observability/flagging.mjs:17 | SEVERITIES · const | constrains formal finding impact labels |
+| scripts/lib/agent-observability/flagging.mjs:18 | CONFIDENCES · const | constrains confidence independently from severity |
+| scripts/lib/agent-observability/flagging.mjs:20 | fingerprint · fn | hashes schema, stage, issue and cause into a prose-independent finding identity |
+| scripts/lib/agent-observability/flagging.mjs:26 | flagEligibility · fn | requires a candidate, allowlisted family, high effort and an already-required turn |
+| scripts/lib/agent-observability/flagging.mjs:39 | detectCandidates · fn | derives at most three deterministic current-run inefficiency observations |
+| scripts/lib/agent-observability/flagging.mjs:64 | createCandidateRecords · fn | converts local candidates into bounded non-formal evidence records |
+| scripts/lib/agent-observability/flagging.mjs:90 | createFormalFlag · fn | validates and fingerprints one evidence-backed formal flag within the byte cap |
+| scripts/lib/agent-observability/flagging.mjs:136 | recurrenceState · fn | labels a finding observation, early signal, recurrence or validated change |
+
+### scripts/lib/agent-observability/public-export.mjs — 93 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/lib/agent-observability/public-export.mjs:8 | PROHIBITED · const | blocks secrets, personal data, paths, URLs and private task identifiers from public output |
+| scripts/lib/agent-observability/public-export.mjs:18 | rounded · fn | rounds public token metrics to the nearest hundred |
+| scripts/lib/agent-observability/public-export.mjs:22 | escapeCell · fn | escapes bounded public values for safe Markdown tables |
+| scripts/lib/agent-observability/public-export.mjs:32 | sanitizeImprovements · fn | accepts only short explicitly human-reviewed generalized improvements |
+| scripts/lib/agent-observability/public-export.mjs:46 | renderPublicReport · fn | renders exact aggregate cohorts of at least five without task or model detail |
+| scripts/lib/agent-observability/public-export.mjs:84 | exportPublicReport · fn | writes a sanitized weekly public report only after explicit approval |
+
+### scripts/lib/agent-observability/report.mjs — 274 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/lib/agent-observability/report.mjs:7 | REPORT_MAX_BYTES · const | caps every private report file at 64 KiB |
+| scripts/lib/agent-observability/report.mjs:8 | SEVERITY_RANK · const | selects the strongest severity when equivalent flags recur |
+| scripts/lib/agent-observability/report.mjs:9 | CONFIDENCE_RANK · const | selects the strongest confidence when equivalent flags recur |
+| scripts/lib/agent-observability/report.mjs:11 | isoWeek · fn | assigns finalized tasks to deterministic UTC ISO weeks |
+| scripts/lib/agent-observability/report.mjs:22 | formatTokens · fn | presents exact private integers in compact human-readable units |
+| scripts/lib/agent-observability/report.mjs:29 | percentile · fn | calculates nearest-rank weekly medians and p95 values |
+| scripts/lib/agent-observability/report.mjs:35 | escapeCell · fn | escapes private values without breaking the flat Markdown table |
+| scripts/lib/agent-observability/report.mjs:45 | shortId · fn | derives a stable non-reversible short task label for the private view |
+| scripts/lib/agent-observability/report.mjs:49 | runtimeFor · fn | displays the terminal event model family and effort |
+| scripts/lib/agent-observability/report.mjs:54 | displayStageGroups · fn | folds exhaustive lifecycle stages into Context, Build, Verify and Other totals |
+| scripts/lib/agent-observability/report.mjs:64 | taskRow · fn | renders one compact task row with usage, retrieval, iteration and result fields |
+| scripts/lib/agent-observability/report.mjs:93 | groupedFlags · fn | combines formal flags by fingerprint and counts distinct tasks |
+| scripts/lib/agent-observability/report.mjs:119 | summaryLine · fn | renders the weekly task, verification, usage, retrieval and flag headline |
+| scripts/lib/agent-observability/report.mjs:127 | dataQualityLines · fn | summarizes exact and partial records without exposing event identifiers |
+| scripts/lib/agent-observability/report.mjs:139 | flagTable · fn | renders grouped findings with separate severity and confidence |
+| scripts/lib/agent-observability/report.mjs:149 | renderWeeklyReport · fn | builds the normal flat private Markdown report deterministically |
+| scripts/lib/agent-observability/report.mjs:172 | renderFlagReport · fn | builds a bounded flag-only part when the weekly view must split |
+| scripts/lib/agent-observability/report.mjs:185 | boundedChunks · fn | bisects oversized row sets until every report part fits 64 KiB |
+| scripts/lib/agent-observability/report.mjs:202 | buildWeeklyReportParts · fn | preserves all task rows and globally grouped flags across bounded parts |
+| scripts/lib/agent-observability/report.mjs:221 | removeExistingWeekReports · fn | removes only generated files for the week before deterministic regeneration |
+| scripts/lib/agent-observability/report.mjs:228 | writeWeek · fn | atomically writes one report or an indexed set of bounded parts |
+| scripts/lib/agent-observability/report.mjs:265 | renderPrivateReports · fn | groups finalized local task bundles by week and regenerates selected reports |
+
+### scripts/lib/agent-observability/schema.mjs — 198 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/lib/agent-observability/schema.mjs:1 | SCHEMA_VERSION · const | versions every persisted observability record and public contract |
+| scripts/lib/agent-observability/schema.mjs:2 | OUTCOMES · const | limits final outcomes to completed, blocked, cancelled, failed or replaced |
+| scripts/lib/agent-observability/schema.mjs:3 | VERIFICATION_STATES · const | constrains recorded verification quality |
+| scripts/lib/agent-observability/schema.mjs:4 | COMPLEXITIES · const | constrains task complexity to C1-C5 or unknown |
+| scripts/lib/agent-observability/schema.mjs:5 | STAGES · const | defines the exhaustive provider-usage lifecycle buckets |
+| scripts/lib/agent-observability/schema.mjs:17 | EFFORTS · const | validates normalized runtime effort metadata |
+| scripts/lib/agent-observability/schema.mjs:18 | JUDGMENT_MAX_BYTES · const | caps provider-visible task judgment metadata at 512 bytes |
+| scripts/lib/agent-observability/schema.mjs:20 | ID · const | allows only bounded opaque identifiers safe for filenames |
+| scripts/lib/agent-observability/schema.mjs:21 | NAME · const | allows bounded provider, model and receipt names |
+| scripts/lib/agent-observability/schema.mjs:22 | SLUG · const | constrains categories and reasons to compact lowercase codes |
+| scripts/lib/agent-observability/schema.mjs:23 | SENSITIVE_TEXT · const | rejects secrets, personal data, URLs and absolute home paths |
+| scripts/lib/agent-observability/schema.mjs:32 | isObject · fn | distinguishes strict record objects from arrays and scalar values |
+| scripts/lib/agent-observability/schema.mjs:36 | assertObject · fn | requires a schema input to be an object |
+| scripts/lib/agent-observability/schema.mjs:41 | assertAllowedKeys · fn | rejects every field not explicitly allowlisted by a record schema |
+| scripts/lib/agent-observability/schema.mjs:47 | assertByteBudget · fn | enforces a UTF-8 serialized byte ceiling |
+| scripts/lib/agent-observability/schema.mjs:53 | cleanId · fn | validates an opaque bounded identifier |
+| scripts/lib/agent-observability/schema.mjs:58 | cleanName · fn | validates bounded runtime metadata with an optional fallback |
+| scripts/lib/agent-observability/schema.mjs:64 | cleanSlug · fn | validates a bounded lowercase category code |
+| scripts/lib/agent-observability/schema.mjs:70 | cleanText · fn | normalizes bounded prose while rejecting controls and sensitive patterns |
+| scripts/lib/agent-observability/schema.mjs:81 | nonNegativeInteger · fn | rejects negative, fractional or unsafe counter values |
+| scripts/lib/agent-observability/schema.mjs:87 | cleanBoolean · fn | validates strict boolean capability and telemetry fields |
+| scripts/lib/agent-observability/schema.mjs:93 | cleanTimestamp · fn | normalizes a valid timestamp to UTC ISO form |
+| scripts/lib/agent-observability/schema.mjs:99 | cleanStringList · fn | validates, deduplicates and sorts bounded name or slug arrays |
+| scripts/lib/agent-observability/schema.mjs:109 | cleanCountGroup · fn | fills an allowlisted counter group with safe zero defaults |
+| scripts/lib/agent-observability/schema.mjs:115 | sanitizeMeta · fn | produces private task metadata within the judgment-sidecar budget |
+| scripts/lib/agent-observability/schema.mjs:146 | sanitizeTelemetry · fn | reduces local workflow evidence to allowlisted counts and categories |
+| scripts/lib/agent-observability/schema.mjs:186 | sanitizeClose · fn | validates terminal outcome, verification and compact telemetry |
+
+### scripts/lib/agent-observability/state.mjs — 129 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/lib/agent-observability/state.mjs:15 | ordered · fn | recursively orders record keys for deterministic serialization |
+| scripts/lib/agent-observability/state.mjs:22 | stableJson · fn | produces canonical indented JSON with a trailing newline |
+| scripts/lib/agent-observability/state.mjs:26 | digest · fn | hashes canonical record content for deduplication and quarantine |
+| scripts/lib/agent-observability/state.mjs:30 | resolveStateDir · fn | applies explicit, environment and ignored-repository state precedence |
+| scripts/lib/agent-observability/state.mjs:34 | taskDirectory · fn | maps a safe root task ID to its private record directory |
+| scripts/lib/agent-observability/state.mjs:38 | readJson · fn | reads one trusted local record as JSON |
+| scripts/lib/agent-observability/state.mjs:42 | writeAtomicText · fn | writes private text through a same-directory temporary and atomic rename |
+| scripts/lib/agent-observability/state.mjs:49 | writeAtomicJson · fn | atomically persists canonical private JSON |
+| scripts/lib/agent-observability/state.mjs:53 | writeImmutable · fn | creates records without overwrite, deduplicates matches and quarantines conflicts |
+| scripts/lib/agent-observability/state.mjs:72 | startTask · fn | creates immutable root task metadata and generates an ID when needed |
+| scripts/lib/agent-observability/state.mjs:80 | recordEvent · fn | persists one immutable usage event under its root task |
+| scripts/lib/agent-observability/state.mjs:85 | recordFlag · fn | persists one immutable candidate or formal flag |
+| scripts/lib/agent-observability/state.mjs:90 | listJson · fn | loads the deterministic JSON files in one private record directory |
+| scripts/lib/agent-observability/state.mjs:97 | readTaskBundle · fn | returns a task's metadata, events, flags and optional final record |
+| scripts/lib/agent-observability/state.mjs:108 | writeFinal · fn | atomically writes the pending or settled task summary |
+| scripts/lib/agent-observability/state.mjs:114 | listTaskBundles · fn | loads valid task bundles in stable start-time order |
+| scripts/lib/agent-observability/state.mjs:126 | reportDirectory · fn | resolves the private generated-report directory |
+
+### scripts/lib/agent-observability/usage.mjs — 172 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/lib/agent-observability/usage.mjs:15 | USAGE_FIELDS · const | allowlists provider counters retained on an event |
+| scripts/lib/agent-observability/usage.mjs:25 | PURPOSES · const | classifies root, child, retry, summary, observability and terminal responses |
+| scripts/lib/agent-observability/usage.mjs:37 | sanitizeCounters · fn | validates counters and permits only disjoint input-plus-output derivation |
+| scripts/lib/agent-observability/usage.mjs:54 | normalizedTotal · fn | prefers provider totals and otherwise derives only documented disjoint usage |
+| scripts/lib/agent-observability/usage.mjs:65 | normalizeUsageEvent · fn | creates a strict settled task-scoped provider usage event |
+| scripts/lib/agent-observability/usage.mjs:110 | aggregateUsage · fn | deduplicates events and computes exact-inclusive, subset and stage totals |
+| scripts/lib/agent-observability/usage.mjs:149 | assessRuntimeCapabilities · fn | enables exact mode only when the host proves every required usage boundary |
 
 ### scripts/lib/context-query.mjs — 601 ln
 
@@ -802,7 +947,7 @@ _no extracted symbols_
 | scripts/lib/context-query.mjs:551 | selectedText · fn | reopens only selected evidence while assembling a context bundle |
 | scripts/lib/context-query.mjs:563 | contextBundle · fn | writes a hard-bounded Markdown handoff with selected evidence and provenance |
 
-### scripts/lib/context-routing.mjs — 199 ln
+### scripts/lib/context-routing.mjs — 224 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
@@ -813,17 +958,19 @@ _no extracted symbols_
 | scripts/lib/context-routing.mjs:16 | hudFiles · const | hud files constant used by context-routing |
 | scripts/lib/context-routing.mjs:33 | MAP_AREAS · const | map areas constant used by context-routing |
 | scripts/lib/context-routing.mjs:65 | ROUTE_RULES · const | route rules constant used by context-routing |
-| scripts/lib/context-routing.mjs:109 | AREA_ALIASES · const | area aliases constant used by context-routing |
-| scripts/lib/context-routing.mjs:125 | WORKSPACE_RULES · const | routes plan and reference working folders with explicit read/write policy |
-| scripts/lib/context-routing.mjs:149 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
-| scripts/lib/context-routing.mjs:157 | mapOwnerForPath · fn | returns the generated map that owns a source path |
-| scripts/lib/context-routing.mjs:161 | IGNORE_DIR · const | ignore dir constant used by context-routing |
-| scripts/lib/context-routing.mjs:162 | IGNORE_PATH · const | ignore path constant used by context-routing |
-| scripts/lib/context-routing.mjs:163 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
-| scripts/lib/context-routing.mjs:164 | norm · const | norm constant used by context-routing |
-| scripts/lib/context-routing.mjs:166 | walk · fn | walk operation implemented by context-routing |
-| scripts/lib/context-routing.mjs:177 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
-| scripts/lib/context-routing.mjs:198 | isExempt · const | reports whether a first-party path is exempt from map coverage |
+| scripts/lib/context-routing.mjs:111 | AREA_ALIASES · const | area aliases constant used by context-routing |
+| scripts/lib/context-routing.mjs:127 | isNormalContextExcludedPath · fn | excludes reports, working material and agent state from normal discovery and indexing |
+| scripts/lib/context-routing.mjs:132 | WORKSPACE_RULES · const | routes plan and reference working folders with explicit read/write policy |
+| scripts/lib/context-routing.mjs:163 | routeSourcePath · fn | returns the owning skill, docs, map, and read strategy for a source path |
+| scripts/lib/context-routing.mjs:171 | documentationNeedlesForPath · fn | combines path names with routed migration anchors for precise doc falsification ranges |
+| scripts/lib/context-routing.mjs:182 | mapOwnerForPath · fn | returns the generated map that owns a source path |
+| scripts/lib/context-routing.mjs:186 | IGNORE_DIR · const | ignore dir constant used by context-routing |
+| scripts/lib/context-routing.mjs:187 | IGNORE_PATH · const | ignore path constant used by context-routing |
+| scripts/lib/context-routing.mjs:188 | COVERAGE_EXEMPT · const | coverage exempt constant used by context-routing |
+| scripts/lib/context-routing.mjs:189 | norm · const | norm constant used by context-routing |
+| scripts/lib/context-routing.mjs:191 | walk · fn | walk operation implemented by context-routing |
+| scripts/lib/context-routing.mjs:202 | firstPartyFiles · fn | walks and assigns every mapped first-party source file to one area |
+| scripts/lib/context-routing.mjs:223 | isExempt · const | reports whether a first-party path is exempt from map coverage |
 
 ### scripts/qa-gate.mjs — 158 ln
 
@@ -920,15 +1067,27 @@ _no extracted symbols_
 | scripts/task-close.mjs:457 | verifyV2 · fn | runs fallback benchmark, final-path QA, review-based map hashing and scoped validators |
 | scripts/task-close.mjs:494 | main · fn | dispatches manifest preparation, documentation decision and verification |
 
+### scripts/tests/agent-observability.test.mjs — 499 ln
+
+| File:Ln | Symbol | Does |
+|---|---|---|
+| scripts/tests/agent-observability.test.mjs:16 | ROOT · const | resolves repository fixtures for the observability behavior suite |
+| scripts/tests/agent-observability.test.mjs:17 | FIXTURE · const | loads the generic exact-provider adapter contract and event sequence |
+| scripts/tests/agent-observability.test.mjs:19 | temporaryState · fn | creates isolated private state for each behavior test |
+| scripts/tests/agent-observability.test.mjs:23 | eventProcess · fn | launches competing event writers to prove no silent overwrite |
+| scripts/tests/agent-observability.test.mjs:39 | closeInput · fn | supplies a complete bounded terminal telemetry fixture |
+| scripts/tests/agent-observability.test.mjs:59 | normalizedFixtureEvents · fn | normalizes all provider fixture events through the production adapter |
+| scripts/tests/agent-observability.test.mjs:63 | bundle · fn | builds exact finalized task cohorts for reporting and analytics tests |
+
 ### scripts/tests/build-file-map.test.mjs — 36 ln
 
 _no extracted symbols_
 
-### scripts/tests/context-query.test.mjs — 158 ln
+### scripts/tests/context-query.test.mjs — 189 ln
 
 | File:Ln | Symbol | Does |
 |---|---|---|
-| scripts/tests/context-query.test.mjs:8 | ROOT · const | resolves the repository fixture root for deterministic protocol tests |
+| scripts/tests/context-query.test.mjs:9 | ROOT · const | resolves the repository fixture root for deterministic protocol tests |
 
 ### scripts/tests/git-sync-commit-push.test.mjs — 38 ln
 
@@ -1021,4 +1180,4 @@ _no extracted symbols_
 
 ---
 
-101 files · 540 symbols · 0 awaiting a `Does` line.
+110 files · 654 symbols · 0 awaiting a `Does` line.

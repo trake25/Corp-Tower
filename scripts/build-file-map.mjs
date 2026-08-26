@@ -17,7 +17,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { MAP_AREAS } from './lib/context-routing.mjs';
+import { MAP_AREAS, isNormalContextExcludedPath } from './lib/context-routing.mjs';
 
 const CLIENT = 'src/Client/App/corp-tower';
 
@@ -78,7 +78,7 @@ export function firstPartyFiles(root) {
     for (const rel of [...new Set(found)].sort()) {
       if (claimed.has(rel)) continue;
       if (!area.exts.some(x => rel.endsWith(x))) continue;
-      if (IGNORE_PATH.some(re => re.test(rel))) continue;
+      if (IGNORE_PATH.some(re => re.test(rel)) || isNormalContextExcludedPath(rel)) continue;
       claimed.add(rel);
       result.push({ area: area.name, rel });
     }
@@ -143,10 +143,9 @@ function symbolsGd(lines) {
       return out.push({ ln, name: m[1], kind: 'const' });
     }
     if ((m = /^static\s+var\s+([A-Za-z_]\w*)/.exec(raw))) return out.push({ ln, name: m[1], kind: 'static var' });
-    // @export var / @export_range(...) var -- the tuning surface. P1 and P4 in
-    // report/retrieval-probes.md both land on one of these, so they are not
-    // optional. Plain `var` and `@onready var` are skipped: node plumbing,
-    // hundreds of them, nothing ever routes to one.
+    // @export var / @export_range(...) var -- the tuning surface and therefore
+    // a retrieval target. Plain `var` and `@onready var` are skipped: node
+    // plumbing, hundreds of them, nothing ever routes to one.
     if ((m = /^@export(?:_\w+)?(?:\([^)]*\))?\s+var\s+([A-Za-z_]\w*)/.exec(raw)))
       return out.push({ ln, name: m[1], kind: 'export' });
     if ((m = /^(?:static\s+)?func\s+([A-Za-z_]\w*)/.exec(raw)))

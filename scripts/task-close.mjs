@@ -403,7 +403,7 @@ function requireDocumentationDecision(manifest) {
 
 function requireFallbackFixtures(manifest) {
   if (!manifest.retrieval.fallbacks.length) return;
-  const fixtureFile = resolve(ROOT, 'report/benchmarks/rag-fixtures.json');
+  const fixtureFile = resolve(ROOT, 'scripts/fixtures/context-retrieval.json');
   let fixtures;
   try {
     fixtures = JSON.parse(readFileSync(fixtureFile, 'utf8'));

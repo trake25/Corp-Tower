@@ -11,9 +11,9 @@
 // those are the only places this diff can have falsified prose, so step 4 reads
 // those ranges instead of the whole doc.
 import { readFileSync, existsSync } from 'node:fs';
-import { join, resolve, basename } from 'node:path';
+import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { routeSourcePath, mapOwnerForPath } from './lib/context-routing.mjs';
+import { documentationNeedlesForPath, routeSourcePath, mapOwnerForPath } from './lib/context-routing.mjs';
 
 const argv = process.argv.slice(2);
 const FROM_GIT = argv.includes('--from-git');
@@ -25,7 +25,6 @@ const RANGE = rangeAt === -1 ? 'HEAD' : argv[rangeAt + 1];
 if (rangeAt !== -1 && !RANGE) { console.error('--range needs a git range, e.g. --range HEAD~1..HEAD'); process.exit(2); }
 const ROOT = resolve(process.env.DOCS_SCOPE_ROOT || '.');
 const CTX = join(ROOT, 'docs/context');
-const CLIENT = 'src/Client/App/corp-tower/';
 const git = a => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
 // Ignore map from docs/context/index.md, plus paths outside this KB's scope.
@@ -111,14 +110,13 @@ for (const path of scoped) {
 // --- falsification targets ----------------------------------------------------
 // A doc section can only have been falsified by this diff if it mentions one of
 // the changed files. Find those sections so step 4 reads ranges, not whole docs.
-const needles = p => [basename(p), p, p.startsWith(CLIENT) ? p.slice(CLIENT.length) : null].filter(Boolean);
-function targets(doc, paths) {
+function targets(doc, items) {
   const file = join(CTX, doc);
   if (!existsSync(file)) return [];
   const lines = readFileSync(file, 'utf8').split(/\r?\n/);
   const heads = [];
   lines.forEach((l, i) => { const m = /^(#{1,4})\s+(.*)$/.exec(l); if (m) heads.push({ line: i + 1, text: m[2] }); });
-  const all = [...new Set(paths.flatMap(needles))];
+  const all = [...new Set(items.flatMap(item => documentationNeedlesForPath(item.path)))];
   const hit = new Map();
   lines.forEach((l, i) => {
     const found = all.filter(n => l.includes(n));
@@ -152,7 +150,7 @@ for (const [doc, items] of order) {
   console.log(`\n${doc}`);
   for (const { path, read } of items)
     console.log(`   changed  ${churn[path].padEnd(10)} [${read}]  ${path}`);
-  const t = targets(doc, items.map(i => i.path));
+  const t = targets(doc, items);
   if (t.length) {
     console.log(`   read only these ranges (the only prose this diff can falsify):`);
     for (const s of t)

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { AREA_ALIASES, routeSourcePath } from './lib/context-routing.mjs';
@@ -15,7 +15,7 @@ import {
 
 const ROOT = resolve(process.argv.find((argument, index) => index > 1 && !argument.startsWith('-')) || '.');
 const CHECK = process.argv.includes('--check');
-const fixtures = JSON.parse(readFileSync(join(ROOT, 'report/benchmarks/rag-fixtures.json'), 'utf8'));
+const fixtures = JSON.parse(readFileSync(join(ROOT, 'scripts/fixtures/context-retrieval.json'), 'utf8'));
 const started = new Date().toISOString();
 
 function queryMap(map, query) {
@@ -174,8 +174,10 @@ const result = {
 const markdown = `# RAG benchmark — latest\n\nGenerated ${started}. This deterministic run tests the shared router, bounded retrieval protocol, source-target handoff, and provider-facing text. It does not claim provider billing or prove that a particular agent UI auto-loaded a skill.\n\n- Retrieval correctness: ${correct}/${retrieval.length}\n- First-route hit: ${first}/${retrieval.length}\n- Expected skill routes: ${skillCorrect}/${skills.length}\n- Protocol fixtures: ${protocolCorrect}/${protocol.length}\n- Complete retrieval sessions: ${sessionCorrect}/${sessions.length}\n- Repository fallbacks used: 0\n- Whole-document reads: 0\n- Legacy map median: ~${legacyMedian} tokens\n- Provider-facing session median: ${providerMedianBytes} bytes (~${Math.round(providerMedianBytes / 4)} tokens)\n- Saved baseline: ${baselineBytes} bytes\n- Reduction from baseline: ${reductionPercent}% (${reductionTargetMet ? 'target met' : 'target missed'})\n- Exact provider usage: unavailable (recorded as null)\n\n## Measurement boundary\n\nProvider-facing bytes count the exact compact text produced by route and search steps in each deterministic session. The local runner cannot observe model-side skill activation, cache use, tokenizer behavior, or provider billing, so exact provider fields remain null rather than estimates.\n`;
 
 if (!CHECK) {
-  writeFileSync(join(ROOT, 'report/benchmarks/latest.json'), `${JSON.stringify(result, null, 2)}\n`);
-  writeFileSync(join(ROOT, 'report/benchmarks/latest.md'), markdown);
+  const outputDir = join(ROOT, '.agent-state/automation/rag-benchmark');
+  mkdirSync(outputDir, { recursive: true });
+  writeFileSync(join(outputDir, 'latest.json'), `${JSON.stringify(result, null, 2)}\n`);
+  writeFileSync(join(outputDir, 'latest.md'), markdown);
 }
 const passed = correct === retrieval.length && skillCorrect === skills.length && protocolCorrect === protocol.length && sessionCorrect === sessions.length && reductionTargetMet;
 console.log(`${passed ? 'PASS' : 'FAIL'} — retrieval ${correct}/${retrieval.length}, skills ${skillCorrect}/${skills.length}, protocol ${protocolCorrect}/${protocol.length}, sessions ${sessionCorrect}/${sessions.length}, median ${providerMedianBytes} bytes (${reductionPercent}% reduction)`);
