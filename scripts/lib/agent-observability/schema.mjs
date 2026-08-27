@@ -16,6 +16,8 @@ export const STAGES = [
 ];
 export const EFFORTS = new Set(['low', 'medium', 'high', 'xhigh', 'max', 'ultra', 'unknown']);
 export const JUDGMENT_MAX_BYTES = 512;
+export const EVIDENCE_KINDS = new Set(['tool', 'compaction', 'lifecycle', 'verification']);
+export const EVIDENCE_OUTCOMES = new Set(['passed', 'failed', 'observed', 'unknown']);
 
 const ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/;
 const NAME = /^[A-Za-z0-9][A-Za-z0-9._:+/-]{0,79}$/;
@@ -193,5 +195,33 @@ export function sanitizeClose(input, now = new Date().toISOString()) {
     verification: input.verification,
     telemetry: sanitizeTelemetry(input.telemetry),
     closed_at: cleanTimestamp(input.closed_at, 'closed_at', now),
+  };
+}
+
+export function sanitizeEvidence(input, now = new Date().toISOString()) {
+  assertAllowedKeys(input, [
+    'evidence_event_id', 'task_id', 'stage', 'kind', 'name', 'outcome',
+    'model_family', 'model', 'effort', 'effort_source',
+    'provider_turn_required', 'occurred_at',
+  ], 'evidence event');
+  if (!STAGES.includes(input.stage)) throw new Error('evidence stage is invalid');
+  if (!EVIDENCE_KINDS.has(input.kind)) throw new Error('evidence kind is invalid');
+  if (!EVIDENCE_OUTCOMES.has(input.outcome)) throw new Error('evidence outcome is invalid');
+  const effort = input.effort || 'unknown';
+  if (!EFFORTS.has(effort)) throw new Error('evidence effort is invalid');
+  return {
+    schema_version: SCHEMA_VERSION,
+    evidence_event_id: cleanId(input.evidence_event_id, 'evidence_event_id'),
+    task_id: cleanId(input.task_id, 'task_id'),
+    stage: input.stage,
+    kind: input.kind,
+    name: cleanName(input.name, 'evidence name'),
+    outcome: input.outcome,
+    model_family: cleanName(input.model_family, 'model_family'),
+    model: cleanName(input.model, 'model'),
+    effort,
+    effort_source: cleanSlug(input.effort_source || 'unavailable', 'effort_source'),
+    provider_turn_required: cleanBoolean(input.provider_turn_required, 'provider_turn_required', false),
+    occurred_at: cleanTimestamp(input.occurred_at, 'occurred_at', now),
   };
 }

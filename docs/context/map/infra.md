@@ -593,15 +593,15 @@ bounded source read. Local implementation detail stays in source.
 | infra/eks/terraform/versions.tf:1 | @file · file | Terraform versions resources and interface |
 | infra/eks/terraform/versions.tf:24 | aws · provider | |
 
-### scripts/agent-observability.mjs — 242 ln
+### scripts/agent-observability.mjs — 263 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/agent-observability.mjs:1 | @file · file | parses the dependency-free observability CLI flags and values |
-| scripts/agent-observability.mjs:38 | parseArgs · fn | |
-| scripts/agent-observability.mjs:71 | compact · fn | |
-| scripts/agent-observability.mjs:101 | executeCommand · fn | |
-| scripts/agent-observability.mjs:197 | executeBestEffort · fn | |
+| scripts/agent-observability.mjs:41 | parseArgs · fn | |
+| scripts/agent-observability.mjs:74 | compact · fn | |
+| scripts/agent-observability.mjs:107 | executeCommand · fn | |
+| scripts/agent-observability.mjs:218 | executeBestEffort · fn | |
 
 ### scripts/art-common.sh — 68 ln
 
@@ -744,6 +744,13 @@ bounded source read. Local implementation detail stays in source.
 | scripts/build-file-map.mjs:350 | render · fn | |
 | scripts/build-file-map.mjs:383 | build · fn | |
 
+### scripts/codex-observability-hook.mjs — 115 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/codex-observability-hook.mjs:1 | @file · file | codex observability hook repository workflow |
+| scripts/codex-observability-hook.mjs:86 | handleHook · fn | |
+
 ### scripts/context.mjs — 217 ln
 
 | File:Ln | Anchor | Purpose |
@@ -808,17 +815,18 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/analytics.mjs:114 | boundedAnalyticsAggregate · fn | |
 | scripts/lib/agent-observability/analytics.mjs:128 | compareWindows · fn | |
 
-### scripts/lib/agent-observability/flagging.mjs — 142 ln
+### scripts/lib/agent-observability/flagging.mjs — 170 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/lib/agent-observability/flagging.mjs:1 | @file · file | hashes schema, stage, issue and cause into a prose-independent finding identity |
 | scripts/lib/agent-observability/flagging.mjs:20 | fingerprint · fn | |
-| scripts/lib/agent-observability/flagging.mjs:26 | flagEligibility · fn | |
-| scripts/lib/agent-observability/flagging.mjs:39 | detectCandidates · fn | |
-| scripts/lib/agent-observability/flagging.mjs:64 | createCandidateRecords · fn | |
-| scripts/lib/agent-observability/flagging.mjs:90 | createFormalFlag · fn | |
-| scripts/lib/agent-observability/flagging.mjs:136 | recurrenceState · fn | |
+| scripts/lib/agent-observability/flagging.mjs:30 | createDataQualityFlag · fn | |
+| scripts/lib/agent-observability/flagging.mjs:54 | flagEligibility · fn | |
+| scripts/lib/agent-observability/flagging.mjs:67 | detectCandidates · fn | |
+| scripts/lib/agent-observability/flagging.mjs:92 | createCandidateRecords · fn | |
+| scripts/lib/agent-observability/flagging.mjs:118 | createFormalFlag · fn | |
+| scripts/lib/agent-observability/flagging.mjs:164 | recurrenceState · fn | |
 
 ### scripts/lib/agent-observability/public-export.mjs — 93 ln
 
@@ -830,7 +838,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/public-export.mjs:46 | renderPublicReport · fn | |
 | scripts/lib/agent-observability/public-export.mjs:84 | exportPublicReport · fn | |
 
-### scripts/lib/agent-observability/report.mjs — 274 ln
+### scripts/lib/agent-observability/report.mjs — 282 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -839,11 +847,22 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/report.mjs:29 | percentile · fn | |
 | scripts/lib/agent-observability/report.mjs:35 | escapeCell · fn | |
 | scripts/lib/agent-observability/report.mjs:54 | displayStageGroups · fn | |
-| scripts/lib/agent-observability/report.mjs:149 | renderWeeklyReport · fn | |
-| scripts/lib/agent-observability/report.mjs:202 | buildWeeklyReportParts · fn | |
-| scripts/lib/agent-observability/report.mjs:265 | renderPrivateReports · fn | |
+| scripts/lib/agent-observability/report.mjs:157 | renderWeeklyReport · fn | |
+| scripts/lib/agent-observability/report.mjs:210 | buildWeeklyReportParts · fn | |
+| scripts/lib/agent-observability/report.mjs:273 | renderPrivateReports · fn | |
 
-### scripts/lib/agent-observability/schema.mjs — 198 ln
+### scripts/lib/agent-observability/runtime.mjs — 76 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/lib/agent-observability/runtime.mjs:1 | @file · file | runtime repository workflow |
+| scripts/lib/agent-observability/runtime.mjs:6 | EFFORTS · const | |
+| scripts/lib/agent-observability/runtime.mjs:26 | modelFamily · fn | |
+| scripts/lib/agent-observability/runtime.mjs:33 | boundedEventId · fn | |
+| scripts/lib/agent-observability/runtime.mjs:38 | resolveRuntimeIdentity · fn | |
+| scripts/lib/agent-observability/runtime.mjs:73 | codexSessionIds · fn | |
+
+### scripts/lib/agent-observability/schema.mjs — 228 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -851,21 +870,22 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/schema.mjs:1 | SCHEMA_VERSION · const | |
 | scripts/lib/agent-observability/schema.mjs:5 | STAGES · const | |
 | scripts/lib/agent-observability/schema.mjs:17 | EFFORTS · const | |
-| scripts/lib/agent-observability/schema.mjs:20 | ID · const | |
-| scripts/lib/agent-observability/schema.mjs:36 | assertObject · fn | |
-| scripts/lib/agent-observability/schema.mjs:41 | assertAllowedKeys · fn | |
-| scripts/lib/agent-observability/schema.mjs:53 | cleanId · fn | |
-| scripts/lib/agent-observability/schema.mjs:58 | cleanName · fn | |
-| scripts/lib/agent-observability/schema.mjs:64 | cleanSlug · fn | |
-| scripts/lib/agent-observability/schema.mjs:70 | cleanText · fn | |
-| scripts/lib/agent-observability/schema.mjs:81 | nonNegativeInteger · fn | |
-| scripts/lib/agent-observability/schema.mjs:87 | cleanBoolean · fn | |
-| scripts/lib/agent-observability/schema.mjs:93 | cleanTimestamp · fn | |
-| scripts/lib/agent-observability/schema.mjs:115 | sanitizeMeta · fn | |
-| scripts/lib/agent-observability/schema.mjs:146 | sanitizeTelemetry · fn | |
-| scripts/lib/agent-observability/schema.mjs:186 | sanitizeClose · fn | |
+| scripts/lib/agent-observability/schema.mjs:22 | ID · const | |
+| scripts/lib/agent-observability/schema.mjs:38 | assertObject · fn | |
+| scripts/lib/agent-observability/schema.mjs:43 | assertAllowedKeys · fn | |
+| scripts/lib/agent-observability/schema.mjs:55 | cleanId · fn | |
+| scripts/lib/agent-observability/schema.mjs:60 | cleanName · fn | |
+| scripts/lib/agent-observability/schema.mjs:66 | cleanSlug · fn | |
+| scripts/lib/agent-observability/schema.mjs:72 | cleanText · fn | |
+| scripts/lib/agent-observability/schema.mjs:83 | nonNegativeInteger · fn | |
+| scripts/lib/agent-observability/schema.mjs:89 | cleanBoolean · fn | |
+| scripts/lib/agent-observability/schema.mjs:95 | cleanTimestamp · fn | |
+| scripts/lib/agent-observability/schema.mjs:117 | sanitizeMeta · fn | |
+| scripts/lib/agent-observability/schema.mjs:148 | sanitizeTelemetry · fn | |
+| scripts/lib/agent-observability/schema.mjs:188 | sanitizeClose · fn | |
+| scripts/lib/agent-observability/schema.mjs:201 | sanitizeEvidence · fn | |
 
-### scripts/lib/agent-observability/state.mjs — 129 ln
+### scripts/lib/agent-observability/state.mjs — 169 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -876,11 +896,16 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/state.mjs:42 | writeAtomicText · fn | |
 | scripts/lib/agent-observability/state.mjs:72 | startTask · fn | |
 | scripts/lib/agent-observability/state.mjs:80 | recordEvent · fn | |
-| scripts/lib/agent-observability/state.mjs:85 | recordFlag · fn | |
-| scripts/lib/agent-observability/state.mjs:97 | readTaskBundle · fn | |
-| scripts/lib/agent-observability/state.mjs:108 | writeFinal · fn | |
-| scripts/lib/agent-observability/state.mjs:114 | listTaskBundles · fn | |
-| scripts/lib/agent-observability/state.mjs:126 | reportDirectory · fn | |
+| scripts/lib/agent-observability/state.mjs:85 | recordEvidence · fn | |
+| scripts/lib/agent-observability/state.mjs:90 | recordFlag · fn | |
+| scripts/lib/agent-observability/state.mjs:102 | readTaskBundle · fn | |
+| scripts/lib/agent-observability/state.mjs:119 | bindActiveTask · fn | |
+| scripts/lib/agent-observability/state.mjs:127 | readActiveTask · fn | |
+| scripts/lib/agent-observability/state.mjs:133 | requestActiveTaskFinalization · fn | |
+| scripts/lib/agent-observability/state.mjs:141 | clearActiveTask · fn | |
+| scripts/lib/agent-observability/state.mjs:148 | writeFinal · fn | |
+| scripts/lib/agent-observability/state.mjs:154 | listTaskBundles · fn | |
+| scripts/lib/agent-observability/state.mjs:166 | reportDirectory · fn | |
 
 ### scripts/lib/agent-observability/usage.mjs — 172 ln
 
@@ -920,7 +945,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-query.mjs:543 | scopeTextLines · fn | |
 | scripts/lib/context-query.mjs:565 | contextBundle · fn | |
 
-### scripts/lib/context-routing.mjs — 224 ln
+### scripts/lib/context-routing.mjs — 225 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -928,18 +953,18 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-routing.mjs:4 | CLIENT · const | |
 | scripts/lib/context-routing.mjs:33 | MAP_AREAS · const | |
 | scripts/lib/context-routing.mjs:65 | ROUTE_RULES · const | |
-| scripts/lib/context-routing.mjs:111 | AREA_ALIASES · const | |
-| scripts/lib/context-routing.mjs:127 | isNormalContextExcludedPath · fn | |
-| scripts/lib/context-routing.mjs:163 | routeSourcePath · fn | |
-| scripts/lib/context-routing.mjs:171 | documentationNeedlesForPath · fn | |
-| scripts/lib/context-routing.mjs:182 | mapOwnerForPath · fn | |
-| scripts/lib/context-routing.mjs:186 | IGNORE_DIR · const | |
-| scripts/lib/context-routing.mjs:187 | IGNORE_PATH · const | |
-| scripts/lib/context-routing.mjs:188 | COVERAGE_EXEMPT · const | |
-| scripts/lib/context-routing.mjs:189 | norm · const | |
-| scripts/lib/context-routing.mjs:191 | walk · fn | |
-| scripts/lib/context-routing.mjs:202 | firstPartyFiles · fn | |
-| scripts/lib/context-routing.mjs:223 | isExempt · const | |
+| scripts/lib/context-routing.mjs:112 | AREA_ALIASES · const | |
+| scripts/lib/context-routing.mjs:128 | isNormalContextExcludedPath · fn | |
+| scripts/lib/context-routing.mjs:164 | routeSourcePath · fn | |
+| scripts/lib/context-routing.mjs:172 | documentationNeedlesForPath · fn | |
+| scripts/lib/context-routing.mjs:183 | mapOwnerForPath · fn | |
+| scripts/lib/context-routing.mjs:187 | IGNORE_DIR · const | |
+| scripts/lib/context-routing.mjs:188 | IGNORE_PATH · const | |
+| scripts/lib/context-routing.mjs:189 | COVERAGE_EXEMPT · const | |
+| scripts/lib/context-routing.mjs:190 | norm · const | |
+| scripts/lib/context-routing.mjs:192 | walk · fn | |
+| scripts/lib/context-routing.mjs:203 | firstPartyFiles · fn | |
+| scripts/lib/context-routing.mjs:224 | isExempt · const | |
 
 ### scripts/qa-gate.mjs — 158 ln
 
@@ -970,39 +995,39 @@ bounded source read. Local implementation detail stays in source.
 | scripts/sync-agent-skills.mjs:15 | compare · fn | |
 | scripts/sync-agent-skills.mjs:22 | skillMirrorDrift · fn | |
 
-### scripts/task-close.mjs — 643 ln
+### scripts/task-close.mjs — 780 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/task-close.mjs:1 | @file · file | reports a command error with its caller-selected exit status |
-| scripts/task-close.mjs:11 | ROOT · const | |
-| scripts/task-close.mjs:13 | SCHEMA_VERSION · const | |
-| scripts/task-close.mjs:16 | fail · fn | |
-| scripts/task-close.mjs:36 | parseArgs · fn | |
-| scripts/task-close.mjs:51 | checkOptions · fn | |
-| scripts/task-close.mjs:55 | one · fn | |
-| scripts/task-close.mjs:62 | many · fn | |
-| scripts/task-close.mjs:79 | testPath · fn | |
-| scripts/task-close.mjs:97 | command · fn | |
-| scripts/task-close.mjs:104 | fingerprint · fn | |
-| scripts/task-close.mjs:125 | publishPathsFor · fn | |
-| scripts/task-close.mjs:149 | createManifest · fn | |
-| scripts/task-close.mjs:181 | amendManifest · fn | |
-| scripts/task-close.mjs:207 | reviewManifest · fn | |
-| scripts/task-close.mjs:241 | applyDocumentationDecision · fn | |
-| scripts/task-close.mjs:276 | applyCoverageDecision · fn | |
-| scripts/task-close.mjs:293 | recordFallback · fn | |
-| scripts/task-close.mjs:305 | intakeForManifest · fn | |
-| scripts/task-close.mjs:364 | manifestPath · fn | |
+| scripts/task-close.mjs:19 | ROOT · const | |
+| scripts/task-close.mjs:21 | SCHEMA_VERSION · const | |
+| scripts/task-close.mjs:24 | fail · fn | |
+| scripts/task-close.mjs:44 | parseArgs · fn | |
+| scripts/task-close.mjs:59 | checkOptions · fn | |
+| scripts/task-close.mjs:63 | one · fn | |
+| scripts/task-close.mjs:70 | many · fn | |
+| scripts/task-close.mjs:87 | testPath · fn | |
+| scripts/task-close.mjs:105 | command · fn | |
+| scripts/task-close.mjs:112 | fingerprint · fn | |
+| scripts/task-close.mjs:133 | publishPathsFor · fn | |
+| scripts/task-close.mjs:157 | createManifest · fn | |
+| scripts/task-close.mjs:314 | amendManifest · fn | |
+| scripts/task-close.mjs:340 | reviewManifest · fn | |
+| scripts/task-close.mjs:374 | applyDocumentationDecision · fn | |
+| scripts/task-close.mjs:409 | applyCoverageDecision · fn | |
+| scripts/task-close.mjs:426 | recordFallback · fn | |
+| scripts/task-close.mjs:438 | intakeForManifest · fn | |
+| scripts/task-close.mjs:499 | manifestPath · fn | |
 
-### scripts/tests/agent-observability.test.mjs — 499 ln
+### scripts/tests/agent-observability.test.mjs — 610 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/agent-observability.test.mjs:1 | @file · file | creates isolated private state for each behavior test |
-| scripts/tests/agent-observability.test.mjs:16 | ROOT · const | |
-| scripts/tests/agent-observability.test.mjs:39 | closeInput · fn | |
-| scripts/tests/agent-observability.test.mjs:63 | bundle · fn | |
+| scripts/tests/agent-observability.test.mjs:18 | ROOT · const | |
+| scripts/tests/agent-observability.test.mjs:41 | closeInput · fn | |
+| scripts/tests/agent-observability.test.mjs:65 | bundle · fn | |
 
 ### scripts/tests/build-file-map.test.mjs — 95 ln
 
@@ -1023,7 +1048,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/git-sync-commit-push.test.mjs:1 | @file · file | permanent regression coverage for git sync commit push |
 
-### scripts/tests/task-close.test.mjs — 149 ln
+### scripts/tests/task-close.test.mjs — 153 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1071,4 +1096,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-110 files · 402 stable anchors.
+112 files · 415 stable anchors.

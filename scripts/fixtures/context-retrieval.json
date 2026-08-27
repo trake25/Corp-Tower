@@ -22,6 +22,7 @@
     { "id": "infra", "path": ".github/workflows/Android-Deploy-wstodplay.yml", "expects": "infra-engineer" },
     { "id": "qa", "path": "src/Server/tests/Gameplay_Events.test.js", "expects": "qa-engineer" },
     { "id": "docs", "path": "scripts/validate-docs.mjs", "expects": "docs-steward" },
+    { "id": "codex-hooks", "path": ".codex/hooks.json", "expects": "docs-steward" },
     { "id": "web", "path": "site/src/components/diagrams/QaLoopDiagram.astro", "expects": "web-designer" },
     { "id": "editorial", "path": "site/src/content/cards/qa.md", "expects": "editorial" }
   ],

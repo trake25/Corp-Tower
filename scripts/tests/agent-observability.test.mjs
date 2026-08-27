@@ -5,12 +5,14 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { executeBestEffort, executeCommand } from '../agent-observability.mjs';
+import { handleHook } from '../codex-observability-hook.mjs';
 import { buildAnalytics, boundedAnalyticsAggregate, compareWindows, overheadCircuitBreaker } from '../lib/agent-observability/analytics.mjs';
 import { createFormalFlag, detectCandidates, flagEligibility } from '../lib/agent-observability/flagging.mjs';
 import { renderPublicReport, exportPublicReport } from '../lib/agent-observability/public-export.mjs';
 import { buildWeeklyReportParts, displayStageGroups, renderWeeklyReport } from '../lib/agent-observability/report.mjs';
+import { modelFamily, resolveRuntimeIdentity } from '../lib/agent-observability/runtime.mjs';
 import { sanitizeClose, sanitizeMeta, sanitizeTelemetry } from '../lib/agent-observability/schema.mjs';
-import { readTaskBundle, recordEvent, resolveStateDir, startTask } from '../lib/agent-observability/state.mjs';
+import { bindActiveTask, readTaskBundle, recordEvent, requestActiveTaskFinalization, resolveStateDir, startTask } from '../lib/agent-observability/state.mjs';
 import { aggregateUsage, assessRuntimeCapabilities, normalizeUsageEvent } from '../lib/agent-observability/usage.mjs';
 
 const ROOT = resolve('.');
@@ -122,6 +124,20 @@ test('runtime doctor enables exact mode only with all required capabilities', ()
     ['terminal_callback'],
   );
   assert.equal(assessRuntimeCapabilities({ ...FIXTURE.capabilities, child_usage: false }).exact_mode, false);
+});
+
+test('runtime identity uses the active hook model and effective configured effort', () => {
+  const identity = resolveRuntimeIdentity({ model: 'gpt-5.6-sol' }, {
+    env: {},
+    configText: 'model = "gpt-5.6-terra"\nmodel_reasoning_effort = "high"\n[features]\nhooks = true\n',
+  });
+
+  assert.equal(identity.model, 'gpt-5.6-sol');
+  assert.equal(identity.model_source, 'hook');
+  assert.equal(identity.model_family, 'sol');
+  assert.equal(identity.effort, 'high');
+  assert.equal(identity.effort_source, 'config');
+  assert.equal(modelFamily('gpt-5.6-terra'), 'terra');
 });
 
 test('inclusive usage counts unique events and does not add cache or reasoning subsets', () => {
@@ -302,6 +318,82 @@ test('explicit partial finalization preserves known usage and reason', () => {
     assert.equal(final.status, 'partial');
     assert.equal(final.final_inclusive_provider_tokens, null);
     assert.ok(final.reasons.includes('provider_usage_unavailable'));
+    const bundle = readTaskBundle(state, FIXTURE.task.task_id);
+    assert.ok(bundle.flags.some(flag => flag.flag_id.startsWith('DQ-') && flag.cause_code === 'provider_usage_unavailable'));
+    assert.match(readFileSync(final.reports[0], 'utf8'), /Flags: [1-9]/);
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
+test('Codex hooks retain bounded metadata and visibly finalize missing usage as partial', () => {
+  const state = temporaryState();
+  const taskId = 'hook-task';
+  try {
+    executeCommand('start', {
+      task_id: taskId,
+      label: 'Hook lifecycle task',
+      task_type: 'repository_task',
+      complexity: 'C2',
+      domains: ['tooling'],
+    }, { stateDir: state });
+    bindActiveTask(state, 'session-hook', taskId);
+    executeCommand('close', closeInput(taskId), { stateDir: state });
+    handleHook({
+      session_id: 'session-hook',
+      turn_id: 'turn-hook',
+      hook_event_name: 'PostToolUse',
+      model: 'gpt-5.6-sol',
+      tool_name: 'apply_patch',
+      tool_use_id: 'tool-hook',
+      tool_input: { command: 'secret patch content' },
+      tool_response: { exit_code: 0, output: 'secret tool output' },
+    }, { stateDir: state, env: {}, configText: 'model_reasoning_effort = "high"' });
+    requestActiveTaskFinalization(state, 'session-hook', taskId);
+    const settled = handleHook({
+      session_id: 'session-hook',
+      turn_id: 'turn-hook',
+      hook_event_name: 'Stop',
+      model: 'gpt-5.6-sol',
+      last_assistant_message: 'secret assistant response',
+    }, { stateDir: state, env: {}, configText: 'model_reasoning_effort = "high"' });
+    const bundle = readTaskBundle(state, taskId);
+    const retained = JSON.stringify(bundle.evidence);
+
+    assert.equal(settled.status, 'settled');
+    assert.equal(bundle.final.status, 'partial');
+    assert.ok(bundle.final.reasons.includes('codex_hook_usage_unavailable'));
+    assert.ok(bundle.flags.some(flag => flag.flag_id.startsWith('DQ-') && flag.cause_code === 'codex_hook_usage_unavailable'));
+    assert.doesNotMatch(retained, /secret|command|tool_input|tool_response|assistant/);
+    assert.equal(bundle.evidence.some(item => item.kind === 'tool' && item.stage === 'implementation'), true);
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
+test('Stop hook preserves exact host usage when a settled terminal event already exists', () => {
+  const state = temporaryState();
+  const taskId = 'hook-exact-task';
+  try {
+    executeCommand('start', { ...FIXTURE.task, task_id: taskId }, { stateDir: state });
+    executeCommand('event', {
+      ...FIXTURE.events.at(-1),
+      task_id: taskId,
+      root_task_id: taskId,
+      usage_event_id: 'host-terminal',
+    }, { stateDir: state });
+    executeCommand('close', closeInput(taskId), { stateDir: state });
+    bindActiveTask(state, 'session-exact', taskId);
+    requestActiveTaskFinalization(state, 'session-exact', taskId);
+    handleHook({
+      session_id: 'session-exact',
+      turn_id: 'turn-exact',
+      hook_event_name: 'Stop',
+      model: 'gpt-5.6-sol',
+    }, { stateDir: state, env: {}, configText: 'model_reasoning_effort = "high"' });
+
+    assert.equal(readTaskBundle(state, taskId).final.status, 'exact');
+    assert.equal(readTaskBundle(state, taskId).events.length, 1);
   } finally {
     rmSync(state, { recursive: true, force: true });
   }
@@ -317,6 +409,25 @@ test('candidate detector is deterministic and bounded to three observations', ()
 
   assert.equal(candidates.length, 3);
   assert.deepEqual(candidates.map(item => item.issue_code), ['broad_fallback', 'repeated_retrieval', 'tool_retry']);
+});
+
+test('candidate retries are idempotent across close-out reruns', () => {
+  const state = temporaryState();
+  try {
+    executeCommand('start', FIXTURE.task, { stateDir: state });
+    const input = {
+      task_id: FIXTURE.task.task_id,
+      telemetry: sanitizeTelemetry({ tools: { failures: 1 } }),
+      evidence_event_ids: [],
+    };
+
+    assert.equal(executeCommand('candidate', input, { stateDir: state, now: '2026-08-26T00:01:00.000Z' }).status, 'written');
+    assert.equal(executeCommand('candidate', input, { stateDir: state, now: '2026-08-26T00:02:00.000Z' }).status, 'duplicate');
+    assert.equal(readTaskBundle(state, FIXTURE.task.task_id).flags.length, 1);
+    assert.equal(existsSync(join(state, 'quarantine')), false);
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
 });
 
 test('formal flags require allowlisted high effort, an existing turn, evidence, and bounded material', () => {

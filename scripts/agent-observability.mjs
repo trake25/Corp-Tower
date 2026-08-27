@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { buildAnalytics, boundedAnalyticsAggregate, overheadCircuitBreaker } from './lib/agent-observability/analytics.mjs';
 import {
+  createDataQualityFlag,
   createCandidateRecords,
   createFormalFlag,
   detectCandidates,
@@ -18,11 +19,13 @@ import {
   cleanSlug,
   cleanTimestamp,
   sanitizeClose,
+  sanitizeEvidence,
   sanitizeTelemetry,
 } from './lib/agent-observability/schema.mjs';
 import {
   listTaskBundles,
   readTaskBundle,
+  recordEvidence,
   recordEvent,
   recordFlag,
   resolveStateDir,
@@ -93,7 +96,10 @@ function pendingFinal(close, usage) {
 }
 
 function assertEvidence(bundle, flag) {
-  const ids = new Set(bundle.events.map(event => event.usage_event_id));
+  const ids = new Set([
+    ...bundle.events.map(event => event.usage_event_id),
+    ...(bundle.evidence || []).map(event => event.evidence_event_id),
+  ]);
   const missing = flag.evidence_event_ids.filter(id => !ids.has(id));
   if (missing.length) throw new Error(`flag evidence is not in the current task: ${missing.join(', ')}`);
 }
@@ -117,6 +123,13 @@ export function executeCommand(command, input, {
     const result = recordEvent(state, event);
     return { status: result.status, task_id: event.task_id, usage_event_id: event.usage_event_id, normalized_total_tokens: event.normalized_total_tokens };
   }
+  if (command === 'evidence') {
+    const evidence = sanitizeEvidence(input, now);
+    const bundle = readTaskBundle(state, evidence.task_id);
+    if (bundle.final?.finalized_at) throw new Error('cannot append evidence after finalization');
+    const result = recordEvidence(state, evidence);
+    return { status: result.status, task_id: evidence.task_id, evidence_event_id: evidence.evidence_event_id };
+  }
   if (command === 'candidate') {
     assertAllowedKeys(input, ['task_id', 'telemetry', 'evidence_event_ids'], 'candidate input');
     const taskId = cleanId(input.task_id, 'task_id');
@@ -124,8 +137,14 @@ export function executeCommand(command, input, {
     if (bundle.final?.finalized_at) throw new Error('cannot add candidates after finalization');
     const telemetry = sanitizeTelemetry(input.telemetry);
     const records = createCandidateRecords(taskId, detectCandidates(telemetry), input.evidence_event_ids || [], now);
-    for (const record of records) recordFlag(state, taskId, record);
-    return { status: 'written', task_id: taskId, candidates: records.map(record => record.flag_id) };
+    const existing = new Set(bundle.flags.map(record => record.flag_id));
+    let written = 0;
+    for (const record of records) {
+      if (existing.has(record.flag_id)) continue;
+      recordFlag(state, taskId, record);
+      written++;
+    }
+    return { status: written ? 'written' : 'duplicate', task_id: taskId, candidates: records.map(record => record.flag_id) };
   }
   if (command === 'flag') {
     const circuit = overheadCircuitBreaker(listTaskBundles(state));
@@ -167,6 +186,8 @@ export function executeCommand(command, input, {
       reasons: [...new Set(reasons)].sort(),
       finalized_at: finalizedAt,
     };
+    if (final.status === 'partial')
+      for (const reason of final.reasons) recordFlag(state, taskId, createDataQualityFlag(taskId, reason, finalizedAt));
     writeFinal(state, taskId, final);
     const reports = renderPrivateReports(state, { week: isoWeek(finalizedAt) });
     return { ...final, reports };
@@ -191,7 +212,7 @@ export function executeCommand(command, input, {
       improvements: input.improvements || [],
     });
   }
-  throw new Error('command must be start, event, candidate, flag, close, finalize, render, analyze, export-public, or doctor');
+  throw new Error('command must be start, event, evidence, candidate, flag, close, finalize, render, analyze, export-public, or doctor');
 }
 
 export function executeBestEffort(command, input, options = {}) {
@@ -216,7 +237,7 @@ export function main(argv = process.argv.slice(2)) {
   try {
     const { command, options } = parseArgs(argv);
     if (!command || options.has('help')) {
-      console.log('usage: node scripts/agent-observability.mjs <start|event|candidate|flag|close|finalize|render|analyze|export-public|doctor> [--input file|--json value] [--state-dir path] [--best-effort] [--approve]');
+      console.log('usage: node scripts/agent-observability.mjs <start|event|evidence|candidate|flag|close|finalize|render|analyze|export-public|doctor> [--input file|--json value] [--state-dir path] [--best-effort] [--approve]');
       return;
     }
     const root = resolve(options.get('root') || '.');

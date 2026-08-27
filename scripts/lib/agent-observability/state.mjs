@@ -82,6 +82,11 @@ export function recordEvent(stateDir, event) {
   return writeImmutable(path, event, stateDir);
 }
 
+export function recordEvidence(stateDir, evidence) {
+  const path = join(taskDirectory(stateDir, evidence.task_id), 'evidence', `${cleanId(evidence.evidence_event_id, 'evidence_event_id')}.json`);
+  return writeImmutable(path, evidence, stateDir);
+}
+
 export function recordFlag(stateDir, rootTaskId, flag) {
   const path = join(taskDirectory(stateDir, rootTaskId), 'flags', `${cleanId(flag.flag_id, 'flag_id')}.json`);
   return writeImmutable(path, flag, stateDir);
@@ -100,9 +105,44 @@ export function readTaskBundle(stateDir, taskId) {
   return {
     meta: readJson(join(dir, 'meta.json')),
     events: listJson(join(dir, 'events')),
+    evidence: listJson(join(dir, 'evidence')),
     flags: listJson(join(dir, 'flags')),
     final: existsSync(join(dir, 'final.json')) ? readJson(join(dir, 'final.json')) : null,
   };
+}
+
+function activePath(stateDir, sessionId) {
+  const key = createHash('sha256').update(String(sessionId)).digest('hex').slice(0, 32);
+  return join(resolve(stateDir), 'active', `${key}.json`);
+}
+
+export function bindActiveTask(stateDir, sessionId, taskId, { now = new Date().toISOString() } = {}) {
+  cleanId(taskId, 'task_id');
+  if (typeof sessionId !== 'string' || !sessionId.trim()) throw new Error('session_id is required');
+  const binding = { schema_version: 2, task_id: taskId, close_requested: false, bound_at: now };
+  writeAtomicJson(activePath(stateDir, sessionId), binding);
+  return binding;
+}
+
+export function readActiveTask(stateDir, sessionId) {
+  if (typeof sessionId !== 'string' || !sessionId.trim()) return null;
+  const path = activePath(stateDir, sessionId);
+  return existsSync(path) ? readJson(path) : null;
+}
+
+export function requestActiveTaskFinalization(stateDir, sessionId, taskId, { now = new Date().toISOString() } = {}) {
+  const current = readActiveTask(stateDir, sessionId);
+  if (!current || current.task_id !== taskId) return null;
+  const binding = { ...current, close_requested: true, close_requested_at: now };
+  writeAtomicJson(activePath(stateDir, sessionId), binding);
+  return binding;
+}
+
+export function clearActiveTask(stateDir, sessionId, taskId) {
+  const current = readActiveTask(stateDir, sessionId);
+  if (!current || current.task_id !== taskId) return false;
+  unlinkSync(activePath(stateDir, sessionId));
+  return true;
 }
 
 export function writeFinal(stateDir, taskId, finalRecord) {

@@ -133,7 +133,15 @@ function dataQualityLines(bundles) {
     reasons.set(label, (reasons.get(label) || 0) + 1);
   }
   const summary = [...reasons.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([reason, count]) => `${reason} (${count})`).join(', ');
-  return [`- Exact: ${exact.length}`, `- Partial: ${partial.length}${summary ? ` — ${summary}` : ''}`];
+  const flags = new Map();
+  for (const flag of bundles.flatMap(bundle => bundle.flags).filter(item => item.flag_id?.startsWith('DQ-')))
+    flags.set(flag.cause_code, (flags.get(flag.cause_code) || 0) + 1);
+  const flagged = [...flags.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([reason, count]) => `${reason.replaceAll('_', ' ')} (${count})`).join(', ');
+  return [
+    `- Exact: ${exact.length}`,
+    `- Partial: ${partial.length}${summary ? ` — ${summary}` : ''}`,
+    `- Flags: ${flags.size}${flagged ? ` — ${flagged}` : ''}`,
+  ];
 }
 
 function flagTable(flags) {

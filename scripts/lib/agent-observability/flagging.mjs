@@ -23,6 +23,34 @@ function fingerprint(stage, issueCode, causeCode) {
     .digest('hex');
 }
 
+function reasonCode(reason) {
+  return String(reason).split(':')[0].replace(/[^a-z0-9_]+/gi, '_').replace(/^_+|_+$/g, '').toLowerCase() || 'unknown';
+}
+
+export function createDataQualityFlag(taskId, reason, now = new Date().toISOString()) {
+  const id = cleanId(taskId, 'task_id');
+  const cause = cleanSlug(reasonCode(reason), 'partial reason');
+  const hash = fingerprint('closeout', 'telemetry_partial', cause);
+  return {
+    schema_version: SCHEMA_VERSION,
+    flag_id: `DQ-${hash.slice(0, 12)}`,
+    fingerprint: hash,
+    task_id: id,
+    formal: false,
+    current_run: true,
+    stage: 'closeout',
+    issue_code: 'telemetry_partial',
+    cause_code: cause,
+    observation: `Telemetry finalized as partial: ${cause}.`,
+    severity: 'low',
+    confidence: 'high',
+    improvement: 'supply the missing current-run host metadata before final settlement',
+    evidence_event_ids: [],
+    occurred_at: cleanTimestamp(now, 'occurred_at'),
+    status: 'data_quality',
+  };
+}
+
 export function flagEligibility({ model_family, effort, provider_turn_required, candidate }) {
   const family = cleanName(model_family, 'model_family').toLowerCase();
   const normalizedEffort = effort || 'unknown';

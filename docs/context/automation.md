@@ -52,17 +52,11 @@ anchors. An exceptional cross-boundary term that extraction cannot recognize may
 be marked `· stable`; regeneration relocates it by name and drops it if the source
 term disappears. Maps do not explain local symbols—the bounded source read does.
 
-Interactive search/filter defaults to five results and 6 KiB; the hard ceilings
-are eight and 24 KiB. Diagnostics are three actions/2 KiB, sections default to 6
-KiB with a 12 KiB ceiling, and bundles default to 12 KiB with a 24 KiB ceiling.
-Public `scope` and task intake stay within 8 KiB; task-close stores larger route
-detail only in its ignored manifest. Search JSON omits excerpts unless explicitly
-requested. `retrieval-aliases.json` remains a small fixture-proven vocabulary
-bridge, not a tag index. `scripts/fixtures/context-retrieval.json` owns checked
-correctness, fallback, whole-read and provider-facing byte cases;
-`benchmark-rag.mjs` writes non-check output to ignored
-`.agent-state/automation/rag-benchmark/`. Exact provider usage stays null unless
-a provider client reports it.
+Public retrieval and task intake are bounded; larger route detail stays in
+ignored artifacts, and search excerpts are opt-in. `retrieval-aliases.json` is a
+small fixture-proven vocabulary bridge, not a tag index. The retrieval fixture
+`context-retrieval.json` owns protocol correctness while `benchmark-rag.mjs` keeps non-check output under
+ignored `.agent-state/automation/rag-benchmark/`.
 
 Cloud coding agents use the same command through a read-only tool adapter. A
 cloud chat session without local-tool access receives only a deliberately made
@@ -111,18 +105,24 @@ nested pipes. A passing close prints one line. A failure prints the step,
 exit/signal, first actionable diagnostic and receipt path; identical close inputs
 reuse the passing receipt.
 
-`scripts/agent-observability.mjs` provides `start`, `event`, `candidate`,
-`flag`, `close`, `finalize`, `render`, `analyze`, `export-public`, and `doctor`.
-State resolves from `--state-dir`, then `CORP_TOWER_OBSERVABILITY_DIR`, then
-`.agent-state/telemetry/v2/`. Exact mode requires stable disjoint event IDs,
-child attribution and usage, settled counters, and a terminal callback; otherwise
-finalization is visibly partial. The inclusive provider total counts every
-settled root, child, retry, summary, observability, analytics, and terminal event
-once; observability usage is a non-additive subset. Hosts use `--best-effort` so
-collection never retries or fails user work. Formal flagging is current-run,
-high-effort, allowlisted, capped, and permitted only inside an already-required
-provider turn. Private flat weekly reports are local; `export-public --approve`
-alone writes a rounded, cohort-suppressed report under `report/observability/`.
+`scripts/agent-observability.mjs` owns private task events, evidence, candidates,
+flags, settlement, analysis and approved export under
+`.agent-state/telemetry/v2/`. Task-close is its default adapter: `prepare` binds
+the Codex session; `close` records verification and returns candidates; trusted
+`.codex/hooks.json` handlers retain only model/effort provenance and bounded
+tool, compaction and lifecycle outcomes before `Stop` settles the task. They
+never retain prompt, response, command, patch, tool payload or transcript
+content. Review hooks once through `/hooks` and again after their definition
+changes.
+
+Exact totals require stable disjoint IDs, settled inclusive root/child/retry
+usage and a terminal host event; observability usage remains a non-additive
+subset. Missing host data produces named `DQ-*` reasons and a partial result,
+never a fabricated total or failed/retried user task. The same active agent may
+formalize an eligible current-run, high-effort candidate before its final
+response; no extra agent or provider turn is created. Private weekly reports
+stay local; only `export-public --approve` writes the rounded,
+cohort-suppressed public report.
 
 ## Authorized Git automation
 

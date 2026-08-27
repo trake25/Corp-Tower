@@ -132,13 +132,17 @@ test('CLI review accepts repository-contract changes without a documentation-sco
   const manifest = '.agent-state/contract.json';
   const run = args => spawnSync(process.execPath, ['scripts/task-close.mjs', ...args], {
     cwd: process.cwd(),
-    env: { ...process.env, TASK_CLOSE_ROOT: root },
+    env: { ...process.env, TASK_CLOSE_ROOT: root, CODEX_SESSION_ID: '', CODEX_THREAD_ID: '' },
     encoding: 'utf8',
   });
 
   try {
     const prepared = run(['prepare', '--task', 'Contract wording', '--output', manifest, '--path', 'AGENTS.md']);
     assert.equal(prepared.status, 0, prepared.stderr);
+    const preparedManifest = JSON.parse(readFileSync(join(root, manifest), 'utf8'));
+    assert.equal(preparedManifest.observability.task_id, preparedManifest.run_id);
+    assert.equal(preparedManifest.observability.status, 'partial');
+    assert.deepEqual(preparedManifest.observability.reasons, ['codex_session_id_unavailable']);
     const reviewed = run(['review', '--manifest', manifest, '--changed', 'AGENTS.md']);
     assert.equal(reviewed.status, 0, reviewed.stderr);
     assert.equal(JSON.parse(readFileSync(join(root, manifest), 'utf8')).phase, 'reviewed');

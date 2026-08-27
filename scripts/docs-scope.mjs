@@ -13,7 +13,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { documentationNeedlesForPath, routeSourcePath, mapOwnerForPath } from './lib/context-routing.mjs';
+import { documentationNeedlesForPath, isNormalContextExcludedPath, routeSourcePath, mapOwnerForPath } from './lib/context-routing.mjs';
 
 const argv = process.argv.slice(2);
 const FROM_GIT = argv.includes('--from-git');
@@ -65,7 +65,7 @@ if (given.length) {
 const dropped = [];
 const scoped = [];
 for (const p of [...paths].sort()) {
-  if (IGNORE.some(re => re.test(p))) { dropped.push(p); continue; }
+  if (isNormalContextExcludedPath(p) || IGNORE.some(re => re.test(p))) { dropped.push(p); continue; }
   scoped.push(p);
 }
 

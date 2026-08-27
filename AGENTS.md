@@ -60,6 +60,14 @@ observability tooling or an explicit human request may read reports. The host
 collects telemetry locally; agents never create a provider call solely to
 record it or read historical reports during ordinary work.
 
+`task-close prepare` starts and binds that private telemetry when Codex session
+metadata is available; trusted repo hooks record bounded current-run evidence
+and settle it after the closing response. If `task-close close` returns an
+eligible workflow candidate, the same active agent may load
+`workflow-inefficiency-flagging` and formalize it before the final response—do
+not spawn an agent or add a provider turn. Missing host usage or identity must
+remain partial and produce a named data-quality flag, never a fabricated total.
+
 ### Skill reuse
 
 Load each selected role skill once per active context window, then reuse it for

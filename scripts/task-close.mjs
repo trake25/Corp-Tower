@@ -7,6 +7,14 @@ import { fileURLToPath } from 'node:url';
 import { mapOwnerForPath, routeSourcePath } from './lib/context-routing.mjs';
 import { scopeContext } from './lib/context-query.mjs';
 import { selectQa } from './qa-gate.mjs';
+import { executeBestEffort } from './agent-observability.mjs';
+import { codexSessionIds } from './lib/agent-observability/runtime.mjs';
+import {
+  bindActiveTask,
+  readTaskBundle,
+  requestActiveTaskFinalization,
+  resolveStateDir,
+} from './lib/agent-observability/state.mjs';
 
 const ROOT = resolve(process.env.TASK_CLOSE_ROOT || '.');
 const DEFAULT_MANIFEST = '.agent-state/automation/close-out.json';
@@ -169,7 +177,132 @@ export function createManifest({ task, ownedPaths = null, changedPaths = null, r
     coverage: coverageFor(hasSource),
     review: null,
     verification: null,
+    observability: { status: 'not_started', task_id: null, session_bindings: 0 },
   };
+}
+
+function startObservability(manifest, env = process.env) {
+  try {
+    const stateDir = resolveStateDir({ root: ROOT, env });
+    const result = executeBestEffort('start', {
+      task_id: manifest.run_id,
+      label: manifest.task,
+      task_type: 'repository_task',
+      complexity: 'unknown',
+      domains: manifest.domains.map(domain => domain.replaceAll('-', '_')),
+    }, { root: ROOT, stateDir });
+    if (!['written', 'duplicate'].includes(result.status))
+      return { status: 'partial', task_id: manifest.run_id, session_bindings: 0, reasons: [result.reason || 'telemetry_start_failed'] };
+    let bindings = 0;
+    for (const sessionId of codexSessionIds(env)) {
+      bindActiveTask(stateDir, sessionId, manifest.run_id);
+      bindings++;
+    }
+    return {
+      status: bindings ? 'active' : 'partial',
+      task_id: manifest.run_id,
+      session_bindings: bindings,
+      reasons: bindings ? [] : ['codex_session_id_unavailable'],
+    };
+  } catch {
+    return { status: 'partial', task_id: manifest.run_id, session_bindings: 0, reasons: ['telemetry_start_failed'] };
+  }
+}
+
+function telemetryFor(manifest, receipt, evidence) {
+  const toolEvents = evidence.filter(item => item.kind === 'tool');
+  const failures = toolEvents.filter(item => item.outcome === 'failed').length;
+  const domains = Object.fromEntries(manifest.domains.map(domain => [domain.replaceAll('-', '_'), manifest.changed_paths.filter(path => domainFor(path) === domain).length]));
+  return {
+    tools: { calls: toolEvents.length, failures, retries: 0 },
+    retrieval: {
+      attempts: 1,
+      expansions: 0,
+      fallbacks: manifest.retrieval.fallbacks.length,
+      first_try: manifest.retrieval.fallbacks.length === 0,
+    },
+    skills: [],
+    worker_count: 1,
+    files: { inspected: 0, modified: manifest.changed_paths.length, domains },
+    iterations: { implementation: manifest.changed_paths.length ? 1 : 0, rework: 0 },
+    checks: {
+      run: receipt.steps.length,
+      failures: receipt.steps.filter(step => step.status !== 0).length,
+      retests: 0,
+    },
+    documentation: { files: manifest.documented_paths.length, updates: manifest.documented_paths.length },
+    task_close: { status: receipt.status, receipt_hash: fingerprint(receipt).slice(0, 32) },
+  };
+}
+
+function closeObservabilityUnsafe(manifest, receipt, env) {
+  const taskId = manifest.observability?.task_id || manifest.run_id;
+  const stateDir = resolveStateDir({ root: ROOT, env });
+  let bundle;
+  try {
+    bundle = readTaskBundle(stateDir, taskId);
+  } catch {
+    return { status: 'partial', task_id: taskId, reasons: ['telemetry_task_unavailable'], candidates: [] };
+  }
+  const evidenceIds = bundle.evidence.slice(-5).map(item => item.evidence_event_id);
+  const telemetry = telemetryFor(manifest, receipt, bundle.evidence);
+  executeBestEffort('close', {
+    task_id: taskId,
+    outcome: receipt.status === 'passed' ? 'completed' : 'failed',
+    verification: receipt.status,
+    telemetry,
+  }, { root: ROOT, stateDir });
+  const candidateResult = executeBestEffort('candidate', {
+    task_id: taskId,
+    telemetry,
+    evidence_event_ids: evidenceIds,
+  }, { root: ROOT, stateDir });
+  const refreshed = readTaskBundle(stateDir, taskId);
+  const candidates = refreshed.flags.filter(item => item.flag_id?.startsWith('C-')).map(item => ({
+    candidate_id: item.flag_id,
+    stage: item.stage,
+    issue_code: item.issue_code,
+    cause_code: item.cause_code,
+    severity: item.severity,
+    evidence_event_ids: item.evidence_event_ids,
+  }));
+  let bindings = 0;
+  for (const sessionId of codexSessionIds(env))
+    if (requestActiveTaskFinalization(stateDir, sessionId, taskId)) bindings++;
+  if (!bindings) executeBestEffort('finalize', {
+    task_id: taskId,
+    partial_reason: 'codex_stop_hook_unavailable',
+  }, { root: ROOT, stateDir });
+  const runtime = [...refreshed.evidence].sort((a, b) => b.occurred_at.localeCompare(a.occurred_at))[0] || null;
+  const formalEligible = Boolean(candidates.length && evidenceIds.length && runtime?.provider_turn_required && ['terra', 'sol', 'opus', 'fable'].includes(runtime.model_family) && ['high', 'xhigh', 'max', 'ultra'].includes(runtime.effort));
+  return {
+    status: bindings ? 'pending_stop' : 'partial',
+    task_id: taskId,
+    session_bindings: bindings,
+    candidates,
+    formal_flag_gate: {
+      eligible: formalEligible,
+      model_family: runtime?.model_family || 'unknown',
+      effort: runtime?.effort || 'unknown',
+      same_required_turn: true,
+    },
+    candidate_status: candidateResult.status,
+    reasons: bindings ? [] : ['codex_stop_hook_unavailable'],
+  };
+}
+
+function closeObservability(manifest, receipt, env = process.env) {
+  try {
+    return closeObservabilityUnsafe(manifest, receipt, env);
+  } catch {
+    return {
+      status: 'partial',
+      task_id: manifest.observability?.task_id || manifest.run_id,
+      session_bindings: 0,
+      candidates: [],
+      reasons: ['telemetry_close_failed'],
+    };
+  }
 }
 
 function upgradeManifest(manifest) {
@@ -334,6 +467,7 @@ export function intakeForManifest(manifest, manifestFile) {
       client_tests: manifest.intake.qa.client_tests,
     },
     tools: manifest.intake.tools.map(tool => ({ name: tool.name, command: tool.command.display })),
+    observability: manifest.observability,
     next: command(['node', 'scripts/task-close.mjs', 'review', '--manifest', manifestFile, '--changed', '<final-path>']).display,
   };
   if (Buffer.byteLength(JSON.stringify(result, null, 2)) + 1 > INTAKE_MAX_BYTES) throw new Error('task intake exceeds 8192 bytes; split the manifest');
@@ -355,6 +489,7 @@ function reviewForManifest(manifest, manifestFile) {
       client_tests: intake.qa.client_tests,
     },
     documentation_scope: manifest.documentation.scope?.output || null,
+    observability: manifest.observability,
     next: command(['node', 'scripts/task-close.mjs', 'close', '--manifest', manifestFile, '--decision', '<updated|not-needed>', '--reason', '<reason>', '--coverage', '<updated|not-needed>', '--coverage-reason', '<reason>']).display,
   };
   if (Buffer.byteLength(JSON.stringify(result, null, 2)) + 1 > INTAKE_MAX_BYTES) throw new Error('task review exceeds 8192 bytes; read the manifest artifact for full documentation scope');
@@ -486,10 +621,11 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
     receipt: displayPath(receiptPath(manifestFile)),
     close_input_fingerprint: closeInputFingerprint,
   };
+  manifest.observability = closeObservability(manifest, receipt);
   if (manifest.schema_version === SCHEMA_VERSION) manifest.phase = failed ? 'failed' : 'closed';
   writeManifest(manifestFile, manifest);
   if (failed) fail(`FAIL — ${failed.name}: ${failed.summary}; receipt: ${displayPath(receiptPath(manifestFile))}`, 1);
-  console.log(`PASS — receipt: ${displayPath(receiptPath(manifestFile))}; ${steps.map(step => `${step.name} ${step.summary}`).join('; ')}`);
+  console.log(`PASS — receipt: ${displayPath(receiptPath(manifestFile))}; ${steps.map(step => `${step.name} ${step.summary}`).join('; ')}; observability ${JSON.stringify(manifest.observability)}`);
 }
 
 function verifyV2(manifest, manifestFile, closeInputFingerprint) {
@@ -540,6 +676,7 @@ async function main() {
     if (existsSync(manifestFile)) fail(`manifest already exists: ${displayPath(manifestFile)}; start a new run with --output`, 1);
     const paths = normalizePaths([...many(values, 'path'), ...many(values, 'changed')]);
     const manifest = createManifest({ task: one(values, 'task', true), ownedPaths: paths });
+    manifest.observability = startObservability(manifest);
     writeManifest(manifestFile, manifest);
     console.log(JSON.stringify(intakeForManifest(manifest, displayPath(manifestFile)), null, 2));
     return;
