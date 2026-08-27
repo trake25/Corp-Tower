@@ -436,7 +436,8 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:378 | placement_visual_bounds | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:585 | set_player_color_map | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:589 | clear_tower | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:81 | tower_collapsed · stable | |
 
 ---
 
-37 files · 208 stable anchors.
+37 files · 209 stable anchors.

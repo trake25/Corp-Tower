@@ -162,7 +162,12 @@ export function createFormalFlag(input, now = new Date().toISOString()) {
 }
 
 export function recurrenceState(count, flags = []) {
-  if (flags.some(flag => flag.status === 'validated_change')) return 'validated_change';
+  const validatedAt = flags.filter(flag => flag.status === 'validated_change')
+    .map(flag => flag.occurred_at || '')
+    .sort()
+    .at(-1);
+  const laterObservation = validatedAt && flags.some(flag => flag.status !== 'validated_change' && (flag.occurred_at || '') > validatedAt);
+  if (validatedAt && !laterObservation) return 'validated_change';
   if (count >= 3) return 'recurring';
   if (count >= 2) return 'early_signal';
   return 'observation';

@@ -93,7 +93,7 @@ function taskRow(bundle) {
 function groupedFlags(bundles) {
   const groups = new Map();
   for (const bundle of bundles) {
-    for (const flag of bundle.flags.filter(item => item.flag_id?.startsWith('WF-'))) {
+    for (const flag of bundle.flags.filter(item => /^(?:WF|C)-/.test(item.flag_id || ''))) {
       const group = groups.get(flag.fingerprint) || { flags: [], tasks: new Set() };
       group.flags.push(flag);
       group.tasks.add(bundle.meta.task_id);
@@ -101,19 +101,22 @@ function groupedFlags(bundles) {
     }
   }
   return [...groups.values()].map(group => {
-    const first = group.flags[0];
+    const formal = group.flags.filter(flag => flag.flag_id.startsWith('WF-')).sort((a, b) => (a.occurred_at || '').localeCompare(b.occurred_at || ''));
+    const first = formal.at(-1) || group.flags[0];
     const severity = group.flags.reduce((best, flag) => SEVERITY_RANK[flag.severity] > SEVERITY_RANK[best] ? flag.severity : best, first.severity);
-    const confidence = group.flags.reduce((best, flag) => CONFIDENCE_RANK[flag.confidence] > CONFIDENCE_RANK[best] ? flag.confidence : best, first.confidence);
+    const confidence = group.flags.reduce((best, flag) => (CONFIDENCE_RANK[flag.confidence] || 0) > (CONFIDENCE_RANK[best] || 0) ? flag.confidence : best, first.confidence);
     return {
-      id: `WF-${first.fingerprint.slice(0, 6)}`,
+      id: `${formal.length ? 'WF' : 'C'}-${first.fingerprint.slice(0, 6)}`,
       stage: first.stage,
       severity,
       confidence,
       occurrences: group.tasks.size,
       improvement: first.improvement,
       status: recurrenceState(group.tasks.size, group.flags),
+      formal: formal.length > 0,
     };
-  }).sort((a, b) => b.occurrences - a.occurrences || a.id.localeCompare(b.id));
+  }).filter(group => group.formal || group.occurrences >= 2)
+    .sort((a, b) => b.occurrences - a.occurrences || a.id.localeCompare(b.id));
 }
 
 function summaryLine(bundles, flags = groupedFlags(bundles)) {

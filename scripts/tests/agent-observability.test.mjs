@@ -328,7 +328,7 @@ test('explicit partial finalization preserves known usage and reason', () => {
   }
 });
 
-test('Codex hooks retain bounded metadata and visibly finalize unexposed usage as partial', () => {
+test('Codex hooks retain bounded metadata and visibly finalize unavailable rollout usage as partial', () => {
   const state = temporaryState();
   const taskId = 'hook-task';
   try {
@@ -364,8 +364,8 @@ test('Codex hooks retain bounded metadata and visibly finalize unexposed usage a
 
     assert.equal(settled.status, 'settled');
     assert.equal(bundle.final.status, 'partial');
-    assert.ok(bundle.final.reasons.includes('codex_hook_token_usage_not_exposed'));
-    assert.ok(bundle.flags.some(flag => flag.flag_id.startsWith('DQ-') && flag.cause_code === 'codex_hook_token_usage_not_exposed'));
+    assert.ok(bundle.final.reasons.includes('codex_rollout_usage_unavailable'));
+    assert.ok(bundle.flags.some(flag => flag.flag_id.startsWith('DQ-') && flag.cause_code === 'codex_rollout_usage_unavailable'));
     assert.doesNotMatch(retained, /secret|command|tool_input|tool_response|assistant/);
     assert.equal(bundle.evidence.some(item => item.kind === 'tool' && item.stage === 'implementation'), true);
     assert.equal(readHookHealth(state, 'session-hook').status, 'healthy');

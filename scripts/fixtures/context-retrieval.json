@@ -64,7 +64,7 @@
       "command": "search",
       "query": "tower_collapsed",
       "options": { "anchor": true },
-      "expects": { "status": "matched", "path": "docs/context/backend.md", "title": "Authority and module boundaries", "fallback": false }
+      "expects": { "status": "matched", "source": "src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd", "fallback": false }
     },
     {
       "id": "observability-task-binding-symbol",
@@ -102,11 +102,32 @@
       "expects": { "status": "matched", "source": "scripts/lib/context-query.mjs", "fallback": false }
     },
     {
+      "id": "normalized-usage-event-symbol",
+      "command": "search",
+      "query": "normalized_total_tokens",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "source": "scripts/lib/agent-observability/usage.mjs", "fallback": false }
+    },
+    {
+      "id": "close-requested-symbol",
+      "command": "search",
+      "query": "close_requested",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "source": "scripts/lib/agent-observability/state.mjs", "fallback": false }
+    },
+    {
+      "id": "broad-fallback-candidate-symbol",
+      "command": "search",
+      "query": "broad_fallback",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "source": "scripts/lib/agent-observability/flagging.mjs", "fallback": false }
+    },
+    {
       "id": "scripts/fixtures/context-retrieval.json",
       "command": "search",
       "query": "tower_collapsed",
       "options": { "anchor": true },
-      "expects": { "status": "matched", "path": "docs/context/backend.md", "title": "Authority and module boundaries", "fallback": false }
+      "expects": { "status": "matched", "source": "src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd", "fallback": false }
     },
     {
       "id": "scope-server",

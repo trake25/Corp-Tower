@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { executeBestEffort } from './agent-observability.mjs';
+import { codexRolloutUsage } from './lib/agent-observability/codex-rollout.mjs';
 import { boundedEventId, resolveRuntimeIdentity } from './lib/agent-observability/runtime.mjs';
 import {
   clearActiveTask,
@@ -27,8 +28,33 @@ function toolOutcome(response) {
   return 'passed';
 }
 
+function toolText(event) {
+  const input = event?.tool_input;
+  if (typeof input === 'string') return input;
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return '';
+  return [input.command, input.cmd, input.code].find(value => typeof value === 'string') || '';
+}
+
+function responseText(event) {
+  const response = event?.tool_response;
+  if (typeof response === 'string') return response;
+  if (!response || typeof response !== 'object' || Array.isArray(response)) return '';
+  return [response.output, response.stdout, response.aggregated_output].find(value => typeof value === 'string') || '';
+}
+
+function retrievalFor(event) {
+  const command = toolText(event);
+  if (!/(?:^|[\\/])context\.mjs\b/.test(command)) return null;
+  const operation = command.match(/context\.mjs["']?\s+(route|search|filter|outline|section|symbol|scope|bundle)\b/)?.[1] || 'query';
+  const output = responseText(event);
+  const status = output.match(/(?:status:\s*|"status"\s*:\s*")(matched|needs-anchor|needs-filter|retrieval-defect|tool-error)/)?.[1]
+    ?.replaceAll('-', '_') || 'unknown';
+  return { operation, status };
+}
+
 function stageFor(event) {
   if (event.hook_event_name === 'PostCompact') return 'retrieval_context';
+  if (retrievalFor(event)) return 'retrieval_context';
   const tool = String(event.tool_name || '').toLowerCase();
   if (tool === 'apply_patch') return 'implementation';
   if (tool.includes('plan')) return 'planning';
@@ -41,12 +67,13 @@ function evidenceFor(event, binding, identity, now) {
     : event.hook_event_name === 'PostCompact' ? 'compaction'
       : 'lifecycle';
   const eventIdentity = event.tool_use_id || event.turn_id || `${event.hook_event_name}-${now}`;
+  const retrieval = retrievalFor(event);
   return {
     evidence_event_id: boundedEventId('ev', event.session_id, eventIdentity, event.hook_event_name),
     task_id: binding.task_id,
     stage: stageFor(event),
     kind,
-    name: safeName(kind === 'tool' ? event.tool_name : event.hook_event_name, kind),
+    name: safeName(retrieval ? `context_${retrieval.operation}_${retrieval.status}` : kind === 'tool' ? event.tool_name : event.hook_event_name, kind),
     outcome: kind === 'tool' ? toolOutcome(event.tool_response) : 'observed',
     model_family: identity.model_family,
     model: safeName(identity.model, 'model'),
@@ -76,32 +103,55 @@ function telemetryFailed(result) {
   return result?.status === 'skipped';
 }
 
-function settleTask(event, binding, identity, root, stateDir, now) {
+function settleTask(event, binding, identity, root, stateDir, now, env) {
   const bundle = readTaskBundle(stateDir, binding.task_id);
   const providerUsage = providerUsageFor(event);
   if (!bundle.events.some(item => item.terminal)) {
-    const terminal = executeBestEffort('event', {
-      usage_event_id: boundedEventId('turn', event.session_id, event.turn_id, 'terminal'),
-      task_id: binding.task_id,
-      provider: 'openai',
-      model_family: identity.model_family,
-      model: safeName(identity.model, 'model'),
-      effort: identity.effort,
-      stage: 'closeout',
-      purpose: 'terminal',
-      usage: providerUsage,
-      settled: true,
-      terminal: true,
-      occurred_at: now,
-    }, { root, stateDir, now });
-    if (telemetryFailed(terminal)) return { status: 'degraded', reason: 'terminal_event_write_failed' };
+    const rollout = codexRolloutUsage(event.session_id, {
+      env,
+      transcriptPath: event.transcript_path,
+      until: now,
+      boundAt: binding.bound_at,
+      evidence: bundle.evidence,
+    });
+    if (rollout.status === 'exact') {
+      for (const usageEvent of rollout.events) {
+        const recorded = executeBestEffort('event', {
+          ...usageEvent,
+          task_id: binding.task_id,
+          provider: 'openai',
+          model_family: identity.model_family,
+          model: safeName(identity.model, 'model'),
+          effort: identity.effort,
+        }, { root, stateDir, now });
+        if (telemetryFailed(recorded)) return { status: 'degraded', reason: 'rollout_event_write_failed' };
+      }
+    } else {
+      const terminal = executeBestEffort('event', {
+        usage_event_id: boundedEventId('turn', event.session_id, event.turn_id, 'terminal'),
+        task_id: binding.task_id,
+        provider: 'openai',
+        model_family: identity.model_family,
+        model: safeName(identity.model, 'model'),
+        effort: identity.effort,
+        stage: 'closeout',
+        purpose: 'terminal',
+        usage: providerUsage,
+        settled: true,
+        terminal: true,
+        occurred_at: now,
+      }, { root, stateDir, now });
+      if (telemetryFailed(terminal)) return { status: 'degraded', reason: 'terminal_event_write_failed' };
+    }
   }
+  const refreshed = readTaskBundle(stateDir, binding.task_id);
+  const usageUnavailable = refreshed.events.some(item => item.terminal && item.normalized_total_tokens === null);
   const final = executeBestEffort('finalize', {
     task_id: binding.task_id,
     finalized_at: now,
-    partial_reason: Object.keys(providerUsage).length
-      ? 'codex_host_usage_incomplete'
-      : 'codex_hook_token_usage_not_exposed',
+    partial_reason: usageUnavailable
+      ? Object.keys(providerUsage).length ? 'codex_host_usage_incomplete' : 'codex_rollout_usage_unavailable'
+      : undefined,
   }, { root, stateDir, now });
   if (telemetryFailed(final)) return { status: 'degraded', reason: 'task_finalization_failed' };
   clearActiveTask(stateDir, event.session_id, binding.task_id);
@@ -135,7 +185,7 @@ export function handleHook(event, {
   const recorded = executeBestEffort('evidence', evidence, { root, stateDir: state, now });
   if (telemetryFailed(recorded)) return finish({ status: 'degraded', reason: 'evidence_write_failed', task_id: binding.task_id });
   if (['Stop', 'SessionEnd'].includes(event.hook_event_name) && binding.close_requested) {
-    const settled = settleTask(event, binding, identity, root, state, now);
+    const settled = settleTask(event, binding, identity, root, state, now, env);
     return finish({ ...settled, task_id: binding.task_id });
   }
   return finish({ status: 'recorded', task_id: binding.task_id, evidence_event_id: evidence.evidence_event_id });

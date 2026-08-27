@@ -21,19 +21,14 @@ secrets or the working-tree diff.
 | `scope <task-owned-path>...` | returns routes, docs, maps, QA and exact verification tools for explicit paths |
 | `bundle <task>` | writes selected KB/map evidence to ignored `.agent-state/automation/` state |
 
-The gitignored working folders have explicit routes but are not searched as KB
-content. `plan/` is where agents look for existing task plans and save new ones;
-existing plans are read-only until the user explicitly instructs or approves an
-edit. After complete verification and close-out, move the implemented plan
-Markdown file into `plan/done/`. `reference/` is human-managed screen-guide and bug-screenshot material;
-humans may upload, modify, or delete those files. Use `route plan/` or `route
-reference/` when task context points to either folder. `plan/`, `task/`, and
-`reference/` are human-maintained working folders. Machine-generated bundles,
-manifests, receipts, and retrieval-benchmark output belong under ignored
-`.agent-state/automation/`. Private workflow telemetry belongs under ignored
-`.agent-state/telemetry/`. All `report/**` paths are excluded from normal
-retrieval and indexing; only their owning tool or an explicit human request may
-read them.
+Gitignored working folders have routes but are excluded from KB search.
+`plan/` stores task plans; existing plans are read-only without explicit user
+approval, and only verified closed plans move to `plan/done/`. `reference/` holds
+human-managed screen and bug references. Use `route plan/` or
+`route reference/` for either folder. Bundles, manifests, receipts and retrieval
+benchmarks belong under ignored `.agent-state/automation/`; private telemetry
+belongs under ignored `.agent-state/telemetry/`. All `report/**` paths are
+excluded from retrieval and indexing unless their owning tool or the user asks.
 
 Search uses every query token as a required match. A weak narrative match returns
 `needs-anchor` with at most three exact retries and no evidence; overflow returns
@@ -71,13 +66,10 @@ the bundle path.
 `scripts/task-close.mjs` owns deterministic task closure. Its manifest is the
 scope authority and always names paths explicitly; it never discovers scope from
 a dirty working tree. Schema 2 separates authorized ownership from the final
-change set and retains full routes, child output and fingerprints locally while
-keeping console responses below the intake budget.
+change set while keeping detailed output in local artifacts.
 
 1. `prepare --task ... --path ...` records `owned_paths` after bounded retrieval
-   and before the first edit. Intake reuses `scopeContext` to name roles, docs,
-   maps, selected tests, validators and the next command. `--changed` remains an
-   accepted schema-1-compatible alias for `--path`.
+   and before the first edit, then returns roles, docs, maps, tests and validators.
 2. `amend --path ...` owns a later-discovered file before its edit. Adding source
    after review invalidates review; adding a reviewed candidate doc preserves the
    source review.
@@ -90,8 +82,7 @@ keeping console responses below the intake budget.
    change deserves durable regression coverage.
 5. Run `close --decision <updated|not-needed> --reason ... [--doc-path ...]
    --coverage <updated|not-needed> --coverage-reason ...`. The coverage decision
-   does not select QA: every task still runs the checks selected from its final
-   paths, while cosmetic or source-obvious fixes normally use `not-needed`.
+   does not select QA; final paths still select every task's checks.
 6. `close` validates both decisions, runs QA/map/KB/agent-config checks, detects
    generated maps by before/after content hash, rejects out-of-scope map output,
    and writes a resumable receipt. `publish_paths` is the union of explicit
@@ -99,14 +90,13 @@ keeping console responses below the intake budget.
 
 `fallback --query ... --classification <retrieval-defect|tool-error> --root ...
 --fixture ...` records permitted source fallback. Closeout requires the named
-fixture and a passing retrieval benchmark. Schema-1 `decide` and `verify` remain
-compatibility commands; schema 2 uses `prepare → review → close`.
+fixture and a passing retrieval benchmark. Schema 2 uses
+`prepare → review → close`.
 
-Child stdout/stderr is captured through a private ignored log file before being
-embedded in the receipt, which preserves diagnostics on hosts that swallow
-nested pipes. A passing close prints one line. A failure prints the step,
-exit/signal, first actionable diagnostic and receipt path; identical close inputs
-reuse the passing receipt.
+Child output is captured in a private ignored log before entering the receipt,
+preserving diagnostics on hosts that swallow nested pipes. A passing close prints
+one line; a failure names the step, exit/signal, first diagnostic and receipt.
+Identical close inputs reuse the passing receipt.
 
 `scripts/agent-observability.mjs` owns private task events, evidence, candidates,
 flags, settlement, analysis and approved export under
@@ -124,13 +114,20 @@ attempt. They never retain prompt, response, command, patch, tool payload or
 transcript content. Review hooks through `/hooks` when Codex asks and again after
 their definition changes; ordinary tasks need no separate hook command.
 
+Context CLI calls become operation/status evidence. Task-close derives
+retrieval attempts, filter expansions and first-try success from them, never
+fixed defaults.
+
 Exact totals require stable disjoint IDs, settled inclusive root/child/retry
 usage and a terminal host event; observability usage remains a non-additive
-subset. `Stop` records terminal counters when a host adapter supplies them. The
-standard Codex hook payload has no token counters, so that path settles with the
-named `codex_hook_token_usage_not_exposed` quality reason instead of a fabricated
-zero. Finalization writes the weekly report, and an idempotent repeat regenerates
-it from settled records. The same active agent may
+subset. At `Stop`, the Codex adapter scans only session metadata, task boundaries
+and token counters, subtracts the root session's earlier-task baseline, and
+includes descendant sessions once through their parent identity. It never reads
+message or tool content. Missing rollout usage is partial with
+`codex_rollout_usage_unavailable`, never a fabricated zero.
+Finalization writes the weekly report, and an idempotent repeat regenerates it
+from settled records. Candidate and formal flags are grouped by fingerprint and
+unique task; a later observation reopens a validated change. The same active agent may
 formalize an eligible current-run, high-effort candidate before its final
 response; no extra agent or provider turn is created. Private weekly reports
 stay local; only `export-public --approve` writes the rounded,

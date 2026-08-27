@@ -60,6 +60,15 @@ test('an explicit anchor resolves through the bounded retrieval vocabulary bridg
   assert.equal(result.results[0].source.symbol, 'bindActiveTask');
 });
 
+test('a product-state anchor returns a bounded source target instead of docs only', () => {
+  const result = searchContext(ROOT, 'tower_collapsed', { anchor: true });
+  const source = result.results.find(item => item.source?.source_path === 'src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd');
+
+  assert.equal(result.status, 'matched');
+  assert.equal(source.source.symbol, 'tower_collapsed');
+  assert.deepEqual(source.source.read.lines, [69, 101]);
+});
+
 test('a broken retrieval index returns tool-error and authorizes repair fallback', () => {
   const root = mkdtempSync(join(tmpdir(), 'corp-context-error-'));
   try {

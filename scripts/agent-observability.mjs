@@ -182,9 +182,14 @@ export function executeCommand(command, input, {
     const reasons = [...usage.reasons];
     if (usage.status === 'partial' && input.partial_reason) reasons.push(cleanSlug(input.partial_reason, 'partial_reason'));
     const finalizedAt = cleanTimestamp(input.finalized_at, 'finalized_at', now);
+    const workerCount = new Set(bundle.events.map(event => event.agent_id)).size;
     const final = {
       ...bundle.final,
       ...usage,
+      telemetry: {
+        ...bundle.final.telemetry,
+        worker_count: Math.max(bundle.final.telemetry.worker_count, workerCount),
+      },
       status: usage.status === 'exact' ? 'exact' : 'partial',
       reasons: [...new Set(reasons)].sort(),
       finalized_at: finalizedAt,

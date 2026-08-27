@@ -8,6 +8,7 @@ import { mapOwnerForPath, routeSourcePath } from './lib/context-routing.mjs';
 import { scopeContext } from './lib/context-query.mjs';
 import { selectQa } from './qa-gate.mjs';
 import { executeBestEffort } from './agent-observability.mjs';
+import { buildTaskTelemetry } from './lib/agent-observability/task-telemetry.mjs';
 import { codexSessionIds } from './lib/agent-observability/runtime.mjs';
 import {
   bindActiveTask,
@@ -232,32 +233,6 @@ export function startObservability(manifest, env = process.env) {
   }
 }
 
-function telemetryFor(manifest, receipt, evidence) {
-  const toolEvents = evidence.filter(item => item.kind === 'tool');
-  const failures = toolEvents.filter(item => item.outcome === 'failed').length;
-  const domains = Object.fromEntries(manifest.domains.map(domain => [domain.replaceAll('-', '_'), manifest.changed_paths.filter(path => domainFor(path) === domain).length]));
-  return {
-    tools: { calls: toolEvents.length, failures, retries: 0 },
-    retrieval: {
-      attempts: 1,
-      expansions: 0,
-      fallbacks: manifest.retrieval.fallbacks.length,
-      first_try: manifest.retrieval.fallbacks.length === 0,
-    },
-    skills: [],
-    worker_count: 1,
-    files: { inspected: 0, modified: manifest.changed_paths.length, domains },
-    iterations: { implementation: manifest.changed_paths.length ? 1 : 0, rework: 0 },
-    checks: {
-      run: receipt.steps.length,
-      failures: receipt.steps.filter(step => step.status !== 0).length,
-      retests: 0,
-    },
-    documentation: { files: manifest.documented_paths.length, updates: manifest.documented_paths.length },
-    task_close: { status: receipt.status, receipt_hash: fingerprint(receipt).slice(0, 32) },
-  };
-}
-
 export function closeObservabilityUnsafe(manifest, receipt, env = process.env) {
   const taskId = manifest.observability?.task_id || manifest.run_id;
   const stateDir = resolveStateDir({ root: ROOT, env });
@@ -268,7 +243,10 @@ export function closeObservabilityUnsafe(manifest, receipt, env = process.env) {
     return { status: 'partial', task_id: taskId, reasons: ['telemetry_task_unavailable'], candidates: [] };
   }
   const evidenceIds = bundle.evidence.slice(-5).map(item => item.evidence_event_id);
-  const telemetry = telemetryFor(manifest, receipt, bundle.evidence);
+  const telemetry = buildTaskTelemetry(manifest, receipt, bundle.evidence, {
+    domainFor,
+    receiptHash: fingerprint(receipt).slice(0, 32),
+  });
   executeBestEffort('close', {
     task_id: taskId,
     outcome: receipt.status === 'passed' ? 'completed' : 'failed',

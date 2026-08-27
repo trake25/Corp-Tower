@@ -36,6 +36,18 @@
     "retrieval aliases": {
       "aliases": ["loadAliases", "retrievalAliases"],
       "areas": ["automation"]
+    },
+    "normalized usage event": {
+      "aliases": ["normalized_total_tokens", "normalizeUsageEvent"],
+      "areas": ["automation"]
+    },
+    "close settlement request": {
+      "aliases": ["close_requested", "requestActiveTaskFinalization"],
+      "areas": ["automation"]
+    },
+    "retrieval fallback candidate": {
+      "aliases": ["broad_fallback", "detectCandidates"],
+      "areas": ["automation"]
     }
   }
 }
