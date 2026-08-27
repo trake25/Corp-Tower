@@ -22,6 +22,7 @@ func test_defaults_match_the_shipped_config() -> void:
 	assert_true(hooks.impact_beat_enabled, "The Impact beat ships enabled.")
 	assert_true(hooks.screen_shake_enabled, "Screen shake ships enabled.")
 	assert_eq(hooks.impact_beat_min_zoom, 0.3, "The zoom floor defaults to 0.3.")
+	assert_eq(hooks.collapse_debris_lifetime_ms, 2000, "Collapsed debris ships with a two-second lifetime.")
 
 func test_apply_reads_every_key_from_the_payload() -> void:
 	var hooks := VisualHooks.new()
@@ -33,6 +34,7 @@ func test_apply_reads_every_key_from_the_payload() -> void:
 		"impactBeatZoomOutMs": 100,
 		"impactBeatWaveMs": 200,
 		"impactBeatHoldMs": 300,
+		"collapseDebrisLifetimeMs": 750,
 		"screenShakeMs": 500,
 		"screenShakeMagnitudeUnits": 0.6
 	})
@@ -42,6 +44,7 @@ func test_apply_reads_every_key_from_the_payload() -> void:
 	assert_eq(hooks.impact_beat_min_zoom, 0.45, "The zoom floor should follow the payload.")
 	assert_eq(hooks.screen_shake_ms, 500, "The shake duration should follow the payload.")
 	assert_eq(hooks.screen_shake_magnitude_units, 0.6, "The shake magnitude should follow the payload.")
+	assert_eq(hooks.collapse_debris_lifetime_ms, 750, "The collapse lifetime should follow the payload.")
 	assert_eq(hooks.impact_beat_total_ms(), 600, "The beat total is the sum of zoom-out, wave and hold.")
 	assert_eq(hooks.impact_beat_total_seconds(), 0.6, "The beat total converts to seconds.")
 
@@ -160,6 +163,24 @@ func test_collapse_seeds_begin_from_the_displayed_structural_pose() -> void:
 
 	assert_almost_eq(float(piece.angle), deg_to_rad(14.0), 0.001, "Collapse inherits the displayed block rotation.")
 	assert_gt(float(piece.vel.x), 0.0, "The critical pose seeds a rightward initial impulse.")
+
+func test_collapsed_bricks_disappear_on_the_configured_deadline() -> void:
+	var tower: Control = _mounted_tower()
+	var hooks := VisualHooks.new()
+	hooks.apply({"collapseDebrisLifetimeMs": 100})
+	tower.set_visual_hooks(hooks)
+	var entry: Dictionary = _tower_entry("P1", 0)
+	tower.set_tower([entry], 2, 30, 100, {})
+	var fallen: Dictionary = entry.duplicate(true)
+	fallen["towerState"] = "fallen"
+	tower.set_tower([fallen], 0, 30, 100, {})
+
+	tower._process(0.099)
+	assert_ne(tower._collapse_phase, TowerStackScript.COLLAPSE_NONE)
+	tower._process(0.002)
+	assert_eq(tower._collapse_phase, TowerStackScript.COLLAPSE_NONE)
+	assert_null(tower._collapse_sim)
+	assert_true(tower._collapsing_block_ids.is_empty())
 
 func test_the_beat_arms_the_camera_and_the_wave() -> void:
 	var tower: Control = _mounted_tower()

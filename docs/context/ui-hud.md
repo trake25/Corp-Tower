@@ -100,7 +100,9 @@ sections carry different poses.
 
 Fallen bricks provide no height, collision, or snap points. Tower Stack animates
 only entries that newly transition to fallen, keeps survivor poses drawable
-during the fall, and does not replay persisted falls after reconnect.
+during the fall, and does not replay persisted falls after reconnect. The
+server-owned visual-hook lifetime bounds debris visibility from the collapse
+transition; repeated snapshots cannot restart that clock.
 
 The Impact Beat temporarily changes the render scale and wave state, then holds
 until Summary cancels it. It adds no delay when disabled, empty, or collapsing.

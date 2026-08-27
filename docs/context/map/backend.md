@@ -50,7 +50,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Debug_Config.js:119 | applyDefaults · fn | |
 | src/Server/app/Debug_Config.js:130 | applyValue · fn | |
 
-### src/Server/app/Game_Config.js — 164 ln
+### src/Server/app/Game_Config.js — 165 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|

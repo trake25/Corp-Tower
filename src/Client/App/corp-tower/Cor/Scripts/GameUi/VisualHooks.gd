@@ -6,6 +6,7 @@ const DEFAULT_MIN_ZOOM := 0.3
 const DEFAULT_ZOOM_OUT_MS := 900
 const DEFAULT_WAVE_MS := 1100
 const DEFAULT_HOLD_MS := 0
+const DEFAULT_COLLAPSE_DEBRIS_LIFETIME_MS := 2000
 const DEFAULT_SHAKE_MS := 260
 const DEFAULT_SHAKE_MAGNITUDE_UNITS := 0.22
 
@@ -15,6 +16,7 @@ var impact_beat_min_zoom: float = DEFAULT_MIN_ZOOM
 var impact_beat_zoom_out_ms: int = DEFAULT_ZOOM_OUT_MS
 var impact_beat_wave_ms: int = DEFAULT_WAVE_MS
 var impact_beat_hold_ms: int = DEFAULT_HOLD_MS
+var collapse_debris_lifetime_ms: int = DEFAULT_COLLAPSE_DEBRIS_LIFETIME_MS
 var screen_shake_ms: int = DEFAULT_SHAKE_MS
 var screen_shake_magnitude_units: float = DEFAULT_SHAKE_MAGNITUDE_UNITS
 
@@ -32,6 +34,9 @@ func apply(config: Variant) -> void:
 	impact_beat_zoom_out_ms = maxi(0, int(hooks.get("impactBeatZoomOutMs", DEFAULT_ZOOM_OUT_MS)))
 	impact_beat_wave_ms = maxi(0, int(hooks.get("impactBeatWaveMs", DEFAULT_WAVE_MS)))
 	impact_beat_hold_ms = maxi(0, int(hooks.get("impactBeatHoldMs", DEFAULT_HOLD_MS)))
+	collapse_debris_lifetime_ms = maxi(
+		0, int(hooks.get("collapseDebrisLifetimeMs", DEFAULT_COLLAPSE_DEBRIS_LIFETIME_MS))
+	)
 	screen_shake_ms = maxi(0, int(hooks.get("screenShakeMs", DEFAULT_SHAKE_MS)))
 	screen_shake_magnitude_units = maxf(
 		0.0, float(hooks.get("screenShakeMagnitudeUnits", DEFAULT_SHAKE_MAGNITUDE_UNITS))

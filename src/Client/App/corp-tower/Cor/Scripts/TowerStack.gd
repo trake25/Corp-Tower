@@ -95,8 +95,10 @@ var _prev_block_count: int = 0
 var mood_threshold: int = BlockDataScript.DEFAULT_MOOD_THRESHOLD
 var _collapse_phase: int = COLLAPSE_NONE
 var _collapse_lean_elapsed: float = 0.0
+var _collapse_elapsed: float = 0.0
 var _collapse_sim = null
 var _collapsing_block_ids: Dictionary = {}
+var _last_collapse_key: String = ""
 var visual_hooks = null
 var _camera_zoom: float = 1.0
 var _beat_phase: int = BEAT_NONE
@@ -126,23 +128,30 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	tower_stability = clampi(new_stability, 0, 100)
 	structural_pose.replace_targets(pose_entries, direct_pose_replace)
 
-	tower_collapsed = !newly_fallen.is_empty() or bool(diagnostics.get("collapsed", false))
+	var collapse_ids: Dictionary = newly_fallen
+	if collapse_ids.is_empty() and bool(diagnostics.get("collapsed", false)):
+		collapse_ids = _all_block_ids()
+	var collapse_key: String = _collapse_key(collapse_ids)
+	var starts_collapse: bool = collapse_key != "" and collapse_key != _last_collapse_key
 	var reported_tilt: float = float(diagnostics.get("tiltAngleDeg", 0.0))
 	var critical_support: Dictionary = diagnostics.get("criticalSupport", {})
 	var critical_direction: String = str(critical_support.get("direction", ""))
 
-	if tower_collapsed:
-		_collapsing_block_ids = newly_fallen if !newly_fallen.is_empty() else _all_block_ids()
+	if starts_collapse:
+		tower_collapsed = true
+		_last_collapse_key = collapse_key
+		_collapsing_block_ids = collapse_ids
 		if !newly_fallen.is_empty():
 			critical_direction = _collapse_direction_for(newly_fallen)
 		var lean_sign: float = 1.0 if critical_direction == "right" or (critical_direction == "" and reported_tilt >= 0.0) else -1.0
 		tower_tilt_deg = lean_sign * collapse_tilt_deg
 		_collapse_phase = COLLAPSE_LEAN
 		_collapse_lean_elapsed = 0.0
+		_collapse_elapsed = 0.0
 		_collapse_sim = null
-	else:
-		if _collapse_phase != COLLAPSE_LEAN:
-			tower_tilt_deg = 0.0 if structural_pose.has_targets() else reported_tilt
+	elif _collapse_phase == COLLAPSE_NONE:
+		tower_collapsed = false
+		tower_tilt_deg = 0.0 if structural_pose.has_targets() else reported_tilt
 
 	_maybe_start_drop_animation(previous_global_height)
 	_update_scroll_offset()
@@ -154,6 +163,14 @@ func _all_block_ids() -> Dictionary:
 		if typeof(entry_value) == TYPE_DICTIONARY:
 			block_ids[_entry_block_id(entry_value)] = true
 	return block_ids
+
+func _collapse_key(block_ids: Dictionary) -> String:
+	var ids: Array = block_ids.keys()
+	ids.sort()
+	var parts := PackedStringArray()
+	for block_id in ids:
+		parts.append(str(block_id))
+	return "|".join(parts)
 
 func _newly_fallen_block_ids(previous: Array, current: Array) -> Dictionary:
 	var fallen: Dictionary = {}
@@ -537,6 +554,12 @@ func _process(delta: float) -> void:
 		_armed_pulse_t = fmod(_armed_pulse_t + delta * ARMED_PULSE_SPEED, TAU)
 		needs_redraw = true
 
+	if _collapse_phase != COLLAPSE_NONE:
+		_collapse_elapsed += delta
+		if _collapse_elapsed >= _collapse_debris_lifetime_seconds():
+			_expire_collapse_debris()
+			needs_redraw = true
+
 	if _collapse_phase == COLLAPSE_LEAN:
 		_collapse_lean_elapsed += delta
 		if _collapse_lean_elapsed >= collapse_lean_seconds:
@@ -570,6 +593,7 @@ func clear_tower() -> void:
 	_prev_block_count = 0
 	_drop_anim_id = ""
 	tower_collapsed = false
+	_last_collapse_key = ""
 	structural_pose.clear()
 	_reset_collapse()
 	cancel_impact_beat()
@@ -579,8 +603,19 @@ func clear_tower() -> void:
 func _reset_collapse() -> void:
 	_collapse_phase = COLLAPSE_NONE
 	_collapse_lean_elapsed = 0.0
+	_collapse_elapsed = 0.0
 	_collapse_sim = null
 	_collapsing_block_ids = {}
+
+func _collapse_debris_lifetime_seconds() -> float:
+	if visual_hooks == null:
+		return 2.0
+	return maxf(0.0, float(visual_hooks.collapse_debris_lifetime_ms) / 1000.0)
+
+func _expire_collapse_debris() -> void:
+	_reset_collapse()
+	tower_collapsed = false
+	tower_tilt_deg = 0.0
 
 func _begin_collapse() -> void:
 	var unit: float = _unit_size()

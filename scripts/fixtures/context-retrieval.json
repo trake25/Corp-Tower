@@ -13,7 +13,9 @@
     { "id": "P4", "area": "networking", "queries": [{ "map": "ui-hud", "query": "snap_radius_units", "expects": "TowerStack.gd" }, { "map": "backend", "query": "resolveColumnOriginX", "expects": "Placement.js" }] },
     { "id": "P5", "area": "networking", "queries": [{ "map": "backend", "query": "createScoreEvent", "expects": "Scoring.js" }, { "map": "ui-hud", "query": "process_score_events", "expects": "ScorePopupController.gd" }] },
     { "id": "P6", "area": "backend", "queries": [{ "map": "backend", "query": "dispatchRoomAction", "expects": "Lobby_Manager.js" }, { "map": "backend", "query": "getRoomLeaseOwner", "expects": "Redis_State.js" }] },
-    { "id": "P7", "area": "hud", "queries": [{ "map": "ui-hud", "query": "failureStatus", "expects": "LevelSummaryController.gd" }] }
+    { "id": "P7", "area": "hud", "queries": [{ "map": "ui-hud", "query": "failureStatus", "expects": "LevelSummaryController.gd" }] },
+    { "id": "visual-hooks-config-anchor", "area": "hud", "queries": [{ "map": "ui-hud", "query": "VisualHooks", "expects": "VisualHooks.gd" }] },
+    { "id": "codex-hook-config-anchor", "area": "automation", "queries": [{ "map": "infra", "query": "handleHook", "expects": "codex-observability-hook.mjs" }] }
   ],
   "skills": [
     { "id": "client", "path": "src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd", "expects": "client-engineer" },
