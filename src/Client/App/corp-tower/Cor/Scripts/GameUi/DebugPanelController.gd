@@ -116,6 +116,7 @@ var tutorial_launch_button: Button
 var parallel_placement_button: Button
 var impact_beat_toggle: CheckButton
 var screen_shake_toggle: CheckButton
+var latency_indicator_toggle: CheckButton
 var impact_beat_zoom_out_label: Control
 var impact_beat_zoom_out_slider: HSlider
 var impact_beat_wave_label: Control
@@ -161,6 +162,7 @@ func bind_nodes(binder) -> void:
 	bots_toggle = binder.optional_node("BotsToggle") as CheckButton
 	impact_beat_toggle = binder.optional_node("ImpactBeatToggle") as CheckButton
 	screen_shake_toggle = binder.optional_node("ScreenShakeToggle") as CheckButton
+	latency_indicator_toggle = binder.optional_node("LatencyIndicatorToggle") as CheckButton
 	bind_tooltip_row(binder, "HooksAboutButton")
 	impact_beat_zoom_out_label = bind_tooltip_row(binder, "ImpactBeatZoomOutLabel")
 	impact_beat_zoom_out_slider = binder.optional_node("ImpactBeatZoomOutSlider") as HSlider
@@ -296,6 +298,9 @@ func setup(
 
 	if screen_shake_toggle != null:
 		screen_shake_toggle.toggled.connect(on_screen_shake_toggle)
+
+	if latency_indicator_toggle != null:
+		latency_indicator_toggle.toggled.connect(on_latency_indicator_toggle)
 
 	if power_last_chance_toggle != null:
 		power_last_chance_toggle.toggled.connect(on_power_last_chance_toggle)
@@ -592,6 +597,11 @@ func on_screen_shake_toggle(enabled: bool) -> void:
 		return
 	network.update_config("visualHookScreenShake", enabled)
 
+func on_latency_indicator_toggle(enabled: bool) -> void:
+	if is_syncing_debug_config:
+		return
+	network.update_config("showLatencyIndicator", enabled)
+
 func on_power_last_chance_toggle(enabled: bool) -> void:
 	if is_syncing_debug_config:
 		return
@@ -683,6 +693,10 @@ func apply_config(config) -> void:
 	if screen_shake_toggle != null:
 		screen_shake_toggle.set_pressed_no_signal(
 			bool(config.get("visualHookScreenShake", true))
+		)
+	if latency_indicator_toggle != null:
+		latency_indicator_toggle.set_pressed_no_signal(
+			bool(config.get("showLatencyIndicator", false))
 		)
 	if bot_strategy_button != null:
 		var strategy: String = str(config.get("debugBotStrategy", DebugPanelCatalogScript.BOT_STRATEGY_COOPERATIVE))

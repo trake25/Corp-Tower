@@ -37,6 +37,10 @@ and client-local accessibility/view controls. The client displays and sends
 intent but never applies a server gameplay outcome locally. Screen Manager limits
 which debug categories are meaningful in lobby and play.
 
+The synchronized latency-display setting controls visibility, but each client
+measures its own WebSocket RTT. Probes run only while shown and discard pending
+results after disable or disconnect; latency never becomes shared game state.
+
 ## Gameplay scene and overlays
 
 The Game UI scene composes the play field, tower, HUD, tutorial, debug panel,

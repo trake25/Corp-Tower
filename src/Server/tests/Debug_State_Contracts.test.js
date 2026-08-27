@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { afterEach, test } = require("node:test");
 
 const LobbyManager = require("../app/Lobby_Manager");
+const { handleMessage } = require("../app/Server");
 const {
     GameConfig,
     createPlayingEngine,
@@ -10,6 +11,33 @@ const {
 } = require("./helpers/Game_Engine_Fixture");
 
 afterEach(resetFixtures);
+
+test("latency pings echo only their nonce to the originating socket", async () => {
+    const sent = [];
+    const player = {
+        id: "player-one",
+        ws: { send: message => sent.push(JSON.parse(message)) }
+    };
+
+    await handleMessage(player, Buffer.from(JSON.stringify({
+        type: "latency_ping",
+        nonce: "probe-1"
+    })));
+
+    assert.deepEqual(sent, [{ type: "latency_pong", nonce: "probe-1" }]);
+});
+
+test("malformed latency pings do not emit a pong", async () => {
+    const sent = [];
+    const player = {
+        id: "player-one",
+        ws: { send: message => sent.push(message) }
+    };
+
+    await handleMessage(player, Buffer.from(JSON.stringify({ type: "latency_ping", nonce: 1 })));
+
+    assert.deepEqual(sent, []);
+});
 
 test("UI durations are exposed and clamped in debug config", async () => {
     const lobbyManager = new LobbyManager();
@@ -86,6 +114,18 @@ test("Last Chance power toggle round-trips through debug config and resets", asy
 
     await lobbyManager.updateDebugConfig("resetDebugConfig", true);
     assert.equal(GameConfig.powerLastChanceEnabled, false);
+});
+
+test("latency indicator toggle round-trips through debug config and resets", async () => {
+    const lobbyManager = new LobbyManager();
+
+    assert.equal(lobbyManager.getDebugConfig().showLatencyIndicator, false);
+    await lobbyManager.updateDebugConfig("showLatencyIndicator", true);
+    assert.equal(GameConfig.showLatencyIndicator, true);
+    assert.equal(lobbyManager.getDebugConfig().showLatencyIndicator, true);
+
+    await lobbyManager.updateDebugConfig("resetDebugConfig", true);
+    assert.equal(GameConfig.showLatencyIndicator, false);
 });
 
 test("transaction scoring controls clamp and reject unknown scoring keys", async () => {

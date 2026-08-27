@@ -61,6 +61,10 @@ against room ownership, state, player identity, cooldowns, and its domain rules.
 Power has no target and applies room-wide. Quick chat sends a template slot, not
 arbitrary text.
 
+Latency diagnostics use a client nonce: `latency_ping` receives a same-socket
+`latency_pong` carrying that nonce. The server neither persists nor fans it out;
+RTT is device-local transport telemetry, not room state.
+
 ## Placement contract
 
 `place_block` identifies an inventory slot plus an intended column and optional

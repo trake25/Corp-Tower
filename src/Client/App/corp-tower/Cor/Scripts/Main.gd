@@ -6,6 +6,7 @@ const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
 const AccessibilitySettingsScript = preload("res://Cor/Scripts/GameUi/AccessibilitySettings.gd")
 const DebugPanelControllerScript = preload("res://Cor/Scripts/GameUi/DebugPanelController.gd")
+const LatencyIndicatorScript = preload("res://Cor/Scripts/GameUi/LatencyIndicator.gd")
 const PlayerContextScript = preload("res://Cor/Scripts/GameUi/PlayerContext.gd")
 const MatchStateScript = preload("res://Cor/Scripts/GameUi/MatchState.gd")
 const ScorePopupControllerScript = preload("res://Cor/Scripts/GameUi/ScorePopupController.gd")
@@ -31,6 +32,7 @@ var missing_required_nodes: Array[String] = []
 var tuning
 var accessibility
 var debug_panel
+var latency_indicator
 var players_ctx
 var match_state
 var score_popups
@@ -60,6 +62,8 @@ func _ready() -> void:
 	match_state = MatchStateScript.new()
 	debug_panel = DebugPanelControllerScript.new()
 	add_child(debug_panel)
+	latency_indicator = LatencyIndicatorScript.new()
+	add_child(latency_indicator)
 	score_popups = ScorePopupControllerScript.new()
 	add_child(score_popups)
 	summary = LevelSummaryControllerScript.new()
@@ -93,6 +97,7 @@ func _ready() -> void:
 	inventory.setup(players_ctx, match_state, tuning, NetworkManager, popovers, tutorial, accessibility)
 	top_bar.setup(match_state)
 	debug_panel.setup(tuning, NetworkManager, request_tutorial, accessibility)
+	latency_indicator.setup(NetworkManager)
 	score_popups.setup(players_ctx, match_state, tuning)
 	summary.setup(players_ctx, match_state, tuning)
 	roster.setup(players_ctx, match_state)
@@ -161,6 +166,7 @@ func bind_ui_nodes() -> void:
 	top_bar.bind_nodes(binder)
 	inventory.bind_nodes(binder)
 	debug_panel.bind_nodes(binder)
+	latency_indicator.bind_nodes(binder)
 	score_popups.bind_nodes(binder)
 	summary.bind_nodes(binder)
 	roster.bind_nodes(binder)
@@ -390,6 +396,7 @@ func update_game_state(data) -> void:
 
 func update_debug_config(config) -> void:
 	debug_panel.apply_config(config)
+	latency_indicator.apply_config(config)
 	top_bar.set_stability_meter_visible(
 		str(config.get("towerStabilityFeedbackMode", "warnings_only"))
 	)

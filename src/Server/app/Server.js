@@ -114,6 +114,13 @@ async function handleMessage(player, message) {
 
     console.log(`${player.id} sent:`, data.type);
 
+    if (data.type === "latency_ping") {
+        if (typeof data.nonce === "string" && data.nonce !== "") {
+            player.ws.send(JSON.stringify({ type: "latency_pong", nonce: data.nonce }));
+        }
+        return;
+    }
+
     if (data.type === "update_config") {
         await lobbyManager.updateDebugConfig(data.key, data.value);
         return;
@@ -175,7 +182,11 @@ async function handleMessage(player, message) {
     }
 }
 
-main().catch(error => {
-    console.error("Server failed to start:", error);
-    process.exit(1);
-});
+if (require.main === module) {
+    main().catch(error => {
+        console.error("Server failed to start:", error);
+        process.exit(1);
+    });
+}
+
+module.exports = { handleMessage };

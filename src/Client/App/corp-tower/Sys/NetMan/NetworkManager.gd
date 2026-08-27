@@ -15,6 +15,11 @@ var current_url := ""
 var tried_failover := false
 var connect_attempt_elapsed := 0.0
 var background_since_msec := -1
+var latency_probe_enabled := false
+var latency_probe_elapsed := 0.0
+var latency_probe_nonce := ""
+var latency_probe_sent_at_msec := -1
+var latency_probe_sequence := 0
 
 const PLAYER_ID_FILE := "user://corp_tower_player_id.save"
 const RECONNECT_TOKEN_FILE := "user://corp_tower_reconnect_token.save"
@@ -23,6 +28,8 @@ const AUTO_RECONNECT_DELAY_SECONDS := 1.0
 const AUTO_RECONNECT_MAX_ATTEMPTS := 8
 const CONNECT_TIMEOUT_SECONDS := 5.0
 const BACKGROUND_STALE_THRESHOLD_SECONDS := 5.0
+const LATENCY_PROBE_INTERVAL_SECONDS := 1.0
+const LATENCY_PROBE_TIMEOUT_MS := 5000
 const SERVER_URL := EndpointConfig.PRIMARY
 const FAILOVER_SERVER_URL := EndpointConfig.FAILOVER
 
@@ -34,6 +41,7 @@ signal room_closed(data)
 signal game_state_updated(data)
 signal client_status(status)
 signal debug_config_updated(config)
+signal latency_rtt_updated(rtt_ms: int)
 
 func connect_server(is_auto_reconnect := false, is_failover_retry := false):
 	if is_auto_reconnect:
@@ -75,6 +83,7 @@ func disconnect_server():
 	manual_disconnect_requested = true
 	auto_reconnect_enabled = false
 	auto_reconnect_delay_remaining = -1.0
+	reset_latency_probe()
 	if ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
 		ws.close()
 
@@ -224,6 +233,7 @@ func force_reconnect_after_background():
 
 	is_conn_estab = false
 	is_connecting = false
+	reset_latency_probe()
 	ws = WebSocketPeer.new()
 	auto_reconnect_attempts = 0
 	connect_server(true)
@@ -235,6 +245,7 @@ func _process(delta: float) -> void:
 			auto_reconnect_delay_remaining = -1.0
 			connect_server(true)
 
+	process_latency_probe(delta)
 	ws.poll()
 
 	while ws.get_available_packet_count():
@@ -264,6 +275,8 @@ func _process(delta: float) -> void:
 				game_state_updated.emit(data)
 			"debug_config":
 				debug_config_updated.emit(data.config)
+			"latency_pong":
+				accept_latency_pong(data)
 			"room_closed":
 				auto_reconnect_enabled = false
 				auto_reconnect_delay_remaining = -1.0
@@ -305,6 +318,7 @@ func _process(delta: float) -> void:
 					client_status.emit("[Connect]")
 			is_conn_estab = false
 			is_connecting = false
+			reset_latency_probe()
 
 func update_config(key, value):
 	if not is_conn_estab:
@@ -317,3 +331,48 @@ func update_config(key, value):
 	}
 
 	ws.send_text(JSON.stringify(data))
+
+func set_latency_probe_enabled(enabled: bool) -> void:
+	latency_probe_enabled = enabled
+	reset_latency_probe()
+
+func reset_latency_probe() -> void:
+	latency_probe_elapsed = 0.0
+	latency_probe_nonce = ""
+	latency_probe_sent_at_msec = -1
+
+func process_latency_probe(delta: float) -> void:
+	if not latency_probe_enabled or not is_conn_estab:
+		return
+	if latency_probe_nonce != "":
+		if Time.get_ticks_msec() - latency_probe_sent_at_msec >= LATENCY_PROBE_TIMEOUT_MS:
+			reset_latency_probe()
+		else:
+			return
+
+	latency_probe_elapsed += delta
+	if latency_probe_elapsed < LATENCY_PROBE_INTERVAL_SECONDS:
+		return
+
+	latency_probe_elapsed = 0.0
+	latency_probe_sequence += 1
+	var nonce := str(Time.get_ticks_usec()) + ":" + str(latency_probe_sequence)
+	if ws.send_text(JSON.stringify({"type": "latency_ping", "nonce": nonce})) != OK:
+		return
+
+	latency_probe_nonce = nonce
+	latency_probe_sent_at_msec = Time.get_ticks_msec()
+
+func accept_latency_pong(data, received_at_msec: int = -1) -> void:
+	if not latency_probe_enabled or latency_probe_nonce == "":
+		return
+
+	var nonce = data.get("nonce", null)
+	if typeof(nonce) != TYPE_STRING or nonce != latency_probe_nonce:
+		return
+	if received_at_msec < 0:
+		received_at_msec = Time.get_ticks_msec()
+
+	var rtt_ms: int = max(0, received_at_msec - latency_probe_sent_at_msec)
+	reset_latency_probe()
+	latency_rtt_updated.emit(rtt_ms)

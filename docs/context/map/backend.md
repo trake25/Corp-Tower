@@ -39,18 +39,18 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Bot_Manager.js:38 | stopBots | |
 | src/Server/app/Bot_Manager.js:394 | chooseBotAction | |
 
-### src/Server/app/Debug_Config.js — 180 ln
+### src/Server/app/Debug_Config.js — 182 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Debug_Config.js:1 | @file · file | resolves a root, scoring or visual-hooks config owner |
-| src/Server/app/Debug_Config.js:107 | target · fn | |
-| src/Server/app/Debug_Config.js:111 | snapshot · fn | |
-| src/Server/app/Debug_Config.js:117 | DEFAULTS · const | |
-| src/Server/app/Debug_Config.js:119 | applyDefaults · fn | |
-| src/Server/app/Debug_Config.js:130 | applyValue · fn | |
+| src/Server/app/Debug_Config.js:109 | target · fn | |
+| src/Server/app/Debug_Config.js:113 | snapshot · fn | |
+| src/Server/app/Debug_Config.js:119 | DEFAULTS · const | |
+| src/Server/app/Debug_Config.js:121 | applyDefaults · fn | |
+| src/Server/app/Debug_Config.js:132 | applyValue · fn | |
 
-### src/Server/app/Game_Config.js — 165 ln
+### src/Server/app/Game_Config.js — 166 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -157,7 +157,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Redis_State.js:554 | unsubscribeFromRoomActions | |
 | src/Server/app/Redis_State.js:573 | subscribeToPlayerAssignments | |
 
-### src/Server/app/Server.js — 182 ln
+### src/Server/app/Server.js — 193 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|

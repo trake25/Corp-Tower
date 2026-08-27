@@ -151,6 +151,7 @@ const GameConfig = {
         assistContributionThreshold: 0.25
     },
     debugBotsEnabled: process.env.CORP_TOWER_BOTS_ENABLED === "true",
+    showLatencyIndicator: false,
     debugBotCount: 2,
     debugBotDelayMin: 1500,
     debugBotDelayMax: 6000,

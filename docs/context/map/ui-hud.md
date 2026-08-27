@@ -7,7 +7,7 @@ Each `@file` purpose is authored once and carried forward on regeneration.
 a file purpose or stable anchor and `path:line`, so it feeds straight into a
 bounded source read. Local implementation detail stays in source.
 
-### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 135 ln
+### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 162 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -152,6 +152,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:580 | revalidate_armed_placement | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:693 | update_inventory_ui | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:734 | update_draw_pile_ui | |
+
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/LatencyIndicator.gd — 45 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LatencyIndicator.gd:1 | @file · file | LatencyIndicator client behavior |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LatencyIndicator.gd:12 | bind_nodes | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/LatencyIndicator.gd:21 | apply_config | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd — 467 ln
 
@@ -440,4 +448,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-37 files · 209 stable anchors.
+38 files · 211 stable anchors.
