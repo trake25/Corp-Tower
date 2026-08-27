@@ -43,7 +43,7 @@ func test_scene_summary_places_next_level_quest_after_countdown() -> void:
 	assert_true(quest_label.visible, "An authoritative next-level quest should be visible in the summary.")
 	assert_gt(quest_label.get_index(), countdown_label.get_index(), "The next-level quest should follow the transition countdown.")
 
-func test_failed_summary_shows_centered_black_collapse_status() -> void:
+func test_failed_summary_shows_progress_message_for_non_impact_failure() -> void:
 	var harness = HarnessScript.new()
 	await harness.mount(self, Vector2(412, 917))
 	var fixture: Dictionary = SUMMARY_FIXTURE.duplicate(true)
@@ -54,8 +54,21 @@ func test_failed_summary_shows_centered_black_collapse_status() -> void:
 	var failures_label := harness.find("LevelSummaryMvpLabel") as Label
 	assert_true(collapse_label.visible)
 	assert_true(failures_label.visible)
+	assert_eq(collapse_label.text, "Reach the top!")
 	assert_eq(collapse_label.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER, "The collapse status should be centered.")
 	assert_eq(failures_label.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER, "The failures status should be centered.")
+
+func test_failed_summary_shows_impact_message_for_early_impact_failure() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(412, 917))
+	var fixture: Dictionary = SUMMARY_FIXTURE.duplicate(true)
+	fixture["level"] = 2
+	fixture["result"] = "failed"
+	fixture["failureReason"] = "impact_score_requirement"
+	fixture["failureStatus"] = {"retriesRemaining": 2}
+	harness.main.summary.show_level_summary(fixture, "failed")
+	var status_label := harness.find("LevelSummaryTeamLabel") as Label
+	assert_eq(status_label.text, "Fill impact bars!")
 
 func test_scene_summary_waits_for_popup_window() -> void:
 	var harness = HarnessScript.new()

@@ -174,21 +174,28 @@ test("a placement with no aimed row still settles from above", () => {
 
 test("a direct gap fill emits one structural placement transaction", () => {
     useFixedGrid();
-    const { engine, messages } = createPlayingEngine(1, 12);
+    const originalDifficulty = GameConfig.towerStabilityDifficulty;
 
-    buildTowerWithVoid(engine);
-    engine.placeBlock("P1", 0, 5, 0);
+    try {
+        GameConfig.towerStabilityDifficulty = 60;
+        const { engine, messages } = createPlayingEngine(1, 12);
 
-    const event = latestMessage(messages).scoreEvents.find(
-        scoreEvent => scoreEvent.type === "placement"
-    );
+        buildTowerWithVoid(engine);
+        engine.placeBlock("P1", 0, 5, 0);
 
-    assert.ok(event, "filling a void is a scored placement");
-    assert.ok(event.meta.structuralPoints > 0, "the direct support repair earns structural value");
-    assert.equal(
-        latestMessage(messages).scoreEvents.some(scoreEvent => scoreEvent.type === "reinforce"),
-        false
-    );
+        const event = latestMessage(messages).scoreEvents.find(
+            scoreEvent => scoreEvent.type === "placement"
+        );
+
+        assert.ok(event, "filling a void is a scored placement");
+        assert.ok(event.meta.structuralPoints > 0, "the direct support repair earns structural value");
+        assert.equal(
+            latestMessage(messages).scoreEvents.some(scoreEvent => scoreEvent.type === "reinforce"),
+            false
+        );
+    } finally {
+        GameConfig.towerStabilityDifficulty = originalDifficulty;
+    }
 });
 
 test("stacking on top of the tower supports nothing and pays no repair", () => {

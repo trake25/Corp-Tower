@@ -42,7 +42,7 @@ const GameConfig = {
     towerStructuralPoseMaxDipUnits: 0.18,
     towerStructuralPoseRigidRisk: 0.08,
     towerStructuralPoseIntegritySwayShare: 0.45,
-    towerStabilityDifficulty: 60,
+    towerStabilityDifficulty: 40,
     towerStabilityPressure: {
         floor: 0.55,
         fullPressureLevel: 8,
@@ -72,7 +72,7 @@ const GameConfig = {
     towerStabilityWarningThreshold: 75,
     towerStabilityCriticalThreshold: 45,
     towerStabilityMoodThreshold: 2,
-    towerStabilityFeedbackMode: "warnings_only",
+    towerStabilityFeedbackMode: "live_preview",
     powerUnlockLevel: 1,
     powerMaxSlots: 3,
     powerActivationCooldownMs: 3000,

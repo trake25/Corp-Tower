@@ -136,6 +136,8 @@ its live contribution before the next band is evaluated. Every recoverable
 failure restores checkpoint score, contribution, and Power while preserving the
 retry count; only securing the next checkpoint resets it. Terminal failure
 restores the checkpoint once, broadcasts game over, and requests Home closure.
+Failure summaries preserve the authoritative reason so presentation can
+distinguish an Impact-score shortfall from an ordinary level failure.
 
 ## Tower Stability
 

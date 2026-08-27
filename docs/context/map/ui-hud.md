@@ -153,7 +153,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:693 | update_inventory_ui | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd:734 | update_draw_pile_ui | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd — 462 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd — 467 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
