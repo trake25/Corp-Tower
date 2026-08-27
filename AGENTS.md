@@ -94,8 +94,12 @@ automatic reflex.
   with documentation and permanent-coverage decisions. It owns QA selection,
   map generation and relevant KB checks; it never reads a shared dirty worktree
   for scope.
-- Files over 600 lines are decomposition candidates. Propose a split; do not
-  expand the current task without approval.
+- Files agents normally read as task context are decomposition candidates over
+  600 lines. Propose a split; do not expand the current task without approval.
+  Load-on-demand automation tools under `scripts/` are exempt from this
+  line-count signal when agents invoke their documented interface instead of
+  reading their implementation. Judge those tools by cohesion, bounded output,
+  interface tests and maintainability; length alone is a false positive.
 - Do not deploy, commit, push, pull, compare remotes, create branches, or perform
   destructive operations unless the user authorizes that action.
 - `scripts/git-sync-commit-push.mjs` is a load-on-demand Git automation tool. An

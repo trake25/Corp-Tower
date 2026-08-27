@@ -1023,12 +1023,12 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/git-sync-commit-push.test.mjs:1 | @file · file | permanent regression coverage for git sync commit push |
 
-### scripts/tests/task-close.test.mjs — 125 ln
+### scripts/tests/task-close.test.mjs — 149 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/task-close.test.mjs:1 | @file · file | permanent regression coverage for task close |
-| scripts/tests/task-close.test.mjs:15 | SOURCE · const | |
+| scripts/tests/task-close.test.mjs:19 | SOURCE · const | |
 
 ### scripts/validate-agent-config.mjs — 58 ln
 

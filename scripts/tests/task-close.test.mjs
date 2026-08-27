@@ -1,4 +1,8 @@
 import assert from 'node:assert/strict';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { selectQa } from '../qa-gate.mjs';
 import {
@@ -121,4 +125,24 @@ test('a documentation-only review does not request a source documentation decisi
   assert.equal(reviewed.documentation.source_changed, false);
   assert.equal(reviewed.documentation.decision, 'not-needed');
   assert.equal(reviewed.coverage.decision, 'not-needed');
+});
+
+test('CLI review accepts repository-contract changes without a documentation-scope process', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-close-'));
+  const manifest = '.agent-state/contract.json';
+  const run = args => spawnSync(process.execPath, ['scripts/task-close.mjs', ...args], {
+    cwd: process.cwd(),
+    env: { ...process.env, TASK_CLOSE_ROOT: root },
+    encoding: 'utf8',
+  });
+
+  try {
+    const prepared = run(['prepare', '--task', 'Contract wording', '--output', manifest, '--path', 'AGENTS.md']);
+    assert.equal(prepared.status, 0, prepared.stderr);
+    const reviewed = run(['review', '--manifest', manifest, '--changed', 'AGENTS.md']);
+    assert.equal(reviewed.status, 0, reviewed.stderr);
+    assert.equal(JSON.parse(readFileSync(join(root, manifest), 'utf8')).phase, 'reviewed');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

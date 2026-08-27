@@ -559,7 +559,7 @@ async function main() {
     const changed = normalizePaths(many(values, 'changed'));
     const sourceChanged = changed.some(sourcePath);
     const scope = sourceChanged ? runStep('documentation scope', ['scripts/docs-scope.mjs', ...changed]) : null;
-    if (scope?.status !== 0) fail(`FAIL — ${scope.name}: ${scope.summary}`, 1);
+    if (scope && scope.status !== 0) fail(`FAIL — ${scope.name}: ${scope.summary}`, 1);
     manifest = reviewManifest(manifest, { changedPaths: changed, scope, mapBaseline: mapHashes() });
     writeManifest(manifestFile, manifest);
     console.log(JSON.stringify(reviewForManifest(manifest, displayPath(manifestFile)), null, 2));
