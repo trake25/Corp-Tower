@@ -86,6 +86,7 @@ function stripRuntimeRoom(room) {
             towerBlocks: engineRoom.towerBlocks || [],
             towerStability: engineRoom.towerStability ?? 100,
             towerStabilityDiagnostics: engineRoom.towerStabilityDiagnostics || {},
+            towerStabilityComponents: engineRoom.towerStabilityComponents || [],
             towerStructuralPose: engineRoom.towerStructuralPose || [],
             lastChanceRescuePending: Boolean(engineRoom.lastChanceRescuePending),
             lastChanceRescueUsed: Boolean(engineRoom.lastChanceRescueUsed),

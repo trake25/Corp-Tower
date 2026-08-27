@@ -98,6 +98,10 @@ projection selects contacts in rendered space but returns canonical grid intent
 for server validation. There is no valid inverse for a whole tower once different
 sections carry different poses.
 
+Fallen bricks provide no height, collision, or snap points. Tower Stack animates
+only entries that newly transition to fallen, keeps survivor poses drawable
+during the fall, and does not replay persisted falls after reconnect.
+
 The Impact Beat temporarily changes the render scale and wave state, then holds
 until Summary cancels it. It adds no delay when disabled, empty, or collapsing.
 Collapse begins from displayed transforms but remains deterministic across

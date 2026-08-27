@@ -53,7 +53,13 @@ static func entry_origin(entry: Dictionary) -> Vector2i:
 		int(entry.get("originY", entry.get("baseHeight", 0)))
 	)
 
+static func is_standing(entry: Dictionary) -> bool:
+	return str(entry.get("towerState", "standing")) != "fallen"
+
 static func entry_cells(entry: Dictionary) -> Array:
+	if !is_standing(entry):
+		return []
+
 	var block: Dictionary = entry_block(entry)
 	var cells: Array = block.get("cells", [])
 	var origin: Vector2i = entry_origin(entry)
@@ -152,6 +158,8 @@ static func snap_point_owners(tower_blocks: Array) -> Dictionary:
 
 	for entry in tower_blocks:
 		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		if !is_standing(entry):
 			continue
 
 		var block: Dictionary = entry_block(entry)

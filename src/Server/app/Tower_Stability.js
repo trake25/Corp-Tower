@@ -17,7 +17,8 @@ function number(value, fallback) {
 function topHeight(entries) {
     return cellsForEntries(entries).reduce((top, cell) => Math.max(top, cell.y + 1), 0);
 }
-function cellsForEntries(entries) { return entries.flatMap(cellsFor); }
+function isStanding(entry) { return entry?.towerState !== "fallen"; }
+function cellsForEntries(entries) { return entries.filter(isStanding).flatMap(cellsFor); }
 function settleBlock(entries, block, originX, fromY = null) {
     const cells = (block.cells || []).map(cell => ({ x: Number(cell[0]), y: Number(cell[1]) }));
     const anchoredX = Math.round(Number(originX) || 0);
@@ -97,7 +98,53 @@ function buildNodes(entries) {
             key: canonicalKey(cells),
             contacts: []
         };
-    }).filter(node => node.mass > 0).sort((left, right) => left.key.localeCompare(right.key));
+    }).filter(node => isStanding(node.entry) && node.mass > 0)
+        .sort((left, right) => left.key.localeCompare(right.key));
+}
+function buildPhysicalComponents(nodes) {
+    const occupancy = new Map();
+    const neighbours = new Map(nodes.map(node => [node, new Set()]));
+
+    for (const node of nodes) {
+        for (const cell of node.cells) {
+            occupancy.set(key(cell.x, cell.y), node);
+        }
+    }
+
+    for (const node of nodes) {
+        for (const cell of node.cells) {
+            for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+                const neighbour = occupancy.get(key(cell.x + dx, cell.y + dy));
+                if (neighbour && neighbour !== node) {
+                    neighbours.get(node).add(neighbour);
+                    neighbours.get(neighbour).add(node);
+                }
+            }
+        }
+    }
+
+    const visited = new Set();
+    const components = [];
+    for (const node of nodes) {
+        if (visited.has(node)) continue;
+        const members = [];
+        const queue = [node];
+        visited.add(node);
+        while (queue.length > 0) {
+            const current = queue.shift();
+            members.push(current);
+            const adjacent = Array.from(neighbours.get(current))
+                .sort((left, right) => left.key.localeCompare(right.key));
+            for (const neighbour of adjacent) {
+                if (!visited.has(neighbour)) {
+                    visited.add(neighbour);
+                    queue.push(neighbour);
+                }
+            }
+        }
+        components.push(members.sort((left, right) => left.key.localeCompare(right.key)));
+    }
+    return components.sort((left, right) => left[0].key.localeCompare(right[0].key));
 }
 function buildContacts(nodes) {
     const occupancy = new Map();
@@ -370,7 +417,7 @@ function analyseGroups(groups, config, height, disabled) {
         }
     }
 }
-function visualSections(groups, config) {
+function visualSections(groups, config, componentId) {
     const parent = new Map(groups.map(group => [group, group]));
     const find = group => parent.get(group) === group ? group : parent.set(group, find(parent.get(group))).get(group);
     const join = (left, right) => {
@@ -396,7 +443,7 @@ function visualSections(groups, config) {
     });
     const sectionForGroup = new Map();
     sections.forEach((section, index) => {
-        section.id = `section-${index}`;
+        section.id = `component-${componentId}-section-${index}`;
         section.groups.forEach(group => sectionForGroup.set(group, section));
         section.groups.forEach(group => group.supportLinks.forEach(link => {
                 const supporterSection = link.supporter ? sectionForGroup.get(link.supporter) : null;
@@ -418,8 +465,8 @@ function cosmeticSign(group) {
     const hash = group.key.split("").reduce((value, character) => (value * 31 + character.charCodeAt(0)) >>> 0, 7);
     return hash % 2 === 0 ? 1 : -1;
 }
-function buildStructuralPose(groups, config) {
-    const { sections, rigidRisk } = visualSections(groups, config);
+function buildStructuralPose(groups, config, componentId) {
+    const { sections, rigidRisk } = visualSections(groups, config, componentId);
     const transforms = new Map();
     const poseMaxAngle = Math.max(0, number(config.towerPoseMaxAngleDeg, config.towerMaxTiltAngleDeg ?? 18));
     const integritySway = clamp01(number(config.towerStructuralPoseIntegritySwayShare, 0.45));
@@ -471,6 +518,7 @@ function buildStructuralPose(groups, config) {
                 const posedCenter = rotatePoint(centerX, centerY, transform.angle);
                 poseByEntry.set(member.entryIndex, {
                     blockId: blockId(member.entry),
+                    componentId,
                     sectionId: section.id,
                     sectionOriginXUnits: transform.originX,
                     sectionOriginYUnits: transform.originY,
@@ -496,33 +544,26 @@ function selectCritical(groups) {
     })[0] || null;
 }
 
-function evaluate(entries, config = {}) {
-    if (!entries || entries.length === 0) {
-        return {
-            stability: 100,
-            diagnostics: {
-                balance: 100,
-                integrity: 100,
-                criticalRisk: 0,
-                criticalSupport: null,
-                comOffset: 0,
-                laneImbalance: 0,
-                overhangPenalty: 0,
-                tiltScore: 0,
-                tiltAngleDeg: 0,
-                leanDirection: "center",
-                slenderness: 0,
-                supportRatio: 1,
-                heightProgress: 0,
-                collapsed: false
-            },
-            structuralPose: [],
-            analysis: { groups: [] }
-        };
-    }
-
-    const nodes = buildNodes(entries);
-    const height = topHeight(entries);
+function emptyDiagnostics() {
+    return {
+        balance: 100,
+        integrity: 100,
+        criticalRisk: 0,
+        criticalSupport: null,
+        comOffset: 0,
+        laneImbalance: 0,
+        overhangPenalty: 0,
+        tiltScore: 0,
+        tiltAngleDeg: 0,
+        leanDirection: "center",
+        slenderness: 0,
+        supportRatio: 1,
+        heightProgress: 0,
+        collapsed: false
+    };
+}
+function evaluateComponent(nodes, config, componentId) {
+    const height = nodes.reduce((value, node) => Math.max(value, node.maxY + 1), 0);
     const disabled = number(config.towerStabilityPressureApplied, 1) <= 0;
     const groups = buildGroups(nodes);
     analyseGroups(groups, config, height, disabled);
@@ -547,32 +588,87 @@ function evaluate(entries, config = {}) {
         pathCount: critical.interface.pathCount
     } : null;
 
+    const diagnostics = {
+        balance,
+        integrity,
+        criticalRisk: Math.max(maxBalanceRisk, maxIntegrityRisk),
+        heightProgress: critical ? critical.interface.heightProgress : 0,
+        criticalSupport,
+        collapsed,
+        comOffset: signedBalanceRisk,
+        laneImbalance: 0,
+        overhangPenalty: 0,
+        tiltScore: signedBalanceRisk,
+        tiltAngleDeg: signedBalanceRisk * maxTilt,
+        leanDirection: critical ? critical.interface.direction : "center",
+        slenderness: critical && critical.interface.contactWidth > 0
+            ? number(config.towerSiteWidth, critical.interface.contactWidth) / critical.interface.contactWidth
+            : 0,
+        supportRatio: critical ? 1 - critical.interface.supportShortfall : 1
+    };
+    if (criticalSupport) criticalSupport.componentId = componentId;
+    const structuralPose = buildStructuralPose(groups, config, componentId);
+
     return {
+        id: componentId,
+        entryIndexes: nodes.map(node => node.entryIndex).sort((left, right) => left - right),
+        blockIds: nodes.map(node => blockId(node.entry)).filter(Boolean).sort(),
+        grounded: nodes.some(node => node.cells.some(cell => cell.y === 0)),
         stability,
-        diagnostics: {
-            balance,
-            integrity,
-            criticalRisk: Math.max(maxBalanceRisk, maxIntegrityRisk),
-            heightProgress: critical ? critical.interface.heightProgress : 0,
-            criticalSupport,
-            collapsed,
-            comOffset: signedBalanceRisk,
-            laneImbalance: 0,
-            overhangPenalty: 0,
-            tiltScore: signedBalanceRisk,
-            tiltAngleDeg: signedBalanceRisk * maxTilt,
-            leanDirection: critical ? critical.interface.direction : "center",
-            slenderness: critical && critical.interface.contactWidth > 0
-                ? number(config.towerSiteWidth, critical.interface.contactWidth) / critical.interface.contactWidth
-                : 0,
-            supportRatio: critical ? 1 - critical.interface.supportShortfall : 1
-        },
-        structuralPose: buildStructuralPose(groups, config),
+        diagnostics,
+        structuralPose,
         analysis: {
             height,
             groups: describeGroups(groups).map(group => ({
                 ...group,
+                componentId,
                 pathConcentration: groups.find(candidate => candidate.key === group.key)?.interface.pathConcentration || 0
+            }))
+        }
+    };
+}
+
+function evaluate(entries, config = {}) {
+    const nodes = buildNodes(entries || []);
+    if (nodes.length === 0) {
+        return {
+            stability: 100,
+            diagnostics: emptyDiagnostics(),
+            structuralPose: [],
+            components: [],
+            analysis: { height: 0, groups: [], components: [] }
+        };
+    }
+
+    const components = buildPhysicalComponents(nodes).map((members, componentId) => (
+        evaluateComponent(members, config, componentId)
+    ));
+    const critical = components.slice().sort((left, right) => (
+        right.diagnostics.criticalRisk - left.diagnostics.criticalRisk || left.id - right.id
+    ))[0];
+    const diagnostics = {
+        ...critical.diagnostics,
+        balance: components.reduce((value, component) => Math.min(value, component.diagnostics.balance), 100),
+        integrity: components.reduce((value, component) => Math.min(value, component.diagnostics.integrity), 100),
+        collapsed: components.some(component => component.diagnostics.collapsed)
+    };
+
+    return {
+        stability: components.reduce((value, component) => Math.min(value, component.stability), 100),
+        diagnostics,
+        structuralPose: components.flatMap(component => component.structuralPose),
+        components,
+        analysis: {
+            height: topHeight(entries || []),
+            groups: components.flatMap(component => component.analysis.groups),
+            components: components.map(component => ({
+                id: component.id,
+                entryIndexes: component.entryIndexes,
+                blockIds: component.blockIds,
+                grounded: component.grounded,
+                height: component.analysis.height,
+                stability: component.stability,
+                collapsed: component.diagnostics.collapsed
             }))
         }
     };

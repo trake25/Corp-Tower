@@ -21,6 +21,7 @@
     { "id": "fullstack", "path": "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd", "expects": "fullstack-coordinator" },
     { "id": "infra", "path": ".github/workflows/Android-Deploy-wstodplay.yml", "expects": "infra-engineer" },
     { "id": "qa", "path": "src/Server/tests/Gameplay_Events.test.js", "expects": "qa-engineer" },
+    { "id": "tower-stack-qa", "path": "src/Client/App/corp-tower/Tests/Gut/GameUi/test_tower_stack.gd", "expects": "qa-engineer" },
     { "id": "docs", "path": "scripts/validate-docs.mjs", "expects": "docs-steward" },
     { "id": "codex-hooks", "path": ".codex/hooks.json", "expects": "docs-steward" },
     { "id": "web", "path": "site/src/components/diagrams/QaLoopDiagram.astro", "expects": "web-designer" },
@@ -54,6 +55,20 @@
       "query": "impossible_anchor_xyz",
       "options": { "anchor": true },
       "expects": { "status": "retrieval-defect", "fallback": true }
+    },
+    {
+      "id": "tower-collapse-anchor",
+      "command": "search",
+      "query": "tower_collapsed",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "path": "docs/context/backend.md", "title": "Authority and module boundaries", "fallback": false }
+    },
+    {
+      "id": "scripts/fixtures/context-retrieval.json",
+      "command": "search",
+      "query": "tower_collapsed",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "path": "docs/context/backend.md", "title": "Authority and module boundaries", "fallback": false }
     },
     {
       "id": "scope-server",

@@ -19,6 +19,12 @@ The server alone decides placement, stability, scoring, failure, progression,
 Power, and room closure. Clients and tools render or preview those decisions from
 the same authoritative contracts.
 
+Standing bricks partition by four-way physical contact. Each component has its
+own stability result and visual pose, while gravity and load transfer still use
+downward contacts only. A collapsed component becomes fallen supply, survivors
+set standing height, and placement continues through normal win and supply
+failure checks rather than failing with `tower_collapsed`.
+
 ## Lobby Manager
 
 Lobby Manager owns connection-to-room assignment, ready-up, reconnect, debug-room

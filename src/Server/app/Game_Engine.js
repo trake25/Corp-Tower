@@ -72,6 +72,7 @@ class GameEngine {
             visualHooks: { ...(GameConfig.visualHooks || {}) },
             towerStability: this.room.towerStability ?? 100,
             towerStabilityDiagnostics: this.room.towerStabilityDiagnostics || {},
+            towerStabilityComponents: this.room.towerStabilityComponents || [],
             towerStructuralPose: this.room.towerStructuralPose || [],
             sideQuest: this.room.sideQuest || null,
             powerEvents: this.consumePowerEvents(),
@@ -137,6 +138,7 @@ class GameEngine {
             towerBlocks: [],
             towerStability: 100,
             towerStabilityDiagnostics: {},
+            towerStabilityComponents: [],
             towerStructuralPose: [],
             towerStabilityResult: null,
             lastChanceRescuePending: false,
@@ -215,6 +217,7 @@ class GameEngine {
             towerBlocks: snapshot.state.towerBlocks || [],
             towerStability: snapshot.state.towerStability ?? 100,
             towerStabilityDiagnostics: snapshot.state.towerStabilityDiagnostics || {},
+            towerStabilityComponents: snapshot.state.towerStabilityComponents || [],
             towerStructuralPose: snapshot.state.towerStructuralPose || [],
             lastChanceRescuePending: Boolean(snapshot.state.lastChanceRescuePending),
             lastChanceRescueUsed: Boolean(snapshot.state.lastChanceRescueUsed),
@@ -472,6 +475,7 @@ class GameEngine {
         this.room.towerBlocks = [];
         this.room.towerStability = 100;
         this.room.towerStabilityDiagnostics = {};
+        this.room.towerStabilityComponents = [];
         this.room.towerStructuralPose = [];
         this.room.towerStabilityResult = null;
         this.resetLastChanceRescue();
@@ -709,6 +713,8 @@ class GameEngine {
         this.room.currentHeight = 0;
         this.room.towerStability = 100;
         this.room.towerStabilityDiagnostics = {};
+        this.room.towerStabilityComponents = [];
+        this.room.towerStructuralPose = [];
         this.room.towerStabilityResult = null;
         this.resetLastChanceRescue();
         this.room.targetHeight = this.getTargetHeightForLevel(targetLevel);

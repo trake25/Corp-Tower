@@ -107,6 +107,45 @@ function resolvePlacementOrigin(engine, block, column, originY) {
     return TowerStability.settleBlock(entries, block, originX);
 }
 
+function assignStandingComponents(entries, result) {
+    for (const component of result.components || []) {
+        for (const entryIndex of component.entryIndexes || []) {
+            const entry = entries[entryIndex];
+            if (!entry || entry.towerState === "fallen") continue;
+            entry.towerState = "standing";
+            entry.componentId = component.id;
+        }
+    }
+}
+
+function collapseComponents(engine, result) {
+    if (!result.diagnostics?.collapsed) return [];
+    const entries = engine.room.towerBlocks || [];
+    const collapsed = (result.components || []).filter(component => component.diagnostics?.collapsed);
+
+    for (const component of collapsed) {
+        const direction = component.diagnostics?.leanDirection || "center";
+        for (const entryIndex of component.entryIndexes || []) {
+            const entry = entries[entryIndex];
+            if (!entry) continue;
+            entry.towerState = "fallen";
+            entry.componentId = component.id;
+            entry.collapseDirection = direction;
+        }
+        engine.queueScoreEvent("tower_component_collapsed", {
+            label: "Tower Component Collapsed",
+            displayOnly: true,
+            meta: {
+                componentId: component.id,
+                blockIds: component.blockIds || [],
+                direction
+            }
+        });
+    }
+
+    return collapsed;
+}
+
 function placeBlock(engine, playerId, blockIndex, column = null, originY = null) {
     if (engine.room.state !== "playing") {
         console.log("Cannot place block, level not active");
@@ -150,28 +189,18 @@ function placeBlock(engine, playerId, blockIndex, column = null, originY = null)
         engine.room.towerBlocks || [], stabilityConfig
     );
     const placement = engine.resolvePlacementOrigin(block, column, originY);
-    const projectedBlocks = [...(engine.room.towerBlocks || []), {
-        playerId: player.id, block, originX: placement.originX, originY: placement.originY
-    }];
-    const newHeight = TowerStability.topHeight(projectedBlocks);
-    const heightGain = Math.max(0, newHeight - previousHeight);
-    const effectiveHeight = Math.max(
-        0,
-        Math.min(heightGain, engine.room.targetHeight - previousHeight)
-    );
-
     player.lastPlacementTime = Date.now();
-    player.contributedHeight += effectiveHeight;
-    engine.room.currentHeight = newHeight;
     engine.room.towerBlocks = engine.room.towerBlocks || [];
     const placedEntry = {
         playerId: player.id,
         block: block,
         height: blockHeight,
-        effectiveHeight: effectiveHeight,
+        effectiveHeight: 0,
         baseHeight: placement.originY,
         originX: placement.originX,
-        originY: placement.originY
+        originY: placement.originY,
+        towerState: "standing",
+        componentId: null
     };
     engine.room.towerBlocks.push(placedEntry);
     engine.refillPlayerBlock(player);
@@ -179,6 +208,22 @@ function placeBlock(engine, playerId, blockIndex, column = null, originY = null)
     console.log(`${player.id} placed block (${blockHeight})`);
 
     const structureAfter = engine.recalculateTowerStability(true);
+    assignStandingComponents(engine.room.towerBlocks, structureAfter);
+    const collapsedComponents = collapseComponents(engine, structureAfter);
+
+    if (collapsedComponents.length > 0) {
+        engine.recalculateTowerStability(false);
+        assignStandingComponents(engine.room.towerBlocks, engine.room.towerStabilityResult);
+    }
+
+    engine.room.currentHeight = TowerStability.topHeight(engine.room.towerBlocks);
+    const heightGain = Math.max(0, engine.room.currentHeight - previousHeight);
+    const effectiveHeight = Math.max(
+        0,
+        Math.min(heightGain, engine.room.targetHeight - previousHeight)
+    );
+    placedEntry.effectiveHeight = effectiveHeight;
+    player.contributedHeight += effectiveHeight;
 
     placedEntry.balanceDelta = TowerStability.balanceDelta(
         structureBefore.diagnostics,
@@ -196,11 +241,7 @@ function placeBlock(engine, playerId, blockIndex, column = null, originY = null)
     });
     engine.tryCompleteSideQuest(player, block, engine.room.currentHeight === engine.room.targetHeight);
 
-    if (engine.room.towerStability <= 0) {
-        engine.failLevel("tower_collapsed");
-    } else {
-        engine.checkWinCondition(player, block);
-    }
+    engine.checkWinCondition(player, block);
 
     if (engine.room.state === "playing") {
         engine.checkFailCondition();
@@ -274,6 +315,14 @@ function recalculateTowerStability(engine, advancesLastChance = false) {
     const previous = engine.room.towerStability ?? 100;
     engine.room.towerStability = result.stability;
     engine.room.towerStabilityDiagnostics = result.diagnostics;
+    engine.room.towerStabilityComponents = (result.components || []).map(component => ({
+        id: component.id,
+        blockIds: component.blockIds,
+        grounded: component.grounded,
+        stability: component.stability,
+        diagnostics: component.diagnostics,
+        structuralPose: component.structuralPose
+    }));
     engine.room.towerStructuralPose = result.structuralPose;
     engine.room.towerStabilityResult = result;
     if (previous > GameConfig.towerStabilityCriticalThreshold && result.stability <= GameConfig.towerStabilityCriticalThreshold) {

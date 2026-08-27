@@ -55,6 +55,22 @@ func test_top_height_reports_the_global_peak() -> void:
 	assert_eq(SnapGridScript.top_height(tower), 4, "Two stacked 2-tall bricks reach height 4.")
 	assert_eq(SnapGridScript.top_height([]), 0, "An empty tower has height 0.")
 
+func test_fallen_bricks_do_not_hold_height_or_block_rebuilding() -> void:
+	var fallen: Dictionary = entry(O_CELLS, 4, 6)
+	fallen["towerState"] = "fallen"
+	var tower: Array = [fallen, entry([[0, 0]], 8, 0)]
+
+	assert_eq(SnapGridScript.top_height(tower), 1, "Only standing bricks contribute height.")
+	assert_eq(
+		SnapGridScript.settle_origin_y(tower, O_CELLS, 4),
+		0,
+		"A replacement brick falls through the failed component's old cells."
+	)
+	assert_false(
+		SnapGridScript.snap_point_owners(tower).has(Vector2i(4, 8)),
+		"Fallen geometry no longer offers snap targets."
+	)
+
 func test_origin_range_keeps_the_whole_footprint_placeable() -> void:
 	var wide: Vector2i = SnapGridScript.origin_range(I_HORIZONTAL_CELLS)
 	assert_eq(wide.x, 4, "The minimum origin is always the first placeable column.")

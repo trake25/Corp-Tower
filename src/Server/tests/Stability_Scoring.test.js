@@ -7,6 +7,7 @@ const {
     GameConfig,
     createBlock,
     createPlayingEngine,
+    eventTypes,
     fixedStabilityConfig,
     latestMessage,
     originalGameConfig,
@@ -33,6 +34,34 @@ function loadedBottleneckEntries() {
         stabilityEntry("U7", row(6), 0, 7),
         stabilityEntry("U8", row(6), 0, 8)
     ];
+}
+
+function configureIndependentCollapse(engine, remainingBlocks) {
+    useFixedGrid({ gridWidth: 14, widthMin: 14, widthMax: 14 });
+    GameConfig.powerLastChanceEnabled = false;
+    const row = width => Array.from({ length: width }, (_, x) => [x, 0]);
+    const config = fixedStabilityConfig({
+        towerSiteWidth: 14,
+        towerStabilityMinHeight: 1,
+        towerStructuralSeverity: 1.3
+    });
+    engine.resolveStabilityConfig = () => config;
+    engine.room.targetHeight = 20;
+    engine.room.towerBlocks = [
+        stabilityEntry("B0", row(6), 0, 0),
+        stabilityEntry("B1", row(6), 0, 1),
+        stabilityEntry("N", row(1), 2, 2),
+        stabilityEntry("U3", row(6), 0, 3),
+        stabilityEntry("U4", row(6), 0, 4),
+        stabilityEntry("U5", row(6), 0, 5),
+        stabilityEntry("S0", row(6), 8, 0),
+        stabilityEntry("S1", row(6), 8, 1)
+    ];
+    engine.room.currentHeight = TowerStability.topHeight(engine.room.towerBlocks);
+    engine.recalculateTowerStability(false);
+    engine.room.players[0].blocks = [{ id: "FAIL", shapeId: "I6H", height: 1, cells: row(6) }];
+    engine.room.players[1].blocks = remainingBlocks;
+    engine.room.players[2].blocks = [];
 }
 
 function poseById(result, id) {
@@ -276,9 +305,79 @@ test("disconnected stacks are evaluated independently and unsupported stacks col
     ], config);
 
     assert.equal(disconnected.analysis.groups.length, 2);
+    assert.equal(disconnected.components.length, 2);
+    assert.ok(disconnected.components.every(component => !component.diagnostics.collapsed));
     assert.ok(disconnected.analysis.groups.every(group => group.carriedLoadShare === 1));
     assert.equal(hanging.diagnostics.collapsed, true);
     assert.equal(hanging.stability, 0);
+});
+
+test("side contact joins a physical component while support paths remain vertical", () => {
+    const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
+    const cell = [[0, 0]];
+    const separate = TowerStability.evaluate([
+        stabilityEntry("L", cell, 0, 0),
+        stabilityEntry("R", cell, 2, 0)
+    ], config);
+    const joined = TowerStability.evaluate([
+        stabilityEntry("L", cell, 0, 0),
+        stabilityEntry("R", cell, 1, 0)
+    ], config);
+
+    assert.equal(separate.components.length, 2);
+    assert.equal(joined.components.length, 1);
+    assert.equal(joined.analysis.groups.length, 2);
+});
+
+test("one unstable component can collapse beside an independent stable tower", () => {
+    const config = fixedStabilityConfig({
+        towerStabilityMinHeight: 1,
+        towerStructuralSeverity: 2
+    });
+    const row = width => Array.from({ length: width }, (_, x) => [x, 0]);
+    const entries = [
+        ...loadedBottleneckEntries(),
+        ...Array.from({ length: 3 }, (_, y) => stabilityEntry("S" + y, row(6), 8, y))
+    ];
+    const result = TowerStability.evaluate(entries, config);
+
+    assert.equal(result.components.length, 2);
+    assert.equal(result.components[0].diagnostics.collapsed, true);
+    assert.equal(result.components[1].diagnostics.collapsed, false);
+    assert.equal(result.components[1].stability, 100);
+    assert.ok(result.structuralPose.every(pose => Number.isInteger(pose.componentId)));
+});
+
+test("a bridge merges components and transfers load through both support paths", () => {
+    const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
+    const cell = [[0, 0]];
+    const bridge = [[0, 0], [1, 0], [2, 0]];
+    const before = TowerStability.evaluate([
+        stabilityEntry("L", cell, 0, 0),
+        stabilityEntry("R", cell, 2, 0)
+    ], config);
+    const after = TowerStability.evaluate([
+        stabilityEntry("L", cell, 0, 0),
+        stabilityEntry("R", cell, 2, 0),
+        stabilityEntry("B", bridge, 0, 1)
+    ], config);
+
+    assert.equal(before.components.length, 2);
+    assert.equal(after.components.length, 1);
+    assert.ok(after.analysis.groups.some(group => group.pathConcentration === 0.5));
+});
+
+test("fallen components leave no standing height or placement collision", () => {
+    const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
+    const fallen = stabilityEntry("F", [[0, 0], [0, 1], [0, 2]], 0, 5);
+    fallen.towerState = "fallen";
+    const standing = stabilityEntry("S", [[0, 0]], 5, 0);
+    const entries = [fallen, standing];
+    const rebuilding = { id: "R", cells: [[0, 0], [1, 0]] };
+
+    assert.equal(TowerStability.topHeight(entries), 1);
+    assert.deepEqual(TowerStability.settleBlock(entries, rebuilding, 0), { originX: 0, originY: 0 });
+    assert.equal(TowerStability.evaluate(entries, config).components.length, 1);
 });
 
 test("geometry, diagnostics, and structural pose are independent of entry ordering", () => {
@@ -735,6 +834,54 @@ test("balance delta clamps and tolerates missing diagnostics", () => {
     );
 });
 
+test("placement collapses only its component and play continues with enough supply", () => {
+    const { engine, messages } = createPlayingEngine(1, 20);
+    const rebuild = {
+        id: "REBUILD",
+        shapeId: "I6H",
+        height: 1,
+        cells: Array.from({ length: 6 }, (_, x) => [x, 0])
+    };
+    configureIndependentCollapse(engine, [rebuild]);
+    engine.room.players[2].blocks = [createBlock(30, "SUPPLY")];
+
+    engine.placeBlock("P1", 0, 0);
+
+    const fallen = engine.room.towerBlocks.filter(entry => entry.towerState === "fallen");
+    const standing = engine.room.towerBlocks.filter(entry => entry.towerState === "standing");
+    const failedPlacement = fallen.find(entry => entry.block.id === "FAIL");
+    const broadcast = latestMessage(messages);
+
+    assert.equal(engine.room.state, "playing");
+    assert.equal(engine.room.currentHeight, 2);
+    assert.ok(engine.room.towerStability > 0);
+    assert.equal(fallen.length, 7);
+    assert.deepEqual(standing.map(entry => entry.block.id).sort(), ["S0", "S1"]);
+    assert.equal(failedPlacement.effectiveHeight, 0);
+    assert.equal(engine.room.players[0].contributedHeight, 0);
+    assert.ok(eventTypes(broadcast).includes("tower_component_collapsed"));
+    assert.equal(broadcast.towerStabilityComponents.length, 1);
+    assert.equal(Object.hasOwn(broadcast.towerStabilityComponents[0], "analysis"), false);
+    assert.equal(Object.hasOwn(broadcast.towerStabilityComponents[0], "entryIndexes"), false);
+
+    engine.placeBlock("P2", 0, 0);
+
+    const rebuilt = engine.room.towerBlocks.find(entry => entry.block.id === "REBUILD");
+    assert.equal(engine.room.state, "playing");
+    assert.equal(rebuilt.towerState, "standing");
+    assert.equal(rebuilt.originY, 0);
+});
+
+test("component collapse reaches the normal insufficient-supply failure path", () => {
+    const { engine } = createPlayingEngine(1, 20);
+    configureIndependentCollapse(engine, [createBlock(1, "TOO_SMALL")]);
+
+    engine.placeBlock("P1", 0, 0);
+
+    assert.equal(engine.room.state, "failed");
+    assert.equal(engine.room.lastLevelSummary.failureReason, "not_enough_height_remaining");
+});
+
 test("a placed brick carries the balance delta it caused", () => {
     useFixedGrid();
     const { engine, messages } = createPlayingEngine(1, 8);
@@ -769,7 +916,7 @@ test("a placed brick carries the balance delta it caused", () => {
     assert.deepEqual(
         Object.keys(broadcast.towerStructuralPose[0]).sort(),
         [
-            "blockId", "failureWeight", "offsetXUnits", "offsetYUnits", "rotationDeg",
+            "blockId", "componentId", "failureWeight", "offsetXUnits", "offsetYUnits", "rotationDeg",
             "sectionId", "sectionOriginXUnits", "sectionOriginYUnits"
         ]
     );
@@ -782,5 +929,6 @@ test("a placed brick carries the balance delta it caused", () => {
     });
 
     assert.deepEqual(snapshot.state.towerStructuralPose, engine.room.towerStructuralPose);
+    assert.deepEqual(snapshot.state.towerStabilityComponents, engine.room.towerStabilityComponents);
     assert.equal(Object.hasOwn(snapshot.state, "analysis"), false);
 });

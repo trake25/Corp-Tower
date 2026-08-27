@@ -84,9 +84,10 @@ gameplay reconstruction:
 - level state and its current deadline;
 - authoritative grid width and derived placeable range;
 - inventory, shared-pile count, and visible next draw;
-- ordered tower blocks with resolved coordinates and placement-time Balance
-  result;
-- current stability diagnostics and presentation-only structural pose;
+- ordered tower blocks with resolved coordinates, standing/fallen state,
+  component identity, and placement-time Balance result;
+- worst-component compatibility diagnostics plus component summaries and
+  component-scoped presentation poses;
 - roster, scores, accessibility defaults, and synchronized visual hooks;
 - transient score, quick-chat, and Power events;
 - side quest, summaries, and canonical Impact contribution/retry status.

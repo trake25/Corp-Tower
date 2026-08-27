@@ -262,7 +262,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:62 | show_score_event_popup | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:183 | clear_score_popups | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd — 402 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd — 410 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -274,19 +274,19 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:22 | placeable_column_max · static var | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:24 | set_placeable_range · static func | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:36 | entry_block · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:56 | entry_cells · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:79 | top_height · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:91 | settle_origin_y · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:123 | is_placement_legal · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:142 | snap_point_owners · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:186 | tower_snap_points · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:227 | footprint_centroid · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:261 | resolve · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:297 | exact_candidates · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:330 | resolve_exact_candidate · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:350 | resolve_fallback · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:391 | cell_x · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:397 | cell_y · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:59 | entry_cells · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:85 | top_height · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:97 | settle_origin_y · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:129 | is_placement_legal · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:148 | snap_point_owners · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:194 | tower_snap_points · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:235 | footprint_centroid · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:269 | resolve · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:305 | exact_candidates · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:338 | resolve_exact_candidate · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:358 | resolve_fallback · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:399 | cell_x · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd:405 | cell_y · static func | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd — 216 ln
 
@@ -393,7 +393,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd:1 | @file · file | tint bare icon TextureButtons cyan on press, no StyleBox to swap |
 
-### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1259 ln
+### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1315 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -418,24 +418,24 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:68 | drag_grip_offset_units · export | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:71 | scroll_offset_changed · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:72 | camera_zoom_changed · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:117 | set_tower | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:147 | refresh_visuals | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:151 | set_mood_threshold | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:160 | set_visual_hooks | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:163 | play_impact_beat | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:181 | cancel_impact_beat | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:192 | shake | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:268 | drag_grip_offset | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:271 | begin_snap_drag | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:279 | resolve_snap | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:295 | is_placement_still_legal | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:298 | set_snap_state | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:307 | clear_snap_preview | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:312 | end_snap_drag | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:317 | is_placement_frame_active | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:320 | placement_visual_bounds | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:521 | set_player_color_map | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:525 | clear_tower | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:118 | set_tower | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:188 | refresh_visuals | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:192 | set_mood_threshold | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:201 | set_visual_hooks | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:204 | play_impact_beat | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:222 | cancel_impact_beat | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:233 | shake | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:309 | drag_grip_offset | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:312 | begin_snap_drag | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:320 | resolve_snap | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:336 | is_placement_still_legal | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:339 | set_snap_state | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:348 | clear_snap_preview | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:353 | end_snap_drag | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:358 | is_placement_frame_active | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:361 | placement_visual_bounds | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:562 | set_player_color_map | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:566 | clear_tower | |
 
 ---
 

@@ -96,6 +96,7 @@ var mood_threshold: int = BlockDataScript.DEFAULT_MOOD_THRESHOLD
 var _collapse_phase: int = COLLAPSE_NONE
 var _collapse_lean_elapsed: float = 0.0
 var _collapse_sim = null
+var _collapsing_block_ids: Dictionary = {}
 var visual_hooks = null
 var _camera_zoom: float = 1.0
 var _beat_phase: int = BEAT_NONE
@@ -118,31 +119,71 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	var previous_global_height: int = current_height
 	var previous_block_count: int = tower_blocks.size()
 	var direct_pose_replace: bool = blocks.size() != previous_block_count and blocks.size() != previous_block_count + 1
+	var newly_fallen: Dictionary = _newly_fallen_block_ids(tower_blocks, blocks)
 	tower_blocks = blocks
 	current_height = max(0, new_current_height)
 	target_height = max(0, new_target_height)
 	tower_stability = clampi(new_stability, 0, 100)
 	structural_pose.replace_targets(pose_entries, direct_pose_replace)
 
-	tower_collapsed = bool(diagnostics.get("collapsed", false))
+	tower_collapsed = !newly_fallen.is_empty() or bool(diagnostics.get("collapsed", false))
 	var reported_tilt: float = float(diagnostics.get("tiltAngleDeg", 0.0))
 	var critical_support: Dictionary = diagnostics.get("criticalSupport", {})
 	var critical_direction: String = str(critical_support.get("direction", ""))
 
 	if tower_collapsed:
+		_collapsing_block_ids = newly_fallen if !newly_fallen.is_empty() else _all_block_ids()
+		if !newly_fallen.is_empty():
+			critical_direction = _collapse_direction_for(newly_fallen)
 		var lean_sign: float = 1.0 if critical_direction == "right" or (critical_direction == "" and reported_tilt >= 0.0) else -1.0
 		tower_tilt_deg = lean_sign * collapse_tilt_deg
-
-		if _collapse_phase == COLLAPSE_NONE:
-			_collapse_phase = COLLAPSE_LEAN
-			_collapse_lean_elapsed = 0.0
+		_collapse_phase = COLLAPSE_LEAN
+		_collapse_lean_elapsed = 0.0
+		_collapse_sim = null
 	else:
-		tower_tilt_deg = 0.0 if structural_pose.has_targets() else reported_tilt
-		_reset_collapse()
+		if _collapse_phase != COLLAPSE_LEAN:
+			tower_tilt_deg = 0.0 if structural_pose.has_targets() else reported_tilt
 
 	_maybe_start_drop_animation(previous_global_height)
 	_update_scroll_offset()
 	queue_redraw()
+
+func _all_block_ids() -> Dictionary:
+	var block_ids: Dictionary = {}
+	for entry_value in tower_blocks:
+		if typeof(entry_value) == TYPE_DICTIONARY:
+			block_ids[_entry_block_id(entry_value)] = true
+	return block_ids
+
+func _newly_fallen_block_ids(previous: Array, current: Array) -> Dictionary:
+	var fallen: Dictionary = {}
+	if previous.is_empty():
+		return fallen
+	var prior_states: Dictionary = {}
+	for entry_value in previous:
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_value
+		prior_states[_entry_block_id(entry)] = str(entry.get("towerState", "standing"))
+	for entry_value in current:
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_value
+		if str(entry.get("towerState", "standing")) != "fallen":
+			continue
+		var block_id: String = _entry_block_id(entry)
+		if !prior_states.has(block_id) or str(prior_states[block_id]) != "fallen":
+			fallen[block_id] = true
+	return fallen
+
+func _collapse_direction_for(block_ids: Dictionary) -> String:
+	for entry_value in tower_blocks:
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_value
+		if block_ids.has(_entry_block_id(entry)):
+			return str(entry.get("collapseDirection", "center"))
+	return "center"
 
 func refresh_visuals() -> void:
 	_update_scroll_offset()
@@ -315,7 +356,7 @@ func end_snap_drag() -> void:
 	clear_snap_preview()
 
 func is_placement_frame_active() -> bool:
-	return snap_preview_active and structural_pose.has_targets() and _collapse_phase == COLLAPSE_NONE
+	return snap_preview_active and structural_pose.has_targets()
 
 func placement_visual_bounds() -> Rect2:
 	var unit: float = _unit_size()
@@ -539,6 +580,7 @@ func _reset_collapse() -> void:
 	_collapse_phase = COLLAPSE_NONE
 	_collapse_lean_elapsed = 0.0
 	_collapse_sim = null
+	_collapsing_block_ids = {}
 
 func _begin_collapse() -> void:
 	var unit: float = _unit_size()
@@ -552,6 +594,8 @@ func _begin_collapse() -> void:
 
 	for entry_value in tower_blocks:
 		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+		if !_collapsing_block_ids.has(_entry_block_id(entry_value)):
 			continue
 
 		var seed_data: Dictionary = _build_collapse_seed(
@@ -682,6 +726,8 @@ func _collapse_seed() -> int:
 	for entry_value in tower_blocks:
 		if typeof(entry_value) != TYPE_DICTIONARY:
 			continue
+		if !_collapsing_block_ids.has(_entry_block_id(entry_value)):
+			continue
 
 		key += _entry_block_id(entry_value) + "|"
 
@@ -746,10 +792,6 @@ func _draw() -> void:
 	var base_x: float = size.x * 0.5 + _shake_offset.x
 	var baseline: float = size.y - bottom_padding + _shake_offset.y
 
-	if _collapse_phase == COLLAPSE_FALL or _collapse_phase == COLLAPSE_SETTLED:
-		_draw_debris(unit)
-		return
-
 	if tower_blocks.is_empty():
 		_draw_fallback_stack()
 		_draw_snap_layer(unit, base_x, baseline, Vector2.ZERO)
@@ -760,15 +802,21 @@ func _draw() -> void:
 
 	var has_structural_pose: bool = structural_pose.has_targets()
 	var pivot: Vector2 = Vector2(base_x, baseline)
-	var draw_origin: Vector2 = Vector2.ZERO if has_structural_pose else pivot
+	var component_collapse_active: bool = _collapse_phase != COLLAPSE_NONE
+	var draw_origin: Vector2 = Vector2.ZERO if has_structural_pose or component_collapse_active else pivot
 
-	if has_structural_pose:
+	if has_structural_pose or component_collapse_active:
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	else:
 		draw_set_transform(pivot, deg_to_rad(displayed_tilt_deg), Vector2.ONE)
 
 	for i in range(tower_blocks.size()):
 		var entry: Dictionary = tower_blocks[i]
+		var entry_fallen: bool = str(entry.get("towerState", "standing")) == "fallen"
+		if entry_fallen and (
+			_collapse_phase != COLLAPSE_LEAN or !_collapsing_block_ids.has(_entry_block_id(entry))
+		):
+			continue
 		var block: Dictionary = _normalize_block_entry(entry)
 		var cells: Array = block.get("cells", [])
 		var shape_id: String = str(block.get("shapeId", ""))
@@ -845,9 +893,17 @@ func _draw() -> void:
 				entry, cells, origin_x, base_height, unit, base_x, baseline, scroll_offset_units, drop_offset, draw_origin
 			)
 
-	_draw_snap_layer(unit, base_x, baseline, draw_origin)
-
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+	if _collapse_phase == COLLAPSE_FALL or _collapse_phase == COLLAPSE_SETTLED:
+		_draw_debris(unit)
+
+	if has_structural_pose or component_collapse_active:
+		_draw_snap_layer(unit, base_x, baseline, Vector2.ZERO)
+	else:
+		draw_set_transform(pivot, deg_to_rad(displayed_tilt_deg), Vector2.ONE)
+		_draw_snap_layer(unit, base_x, baseline, pivot)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	if current_height > tower_units:
 		_draw_fallback_stack()
