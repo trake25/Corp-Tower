@@ -14,7 +14,7 @@ test('search returns a bounded, provenance-bearing exact symbol match', () => {
   assert.equal(result.schema_version, 2);
   assert.equal(result.status, 'matched');
   assert.equal(result.results.length, 1);
-  assert.deepEqual(result.results[0].lines, [159, 159]);
+  assert.deepEqual(result.results[0].lines, [103, 103]);
   assert.equal(result.results[0].path, 'docs/context/map/backend.md');
   assert.equal(result.results[0].source.source_path, 'src/Server/app/Lobby_Manager.js');
   assert.equal(result.results[0].source.symbol, 'updateDebugConfig');
@@ -24,17 +24,12 @@ test('search returns a bounded, provenance-bearing exact symbol match', () => {
   assert.equal(result.limits.returned_bytes, Buffer.byteLength(JSON.stringify(result, null, 2)) + 1);
 });
 
-test('search filters by an existing domain and asks for refinement when bounded', () => {
+test('compact maps keep an existing domain search within the result budget', () => {
   const result = searchContext(ROOT, 'splash', { domains: ['screens'], anchor: true });
 
-  assert.equal(result.status, 'needs-filter');
+  assert.equal(result.status, 'matched');
   assert.ok(result.results.length <= 5);
   assert.ok(result.results.every(item => item.path === 'docs/context/ui.md' || item.path === 'docs/context/map/ui-screens.md'));
-  assert.ok(result.warnings.some(warning => warning.startsWith('refine query:')));
-  assert.ok(result.next_actions.length <= 3);
-  assert.ok(result.next_actions.some(action => action.command.argv[2] === 'filter'));
-  assert.ok(result.next_actions.some(action => action.type === 'read-symbol'));
-  assert.ok(result.limits.diagnostic_bytes <= 2 * 1024);
   assert.ok(result.limits.returned_bytes <= result.limits.max_bytes);
 });
 
@@ -152,11 +147,11 @@ test('automation scope selects the protocol suite and retrieval benchmark', () =
 });
 
 test('section and bundle enforce bounded source material', () => {
-  const section = documentSection(ROOT, 'testing', 'Local selection matrix');
+  const section = documentSection(ROOT, 'testing', 'Local selection');
   const bundle = contextBundle(ROOT, 'updateDebugConfig', { kinds: ['symbol'], maxBytes: 1024 });
 
   assert.match(section.text, /qa-gate/);
-  assert.match(bundle.bundle, /Source: docs\/context\/map\/backend\.md:159-159/);
+  assert.match(bundle.bundle, /Source: docs\/context\/map\/backend\.md:103-103/);
   assert.ok(Buffer.byteLength(bundle.bundle) <= 1024);
   assert.equal(bundle.limits.returned_bytes, Buffer.byteLength(bundle.bundle));
 });

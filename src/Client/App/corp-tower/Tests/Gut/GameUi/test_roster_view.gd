@@ -47,36 +47,15 @@ func test_impact_bars_follow_status_membership() -> void:
 	})
 	assert_eq(roster().impact_bars.size(), 1, "A player who leaves the status should lose their impact bar.")
 
-func test_impact_bars_follow_the_compact_guide_spacing() -> void:
-	roster().update_impact_status_ui({
-		"requiredBandScore": 40,
-		"players": [
-			{"id": "P1", "bandScore": 20, "requiredBandScore": 40},
-			{"id": "P2", "bandScore": 20, "requiredBandScore": 40}
-		]
-	})
-	await get_tree().process_frame
-	var first_bar: Control = roster().impact_bars["P1"]
-	var second_bar: Control = roster().impact_bars["P2"]
-	assert_almost_eq(first_bar.custom_minimum_size.y, 176.0, 0.5, "Each Impact slot should follow the guide's compact vertical cadence.")
-	assert_almost_eq(second_bar.position.y - first_bar.position.y, 180.0, 0.5, "Impact frames should use the guide cadence with a small four-unit separation.")
-	var marker: Control = first_bar.get_node("%ImpactAvatarMarker") as Control
-	assert_almost_eq(marker.size.x, 27.2, 0.1, "Impact avatars should be twenty percent smaller than the previous 34-unit marker.")
-	assert_almost_eq(marker.position.x, 4.4, 0.1, "The reduced Impact avatar should remain centered on its frame.")
-
 func test_legacy_avatar_ids_map_to_flat_9_play_assets() -> void:
-	var expected := {
-		"avatar_0": "avatar-lion.png",
-		"avatar_1": "avatar-duck.png",
-		"avatar_2": "avatar-hippo.png",
-		"avatar_3": "avatar-fox.png",
-		"avatar_4": "avatar-penguin.png",
-		"avatar_5": "avatar-elephant.png"
-	}
-	for avatar_id in expected:
+	var resolved_paths: Array[String] = []
+	var unique_paths: Dictionary = {}
+	for avatar_id in ["avatar_0", "avatar_1", "avatar_2", "avatar_3", "avatar_4", "avatar_5"]:
 		var texture := PlayerRailEntryScript.load_avatar_texture(avatar_id)
-		assert_not_null(texture, "%s should resolve to a 9-Play avatar." % avatar_id)
-		assert_true(texture.resource_path.ends_with("/9-Play/" + expected[avatar_id]), "%s should preserve its existing character mapping." % avatar_id)
+		assert_not_null(texture, "%s should resolve to an avatar." % avatar_id)
+		resolved_paths.append(texture.resource_path)
+		unique_paths[texture.resource_path] = true
+	assert_eq(unique_paths.size(), resolved_paths.size(), "Legacy avatar ids should remain distinct.")
 
 func test_progressing_impact_bar_shows_player_avatar_marker() -> void:
 	harness.main.players_ctx.roster = [{"id": "P1", "avatarId": "avatar_1"}]

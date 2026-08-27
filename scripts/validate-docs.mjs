@@ -39,41 +39,25 @@ const tok = s => Math.round(Buffer.byteLength(s, 'utf8') / 4);
 
 // Per-doc token budgets are capacity ceilings, while section limits below bound
 // the normal retrieval unit. Exceeding either is a split-or-compact signal.
-const DEFAULT_BUDGET = 3000;
-// Re-baselined in the universal-agent migration from measured use of 32,673 /
-// 40,000 tokens. Active domains receive roughly 35–45% growth room, but the
-// 45,000 global ceiling remains lower than the sum of individual ceilings.
+const DEFAULT_BUDGET = 1500;
+// Ratcheted from the abstraction-level compaction baseline. Each ceiling is the
+// greater of ten percent or 100 tokens of headroom, rounded up to 50. Raising a
+// ceiling requires docs-steward review; a second raise requires compaction.
 const BUDGETS = {
-  'index.md': 1800,
-  'backend.md': 8500, 'gameplay.md': 7500, 'deployment.md': 5250,
-  'networking.md': 5750, 'build.md': 4500, 'testing.md': 4000,
-  'ui.md': 2000, 'ui-hud.md': 6500, 'ui-tutorial.md': 1200,
+  'automation.md': 2500, 'backend.md': 2750, 'build.md': 1150,
+  'deployment-backup.md': 1800, 'deployment-eks.md': 1300,
+  'deployment.md': 1500, 'gameplay.md': 2150, 'index.md': 1750,
+  'networking.md': 1650, 'testing.md': 1500, 'ui-hud.md': 1900,
+  'ui-tutorial.md': 900, 'ui.md': 950,
 };
-// Map files are grep targets, not reads. Their cost model is per-hit (~150 tokens
-// for one row), not per-load, so a load budget on them measures a thing that never
-// happens -- the same category error as the line budget this rewrite replaces.
-// What actually bounds a map's cost is MAX_LINE_CHARS, which is enforced on them
-// like everything else. The ceiling below is a bloat alarm, not a load budget.
-// Raised from 12000 once the `Does` column was actually authored. A map is
-// grepped, never loaded, so its cost is per-hit (~150 tokens for one row) and does
-// not scale with the file. The ceiling exists to catch a generator emitting junk
-// rows -- which it did: `require()`/`preload()` imports were being listed as
-// symbols and are now filtered. A fully authored map is the working state, not
-// bloat; a map that grows without the symbol count growing is.
-// Raised again to 28000 for self-sufficient rows. Every row now carries its own
-// `path:line`, costing ~13 tokens of file growth per row and removing an entire
-// second lookup per hit -- the solo probe's Q4 spent ~550 tokens re-grepping the
-// heading list purely to learn which file a matched line belonged to. File size is
-// the one cost a grep target does not pay, so this trade is close to free.
-// map/ui.md hit this ceiling anyway (fully-authored, ~28.7k) -- not because the
-// client area covers unusually many files, but because 3 of its ~49 source files
-// are oversized multi-responsibility scripts with unusually dense per-symbol
-// rows. Split into ui-tutorial/ui-debug/ui-hud/ui-screens rather than raised a
-// third time; each lands well under this same shared ceiling.
-const MAP_BUDGET = 28000;
-// "Whole KB loadable in an emergency" is a claim about prose. Maps are excluded
-// and reported separately.
-const PROSE_TOTAL_BUDGET = 45000;
+// Maps contain one purpose per file plus generated stable anchors. Per-area and
+// global ratchets catch a generator widening back toward exhaustive symbols.
+const MAP_BUDGETS = {
+  'backend.md': 5700, 'infra.md': 14000, 'ui-debug.md': 1650,
+  'ui-hud.md': 8000, 'ui-screens.md': 4600, 'ui-tutorial.md': 1750,
+};
+const PROSE_TOTAL_BUDGET = 21450;
+const MAP_TOTAL_BUDGET = 35600;
 const MAX_LINE_CHARS = 300;
 const NET_GROWTH_WARN = 30;
 const SECTION_WARN = 1000;
@@ -376,22 +360,16 @@ const isNew = (f, line) => gitOk && addedLines[f]?.has(line.trim());
 // --- budgets, line length, banned constructions, status markers ---------------
 const statusMarkers = [];
 const counts = [];
-// A bare `TODO` in a map row is the generator saying "this symbol has no authored
-// Does line yet" -- by design, and there are hundreds. Listing each one buries the
-// handful of real unresolved commitments in the prose docs, so they are counted.
-let mapTodos = 0;
 for (const { f, txt } of all) {
   const lines = txt.split(/\r?\n/);
   const t = tok(txt);
   const isMap = f.startsWith('map/');
-  const budget = isMap ? MAP_BUDGET : (BUDGETS[f] ?? DEFAULT_BUDGET);
+  const budget = isMap ? (MAP_BUDGETS[f.slice(4)] ?? DEFAULT_BUDGET) : (BUDGETS[f] ?? DEFAULT_BUDGET);
   counts.push([f, t, budget, lines.length, isMap]);
   if (t > budget)
     errors.push(`over budget: ${f} ~${t} tok > ${budget} — compact or split it`);
-  else if (!isMap && t >= Math.round(budget * 0.85))
-    warnings.push(`budget pressure 85%: ${f} ~${t} / ${budget} tok`);
-  else if (!isMap && t >= Math.round(budget * 0.70))
-    warnings.push(`budget pressure 70%: ${f} ~${t} / ${budget} tok`);
+  else if (!isMap && t >= Math.round(budget * 0.95))
+    warnings.push(`budget pressure 95%: ${f} ~${t} / ${budget} tok`);
   if ((growth[f] || 0) > NET_GROWTH_WARN)
     warnings.push(`net growth: ${f} +${growth[f]} lines this run (> ${NET_GROWTH_WARN}) — transcribing, not documenting?`);
   let fenced = false;
@@ -409,7 +387,6 @@ for (const { f, txt } of all) {
       (isNew(f, line) ? errors : warnings).push(msg);
     }
     if (!STATUS.test(line)) return;
-    if (isMap && /^\|.*\|\s*TODO\s*\|$/.test(line)) { mapTodos++; return; }
     statusMarkers.push(`${f}:${i + 1}  ${line.trim().slice(0, 90)}`);
   });
 }
@@ -428,12 +405,13 @@ for (const { f, txt } of all.filter(item => !item.f.startsWith('map/'))) {
     else if (size > SECTION_WARN) warnings.push(`large section: ${f} "${head.heading}" ~${size} tok > ${SECTION_WARN}`);
   });
 }
-if (mapTodos) errors.push(`map purposes: ${mapTodos} row(s) still use TODO`);
 counts.sort((a, b) => b[1] - a[1]);
 const proseTotal = counts.filter(c => !c[4]).reduce((s, c) => s + c[1], 0);
 const mapTotal = counts.filter(c => c[4]).reduce((s, c) => s + c[1], 0);
 if (proseTotal > PROSE_TOTAL_BUDGET)
   errors.push(`KB prose total ~${proseTotal} tok > ${PROSE_TOTAL_BUDGET} — compact or split docs`);
+if (mapTotal > MAP_TOTAL_BUDGET)
+  errors.push(`KB maps total ~${mapTotal} tok > ${MAP_TOTAL_BUDGET} — reduce generated anchors or split maps`);
 
 // --- map freshness ------------------------------------------------------------
 let mapFresh = 'skipped';
@@ -451,7 +429,6 @@ try {
 const terse = QUIET && !errors.length;
 console.log('=== docs/context validation ===');
 console.log(`docs: ${files.length} + ${mapFiles.length} map   prose: ~${proseTotal} / ${PROSE_TOTAL_BUDGET} tok   maps: ~${mapTotal} tok   links: ${linkCount}   map: ${mapFresh}`);
-if (mapTodos) console.log(`map rows awaiting a Does line: ${mapTodos}`);
 if (!terse) {
   console.log('tokens per doc (budget, net line change):');
   for (const [f, t, b, ln, isMap] of counts) {

@@ -58,6 +58,18 @@ state. Do not read that as a parse error.
 
 ## Policy
 
+- **Task verification and permanent coverage are different decisions.** Run the
+  checks needed to prove this change, then add or retain a test only when its
+  future failure would identify a broken rule, boundary, invariant, credible
+  regression, meaningful UI structure, or release-critical smoke path. Exact
+  copy, pixels, artwork dimensions, local defaults, retired-node absence and
+  private implementation are verified in the task and normally do not stay in
+  the suite.
+- UI structure means required bindings, membership, containment, visibility,
+  relative alignment, responsive behavior and draw order. Assert relationships,
+  not authored coordinates or dimensions. Exact text qualifies only when code
+  parses it or it is a security, accessibility, legal, protocol or gameplay
+  contract.
 - **A stale assertion is a bug in the test, not licence to change the source.**
   Source is truth. Prove which one is wrong before editing either — `git log -S`
   on the constant is usually enough.

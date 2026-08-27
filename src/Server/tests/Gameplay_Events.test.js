@@ -16,13 +16,6 @@ const {
 
 afterEach(resetFixtures);
 
-test("createBlock no longer assigns an anchorX field", () => {
-    const { engine } = createPlayingEngine(1, 8);
-    const block = engine.createBlock("O");
-
-    assert.equal(Object.prototype.hasOwnProperty.call(block, "anchorX"), false);
-});
-
 test("Last Chance saves one collapse, requires a reinforcement, and persists its pending state", () => {
     const { engine } = createPlayingEngine(1, 8);
     const collapse = {
@@ -479,10 +472,6 @@ test("saveImpactPowers captures each player's current inventory", () => {
         { id: "copy_score", earnedLevel: 5 }
     ]);
     assert.deepEqual(engine.room.impactPowers.P3, []);
-});
-
-test("Impact defaults each player's contribution share to thirty percent", () => {
-    assert.equal(GameConfig.impactMinContributionShare, 0.30);
 });
 
 test("Impact measures scored contribution with live points counted once", () => {

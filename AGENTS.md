@@ -76,13 +76,24 @@ automatic reflex.
 
 - The server is authoritative. The client renders `game_state`; it does not
   decide scoring, stability, legality, or another game outcome.
+- Every implementation is verified in proportion to its risk, but verification
+  does not automatically become permanent test coverage. Add or retain a test
+  only for a rule, boundary, invariant, credible regression, meaningful UI
+  structure, or release-critical smoke path. Exact copy, pixels, local defaults,
+  private implementation and other source-obvious details are task evidence, not
+  permanent suite obligations.
+- Context docs explain how a feature works at the system and subsystem level
+  before source is opened. They keep authority, flow, boundaries, rationale and
+  live landmines; they do not repeat labels, scene inventories, private symbols,
+  local defaults or details that become obvious in the routed source.
 - Product source under the server app and Godot client has no comments.
   `scripts/`, `.github/`, and `site/` retain useful comments; never remove a
   `SAFETY EXCEPTION` comment.
 - Finish repository changes through that manifest: `review` the explicit final
   paths after source edits, own and update any selected KB docs, then `close`
-  with the documentation decision. It owns QA selection, map generation and
-  relevant KB checks; it never reads a shared dirty worktree for scope.
+  with documentation and permanent-coverage decisions. It owns QA selection,
+  map generation and relevant KB checks; it never reads a shared dirty worktree
+  for scope.
 - Files over 600 lines are decomposition candidates. Propose a split; do not
   expand the current task without approval.
 - Do not deploy, commit, push, pull, compare remotes, create branches, or perform

@@ -57,7 +57,8 @@ function parseMapRow(line) {
   const start = Math.max(1, sourceLine - 12);
   const end = sourceLine + 20;
   const symbol = cells[1] || '';
-  return { source_path: match[1], source_line: sourceLine, symbol: symbol.replace(/\s+·\s+.*$/, ''), purpose: cells[2] || '',
+  const cleanSymbol = symbol.replace(/\s+·\s+.*$/, '');
+  return { source_path: match[1], source_line: sourceLine, symbol: cleanSymbol, map_kind: cleanSymbol === '@file' ? 'file' : 'anchor', purpose: cells[2] || '',
     read: { path: match[1], lines: [start, end], command: command(['sed', '-n', `${start},${end}p`, match[1]]) } };
 }
 
@@ -408,6 +409,7 @@ function fitPayload(payload, maxBytes) {
     else if (payload.next_actions.length > 1) payload.next_actions.pop();
     else if (payload.results[0]?.source?.read?.command?.argv) delete payload.results[0].source.read.command.argv;
     else if (payload.results[0]?.source?.purpose) delete payload.results[0].source.purpose;
+    else if (payload.results[0]?.source?.map_kind) delete payload.results[0].source.map_kind;
     else if (payload.results[0]?.reason) delete payload.results[0].reason;
     else if (payload.results[0] && 'score' in payload.results[0]) delete payload.results[0].score;
     else throw new Error(`search response metadata exceeds ${maxBytes} byte limit`);

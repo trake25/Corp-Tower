@@ -69,20 +69,8 @@ test("stability difficulty is the only exposed stability tunable", async () => {
         await lobbyManager.updateDebugConfig("towerStabilityDifficulty", 65);
         assert.equal(lobbyManager.getDebugConfig().towerStabilityDifficulty, 65);
 
-        // The raw physics constants are derived now, so a stale client sending
-        // them must be rejected rather than silently desyncing from the dial.
-        for (const key of [
-            "towerOverhangWeight",
-            "towerCollapseTiltScore",
-            "towerSlendernessSafe",
-            "towerSlendernessMax",
-            "towerSupportDeficitMax",
-            "towerStabilityMinHeight",
-            "towerHeightPressureGain"
-        ]) {
-            assert.equal(await lobbyManager.updateDebugConfig(key, 1), false, key);
-            assert.equal(GameConfig[key], undefined, key);
-        }
+        assert.equal(await lobbyManager.updateDebugConfig("towerOverhangWeight", 1), false);
+        assert.equal(GameConfig.towerOverhangWeight, undefined);
     } finally {
         GameConfig.towerStabilityDifficulty = original;
     }
@@ -100,7 +88,7 @@ test("Last Chance power toggle round-trips through debug config and resets", asy
     assert.equal(GameConfig.powerLastChanceEnabled, false);
 });
 
-test("transaction scoring controls replace the retired scoring formulas", async () => {
+test("transaction scoring controls clamp and reject unknown scoring keys", async () => {
     const lobbyManager = new LobbyManager();
     const original = {
         dangerousHeightFloor: GameConfig.scoring.dangerousHeightFloor,
@@ -123,27 +111,8 @@ test("transaction scoring controls replace the retired scoring formulas", async 
         assert.equal(GameConfig.scoring.criticalSaveBonusActionShare, 2);
         assert.equal(GameConfig.scoring.criticalCombinedCapActionShare, 3);
 
-        for (const key of [
-            "placementStabilityFloor",
-            "reinforceScorePerIntegrity",
-            "reinforceScorePerLean",
-            "reinforceScorePerSupportedCell",
-            "reinforceScoreCapShare",
-            "reinforceScoreCapShareAtTarget"
-        ]) {
-            assert.equal(await lobbyManager.updateDebugConfig(key, 1), false, key);
-            assert.equal(GameConfig.scoring[key], undefined, key);
-        }
-
-        for (const key of [
-            "finisherBonusPerLevel",
-            "precisionBonusPerLevel",
-            "teamExactBonusPerLevel",
-            "assistBonusPerLevel",
-            "assistContributionThreshold"
-        ]) {
-            assert.equal(await lobbyManager.updateDebugConfig(key, 1), false, key);
-        }
+        assert.equal(await lobbyManager.updateDebugConfig("reinforceScorePerIntegrity", 1), false);
+        assert.equal(GameConfig.scoring.reinforceScorePerIntegrity, undefined);
     } finally {
         Object.assign(GameConfig.scoring, original);
     }
@@ -163,10 +132,6 @@ test("the brick mood threshold is exposed and clamped in debug config", async ()
     await lobbyManager.updateDebugConfig("towerStabilityMoodThreshold", 8);
     assert.equal(lobbyManager.getDebugConfig().towerStabilityMoodThreshold, 8);
 });
-
-// The bug this pins: a perfectly centred brick used to read as a loss, and the
-// loss grew with height and level, because the stability score is
-// min(lean, integrity) and sags on its own as the tower matures.
 
 test("game state carries the room's accessibility options", () => {
     const { engine, messages } = createPlayingEngine(1, 8);

@@ -16,16 +16,23 @@ current, compact prose before the manifest records its documentation decision.
 These docs describe the system **as it is now**, not how it got here. Git holds
 the history. Every run *replaces* prose; it never appends.
 
-**Retention test.** A sentence survives only if it changes what someone does to
-the code **today**. Two forms qualify:
+**Retention test.** A sentence survives only if it both changes what someone
+does to the code **today** and supplies understanding that is not obvious from
+the routed source file. Two forms qualify:
 
-1. **State** — current behaviour, contract, number, term, or a file's role.
+1. **State** — feature behaviour, authority, cross-file or cross-system
+   contract, term, or subsystem role.
 2. **Live constraint** — something the code still cannot do, or a trap still
    sitting in it. `Number(null)` is `0`. `SnapGrid.settle_origin_y` mirrors server
    `settleBlock`. `checkFailCondition` must not take the efficiency factor.
 
 Write both in the **present tense, as how the system behaves and why it cannot
 behave otherwise.** Never as a story about how it got that way.
+
+The docs are the feature briefing before source inspection, not a prose rendering
+of the source. A label, asset name, pixel value, private symbol, local default,
+scene-node inventory or implementation branch fails the gate unless another
+system consumes it as a contract. The routed file will be read for those details.
 
 A landmine is only a currently reachable silent trap. Fold a fixed bug into the
 normal behaviour; do not preserve it as task history.
@@ -55,10 +62,13 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
    paths. `--from-git` is not a close-out fallback because it can include
    concurrent work.
 
-2. **Doc-worthy gate.** A change earns an edit only if it alters a **number, a wire
-   contract, a rule, a file's role, a term, or a rationale a future session would
-   re-litigate**. A pure refactor with none of those produces *no doc change* — say
-   so, validate, stop. Do not manufacture an entry to show work.
+2. **Doc-worthy gate.** A change earns an edit only if it alters feature
+   behaviour, a rule, authority or ownership, a cross-boundary contract, a term,
+   or a rationale/live trap a future session cannot recover from one routed
+   source file. Copy fixes, cosmetic values, local defaults, node or symbol
+   changes and pure refactors produce *no doc change* unless they alter one of
+   those medium-level contracts. Say so, validate, stop; do not manufacture an
+   entry to show work.
 
 3. **Read the diff only where you don't already hold it.** Use the per-path
    strategy `docs-scope.mjs` prints: `full` (the file encodes numbers a hunk can

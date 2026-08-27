@@ -1,21 +1,18 @@
 #!/usr/bin/env node
 // Generates docs/context/map/{backend,ui-tutorial,ui-debug,ui-hud,ui-screens,
-// infra}.md -- one row per symbol, so retrieval can land on a section of a
-// 1,200-line file instead of the file. Zero dependencies (Node stdlib only).
+// infra}.md -- one purpose row per file plus stable navigation anchors, so
+// retrieval finds the owning file without narrating its implementation.
 //   node scripts/build-file-map.mjs            # regenerate in place
 //   node scripts/build-file-map.mjs --check    # exit 1 if the committed maps are stale
 //   node scripts/build-file-map.mjs --quiet    # summary line only
 //
-// The `Does` column is hand-authored ONCE and carried forward on every later
-// regeneration, keyed to `path#symbol`. Line numbers are regenerated from source
-// every run, so a comment strip or a refactor costs one command and zero
-// re-authoring. New symbols land as TODO -- already a status marker the validator
-// surfaces -- and deleted symbols drop out silently.
+// File purposes are carried forward under `path#@file`. Anchor names and line
+// numbers are generated from source and carry no prose of their own.
 //
 // Area ownership comes from scripts/lib/context-routing.mjs, shared with docs
 // scoping and agent-config validation so a route split cannot leave stale callers.
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSync } from 'node:fs';
-import { join, resolve, relative } from 'node:path';
+import { basename, join, resolve, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { MAP_AREAS, isNormalContextExcludedPath } from './lib/context-routing.mjs';
 
@@ -231,13 +228,71 @@ export function extract(rel, text) {
   return { lines: lines.length, syms };
 }
 
+const GENERIC_ANCHORS = new Set(['main', 'run', 'start', 'stop', 'setup', 'reset', 'update', 'connect', 'close', 'load', 'save']);
+
+function referencedOutside(rel, name, files) {
+  if (!name || name.startsWith('_') || GENERIC_ANCHORS.has(name)) return false;
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = name.startsWith('%') ? new RegExp(escaped) : new RegExp(`(^|[^A-Za-z0-9_])${escaped}([^A-Za-z0-9_]|$)`);
+  return files.some(file => file.rel !== rel && pattern.test(file.text));
+}
+
+function intrinsicAnchor(rel, symbol) {
+  if (symbol.kind === 'stable') return true;
+  if (rel.endsWith('.tscn')) return symbol.kind === 'scene root';
+  if (rel.endsWith('.tf')) return ['module', 'variable', 'output'].includes(symbol.kind);
+  if (rel.endsWith('.yml') || rel.endsWith('.yaml')) return symbol.kind === 'job';
+  if (rel.endsWith('.gd')) return ['class_name', 'signal'].includes(symbol.kind);
+  return ['class', 'export'].includes(symbol.kind);
+}
+
+export function selectAnchors(rel, symbols, files) {
+  return symbols.filter(symbol => intrinsicAnchor(rel, symbol) || referencedOutside(rel, symbol.name, files));
+}
+
+function fallbackPurpose(rel) {
+  const stem = basename(rel).replace(/\.[^.]+$/, '').replaceAll(/[_-]+/g, ' ');
+  if (/\/migrations\//.test(rel)) return `database migration for ${stem}`;
+  if (/\/(?:tests?|Tests)\//.test(rel) || /\.test\./.test(rel)) return `permanent regression coverage for ${stem.replace(/\.test$/, '')}`;
+  if (rel.endsWith('.tscn')) return `${stem} scene composition and controller bindings`;
+  if (rel.endsWith('.tf')) return `Terraform ${stem} resources and interface`;
+  if (/\.github\/actions\//.test(rel)) return `reusable GitHub action for ${rel.split('/').at(-2).replaceAll('-', ' ')}`;
+  if (/\.github\/workflows\//.test(rel)) return `CI workflow for ${stem}`;
+  if (rel.endsWith('.yml') || rel.endsWith('.yaml')) return `Kubernetes or workflow configuration for ${stem}`;
+  if (rel.endsWith('.gd')) return `${stem} client behavior`;
+  if (rel.endsWith('.sh')) return `${stem} operator script`;
+  if (rel.endsWith('.mjs')) return `${stem} repository workflow`;
+  if (rel.startsWith('src/Server/')) return `${stem} server behavior`;
+  return `${stem} first-party source`;
+}
+
+function lowQualityPurpose(purpose) {
+  return /(?: module| workflow| scene structure| infrastructure interface| host operation)$/.test(purpose)
+    || ['setting flipped', 'hidden by default', 'synthetic roster', 'connection status text', 'this client player id', 'discard all pose state'].includes(purpose);
+}
+
+function filePurpose(rel, symbols, authored) {
+  const carried = authored.does.get(`${rel}#@file`) || authored.blurb.get(rel);
+  if (carried && !lowQualityPurpose(carried)) return carried;
+  const boilerplate = new Set(['root of this reusable Godot scene', 'scene node exposed for name-based controller binding']);
+  const preferredKinds = ['class', 'class_name', 'export', 'job', 'module', 'output', 'signal', 'fn', 'func', 'method'];
+  for (const kind of preferredKinds) {
+    for (const symbol of symbols.filter(item => item.kind === kind)) {
+      const purpose = authored.does.get(`${rel}#${symbol.name}`);
+      if (purpose && !boilerplate.has(purpose)) return purpose;
+    }
+  }
+  return fallbackPurpose(rel);
+}
+
 // --- carry-forward ------------------------------------------------------------
 // Parse an existing map so authored prose survives regeneration. Keyed on
 // `path#symbol`, never on line number -- the line number is the thing that moves.
 function readAuthored(file) {
   const does = new Map();
   const blurb = new Map();
-  if (!existsSync(file)) return { does, blurb };
+  const pinned = new Set();
+  if (!existsSync(file)) return { does, blurb, pinned };
   let cur = null;
   for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
     const h = /^###\s+(\S+)\s+—\s+\d+\s+ln(?:\s+—\s+(.*))?\s*$/.exec(line);
@@ -249,12 +304,14 @@ function readAuthored(file) {
     // separator rows without needing to know what they say.
     const r = /^\|\s*([^|]*?)\s*\|\s*([^|]+?)\s*\|\s*(.*?)\s*\|\s*$/.exec(line);
     if (r && cur && /(?:^|:)\d+$/.test(r[1])) {
-      const name = r[2].split('·')[0].trim().replace(/`/g, '');
+      const parts = r[2].split('·');
+      const name = parts[0].trim().replace(/`/g, '');
       const text = r[3].trim();
       if (text && text !== 'TODO') does.set(`${cur}#${name}`, text);
+      if (parts[1]?.trim() === 'stable') pinned.add(`${cur}#${name}`);
     }
   }
-  return { does, blurb };
+  return { does, blurb, pinned };
 }
 
 // Same key space (`path#symbol`, and file-path for blurbs) across every map
@@ -265,13 +322,29 @@ function readAuthored(file) {
 function readAuthoredAll(mapDir) {
   const does = new Map();
   const blurb = new Map();
-  if (!existsSync(mapDir)) return { does, blurb };
+  const pinned = new Set();
+  if (!existsSync(mapDir)) return { does, blurb, pinned };
   for (const f of readdirSync(mapDir).filter(f => f.endsWith('.md'))) {
     const one = readAuthored(join(mapDir, f));
     for (const [k, v] of one.does) does.set(k, v);
     for (const [k, v] of one.blurb) blurb.set(k, v);
+    for (const key of one.pinned) pinned.add(key);
   }
-  return { does, blurb };
+  return { does, blurb, pinned };
+}
+
+export function applyPinnedAnchors(rel, text, symbols, pinned) {
+  const result = [...symbols];
+  for (const key of pinned) {
+    const prefix = `${rel}#`;
+    if (!key.startsWith(prefix)) continue;
+    const name = key.slice(prefix.length);
+    if (result.some(symbol => symbol.name === name)) continue;
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const line = text.split(/\r?\n/).findIndex(raw => new RegExp(`(^|[^A-Za-z0-9_])${escaped}([^A-Za-z0-9_]|$)`).test(raw));
+    if (line >= 0) result.push({ ln: line + 1, name, kind: 'stable' });
+  }
+  return result;
 }
 
 function render(area, files, authored) {
@@ -279,60 +352,53 @@ function render(area, files, authored) {
   L.push(`# Map — ${area.title}`);
   L.push('');
   L.push('GENERATED by `scripts/build-file-map.mjs` — do not hand-edit line numbers.');
-  L.push('The `Does` column IS hand-authored and is carried forward on regeneration.');
+  L.push('Each `@file` purpose is authored once and carried forward on regeneration.');
   L.push('');
   L.push('**Grep this file, do not load it.** One hit is self-sufficient — it carries');
-  L.push('`path:line` and purpose, so it feeds straight into a `Read` with no second');
-  L.push('lookup. Loading the whole map costs thousands and gives you the same one row.');
+  L.push('a file purpose or stable anchor and `path:line`, so it feeds straight into a');
+  L.push('bounded source read. Local implementation detail stays in source.');
   L.push('');
-  let rows = 0, todo = 0;
-  for (const { rel, lines, syms } of files) {
-    const b = authored.blurb.get(rel);
-    L.push(`### ${rel} — ${lines} ln${b ? ` — ${b}` : ''}`);
+  let rows = 0;
+  for (const { rel, lines, syms, anchors } of files) {
+    L.push(`### ${rel} — ${lines} ln`);
     L.push('');
-    if (!syms.length) {
-      L.push('_no extracted symbols_');
-      L.push('');
-      continue;
-    }
-    L.push('| File:Ln | Symbol | Does |');
+    L.push('| File:Ln | Anchor | Purpose |');
     L.push('|---|---|---|');
-    for (const s of syms) {
-      const key = `${rel}#${s.name}`;
-      const scenePurpose = s.kind === 'scene root'
-        ? 'root of this reusable Godot scene'
-        : s.kind === 'unique node'
-          ? 'scene node exposed for name-based controller binding'
-          : null;
-      const d = authored.does.get(key) || scenePurpose || 'TODO';
-      if (d === 'TODO') todo++;
+    L.push(`| ${rel}:1 | @file · file | ${filePurpose(rel, syms, authored)} |`);
+    rows++;
+    for (const s of anchors) {
       rows++;
       const sym = s.kind === 'func' || s.kind === 'method' ? s.name : `${s.name} · ${s.kind}`;
-      L.push(`| ${rel}:${s.ln} | ${sym} | ${d} |`);
+      L.push(`| ${rel}:${s.ln} | ${sym} | |`);
     }
     L.push('');
   }
   L.push('---');
   L.push('');
-  L.push(`${files.length} files · ${rows} symbols · ${todo} awaiting a \`Does\` line.`);
+  L.push(`${files.length} files · ${rows - files.length} stable anchors.`);
   L.push('');
-  return { text: L.join('\n'), rows, todo };
+  return { text: L.join('\n'), rows, anchors: rows - files.length };
 }
 
 function build(root) {
   const all = firstPartyFiles(root);
   const mapDir = join(root, 'docs/context/map');
   const authored = readAuthoredAll(mapDir);
+  const sourceFiles = all.filter(file => !isExempt(file.rel)).map(file => {
+    const text = readFileSync(join(root, file.rel), 'utf8');
+    const extracted = extract(file.rel, text);
+    return { ...file, text, ...extracted, syms: applyPinnedAnchors(file.rel, text, extracted.syms, authored.pinned) };
+  });
+  const filesWithAnchors = sourceFiles.map(file => ({
+    ...file,
+    anchors: selectAnchors(file.rel, file.syms, sourceFiles),
+  }));
   const results = [];
   for (const area of AREAS) {
-    const mine = all.filter(f => f.area === area.name && !isExempt(f.rel));
-    const files = mine.map(({ rel }) => {
-      const text = readFileSync(join(root, rel), 'utf8');
-      return { rel, ...extract(rel, text) };
-    });
+    const files = filesWithAnchors.filter(file => file.area === area.name);
     const out = join(mapDir, area.out);
-    const { text, rows, todo } = render(area, files, authored);
-    results.push({ area, out, text, files: files.length, rows, todo });
+    const { text, rows, anchors } = render(area, files, authored);
+    results.push({ area, out, text, files: files.length, rows, anchors });
   }
   return { results, mapDir };
 }
@@ -357,7 +423,7 @@ function main() {
   if (!QUIET) {
     console.log('=== file map ===');
     for (const r of results)
-      console.log(`  ${r.area.out.padEnd(12)} ${String(r.files).padStart(3)} files  ${String(r.rows).padStart(4)} symbols  ${String(r.todo).padStart(4)} TODO  ${Math.round(r.text.length / 4)} tok`);
+      console.log(`  ${r.area.out.padEnd(12)} ${String(r.files).padStart(3)} files  ${String(r.anchors).padStart(4)} anchors  ${Math.round(r.text.length / 4)} tok`);
   }
   if (CHECK && stale.length) {
     console.log(`\nSTALE (${stale.length}) — run: node scripts/build-file-map.mjs`);

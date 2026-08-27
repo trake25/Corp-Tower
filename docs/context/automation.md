@@ -47,6 +47,11 @@ and add a passing benchmark fixture with the route, map purpose or alias repair.
 A suggestion loop, invalid source target or budget breach is also a retrieval
 defect even when the process exits zero.
 
+Generated maps keep one authored purpose per file and only stable navigation
+anchors. An exceptional cross-boundary term that extraction cannot recognize may
+be marked `· stable`; regeneration relocates it by name and drops it if the source
+term disappears. Maps do not explain local symbols—the bounded source read does.
+
 Interactive search/filter defaults to five results and 6 KiB; the hard ceilings
 are eight and 24 KiB. Diagnostics are three actions/2 KiB, sections default to 6
 KiB with a 12 KiB ceiling, and bundles default to 12 KiB with a 24 KiB ceiling.
@@ -84,9 +89,13 @@ keeping console responses below the intake budget.
    ranges made falsifiable by the diff. No Git working-tree discovery supplies
    path scope.
 4. Apply the doc-worthy gate, own each selected candidate doc through `amend`,
-   edit only its returned ranges, then run
-   `close --decision <updated|not-needed> --reason ... [--doc-path ...]`.
-5. `close` validates the decision, runs QA/map/KB/agent-config checks, detects
+   edit only its returned ranges, and decide separately whether the completed
+   change deserves durable regression coverage.
+5. Run `close --decision <updated|not-needed> --reason ... [--doc-path ...]
+   --coverage <updated|not-needed> --coverage-reason ...`. The coverage decision
+   does not select QA: every task still runs the checks selected from its final
+   paths, while cosmetic or source-obvious fixes normally use `not-needed`.
+6. `close` validates both decisions, runs QA/map/KB/agent-config checks, detects
    generated maps by before/after content hash, rejects out-of-scope map output,
    and writes a resumable receipt. `publish_paths` is the union of explicit
    changes, documented paths and content-changed generated maps.

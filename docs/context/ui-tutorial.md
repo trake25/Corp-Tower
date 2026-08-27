@@ -2,8 +2,8 @@
 
 Scope: the client-side coach-mark tutorial layer. Screens & shell →
 [ui.md](./ui.md). Gameplay HUD & stack → [ui-hud.md](./ui-hud.md). Gameplay
-rules the tutorial teaches → [gameplay.md](./gameplay.md). Per-symbol file and
-line → grep [map/ui-tutorial.md](./map/ui-tutorial.md).
+rules the tutorial teaches → [gameplay.md](./gameplay.md). File purposes and stable
+anchors → grep [map/ui-tutorial.md](./map/ui-tutorial.md).
 
 All paths under `src/Client/App/corp-tower/` unless noted.
 

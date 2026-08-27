@@ -1,221 +1,104 @@
 # Testing
 
-Scope: server contract tests, balance CLIs, client smoke and unit tests, CI gates.
-Logic under test → [backend.md](./backend.md) · [ui.md](./ui.md) ·
-[ui-hud.md](./ui-hud.md) · [ui-tutorial.md](./ui-tutorial.md).
+Scope: permanent server, client and automation coverage; local selection; balance
+tools; CI gates. Product behavior belongs in [backend.md](./backend.md),
+[gameplay.md](./gameplay.md), and the UI documents.
 
-## Local selection matrix
+## Verification and durable coverage
 
-Scope selection to files changed for the current task; unrelated dirty files do
-not widen the gate. A changed test runs itself. Unknown/shared runtime paths fall
-back to the full affected-domain suite. CI keeps its full domain gates.
+Every implementation receives proportionate verification. That may be syntax
+checking, an existing focused suite, full domain tests, smoke, a rendered
+comparison, or a purpose-built one-time probe. Passing verification does not make
+that probe a permanent test.
 
-| Task-owned source | Local tests |
-|---|---|
-| Server `Auth_Verifier.js` | `Auth_Verifier.test.js` |
-| Server `Profile_Store.js` | `Profile_Store.test.js` |
-| Server `Redis_State.js` | `Matchmaking_Queue.test.js` |
-| Server `Tower_Stability.js` | `Stability_Scoring.test.js` |
-| Server `Block_Supply.js` or `Impacts.js` | `Gameplay_Events.test.js` |
-| Server `Scoring.js` | placement, stability/scoring and gameplay event suites |
-| Server `Game_Engine.js`, `Game_Config.js`, `Lobby_Manager.js`, `Server.js`, Bot Manager or the shared test fixture | full `npm test` |
-| Server settle/range mirror | server placement plus client `test_snap_grid.gd` |
-| Client `SnapGrid`, Inventory, BlockData/orientation, emoji, CollapseSim, VisualHooks/TowerStack, Tutorial, DebugPanel, summary, roster or player context | the correspondingly named GUT file/group |
-| Client Auth Manager or shared auth config | all `test_auth_*.gd`; a provider addon alone runs its provider file |
-| Client `Main.gd`, `GameUI.tscn`, project/autoload config, `UiNodeBinder` or `GameUiHarness` | smoke plus full GUT |
-| Any other client runtime file | smoke plus nearest mapped GUT; full GUT if no mapping is defensible |
-| Infra, docs, site or non-runtime assets only | no game suite unless the change creates a client runtime risk Godot can exercise |
+Permanent coverage is reserved for authoritative rules, cross-system contracts,
+stateful invariants, credible regressions, meaningful UI structure, and
+release-critical smoke paths. Exact copy, pixels, artwork dimensions, local
+defaults, retired-node absence, and private implementation normally remain in
+source and task evidence. UI structure covers required bindings, membership,
+containment, visibility, relative layout, responsive behavior, and draw order;
+assert relationships rather than authored coordinates.
 
-Every client runtime gate includes `CiSmokeTest.gd`. New/changed assets get a
-headless `--import` first. Complex UI, screens, scene/autoload and asset
-integration require smoke plus related GUT, then a live rendered comparison;
-headless mode cannot prove visual fidelity.
+Task close-out records this separately from QA as
+`--coverage <updated|not-needed> --coverage-reason ...`. A source change can run
+the full suite and correctly choose `not-needed`.
 
-`node scripts/qa-gate.mjs --changed <task-owned-path>...` applies this matrix
-without reading the working-tree diff, prints only a compact successful summary,
-and prints captured test output only on failure. Pass every task-owned changed
-path explicitly; the command widens unknown or shared runtime changes to the
-full affected-domain suite.
+## Local selection
 
-`qa-gate --plan --json` returns the same deterministic test selection without
-running it. The manifest, documentation and report lifecycle is owned by
-[automation.md](./automation.md); it never derives scope from the working tree.
+`node scripts/qa-gate.mjs --changed <task-owned-path>...` selects checks from the
+explicit task scope. A changed test runs itself; shared or unmapped runtime code
+widens to the affected domain suite. Client runtime checks always include
+`CiSmokeTest.gd`; complex scenes, screens and assets also need related GUT and a
+rendered comparison. Headless checks establish correctness but cannot establish
+visual fidelity.
 
-## Server tests
+Server changes receive `node --check` plus mapped Node tests. Client changes use
+the repository-root host-matching Godot binary, smoke, and mapped GUT files.
+Infra, docs and site-only work runs no game suite unless it creates runtime risk.
+`qa-gate --plan --json` exposes the same deterministic selection without running
+it. CI retains the full server and client domain gates.
 
-Nothing under `tests/` or `tools/` ships in the image. `npm test` runs syntax
-checks and every Node test; targeted local runs use the files above.
+The complete command forms and failure-output rules live in the `qa-engineer`
+skill. A stale assertion is a test bug until source evidence proves otherwise;
+prefer invariants over hardcoded tuning values and never weaken a test merely to
+make a gate green.
 
-The engine contracts are split by failure signal: `Block_Geometry.test.js`,
-`Placement_Geometry.test.js`, `Stability_Scoring.test.js`, `Gameplay_Events.test.js` and
-`Debug_State_Contracts.test.js`. `helpers/Game_Engine_Fixture.js` owns pinned
-configuration, engine construction and cleanup. Geometry/stability cases must
-use `useFixedGrid()`/`fixedStabilityConfig()` instead of live tunables.
+## Server coverage
 
-Keep these paired signals: centred `balanceDelta === 0` while raw stability sags;
-a symmetric slender spire collapses with zero tilt; the first brick earns no
-phantom structural value; unknown derived/debug keys are positively rejected. An
-off-centre scoring case that asserts exact event types must zero live stability
-difficulty in `try`/`finally` or an unrelated warning joins the event list.
+Server tests protect placement and block geometry, stability/scoring invariants,
+authoritative gameplay events, Impact rollback, authentication/account/profile
+boundaries, and multi-pod room lifecycle. The shared engine fixture owns pinned
+configuration and cleanup. Tests under `tests/` and tools do not ship in the
+server image.
 
-`Debug_State_Contracts.test.js` also clamps the six live scoring transaction
-controls and rejects retired scoring dials. The Debug Panel GUT suite checks that
-the dynamic payout table reflects those controls, including a critical-cap value
-that must not be rounded by its slider.
+Geometry and stability suites must use fixed configuration rather than live
+tunables. Preview and award paths must agree, score components must conserve
+their transaction totals, and tests that assert exact event sets must isolate
+unrelated live warning behavior.
 
-`Matchmaking_Queue.test.js` covers the Redis-locked multi-pod seating race and
-owner-published terminal close: both pods receive one `room_closed`, remote
-replicas and session room assignments are cleared, and a deleted room cannot be
-persisted back by engine teardown.
-`Profile_Store.test.js` covers offline PostgREST fallback, racing insert and
-header-only credentials. `Auth_Verifier.test.js` verifies JWT/Meta identity and
-rejections offline. Bot Manager, balance tools and Server Entry still have no
-dedicated behavioural tests.
+## Godot coverage
 
-## Balance CLIs
+The smoke script loads every client runtime script, the main scene, autoloads,
+and required gameplay UI bindings. GUT protects the server/client placement
+mirror, inventory and block behavior, deterministic collapse/pose logic, auth,
+tutorial progression, gameplay state rendering, and meaningful UI structure.
+Native provider flows and visual fidelity remain release/manual coverage.
 
-`src/Server/tools/Balance_Run.js` is the required host-aware entrypoint for all
-offline balance tools; CI syntax-checks them only. Every `npm run balance:*`
-command starts with a small pilot, detects the current OS/CPU/RAM tier, emits a
-heartbeat every five seconds, saves verbose CSV to ignored task material, and
-kills the child at a hard deadline. A constrained host is four or fewer logical
-CPUs or under 8 GiB RAM: it allows 24 work units and 45 seconds by default, never
-more than 180 seconds. The standard and performance tiers raise those limits but
-retain a deadline.
+`SnapGrid` range is static state and must be reset around its suite. Private face
+art is gitignored, so a local texture case may fail on a machine without imported
+art even though CI, which imports assets first, passes. Render Tower Stack drag
+and collapse behavior in addition to running headless tests; structural coverage
+does not catch frame-level defects.
 
-Run `npm run balance:simulate`, `balance:stability`, `balance:probe` or
-`impact:probe` with no arguments first. Numeric samples remain available after
-`--`; a request above the host budget fails before spawning. `--allow-expensive`
-and an explicit `--max-seconds N` are both required to exceed it. A timed-out run
-is evidence of an expensive configuration, not a passing result; inspect its
-captured artifact or reduce the sample before deciding on tuning.
+## Balance tools
 
-- Instantiates [Game Engine](./backend.md#game-engine) directly — no lobby, no
-  Redis, no socket.
-- **Delegates every decision to the shipped Bot Manager** rather than keeping a
-  parallel copy of the heuristics, so what it measures is what a real room plays.
-  It honours the `wait` action by burning that player's turn.
-- **Models the per-player placement cooldown on a clock.** Each player has a
-  `simReadyAt`; the simulator picks the earliest-ready player with blocks and
-  advances a millisecond clock, failing the run as `timedOut` once it passes the
-  level's **derived** limit — reading the flat config value instead would report
-  every level past the earliest as a false timeout.
-- Runs **both strategies** per level so the comparison is directly readable.
-- **Stability sweep:** `npm run balance:stability` re-runs every level at
-  difficulty 0/5/25/50/75/100 and prints `avgStability`, `minStability`,
-  `avgBalance`, `avgIntegrity`, critical carried-load share, path concentration,
-  weakest-interface height, evaluator time, and transaction components,
-  classifications, caps and Critical Save rejections. Sampled at **every
-  placement**, not just level end.
+Balance Simulator, Stability Probe, and Impact Probe are tuning instruments, not
+pass/fail authorities. Run their host-aware npm entrypoints without arguments
+first; the wrapper pilots the workload, enforces CPU/RAM and time budgets, emits
+heartbeats, and stores verbose output in ignored task material. Expensive samples
+require explicit opt-in and a deadline.
 
-`gatePassed` is a useful single-level signal, but checkpoint progression is decided
-over a full Impact band. It routes through the engine's real
-`hasMetImpactScoreRequirement` rather than a simplified formula, so it reads the
-gate the server enforces. Use `impact:probe` for retry and terminal distributions.
+The simulator constructs the real Game Engine and delegates decisions to the
+shipped Bot Manager. Its per-player cooldown clock is part of the model: removing
+it lets one bot place repeatedly and makes contribution results meaningless.
+Bots reject collapsing moves and favor clean construction, so collapse rate,
+completion, timeout, and gap-placement frequency are poor balance signals. Use
+stability distributions and Impact contribution outcomes, and use playtests for
+messy human gap repair.
 
-**Landmine — the cooldown model is not just pacing.** Drop it and one player
-places unboundedly in a row, which makes contribution read lopsided and the Impact
-gate read impossible — an artifact that swings the measured pass
-rate by an order of magnitude.
+## Automation and CI
 
-**Landmine — do not calibrate against `collapse`.** `chooseBotPlacement` skips any
-placement that collapses, so bots almost never die and the rate reads ~0% across
-wildly different configs. Tune against `avgStability` and the spread of
-per-placement outcomes.
+Automation tests protect retrieval result states and budgets, manifest
+ownership/close-out, explicit Git publication scope, map generation, and private
+observability arithmetic and safety gates. `benchmark-rag.mjs --check` is the
+end-to-end retrieval correctness and provider-byte gate.
 
-**Two things the bots structurally cannot measure**, so neither is evidence of a
-balance problem:
+Android deployment runs client smoke and required GUT before export. Server EKS
+deployment runs the complete Node suite before image build and push.
 
-- **`timeout` and completion.** The derived clock is sized for a human's 0.55
-  packing efficiency while bots spire-build at ~0.9, so they finish in a fraction
-  of the budget and read a flat 100% completion at every level.
-- **`gapPlacements`.** Bots pick a max-stability placement every turn, so they
-  build clean towers with nothing to repair. Gap-filling is a mechanic for players
-  who create messes under time pressure; validating it needs playtests.
+## Known gaps
 
-`src/Server/tools/Stability_Probe.js` (`npm run balance:probe`) covers that second
-blind spot with narrow bottlenecks, wide crowns, redundant supports, disconnected
-stacks, and gap-repair geometry across heights and levels through
-`resolveStabilityConfig(level)` at every sweep difficulty. It asserts a single
-opening brick never collapses at any sampled level or difficulty, and probes
-clean height, direct repairs, dangerous height, transaction caps, Critical Saves
-and claim reuse.
-
-`src/Server/tools/Impact_Balance_Probe.js` (`npm run impact:probe -- <start-levels>
-<runs>`) drives full checkpoint bands through the shipped simulator decisions. It
-reports each strategy's personal contribution and expected-pool-share percentiles,
-all-player pass and checkpoint-reset rates, shortfalls, rollback distribution,
-Last Chance and terminal rates, Critical Save frequency, and whether failure paths
-restored checkpoint score and contribution. It is a tuning probe, not a second
-authority.
-
-Both are tuning aids, not gameplay authorities.
-
-## Godot client tests
-
-The smoke test loads every `Cor`/`Sys` script, main scene, autoload and required
-GameUI node. GUT covers placement mirrors, inventory, block visuals, fixed-seed
-collapse, hooks, auth, tutorial gates/targets, summaries, roster/context, layout
-baselines and debug wiring. Auth remains offline; native/browser/device flows are
-manual release coverage.
-
-`test_snap_grid.gd` must move with server settle/range semantics. Its legality
-contract accepts unsupported release rows because gravity resolves them, while
-rejecting overlap/below-platform and any origin that lets a footprint escape.
-`test_block_emoji.gd` pins the server `balanceDelta` key. Tutorial target tests
-mount the scene so renamed or hidden controls fail.
-
-Synthetic inventory taps reset `last_tap_ms` or the 60 ms de-dupe window swallows
-them.
-
-Gameplay HUD coverage pins the two-state quest art, legacy-ID avatar mapping,
-visible Impact fills and progress-only avatar markers, shared glass popovers,
-the compact Impact cadence and 20%-reduced marker, overlay ordering, power-toast
-text and size, Android responsive anchors with fixed artwork proportions, startup
-splash continuity, Android covered-background ground alignment, Hook Zoom platform
-aspect/ground/tower contact, the summary countdown/quest rows, failure retry text,
-and the terminal Home countdown.
-
-**Landmine — `SnapGrid`'s range is `static var` state**, so `before_each` and
-`after_all` must call `reset_placeable_range()`. Omit it and tests leak grid state
-into each other.
-
-**Landmine — the face PNGs live in the gitignored private-art folder**, so
-`test_block_emoji.gd::test_each_mood_resolves_its_own_texture` fails with
-`ERR_CANT_OPEN` on any machine that has not imported the art. CI imports assets
-before running GUT, so **a local run with only that one case red is the expected
-state, not a regression.**
-
-## CI gates
-
-| Workflow | Runs | Blocking |
-|---|---|---|
-| Android Deploy wstodplay | `CiSmokeTest.gd` + required GUT suites | Yes — before signed export |
-| EKS Deploy (game server) | `npm test` | Yes — before image build/push |
-
-## Automation protocol tests
-
-`scripts/tests/context-query.test.mjs` covers strict retrieval states, bounded
-diagnostics and source targets; `task-close.test.mjs` covers manifest ownership,
-review and documentation decisions. `git-sync-commit-push.test.mjs` validates
-explicit manifest selection and schema-specific publication scope without
-invoking Git or the network.
-`agent-observability.test.mjs` covers adapter gates, exact-inclusive arithmetic,
-lifecycle, privacy, race-safe state, bounded flagging/reporting, analytics and
-public export. Run `node --test` over those four files, then run `node
-scripts/benchmark-rag.mjs --check` for end-to-end retrieval correctness and
-provider-facing byte thresholds.
-
-## Known coverage gaps
-
-- `checkFailCondition()`'s all-blocks-used branch and the Power side-quest flow
-  have no direct test.
-- Multi-worker matchmaking has regression coverage; **reconnect and gateway
-  routing across pods more broadly do not.**
-- Most client UI is **structural coverage only**: Main UI Controller,
-  NetworkManager, Block Preview, Cooldown and Debug Overlay have no behavioural
-  tests. The exceptions are placement, face maths, block orientation, the Impact
-  Beat, the collapse sim, the Tutorial and the auth session.
-- **`TowerStack`'s drawing and drag-state handling remain untested**, and the suite
-  has already passed a drag bug that only a rendered frame caught. **Verify
-  placement visuals by running the client, not by the suite alone.**
+- Broader reconnect and gateway routing across pods lacks integration coverage.
+- Most visual fidelity, Tower Stack drag state, and collapse framing require a
+  rendered client rather than structural GUT assertions.
+- Native/browser/device authentication remains manual release coverage.

@@ -1,118 +1,64 @@
-# UI — Screens & Navigation (Godot Client)
+# UI Screens and Navigation
 
-Scope: the Godot client's shell, screen flow, and the network layer that drives
-it — which screen shows when, and how a build starts. Gameplay HUD, stack
-rendering, popovers and the debug panel → [ui-hud.md](./ui-hud.md). Tutorial
-layer → [ui-tutorial.md](./ui-tutorial.md). Wire protocol →
-[networking.md](./networking.md). Tests →
-[testing.md](./testing.md#godot-client-tests). Per-symbol file and line → grep
+Scope: Godot client shell, authentication, screen flow, and responsive root
+behavior. Gameplay view → [ui-hud.md](./ui-hud.md). Tutorial →
+[ui-tutorial.md](./ui-tutorial.md). Wire lifecycle →
+[networking.md](./networking.md). File purposes and stable anchors →
 [map/ui-screens.md](./map/ui-screens.md).
 
-All paths under `src/Client/App/corp-tower/` unless noted. **The client renders
-`game_state` and never computes a gameplay outcome.**
+The client renders server state and never computes a gameplay outcome.
 
-## Godot Client App (shell)
+## Client shell
 
-- `project.godot` autoloads NetworkManager and `AuthManager` (`Sys/Auth/`), which
-  owns the Supabase session in `user://` and refreshes it on a timer so the
-  connect path never awaits — NetworkManager just reads `access_token()`.
-  `Auth_Request_Transport.gd` owns one-shot Supabase HTTP request lifetime,
-  headers and response parsing; the autoload retains session and provider state.
-- Display: 412×917 portrait design size, `canvas_items` stretch, `keep` aspect
-  on web (`.web`, pillarboxed), `expand` on mobile (`.mobile`) to fill device
-  edges — `GameUI.tscn`'s fixed-offset HUD sits under `PlayField`'s origin, so
-  extra canvas only adds background beneath it.
-- `Main.tscn` is the app root and owns [Screen Manager](#screen-manager); there is
-  no static UI root scene.
-- `PlayField` owns a `PlacementWorldFrame` for the platform, Tower Stack and drop
-  zone; its lateral shift is presentation-only and the HUD remains anchored to the root.
-- `export_presets.cfg` is gitignored; CI uses a non-secret preset →
-  [build.md](./build.md#android-deploy-wstodplay-workflow).
-- Build-time flags from `EndpointConfig`, written per build by
-  `write-endpoint-config.sh`: `DEBUG_UI_ENABLED` gates the debug button, off for
-  the EKS web builds and the public demo; `DEMO_MODE_ENABLED` gates the required
-  `DemoModeLabel` node disclosing that empty seats are bots, set only for
-  `toddemo`; `SUPABASE_URL`/`SUPABASE_ANON_KEY` enable sign-in — **both empty
-  (the committed default) disables AuthManager**; `AUTH_OAUTH_ENABLED`,
-  `AUTH_REDIRECT_WEB`, `AUTH_GOOGLE_SERVER_CLIENT_ID` add provider sign-in.
+The project autoloads Network Manager and Auth Manager. Auth Manager owns the
+persisted Supabase session, provider state, refresh timing, and one-shot request
+transport; the connection path reads its current token without waiting. Main is
+the application root and Screen Manager owns the active screen.
 
-`update_config`/`resetDebugConfig` have **no server-side auth check** — the debug
-gate is UI-only, and needs one before public release.
+Build-time endpoint configuration controls WebSocket targets, debug/demo mode,
+and whether provider sign-in is available. Empty committed auth values disable
+sign-in. The debug UI gate is client-only: server debug writes still need admin
+authorization before public release.
 
-## Screen Manager
+Web preserves the portrait aspect while mobile expands to the available logical
+canvas. Gameplay art keeps aspect and either centers or follows an edge anchor;
+background and overlay surfaces fill the root. Presentation transforms never
+change placement coordinates.
 
-`Cor/Scripts/ScreenManager.gd`, on `Main.tscn`. Owns screen flow and the single
-global floating debug button.
+## Screen flow
 
-- Sign-in shows a social button **only for a provider in `AuthManager.PROVIDERS`
-  with OAuth on**, hiding the row and divider otherwise — no dead social button
-  ships. Android returns via the vendored Deeplink plugin; web reloads at its
-  configured URL and holds the one-time PKCE verifier in same-tab session storage
-  until the callback exchange completes.
-  Its debug Sign In category can locally force Google or Facebook through browser
-  OAuth by disabling the default-on native Android path; both runtime-only
-  preferences reset to enabled when the app reloads.
-- Swaps screens inside `ScreenContainer`, driven by the child screens' request
-  signals and NetworkManager's `room_joined` / `match_started` / `room_closed`.
-- `StartupSplash` reuses the boot splash texture behind `ScreenContainer` while
-  the initial `restore_session()` await is unresolved, then hides when Home or
-  Sign-in is attached. Its centered aspect-fit scaling preserves the full
-  portrait art on expanded Android and web canvases, preventing a cold
-  post-update token refresh from exposing the empty grey root.
-- Flow: Splash → Sign-in → Home → Join Screen; a restored session skips
-  Sign-in, while Play Loader remains reusable and unwired. Tutorial exit → Home,
-  room-close → Join Screen, except terminal `failure_limit_reached` closes and an
-  explicit `destination: "home"` route Home. Demo skips Sign-in: Play Demo +
-  Tutorial on Home, room-close → Home. A final room close clears client
-  matchmaking state and disconnects before navigation, so the next Find Match
-  action creates a fresh WebSocket session. Buttons:
-  [map/ui-screens.md](./map/ui-screens.md).
-- Routes `room_joined` on `matchStarted` (false → Public Lobby); `match_started`
-  enters the game → [networking.md](./networking.md). **Demo skips the Public
-  Lobby**: it enters play immediately and calls `send_ready()` itself, since bots
-  pre-ready every other seat. `room_closed: lobby_timeout` opens
-  `AutoDismissModal` over the current screen instead of swapping it away; terminal
-  `failure_limit_reached` or destination `home` → Home; other reasons → Join
-  Screen (Home in demo).
-- `AutoDismissModal` (`Main.tscn`, third child) also covers an unexpected
-  disconnect while `find_match_active`. Both cases tear the screen underneath
-  down only on dismiss, so it stays visible behind the modal's 3s countdown.
-- Play's terminal `game_over` state keeps the level summary path active so its
-  glass failure card counts down three seconds before the authoritative Home close.
-- Android exports keep the OS status bar visible above the 412×917 authored
-  content area. When the resulting logical canvas is wider, Play fills it without
-  scaling the scene: fixed art keeps its aspect while centered and edge-anchored
-  HUD groups reposition responsively. Web keeps the 412-wide aspect.
-- Instantiates `PlayScreenScene` on entering Find Match or the lobby, frees it on
-  close.
-- Debug button: tap vs drag via `DEBUG_BUTTON_DRAG_THRESHOLD`; *visible* from
-  `DEBUG_UI_ENABLED`, and enabled on Sign In, Public Lobby, and Play only.
-  Sign In enables only its local Sign In category, Public Lobby only Bots, and
-  Play every gameplay category; unrelated categories remain visible but disabled.
-  Position resets on `_ready()` and room join, never after a drag, so a drag
-  persists to the next join.
-- Calls into Main by duck typing (`play_instance.call(...)`) — no static
-  dependency on it.
+Screen Manager swaps scenes in one container and owns the floating debug entry.
+The normal path is startup restoration, Sign-in when needed, Home, matchmaking
+or Public Lobby, then Play. A restored session can skip Sign-in. Demo mode skips
+Sign-in and the public lobby, joins directly, and readies its real seat because
+bots are already ready.
 
-## Landmines
+Network signals drive room entry, match start, teardown, and navigation.
+Ordinary close returns to matchmaking; terminal failure or an explicit Home
+destination returns Home. Lobby timeout and unexpected matchmaking disconnect
+use an auto-dismiss modal while leaving the current screen visible underneath.
+Terminal game over keeps Summary active until the server closes the room.
 
-- **Never run `godot --editor --quit`.** Its import/parse pass re-saves `.tscn`
-  and drops authored overrides — `custom_minimum_size`, `stretch_mode`,
-  `layout_mode` — silently. Edit scenes by hand or in the real editor. If it has
-  run, `git checkout` the scene and re-apply.
-- **A `.tscn` declares parents before children.** A row node must sit after its
-  container in file order, or it draws a `Parent path … has vanished` warning and
-  disappears. Moving a row between categories means moving its node block too.
-- **`mouse_filter = 2` on every decorative or overlapping node.** Godot's default
-  `0` (stop) makes a Control swallow touches even where it draws nothing.
-- **`window/handheld/orientation` must be the Godot 4 integer `1`.** A Godot
-  3-style string silently coerces to `0` (landscape) with no warning, and the
-  string form *looks* correct — check it first if orientation regresses.
-- **A `Button`'s native `text` goes near-invisible on hover/press** unless
-  `font_hover_color`/`font_pressed_color` are also set — they default to a light
-  colour. Every text-bearing button instead uses `text = ""` plus a child
-  `Label` (fixed `font_color`), outside `Button`'s state colours entirely.
-- **The editor viewport is fixed at 412×917**, where `expand` and `keep`
-  coincide — it can't show device-size layout, popover mis-positioning, or
-  trigger-tap timing. Resize the running desktop client instead, or verify on
-  a deployed build.
+Startup Splash preserves continuity while session restoration is unresolved.
+Authentication shows only configured providers. Android uses native providers
+when available and falls back to browser OAuth; Web keeps the PKCE verifier in
+same-tab session storage through the callback.
+
+The debug entry is build-gated and changes available categories by screen:
+Sign-in exposes local authentication controls, lobby exposes bots, and Play
+exposes gameplay tuning. Drag position persists until a new app or room setup.
+
+## Live constraints
+
+- Do not use an editor quit cycle as a parse check; it can resave scenes and
+  discard authored overrides. Use headless smoke/import or the real editor.
+- Scene parents must precede children in the text format. Moving a UI row between
+  containers requires moving its node block.
+- Decorative and overlapping controls must pass pointer input through or they can
+  swallow taps in visually empty regions.
+- Mobile orientation uses Godot's current integer setting; a legacy string can
+  silently coerce to landscape.
+- Text-bearing buttons need explicit state colors or a child Label, because
+  native hover/press colors can make text disappear.
+- The authored editor viewport cannot expose wider-device layout or touch-event
+  pairing. Resize the running client or use a device/rendered comparison.

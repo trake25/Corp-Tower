@@ -19,9 +19,10 @@ Procedure:
    banned-phrase list and status-marker list are the worklist. Work the largest
    over-budget doc first.
 2. Apply the retention test from `update-docs` to **every** paragraph: keep only
-   **State** and **live constraints**, both written in the present tense as how the
-   system behaves. Delete abandoned alternatives and fixed-bug narratives outright.
-   A surviving lesson is rewritten as the constraint itself, never as a rejection.
+   medium-level **State** and **live constraints** that are not obvious from one
+   routed source file. Delete local implementation narration, abandoned
+   alternatives and fixed-bug history. A surviving lesson is rewritten as the
+   constraint itself, never as a rejection.
 3. Collapse superseded entries rather than annexing them. An entry describing
    something that no longer exists is deleted outright unless a live hazard
    survives it — then keep the hazard and drop the rest.
@@ -29,9 +30,9 @@ Procedure:
    it; after rewriting, tick each one off in the new text. A *live* hazard is one
    the code still carries — a fixed bug is not a landmine and does not survive the
    pass. Budget policy — when raising one is legitimate — is `docs-steward`'s.
-5. Move per-symbol detail into `docs/context/map/` rather than deleting it. A
-   symbol's file, line and one-line purpose belong in a map row; the doc keeps the
-   behaviour and the contract.
+5. Delete per-symbol explanation instead of moving it elsewhere. Generated maps
+   keep one file purpose plus stable navigation anchors and line numbers; source
+   supplies local symbol behavior.
 6. Strip mirrored `Game_Config.js` values — keep values only for the ~10 keys that
    drive design conversation on their own.
 7. Resolve each status marker: still true (keep), now done (delete), stale (delete

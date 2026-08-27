@@ -19,6 +19,11 @@ repeatedly freed more room than raising a budget would have. Raise a budget only
 when a doc is all current behaviour and live constraint and still does not fit,
 and say why in the same change.
 
+After a whole-KB compaction, ratchet each ceiling to the greater of ten percent
+headroom or 100 estimated tokens above the cleaned document, rounded up to 50.
+That allowance is capacity for a real feature contract, not permission to append
+source-obvious detail.
+
 **A doc over budget again after already being raised is a compaction signal, not
 a second raise.** Check history before touching the ceiling:
 `git log -p -- scripts/validate-docs.mjs | grep "'<doc>.md':"`. If the number
@@ -57,8 +62,8 @@ and edits any selected candidate docs, `task-close close` records the doc-worthy
 decision, regenerates content-changed maps, validates the relevant game/site KB
 and writes exact command evidence.
 
-Regenerated maps preserve authored `Does` by `file#symbol`. Fix every validator
-error before completion. Receipt is one line:
+Regenerated maps preserve each authored file purpose and explicit stable anchor
+by `file#symbol`. Fix every validator error before completion. Receipt is one line:
 `docs: gameplay.md, backend.md (+4/−31) · validate PASS`.
 
 **Do not commit unless explicitly told to.**

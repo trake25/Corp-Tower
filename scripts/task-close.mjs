@@ -76,6 +76,10 @@ function sourcePath(path) {
   return /^(src\/|scripts\/|infra\/|docker\/|\.github\/|site\/src\/|site-root\/)/.test(path);
 }
 
+function testPath(path) {
+  return /^(src\/Server\/tests\/|src\/Client\/.*\/Tests\/|scripts\/tests\/|site\/.*(?:test|spec)\.)/.test(path);
+}
+
 function agentConfigPath(path) {
   return /^(AGENTS\.md|CLAUDE\.md|\.agents\/skills\/|\.claude\/skills\/)/.test(path);
 }
@@ -134,6 +138,14 @@ function documentationFor(scope, sourceChanged = false) {
   };
 }
 
+function coverageFor(sourceChanged = false) {
+  return {
+    source_changed: sourceChanged,
+    decision: sourceChanged ? 'pending' : 'not-needed',
+    reason: sourceChanged ? null : 'No source path is in the reviewed change set.',
+  };
+}
+
 export function createManifest({ task, ownedPaths = null, changedPaths = null, runId = null }) {
   if (!task || task.length > 120) throw new Error('task must be present and at most 120 characters');
   const owned = [...new Set(ownedPaths || changedPaths || [])].sort();
@@ -154,6 +166,7 @@ export function createManifest({ task, ownedPaths = null, changedPaths = null, r
     intake,
     retrieval: { fallbacks: [] },
     documentation: documentationFor(intake, hasSource),
+    coverage: coverageFor(hasSource),
     review: null,
     verification: null,
   };
@@ -185,6 +198,7 @@ export function amendManifest(manifest, paths) {
     documented_paths: resetReview ? [] : manifest.documented_paths,
     publish_paths: [],
     documentation: resetReview ? documentationFor(intake, owned.some(sourcePath)) : manifest.documentation,
+    coverage: resetReview ? coverageFor(owned.some(sourcePath)) : manifest.coverage,
     review: resetReview ? null : manifest.review,
     verification: null,
   };
@@ -208,6 +222,7 @@ export function reviewManifest(manifest, { changedPaths, scope = null, mapBaseli
     documented_paths: [],
     publish_paths: changed,
     documentation: { ...documentationFor(intake, sourceChanged), scope },
+    coverage: coverageFor(sourceChanged),
     review: { input_fingerprint: fingerprint(reviewInput), reviewed_at: new Date().toISOString(), intake, map_hashes: mapHashesAtReview },
     verification: null,
   };
@@ -254,6 +269,23 @@ export function applyDocumentationDecision(manifest, input) {
     },
     documented_paths: values.documentedPaths,
     publish_paths: publishPathsFor(manifest.changed_paths, values.documentedPaths, []),
+    verification: null,
+  };
+}
+
+export function applyCoverageDecision(manifest, { decision, reason }) {
+  if (!['updated', 'not-needed'].includes(decision)) throw new Error('coverage must be updated or not-needed');
+  if (!reason?.trim()) throw new Error('a permanent-coverage decision needs a plain-English reason');
+  if (!['reviewed', 'failed'].includes(manifest.phase)) throw new Error('close requires a reviewed manifest');
+  if (decision === 'updated' && !manifest.changed_paths.some(testPath))
+    throw new Error('updated permanent coverage requires an explicit changed test path');
+  return {
+    ...manifest,
+    coverage: {
+      ...(manifest.coverage || coverageFor(true)),
+      decision,
+      reason: reason.trim(),
+    },
     verification: null,
   };
 }
@@ -323,7 +355,7 @@ function reviewForManifest(manifest, manifestFile) {
       client_tests: intake.qa.client_tests,
     },
     documentation_scope: manifest.documentation.scope?.output || null,
-    next: command(['node', 'scripts/task-close.mjs', 'close', '--manifest', manifestFile, '--decision', '<updated|not-needed>', '--reason', '<reason>']).display,
+    next: command(['node', 'scripts/task-close.mjs', 'close', '--manifest', manifestFile, '--decision', '<updated|not-needed>', '--reason', '<reason>', '--coverage', '<updated|not-needed>', '--coverage-reason', '<reason>']).display,
   };
   if (Buffer.byteLength(JSON.stringify(result, null, 2)) + 1 > INTAKE_MAX_BYTES) throw new Error('task review exceeds 8192 bytes; read the manifest artifact for full documentation scope');
   return result;
@@ -401,6 +433,12 @@ function requireDocumentationDecision(manifest) {
     fail('updated documentation decision has no documented paths', 1);
 }
 
+function requireCoverageDecision(manifest) {
+  if (!manifest.coverage?.source_changed) return;
+  if (manifest.coverage.decision === 'pending') fail('permanent-coverage decision is pending; pass it to task-close close', 1);
+  if (!manifest.coverage.reason) fail('permanent-coverage decision has no reason', 1);
+}
+
 function requireFallbackFixtures(manifest) {
   if (!manifest.retrieval.fallbacks.length) return;
   const fixtureFile = resolve(ROOT, 'scripts/fixtures/context-retrieval.json');
@@ -456,6 +494,7 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
 
 function verifyV2(manifest, manifestFile, closeInputFingerprint) {
   requireDocumentationDecision(manifest);
+  requireCoverageDecision(manifest);
   requireFallbackFixtures(manifest);
   const steps = [];
   for (const tool of manifest.review.intake.tools.filter(tool => ['automation protocol', 'retrieval benchmark'].includes(tool.name)))
@@ -542,7 +581,7 @@ async function main() {
     return;
   }
   if (action === 'close') {
-    checkOptions(values, ['manifest', 'decision', 'reason', 'doc-path']);
+    checkOptions(values, ['manifest', 'decision', 'reason', 'doc-path', 'coverage', 'coverage-reason']);
     const manifestFile = manifestPath(values);
     let manifest = upgradeManifest(readManifest(manifestFile));
     const documentedPaths = normalizeOptionalPaths(many(values, 'doc-path'), '--doc-path');
@@ -551,6 +590,8 @@ async function main() {
       decision: one(values, 'decision', true),
       reason: one(values, 'reason', true).trim(),
       documented_paths: documentedPaths,
+      coverage: one(values, 'coverage', true),
+      coverage_reason: one(values, 'coverage-reason', true).trim(),
     };
     const closeInputFingerprint = fingerprint(closeInput);
     if (manifest.phase === 'closed') {
@@ -564,6 +605,10 @@ async function main() {
       decision: closeInput.decision,
       reason: closeInput.reason,
       documentedPaths,
+    });
+    manifest = applyCoverageDecision(manifest, {
+      decision: closeInput.coverage,
+      reason: closeInput.coverage_reason,
     });
     writeManifest(manifestFile, manifest);
     verifyV2(manifest, manifestFile, closeInputFingerprint);

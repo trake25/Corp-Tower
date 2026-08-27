@@ -12,7 +12,7 @@
     { "id": "P3", "area": "backend", "queries": [{ "map": "backend", "query": "updateDebugConfig", "expects": "Lobby_Manager.js" }] },
     { "id": "P4", "area": "networking", "queries": [{ "map": "ui-hud", "query": "snap_radius_units", "expects": "TowerStack.gd" }, { "map": "backend", "query": "resolveColumnOriginX", "expects": "Placement.js" }] },
     { "id": "P5", "area": "networking", "queries": [{ "map": "backend", "query": "createScoreEvent", "expects": "Scoring.js" }, { "map": "ui-hud", "query": "process_score_events", "expects": "ScorePopupController.gd" }] },
-    { "id": "P6", "area": "backend", "queries": [{ "map": "backend", "query": "dispatchRoomAction", "expects": "Lobby_Manager.js" }, { "map": "backend", "query": "isRoomOwner", "expects": "Redis_State.js" }] },
+    { "id": "P6", "area": "backend", "queries": [{ "map": "backend", "query": "dispatchRoomAction", "expects": "Lobby_Manager.js" }, { "map": "backend", "query": "getRoomLeaseOwner", "expects": "Redis_State.js" }] },
     { "id": "P7", "area": "hud", "queries": [{ "map": "ui-hud", "query": "failureStatus", "expects": "LevelSummaryController.gd" }] }
   ],
   "skills": [
@@ -45,7 +45,7 @@
       "command": "search",
       "query": "splash",
       "options": { "anchor": true, "domains": ["screens"] },
-      "expects": { "status": "needs-filter", "action": "filter", "fallback": false }
+      "expects": { "status": "matched", "source": "src/Client/App/corp-tower/Cor/Scenes/Main.tscn", "fallback": false }
     },
     {
       "id": "confirmed-defect",
@@ -88,8 +88,7 @@
       "route": "screens",
       "steps": [
         { "query": "show startup splash screen", "options": {}, "expects": { "status": "needs-anchor", "anchor": "splash" } },
-        { "query": "splash", "options": { "anchor": true, "domains": ["screens"] }, "expects": { "status": "needs-filter", "action": "read-symbol" } },
-        { "query": "%StartupSplash", "options": { "anchor": true, "kinds": ["symbol"] }, "expects": { "status": "matched", "source": "src/Client/App/corp-tower/Cor/Scenes/Main.tscn" } }
+        { "query": "splash", "options": { "anchor": true, "domains": ["screens"] }, "expects": { "status": "matched", "source": "src/Client/App/corp-tower/Cor/Scenes/Main.tscn" } }
       ]
     },
     {

@@ -2,7 +2,7 @@
 
 Scope: infrastructure, runtime topology, operational runbooks. Build/CI that
 produces the artifacts → [build.md](./build.md). Server code →
-[backend.md](./backend.md). Per-symbol file and line → grep
+[backend.md](./backend.md). File purposes and stable anchors → grep
 [map/infra.md](./map/infra.md).
 
 ## Overview
