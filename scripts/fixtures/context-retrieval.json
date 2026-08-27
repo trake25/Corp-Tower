@@ -15,7 +15,8 @@
     { "id": "P6", "area": "backend", "queries": [{ "map": "backend", "query": "dispatchRoomAction", "expects": "Lobby_Manager.js" }, { "map": "backend", "query": "getRoomLeaseOwner", "expects": "Redis_State.js" }] },
     { "id": "P7", "area": "hud", "queries": [{ "map": "ui-hud", "query": "failureStatus", "expects": "LevelSummaryController.gd" }] },
     { "id": "visual-hooks-config-anchor", "area": "hud", "queries": [{ "map": "ui-hud", "query": "VisualHooks", "expects": "VisualHooks.gd" }] },
-    { "id": "codex-hook-config-anchor", "area": "automation", "queries": [{ "map": "infra", "query": "handleHook", "expects": "codex-observability-hook.mjs" }] }
+    { "id": "codex-hook-config-anchor", "area": "automation", "queries": [{ "map": "infra", "query": "handleHook", "expects": "codex-observability-hook.mjs" }] },
+    { "id": "observability-start-adapter-symbol", "area": "automation", "queries": [{ "map": "infra", "query": "startObservability", "expects": "task-close.mjs" }] }
   ],
   "skills": [
     { "id": "client", "path": "src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd", "expects": "client-engineer" },
@@ -64,6 +65,41 @@
       "query": "tower_collapsed",
       "options": { "anchor": true },
       "expects": { "status": "matched", "path": "docs/context/backend.md", "title": "Authority and module boundaries", "fallback": false }
+    },
+    {
+      "id": "observability-task-binding-symbol",
+      "command": "search",
+      "query": "bindTask",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "source": "scripts/lib/agent-observability/state.mjs", "fallback": false }
+    },
+    {
+      "id": "observability-task-finalization-symbol",
+      "command": "search",
+      "query": "finalizeTask",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "source": "scripts/lib/agent-observability/state.mjs", "fallback": false }
+    },
+    {
+      "id": "observability-task-meta-symbol",
+      "command": "search",
+      "query": "sanitizeTaskMeta",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "source": "scripts/lib/agent-observability/schema.mjs", "fallback": false }
+    },
+    {
+      "id": "observability-usage-event-symbol",
+      "command": "search",
+      "query": "sanitizeUsageEvent",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "source": "scripts/lib/agent-observability/usage.mjs", "fallback": false }
+    },
+    {
+      "id": "context-alias-loader-symbol",
+      "command": "search",
+      "query": "loadAliases",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "source": "scripts/lib/context-query.mjs", "fallback": false }
     },
     {
       "id": "scripts/fixtures/context-retrieval.json",

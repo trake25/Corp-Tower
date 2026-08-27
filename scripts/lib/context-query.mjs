@@ -189,7 +189,7 @@ function searchableMaps(root) {
   return files.sort();
 }
 
-function aliases(root, queryTokens) {
+export function retrievalAliases(root, queryTokens) {
   const file = resolve(root, 'docs/context/retrieval-aliases.json');
   if (!existsSync(file)) return [];
   let terms;
@@ -211,7 +211,8 @@ function phraseScore({ title, text, path, query, queryTokens, kind, relatedAlias
   const joined = `${titleText}\n${bodyText}\n${pathText}`;
   const exact = joined.includes(query);
   const allWords = queryTokens.every(token => joined.includes(token));
-  if (!exact && !allWords) return null;
+  const aliasMatch = relatedAliases.some(alias => (alias.aliases || []).some(phrase => joined.includes(normalize(phrase))));
+  if (!exact && !allWords && !aliasMatch) return null;
   let score = 0;
   const reasons = [];
   if (titleText.includes(query)) {
@@ -229,9 +230,9 @@ function phraseScore({ title, text, path, query, queryTokens, kind, relatedAlias
     score += 35;
     reasons.push('path term');
   }
-  const aliasHits = relatedAliases.filter(alias => [alias.term, ...(alias.aliases || [])].flatMap(tokens).some(word => joined.includes(word)));
+  const aliasHits = relatedAliases.filter(alias => (alias.aliases || []).some(phrase => joined.includes(normalize(phrase))));
   if (aliasHits.length) {
-    score += aliasHits.length * 10;
+    score += aliasHits.length * 100;
     reasons.push('related alias');
   }
   return { score, reason: reasons.join(', ') };
@@ -358,7 +359,7 @@ function anchorSuggestions(root, entries, queryTokens, options) {
   const candidates = queryTokens
     .filter(token => token.length > 2 && !ANCHOR_STOP_WORDS.has(token))
     .flatMap(anchor => {
-      const ranked = constrained(rankedEntries(entries, anchor, aliases(root, [anchor])), options)
+      const ranked = constrained(rankedEntries(entries, anchor, retrievalAliases(root, [anchor])), options)
         .sort((left, right) => right.score - left.score || left.path.localeCompare(right.path) || (left.lines?.[0] || 0) - (right.lines?.[0] || 0));
       if (!ranked.length) return [];
       return [{
@@ -428,7 +429,7 @@ export function searchContext(root, query, options = {}) {
   let relatedAliases;
   try {
     entries = searchEntries(root);
-    relatedAliases = aliases(root, queryTokens);
+    relatedAliases = retrievalAliases(root, queryTokens);
   } catch (error) {
     return fitPayload({
       schema_version: 2,

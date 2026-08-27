@@ -52,6 +52,14 @@ test('an explicitly confirmed missing anchor is a repairable retrieval defect', 
   assert.match(result.fallback.reason, /retrieval defect/);
 });
 
+test('an explicit anchor resolves through the bounded retrieval vocabulary bridge', () => {
+  const result = searchContext(ROOT, 'bindTask', { anchor: true });
+
+  assert.equal(result.status, 'matched');
+  assert.equal(result.results[0].source.source_path, 'scripts/lib/agent-observability/state.mjs');
+  assert.equal(result.results[0].source.symbol, 'bindActiveTask');
+});
+
 test('a broken retrieval index returns tool-error and authorizes repair fallback', () => {
   const root = mkdtempSync(join(tmpdir(), 'corp-context-error-'));
   try {

@@ -54,9 +54,12 @@ term disappears. Maps do not explain local symbols—the bounded source read doe
 
 Public retrieval and task intake are bounded; larger route detail stays in
 ignored artifacts, and search excerpts are opt-in. `retrieval-aliases.json` is a
-small fixture-proven vocabulary bridge, not a tag index. The retrieval fixture
-`context-retrieval.json` owns protocol correctness while `benchmark-rag.mjs` keeps non-check output under
-ignored `.agent-state/automation/rag-benchmark/`.
+small fixture-proven vocabulary bridge that lets an explicit anchor resolve to a
+curated sibling, not a tag index. An authored stable pin promotes an already
+extracted internal helper so regeneration cannot discard the repair. The
+`context-retrieval.json` fixture owns protocol correctness while
+`benchmark-rag.mjs` keeps non-check output under ignored
+`.agent-state/automation/rag-benchmark/`.
 
 Cloud coding agents use the same command through a read-only tool adapter. A
 cloud chat session without local-tool access receives only a deliberately made
@@ -107,18 +110,27 @@ reuse the passing receipt.
 
 `scripts/agent-observability.mjs` owns private task events, evidence, candidates,
 flags, settlement, analysis and approved export under
-`.agent-state/telemetry/v2/`. Task-close is its default adapter: `prepare` binds
-the Codex session; `close` records verification and returns candidates; trusted
-`.codex/hooks.json` handlers retain only model/effort provenance and bounded
-tool, compaction and lifecycle outcomes before `Stop` settles the task. They
-never retain prompt, response, command, patch, tool payload or transcript
-content. Review hooks once through `/hooks` and again after their definition
-changes.
+`.agent-state/telemetry/v2/`. Task-close is its default adapter: `prepare` derives
+complexity from owned source breadth and binds the Codex session; `close` records
+verification and returns candidates. Without a live session binding, the task
+stays pending and is excluded from weekly reports instead of being finalized
+without a terminal event.
+
+Trusted `.codex/hooks.json` handlers retain only model/effort provenance and
+bounded tool, compaction and lifecycle outcomes. `SessionStart` writes an idle
+heartbeat, every later event refreshes hook health, and a degraded write surfaces
+a bounded warning while leaving the binding available for a later settlement
+attempt. They never retain prompt, response, command, patch, tool payload or
+transcript content. Review hooks through `/hooks` when Codex asks and again after
+their definition changes; ordinary tasks need no separate hook command.
 
 Exact totals require stable disjoint IDs, settled inclusive root/child/retry
 usage and a terminal host event; observability usage remains a non-additive
-subset. Missing host data produces named `DQ-*` reasons and a partial result,
-never a fabricated total or failed/retried user task. The same active agent may
+subset. `Stop` records terminal counters when a host adapter supplies them. The
+standard Codex hook payload has no token counters, so that path settles with the
+named `codex_hook_token_usage_not_exposed` quality reason instead of a fabricated
+zero. Finalization writes the weekly report, and an idempotent repeat regenerates
+it from settled records. The same active agent may
 formalize an eligible current-run, high-effort candidate before its final
 response; no extra agent or provider turn is created. Private weekly reports
 stay local; only `export-public --approve` writes the rounded,

@@ -10,7 +10,7 @@ import {
 } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
-import { cleanId, sanitizeMeta } from './schema.mjs';
+import { cleanId, cleanName, cleanTimestamp, sanitizeMeta } from './schema.mjs';
 
 function ordered(value) {
   if (Array.isArray(value)) return value.map(ordered);
@@ -112,8 +112,37 @@ export function readTaskBundle(stateDir, taskId) {
 }
 
 function activePath(stateDir, sessionId) {
-  const key = createHash('sha256').update(String(sessionId)).digest('hex').slice(0, 32);
+  const key = sessionKey(sessionId);
   return join(resolve(stateDir), 'active', `${key}.json`);
+}
+
+function sessionKey(sessionId) {
+  return createHash('sha256').update(String(sessionId || 'unscoped')).digest('hex').slice(0, 32);
+}
+
+function hookHealthPath(stateDir, sessionId) {
+  return join(resolve(stateDir), 'health', 'hooks', `${sessionKey(sessionId)}.json`);
+}
+
+export function recordHookHealth(stateDir, input, { now = new Date().toISOString() } = {}) {
+  const status = input.status || 'healthy';
+  if (!['healthy', 'idle', 'degraded'].includes(status)) throw new Error('hook health status is invalid');
+  const health = {
+    schema_version: 2,
+    session_key: sessionKey(input.session_id),
+    event: cleanName(input.event, 'hook health event', 'unknown'),
+    status,
+    reason: cleanName(input.reason, 'hook health reason', 'none'),
+    task_id: input.task_id ? cleanId(input.task_id, 'task_id') : null,
+    occurred_at: cleanTimestamp(input.occurred_at, 'occurred_at', now),
+  };
+  writeAtomicJson(hookHealthPath(stateDir, input.session_id), health);
+  return health;
+}
+
+export function readHookHealth(stateDir, sessionId) {
+  const path = hookHealthPath(stateDir, sessionId);
+  return existsSync(path) ? readJson(path) : null;
 }
 
 export function bindActiveTask(stateDir, sessionId, taskId, { now = new Date().toISOString() } = {}) {

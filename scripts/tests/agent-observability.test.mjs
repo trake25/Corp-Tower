@@ -12,7 +12,7 @@ import { renderPublicReport, exportPublicReport } from '../lib/agent-observabili
 import { buildWeeklyReportParts, displayStageGroups, renderWeeklyReport } from '../lib/agent-observability/report.mjs';
 import { modelFamily, resolveRuntimeIdentity } from '../lib/agent-observability/runtime.mjs';
 import { sanitizeClose, sanitizeMeta, sanitizeTelemetry } from '../lib/agent-observability/schema.mjs';
-import { bindActiveTask, readTaskBundle, recordEvent, requestActiveTaskFinalization, resolveStateDir, startTask } from '../lib/agent-observability/state.mjs';
+import { bindActiveTask, readHookHealth, readTaskBundle, recordEvent, requestActiveTaskFinalization, resolveStateDir, startTask } from '../lib/agent-observability/state.mjs';
 import { aggregateUsage, assessRuntimeCapabilities, normalizeUsageEvent } from '../lib/agent-observability/usage.mjs';
 
 const ROOT = resolve('.');
@@ -266,7 +266,9 @@ test('close then post-terminal finalize writes exact record and simple weekly re
     assert.match(report, /^<!-- PRIVATE GENERATED/m);
     assert.match(report, /Fixture observability task/);
     assert.match(report, /\| 2\.3k \| 240 \| 1\.0k \| 400 \| 150 \| 700 \|/);
-    assert.equal(executeCommand('finalize', { task_id: FIXTURE.task.task_id }, { stateDir: state }).final_inclusive_provider_tokens, 2250);
+    const repeated = executeCommand('finalize', { task_id: FIXTURE.task.task_id }, { stateDir: state });
+    assert.equal(repeated.final_inclusive_provider_tokens, 2250);
+    assert.equal(repeated.reports.length, 1);
   } finally {
     rmSync(state, { recursive: true, force: true });
   }
@@ -326,7 +328,7 @@ test('explicit partial finalization preserves known usage and reason', () => {
   }
 });
 
-test('Codex hooks retain bounded metadata and visibly finalize missing usage as partial', () => {
+test('Codex hooks retain bounded metadata and visibly finalize unexposed usage as partial', () => {
   const state = temporaryState();
   const taskId = 'hook-task';
   try {
@@ -362,10 +364,63 @@ test('Codex hooks retain bounded metadata and visibly finalize missing usage as 
 
     assert.equal(settled.status, 'settled');
     assert.equal(bundle.final.status, 'partial');
-    assert.ok(bundle.final.reasons.includes('codex_hook_usage_unavailable'));
-    assert.ok(bundle.flags.some(flag => flag.flag_id.startsWith('DQ-') && flag.cause_code === 'codex_hook_usage_unavailable'));
+    assert.ok(bundle.final.reasons.includes('codex_hook_token_usage_not_exposed'));
+    assert.ok(bundle.flags.some(flag => flag.flag_id.startsWith('DQ-') && flag.cause_code === 'codex_hook_token_usage_not_exposed'));
     assert.doesNotMatch(retained, /secret|command|tool_input|tool_response|assistant/);
     assert.equal(bundle.evidence.some(item => item.kind === 'tool' && item.stage === 'implementation'), true);
+    assert.equal(readHookHealth(state, 'session-hook').status, 'healthy');
+    assert.equal(readHookHealth(state, 'session-hook').event, 'Stop');
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
+test('Stop hook records exact terminal usage when a host adapter supplies counters', () => {
+  const state = temporaryState();
+  const taskId = 'hook-host-usage-task';
+  try {
+    executeCommand('start', { ...FIXTURE.task, task_id: taskId }, { stateDir: state });
+    executeCommand('close', closeInput(taskId), { stateDir: state });
+    bindActiveTask(state, 'session-host-usage', taskId);
+    requestActiveTaskFinalization(state, 'session-host-usage', taskId);
+    const settled = handleHook({
+      session_id: 'session-host-usage',
+      turn_id: 'turn-host-usage',
+      hook_event_name: 'Stop',
+      model: 'gpt-5.6-sol',
+      usage: {
+        input_tokens: 100,
+        output_tokens: 20,
+        total_tokens: 120,
+        input_tokens_details: { cached_tokens: 40 },
+        output_tokens_details: { reasoning_tokens: 8 },
+      },
+    }, { stateDir: state, env: {}, configText: 'model_reasoning_effort = "high"' });
+    const bundle = readTaskBundle(state, taskId);
+
+    assert.equal(settled.status, 'settled');
+    assert.equal(bundle.final.status, 'exact');
+    assert.equal(bundle.final.final_inclusive_provider_tokens, 120);
+    assert.equal(bundle.events[0].usage.cache_read_tokens, 40);
+    assert.equal(bundle.events[0].usage.reasoning_tokens, 8);
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
+test('SessionStart hook writes an idle heartbeat without an active task', () => {
+  const state = temporaryState();
+  try {
+    const result = handleHook({
+      session_id: 'session-heartbeat',
+      hook_event_name: 'SessionStart',
+      model: 'gpt-5.6-sol',
+      source: 'startup',
+    }, { stateDir: state, env: {} });
+
+    assert.equal(result.status, 'ignored');
+    assert.equal(readHookHealth(state, 'session-heartbeat').status, 'idle');
+    assert.equal(readHookHealth(state, 'session-heartbeat').reason, 'no_active_task');
   } finally {
     rmSync(state, { recursive: true, force: true });
   }

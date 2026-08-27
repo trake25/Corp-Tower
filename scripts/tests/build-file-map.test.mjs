@@ -73,6 +73,20 @@ test('cross-file payload keys remain stable anchors', () => {
   ]);
 });
 
+test('an authored pin promotes an extracted internal helper to a stable anchor', () => {
+  const source = 'function retrievalAliases() {}';
+  const symbols = applyPinnedAnchors(
+    'context-query.mjs',
+    source,
+    extract('context-query.mjs', source).syms,
+    new Set(['context-query.mjs#retrievalAliases']),
+  );
+
+  assert.deepEqual(selectAnchors('context-query.mjs', symbols, [{ rel: 'context-query.mjs', text: source }]), [
+    { ln: 1, name: 'retrievalAliases', kind: 'stable' },
+  ]);
+});
+
 test('scene anchors omit unique nodes with no external binding', () => {
   const scene = [
     '[node name="LevelSummary" type="Control"]',

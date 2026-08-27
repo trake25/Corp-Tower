@@ -593,7 +593,7 @@ bounded source read. Local implementation detail stays in source.
 | infra/eks/terraform/versions.tf:1 | @file · file | Terraform versions resources and interface |
 | infra/eks/terraform/versions.tf:24 | aws · provider | |
 
-### scripts/agent-observability.mjs — 263 ln
+### scripts/agent-observability.mjs — 266 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -601,7 +601,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/agent-observability.mjs:41 | parseArgs · fn | |
 | scripts/agent-observability.mjs:74 | compact · fn | |
 | scripts/agent-observability.mjs:107 | executeCommand · fn | |
-| scripts/agent-observability.mjs:218 | executeBestEffort · fn | |
+| scripts/agent-observability.mjs:221 | executeBestEffort · fn | |
 
 ### scripts/art-common.sh — 68 ln
 
@@ -724,7 +724,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/build-facebook-android-plugin.sh:1 | @file · file | build facebook android plugin operator script |
 
-### scripts/build-file-map.mjs — 438 ln
+### scripts/build-file-map.mjs — 442 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -741,15 +741,15 @@ bounded source read. Local implementation detail stays in source.
 | scripts/build-file-map.mjs:217 | extract · fn | |
 | scripts/build-file-map.mjs:249 | selectAnchors · fn | |
 | scripts/build-file-map.mjs:336 | applyPinnedAnchors · fn | |
-| scripts/build-file-map.mjs:350 | render · fn | |
-| scripts/build-file-map.mjs:383 | build · fn | |
+| scripts/build-file-map.mjs:354 | render · fn | |
+| scripts/build-file-map.mjs:387 | build · fn | |
 
-### scripts/codex-observability-hook.mjs — 115 ln
+### scripts/codex-observability-hook.mjs — 160 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/codex-observability-hook.mjs:1 | @file · file | codex observability hook repository workflow |
-| scripts/codex-observability-hook.mjs:86 | handleHook · fn | |
+| scripts/codex-observability-hook.mjs:111 | handleHook · fn | |
 
 ### scripts/context.mjs — 217 ln
 
@@ -885,7 +885,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/schema.mjs:188 | sanitizeClose · fn | |
 | scripts/lib/agent-observability/schema.mjs:201 | sanitizeEvidence · fn | |
 
-### scripts/lib/agent-observability/state.mjs — 169 ln
+### scripts/lib/agent-observability/state.mjs — 198 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -899,13 +899,15 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/state.mjs:85 | recordEvidence · fn | |
 | scripts/lib/agent-observability/state.mjs:90 | recordFlag · fn | |
 | scripts/lib/agent-observability/state.mjs:102 | readTaskBundle · fn | |
-| scripts/lib/agent-observability/state.mjs:119 | bindActiveTask · fn | |
-| scripts/lib/agent-observability/state.mjs:127 | readActiveTask · fn | |
-| scripts/lib/agent-observability/state.mjs:133 | requestActiveTaskFinalization · fn | |
-| scripts/lib/agent-observability/state.mjs:141 | clearActiveTask · fn | |
-| scripts/lib/agent-observability/state.mjs:148 | writeFinal · fn | |
-| scripts/lib/agent-observability/state.mjs:154 | listTaskBundles · fn | |
-| scripts/lib/agent-observability/state.mjs:166 | reportDirectory · fn | |
+| scripts/lib/agent-observability/state.mjs:127 | recordHookHealth · fn | |
+| scripts/lib/agent-observability/state.mjs:143 | readHookHealth · fn | |
+| scripts/lib/agent-observability/state.mjs:148 | bindActiveTask · fn | |
+| scripts/lib/agent-observability/state.mjs:156 | readActiveTask · fn | |
+| scripts/lib/agent-observability/state.mjs:162 | requestActiveTaskFinalization · fn | |
+| scripts/lib/agent-observability/state.mjs:170 | clearActiveTask · fn | |
+| scripts/lib/agent-observability/state.mjs:177 | writeFinal · fn | |
+| scripts/lib/agent-observability/state.mjs:183 | listTaskBundles · fn | |
+| scripts/lib/agent-observability/state.mjs:195 | reportDirectory · fn | |
 
 ### scripts/lib/agent-observability/usage.mjs — 172 ln
 
@@ -916,7 +918,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/usage.mjs:110 | aggregateUsage · fn | |
 | scripts/lib/agent-observability/usage.mjs:149 | assessRuntimeCapabilities · fn | |
 
-### scripts/lib/context-query.mjs — 603 ln
+### scripts/lib/context-query.mjs — 604 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -934,16 +936,16 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-query.mjs:125 | mapSymbols · fn | |
 | scripts/lib/context-query.mjs:142 | routeContext · fn | |
 | scripts/lib/context-query.mjs:158 | routeTextLines · fn | |
-| scripts/lib/context-query.mjs:192 | aliases · fn | |
-| scripts/lib/context-query.mjs:240 | excerpt · fn | |
-| scripts/lib/context-query.mjs:255 | constrained · fn | |
-| scripts/lib/context-query.mjs:272 | bounded · fn | |
-| scripts/lib/context-query.mjs:286 | limits · fn | |
-| scripts/lib/context-query.mjs:422 | searchContext · fn | |
-| scripts/lib/context-query.mjs:496 | searchTextLines · fn | |
-| scripts/lib/context-query.mjs:508 | scopeContext · fn | |
-| scripts/lib/context-query.mjs:543 | scopeTextLines · fn | |
-| scripts/lib/context-query.mjs:565 | contextBundle · fn | |
+| scripts/lib/context-query.mjs:192 | retrievalAliases · stable | |
+| scripts/lib/context-query.mjs:241 | excerpt · fn | |
+| scripts/lib/context-query.mjs:256 | constrained · fn | |
+| scripts/lib/context-query.mjs:273 | bounded · fn | |
+| scripts/lib/context-query.mjs:287 | limits · fn | |
+| scripts/lib/context-query.mjs:423 | searchContext · fn | |
+| scripts/lib/context-query.mjs:497 | searchTextLines · fn | |
+| scripts/lib/context-query.mjs:509 | scopeContext · fn | |
+| scripts/lib/context-query.mjs:544 | scopeTextLines · fn | |
+| scripts/lib/context-query.mjs:566 | contextBundle · fn | |
 
 ### scripts/lib/context-routing.mjs — 225 ln
 
@@ -995,7 +997,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/sync-agent-skills.mjs:15 | compare · fn | |
 | scripts/sync-agent-skills.mjs:22 | skillMirrorDrift · fn | |
 
-### scripts/task-close.mjs — 780 ln
+### scripts/task-close.mjs — 799 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1008,19 +1010,22 @@ bounded source read. Local implementation detail stays in source.
 | scripts/task-close.mjs:63 | one · fn | |
 | scripts/task-close.mjs:70 | many · fn | |
 | scripts/task-close.mjs:87 | testPath · fn | |
-| scripts/task-close.mjs:105 | command · fn | |
-| scripts/task-close.mjs:112 | fingerprint · fn | |
-| scripts/task-close.mjs:133 | publishPathsFor · fn | |
-| scripts/task-close.mjs:157 | createManifest · fn | |
-| scripts/task-close.mjs:314 | amendManifest · fn | |
-| scripts/task-close.mjs:340 | reviewManifest · fn | |
-| scripts/task-close.mjs:374 | applyDocumentationDecision · fn | |
-| scripts/task-close.mjs:409 | applyCoverageDecision · fn | |
-| scripts/task-close.mjs:426 | recordFallback · fn | |
-| scripts/task-close.mjs:438 | intakeForManifest · fn | |
-| scripts/task-close.mjs:499 | manifestPath · fn | |
+| scripts/task-close.mjs:105 | deriveTaskComplexity · fn | |
+| scripts/task-close.mjs:126 | command · fn | |
+| scripts/task-close.mjs:133 | fingerprint · fn | |
+| scripts/task-close.mjs:154 | publishPathsFor · fn | |
+| scripts/task-close.mjs:178 | createManifest · fn | |
+| scripts/task-close.mjs:205 | startObservability · fn | |
+| scripts/task-close.mjs:261 | closeObservabilityUnsafe · fn | |
+| scripts/task-close.mjs:333 | amendManifest · fn | |
+| scripts/task-close.mjs:359 | reviewManifest · fn | |
+| scripts/task-close.mjs:393 | applyDocumentationDecision · fn | |
+| scripts/task-close.mjs:428 | applyCoverageDecision · fn | |
+| scripts/task-close.mjs:445 | recordFallback · fn | |
+| scripts/task-close.mjs:457 | intakeForManifest · fn | |
+| scripts/task-close.mjs:518 | manifestPath · fn | |
 
-### scripts/tests/agent-observability.test.mjs — 610 ln
+### scripts/tests/agent-observability.test.mjs — 665 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1029,13 +1034,13 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/agent-observability.test.mjs:41 | closeInput · fn | |
 | scripts/tests/agent-observability.test.mjs:65 | bundle · fn | |
 
-### scripts/tests/build-file-map.test.mjs — 95 ln
+### scripts/tests/build-file-map.test.mjs — 109 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/build-file-map.test.mjs:1 | @file · file | permanent regression coverage for build file map |
 
-### scripts/tests/context-query.test.mjs — 184 ln
+### scripts/tests/context-query.test.mjs — 192 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1048,12 +1053,12 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/git-sync-commit-push.test.mjs:1 | @file · file | permanent regression coverage for git sync commit push |
 
-### scripts/tests/task-close.test.mjs — 153 ln
+### scripts/tests/task-close.test.mjs — 196 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/task-close.test.mjs:1 | @file · file | permanent regression coverage for task close |
-| scripts/tests/task-close.test.mjs:19 | SOURCE · const | |
+| scripts/tests/task-close.test.mjs:24 | SOURCE · const | |
 
 ### scripts/validate-agent-config.mjs — 58 ln
 
@@ -1096,4 +1101,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-112 files · 415 stable anchors.
+112 files · 420 stable anchors.

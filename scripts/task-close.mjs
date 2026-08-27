@@ -102,6 +102,27 @@ function domainFor(path) {
   return 'repository';
 }
 
+export function deriveTaskComplexity(manifest) {
+  const sourcePaths = manifest.owned_paths.filter(sourcePath);
+  const sourceDomains = new Set(sourcePaths.map(domainFor));
+  if (!sourcePaths.length) return {
+    complexity: 'C1',
+    reason: 'Documentation or repository metadata only.',
+  };
+  if (sourcePaths.length <= 3 && sourceDomains.size === 1) return {
+    complexity: 'C2',
+    reason: 'Scoped implementation in one source domain.',
+  };
+  if (sourcePaths.length <= 8 && sourceDomains.size <= 2) return {
+    complexity: 'C3',
+    reason: 'Multi-file implementation across at most two source domains.',
+  };
+  return {
+    complexity: 'C4',
+    reason: 'Broad implementation spanning many files or source domains.',
+  };
+}
+
 function command(argv) {
   return {
     argv,
@@ -181,14 +202,16 @@ export function createManifest({ task, ownedPaths = null, changedPaths = null, r
   };
 }
 
-function startObservability(manifest, env = process.env) {
+export function startObservability(manifest, env = process.env) {
   try {
     const stateDir = resolveStateDir({ root: ROOT, env });
+    const complexity = deriveTaskComplexity(manifest);
     const result = executeBestEffort('start', {
       task_id: manifest.run_id,
       label: manifest.task,
       task_type: 'repository_task',
-      complexity: 'unknown',
+      complexity: complexity.complexity,
+      complexity_reason: complexity.reason,
       domains: manifest.domains.map(domain => domain.replaceAll('-', '_')),
     }, { root: ROOT, stateDir });
     if (!['written', 'duplicate'].includes(result.status))
@@ -235,7 +258,7 @@ function telemetryFor(manifest, receipt, evidence) {
   };
 }
 
-function closeObservabilityUnsafe(manifest, receipt, env) {
+export function closeObservabilityUnsafe(manifest, receipt, env = process.env) {
   const taskId = manifest.observability?.task_id || manifest.run_id;
   const stateDir = resolveStateDir({ root: ROOT, env });
   let bundle;
@@ -269,10 +292,6 @@ function closeObservabilityUnsafe(manifest, receipt, env) {
   let bindings = 0;
   for (const sessionId of codexSessionIds(env))
     if (requestActiveTaskFinalization(stateDir, sessionId, taskId)) bindings++;
-  if (!bindings) executeBestEffort('finalize', {
-    task_id: taskId,
-    partial_reason: 'codex_stop_hook_unavailable',
-  }, { root: ROOT, stateDir });
   const runtime = [...refreshed.evidence].sort((a, b) => b.occurred_at.localeCompare(a.occurred_at))[0] || null;
   const formalEligible = Boolean(candidates.length && evidenceIds.length && runtime?.provider_turn_required && ['terra', 'sol', 'opus', 'fable'].includes(runtime.model_family) && ['high', 'xhigh', 'max', 'ultra'].includes(runtime.effort));
   return {

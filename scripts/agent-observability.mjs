@@ -172,7 +172,10 @@ export function executeCommand(command, input, {
     const taskId = cleanId(input.task_id, 'task_id');
     const bundle = readTaskBundle(state, taskId);
     if (!bundle.final) throw new Error('close must run before finalize');
-    if (bundle.final.finalized_at) return bundle.final;
+    if (bundle.final.finalized_at) return {
+      ...bundle.final,
+      reports: renderPrivateReports(state, { week: isoWeek(bundle.final.finalized_at) }),
+    };
     const usage = aggregateUsage(bundle.events);
     if (usage.status === 'partial' && !input.partial_reason)
       throw new Error(`usage is not exact: ${usage.reasons.join(', ')}`);

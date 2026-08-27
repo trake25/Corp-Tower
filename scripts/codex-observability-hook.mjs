@@ -6,6 +6,7 @@ import { executeBestEffort } from './agent-observability.mjs';
 import { boundedEventId, resolveRuntimeIdentity } from './lib/agent-observability/runtime.mjs';
 import {
   clearActiveTask,
+  recordHookHealth,
   readActiveTask,
   readTaskBundle,
   resolveStateDir,
@@ -56,10 +57,30 @@ function evidenceFor(event, binding, identity, now) {
   };
 }
 
+function providerUsageFor(event) {
+  const source = event?.usage;
+  if (!source || typeof source !== 'object' || Array.isArray(source)) return {};
+  const usage = {};
+  for (const field of ['total_tokens', 'input_tokens', 'output_tokens', 'billed_tokens'])
+    if (Number.isSafeInteger(source[field]) && source[field] >= 0) usage[field] = source[field];
+  const reasoning = source.output_tokens_details?.reasoning_tokens ?? source.reasoning_tokens;
+  const cached = source.input_tokens_details?.cached_tokens ?? source.cache_read_tokens;
+  if (Number.isSafeInteger(reasoning) && reasoning >= 0) usage.reasoning_tokens = reasoning;
+  if (Number.isSafeInteger(cached) && cached >= 0) usage.cache_read_tokens = cached;
+  if (usage.total_tokens === undefined && usage.input_tokens !== undefined && usage.output_tokens !== undefined)
+    usage.additive_fields = ['input_tokens', 'output_tokens'];
+  return usage;
+}
+
+function telemetryFailed(result) {
+  return result?.status === 'skipped';
+}
+
 function settleTask(event, binding, identity, root, stateDir, now) {
   const bundle = readTaskBundle(stateDir, binding.task_id);
+  const providerUsage = providerUsageFor(event);
   if (!bundle.events.some(item => item.terminal)) {
-    executeBestEffort('event', {
+    const terminal = executeBestEffort('event', {
       usage_event_id: boundedEventId('turn', event.session_id, event.turn_id, 'terminal'),
       task_id: binding.task_id,
       provider: 'openai',
@@ -68,19 +89,23 @@ function settleTask(event, binding, identity, root, stateDir, now) {
       effort: identity.effort,
       stage: 'closeout',
       purpose: 'terminal',
-      usage: {},
+      usage: providerUsage,
       settled: true,
       terminal: true,
       occurred_at: now,
     }, { root, stateDir, now });
+    if (telemetryFailed(terminal)) return { status: 'degraded', reason: 'terminal_event_write_failed' };
   }
   const final = executeBestEffort('finalize', {
     task_id: binding.task_id,
     finalized_at: now,
-    partial_reason: 'codex_hook_usage_unavailable',
+    partial_reason: Object.keys(providerUsage).length
+      ? 'codex_host_usage_incomplete'
+      : 'codex_hook_token_usage_not_exposed',
   }, { root, stateDir, now });
+  if (telemetryFailed(final)) return { status: 'degraded', reason: 'task_finalization_failed' };
   clearActiveTask(stateDir, event.session_id, binding.task_id);
-  return final;
+  return { status: 'settled', final };
 }
 
 export function handleHook(event, {
@@ -90,25 +115,45 @@ export function handleHook(event, {
   env = process.env,
   configText = null,
 } = {}) {
-  if (!event || typeof event !== 'object') return { status: 'ignored', reason: 'invalid_event' };
   const state = resolveStateDir({ root, stateDir, env });
+  const finish = result => {
+    recordHookHealth(state, {
+      session_id: event?.session_id,
+      event: event?.hook_event_name,
+      status: result.status === 'degraded' ? 'degraded' : result.status === 'ignored' ? 'idle' : 'healthy',
+      reason: result.reason,
+      task_id: result.task_id,
+      occurred_at: now,
+    }, { now });
+    return result;
+  };
+  if (!event || typeof event !== 'object') return finish({ status: 'ignored', reason: 'invalid_event' });
   const binding = readActiveTask(state, event.session_id);
-  if (!binding) return { status: 'ignored', reason: 'no_active_task' };
+  if (!binding) return finish({ status: 'ignored', reason: 'no_active_task' });
   const identity = resolveRuntimeIdentity(event, { env, configText });
   const evidence = evidenceFor(event, binding, identity, now);
-  executeBestEffort('evidence', evidence, { root, stateDir: state, now });
-  if (['Stop', 'SessionEnd'].includes(event.hook_event_name) && binding.close_requested)
-    return { status: 'settled', task_id: binding.task_id, final: settleTask(event, binding, identity, root, state, now) };
-  return { status: 'recorded', task_id: binding.task_id, evidence_event_id: evidence.evidence_event_id };
+  const recorded = executeBestEffort('evidence', evidence, { root, stateDir: state, now });
+  if (telemetryFailed(recorded)) return finish({ status: 'degraded', reason: 'evidence_write_failed', task_id: binding.task_id });
+  if (['Stop', 'SessionEnd'].includes(event.hook_event_name) && binding.close_requested) {
+    const settled = settleTask(event, binding, identity, root, state, now);
+    return finish({ ...settled, task_id: binding.task_id });
+  }
+  return finish({ status: 'recorded', task_id: binding.task_id, evidence_event_id: evidence.evidence_event_id });
 }
 
 export function main() {
+  let output = {};
   try {
     const body = readFileSync(0, 'utf8').trim();
-    handleHook(body ? JSON.parse(body) : {});
+    const result = handleHook(body ? JSON.parse(body) : {});
+    if (result.status === 'degraded')
+      output = { systemMessage: `Corp Tower observability degraded: ${result.reason}` };
   } catch {
+    output = { systemMessage: 'Corp Tower observability hook failed: bounded health update unavailable' };
+    process.stderr.write('Corp Tower observability hook failed: bounded health update unavailable\n');
+    process.exitCode = 1;
   }
-  process.stdout.write('{}\n');
+  process.stdout.write(`${JSON.stringify(output)}\n`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

@@ -5,15 +5,20 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { selectQa } from '../qa-gate.mjs';
+import { renderPrivateReports } from '../lib/agent-observability/report.mjs';
+import { readTaskBundle } from '../lib/agent-observability/state.mjs';
 import {
   amendManifest,
   applyCoverageDecision,
   applyDocumentationDecision,
+  closeObservabilityUnsafe,
   createManifest,
+  deriveTaskComplexity,
   intakeForManifest,
   publishPathsFor,
   recordFallback,
   reviewManifest,
+  startObservability,
 } from '../task-close.mjs';
 
 const SOURCE = 'src/Server/app/engine/Scoring.js';
@@ -42,6 +47,44 @@ test('prepare creates a compact schema-v2 ownership manifest and intake', () => 
   const intake = intakeForManifest(manifest, '.agent-state/automation/task.json');
   assert.deepEqual(intake.owned_paths, [SOURCE]);
   assert.ok(Buffer.byteLength(JSON.stringify(intake, null, 2)) + 1 <= 8 * 1024);
+});
+
+test('task binding derives a bounded complexity instead of unknown', () => {
+  assert.equal(deriveTaskComplexity({ owned_paths: [DOC] }).complexity, 'C1');
+  assert.equal(deriveTaskComplexity({ owned_paths: [SOURCE] }).complexity, 'C2');
+  assert.equal(deriveTaskComplexity({ owned_paths: [
+    'scripts/agent-observability.mjs',
+    'scripts/codex-observability-hook.mjs',
+    'scripts/task-close.mjs',
+    'scripts/tests/agent-observability.test.mjs',
+  ] }).complexity, 'C3');
+  assert.equal(deriveTaskComplexity({ owned_paths: Array.from({ length: 9 }, (_, index) => `scripts/tool-${index}.mjs`) }).complexity, 'C4');
+});
+
+test('closeout without a Stop binding remains pending and stays out of weekly reports', () => {
+  const state = mkdtempSync(join(tmpdir(), 'corp-task-observability-'));
+  const env = {
+    CORP_TOWER_OBSERVABILITY_DIR: state,
+    CODEX_SESSION_ID: '',
+    CODEX_THREAD_ID: '',
+  };
+  try {
+    const manifest = createManifest({ task: 'Pending telemetry task', ownedPaths: [SOURCE], runId: 'pending-telemetry-task' });
+    manifest.observability = startObservability(manifest, env);
+    const result = closeObservabilityUnsafe(manifest, {
+      status: 'passed',
+      steps: [],
+      publish_paths: [],
+    }, env);
+    const bundle = readTaskBundle(state, manifest.run_id);
+
+    assert.equal(result.status, 'partial');
+    assert.equal(bundle.final.status, 'pending');
+    assert.equal(bundle.final.finalized_at, null);
+    assert.deepEqual(renderPrivateReports(state), []);
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
 });
 
 test('review accepts only owned final paths and refreshes docs and QA from them', () => {

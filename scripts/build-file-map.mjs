@@ -339,7 +339,11 @@ export function applyPinnedAnchors(rel, text, symbols, pinned) {
     const prefix = `${rel}#`;
     if (!key.startsWith(prefix)) continue;
     const name = key.slice(prefix.length);
-    if (result.some(symbol => symbol.name === name)) continue;
+    const existing = result.findIndex(symbol => symbol.name === name);
+    if (existing >= 0) {
+      result[existing] = { ...result[existing], kind: 'stable' };
+      continue;
+    }
     const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const line = text.split(/\r?\n/).findIndex(raw => new RegExp(`(^|[^A-Za-z0-9_])${escaped}([^A-Za-z0-9_]|$)`).test(raw));
     if (line >= 0) result.push({ ln: line + 1, name, kind: 'stable' });

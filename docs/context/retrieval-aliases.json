@@ -16,6 +16,26 @@
     "documentation": {
       "aliases": ["docs", "knowledge base", "kb"],
       "areas": ["docs"]
+    },
+    "task binding": {
+      "aliases": ["bindTask", "bindActiveTask"],
+      "areas": ["automation"]
+    },
+    "task finalization": {
+      "aliases": ["finalizeTask", "requestActiveTaskFinalization"],
+      "areas": ["automation"]
+    },
+    "task metadata": {
+      "aliases": ["sanitizeTaskMeta", "sanitizeMeta"],
+      "areas": ["automation"]
+    },
+    "usage event": {
+      "aliases": ["sanitizeUsageEvent", "normalizeUsageEvent"],
+      "areas": ["automation"]
+    },
+    "retrieval aliases": {
+      "aliases": ["loadAliases", "retrievalAliases"],
+      "areas": ["automation"]
     }
   }
 }
