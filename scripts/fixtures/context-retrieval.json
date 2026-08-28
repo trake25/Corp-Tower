@@ -14,6 +14,7 @@
     { "id": "P5", "area": "networking", "queries": [{ "map": "backend", "query": "createScoreEvent", "expects": "Scoring.js" }, { "map": "ui-hud", "query": "process_score_events", "expects": "ScorePopupController.gd" }] },
     { "id": "P6", "area": "backend", "queries": [{ "map": "backend", "query": "dispatchRoomAction", "expects": "Lobby_Manager.js" }, { "map": "backend", "query": "getRoomLeaseOwner", "expects": "Redis_State.js" }] },
     { "id": "P7", "area": "hud", "queries": [{ "map": "ui-hud", "query": "failureStatus", "expects": "LevelSummaryController.gd" }] },
+    { "id": "live-preview-config-anchor", "area": "backend", "queries": [{ "map": "backend", "query": "live_preview", "expects": "Game_Config.js" }] },
     { "id": "visual-hooks-config-anchor", "area": "hud", "queries": [{ "map": "ui-hud", "query": "VisualHooks", "expects": "VisualHooks.gd" }] },
     { "id": "codex-hook-config-anchor", "area": "automation", "queries": [{ "map": "infra", "query": "handleHook", "expects": "codex-observability-hook.mjs" }] },
     { "id": "observability-start-adapter-symbol", "area": "automation", "queries": [{ "map": "infra", "query": "startObservability", "expects": "task-close.mjs" }] }

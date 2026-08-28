@@ -43,6 +43,10 @@ spec:
               value: staging
             - name: PORT
               value: "3000"
+            - name: CORP_TOWER_LATENCY_INDICATOR_ENABLED
+              value: "false"
+            - name: CORP_TOWER_LIVE_PREVIEW_ENABLED
+              value: "false"
             - name: REDIS_URL
               value: rediss://lab-placeholder:6379
             # Empty SUPABASE_URL leaves token verification off and the server

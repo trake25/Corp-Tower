@@ -182,6 +182,10 @@ clock, supply, stability, scoring, site, Power, and bot behavior derive from tha
 single object. Do not mirror routine values into prose or expose raw derived
 physics controls merely for debug convenience.
 
+Development and demo servers enable the latency indicator and live stability
+preview by default. EKS explicitly disables both diagnostics in its game-pod
+environment so it cannot inherit the development presentation defaults.
+
 Redis State supplies open-room claims, the matchmaking lock, room leases,
 snapshots, per-room broadcasts/actions, player assignment, and demo counters. It
 falls back to in-memory state when Redis is absent. Only a bounded draw-pile

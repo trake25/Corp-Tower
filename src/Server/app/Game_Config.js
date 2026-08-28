@@ -72,7 +72,9 @@ const GameConfig = {
     towerStabilityWarningThreshold: 75,
     towerStabilityCriticalThreshold: 45,
     towerStabilityMoodThreshold: 2,
-    towerStabilityFeedbackMode: "live_preview",
+    towerStabilityFeedbackMode: process.env.CORP_TOWER_LIVE_PREVIEW_ENABLED === "false"
+        ? "warnings_only"
+        : "live_preview",
     powerUnlockLevel: 1,
     powerMaxSlots: 3,
     powerActivationCooldownMs: 3000,
@@ -151,7 +153,7 @@ const GameConfig = {
         assistContributionThreshold: 0.25
     },
     debugBotsEnabled: process.env.CORP_TOWER_BOTS_ENABLED === "true",
-    showLatencyIndicator: false,
+    showLatencyIndicator: process.env.CORP_TOWER_LATENCY_INDICATOR_ENABLED !== "false",
     debugBotCount: 2,
     debugBotDelayMin: 1500,
     debugBotDelayMax: 6000,

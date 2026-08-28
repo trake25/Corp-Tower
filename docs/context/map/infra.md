@@ -338,7 +338,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | infra/eks/apps/corp-tower/base/kustomization.yaml:1 | @file · file | Kubernetes or workflow configuration for kustomization |
 
-### infra/eks/apps/corp-tower/base/server-deployment.yaml — 116 ln
+### infra/eks/apps/corp-tower/base/server-deployment.yaml — 120 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|

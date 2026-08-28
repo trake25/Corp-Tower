@@ -14,6 +14,9 @@ NAT egress) → pods → ElastiCache Redis over `rediss://`. **Game target group
 health matcher is `426`** — `ws` answers a plain `GET /` with Upgrade Required;
 web is `200`. No in-cluster Redis on EKS.
 
+The game pod disables the latency indicator and live stability preview, keeping
+production presentation separate from the enabled development and demo defaults.
+
 Routing uses **`target_type=instance` NodePorts** — 30300 game, 30310 web — with no
 extra controllers. An AWS Load Balancer Controller would add a Helm install and
 IRSA wiring this stack does not need.

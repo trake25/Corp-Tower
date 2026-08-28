@@ -50,11 +50,11 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Debug_Config.js:121 | applyDefaults · fn | |
 | src/Server/app/Debug_Config.js:132 | applyValue · fn | |
 
-### src/Server/app/Game_Config.js — 166 ln
+### src/Server/app/Game_Config.js — 168 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
-| src/Server/app/Game_Config.js:1 | @file · file | authoritative values for gameplay, tuning, bots, and room timing |
+| src/Server/app/Game_Config.js:1 | @file · file | authoritative gameplay, tuning, bot, room-timing, live_preview, and latency defaults |
 | src/Server/app/Game_Config.js:1 | GameConfig · const | |
 
 ### src/Server/app/Game_Engine.js — 970 ln

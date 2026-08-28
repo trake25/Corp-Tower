@@ -1,4 +1,6 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const { afterEach, test } = require("node:test");
 
 const LobbyManager = require("../app/Lobby_Manager");
@@ -11,6 +13,27 @@ const {
 } = require("./helpers/Game_Engine_Fixture");
 
 afterEach(resetFixtures);
+
+function readGameConfig(env = {}) {
+    const configPath = require.resolve("../app/Game_Config");
+    const cachedModule = require.cache[configPath];
+    const originalEnv = Object.fromEntries(Object.keys(env).map(name => [name, process.env[name]]));
+
+    try {
+        Object.assign(process.env, env);
+        delete require.cache[configPath];
+        return require("../app/Game_Config");
+    } finally {
+        for (const [name, value] of Object.entries(originalEnv)) {
+            if (value === undefined) {
+                delete process.env[name];
+            } else {
+                process.env[name] = value;
+            }
+        }
+        require.cache[configPath] = cachedModule;
+    }
+}
 
 test("latency pings echo only their nonce to the originating socket", async () => {
     const sent = [];
@@ -119,13 +142,32 @@ test("Last Chance power toggle round-trips through debug config and resets", asy
 test("latency indicator toggle round-trips through debug config and resets", async () => {
     const lobbyManager = new LobbyManager();
 
-    assert.equal(lobbyManager.getDebugConfig().showLatencyIndicator, false);
+    assert.equal(lobbyManager.getDebugConfig().showLatencyIndicator, true);
     await lobbyManager.updateDebugConfig("showLatencyIndicator", true);
     assert.equal(GameConfig.showLatencyIndicator, true);
     assert.equal(lobbyManager.getDebugConfig().showLatencyIndicator, true);
 
     await lobbyManager.updateDebugConfig("resetDebugConfig", true);
-    assert.equal(GameConfig.showLatencyIndicator, false);
+    assert.equal(GameConfig.showLatencyIndicator, true);
+});
+
+test("diagnostic defaults stay enabled outside EKS and EKS overrides disable them", () => {
+    const developmentConfig = readGameConfig();
+    const eksConfig = readGameConfig({
+        CORP_TOWER_LATENCY_INDICATOR_ENABLED: "false",
+        CORP_TOWER_LIVE_PREVIEW_ENABLED: "false"
+    });
+    const eksDeployment = fs.readFileSync(path.resolve(
+        __dirname,
+        "../../../infra/eks/apps/corp-tower/base/server-deployment.yaml"
+    ), "utf8");
+
+    assert.equal(developmentConfig.showLatencyIndicator, true);
+    assert.equal(developmentConfig.towerStabilityFeedbackMode, "live_preview");
+    assert.equal(eksConfig.showLatencyIndicator, false);
+    assert.equal(eksConfig.towerStabilityFeedbackMode, "warnings_only");
+    assert.match(eksDeployment, /name: CORP_TOWER_LATENCY_INDICATOR_ENABLED\s+value: "false"/);
+    assert.match(eksDeployment, /name: CORP_TOWER_LIVE_PREVIEW_ENABLED\s+value: "false"/);
 });
 
 test("transaction scoring controls clamp and reject unknown scoring keys", async () => {
