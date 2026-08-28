@@ -59,9 +59,10 @@ transition countdown. Failure uses retry state from the server; game over counts
 down to Home. Exact copy and visual measurements live in the scene/controller,
 not this knowledge base.
 
-Score popups consume transient authoritative events and de-duplicate by id.
-Placement classification comes from the server transaction. Aggregate events
-that already have a dedicated HUD surface do not create duplicate popups.
+Score popups consume and de-duplicate only core in-level authoritative events:
+placement, reinforcement, critical saves, and tower-stability warnings. Placement
+classification comes from the server transaction; aggregate and end-of-level
+events do not create duplicate popups.
 
 ## Popovers
 

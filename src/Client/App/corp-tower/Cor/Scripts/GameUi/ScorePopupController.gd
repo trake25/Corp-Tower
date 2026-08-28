@@ -9,6 +9,13 @@ const SCORE_POPUP_MAX_FADE_SECONDS := 2.0
 const SCORE_POPUP_MIN_HOLD_SECONDS := 0.05
 const FINISH_SCORE_POPUP_MIN_HOLD_RATIO := 0.08
 const POWER_TOAST_CENTER_Y_RATIO := 0.793
+const POPUP_EVENT_TYPES := {
+	"placement": true,
+	"reinforce": true,
+	"critical_save": true,
+	"tower_warning": true,
+	"tower_critical": true
+}
 
 var players_ctx
 var match_state
@@ -38,7 +45,7 @@ func process_score_events(raw_events: Variant, players: Array) -> float:
 
 		var event: Dictionary = event_value
 		var raw_event_type: String = str(event.get("type", ""))
-		if raw_event_type == "team_total" or raw_event_type == "exact_finish" or raw_event_type == "overbuild_finish":
+		if !POPUP_EVENT_TYPES.has(raw_event_type):
 			continue
 
 		var event_id: String = str(event.get("id", ""))
@@ -202,18 +209,6 @@ func get_score_event_text(event: Dictionary, _players: Array) -> String:
 			return "REINFORCE +" + str(points)
 		"critical_save":
 			return "CRITICAL SAVE +" + str(points)
-		"finisher_bonus":
-			return "FINISH +" + str(points)
-		"precision_bonus":
-			return "PRECISION +" + str(points)
-		"team_exact_bonus":
-			return "TEAM +" + str(points)
-		"assist_bonus":
-			return "ASSIST +" + str(points)
-		"mvp":
-			return "MVP " + players_ctx.display_name(player_id) + " +" + str(points)
-		"impact_failed":
-			return "IMPACT FAILED"
 		"tower_warning":
 			return "TOWER WOBBLING"
 		"tower_critical":
@@ -233,12 +228,6 @@ func get_score_event_color(event: Dictionary) -> Color:
 	if player_id != "" and players_ctx.color_map.has(player_id):
 		return players_ctx.color_map[player_id]
 
-	if event_type == "team_exact_bonus":
-		return Color(0.42, 0.84, 1.0, 1.0)
-
-	if event_type == "impact_failed":
-		return Color(1.0, 0.38, 0.28, 1.0)
-
 	if event_type == "tower_warning" or event_type == "tower_critical":
 		return Color(1.0, 0.55, 0.2, 1.0)
 
@@ -246,8 +235,6 @@ func get_score_event_color(event: Dictionary) -> Color:
 
 func is_emphasis_score_event(event_type: String) -> bool:
 	return (
-		event_type == "mvp" or
-		event_type == "impact_failed" or
 		event_type == "critical_save"
 	)
 
@@ -258,7 +245,7 @@ func get_score_popup_size(event_type: String) -> Vector2:
 	if event_type == "quick_chat":
 		return Vector2(218, 56)
 
-	if event_type == "mvp" or event_type == "impact_failed" or event_type == "critical_save":
+	if event_type == "critical_save":
 		return Vector2(220, 48)
 
 	return Vector2(128, 38)
@@ -267,7 +254,7 @@ func get_score_popup_font_size(event_type: String) -> int:
 	if event_type == "power_activated":
 		return 16
 
-	if event_type == "mvp" or event_type == "impact_failed" or event_type == "critical_save":
+	if event_type == "critical_save":
 		return 20
 
 	return 16
@@ -301,14 +288,8 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 
 	var event_type: String = str(event.get("type", ""))
 
-	if event_type == "mvp":
-		return Vector2(layer_size.x * 0.5, layer_size.y * 0.25)
-
 	if event_type == "power_activated":
 		return Vector2(layer_size.x * 0.5, layer_size.y * POWER_TOAST_CENTER_Y_RATIO)
-
-	if event_type == "impact_failed":
-		return Vector2(layer_size.x * 0.5, layer_size.y * 0.4)
 
 	var player_id: String = str(event.get("playerId", ""))
 	var lane_count: int = max(1, players_ctx.order.size())
@@ -329,10 +310,8 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 		"placement": 0.58,
 		"reinforce": 0.64,
 		"critical_save": 0.48,
-		"finisher_bonus": 0.5,
-		"precision_bonus": 0.44,
-		"team_exact_bonus": 0.38,
-		"assist_bonus": 0.52
+		"tower_warning": 0.44,
+		"tower_critical": 0.44
 	}
 	var y_ratio: float = float(y_offsets.get(event_type, 0.52))
 

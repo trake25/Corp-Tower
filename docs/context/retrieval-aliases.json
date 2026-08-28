@@ -5,6 +5,10 @@
       "aliases": ["power", "effect", "contribution"],
       "areas": ["backend", "hud"]
     },
+    "impact_failed": {
+      "aliases": ["failImpactScoreRequirement"],
+      "areas": ["backend"]
+    },
     "authentication": {
       "aliases": ["auth", "login", "sign-in", "oauth"],
       "areas": ["backend", "screens"]

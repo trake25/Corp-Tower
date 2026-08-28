@@ -259,16 +259,16 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:74 | update_impact_status_ui | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:145 | flash_impact_bars | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 349 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 328 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:1 | @file · file | declare the nodes this module needs |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:5 | SCORE_POPUP_INTRO_SECONDS · const | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:19 | bind_nodes | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:29 | process_score_events | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:62 | show_score_event_popup | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:183 | clear_score_popups | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:26 | bind_nodes | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:36 | process_score_events | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:69 | show_score_event_popup | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:190 | clear_score_popups | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd — 410 ln
 
