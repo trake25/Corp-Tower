@@ -56,6 +56,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | src/Server/app/Game_Config.js:1 | @file · file | authoritative gameplay, tuning, bot, room-timing, live_preview, and latency defaults |
 | src/Server/app/Game_Config.js:1 | GameConfig · const | |
+| src/Server/app/Game_Config.js:74 | towerStabilityMoodThreshold · stable | |
 
 ### src/Server/app/Game_Engine.js — 970 ln
 
@@ -384,4 +385,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-24 files · 231 stable anchors.
+24 files · 232 stable anchors.

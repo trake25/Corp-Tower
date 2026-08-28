@@ -13,6 +13,16 @@ func test_toggle_controls_indicator_visibility() -> void:
 	harness.main.update_debug_config({"showLatencyIndicator": true})
 	assert_true(indicator.visible, "The indicator must become visible when the synchronized toggle is on.")
 
+func test_indicator_container_is_transparent() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(412, 917))
+	var indicator := harness.find("LatencyIndicator") as Panel
+
+	assert_true(
+		indicator.get_theme_stylebox("panel") is StyleBoxEmpty,
+		"The latency text must not render inside a visible panel container."
+	)
+
 func test_latency_threshold_colors_include_each_boundary() -> void:
 	var harness = HarnessScript.new()
 	await harness.mount(self, Vector2(412, 917))

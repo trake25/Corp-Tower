@@ -7,6 +7,9 @@ const RoundTimeFreezeTexture = preload("res://Cor/Art/9-Play/play-timer-freeze.p
 const TopIndicatorFillOverTexture = preload("res://Cor/Themes/TopIndicatorFillOver.tres")
 const FREEZE_BLINK_HALF_SECONDS := 0.35
 const FREEZE_BLINK_COLOR := Color(0.82, 0.12, 0.12, 1.0)
+const STABILITY_GREEN := Color("#166534")
+const STABILITY_YELLOW := Color("#B45309")
+const STABILITY_RED := Color("#B91C1C")
 
 var match_state
 var level_label: Label
@@ -156,7 +159,7 @@ func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
 		if lean_direction != "center":
 			lean_suffix = " - leaning " + lean_direction
 	tower_stability_label.text = state.to_upper() + " · " + str(safe_stability) + "%" + lean_suffix
-	tower_stability_label.modulate = Color(0.7, 1.0, 0.75, 1.0) if safe_stability > 60 else (Color(1.0, 0.8, 0.3, 1.0) if safe_stability > 30 else Color(1.0, 0.4, 0.32, 1.0))
+	tower_stability_label.modulate = STABILITY_GREEN if safe_stability > 60 else (STABILITY_YELLOW if safe_stability > 30 else STABILITY_RED)
 
 func set_stability_meter_visible(feedback_mode: String) -> void:
 	tower_stability_label.visible = feedback_mode == "meter_only" or feedback_mode == "live_preview"

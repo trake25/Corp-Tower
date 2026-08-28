@@ -11,6 +11,8 @@
 [ext_resource type="PackedScene" path="res://Cor/Scenes/TutorialLayer.tscn" id="25_tutorial"]
 [ext_resource type="PackedScene" path="res://Cor/Scenes/DebugPanel.tscn" id="26_debug"]
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_LatencyIndicator"]
+
 [node name="GameUI" type="Control" unique_id=20707474]
 layout_mode = 3
 anchors_preset = 15
@@ -104,6 +106,7 @@ offset_right = -16.0
 offset_bottom = 48.0
 grow_horizontal = 0
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_LatencyIndicator")
 
 [node name="LatencyIndicatorLabel" type="Label" parent="LatencyIndicator"]
 unique_name_in_owner = true

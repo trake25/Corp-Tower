@@ -1,8 +1,8 @@
 extends Node
 
-const GREEN := Color("#5EE68C")
-const YELLOW := Color("#FFD166")
-const RED := Color("#FF6B6B")
+const GREEN := Color("#166534")
+const YELLOW := Color("#B45309")
+const RED := Color("#B91C1C")
 const NEUTRAL := Color("#E5E7EB")
 
 var indicator: Control

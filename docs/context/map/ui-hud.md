@@ -7,12 +7,13 @@ Each `@file` purpose is authored once and carried forward on regeneration.
 a file purpose or stable anchor and `path:line`, so it feeds straight into a
 bounded source read. Local implementation detail stays in source.
 
-### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 162 ln
+### src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn — 165 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:1 | @file · file | GameUI scene composition and controller bindings |
-| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:14 | GameUI · scene root | |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:16 | GameUI · scene root | |
+| src/Client/App/corp-tower/Cor/Scenes/GameUI.tscn:111 | LatencyIndicatorLabel · stable | |
 
 ### src/Client/App/corp-tower/Cor/Scenes/ImpactBar.tscn — 108 ln
 
@@ -309,18 +310,18 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:134 | has_pose | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:137 | has_targets | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 163 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 166 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:1 | @file · file | declare the nodes this module needs |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:26 | bind_nodes | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:42 | reset_indicators | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:80 | tick_round_timer | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:100 | set_top_indicator_progress | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:129 | update_top_bar_display | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:150 | update_tower_stability_ui | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:161 | set_stability_meter_visible | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:29 | bind_nodes | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:45 | reset_indicators | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:83 | tick_round_timer | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:103 | set_top_indicator_progress | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:132 | update_top_bar_display | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:153 | update_tower_stability_ui | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:164 | set_stability_meter_visible | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd — 22 ln
 
@@ -448,4 +449,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-38 files · 211 stable anchors.
+38 files · 212 stable anchors.
