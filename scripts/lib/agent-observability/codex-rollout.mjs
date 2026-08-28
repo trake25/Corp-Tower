@@ -114,18 +114,27 @@ function sessionTimeline(meta, until) {
     if (record.type === 'event_msg' && payload.type === 'task_started') starts.push(record.timestamp);
     if (record.type !== 'event_msg' || payload.type !== 'token_count') return;
     const usage = validUsage(payload.info?.total_token_usage);
-    const lastUsage = validUsage(payload.info?.last_token_usage);
-    if (usage) tokens.push({ occurred_at: record.timestamp, ordinal: record.ordinal, usage, last_usage: lastUsage });
+    if (usage) tokens.push({ occurred_at: record.timestamp, ordinal: record.ordinal, usage });
   });
   return { starts, tokens };
 }
 
-function subtract(latest, baseline) {
-  if (!baseline) return latest;
+function usageDelta(current, previous) {
+  if (!previous) return current;
+  const reset = current.total_tokens < previous.total_tokens;
   return Object.fromEntries(COUNTERS.map(field => [
     field,
-    latest[field] >= baseline[field] ? latest[field] - baseline[field] : latest[field],
+    !reset && current[field] >= previous[field] ? current[field] - previous[field] : current[field],
   ]));
+}
+
+function usageSegments(timeline, startedAt) {
+  let previous = timeline.tokens.filter(item => item.occurred_at < startedAt).at(-1)?.usage || null;
+  return timeline.tokens.filter(item => item.occurred_at >= startedAt).map(item => {
+    const delta = usageDelta(item.usage, previous);
+    previous = item.usage;
+    return { ...item, delta };
+  }).filter(item => item.delta.total_tokens > 0);
 }
 
 function providerUsage(counters) {
@@ -139,49 +148,32 @@ function providerUsage(counters) {
   };
 }
 
-function segmentedUsage(meta, timeline, aggregate, {
-  startedAt,
+function segmentedUsage(meta, tokens, {
   boundAt,
   evidence,
   terminal,
 }) {
-  const tokens = timeline.tokens.filter(item => item.occurred_at >= startedAt && item.last_usage);
-  const total = tokens.reduce((sum, item) => sum + item.last_usage.total_tokens, 0);
-  if (!tokens.length || total !== aggregate.total_tokens) return null;
   const toolEvidence = evidence.filter(item => item.kind === 'tool').sort((a, b) => a.occurred_at.localeCompare(b.occurred_at));
   return tokens.map((token, index) => {
     const next = tokens[index + 1]?.occurred_at;
-    const matching = toolEvidence.find(item => item.occurred_at >= token.occurred_at && (!next || item.occurred_at < next));
+    const matching = toolEvidence.find(item => item.stage !== 'other' && item.occurred_at >= token.occurred_at && (!next || item.occurred_at < next));
+    const preceding = toolEvidence.filter(item => item.stage !== 'other' && item.occurred_at < token.occurred_at).at(-1);
     const isTerminal = terminal && index === tokens.length - 1;
     const stage = isTerminal ? 'closeout'
       : boundAt && token.occurred_at < boundAt ? 'retrieval_context'
-        : matching?.stage || 'other';
+        : matching?.stage || preceding?.stage || 'other';
     return {
-      usage_event_id: boundedEventId('rollout', meta.session_id, startedAt, token.ordinal, token.occurred_at),
+      usage_event_id: boundedEventId('rollout', meta.session_id, token.ordinal, token.occurred_at),
       agent_id: meta.session_id,
       parent_agent_id: meta.parent_session_id,
       stage,
       purpose: isTerminal ? 'terminal' : terminal ? 'root' : 'subagent',
-      usage: providerUsage(token.last_usage),
+      usage: providerUsage(token.delta),
       settled: true,
       terminal: isTerminal,
       occurred_at: token.occurred_at,
     };
   });
-}
-
-function aggregateEvent(meta, counters, { startedAt, terminal, occurredAt }) {
-  return {
-    usage_event_id: boundedEventId('rollout', meta.session_id, startedAt, occurredAt),
-    agent_id: meta.session_id,
-    parent_agent_id: meta.parent_session_id,
-    stage: terminal ? 'closeout' : 'other',
-    purpose: terminal ? 'terminal' : 'subagent',
-    usage: providerUsage(counters),
-    settled: true,
-    terminal,
-    occurred_at: occurredAt,
-  };
 }
 
 function rootRollout(paths, sessionsRoot, sessionId, transcriptPath) {
@@ -229,31 +221,21 @@ export function codexRolloutUsage(sessionId, {
     if (!root) return { status: 'unavailable', reason: 'codex_rollout_not_found', events: [] };
     const rootTimeline = sessionTimeline(root, until);
     const startedAt = rootTimeline.starts.at(-1) || root.occurred_at;
-    const rootLatest = rootTimeline.tokens.filter(item => item.occurred_at >= startedAt).at(-1);
-    if (!rootLatest) return { status: 'unavailable', reason: 'codex_rollout_usage_unavailable', events: [] };
-    const rootBaseline = rootTimeline.tokens.filter(item => item.occurred_at < startedAt).at(-1)?.usage || null;
+    if (!rootTimeline.tokens.some(item => item.occurred_at >= startedAt))
+      return { status: 'unavailable', reason: 'codex_rollout_usage_unavailable', events: [] };
     const metas = paths.map(path => sessionMeta(path, sessionsRoot)).filter(Boolean);
     const tree = sessionTree(metas, root, startedAt, until);
     const events = [];
     for (const meta of tree) {
       const timeline = meta.session_id === root.session_id ? rootTimeline : sessionTimeline(meta, until);
-      const latest = timeline.tokens.at(-1);
-      if (!latest) continue;
-      const counters = meta.session_id === root.session_id
-        ? subtract(latest.usage, rootBaseline)
-        : latest.usage;
       const terminal = meta.session_id === root.session_id;
-      const segmented = segmentedUsage(meta, timeline, counters, {
-        startedAt: terminal ? startedAt : meta.occurred_at,
+      const segments = usageSegments(timeline, terminal ? startedAt : meta.occurred_at);
+      if (!segments.length) continue;
+      events.push(...segmentedUsage(meta, segments, {
         boundAt: terminal ? boundAt : null,
-        evidence: terminal ? evidence : [],
+        evidence,
         terminal,
-      });
-      events.push(...(segmented || [aggregateEvent(meta, counters, {
-        startedAt,
-        terminal,
-        occurredAt: latest.occurred_at,
-      })]));
+      }));
     }
     if (!events.some(event => event.terminal)) return { status: 'unavailable', reason: 'codex_rollout_terminal_usage_unavailable', events: [] };
     return { status: 'exact', reason: null, events };

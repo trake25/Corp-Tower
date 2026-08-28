@@ -52,17 +52,32 @@ function retrievalFor(event) {
   return { operation, status };
 }
 
-function stageFor(event) {
-  if (event.hook_event_name === 'PostCompact') return 'retrieval_context';
-  if (retrievalFor(event)) return 'retrieval_context';
-  const tool = String(event.tool_name || '').toLowerCase();
-  if (tool === 'apply_patch') return 'implementation';
-  if (tool.includes('plan')) return 'planning';
-  if (tool.includes('test') || tool.includes('qa')) return 'verification';
-  return 'other';
+function activeStage(evidence) {
+  return evidence.filter(item => item.stage !== 'other')
+    .sort((a, b) => a.occurred_at.localeCompare(b.occurred_at)).at(-1)?.stage || 'retrieval_context';
 }
 
-function evidenceFor(event, binding, identity, now) {
+function stageFor(event, evidence = []) {
+  if (event.hook_event_name === 'PostCompact') return 'retrieval_context';
+  if (event.hook_event_name !== 'PostToolUse') return 'other';
+  if (retrievalFor(event)) return 'retrieval_context';
+  const tool = String(event.tool_name || '').toLowerCase();
+  const command = toolText(event);
+  if (/task-close\.mjs["']?\s+prepare\b/.test(command)) return 'intake';
+  if (/task-close\.mjs["']?\s+(?:review|decide)\b/.test(command)) return 'documentation';
+  if (/task-close\.mjs["']?\s+(?:close|verify)\b/.test(command)) return 'verification';
+  if (/(?:node\s+(?:--test\b|scripts\/tests\/)|npm(?:\.cmd)?\s+(?:test|run\s+(?:test|docs:check))|pytest\b|scripts\/(?:qa-gate|validate-[\w-]+|benchmark-rag|build-file-map)\.mjs)/.test(command))
+    return 'verification';
+  if (tool === 'apply_patch')
+    return /(?:^|[\s/])(?:docs\/context|site\/docs)\//m.test(command) ? 'documentation' : 'implementation';
+  if (tool.includes('plan')) return 'planning';
+  if (tool.includes('test') || tool.includes('qa')) return 'verification';
+  if (/(?:search|browse|read|view|find)/.test(tool)) return 'retrieval_context';
+  if (tool === 'bash' || tool.includes('exec') || tool.includes('spawn') || tool.includes('agent')) return activeStage(evidence);
+  return activeStage(evidence);
+}
+
+function evidenceFor(event, binding, identity, now, priorEvidence = []) {
   const kind = event.hook_event_name === 'PostToolUse' ? 'tool'
     : event.hook_event_name === 'PostCompact' ? 'compaction'
       : 'lifecycle';
@@ -71,7 +86,7 @@ function evidenceFor(event, binding, identity, now) {
   return {
     evidence_event_id: boundedEventId('ev', event.session_id, eventIdentity, event.hook_event_name),
     task_id: binding.task_id,
-    stage: stageFor(event),
+    stage: stageFor(event, priorEvidence),
     kind,
     name: safeName(retrieval ? `context_${retrieval.operation}_${retrieval.status}` : kind === 'tool' ? event.tool_name : event.hook_event_name, kind),
     outcome: kind === 'tool' ? toolOutcome(event.tool_response) : 'observed',
@@ -181,7 +196,8 @@ export function handleHook(event, {
   const binding = readActiveTask(state, event.session_id);
   if (!binding) return finish({ status: 'ignored', reason: 'no_active_task' });
   const identity = resolveRuntimeIdentity(event, { env, configText });
-  const evidence = evidenceFor(event, binding, identity, now);
+  const bundle = readTaskBundle(state, binding.task_id);
+  const evidence = evidenceFor(event, binding, identity, now, bundle.evidence);
   const recorded = executeBestEffort('evidence', evidence, { root, stateDir: state, now });
   if (telemetryFailed(recorded)) return finish({ status: 'degraded', reason: 'evidence_write_failed', task_id: binding.task_id });
   if (['Stop', 'SessionEnd'].includes(event.hook_event_name) && binding.close_requested) {

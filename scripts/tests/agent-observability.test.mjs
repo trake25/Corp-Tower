@@ -265,7 +265,8 @@ test('close then post-terminal finalize writes exact record and simple weekly re
     const report = readFileSync(final.reports[0], 'utf8');
     assert.match(report, /^<!-- PRIVATE GENERATED/m);
     assert.match(report, /Fixture observability task/);
-    assert.match(report, /\| 2\.3k \| 240 \| 1\.0k \| 400 \| 150 \| 700 \|/);
+    assert.match(report, /\| 2\.3k \| 1\.0k \| 400 \| 150 \| 700 \|/);
+    assert.doesNotMatch(report, /\| Obs \|/);
     const repeated = executeCommand('finalize', { task_id: FIXTURE.task.task_id }, { stateDir: state });
     assert.equal(repeated.final_inclusive_provider_tokens, 2250);
     assert.equal(repeated.reports.length, 1);
@@ -322,7 +323,7 @@ test('explicit partial finalization preserves known usage and reason', () => {
     assert.ok(final.reasons.includes('provider_usage_unavailable'));
     const bundle = readTaskBundle(state, FIXTURE.task.task_id);
     assert.ok(bundle.flags.some(flag => flag.flag_id.startsWith('DQ-') && flag.cause_code === 'provider_usage_unavailable'));
-    assert.match(readFileSync(final.reports[0], 'utf8'), /Flags: [1-9]/);
+    assert.match(readFileSync(final.reports[0], 'utf8'), /Data-quality warnings: [1-9]/);
   } finally {
     rmSync(state, { recursive: true, force: true });
   }
@@ -546,7 +547,9 @@ test('display groups reconcile exactly and observability remains a subset', () =
 test('weekly private report stays flat and human readable', () => {
   const body = renderWeeklyReport([bundle(1)], '2026-W35');
 
-  assert.match(body, /\| Task \| Type\/Cx \| Runtime \| Total \| Obs \| Context \| Build \| Verify \| Other \|/);
+  assert.match(body, /\| Task \| Work type \| Complexity \| Model and effort \| Total model tokens \| Context and research \| Planning and implementation \| Verification and documentation \| Wrap-up and uncategorized \| Outcome \|/);
+  assert.doesNotMatch(body, /Context retrieval|Implementation passes/);
+  assert.doesNotMatch(body, /\| Obs \||## Recurring Flags|Flags 0/);
   assert.match(body, /Private task label 1/);
   assert.equal(Buffer.byteLength(body) < 64 * 1024, true);
 });
@@ -572,7 +575,7 @@ test('oversized weekly reports split into bounded task and globally grouped flag
   assert.equal(parts.length > 1, true);
   assert.equal(parts.every(part => Buffer.byteLength(part.body) <= 64 * 1024), true);
   assert.equal(parts.some(part => part.kind === 'flags'), true);
-  assert.match(joined, /\| 500 \| tighten the authoritative route \| recurring \|/);
+  assert.match(joined, /\| 500 \| tighten the authoritative route \| Recurring \|/);
 });
 
 test('analytics requires five verified comparable tasks and stays within 8 KiB', () => {

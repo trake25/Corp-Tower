@@ -107,27 +107,26 @@ stays pending and is excluded from weekly reports instead of being finalized
 without a terminal event.
 
 Trusted `.codex/hooks.json` handlers retain only model/effort provenance and
-bounded tool, compaction and lifecycle outcomes. `SessionStart` writes an idle
-heartbeat, every later event refreshes hook health, and a degraded write surfaces
-a bounded warning while leaving the binding available for a later settlement
-attempt. They never retain prompt, response, command, patch, tool payload or
-transcript content. Review hooks through `/hooks` when Codex asks and again after
-their definition changes; ordinary tasks need no separate hook command.
+bounded outcome or phase codes. `SessionStart` writes an idle heartbeat; degraded
+writes warn without losing the binding. Hooks never retain prompt, response,
+command, patch, tool payload or transcript content. Review them through `/hooks`
+when Codex asks or their definition changes.
 
-Context CLI calls become operation/status evidence. Task-close derives
-retrieval attempts, filter expansions and first-try success from them, never
-fixed defaults.
+Task-close derives retrieval metrics from context outcome codes, never defaults.
+Usage before task binding is context and research; edit, check, documentation and
+task-close codes set later phase boundaries before hook input and output are discarded.
 
 Exact totals require stable disjoint IDs, settled inclusive root/child/retry
 usage and a terminal host event; observability usage remains a non-additive
 subset. At `Stop`, the Codex adapter scans only session metadata, task boundaries
-and token counters, subtracts the root session's earlier-task baseline, and
-includes descendant sessions once through their parent identity. It never reads
-message or tool content. Missing rollout usage is partial with
+and cumulative counters, turns increases and resets into exact response deltas,
+and includes each descendant once by parent identity. It never reads message or
+tool content. Missing rollout usage is partial with
 `codex_rollout_usage_unavailable`, never a fabricated zero.
-Finalization writes the weekly report, and an idempotent repeat regenerates it
-from settled records. Candidate and formal flags are grouped by fingerprint and
-unique task; a later observation reopens a validated change. The same active agent may
+Finalization writes a human-labelled weekly report with reliable task, runtime,
+phase-token and outcome fields; synthetic columns and empty flag tables are
+omitted. Repeats regenerate it from settled records. Flags group by fingerprint
+and unique task, and a later observation reopens a validated change. The same active agent may
 formalize an eligible current-run, high-effort candidate before its final
 response; no extra agent or provider turn is created. Private weekly reports
 stay local; only `export-public --approve` writes the rounded,

@@ -46,8 +46,8 @@ function writeRolloutFixture(codexHome) {
     rolloutRecord('2026-08-28T00:10:00.000Z', 'event_msg', { type: 'task_started' }),
     JSON.stringify({ timestamp: '2026-08-28T00:11:00.000Z', type: 'response_item', payload: { type: 'message', role: 'user', content: 'secret prompt content' } }),
     rolloutRecord('2026-08-28T00:10:30.000Z', 'event_msg', tokenPayload(usage(1080, 600, 120, 22, 1200), usage(180, 100, 20, 2, 200))),
-    rolloutRecord('2026-08-28T00:12:00.000Z', 'event_msg', tokenPayload(usage(1450, 900, 150, 30, 1600), usage(370, 300, 30, 8, 400))),
-    rolloutRecord('2026-08-28T00:12:30.000Z', 'event_msg', tokenPayload(usage(1540, 950, 160, 32, 1700), usage(90, 50, 10, 2, 100))),
+    rolloutRecord('2026-08-28T00:12:00.000Z', 'event_msg', tokenPayload(usage(1450, 900, 150, 30, 1600), usage(550, 400, 50, 10, 600))),
+    rolloutRecord('2026-08-28T00:12:30.000Z', 'event_msg', tokenPayload(usage(1540, 950, 160, 32, 1700), usage(640, 450, 60, 12, 700))),
   ].join('\n') + '\n');
   writeFileSync(childPath, [
     rolloutRecord('2026-08-28T00:10:30.000Z', 'session_meta', { id: 'session-child', parent_thread_id: 'session-root' }),
@@ -162,6 +162,40 @@ test('hook-derived retrieval telemetry stores only canonical outcomes', () => {
   }
 });
 
+test('hooks retain human workflow phases without retaining command or patch content', () => {
+  const state = temporaryDirectory('corp-observability-');
+  const taskId = 'phase-hook-task';
+  try {
+    executeCommand('start', { task_id: taskId, label: 'Phase hook task', task_type: 'repository_task' }, { stateDir: state });
+    bindActiveTask(state, 'phase-session', taskId);
+    const events = [
+      { tool_use_id: 'read', tool_name: 'Bash', tool_input: { command: 'rg secret-anchor scripts/' } },
+      { tool_use_id: 'edit', tool_name: 'apply_patch', tool_input: '*** Update File: scripts/example.mjs\nsecret patch' },
+      { tool_use_id: 'inspect', tool_name: 'Bash', tool_input: { command: 'git status --short' } },
+      { tool_use_id: 'docs', tool_name: 'apply_patch', tool_input: '*** Update File: docs/context/automation.md\nsecret docs' },
+      { tool_use_id: 'test', tool_name: 'Bash', tool_input: { command: 'node --test scripts/tests/example.test.mjs' } },
+    ];
+    events.forEach((event, index) =>
+      handleHook({ session_id: 'phase-session', hook_event_name: 'PostToolUse', tool_response: { success: true }, ...event }, {
+        stateDir: state,
+        env: {},
+        now: `2026-08-28T00:00:0${index}.000Z`,
+      }));
+    const evidence = readTaskBundle(state, taskId).evidence.sort((a, b) => a.occurred_at.localeCompare(b.occurred_at));
+
+    assert.deepEqual(evidence.map(item => item.stage), [
+      'retrieval_context',
+      'implementation',
+      'implementation',
+      'documentation',
+      'verification',
+    ]);
+    assert.doesNotMatch(JSON.stringify(evidence), /secret-anchor|secret patch|secret docs|git status|node --test/);
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
 function reportBundle(index, flags) {
   const taskId = `recurrence-task-${index}`;
   return {
@@ -209,6 +243,6 @@ test('later candidates reopen a validated retrieval flag and count unique task o
   ];
   const report = renderWeeklyReport(bundles, '2026-W35');
 
-  assert.match(report, /\| WF-ffffff \| retrieval_context \| high\/high \| 4 \| repair the retrieval route \| recurring \|/);
-  assert.doesNotMatch(report, /\| 1 \| repair the retrieval route \| validated_change \|/);
+  assert.match(report, /\| WF-ffffff \| Context and research \| High \/ high \| 4 \| repair the retrieval route \| Recurring \|/);
+  assert.doesNotMatch(report, /\| 1 \| repair the retrieval route \| Validated change \|/);
 });

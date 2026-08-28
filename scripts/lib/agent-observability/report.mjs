@@ -46,9 +46,44 @@ function shortId(prefix, value) {
   return `${prefix}-${createHash('sha256').update(value).digest('hex').slice(0, 6)}`;
 }
 
+function words(value) {
+  const text = String(value || 'unknown').replaceAll('_', ' ').replaceAll('-', ' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function stageLabel(value) {
+  return {
+    intake: 'Task intake',
+    retrieval_context: 'Context and research',
+    planning: 'Planning',
+    implementation: 'Implementation',
+    verification: 'Verification',
+    documentation: 'Documentation',
+    closeout: 'Wrap-up',
+    flagging: 'Workflow review',
+    analytics: 'Analysis',
+    other: 'Uncategorized',
+  }[value] || words(value);
+}
+
 function runtimeFor(bundle) {
   const event = [...bundle.events].sort((a, b) => Number(b.terminal) - Number(a.terminal) || b.occurred_at.localeCompare(a.occurred_at))[0];
-  return event ? `${event.model_family}/${event.effort}` : 'unknown';
+  if (!event) return 'Unknown';
+  const rawModel = String(event.model || event.model_family);
+  const model = rawModel.toLowerCase().startsWith('gpt-')
+    ? rawModel.replace(/^gpt-/i, 'GPT-').replace(/-(sol|terra|luna)$/i, (_, family) => ` ${words(family)}`)
+    : words(rawModel);
+  const effort = { xhigh: 'very high', ultra: 'ultra high' }[event.effort] || event.effort;
+  return `${model} — ${effort} effort`;
+}
+
+function complexityFor(value) {
+  return {
+    C1: 'Small (C1)',
+    C2: 'Focused (C2)',
+    C3: 'Multi-file (C3)',
+    C4: 'Broad (C4)',
+  }[value] || words(value);
 }
 
 export function displayStageGroups(stageTotals = {}) {
@@ -64,29 +99,21 @@ export function displayStageGroups(stageTotals = {}) {
 function taskRow(bundle) {
   const final = bundle.final;
   const groups = displayStageGroups(final.stage_totals);
-  const telemetry = final.telemetry;
   const total = final.status === 'exact'
     ? formatTokens(final.final_inclusive_provider_tokens)
     : `${formatTokens(final.known_provider_tokens)}?`;
-  const obs = final.observability_provider_tokens === null
-    ? '—'
-    : `${final.observability_kind === 'estimated' ? '~' : ''}${formatTokens(final.observability_provider_tokens)}`;
-  const retrieval = `${telemetry.retrieval.attempts}/${telemetry.retrieval.first_try ? 'first' : telemetry.retrieval.fallbacks ? 'fallback' : 'expanded'}`;
-  const iterations = telemetry.iterations.implementation + telemetry.iterations.rework;
   const task = `${shortId('T', bundle.meta.task_id)} — ${bundle.meta.label}`;
   return [
     task,
-    `${bundle.meta.task_type}/${bundle.meta.complexity}`,
+    words(bundle.meta.task_type),
+    complexityFor(bundle.meta.complexity),
     runtimeFor(bundle),
     total,
-    obs,
     formatTokens(groups.context),
     formatTokens(groups.build),
     formatTokens(groups.verify),
     formatTokens(groups.other),
-    retrieval,
-    iterations,
-    `${final.outcome}/${final.verification}`,
+    `${words(final.outcome)} — verification ${words(final.verification).toLowerCase()}`,
   ].map(escapeCell);
 }
 
@@ -119,12 +146,11 @@ function groupedFlags(bundles) {
     .sort((a, b) => b.occurrences - a.occurrences || a.id.localeCompare(b.id));
 }
 
-function summaryLine(bundles, flags = groupedFlags(bundles)) {
+function summaryLine(bundles) {
   const exact = bundles.filter(bundle => bundle.final.status === 'exact');
   const totals = exact.map(bundle => bundle.final.final_inclusive_provider_tokens);
   const verified = bundles.filter(bundle => bundle.final.verification === 'passed').length;
-  const firstTry = bundles.filter(bundle => bundle.final.telemetry.retrieval.first_try).length;
-  return `Tasks ${bundles.length} | Verified ${verified}/${bundles.length} | Median ${formatTokens(percentile(totals, 0.5))} | P95 ${formatTokens(percentile(totals, 0.95))} | First-try ${bundles.length ? Math.round(firstTry * 100 / bundles.length) : 0}% | Flags ${flags.length}`;
+  return `${bundles.length} tasks | ${verified}/${bundles.length} passed verification | Median ${formatTokens(percentile(totals, 0.5))} tokens | P95 ${formatTokens(percentile(totals, 0.95))} tokens`;
 }
 
 function dataQualityLines(bundles) {
@@ -141,19 +167,18 @@ function dataQualityLines(bundles) {
     flags.set(flag.cause_code, (flags.get(flag.cause_code) || 0) + 1);
   const flagged = [...flags.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([reason, count]) => `${reason.replaceAll('_', ' ')} (${count})`).join(', ');
   return [
-    `- Exact: ${exact.length}`,
-    `- Partial: ${partial.length}${summary ? ` — ${summary}` : ''}`,
-    `- Flags: ${flags.size}${flagged ? ` — ${flagged}` : ''}`,
+    `- Complete token records: ${exact.length}`,
+    `- Partial token records: ${partial.length}${summary ? ` — ${summary}` : ''}`,
+    ...(flags.size ? [`- Data-quality warnings: ${flags.size}${flagged ? ` — ${flagged}` : ''}`] : []),
   ];
 }
 
 function flagTable(flags) {
   const rows = [
-    '| Flag | Stage | Severity/Confidence | Occurrences | Suggested improvement | Status |',
+    '| Workflow issue | Phase | Severity / confidence | Tasks affected | Recommended improvement | Status |',
     '|---|---|---|---:|---|---|',
   ];
-  if (flags.length) rows.push(...flags.map(flag => `| ${[flag.id, flag.stage, `${flag.severity}/${flag.confidence}`, flag.occurrences, flag.improvement, flag.status].map(escapeCell).join(' | ')} |`));
-  else rows.push('| — | — | — | 0 | none | observation |');
+  rows.push(...flags.map(flag => `| ${[flag.id, stageLabel(flag.stage), `${words(flag.severity)} / ${words(flag.confidence).toLowerCase()}`, flag.occurrences, flag.improvement, words(flag.status)].map(escapeCell).join(' | ')} |`));
   return rows;
 }
 
@@ -165,15 +190,15 @@ export function renderWeeklyReport(bundles, week, { part = null, includeFlags = 
     '',
     title,
     '',
-    summaryLine(bundles, flags),
+    summaryLine(bundles),
     '',
     '## Tasks',
     '',
-    '| Task | Type/Cx | Runtime | Total | Obs | Context | Build | Verify | Other | Retrieval | Iter | Result |',
-    '|---|---|---|---:|---:|---:|---:|---:|---:|---|---:|---|',
+    '| Task | Work type | Complexity | Model and effort | Total model tokens | Context and research | Planning and implementation | Verification and documentation | Wrap-up and uncategorized | Outcome |',
+    '|---|---|---|---|---:|---:|---:|---:|---:|---|',
     ...bundles.map(bundle => `| ${taskRow(bundle).join(' | ')} |`),
   ];
-  if (includeFlags) {
+  if (includeFlags && flags.length) {
     lines.push('', '## Recurring Flags', '', ...flagTable(flags));
   }
   lines.push('', '## Data Quality', '', ...dataQualityLines(bundles), '');
@@ -256,7 +281,7 @@ function writeWeek(stateDir, bundles, week) {
     '',
     '# Workflow Observability — ' + week,
     '',
-    summaryLine(bundles, flags),
+    summaryLine(bundles),
     '',
     '## Parts',
     '',

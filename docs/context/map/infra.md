@@ -745,12 +745,12 @@ bounded source read. Local implementation detail stays in source.
 | scripts/build-file-map.mjs:354 | render · fn | |
 | scripts/build-file-map.mjs:387 | build · fn | |
 
-### scripts/codex-observability-hook.mjs — 210 ln
+### scripts/codex-observability-hook.mjs — 226 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/codex-observability-hook.mjs:1 | @file · file | reduces trusted hook outcomes and settles active tasks from Codex rollout usage |
-| scripts/codex-observability-hook.mjs:161 | handleHook · fn | |
+| scripts/codex-observability-hook.mjs:176 | handleHook · fn | |
 
 ### scripts/context.mjs — 217 ln
 
@@ -816,14 +816,14 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/analytics.mjs:114 | boundedAnalyticsAggregate · fn | |
 | scripts/lib/agent-observability/analytics.mjs:128 | compareWindows · fn | |
 
-### scripts/lib/agent-observability/codex-rollout.mjs — 264 ln
+### scripts/lib/agent-observability/codex-rollout.mjs — 246 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/lib/agent-observability/codex-rollout.mjs:1 | @file · file | emits disjoint task usage from Codex session metadata and token counters |
 | scripts/lib/agent-observability/codex-rollout.mjs:25 | inside · fn | |
-| scripts/lib/agent-observability/codex-rollout.mjs:131 | providerUsage · fn | |
-| scripts/lib/agent-observability/codex-rollout.mjs:217 | codexRolloutUsage · fn | |
+| scripts/lib/agent-observability/codex-rollout.mjs:140 | providerUsage · fn | |
+| scripts/lib/agent-observability/codex-rollout.mjs:209 | codexRolloutUsage · fn | |
 
 ### scripts/lib/agent-observability/flagging.mjs — 175 ln
 
@@ -848,7 +848,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/public-export.mjs:46 | renderPublicReport · fn | |
 | scripts/lib/agent-observability/public-export.mjs:84 | exportPublicReport · fn | |
 
-### scripts/lib/agent-observability/report.mjs — 285 ln
+### scripts/lib/agent-observability/report.mjs — 310 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -856,10 +856,11 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/report.mjs:11 | isoWeek · fn | |
 | scripts/lib/agent-observability/report.mjs:29 | percentile · fn | |
 | scripts/lib/agent-observability/report.mjs:35 | escapeCell · fn | |
-| scripts/lib/agent-observability/report.mjs:54 | displayStageGroups · fn | |
-| scripts/lib/agent-observability/report.mjs:160 | renderWeeklyReport · fn | |
-| scripts/lib/agent-observability/report.mjs:213 | buildWeeklyReportParts · fn | |
-| scripts/lib/agent-observability/report.mjs:276 | renderPrivateReports · fn | |
+| scripts/lib/agent-observability/report.mjs:49 | words · fn | |
+| scripts/lib/agent-observability/report.mjs:89 | displayStageGroups · fn | |
+| scripts/lib/agent-observability/report.mjs:185 | renderWeeklyReport · fn | |
+| scripts/lib/agent-observability/report.mjs:238 | buildWeeklyReportParts · fn | |
+| scripts/lib/agent-observability/report.mjs:301 | renderPrivateReports · fn | |
 
 ### scripts/lib/agent-observability/runtime.mjs — 76 ln
 
@@ -1043,7 +1044,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/task-close.mjs:435 | intakeForManifest · fn | |
 | scripts/task-close.mjs:496 | manifestPath · fn | |
 
-### scripts/tests/agent-observability.test.mjs — 665 ln
+### scripts/tests/agent-observability.test.mjs — 668 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1058,7 +1059,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/build-file-map.test.mjs:1 | @file · file | permanent regression coverage for build file map |
 
-### scripts/tests/codex-rollout-observability.test.mjs — 215 ln
+### scripts/tests/codex-rollout-observability.test.mjs — 249 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1126,4 +1127,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-115 files · 427 stable anchors.
+115 files · 428 stable anchors.
