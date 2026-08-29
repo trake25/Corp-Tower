@@ -1,0 +1,65 @@
+name: Verify EKS destroy
+description: Confirms resources tagged for the EKS stack are gone after Terraform destroy
+
+inputs:
+  stack-tag:
+    description: Stack tag value to verify
+    required: false
+    default: server-eks
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -uo pipefail
+
+        RESOURCES_JSON="$(
+          aws resourcegroupstaggingapi get-resources \
+            --tag-filters "Key=Stack,Values=${{ inputs.stack-tag }}" \
+            --output json
+        )"
+
+        mapfile -t ARNS < <(printf '%s' "$RESOURCES_JSON" | jq -r '.ResourceTagMappingList[].ResourceARN')
+        STILL_LIVE=()
+
+        for arn in "${ARNS[@]}"; do
+          resource_part="${arn##*:}"
+          rtype="${resource_part%%/*}"
+          rid="${resource_part##*/}"
+
+          case "$rtype" in
+            natgateway)
+              state="$(aws ec2 describe-nat-gateways --nat-gateway-ids "$rid" \
+                         --query 'NatGateways[0].State' --output text 2>/dev/null)"
+              if [ -n "$state" ] && [ "$state" != "deleted" ] && [ "$state" != "None" ]; then
+                STILL_LIVE+=("$arn (state: $state)")
+              fi
+              ;;
+            subnet)
+              if aws ec2 describe-subnets --subnet-ids "$rid" >/dev/null 2>&1; then
+                STILL_LIVE+=("$arn")
+              fi
+              ;;
+            security-group-rule)
+              if aws ec2 describe-security-group-rules --security-group-rule-ids "$rid" >/dev/null 2>&1; then
+                STILL_LIVE+=("$arn")
+              fi
+              ;;
+            *)
+              STILL_LIVE+=("$arn")
+              ;;
+          esac
+        done
+
+        if [ "${#STILL_LIVE[@]}" -gt 0 ]; then
+          echo "::error::${#STILL_LIVE[@]} resource(s) tagged Stack=${{ inputs.stack-tag }} are confirmed still live after destroy (M-8)."
+          printf '%s\n' "${STILL_LIVE[@]}"
+          exit 1
+        fi
+
+        if [ "${#ARNS[@]}" -gt 0 ]; then
+          echo "Tagging-API index still lists ${#ARNS[@]} resource(s), but live EC2 lookups confirm all are actually gone. Destroy is clean."
+        else
+          echo "No resources tagged Stack=${{ inputs.stack-tag }} remain. Destroy is clean."
+        fi

@@ -14,7 +14,7 @@ test('search returns a bounded, provenance-bearing exact symbol match', () => {
   assert.equal(result.schema_version, 2);
   assert.equal(result.status, 'matched');
   assert.equal(result.results.length, 1);
-  assert.deepEqual(result.results[0].lines, [103, 103]);
+  assert.deepEqual(result.results[0].lines, [105, 105]);
   assert.equal(result.results[0].path, 'docs/context/map/backend.md');
   assert.equal(result.results[0].source.source_path, 'src/Server/app/Lobby_Manager.js');
   assert.equal(result.results[0].source.symbol, 'updateDebugConfig');
@@ -168,7 +168,7 @@ test('section and bundle enforce bounded source material', () => {
   const bundle = contextBundle(ROOT, 'updateDebugConfig', { kinds: ['symbol'], maxBytes: 1024 });
 
   assert.match(section.text, /qa-gate/);
-  assert.match(bundle.bundle, /Source: docs\/context\/map\/backend\.md:103-103/);
+  assert.match(bundle.bundle, /Source: docs\/context\/map\/backend\.md:105-105/);
   assert.ok(Buffer.byteLength(bundle.bundle) <= 1024);
   assert.equal(bundle.limits.returned_bytes, Buffer.byteLength(bundle.bundle));
 });

@@ -56,6 +56,14 @@ bounded source read. Local implementation detail stays in source.
 | .github/actions/terraform-validate-plan/action.yml:7 | inputs · key | |
 | .github/actions/terraform-validate-plan/action.yml:12 | runs · key | |
 
+### .github/actions/verify-eks-destroy/action.yml — 66 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| .github/actions/verify-eks-destroy/action.yml:1 | @file · file | reusable GitHub action for verify eks destroy |
+| .github/actions/verify-eks-destroy/action.yml:4 | inputs · key | |
+| .github/actions/verify-eks-destroy/action.yml:10 | runs · key | |
+
 ### .github/workflows/Android-Deploy-wstodplay.yml — 511 ln
 
 | File:Ln | Anchor | Purpose |
@@ -251,7 +259,7 @@ bounded source read. Local implementation detail stays in source.
 | .github/workflows/EKS-Infra-Apply.yml:22 | jobs · key | |
 | .github/workflows/EKS-Infra-Apply.yml:23 | apply · job | |
 
-### .github/workflows/EKS-Infra-Auto-Destroy.yml — 90 ln
+### .github/workflows/EKS-Infra-Auto-Destroy.yml — 72 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -260,7 +268,7 @@ bounded source read. Local implementation detail stays in source.
 | .github/workflows/EKS-Infra-Auto-Destroy.yml:23 | jobs · key | |
 | .github/workflows/EKS-Infra-Auto-Destroy.yml:24 | auto-destroy · job | |
 
-### .github/workflows/EKS-Infra-Destroy.yml — 123 ln
+### .github/workflows/EKS-Infra-Destroy.yml — 62 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1127,4 +1135,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-115 files · 428 stable anchors.
+116 files · 430 stable anchors.
