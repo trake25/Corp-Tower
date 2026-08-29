@@ -250,33 +250,33 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:12 | AUTH_FACEBOOK_APP_ID · const | |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:13 | AUTH_FACEBOOK_CLIENT_TOKEN · const | |
 
-### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 546 ln
+### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 565 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:1 | @file · file | WebSocket lifecycle, reconnect, message dispatch, and client signals |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:50 | status_changed · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:51 | room_joined · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:52 | match_started · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:53 | lobby_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:54 | room_closed · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:55 | game_state_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:56 | client_status · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:57 | debug_config_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:58 | latency_rtt_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:59 | recovery_started · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:60 | recovery_recovered · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:61 | recovery_unavailable · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:63 | connect_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:98 | disconnect_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:115 | place_block | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:130 | send_ready | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:136 | leave_lobby | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:223 | is_recovering | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:322 | send_quick_chat | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:331 | activate_power | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:489 | update_config | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:501 | set_latency_probe_enabled | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:51 | status_changed · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:52 | room_joined · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:53 | match_started · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:54 | lobby_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:55 | room_closed · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:56 | game_state_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:57 | client_status · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:58 | debug_config_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:59 | latency_rtt_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:60 | recovery_started · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:61 | recovery_recovered · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:62 | recovery_unavailable · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:64 | connect_server | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:104 | disconnect_server | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:124 | place_block | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:139 | send_ready | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:145 | leave_lobby | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:232 | is_recovering | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:334 | send_quick_chat | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:343 | activate_power | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:508 | update_config | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:520 | set_latency_probe_enabled | |
 
 ---
 

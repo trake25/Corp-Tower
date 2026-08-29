@@ -96,11 +96,11 @@ func _on_recovery_recovered() -> void:
 	auto_dismiss_modal.dismiss_recovery()
 	update_debug_button_availability()
 
-func _on_recovery_unavailable(_data) -> void:
+func _on_recovery_unavailable(data) -> void:
 	if tutorial_active:
 		return
 
-	resume_unavailable_active = false
+	resume_unavailable_active = bool(data.get("resumeUnavailable", false))
 	auto_dismiss_modal.open_recovery_failed()
 	update_debug_button_availability()
 

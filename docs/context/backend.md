@@ -15,10 +15,10 @@ and callers do not import them directly. `Block_Geometry.js`,
 Lobby Manager persists or restores room state. The server decides all game
 outcomes; clients and tools only render or preview them.
 
-Lobby Manager and Redis accept actions or disconnect cleanup only from a
-session's current connection id, preventing a superseded socket from clearing a
-resumed seat. Game Engine builds durable recovery snapshots separately from
-event-consuming broadcasts.
+Lobby Manager and Redis accept actions or cleanup only from a session's current
+connection id, preventing a superseded socket from clearing a resumed seat. Game
+Engine builds durable snapshots separately from broadcasts. Rebuild decay
+survives resumes until the tower reaches a new height target.
 
 Four-way contact partitions standing bricks into independent stability and pose
 components; every occupied cell adds mass, and downward contacts carry it
@@ -194,9 +194,8 @@ snapshots, per-room broadcasts/actions, player assignment, and demo counters. It
 falls back to in-memory state when Redis is absent. Only a bounded draw-pile
 prefix is stored; hydration regenerates its hidden tail because only the next
 draw is observable. Tower pose and lifecycle/accounting state needed for
-continuity are persisted, but full stability analysis is not. Historical height,
-claimed Recovery rows, and rewarded repair boundaries persist so reconnect or
-pod handoff cannot reopen scoring history.
+continuity are persisted, but full stability analysis is not. Historical height
+and the rebuild counter persist through reconnect and pod handoff.
 
 ## Known gaps
 

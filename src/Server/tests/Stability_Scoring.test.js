@@ -551,36 +551,55 @@ test("clean average height earns one action unit while dangerous height stays po
     assert.equal(dangerous.classification, "dangerous_height");
 });
 
-test("historical rows earn Recovery once while new maxima retain full Height", () => {
+test("historical rows and rebuild reinforcement decay until a new target", () => {
     const { engine } = createPlayingEngine(2, 20);
     const player = engine.room.players[0];
+    const actionUnit = engine.getActionUnit();
     const input = {
         previousHeight: 2,
-        settledHeight: 6,
+        settledHeight: 4,
         historicalMaxStandingHeight: 4,
         beforeResult: scoreResult(100, 0, 2),
-        settledResult: scoreResult(100, 0, 6),
-        peakResult: scoreResult(100, 0, 6),
+        settledResult: scoreResult(100, 0, 4),
+        peakResult: scoreResult(100, 0, 4),
         placedEntry: { block: { id: "RECOVERY" }, towerState: "standing" },
-        assessment: scoreAssessment(),
+        assessment: scoreAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 1
+        }),
         collapseSummary: { anyFallen: false }
     };
-    const transaction = engine.addPlacementScore(player, input);
+    const first = engine.addPlacementScore(player, input);
 
-    assert.equal(transaction.newHeight, 2);
-    assert.equal(transaction.recoveredHeight, 2);
-    assert.equal(transaction.heightPoints, 40);
-    assert.equal(transaction.recoveryPoints, 20);
-    assert.equal(engine.room.historicalMaxStandingHeight, 6);
-    assert.deepEqual(Object.keys(engine.room.recoveryCreditedRows).sort(), ["3", "4"]);
+    assert.equal(first.newHeight, 0);
+    assert.equal(first.recoveredHeight, 2);
+    assert.equal(first.recoveryPoints, 20);
+    assert.equal(first.structuralPoints, actionUnit);
+    assert.equal(engine.room.rebuildScoreCount, 1);
 
-    const repeated = engine.previewPlacementScore({
+    const second = engine.addPlacementScore(player, input);
+    const third = engine.addPlacementScore(player, input);
+
+    assert.equal(second.recoveryPoints, 10);
+    assert.equal(second.structuralPoints, Math.round(actionUnit * 0.5));
+    assert.equal(third.recoveryPoints, 5);
+    assert.equal(third.structuralPoints, Math.round(actionUnit * 0.25));
+    assert.equal(engine.room.rebuildScoreCount, 3);
+
+    const newHeight = engine.previewPlacementScore({
         ...input,
-        settledHeight: 4,
-        historicalMaxStandingHeight: 6
+        previousHeight: 4,
+        settledHeight: 6,
+        historicalMaxStandingHeight: 4,
+        settledResult: scoreResult(100, 0, 6),
+        peakResult: scoreResult(100, 0, 6)
     });
-    assert.equal(repeated.recoveryPoints, 0);
-    assert.equal(repeated.recoveredHeight, 0);
+    assert.equal(newHeight.heightPoints, 40);
+    assert.equal(newHeight.recoveryPoints, 0);
+    assert.equal(
+        newHeight.structuralPoints,
+        Math.min(actionUnit, newHeight.cap - newHeight.heightPoints)
+    );
 });
 
 test("zero-percent Recovery consumes rows and a collapse transaction scores nothing", () => {
@@ -601,7 +620,7 @@ test("zero-percent Recovery consumes rows and a collapse transaction scores noth
     const recovery = engine.addPlacementScore(player, base);
 
     assert.equal(recovery.recoveryPoints, 0);
-    assert.deepEqual(Object.keys(engine.room.recoveryCreditedRows).sort(), ["2", "3"]);
+    assert.equal(engine.room.rebuildScoreCount, 1);
 
     const collapse = engine.addPlacementScore(player, {
         ...base,

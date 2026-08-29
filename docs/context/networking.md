@@ -12,6 +12,10 @@ and identity credentials. A valid pair resumes its seat; otherwise the server
 creates a session and joins or creates a room. Verified identity overrides the
 claimed profile; required auth closes an unverified socket.
 
+If the persisted room cannot be restored, the server clears its session room
+reference before reporting `resume_unavailable`, so the next matchmaking attempt
+can use the same session without retrying the vanished room.
+
 Focus return blocks play and requests fresh state. A stale transport is closed
 before bounded reconnect; one total recovery deadline spans resync and reconnect,
 then ignores late state and returns the player Home. Manual disconnect and app

@@ -7,6 +7,7 @@ var manual_disconnect_requested := false
 var auto_reconnect_enabled := false
 var auto_reconnect_attempts := 0
 var auto_reconnect_delay_remaining := -1.0
+var connect_after_close := false
 var recovery_state := "healthy"
 var recovery_request_id := ""
 var recovery_deadline_msec := -1
@@ -41,7 +42,7 @@ const BACKGROUND_STALE_THRESHOLD_SECONDS := 5.0
 const GAME_STATE_STALE_TIMEOUT_MS := 8000
 const RECOVERY_TIMEOUT_MIN_MS := 2500
 const RECOVERY_TIMEOUT_MAX_MS := 8000
-const RECOVERY_TOTAL_TIMEOUT_MS := 20000
+const RECOVERY_TOTAL_TIMEOUT_MS := 10000
 const LATENCY_PROBE_INTERVAL_SECONDS := 1.0
 const LATENCY_PROBE_TIMEOUT_MS := 5000
 const SERVER_URL := EndpointConfig.PRIMARY
@@ -73,6 +74,11 @@ func connect_server(is_auto_reconnect := false, is_failover_retry := false):
 	if is_conn_estab or is_connecting:
 		return
 
+	if ws.get_ready_state() == WebSocketPeer.STATE_CLOSING:
+		manual_disconnect_requested = false
+		connect_after_close = true
+		return
+
 	if ws.get_ready_state() == WebSocketPeer.STATE_CLOSED:
 		ws = WebSocketPeer.new()
 
@@ -98,6 +104,9 @@ func connect_server(is_auto_reconnect := false, is_failover_retry := false):
 func disconnect_server():
 	status_changed.emit("Disconnecting...")
 	manual_disconnect_requested = true
+	connect_after_close = false
+	is_conn_estab = false
+	is_connecting = false
 	auto_reconnect_enabled = false
 	auto_reconnect_delay_remaining = -1.0
 	match_active = false
@@ -304,7 +313,7 @@ func settle_recovery(data) -> void:
 	reset_recovery_state()
 	recovery_recovered.emit()
 
-func mark_recovery_unavailable(reason: String) -> void:
+func mark_recovery_unavailable(reason: String, resume_unavailable := false) -> void:
 	if recovery_state == "unavailable":
 		return
 
@@ -317,7 +326,10 @@ func mark_recovery_unavailable(reason: String) -> void:
 	auto_reconnect_delay_remaining = -1.0
 	match_active = false
 	status_changed.emit("Match unavailable")
-	recovery_unavailable.emit({"reason": reason})
+	recovery_unavailable.emit({
+		"reason": reason,
+		"resumeUnavailable": resume_unavailable
+	})
 
 func send_quick_chat(slot: int) -> void:
 	if !is_conn_estab or is_recovering():
@@ -434,7 +446,10 @@ func _process(delta: float) -> void:
 				accept_latency_pong(data)
 			"resume_unavailable":
 				match_active = false
-				mark_recovery_unavailable(str(data.get("reason", "room_unavailable")))
+				mark_recovery_unavailable(
+					str(data.get("reason", "room_unavailable")),
+					true
+				)
 			"room_closed":
 				match_active = false
 				reset_recovery_state()
@@ -472,6 +487,10 @@ func _process(delta: float) -> void:
 
 			if recovery_reconnect_pending:
 				start_pending_recovery_reconnect()
+			elif connect_after_close:
+				connect_after_close = false
+				ws = WebSocketPeer.new()
+				connect_server()
 			elif was_connecting:
 				if match_active and recovery_state == "healthy" and not manual_disconnect_requested:
 					begin_recovery(true)

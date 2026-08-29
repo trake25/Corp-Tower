@@ -462,6 +462,34 @@ test("reconnecting mid-lobby resumes the ready state without a stray game_state"
     );
 });
 
+test("an unavailable resume clears the stale room session for the next match", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+
+    activeLobbies.push(lobby);
+    await lobby.start();
+
+    const ws = createFakeWs();
+    const player = await lobby.createPlayer(ws, {});
+    await lobby.stateStore.saveSession({
+        sessionId: player.sessionId,
+        reconnectToken: player.sessionId,
+        playerId: player.id,
+        roomId: 999,
+        connectionId: player.connectionId,
+        connected: true
+    });
+
+    await lobby.resumePlayer(player, 999);
+
+    assert.equal(messagesOfType(ws, "resume_unavailable").length, 1);
+    assert.equal(
+        cluster.shared.sessions.get(player.sessionId).roomId,
+        null,
+        "the next connection must be free to join a new room"
+    );
+});
+
 test("bots are pre-readied so a debug room only waits on its real player", async () => {
     const cluster = createSharedFakeCluster();
     const lobby = new LobbyManager(cluster.makeStore("podA"));

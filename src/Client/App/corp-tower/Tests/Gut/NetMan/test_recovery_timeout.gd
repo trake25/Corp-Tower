@@ -2,6 +2,24 @@ extends GutTest
 
 const NetworkManagerScript = preload("res://Sys/NetMan/NetworkManager.gd")
 
+func test_total_recovery_deadline_is_ten_seconds() -> void:
+	assert_eq(
+		NetworkManagerScript.RECOVERY_TOTAL_TIMEOUT_MS,
+		10000,
+		"Background recovery must return Home after ten seconds."
+	)
+
+func test_manual_disconnect_releases_connection_flags_for_a_new_match() -> void:
+	var network = NetworkManagerScript.new()
+	network.is_conn_estab = true
+	network.is_connecting = true
+
+	network.disconnect_server()
+
+	assert_false(network.is_conn_estab, "A cancelled connection must not block the next match request.")
+	assert_false(network.is_connecting, "A cancelled connection must not keep matchmaking in its spinner.")
+	network.free()
+
 func test_total_recovery_expiry_stops_reconnect_and_reports_terminal_reason() -> void:
 	var network = NetworkManagerScript.new()
 	var reasons: Array[String] = []

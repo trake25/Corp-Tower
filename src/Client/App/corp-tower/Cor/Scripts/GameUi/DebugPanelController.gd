@@ -531,7 +531,7 @@ func placement_score_table_body() -> String:
 		])
 
 	lines.append("REPAIR MAX / SAVE")
-	lines.append("RECOVERY: %d%% of clean row value once." % recovery_share)
+	lines.append("RECOVERY: %d%% of clean row value, halved after each rebuild." % recovery_share)
 
 	for level in [1, 5, 10, 25]:
 		var action_unit: float = float(level) * float(height_rate) * SCORE_TABLE_AVERAGE_BRICK_HEIGHT

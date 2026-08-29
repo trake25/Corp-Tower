@@ -46,3 +46,13 @@ func test_terminal_recovery_returns_home_after_countdown() -> void:
 		screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"),
 		"A terminal recovery must return the player Home after its countdown."
 	)
+
+func test_unavailable_resume_returns_to_matchmaking_after_countdown() -> void:
+	screen_manager._on_recovery_unavailable({"resumeUnavailable": true})
+	screen_manager.auto_dismiss_modal.auto_dismiss_remaining = 0.0
+	screen_manager.auto_dismiss_modal._process(0.0)
+
+	assert_true(
+		screen_manager.current_overlay.scene_file_path.ends_with("/JoinScreen.tscn"),
+		"An unavailable restored room must return to matchmaking rather than Home."
+	)

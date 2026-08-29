@@ -252,14 +252,13 @@ function classifyHeightRows(engine, input) {
     const historicalMaximum = Math.max(0, Math.floor(Number(
         input.historicalMaxStandingHeight ?? engine.room?.historicalMaxStandingHeight
     ) || 0));
-    const credited = input.recoveryCreditedRows || engine.room?.recoveryCreditedRows || {};
     let newHeightRows = 0;
     const recoveryRows = [];
 
     for (let row = previousHeight + 1; row <= settledHeight; row += 1) {
         if (row > historicalMaximum) {
             newHeightRows += 1;
-        } else if (!credited[row]) {
+        } else {
             recoveryRows.push(row);
         }
     }
@@ -267,11 +266,25 @@ function classifyHeightRows(engine, input) {
     return { newHeightRows, recoveryRows };
 }
 
+function getRebuildScoreMultipliers(engine, rows, input) {
+    if (rows.recoveryRows.length === 0) {
+        return { recovery: 1, structural: 1 };
+    }
+
+    const rebuildCount = Math.max(0, Math.floor(Number(
+        input.rebuildScoreCount ?? engine.room?.rebuildScoreCount
+    ) || 0));
+    const recovery = 0.5 ** rebuildCount;
+
+    return { recovery, structural: recovery };
+}
+
 function previewPlacementScore(engine, input = {}) {
     const level = Math.max(1, Number(engine.room?.level) || 1);
     const actionUnit = getActionUnit(engine, level);
     const rowValue = level * positive(GameConfig.scoring?.placementScorePerHeight, 1);
     const rows = classifyHeightRows(engine, input);
+    const rebuildMultipliers = getRebuildScoreMultipliers(engine, rows, input);
     const assessment = getStructuralAssessment(engine, input);
     const danger = clamp01(
         assessment.riskIncrease / Math.max(0.0001, positive(GameConfig.scoring?.fullDangerRiskIncrease, 1))
@@ -281,9 +294,12 @@ function previewPlacementScore(engine, input = {}) {
     const effectiveHeight = collapse ? 0 : rows.newHeightRows;
     const heightPoints = collapse ? 0 : Math.round(rows.newHeightRows * rowValue * heightQuality);
     const recoveryShare = clamp01(positive(GameConfig.scoring?.recoveryHeightScorePercent) / 100);
-    const recoveryPoints = collapse ? 0 : Math.round(rows.recoveryRows.length * rowValue * heightQuality * recoveryShare);
+    const recoveryPoints = collapse ? 0 : Math.round(
+        rows.recoveryRows.length * rowValue * heightQuality * recoveryShare * rebuildMultipliers.recovery
+    );
     const structuralPoints = collapse || assessment.isActiveTower === false ? 0 : Math.round(
-        actionUnit * positive(GameConfig.scoring?.strongReinforcementActionShare) * assessment.structuralValue
+        actionUnit * positive(GameConfig.scoring?.strongReinforcementActionShare) *
+        assessment.structuralValue * rebuildMultipliers.structural
     );
     const criticalSave = collapse
         ? { eligible: false, reason: "collapse" }
@@ -344,9 +360,10 @@ function addPlacementScore(engine, player, input = {}) {
         engine.room.criticalSaveClaimKeys[transaction.repairClaimKey] = true;
     }
 
-    engine.room.recoveryCreditedRows = engine.room.recoveryCreditedRows || {};
-    for (const row of transaction.recoveryRows) {
-        engine.room.recoveryCreditedRows[row] = true;
+    if (transaction.recoveryRows.length > 0) {
+        engine.room.rebuildScoreCount = Math.max(
+            0, Math.floor(Number(engine.room.rebuildScoreCount) || 0)
+        ) + 1;
     }
     engine.room.historicalMaxStandingHeight = Math.max(
         Number(engine.room.historicalMaxStandingHeight || 0),

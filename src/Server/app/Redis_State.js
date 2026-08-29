@@ -91,7 +91,7 @@ function stripRuntimeRoom(room) {
             towerStabilityComponents: engineRoom.towerStabilityComponents || [],
             towerStructuralPose: engineRoom.towerStructuralPose || [],
             historicalMaxStandingHeight: engineRoom.historicalMaxStandingHeight || 0,
-            recoveryCreditedRows: engineRoom.recoveryCreditedRows || {},
+            rebuildScoreCount: Math.max(0, Math.floor(Number(engineRoom.rebuildScoreCount) || 0)),
             lastChanceRescuePending: Boolean(engineRoom.lastChanceRescuePending),
             lastChanceRescueUsed: Boolean(engineRoom.lastChanceRescueUsed),
             criticalSaveClaimKeys: engineRoom.criticalSaveClaimKeys || {},

@@ -102,12 +102,14 @@ budget enters terminal game over and returns players Home after the summary.
 ## Scoring and contribution
 
 Every settled brick produces one authoritative placement transaction. Rows above
-the level's historical maximum earn Height once; rebuilt lost rows earn one-time
-Recovery at the configured share. Risk at the placed brick's component peak
-discounts both. Every direct surviving repair on the active tallest tower earns
-Reinforce; repairs to other components do not. A mature rescue may add a
-single-use Critical Save. Any placement that drops a brick earns no placement or
-Impact points. Height, Recovery, Critical Save, then Reinforce share the cap.
+the level's historical maximum earn Height once; rebuilt lost rows earn Recovery
+at the configured share, then half that amount for each further rebuild before a
+new height target. Rebuild Reinforce follows the same decay; direct surviving
+repairs on the active tallest tower otherwise earn Reinforce, while repairs to
+other components do not. Risk at the placed brick's component peak discounts
+both. A mature rescue may add a single-use Critical Save. Any placement that
+drops a brick earns no placement or Impact points. Height, Recovery, Critical
+Save, then Reinforce share the cap.
 
 Only capped useful placement components count toward Impact contribution.
 Completion, MVP, exact-finish, Power, and other display-score bonuses do not.

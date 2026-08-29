@@ -151,8 +151,13 @@ class LobbyManager {
         await this.joinOrCreateRoom(player);
     }
 
-    reportResumeUnavailable(player, reason) {
+    async reportResumeUnavailable(player, reason) {
         player.resumeUnavailable = true;
+
+        if (this.stateStore.clearSessionRoom) {
+            await this.stateStore.clearSessionRoom(player.sessionId);
+        }
+
         this.sendPlayer(player, {
             type: "resume_unavailable",
             reason
@@ -172,7 +177,7 @@ class LobbyManager {
         }
 
         if (!room) {
-            this.reportResumeUnavailable(player, "reconnect_ttl_expired");
+            await this.reportResumeUnavailable(player, "reconnect_ttl_expired");
             return;
         }
 
@@ -180,7 +185,7 @@ class LobbyManager {
             room.players.find(candidate => candidate.id === player.id);
 
         if (!roomPlayer) {
-            this.reportResumeUnavailable(player, "room_unavailable");
+            await this.reportResumeUnavailable(player, "room_unavailable");
             return;
         }
 
@@ -1129,7 +1134,7 @@ class LobbyManager {
                     Number(snapshot.state.historicalMaxStandingHeight || 0),
                     Number(snapshot.state.currentHeight || 0)
                 ),
-                recoveryCreditedRows: snapshot.state.recoveryCreditedRows || {},
+                rebuildScoreCount: Math.max(0, Math.floor(Number(snapshot.state.rebuildScoreCount) || 0)),
                 lastChanceRescuePending: Boolean(snapshot.state.lastChanceRescuePending),
                 lastChanceRescueUsed: Boolean(snapshot.state.lastChanceRescueUsed),
                 state: snapshot.state.state,

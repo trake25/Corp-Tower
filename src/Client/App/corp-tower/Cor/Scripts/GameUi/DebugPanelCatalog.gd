@@ -94,7 +94,7 @@ const DEBUG_TOOLTIPS := {
 	},
 	"RecoveryHeightScoreLabel": {
 		"title": "Recovery Height Score",
-		"body": "The share of risk-adjusted Height score paid when the team rebuilds a previously reached row. Each lost row can earn Recovery once, even when this is set to 0. New historical height still earns full Height score.",
+		"body": "The share of risk-adjusted Height score paid when the team rebuilds a previously reached row. Each rebuilding placement halves Recovery and rebuild Reinforce again until the tower reaches a new target. New historical height still earns full Height score.",
 	},
 	"ReinforceIntegrityLabel": {
 		"title": "Strong Direct Repair",

@@ -175,7 +175,7 @@ class GameEngine {
             towerStructuralPose: [],
             towerStabilityResult: null,
             historicalMaxStandingHeight: 0,
-            recoveryCreditedRows: {},
+            rebuildScoreCount: 0,
             lastChanceRescuePending: false,
             lastChanceRescueUsed: false,
             state: "waiting",
@@ -259,7 +259,7 @@ class GameEngine {
                 Number(snapshot.state.historicalMaxStandingHeight || 0),
                 Number(snapshot.state.currentHeight || 0)
             ),
-            recoveryCreditedRows: snapshot.state.recoveryCreditedRows || {},
+            rebuildScoreCount: Math.max(0, Math.floor(Number(snapshot.state.rebuildScoreCount) || 0)),
             lastChanceRescuePending: Boolean(snapshot.state.lastChanceRescuePending),
             lastChanceRescueUsed: Boolean(snapshot.state.lastChanceRescueUsed),
             state: snapshot.state.state,
@@ -519,11 +519,12 @@ class GameEngine {
         this.room.towerStabilityComponents = [];
         this.room.towerStructuralPose = [];
         this.room.towerStabilityResult = null;
+        const targetHeight = this.getTargetHeightForLevel(this.room.level);
+        const targetChanged = this.room.targetHeight !== targetHeight;
         this.room.historicalMaxStandingHeight = 0;
-        this.room.recoveryCreditedRows = {};
+        if (targetChanged) this.room.rebuildScoreCount = 0;
         this.resetLastChanceRescue();
-        this.room.targetHeight =
-            this.getTargetHeightForLevel(this.room.level);
+        this.room.targetHeight = targetHeight;
         this.room.startsAt = Date.now() + GameConfig.startDelayMs;
         this.room.levelDurationMs = this.getLevelTimeLimitMs();
         this.room.endsAt = this.room.startsAt + this.room.levelDurationMs;
@@ -760,7 +761,7 @@ class GameEngine {
         this.room.towerStructuralPose = [];
         this.room.towerStabilityResult = null;
         this.room.historicalMaxStandingHeight = 0;
-        this.room.recoveryCreditedRows = {};
+        this.room.rebuildScoreCount = 0;
         this.resetLastChanceRescue();
         this.room.targetHeight = this.getTargetHeightForLevel(targetLevel);
         this.room.lastLevelSummary = null;

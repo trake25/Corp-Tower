@@ -60,7 +60,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Game_Config.js:78 | towerStabilityMoodThreshold · stable | |
 | src/Server/app/Game_Config.js:148 | normalCombinedCapActionShare · stable | |
 
-### src/Server/app/Game_Engine.js — 1019 ln
+### src/Server/app/Game_Engine.js — 1020 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -80,20 +80,20 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Game_Engine.js:444 | activatePower | |
 | src/Server/app/Game_Engine.js:478 | getPostLevelTransitionDelayMs | |
 | src/Server/app/Game_Engine.js:506 | startLevel | |
-| src/Server/app/Game_Engine.js:583 | clearTimers | |
-| src/Server/app/Game_Engine.js:595 | closeRoom | |
-| src/Server/app/Game_Engine.js:618 | requestRoomClose | |
-| src/Server/app/Game_Engine.js:633 | stopBots | |
-| src/Server/app/Game_Engine.js:667 | getTargetHeightForLevel | |
-| src/Server/app/Game_Engine.js:678 | getLevelTimeLimitMs | |
-| src/Server/app/Game_Engine.js:718 | clampLevel | |
-| src/Server/app/Game_Engine.js:725 | restartAtConfiguredStartLevel | |
-| src/Server/app/Game_Engine.js:732 | restartAtLevel | |
-| src/Server/app/Game_Engine.js:812 | completeLevel | |
-| src/Server/app/Game_Engine.js:892 | failLevel | |
-| src/Server/app/Game_Engine.js:899 | nextLevel | |
+| src/Server/app/Game_Engine.js:584 | clearTimers | |
+| src/Server/app/Game_Engine.js:596 | closeRoom | |
+| src/Server/app/Game_Engine.js:619 | requestRoomClose | |
+| src/Server/app/Game_Engine.js:634 | stopBots | |
+| src/Server/app/Game_Engine.js:668 | getTargetHeightForLevel | |
+| src/Server/app/Game_Engine.js:679 | getLevelTimeLimitMs | |
+| src/Server/app/Game_Engine.js:719 | clampLevel | |
+| src/Server/app/Game_Engine.js:726 | restartAtConfiguredStartLevel | |
+| src/Server/app/Game_Engine.js:733 | restartAtLevel | |
+| src/Server/app/Game_Engine.js:813 | completeLevel | |
+| src/Server/app/Game_Engine.js:893 | failLevel | |
+| src/Server/app/Game_Engine.js:900 | nextLevel | |
 
-### src/Server/app/Lobby_Manager.js — 1373 ln
+### src/Server/app/Lobby_Manager.js — 1378 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -102,16 +102,16 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Lobby_Manager.js:75 | isCurrentPlayerConnection | |
 | src/Server/app/Lobby_Manager.js:89 | createPlayer | |
 | src/Server/app/Lobby_Manager.js:148 | addPlayer | |
-| src/Server/app/Lobby_Manager.js:230 | removePlayer | |
-| src/Server/app/Lobby_Manager.js:351 | closeRoom | |
-| src/Server/app/Lobby_Manager.js:455 | broadcastDebugConfig | |
-| src/Server/app/Lobby_Manager.js:501 | updateDebugConfig | |
-| src/Server/app/Lobby_Manager.js:737 | createRoom | |
-| src/Server/app/Lobby_Manager.js:853 | toggleLobbyReady | |
-| src/Server/app/Lobby_Manager.js:921 | leaveLobby | |
-| src/Server/app/Lobby_Manager.js:1055 | hydrateRoom | |
-| src/Server/app/Lobby_Manager.js:1255 | dispatchRoomAction | |
-| src/Server/app/Lobby_Manager.js:1282 | resyncState | |
+| src/Server/app/Lobby_Manager.js:235 | removePlayer | |
+| src/Server/app/Lobby_Manager.js:356 | closeRoom | |
+| src/Server/app/Lobby_Manager.js:460 | broadcastDebugConfig | |
+| src/Server/app/Lobby_Manager.js:506 | updateDebugConfig | |
+| src/Server/app/Lobby_Manager.js:742 | createRoom | |
+| src/Server/app/Lobby_Manager.js:858 | toggleLobbyReady | |
+| src/Server/app/Lobby_Manager.js:926 | leaveLobby | |
+| src/Server/app/Lobby_Manager.js:1060 | hydrateRoom | |
+| src/Server/app/Lobby_Manager.js:1260 | dispatchRoomAction | |
+| src/Server/app/Lobby_Manager.js:1287 | resyncState | |
 
 ### src/Server/app/Profile_Store.js — 169 ln
 
@@ -320,7 +320,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Placement.js:413 | anyPlayerCanRescueSupply · fn | |
 | src/Server/app/engine/Placement.js:409 | not_enough_height_remaining · stable | |
 
-### src/Server/app/engine/Scoring.js — 501 ln
+### src/Server/app/engine/Scoring.js — 518 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -337,14 +337,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Scoring.js:134 | positive · fn | |
 | src/Server/app/engine/Scoring.js:138 | getActionUnit · fn | |
 | src/Server/app/engine/Scoring.js:144 | getExpectedNormalUsefulScoreForLevel · fn | |
-| src/Server/app/engine/Scoring.js:270 | previewPlacementScore · fn | |
-| src/Server/app/engine/Scoring.js:331 | addPlacementScore · fn | |
-| src/Server/app/engine/Scoring.js:379 | awardCompletionBonuses · fn | |
-| src/Server/app/engine/Scoring.js:418 | addBonusScore · fn | |
-| src/Server/app/engine/Scoring.js:437 | getBonusScoreEventType · fn | |
-| src/Server/app/engine/Scoring.js:448 | getBonusScoreEventLabel · fn | |
-| src/Server/app/engine/Scoring.js:459 | addLevelScoreToLeaderboard · fn | |
-| src/Server/app/engine/Scoring.js:469 | getLevelMVP · fn | |
+| src/Server/app/engine/Scoring.js:282 | previewPlacementScore · fn | |
+| src/Server/app/engine/Scoring.js:347 | addPlacementScore · fn | |
+| src/Server/app/engine/Scoring.js:396 | awardCompletionBonuses · fn | |
+| src/Server/app/engine/Scoring.js:435 | addBonusScore · fn | |
+| src/Server/app/engine/Scoring.js:454 | getBonusScoreEventType · fn | |
+| src/Server/app/engine/Scoring.js:465 | getBonusScoreEventLabel · fn | |
+| src/Server/app/engine/Scoring.js:476 | addLevelScoreToLeaderboard · fn | |
+| src/Server/app/engine/Scoring.js:486 | getLevelMVP · fn | |
 
 ### src/Server/migrations/0001_profiles.sql — 46 ln
 
