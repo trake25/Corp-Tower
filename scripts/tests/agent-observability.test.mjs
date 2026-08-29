@@ -376,6 +376,47 @@ test('Codex hooks retain bounded metadata and visibly finalize unavailable rollo
   }
 });
 
+test('Codex hook does not attribute unrelated shell work to the prior verification stage', () => {
+  const state = temporaryState();
+  const taskId = 'hook-shell-stage-task';
+  try {
+    executeCommand('start', { ...FIXTURE.task, task_id: taskId }, { stateDir: state });
+    bindActiveTask(state, 'session-shell-stage', taskId);
+    const base = {
+      session_id: 'session-shell-stage',
+      hook_event_name: 'PostToolUse',
+      model: 'gpt-5.6-sol',
+      tool_name: 'Bash',
+      tool_response: { exit_code: 0, output: 'ok' },
+    };
+    const verification = handleHook({
+      ...base,
+      turn_id: 'turn-verify',
+      tool_use_id: 'tool-verify',
+      tool_input: { command: 'node scripts/qa-gate.mjs --changed AGENTS.md' },
+    }, { stateDir: state, env: {}, now: '2026-08-29T00:00:01.000Z', configText: 'model_reasoning_effort = "high"' });
+    const unrelated = handleHook({
+      ...base,
+      turn_id: 'turn-unrelated',
+      tool_use_id: 'tool-unrelated',
+      tool_input: { command: 'node scripts/custom-local-helper.mjs' },
+    }, { stateDir: state, env: {}, now: '2026-08-29T00:00:02.000Z', configText: 'model_reasoning_effort = "high"' });
+    const retrieval = handleHook({
+      ...base,
+      turn_id: 'turn-read',
+      tool_use_id: 'tool-read',
+      tool_input: { command: 'rg -n "anchor" docs/context/index.md' },
+    }, { stateDir: state, env: {}, now: '2026-08-29T00:00:03.000Z', configText: 'model_reasoning_effort = "high"' });
+    const stages = new Map(readTaskBundle(state, taskId).evidence.map(item => [item.evidence_event_id, item.stage]));
+
+    assert.equal(stages.get(verification.evidence_event_id), 'verification');
+    assert.equal(stages.get(unrelated.evidence_event_id), 'other');
+    assert.equal(stages.get(retrieval.evidence_event_id), 'retrieval_context');
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
 test('Stop hook records exact terminal usage when a host adapter supplies counters', () => {
   const state = temporaryState();
   const taskId = 'hook-host-usage-task';

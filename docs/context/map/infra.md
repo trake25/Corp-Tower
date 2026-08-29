@@ -753,12 +753,12 @@ bounded source read. Local implementation detail stays in source.
 | scripts/build-file-map.mjs:354 | render · fn | |
 | scripts/build-file-map.mjs:387 | build · fn | |
 
-### scripts/codex-observability-hook.mjs — 226 ln
+### scripts/codex-observability-hook.mjs — 234 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/codex-observability-hook.mjs:1 | @file · file | reduces trusted hook outcomes and settles active tasks from Codex rollout usage |
-| scripts/codex-observability-hook.mjs:176 | handleHook · fn | |
+| scripts/codex-observability-hook.mjs:184 | handleHook · fn | |
 
 ### scripts/context.mjs — 217 ln
 
@@ -1052,7 +1052,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/task-close.mjs:435 | intakeForManifest · fn | |
 | scripts/task-close.mjs:496 | manifestPath · fn | |
 
-### scripts/tests/agent-observability.test.mjs — 668 ln
+### scripts/tests/agent-observability.test.mjs — 709 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1074,7 +1074,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/codex-rollout-observability.test.mjs:1 | @file · file | permanent regression coverage for codex rollout observability |
 | scripts/tests/codex-rollout-observability.test.mjs:17 | usage · fn | |
 
-### scripts/tests/context-query.test.mjs — 201 ln
+### scripts/tests/context-query.test.mjs — 208 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|

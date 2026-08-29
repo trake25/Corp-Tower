@@ -15,27 +15,28 @@ This file is the vendor-neutral repository contract. Load one role skill from
 2. For an implementation, begin the task-close run with its explicit
    task-owned paths after bounded context retrieval and before the first file
    edit. Its intake is the canonical role route, KB/map, QA, validator and tool
-   scope. For an
-   assessment that needs no manifest, use
-   `node scripts/context.mjs route` or `scope <task-owned-path>...`. Game
-   knowledge starts at `docs/context/index.md`; portfolio knowledge at
-   `site/docs/index.md`.
-3. Treat `context.mjs` as the primary retrieval tool. Start `search` with one
-   stable product anchor — a named screen, node, signal, file, or feature — not
-   a narrative symptom sentence: every query term must match one result. Use
-   `search <anchor> --anchor` when the anchor is known. Otherwise obey the exact
-   command returned by `needs-anchor` or `needs-filter` before reading source.
-4. `rg` source fallback is allowed only for `retrieval-defect` or `tool-error`,
-   starting in the smallest routed root. Record the fallback in the manifest and
-   repair the route, map purpose, alias, budget or tool in the same task with a
-   passing benchmark fixture. Unfamiliar CLI usage is never a fallback trigger.
-5. The CLI's `bundle` writes the bounded, upload-safe KB/map handoff under
-   ignored `.agent-state/automation/`. The protocol and limits are in
-   `docs/context/automation.md`.
+   scope. Game knowledge starts at `docs/context/index.md`; portfolio knowledge
+   at `site/docs/index.md`.
+3. Use the selected KB index as the router. Read only the row for the task, then
+   search its named document and map with one stable product anchor — a screen,
+   node, signal, file, feature or exact term. Prefer
+   `rg -n -i '<anchor>' <routed-doc-or-map>` and add a path or second term when
+   the result is noisy. Do not search every KB document or load a generated map
+   whole.
+4. Read the smallest matching KB section and map row, then use the row's path and
+   line for a bounded source read. If the map has no usable row, search only the
+   smallest root owned by the active role and repair a confirmed missing or stale
+   KB router/map entry in the same task under `docs-steward`.
+5. `scripts/context.mjs` remains a dormant retrieval experiment and portable
+   bundle producer; it is not the normal agent router. Keep its implementation,
+   fixtures, benchmarks and dedicated validation intact. Its protocol and limits
+   are documented in `docs/context/automation.md`.
 
-A confirmed retrieval miss, suggestion loop, invalid source target or budget
-breach is a retrieval-system defect. Repair it in the same task under
-`docs-steward`, unless the correct behavior needs a user decision.
+A confirmed retrieval miss, invalid source target or budget breach is a
+retrieval-system defect. Repair it in the same task under `docs-steward`, unless
+the correct behavior needs a user decision. A suggestion loop in the dormant
+retrieval experiment is a tool defect, not a reason to route normal work through
+another tool retry.
 
 ## Working material
 

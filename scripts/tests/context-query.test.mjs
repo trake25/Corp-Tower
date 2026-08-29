@@ -8,17 +8,26 @@ import { documentationNeedlesForPath, isNormalContextExcludedPath } from '../lib
 
 const ROOT = resolve('.');
 
+function assertBoundedSource(source, path) {
+  assert.equal(source.source_path, path);
+  assert.ok(Number.isInteger(source.source_line) && source.source_line > 0);
+  const [start, end] = source.read.lines;
+  assert.ok(start <= source.source_line && end >= source.source_line);
+  assert.ok(end - start <= 32);
+  assert.equal(source.read.command.display, `sed -n ${start},${end}p ${path}`);
+}
+
 test('search returns a bounded, provenance-bearing exact symbol match', () => {
   const result = searchContext(ROOT, 'updateDebugConfig', { kinds: ['symbol'] });
 
   assert.equal(result.schema_version, 2);
   assert.equal(result.status, 'matched');
   assert.equal(result.results.length, 1);
-  assert.deepEqual(result.results[0].lines, [105, 105]);
+  assert.equal(result.results[0].lines[0], result.results[0].lines[1]);
+  assert.ok(result.results[0].lines[0] > 0);
   assert.equal(result.results[0].path, 'docs/context/map/backend.md');
-  assert.equal(result.results[0].source.source_path, 'src/Server/app/Lobby_Manager.js');
+  assertBoundedSource(result.results[0].source, 'src/Server/app/Lobby_Manager.js');
   assert.equal(result.results[0].source.symbol, 'updateDebugConfig');
-  assert.deepEqual(result.results[0].source.read.lines, [438, 470]);
   assert.equal('excerpt' in result.results[0], false);
   assert.equal(result.fallback.allowed, false);
   assert.equal(result.limits.returned_bytes, Buffer.byteLength(JSON.stringify(result, null, 2)) + 1);
@@ -66,7 +75,7 @@ test('a product-state anchor returns a bounded source target instead of docs onl
 
   assert.equal(result.status, 'matched');
   assert.equal(source.source.symbol, 'tower_collapsed');
-  assert.deepEqual(source.source.read.lines, [69, 101]);
+  assertBoundedSource(source.source, 'src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd');
 });
 
 test('a broken retrieval index returns tool-error and authorizes repair fallback', () => {
@@ -168,7 +177,7 @@ test('section and bundle enforce bounded source material', () => {
   const bundle = contextBundle(ROOT, 'updateDebugConfig', { kinds: ['symbol'], maxBytes: 1024 });
 
   assert.match(section.text, /qa-gate/);
-  assert.match(bundle.bundle, /Source: docs\/context\/map\/backend\.md:105-105/);
+  assert.match(bundle.bundle, /Source: docs\/context\/map\/backend\.md:(\d+)-\1/);
   assert.ok(Buffer.byteLength(bundle.bundle) <= 1024);
   assert.equal(bundle.limits.returned_bytes, Buffer.byteLength(bundle.bundle));
 });
@@ -177,16 +186,14 @@ test('direct symbol lookup exposes the same structured bounded source target', (
   const result = mapSymbols(ROOT, 'backend', 'updateDebugConfig');
 
   assert.equal(result.rows.length, 1);
-  assert.equal(result.rows[0].source.source_path, 'src/Server/app/Lobby_Manager.js');
-  assert.equal(result.rows[0].source.read.command.display, 'sed -n 438,470p src/Server/app/Lobby_Manager.js');
+  assertBoundedSource(result.rows[0].source, 'src/Server/app/Lobby_Manager.js');
 });
 
 test('the minimum search budget sheds optional metadata but keeps the bounded target', () => {
   const result = searchContext(ROOT, 'updateDebugConfig', { anchor: true, kinds: ['symbol'], maxBytes: 1024 });
 
   assert.equal(result.status, 'matched');
-  assert.equal(result.results[0].source.source_path, 'src/Server/app/Lobby_Manager.js');
-  assert.equal(result.results[0].source.read.command.display, 'sed -n 438,470p src/Server/app/Lobby_Manager.js');
+  assertBoundedSource(result.results[0].source, 'src/Server/app/Lobby_Manager.js');
   assert.ok(result.limits.returned_bytes <= 1024);
 });
 

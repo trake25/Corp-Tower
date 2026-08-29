@@ -57,6 +57,13 @@ function activeStage(evidence) {
     .sort((a, b) => a.occurred_at.localeCompare(b.occurred_at)).at(-1)?.stage || 'retrieval_context';
 }
 
+function shellStage(command) {
+  if (!command.trim()) return 'other';
+  if (/(?:^|[;&|]\s*)(?:rg|sed|head|tail|wc|find|ls)\b/.test(command)) return 'retrieval_context';
+  if (/(?:^|[;&|]\s*)git\s+(?:status|diff|show|log)\b/.test(command)) return 'retrieval_context';
+  return 'other';
+}
+
 function stageFor(event, evidence = []) {
   if (event.hook_event_name === 'PostCompact') return 'retrieval_context';
   if (event.hook_event_name !== 'PostToolUse') return 'other';
@@ -73,7 +80,8 @@ function stageFor(event, evidence = []) {
   if (tool.includes('plan')) return 'planning';
   if (tool.includes('test') || tool.includes('qa')) return 'verification';
   if (/(?:search|browse|read|view|find)/.test(tool)) return 'retrieval_context';
-  if (tool === 'bash' || tool.includes('exec') || tool.includes('spawn') || tool.includes('agent')) return activeStage(evidence);
+  if (tool === 'bash' || tool.includes('exec') || tool.includes('spawn')) return shellStage(command);
+  if (tool.includes('agent')) return activeStage(evidence);
   return activeStage(evidence);
 }
 

@@ -1,60 +1,64 @@
 # Agent automation
 
-This document owns the repository's deterministic retrieval and task close-out
-protocol. Product behavior belongs in its domain document; this file only owns
-how agents find bounded evidence and record completion.
+This document owns the repository's direct agent retrieval, retained retrieval
+experiment and task close-out protocol. Product behavior belongs in its domain
+document; this file only owns how agents find bounded evidence and record
+completion.
 
-## Context protocol
+## Direct agent retrieval
+
+Normal repository work starts at `docs/context/index.md` or
+`site/docs/index.md`. The selected row names one owning document and, where
+needed, one generated map. Search those named files directly with `rg`, starting
+from one stable product anchor and adding a path or second term only when the
+result is noisy. Read the smallest matching document section and map row, then a
+bounded source range around the returned path and line. Do not sweep every KB
+document or load a generated map whole.
+
+When a map cannot identify the source, search only the smallest root owned by
+the active role. A missing or stale router row, map purpose, source target or KB
+contract is repaired in the same task under `docs-steward`. After explicit
+task-owned paths are known, task-close still supplies the deterministic role,
+documentation, QA and validator intake; that post-path scope is independent of
+exploratory retrieval.
+
+## Retained context experiment
 
 `scripts/context.mjs` is the shared local-tool protocol for Codex, Claude Code,
-and local LLM runners. Schema 2 returns repository-relative provenance, stable
-result states, exact next commands and provider-visible byte counts. Search reads
-only the KB and generated maps; it never exposes raw source, environment files,
-secrets or the working-tree diff.
-
-| Command | Role |
-|---|---|
-| `route <area-or-path>` | selects skill, docs, map and bounded source-read strategy |
-| `search <query> [--anchor]` | ranks strict KB/map matches; `--anchor` confirms a canonical retry |
-| `filter <query> ...` | narrows a fresh deterministic search by area, kind, path or required term |
-| `outline` / `section` / `symbol` | reads one known KB structure, section or generated-map row set |
-| `scope <task-owned-path>...` | returns routes, docs, maps, QA and exact verification tools for explicit paths |
-| `bundle <task>` | writes selected KB/map evidence to ignored `.agent-state/automation/` state |
+and local LLM runners, retained for controlled comparison and portable bundles.
+It is not the normal repository router. Schema 2 returns repository-relative
+provenance, stable result states, exact next commands and provider-visible byte
+counts. Its route/search/filter/section/symbol commands read only the KB and
+generated maps; they never expose raw source, environment files, secrets or the
+working-tree diff. `scope` derives post-path tools, while `bundle` creates the
+bounded handoff for a runner without local access.
 
 Gitignored working folders have routes but are excluded from KB search.
 `plan/` stores task plans; existing plans are read-only without explicit user
 approval, and only verified closed plans move to `plan/done/`. `reference/` holds
-human-managed screen and bug references. Use `route plan/` or
-`route reference/` for either folder. Bundles, manifests, receipts and retrieval
-benchmarks belong under ignored `.agent-state/automation/`; private telemetry
-belongs under ignored `.agent-state/telemetry/`. All `report/**` paths are
-excluded from retrieval and indexing unless their owning tool or the user asks.
+human-managed screen and bug references. Bundles, manifests, receipts and
+retrieval benchmarks belong under ignored `.agent-state/automation/`; private
+telemetry belongs under ignored `.agent-state/telemetry/`. All `report/**` paths
+are excluded from retrieval and indexing unless their owning tool or the user
+asks.
 
 Search uses every query token as a required match. A weak narrative match returns
-`needs-anchor` with at most three exact retries and no evidence; overflow returns
-`needs-filter` with a direct section/symbol read and exact filter commands.
-`matched` evidence exposes map provenance plus a structured candidate source
-path, line and bounded `sed` range. An empty `search --anchor` returns
-`retrieval-defect`. Only `retrieval-defect` and `tool-error` allow source
-fallback; unfamiliar syntax, `needs-anchor` and `needs-filter` do not. Search the
-smallest routed root first, record a real fallback through `task-close fallback`,
-and add a passing benchmark fixture with the route, map purpose or alias repair.
-A suggestion loop, invalid source target or budget breach is also a retrieval
-defect even when the process exits zero.
+`needs-anchor`; overflow returns `needs-filter`; a strict match returns map
+provenance and a bounded source range. An empty anchored search is
+`retrieval-defect`. Only that state or `tool-error` permits bounded source
+fallback, which must be recorded with a passing repair fixture. A suggestion
+loop, invalid target or budget breach is also a defect.
 
 Generated maps keep one authored purpose per file and only stable navigation
 anchors. An exceptional cross-boundary term that extraction cannot recognize may
 be marked `· stable`; regeneration relocates it by name and drops it if the source
 term disappears. Maps do not explain local symbols—the bounded source read does.
 
-Public retrieval and task intake are bounded; larger route detail stays in
-ignored artifacts, and search excerpts are opt-in. `retrieval-aliases.json` is a
-small fixture-proven vocabulary bridge that lets an explicit anchor resolve to a
-curated sibling, not a tag index. An authored stable pin promotes an already
-extracted internal helper so regeneration cannot discard the repair. The
-`context-retrieval.json` fixture owns protocol correctness while
-`benchmark-rag.mjs` keeps non-check output under ignored
-`.agent-state/automation/rag-benchmark/`.
+Public output is bounded; larger route detail stays in ignored artifacts and
+search excerpts are opt-in. Fixture-proven aliases bridge only demonstrated
+vocabulary mismatches, and stable pins preserve exceptional map anchors.
+`context-retrieval.json` owns protocol behavior; benchmark detail stays under
+ignored `.agent-state/automation/rag-benchmark/`.
 
 Cloud coding agents use the same command through a read-only tool adapter. A
 cloud chat session without local-tool access receives only a deliberately made
@@ -68,25 +72,17 @@ scope authority and always names paths explicitly; it never discovers scope from
 a dirty working tree. Schema 2 separates authorized ownership from the final
 change set while keeping detailed output in local artifacts.
 
-1. `prepare --task ... --path ...` records `owned_paths` after bounded retrieval
-   and before the first edit, then returns roles, docs, maps, tests and validators.
-2. `amend --path ...` owns a later-discovered file before its edit. Adding source
-   after review invalidates review; adding a reviewed candidate doc preserves the
-   source review.
-3. `review --changed ...` records only the explicit final authored/source paths,
-   recomputes QA, and runs `docs-scope` after edits so it can return the exact KB
-   ranges made falsifiable by the diff. No Git working-tree discovery supplies
-   path scope.
-4. Apply the doc-worthy gate, own each selected candidate doc through `amend`,
-   edit only its returned ranges, and decide separately whether the completed
-   change deserves durable regression coverage.
-5. Run `close --decision <updated|not-needed> --reason ... [--doc-path ...]
-   --coverage <updated|not-needed> --coverage-reason ...`. The coverage decision
-   does not select QA; final paths still select every task's checks.
-6. `close` validates both decisions, runs QA/map/KB/agent-config checks, detects
-   generated maps by before/after content hash, rejects out-of-scope map output,
-   and writes a resumable receipt. `publish_paths` is the union of explicit
-   changes, documented paths and content-changed generated maps.
+1. `prepare --task ... --path ...` owns explicit paths before their first edit
+   and returns the role, docs, maps, tests and validators.
+2. `amend --path ...` owns later files before editing them; new source invalidates
+   an existing review, while an already reviewed candidate doc does not.
+3. `review --changed ...` accepts only owned final paths, recomputes QA and runs
+   `docs-scope` against the completed edits. Git working-tree discovery never
+   supplies scope.
+4. After the separate documentation and durable-coverage decisions, `close`
+   runs QA/map/KB/agent-config checks, rejects out-of-scope generated maps and
+   writes a resumable receipt. `publish_paths` unites explicit, documented and
+   content-changed generated paths.
 
 `fallback --query ... --classification <retrieval-defect|tool-error> --root ...
 --fixture ...` records permitted source fallback. Closeout requires the named
@@ -112,9 +108,11 @@ writes warn without losing the binding. Hooks never retain prompt, response,
 command, patch, tool payload or transcript content. Review them through `/hooks`
 when Codex asks or their definition changes.
 
-Task-close derives retrieval metrics from context outcome codes, never defaults.
-Usage before task binding is context and research; edit, check, documentation and
-task-close codes set later phase boundaries before hook input and output are discarded.
+Task-close derives retrieval metrics from outcome codes, never defaults. Known
+edit, check, documentation and close-out commands set phase boundaries before
+hook payloads are discarded. Read-only shell commands count as context and
+research; unclassified shell work is `other` rather than inheriting the prior
+stage, so work after a check does not inflate verification.
 
 Exact totals require stable disjoint IDs, settled inclusive root/child/retry
 usage and a terminal host event; observability usage remains a non-additive
@@ -123,14 +121,12 @@ and cumulative counters, turns increases and resets into exact response deltas,
 and includes each descendant once by parent identity. It never reads message or
 tool content. Missing rollout usage is partial with
 `codex_rollout_usage_unavailable`, never a fabricated zero.
-Finalization writes a human-labelled weekly report with reliable task, runtime,
-phase-token and outcome fields; synthetic columns and empty flag tables are
-omitted. Repeats regenerate it from settled records. Flags group by fingerprint
-and unique task, and a later observation reopens a validated change. The same active agent may
-formalize an eligible current-run, high-effort candidate before its final
-response; no extra agent or provider turn is created. Private weekly reports
-stay local; only `export-public --approve` writes the rounded,
-cohort-suppressed public report.
+Finalization writes a human-labelled weekly report from settled records. Flags
+group by fingerprint and unique task; a later observation reopens a validated
+change. The same active agent may formalize an eligible current-run, high-effort
+candidate before its final response without another agent or provider turn.
+Private reports stay local; only `export-public --approve` writes rounded,
+cohort-suppressed output.
 
 ## Authorized Git automation
 

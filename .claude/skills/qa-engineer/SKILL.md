@@ -7,13 +7,21 @@ description: The verification loop — src/Server/tests, the Godot GUT suites un
 
 Most tasks invoke this skill as their **gate**, not as standalone work. The
 manifest's post-edit `review` supplies the final-path testing context and QA
-selection; run `qa-gate` directly only for iterative feedback before `close`.
+selection; run `qa-gate` directly only when iterative feedback is needed before
+`close`. Do not call its plan mode when the manifest already reports the
+selection, and do not repeat a passing gate before close.
 
 ## The gate
 
 Verify the files owned by this task, not every pre-existing dirty file.
 `qa-gate --plan --json` is the shared deterministic selection used by
 `task-close close`; do not recreate the mapping in an agent response.
+
+`task-close close` is the normal final invocation: it batches the selected QA,
+map and KB checks, retains verbose child output locally, and prints a compact
+result. A passing close is sufficient evidence; do not reread its receipt or
+rerun individual validators on success. On failure, read only the named failing
+log, rerun the focused failing check while fixing it, then invoke close once.
 
 For a changed-source task, run `node scripts/qa-gate.mjs --changed <task-owned-path>...`
 with every task-owned changed path stated explicitly. It selects this matrix,
