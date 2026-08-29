@@ -130,12 +130,19 @@ class BotManager {
                 return;
             }
 
+            engine.checkFailCondition();
+
+            if (engine.room.state !== "playing") {
+                return;
+            }
+
             if (
                 !bot.blocks
                 ||
                 bot.blocks.length
                 === 0
             ) {
+                this.runBotLoop(bot, engine, level);
                 return;
             }
 
@@ -161,6 +168,24 @@ class BotManager {
 
         }, delay);
 
+    }
+
+    tryActivateReplenish(engine) {
+        for (const bot of engine.room?.players || []) {
+            if (!bot.isBot) {
+                continue;
+            }
+
+            const slot = (bot.powerInventory || []).findIndex(item => {
+                return item && item.id === "replenish";
+            });
+
+            if (slot >= 0 && engine.activatePower(bot.id, slot)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     hasClearedShareWhileTeammateShort(bot, engine) {

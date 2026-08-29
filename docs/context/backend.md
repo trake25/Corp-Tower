@@ -19,12 +19,12 @@ The server alone decides placement, stability, scoring, failure, progression,
 Power, and room closure. Clients and tools render or preview those decisions from
 the same authoritative contracts.
 
-Four-way contact partitions standing bricks into components with independent
-stability and pose; gravity and load transfer use downward contacts. An
-overloaded support cuts itself and groups with no remaining path to ground;
-strong lower sections and disconnected towers survive. The tallest component
-sets current height. Collapse alone stays active; Timer, unmet Impact, exhausted
-supply, or insufficient remaining brick height fails the level.
+Four-way contact partitions standing bricks into independent stability and pose
+components; gravity and load follow downward contacts. Overload removes its
+support and groups with no ground path, preserving strong bases and disconnected
+towers. The tallest controls height. Collapse alone stays active. Threatened
+supply consumes bot-held Replenish, waits on human-held Replenish, and fails
+without rescue; Timer expiry and unmet Impact also fail.
 
 ## Lobby Manager
 

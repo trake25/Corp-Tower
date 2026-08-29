@@ -773,6 +773,7 @@ class GameEngine {
     checkWinCondition(finisher, finishingBlock) { return Placement.checkWinCondition(this, finisher, finishingBlock); }
     checkFailCondition() { return Placement.checkFailCondition(this); }
     anyPlayerCanRescueSupply() { return Placement.anyPlayerCanRescueSupply(this); }
+    tryActivateBotReplenish() { return BotManager.tryActivateReplenish(this); }
 
     completeLevel(finisher, finishingBlock) {
         this.room.state = "finished";

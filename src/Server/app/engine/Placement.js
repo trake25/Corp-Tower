@@ -385,13 +385,27 @@ function checkFailCondition(engine) {
         }, 0);
     }, 0) + engine.getTotalBlockHeight(engine.room.drawPile || []);
     const neededHeight = engine.room.targetHeight - engine.room.currentHeight;
+    const supplyExhausted = allEmpty && drawPileEmpty && neededHeight > 0;
+    const supplyInsufficient = remainingPossibleHeight < neededHeight;
 
-    if (allEmpty && drawPileEmpty && engine.room.currentHeight < engine.room.targetHeight) {
+    if (!supplyExhausted && !supplyInsufficient) {
+        return;
+    }
+
+    if (engine.tryActivateBotReplenish()) {
+        return;
+    }
+
+    if (engine.anyPlayerCanRescueSupply()) {
+        return;
+    }
+
+    if (supplyExhausted) {
         engine.failLevel("all_blocks_used");
         return;
     }
 
-    if (remainingPossibleHeight < neededHeight && !engine.anyPlayerCanRescueSupply()) {
+    if (supplyInsufficient) {
         engine.failLevel("not_enough_height_remaining");
     }
 }

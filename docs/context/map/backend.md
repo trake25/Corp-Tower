@@ -29,7 +29,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Auth_Verifier.js:62 | isRequired | |
 | src/Server/app/Auth_Verifier.js:84 | verifyAccessToken | |
 
-### src/Server/app/Bot_Manager.js — 467 ln
+### src/Server/app/Bot_Manager.js — 492 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -37,7 +37,8 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Bot_Manager.js:6 | BotManager · class | |
 | src/Server/app/Bot_Manager.js:8 | startBots | |
 | src/Server/app/Bot_Manager.js:38 | stopBots | |
-| src/Server/app/Bot_Manager.js:394 | chooseBotAction | |
+| src/Server/app/Bot_Manager.js:173 | tryActivateReplenish | |
+| src/Server/app/Bot_Manager.js:419 | chooseBotAction | |
 
 ### src/Server/app/Debug_Config.js — 184 ln
 
@@ -59,7 +60,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Game_Config.js:74 | towerStabilityMoodThreshold · stable | |
 | src/Server/app/Game_Config.js:144 | normalCombinedCapActionShare · stable | |
 
-### src/Server/app/Game_Engine.js — 984 ln
+### src/Server/app/Game_Engine.js — 985 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -87,9 +88,9 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Game_Engine.js:684 | clampLevel | |
 | src/Server/app/Game_Engine.js:691 | restartAtConfiguredStartLevel | |
 | src/Server/app/Game_Engine.js:698 | restartAtLevel | |
-| src/Server/app/Game_Engine.js:777 | completeLevel | |
-| src/Server/app/Game_Engine.js:857 | failLevel | |
-| src/Server/app/Game_Engine.js:864 | nextLevel | |
+| src/Server/app/Game_Engine.js:778 | completeLevel | |
+| src/Server/app/Game_Engine.js:858 | failLevel | |
+| src/Server/app/Game_Engine.js:865 | nextLevel | |
 
 ### src/Server/app/Lobby_Manager.js — 1232 ln
 
@@ -284,7 +285,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Last_Chance.js:1 | @file · file | Produces the standing one-percent result while a rescue is pending |
 | src/Server/app/engine/Last_Chance.js:29 | resolve · fn | |
 
-### src/Server/app/engine/Placement.js — 424 ln
+### src/Server/app/engine/Placement.js — 438 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -303,7 +304,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Placement.js:337 | recalculateTowerStability · fn | |
 | src/Server/app/engine/Placement.js:365 | checkWinCondition · fn | |
 | src/Server/app/engine/Placement.js:373 | checkFailCondition · fn | |
-| src/Server/app/engine/Placement.js:399 | anyPlayerCanRescueSupply · fn | |
+| src/Server/app/engine/Placement.js:413 | anyPlayerCanRescueSupply · fn | |
 
 ### src/Server/app/engine/Scoring.js — 501 ln
 
@@ -387,4 +388,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-24 files · 234 stable anchors.
+24 files · 235 stable anchors.

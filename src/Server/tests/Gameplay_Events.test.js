@@ -333,11 +333,36 @@ test("insufficient supply fails unless replenish can rescue it", () => {
     exhausted.room.drawPile = [];
     exhausted.room.players.forEach(p => {
         p.blocks = [];
-        p.powerInventory = [{ id: "replenish", earnedLevel: 10 }];
+        p.powerInventory = [];
     });
     exhausted.checkFailCondition();
     assert.equal(exhausted.room.state, "failed");
     assert.equal(exhausted.room.lastLevelSummary.failureReason, "all_blocks_used");
+});
+
+test("an empty-handed bot activates Replenish before supply failure", () => {
+    const { engine, messages } = createPlayingEngine(10, 20);
+    const bot = engine.room.players[1];
+
+    engine.room.endsAt = Date.now() + 60000;
+    engine.room.drawPile = [];
+    engine.room.drawPileStartCount = 12;
+    engine.room.players.forEach(player => {
+        player.blocks = [];
+        player.powerInventory = [];
+    });
+    bot.isBot = true;
+    bot.lastPowerActivationTime = 0;
+    bot.powerInventory = [{ id: "replenish", earnedLevel: 10 }];
+
+    engine.checkFailCondition();
+
+    assert.equal(engine.room.state, "playing");
+    assert.equal(bot.powerInventory.length, 0);
+    assert.ok(engine.room.players.some(player => player.blocks.length > 0));
+    assert.ok(messages.flatMap(message => message.powerEvents || []).some(event => {
+        return event.playerId === bot.id && event.powerId === "replenish";
+    }));
 });
 
 test("replenish adds a share of the level's starting draw pile", () => {
