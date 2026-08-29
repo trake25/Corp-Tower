@@ -96,12 +96,12 @@ func _on_recovery_recovered() -> void:
 	auto_dismiss_modal.dismiss_recovery()
 	update_debug_button_availability()
 
-func _on_recovery_unavailable(data) -> void:
+func _on_recovery_unavailable(_data) -> void:
 	if tutorial_active:
 		return
 
-	resume_unavailable_active = true
-	auto_dismiss_modal.open_match_unavailable(str(data.get("reason", "room_unavailable")))
+	resume_unavailable_active = false
+	auto_dismiss_modal.open_recovery_failed()
 	update_debug_button_availability()
 
 func _enter_play_instance() -> void:

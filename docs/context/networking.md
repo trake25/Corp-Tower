@@ -13,8 +13,10 @@ creates a session and joins or creates a room. Verified identity overrides the
 claimed profile; required auth closes an unverified socket.
 
 Focus return blocks play and requests fresh state. A stale transport is closed
-before bounded reconnect; manual disconnect and app close do not recover. RTT is
-only a quality indicator—missing authoritative state starts recovery.
+before bounded reconnect; one total recovery deadline spans resync and reconnect,
+then ignores late state and returns the player Home. Manual disconnect and app
+close do not recover. RTT is only a quality indicator—missing authoritative
+state starts recovery.
 
 Only a session's current opaque connection id may act or disconnect, so an old
 socket cannot invalidate a resumed connection.

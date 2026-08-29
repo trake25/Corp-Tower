@@ -10,6 +10,7 @@ var auto_reconnect_delay_remaining := -1.0
 var recovery_state := "healthy"
 var recovery_request_id := ""
 var recovery_deadline_msec := -1
+var recovery_expiry_msec := -1
 var recovery_reconnect_pending := false
 var recovery_sequence := 0
 var last_state_revision := -1
@@ -40,6 +41,7 @@ const BACKGROUND_STALE_THRESHOLD_SECONDS := 5.0
 const GAME_STATE_STALE_TIMEOUT_MS := 8000
 const RECOVERY_TIMEOUT_MIN_MS := 2500
 const RECOVERY_TIMEOUT_MAX_MS := 8000
+const RECOVERY_TOTAL_TIMEOUT_MS := 20000
 const LATENCY_PROBE_INTERVAL_SECONDS := 1.0
 const LATENCY_PROBE_TIMEOUT_MS := 5000
 const SERVER_URL := EndpointConfig.PRIMARY
@@ -219,12 +221,13 @@ func schedule_auto_reconnect():
 	)
 
 func is_recovering() -> bool:
-	return recovery_state == "resyncing" or recovery_state == "reconnecting"
+	return recovery_state != "healthy"
 
 func reset_recovery_state() -> void:
 	recovery_state = "healthy"
 	recovery_request_id = ""
 	recovery_deadline_msec = -1
+	recovery_expiry_msec = -1
 	recovery_reconnect_pending = false
 
 func recovery_timeout_ms() -> int:
@@ -243,6 +246,8 @@ func begin_recovery(force_reconnect := false) -> void:
 
 	recovery_state = "resyncing"
 	recovery_started.emit()
+	var now_msec := Time.get_ticks_msec()
+	recovery_expiry_msec = now_msec + RECOVERY_TOTAL_TIMEOUT_MS
 
 	if force_reconnect or not is_conn_estab or ws.get_ready_state() != WebSocketPeer.STATE_OPEN:
 		begin_controlled_reconnect()
@@ -260,7 +265,7 @@ func begin_recovery(force_reconnect := false) -> void:
 		begin_controlled_reconnect()
 		return
 
-	recovery_deadline_msec = Time.get_ticks_msec() + recovery_timeout_ms()
+	recovery_deadline_msec = now_msec + recovery_timeout_ms()
 
 func begin_controlled_reconnect() -> void:
 	if manual_disconnect_requested or recovery_state == "unavailable":
@@ -287,7 +292,7 @@ func start_pending_recovery_reconnect() -> void:
 	connect_server(true)
 
 func settle_recovery(data) -> void:
-	if recovery_state == "healthy":
+	if recovery_state == "healthy" or recovery_state == "unavailable":
 		return
 
 	if not bool(data.get("snapshot", false)):
@@ -306,9 +311,11 @@ func mark_recovery_unavailable(reason: String) -> void:
 	recovery_state = "unavailable"
 	recovery_request_id = ""
 	recovery_deadline_msec = -1
+	recovery_expiry_msec = -1
 	recovery_reconnect_pending = false
 	auto_reconnect_enabled = false
 	auto_reconnect_delay_remaining = -1.0
+	match_active = false
 	status_changed.emit("Match unavailable")
 	recovery_unavailable.emit({"reason": reason})
 
@@ -343,6 +350,9 @@ func force_reconnect_after_background():
 	begin_recovery(true)
 
 func accept_game_state(data) -> bool:
+	if recovery_state == "unavailable":
+		return false
+
 	var revision := int(data.get("stateRevision", -1))
 
 	if revision >= 0:
@@ -356,6 +366,13 @@ func accept_game_state(data) -> bool:
 
 func _process(delta: float) -> void:
 	if (
+		recovery_state != "healthy"
+		and recovery_state != "unavailable"
+		and recovery_expiry_msec >= 0
+		and Time.get_ticks_msec() >= recovery_expiry_msec
+	):
+		mark_recovery_unavailable("recovery_timed_out")
+	elif (
 		recovery_state == "resyncing"
 		and recovery_deadline_msec >= 0
 		and Time.get_ticks_msec() >= recovery_deadline_msec

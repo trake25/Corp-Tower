@@ -31,3 +31,18 @@ func test_ordinary_room_close_still_routes_join() -> void:
 		screen_manager.current_overlay.scene_file_path.ends_with("/JoinScreen.tscn"),
 		"Non-terminal close reasons must retain the Join fallback."
 	)
+
+func test_terminal_recovery_returns_home_after_countdown() -> void:
+	screen_manager._on_recovery_unavailable({"reason": "recovery_timed_out"})
+	assert_true(
+		screen_manager.auto_dismiss_modal.visible,
+		"Terminal recovery must open the automatic Home-return modal."
+	)
+
+	screen_manager.auto_dismiss_modal.auto_dismiss_remaining = 0.0
+	screen_manager.auto_dismiss_modal._process(0.0)
+
+	assert_true(
+		screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"),
+		"A terminal recovery must return the player Home after its countdown."
+	)

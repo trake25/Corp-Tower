@@ -7,6 +7,7 @@ const OUTSIDE_TAP_GRACE_MS := 200
 const COUNTDOWN_SECONDS := 3.0
 const TIME_EXPIRED_BODY := "Lobby failed to continue. Returning to Home (%ds)."
 const DISCONNECTED_BODY := "You are disconnected. Returning to Home (%ds)."
+const RECOVERY_FAILED_BODY := "We could not restore this match. Returning to Home (%ds)."
 
 var opened_at_ms: int = -OUTSIDE_TAP_GRACE_MS
 var auto_dismiss_remaining: float = -1.0
@@ -61,23 +62,12 @@ func open_recovering() -> void:
 	auto_dismiss_remaining = -1.0
 	_open()
 
-func open_match_unavailable(reason: String) -> void:
+func open_recovery_failed() -> void:
 	recovery_locked = false
-	title_label.text = "Match unavailable"
-	body_label.text = unavailable_body(reason)
-	button_row.visible = true
-	close_button.visible = false
-	continue_button.visible = true
-	continue_button.text = "Continue"
-	auto_dismiss_remaining = -1.0
-	_open()
-
-func unavailable_body(reason: String) -> String:
-	if reason == "reconnect_ttl_expired":
-		return "This match ended while you were away."
-	if reason == "reconnect_failed":
-		return "We could not restore this match."
-	return "This match can no longer be resumed."
+	title_label.text = "Connection lost"
+	button_row.visible = false
+	countdown_body_format = RECOVERY_FAILED_BODY
+	_start_countdown()
 
 func close() -> void:
 	if not visible or recovery_locked:
