@@ -169,15 +169,6 @@ bounded source read. Local implementation detail stays in source.
 | .github/workflows/Demo-Deploy.yml:28 | deploy-wstoddemo · job | |
 | .github/workflows/Demo-Deploy.yml:35 | deploy-toddemo · job | |
 
-### .github/workflows/Docs-Agent-Validation.yml — 34 ln
-
-| File:Ln | Anchor | Purpose |
-|---|---|---|
-| .github/workflows/Docs-Agent-Validation.yml:1 | @file · file | gates agent-configuration validation (including skill-mirror drift), build-map freshness, both KB docs, report schema and RAG fixtures |
-| .github/workflows/Docs-Agent-Validation.yml:3 | on · key | |
-| .github/workflows/Docs-Agent-Validation.yml:20 | jobs · key | |
-| .github/workflows/Docs-Agent-Validation.yml:21 | validate · job | |
-
 ### .github/workflows/EKS-Cleanup-All.yml — 36 ln
 
 | File:Ln | Anchor | Purpose |
@@ -1135,4 +1126,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-116 files · 430 stable anchors.
+115 files · 427 stable anchors.
