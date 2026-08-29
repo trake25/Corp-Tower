@@ -56,7 +56,9 @@ const GameConfig = {
             towerRedundancyBonus: 0.45,
             towerStructuralSeverity: 0.55,
             towerStabilityMinHeight: 10,
-            towerHeightPressureGain: 0.0
+            towerHeightPressureGain: 0.0,
+            towerSupportSafeLoadHeightShare: 1.0,
+            towerSupportCollapseLoadHeightShare: 1.8
         },
         harsh: {
             towerBalanceSafeOffsetShare: 0.40,
@@ -65,7 +67,9 @@ const GameConfig = {
             towerRedundancyBonus: 0.65,
             towerStructuralSeverity: 1.35,
             towerStabilityMinHeight: 8,
-            towerHeightPressureGain: 1.3
+            towerHeightPressureGain: 1.3,
+            towerSupportSafeLoadHeightShare: 0.6,
+            towerSupportCollapseLoadHeightShare: 1.15
         }
     },
     towerBaseHalfWidthFloor: 1.0,

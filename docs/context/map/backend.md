@@ -51,14 +51,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Debug_Config.js:123 | applyDefaults · fn | |
 | src/Server/app/Debug_Config.js:134 | applyValue · fn | |
 
-### src/Server/app/Game_Config.js — 169 ln
+### src/Server/app/Game_Config.js — 173 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Game_Config.js:1 | @file · file | authoritative gameplay, tuning, bot, room-timing, live_preview, and latency defaults |
 | src/Server/app/Game_Config.js:1 | GameConfig · const | |
-| src/Server/app/Game_Config.js:74 | towerStabilityMoodThreshold · stable | |
-| src/Server/app/Game_Config.js:144 | normalCombinedCapActionShare · stable | |
+| src/Server/app/Game_Config.js:78 | towerStabilityMoodThreshold · stable | |
+| src/Server/app/Game_Config.js:148 | normalCombinedCapActionShare · stable | |
 
 ### src/Server/app/Game_Engine.js — 1019 ln
 
@@ -171,22 +171,31 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Server.js:1 | @file · file | parse guard; malformed frames never throw |
 | src/Server/app/Server.js:12 | port · const | |
 
-### src/Server/app/Tower_Stability.js — 746 ln
+### src/Server/app/Tower_Load_Capacity.js — 62 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Server/app/Tower_Load_Capacity.js:1 | @file · file | Tower Load Capacity server behavior |
+| src/Server/app/Tower_Load_Capacity.js:3 | number · fn | |
+| src/Server/app/Tower_Load_Capacity.js:8 | clamp01 · fn | |
+| src/Server/app/Tower_Load_Capacity.js:32 | assessLoadCapacity · fn | |
+
+### src/Server/app/Tower_Stability.js — 751 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Tower_Stability.js:1 | @file · file | deterministic tower stability, support components, load propagation, and collapse evaluation |
-| src/Server/app/Tower_Stability.js:3 | cellsFor · fn | |
-| src/Server/app/Tower_Stability.js:11 | key · fn | |
-| src/Server/app/Tower_Stability.js:12 | clamp01 · fn | |
-| src/Server/app/Tower_Stability.js:13 | number · fn | |
-| src/Server/app/Tower_Stability.js:17 | topHeight · fn | |
-| src/Server/app/Tower_Stability.js:22 | settleBlock · fn | |
-| src/Server/app/Tower_Stability.js:40 | isPlacementLegal · fn | |
-| src/Server/app/Tower_Stability.js:54 | supportedCellsGained · fn | |
-| src/Server/app/Tower_Stability.js:80 | blockId · fn | |
-| src/Server/app/Tower_Stability.js:678 | evaluate · fn | |
-| src/Server/app/Tower_Stability.js:734 | balanceDelta · fn | |
+| src/Server/app/Tower_Stability.js:4 | cellsFor · fn | |
+| src/Server/app/Tower_Stability.js:12 | key · fn | |
+| src/Server/app/Tower_Stability.js:13 | clamp01 · fn | |
+| src/Server/app/Tower_Stability.js:14 | number · fn | |
+| src/Server/app/Tower_Stability.js:18 | topHeight · fn | |
+| src/Server/app/Tower_Stability.js:23 | settleBlock · fn | |
+| src/Server/app/Tower_Stability.js:41 | isPlacementLegal · fn | |
+| src/Server/app/Tower_Stability.js:55 | supportedCellsGained · fn | |
+| src/Server/app/Tower_Stability.js:81 | blockId · fn | |
+| src/Server/app/Tower_Stability.js:683 | evaluate · fn | |
+| src/Server/app/Tower_Stability.js:739 | balanceDelta · fn | |
 
 ### src/Server/app/Tower_Structure_Assessment.js — 235 ln
 
@@ -382,7 +391,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/tools/Impact_Balance_Probe.js:13 | number · fn | |
 | src/Server/tools/Impact_Balance_Probe.js:24 | failureReason · fn | |
 
-### src/Server/tools/Stability_Probe.js — 420 ln
+### src/Server/tools/Stability_Probe.js — 500 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -390,7 +399,8 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/tools/Stability_Probe.js:13 | createPlayers · fn | |
 | src/Server/tools/Stability_Probe.js:21 | withMutedConsole · fn | |
 | src/Server/tools/Stability_Probe.js:33 | createEngineForLevel · fn | |
+| src/Server/tools/Stability_Probe.js:62 | O · const | |
 
 ---
 
-24 files · 240 stable anchors.
+25 files · 244 stable anchors.

@@ -10,10 +10,10 @@ All runtime modules live under `src/Server/app/`.
 ## Authority and module boundaries
 
 `Game_Engine.js` is the room facade; its `engine/` modules take the owner first
-and callers do not import them directly. `Block_Geometry.js` and
-`Tower_Stability.js` are pure exceptions, and only Lobby Manager persists or
-restores room state. The server decides all game outcomes; clients and tools only
-render or preview them.
+and callers do not import them directly. `Block_Geometry.js`,
+`Tower_Load_Capacity.js`, and `Tower_Stability.js` are pure exceptions, and only
+Lobby Manager persists or restores room state. The server decides all game
+outcomes; clients and tools only render or preview them.
 
 Lobby Manager and Redis accept actions or disconnect cleanup only from a
 session's current connection id, preventing a superseded socket from clearing a
@@ -21,11 +21,15 @@ resumed seat. Game Engine builds durable recovery snapshots separately from
 event-consuming broadcasts.
 
 Four-way contact partitions standing bricks into independent stability and pose
-components; gravity and load follow downward contacts. Overload removes its
-support and groups with no ground path, preserving strong bases and disconnected
-towers. The tallest controls height. Collapse alone stays active. Threatened
-supply consumes bot-held Replenish, waits on human-held Replenish, and fails
-without rescue; Timer expiry and unmet Impact also fail.
+components; every occupied cell adds mass, and downward contacts carry it
+against level-resolved contact-face capacity. Extra upper mass never increases
+an unchanged interface's capacity; wider or independent paths raise it.
+Difficulty controls geometry and the finite overload limit; zero retains
+diagnostics while suppressing collapse risk.
+Overload removes its support and groups with no ground path, preserving strong
+bases and disconnected towers. The tallest controls height. Collapse alone stays
+active. Threatened supply consumes bot-held Replenish, waits on human-held
+Replenish, and fails without rescue; Timer expiry and unmet Impact also fail.
 
 ## Lobby Manager
 

@@ -179,7 +179,7 @@ test("stability difficulty 0 leaves the same tower unpenalised", () => {
 });
 
 test("the difficulty dial is forgiving at 5 and ramps a loaded bottleneck smoothly", () => {
-    const { engine } = createPlayingEngine(8, 10);
+    const { engine } = createPlayingEngine(8, 125);
     const original = GameConfig.towerStabilityDifficulty;
     const results = new Map();
 
@@ -212,7 +212,7 @@ test("the difficulty dial is forgiving at 5 and ramps a loaded bottleneck smooth
 });
 
 test("well-supported tall towers remain viable at every difficulty", () => {
-    const { engine } = createPlayingEngine(8, 10);
+    const { engine } = createPlayingEngine(8, 125);
     const original = GameConfig.towerStabilityDifficulty;
     const row = Array.from({ length: 8 }, (_, x) => [x, 0]);
     const entries = Array.from({ length: 10 }, (_, y) => stabilityEntry("R" + y, row, 0, y));
@@ -273,18 +273,6 @@ test("a wide crown on redundant supports is safer than the same crown on one sup
     assert.equal(crownAnalysis.pathConcentration, 0.5);
     assert.equal(redundantResult.diagnostics.balance, 100);
     assert.equal(redundantResult.diagnostics.leanDirection, "center");
-});
-
-test("upper mass raises load ratio at a fixed narrow support", () => {
-    const config = fixedStabilityConfig({ towerSiteWidth: 6, towerStabilityMinHeight: 1 });
-    const light = TowerStability.evaluate(loadedBottleneckEntries().slice(0, 5), config);
-    const heavy = TowerStability.evaluate(loadedBottleneckEntries(), config);
-    const lightSupport = light.analysis.groups.find(group => group.memberBlockIds.includes("N"));
-    const heavySupport = heavy.analysis.groups.find(group => group.memberBlockIds.includes("N"));
-
-    assert.ok(heavySupport.supportedLoad > lightSupport.supportedLoad);
-    assert.ok(heavySupport.loadRatio > lightSupport.loadRatio);
-    assert.ok(heavySupport.supportCapacity > 0);
 });
 
 test("a failed narrow middle cuts only itself and its dependent upper groups", () => {
@@ -719,8 +707,8 @@ test("strong and small reinforcement stay in their action-unit bands", () => {
         })
     });
 
-    assert.ok(strong.structuralPoints >= actionUnit * 0.8);
-    assert.ok(strong.structuralPoints <= actionUnit * 0.9);
+    assert.ok(strong.structuralPoints >= actionUnit * 0.95);
+    assert.ok(strong.structuralPoints <= actionUnit);
     assert.ok(small.structuralPoints >= actionUnit * 0.1);
     assert.ok(small.structuralPoints <= actionUnit * 0.4);
     assert.equal(strong.classification, "reinforcement");

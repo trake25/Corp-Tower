@@ -57,6 +57,40 @@ function centeredOriginX(siteWidth, width) {
     return Math.max(0, Math.floor((siteWidth - width) / 2));
 }
 
+const I_HORIZONTAL = [[0, 0], [1, 0], [2, 0], [3, 0]];
+const I_VERTICAL = [[0, 0], [0, 1], [0, 2], [0, 3]];
+const O = [[0, 0], [1, 0], [0, 1], [1, 1]];
+
+function tetrominoEntry(shapeId, cells, originX, originY) {
+    return { block: { shapeId, cells }, originX, originY };
+}
+
+function thinIUnderOPile(siteWidth, height, reinforced = false, alternating = false) {
+    const entries = [];
+    const baseX = centeredOriginX(siteWidth, 4);
+    const middleX = centeredOriginX(siteWidth, reinforced ? 2 : 1);
+
+    if (height >= 1) entries.push(tetrominoEntry("I", I_HORIZONTAL, baseX, 0));
+    if (height >= 2) entries.push(tetrominoEntry("I", I_HORIZONTAL, baseX, 1));
+    if (height < 6) return entries;
+
+    entries.push(tetrominoEntry("I", I_VERTICAL, middleX, 2));
+    if (reinforced) entries.push(tetrominoEntry("I", I_VERTICAL, middleX + 1, 2));
+
+    let y = 6;
+    let useO = true;
+    while (y < height) {
+        const cells = alternating && !useO ? I_VERTICAL : O;
+        const blockHeight = alternating && !useO ? 4 : 2;
+        if (y + blockHeight > height) break;
+        entries.push(tetrominoEntry(alternating && !useO ? "I" : "O", cells, middleX, y));
+        y += blockHeight;
+        useO = !useO;
+    }
+
+    return entries;
+}
+
 const ARCHETYPES = {
     wellPackedFullSite: (siteWidth, height) => {
         const entries = [];
@@ -139,12 +173,22 @@ const ARCHETYPES = {
         if (height > baseRows) {
             entries.push(rowEntry(1, center, baseRows));
         }
-        if (height > baseRows + 1) {
-            entries.push(rowEntry(siteWidth, 0, baseRows + 1));
+        for (let y = baseRows + 1; y < height; y++) {
+            entries.push(rowEntry(siteWidth, 0, y));
         }
 
         return entries;
     },
+
+    thinIUnderOPile: (siteWidth, height) => thinIUnderOPile(siteWidth, height),
+
+    thinIUnderAlternatingPile: (siteWidth, height) => (
+        thinIUnderOPile(siteWidth, height, false, true)
+    ),
+
+    reinforcedIUnderOPile: (siteWidth, height) => (
+        thinIUnderOPile(siteWidth, height, true)
+    ),
 
     wideCrown: (siteWidth, height) => {
         const entries = [rowEntry(1, centeredOriginX(siteWidth, 1), 0)];
@@ -213,7 +257,8 @@ function run() {
         [
             "difficulty", "archetype", "level", "target", "siteWidth", "height", "heightFraction",
             "stability", "balance", "integrity", "criticalLoadShare", "pathCount",
-            "pathConcentration", "weakestInterfaceHeight", "evaluatorMs", "collapsed"
+            "pathConcentration", "supportedLoad", "supportCapacity", "loadRatio",
+            "weakestInterfaceHeight", "evaluatorMs", "collapsed"
         ].join(",")
     );
 
@@ -228,7 +273,10 @@ function run() {
                 const config = engine.resolveStabilityConfig(level);
 
                 const archetypes = PILOT
-                    ? Object.entries(ARCHETYPES).filter(([name]) => ["modelTypical", "narrowBottleneck", "gapRepair"].includes(name))
+                    ? Object.entries(ARCHETYPES).filter(([name]) => [
+                        "modelTypical", "narrowBottleneck", "gapRepair",
+                        "thinIUnderOPile", "reinforcedIUnderOPile"
+                    ].includes(name))
                     : Object.entries(ARCHETYPES);
                 for (const [name, build] of archetypes) {
                     for (const fraction of HEIGHT_FRACTIONS) {
@@ -255,6 +303,9 @@ function run() {
                                 Number(critical.carriedLoadShare || 0).toFixed(3),
                                 Number(d.criticalSupport?.pathCount || 0),
                                 Number(critical.pathConcentration || 0).toFixed(3),
+                                Number(critical.supportedLoad || 0).toFixed(2),
+                                Number(critical.supportCapacity || 0).toFixed(2),
+                                Number(critical.loadRatio || 0).toFixed(3),
                                 Number(critical.pivotY || 0).toFixed(2),
                                 evaluatorMs.toFixed(3),
                                 d.collapsed
@@ -389,8 +440,8 @@ function assertScoringScenarios() {
     });
 
     assert.equal(clean.heightPoints, Math.round(actionUnit));
-    assert.ok(strong.structuralPoints >= actionUnit * 0.8);
-    assert.ok(strong.structuralPoints <= actionUnit * 0.9);
+    assert.ok(strong.structuralPoints >= actionUnit * 0.95);
+    assert.ok(strong.structuralPoints <= actionUnit);
     assert.ok(small.structuralPoints >= actionUnit * 0.1);
     assert.ok(small.structuralPoints <= actionUnit * 0.4);
     assert.ok(dangerous.points > 0 && dangerous.points < clean.points);
@@ -404,9 +455,37 @@ function assertScoringScenarios() {
     console.log("OK: scoring scenarios cover clean, structural, danger, caps, Critical Save, and claims.");
 }
 
+function assertLoadCapacityScenarios() {
+    const originalDifficulty = GameConfig.towerStabilityDifficulty;
+
+    try {
+        GameConfig.towerStabilityDifficulty = 65;
+        const engine = createEngineForLevel(8);
+        const target = engine.room.targetHeight;
+        const siteWidth = engine.getSiteWidthForHeight(target);
+        const config = engine.resolveStabilityConfig(8);
+        const weak = TowerStability.evaluate(thinIUnderOPile(siteWidth, target), config);
+        const reinforced = TowerStability.evaluate(
+            thinIUnderOPile(siteWidth, target, true),
+            config
+        );
+        const ordinary = TowerStability.evaluate(ARCHETYPES.modelTypical(siteWidth, target), config);
+
+        assert.equal(weak.diagnostics.collapsed, true);
+        assert.equal(reinforced.diagnostics.collapsed, false);
+        assert.equal(ordinary.diagnostics.collapsed, false);
+        assert.ok(reinforced.diagnostics.integrity > weak.diagnostics.integrity);
+    } finally {
+        GameConfig.towerStabilityDifficulty = originalDifficulty;
+    }
+
+    console.log("OK: finite I/O bottleneck capacity fails locally while reinforced and ordinary towers survive.");
+}
+
 if (require.main === module) {
     run();
     assertOpeningBrickSurvives();
+    assertLoadCapacityScenarios();
     assertScoringScenarios();
 }
 
@@ -415,5 +494,6 @@ module.exports = {
     criticalAnalysis,
     createEngineForLevel,
     rowEntry,
+    assertLoadCapacityScenarios,
     assertScoringScenarios
 };

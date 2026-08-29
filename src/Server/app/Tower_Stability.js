@@ -1,5 +1,6 @@
 "use strict";
 const { describeGroups, comparePlacement } = require("./Tower_Structure_Assessment");
+const { assessLoadCapacity } = require("./Tower_Load_Capacity");
 function cellsFor(entry) {
     const block = entry.block || {};
     const cells = Array.isArray(block.cells) ? block.cells : [];
@@ -359,14 +360,15 @@ function interfaceFor(group, config, height, disabled) {
     const availableSupportShare = Math.min(1, contactShare * redundancyFactor);
     const loadExponent = Math.max(0.05, number(config.towerStructuralLoadExponent, 0.8));
     const requiredSupportShare = Math.pow(carriedLoadShare, loadExponent);
-    const supportCapacityShare = Math.pow(Math.max(0, availableSupportShare), 1 / loadExponent);
     const supportedLoad = Math.max(0, group.loadMass);
-    const supportCapacity = group.componentMass * supportCapacityShare;
-    const loadRatio = supportedLoad / Math.max(0.0001, supportCapacity);
+    const loadCapacity = assessLoadCapacity(config, supportedLoad, links, disabled);
+    const supportCapacity = loadCapacity.supportCapacity;
+    const loadRatio = loadCapacity.loadRatio;
     const supportShortfall = contactWidth === 0
         ? 1
         : Math.max(0, requiredSupportShare - availableSupportShare) / Math.max(requiredSupportShare, 0.0001);
-    const integrityRisk = disabled ? 0 : clamp01(supportShortfall * severity);
+    const geometryIntegrityRisk = disabled ? 0 : clamp01(supportShortfall * severity);
+    const integrityRisk = Math.max(geometryIntegrityRisk, loadCapacity.loadRisk);
     let direction = "center";
     if (balanceRisk > 0.0001) {
         if (signedOffsetShare > 0.05) direction = "right";
@@ -385,6 +387,9 @@ function interfaceFor(group, config, height, disabled) {
         supportedLoad,
         supportCapacity,
         loadRatio,
+        loadRisk: loadCapacity.loadRisk,
+        safeLoadRatio: loadCapacity.safeLoadRatio,
+        contactFaces: loadCapacity.totalContactFaces,
         balanceRisk,
         integrityRisk,
         direction,
@@ -612,9 +617,9 @@ function evaluateComponent(nodes, config, componentId) {
     const maxBalanceRisk = groups.reduce((value, group) => Math.max(value, group.interface.balanceRisk), 0);
     const maxIntegrityRisk = groups.reduce((value, group) => Math.max(value, group.interface.integrityRisk), 0);
     const collapse = collapseSlice(groups);
-    const balance = Math.round(100 * (1 - maxBalanceRisk));
-    const integrity = Math.round(100 * (1 - maxIntegrityRisk));
     const collapsed = maxBalanceRisk >= 1 || maxIntegrityRisk >= 1;
+    const balance = maxBalanceRisk >= 1 ? 0 : Math.max(1, Math.round(100 * (1 - maxBalanceRisk)));
+    const integrity = maxIntegrityRisk >= 1 ? 0 : Math.max(1, Math.round(100 * (1 - maxIntegrityRisk)));
     const stability = collapsed ? 0 : Math.min(balance, integrity);
     const maxTilt = Math.max(0, number(config.towerMaxTiltAngleDeg, 18));
     const signedBalanceRisk = critical ? critical.interface.signedBalanceRisk : 0;
