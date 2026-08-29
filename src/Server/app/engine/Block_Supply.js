@@ -416,11 +416,9 @@ function getReplenishBlockCount(engine) {
         0,
         Math.min(1, Number(GameConfig.powerReplenishPileShare) || 0)
     );
-    const pileSize =
-        Number(engine.room.drawPileStartCount) ||
-        (engine.room.drawPile || []).length;
+    const maximum = Math.max(0, Number(engine.room.drawPileStartCount) || 0);
 
-    return Math.max(1, Math.round(share * pileSize));
+    return Math.round(share * maximum);
 }
 
 function generateReplenishBlocks(engine) {

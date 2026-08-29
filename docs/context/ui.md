@@ -33,10 +33,13 @@ or Public Lobby, then Play. A restored session can skip Sign-in. Demo mode skips
 Sign-in and the public lobby, joins directly, and readies its real seat because
 bots are already ready.
 
-Network signals drive room entry, match start, teardown, and navigation.
-Ordinary close returns to matchmaking; terminal failure or an explicit Home
-destination returns Home. Lobby timeout and unexpected matchmaking disconnect
-use an auto-dismiss modal while leaving the current screen visible underneath.
+Network signals drive room entry, match start, teardown, navigation, and recovery.
+During active-match recovery, a centred blocking modal keeps the current screen
+visible while the client applies the authoritative snapshot; gameplay and debug
+input stay unavailable until it completes. A terminal resume result routes to
+matchmaking through an explicit continuation. Ordinary close returns to
+matchmaking; terminal failure or an explicit Home destination returns Home.
+Lobby timeout and unexpected matchmaking disconnect use an auto-dismiss modal.
 Terminal game over keeps Summary active until the server closes the room.
 
 Startup Splash preserves continuity while session restoration is unresolved.

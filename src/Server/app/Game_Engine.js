@@ -43,16 +43,15 @@ class GameEngine {
         return Math.max(0, this.room.endsAt - Date.now());
     }
 
-    broadcastGameState() {
+    buildGameState(options = {}) {
         if (!this.room) {
-            return;
+            return null;
         }
 
-        const scoreEvents = this.consumeScoreEvents();
-        const quickChatEvents = this.consumeQuickChatEvents();
         const placeableColumns = this.getPlaceableColumnRange();
         const gameState = {
             type: "game_state",
+            stateRevision: Math.max(0, Number(this.room.stateRevision) || 0),
             state: this.room.state,
             level: this.room.level,
             impactLevel: this.room.impactLevel,
@@ -75,12 +74,12 @@ class GameEngine {
             towerStabilityComponents: this.room.towerStabilityComponents || [],
             towerStructuralPose: this.room.towerStructuralPose || [],
             sideQuest: this.room.sideQuest || null,
-            powerEvents: this.consumePowerEvents(),
+            powerEvents: options.powerEvents || [],
             towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode,
             secondsRemaining: Math.ceil(this.getRemainingMs() / 1000),
             lastLevelSummary: this.room.lastLevelSummary,
-            scoreEvents: scoreEvents,
-            quickChatEvents: quickChatEvents,
+            scoreEvents: options.scoreEvents || [],
+            quickChatEvents: options.quickChatEvents || [],
             quickChatCooldownMs: Math.max(0, Number(GameConfig.quickChatCooldownMs) || 0),
             quickChatTemplates: GameConfig.quickChatTemplates || [],
             placementScorePopupDurationMs: this.getPlacementScorePopupDurationMs(),
@@ -99,6 +98,39 @@ class GameEngine {
                 powerInventory: player.powerInventory || []
             }))
         };
+
+        if (options.snapshot) {
+            gameState.snapshot = true;
+        }
+
+        if (options.resyncRequestId) {
+            gameState.resyncRequestId = options.resyncRequestId;
+        }
+
+        return gameState;
+    }
+
+    buildGameStateSnapshot(resyncRequestId = "") {
+        return this.buildGameState({
+            snapshot: true,
+            resyncRequestId
+        });
+    }
+
+    broadcastGameState() {
+        if (!this.room) {
+            return;
+        }
+
+        this.room.stateRevision = Math.max(
+            0, Number(this.room.stateRevision) || 0
+        ) + 1;
+
+        const gameState = this.buildGameState({
+            scoreEvents: this.consumeScoreEvents(),
+            quickChatEvents: this.consumeQuickChatEvents(),
+            powerEvents: this.consumePowerEvents()
+        });
 
         if (this.onRoomMessage) {
             this.onRoomMessage(this.room.id, gameState);
@@ -121,6 +153,7 @@ class GameEngine {
             players: [],
             level: startLevel,
             impactLevel: startLevel,
+            stateRevision: 0,
             impactScores: {},
             impactPowers: {},
             impactContributions: {},
@@ -200,6 +233,7 @@ class GameEngine {
             id: snapshot.id,
             players: runtimePlayers,
             level: snapshot.state.level,
+            stateRevision: Math.max(0, Number(snapshot.state.stateRevision) || 0),
             impactLevel: snapshot.state.impactLevel,
             impactScores: snapshot.state.impactScores || {},
             impactPowers: snapshot.state.impactPowers || {},

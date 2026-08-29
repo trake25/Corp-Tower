@@ -83,7 +83,10 @@ async function main() {
 
             console.log(`${player.id} connected${identity ? " (verified)" : ""}`);
 
-            if (!reconnectRequest.reconnectToken || !player.room) {
+            if (
+                !reconnectRequest.reconnectToken ||
+                (!player.room && !player.resumeUnavailable)
+            ) {
                 await lobbyManager.addPlayer(player);
             }
 
@@ -121,8 +124,17 @@ async function handleMessage(player, message) {
         return;
     }
 
+    if (!await lobbyManager.isCurrentPlayerConnection(player)) {
+        return;
+    }
+
     if (data.type === "update_config") {
         await lobbyManager.updateDebugConfig(data.key, data.value);
+        return;
+    }
+
+    if (data.type === "resync_state") {
+        await lobbyManager.resyncState(player, data.requestId);
         return;
     }
 

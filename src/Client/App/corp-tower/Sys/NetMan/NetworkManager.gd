@@ -7,6 +7,15 @@ var manual_disconnect_requested := false
 var auto_reconnect_enabled := false
 var auto_reconnect_attempts := 0
 var auto_reconnect_delay_remaining := -1.0
+var recovery_state := "healthy"
+var recovery_request_id := ""
+var recovery_deadline_msec := -1
+var recovery_reconnect_pending := false
+var recovery_sequence := 0
+var last_state_revision := -1
+var last_game_state_msec := -1
+var last_latency_rtt_ms := -1
+var match_active := false
 
 var player_id := ""
 var reconnect_token := ""
@@ -28,6 +37,9 @@ const AUTO_RECONNECT_DELAY_SECONDS := 1.0
 const AUTO_RECONNECT_MAX_ATTEMPTS := 8
 const CONNECT_TIMEOUT_SECONDS := 5.0
 const BACKGROUND_STALE_THRESHOLD_SECONDS := 5.0
+const GAME_STATE_STALE_TIMEOUT_MS := 8000
+const RECOVERY_TIMEOUT_MIN_MS := 2500
+const RECOVERY_TIMEOUT_MAX_MS := 8000
 const LATENCY_PROBE_INTERVAL_SECONDS := 1.0
 const LATENCY_PROBE_TIMEOUT_MS := 5000
 const SERVER_URL := EndpointConfig.PRIMARY
@@ -42,6 +54,9 @@ signal game_state_updated(data)
 signal client_status(status)
 signal debug_config_updated(config)
 signal latency_rtt_updated(rtt_ms: int)
+signal recovery_started
+signal recovery_recovered
+signal recovery_unavailable(data)
 
 func connect_server(is_auto_reconnect := false, is_failover_retry := false):
 	if is_auto_reconnect:
@@ -83,6 +98,8 @@ func disconnect_server():
 	manual_disconnect_requested = true
 	auto_reconnect_enabled = false
 	auto_reconnect_delay_remaining = -1.0
+	match_active = false
+	reset_recovery_state()
 	reset_latency_probe()
 	if ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
 		ws.close()
@@ -94,7 +111,7 @@ func toggle_connection():
 		connect_server()
 
 func place_block(block_index, column := -1, origin_y := -1):
-	if not is_conn_estab:
+	if not is_conn_estab or is_recovering():
 		return
 
 	var data = {
@@ -109,13 +126,13 @@ func place_block(block_index, column := -1, origin_y := -1):
 	ws.send_text(JSON.stringify(data))
 
 func send_ready():
-	if not is_conn_estab:
+	if not is_conn_estab or is_recovering():
 		return
 
 	ws.send_text(JSON.stringify({"type": "ready"}))
 
 func leave_lobby():
-	if not is_conn_estab:
+	if not is_conn_estab or is_recovering():
 		return
 
 	ws.send_text(JSON.stringify({"type": "leave_lobby"}))
@@ -181,15 +198,18 @@ func update_auto_reconnect_state(data):
 	auto_reconnect_enabled = players.size() >= 3 and not has_bot
 
 func schedule_auto_reconnect():
-	if not auto_reconnect_enabled:
+	if not auto_reconnect_enabled and recovery_state != "reconnecting":
 		return
 
 	if manual_disconnect_requested:
 		return
 
 	if auto_reconnect_attempts >= AUTO_RECONNECT_MAX_ATTEMPTS:
-		status_changed.emit("Disconnected")
-		client_status.emit("[Connect]")
+		if recovery_state == "reconnecting":
+			mark_recovery_unavailable("reconnect_failed")
+		else:
+			status_changed.emit("Disconnected")
+			client_status.emit("[Connect]")
 		return
 
 	auto_reconnect_attempts += 1
@@ -198,8 +218,102 @@ func schedule_auto_reconnect():
 		"Reconnecting " + str(auto_reconnect_attempts) + "/" + str(AUTO_RECONNECT_MAX_ATTEMPTS)
 	)
 
+func is_recovering() -> bool:
+	return recovery_state == "resyncing" or recovery_state == "reconnecting"
+
+func reset_recovery_state() -> void:
+	recovery_state = "healthy"
+	recovery_request_id = ""
+	recovery_deadline_msec = -1
+	recovery_reconnect_pending = false
+
+func recovery_timeout_ms() -> int:
+	if last_latency_rtt_ms < 0:
+		return RECOVERY_TIMEOUT_MIN_MS
+
+	return clamp(
+		last_latency_rtt_ms * 3,
+		RECOVERY_TIMEOUT_MIN_MS,
+		RECOVERY_TIMEOUT_MAX_MS
+	)
+
+func begin_recovery(force_reconnect := false) -> void:
+	if manual_disconnect_requested or not match_active or recovery_state != "healthy":
+		return
+
+	recovery_state = "resyncing"
+	recovery_started.emit()
+
+	if force_reconnect or not is_conn_estab or ws.get_ready_state() != WebSocketPeer.STATE_OPEN:
+		begin_controlled_reconnect()
+		return
+
+	recovery_sequence += 1
+	recovery_request_id = str(Time.get_ticks_usec()) + ":" + str(recovery_sequence)
+	var result := ws.send_text(JSON.stringify({
+		"type": "resync_state",
+		"requestId": recovery_request_id,
+		"stateRevision": last_state_revision
+	}))
+
+	if result != OK:
+		begin_controlled_reconnect()
+		return
+
+	recovery_deadline_msec = Time.get_ticks_msec() + recovery_timeout_ms()
+
+func begin_controlled_reconnect() -> void:
+	if manual_disconnect_requested or recovery_state == "unavailable":
+		return
+
+	recovery_state = "reconnecting"
+	recovery_request_id = ""
+	recovery_deadline_msec = -1
+	recovery_reconnect_pending = true
+	auto_reconnect_attempts = 0
+	is_conn_estab = false
+	is_connecting = false
+	reset_latency_probe()
+
+	if ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
+		ws.close()
+
+func start_pending_recovery_reconnect() -> void:
+	if not recovery_reconnect_pending or ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
+		return
+
+	recovery_reconnect_pending = false
+	ws = WebSocketPeer.new()
+	connect_server(true)
+
+func settle_recovery(data) -> void:
+	if recovery_state == "healthy":
+		return
+
+	if not bool(data.get("snapshot", false)):
+		return
+
+	if recovery_request_id != "" and str(data.get("resyncRequestId", "")) != recovery_request_id:
+		return
+
+	reset_recovery_state()
+	recovery_recovered.emit()
+
+func mark_recovery_unavailable(reason: String) -> void:
+	if recovery_state == "unavailable":
+		return
+
+	recovery_state = "unavailable"
+	recovery_request_id = ""
+	recovery_deadline_msec = -1
+	recovery_reconnect_pending = false
+	auto_reconnect_enabled = false
+	auto_reconnect_delay_remaining = -1.0
+	status_changed.emit("Match unavailable")
+	recovery_unavailable.emit({"reason": reason})
+
 func send_quick_chat(slot: int) -> void:
-	if !is_conn_estab:
+	if !is_conn_estab or is_recovering():
 		return
 
 	ws.send_text(JSON.stringify({
@@ -208,7 +322,7 @@ func send_quick_chat(slot: int) -> void:
 	}))
 
 func activate_power(slot: int) -> void:
-	if is_conn_estab:
+	if is_conn_estab and not is_recovering():
 		ws.send_text(JSON.stringify({"type": "activate_power", "slot": slot}))
 
 func _notification(what: int) -> void:
@@ -221,24 +335,43 @@ func _notification(what: int) -> void:
 				return
 			var backgrounded_seconds = (Time.get_ticks_msec() - background_since_msec) / 1000.0
 			background_since_msec = -1
-			if backgrounded_seconds >= BACKGROUND_STALE_THRESHOLD_SECONDS:
-				force_reconnect_after_background()
+			if not match_active:
+				return
+			begin_recovery(backgrounded_seconds >= BACKGROUND_STALE_THRESHOLD_SECONDS)
 
 func force_reconnect_after_background():
-	if manual_disconnect_requested:
-		return
+	begin_recovery(true)
 
-	if not (is_conn_estab or is_connecting):
-		return
+func accept_game_state(data) -> bool:
+	var revision := int(data.get("stateRevision", -1))
 
-	is_conn_estab = false
-	is_connecting = false
-	reset_latency_probe()
-	ws = WebSocketPeer.new()
-	auto_reconnect_attempts = 0
-	connect_server(true)
+	if revision >= 0:
+		if last_state_revision >= 0 and revision < last_state_revision:
+			return false
+		last_state_revision = revision
+
+	last_game_state_msec = Time.get_ticks_msec()
+	match_active = true
+	return true
 
 func _process(delta: float) -> void:
+	if (
+		recovery_state == "resyncing"
+		and recovery_deadline_msec >= 0
+		and Time.get_ticks_msec() >= recovery_deadline_msec
+	):
+		begin_controlled_reconnect()
+
+	if (
+		match_active
+		and recovery_state == "healthy"
+		and background_since_msec < 0
+		and is_conn_estab
+		and last_game_state_msec >= 0
+		and Time.get_ticks_msec() - last_game_state_msec >= GAME_STATE_STALE_TIMEOUT_MS
+	):
+		begin_recovery(false)
+
 	if auto_reconnect_delay_remaining >= 0.0:
 		auto_reconnect_delay_remaining -= delta
 		if auto_reconnect_delay_remaining <= 0.0:
@@ -261,23 +394,33 @@ func _process(delta: float) -> void:
 			"room_created":
 				save_reconnect_identity(data)
 				auto_reconnect_attempts = 0
+				match_active = bool(data.get("matchStarted", false))
 				room_joined.emit(data)
 			"room_resumed":
 				save_reconnect_identity(data)
 				auto_reconnect_attempts = 0
+				match_active = bool(data.get("matchStarted", false))
 				room_joined.emit(data)
 			"match_started":
+				match_active = true
 				match_started.emit(data)
 			"lobby_update":
 				lobby_updated.emit(data)
 			"game_state":
-				update_auto_reconnect_state(data)
-				game_state_updated.emit(data)
+				if accept_game_state(data):
+					update_auto_reconnect_state(data)
+					game_state_updated.emit(data)
+					settle_recovery(data)
 			"debug_config":
 				debug_config_updated.emit(data.config)
 			"latency_pong":
 				accept_latency_pong(data)
+			"resume_unavailable":
+				match_active = false
+				mark_recovery_unavailable(str(data.get("reason", "room_unavailable")))
 			"room_closed":
+				match_active = false
+				reset_recovery_state()
 				auto_reconnect_enabled = false
 				auto_reconnect_delay_remaining = -1.0
 				room_closed.emit(data)
@@ -305,8 +448,17 @@ func _process(delta: float) -> void:
 			pass
 
 		WebSocketPeer.STATE_CLOSED:
-			if is_conn_estab or is_connecting:
-				if auto_reconnect_enabled and not manual_disconnect_requested:
+			var was_connecting := is_conn_estab or is_connecting
+			is_conn_estab = false
+			is_connecting = false
+			reset_latency_probe()
+
+			if recovery_reconnect_pending:
+				start_pending_recovery_reconnect()
+			elif was_connecting:
+				if match_active and recovery_state == "healthy" and not manual_disconnect_requested:
+					begin_recovery(true)
+				elif (auto_reconnect_enabled or recovery_state == "reconnecting") and not manual_disconnect_requested:
 					schedule_auto_reconnect()
 				elif is_connecting and not is_conn_estab and not tried_failover and not manual_disconnect_requested and FAILOVER_SERVER_URL != "":
 					tried_failover = true
@@ -316,12 +468,9 @@ func _process(delta: float) -> void:
 				else:
 					status_changed.emit("Disconnected")
 					client_status.emit("[Connect]")
-			is_conn_estab = false
-			is_connecting = false
-			reset_latency_probe()
 
 func update_config(key, value):
-	if not is_conn_estab:
+	if not is_conn_estab or is_recovering():
 		return
 
 	var data = {
@@ -375,4 +524,5 @@ func accept_latency_pong(data, received_at_msec: int = -1) -> void:
 
 	var rtt_ms: int = max(0, received_at_msec - latency_probe_sent_at_msec)
 	reset_latency_probe()
+	last_latency_rtt_ms = rtt_ms
 	latency_rtt_updated.emit(rtt_ms)

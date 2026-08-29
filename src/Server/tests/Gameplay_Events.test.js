@@ -365,10 +365,10 @@ test("an empty-handed bot activates Replenish before supply failure", () => {
     }));
 });
 
-test("replenish adds a share of the level's starting draw pile", () => {
+test("replenish adds a configurable share of level-start supply", () => {
     const { engine } = createPlayingEngine(10, 20);
 
-    engine.room.drawPile = Array.from({ length: 20 }, (_, i) => {
+    engine.room.drawPile = Array.from({ length: 5 }, (_, i) => {
         return createBlock(1, `P${i}`);
     });
     engine.room.drawPileStartCount = 20;
@@ -380,7 +380,7 @@ test("replenish adds a share of the level's starting draw pile", () => {
     const added = engine.generateReplenishBlocks();
 
     assert.equal(added, 5);
-    assert.equal(engine.room.drawPile.length, 25);
+    assert.equal(engine.room.drawPile.length, 10);
     // Appended, never reshuffled: the previewed next draw must not move.
     assert.equal(engine.getNextDrawBlock().id, nextDrawBefore.id);
 
@@ -388,9 +388,7 @@ test("replenish adds a share of the level's starting draw pile", () => {
     assert.equal(engine.getReplenishBlockCount(), 10);
 
     GameConfig.powerReplenishPileShare = 0;
-    assert.equal(engine.getReplenishBlockCount(), 1);
-
-    GameConfig.powerReplenishPileShare = 0.25;
+    assert.equal(engine.getReplenishBlockCount(), 0);
 });
 
 test("activating replenish grows the shared draw pile and reports the count", () => {
@@ -398,7 +396,7 @@ test("activating replenish grows the shared draw pile and reports the count", ()
     const caster = engine.room.players[0];
 
     engine.room.endsAt = Date.now() + 60000;
-    engine.room.drawPile = Array.from({ length: 12 }, (_, i) => {
+    engine.room.drawPile = Array.from({ length: 9 }, (_, i) => {
         return createBlock(1, `P${i}`);
     });
     engine.room.drawPileStartCount = 12;

@@ -12,46 +12,86 @@ var opened_at_ms: int = -OUTSIDE_TAP_GRACE_MS
 var auto_dismiss_remaining: float = -1.0
 var shown_seconds: int = -1
 var countdown_body_format := ""
+var recovery_locked := false
 
 @onready var dim_layer: ColorRect = %ModalDimLayer
 @onready var title_label: Label = %ModalTitleLabel
 @onready var body_label: Label = %ModalBodyLabel
 @onready var button_row: HBoxContainer = %ModalButtonRow
+@onready var close_button: Button = %ModalCloseButton
+@onready var continue_button: Button = %ModalContinueButton
 
 func _ready() -> void:
 	visible = false
 	dim_layer.mouse_filter = Control.MOUSE_FILTER_STOP
 	dim_layer.gui_input.connect(_on_dim_layer_gui_input)
-	%ModalCloseButton.pressed.connect(close)
-	%ModalContinueButton.pressed.connect(_on_continue_pressed)
+	close_button.pressed.connect(close)
+	continue_button.pressed.connect(_on_continue_pressed)
 
 func open_leave_lobby() -> void:
+	recovery_locked = false
 	title_label.text = "Leave lobby"
 	body_label.text = "Do you want to leave this lobby?"
 	button_row.visible = true
+	close_button.visible = true
+	continue_button.visible = true
+	continue_button.text = "Continue"
 	auto_dismiss_remaining = -1.0
 	_open()
 
 func open_time_expired() -> void:
+	recovery_locked = false
 	title_label.text = "Time expired"
 	button_row.visible = false
 	countdown_body_format = TIME_EXPIRED_BODY
 	_start_countdown()
 
 func open_disconnected() -> void:
+	recovery_locked = false
 	title_label.text = "Disconnected"
 	button_row.visible = false
 	countdown_body_format = DISCONNECTED_BODY
 	_start_countdown()
 
+func open_recovering() -> void:
+	recovery_locked = true
+	title_label.text = "Reconnecting"
+	body_label.text = "Syncing the latest game state…"
+	button_row.visible = false
+	auto_dismiss_remaining = -1.0
+	_open()
+
+func open_match_unavailable(reason: String) -> void:
+	recovery_locked = false
+	title_label.text = "Match unavailable"
+	body_label.text = unavailable_body(reason)
+	button_row.visible = true
+	close_button.visible = false
+	continue_button.visible = true
+	continue_button.text = "Continue"
+	auto_dismiss_remaining = -1.0
+	_open()
+
+func unavailable_body(reason: String) -> String:
+	if reason == "reconnect_ttl_expired":
+		return "This match ended while you were away."
+	if reason == "reconnect_failed":
+		return "We could not restore this match."
+	return "This match can no longer be resumed."
+
 func close() -> void:
-	if not visible:
+	if not visible or recovery_locked:
 		return
 
 	visible = false
 	auto_dismiss_remaining = -1.0
 
+func dismiss_recovery() -> void:
+	recovery_locked = false
+	close()
+
 func _start_countdown() -> void:
+	recovery_locked = false
 	auto_dismiss_remaining = COUNTDOWN_SECONDS
 	shown_seconds = -1
 	_refresh_countdown_body()
@@ -62,7 +102,7 @@ func _open() -> void:
 	opened_at_ms = Time.get_ticks_msec()
 
 func _on_continue_pressed() -> void:
-	if not visible:
+	if not visible or recovery_locked:
 		return
 
 	visible = false
@@ -70,6 +110,7 @@ func _on_continue_pressed() -> void:
 	confirmed.emit()
 
 func _finish_countdown() -> void:
+	recovery_locked = false
 	auto_dismiss_remaining = -1.0
 	visible = false
 	dismissed.emit()
@@ -94,6 +135,8 @@ func _refresh_countdown_body() -> void:
 	body_label.text = countdown_body_format % seconds
 
 func _on_dim_layer_gui_input(event: InputEvent) -> void:
+	if recovery_locked:
+		return
 	if Time.get_ticks_msec() - opened_at_ms < OUTSIDE_TAP_GRACE_MS:
 		return
 

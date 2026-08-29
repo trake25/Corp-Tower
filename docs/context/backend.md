@@ -9,15 +9,16 @@ All runtime modules live under `src/Server/app/`.
 
 ## Authority and module boundaries
 
-`Game_Engine.js` is the facade for one room. Placement, supply, scoring, and
-Impact logic are plain-function modules under `engine/`; their first argument is
-the owning engine and callers use the facade rather than importing those modules
-directly. `Block_Geometry.js` and `Tower_Stability.js` are pure exceptions with no
-room state. The engine never reads Redis; Lobby Manager persists and restores it.
+`Game_Engine.js` is the room facade; its `engine/` modules take the owner first
+and callers do not import them directly. `Block_Geometry.js` and
+`Tower_Stability.js` are pure exceptions, and only Lobby Manager persists or
+restores room state. The server decides all game outcomes; clients and tools only
+render or preview them.
 
-The server alone decides placement, stability, scoring, failure, progression,
-Power, and room closure. Clients and tools render or preview those decisions from
-the same authoritative contracts.
+Lobby Manager and Redis accept actions or disconnect cleanup only from a
+session's current connection id, preventing a superseded socket from clearing a
+resumed seat. Game Engine builds durable recovery snapshots separately from
+event-consuming broadcasts.
 
 Four-way contact partitions standing bricks into independent stability and pose
 components; gravity and load follow downward contacts. Overload removes its
@@ -47,12 +48,10 @@ must suppress later persistence callbacks so a closed room cannot be resurrected
 
 ### Identity and profiles
 
-Auth Verifier uses `jose` to validate Supabase JWTs and validates native Facebook tokens without
-throwing. Account Store converts a verified credential into the stable game
-account id, so a claimed wire `profileId` cannot override verified identity.
-Facebook identities persist only as versioned HMACs; raw provider ids and access
-tokens never enter the database. Browser and native Facebook converge on the same
-provider subject and account.
+Auth Verifier uses `jose` to validate Supabase JWTs and native Facebook tokens without
+throwing. Account Store makes verified identity override wire `profileId` and
+persists Facebook identities only as versioned HMACs; raw provider ids and access
+tokens never enter the database.
 
 Profile Store reads and stamps durable profiles when service credentials exist;
 the stored display name wins. Without persistence or during an outage it falls
@@ -64,8 +63,6 @@ enforced here. Redis remains active-session storage, not profile storage.
 `Debug_Config.js` is the write boundary for runtime tuning. It rejects unknown
 keys, clamps values, enforces enum allowlists and dependent bounds, then Lobby
 Manager reconciles affected rooms and broadcasts the authoritative snapshot.
-Settings are debug state, not player progression.
-
 `towerStabilityDifficulty` is the only writable stability dial; derived physics
 constants have no setters. Grid bounds remain limited by the client viewport and
 the derived site is forced even so odd debug inputs cannot move it off-center.
@@ -103,15 +100,15 @@ Every production evaluator—engine, bots, and balance tools—must receive
 width, difficulty scaling, and pose limits and makes preview/ranking disagree with
 the authoritative award path.
 
-Last Chance is a debug-only rescue: the first collapsing placement becomes a
-one-percent pending state and the next placement must recover above it. Only a
-placement evaluation may spend it; passive recalculation cannot.
+Last Chance is a debug-only one-placement rescue; passive recalculation cannot
+spend it.
 
 ### Power and transient events
 
-Power activation has no target and applies its effect room-wide. Replenish grows
-the shared pile once; a held Replenish can defer an otherwise unavoidable
-not-enough-height failure. Power inventory participates in Impact snapshots.
+Power activation has no target and applies its effect room-wide. Replenish adds
+its configured share of start-pile capacity once; a held Replenish can defer
+an otherwise unavoidable not-enough-height failure. Power inventory participates
+in Impact snapshots.
 
 Score, quick-chat, and Power events are transient broadcast queues. They are not
 persisted or reconstructed from score differences.

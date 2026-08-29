@@ -21,6 +21,7 @@
     { "id": "stability-component-evaluator-purpose", "area": "backend", "queries": [{ "map": "backend", "query": "support components", "expects": "Tower_Stability.js" }] },
     { "id": "stability-warning-preview-purpose", "area": "hud", "queries": [{ "map": "ui-hud", "query": "stability warning", "expects": "TopBarController.gd" }] },
     { "id": "placement-score-cap-config-anchor", "area": "backend", "queries": [{ "map": "backend", "query": "normalCombinedCapActionShare", "expects": "Game_Config.js" }] },
+    { "id": "supply-exhaustion-failure-anchor", "area": "backend", "queries": [{ "map": "backend", "query": "not_enough_height_remaining", "expects": "Placement.js" }] },
     { "id": "visual-hooks-config-anchor", "area": "hud", "queries": [{ "map": "ui-hud", "query": "VisualHooks", "expects": "VisualHooks.gd" }] },
     { "id": "codex-hook-config-anchor", "area": "automation", "queries": [{ "map": "infra", "query": "handleHook", "expects": "codex-observability-hook.mjs" }] },
     { "id": "observability-start-adapter-symbol", "area": "automation", "queries": [{ "map": "infra", "query": "startObservability", "expects": "task-close.mjs" }] }

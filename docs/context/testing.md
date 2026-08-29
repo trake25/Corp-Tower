@@ -51,6 +51,9 @@ boundaries, and multi-pod room lifecycle. The shared engine fixture owns pinned
 configuration and cleanup. Tests under `tests/` and tools do not ship in the
 server image.
 
+Reconnect coverage keeps the current socket attached after a superseded socket
+closes and proves targeted recovery snapshots do not consume transient events.
+
 Geometry and stability suites must use fixed configuration rather than live
 tunables. Preview and award paths must agree, score components must conserve
 their transaction totals, and tests that assert exact event sets must isolate

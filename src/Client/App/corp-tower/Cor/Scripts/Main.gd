@@ -141,6 +141,8 @@ func apply_accessibility() -> void:
 
 func should_block_popovers() -> bool:
 	return (
+		NetworkManager.is_recovering()
+		or
 		debug_panel.is_open()
 		or summary.is_overlay_visible()
 		or tutorial.blocks_popovers()
@@ -208,6 +210,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		debug_panel.set_open(false)
 
 func _input(event: InputEvent) -> void:
+	if NetworkManager.is_recovering():
+		return
+
 	inventory.handle_input(event)
 
 func _process(_delta: float) -> void:
@@ -295,6 +300,9 @@ func _on_tutorial_menu_exit() -> void:
 func update_game_state(data) -> void:
 	if match_state.tutorial_mode:
 		return
+
+	if bool(data.get("snapshot", false)):
+		inventory.cancel_block_drag()
 
 	var state: String = str(data.get("state", "playing"))
 	match_state.current_match_state = state

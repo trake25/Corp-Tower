@@ -644,3 +644,41 @@ test("terminal close publishes Home routing and clears owner and remote replicas
     await lobbyA.closeRoom(room, "failure_limit_reached", "home");
     assert.equal(messagesOfType(sockets[0], "room_closed").length, 1);
 });
+
+test("a resumed connection keeps its room socket when the superseded socket closes", async () => {
+    const { lobby, players, room } = await createLobbyOfThree();
+
+    await lobby.toggleLobbyReady(players[0]);
+    await lobby.toggleLobbyReady(players[1]);
+    await lobby.toggleLobbyReady(players[2]);
+
+    room.engine.room.pendingScoreEvents = [{ id: "pending-score" }];
+    await lobby.stateStore.saveSession({
+        sessionId: players[0].sessionId,
+        reconnectToken: players[0].sessionId,
+        playerId: players[0].id,
+        roomId: room.id,
+        connectionId: players[0].connectionId,
+        connected: true
+    });
+    const resumedWs = createFakeWs();
+    const resumedPlayer = await lobby.createPlayer(resumedWs, {
+        playerId: players[0].id,
+        reconnectToken: players[0].sessionId
+    });
+
+    const roomPlayer = room.players.find(player => player.id === players[0].id);
+    assert.equal(roomPlayer.ws, resumedWs);
+
+    await lobby.removePlayer(players[0]);
+
+    assert.equal(lobby.connectedPlayers.get(players[0].id), resumedPlayer);
+    assert.equal(roomPlayer.ws, resumedWs);
+
+    const snapshot = messagesOfType(resumedWs, "game_state").find(
+        message => message.snapshot
+    );
+    assert.ok(snapshot);
+    assert.deepEqual(snapshot.scoreEvents, []);
+    assert.equal(room.engine.room.pendingScoreEvents.length, 1);
+});

@@ -26,6 +26,7 @@ var current_overlay: Node = null
 var play_instance: Node = null
 var tutorial_active := false
 var find_match_active := false
+var resume_unavailable_active := false
 var debug_button_dragging := false
 var debug_button_pointer_id := DRAG_POINTER_NONE
 var debug_button_drag_distance := 0.0
@@ -37,7 +38,11 @@ func _ready() -> void:
 	NetworkManager.match_started.connect(_on_match_started)
 	NetworkManager.room_closed.connect(_on_room_closed)
 	NetworkManager.status_changed.connect(_on_status_changed)
+	NetworkManager.recovery_started.connect(_on_recovery_started)
+	NetworkManager.recovery_recovered.connect(_on_recovery_recovered)
+	NetworkManager.recovery_unavailable.connect(_on_recovery_unavailable)
 	auto_dismiss_modal.dismissed.connect(_on_auto_dismiss_modal_dismissed)
+	auto_dismiss_modal.confirmed.connect(_on_auto_dismiss_modal_dismissed)
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
 	debug_button.visible = EndpointConfig.DEBUG_UI_ENABLED
 	reset_debug_button_position()
@@ -79,6 +84,26 @@ func _on_room_joined(data) -> void:
 func _on_match_started(_data) -> void:
 	_enter_play_instance()
 
+func _on_recovery_started() -> void:
+	if tutorial_active:
+		return
+
+	auto_dismiss_modal.open_recovering()
+	update_debug_button_availability()
+
+func _on_recovery_recovered() -> void:
+	resume_unavailable_active = false
+	auto_dismiss_modal.dismiss_recovery()
+	update_debug_button_availability()
+
+func _on_recovery_unavailable(data) -> void:
+	if tutorial_active:
+		return
+
+	resume_unavailable_active = true
+	auto_dismiss_modal.open_match_unavailable(str(data.get("reason", "room_unavailable")))
+	update_debug_button_availability()
+
 func _enter_play_instance() -> void:
 	_ensure_play_instance()
 	_clear_overlay()
@@ -91,6 +116,8 @@ func _on_room_closed(data) -> void:
 		return
 
 	find_match_active = false
+	resume_unavailable_active = false
+	auto_dismiss_modal.dismiss_recovery()
 	var reason := str(data.get("reason", ""))
 	var destination := str(data.get("destination", ""))
 
@@ -109,7 +136,12 @@ func _on_room_closed(data) -> void:
 func _on_auto_dismiss_modal_dismissed() -> void:
 	NetworkManager.disconnect_server()
 	_teardown_play_instance()
-	show_home_screen()
+
+	if resume_unavailable_active:
+		resume_unavailable_active = false
+		show_join_screen()
+	else:
+		show_home_screen()
 
 func show_play_loader_screen() -> void:
 	var screen := PlayLoaderScreenScene.instantiate()
@@ -318,6 +350,7 @@ func update_debug_button_availability() -> void:
 		(debug_context == DEBUG_CONTEXT_LOBBY or debug_context == DEBUG_CONTEXT_PLAY)
 		and has_play_instance
 		and NetworkManager.is_conn_estab
+		and not NetworkManager.is_recovering()
 	)
 	debug_button.disabled = not sign_in_debug_available and not game_debug_available
 

@@ -31,6 +31,7 @@ function stripRuntimePlayer(player) {
     return {
         id: player.id,
         sessionId: player.sessionId || null,
+        connectionId: player.connectionId || null,
         profileId: player.profileId || null,
         displayName: player.displayName || null,
         isBot: Boolean(player.isBot),
@@ -64,6 +65,7 @@ function stripRuntimeRoom(room) {
         lobbyDeadlineAt: room.lobbyDeadlineAt || 0,
         state: {
             level: engineRoom.level || 1,
+            stateRevision: engineRoom.stateRevision || 0,
             impactLevel: engineRoom.impactLevel || 1,
             impactScores: engineRoom.impactScores || {},
             impactPowers: engineRoom.impactPowers || {},
@@ -326,6 +328,20 @@ class RedisState {
         return raw ? JSON.parse(raw) : null;
     }
 
+    async isCurrentSessionConnection(sessionId, connectionId) {
+        const session = await this.getSession(sessionId);
+
+        if (!session) {
+            return false;
+        }
+
+        if (!session.connectionId) {
+            return true;
+        }
+
+        return session.connectionId === connectionId;
+    }
+
     async markSessionDisconnected(player) {
         if (!player?.sessionId) {
             return;
@@ -334,7 +350,14 @@ class RedisState {
         const session = await this.getSession(player.sessionId);
 
         if (!session) {
-            return;
+            return false;
+        }
+
+        if (
+            session.connectionId &&
+            session.connectionId !== player.connectionId
+        ) {
+            return false;
         }
 
         await this.saveSession({
@@ -342,6 +365,8 @@ class RedisState {
             connected: false,
             roomId: player.room?.id || session.roomId || null
         });
+
+        return true;
     }
 
     async clearSessionRoom(sessionId) {
@@ -437,13 +462,19 @@ class RedisState {
         await Promise.all(
             payload.players
                 .filter(player => !player.isBot && player.sessionId)
-                .map(player => this.saveSession({
-                    sessionId: player.sessionId,
-                    reconnectToken: player.sessionId,
-                    playerId: player.id,
-                    roomId: payload.id,
-                    connected: true
-                }))
+                .map(async player => {
+                    const existing = await this.getSession(player.sessionId);
+
+                    return this.saveSession({
+                        ...existing,
+                        sessionId: player.sessionId,
+                        reconnectToken: player.sessionId,
+                        playerId: player.id,
+                        roomId: payload.id,
+                        connectionId: existing?.connectionId || player.connectionId || null,
+                        connected: existing?.connected ?? true
+                    });
+                })
         );
 
         return payload;

@@ -60,6 +60,32 @@ class LobbyManager {
         };
     }
 
+    retireConnection(player) {
+        if (
+            !player?.ws ||
+            player.ws.readyState !== 1 ||
+            typeof player.ws.close !== "function"
+        ) {
+            return;
+        }
+
+        player.ws.close(4000, "superseded_connection");
+    }
+
+    async isCurrentPlayerConnection(player) {
+        if (!player || this.connectedPlayers.get(player.id) !== player) {
+            return false;
+        }
+
+        if (!this.stateStore.isCurrentSessionConnection) {
+            return true;
+        }
+
+        return await this.stateStore.isCurrentSessionConnection(
+            player.sessionId, player.connectionId
+        );
+    }
+
     async createPlayer(ws, reconnectRequest = {}, identity = null) {
         const identityFields = this.resolveIdentityFields(reconnectRequest, identity);
         const existingSession =
@@ -69,9 +95,11 @@ class LobbyManager {
             existingSession &&
             existingSession.playerId === reconnectRequest.playerId
         ) {
+            const previousPlayer = this.connectedPlayers.get(existingSession.playerId);
             const player = {
                 id: existingSession.playerId,
                 sessionId: existingSession.sessionId,
+                connectionId: this.stateStore.createReconnectToken(),
                 profileId: identityFields.profileId,
                 displayName: identityFields.displayName,
                 ws: ws,
@@ -82,8 +110,11 @@ class LobbyManager {
             this.connectedPlayers.set(player.id, player);
             await this.stateStore.saveSession({
                 ...existingSession,
+                connectionId: player.connectionId,
                 connected: true
             });
+
+            this.retireConnection(previousPlayer);
 
             await this.resumePlayer(player, existingSession.roomId);
             return player;
@@ -93,6 +124,7 @@ class LobbyManager {
         const player = {
             id: await this.stateStore.nextPlayerId(),
             sessionId: sessionId,
+            connectionId: this.stateStore.createReconnectToken(),
             profileId: identityFields.profileId,
             displayName: identityFields.displayName,
             ws: ws,
@@ -106,6 +138,7 @@ class LobbyManager {
             reconnectToken: sessionId,
             playerId: player.id,
             roomId: null,
+            connectionId: player.connectionId,
             connected: true
         });
 
@@ -116,6 +149,14 @@ class LobbyManager {
         this.resetParticipantState(player);
         this.connectedPlayers.set(player.id, player);
         await this.joinOrCreateRoom(player);
+    }
+
+    reportResumeUnavailable(player, reason) {
+        player.resumeUnavailable = true;
+        this.sendPlayer(player, {
+            type: "resume_unavailable",
+            reason
+        });
     }
 
     async resumePlayer(player, roomId) {
@@ -131,7 +172,7 @@ class LobbyManager {
         }
 
         if (!room) {
-            await this.addPlayer(player);
+            this.reportResumeUnavailable(player, "reconnect_ttl_expired");
             return;
         }
 
@@ -139,12 +180,13 @@ class LobbyManager {
             room.players.find(candidate => candidate.id === player.id);
 
         if (!roomPlayer) {
-            await this.addPlayer(player);
+            this.reportResumeUnavailable(player, "room_unavailable");
             return;
         }
 
         roomPlayer.ws = player.ws;
         roomPlayer.sessionId = player.sessionId;
+        roomPlayer.connectionId = player.connectionId;
         roomPlayer.profileId = player.profileId || roomPlayer.profileId;
         roomPlayer.displayName = player.displayName || roomPlayer.displayName || null;
         player.room = room;
@@ -155,6 +197,7 @@ class LobbyManager {
             reconnectToken: player.sessionId,
             playerId: player.id,
             roomId: room.id,
+            connectionId: player.connectionId,
             connected: true
         });
 
@@ -180,14 +223,22 @@ class LobbyManager {
         });
 
         if (room.matchStarted) {
-            room.engine.broadcastGameState();
+            await this.resyncState(player, "");
         }
     }
 
     async removePlayer(player) {
+        if (this.connectedPlayers.get(player.id) !== player) {
+            return;
+        }
+
         this.connectedPlayers.delete(player.id);
 
-        await this.stateStore.markSessionDisconnected(player);
+        const disconnected = await this.stateStore.markSessionDisconnected(player);
+
+        if (disconnected === false) {
+            return;
+        }
 
         if (player.room && !player.room.matchStarted) {
             await this.evictLobbyPlayer(player.room, player, "player_left_lobby");
@@ -1051,6 +1102,7 @@ class LobbyManager {
                 id: snapshot.id,
                 players: runtimePlayers,
                 level: snapshot.state.level,
+                stateRevision: Math.max(0, Number(snapshot.state.stateRevision) || 0),
                 impactLevel: snapshot.state.impactLevel,
                 impactScores: snapshot.state.impactScores || {},
                 impactPowers: snapshot.state.impactPowers || {},
@@ -1157,6 +1209,20 @@ class LobbyManager {
                 return;
             }
 
+            if (message.targetPlayerId) {
+                const target = room.players.find(player => {
+                    return (
+                        player.id === message.targetPlayerId &&
+                        player.connectionId === message.targetConnectionId
+                    );
+                });
+
+                if (target) {
+                    this.sendPlayer(target, message);
+                }
+                return;
+            }
+
             room.players.forEach(player => {
                 if (!player.isBot) {
                     this.sendPlayer(player, message);
@@ -1176,7 +1242,9 @@ class LobbyManager {
                 return;
             }
 
-            this.runRoomAction(room, message.playerId, message.action);
+            this.runRoomAction(room, message.playerId, message.action).catch(error => {
+                console.error("Remote room action failed:", error.message);
+            });
         });
     }
 
@@ -1185,25 +1253,98 @@ class LobbyManager {
     }
 
     async dispatchRoomAction(player, action) {
+        if (!await this.isCurrentPlayerConnection(player)) {
+            return;
+        }
+
         const room = player.room;
 
         if (!room) {
             return;
         }
 
+        const roomAction = {
+            ...action,
+            connectionId: player.connectionId
+        };
+
         if (this.isRoomOwner(room)) {
-            this.runRoomAction(room, player.id, action);
+            await this.runRoomAction(room, player.id, roomAction);
             return;
         }
 
         await this.stateStore.publishRoomAction(room.id, {
             playerId: player.id,
-            action
+            action: roomAction
         });
     }
 
-    runRoomAction(room, playerId, action) {
+    async resyncState(player, requestId = "") {
+        if (!await this.isCurrentPlayerConnection(player) || !player.room) {
+            return;
+        }
+
+        if (!player.room.matchStarted) {
+            this.sendPlayer(player, {
+                type: "lobby_update",
+                roomId: player.room.id,
+                roster: await this.buildRoomRoster(player.room),
+                ...this.buildLobbyPayload(player.room),
+                resyncRequestId: requestId
+            });
+            return;
+        }
+
+        await this.dispatchRoomAction(player, {
+            type: "resync_state",
+            requestId: typeof requestId === "string" ? requestId : ""
+        });
+    }
+
+    async sendGameStateSnapshot(room, playerId, connectionId, requestId = "") {
+        const snapshot = room?.engine?.buildGameStateSnapshot(requestId);
+
+        if (!snapshot) {
+            return;
+        }
+
+        const localPlayer = this.connectedPlayers.get(playerId);
+
+        if (localPlayer?.connectionId === connectionId) {
+            this.sendPlayer(localPlayer, snapshot);
+        }
+
+        await this.stateStore.publishRoom(room.id, {
+            ...snapshot,
+            targetPlayerId: playerId,
+            targetConnectionId: connectionId
+        });
+    }
+
+    async runRoomAction(room, playerId, action) {
+        const player = room.players.find(candidate => candidate.id === playerId);
+
+        if (!player) {
+            return;
+        }
+
+        if (
+            action.connectionId &&
+            this.stateStore.isCurrentSessionConnection &&
+            !await this.stateStore.isCurrentSessionConnection(
+                player.sessionId, action.connectionId
+            )
+        ) {
+            return;
+        }
+
         switch (action.type) {
+            case "resync_state":
+                await this.sendGameStateSnapshot(
+                    room, playerId, action.connectionId, action.requestId
+                );
+                return;
+
             case "place_block":
                 room.engine.placeBlock(
                     playerId, action.blockIndex, action.column, action.originY

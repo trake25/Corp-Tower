@@ -6,20 +6,18 @@ whose meaning cannot be recovered from only one endpoint. Gameplay →
 
 ## Connection and identity
 
-The client endpoint is injected at build time. Godot uses `WebSocketPeer`; the
-server uses `ws`. Network Manager never predicts a game outcome: it updates view
-state only from server messages.
+Build injects the endpoint; Godot uses `WebSocketPeer` and the server uses `ws`.
+Network Manager renders server messages only. On open it sends stored reconnect
+and identity credentials. A valid pair resumes its seat; otherwise the server
+creates a session and joins or creates a room. Verified identity overrides the
+claimed profile; required auth closes an unverified socket.
 
-On open, the client sends its stored player id and reconnect token plus available
-identity credentials. A valid reconnect pair resumes the same room and seat;
-otherwise the server creates a session and joins or creates a room. Verified
-Supabase or native Facebook identity overrides a claimed profile id. When auth is
-optional, absent or expired identity falls back to the client profile; required
-auth closes the socket.
+Focus return blocks play and requests fresh state. A stale transport is closed
+before bounded reconnect; manual disconnect and app close do not recover. RTT is
+only a quality indicator—missing authoritative state starts recovery.
 
-Automatic reconnect applies only to unintended disconnects from a started,
-all-real-player room and has a finite attempt count. Manual disconnect and app
-close do not trigger it.
+Only a session's current opaque connection id may act or disconnect, so an old
+socket cannot invalidate a resumed connection.
 
 ## Lobby and room lifecycle
 
@@ -47,8 +45,8 @@ can remain in the persisted room.
 
 Server messages fall into five contracts:
 
-- Session assignment: room id, player/reconnect identity, initial inventory,
-  roster, lobby state, and whether play has started.
+- Session assignment: room identity, inventory, roster, lobby/start state, and
+  terminal `resume_unavailable` when Play cannot be restored.
 - Lobby lifecycle: roster/readiness changes and match start.
 - `game_state`: the complete authoritative room presentation used for rendering
   and recovery.
@@ -56,10 +54,10 @@ Server messages fall into five contracts:
 - `room_closed`: teardown reason and navigation destination.
 
 Client actions are reconnect, ready/leave-lobby, place block, activate Power,
-send quick chat, and update debug configuration. Every action is validated
-against room ownership, state, player identity, cooldowns, and its domain rules.
-Power has no target and applies room-wide. Quick chat sends a template slot, not
-arbitrary text.
+quick chat, debug update, and `resync_state`. Resync carries only correlation and
+the last revision. Every stateful action is validated for room, identity,
+connection, state, cooldown, and domain rules; Power is room-wide and chat sends
+a template slot, never free text.
 
 Latency diagnostics use a client nonce: `latency_ping` receives a same-socket
 `latency_pong` carrying that nonce. The server neither persists nor fans it out;
@@ -96,30 +94,25 @@ gameplay reconstruction:
 - transient score, quick-chat, and Power events;
 - side quest, summaries, and canonical Impact contribution/retry status.
 
-The client derives render center and snapping range from the transmitted grid.
-Structural pose never affects aiming or legality. `impactScoreStatus` already
-includes live contribution exactly once; clients must not add level score to it.
-Compatibility aliases may be read for mixed-version fallback but new logic uses
-the contribution-named fields.
+The client derives render center and snapping from the transmitted grid;
+structural pose never affects aiming or legality. `impactScoreStatus` includes
+live contribution exactly once, so clients must not add level score.
 
-Transient events carry ids for client de-duplication and are consumed after
-broadcast. They are not persisted or replayed after reconnect. Room snapshots
-persist durable state: tower, pose, inventory, score/contribution, checkpoint,
-retry, Power, scoring-history claims, lobby lifecycle, and relevant deadlines.
-Placement events carry the authoritative Height, Recovery, Reinforce, and
-Critical breakdown; clients never reconstruct those components.
+Transient events are id-deduplicated, consumed after broadcast, and never
+persisted or replayed. Snapshots persist tower, inventory, scores, checkpoints,
+retries, Power, lifecycle, and deadlines. Placement breakdowns stay server-owned.
+
+`game_state.stateRevision` orders durable state across recovery. A reconnect or
+`resync_state` receives a targeted snapshot with empty transient-event arrays;
+the client applies it before re-enabling interaction. A missing room produces
+`resume_unavailable` rather than leaving Play attached to stale state.
 
 ## Wire adapters
 
-Server Entry accepts sockets, performs connection-level parsing/error handling,
-and forwards actions to Lobby Manager. Lobby Manager resolves room ownership and
-either executes on the lease owner or republishes to it. Game Engine produces
-authoritative state but does not know about sockets or Redis.
-
-Network Manager owns socket polling, reconnect credentials, endpoint failover,
-message dispatch, and signals consumed by the client shell. It does not score,
-settle, validate, or advance a room. Unknown optional fields degrade quietly;
-unknown message types are logged rather than interpreted as game state.
+Server Entry parses sockets and forwards actions; Lobby Manager resolves the
+lease owner or republishes; Game Engine produces state without socket or Redis
+knowledge. Network Manager owns polling, reconnect credentials, failover, and
+shell signals, never game outcomes. Unknown optional fields degrade quietly.
 
 ## Compatibility boundary
 
