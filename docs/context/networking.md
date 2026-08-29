@@ -90,8 +90,8 @@ gameplay reconstruction:
 - inventory, shared-pile count, and visible next draw;
 - ordered tower blocks with resolved coordinates, standing/fallen state,
   component identity, and placement-time Balance result;
-- worst-component compatibility diagnostics plus component summaries and
-  component-scoped presentation poses;
+- worst-component compatibility diagnostics plus component summaries with
+  authoritative height and component-scoped presentation poses;
 - roster, scores, accessibility defaults, and synchronized visual hooks;
 - transient score, quick-chat, and Power events;
 - side quest, summaries, and canonical Impact contribution/retry status.
@@ -105,7 +105,9 @@ the contribution-named fields.
 Transient events carry ids for client de-duplication and are consumed after
 broadcast. They are not persisted or replayed after reconnect. Room snapshots
 persist durable state: tower, pose, inventory, score/contribution, checkpoint,
-retry, Power, lobby lifecycle, and relevant deadlines.
+retry, Power, scoring-history claims, lobby lifecycle, and relevant deadlines.
+Placement events carry the authoritative Height, Recovery, Reinforce, and
+Critical breakdown; clients never reconstruct those components.
 
 ## Wire adapters
 

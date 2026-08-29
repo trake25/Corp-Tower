@@ -92,6 +92,10 @@ const DEBUG_TOOLTIPS := {
 		"title": "Dangerous Height Floor",
 		"body": "The lowest share of clean height points a risky placement can keep.\n\nThe server grades the risk this brick adds, not the tower it inherited.\n\nLower makes dangerous height less rewarding; it never changes collapse rules.",
 	},
+	"RecoveryHeightScoreLabel": {
+		"title": "Recovery Height Score",
+		"body": "The share of risk-adjusted Height score paid when the team rebuilds a previously reached row. Each lost row can earn Recovery once, even when this is set to 0. New historical height still earns full Height score.",
+	},
 	"ReinforceIntegrityLabel": {
 		"title": "Strong Direct Repair",
 		"body": "The share of one average useful-height action awarded for a strong, direct structural repair.\n\nThe server pays one matched support improvement, so Integrity, lean, and repaired cells cannot stack for the same fix.",

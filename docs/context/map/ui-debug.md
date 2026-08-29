@@ -7,7 +7,7 @@ Each `@file` purpose is authored once and carried forward on regeneration.
 a file purpose or stable anchor and `path:line`, so it feeds straight into a
 bounded source read. Local implementation detail stays in source.
 
-### src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn — 1013 ln
+### src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn — 1024 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -15,9 +15,9 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:6 | DebugLayer · scene root | |
 | src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:20 | %DebugDimLayer · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:30 | %DebugPanel · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:960 | %TooltipDimLayer · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:998 | %TooltipTitleLabel · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:1007 | %TooltipBodyLabel · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:971 | %TooltipDimLayer · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:1009 | %TooltipTitleLabel · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/DebugPanel.tscn:1018 | %TooltipBodyLabel · unique node | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd — 21 ln
 
@@ -36,7 +36,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/DebugTooltip.gd:5 | OUTSIDE_TAP_GRACE_MS · const | |
 | src/Client/App/corp-tower/Cor/Scripts/DebugTooltip.gd:18 | open | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd — 241 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd — 245 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -49,12 +49,12 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:11 | DEBUG_CONTEXT_LOBBY · const | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:12 | DEBUG_CONTEXT_PLAY · const | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:14 | DEBUG_TOOLTIPS · const | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:139 | PARALLAX_TARGET_TOWER · const | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:140 | PARALLAX_TARGET_SKY · const | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:141 | PARALLAX_TARGET_GROUND · const | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:239 | tunable_rows · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:143 | PARALLAX_TARGET_TOWER · const | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:144 | PARALLAX_TARGET_SKY · const | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:145 | PARALLAX_TARGET_GROUND · const | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelCatalog.gd:243 | tunable_rows · static func | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd — 993 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd — 1005 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -70,13 +70,13 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:14 | PARALLAX_TARGET_TOWER · const | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:15 | PARALLAX_TARGET_SKY · const | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:16 | PARALLAX_TARGET_GROUND · const | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:132 | bind_nodes | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:379 | set_screen_context | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:557 | toggle | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:566 | set_open | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:578 | is_open | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:628 | refresh_accessibility_row | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:682 | apply_config | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:134 | bind_nodes | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:384 | set_screen_context | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:564 | toggle | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:573 | set_open | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:585 | is_open | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:635 | refresh_accessibility_row | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/DebugPanelController.gd:689 | apply_config | |
 
 ---
 

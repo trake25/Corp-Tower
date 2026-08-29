@@ -10,17 +10,13 @@ failure, progression, or another outcome.
 
 ## Game UI controller family
 
-`Main.gd` is the gameplay view coordinator. It binds the composed scene once,
-stores the latest authoritative state, and delegates focused work to controllers
-for match state, player context/roster, top bar, inventory, quests, score popups,
-Power, summary, debug state, and visual hooks. Controllers share node references
-through the binder rather than rediscovering scene structure.
+`Main.gd` binds the composed scene, stores the latest authoritative state, and
+delegates match, roster, top bar, inventory, quest, popup, Power, summary, debug,
+and visual-hook behavior to binder-wired controllers.
 
-Each state update applies server grid/site values before drawing inventory or the
-tower, refreshes roster and Impact status, redraws blocks and structural pose,
-consumes transient events by id, and then presents state-specific overlays. The
-round clock ticks locally from the most recent state deadline so starting,
-playing, summary, and terminal countdowns remain smooth between broadcasts.
+State updates apply server grid/site values, refresh roster and Impact, redraw
+tower pose and inventory, consume events by id, then present overlays. The round
+clock interpolates from the latest server deadline.
 
 Rail totals may combine authoritative total with the current live level score
 only while playing. Impact bars use canonical server contribution directly; it
@@ -32,10 +28,11 @@ aim on the tower, then confirm the same resolved position. A changed aim updates
 the preview rather than placing accidentally. Every broadcast revalidates the
 armed position because a teammate may fill it first.
 
-Debug controls divide into server-backed tuning, synchronized presentation state,
-and client-local accessibility/view controls. The client displays and sends
-intent but never applies a server gameplay outcome locally. Screen Manager limits
-which debug categories are meaningful in lobby and play.
+Debug controls are server-backed tuning, synchronized presentation state, or
+client-local view state; Screen Manager limits categories by screen. Live
+Stability selects the tallest server component, with lower component id as the
+height tie-break and aggregate fallback for legacy payloads. Recovery sends a
+fixed-step percentage and renders the authoritative score event.
 
 The synchronized latency-display setting controls visibility, but each client
 measures its own WebSocket RTT. Probes run only while shown and discard pending
@@ -43,10 +40,10 @@ results after disable or disconnect; latency never becomes shared game state.
 
 ## Gameplay scene and overlays
 
-The Game UI scene composes the play field, tower, HUD, tutorial, debug panel,
-summary, and transient overlay layers. Fixed game art retains aspect and remains
-attached to its tower or edge anchor on wider Android roots; runtime surfaces may
-expand. Popovers, score events, and summaries draw above player Impact progress.
+The Game UI composes play field, tower, HUD, tutorial, debug, summary, and
+transient overlays. Fixed art keeps its tower or edge anchor on wider Android
+roots; runtime surfaces may expand. Popovers, score events, and summaries draw
+above Impact progress.
 
 The shared inventory bar exposes the communal pile and next draw. Player rails
 follow authoritative roster membership. Impact bars show each player's progress

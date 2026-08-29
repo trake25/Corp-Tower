@@ -61,7 +61,8 @@ unrelated live warning behavior.
 The smoke script loads every client runtime script, the main scene, autoloads,
 and required gameplay UI bindings. GUT protects the server/client placement
 mirror, inventory and block behavior, deterministic collapse/pose logic, auth,
-tutorial progression, gameplay state rendering, and meaningful UI structure.
+tutorial progression, gameplay state rendering including top-bar stability
+feedback, and meaningful UI structure.
 Native provider flows and visual fidelity remain release/manual coverage.
 
 `SnapGrid` range is static state and must be reset around its suite. Private face

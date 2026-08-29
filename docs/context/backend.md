@@ -19,11 +19,12 @@ The server alone decides placement, stability, scoring, failure, progression,
 Power, and room closure. Clients and tools render or preview those decisions from
 the same authoritative contracts.
 
-Standing bricks partition by four-way physical contact. Each component has its
-own stability result and visual pose, while gravity and load transfer still use
-downward contacts only. A collapsed component becomes fallen supply, survivors
-set standing height, and placement continues through normal win and supply
-failure checks rather than failing with `tower_collapsed`.
+Four-way contact partitions standing bricks into components with independent
+stability and pose; gravity and load transfer use downward contacts. An
+overloaded support cuts itself and groups with no remaining path to ground;
+strong lower sections and disconnected towers survive. The tallest component
+sets current height. Collapse alone stays active; Timer, unmet Impact, exhausted
+supply, or insufficient remaining brick height fails the level.
 
 ## Lobby Manager
 
@@ -70,7 +71,8 @@ constants have no setters. Grid bounds remain limited by the client viewport and
 the derived site is forced even so odd debug inputs cannot move it off-center.
 Visual-hook durations travel through `game_state`, while their enablement and
 other exposed controls use the debug snapshot. Restart is an action, not a
-tunable.
+tunable. Recovery scoring is a server-applied percentage; the client control
+sends bounded intent and never calculates points.
 
 ## Game Engine
 
@@ -191,7 +193,9 @@ snapshots, per-room broadcasts/actions, player assignment, and demo counters. It
 falls back to in-memory state when Redis is absent. Only a bounded draw-pile
 prefix is stored; hydration regenerates its hidden tail because only the next
 draw is observable. Tower pose and lifecycle/accounting state needed for
-continuity are persisted, but full stability analysis is not.
+continuity are persisted, but full stability analysis is not. Historical height,
+claimed Recovery rows, and rewarded repair boundaries persist so reconnect or
+pod handoff cannot reopen scoring history.
 
 ## Known gaps
 

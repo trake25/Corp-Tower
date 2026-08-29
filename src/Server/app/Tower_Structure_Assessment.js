@@ -29,6 +29,9 @@ function describeGroups(groups) {
             memberKeys,
             memberBlockIds,
             carriedLoadShare: clamp01(group.interface.carriedLoadShare),
+            supportedLoad: Math.max(0, Number(group.interface.supportedLoad) || 0),
+            supportCapacity: Math.max(0, Number(group.interface.supportCapacity) || 0),
+            loadRatio: Math.max(0, Number(group.interface.loadRatio) || 0),
             balanceRisk: clamp01(group.interface.balanceRisk),
             integrityRisk: clamp01(group.interface.integrityRisk),
             risk: interfaceRisk(group.interface),
@@ -36,6 +39,36 @@ function describeGroups(groups) {
             supportLinks
         };
     });
+}
+
+function affectedComponent(result, placedBlockId) {
+    return (result?.components || []).find(component => (
+        placedBlockId !== "" && (component.blockIds || []).includes(placedBlockId)
+    )) || null;
+}
+
+function activeComponent(result) {
+    return (result?.components || []).slice().sort((left, right) => {
+        const heightDifference = Number(right.analysis?.height || 0) -
+            Number(left.analysis?.height || 0);
+        return heightDifference || Number(left.id) - Number(right.id);
+    })[0] || null;
+}
+
+function matchingComponent(result, target, placedBlockId) {
+    if (!target) return null;
+    const targetIds = new Set((target.blockIds || []).filter(id => id !== placedBlockId));
+    const ranked = (result?.components || []).map(component => ({
+        component,
+        overlap: (component.blockIds || []).filter(id => targetIds.has(id)).length
+    })).sort((left, right) => {
+        return right.overlap - left.overlap || Number(left.component.id) - Number(right.component.id);
+    });
+    return ranked[0]?.overlap > 0 ? ranked[0].component : null;
+}
+
+function componentRisk(component, result) {
+    return clamp01(component?.diagnostics?.criticalRisk ?? result?.diagnostics?.criticalRisk ?? 0);
 }
 
 function overlapCount(left, right) {
@@ -103,13 +136,25 @@ function comparisonInterface(group) {
 }
 
 function comparePlacement(beforeResult, afterResult, placedEntry) {
-    const beforeGroups = Array.isArray(beforeResult?.analysis?.groups)
+    let beforeGroups = Array.isArray(beforeResult?.analysis?.groups)
         ? beforeResult.analysis.groups
         : [];
-    const afterGroups = Array.isArray(afterResult?.analysis?.groups)
+    let afterGroups = Array.isArray(afterResult?.analysis?.groups)
         ? afterResult.analysis.groups
         : [];
     const placedBlockId = String(placedEntry?.block?.id ?? placedEntry?.blockId ?? "");
+    const afterComponent = affectedComponent(afterResult, placedBlockId);
+    const activeAfterComponent = activeComponent(afterResult);
+    const beforeComponent = matchingComponent(beforeResult, afterComponent, placedBlockId);
+
+    if (afterComponent && afterGroups.some(group => group.componentId !== undefined)) {
+        afterGroups = afterGroups.filter(group => group.componentId === afterComponent.id);
+    }
+    if (beforeComponent && beforeGroups.some(group => group.componentId !== undefined)) {
+        beforeGroups = beforeGroups.filter(group => group.componentId === beforeComponent.id);
+    } else if (afterComponent && beforeResult?.components?.length > 0) {
+        beforeGroups = [];
+    }
     const placedKeys = new Set(afterGroups.filter(group => {
         return placedBlockId !== "" && (group.memberBlockIds || []).includes(placedBlockId);
     }).map(group => group.key));
@@ -155,10 +200,11 @@ function comparePlacement(beforeResult, afterResult, placedEntry) {
     const rawStructuralUtility = improvements.reduce((total, improvement) => {
         return total + improvement.weightedImprovement;
     }, 0);
-    const riskIncrease = clamp01(
-        Number(afterResult?.diagnostics?.criticalRisk || 0) -
-        Number(beforeResult?.diagnostics?.criticalRisk || 0)
-    );
+    const beforeRisk = afterComponent
+        ? componentRisk(beforeComponent, null)
+        : componentRisk(null, beforeResult);
+    const afterRisk = componentRisk(afterComponent, afterResult);
+    const riskIncrease = clamp01(afterRisk - beforeRisk);
 
     return {
         riskIncrease,
@@ -168,6 +214,15 @@ function comparePlacement(beforeResult, afterResult, placedEntry) {
             return total + improvement.before.carriedLoadShare * improvement.directSupportShare;
         }, 0)),
         directSupportShare: critical ? critical.directSupportShare : 0,
+        isActiveTower: Boolean(
+            afterComponent && activeAfterComponent && afterComponent.id === activeAfterComponent.id
+        ),
+        affectedBeforeRisk: beforeRisk,
+        affectedAfterRisk: afterRisk,
+        affectedBeforeStability: Number(afterComponent
+            ? beforeComponent?.stability ?? 100
+            : beforeResult?.stability ?? 100),
+        affectedAfterStability: Number(afterComponent?.stability ?? afterResult?.stability ?? 100),
         criticalInterfaceBefore: comparisonInterface(critical?.before),
         criticalInterfaceAfter: comparisonInterface(critical?.after),
         criticalRiskReduction: critical ? critical.riskReduction : 0,

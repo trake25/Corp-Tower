@@ -141,6 +141,8 @@ class GameEngine {
             towerStabilityComponents: [],
             towerStructuralPose: [],
             towerStabilityResult: null,
+            historicalMaxStandingHeight: 0,
+            recoveryCreditedRows: {},
             lastChanceRescuePending: false,
             lastChanceRescueUsed: false,
             state: "waiting",
@@ -219,6 +221,11 @@ class GameEngine {
             towerStabilityDiagnostics: snapshot.state.towerStabilityDiagnostics || {},
             towerStabilityComponents: snapshot.state.towerStabilityComponents || [],
             towerStructuralPose: snapshot.state.towerStructuralPose || [],
+            historicalMaxStandingHeight: Math.max(
+                Number(snapshot.state.historicalMaxStandingHeight || 0),
+                Number(snapshot.state.currentHeight || 0)
+            ),
+            recoveryCreditedRows: snapshot.state.recoveryCreditedRows || {},
             lastChanceRescuePending: Boolean(snapshot.state.lastChanceRescuePending),
             lastChanceRescueUsed: Boolean(snapshot.state.lastChanceRescueUsed),
             state: snapshot.state.state,
@@ -478,6 +485,8 @@ class GameEngine {
         this.room.towerStabilityComponents = [];
         this.room.towerStructuralPose = [];
         this.room.towerStabilityResult = null;
+        this.room.historicalMaxStandingHeight = 0;
+        this.room.recoveryCreditedRows = {};
         this.resetLastChanceRescue();
         this.room.targetHeight =
             this.getTargetHeightForLevel(this.room.level);
@@ -716,6 +725,8 @@ class GameEngine {
         this.room.towerStabilityComponents = [];
         this.room.towerStructuralPose = [];
         this.room.towerStabilityResult = null;
+        this.room.historicalMaxStandingHeight = 0;
+        this.room.recoveryCreditedRows = {};
         this.resetLastChanceRescue();
         this.room.targetHeight = this.getTargetHeightForLevel(targetLevel);
         this.room.lastLevelSummary = null;
@@ -758,7 +769,7 @@ class GameEngine {
     resolveStabilityConfig(level) { return Placement.resolveStabilityConfig(this, level); }
     resolveLastChance(result, advancesRescue = false) { return LastChance.resolve(this, result, advancesRescue); }
     resetLastChanceRescue() { return LastChance.reset(this); }
-    recalculateTowerStability(advancesLastChance = false) { return Placement.recalculateTowerStability(this, advancesLastChance); }
+    recalculateTowerStability(advancesLastChance = false, evaluatedResult = null) { return Placement.recalculateTowerStability(this, advancesLastChance, evaluatedResult); }
     checkWinCondition(finisher, finishingBlock) { return Placement.checkWinCondition(this, finisher, finishingBlock); }
     checkFailCondition() { return Placement.checkFailCondition(this); }
     anyPlayerCanRescueSupply() { return Placement.anyPlayerCanRescueSupply(this); }
@@ -844,6 +855,9 @@ class GameEngine {
     }
 
     failLevel(reason) {
+        if (!["time_expired", "all_blocks_used", "not_enough_height_remaining"].includes(reason)) {
+            return false;
+        }
         return this.resolveCheckpointFailure({ reason });
     }
 

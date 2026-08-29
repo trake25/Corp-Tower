@@ -166,7 +166,8 @@ test("a placement emits one authoritative score transaction and contribution", (
         Object.keys(placementEvents[0].meta).sort(),
         [
             "benefitedLoadShare", "classification", "criticalSavePoints", "effectiveHeight",
-            "heightPoints", "heightQuality", "structuralPoints", "structuralValue"
+            "heightPoints", "heightQuality", "newHeight", "recoveredHeight", "recoveryPoints",
+            "structuralPoints", "structuralValue"
         ]
     );
     assert.equal(player.levelImpactContribution, placementEvents[0].points);
@@ -306,7 +307,7 @@ test("activating the refresh power item rerolls every player's blocks", () => {
     }
 });
 
-test("a held replenish power item defers the not-enough-height fail", () => {
+test("insufficient supply fails unless replenish can rescue it", () => {
     const { engine } = createPlayingEngine(10, 20);
     const player = engine.room.players[0];
 
@@ -326,6 +327,17 @@ test("a held replenish power item defers the not-enough-height fail", () => {
     player.powerInventory = [];
     engine.checkFailCondition();
     assert.equal(engine.room.state, "failed");
+    assert.equal(engine.room.lastLevelSummary.failureReason, "not_enough_height_remaining");
+
+    const exhausted = createPlayingEngine(10, 20).engine;
+    exhausted.room.drawPile = [];
+    exhausted.room.players.forEach(p => {
+        p.blocks = [];
+        p.powerInventory = [{ id: "replenish", earnedLevel: 10 }];
+    });
+    exhausted.checkFailCondition();
+    assert.equal(exhausted.room.state, "failed");
+    assert.equal(exhausted.room.lastLevelSummary.failureReason, "all_blocks_used");
 });
 
 test("replenish adds a share of the level's starting draw pile", () => {
@@ -561,25 +573,28 @@ test("cooperative bots use authoritative Impact contribution status", () => {
     assert.equal(BotManager.hasClearedShareWhileTeammateShort(first, engine), false);
 });
 
-test("every rollback-worthy failure increments once and schedules a checkpoint recovery", () => {
-    const reasons = [
-        "tower_collapsed",
-        "time_expired",
-        "all_blocks_used",
-        "not_enough_height_remaining"
-    ];
-
-    reasons.forEach(reason => {
+test("Timer and supply failures enter checkpoint failure while collapse does not", () => {
+    for (const reason of ["all_blocks_used", "not_enough_height_remaining"]) {
         const { engine } = createPlayingEngine(1, 5);
-
         assert.equal(engine.failLevel(reason), true);
         assert.equal(engine.room.state, "failed");
         assert.equal(engine.room.impactFailureCount, 1);
-        assert.equal(engine.getImpactFailureStatus().retriesRemaining, 2);
-        assert.ok(engine.nextLevelTimer);
+    }
+
+    for (const reason of ["tower_collapsed", "lost_height"]) {
+        const { engine } = createPlayingEngine(1, 5);
         assert.equal(engine.failLevel(reason), false);
-        assert.equal(engine.room.impactFailureCount, 1);
-    });
+        assert.equal(engine.room.state, "playing");
+        assert.equal(engine.room.impactFailureCount, 0);
+    }
+
+    const timer = createPlayingEngine(1, 5).engine;
+    assert.equal(timer.failLevel("time_expired"), true);
+    assert.equal(timer.room.state, "failed");
+    assert.equal(timer.room.impactFailureCount, 1);
+    assert.equal(timer.getImpactFailureStatus().retriesRemaining, 2);
+    assert.ok(timer.nextLevelTimer);
+    assert.equal(timer.failLevel("time_expired"), false);
 
     const { engine } = createPlayingEngine(1, 5);
     engine.room.state = "finished";
@@ -663,11 +678,11 @@ test("the fourth failure enters Game Over, restores checkpoint totals, and close
     first.levelImpactContribution = 25;
     first.powerInventory = [{ id: "refresh", earnedLevel: 4 }];
 
-    assert.equal(engine.failLevel("tower_collapsed"), true);
+    assert.equal(engine.failLevel("time_expired"), true);
     assert.equal(engine.room.state, "game_over");
     assert.equal(engine.room.impactFailureCount, 4);
     assert.equal(engine.room.lastLevelSummary.result, "game_over");
-    assert.equal(engine.room.lastLevelSummary.failureReason, "tower_collapsed");
+    assert.equal(engine.room.lastLevelSummary.failureReason, "time_expired");
     assert.equal(engine.rollbackToImpact(), false);
     assert.equal(first.score, 12);
     assert.equal(first.impactContribution, 9);

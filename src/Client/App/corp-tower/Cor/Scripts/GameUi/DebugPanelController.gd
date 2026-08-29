@@ -68,6 +68,8 @@ var refresh_min_useful_height_slider: HSlider
 var placement_score_table_label: Control
 var placement_score_label: Control
 var placement_score_slider: HSlider
+var recovery_height_score_label: Control
+var recovery_height_score_slider: HSlider
 var impact_score_label: Control
 var impact_score_slider: HSlider
 var impact_interval_label: Control
@@ -210,6 +212,8 @@ func bind_nodes(binder) -> void:
 	placement_score_table_label = bind_placement_score_table_row(binder)
 	placement_score_label = bind_tooltip_row(binder, "PlacementScoreLabel")
 	placement_score_slider = binder.optional_node("PlacementScoreSlider") as HSlider
+	recovery_height_score_label = bind_tooltip_row(binder, "RecoveryHeightScoreLabel")
+	recovery_height_score_slider = binder.optional_node("RecoveryHeightScoreSlider") as HSlider
 	impact_score_label = bind_tooltip_row(binder, "ImpactScoreLabel")
 	impact_score_slider = binder.optional_node("ImpactScoreSlider") as HSlider
 	impact_interval_label = bind_tooltip_row(binder, "ImpactIntervalLabel")
@@ -328,6 +332,7 @@ func setup(
 	configure_slider(max_team_carry_over_slider, 0, 12, 1, func(value): send_debug_int("maxTeamCarryOverBlocks", value))
 	configure_slider(refresh_min_useful_height_slider, 1, 6, 1, func(value): send_debug_int("refreshMinUsefulBlockHeight", value))
 	configure_slider(placement_score_slider, 1, 25, 1, func(value): send_debug_int("placementScorePerHeight", value))
+	configure_slider(recovery_height_score_slider, 0, 100, 10, func(value): send_debug_int("recoveryHeightScorePercent", value))
 	configure_slider(impact_score_slider, 0, 50, 5, func(value): send_debug_float("impactMinContributionShare", value / 100.0))
 	configure_slider(impact_interval_slider, 1, 10, 1, func(value): send_debug_int("impactInterval", value))
 	configure_slider(impact_score_floor_slider, 0, 5000, 50, func(value): send_debug_int("impactScoreRequirement", value))
@@ -506,6 +511,7 @@ func bind_placement_score_table_row(row_binder) -> Control:
 
 func placement_score_table_body() -> String:
 	var height_rate: int = maxi(1, roundi(get_slider_value(placement_score_slider, 10)))
+	var recovery_share: int = clampi(roundi(get_slider_value(recovery_height_score_slider, 50)), 0, 100)
 	var dangerous_floor: float = clampf(get_slider_value(placement_stability_floor_slider, 35) / 100.0, 0.1, 1.0)
 	var repair_share: float = clampf(get_slider_value(reinforce_integrity_slider, 85) / 100.0, 0.1, 1.0)
 	var normal_cap_share: float = clampf(get_slider_value(reinforce_lean_slider, 160) / 100.0, 1.0, 3.0)
@@ -525,6 +531,7 @@ func placement_score_table_body() -> String:
 		])
 
 	lines.append("REPAIR MAX / SAVE")
+	lines.append("RECOVERY: %d%% of clean row value once." % recovery_share)
 
 	for level in [1, 5, 10, 25]:
 		var action_unit: float = float(level) * float(height_rate) * SCORE_TABLE_AVERAGE_BRICK_HEIGHT
@@ -734,6 +741,7 @@ func apply_config(config) -> void:
 	set_slider_no_signal(max_team_carry_over_slider, float(config.get("maxTeamCarryOverBlocks", 3)))
 	set_slider_no_signal(refresh_min_useful_height_slider, float(config.get("refreshMinUsefulBlockHeight", 2)))
 	set_slider_no_signal(placement_score_slider, float(config.get("placementScorePerHeight", 10)))
+	set_slider_no_signal(recovery_height_score_slider, float(config.get("recoveryHeightScorePercent", 50)))
 	set_slider_no_signal(
 		impact_interval_slider,
 		float(config.get("impactInterval", 1))
@@ -887,6 +895,10 @@ func update_debug_labels() -> void:
 	set_debug_label_text(
 		placement_score_label,
 		"Useful Height Rate: " + str(int(get_slider_value(placement_score_slider, 10)))
+	)
+	set_debug_label_text(
+		recovery_height_score_label,
+		"Recovery Height Score: " + str(int(get_slider_value(recovery_height_score_slider, 50))) + "%"
 	)
 	set_debug_label_text(
 		supply_effective_width_label,

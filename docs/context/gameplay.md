@@ -88,10 +88,11 @@ players, cooldown, and a level-dependent slack curve. It grows with the tower
 rather than using a flat duration. The reconnect TTL is independent, so long
 late-game rounds can outlast a disconnected player's recovery window.
 
-A level fails on timeout, exhausted supply below target, mathematically
-insufficient remaining height without a rescue, collapse, or an unmet personal
-Impact requirement. Quick chat is a small fixed template set with a
-server-authoritative per-player cooldown.
+A level fails when its Timer expires, an Impact contribution checkpoint is
+unmet, supply is exhausted, or the remaining bricks cannot reach the target.
+Replenish can defer the insufficient-supply check while it can still rescue the
+run. Collapse and lost height alone do not fail. Quick chat is a small fixed
+template set with a server-authoritative per-player cooldown.
 
 Each Impact band begins at a secured checkpoint. Failure replays the active band
 from its saved score, eligible contribution, and Power inventory while retaining
@@ -100,11 +101,13 @@ budget enters terminal game over and returns players Home after the summary.
 
 ## Scoring and contribution
 
-Every settled brick produces one authoritative placement transaction. Useful
-height pays only for usable progress and is discounted by risk the placement
-introduces. Direct structural repair pays for its normalized utility. A mature
-critical repair may add a single-use Critical Save. Normal placement components
-share an action-level cap; completion and presentation bonuses remain outside it.
+Every settled brick produces one authoritative placement transaction. Rows above
+the level's historical maximum earn Height once; rebuilt lost rows earn one-time
+Recovery at the configured share. Risk at the placed brick's component peak
+discounts both. Every direct surviving repair on the active tallest tower earns
+Reinforce; repairs to other components do not. A mature rescue may add a
+single-use Critical Save. Any placement that drops a brick earns no placement or
+Impact points. Height, Recovery, Critical Save, then Reinforce share the cap.
 
 Only capped useful placement components count toward Impact contribution.
 Completion, MVP, exact-finish, Power, and other display-score bonuses do not.

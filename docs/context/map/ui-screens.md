@@ -125,7 +125,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:3 | find_match_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | back_requested · signal | |
 
-### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 408 ln
+### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 418 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -134,7 +134,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:27 | tutorial_exited · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:217 | toggle_debug_overlay | |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:220 | set_debug_context | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:272 | start_tutorial | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:277 | start_tutorial | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd — 49 ln
 

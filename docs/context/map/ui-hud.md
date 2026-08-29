@@ -310,18 +310,18 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:134 | has_pose | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:137 | has_targets | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 166 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 187 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:1 | @file · file | declare the nodes this module needs |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:29 | bind_nodes | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:45 | reset_indicators | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:83 | tick_round_timer | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:103 | set_top_indicator_progress | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:132 | update_top_bar_display | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:153 | update_tower_stability_ui | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:164 | set_stability_meter_visible | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:1 | @file · file | top-bar height indicators and live stability warning preview |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:30 | bind_nodes | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:46 | reset_indicators | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:84 | tick_round_timer | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:104 | set_top_indicator_progress | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:133 | update_top_bar_display | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:154 | update_tower_stability_ui | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:184 | set_stability_meter_visible | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd — 22 ln
 

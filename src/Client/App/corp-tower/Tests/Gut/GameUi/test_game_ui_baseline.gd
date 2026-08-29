@@ -91,6 +91,21 @@ func test_debug_meter_mode_reveals_stability_label() -> void:
 	harness.main.update_debug_config({"towerStabilityFeedbackMode": "meter_only"})
 	assert_true((harness.find("TowerStabilityLabel") as Label).is_visible_in_tree(), "The debug meter mode should reveal the stability label.")
 
+func test_live_stability_uses_the_tallest_component_with_stable_ties() -> void:
+	var state: Dictionary = GAME_STATE_FIXTURE.duplicate(true)
+	state["towerStabilityFeedbackMode"] = "live_preview"
+	state["towerStability"] = 20
+	state["towerStabilityComponents"] = [
+		{"id": 0, "height": 3, "stability": 90, "diagnostics": {}},
+		{"id": 1, "height": 6, "stability": 72, "diagnostics": {"leanDirection": "right"}},
+		{"id": 2, "height": 6, "stability": 64, "diagnostics": {"leanDirection": "left"}}
+	]
+	harness.main.update_game_state(state)
+	var label := harness.find("TowerStabilityLabel") as Label
+	assert_true(label.visible)
+	assert_true(label.text.contains("72%"))
+	assert_true(label.text.contains("right"))
+
 func test_score_events_deduplicate_by_id() -> void:
 	var layer: Control = harness.find("ScorePopupLayer") as Control
 	var first_wait: float = harness.main.score_popups.process_score_events(GAME_STATE_FIXTURE["scoreEvents"], PLAYERS_FIXTURE)

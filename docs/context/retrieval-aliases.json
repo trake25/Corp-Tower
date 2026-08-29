@@ -52,6 +52,18 @@
     "retrieval fallback candidate": {
       "aliases": ["broad_fallback", "detectCandidates"],
       "areas": ["automation"]
+    },
+    "workflow candidate": {
+      "aliases": ["candidate_id", "createFormalFlag"],
+      "areas": ["automation"]
+    },
+    "tower collapse": {
+      "aliases": ["tower_collapse", "collapseComponents"],
+      "areas": ["backend"]
+    },
+    "reinforcement scoring": {
+      "aliases": ["bestRewardedRiskByBoundary", "previewPlacementScore"],
+      "areas": ["backend"]
     }
   }
 }

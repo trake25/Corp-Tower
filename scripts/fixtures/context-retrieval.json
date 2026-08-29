@@ -18,6 +18,9 @@
     { "id": "latency-indicator-label-anchor", "area": "hud", "queries": [{ "map": "ui-hud", "query": "LatencyIndicatorLabel", "expects": "GameUI.tscn" }] },
     { "id": "stability-mood-threshold-config-anchor", "area": "backend", "queries": [{ "map": "backend", "query": "towerStabilityMoodThreshold", "expects": "Game_Config.js" }] },
     { "id": "live-preview-config-anchor", "area": "backend", "queries": [{ "map": "backend", "query": "live_preview", "expects": "Game_Config.js" }] },
+    { "id": "stability-component-evaluator-purpose", "area": "backend", "queries": [{ "map": "backend", "query": "support components", "expects": "Tower_Stability.js" }] },
+    { "id": "stability-warning-preview-purpose", "area": "hud", "queries": [{ "map": "ui-hud", "query": "stability warning", "expects": "TopBarController.gd" }] },
+    { "id": "placement-score-cap-config-anchor", "area": "backend", "queries": [{ "map": "backend", "query": "normalCombinedCapActionShare", "expects": "Game_Config.js" }] },
     { "id": "visual-hooks-config-anchor", "area": "hud", "queries": [{ "map": "ui-hud", "query": "VisualHooks", "expects": "VisualHooks.gd" }] },
     { "id": "codex-hook-config-anchor", "area": "automation", "queries": [{ "map": "infra", "query": "handleHook", "expects": "codex-observability-hook.mjs" }] },
     { "id": "observability-start-adapter-symbol", "area": "automation", "queries": [{ "map": "infra", "query": "startObservability", "expects": "task-close.mjs" }] }
@@ -69,6 +72,34 @@
       "query": "tower_collapsed",
       "options": { "anchor": true },
       "expects": { "status": "matched", "source": "src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd", "fallback": false }
+    },
+    {
+      "id": "top-bar-stability-testing-anchor",
+      "command": "search",
+      "query": "top-bar stability feedback",
+      "options": { "anchor": true, "domains": ["testing"] },
+      "expects": { "status": "matched", "path": "docs/context/testing.md", "title": "Godot coverage", "fallback": false }
+    },
+    {
+      "id": "placement-score-cap-config-symbol",
+      "command": "search",
+      "query": "normalCombinedCapActionShare",
+      "options": { "anchor": true, "kinds": ["symbol"] },
+      "expects": { "status": "matched", "source": "src/Server/app/Game_Config.js", "fallback": false }
+    },
+    {
+      "id": "tower-collapse-section-symbol",
+      "command": "search",
+      "query": "tower_collapse",
+      "options": { "anchor": true, "kinds": ["symbol"], "domains": ["backend"] },
+      "expects": { "status": "matched", "source": "src/Server/app/engine/Placement.js", "fallback": false }
+    },
+    {
+      "id": "obsolete-reinforcement-ledger-alias",
+      "command": "search",
+      "query": "bestRewardedRiskByBoundary",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "source": "src/Server/app/engine/Scoring.js", "fallback": false }
     },
     {
       "id": "observability-task-binding-symbol",
@@ -123,6 +154,13 @@
       "id": "broad-fallback-candidate-symbol",
       "command": "search",
       "query": "broad_fallback",
+      "options": { "anchor": true },
+      "expects": { "status": "matched", "source": "scripts/lib/agent-observability/flagging.mjs", "fallback": false }
+    },
+    {
+      "id": "workflow-candidate-alias-symbol",
+      "command": "search",
+      "query": "candidate_id",
       "options": { "anchor": true },
       "expects": { "status": "matched", "source": "scripts/lib/agent-observability/flagging.mjs", "fallback": false }
     },

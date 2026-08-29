@@ -357,7 +357,12 @@ function interfaceFor(group, config, height, disabled) {
     const redundancyFactor = 1 + Math.max(0, number(config.towerRedundancyBonus, 0.45)) * (1 - pathConcentration);
     const contactShare = contactWidth / Math.max(1, number(config.towerSiteWidth, contactWidth || 1));
     const availableSupportShare = Math.min(1, contactShare * redundancyFactor);
-    const requiredSupportShare = Math.pow(carriedLoadShare, Math.max(0.05, number(config.towerStructuralLoadExponent, 0.8)));
+    const loadExponent = Math.max(0.05, number(config.towerStructuralLoadExponent, 0.8));
+    const requiredSupportShare = Math.pow(carriedLoadShare, loadExponent);
+    const supportCapacityShare = Math.pow(Math.max(0, availableSupportShare), 1 / loadExponent);
+    const supportedLoad = Math.max(0, group.loadMass);
+    const supportCapacity = group.componentMass * supportCapacityShare;
+    const loadRatio = supportedLoad / Math.max(0.0001, supportCapacity);
     const supportShortfall = contactWidth === 0
         ? 1
         : Math.max(0, requiredSupportShare - availableSupportShare) / Math.max(requiredSupportShare, 0.0001);
@@ -377,6 +382,9 @@ function interfaceFor(group, config, height, disabled) {
         contactWidth,
         pathCount: links.length,
         pathConcentration,
+        supportedLoad,
+        supportCapacity,
+        loadRatio,
         balanceRisk,
         integrityRisk,
         direction,
@@ -416,6 +424,39 @@ function analyseGroups(groups, config, height, disabled) {
             group.supportLinks = group.interface.supportLinks;
         }
     }
+}
+function collapseSlice(groups) {
+    const failed = new Set(groups.filter(group => (
+        group.interface.balanceRisk >= 1 || group.interface.integrityRisk >= 1
+    )));
+    const grounded = new Map();
+
+    const hasGroundPath = (group, visiting = new Set()) => {
+        if (failed.has(group)) return false;
+        if (grounded.has(group)) return grounded.get(group);
+        if (visiting.has(group)) return false;
+        if (group.contacts.some(contact => !contact.supporter)) {
+            grounded.set(group, true);
+            return true;
+        }
+        const next = new Set(visiting);
+        next.add(group);
+        const reachesGround = group.supportLinks.some(link => (
+            link.supporter && hasGroundPath(link.supporter, next)
+        ));
+        grounded.set(group, reachesGround);
+        return reachesGround;
+    };
+
+    const collapsedGroups = groups.filter(group => failed.has(group) || !hasGroundPath(group));
+    const entryIndexes = Array.from(new Set(collapsedGroups.flatMap(group => (
+        group.members.map(member => member.entryIndex)
+    )))).sort((left, right) => left - right);
+    const blockIds = Array.from(new Set(collapsedGroups.flatMap(group => (
+        group.members.map(member => blockId(member.entry)).filter(Boolean)
+    )))).sort();
+
+    return { entryIndexes, blockIds };
 }
 function visualSections(groups, config, componentId) {
     const parent = new Map(groups.map(group => [group, group]));
@@ -570,6 +611,7 @@ function evaluateComponent(nodes, config, componentId) {
     const critical = selectCritical(groups);
     const maxBalanceRisk = groups.reduce((value, group) => Math.max(value, group.interface.balanceRisk), 0);
     const maxIntegrityRisk = groups.reduce((value, group) => Math.max(value, group.interface.integrityRisk), 0);
+    const collapse = collapseSlice(groups);
     const balance = Math.round(100 * (1 - maxBalanceRisk));
     const integrity = Math.round(100 * (1 - maxIntegrityRisk));
     const collapsed = maxBalanceRisk >= 1 || maxIntegrityRisk >= 1;
@@ -585,7 +627,10 @@ function evaluateComponent(nodes, config, componentId) {
         integrityRisk: critical.interface.integrityRisk,
         carriedLoadShare: critical.interface.carriedLoadShare,
         effectiveSupportWidth: critical.interface.effectiveSupportWidth,
-        pathCount: critical.interface.pathCount
+        pathCount: critical.interface.pathCount,
+        supportedLoad: critical.interface.supportedLoad,
+        supportCapacity: critical.interface.supportCapacity,
+        loadRatio: critical.interface.loadRatio
     } : null;
 
     const diagnostics = {
@@ -613,6 +658,8 @@ function evaluateComponent(nodes, config, componentId) {
         id: componentId,
         entryIndexes: nodes.map(node => node.entryIndex).sort((left, right) => left - right),
         blockIds: nodes.map(node => blockId(node.entry)).filter(Boolean).sort(),
+        collapseEntryIndexes: collapse.entryIndexes,
+        collapseBlockIds: collapse.blockIds,
         grounded: nodes.some(node => node.cells.some(cell => cell.y === 0)),
         stability,
         diagnostics,
@@ -668,7 +715,9 @@ function evaluate(entries, config = {}) {
                 grounded: component.grounded,
                 height: component.analysis.height,
                 stability: component.stability,
-                collapsed: component.diagnostics.collapsed
+                collapsed: component.diagnostics.collapsed,
+                collapseEntryIndexes: component.collapseEntryIndexes,
+                collapseBlockIds: component.collapseBlockIds
             }))
         }
     };

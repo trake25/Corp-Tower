@@ -246,7 +246,12 @@ func update_room(data) -> void:
 		data.get("nextDrawBlock", null)
 	)
 	roster.update_impact_status_ui(data.get("impactScoreStatus", {}))
-	top_bar.update_tower_stability_ui(int(data.get("towerStability", 100)), data.get("towerStabilityDiagnostics", {}))
+	top_bar.set_stability_meter_visible(str(data.get("towerStabilityFeedbackMode", "warnings_only")))
+	top_bar.update_tower_stability_ui(
+		int(data.get("towerStability", 100)),
+		data.get("towerStabilityDiagnostics", {}),
+		data.get("towerStabilityComponents", [])
+	)
 
 func update_room_closed(_data) -> void:
 	match_state.current_match_state = ""
@@ -335,7 +340,12 @@ func update_game_state(data) -> void:
 
 	top_bar.update_top_bar_display(incoming_level, impact_level, state, seconds_remaining)
 	top_bar.set_top_indicator_progress(current_height, target_height)
-	top_bar.update_tower_stability_ui(int(data.get("towerStability", 100)), data.get("towerStabilityDiagnostics", {}))
+	top_bar.set_stability_meter_visible(str(data.get("towerStabilityFeedbackMode", "warnings_only")))
+	top_bar.update_tower_stability_ui(
+		int(data.get("towerStability", 100)),
+		data.get("towerStabilityDiagnostics", {}),
+		data.get("towerStabilityComponents", [])
+	)
 	if data.has("accessibility"):
 		accessibility.apply_server_defaults(data.get("accessibility", {}))
 	if data.has("visualHooks"):

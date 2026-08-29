@@ -25,6 +25,7 @@ var timer_deadline_ms: int = 0
 var timer_shown_seconds: int = -1
 var freeze_blink_tween: Tween
 var freeze_blink_base_color: Color = Color.BLACK
+var stability_feedback_mode := "warnings_only"
 
 func bind_nodes(binder) -> void:
 	level_label = binder.require_node("LevelLabel") as Label
@@ -150,16 +151,36 @@ func update_top_bar_display(level: int, impact_level: int, state: String, second
 	else:
 		stop_freeze_blink()
 
-func update_tower_stability_ui(stability: int, diagnostics: Variant) -> void:
-	var safe_stability: int = clampi(stability, 0, 100)
+func update_tower_stability_ui(stability: int, diagnostics: Variant, components: Variant = []) -> void:
+	var displayed_stability: int = stability
+	var displayed_diagnostics: Variant = diagnostics
+	if stability_feedback_mode == "live_preview" and typeof(components) == TYPE_ARRAY:
+		var selected: Dictionary = {}
+		var selected_height: int = -1
+		var selected_id: int = 2147483647
+		for candidate_value in components:
+			if typeof(candidate_value) != TYPE_DICTIONARY or not candidate_value.has("height"):
+				continue
+			var candidate: Dictionary = candidate_value
+			var candidate_height := int(candidate.get("height", 0))
+			var candidate_id := int(candidate.get("id", 0))
+			if candidate_height > selected_height or (candidate_height == selected_height and candidate_id < selected_id):
+				selected = candidate
+				selected_height = candidate_height
+				selected_id = candidate_id
+		if not selected.is_empty():
+			displayed_stability = int(selected.get("stability", stability))
+			displayed_diagnostics = selected.get("diagnostics", diagnostics)
+	var safe_stability: int = clampi(displayed_stability, 0, 100)
 	var state := "Stable" if safe_stability > 60 else ("Warning" if safe_stability > 30 else "Critical")
 	var lean_suffix := ""
-	if typeof(diagnostics) == TYPE_DICTIONARY:
-		var lean_direction := str(diagnostics.get("leanDirection", "center"))
+	if typeof(displayed_diagnostics) == TYPE_DICTIONARY:
+		var lean_direction := str(displayed_diagnostics.get("leanDirection", "center"))
 		if lean_direction != "center":
 			lean_suffix = " - leaning " + lean_direction
 	tower_stability_label.text = state.to_upper() + " · " + str(safe_stability) + "%" + lean_suffix
 	tower_stability_label.modulate = STABILITY_GREEN if safe_stability > 60 else (STABILITY_YELLOW if safe_stability > 30 else STABILITY_RED)
 
 func set_stability_meter_visible(feedback_mode: String) -> void:
+	stability_feedback_mode = feedback_mode
 	tower_stability_label.visible = feedback_mode == "meter_only" or feedback_mode == "live_preview"

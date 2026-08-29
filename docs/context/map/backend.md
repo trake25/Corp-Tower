@@ -39,26 +39,27 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Bot_Manager.js:38 | stopBots | |
 | src/Server/app/Bot_Manager.js:394 | chooseBotAction | |
 
-### src/Server/app/Debug_Config.js — 182 ln
+### src/Server/app/Debug_Config.js — 184 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Debug_Config.js:1 | @file · file | resolves a root, scoring or visual-hooks config owner |
-| src/Server/app/Debug_Config.js:109 | target · fn | |
-| src/Server/app/Debug_Config.js:113 | snapshot · fn | |
-| src/Server/app/Debug_Config.js:119 | DEFAULTS · const | |
-| src/Server/app/Debug_Config.js:121 | applyDefaults · fn | |
-| src/Server/app/Debug_Config.js:132 | applyValue · fn | |
+| src/Server/app/Debug_Config.js:111 | target · fn | |
+| src/Server/app/Debug_Config.js:115 | snapshot · fn | |
+| src/Server/app/Debug_Config.js:121 | DEFAULTS · const | |
+| src/Server/app/Debug_Config.js:123 | applyDefaults · fn | |
+| src/Server/app/Debug_Config.js:134 | applyValue · fn | |
 
-### src/Server/app/Game_Config.js — 168 ln
+### src/Server/app/Game_Config.js — 169 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Game_Config.js:1 | @file · file | authoritative gameplay, tuning, bot, room-timing, live_preview, and latency defaults |
 | src/Server/app/Game_Config.js:1 | GameConfig · const | |
 | src/Server/app/Game_Config.js:74 | towerStabilityMoodThreshold · stable | |
+| src/Server/app/Game_Config.js:144 | normalCombinedCapActionShare · stable | |
 
-### src/Server/app/Game_Engine.js — 970 ln
+### src/Server/app/Game_Engine.js — 984 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -66,31 +67,31 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Game_Engine.js:9 | GameEngine · class | |
 | src/Server/app/Game_Engine.js:46 | broadcastGameState | |
 | src/Server/app/Game_Engine.js:116 | createRoom | |
-| src/Server/app/Game_Engine.js:165 | initializePlayerForRoom | |
-| src/Server/app/Game_Engine.js:180 | removePlayerFromRoom | |
-| src/Server/app/Game_Engine.js:194 | hydrateRoom | |
-| src/Server/app/Game_Engine.js:301 | persistRoom | |
-| src/Server/app/Game_Engine.js:311 | recordLevelOutcome | |
-| src/Server/app/Game_Engine.js:325 | queueQuickChat | |
-| src/Server/app/Game_Engine.js:372 | clonePowerInventory | |
-| src/Server/app/Game_Engine.js:393 | tryCompleteSideQuest | |
-| src/Server/app/Game_Engine.js:403 | activatePower | |
-| src/Server/app/Game_Engine.js:437 | getPostLevelTransitionDelayMs | |
-| src/Server/app/Game_Engine.js:465 | startLevel | |
-| src/Server/app/Game_Engine.js:540 | clearTimers | |
-| src/Server/app/Game_Engine.js:552 | closeRoom | |
-| src/Server/app/Game_Engine.js:575 | requestRoomClose | |
-| src/Server/app/Game_Engine.js:590 | stopBots | |
-| src/Server/app/Game_Engine.js:624 | getTargetHeightForLevel | |
-| src/Server/app/Game_Engine.js:635 | getLevelTimeLimitMs | |
-| src/Server/app/Game_Engine.js:675 | clampLevel | |
-| src/Server/app/Game_Engine.js:682 | restartAtConfiguredStartLevel | |
-| src/Server/app/Game_Engine.js:689 | restartAtLevel | |
-| src/Server/app/Game_Engine.js:766 | completeLevel | |
-| src/Server/app/Game_Engine.js:846 | failLevel | |
-| src/Server/app/Game_Engine.js:850 | nextLevel | |
+| src/Server/app/Game_Engine.js:167 | initializePlayerForRoom | |
+| src/Server/app/Game_Engine.js:182 | removePlayerFromRoom | |
+| src/Server/app/Game_Engine.js:196 | hydrateRoom | |
+| src/Server/app/Game_Engine.js:308 | persistRoom | |
+| src/Server/app/Game_Engine.js:318 | recordLevelOutcome | |
+| src/Server/app/Game_Engine.js:332 | queueQuickChat | |
+| src/Server/app/Game_Engine.js:379 | clonePowerInventory | |
+| src/Server/app/Game_Engine.js:400 | tryCompleteSideQuest | |
+| src/Server/app/Game_Engine.js:410 | activatePower | |
+| src/Server/app/Game_Engine.js:444 | getPostLevelTransitionDelayMs | |
+| src/Server/app/Game_Engine.js:472 | startLevel | |
+| src/Server/app/Game_Engine.js:549 | clearTimers | |
+| src/Server/app/Game_Engine.js:561 | closeRoom | |
+| src/Server/app/Game_Engine.js:584 | requestRoomClose | |
+| src/Server/app/Game_Engine.js:599 | stopBots | |
+| src/Server/app/Game_Engine.js:633 | getTargetHeightForLevel | |
+| src/Server/app/Game_Engine.js:644 | getLevelTimeLimitMs | |
+| src/Server/app/Game_Engine.js:684 | clampLevel | |
+| src/Server/app/Game_Engine.js:691 | restartAtConfiguredStartLevel | |
+| src/Server/app/Game_Engine.js:698 | restartAtLevel | |
+| src/Server/app/Game_Engine.js:777 | completeLevel | |
+| src/Server/app/Game_Engine.js:857 | failLevel | |
+| src/Server/app/Game_Engine.js:864 | nextLevel | |
 
-### src/Server/app/Lobby_Manager.js — 1225 ln
+### src/Server/app/Lobby_Manager.js — 1232 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -106,7 +107,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Lobby_Manager.js:802 | toggleLobbyReady | |
 | src/Server/app/Lobby_Manager.js:870 | leaveLobby | |
 | src/Server/app/Lobby_Manager.js:1004 | hydrateRoom | |
-| src/Server/app/Lobby_Manager.js:1180 | dispatchRoomAction | |
+| src/Server/app/Lobby_Manager.js:1187 | dispatchRoomAction | |
 
 ### src/Server/app/Profile_Store.js — 169 ln
 
@@ -119,7 +120,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Profile_Store.js:47 | getProfile | |
 | src/Server/app/Profile_Store.js:117 | request | |
 
-### src/Server/app/Redis_State.js — 589 ln
+### src/Server/app/Redis_State.js — 591 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -129,34 +130,34 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Redis_State.js:17 | REDIS_CONNECT_RETRY_DELAY_MS · const | |
 | src/Server/app/Redis_State.js:26 | sleep · fn | |
 | src/Server/app/Redis_State.js:30 | stripRuntimePlayer · fn | |
-| src/Server/app/Redis_State.js:104 | RedisState · class | |
-| src/Server/app/Redis_State.js:221 | getPodId | |
-| src/Server/app/Redis_State.js:225 | getReconnectTtlSeconds | |
-| src/Server/app/Redis_State.js:229 | nextPlayerId | |
-| src/Server/app/Redis_State.js:238 | nextRoomId | |
-| src/Server/app/Redis_State.js:246 | recordDemoOutcome | |
-| src/Server/app/Redis_State.js:259 | getDemoStats | |
-| src/Server/app/Redis_State.js:281 | createReconnectToken | |
-| src/Server/app/Redis_State.js:285 | saveSession | |
-| src/Server/app/Redis_State.js:314 | getSession | |
-| src/Server/app/Redis_State.js:327 | markSessionDisconnected | |
-| src/Server/app/Redis_State.js:345 | clearSessionRoom | |
-| src/Server/app/Redis_State.js:359 | markRoomOpen | |
-| src/Server/app/Redis_State.js:368 | removeOpenRoom | |
-| src/Server/app/Redis_State.js:377 | claimOpenRoomId | |
-| src/Server/app/Redis_State.js:393 | withMatchmakingLock | |
-| src/Server/app/Redis_State.js:419 | saveRoom | |
-| src/Server/app/Redis_State.js:450 | claimRoomLease | |
-| src/Server/app/Redis_State.js:463 | getRoomLeaseOwner | |
-| src/Server/app/Redis_State.js:471 | getRoom | |
-| src/Server/app/Redis_State.js:484 | deleteRoom | |
-| src/Server/app/Redis_State.js:498 | publishRoom | |
-| src/Server/app/Redis_State.js:512 | subscribeToRoom | |
-| src/Server/app/Redis_State.js:522 | unsubscribeFromRoom | |
-| src/Server/app/Redis_State.js:530 | publishRoomAction | |
-| src/Server/app/Redis_State.js:544 | subscribeToRoomActions | |
-| src/Server/app/Redis_State.js:554 | unsubscribeFromRoomActions | |
-| src/Server/app/Redis_State.js:573 | subscribeToPlayerAssignments | |
+| src/Server/app/Redis_State.js:106 | RedisState · class | |
+| src/Server/app/Redis_State.js:223 | getPodId | |
+| src/Server/app/Redis_State.js:227 | getReconnectTtlSeconds | |
+| src/Server/app/Redis_State.js:231 | nextPlayerId | |
+| src/Server/app/Redis_State.js:240 | nextRoomId | |
+| src/Server/app/Redis_State.js:248 | recordDemoOutcome | |
+| src/Server/app/Redis_State.js:261 | getDemoStats | |
+| src/Server/app/Redis_State.js:283 | createReconnectToken | |
+| src/Server/app/Redis_State.js:287 | saveSession | |
+| src/Server/app/Redis_State.js:316 | getSession | |
+| src/Server/app/Redis_State.js:329 | markSessionDisconnected | |
+| src/Server/app/Redis_State.js:347 | clearSessionRoom | |
+| src/Server/app/Redis_State.js:361 | markRoomOpen | |
+| src/Server/app/Redis_State.js:370 | removeOpenRoom | |
+| src/Server/app/Redis_State.js:379 | claimOpenRoomId | |
+| src/Server/app/Redis_State.js:395 | withMatchmakingLock | |
+| src/Server/app/Redis_State.js:421 | saveRoom | |
+| src/Server/app/Redis_State.js:452 | claimRoomLease | |
+| src/Server/app/Redis_State.js:465 | getRoomLeaseOwner | |
+| src/Server/app/Redis_State.js:473 | getRoom | |
+| src/Server/app/Redis_State.js:486 | deleteRoom | |
+| src/Server/app/Redis_State.js:500 | publishRoom | |
+| src/Server/app/Redis_State.js:514 | subscribeToRoom | |
+| src/Server/app/Redis_State.js:524 | unsubscribeFromRoom | |
+| src/Server/app/Redis_State.js:532 | publishRoomAction | |
+| src/Server/app/Redis_State.js:546 | subscribeToRoomActions | |
+| src/Server/app/Redis_State.js:556 | unsubscribeFromRoomActions | |
+| src/Server/app/Redis_State.js:575 | subscribeToPlayerAssignments | |
 
 ### src/Server/app/Server.js — 193 ln
 
@@ -165,11 +166,11 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Server.js:1 | @file · file | parse guard; malformed frames never throw |
 | src/Server/app/Server.js:12 | port · const | |
 
-### src/Server/app/Tower_Stability.js — 697 ln
+### src/Server/app/Tower_Stability.js — 746 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
-| src/Server/app/Tower_Stability.js:1 | @file · file | absolute grid cells for one placed entry |
+| src/Server/app/Tower_Stability.js:1 | @file · file | deterministic tower stability, support components, load propagation, and collapse evaluation |
 | src/Server/app/Tower_Stability.js:3 | cellsFor · fn | |
 | src/Server/app/Tower_Stability.js:11 | key · fn | |
 | src/Server/app/Tower_Stability.js:12 | clamp01 · fn | |
@@ -179,17 +180,17 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Tower_Stability.js:40 | isPlacementLegal · fn | |
 | src/Server/app/Tower_Stability.js:54 | supportedCellsGained · fn | |
 | src/Server/app/Tower_Stability.js:80 | blockId · fn | |
-| src/Server/app/Tower_Stability.js:631 | evaluate · fn | |
-| src/Server/app/Tower_Stability.js:685 | balanceDelta · fn | |
+| src/Server/app/Tower_Stability.js:678 | evaluate · fn | |
+| src/Server/app/Tower_Stability.js:734 | balanceDelta · fn | |
 
-### src/Server/app/Tower_Structure_Assessment.js — 180 ln
+### src/Server/app/Tower_Structure_Assessment.js — 235 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Tower_Structure_Assessment.js:1 | @file · file | normalize a fractional structural value |
 | src/Server/app/Tower_Structure_Assessment.js:3 | clamp01 · fn | |
 | src/Server/app/Tower_Structure_Assessment.js:11 | describeGroups · fn | |
-| src/Server/app/Tower_Structure_Assessment.js:105 | comparePlacement · fn | |
+| src/Server/app/Tower_Structure_Assessment.js:138 | comparePlacement · fn | |
 
 ### src/Server/app/engine/Block_Geometry.js — 109 ln
 
@@ -283,7 +284,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Last_Chance.js:1 | @file · file | Produces the standing one-percent result while a rescue is pending |
 | src/Server/app/engine/Last_Chance.js:29 | resolve · fn | |
 
-### src/Server/app/engine/Placement.js — 406 ln
+### src/Server/app/engine/Placement.js — 424 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -295,15 +296,16 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Placement.js:72 | getPlaceableOriginRange · fn | |
 | src/Server/app/engine/Placement.js:84 | resolveColumnOriginX · fn | |
 | src/Server/app/engine/Placement.js:95 | resolvePlacementOrigin · fn | |
-| src/Server/app/engine/Placement.js:149 | placeBlock · fn | |
-| src/Server/app/engine/Placement.js:254 | getStabilityPressure · fn | |
-| src/Server/app/engine/Placement.js:282 | resolveStabilityConfig · fn | |
-| src/Server/app/engine/Placement.js:310 | recalculateTowerStability · fn | |
-| src/Server/app/engine/Placement.js:337 | checkWinCondition · fn | |
-| src/Server/app/engine/Placement.js:345 | checkFailCondition · fn | |
-| src/Server/app/engine/Placement.js:381 | anyPlayerCanRescueSupply · fn | |
+| src/Server/app/engine/Placement.js:121 | collapseComponents · stable | |
+| src/Server/app/engine/Placement.js:161 | placeBlock · fn | |
+| src/Server/app/engine/Placement.js:281 | getStabilityPressure · fn | |
+| src/Server/app/engine/Placement.js:309 | resolveStabilityConfig · fn | |
+| src/Server/app/engine/Placement.js:337 | recalculateTowerStability · fn | |
+| src/Server/app/engine/Placement.js:365 | checkWinCondition · fn | |
+| src/Server/app/engine/Placement.js:373 | checkFailCondition · fn | |
+| src/Server/app/engine/Placement.js:399 | anyPlayerCanRescueSupply · fn | |
 
-### src/Server/app/engine/Scoring.js — 431 ln
+### src/Server/app/engine/Scoring.js — 501 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -314,20 +316,20 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Scoring.js:46 | getPlayerScoreMap · fn | |
 | src/Server/app/engine/Scoring.js:56 | getTeamLevelScore · fn | |
 | src/Server/app/engine/Scoring.js:62 | getPlayerBonusBreakdown · fn | |
-| src/Server/app/engine/Scoring.js:76 | buildLevelSummary · fn | |
-| src/Server/app/engine/Scoring.js:123 | recordScoreBreakdown · fn | |
-| src/Server/app/engine/Scoring.js:129 | clamp01 · fn | |
-| src/Server/app/engine/Scoring.js:133 | positive · fn | |
-| src/Server/app/engine/Scoring.js:137 | getActionUnit · fn | |
-| src/Server/app/engine/Scoring.js:143 | getExpectedNormalUsefulScoreForLevel · fn | |
-| src/Server/app/engine/Scoring.js:223 | previewPlacementScore · fn | |
-| src/Server/app/engine/Scoring.js:274 | addPlacementScore · fn | |
-| src/Server/app/engine/Scoring.js:309 | awardCompletionBonuses · fn | |
-| src/Server/app/engine/Scoring.js:348 | addBonusScore · fn | |
-| src/Server/app/engine/Scoring.js:367 | getBonusScoreEventType · fn | |
-| src/Server/app/engine/Scoring.js:378 | getBonusScoreEventLabel · fn | |
-| src/Server/app/engine/Scoring.js:389 | addLevelScoreToLeaderboard · fn | |
-| src/Server/app/engine/Scoring.js:399 | getLevelMVP · fn | |
+| src/Server/app/engine/Scoring.js:77 | buildLevelSummary · fn | |
+| src/Server/app/engine/Scoring.js:124 | recordScoreBreakdown · fn | |
+| src/Server/app/engine/Scoring.js:130 | clamp01 · fn | |
+| src/Server/app/engine/Scoring.js:134 | positive · fn | |
+| src/Server/app/engine/Scoring.js:138 | getActionUnit · fn | |
+| src/Server/app/engine/Scoring.js:144 | getExpectedNormalUsefulScoreForLevel · fn | |
+| src/Server/app/engine/Scoring.js:270 | previewPlacementScore · fn | |
+| src/Server/app/engine/Scoring.js:331 | addPlacementScore · fn | |
+| src/Server/app/engine/Scoring.js:379 | awardCompletionBonuses · fn | |
+| src/Server/app/engine/Scoring.js:418 | addBonusScore · fn | |
+| src/Server/app/engine/Scoring.js:437 | getBonusScoreEventType · fn | |
+| src/Server/app/engine/Scoring.js:448 | getBonusScoreEventLabel · fn | |
+| src/Server/app/engine/Scoring.js:459 | addLevelScoreToLeaderboard · fn | |
+| src/Server/app/engine/Scoring.js:469 | getLevelMVP · fn | |
 
 ### src/Server/migrations/0001_profiles.sql — 46 ln
 
@@ -385,4 +387,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-24 files · 232 stable anchors.
+24 files · 234 stable anchors.

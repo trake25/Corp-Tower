@@ -275,6 +275,32 @@ test("a wide crown on redundant supports is safer than the same crown on one sup
     assert.equal(redundantResult.diagnostics.leanDirection, "center");
 });
 
+test("upper mass raises load ratio at a fixed narrow support", () => {
+    const config = fixedStabilityConfig({ towerSiteWidth: 6, towerStabilityMinHeight: 1 });
+    const light = TowerStability.evaluate(loadedBottleneckEntries().slice(0, 5), config);
+    const heavy = TowerStability.evaluate(loadedBottleneckEntries(), config);
+    const lightSupport = light.analysis.groups.find(group => group.memberBlockIds.includes("N"));
+    const heavySupport = heavy.analysis.groups.find(group => group.memberBlockIds.includes("N"));
+
+    assert.ok(heavySupport.supportedLoad > lightSupport.supportedLoad);
+    assert.ok(heavySupport.loadRatio > lightSupport.loadRatio);
+    assert.ok(heavySupport.supportCapacity > 0);
+});
+
+test("a failed narrow middle cuts only itself and its dependent upper groups", () => {
+    const result = TowerStability.evaluate(loadedBottleneckEntries(), fixedStabilityConfig({
+        towerSiteWidth: 6,
+        towerStabilityMinHeight: 1,
+        towerStructuralSeverity: 1.4
+    }));
+    const collapseIds = result.components[0].collapseBlockIds;
+
+    assert.ok(collapseIds.includes("N"));
+    assert.ok(collapseIds.includes("U8"));
+    assert.equal(collapseIds.includes("B0"), false);
+    assert.equal(collapseIds.includes("B1"), false);
+});
+
 test("a gap fill repairs its matched support interface without accumulated damage", () => {
     const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
     const cell = [[0, 0]];
@@ -537,7 +563,76 @@ test("clean average height earns one action unit while dangerous height stays po
     assert.equal(dangerous.classification, "dangerous_height");
 });
 
-test("structural comparison pays one direct repair and keeps indirect repair at zero", () => {
+test("historical rows earn Recovery once while new maxima retain full Height", () => {
+    const { engine } = createPlayingEngine(2, 20);
+    const player = engine.room.players[0];
+    const input = {
+        previousHeight: 2,
+        settledHeight: 6,
+        historicalMaxStandingHeight: 4,
+        beforeResult: scoreResult(100, 0, 2),
+        settledResult: scoreResult(100, 0, 6),
+        peakResult: scoreResult(100, 0, 6),
+        placedEntry: { block: { id: "RECOVERY" }, towerState: "standing" },
+        assessment: scoreAssessment(),
+        collapseSummary: { anyFallen: false }
+    };
+    const transaction = engine.addPlacementScore(player, input);
+
+    assert.equal(transaction.newHeight, 2);
+    assert.equal(transaction.recoveredHeight, 2);
+    assert.equal(transaction.heightPoints, 40);
+    assert.equal(transaction.recoveryPoints, 20);
+    assert.equal(engine.room.historicalMaxStandingHeight, 6);
+    assert.deepEqual(Object.keys(engine.room.recoveryCreditedRows).sort(), ["3", "4"]);
+
+    const repeated = engine.previewPlacementScore({
+        ...input,
+        settledHeight: 4,
+        historicalMaxStandingHeight: 6
+    });
+    assert.equal(repeated.recoveryPoints, 0);
+    assert.equal(repeated.recoveredHeight, 0);
+});
+
+test("zero-percent Recovery consumes rows and a collapse transaction scores nothing", () => {
+    const { engine } = createPlayingEngine(1, 20);
+    const player = engine.room.players[0];
+    GameConfig.scoring.recoveryHeightScorePercent = 0;
+    const base = {
+        previousHeight: 1,
+        settledHeight: 3,
+        historicalMaxStandingHeight: 3,
+        beforeResult: scoreResult(100, 0, 1),
+        settledResult: scoreResult(100, 0, 3),
+        peakResult: scoreResult(100, 0, 3),
+        placedEntry: { block: { id: "REPAIR" }, towerState: "standing" },
+        assessment: scoreAssessment({ rawStructuralUtility: 1, directSupportShare: 1 }),
+        collapseSummary: { anyFallen: false }
+    };
+    const recovery = engine.addPlacementScore(player, base);
+
+    assert.equal(recovery.recoveryPoints, 0);
+    assert.deepEqual(Object.keys(engine.room.recoveryCreditedRows).sort(), ["2", "3"]);
+
+    const collapse = engine.addPlacementScore(player, {
+        ...base,
+        previousHeight: 3,
+        settledHeight: 4,
+        historicalMaxStandingHeight: 3,
+        collapseSummary: { anyFallen: true }
+    });
+    assert.equal(collapse.points, 0);
+    assert.equal(collapse.impactEligiblePoints, 0);
+    assert.equal(collapse.heightPoints, 0);
+    assert.equal(collapse.newHeight, 0);
+    assert.equal(collapse.classification, "collapse");
+    assert.equal(collapse.structuralPoints, 0);
+    assert.equal(collapse.criticalSavePoints, 0);
+    assert.equal(engine.room.historicalMaxStandingHeight, 4);
+});
+
+test("active-tower reinforcement always pays while inactive and indirect repairs do not", () => {
     const { engine } = createPlayingEngine(1, 20);
     const config = fixedStabilityConfig({ towerStabilityMinHeight: 1 });
     const cell = [[0, 0]];
@@ -569,7 +664,41 @@ test("structural comparison pays one direct repair and keeps indirect repair at 
 
     assert.ok(assessment.rawStructuralUtility > 0);
     assert.ok(assessment.directSupportShare > 0);
+    assert.equal(assessment.isActiveTower, true);
     assert.ok(direct.structuralPoints > 0);
+    const repeated = TowerStability.comparePlacement(before, after, placedEntry);
+    assert.equal(repeated.rawStructuralUtility, assessment.rawStructuralUtility);
+
+    const wide = [[0, 0], [1, 0], [2, 0]];
+    const tallerTower = [
+        stabilityEntry("T0", wide, 10, 0),
+        stabilityEntry("T1", wide, 10, 1),
+        stabilityEntry("T2", wide, 10, 2)
+    ];
+    const inactiveBefore = TowerStability.evaluate([
+        stabilityEntry("L", cell, 2, 0),
+        stabilityEntry("C", crown, 1, 1),
+        ...tallerTower
+    ], config);
+    const inactiveAfter = TowerStability.evaluate([
+        stabilityEntry("L", cell, 2, 0),
+        placedEntry,
+        stabilityEntry("C", crown, 1, 1),
+        ...tallerTower
+    ], config);
+    const inactiveAssessment = TowerStability.comparePlacement(
+        inactiveBefore, inactiveAfter, placedEntry
+    );
+    const inactive = previewScore(engine, {
+        beforeResult: inactiveBefore,
+        afterResult: inactiveAfter,
+        placedEntry,
+        assessment: inactiveAssessment,
+        stabilityConfig: config
+    });
+
+    assert.equal(inactiveAssessment.isActiveTower, false);
+    assert.equal(inactive.structuralPoints, 0);
     assert.equal(indirect.structuralPoints, 0);
     assert.equal(indirect.classification, "low_value");
 });
@@ -855,12 +984,14 @@ test("placement collapses only its component and play continues with enough supp
     assert.equal(engine.room.state, "playing");
     assert.equal(engine.room.currentHeight, 2);
     assert.ok(engine.room.towerStability > 0);
-    assert.equal(fallen.length, 7);
-    assert.deepEqual(standing.map(entry => entry.block.id).sort(), ["S0", "S1"]);
+    assert.equal(fallen.length, 5);
+    assert.deepEqual(standing.map(entry => entry.block.id).sort(), ["B0", "B1", "S0", "S1"]);
     assert.equal(failedPlacement.effectiveHeight, 0);
     assert.equal(engine.room.players[0].contributedHeight, 0);
     assert.ok(eventTypes(broadcast).includes("tower_component_collapsed"));
-    assert.equal(broadcast.towerStabilityComponents.length, 1);
+    assert.equal(eventTypes(broadcast).includes("placement"), false);
+    assert.equal(broadcast.towerStabilityComponents.length, 2);
+    assert.ok(broadcast.towerStabilityComponents.every(component => component.height === 2));
     assert.equal(Object.hasOwn(broadcast.towerStabilityComponents[0], "analysis"), false);
     assert.equal(Object.hasOwn(broadcast.towerStabilityComponents[0], "entryIndexes"), false);
 
@@ -869,10 +1000,10 @@ test("placement collapses only its component and play continues with enough supp
     const rebuilt = engine.room.towerBlocks.find(entry => entry.block.id === "REBUILD");
     assert.equal(engine.room.state, "playing");
     assert.equal(rebuilt.towerState, "standing");
-    assert.equal(rebuilt.originY, 0);
+    assert.equal(rebuilt.originY, 2);
 });
 
-test("component collapse reaches the normal insufficient-supply failure path", () => {
+test("collapse itself does not fail but insufficient remaining supply does", () => {
     const { engine } = createPlayingEngine(1, 20);
     configureIndependentCollapse(engine, [createBlock(1, "TOO_SMALL")]);
 

@@ -28,6 +28,7 @@ const CONFIG_FIXTURE := {
 	"visualHookHoldMs": 200,
 	"visualHookShakeMs": 340,
 	"placementScorePerHeight": 12,
+	"recoveryHeightScorePercent": 70,
 	"dangerousHeightFloor": 0.4,
 	"strongReinforcementActionShare": 0.9,
 	"normalCombinedCapActionShare": 1.7,
@@ -48,6 +49,8 @@ func test_apply_config_syncs_sliders_toggles_and_options() -> void:
 	assert_eq((harness.find("BotStrategyButton") as OptionButton).selected, 1, "The MVP greedy strategy should select the second option.")
 	assert_true((harness.find("PowerLastChanceToggle") as CheckButton).button_pressed, "Last Chance should sync from the config payload.")
 	assert_true((harness.find("LatencyIndicatorToggle") as CheckButton).button_pressed, "The latency toggle should sync from the config payload.")
+	assert_eq((harness.find("RecoveryHeightScoreSlider") as HSlider).value, 70.0)
+	assert_eq((harness.find("RecoveryHeightScoreSlider") as HSlider).step, 10.0)
 
 func test_lobby_debug_context_enables_only_bots() -> void:
 	harness.main.set_debug_context("lobby")

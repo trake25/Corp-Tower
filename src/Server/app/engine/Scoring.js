@@ -64,6 +64,7 @@ function getPlayerBonusBreakdown(engine, player) {
 
     return {
         height: Number(breakdown.height || 0),
+        recovery: Number(breakdown.recovery || 0),
         structural: Number(breakdown.structural || 0),
         criticalSave: Number(breakdown.criticalSave || 0),
         finisher: Number(breakdown.finisher || 0),
@@ -148,9 +149,17 @@ function getExpectedNormalUsefulScoreForLevel(engine, level) {
     );
 }
 
-function getStructuralAssessment(input) {
+function getStructuralAssessment(engine, input) {
+    const settledResult = input.settledResult || input.afterResult;
     const comparison = input.assessment || TowerStability.comparePlacement(
-        input.beforeResult, input.afterResult, input.placedEntry
+        input.beforeResult,
+        settledResult,
+        input.placedEntry
+    );
+    const peakComparison = input.peakAssessment || TowerStability.comparePlacement(
+        input.beforeResult,
+        input.peakResult || settledResult,
+        input.placedEntry
     );
     const reference = Math.max(
         0.0001, positive(GameConfig.scoring?.strongStructuralImprovement, 1)
@@ -162,6 +171,10 @@ function getStructuralAssessment(input) {
 
     return {
         ...comparison,
+        riskIncrease: input.assessment && !input.peakAssessment
+            ? Number(comparison.riskIncrease || 0)
+            : peakComparison.riskIncrease,
+        affectedPeakRisk: peakComparison.affectedAfterRisk,
         rawStructuralUtility,
         structuralValue: clamp01(rawStructuralUtility / reference)
     };
@@ -169,10 +182,10 @@ function getStructuralAssessment(input) {
 
 function getCriticalSavePreview(engine, input, assessment) {
     const claims = input.claimedKeys || engine.room?.criticalSaveClaimKeys || {};
-    const beforeStability = Number(input.beforeResult?.stability ?? 100);
-    const afterStability = Number(input.afterResult?.stability ?? 100);
+    const beforeStability = Number(assessment.affectedBeforeStability ?? input.beforeResult?.stability ?? 100);
+    const afterStability = Number(assessment.affectedAfterStability ?? input.settledResult?.stability ?? input.afterResult?.stability ?? 100);
     const stabilityConfig = input.stabilityConfig || engine.resolveStabilityConfig();
-    const maturityHeight = Number(input.afterResult?.analysis?.height || 0);
+    const maturityHeight = Number((input.settledResult || input.afterResult)?.analysis?.height || 0);
     const maxClaims = Math.max(
         0, Math.floor(positive(GameConfig.scoring?.criticalSaveMaxPerLevel, 0))
     );
@@ -180,6 +193,8 @@ function getCriticalSavePreview(engine, input, assessment) {
     const reject = reason => ({ eligible: false, reason });
 
     if (Boolean(input.beforeResult?.diagnostics?.collapsed)) return reject("already_collapsed");
+    if (Boolean(input.collapseSummary?.anyFallen)) return reject("collapse");
+    if (Boolean(input.lastChanceRescued)) return reject("last_chance");
     if (beforeStability > Number(GameConfig.towerStabilityCriticalThreshold || 0)) return reject("not_critical");
     if (afterStability < Number(GameConfig.towerStabilityWarningThreshold || 0)) return reject("still_warning");
     if (!assessment.criticalSaveCandidate) return reject("no_direct_repair");
@@ -193,48 +208,86 @@ function getCriticalSavePreview(engine, input, assessment) {
     return { eligible: true, reason: null };
 }
 
-function classifyPlacement(heightPoints, structuralPoints, heightQuality, actionUnit) {
+function classifyPlacement(heightPoints, recoveryPoints, structuralPoints, heightQuality, actionUnit) {
     const material = Math.max(1, Math.round(actionUnit * 0.1));
     const hasHeight = heightPoints >= material;
     const hasStructural = structuralPoints >= material;
+    const hasRecovery = recoveryPoints > 0;
 
     if (hasHeight && heightQuality < 0.9) return "dangerous_height";
     if (hasHeight && hasStructural) return "combined";
     if (hasHeight) return "useful_height";
+    if (hasRecovery && hasStructural) return "combined";
+    if (hasRecovery) return "recovery";
     if (hasStructural) return "reinforcement";
     return "low_value";
 }
 
-function applyPlacementCap(heightPoints, structuralPoints, criticalSavePoints, cap) {
-    const total = heightPoints + structuralPoints + criticalSavePoints;
-    const excess = Math.max(0, total - cap);
-    const critical = Math.max(0, criticalSavePoints - excess);
-    const structural = Math.max(0, structuralPoints - Math.max(0, excess - criticalSavePoints));
+function applyPlacementCap(heightPoints, recoveryPoints, structuralPoints, criticalSavePoints, cap) {
+    const recovery = Math.min(recoveryPoints, Math.max(0, cap - heightPoints));
+    const critical = Math.min(criticalSavePoints, Math.max(0, cap - heightPoints - recovery));
+    const structural = Math.min(structuralPoints, Math.max(0, cap - heightPoints - recovery - critical));
+    const total = heightPoints + recoveryPoints + structuralPoints + criticalSavePoints;
 
     return {
         heightPoints,
+        recoveryPoints: recovery,
         structuralPoints: structural,
         criticalSavePoints: critical,
-        points: heightPoints + structural + critical,
-        capHit: excess > 0
+        points: heightPoints + recovery + structural + critical,
+        capHit: total > cap
     };
+}
+
+function classifyHeightRows(engine, input) {
+    if (!Number.isFinite(Number(input.previousHeight))) {
+        return {
+            newHeightRows: positive(input.effectiveHeight),
+            recoveryRows: []
+        };
+    }
+
+    const previousHeight = Math.max(0, Math.floor(Number(input.previousHeight) || 0));
+    const settledHeight = Math.max(previousHeight, Math.floor(Number(input.settledHeight) || 0));
+    const historicalMaximum = Math.max(0, Math.floor(Number(
+        input.historicalMaxStandingHeight ?? engine.room?.historicalMaxStandingHeight
+    ) || 0));
+    const credited = input.recoveryCreditedRows || engine.room?.recoveryCreditedRows || {};
+    let newHeightRows = 0;
+    const recoveryRows = [];
+
+    for (let row = previousHeight + 1; row <= settledHeight; row += 1) {
+        if (row > historicalMaximum) {
+            newHeightRows += 1;
+        } else if (!credited[row]) {
+            recoveryRows.push(row);
+        }
+    }
+
+    return { newHeightRows, recoveryRows };
 }
 
 function previewPlacementScore(engine, input = {}) {
     const level = Math.max(1, Number(engine.room?.level) || 1);
     const actionUnit = getActionUnit(engine, level);
-    const averageHeight = Math.max(1, Number(engine.getAverageBrickHeight()) || 1);
-    const effectiveHeight = positive(input.effectiveHeight);
-    const assessment = getStructuralAssessment(input);
+    const rowValue = level * positive(GameConfig.scoring?.placementScorePerHeight, 1);
+    const rows = classifyHeightRows(engine, input);
+    const assessment = getStructuralAssessment(engine, input);
     const danger = clamp01(
         assessment.riskIncrease / Math.max(0.0001, positive(GameConfig.scoring?.fullDangerRiskIncrease, 1))
     );
     const heightQuality = 1 - (1 - clamp01(GameConfig.scoring?.dangerousHeightFloor)) * danger;
-    const heightPoints = Math.round(actionUnit * (effectiveHeight / averageHeight) * heightQuality);
-    const structuralPoints = Math.round(
+    const collapse = Boolean(input.collapseSummary?.anyFallen);
+    const effectiveHeight = collapse ? 0 : rows.newHeightRows;
+    const heightPoints = collapse ? 0 : Math.round(rows.newHeightRows * rowValue * heightQuality);
+    const recoveryShare = clamp01(positive(GameConfig.scoring?.recoveryHeightScorePercent) / 100);
+    const recoveryPoints = collapse ? 0 : Math.round(rows.recoveryRows.length * rowValue * heightQuality * recoveryShare);
+    const structuralPoints = collapse || assessment.isActiveTower === false ? 0 : Math.round(
         actionUnit * positive(GameConfig.scoring?.strongReinforcementActionShare) * assessment.structuralValue
     );
-    const criticalSave = getCriticalSavePreview(engine, input, assessment);
+    const criticalSave = collapse
+        ? { eligible: false, reason: "collapse" }
+        : getCriticalSavePreview(engine, input, assessment);
     const criticalSavePoints = criticalSave.eligible
         ? Math.round(actionUnit * positive(GameConfig.scoring?.criticalSaveBonusActionShare))
         : 0;
@@ -242,11 +295,11 @@ function previewPlacementScore(engine, input = {}) {
         ? positive(GameConfig.scoring?.criticalCombinedCapActionShare)
         : positive(GameConfig.scoring?.normalCombinedCapActionShare);
     const cap = Math.round(Math.max(
-        heightPoints,
+        heightPoints + recoveryPoints + (criticalSave.eligible ? 1 : 0),
         actionUnit * capShare
     ));
     const capped = applyPlacementCap(
-        heightPoints, structuralPoints, criticalSavePoints, cap
+        heightPoints, recoveryPoints, structuralPoints, criticalSavePoints, cap
     );
 
     return {
@@ -254,19 +307,23 @@ function previewPlacementScore(engine, input = {}) {
         actionUnit,
         cap,
         effectiveHeight,
+        newHeight: effectiveHeight,
+        recoveredHeight: collapse ? 0 : rows.recoveryRows.length,
+        recoveryRows: collapse ? [] : rows.recoveryRows,
         heightQuality,
         danger,
         structuralValue: assessment.structuralValue,
         benefitedLoadShare: assessment.benefitedLoadShare,
         directSupportShare: assessment.directSupportShare,
         riskIncrease: assessment.riskIncrease,
-        classification: classifyPlacement(
-            capped.heightPoints, capped.structuralPoints, heightQuality, actionUnit
+        classification: collapse ? "collapse" : classifyPlacement(
+            capped.heightPoints, capped.recoveryPoints, capped.structuralPoints, heightQuality, actionUnit
         ),
         criticalSave: criticalSave.eligible,
         criticalSaveRejection: criticalSave.reason,
         repairClaimKey: criticalSave.eligible ? assessment.repairClaimKey : null,
-        impactEligiblePoints: capped.points,
+        collapse,
+        impactEligiblePoints: collapse ? 0 : capped.points,
         assessment
     };
 }
@@ -278,6 +335,7 @@ function addPlacementScore(engine, player, input = {}) {
     player.levelImpactContribution = Number(player.levelImpactContribution || 0) +
         transaction.impactEligiblePoints;
     engine.recordScoreBreakdown(player, "height", transaction.heightPoints);
+    engine.recordScoreBreakdown(player, "recovery", transaction.recoveryPoints);
     engine.recordScoreBreakdown(player, "structural", transaction.structuralPoints);
     engine.recordScoreBreakdown(player, "criticalSave", transaction.criticalSavePoints);
 
@@ -286,16 +344,28 @@ function addPlacementScore(engine, player, input = {}) {
         engine.room.criticalSaveClaimKeys[transaction.repairClaimKey] = true;
     }
 
-    engine.queueScoreEvent(transaction.criticalSave ? "critical_save" : "placement", {
+    engine.room.recoveryCreditedRows = engine.room.recoveryCreditedRows || {};
+    for (const row of transaction.recoveryRows) {
+        engine.room.recoveryCreditedRows[row] = true;
+    }
+    engine.room.historicalMaxStandingHeight = Math.max(
+        Number(engine.room.historicalMaxStandingHeight || 0),
+        Number(input.settledHeight ?? engine.room.currentHeight ?? 0)
+    );
+
+    if (!transaction.collapse) engine.queueScoreEvent(transaction.criticalSave ? "critical_save" : "placement", {
         playerId: player.id,
         points: transaction.points,
-        label: transaction.criticalSave ? "Critical Save" : "Placement",
+        label: transaction.criticalSave ? "Critical Save" : (transaction.classification === "recovery" ? "Recovery" : "Placement"),
         meta: {
             classification: transaction.classification,
             heightPoints: transaction.heightPoints,
+            recoveryPoints: transaction.recoveryPoints,
             structuralPoints: transaction.structuralPoints,
             criticalSavePoints: transaction.criticalSavePoints,
             effectiveHeight: transaction.effectiveHeight,
+            newHeight: transaction.newHeight,
+            recoveredHeight: transaction.recoveredHeight,
             heightQuality: transaction.heightQuality,
             structuralValue: transaction.structuralValue,
             benefitedLoadShare: transaction.benefitedLoadShare

@@ -106,6 +106,17 @@ test("tower stability thresholds are exposed and clamped in debug config", async
     assert.equal(lobbyManager.getDebugConfig().towerStabilityCriticalThreshold, 30);
 });
 
+test("Recovery score percentage is exposed and clamped from zero to one hundred", async () => {
+    const lobbyManager = new LobbyManager();
+
+    await lobbyManager.updateDebugConfig("recoveryHeightScorePercent", -10);
+    assert.equal(GameConfig.scoring.recoveryHeightScorePercent, 0);
+    await lobbyManager.updateDebugConfig("recoveryHeightScorePercent", 55);
+    assert.equal(GameConfig.scoring.recoveryHeightScorePercent, 55);
+    await lobbyManager.updateDebugConfig("recoveryHeightScorePercent", 120);
+    assert.equal(lobbyManager.getDebugConfig().recoveryHeightScorePercent, 100);
+});
+
 test("stability difficulty is the only exposed stability tunable", async () => {
     const lobbyManager = new LobbyManager();
     const original = GameConfig.towerStabilityDifficulty;

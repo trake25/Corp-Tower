@@ -136,6 +136,7 @@ const GameConfig = {
     },
     scoring: {
         placementScorePerHeight: 10,
+        recoveryHeightScorePercent: 50,
         strongReinforcementActionShare: 0.85,
         strongStructuralImprovement: 0.15,
         fullDangerRiskIncrease: 0.25,

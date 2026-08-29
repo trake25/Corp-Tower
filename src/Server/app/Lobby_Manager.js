@@ -1070,7 +1070,14 @@ class LobbyManager {
                 towerBlocks: snapshot.state.towerBlocks || [],
                 towerStability: snapshot.state.towerStability ?? 100,
                 towerStabilityDiagnostics: snapshot.state.towerStabilityDiagnostics || {},
+                towerStabilityComponents: snapshot.state.towerStabilityComponents || [],
                 towerStructuralPose: snapshot.state.towerStructuralPose || [],
+                towerStabilityResult: null,
+                historicalMaxStandingHeight: Math.max(
+                    Number(snapshot.state.historicalMaxStandingHeight || 0),
+                    Number(snapshot.state.currentHeight || 0)
+                ),
+                recoveryCreditedRows: snapshot.state.recoveryCreditedRows || {},
                 lastChanceRescuePending: Boolean(snapshot.state.lastChanceRescuePending),
                 lastChanceRescueUsed: Boolean(snapshot.state.lastChanceRescueUsed),
                 state: snapshot.state.state,
