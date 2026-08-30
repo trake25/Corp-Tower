@@ -26,6 +26,8 @@ var timer_shown_seconds: int = -1
 var freeze_blink_tween: Tween
 var freeze_blink_base_color: Color = Color.BLACK
 var stability_feedback_mode := "warnings_only"
+var stability_warning_threshold := 75
+var stability_critical_threshold := 45
 
 func bind_nodes(binder) -> void:
 	level_label = binder.require_node("LevelLabel") as Label
@@ -172,15 +174,30 @@ func update_tower_stability_ui(stability: int, diagnostics: Variant, components:
 			displayed_stability = int(selected.get("stability", stability))
 			displayed_diagnostics = selected.get("diagnostics", diagnostics)
 	var safe_stability: int = clampi(displayed_stability, 0, 100)
-	var state := "Stable" if safe_stability > 60 else ("Warning" if safe_stability > 30 else "Critical")
+	var state := (
+		"Stable"
+		if safe_stability > stability_warning_threshold
+		else ("Warning" if safe_stability > stability_critical_threshold else "Critical")
+	)
 	var lean_suffix := ""
 	if typeof(displayed_diagnostics) == TYPE_DICTIONARY:
 		var lean_direction := str(displayed_diagnostics.get("leanDirection", "center"))
 		if lean_direction != "center":
 			lean_suffix = " - leaning " + lean_direction
 	tower_stability_label.text = state.to_upper() + " · " + str(safe_stability) + "%" + lean_suffix
-	tower_stability_label.modulate = STABILITY_GREEN if safe_stability > 60 else (STABILITY_YELLOW if safe_stability > 30 else STABILITY_RED)
+	tower_stability_label.modulate = (
+		STABILITY_GREEN
+		if safe_stability > stability_warning_threshold
+		else (STABILITY_YELLOW if safe_stability > stability_critical_threshold else STABILITY_RED)
+	)
+
+func set_stability_thresholds(warning_threshold: int, critical_threshold: int) -> void:
+	stability_warning_threshold = clampi(warning_threshold, 0, 100)
+	stability_critical_threshold = mini(
+		stability_warning_threshold,
+		clampi(critical_threshold, 0, 100)
+	)
 
 func set_stability_meter_visible(feedback_mode: String) -> void:
 	stability_feedback_mode = feedback_mode
-	tower_stability_label.visible = feedback_mode == "meter_only" or feedback_mode == "live_preview"
+	tower_stability_label.visible = feedback_mode == "live_preview"

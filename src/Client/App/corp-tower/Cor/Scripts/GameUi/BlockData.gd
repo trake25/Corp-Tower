@@ -25,6 +25,7 @@ const EMOJI_TEXTURE_PATHS := {
 const DEFAULT_EMOJI_MOOD := "neutral"
 const DEFAULT_MOOD_THRESHOLD := 3
 const BALANCE_DELTA_KEY := "balanceDelta"
+const SUPPORT_STABILITY_KEY := "supportStability"
 
 const TOP_SHADE_MULTIPLIER := 1.28
 const BOTTOM_SHADE_MULTIPLIER := 0.86
@@ -129,6 +130,19 @@ static func emoji_mood_for_delta(delta: int, threshold: int) -> String:
 		return "negative"
 
 	return "neutral"
+
+static func emoji_mood_for_support(stability: int, warning_threshold: int, critical_threshold: int) -> String:
+	var warning: int = clampi(warning_threshold, 0, 100)
+	var critical: int = mini(warning, clampi(critical_threshold, 0, 100))
+	var resolved: int = clampi(stability, 0, 100)
+
+	if resolved > warning:
+		return "positive"
+
+	if resolved > critical:
+		return "neutral"
+
+	return "negative"
 
 static func emoji_texture(mood: String) -> Texture2D:
 	var resolved: String = mood if EMOJI_TEXTURE_PATHS.has(mood) else DEFAULT_EMOJI_MOOD

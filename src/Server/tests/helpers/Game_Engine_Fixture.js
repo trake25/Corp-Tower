@@ -13,6 +13,7 @@ const originalGameConfig = {
     ,towerStabilityWarningThreshold: GameConfig.towerStabilityWarningThreshold
     ,towerStabilityCriticalThreshold: GameConfig.towerStabilityCriticalThreshold
     ,towerStabilityMoodThreshold: GameConfig.towerStabilityMoodThreshold
+    ,towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode
     ,towerGridWidth: GameConfig.towerGridWidth
     ,towerSiteWidthMin: GameConfig.towerSiteWidthMin
     ,towerSiteWidthMax: GameConfig.towerSiteWidthMax
@@ -48,6 +49,8 @@ function fixedStabilityConfig(overrides = {}) {
         towerStructuralSeverity: 1.0,
         towerStabilityMinHeight: 6,
         towerStabilityPressureApplied: 1,
+        towerSupportSafeLoadPerContact: 25.5,
+        towerSupportCollapseLoadPerContact: 45,
         ...overrides
     };
 }
@@ -77,6 +80,8 @@ function resetFixtures() {
         originalGameConfig.towerStabilityCriticalThreshold;
     GameConfig.towerStabilityMoodThreshold =
         originalGameConfig.towerStabilityMoodThreshold;
+    GameConfig.towerStabilityFeedbackMode =
+        originalGameConfig.towerStabilityFeedbackMode;
     GameConfig.towerGridWidth = originalGameConfig.towerGridWidth;
     GameConfig.towerSiteWidthMin = originalGameConfig.towerSiteWidthMin;
     GameConfig.towerSiteWidthMax = originalGameConfig.towerSiteWidthMax;

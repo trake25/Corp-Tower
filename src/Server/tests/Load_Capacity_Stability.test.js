@@ -31,8 +31,8 @@ function exactCapacityConfig(overrides = {}) {
         towerHeightPressureGain: 0,
         towerStabilityPressureApplied: 1,
         towerStabilityRiskScaleApplied: 1,
-        towerSupportSafeLoadHeightShare: 0.5,
-        towerSupportCollapseLoadHeightShare: 1,
+        towerSupportSafeLoadPerContact: 15,
+        towerSupportCollapseLoadPerContact: 30,
         ...overrides
     };
 }
@@ -73,6 +73,25 @@ function groupFor(result, blockId) {
     return result.analysis.groups.find(group => group.memberBlockIds.includes(blockId));
 }
 
+function supportFor(result, blockId) {
+    return result.supportStability.find(state => state.blockId === blockId)?.supportStability;
+}
+
+function thinStack(oCount, mirrored = false, reinforced = false) {
+    const oOriginX = mirrored ? 2 : 3;
+    const entries = [entry("I", "I", I_VERTICAL, 3, 0)];
+
+    if (reinforced) {
+        entries.push(entry("I2", "I", I_VERTICAL, mirrored ? 2 : 4, 0));
+    }
+
+    for (let index = 0; index < oCount; index += 1) {
+        entries.push(entry(`O${index}`, "O", O, oOriginX, 4 + index * 2));
+    }
+
+    return entries;
+}
+
 function productionConfig(level, difficulty) {
     const originalLog = console.log;
     console.log = () => {};
@@ -111,6 +130,47 @@ test("unchanged thin support has fixed capacity and monotonically rising I/O loa
     }
 });
 
+test("support capacity is physical and does not grow with the level target height", () => {
+    const shortTarget = TowerStability.evaluate(ioBottleneck(4), exactCapacityConfig({ towerTargetHeight: 30 }));
+    const longTarget = TowerStability.evaluate(ioBottleneck(4), exactCapacityConfig({ towerTargetHeight: 300 }));
+
+    assert.equal(groupFor(shortTarget, "MID").supportCapacity, groupFor(longTarget, "MID").supportCapacity);
+    assert.equal(groupFor(shortTarget, "MID").loadRatio, groupFor(longTarget, "MID").loadRatio);
+});
+
+test("a thin support face worsens with dependent load and recovers through reinforcement", () => {
+    const config = productionConfig(1, 50);
+    const empty = TowerStability.evaluate(thinStack(0), config);
+    const one = TowerStability.evaluate(thinStack(1), config);
+    const two = TowerStability.evaluate(thinStack(2), config);
+    const three = TowerStability.evaluate(thinStack(3), config);
+    const reinforced = TowerStability.evaluate(thinStack(3, false, true), config);
+
+    assert.ok(supportFor(empty, "I") > GameConfig.towerStabilityWarningThreshold);
+    assert.ok(supportFor(one, "I") > GameConfig.towerStabilityWarningThreshold);
+    assert.ok(supportFor(two, "I") <= GameConfig.towerStabilityWarningThreshold);
+    assert.ok(supportFor(two, "I") > GameConfig.towerStabilityCriticalThreshold);
+    assert.ok(supportFor(three, "I") <= GameConfig.towerStabilityCriticalThreshold);
+    assert.equal(supportFor(three, "O2"), 100);
+    assert.ok(supportFor(reinforced, "I") > supportFor(three, "I"));
+});
+
+test("support faces and load direction mirror without inventing symmetric lean", () => {
+    const config = productionConfig(1, 50);
+    const right = TowerStability.evaluate(thinStack(3), config);
+    const left = TowerStability.evaluate(thinStack(3, true), config);
+    const symmetric = TowerStability.evaluate(thinStack(3, false, true), config);
+    const rightPose = right.structuralPose.find(pose => pose.blockId === "I");
+    const leftPose = left.structuralPose.find(pose => pose.blockId === "I");
+
+    assert.equal(right.diagnostics.leanDirection, "right");
+    assert.equal(left.diagnostics.leanDirection, "left");
+    assert.equal(symmetric.diagnostics.leanDirection, "center");
+    assert.ok(rightPose.rotationDeg > 0);
+    assert.ok(leftPose.rotationDeg < 0);
+    assert.ok(Math.abs(rightPose.rotationDeg + leftPose.rotationDeg) < 0.000001);
+});
+
 test("I/O pile collapses at the exact contact limit and preserves the strong base", () => {
     const safe = TowerStability.evaluate(ioBottleneck(6), exactCapacityConfig());
     const failed = TowerStability.evaluate(ioBottleneck(7), exactCapacityConfig());
@@ -138,6 +198,51 @@ test("a second grounded I path carries more O mass than one thin support", () =>
     assert.ok(reinforcedMiddle.loadRatio < weakMiddle.loadRatio);
 });
 
+test("a connected support cluster stresses only bricks carrying dependent load", () => {
+    const single = [[0, 0]];
+    const row = [[0, 0], [1, 0]];
+    const result = TowerStability.evaluate([
+        entry("L", "single", single, 2, 0),
+        entry("R", "single", single, 3, 0),
+        entry("IDLE", "single", single, 4, 0),
+        entry("CROWN", "row", row, 2, 1),
+        entry("UPPER", "row", row, 2, 2)
+    ], exactCapacityConfig({
+        towerSupportSafeLoadPerContact: 1,
+        towerSupportCollapseLoadPerContact: 6
+    }));
+
+    assert.equal(result.components.length, 1);
+    assert.equal(supportFor(result, "L"), supportFor(result, "R"));
+    assert.ok(supportFor(result, "L") < supportFor(result, "IDLE"));
+    assert.equal(supportFor(result, "IDLE"), 100);
+});
+
+test("connecting separate towers recomputes load paths and relieves the prior bottleneck", () => {
+    const row = width => Array.from({ length: width }, (_, x) => [x, 0]);
+    const column = height => Array.from({ length: height }, (_, y) => [0, y]);
+    const config = exactCapacityConfig({
+        towerSupportSafeLoadPerContact: 4,
+        towerSupportCollapseLoadPerContact: 20
+    });
+    const separate = [
+        entry("A", "column", column(5), 2, 0),
+        entry("B", "column", column(4), 5, 0),
+        entry("CROWN", "row", row(4), 2, 5),
+        entry("UPPER", "row", row(4), 2, 6)
+    ];
+    const before = TowerStability.evaluate(separate, config);
+    const connected = TowerStability.evaluate([
+        ...separate,
+        entry("BRIDGE", "row", row(3), 3, 4)
+    ], config);
+
+    assert.equal(before.components.length, 2);
+    assert.equal(connected.components.length, 1);
+    assert.ok(supportFor(connected, "A") > supportFor(before, "A"));
+    assert.ok(supportFor(connected, "B") < supportFor(before, "B"));
+});
+
 test("equal-mass I and O add the same four load units", () => {
     const base = verticalIBottleneck(0);
     const withI = TowerStability.evaluate(verticalIBottleneck(1), exactCapacityConfig());
@@ -160,7 +265,7 @@ test("centred overload fails Integrity without inventing Balance direction", () 
 });
 
 test("stability difficulty changes the finite I/O carrying limit", () => {
-    const entries = ioBottleneck(35);
+    const entries = ioBottleneck(4);
     const forgiving = TowerStability.evaluate(entries, productionConfig(8, 25));
     const harsh = TowerStability.evaluate(entries, productionConfig(8, 100));
 
@@ -180,4 +285,12 @@ test("load analysis and collapse membership are independent of entry order", () 
     assert.equal(forwardMiddle.supportCapacity, reversedMiddle.supportCapacity);
     assert.equal(forwardMiddle.loadRatio, reversedMiddle.loadRatio);
     assert.deepEqual(forward.components[0].collapseBlockIds, reversed.components[0].collapseBlockIds);
+    const forwardSupport = forward.supportStability.slice().sort((left, right) => left.blockId.localeCompare(right.blockId));
+    const reversedSupport = reversed.supportStability.slice().sort((left, right) => left.blockId.localeCompare(right.blockId));
+    assert.deepEqual(
+        forwardSupport.map(state => [state.blockId, state.supportStability]),
+        reversedSupport.map(state => [state.blockId, state.supportStability])
+    );
+    assert.ok(forwardSupport.every(state => Number.isInteger(state.supportStability)));
+    assert.ok(forwardSupport.every(state => state.supportStability >= 0 && state.supportStability <= 100));
 });

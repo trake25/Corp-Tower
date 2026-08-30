@@ -45,6 +45,7 @@ spec:
               value: "3000"
             - name: CORP_TOWER_LATENCY_INDICATOR_ENABLED
               value: "false"
+            # Startup default only; authorized debug updates can enable preview.
             - name: CORP_TOWER_LIVE_PREVIEW_ENABLED
               value: "false"
             - name: REDIS_URL

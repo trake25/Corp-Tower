@@ -337,7 +337,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | infra/eks/apps/corp-tower/base/kustomization.yaml:1 | @file · file | Kubernetes or workflow configuration for kustomization |
 
-### infra/eks/apps/corp-tower/base/server-deployment.yaml — 120 ln
+### infra/eks/apps/corp-tower/base/server-deployment.yaml — 121 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -670,7 +670,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/backup/backup-server-status.sh:1 | @file · file | backup server status operator script |
 
-### scripts/backup/backup-server-up.sh — 99 ln
+### scripts/backup/backup-server-up.sh — 103 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -964,7 +964,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-query.mjs:544 | scopeTextLines · fn | |
 | scripts/lib/context-query.mjs:566 | contextBundle · fn | |
 
-### scripts/lib/context-routing.mjs — 225 ln
+### scripts/lib/context-routing.mjs — 226 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -972,18 +972,18 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-routing.mjs:4 | CLIENT · const | |
 | scripts/lib/context-routing.mjs:33 | MAP_AREAS · const | |
 | scripts/lib/context-routing.mjs:65 | ROUTE_RULES · const | |
-| scripts/lib/context-routing.mjs:112 | AREA_ALIASES · const | |
-| scripts/lib/context-routing.mjs:128 | isNormalContextExcludedPath · fn | |
-| scripts/lib/context-routing.mjs:164 | routeSourcePath · fn | |
-| scripts/lib/context-routing.mjs:172 | documentationNeedlesForPath · fn | |
-| scripts/lib/context-routing.mjs:183 | mapOwnerForPath · fn | |
-| scripts/lib/context-routing.mjs:187 | IGNORE_DIR · const | |
-| scripts/lib/context-routing.mjs:188 | IGNORE_PATH · const | |
-| scripts/lib/context-routing.mjs:189 | COVERAGE_EXEMPT · const | |
-| scripts/lib/context-routing.mjs:190 | norm · const | |
-| scripts/lib/context-routing.mjs:192 | walk · fn | |
-| scripts/lib/context-routing.mjs:203 | firstPartyFiles · fn | |
-| scripts/lib/context-routing.mjs:224 | isExempt · const | |
+| scripts/lib/context-routing.mjs:113 | AREA_ALIASES · const | |
+| scripts/lib/context-routing.mjs:129 | isNormalContextExcludedPath · fn | |
+| scripts/lib/context-routing.mjs:165 | routeSourcePath · fn | |
+| scripts/lib/context-routing.mjs:173 | documentationNeedlesForPath · fn | |
+| scripts/lib/context-routing.mjs:184 | mapOwnerForPath · fn | |
+| scripts/lib/context-routing.mjs:188 | IGNORE_DIR · const | |
+| scripts/lib/context-routing.mjs:189 | IGNORE_PATH · const | |
+| scripts/lib/context-routing.mjs:190 | COVERAGE_EXEMPT · const | |
+| scripts/lib/context-routing.mjs:191 | norm · const | |
+| scripts/lib/context-routing.mjs:193 | walk · fn | |
+| scripts/lib/context-routing.mjs:204 | firstPartyFiles · fn | |
+| scripts/lib/context-routing.mjs:225 | isExempt · const | |
 
 ### scripts/qa-gate.mjs — 158 ln
 
@@ -1065,7 +1065,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/codex-rollout-observability.test.mjs:1 | @file · file | permanent regression coverage for codex rollout observability |
 | scripts/tests/codex-rollout-observability.test.mjs:17 | usage · fn | |
 
-### scripts/tests/context-query.test.mjs — 208 ln
+### scripts/tests/context-query.test.mjs — 219 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|

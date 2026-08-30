@@ -128,7 +128,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:3 | find_match_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | back_requested · signal | |
 
-### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 426 ln
+### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 442 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|

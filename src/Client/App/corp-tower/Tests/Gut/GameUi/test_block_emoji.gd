@@ -117,6 +117,15 @@ func test_the_balance_delta_key_matches_the_server_field() -> void:
 		"The key must match Game_Engine's stamped field, or every brick loses its face."
 	)
 
+func test_support_stability_key_and_authoritative_threshold_bands() -> void:
+	assert_eq(BlockData.SUPPORT_STABILITY_KEY, "supportStability")
+	assert_eq(BlockData.emoji_mood_for_support(76, 75, 45), "positive")
+	assert_eq(BlockData.emoji_mood_for_support(75, 75, 45), "neutral")
+	assert_eq(BlockData.emoji_mood_for_support(46, 75, 45), "neutral")
+	assert_eq(BlockData.emoji_mood_for_support(45, 75, 45), "negative")
+	assert_eq(BlockData.emoji_mood_for_support(-20, 75, 45), "negative")
+	assert_eq(BlockData.emoji_mood_for_support(200, 75, 45), "positive")
+
 # The knob's whole point is that one delta reads differently at different
 # thresholds -- that is what lets a designer sweep it and watch the tower change.
 func test_the_same_delta_reclassifies_as_the_threshold_moves() -> void:

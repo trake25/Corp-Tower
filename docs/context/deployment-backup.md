@@ -4,11 +4,11 @@ Scope: self-hosted backup and public-demo topology, guards and recovery operatio
 
 ## Backup (physical machine)
 
-A manually-operated Linux Mint machine runs six containers behind one shared
-Cloudflare Tunnel, independent of AWS: two dev game servers
-(`devwstod1`/`devwstod2`), two dev web servers (`devtod1`/`devtod2`), and one
-always-on public demo pair (`wstoddemo`/`toddemo`, instance **3**). Game servers
-run the unmodified server image.
+A Linux Mint machine runs six containers behind one Cloudflare Tunnel: two dev
+game servers (`devwstod1`/`devwstod2`), two dev web servers
+(`devtod1`/`devtod2`), and the always-on public demo pair
+(`wstoddemo`/`toddemo`, instance **3**). Dev games inherit live stability
+preview; the demo selects warning-only feedback.
 
 **No Redis for the two dev instances** — `Redis_State.js`'s in-memory fallback,
 correct for one machine, wrong for multi-replica EKS. Instance 3 (`wstoddemo`)
@@ -62,8 +62,6 @@ instance index: cooperative bots enabled (it fills every seat while respecting
 personal Impact contribution), debug UI off, demo mode on
 (the client's bots-disclosure label), and its own dispatchers carrying **no push
 trigger**, so a routine push can never redeploy it.
-The demo is deliberately off the push path: it is a link on a résumé, and a routine
-commit must never redeploy it.
 
 ### Auto-deploy guard rails check live status, not a stored flag
 

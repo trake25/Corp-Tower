@@ -109,7 +109,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/AccessibilitySettings.gd:35 | is_enabled | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/AccessibilitySettings.gd:57 | toggle | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd — 287 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd — 301 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -117,18 +117,20 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:3 | BRICK_SHAPES · const | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:26 | DEFAULT_MOOD_THRESHOLD · const | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:27 | BALANCE_DELTA_KEY · const | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:35 | normalize_block · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:59 | calculate_block_height · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:79 | cell_bounds · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:95 | outline_corners · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:113 | brick_texture · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:122 | emoji_mood_for_delta · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:133 | emoji_texture · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:141 | emoji_anchor · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:170 | detect_orientation · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:188 | brick_quad_uvs · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:193 | brick_quad_points · static func | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:212 | brick_quad_colors · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:28 | SUPPORT_STABILITY_KEY · const | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:36 | normalize_block · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:60 | calculate_block_height · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:80 | cell_bounds · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:96 | outline_corners · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:114 | brick_texture · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:123 | emoji_mood_for_delta · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:134 | emoji_mood_for_support · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:147 | emoji_texture · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:155 | emoji_anchor · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:184 | detect_orientation · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:202 | brick_quad_uvs · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:207 | brick_quad_points · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/BlockData.gd:226 | brick_quad_colors · static func | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/CollapseSim.gd — 219 ln
 
@@ -310,18 +312,19 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:134 | has_pose | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/StructuralPose.gd:137 | has_targets | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 187 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd — 204 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:1 | @file · file | top-bar height indicators and live stability warning preview |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:30 | bind_nodes | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:46 | reset_indicators | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:84 | tick_round_timer | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:104 | set_top_indicator_progress | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:133 | update_top_bar_display | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:154 | update_tower_stability_ui | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:184 | set_stability_meter_visible | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:32 | bind_nodes | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:48 | reset_indicators | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:86 | tick_round_timer | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:106 | set_top_indicator_progress | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:135 | update_top_bar_display | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:156 | update_tower_stability_ui | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:194 | set_stability_thresholds | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:201 | set_stability_meter_visible | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd — 22 ln
 
@@ -402,7 +405,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd:1 | @file · file | tint bare icon TextureButtons cyan on press, no StyleBox to swap |
 
-### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1350 ln
+### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1381 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -427,26 +430,27 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:68 | drag_grip_offset_units · export | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:71 | scroll_offset_changed · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:72 | camera_zoom_changed · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:120 | set_tower | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:205 | refresh_visuals | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:209 | set_mood_threshold | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:218 | set_visual_hooks | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:221 | play_impact_beat | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:239 | cancel_impact_beat | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:250 | shake | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:326 | drag_grip_offset | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:329 | begin_snap_drag | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:337 | resolve_snap | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:353 | is_placement_still_legal | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:356 | set_snap_state | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:365 | clear_snap_preview | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:370 | end_snap_drag | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:375 | is_placement_frame_active | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:378 | placement_visual_bounds | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:585 | set_player_color_map | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:589 | clear_tower | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:122 | set_tower | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:207 | refresh_visuals | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:211 | set_mood_threshold | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:220 | set_support_stability_thresholds | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:231 | set_visual_hooks | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:234 | play_impact_beat | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:252 | cancel_impact_beat | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:263 | shake | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:339 | drag_grip_offset | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:342 | begin_snap_drag | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:350 | resolve_snap | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:366 | is_placement_still_legal | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:369 | set_snap_state | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:378 | clear_snap_preview | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:383 | end_snap_drag | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:388 | is_placement_frame_active | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:391 | placement_visual_bounds | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:598 | set_player_color_map | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:602 | clear_tower | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:81 | tower_collapsed · stable | |
 
 ---
 
-38 files · 212 stable anchors.
+38 files · 216 stable anchors.

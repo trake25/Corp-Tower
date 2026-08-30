@@ -64,6 +64,7 @@ export const MAP_AREAS = [
 
 export const ROUTE_RULES = [
   { pattern: /^src\/Server\/app\/Game_Config\.js$/, skill: 'server-engineer', docs: ['backend.md', 'gameplay.md'], map: 'backend.md', read: 'full' },
+  { pattern: /^src\/Server\/app\/Game_Engine\.js$/, skill: 'server-engineer', docs: ['backend.md', 'networking.md'], map: 'backend.md', read: 'hunk' },
   { pattern: /^src\/Server\/app\/(Server|Redis_State)\.js$/, skill: 'fullstack-coordinator', docs: ['networking.md', 'backend.md'], map: 'backend.md', read: 'hunk' },
   { pattern: /^src\/Server\/app\//, skill: 'server-engineer', docs: ['backend.md'], map: 'backend.md', read: 'hunk' },
   { pattern: /^src\/Server\/migrations\//, skill: 'server-engineer', docs: ['backend.md'], map: 'backend.md', read: 'hunk' },

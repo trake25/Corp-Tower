@@ -2,8 +2,8 @@ extends RefCounted
 
 const BOT_STRATEGY_COOPERATIVE := "cooperative"
 const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
-const TOWER_FEEDBACK_MODES := ["warnings_only", "meter_only", "live_preview"]
-const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Meter Only", "Live Preview"]
+const TOWER_FEEDBACK_MODES := ["warnings_only", "live_preview"]
+const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Live Preview"]
 const DEBUG_CATEGORY_NAMES := [
 	"Bots", "Round", "UI", "Supply", "Scoring", "Impact", "Tower", "Power", "Parallax", "Placement",
 	"Hooks", "Sign In"
@@ -42,11 +42,11 @@ const DEBUG_TOOLTIPS := {
 	},
 	"TowerMoodThresholdLabel": {
 		"title": "Brick Mood Threshold",
-		"body": "How far a placement must move the tower toward or away from centre before the brick's face reacts.\n\nbalance delta = (lean before - lean after) / collapse threshold x 100\n\ndelta >= this = smiley, delta <= -this = worried, in between = disbelief. Display only, no gameplay effect.\n\nThis is NOT the change in the Stability %. That score is min(lean, integrity) and sags as the tower grows, so a perfectly centred brick read as a loss and straightening a lean was masked whenever integrity was the lower axis. This reads the lean alone, so a centred brick scores 0 at every height and pulling the tower back upright always scores positive.\n\nEach brick's delta is fixed at placement, but this compares against it live — dragging the slider restyles the whole standing tower immediately.\n\nMeasured mix across levels 1-30: at 1 roughly 29/58/13 smiley/worried/disbelief, at 3 about 17/33/50, at 5 about 12/18/70.\n\nBricks with no face at all mean the server is older than this feature and is not sending a delta.",
+		"body": "How far a new placement must move the tower toward or away from centre for its entrance reaction.\n\nbalance delta = (lean before - lean after) / collapse threshold x 100\n\ndelta >= this = smiley, delta <= -this = worried, in between = disbelief. Display only, no gameplay effect.\n\nAfter the drop animation, every standing brick switches to its live load-bearing support state using the authoritative Warning and Critical thresholds.",
 	},
 	"TowerFeedbackModeLabel": {
 		"title": "Stability Feedback",
-		"body": "How stability is surfaced: warning popups only, a numeric meter, or a live preview. Presentation only.",
+		"body": "How stability is surfaced: warning popups only, or a live preview of the tallest active component. Brick faces and structural pose remain live in both modes. Presentation only.",
 	},
 	"ImpactIntervalLabel": {
 		"title": "Impact Interval",

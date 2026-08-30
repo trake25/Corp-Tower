@@ -64,7 +64,7 @@ const RULES = {
     debugBotDelayMax: ["int", 250, 10000],
     placementCooldown: ["int", 0, 5000],
     quickChatCooldownMs: ["int", 1000, 30000],
-    towerStabilityFeedbackMode: ["enum", ["warnings_only", "meter_only", "live_preview"]],
+    towerStabilityFeedbackMode: ["enum", ["warnings_only", "live_preview"]],
     levelTimeLimitMs: ["int", 5000, 120000],
     startDelayMs: ["int", 0, 10000],
     placementScorePopupDurationMs: ["int", 500, 10000],
@@ -147,9 +147,8 @@ function applyValue(key, value) {
         owner[property] = Boolean(value);
     } else if (kind === "enum") {
         const candidate = String(value);
-        if (rule[1].includes(candidate)) {
-            owner[property] = candidate;
-        }
+        if (!rule[1].includes(candidate)) return false;
+        owner[property] = candidate;
     } else {
         const numeric = Number(value);
         const current = Number(owner[property]);

@@ -73,6 +73,8 @@ class GameEngine {
             towerStabilityDiagnostics: this.room.towerStabilityDiagnostics || {},
             towerStabilityComponents: this.room.towerStabilityComponents || [],
             towerStructuralPose: this.room.towerStructuralPose || [],
+            towerStabilityWarningThreshold: Math.max(0, Math.min(100, Math.round(Number(GameConfig.towerStabilityWarningThreshold) || 0))),
+            towerStabilityCriticalThreshold: Math.max(0, Math.min(100, Math.round(Number(GameConfig.towerStabilityCriticalThreshold) || 0))),
             sideQuest: this.room.sideQuest || null,
             powerEvents: options.powerEvents || [],
             towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode,

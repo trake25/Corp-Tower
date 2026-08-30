@@ -370,10 +370,8 @@ function interfaceFor(group, config, height, disabled) {
     const geometryIntegrityRisk = disabled ? 0 : clamp01(supportShortfall * severity);
     const integrityRisk = Math.max(geometryIntegrityRisk, loadCapacity.loadRisk);
     let direction = "center";
-    if (balanceRisk > 0.0001) {
-        if (signedOffsetShare > 0.05) direction = "right";
-        else if (signedOffsetShare < -0.05) direction = "left";
-    }
+    if (signedOffsetShare > 0.05) direction = "right";
+    else if (signedOffsetShare < -0.05) direction = "left";
 
     return {
         pivotX: supportCenter,
@@ -394,6 +392,7 @@ function interfaceFor(group, config, height, disabled) {
         integrityRisk,
         direction,
         signedBalanceRisk: direction === "center" ? 0 : balanceRisk * (direction === "right" ? 1 : -1),
+        signedLoadBias: direction === "center" ? 0 : Math.max(-1, Math.min(1, signedOffsetShare)),
         supportLinks: links,
         supportShortfall,
         heightProgress
@@ -491,6 +490,8 @@ function visualSections(groups, config, componentId) {
     sections.forEach((section, index) => {
         section.id = `component-${componentId}-section-${index}`;
         section.groups.forEach(group => sectionForGroup.set(group, section));
+    });
+    sections.forEach(section => {
         section.groups.forEach(group => group.supportLinks.forEach(link => {
                 const supporterSection = link.supporter ? sectionForGroup.get(link.supporter) : null;
                 if (!supporterSection || supporterSection !== section) {
@@ -507,10 +508,6 @@ function rotatePoint(x, y, angle) {
     const radians = -angle * Math.PI / 180;
     return { x: x * Math.cos(radians) - y * Math.sin(radians), y: x * Math.sin(radians) + y * Math.cos(radians) };
 }
-function cosmeticSign(group) {
-    const hash = group.key.split("").reduce((value, character) => (value * 31 + character.charCodeAt(0)) >>> 0, 7);
-    return hash % 2 === 0 ? 1 : -1;
-}
 function buildStructuralPose(groups, config, componentId) {
     const { sections, rigidRisk } = visualSections(groups, config, componentId);
     const transforms = new Map();
@@ -519,37 +516,61 @@ function buildStructuralPose(groups, config, componentId) {
 
     const transformFor = section => {
         if (transforms.has(section)) return transforms.get(section);
+        const orderedBoundaries = section.boundaries.slice().sort((left, right) => {
+            const leftRisk = Math.max(left.group.interface.balanceRisk, left.group.interface.integrityRisk);
+            const rightRisk = Math.max(right.group.interface.balanceRisk, right.group.interface.integrityRisk);
+            if (rightRisk !== leftRisk) return rightRisk - leftRisk;
+            const leftWeight = left.group.loadMass * number(left.link.weight, 1);
+            const rightWeight = right.group.loadMass * number(right.link.weight, 1);
+            if (rightWeight !== leftWeight) return rightWeight - leftWeight;
+            return left.group.key.localeCompare(right.group.key);
+        });
+        const risk = Math.max(
+            orderedBoundaries[0].group.interface.balanceRisk,
+            orderedBoundaries[0].group.interface.integrityRisk
+        );
+        const criticalBoundaries = orderedBoundaries.filter(boundary => (
+            Math.abs(Math.max(boundary.group.interface.balanceRisk, boundary.group.interface.integrityRisk) - risk) <= 0.000001
+        ));
         let total = 0, pivotX = 0, pivotY = 0, anchoredX = 0, anchoredY = 0;
-        let inheritedAngle = 0, localBend = 0, failureWeight = 0;
-        for (const boundary of section.boundaries) {
+        let inheritedAngle = 0, directionBias = 0, balanceRisk = 0, integrityRisk = 0, failureWeight = 0;
+        for (const boundary of criticalBoundaries) {
             const weight = Math.max(0.0001, boundary.group.loadMass * number(boundary.link.weight, 1));
-            const parentTransform = boundary.supporterSection ? transformFor(boundary.supporterSection) : { originX: 0, originY: 0, angle: 0, failureWeight: 0 };
-            const pivot = boundary.group.interface;
-            const anchored = rotatePoint(pivot.pivotX, pivot.pivotY, parentTransform.angle);
-            const risk = Math.max(pivot.balanceRisk, pivot.integrityRisk);
-            const visualRisk = clamp01((risk - rigidRisk) / Math.max(0.0001, 1 - rigidRisk));
-            const signedBalance = pivot.signedBalanceRisk;
-            const direction = Math.abs(signedBalance) > 0.0001 ? Math.sign(signedBalance) : cosmeticSign(boundary.group);
-            const bend = direction * Math.max(Math.abs(signedBalance), pivot.integrityRisk * integritySway) * visualRisk;
+            const parentTransform = boundary.supporterSection
+                ? transformFor(boundary.supporterSection)
+                : { originX: 0, originY: 0, angle: 0, failureWeight: 0 };
+            const boundaryInterface = boundary.group.interface;
+            const anchored = rotatePoint(boundaryInterface.pivotX, boundaryInterface.pivotY, parentTransform.angle);
             total += weight;
-            pivotX += pivot.pivotX * weight;
-            pivotY += pivot.pivotY * weight;
+            pivotX += boundaryInterface.pivotX * weight;
+            pivotY += boundaryInterface.pivotY * weight;
             anchoredX += (parentTransform.originX + anchored.x) * weight;
             anchoredY += (parentTransform.originY + anchored.y) * weight;
             inheritedAngle += parentTransform.angle * weight;
-            localBend += bend * weight;
+            directionBias += boundaryInterface.signedLoadBias * weight;
+            balanceRisk = Math.max(balanceRisk, boundaryInterface.balanceRisk);
+            integrityRisk = Math.max(integrityRisk, boundaryInterface.integrityRisk);
             failureWeight = Math.max(failureWeight, parentTransform.failureWeight, risk);
         }
         pivotX /= total;
         pivotY /= total;
         anchoredX /= total;
         anchoredY /= total;
+        inheritedAngle /= total;
+        const visualRisk = clamp01((risk - rigidRisk) / Math.max(0.0001, 1 - rigidRisk));
+        const direction = Math.abs(directionBias) > 0.0001 ? Math.sign(directionBias) : 0;
+        const bend = direction * Math.max(balanceRisk, integrityRisk * integritySway) * visualRisk;
         const angle = Math.max(
             -poseMaxAngle,
-            Math.min(poseMaxAngle, inheritedAngle / total + localBend / total * poseMaxAngle)
+            Math.min(poseMaxAngle, inheritedAngle + bend * poseMaxAngle)
         );
         const rotatedPivot = rotatePoint(pivotX, pivotY, angle);
-        const transform = { originX: anchoredX - rotatedPivot.x, originY: anchoredY - rotatedPivot.y, angle, failureWeight };
+        const transform = {
+            originX: anchoredX - rotatedPivot.x,
+            originY: anchoredY - rotatedPivot.y,
+            angle,
+            failureWeight
+        };
         transforms.set(section, transform);
         return transform;
     };
@@ -577,6 +598,38 @@ function buildStructuralPose(groups, config, componentId) {
         }
     }
     return Array.from(poseByEntry.entries()).sort((left, right) => left[0] - right[0]).map(([, pose]) => pose);
+}
+function supportPresentation(groups) {
+    return groups.flatMap(group => {
+        const dependentLoad = Math.max(0, group.loadMass - group.mass);
+        const risk = dependentLoad > 0
+            ? Math.max(group.interface.balanceRisk, group.interface.integrityRisk)
+            : 0;
+        const supportStability = Math.max(0, Math.min(100, Math.round(100 * (1 - risk))));
+        return group.members.map(member => ({
+            entryIndex: member.entryIndex,
+            blockId: blockId(member.entry),
+            supportStability
+        }));
+    }).sort((left, right) => left.entryIndex - right.entryIndex);
+}
+function componentLean(groups) {
+    const maxRisk = groups.reduce((value, group) => (
+        Math.max(value, group.interface.balanceRisk, group.interface.integrityRisk)
+    ), 0);
+    const criticalGroups = groups.filter(group => (
+        Math.abs(Math.max(group.interface.balanceRisk, group.interface.integrityRisk) - maxRisk) <= 0.000001
+    ));
+    const totalLoad = criticalGroups.reduce((sum, group) => sum + Math.max(0.0001, group.loadMass), 0);
+    const signedLoad = criticalGroups.reduce((sum, group) => (
+        sum + group.interface.signedLoadBias * Math.max(0.0001, group.loadMass)
+    ), 0);
+    const signedBalanceRisk = criticalGroups.reduce((sum, group) => (
+        sum + group.interface.signedBalanceRisk * Math.max(0.0001, group.loadMass)
+    ), 0) / Math.max(0.0001, totalLoad);
+    if (signedLoad > 0.0001) return { direction: "right", signedBalanceRisk };
+    if (signedLoad < -0.0001) return { direction: "left", signedBalanceRisk };
+    return { direction: "center", signedBalanceRisk: 0 };
 }
 function selectCritical(groups) {
     return groups.slice().sort((left, right) => {
@@ -622,7 +675,8 @@ function evaluateComponent(nodes, config, componentId) {
     const integrity = maxIntegrityRisk >= 1 ? 0 : Math.max(1, Math.round(100 * (1 - maxIntegrityRisk)));
     const stability = collapsed ? 0 : Math.min(balance, integrity);
     const maxTilt = Math.max(0, number(config.towerMaxTiltAngleDeg, 18));
-    const signedBalanceRisk = critical ? critical.interface.signedBalanceRisk : 0;
+    const lean = componentLean(groups);
+    const signedBalanceRisk = lean.signedBalanceRisk;
     const criticalSupport = critical ? {
         id: critical.members.map(member => blockId(member.entry)).filter(Boolean).sort()[0] || null,
         pivotX: critical.interface.pivotX,
@@ -650,7 +704,7 @@ function evaluateComponent(nodes, config, componentId) {
         overhangPenalty: 0,
         tiltScore: signedBalanceRisk,
         tiltAngleDeg: signedBalanceRisk * maxTilt,
-        leanDirection: critical ? critical.interface.direction : "center",
+        leanDirection: lean.direction,
         slenderness: critical && critical.interface.contactWidth > 0
             ? number(config.towerSiteWidth, critical.interface.contactWidth) / critical.interface.contactWidth
             : 0,
@@ -658,6 +712,7 @@ function evaluateComponent(nodes, config, componentId) {
     };
     if (criticalSupport) criticalSupport.componentId = componentId;
     const structuralPose = buildStructuralPose(groups, config, componentId);
+    const supportStability = supportPresentation(groups);
 
     return {
         id: componentId,
@@ -669,6 +724,7 @@ function evaluateComponent(nodes, config, componentId) {
         stability,
         diagnostics,
         structuralPose,
+        supportStability,
         analysis: {
             height,
             groups: describeGroups(groups).map(group => ({
@@ -687,6 +743,7 @@ function evaluate(entries, config = {}) {
             stability: 100,
             diagnostics: emptyDiagnostics(),
             structuralPose: [],
+            supportStability: [],
             components: [],
             analysis: { height: 0, groups: [], components: [] }
         };
@@ -709,6 +766,8 @@ function evaluate(entries, config = {}) {
         stability: components.reduce((value, component) => Math.min(value, component.stability), 100),
         diagnostics,
         structuralPose: components.flatMap(component => component.structuralPose),
+        supportStability: components.flatMap(component => component.supportStability)
+            .sort((left, right) => left.entryIndex - right.entryIndex),
         components,
         analysis: {
             height: topHeight(entries || []),

@@ -16,7 +16,7 @@ const CONFIG_FIXTURE := {
 	"finishScorePopupDurationMs": 5000,
 	"levelSummaryDelayMs": 6000,
 	"targetHeightMultiplier": 5,
-	"towerStabilityFeedbackMode": "meter_only",
+	"towerStabilityFeedbackMode": "live_preview",
 	"towerStabilityMoodThreshold": 12,
 	"showLatencyIndicator": true,
 	"powerLastChanceEnabled": true,
@@ -51,6 +51,10 @@ func test_apply_config_syncs_sliders_toggles_and_options() -> void:
 	assert_true((harness.find("LatencyIndicatorToggle") as CheckButton).button_pressed, "The latency toggle should sync from the config payload.")
 	assert_eq((harness.find("RecoveryHeightScoreSlider") as HSlider).value, 70.0)
 	assert_eq((harness.find("RecoveryHeightScoreSlider") as HSlider).step, 10.0)
+	var feedback := harness.find("TowerFeedbackModeButton") as OptionButton
+	assert_eq(feedback.item_count, 2)
+	assert_eq(feedback.get_item_text(0), "Warnings Only")
+	assert_eq(feedback.get_item_text(1), "Live Preview")
 
 func test_lobby_debug_context_enables_only_bots() -> void:
 	harness.main.set_debug_context("lobby")

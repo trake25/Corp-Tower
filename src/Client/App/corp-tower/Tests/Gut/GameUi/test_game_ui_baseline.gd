@@ -87,9 +87,11 @@ func test_demo_game_state_uses_the_shared_hud_contract() -> void:
 	assert_eq(harness.main.roster.player_rail_entries.size(), 3)
 	assert_eq(harness.main.roster.impact_bars.size(), 3)
 
-func test_debug_meter_mode_reveals_stability_label() -> void:
-	harness.main.update_debug_config({"towerStabilityFeedbackMode": "meter_only"})
-	assert_true((harness.find("TowerStabilityLabel") as Label).is_visible_in_tree(), "The debug meter mode should reveal the stability label.")
+func test_only_live_preview_reveals_stability_label() -> void:
+	harness.main.update_debug_config({"towerStabilityFeedbackMode": "warnings_only"})
+	assert_false((harness.find("TowerStabilityLabel") as Label).visible)
+	harness.main.update_debug_config({"towerStabilityFeedbackMode": "live_preview"})
+	assert_true((harness.find("TowerStabilityLabel") as Label).is_visible_in_tree())
 
 func test_live_stability_uses_the_tallest_component_with_stable_ties() -> void:
 	var state: Dictionary = GAME_STATE_FIXTURE.duplicate(true)

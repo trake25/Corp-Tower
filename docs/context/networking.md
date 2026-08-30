@@ -86,14 +86,14 @@ coercion. Client-only target-point and matched-vertex data never crosses the wir
 
 ## Authoritative game state
 
-The state payload supplies enough information to redraw or resume without local
-gameplay reconstruction:
+`Game_Engine.js` builds enough state to redraw or resume without local gameplay
+reconstruction:
 
 - level state and its current deadline;
 - authoritative grid width and derived placeable range;
 - inventory, shared-pile count, and visible next draw;
-- ordered tower blocks with resolved coordinates, standing/fallen state,
-  component identity, and placement-time Balance result;
+- ordered tower blocks with coordinates, lifecycle/component identity,
+  placement Balance, and per-brick support stability;
 - worst-component compatibility diagnostics plus component summaries with
   authoritative height and component-scoped presentation poses;
 - roster, scores, accessibility defaults, and synchronized visual hooks;
@@ -103,6 +103,10 @@ gameplay reconstruction:
 The client derives render center and snapping from the transmitted grid;
 structural pose never affects aiming or legality. `impactScoreStatus` includes
 live contribution exactly once, so clients must not add level score.
+
+Support values and their thresholds are authoritative presentation. Standing
+values recalculate; fallen values freeze in persisted entries so reconnect keeps
+the face without client-side stability reconstruction.
 
 Transient events are id-deduplicated, consumed after broadcast, and never
 persisted or replayed. Snapshots persist tower, inventory, scores, checkpoints,

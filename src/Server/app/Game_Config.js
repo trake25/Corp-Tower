@@ -42,11 +42,19 @@ const GameConfig = {
     towerStructuralPoseMaxDipUnits: 0.18,
     towerStructuralPoseRigidRisk: 0.08,
     towerStructuralPoseIntegritySwayShare: 0.45,
+    towerVisibleRowCapacity: 17,
+    towerScrollStartRatio: 0.7,
+    towerScrollEasePower: 3.0,
+    towerTopIndicatorClearanceRows: 1,
     towerStabilityDifficulty: 65,
     towerStabilityPressure: {
         floor: 0.55,
         fullPressureLevel: 8,
         difficultyCurvePower: 2
+    },
+    towerSupportDifficultyPressure: {
+        midpoint: 0.38,
+        steepness: 8
     },
     towerStabilityAnchors: {
         forgiving: {
@@ -57,8 +65,8 @@ const GameConfig = {
             towerStructuralSeverity: 0.55,
             towerStabilityMinHeight: 10,
             towerHeightPressureGain: 0.0,
-            towerSupportSafeLoadHeightShare: 1.0,
-            towerSupportCollapseLoadHeightShare: 1.8
+            towerSupportSafeLoadPerContact: 9.6,
+            towerSupportCollapseLoadPerContact: 48
         },
         harsh: {
             towerBalanceSafeOffsetShare: 0.40,
@@ -68,8 +76,8 @@ const GameConfig = {
             towerStructuralSeverity: 1.35,
             towerStabilityMinHeight: 8,
             towerHeightPressureGain: 1.3,
-            towerSupportSafeLoadHeightShare: 0.6,
-            towerSupportCollapseLoadHeightShare: 1.15
+            towerSupportSafeLoadPerContact: 3.2,
+            towerSupportCollapseLoadPerContact: 16
         }
     },
     towerBaseHalfWidthFloor: 1.0,

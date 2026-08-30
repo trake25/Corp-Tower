@@ -138,6 +138,17 @@ test('observability source routes to the automation contract', () => {
   assert.deepEqual(route.maps, ['docs/context/map/infra.md']);
 });
 
+test('game state source routes to both backend and wire contracts', () => {
+  const route = routeContext('src/Server/app/Game_Engine.js');
+
+  assert.equal(route.skill, 'server-engineer');
+  assert.deepEqual(route.docs, [
+    'docs/context/backend.md',
+    'docs/context/networking.md',
+  ]);
+  assert.deepEqual(route.maps, ['docs/context/map/backend.md']);
+});
+
 test('documentation scope follows routed anchors when a source file moves its artifact', () => {
   const needles = documentationNeedlesForPath('scripts/fixtures/context-retrieval.json');
   const automation = readFileSync(join(ROOT, 'docs/context/automation.md'), 'utf8');

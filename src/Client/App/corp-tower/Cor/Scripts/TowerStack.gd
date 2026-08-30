@@ -93,6 +93,8 @@ var _drop_fall_units: float = 0.0
 var _armed_pulse_t: float = 0.0
 var _prev_block_count: int = 0
 var mood_threshold: int = BlockDataScript.DEFAULT_MOOD_THRESHOLD
+var support_warning_threshold: int = 75
+var support_critical_threshold: int = 45
 var _collapse_phase: int = COLLAPSE_NONE
 var _collapse_lean_elapsed: float = 0.0
 var _collapse_elapsed: float = 0.0
@@ -213,6 +215,17 @@ func set_mood_threshold(value: int) -> void:
 		return
 
 	mood_threshold = resolved
+	queue_redraw()
+
+func set_support_stability_thresholds(warning_threshold: int, critical_threshold: int) -> void:
+	var warning: int = clampi(warning_threshold, 0, 100)
+	var critical: int = mini(warning, clampi(critical_threshold, 0, 100))
+
+	if warning == support_warning_threshold and critical == support_critical_threshold:
+		return
+
+	support_warning_threshold = warning
+	support_critical_threshold = critical
 	queue_redraw()
 
 func set_visual_hooks(hooks) -> void:
@@ -725,10 +738,8 @@ func _build_collapse_seed(
 	var emoji_texture: Texture2D = null
 	var emoji_offset: Vector2 = Vector2.ZERO
 
-	if entry.has(BlockDataScript.BALANCE_DELTA_KEY):
-		var mood: String = BlockDataScript.emoji_mood_for_delta(
-			int(entry.get(BlockDataScript.BALANCE_DELTA_KEY, 0)), mood_threshold
-		)
+	var mood: String = _emoji_mood_for_entry(entry)
+	if mood != "":
 		emoji_texture = BlockDataScript.emoji_texture(mood)
 
 		var anchor: Vector2 = BlockDataScript.emoji_anchor(cells)
@@ -964,12 +975,9 @@ func _draw_block_emoji(
 	var mood: String = verdict_mood
 
 	if mood == "":
-		if not entry.has(BlockDataScript.BALANCE_DELTA_KEY):
+		mood = _emoji_mood_for_entry(entry)
+		if mood == "":
 			return
-
-		mood = BlockDataScript.emoji_mood_for_delta(
-			int(entry.get(BlockDataScript.BALANCE_DELTA_KEY, 0)), mood_threshold
-		)
 
 	var texture: Texture2D = BlockDataScript.emoji_texture(mood)
 
@@ -1014,12 +1022,9 @@ func _draw_posed_block_emoji(
 	var mood: String = verdict_mood
 
 	if mood == "":
-		if not entry.has(BlockDataScript.BALANCE_DELTA_KEY):
+		mood = _emoji_mood_for_entry(entry)
+		if mood == "":
 			return
-
-		mood = BlockDataScript.emoji_mood_for_delta(
-			int(entry.get(BlockDataScript.BALANCE_DELTA_KEY, 0)), mood_threshold
-		)
 
 	var texture: Texture2D = BlockDataScript.emoji_texture(mood)
 
@@ -1040,6 +1045,32 @@ func _draw_posed_block_emoji(
 	) - block_center
 	var box_size: Vector2 = Vector2.ONE * unit * emoji_unit_scale * pop_scale
 	draw_texture_rect(texture, Rect2(local_anchor - box_size * 0.5, box_size), false)
+
+func _emoji_mood_for_entry(entry: Dictionary) -> String:
+	var block_id: String = _entry_block_id(entry)
+	var is_collapsing: bool = (
+		str(entry.get("towerState", "standing")) == "fallen" or
+		_collapsing_block_ids.has(block_id)
+	)
+
+	if !is_collapsing and block_id == _drop_anim_id and entry.has(BlockDataScript.BALANCE_DELTA_KEY):
+		return BlockDataScript.emoji_mood_for_delta(
+			int(entry.get(BlockDataScript.BALANCE_DELTA_KEY, 0)), mood_threshold
+		)
+
+	if entry.has(BlockDataScript.SUPPORT_STABILITY_KEY):
+		return BlockDataScript.emoji_mood_for_support(
+			int(entry.get(BlockDataScript.SUPPORT_STABILITY_KEY, 100)),
+			support_warning_threshold,
+			support_critical_threshold
+		)
+
+	if entry.has(BlockDataScript.BALANCE_DELTA_KEY):
+		return BlockDataScript.emoji_mood_for_delta(
+			int(entry.get(BlockDataScript.BALANCE_DELTA_KEY, 0)), mood_threshold
+		)
+
+	return ""
 
 func _verdict_mood_for(entry: Dictionary, brick_top_units: float) -> String:
 	if _wave_progress < 0.0 or _verdict_by_player.is_empty():

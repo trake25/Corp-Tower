@@ -73,13 +73,16 @@ pose. Pose never changes legality, snapping, scoring, or collapse.
 The support graph produces Balance and Integrity; tower stability is the weaker
 of them. Balance measures lean against a contact span. Integrity measures whether
 contact width and independent paths can carry the load, so a centered bottleneck
-can fail without a false directional warning.
+can fail without a false directional warning. Each standing brick also carries a
+score for its loaded support interface; it changes with dependent load and
+freezes on falling. Directional load leans its section from that support;
+symmetric load stays centered.
 
 `towerStabilityDifficulty` is the single gameplay stability dial. It interpolates
-forgiving and harsh behavior while height and maturity pressure let openings
-survive and weak load-bearing interfaces become dangerous later. Directly
-repairing a weak interface can reduce risk, earn structural value, and qualify
-for a capped Critical Save.
+geometry while independently tightening physical load per contact. Capacity does
+not grow with target height, so a narrow base needs another path as mass grows.
+Height and maturity pressure still protect openings early. Repair can reduce
+risk, earn structural value, and qualify for a capped Critical Save.
 
 ## Time, failure, and progression
 
@@ -147,7 +150,9 @@ MVP-greedy takes the best non-collapsing personal transaction. Cooperative play
 first stays near the best available stability, then maximizes authoritative
 score. After meeting its own Impact share it prefers a useful repair and may wait
 so a short teammate can claim scarce height. It reads canonical Impact status,
-not display score.
+not display score. A zero-height repair is considered only while its support
+region remains inside the normal active tower view; ordinary upward building is
+not filtered by that visibility boundary.
 
 Because candidate selection rejects collapse, simulated bot collapse rate cannot
 calibrate stability. Use stability distributions, contribution outcomes, and

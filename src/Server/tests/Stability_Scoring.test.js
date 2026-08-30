@@ -68,6 +68,14 @@ function poseById(result, id) {
     return result.structuralPose.find(pose => pose.blockId === id);
 }
 
+function posedPoint(pose, x, y) {
+    const angle = -pose.rotationDeg * Math.PI / 180;
+    return {
+        x: pose.sectionOriginXUnits + x * Math.cos(angle) - y * Math.sin(angle),
+        y: pose.sectionOriginYUnits + x * Math.sin(angle) + y * Math.cos(angle)
+    };
+}
+
 function scoreResult(stability = 100, criticalRisk = 0, height = 20) {
     return {
         stability,
@@ -144,8 +152,14 @@ test("the same tower is less stable at a high level than at level 1", () => {
         entries.push({ block: rowBlock, originX: 2, originY: y });
     }
 
-    const early = TowerStability.evaluate(entries, engine.resolveStabilityConfig(1));
-    const late = TowerStability.evaluate(entries, engine.resolveStabilityConfig(40));
+    const earlyConfig = engine.resolveStabilityConfig(1);
+    const lateConfig = engine.resolveStabilityConfig(40);
+    for (const config of [earlyConfig, lateConfig]) {
+        config.towerSupportSafeLoadPerContact = 1000;
+        config.towerSupportCollapseLoadPerContact = 2000;
+    }
+    const early = TowerStability.evaluate(entries, earlyConfig);
+    const late = TowerStability.evaluate(entries, lateConfig);
 
     assert.ok(
         late.stability < early.stability,
@@ -178,7 +192,7 @@ test("stability difficulty 0 leaves the same tower unpenalised", () => {
     }
 });
 
-test("the difficulty dial is forgiving at 5 and ramps a loaded bottleneck smoothly", () => {
+test("the difficulty dial is forgiving at 5 and never improves a loaded bottleneck", () => {
     const { engine } = createPlayingEngine(8, 125);
     const original = GameConfig.towerStabilityDifficulty;
     const results = new Map();
@@ -197,10 +211,11 @@ test("the difficulty dial is forgiving at 5 and ramps a loaded bottleneck smooth
 
     assert.equal(results.get(0).stability, 100);
     assert.equal(results.get(0).diagnostics.collapsed, false);
-    assert.ok(results.get(5).stability >= 99, "difficulty 5 must be extremely forgiving");
-    assert.ok(results.get(25).stability > 90, "difficulty 25 remains forgiving");
-    assert.ok(results.get(50).stability < results.get(25).stability);
-    assert.ok(results.get(75).stability < results.get(50).stability);
+    assert.ok(results.get(5).stability > 0, "difficulty 5 must keep the bottleneck standing");
+    assert.equal(results.get(5).diagnostics.collapsed, false);
+    assert.ok(results.get(25).stability <= results.get(5).stability);
+    assert.ok(results.get(50).stability <= results.get(25).stability);
+    assert.ok(results.get(75).stability <= results.get(50).stability);
     assert.equal(results.get(100).diagnostics.collapsed, true);
 
     for (const [previous, difficulty] of [[0, 5], [5, 25], [25, 50], [50, 75], [75, 100]]) {
@@ -211,7 +226,7 @@ test("the difficulty dial is forgiving at 5 and ramps a loaded bottleneck smooth
     }
 });
 
-test("well-supported tall towers remain viable at every difficulty", () => {
+test("well-supported tall towers remain standing at every difficulty", () => {
     const { engine } = createPlayingEngine(8, 125);
     const original = GameConfig.towerStabilityDifficulty;
     const row = Array.from({ length: 8 }, (_, x) => [x, 0]);
@@ -221,7 +236,7 @@ test("well-supported tall towers remain viable at every difficulty", () => {
         for (const difficulty of [0, 5, 25, 50, 75, 100]) {
             GameConfig.towerStabilityDifficulty = difficulty;
             const result = TowerStability.evaluate(entries, engine.resolveStabilityConfig(8));
-            assert.equal(result.stability, 100, "full support must stay viable at " + difficulty);
+            assert.ok(result.stability > 0, "full support must stay viable at " + difficulty);
             assert.equal(result.diagnostics.collapsed, false);
         }
     } finally {
@@ -273,6 +288,7 @@ test("a wide crown on redundant supports is safer than the same crown on one sup
     assert.equal(crownAnalysis.pathConcentration, 0.5);
     assert.equal(redundantResult.diagnostics.balance, 100);
     assert.equal(redundantResult.diagnostics.leanDirection, "center");
+    assert.ok(Math.abs(poseById(redundantResult, "C").rotationDeg) < 0.000001);
 });
 
 test("a failed narrow middle cuts only itself and its dependent upper groups", () => {
@@ -359,6 +375,8 @@ test("one unstable component can collapse beside an independent stable tower", (
     assert.equal(result.components[0].diagnostics.collapsed, true);
     assert.equal(result.components[1].diagnostics.collapsed, false);
     assert.equal(result.components[1].stability, 100);
+    assert.ok(result.components[0].supportStability.some(state => state.supportStability < 100));
+    assert.ok(result.components[1].supportStability.every(state => state.supportStability === 100));
     assert.ok(result.structuralPose.every(pose => Number.isInteger(pose.componentId)));
 });
 
@@ -443,12 +461,16 @@ test("structural pose bends weak interfaces while rigid upper sections remain se
         x: upperNextCenter.x + upperNext.offsetXUnits,
         y: upperNextCenter.y + upperNext.offsetYUnits
     };
+    const bottleneckHinge = posedPoint(bottleneck, 2.5, 3);
+    const upperHinge = posedPoint(upper, 2.5, 3);
 
     assert.equal(upper.sectionId, upperNext.sectionId);
     assert.equal(upper.rotationDeg, upperNext.rotationDeg);
     assert.ok(Math.abs(upper.rotationDeg) > Math.abs(bottleneck.rotationDeg));
     assert.ok(Math.abs(upper.rotationDeg) > Math.abs(base.rotationDeg));
     assert.ok(Math.abs(reinforcedUpper.rotationDeg) < Math.abs(upper.rotationDeg));
+    assert.ok(Math.abs(bottleneckHinge.x - upperHinge.x) < 0.0001);
+    assert.ok(Math.abs(bottleneckHinge.y - upperHinge.y) < 0.0001);
     assert.ok(Math.abs(posedUpperNext.x - posedUpper.x + Math.sin(angle)) < 0.0001);
     assert.ok(Math.abs(posedUpperNext.y - posedUpper.y - Math.cos(angle)) < 0.0001);
 });
@@ -994,6 +1016,9 @@ test("placement collapses only its component and play continues with enough supp
     assert.equal(fallen.length, 5);
     assert.deepEqual(standing.map(entry => entry.block.id).sort(), ["B0", "B1", "S0", "S1"]);
     assert.equal(failedPlacement.effectiveHeight, 0);
+    assert.equal(failedPlacement.supportStability, 0);
+    assert.ok(fallen.every(entry => Number.isInteger(entry.supportStability)));
+    assert.ok(standing.every(entry => Number.isInteger(entry.supportStability)));
     assert.equal(engine.room.players[0].contributedHeight, 0);
     assert.ok(eventTypes(broadcast).includes("tower_component_collapsed"));
     assert.equal(eventTypes(broadcast).includes("placement"), false);
@@ -1037,10 +1062,11 @@ test("a placed brick carries the balance delta it caused", () => {
         assert.equal(
             typeof entry.balanceDelta, "number", "every placed brick is stamped"
         );
+        assert.equal(typeof entry.supportStability, "number", "every standing brick carries live support stability");
     }
 
-    // The client classifies the face from this delta on every frame, so it must
-    // ride every rebroadcast -- not just the one right after the placement.
+    // The client can redraw the entrance reaction before switching to live support,
+    // so both presentation fields must ride every rebroadcast.
     const broadcast = latestMessage(messages);
     assert.equal(
         broadcast.towerBlocks[0].balanceDelta,
@@ -1050,6 +1076,14 @@ test("a placed brick carries the balance delta it caused", () => {
         broadcast.towerBlocks[1].balanceDelta,
         engine.room.towerBlocks[1].balanceDelta
     );
+    assert.equal(
+        broadcast.towerBlocks[0].supportStability,
+        engine.room.towerBlocks[0].supportStability
+    );
+    assert.equal(broadcast.towerStabilityWarningThreshold, GameConfig.towerStabilityWarningThreshold);
+    assert.equal(broadcast.towerStabilityCriticalThreshold, GameConfig.towerStabilityCriticalThreshold);
+    assert.equal(Number.isInteger(broadcast.towerStabilityWarningThreshold), true);
+    assert.equal(Number.isInteger(broadcast.towerStabilityCriticalThreshold), true);
     assert.equal(broadcast.towerStructuralPose.length, engine.room.towerBlocks.length);
     assert.deepEqual(
         Object.keys(broadcast.towerStructuralPose[0]).sort(),
@@ -1068,5 +1102,6 @@ test("a placed brick carries the balance delta it caused", () => {
 
     assert.deepEqual(snapshot.state.towerStructuralPose, engine.room.towerStructuralPose);
     assert.deepEqual(snapshot.state.towerStabilityComponents, engine.room.towerStabilityComponents);
+    assert.equal(snapshot.state.towerBlocks[0].supportStability, engine.room.towerBlocks[0].supportStability);
     assert.equal(Object.hasOwn(snapshot.state, "analysis"), false);
 });

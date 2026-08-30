@@ -75,14 +75,19 @@ language but belong to the transient score layer.
 
 ## Tower Stack and snapping
 
+A new brick keeps its Balance reaction through the drop; afterward standing faces
+follow authoritative support stability. Server thresholds classify them, fallen
+faces freeze, and the collapse trigger is critical. Warning-only hides the meter
+but keeps faces and pose live; live preview adds the tallest-component meter.
+Section origins attach each independent component's lean to its stressed support.
+
 The grid and placeable range are server-owned and updated on every broadcast.
 Snap Grid keeps them as static state, and the renderer derives center from grid
 width. Tests must reset the static range between cases.
 
-Bricks stay at a fixed gameplay size while the tower view pans upward. Scrolling
-begins only when needed, eases with progress, and freezes after target height so
-overbuild remains visually attached. The Control-based renderer uses scalar
-coordinate transforms rather than a `Camera2D`.
+Bricks stay fixed-size while the tower view pans upward. Scrolling begins only
+when needed, eases with progress, and freezes after target height so overbuild
+remains visually attached.
 
 Snapping pairs every dragged-brick outline vertex with platform and placed-brick
 snap points. It rejects overlap or a footprint outside the authoritative site,
@@ -109,8 +114,7 @@ transition; repeated snapshots cannot restart that clock.
 The Impact Beat temporarily changes the render scale and wave state, then holds
 until Summary cancels it. It adds no delay when disabled, empty, or collapsing.
 Collapse begins from displayed transforms but remains deterministic across
-clients. Brick faces derive from placement-time Balance change and live cosmetic
-thresholds; missing Balance data deliberately produces no face.
+clients.
 
 ## Live integration constraints
 

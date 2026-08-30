@@ -29,7 +29,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Auth_Verifier.js:62 | isRequired | |
 | src/Server/app/Auth_Verifier.js:84 | verifyAccessToken | |
 
-### src/Server/app/Bot_Manager.js — 492 ln
+### src/Server/app/Bot_Manager.js — 540 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -38,9 +38,9 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Bot_Manager.js:8 | startBots | |
 | src/Server/app/Bot_Manager.js:38 | stopBots | |
 | src/Server/app/Bot_Manager.js:173 | tryActivateReplenish | |
-| src/Server/app/Bot_Manager.js:419 | chooseBotAction | |
+| src/Server/app/Bot_Manager.js:467 | chooseBotAction | |
 
-### src/Server/app/Debug_Config.js — 184 ln
+### src/Server/app/Debug_Config.js — 183 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -51,47 +51,47 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Debug_Config.js:123 | applyDefaults · fn | |
 | src/Server/app/Debug_Config.js:134 | applyValue · fn | |
 
-### src/Server/app/Game_Config.js — 173 ln
+### src/Server/app/Game_Config.js — 181 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Game_Config.js:1 | @file · file | authoritative gameplay, tuning, bot, room-timing, live_preview, and latency defaults |
 | src/Server/app/Game_Config.js:1 | GameConfig · const | |
-| src/Server/app/Game_Config.js:78 | towerStabilityMoodThreshold · stable | |
-| src/Server/app/Game_Config.js:148 | normalCombinedCapActionShare · stable | |
+| src/Server/app/Game_Config.js:86 | towerStabilityMoodThreshold · stable | |
+| src/Server/app/Game_Config.js:156 | normalCombinedCapActionShare · stable | |
 
-### src/Server/app/Game_Engine.js — 1020 ln
+### src/Server/app/Game_Engine.js — 1022 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Game_Engine.js:1 | @file · file | room facade; owns level lifecycle, timers, placement validation, Power |
 | src/Server/app/Game_Engine.js:9 | GameEngine · class | |
-| src/Server/app/Game_Engine.js:113 | buildGameStateSnapshot | |
-| src/Server/app/Game_Engine.js:120 | broadcastGameState | |
-| src/Server/app/Game_Engine.js:148 | createRoom | |
-| src/Server/app/Game_Engine.js:200 | initializePlayerForRoom | |
-| src/Server/app/Game_Engine.js:215 | removePlayerFromRoom | |
-| src/Server/app/Game_Engine.js:229 | hydrateRoom | |
-| src/Server/app/Game_Engine.js:342 | persistRoom | |
-| src/Server/app/Game_Engine.js:352 | recordLevelOutcome | |
-| src/Server/app/Game_Engine.js:366 | queueQuickChat | |
-| src/Server/app/Game_Engine.js:413 | clonePowerInventory | |
-| src/Server/app/Game_Engine.js:434 | tryCompleteSideQuest | |
-| src/Server/app/Game_Engine.js:444 | activatePower | |
-| src/Server/app/Game_Engine.js:478 | getPostLevelTransitionDelayMs | |
-| src/Server/app/Game_Engine.js:506 | startLevel | |
-| src/Server/app/Game_Engine.js:584 | clearTimers | |
-| src/Server/app/Game_Engine.js:596 | closeRoom | |
-| src/Server/app/Game_Engine.js:619 | requestRoomClose | |
-| src/Server/app/Game_Engine.js:634 | stopBots | |
-| src/Server/app/Game_Engine.js:668 | getTargetHeightForLevel | |
-| src/Server/app/Game_Engine.js:679 | getLevelTimeLimitMs | |
-| src/Server/app/Game_Engine.js:719 | clampLevel | |
-| src/Server/app/Game_Engine.js:726 | restartAtConfiguredStartLevel | |
-| src/Server/app/Game_Engine.js:733 | restartAtLevel | |
-| src/Server/app/Game_Engine.js:813 | completeLevel | |
-| src/Server/app/Game_Engine.js:893 | failLevel | |
-| src/Server/app/Game_Engine.js:900 | nextLevel | |
+| src/Server/app/Game_Engine.js:115 | buildGameStateSnapshot | |
+| src/Server/app/Game_Engine.js:122 | broadcastGameState | |
+| src/Server/app/Game_Engine.js:150 | createRoom | |
+| src/Server/app/Game_Engine.js:202 | initializePlayerForRoom | |
+| src/Server/app/Game_Engine.js:217 | removePlayerFromRoom | |
+| src/Server/app/Game_Engine.js:231 | hydrateRoom | |
+| src/Server/app/Game_Engine.js:344 | persistRoom | |
+| src/Server/app/Game_Engine.js:354 | recordLevelOutcome | |
+| src/Server/app/Game_Engine.js:368 | queueQuickChat | |
+| src/Server/app/Game_Engine.js:415 | clonePowerInventory | |
+| src/Server/app/Game_Engine.js:436 | tryCompleteSideQuest | |
+| src/Server/app/Game_Engine.js:446 | activatePower | |
+| src/Server/app/Game_Engine.js:480 | getPostLevelTransitionDelayMs | |
+| src/Server/app/Game_Engine.js:508 | startLevel | |
+| src/Server/app/Game_Engine.js:586 | clearTimers | |
+| src/Server/app/Game_Engine.js:598 | closeRoom | |
+| src/Server/app/Game_Engine.js:621 | requestRoomClose | |
+| src/Server/app/Game_Engine.js:636 | stopBots | |
+| src/Server/app/Game_Engine.js:670 | getTargetHeightForLevel | |
+| src/Server/app/Game_Engine.js:681 | getLevelTimeLimitMs | |
+| src/Server/app/Game_Engine.js:721 | clampLevel | |
+| src/Server/app/Game_Engine.js:728 | restartAtConfiguredStartLevel | |
+| src/Server/app/Game_Engine.js:735 | restartAtLevel | |
+| src/Server/app/Game_Engine.js:815 | completeLevel | |
+| src/Server/app/Game_Engine.js:895 | failLevel | |
+| src/Server/app/Game_Engine.js:902 | nextLevel | |
 
 ### src/Server/app/Lobby_Manager.js — 1378 ln
 
@@ -171,16 +171,16 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Server.js:1 | @file · file | parse guard; malformed frames never throw |
 | src/Server/app/Server.js:12 | port · const | |
 
-### src/Server/app/Tower_Load_Capacity.js — 62 ln
+### src/Server/app/Tower_Load_Capacity.js — 61 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Tower_Load_Capacity.js:1 | @file · file | Tower Load Capacity server behavior |
 | src/Server/app/Tower_Load_Capacity.js:3 | number · fn | |
 | src/Server/app/Tower_Load_Capacity.js:8 | clamp01 · fn | |
-| src/Server/app/Tower_Load_Capacity.js:32 | assessLoadCapacity · fn | |
+| src/Server/app/Tower_Load_Capacity.js:31 | assessLoadCapacity · fn | |
 
-### src/Server/app/Tower_Stability.js — 751 ln
+### src/Server/app/Tower_Stability.js — 810 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -194,8 +194,8 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Tower_Stability.js:41 | isPlacementLegal · fn | |
 | src/Server/app/Tower_Stability.js:55 | supportedCellsGained · fn | |
 | src/Server/app/Tower_Stability.js:81 | blockId · fn | |
-| src/Server/app/Tower_Stability.js:683 | evaluate · fn | |
-| src/Server/app/Tower_Stability.js:739 | balanceDelta · fn | |
+| src/Server/app/Tower_Stability.js:739 | evaluate · fn | |
+| src/Server/app/Tower_Stability.js:798 | balanceDelta · fn | |
 
 ### src/Server/app/Tower_Structure_Assessment.js — 235 ln
 
@@ -298,7 +298,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Last_Chance.js:1 | @file · file | Produces the standing one-percent result while a rescue is pending |
 | src/Server/app/engine/Last_Chance.js:29 | resolve · fn | |
 
-### src/Server/app/engine/Placement.js — 438 ln
+### src/Server/app/engine/Placement.js — 469 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -310,15 +310,15 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Placement.js:72 | getPlaceableOriginRange · fn | |
 | src/Server/app/engine/Placement.js:84 | resolveColumnOriginX · fn | |
 | src/Server/app/engine/Placement.js:95 | resolvePlacementOrigin · fn | |
-| src/Server/app/engine/Placement.js:121 | collapseComponents · stable | |
-| src/Server/app/engine/Placement.js:161 | placeBlock · fn | |
-| src/Server/app/engine/Placement.js:281 | getStabilityPressure · fn | |
-| src/Server/app/engine/Placement.js:309 | resolveStabilityConfig · fn | |
-| src/Server/app/engine/Placement.js:337 | recalculateTowerStability · fn | |
-| src/Server/app/engine/Placement.js:365 | checkWinCondition · fn | |
-| src/Server/app/engine/Placement.js:373 | checkFailCondition · fn | |
-| src/Server/app/engine/Placement.js:413 | anyPlayerCanRescueSupply · fn | |
-| src/Server/app/engine/Placement.js:409 | not_enough_height_remaining · stable | |
+| src/Server/app/engine/Placement.js:132 | collapseComponents · stable | |
+| src/Server/app/engine/Placement.js:172 | placeBlock · fn | |
+| src/Server/app/engine/Placement.js:295 | getStabilityPressure · fn | |
+| src/Server/app/engine/Placement.js:335 | resolveStabilityConfig · fn | |
+| src/Server/app/engine/Placement.js:367 | recalculateTowerStability · fn | |
+| src/Server/app/engine/Placement.js:396 | checkWinCondition · fn | |
+| src/Server/app/engine/Placement.js:404 | checkFailCondition · fn | |
+| src/Server/app/engine/Placement.js:444 | anyPlayerCanRescueSupply · fn | |
+| src/Server/app/engine/Placement.js:440 | not_enough_height_remaining · stable | |
 
 ### src/Server/app/engine/Scoring.js — 518 ln
 

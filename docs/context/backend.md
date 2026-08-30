@@ -20,16 +20,13 @@ connection id, preventing a superseded socket from clearing a resumed seat. Game
 Engine builds durable snapshots separately from broadcasts. Rebuild decay
 survives resumes until the tower reaches a new height target.
 
-Four-way contact partitions standing bricks into independent stability and pose
-components; every occupied cell adds mass, and downward contacts carry it
-against level-resolved contact-face capacity. Extra upper mass never increases
-an unchanged interface's capacity; wider or independent paths raise it.
-Difficulty controls geometry and the finite overload limit; zero retains
-diagnostics while suppressing collapse risk.
-Overload removes its support and groups with no ground path, preserving strong
-bases and disconnected towers. The tallest controls height. Collapse alone stays
-active. Threatened supply consumes bot-held Replenish, waits on human-held
-Replenish, and fails without rescue; Timer expiry and unmet Impact also fail.
+Four-way contact separates stability and pose components; per-cell mass flows
+down independent paths against physical contact capacity. Difficulty tightens
+geometry and overload limits, but target height never raises capacity; zero
+keeps diagnostics while suppressing collapse risk. Overload removes failed
+supports and groups without a ground path, preserving disconnected towers.
+Collapse alone stays active. Supply consumes bot-held Replenish, waits on a
+human-held one, and fails without rescue; Timer expiry and unmet Impact also fail.
 
 ## Lobby Manager
 
@@ -152,14 +149,16 @@ support contacts. Stability is the minimum of two axes:
 - Integrity measures whether contact width and independent support paths can
   carry their load.
 
-A centered bottleneck can therefore lose Integrity without inventing a lean
-direction. Difficulty zero suppresses gameplay risk while retaining diagnostics.
-Opening maturity and height pressure prevent shape-specific opening exceptions
-while allowing weak interfaces to become dangerous later.
+A centered bottleneck can lose Integrity without an invented lean; real carried-
+load bias gives either axis its direction. Difficulty zero retains diagnostics
+without gameplay risk, while maturity and height pressure replace shape-specific
+exceptions.
 
-Structural pose is presentation output only. It never changes coordinates,
-gravity, snapping, scoring inputs, or collapse. `balanceDelta` is the directional
-Balance change stamped on a placed brick; Integrity does not drive brick faces.
+Each standing block receives its support group's worst meaningful responsibility;
+connecting components recomputes both graphs. Pose pivots dependent sections at
+the stressed interface and leaves unrelated grounded sections independent. It
+never changes coordinates, gravity, snapping, scoring, or collapse. `balanceDelta`
+is only the placed brick's entrance reaction.
 
 ## Bot Manager
 
@@ -172,7 +171,9 @@ Ranking must use the authoritative score transaction rather than height gain;
 otherwise zero-height gap repairs are unreachable. Cooperative bots may wait
 after satisfying their own Impact share so another player can claim scarce
 height, but only when no useful repair remains. Callers must handle both place
-and wait actions.
+and wait actions. Zero-height repairs below the normal tower view floor are not
+candidates; height-building moves remain available so bots cannot repair history
+that a player can no longer see.
 
 Bot collapse rate is not a stability calibration signal because candidate search
 rejects collapsing moves. Use per-placement stability distributions and Impact
@@ -185,17 +186,16 @@ clock, supply, stability, scoring, site, Power, and bot behavior derive from tha
 single object. Do not mirror routine values into prose or expose raw derived
 physics controls merely for debug convenience.
 
-Development and demo servers enable the latency indicator and live stability
-preview by default. EKS explicitly disables both diagnostics in its game-pod
-environment so it cannot inherit the development presentation defaults.
+Development enables latency and live stability diagnostics. The public demo and
+EKS select warning-only stability feedback; EKS also disables latency.
 
 Redis State supplies open-room claims, the matchmaking lock, room leases,
 snapshots, per-room broadcasts/actions, player assignment, and demo counters. It
 falls back to in-memory state when Redis is absent. Only a bounded draw-pile
 prefix is stored; hydration regenerates its hidden tail because only the next
-draw is observable. Tower pose and lifecycle/accounting state needed for
-continuity are persisted, but full stability analysis is not. Historical height
-and the rebuild counter persist through reconnect and pod handoff.
+draw is observable. Continuity persists tower pose, lifecycle/accounting, each
+brick's last support stability, historical height, and rebuild count, but not
+full stability analysis.
 
 ## Known gaps
 

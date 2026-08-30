@@ -348,6 +348,9 @@ func update_game_state(data) -> void:
 
 	top_bar.update_top_bar_display(incoming_level, impact_level, state, seconds_remaining)
 	top_bar.set_top_indicator_progress(current_height, target_height)
+	var stability_warning_threshold: int = int(data.get("towerStabilityWarningThreshold", 75))
+	var stability_critical_threshold: int = int(data.get("towerStabilityCriticalThreshold", 45))
+	top_bar.set_stability_thresholds(stability_warning_threshold, stability_critical_threshold)
 	top_bar.set_stability_meter_visible(str(data.get("towerStabilityFeedbackMode", "warnings_only")))
 	top_bar.update_tower_stability_ui(
 		int(data.get("towerStability", 100)),
@@ -364,6 +367,11 @@ func update_game_state(data) -> void:
 		SnapGridScript.set_placeable_range(
 			int(data.get("placeableColumnMin", 4)),
 			int(data.get("placeableColumnMax", 9))
+		)
+	if tower_stack.has_method("set_support_stability_thresholds"):
+		tower_stack.set_support_stability_thresholds(
+			stability_warning_threshold,
+			stability_critical_threshold
 		)
 	tower_stack.set_tower(
 		data.get("towerBlocks", []), current_height, target_height,
@@ -418,8 +426,16 @@ func update_debug_config(config) -> void:
 	top_bar.set_stability_meter_visible(
 		str(config.get("towerStabilityFeedbackMode", "warnings_only"))
 	)
+	var stability_warning_threshold: int = int(config.get("towerStabilityWarningThreshold", 75))
+	var stability_critical_threshold: int = int(config.get("towerStabilityCriticalThreshold", 45))
+	top_bar.set_stability_thresholds(stability_warning_threshold, stability_critical_threshold)
 
 	if tower_stack != null and tower_stack.has_method("set_mood_threshold"):
 		tower_stack.set_mood_threshold(
 			int(config.get("towerStabilityMoodThreshold", BlockDataScript.DEFAULT_MOOD_THRESHOLD))
+		)
+	if tower_stack != null and tower_stack.has_method("set_support_stability_thresholds"):
+		tower_stack.set_support_stability_thresholds(
+			stability_warning_threshold,
+			stability_critical_threshold
 		)

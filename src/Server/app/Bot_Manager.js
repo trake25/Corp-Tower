@@ -308,6 +308,51 @@ class BotManager {
         }, null);
     }
 
+    getActiveVisibleTowerFloor(engine) {
+        const visibleRows = Math.max(
+            1,
+            Math.floor(Number(GameConfig.towerVisibleRowCapacity) || 1)
+        );
+        const startRatio = Math.max(
+            0,
+            Math.min(1, Number(GameConfig.towerScrollStartRatio) || 0)
+        );
+        const startRows = Math.max(1, Math.floor(visibleRows * startRatio));
+        const clearanceRows = Math.max(
+            0,
+            Math.floor(Number(GameConfig.towerTopIndicatorClearanceRows) || 0)
+        );
+        const flushRows = Math.max(startRows, visibleRows - clearanceRows);
+        const targetHeight = Math.max(0, Number(engine.room?.targetHeight) || 0);
+
+        if (targetHeight > 0 && targetHeight <= flushRows) {
+            return 0;
+        }
+
+        let focusHeight = Math.max(1, Number(engine.room?.currentHeight) || 0);
+        if (targetHeight > 0) {
+            focusHeight = Math.min(focusHeight, targetHeight);
+        }
+        if (focusHeight <= startRows) {
+            return 0;
+        }
+
+        let linearProgress = 1;
+        if (targetHeight > startRows) {
+            linearProgress = Math.max(
+                0,
+                Math.min(1, (focusHeight - startRows) / (targetHeight - startRows))
+            );
+        }
+        const easePower = Math.max(0.01, Number(GameConfig.towerScrollEasePower) || 1);
+        const topRow = startRows + (flushRows - startRows) * Math.pow(linearProgress, easePower);
+        return Math.max(0, Math.round(focusHeight - topRow));
+    }
+
+    isVisibleStructuralRepair(engine, candidate) {
+        return candidate.heightGain !== 0 || candidate.originY >= this.getActiveVisibleTowerFloor(engine);
+    }
+
     chooseBotPlacement(engine, block, strategy = GameConfig.debugBotStrategy) {
         if (!block) {
             return null;
@@ -359,6 +404,9 @@ class BotManager {
                 const effectiveHeight = Math.max(
                     0, Math.min(heightGain, targetHeight - currentHeight)
                 );
+                if (!this.isVisibleStructuralRepair(engine, { heightGain, originY: placement.originY })) {
+                    continue;
+                }
                 cheapCandidates.push({
                     column: column,
                     originX: placement.originX,

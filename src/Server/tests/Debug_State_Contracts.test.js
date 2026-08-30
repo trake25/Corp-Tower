@@ -172,6 +172,10 @@ test("diagnostic defaults stay enabled outside EKS and EKS overrides disable the
         __dirname,
         "../../../infra/eks/apps/corp-tower/base/server-deployment.yaml"
     ), "utf8");
+    const demoLauncher = fs.readFileSync(path.resolve(
+        __dirname,
+        "../../../scripts/backup/backup-server-up.sh"
+    ), "utf8");
 
     assert.equal(developmentConfig.showLatencyIndicator, true);
     assert.equal(developmentConfig.towerStabilityFeedbackMode, "live_preview");
@@ -179,6 +183,18 @@ test("diagnostic defaults stay enabled outside EKS and EKS overrides disable the
     assert.equal(eksConfig.towerStabilityFeedbackMode, "warnings_only");
     assert.match(eksDeployment, /name: CORP_TOWER_LATENCY_INDICATOR_ENABLED\s+value: "false"/);
     assert.match(eksDeployment, /name: CORP_TOWER_LIVE_PREVIEW_ENABLED\s+value: "false"/);
+    assert.match(demoLauncher, /CORP_TOWER_LIVE_PREVIEW_ENABLED=false/);
+});
+
+test("debug feedback supports runtime live preview but rejects the retired meter mode", async () => {
+    const lobbyManager = new LobbyManager();
+
+    assert.equal(await lobbyManager.updateDebugConfig("towerStabilityFeedbackMode", "warnings_only"), true);
+    assert.equal(GameConfig.towerStabilityFeedbackMode, "warnings_only");
+    assert.equal(await lobbyManager.updateDebugConfig("towerStabilityFeedbackMode", "live_preview"), true);
+    assert.equal(GameConfig.towerStabilityFeedbackMode, "live_preview");
+    assert.equal(await lobbyManager.updateDebugConfig("towerStabilityFeedbackMode", "meter_only"), false);
+    assert.equal(GameConfig.towerStabilityFeedbackMode, "live_preview");
 });
 
 test("transaction scoring controls clamp and reject unknown scoring keys", async () => {

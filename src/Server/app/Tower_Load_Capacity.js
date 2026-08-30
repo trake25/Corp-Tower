@@ -10,22 +10,21 @@ function clamp01(value) {
 }
 
 function resolveCapacityProfile(config) {
-    const referenceHeight = Math.max(1, number(config.towerTargetHeight, 30));
-    const collapseShare = Math.max(
+    const collapsePerContact = Math.max(
         0.0001,
-        number(config.towerSupportCollapseLoadHeightShare, 1.5)
+        number(config.towerSupportCollapseLoadPerContact, 30)
     );
-    const safeShare = Math.max(
+    const safePerContact = Math.max(
         0,
         Math.min(
-            collapseShare - 0.0001,
-            number(config.towerSupportSafeLoadHeightShare, 0.85)
+            collapsePerContact - 0.0001,
+            number(config.towerSupportSafeLoadPerContact, 6)
         )
     );
 
     return {
-        safePerContact: referenceHeight * safeShare,
-        collapsePerContact: referenceHeight * collapseShare
+        safePerContact,
+        collapsePerContact
     };
 }
 

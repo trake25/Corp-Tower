@@ -596,6 +596,27 @@ test("cooperative bots use authoritative Impact contribution status", () => {
     assert.equal(BotManager.hasClearedShareWhileTeammateShort(first, engine), false);
 });
 
+test("bots keep height moves but reject structural repairs below the visible tower floor", () => {
+    const { engine } = createPlayingEngine(1, 30);
+    engine.room.currentHeight = 24;
+    engine.room.targetHeight = 30;
+    const visibleFloor = BotManager.getActiveVisibleTowerFloor(engine);
+
+    assert.ok(visibleFloor > 0);
+    assert.equal(
+        BotManager.isVisibleStructuralRepair(engine, { heightGain: 0, originY: visibleFloor - 1 }),
+        false
+    );
+    assert.equal(
+        BotManager.isVisibleStructuralRepair(engine, { heightGain: 0, originY: visibleFloor }),
+        true
+    );
+    assert.equal(
+        BotManager.isVisibleStructuralRepair(engine, { heightGain: 1, originY: 0 }),
+        true
+    );
+});
+
 test("Timer and supply failures enter checkpoint failure while collapse does not", () => {
     for (const reason of ["all_blocks_used", "not_enough_height_remaining"]) {
         const { engine } = createPlayingEngine(1, 5);

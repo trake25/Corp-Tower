@@ -118,6 +118,17 @@ function assignStandingComponents(entries, result) {
     }
 }
 
+function assignStandingSupportStability(entries, result) {
+    for (const presentation of result.supportStability || []) {
+        const entry = entries[presentation.entryIndex];
+        if (!entry || entry.towerState === "fallen") continue;
+        entry.supportStability = Math.max(
+            0,
+            Math.min(100, Math.round(Number(presentation.supportStability) || 0))
+        );
+    }
+}
+
 function collapseComponents(engine, result) {
     if (!result.diagnostics?.collapsed) return [];
     const entries = engine.room.towerBlocks || [];
@@ -249,6 +260,9 @@ function placeBlock(engine, playerId, blockIndex, column = null, originY = null)
         entryIndexes: Array.from(new Set(collapsedSlices.flatMap(slice => slice.entryIndexes))).sort((left, right) => left - right),
         blockIds: Array.from(new Set(collapsedSlices.flatMap(slice => slice.blockIds))).sort()
     };
+    if (collapseSummary.anyFallen) {
+        placedEntry.supportStability = 0;
+    }
     const transaction = engine.addPlacementScore(player, {
         block,
         placedEntry,
@@ -306,11 +320,24 @@ function getStabilityRiskScale() {
     return Math.pow(difficulty, power);
 }
 
+function getSupportLoadPressure() {
+    const difficulty = Math.max(
+        0,
+        Math.min(100, Number(GameConfig.towerStabilityDifficulty) || 0)
+    ) / 100;
+    const curve = GameConfig.towerSupportDifficultyPressure || {};
+    const midpoint = Math.max(0, Math.min(1, Number(curve.midpoint) || 0));
+    const steepness = Math.max(0.01, Number(curve.steepness) || 1);
+
+    return 1 / (1 + Math.exp(-steepness * (difficulty - midpoint)));
+}
+
 function resolveStabilityConfig(engine, level) {
     const anchors = GameConfig.towerStabilityAnchors || {};
     const forgiving = anchors.forgiving || {};
     const harsh = anchors.harsh || {};
     const pressure = engine.getStabilityPressure(level);
+    const supportPressure = getSupportLoadPressure();
     const riskScale = getStabilityRiskScale();
     const resolved = {
         towerMaxTiltAngleDeg: GameConfig.towerMaxTiltAngleDeg,
@@ -328,7 +355,10 @@ function resolveStabilityConfig(engine, level) {
     for (const key of Object.keys(forgiving)) {
         const from = Number(forgiving[key]);
         const to = Number(harsh[key] ?? forgiving[key]);
-        resolved[key] = from + (to - from) * pressure;
+        const interpolation = key === "towerSupportSafeLoadPerContact" || key === "towerSupportCollapseLoadPerContact"
+            ? supportPressure
+            : pressure;
+        resolved[key] = from + (to - from) * interpolation;
     }
 
     return resolved;
@@ -339,6 +369,7 @@ function recalculateTowerStability(engine, advancesLastChance = false, evaluated
         engine.room.towerBlocks || [], engine.resolveStabilityConfig()
     );
     const result = engine.resolveLastChance(evaluated, advancesLastChance);
+    assignStandingSupportStability(engine.room.towerBlocks || [], result);
     const previous = engine.room.towerStability ?? 100;
     engine.room.towerStability = result.stability;
     engine.room.towerStabilityDiagnostics = result.diagnostics;
