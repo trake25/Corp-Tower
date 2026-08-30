@@ -358,14 +358,13 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | src/Server/migrations/0002_player_accounts.sql:1 | @file · file | database migration for 0002 player accounts |
 
-### src/Server/tools/Balance_Run.js — 217 ln
+### src/Server/tools/Balance_Run.js — 256 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/tools/Balance_Run.js:1 | @file · file | rejects zero, negative and non-integer CLI limits before a child is spawned |
-| src/Server/tools/Balance_Run.js:8 | SERVER · const | |
-| src/Server/tools/Balance_Run.js:9 | ROOT · const | |
-| src/Server/tools/Balance_Run.js:13 | positiveInteger · fn | |
+| src/Server/tools/Balance_Run.js:9 | SERVER · const | |
+| src/Server/tools/Balance_Run.js:14 | positiveInteger · fn | |
 
 ### src/Server/tools/Balance_Simulator.js — 740 ln
 
@@ -403,4 +402,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-25 files · 244 stable anchors.
+25 files · 243 stable anchors.

@@ -54,6 +54,12 @@ folder as tracked source, KB evidence, or a reason to search the whole repo.
 Use `node scripts/context.mjs route plan/` or `route reference/` for the
 standard workspace guidance.
 
+`plan/`, `task/`, and `reference/` are human-maintained working material.
+Automated tools must not create scratch, log, or output trees there; disposable
+machine-generated output belongs in OS temporary storage or an explicitly
+designated ignored machine-state/output location. A human may intentionally
+save a requested retained artifact into working material.
+
 The gitignored `repair/` folder holds close-out handoffs for unrelated
 tooling, environment, capacity, retrieval-map, or advisory decomposition work.
 Task-close writes a handoff only when an unresolved item exists, may rewrite

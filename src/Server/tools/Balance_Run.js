@@ -1,14 +1,15 @@
 "use strict";
 
 const { spawn } = require("node:child_process");
-const { cpus, platform, totalmem } = require("node:os");
-const { createWriteStream, mkdirSync } = require("node:fs");
-const { join, relative, resolve } = require("node:path");
+const { randomUUID } = require("node:crypto");
+const { cpus, platform, tmpdir, totalmem } = require("node:os");
+const { createWriteStream, mkdirSync, readdirSync, rmSync, statSync } = require("node:fs");
+const { join, resolve } = require("node:path");
 
 const SERVER = resolve(__dirname, "..");
-const ROOT = resolve(SERVER, "../..");
-const ARTIFACTS = join(ROOT, "task", "balance-runs");
 const HEARTBEAT_SECONDS = 5;
+const MAX_ARTIFACT_RUNS = 10;
+const ARTIFACT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 function positiveInteger(value, label) {
     const number = Number(value);
@@ -116,25 +117,63 @@ function planRun(input, profile = hostProfile()) {
     return { ...profile, kind: input.kind, script, args, levels, runs, workUnits, runProfile, deadlineSeconds };
 }
 
-function artifactPaths(kind) {
-    mkdirSync(ARTIFACTS, { recursive: true });
-    const stamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
-    const base = `${stamp}-${kind}-${process.pid}`;
+function artifactRoot(tempRoot = tmpdir()) {
+    return join(resolve(tempRoot), "corp-tower", "balance-runs");
+}
+
+function cleanupArtifacts(root, now = Date.now()) {
+    const resolvedRoot = resolve(root);
+    const entries = readdirSync(resolvedRoot, { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+        .map(entry => {
+            const path = resolve(resolvedRoot, entry.name);
+            if (!path.startsWith(`${resolvedRoot}/`) && !path.startsWith(`${resolvedRoot}\\`)) return null;
+            return { path, modifiedAt: statSync(path).mtimeMs };
+        })
+        .filter(Boolean)
+        .sort((left, right) => right.modifiedAt - left.modifiedAt);
+    entries.forEach((entry, index) => {
+        if (now - entry.modifiedAt > ARTIFACT_MAX_AGE_MS || index >= MAX_ARTIFACT_RUNS) {
+            rmSync(entry.path, { recursive: true, force: true });
+        }
+    });
+}
+
+function artifactPaths(kind, options = {}) {
+    const root = resolve(options.root || artifactRoot());
+    const now = options.now ?? Date.now();
+    mkdirSync(root, { recursive: true });
+    let cleanupWarning = null;
+    try {
+        (options.cleanup || cleanupArtifacts)(root, now);
+    } catch (error) {
+        cleanupWarning = error.message;
+    }
+    const stamp = new Date(now).toISOString().replaceAll(":", "-").replaceAll(".", "-");
+    const runDirectory = join(root, `${stamp}-${kind}-${process.pid}-${(options.unique || randomUUID())}`);
+    mkdirSync(runDirectory);
     return {
-        stdout: join(ARTIFACTS, `${base}.stdout`),
-        stderr: join(ARTIFACTS, `${base}.stderr`)
+        root,
+        runDirectory,
+        stdout: join(runDirectory, "stdout.log"),
+        stderr: join(runDirectory, "stderr.log"),
+        cleanupWarning
     };
 }
 
-function runPlan(plan) {
-    const artifacts = artifactPaths(plan.kind);
-    const stdout = createWriteStream(artifacts.stdout);
-    const stderr = createWriteStream(artifacts.stderr);
+function runPlan(plan, options = {}) {
+    const artifacts = artifactPaths(plan.kind, options.artifacts);
+    const output = options.output || console;
+    if (artifacts.cleanupWarning) {
+        output.warn(JSON.stringify({ event: "balance.cleanup", warning: artifacts.cleanupWarning, artifact: artifacts.root }));
+    }
+    const stdout = (options.createWriteStream || createWriteStream)(artifacts.stdout);
+    const stderr = (options.createWriteStream || createWriteStream)(artifacts.stderr);
     const startedAt = Date.now();
     let timedOut = false;
     let stdoutBytes = 0;
     let stderrBytes = 0;
-    const child = spawn(process.execPath, [join(__dirname, plan.script), ...plan.args], {
+    const child = (options.spawn || spawn)(process.execPath, [join(__dirname, plan.script), ...plan.args], {
         cwd: SERVER,
         env: { ...process.env, BALANCE_RUN_PROFILE: plan.runProfile },
         stdio: ["ignore", "pipe", "pipe"]
@@ -147,8 +186,8 @@ function runPlan(plan) {
         stderrBytes += chunk.length;
         stderr.write(chunk);
     });
-    const runId = relative(ROOT, artifacts.stdout).replaceAll("\\", "/");
-    console.log(JSON.stringify({
+    const runId = artifacts.runDirectory;
+    output.log(JSON.stringify({
         event: "balance.start",
         kind: plan.kind,
         profile: plan.tier,
@@ -160,7 +199,7 @@ function runPlan(plan) {
         artifact: runId
     }));
     const heartbeat = setInterval(() => {
-        console.log(JSON.stringify({
+        output.log(JSON.stringify({
             event: "balance.heartbeat",
             kind: plan.kind,
             elapsedSeconds: Math.round((Date.now() - startedAt) / 1000),
@@ -185,7 +224,7 @@ function runPlan(plan) {
                 new Promise(done => stderr.once("finish", done))
             ]).then(() => {
                 const status = timedOut ? "timeout" : code === 0 ? "complete" : "failed";
-                console.log(JSON.stringify({
+                output.log(JSON.stringify({
                     event: `balance.${status}`,
                     kind: plan.kind,
                     elapsedSeconds: Math.round((Date.now() - startedAt) / 1000),
@@ -213,4 +252,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { hostProfile, parseCli, planRun };
+module.exports = { artifactPaths, artifactRoot, cleanupArtifacts, hostProfile, parseCli, planRun, runPlan };

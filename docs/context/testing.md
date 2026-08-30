@@ -85,8 +85,9 @@ does not catch frame-level defects.
 Balance Simulator, Stability Probe, and Impact Probe are tuning instruments, not
 pass/fail authorities. Run their host-aware npm entrypoints without arguments
 first; the wrapper pilots the workload, enforces CPU/RAM and time budgets, emits
-heartbeats, and stores verbose output in ignored task material. Expensive samples
-require explicit opt-in and a deadline.
+heartbeats, and keeps verbose output briefly in a dedicated OS-temp namespace.
+It prunes stale or excess runs automatically, and never uses `task/` as automated
+scratch storage. Expensive samples require explicit opt-in and a deadline.
 
 The simulator constructs the real Game Engine and delegates decisions to the
 shipped Bot Manager. Its per-player cooldown clock is part of the model: removing
