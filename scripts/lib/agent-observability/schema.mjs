@@ -1,6 +1,6 @@
 export const SCHEMA_VERSION = 2;
 export const OUTCOMES = new Set(['completed', 'blocked', 'cancelled', 'failed', 'replaced']);
-export const VERIFICATION_STATES = new Set(['passed', 'failed', 'not_run', 'not_applicable', 'unknown']);
+export const VERIFICATION_STATES = new Set(['passed', 'maintenance-blocked', 'failed', 'not_run', 'not_applicable', 'unknown']);
 export const COMPLEXITIES = new Set(['C1', 'C2', 'C3', 'C4', 'C5', 'unknown']);
 export const STAGES = [
   'intake',
@@ -30,6 +30,15 @@ const SENSITIVE_TEXT = [
   /(?:^|\s)(?:\/home\/|[A-Za-z]:\\Users\\)/,
   /https?:\/\//i,
 ];
+const TELEMETRY_OUTCOMES = new Set([
+  'complete',
+  'failed',
+  'maintenance_blocked',
+  'not_applicable',
+  'not_needed',
+  'passed',
+  'updated',
+]);
 
 export function isObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -114,6 +123,12 @@ function cleanCountGroup(value, label, fields) {
   return Object.fromEntries(fields.map(field => [field, nonNegativeInteger(input[field], `${label}.${field}`, 0)]));
 }
 
+function cleanTelemetryOutcome(value, label, fallback = 'not_applicable') {
+  const normalized = String(value || fallback).replaceAll('-', '_');
+  if (!TELEMETRY_OUTCOMES.has(normalized)) throw new Error(`${label} is invalid`);
+  return normalized;
+}
+
 export function sanitizeMeta(input, { taskId, now = new Date().toISOString() } = {}) {
   assertAllowedKeys(input, [
     'task_id', 'root_task_id', 'parent_task_id', 'started_at', 'label', 'task_type',
@@ -148,7 +163,7 @@ export function sanitizeMeta(input, { taskId, now = new Date().toISOString() } =
 export function sanitizeTelemetry(input = {}) {
   assertAllowedKeys(input, [
     'tools', 'retrieval', 'skills', 'worker_count', 'files', 'iterations',
-    'checks', 'documentation', 'task_close',
+    'checks', 'documentation', 'task_close', 'outcomes',
   ], 'telemetry');
   const retrieval = input.retrieval ?? {};
   assertAllowedKeys(retrieval, ['attempts', 'expansions', 'fallbacks', 'first_try'], 'telemetry.retrieval');
@@ -160,6 +175,11 @@ export function sanitizeTelemetry(input = {}) {
   for (const [name, count] of Object.entries(domains)) domainCounts[cleanSlug(name, 'telemetry.files.domains key')] = nonNegativeInteger(count, `telemetry.files.domains.${name}`);
   const taskClose = input.task_close ?? {};
   assertAllowedKeys(taskClose, ['status', 'receipt_hash'], 'telemetry.task_close');
+  const outcomes = input.outcomes ?? {};
+  assertAllowedKeys(outcomes, [
+    'implementation', 'task_qa', 'documentation', 'maps_retrieval',
+    'close_out', 'maintenance_blockers',
+  ], 'telemetry.outcomes');
   return {
     tools: cleanCountGroup(input.tools, 'telemetry.tools', ['calls', 'failures', 'retries']),
     retrieval: {
@@ -179,8 +199,16 @@ export function sanitizeTelemetry(input = {}) {
     checks: cleanCountGroup(input.checks, 'telemetry.checks', ['run', 'failures', 'retests']),
     documentation: cleanCountGroup(input.documentation, 'telemetry.documentation', ['files', 'updates']),
     task_close: {
-      status: cleanSlug(taskClose.status || 'not_applicable', 'telemetry.task_close.status'),
+      status: cleanTelemetryOutcome(taskClose.status, 'telemetry.task_close.status'),
       receipt_hash: taskClose.receipt_hash ? cleanName(taskClose.receipt_hash, 'telemetry.task_close.receipt_hash') : null,
+    },
+    outcomes: {
+      implementation: cleanTelemetryOutcome(outcomes.implementation, 'telemetry.outcomes.implementation'),
+      task_qa: cleanTelemetryOutcome(outcomes.task_qa, 'telemetry.outcomes.task_qa'),
+      documentation: cleanTelemetryOutcome(outcomes.documentation, 'telemetry.outcomes.documentation'),
+      maps_retrieval: cleanTelemetryOutcome(outcomes.maps_retrieval, 'telemetry.outcomes.maps_retrieval'),
+      close_out: cleanTelemetryOutcome(outcomes.close_out, 'telemetry.outcomes.close_out'),
+      maintenance_blockers: nonNegativeInteger(outcomes.maintenance_blockers, 'telemetry.outcomes.maintenance_blockers', 0),
     },
   };
 }

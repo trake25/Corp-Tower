@@ -82,7 +82,13 @@ change set while keeping detailed output in local artifacts.
 4. After the separate documentation and durable-coverage decisions, `close`
    runs QA/map/KB/agent-config checks, rejects out-of-scope generated maps and
    writes a resumable receipt. `publish_paths` unites explicit, documented and
-   content-changed generated paths.
+   content-changed generated paths, never a `repair/` handoff.
+
+Verification is `passed`, `maintenance-blocked`, or `failed`. A maintenance
+blocker closes only when every failed step has an approved unrelated
+classification; unknown, mixed, and implementation failures remain open. The
+close-out writes one run-scoped handoff only for unresolved blockers or advisory
+decomposition candidates and never deletes another handoff.
 
 `fallback --query ... --classification <retrieval-defect|tool-error> --root ...
 --fixture ...` records permitted source fallback. Closeout requires the named
@@ -91,8 +97,9 @@ fixture and a passing retrieval benchmark. Schema 2 uses
 
 Child output is captured in a private ignored log before entering the receipt,
 preserving diagnostics on hosts that swallow nested pipes. A passing close prints
-one line; a failure names the step, exit/signal, first diagnostic and receipt.
-Identical close inputs reuse the passing receipt.
+one line; a maintenance-blocked close names its handoff; a task failure names the
+step, exit/signal, first diagnostic and receipt. Identical close inputs reuse a
+closed receipt.
 
 `scripts/agent-observability.mjs` owns private task events, evidence, candidates,
 flags, settlement, analysis and approved export under
@@ -101,6 +108,11 @@ complexity from owned source breadth and binds the Codex session; `close` record
 verification and returns candidates. Without a live session binding, the task
 stays pending and is excluded from weekly reports instead of being finalized
 without a terminal event.
+
+Telemetry records implementation, task QA, documentation, maps/retrieval,
+close-out, and maintenance-blocker outcomes separately. A maintenance-blocked
+task is implementation-complete with partial verification, not an implementation
+failure.
 
 Trusted `.codex/hooks.json` handlers retain only model/effort provenance and
 bounded outcome or phase codes. `SessionStart` writes an idle heartbeat; degraded
@@ -125,6 +137,9 @@ Finalization writes a human-labelled weekly report from settled records. Flags
 group by fingerprint and unique task; a later observation reopens a validated
 change. The same active agent may formalize an eligible current-run, high-effort
 candidate before its final response without another agent or provider turn.
+One correctly handled maintenance failure is not a workflow-inefficiency
+candidate; retries, repeated verification, repeated recovery, rework, or
+retrieval expansion are the relevant evidence.
 Private reports stay local; only `export-public --approve` writes rounded,
 cohort-suppressed output.
 

@@ -54,6 +54,12 @@ folder as tracked source, KB evidence, or a reason to search the whole repo.
 Use `node scripts/context.mjs route plan/` or `route reference/` for the
 standard workspace guidance.
 
+The gitignored `repair/` folder holds close-out handoffs for unrelated
+tooling, environment, capacity, retrieval-map, or advisory decomposition work.
+Task-close writes a handoff only when an unresolved item exists, may rewrite
+only its own run file, and never deletes one. Repair files are not normal
+context, citations, maps, or publication paths; humans own the follow-up.
+
 Generated observability state belongs under ignored
 `.agent-state/telemetry/`. `report/**` is non-context output: normal retrieval,
 indexing, file discovery and broad-search fallback must exclude it. Only
@@ -103,12 +109,13 @@ automatic reflex.
   with documentation and permanent-coverage decisions. It owns QA selection,
   map generation and relevant KB checks; it never reads a shared dirty worktree
   for scope.
-- Files agents normally read as task context are decomposition candidates over
-  600 lines. Propose a split; do not expand the current task without approval.
-  Load-on-demand automation tools under `scripts/` are exempt from this
-  line-count signal when agents invoke their documented interface instead of
-  reading their implementation. Judge those tools by cohesion, bounded output,
-  interface tests and maintainability; length alone is a false positive.
+- A changed first-party code file at roughly 900 lines is an advisory
+  decomposition review candidate; at roughly 1200 lines it is a strong
+  candidate. Neither signal invalidates the current task, requires a refactor,
+  or expands scope without approval. Generated/content files, tests, docs/maps,
+  and load-on-demand automation under `scripts/` are excluded. Judge that
+  automation by cohesion, bounded output, interface tests and maintainability;
+  length alone is a false positive.
 - Do not deploy, commit, push, pull, compare remotes, create branches, or perform
   destructive operations unless the user authorizes that action.
 - `scripts/git-sync-commit-push.mjs` is a load-on-demand Git automation tool. An
@@ -125,9 +132,9 @@ automatic reflex.
   For an explicitly approved branch backup publication, use `--push-only` with
   `--branch` and `--remote-branch`; this publishes only the existing local ref
   and never stages, commits, or switches the dirty worktree.
-- `plan/`, `task/`, and `reference/` are human-maintained working material. They
-  cannot
-  satisfy documentation citations or become knowledge-base dependencies.
+- `plan/`, `task/`, `reference/`, and `repair/` are isolated working
+  material. They cannot satisfy documentation citations or become knowledge-base
+  dependencies.
 
 ## Delegation
 
@@ -137,4 +144,6 @@ parallel work; higher-level agent policies and user instructions control it.
 
 ## Completion
 
-Use the passing `task-close` receipt as the QA/docs-steward handoff.
+Use the closed `task-close` receipt as the QA/docs-steward handoff. A
+`maintenance-blocked` receipt completes only when every failed check is an
+unrelated classified maintenance blocker; task-caused defects stay open.

@@ -84,9 +84,13 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
    decision, regenerates content-changed maps and carries authored `Does` by
    symbol.
 
-6. **Fix every validator error.** The same verification receipt validates the game
-   KB and, when in scope, the site KB; rerun the individual validator only to read
-   its full failure detail.
+6. **Repair semantic task defects; hand off unrelated maintenance.** The same
+   verification receipt validates the game KB and, when in scope, the site KB.
+   A classified tooling/environment or capacity blocker writes a maintenance
+   handoff and may close as `maintenance-blocked`; bad links, anchors, citations,
+   map targets, generated structure, section limits, and task-caused failures
+   remain open work. Rerun an individual validator only to read its full failure
+   detail.
 
 7. **Receipt.** One line: `docs: gameplay.md, backend.md (+4/−31) · validate PASS`.
    Commit only if explicitly instructed.
@@ -95,7 +99,9 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
 than 30 net lines into one doc means the session is being transcribed rather than
 the system documented — compress before finishing.
 
-Whole-KB compaction is not part of this — load `compact-docs` for that workflow.
+Whole-KB compaction is not part of this. Capacity pressure alone creates a
+maintenance handoff; load `compact-docs` only for an explicit entropy,
+duplication, stale-prose, or sustained-capacity maintenance task.
 
 `site/` is out of scope: `docs-scope.mjs` drops those paths and prints them as
 dropped. The portfolio has its own KB at `site/docs/`, updated in place as part

@@ -128,7 +128,7 @@ export const AREA_ALIASES = {
 
 export function isNormalContextExcludedPath(path) {
   const normalized = path.replaceAll('\\', '/').replace(/^(?:\.\/)+/, '');
-  return /^(?:report|plan|reference|task|\.agent-state)(?:\/|$)/.test(normalized);
+  return /^(?:repair|report|plan|reference|task|\.agent-state)(?:\/|$)/.test(normalized);
 }
 
 export const WORKSPACE_RULES = [
@@ -138,6 +138,13 @@ export const WORKSPACE_RULES = [
     skill: 'docs-steward',
     purpose: 'Generated observability output excluded from normal repository context.',
     policy: 'Never use reports as implementation, architecture, requirements, or ordinary task context.',
+  },
+  {
+    name: 'repair',
+    pattern: /^repair(?:\/|$)/,
+    skill: 'docs-steward',
+    purpose: 'Close-out maintenance handoffs preserved for human follow-up.',
+    policy: 'Never use repair handoffs as normal repository context; task-close may rewrite only its own run file.',
   },
   {
     name: 'plan-done',

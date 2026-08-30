@@ -20,8 +20,9 @@ Verify the files owned by this task, not every pre-existing dirty file.
 `task-close close` is the normal final invocation: it batches the selected QA,
 map and KB checks, retains verbose child output locally, and prints a compact
 result. A passing close is sufficient evidence; do not reread its receipt or
-rerun individual validators on success. On failure, read only the named failing
-log, rerun the focused failing check while fixing it, then invoke close once.
+rerun individual validators on success. On a task-owned failure, read only the
+named failing log, rerun the focused failing check while fixing it, then invoke
+close once.
 
 For a changed-source task, run `node scripts/qa-gate.mjs --changed <task-owned-path>...`
 with every task-owned changed path stated explicitly. It selects this matrix,
@@ -63,6 +64,19 @@ The smoke test loads every script under `Cor`/`Sys`, so it is the real syntax
 gate for the client. **`--check-only --script <one file>` is not** — it registers
 no autoloads, so anything referencing `NetworkManager` fails there whatever its
 state. Do not read that as a parse error.
+
+## Failure classification
+
+`qa-gate` emits one stable failure classification with its compact diagnostic.
+Spawn, executable, permissions, sandbox, and host failures are
+`tooling-environment`; syntax, parse, compile, and ordinary assertion failures
+are `implementation`. An assertion becomes `test-expectation` only when bounded
+source/history evidence proves it stale or pre-existing: pass that evidence
+through `task-close close --qa-classification test-expectation --qa-evidence`.
+
+Unknown, mixed, and planned-behavior assertion failures remain implementation
+work. A `maintenance-blocked` close is valid only when every failed step is an
+approved unrelated maintenance classification. Never weaken a test to obtain it.
 
 ## Policy
 

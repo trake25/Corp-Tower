@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -7,6 +7,11 @@ import test from 'node:test';
 import { selectQa } from '../qa-gate.mjs';
 import { renderPrivateReports } from '../lib/agent-observability/report.mjs';
 import { readTaskBundle } from '../lib/agent-observability/state.mjs';
+import {
+  createMaintenanceItem,
+  resolveMaintenanceHandoff,
+  terminalStatusForSteps,
+} from '../lib/maintenance-handoff.mjs';
 import {
   amendManifest,
   applyCoverageDecision,
@@ -159,6 +164,76 @@ test('publication scope includes explicit, documented, and content-derived paths
   assert.deepEqual(
     publishPathsFor([SOURCE], [DOC], ['docs/context/map/backend.md', SOURCE]),
     [DOC, 'docs/context/map/backend.md', SOURCE],
+  );
+});
+
+test('maintenance terminal outcomes distinguish passed, maintenance-blocked, and failed work', () => {
+  assert.equal(terminalStatusForSteps([{ status: 0 }]), 'passed');
+  assert.equal(terminalStatusForSteps([{ status: 1, classification: 'tooling-environment' }]), 'maintenance-blocked');
+  assert.equal(terminalStatusForSteps([
+    { status: 1, classification: 'tooling-environment' },
+    { status: 1, classification: 'implementation' },
+  ]), 'failed');
+});
+
+test('maintenance handoffs are run-scoped, compact, and never auto-delete another run', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-maintenance-handoff-'));
+  try {
+    mkdirSync(join(root, 'repair'), { recursive: true });
+    const other = join(root, 'repair', 'other-run.md');
+    writeFileSync(other, 'keep this handoff\n');
+    const result = resolveMaintenanceHandoff({
+      root,
+      task: 'Repair close-out tooling',
+      runId: '12345678-aaaa-bbbb-cccc-dddddddddddd',
+      steps: [{
+        name: 'QA',
+        status: 1,
+        classification: 'tooling-environment',
+        command: ['node', 'scripts/qa-gate.mjs'],
+        summary: 'exit 1; missing root Godot binary',
+      }],
+      changedPaths: [],
+    });
+
+    assert.equal(result.status, 'maintenance-blocked');
+    assert.equal(result.handoff, 'repair/repair-close-out-tooling-12345678.md');
+    assert.match(readFileSync(join(root, result.handoff), 'utf8'), /tooling-environment/);
+    assert.match(readFileSync(join(root, result.handoff), 'utf8'), /missing root Godot binary/);
+    assert.equal(readFileSync(other, 'utf8'), 'keep this handoff\n');
+    assert.throws(() => createMaintenanceItem({ state: 'blocking', classification: 'implementation' }), /not allowed/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('advisory decomposition handoffs preserve a passing verification result', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-maintenance-advisory-'));
+  try {
+    const source = join(root, 'src/Server/app/Large.js');
+    mkdirSync(join(root, 'src/Server/app'), { recursive: true });
+    writeFileSync(source, `${Array.from({ length: 900 }, () => 'const value = 1;').join('\n')}\n`);
+    const result = resolveMaintenanceHandoff({
+      root,
+      task: 'Small server change',
+      runId: 'abcdefgh-aaaa-bbbb-cccc-dddddddddddd',
+      steps: [{ name: 'QA', status: 0, command: ['node', 'scripts/qa-gate.mjs'], summary: 'exit 0' }],
+      changedPaths: ['src/Server/app/Large.js'],
+    });
+
+    assert.equal(result.status, 'passed');
+    assert.equal(result.items[0].state, 'advisory');
+    assert.equal(result.items[0].classification, 'architecture-decomposition');
+    assert.match(readFileSync(join(root, result.handoff), 'utf8'), /Advisory/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('publication scope always excludes maintenance handoffs', () => {
+  assert.deepEqual(
+    publishPathsFor([SOURCE, 'repair/repair-12345678.md'], [DOC], ['repair/map-note.md']),
+    [DOC, SOURCE],
   );
 });
 

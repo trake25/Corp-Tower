@@ -11,6 +11,11 @@ import { executeBestEffort } from './agent-observability.mjs';
 import { buildTaskTelemetry } from './lib/agent-observability/task-telemetry.mjs';
 import { codexSessionIds } from './lib/agent-observability/runtime.mjs';
 import {
+  failureClassificationFromOutput,
+  isMaintenancePath,
+  resolveMaintenanceHandoff,
+} from './lib/maintenance-handoff.mjs';
+import {
   bindActiveTask,
   readTaskBundle,
   requestActiveTaskFinalization,
@@ -153,7 +158,9 @@ function pathChanges(before, after) {
 }
 
 export function publishPathsFor(changedPaths, documentedPaths, derivedPaths) {
-  return [...new Set([...changedPaths, ...documentedPaths, ...derivedPaths])].sort();
+  return [...new Set([...changedPaths, ...documentedPaths, ...derivedPaths])]
+    .filter(path => !isMaintenancePath(path))
+    .sort();
 }
 
 function documentationFor(scope, sourceChanged = false) {
@@ -249,7 +256,7 @@ export function closeObservabilityUnsafe(manifest, receipt, env = process.env) {
   });
   executeBestEffort('close', {
     task_id: taskId,
-    outcome: receipt.status === 'passed' ? 'completed' : 'failed',
+    outcome: receipt.status === 'failed' ? 'failed' : 'completed',
     verification: receipt.status,
     telemetry,
   }, { root: ROOT, stateDir });
@@ -552,6 +559,7 @@ function runStep(name, args) {
     exit_code: result.status,
     signal: result.signal || null,
     summary: compactOutput(output, { status, signal: result.signal }),
+    classification: status === 0 ? null : failureClassificationFromOutput(output),
     output: output.trim() || undefined,
   };
 }
@@ -601,14 +609,25 @@ function verifyV1(manifest, manifestFile) {
 }
 
 function finishVerification(manifest, manifestFile, steps, publishPaths, closeInputFingerprint = null) {
+  const maintenance = resolveMaintenanceHandoff({
+    root: ROOT,
+    task: manifest.task,
+    runId: manifest.run_id || fingerprint({ task: manifest.task, manifest: displayPath(manifestFile) }).slice(0, 8),
+    steps,
+    changedPaths: manifest.changed_paths,
+  });
   const failed = steps.find(step => step.status !== 0);
   const receipt = {
     schema_version: manifest.schema_version,
     task: manifest.task,
     manifest: displayPath(manifestFile),
-    status: failed ? 'failed' : 'passed',
+    status: maintenance.status,
     input_fingerprint: closeInputFingerprint,
     publish_paths: publishPaths,
+    maintenance: {
+      handoff: maintenance.handoff,
+      items: maintenance.items,
+    },
     steps,
   };
   writeFileSync(receiptPath(manifestFile), `${JSON.stringify(receipt, null, 2)}\n`);
@@ -617,15 +636,18 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
     status: receipt.status,
     receipt: displayPath(receiptPath(manifestFile)),
     close_input_fingerprint: closeInputFingerprint,
+    maintenance_handoff: maintenance.handoff,
   };
   manifest.observability = closeObservability(manifest, receipt);
-  if (manifest.schema_version === SCHEMA_VERSION) manifest.phase = failed ? 'failed' : 'closed';
+  if (manifest.schema_version === SCHEMA_VERSION) manifest.phase = maintenance.status === 'failed' ? 'failed' : 'closed';
   writeManifest(manifestFile, manifest);
-  if (failed) fail(`FAIL — ${failed.name}: ${failed.summary}; receipt: ${displayPath(receiptPath(manifestFile))}`, 1);
-  console.log(`PASS — receipt: ${displayPath(receiptPath(manifestFile))}; ${steps.map(step => `${step.name} ${step.summary}`).join('; ')}; observability ${JSON.stringify(manifest.observability)}`);
+  if (maintenance.status === 'failed') fail(`FAIL — ${failed.name}: ${failed.summary}; receipt: ${displayPath(receiptPath(manifestFile))}`, 1);
+  const label = maintenance.status === 'passed' ? 'PASS' : 'MAINTENANCE-BLOCKED';
+  const handoff = maintenance.handoff ? `; maintenance handoff: ${maintenance.handoff}` : '';
+  console.log(`${label} — receipt: ${displayPath(receiptPath(manifestFile))}; ${steps.map(step => `${step.name} ${step.summary}`).join('; ')}${handoff}; observability ${JSON.stringify(manifest.observability)}`);
 }
 
-function verifyV2(manifest, manifestFile, closeInputFingerprint) {
+function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = null) {
   requireDocumentationDecision(manifest);
   requireCoverageDecision(manifest);
   requireFallbackFixtures(manifest);
@@ -634,7 +656,9 @@ function verifyV2(manifest, manifestFile, closeInputFingerprint) {
     steps.push(runStep(tool.name, tool.command.argv.slice(1)));
   if (manifest.retrieval.fallbacks.length && !steps.some(step => step.name === 'retrieval benchmark'))
     steps.push(runStep('retrieval benchmark', ['scripts/benchmark-rag.mjs', '--check']));
-  steps.push(runStep('QA', ['scripts/qa-gate.mjs', '--changed', ...manifest.changed_paths]));
+  const qaArgs = ['scripts/qa-gate.mjs', '--changed', ...manifest.changed_paths];
+  if (qaOverride) qaArgs.push('--classification', qaOverride.classification, '--evidence', qaOverride.evidence);
+  steps.push(runStep('QA', qaArgs));
   let derived = [];
   if (manifest.documentation.source_changed) {
     const before = manifest.review.map_hashes || mapHashes();
@@ -715,10 +739,17 @@ async function main() {
     return;
   }
   if (action === 'close') {
-    checkOptions(values, ['manifest', 'decision', 'reason', 'doc-path', 'coverage', 'coverage-reason']);
+    checkOptions(values, ['manifest', 'decision', 'reason', 'doc-path', 'coverage', 'coverage-reason', 'qa-classification', 'qa-evidence']);
     const manifestFile = manifestPath(values);
     let manifest = upgradeManifest(readManifest(manifestFile));
     const documentedPaths = normalizeOptionalPaths(many(values, 'doc-path'), '--doc-path');
+    const qaClassification = one(values, 'qa-classification');
+    const qaEvidence = one(values, 'qa-evidence');
+    if (qaClassification && qaClassification !== 'test-expectation') fail('only test-expectation may be supplied as a QA maintenance classification');
+    if (qaClassification && (!qaEvidence.trim() || qaEvidence.length > 240))
+      fail('test-expectation classification requires 1-240 characters of bounded evidence');
+    if (!qaClassification && qaEvidence) fail('QA evidence requires a QA classification');
+    const qaOverride = qaClassification ? { classification: qaClassification, evidence: qaEvidence.trim() } : null;
     const closeInput = {
       review: manifest.review?.input_fingerprint || null,
       decision: one(values, 'decision', true),
@@ -726,6 +757,8 @@ async function main() {
       documented_paths: documentedPaths,
       coverage: one(values, 'coverage', true),
       coverage_reason: one(values, 'coverage-reason', true).trim(),
+      qa_classification: qaOverride?.classification || null,
+      qa_evidence: qaOverride?.evidence || null,
     };
     const closeInputFingerprint = fingerprint(closeInput);
     if (manifest.phase === 'closed') {
@@ -745,7 +778,7 @@ async function main() {
       reason: closeInput.coverage_reason,
     });
     writeManifest(manifestFile, manifest);
-    verifyV2(manifest, manifestFile, closeInputFingerprint);
+    verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride);
     return;
   }
   if (action === 'decide') {

@@ -94,7 +94,7 @@ test('a broken retrieval index returns tool-error and authorizes repair fallback
   }
 });
 
-test('working folders route to explicit plan and reference guidance', () => {
+test('working folders route to explicit plan, repair, and reference guidance', () => {
   const plan = routeContext('plan/example.md');
   assert.equal(plan.skill, 'docs-steward');
   assert.deepEqual(plan.workspace, {
@@ -106,6 +106,10 @@ test('working folders route to explicit plan and reference guidance', () => {
   assert.equal(reference.skill, 'client-engineer');
   assert.equal(reference.workspace.name, 'reference');
   assert.match(reference.workspace.purpose, /screen guides and bug screenshots/);
+  const repair = routeContext('repair/retrieval-repair-12345678.md');
+  assert.equal(repair.skill, 'docs-steward');
+  assert.equal(repair.workspace.name, 'repair');
+  assert.match(repair.workspace.policy, /Never use repair handoffs/);
 });
 
 test('legacy retrieval benchmark reports remain non-context output', () => {
@@ -127,6 +131,7 @@ test('observability reports route as explicit non-context output', () => {
   assert.equal(isNormalContextExcludedPath('report/observability/2026-W35.md'), true);
   assert.equal(isNormalContextExcludedPath('./.agent-state/telemetry/v2/tasks/a.json'), true);
   assert.equal(isNormalContextExcludedPath('.\\report\\observability\\2026-W35.md'), true);
+  assert.equal(isNormalContextExcludedPath('repair/retrieval-repair-12345678.md'), true);
   assert.equal(isNormalContextExcludedPath('scripts/agent-observability.mjs'), false);
 });
 

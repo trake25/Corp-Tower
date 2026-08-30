@@ -15,3 +15,9 @@ one scoped improvement. High token use alone is not inefficiency.
 Keep the skill, evidence digest, and structured output within 1.5 KiB. Drop the
 weakest finding if needed. A finding is review evidence; never change repository
 workflow without human approval.
+
+A single correctly handled maintenance blocker is not workflow inefficiency.
+Flag only actual wasted effort in the current run, such as retries, repeated
+verification, repeated tooling recovery, unnecessary rework, or repeated
+retrieval expansion. Maintenance handoffs and workflow-inefficiency findings are
+separate records.

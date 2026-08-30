@@ -514,9 +514,9 @@ export function scopeContext(paths, options = {}) {
   const maps = [...new Set(changed.map(mapOwnerForPath).filter(Boolean).map(map => `docs/context/map/${map}`))].sort();
   const qa = selectQa(changed);
   const tools = [{ name: 'QA', command: command(['node', 'scripts/qa-gate.mjs', '--changed', ...changed]) }];
-  const automationProtocol = changed.some(path => /^(scripts\/(?:context|task-close|benchmark-rag|git-sync-commit-push|agent-observability)\.mjs|scripts\/lib\/(?:context-(?:query|routing)|agent-observability\/[^/]+)\.mjs|scripts\/tests\/(?:context-query|task-close|git-sync-commit-push|agent-observability)\.test\.mjs|report\/benchmarks\/)/.test(path));
+  const automationProtocol = changed.some(path => /^(scripts\/(?:context|task-close|benchmark-rag|git-sync-commit-push|agent-observability|qa-gate|validate-docs)\.mjs|scripts\/lib\/(?:context-(?:query|routing)|agent-observability\/[^/]+|docs-capacity|maintenance-handoff)\.mjs|scripts\/tests\/(?:context-query|task-close|git-sync-commit-push|agent-observability|qa-gate|validate-docs)\.test\.mjs|report\/benchmarks\/)/.test(path));
   if (automationProtocol) {
-    tools.push({ name: 'automation protocol', command: command(['node', '--test', 'scripts/tests/context-query.test.mjs', 'scripts/tests/task-close.test.mjs', 'scripts/tests/git-sync-commit-push.test.mjs', 'scripts/tests/agent-observability.test.mjs']) });
+    tools.push({ name: 'automation protocol', command: command(['node', '--test', 'scripts/tests/context-query.test.mjs', 'scripts/tests/task-close.test.mjs', 'scripts/tests/git-sync-commit-push.test.mjs', 'scripts/tests/qa-gate.test.mjs', 'scripts/tests/validate-docs.test.mjs', 'scripts/tests/agent-observability.test.mjs']) });
     tools.push({ name: 'retrieval benchmark', command: command(['node', 'scripts/benchmark-rag.mjs', '--check']) });
   }
   if (maps.length) tools.push({ name: 'file map', command: command(['node', 'scripts/build-file-map.mjs']) });

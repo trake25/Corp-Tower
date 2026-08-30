@@ -21,6 +21,15 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { MAP_AREAS as AREAS, firstPartyFiles, isExempt } from './lib/context-routing.mjs';
+import {
+  DEFAULT_PROSE_BUDGET,
+  PROSE_BUDGETS,
+  PROSE_TOTAL_BUDGET,
+  mapCapacityFor,
+  mapCapacitySummary,
+  validatorFailureClassification,
+} from './lib/docs-capacity.mjs';
+import { failureClassificationLine } from './lib/maintenance-handoff.mjs';
 
 const argv = process.argv.slice(2);
 const QUIET = argv.includes('--quiet');
@@ -28,8 +37,9 @@ const ROOT = resolve(argv.find(a => !a.startsWith('-')) || '.');
 const CTX = join(ROOT, 'docs/context');
 const MAP = join(CTX, 'map');
 const errors = [];
+const maintenanceErrors = [];
 const warnings = [];
-const ISOLATED_DIRS = new Set(['plan', 'task', 'reference']);
+const ISOLATED_DIRS = new Set(['repair', 'plan', 'task', 'reference']);
 const isIsolated = absolute => {
   const rel = absolute.slice(ROOT.length + 1).split(/[\\/]/);
   return rel.length > 1 && ISOLATED_DIRS.has(rel[0]);
@@ -39,25 +49,6 @@ const tok = s => Math.round(Buffer.byteLength(s, 'utf8') / 4);
 
 // Per-doc token budgets are capacity ceilings, while section limits below bound
 // the normal retrieval unit. Exceeding either is a split-or-compact signal.
-const DEFAULT_BUDGET = 1500;
-// Ratcheted from the abstraction-level compaction baseline. Each ceiling is the
-// greater of ten percent or 100 tokens of headroom, rounded up to 50. Raising a
-// ceiling requires docs-steward review; a second raise requires compaction.
-const BUDGETS = {
-  'automation.md': 2500, 'backend.md': 2750, 'build.md': 1150,
-  'deployment-backup.md': 1800, 'deployment-eks.md': 1300,
-  'deployment.md': 1500, 'gameplay.md': 2150, 'index.md': 1750,
-  'networking.md': 1650, 'testing.md': 1500, 'ui-hud.md': 1900,
-  'ui-tutorial.md': 900, 'ui.md': 950,
-};
-// Maps contain one purpose per file plus generated stable anchors. Per-area and
-// global ratchets catch a generator widening back toward exhaustive symbols.
-const MAP_BUDGETS = {
-  'backend.md': 5700, 'infra.md': 14000, 'ui-debug.md': 1650,
-  'ui-hud.md': 8000, 'ui-screens.md': 4600, 'ui-tutorial.md': 1750,
-};
-const PROSE_TOTAL_BUDGET = 21450;
-const MAP_TOTAL_BUDGET = 35600;
 const MAX_LINE_CHARS = 300;
 const NET_GROWTH_WARN = 30;
 const SECTION_WARN = 1000;
@@ -150,6 +141,7 @@ for (const { f } of all) if (f !== 'index.md' && !referenced.has(f))
 // check that would have caught DebugPanelController.gd -- 1,165 lines, the largest
 // client file, absent from module-index.md entirely.
 const source = firstPartyFiles(ROOT).filter(s => !isExempt(s.rel));
+const mapCapacity = mapCapacitySummary(source);
 const mapText = new Map(mapFiles.map(f => [f, readMap(f)]));
 if (!mapFiles.length) {
   errors.push('no docs/context/map/ — run: node scripts/build-file-map.mjs');
@@ -218,7 +210,7 @@ function checkCitations(label, text) {
     const h = /^#{1,6}\s+(.*)$/.exec(line);
     if (h) { section = slug(h[1]); return; }
     if (CITATION_SKIP_SECTIONS.has(section) || CITES_OK.test(line)) return;
-    if (/(?:^|[`(\s])(?:\.{0,2}\/)*(?:plan|task|reference)\/[^\s`|)]+\.[A-Za-z0-9]+/.test(line))
+    if (/(?:^|[`(\s])(?:\.{0,2}\/)*(?:repair|plan|task|reference)\/[^\s`|)]+\.[A-Za-z0-9]+/.test(line))
       errors.push(`${label}:${i + 1} cites isolated working material`);
     for (const m of maskGlobs(line).matchAll(FILEISH)) {
       const name = m[1];
@@ -235,7 +227,7 @@ for (const { rel } of source) {
   txt.split(/\r?\n/).forEach((line, i) => {
     const c = COMMENT.exec(line);
     if (!c || CITES_OK.test(line)) return;
-    if (/(?:^|[`(\s])(?:\.{0,2}\/)*(?:plan|task|reference)\/[^\s`|)]+\.[A-Za-z0-9]+/.test(c[1]))
+    if (/(?:^|[`(\s])(?:\.{0,2}\/)*(?:repair|plan|task|reference)\/[^\s`|)]+\.[A-Za-z0-9]+/.test(c[1]))
       errors.push(`${rel}:${i + 1} comment cites isolated working material`);
     for (const m of maskGlobs(c[1]).matchAll(FILEISH)) {
       const name = m[1];
@@ -364,10 +356,13 @@ for (const { f, txt } of all) {
   const lines = txt.split(/\r?\n/);
   const t = tok(txt);
   const isMap = f.startsWith('map/');
-  const budget = isMap ? (MAP_BUDGETS[f.slice(4)] ?? DEFAULT_BUDGET) : (BUDGETS[f] ?? DEFAULT_BUDGET);
+  const mapBudget = isMap ? (mapCapacity.by_file[f.slice(4)] || mapCapacityFor(f.slice(4), 0)) : null;
+  const budget = isMap ? mapBudget.capacity : (PROSE_BUDGETS[f] ?? DEFAULT_PROSE_BUDGET);
   counts.push([f, t, budget, lines.length, isMap]);
-  if (t > budget)
-    errors.push(`over budget: ${f} ~${t} tok > ${budget} — compact or split it`);
+  if (isMap && t > mapBudget.density_ceiling)
+    maintenanceErrors.push(`map density ceiling: ${f} ~${t} tok > ${mapBudget.density_ceiling} with ${mapBudget.baseline?.file_count ?? 0}+ mapped files — inspect generator density`);
+  else if (t > budget)
+    maintenanceErrors.push(`capacity: ${f} ~${t} tok > ${budget} — schedule capacity maintenance`);
   else if (!isMap && t >= Math.round(budget * 0.95))
     warnings.push(`budget pressure 95%: ${f} ~${t} / ${budget} tok`);
   if ((growth[f] || 0) > NET_GROWTH_WARN)
@@ -409,9 +404,11 @@ counts.sort((a, b) => b[1] - a[1]);
 const proseTotal = counts.filter(c => !c[4]).reduce((s, c) => s + c[1], 0);
 const mapTotal = counts.filter(c => c[4]).reduce((s, c) => s + c[1], 0);
 if (proseTotal > PROSE_TOTAL_BUDGET)
-  errors.push(`KB prose total ~${proseTotal} tok > ${PROSE_TOTAL_BUDGET} — compact or split docs`);
-if (mapTotal > MAP_TOTAL_BUDGET)
-  errors.push(`KB maps total ~${mapTotal} tok > ${MAP_TOTAL_BUDGET} — reduce generated anchors or split maps`);
+  maintenanceErrors.push(`prose capacity: KB total ~${proseTotal} tok > ${PROSE_TOTAL_BUDGET} — schedule capacity maintenance`);
+if (mapTotal > mapCapacity.density_ceiling)
+  maintenanceErrors.push(`map density ceiling: KB total ~${mapTotal} tok > ${mapCapacity.density_ceiling} — inspect generator density`);
+else if (mapTotal > mapCapacity.capacity)
+  maintenanceErrors.push(`map capacity: KB total ~${mapTotal} tok > ${mapCapacity.capacity} — schedule capacity maintenance`);
 
 // --- map freshness ------------------------------------------------------------
 let mapFresh = 'skipped';
@@ -426,9 +423,11 @@ try {
 }
 
 // --- report -------------------------------------------------------------------
-const terse = QUIET && !errors.length;
+const classification = validatorFailureClassification({ semanticErrors: errors, maintenanceErrors });
+const allErrors = [...errors, ...maintenanceErrors];
+const terse = QUIET && !allErrors.length;
 console.log('=== docs/context validation ===');
-console.log(`docs: ${files.length} + ${mapFiles.length} map   prose: ~${proseTotal} / ${PROSE_TOTAL_BUDGET} tok   maps: ~${mapTotal} tok   links: ${linkCount}   map: ${mapFresh}`);
+console.log(`docs: ${files.length} + ${mapFiles.length} map   prose: ~${proseTotal} / ${PROSE_TOTAL_BUDGET} tok   maps: ~${mapTotal} / ${mapCapacity.capacity} tok   links: ${linkCount}   map: ${mapFresh}`);
 if (!terse) {
   console.log('tokens per doc (budget, net line change):');
   for (const [f, t, b, ln, isMap] of counts) {
@@ -445,5 +444,10 @@ if (terse) {
     console.log(`warnings: ${warnings.length}   status markers: ${statusMarkers.length}   (re-run without --quiet for detail)`);
 } else if (warnings.length) { console.log(`\nWARNINGS (${warnings.length}):`); warnings.forEach(w => console.log('  ! ' + w)); }
 if (errors.length) { console.log(`\nERRORS (${errors.length}):`); errors.forEach(e => console.log('  x ' + e)); }
-console.log(errors.length ? '\nFAIL' : '\nPASS');
-process.exit(errors.length ? 1 : 0);
+if (maintenanceErrors.length) {
+  console.log(`\nMAINTENANCE BLOCKERS (${maintenanceErrors.length}):`);
+  maintenanceErrors.forEach(error => console.log('  m ' + error));
+}
+if (classification) console.log(failureClassificationLine(classification));
+console.log(allErrors.length ? '\nFAIL' : '\nPASS');
+process.exit(allErrors.length ? 1 : 0);

@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
+import { failureClassificationLine } from './lib/maintenance-handoff.mjs';
 
 const ROOT = resolve(process.cwd());
 const CLIENT = 'src/Client/App/corp-tower';
@@ -87,38 +88,74 @@ function failureDetail(output) {
   return [totals, error].filter(Boolean).join(' · ');
 }
 
-function fail(message, output = '') {
+export function classifyQaFailure({ message = '', output = '', error = null, requestedClassification = null, evidence = '' } = {}) {
+  const detail = `${message}\n${output}\n${error?.message || ''}`;
+  if (error || /\b(?:EACCES|EPERM|ENOENT|permission denied|sandbox|missing root Godot binary)\b/i.test(detail))
+    return 'tooling-environment';
+  const assertion = /\b(?:AssertionError|not ok|\[Failed\]:|expected)\b/i.test(detail);
+  if (requestedClassification === 'test-expectation' && evidence.trim() && assertion)
+    return 'test-expectation';
+  return 'implementation';
+}
+
+function fail(message, output = '', error = null, options = {}) {
+  const classification = classifyQaFailure({
+    message,
+    output,
+    error,
+    requestedClassification: options.classification,
+    evidence: options.evidence,
+  });
   const detail = failureDetail(output);
   const log = output.trim() ? join(mkdtempSync(join(tmpdir(), 'corp-tower-qa-gate-')), 'failure.log') : '';
   if (log) writeFileSync(log, output);
+  console.error(failureClassificationLine(classification));
   console.error(`FAIL — ${message}${detail ? ` — ${detail}` : ''}`);
   if (log) console.error(`Full output: ${log}`);
   process.exit(1);
 }
 
-function run(label, command, args, cwd, env = process.env) {
+function run(label, command, args, cwd, env = process.env, options = {}) {
   const result = spawnSync(command, args, { cwd, env, encoding: 'utf8' });
-  if (result.error) fail(`${label}: ${result.error.message}`);
-  if (result.status !== 0) fail(label, `${result.stdout || ''}${result.stderr || ''}`);
+  if (result.error) fail(`${label}: ${result.error.message}`, '', result.error, options);
+  if (result.status !== 0) fail(label, `${result.stdout || ''}${result.stderr || ''}`, null, options);
   return label;
 }
 
-function godotBinary() {
+function godotBinary(options) {
   const suffix = process.platform === 'win32' ? '_win64.exe' : '_linux.x86_64';
   const candidates = readdirSync(ROOT).filter(name => name.startsWith('Godot_v') && name.endsWith(suffix)).sort();
-  if (!candidates.length) fail(`missing root Godot binary matching Godot_v*${suffix}`);
+  if (!candidates.length) fail(`missing root Godot binary matching Godot_v*${suffix}`, '', null, options);
   return join(ROOT, candidates.at(-1));
 }
 
 function changedArguments(argv) {
   const changedAt = argv.indexOf('--changed');
-  return changedAt < 0 ? [] : argv.slice(changedAt + 1).filter(path => path && !path.startsWith('-'));
+  if (changedAt < 0) return [];
+  const changed = [];
+  for (const path of argv.slice(changedAt + 1)) {
+    if (path.startsWith('--')) break;
+    if (path) changed.push(path);
+  }
+  return changed;
+}
+
+function failureOptions(argv) {
+  const classificationAt = argv.indexOf('--classification');
+  if (classificationAt < 0) return { classification: null, evidence: '' };
+  const classification = argv[classificationAt + 1] || '';
+  const evidenceAt = argv.indexOf('--evidence');
+  const evidence = evidenceAt < 0 ? '' : argv[evidenceAt + 1] || '';
+  if (classification !== 'test-expectation') fail('only test-expectation may be supplied as an explicit QA classification');
+  if (!evidence.trim()) fail('test-expectation classification requires bounded evidence');
+  return { classification, evidence };
 }
 
 function main() {
   const argv = process.argv.slice(2);
+  const options = failureOptions(argv);
   const changed = changedArguments(argv);
-  if (!changed.length) fail('pass one or more task-owned paths after --changed');
+  if (!changed.length) fail('pass one or more task-owned paths after --changed', '', null, options);
   const plan = selectQa(changed);
   if (argv.includes('--plan')) {
     if (argv.includes('--json')) console.log(JSON.stringify(plan, null, 2));
@@ -128,24 +165,24 @@ function main() {
 
   const completed = [];
   if (plan.server_sources.length) {
-    for (const source of plan.server_sources) run(`server syntax ${source}`, process.execPath, ['--check', source], SERVER);
+    for (const source of plan.server_sources) run(`server syntax ${source}`, process.execPath, ['--check', source], SERVER, process.env, options);
     completed.push(`server syntax (${plan.server_sources.length})`);
   }
   if (plan.full_server) {
-    completed.push(run('server full suite', process.platform === 'win32' ? 'npm.cmd' : 'npm', ['test'], SERVER));
+    completed.push(run('server full suite', process.platform === 'win32' ? 'npm.cmd' : 'npm', ['test'], SERVER, process.env, options));
   } else if (plan.server_tests.length) {
-    completed.push(run('server targeted tests', process.execPath, ['--test', '--test-reporter=dot', ...plan.server_tests.map(test => `tests/${test}`)], SERVER));
+    completed.push(run('server targeted tests', process.execPath, ['--test', '--test-reporter=dot', ...plan.server_tests.map(test => `tests/${test}`)], SERVER, process.env, options));
   }
 
   if (plan.client_runtime || plan.client_tests.length) {
-    const bin = godotBinary();
+    const bin = godotBinary(options);
     const dataHome = mkdtempSync(join(tmpdir(), 'corp-tower-qa-gate-'));
     const env = { ...process.env, XDG_DATA_HOME: dataHome };
-    if (plan.client_runtime) completed.push(run('client smoke', bin, ['--headless', '--path', CLIENT, '-s', 'Tests/CiSmokeTest.gd'], ROOT, env));
+    if (plan.client_runtime) completed.push(run('client smoke', bin, ['--headless', '--path', CLIENT, '-s', 'Tests/CiSmokeTest.gd'], ROOT, env, options));
     if (plan.full_client) {
-      completed.push(run('client full GUT', bin, ['--headless', '--path', CLIENT, '-s', 'addons/gut/gut_cmdln.gd', '-gdir=res://Tests/Gut', '-ginclude_subdirs', '-glog=0', '-gdisable_colors', '-gexit'], ROOT, env));
+      completed.push(run('client full GUT', bin, ['--headless', '--path', CLIENT, '-s', 'addons/gut/gut_cmdln.gd', '-gdir=res://Tests/Gut', '-ginclude_subdirs', '-glog=0', '-gdisable_colors', '-gexit'], ROOT, env, options));
     } else {
-      for (const test of plan.client_tests) run(`client GUT ${test}`, bin, ['--headless', '--path', CLIENT, '-s', 'addons/gut/gut_cmdln.gd', `-gtest=res://Tests/Gut/${test}`, '-glog=0', '-gdisable_colors', '-gexit'], ROOT, env);
+      for (const test of plan.client_tests) run(`client GUT ${test}`, bin, ['--headless', '--path', CLIENT, '-s', 'addons/gut/gut_cmdln.gd', `-gtest=res://Tests/Gut/${test}`, '-glog=0', '-gdisable_colors', '-gexit'], ROOT, env, options);
       completed.push(`client targeted GUT (${plan.client_tests.length})`);
     }
   }
@@ -154,4 +191,10 @@ function main() {
   else console.log(`PASS — ${completed.join('; ')}`);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    main();
+  } catch (error) {
+    fail(`qa gate: ${error.message}`, '', error);
+  }
+}

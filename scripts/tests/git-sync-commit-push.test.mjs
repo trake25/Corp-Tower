@@ -29,6 +29,13 @@ test('schema-v2 Git scope refuses unverified publication', () => {
     publish_paths: ['scripts/context.mjs'],
     verification: null,
   }), /passing closeout/);
+  assert.throws(() => manifestScope({
+    schema_version: 2,
+    task: 'Retrieval polish',
+    phase: 'closed',
+    publish_paths: ['scripts/context.mjs'],
+    verification: { status: 'maintenance-blocked' },
+  }), /passing closeout/);
 });
 
 test('schema-v1 Git scope retains the explicit changed-path fallback', () => {

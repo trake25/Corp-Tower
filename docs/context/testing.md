@@ -43,6 +43,12 @@ skill. A stale assertion is a test bug until source evidence proves otherwise;
 prefer invariants over hardcoded tuning values and never weaken a test merely to
 make a gate green.
 
+QA emits a stable classification with its compact diagnostic. Host, spawn,
+permissions, sandbox, and missing-executable failures are `tooling-environment`;
+syntax, parse, compile, and ordinary assertions are task-owned
+`implementation`. `test-expectation` needs bounded proof that the assertion is
+stale or pre-existing; a planned behavior change still requires its test update.
+
 ## Server coverage
 
 Server tests protect placement and block geometry, stability/scoring invariants,

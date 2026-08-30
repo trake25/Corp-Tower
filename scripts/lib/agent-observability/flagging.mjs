@@ -66,6 +66,11 @@ export function flagEligibility({ model_family, effort, provider_turn_required, 
 
 export function detectCandidates(telemetry) {
   const candidates = [];
+  const handledSingleMaintenance = telemetry.outcomes.close_out === 'maintenance_blocked'
+    && telemetry.outcomes.maintenance_blockers === 1
+    && telemetry.checks.failures === 1
+    && telemetry.tools.failures <= 1
+    && telemetry.tools.retries === 0;
   const add = (stage, issue, cause, severity, observation, improvement) => {
     if (candidates.length < 3) candidates.push({
       stage,
@@ -80,7 +85,7 @@ export function detectCandidates(telemetry) {
     add('retrieval_context', 'broad_fallback', 'route_miss', 'high', 'Current retrieval required a broad fallback.', 'repair the route and add a retrieval fixture');
   if (telemetry.retrieval.attempts > 1 || telemetry.retrieval.expansions > 0)
     add('retrieval_context', 'repeated_retrieval', 'insufficient_first_result', 'medium', 'Current retrieval expanded beyond the first result.', 'tighten the authoritative route or candidate ranking');
-  if (telemetry.tools.failures > 0 || telemetry.tools.retries > 0)
+  if ((telemetry.tools.failures > 0 || telemetry.tools.retries > 0) && !handledSingleMaintenance)
     add('other', 'tool_retry', 'tool_failure', 'medium', 'A local tool failed or required retry.', 'repair the tool contract or its compact diagnostic');
   if (telemetry.iterations.rework > 1)
     add('implementation', 'implementation_rework', 'insufficient_context', 'medium', 'Implementation required repeated rework.', 'improve the pre-edit evidence or acceptance check');

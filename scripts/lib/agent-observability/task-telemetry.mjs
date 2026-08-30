@@ -1,3 +1,5 @@
+import { isMaintenanceClassification } from '../maintenance-handoff.mjs';
+
 function retrievalTelemetry(evidence, fallbacks) {
   const events = evidence.filter(item => item.kind === 'tool' && item.stage === 'retrieval_context' && item.name.startsWith('context_'));
   const queries = events.filter(item => /^context_(search|filter)_/.test(item.name));
@@ -13,9 +15,25 @@ function retrievalTelemetry(evidence, fallbacks) {
   };
 }
 
+const telemetryCode = value => String(value || 'not_applicable').replaceAll('-', '_');
+const documentationOutcome = decision => ['updated', 'not-needed'].includes(decision)
+  ? telemetryCode(decision)
+  : 'not_applicable';
+
+function stepOutcome(steps, names) {
+  const selected = steps.filter(step => names.includes(step.name));
+  if (!selected.length) return 'not_applicable';
+  if (selected.every(step => step.status === 0)) return 'passed';
+  return selected.every(step => step.status !== 0 && isMaintenanceClassification(step.classification))
+    ? 'maintenance_blocked'
+    : 'failed';
+}
+
 export function buildTaskTelemetry(manifest, receipt, evidence, { domainFor, receiptHash }) {
   const toolEvents = evidence.filter(item => item.kind === 'tool');
   const failures = toolEvents.filter(item => item.outcome === 'failed').length;
+  const steps = receipt.steps || [];
+  const maintenanceBlockers = (receipt.maintenance?.items || []).filter(item => item.state === 'blocking').length;
   const domains = Object.fromEntries(manifest.domains.map(domain => [
     domain.replaceAll('-', '_'),
     manifest.changed_paths.filter(path => domainFor(path) === domain).length,
@@ -28,11 +46,21 @@ export function buildTaskTelemetry(manifest, receipt, evidence, { domainFor, rec
     files: { inspected: 0, modified: manifest.changed_paths.length, domains },
     iterations: { implementation: manifest.changed_paths.length ? 1 : 0, rework: 0 },
     checks: {
-      run: receipt.steps.length,
-      failures: receipt.steps.filter(step => step.status !== 0).length,
+      run: steps.length,
+      failures: steps.filter(step => step.status !== 0).length,
       retests: 0,
     },
     documentation: { files: manifest.documented_paths.length, updates: manifest.documented_paths.length },
-    task_close: { status: receipt.status, receipt_hash: receiptHash },
+    task_close: { status: telemetryCode(receipt.status), receipt_hash: receiptHash },
+    outcomes: {
+      implementation: receipt.status === 'failed'
+        ? 'failed'
+        : manifest.changed_paths.length ? 'complete' : 'not_applicable',
+      task_qa: stepOutcome(steps, ['QA']),
+      documentation: documentationOutcome(manifest.documentation?.decision),
+      maps_retrieval: stepOutcome(steps, ['automation protocol', 'retrieval benchmark', 'file map', 'game KB', 'site KB']),
+      close_out: telemetryCode(receipt.status),
+      maintenance_blockers: maintenanceBlockers,
+    },
   };
 }

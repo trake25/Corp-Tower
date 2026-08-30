@@ -103,7 +103,7 @@ for (const f of files) {
     if (banned) errors.push(`banned phrase: ${f}:${n} "${banned[1]}"`);
     const status = STATUS.exec(line);
     if (status) warnings.push(`status marker: ${f}:${n} "${status[1]}"`);
-    if (/(?:^|[`(\s])(?:\.{0,2}\/)*(?:plan|task|reference)\/[^\s`|)]+\.[A-Za-z0-9]+/.test(line))
+    if (/(?:^|[`(\s])(?:(?:\.{0,2}\/)*(?:plan|task|reference)|(?:\.\.\/){2}repair)\/[^\s`|)]+\.[A-Za-z0-9]+/.test(line))
       errors.push(`isolation: ${f}:${n} cites working material`);
   });
 

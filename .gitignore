@@ -23,6 +23,8 @@ infra/eks/terraform/eks-lab.tfvars
 .agent-state/telemetry/
 plan/
 reference/
+task/
+repair/
 report/benchmarks/raw/
 *.x86_64
 

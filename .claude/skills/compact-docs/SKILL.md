@@ -5,9 +5,9 @@ description: Whole-KB compaction pass over docs/context — collapse superseded 
 
 Compact the `docs/context/` knowledge base. This is the periodic counterpart to
 `update-docs`: that skill is diff-scoped and cheap, so entropy still collects in
-docs it never opens. This one is whole-KB and expensive — run it when
-`validate-docs.mjs` reports docs over budget or a banned-phrase backlog, not
-routinely.
+docs it never opens. This one is whole-KB and expensive — run it as an explicit
+maintenance task for actual entropy, duplication, stale/history prose,
+banned-phrase backlog, or sustained capacity pressure, not routinely.
 
 **This pass changes no facts.** It removes history, duplication and mirrored
 values. If compaction would change what the docs claim the system does, stop and
@@ -15,9 +15,9 @@ ask — that is an `update-docs` job, or a bug in the docs.
 
 Procedure:
 
-1. `node scripts/validate-docs.mjs`. Its over-budget list, long-line list,
+1. `node scripts/validate-docs.mjs`. Its capacity handoff, long-line list,
    banned-phrase list and status-marker list are the worklist. Work the largest
-   over-budget doc first.
+   entropy or sustained-capacity candidate first.
 2. Apply the retention test from `update-docs` to **every** paragraph: keep only
    medium-level **State** and **live constraints** that are not obvious from one
    routed source file. Delete local implementation narration, abandoned

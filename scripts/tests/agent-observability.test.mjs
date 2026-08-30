@@ -12,6 +12,7 @@ import { renderPublicReport, exportPublicReport } from '../lib/agent-observabili
 import { buildWeeklyReportParts, displayStageGroups, renderWeeklyReport } from '../lib/agent-observability/report.mjs';
 import { modelFamily, resolveRuntimeIdentity } from '../lib/agent-observability/runtime.mjs';
 import { sanitizeClose, sanitizeMeta, sanitizeTelemetry } from '../lib/agent-observability/schema.mjs';
+import { buildTaskTelemetry } from '../lib/agent-observability/task-telemetry.mjs';
 import { bindActiveTask, readHookHealth, readTaskBundle, recordEvent, requestActiveTaskFinalization, resolveStateDir, startTask } from '../lib/agent-observability/state.mjs';
 import { aggregateUsage, assessRuntimeCapabilities, normalizeUsageEvent } from '../lib/agent-observability/usage.mjs';
 
@@ -506,6 +507,44 @@ test('candidate detector is deterministic and bounded to three observations', ()
 
   assert.equal(candidates.length, 3);
   assert.deepEqual(candidates.map(item => item.issue_code), ['broad_fallback', 'repeated_retrieval', 'tool_retry']);
+});
+
+test('maintenance-blocked telemetry keeps implementation complete with partial verification', () => {
+  const manifest = {
+    domains: ['tooling'],
+    changed_paths: ['scripts/task-close.mjs'],
+    documented_paths: ['docs/context/automation.md'],
+    retrieval: { fallbacks: [] },
+    documentation: { decision: 'updated' },
+  };
+  const receipt = {
+    status: 'maintenance-blocked',
+    steps: [{
+      name: 'QA',
+      status: 1,
+      classification: 'tooling-environment',
+    }],
+    maintenance: { items: [{ state: 'blocking', classification: 'tooling-environment' }] },
+  };
+  const rawTelemetry = buildTaskTelemetry(manifest, receipt, [], {
+    domainFor: () => 'tooling',
+    receiptHash: 'abc123',
+  });
+  rawTelemetry.tools.failures = 1;
+  const telemetry = sanitizeTelemetry(rawTelemetry);
+  const close = sanitizeClose({
+    task_id: FIXTURE.task.task_id,
+    outcome: 'completed',
+    verification: 'maintenance-blocked',
+    telemetry,
+  });
+
+  assert.equal(close.outcome, 'completed');
+  assert.equal(close.verification, 'maintenance-blocked');
+  assert.equal(close.telemetry.outcomes.implementation, 'complete');
+  assert.equal(close.telemetry.outcomes.task_qa, 'maintenance_blocked');
+  assert.equal(close.telemetry.outcomes.maintenance_blockers, 1);
+  assert.deepEqual(detectCandidates(telemetry), []);
 });
 
 test('candidate retries are idempotent across close-out reruns', () => {
