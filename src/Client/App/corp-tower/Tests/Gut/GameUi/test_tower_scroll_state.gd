@@ -42,6 +42,15 @@ func test_incoming_tower_growth_retargets_auto_without_snapping_manual_navigatio
 	state.step(0.1)
 	assert_lt(state.displayed_offset_units, displayed_before_update)
 
+func test_auto_follow_catching_up_is_not_manual_navigation() -> void:
+	var state = configured_state()
+
+	assert_true(state.is_displaced())
+	assert_false(state.is_manually_displaced())
+	state.snap_to_normal()
+	assert_true(state.navigate_to_row(0.0))
+	assert_true(state.is_manually_displaced())
+
 func test_freeze_and_extent_clamping_keep_navigation_bounded() -> void:
 	var state = configured_state()
 	state.snap_to_normal()

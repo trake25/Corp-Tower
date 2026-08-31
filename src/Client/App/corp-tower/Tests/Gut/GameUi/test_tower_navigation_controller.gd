@@ -55,6 +55,15 @@ func test_playing_offscreen_critical_support_exposes_deliberate_navigation() -> 
 	assert_true(back.visible)
 	assert_eq(harness.main.tower_navigation.selected_block_id, "base-i")
 
+func test_auto_follow_catching_up_does_not_expose_top_navigation() -> void:
+	var tower: Control = prepare_playing_tower()
+	var back := harness.find("BackToTopButton") as Button
+	tower.scroll_state.displayed_offset_units = 0.0
+	tower.scroll_state.normal_target_units = 5.0
+	harness.main.tower_navigation.refresh()
+
+	assert_false(back.visible)
+
 func test_drag_and_armed_placement_disable_both_navigation_actions() -> void:
 	var tower: Control = prepare_playing_tower()
 	var trouble := harness.find("TroubleDownButton") as Button

@@ -86,8 +86,8 @@ Snap Grid keeps them as static state, and the renderer derives center from grid
 width. Tests must reset the static range between cases.
 
 Bricks stay fixed-size while drawing, placement projection, collapse, and parallax consume one
-floating scroll state. Automatic scrolling preserves rounded tower framing; bounded Top and
-Trouble travel reverses smoothly while gameplay geometry stays attached as the background eases.
+floating scroll state. Automatic scrolling preserves rounded tower framing without exposing return
+navigation; bounded Top and Trouble travel reverses smoothly while gameplay geometry stays attached.
 
 Trouble holds a deterministic, standing critical support below the posed visible area during
 travel. Placement, armed actions, overlays, and presentation sequences disable navigation;

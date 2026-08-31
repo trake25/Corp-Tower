@@ -335,7 +335,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:12 | bind_nodes | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:35 | refresh | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd — 140 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd — 143 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -348,7 +348,8 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:101 | hold_current | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:113 | step | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:135 | is_displaced | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:138 | is_navigating | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:138 | is_manually_displaced | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:141 | is_navigating | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd — 22 ln
 
@@ -429,7 +430,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd:1 | @file · file | tint bare icon TextureButtons cyan on press, no StyleBox to swap |
 
-### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1480 ln
+### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1483 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -474,14 +475,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:479 | trouble_target | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:518 | navigate_to_trouble | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:534 | return_to_auto_scroll | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:539 | is_scroll_displaced | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:542 | is_scroll_navigating | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:545 | reset_navigation | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:551 | is_navigation_blocked_by_presentation | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:700 | set_player_color_map | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:704 | clear_tower | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:542 | is_scroll_manually_displaced | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:545 | is_scroll_navigating | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:548 | reset_navigation | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:554 | is_navigation_blocked_by_presentation | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:703 | set_player_color_map | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:707 | clear_tower | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:82 | tower_collapsed · stable | |
 
 ---
 
-40 files · 235 stable anchors.
+40 files · 236 stable anchors.

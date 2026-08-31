@@ -539,6 +539,9 @@ func return_to_auto_scroll() -> bool:
 func is_scroll_displaced() -> bool:
 	return scroll_state.is_displaced()
 
+func is_scroll_manually_displaced() -> bool:
+	return scroll_state.is_manually_displaced()
+
 func is_scroll_navigating() -> bool:
 	return scroll_state.is_navigating()
 

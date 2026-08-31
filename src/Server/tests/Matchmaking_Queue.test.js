@@ -490,6 +490,19 @@ test("an unavailable resume clears the stale room session for the next match", a
     );
 });
 
+test("a resync after room closure reports an unavailable room instead of leaving recovery pending", async () => {
+    const { lobby, players, sockets, room } = await createLobbyOfThree();
+
+    await lobby.closeRoom(room, "failure_limit_reached", "home");
+    sockets[0].sentMessages = [];
+
+    await lobby.resyncState(players[0], "collapse-resync");
+
+    const unavailable = messagesOfType(sockets[0], "resume_unavailable");
+    assert.equal(unavailable.length, 1);
+    assert.equal(unavailable[0].reason, "room_unavailable");
+});
+
 test("bots are pre-readied so a debug room only waits on its real player", async () => {
     const cluster = createSharedFakeCluster();
     const lobby = new LobbyManager(cluster.makeStore("podA"));

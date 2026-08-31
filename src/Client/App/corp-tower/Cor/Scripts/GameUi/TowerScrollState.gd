@@ -135,5 +135,8 @@ func step(delta: float) -> bool:
 func is_displaced() -> bool:
 	return absf(displayed_offset_units - normal_target_units) > EPSILON or mode != Mode.AUTO
 
+func is_manually_displaced() -> bool:
+	return mode != Mode.AUTO
+
 func is_navigating() -> bool:
 	return mode == Mode.NAVIGATING_TO_TROUBLE or mode == Mode.RETURNING_TO_AUTO

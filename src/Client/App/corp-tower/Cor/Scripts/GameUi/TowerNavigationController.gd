@@ -61,7 +61,7 @@ func refresh() -> void:
 		bool(inventory.is_block_dragging) or bool(inventory.is_armed)
 	)
 	var show_trouble: bool = !trouble.is_empty() and selected_block_id == ""
-	var show_back: bool = tower_stack.is_scroll_displaced()
+	var show_back: bool = tower_stack.is_scroll_manually_displaced()
 	_set_visible(show_trouble, show_back)
 	if trouble_button != null:
 		trouble_button.disabled = placement_blocked

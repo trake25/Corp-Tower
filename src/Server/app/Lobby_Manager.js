@@ -1309,7 +1309,12 @@ class LobbyManager {
     }
 
     async resyncState(player, requestId = "") {
-        if (!await this.isCurrentPlayerConnection(player) || !player.room) {
+        if (!await this.isCurrentPlayerConnection(player)) {
+            return;
+        }
+
+        if (!player.room) {
+            await this.reportResumeUnavailable(player, "room_unavailable");
             return;
         }
 
