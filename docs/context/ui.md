@@ -35,12 +35,16 @@ bots are already ready.
 
 Network signals drive room entry, match start, teardown, navigation, and recovery.
 During active-match recovery, a centred blocking modal keeps the current screen
-visible while the client applies the authoritative snapshot; gameplay and debug
+visible while the client applies authoritative recovery state; gameplay and debug
 input stay unavailable until it completes. A terminal resume result routes to
 matchmaking through an explicit continuation. Ordinary close returns to
 matchmaking; terminal failure or an explicit Home destination returns Home.
 Lobby timeout and unexpected matchmaking disconnect use an auto-dismiss modal.
 Terminal game over keeps Summary active until the server closes the room.
+
+Find Match has no retained gameplay view. Public Lobby retains the gameplay root
+only for its debug layer while resetting and suppressing gameplay presentation;
+entering Play or a tutorial restores the gameplay layers.
 
 Startup Splash preserves continuity while session restoration is unresolved.
 Authentication shows only configured providers. Android uses native providers

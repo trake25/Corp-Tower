@@ -262,7 +262,7 @@ func _on_play_instance_tutorial_exited() -> void:
 	show_home_screen()
 
 func show_find_match_screen() -> void:
-	_ensure_play_instance()
+	_teardown_play_instance()
 
 	var screen := FindMatchScreenScene.instantiate()
 	screen.cancel_requested.connect(_on_cancel_requested)

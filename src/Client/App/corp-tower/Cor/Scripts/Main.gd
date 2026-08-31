@@ -19,6 +19,7 @@ const PowerControllerScript = preload("res://Cor/Scripts/GameUi/PowerController.
 const InventoryControllerScript = preload("res://Cor/Scripts/GameUi/InventoryController.gd")
 const TopBarControllerScript = preload("res://Cor/Scripts/GameUi/TopBarController.gd")
 const TowerNavigationControllerScript = preload("res://Cor/Scripts/GameUi/TowerNavigationController.gd")
+const PresentationVisibilityScript = preload("res://Cor/Scripts/GameUi/PresentationVisibility.gd")
 const VisualHooksScript = preload("res://Cor/Scripts/GameUi/VisualHooks.gd")
 const VisualHooksControllerScript = preload("res://Cor/Scripts/GameUi/VisualHooksController.gd")
 const TutorialControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialController.gd")
@@ -46,6 +47,7 @@ var power
 var inventory
 var top_bar
 var tower_navigation
+var presentation_visibility
 var visual_hooks
 var visual_fx
 var tutorial
@@ -85,6 +87,8 @@ func _ready() -> void:
 	add_child(top_bar)
 	tower_navigation = TowerNavigationControllerScript.new()
 	add_child(tower_navigation)
+	presentation_visibility = PresentationVisibilityScript.new()
+	add_child(presentation_visibility)
 	visual_hooks = VisualHooksScript.new()
 	visual_fx = VisualHooksControllerScript.new()
 	add_child(visual_fx)
@@ -127,6 +131,7 @@ func _ready() -> void:
 	})
 	tutorial_menu.setup(tutorial, _on_tutorial_menu_exit)
 	tower_navigation.setup(tower_stack, match_state, inventory, should_block_tower_navigation)
+	presentation_visibility.setup(reset_ui)
 
 	if tower_stack.has_signal("scroll_offset_changed"):
 		tower_stack.connect("scroll_offset_changed", Callable(background_parallax, "set_scroll_pixels"))
@@ -181,6 +186,7 @@ func bind_ui_nodes() -> void:
 
 	top_bar.bind_nodes(binder)
 	tower_navigation.bind_nodes(binder)
+	presentation_visibility.bind_nodes(binder)
 	inventory.bind_nodes(binder)
 	debug_panel.bind_nodes(binder)
 	latency_indicator.bind_nodes(binder)
@@ -240,6 +246,7 @@ func toggle_debug_overlay() -> void:
 
 func set_debug_context(context: String) -> void:
 	debug_panel.set_screen_context(context)
+	presentation_visibility.set_screen_context(context)
 
 func _on_room_joined(data) -> void:
 	if bool(data.get("matchStarted", true)):

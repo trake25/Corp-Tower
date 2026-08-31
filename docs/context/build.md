@@ -52,10 +52,10 @@ requires a rendered device check, not a permanent pixel assertion.
 ## Endpoint and authentication injection
 
 `write-endpoint-config.sh` regenerates the committed Godot endpoint configuration
-before a client build. It owns primary/failover WebSocket targets, debug/demo
-flags, Supabase public configuration, OAuth enablement and redirect, and native
-provider identifiers. Empty optional values disable their feature; partial
-Supabase configuration or OAuth without a project fails the build.
+before a client build. It owns one selected WebSocket target, debug/demo flags,
+Supabase public configuration, OAuth enablement and redirect, and native provider
+identifiers. Empty optional values disable their feature; partial Supabase
+configuration or OAuth without a project fails the build.
 
 The Deeplink plugin receives Android OAuth redirects through its export
 configuration and requires the Gradle export path. Native Google and Facebook

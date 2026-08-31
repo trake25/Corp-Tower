@@ -24,7 +24,6 @@ jobs:
     outputs:
       instance: ${{ steps.resolve.outputs.instance }}
       ws_primary: ${{ steps.resolve.outputs.ws_primary }}
-      ws_failover: ${{ steps.resolve.outputs.ws_failover }}
       debug_ui: ${{ steps.resolve.outputs.debug_ui }}
       demo_mode: ${{ steps.resolve.outputs.demo_mode }}
       domain: ${{ steps.resolve.outputs.domain }}
@@ -37,7 +36,6 @@ jobs:
             devtod1)
               echo "instance=1" >> "$GITHUB_OUTPUT"
               echo "ws_primary=wss://devwstod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
-              echo "ws_failover=wss://devwstod2.galaxxigames.com" >> "$GITHUB_OUTPUT"
               echo "debug_ui=true" >> "$GITHUB_OUTPUT"
               echo "demo_mode=false" >> "$GITHUB_OUTPUT"
               echo "domain=devtod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
@@ -45,7 +43,6 @@ jobs:
             devtod2)
               echo "instance=2" >> "$GITHUB_OUTPUT"
               echo "ws_primary=wss://devwstod2.galaxxigames.com" >> "$GITHUB_OUTPUT"
-              echo "ws_failover=wss://devwstod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
               echo "debug_ui=true" >> "$GITHUB_OUTPUT"
               echo "demo_mode=false" >> "$GITHUB_OUTPUT"
               echo "domain=devtod2.galaxxigames.com" >> "$GITHUB_OUTPUT"
@@ -53,7 +50,6 @@ jobs:
             toddemo)
               echo "instance=3" >> "$GITHUB_OUTPUT"
               echo "ws_primary=wss://wstoddemo.galaxxigames.com" >> "$GITHUB_OUTPUT"
-              echo "ws_failover=wss://devwstod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
               echo "debug_ui=false" >> "$GITHUB_OUTPUT"
               echo "demo_mode=true" >> "$GITHUB_OUTPUT"
               echo "domain=toddemo.galaxxigames.com" >> "$GITHUB_OUTPUT"
@@ -91,7 +87,6 @@ jobs:
       - name: Write client endpoint config
         env:
           CORP_TOWER_WS_PRIMARY: ${{ needs.resolve-target.outputs.ws_primary }}
-          CORP_TOWER_WS_FAILOVER: ${{ needs.resolve-target.outputs.ws_failover }}
           CORP_TOWER_DEBUG_UI: ${{ needs.resolve-target.outputs.debug_ui }}
           CORP_TOWER_DEMO_MODE: ${{ needs.resolve-target.outputs.demo_mode }}
           CORP_TOWER_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

@@ -6,7 +6,7 @@ whose meaning cannot be recovered from only one endpoint. Gameplay →
 
 ## Connection and identity
 
-Build injects the endpoint; Godot uses `WebSocketPeer` and the server uses `ws`.
+Build injects one endpoint; Godot uses `WebSocketPeer` and the server uses `ws`.
 Network Manager renders server messages only. On open it sends stored reconnect
 and identity credentials. A valid pair resumes its seat; otherwise the server
 creates a session and joins or creates a room. Verified identity overrides the
@@ -16,11 +16,13 @@ If the persisted room cannot be restored, the server clears its session room
 reference before reporting `resume_unavailable`, so the next matchmaking attempt
 can use the same session without retrying the vanished room.
 
-Focus return blocks play and requests fresh state. A stale transport is closed
-before bounded reconnect; one total recovery deadline spans resync and reconnect,
-then ignores late state and returns the player Home. Manual disconnect and app
-close do not recover. RTT is only a quality indicator—missing authoritative
-state starts recovery.
+Focus return blocks play and requests fresh state. Missing authoritative updates
+start recovery only while the match is expected to stream in `starting` or
+`playing`; `finished`, `failed`, and `game_over` may stay quiet for presentation.
+A stale transport reconnects to the same configured endpoint. One total recovery
+deadline spans resync and reconnect, then ignores late state and returns the
+player Home. Manual disconnect and app close do not recover. RTT is only a
+quality indicator.
 
 Only a session's current opaque connection id may act or disconnect, so an old
 socket cannot invalidate a resumed connection.
@@ -113,16 +115,18 @@ persisted or replayed. Snapshots persist tower, inventory, scores, checkpoints,
 retries, Power, lifecycle, and deadlines. Placement breakdowns stay server-owned.
 
 `game_state.stateRevision` orders durable state across recovery. A reconnect or
-`resync_state` receives a targeted snapshot with empty transient-event arrays;
-the client applies it before re-enabling interaction. A missing room produces
+`resync_state` receives a targeted snapshot with empty transient-event arrays.
+Either the correlated snapshot or a newer accepted complete `game_state` proves
+authoritative progress before interaction is re-enabled. A missing room produces
 `resume_unavailable` rather than leaving Play attached to stale state.
 
 ## Wire adapters
 
 Server Entry parses sockets and forwards actions; Lobby Manager resolves the
 lease owner or republishes; Game Engine produces state without socket or Redis
-knowledge. Network Manager owns polling, reconnect credentials, failover, and
-shell signals, never game outcomes. Unknown optional fields degrade quietly.
+knowledge. Network Manager owns polling, the configured endpoint, reconnect
+credentials, and shell signals, never game outcomes. Unknown optional fields
+degrade quietly.
 
 ## Compatibility boundary
 

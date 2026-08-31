@@ -71,15 +71,12 @@ jobs:
           case "${{ inputs.websocket_target }}" in
             wstodplay)
               echo "CORP_TOWER_WS_PRIMARY=wss://wstodplay.galaxxigames.com" >> "$GITHUB_ENV"
-              echo "CORP_TOWER_WS_FAILOVER=" >> "$GITHUB_ENV"
               ;;
             devwstod1)
               echo "CORP_TOWER_WS_PRIMARY=wss://devwstod1.galaxxigames.com" >> "$GITHUB_ENV"
-              echo "CORP_TOWER_WS_FAILOVER=wss://devwstod2.galaxxigames.com" >> "$GITHUB_ENV"
               ;;
             devwstod2)
               echo "CORP_TOWER_WS_PRIMARY=wss://devwstod2.galaxxigames.com" >> "$GITHUB_ENV"
-              echo "CORP_TOWER_WS_FAILOVER=wss://devwstod1.galaxxigames.com" >> "$GITHUB_ENV"
               ;;
             *)
               echo "::error::Unknown WebSocket target '${{ inputs.websocket_target }}'."

@@ -128,16 +128,16 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:3 | find_match_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | back_requested · signal | |
 
-### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 461 ln
+### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 468 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:1 | @file · file | ask ScreenManager to open the Tutorial |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:27 | tutorial_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:28 | tutorial_exited · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:238 | toggle_debug_overlay | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:241 | set_debug_context | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:300 | start_tutorial | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:28 | tutorial_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:29 | tutorial_exited · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:244 | toggle_debug_overlay | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:247 | set_debug_context | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:307 | start_tutorial | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd — 49 ln
 
@@ -232,25 +232,24 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Request_Transport.gd:12 | bind_nodes | |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Request_Transport.gd:19 | post | |
 
-### src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd — 14 ln
+### src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd — 13 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:1 | @file · file | **build-time flags, rewritten per build by `write-endpoint-config.sh`** |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:1 | EndpointConfig · class_name | |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:3 | PRIMARY · const | |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:4 | FAILOVER · const | |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:5 | DEBUG_UI_ENABLED · const | |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:6 | DEMO_MODE_ENABLED · const | |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:7 | SUPABASE_URL · const | |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:8 | SUPABASE_ANON_KEY · const | |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:9 | AUTH_OAUTH_ENABLED · const | |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:10 | AUTH_REDIRECT_WEB · const | |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:11 | AUTH_GOOGLE_SERVER_CLIENT_ID · const | |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:12 | AUTH_FACEBOOK_APP_ID · const | |
-| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:13 | AUTH_FACEBOOK_CLIENT_TOKEN · const | |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:4 | DEBUG_UI_ENABLED · const | |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:5 | DEMO_MODE_ENABLED · const | |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:6 | SUPABASE_URL · const | |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:7 | SUPABASE_ANON_KEY · const | |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:8 | AUTH_OAUTH_ENABLED · const | |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:9 | AUTH_REDIRECT_WEB · const | |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:10 | AUTH_GOOGLE_SERVER_CLIENT_ID · const | |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:11 | AUTH_FACEBOOK_APP_ID · const | |
+| src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:12 | AUTH_FACEBOOK_CLIENT_TOKEN · const | |
 
-### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 565 ln
+### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 579 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -268,16 +267,16 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:61 | recovery_recovered · signal | |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:62 | recovery_unavailable · signal | |
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:64 | connect_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:104 | disconnect_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:124 | place_block | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:139 | send_ready | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:145 | leave_lobby | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:232 | is_recovering | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:334 | send_quick_chat | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:343 | activate_power | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:508 | update_config | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:520 | set_latency_probe_enabled | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:96 | disconnect_server | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:115 | place_block | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:130 | send_ready | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:136 | leave_lobby | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:223 | is_recovering | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:344 | send_quick_chat | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:353 | activate_power | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:522 | update_config | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:534 | set_latency_probe_enabled | |
 
 ---
 
-24 files · 127 stable anchors.
+24 files · 126 stable anchors.

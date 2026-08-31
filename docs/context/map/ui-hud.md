@@ -232,6 +232,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/PowerController.gd:13 | bind_nodes | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/PowerController.gd:82 | process_power_events | |
 
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/PresentationVisibility.gd — 53 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/PresentationVisibility.gd:1 | @file · file | PresentationVisibility client behavior |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/PresentationVisibility.gd:14 | bind_nodes | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/PresentationVisibility.gd:18 | set_screen_context | |
+
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd — 155 ln
 
 | File:Ln | Anchor | Purpose |
@@ -485,4 +493,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-40 files · 236 stable anchors.
+41 files · 238 stable anchors.

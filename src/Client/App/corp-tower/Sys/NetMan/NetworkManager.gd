@@ -14,16 +14,16 @@ var recovery_deadline_msec := -1
 var recovery_expiry_msec := -1
 var recovery_reconnect_pending := false
 var recovery_sequence := 0
+var recovery_start_revision := -1
 var last_state_revision := -1
 var last_game_state_msec := -1
+var latest_match_state := ""
 var last_latency_rtt_ms := -1
 var match_active := false
 
 var player_id := ""
 var reconnect_token := ""
 var profile_id := ""
-var current_url := ""
-var tried_failover := false
 var connect_attempt_elapsed := 0.0
 var background_since_msec := -1
 var latency_probe_enabled := false
@@ -46,7 +46,7 @@ const RECOVERY_TOTAL_TIMEOUT_MS := 10000
 const LATENCY_PROBE_INTERVAL_SECONDS := 1.0
 const LATENCY_PROBE_TIMEOUT_MS := 5000
 const SERVER_URL := EndpointConfig.PRIMARY
-const FAILOVER_SERVER_URL := EndpointConfig.FAILOVER
+const STREAMING_MATCH_STATES := ["starting", "playing"]
 
 signal status_changed(text)
 signal room_joined(data)
@@ -61,14 +61,10 @@ signal recovery_started
 signal recovery_recovered
 signal recovery_unavailable(data)
 
-func connect_server(is_auto_reconnect := false, is_failover_retry := false):
+func connect_server(is_auto_reconnect := false):
 	if is_auto_reconnect:
 		status_changed.emit("Reconnecting...")
-	elif is_failover_retry:
-		status_changed.emit("Primary server unreachable, trying backup...")
 	else:
-		current_url = SERVER_URL
-		tried_failover = false
 		status_changed.emit("Connecting...")
 
 	if is_conn_estab or is_connecting:
@@ -86,7 +82,7 @@ func connect_server(is_auto_reconnect := false, is_failover_retry := false):
 	is_connecting = true
 	load_reconnect_identity()
 
-	var error = ws.connect_to_url(current_url)
+	var error = ws.connect_to_url(SERVER_URL)
 
 	if error == OK:
 		connect_attempt_elapsed = 0.0
@@ -96,10 +92,6 @@ func connect_server(is_auto_reconnect := false, is_failover_retry := false):
 		is_connecting = false
 		if is_auto_reconnect:
 			schedule_auto_reconnect()
-		elif not tried_failover and FAILOVER_SERVER_URL != "":
-			tried_failover = true
-			current_url = FAILOVER_SERVER_URL
-			connect_server(false, true)
 
 func disconnect_server():
 	status_changed.emit("Disconnecting...")
@@ -109,8 +101,7 @@ func disconnect_server():
 	is_connecting = false
 	auto_reconnect_enabled = false
 	auto_reconnect_delay_remaining = -1.0
-	match_active = false
-	reset_recovery_state()
+	reset_match_tracking()
 	reset_latency_probe()
 	if ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
 		ws.close()
@@ -232,12 +223,20 @@ func schedule_auto_reconnect():
 func is_recovering() -> bool:
 	return recovery_state != "healthy"
 
+func reset_match_tracking() -> void:
+	match_active = false
+	last_state_revision = -1
+	last_game_state_msec = -1
+	latest_match_state = ""
+	reset_recovery_state()
+
 func reset_recovery_state() -> void:
 	recovery_state = "healthy"
 	recovery_request_id = ""
 	recovery_deadline_msec = -1
 	recovery_expiry_msec = -1
 	recovery_reconnect_pending = false
+	recovery_start_revision = -1
 
 func recovery_timeout_ms() -> int:
 	if last_latency_rtt_ms < 0:
@@ -254,6 +253,7 @@ func begin_recovery(force_reconnect := false) -> void:
 		return
 
 	recovery_state = "resyncing"
+	recovery_start_revision = last_state_revision
 	recovery_started.emit()
 	var now_msec := Time.get_ticks_msec()
 	recovery_expiry_msec = now_msec + RECOVERY_TOTAL_TIMEOUT_MS
@@ -304,10 +304,20 @@ func settle_recovery(data) -> void:
 	if recovery_state == "healthy" or recovery_state == "unavailable":
 		return
 
-	if not bool(data.get("snapshot", false)):
-		return
+	var correlated_snapshot := (
+		bool(data.get("snapshot", false))
+		and (
+			recovery_request_id == ""
+			or str(data.get("resyncRequestId", "")) == recovery_request_id
+		)
+	)
+	var revision := int(data.get("stateRevision", -1))
+	var authoritative_progress := (
+		recovery_start_revision < 0
+		or revision > recovery_start_revision
+	)
 
-	if recovery_request_id != "" and str(data.get("resyncRequestId", "")) != recovery_request_id:
+	if not correlated_snapshot and not authoritative_progress:
 		return
 
 	reset_recovery_state()
@@ -372,35 +382,41 @@ func accept_game_state(data) -> bool:
 			return false
 		last_state_revision = revision
 
+	if data.has("state"):
+		latest_match_state = str(data.get("state", ""))
+
 	last_game_state_msec = Time.get_ticks_msec()
 	match_active = true
 	return true
 
-func _process(delta: float) -> void:
-	if (
-		recovery_state != "healthy"
-		and recovery_state != "unavailable"
-		and recovery_expiry_msec >= 0
-		and Time.get_ticks_msec() >= recovery_expiry_msec
-	):
-		mark_recovery_unavailable("recovery_timed_out")
-	elif (
-		recovery_state == "resyncing"
-		and recovery_deadline_msec >= 0
-		and Time.get_ticks_msec() >= recovery_deadline_msec
-	):
-		begin_controlled_reconnect()
-
+func check_stale_game_state(now_msec: int) -> void:
 	if (
 		match_active
 		and recovery_state == "healthy"
 		and background_since_msec < 0
 		and is_conn_estab
+		and latest_match_state in STREAMING_MATCH_STATES
 		and last_game_state_msec >= 0
-		and Time.get_ticks_msec() - last_game_state_msec >= GAME_STATE_STALE_TIMEOUT_MS
+		and now_msec - last_game_state_msec >= GAME_STATE_STALE_TIMEOUT_MS
 	):
 		begin_recovery(false)
 
+func check_recovery_deadlines(now_msec: int) -> void:
+	if (
+		recovery_state != "healthy"
+		and recovery_state != "unavailable"
+		and recovery_expiry_msec >= 0
+		and now_msec >= recovery_expiry_msec
+	):
+		mark_recovery_unavailable("recovery_timed_out")
+	elif (
+		recovery_state == "resyncing"
+		and recovery_deadline_msec >= 0
+		and now_msec >= recovery_deadline_msec
+	):
+		begin_controlled_reconnect()
+
+func _process(delta: float) -> void:
 	if auto_reconnect_delay_remaining >= 0.0:
 		auto_reconnect_delay_remaining -= delta
 		if auto_reconnect_delay_remaining <= 0.0:
@@ -451,11 +467,14 @@ func _process(delta: float) -> void:
 					true
 				)
 			"room_closed":
-				match_active = false
-				reset_recovery_state()
+				reset_match_tracking()
 				auto_reconnect_enabled = false
 				auto_reconnect_delay_remaining = -1.0
 				room_closed.emit(data)
+
+	var now_msec := Time.get_ticks_msec()
+	check_recovery_deadlines(now_msec)
+	check_stale_game_state(now_msec)
 
 	var state = ws.get_ready_state()
 
@@ -496,11 +515,6 @@ func _process(delta: float) -> void:
 					begin_recovery(true)
 				elif (auto_reconnect_enabled or recovery_state == "reconnecting") and not manual_disconnect_requested:
 					schedule_auto_reconnect()
-				elif is_connecting and not is_conn_estab and not tried_failover and not manual_disconnect_requested and FAILOVER_SERVER_URL != "":
-					tried_failover = true
-					current_url = FAILOVER_SERVER_URL
-					is_connecting = false
-					connect_server(false, true)
 				else:
 					status_changed.emit("Disconnected")
 					client_status.emit("[Connect]")

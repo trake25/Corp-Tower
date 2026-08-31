@@ -64,7 +64,7 @@ bounded source read. Local implementation detail stays in source.
 | .github/actions/verify-eks-destroy/action.yml:4 | inputs · key | |
 | .github/actions/verify-eks-destroy/action.yml:10 | runs · key | |
 
-### .github/workflows/Android-Deploy-wstodplay.yml — 511 ln
+### .github/workflows/Android-Deploy-wstodplay.yml — 508 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -128,7 +128,7 @@ bounded source read. Local implementation detail stays in source.
 | .github/workflows/Backup-Deploy-Game-Server.yml:15 | jobs · key | |
 | .github/workflows/Backup-Deploy-Game-Server.yml:16 | deploy-backup · job | |
 
-### .github/workflows/Backup-Deploy-Web-Server.yml — 143 ln
+### .github/workflows/Backup-Deploy-Web-Server.yml — 138 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -136,8 +136,8 @@ bounded source read. Local implementation detail stays in source.
 | .github/workflows/Backup-Deploy-Web-Server.yml:3 | on · key | |
 | .github/workflows/Backup-Deploy-Web-Server.yml:20 | jobs · key | |
 | .github/workflows/Backup-Deploy-Web-Server.yml:21 | resolve-target · job | |
-| .github/workflows/Backup-Deploy-Web-Server.yml:67 | build · job | |
-| .github/workflows/Backup-Deploy-Web-Server.yml:123 | deploy-to-backup · job | |
+| .github/workflows/Backup-Deploy-Web-Server.yml:63 | build · job | |
+| .github/workflows/Backup-Deploy-Web-Server.yml:118 | deploy-to-backup · job | |
 
 ### .github/workflows/Backup-Diagnose.yml — 42 ln
 
@@ -219,7 +219,7 @@ bounded source read. Local implementation detail stays in source.
 | .github/workflows/EKS-Deploy-Game-Server.yml:71 | build-and-push · job | |
 | .github/workflows/EKS-Deploy-Game-Server.yml:117 | deploy-eks · job | |
 
-### .github/workflows/EKS-Deploy-Web-Server.yml — 356 ln
+### .github/workflows/EKS-Deploy-Web-Server.yml — 355 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -229,8 +229,8 @@ bounded source read. Local implementation detail stays in source.
 | .github/workflows/EKS-Deploy-Web-Server.yml:27 | resolve-target · job | |
 | .github/workflows/EKS-Deploy-Web-Server.yml:53 | verify-infra · job | |
 | .github/workflows/EKS-Deploy-Web-Server.yml:75 | build · job | |
-| .github/workflows/EKS-Deploy-Web-Server.yml:129 | push · job | |
-| .github/workflows/EKS-Deploy-Web-Server.yml:167 | deploy-eks · job | |
+| .github/workflows/EKS-Deploy-Web-Server.yml:128 | push · job | |
+| .github/workflows/EKS-Deploy-Web-Server.yml:166 | deploy-eks · job | |
 
 ### .github/workflows/EKS-Force-Unlock.yml — 59 ln
 
@@ -1185,7 +1185,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/validate-docs.mjs:354 | counts · const | |
 | scripts/validate-docs.mjs:426 | classification · const | |
 
-### scripts/write-endpoint-config.sh — 100 ln
+### scripts/write-endpoint-config.sh — 97 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|

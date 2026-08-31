@@ -95,7 +95,6 @@ jobs:
       - name: Write client endpoint config
         env:
           CORP_TOWER_WS_PRIMARY: ${{ needs.resolve-target.outputs.ws_primary }}
-          CORP_TOWER_WS_FAILOVER: ""
           CORP_TOWER_DEBUG_UI: "false"
           # Both unset means the build has no sign-in and uses a local profile id.
           CORP_TOWER_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
