@@ -476,12 +476,28 @@ class LobbyManager {
         DebugConfig.applyDefaults();
     }
 
+    invalidateTowerStabilityResults() {
+        this.rooms.forEach(room => {
+            if (!room.engine?.room || room.engine.room.state === "closed") return;
+            room.engine.room.towerStabilityResult = null;
+        });
+    }
+
     async resetDebugConfigToDefaults() {
         const previousBotsEnabled = GameConfig.debugBotsEnabled;
         const previousBotCount = GameConfig.debugBotCount;
         const previousStartLevel = GameConfig.debugStartLevel;
+        const previousStabilityDifficulty = GameConfig.towerStabilityDifficulty;
+        const previousLateralLoadShare = GameConfig.towerLateralLoadShare;
 
         this.applyDefaultDebugConfig();
+
+        if (
+            previousStabilityDifficulty !== GameConfig.towerStabilityDifficulty ||
+            previousLateralLoadShare !== GameConfig.towerLateralLoadShare
+        ) {
+            this.invalidateTowerStabilityResults();
+        }
 
         if (!GameConfig.debugBotsEnabled) {
             this.rooms.forEach(room => {
@@ -514,9 +530,17 @@ class LobbyManager {
             return true;
         }
 
+        const previousValue = key === "towerStabilityDifficulty" || key === "towerLateralLoadShare"
+            ? GameConfig[key]
+            : undefined;
+
         if (!DebugConfig.applyValue(key, value)) {
             console.log("Rejected unknown debug config:", key);
             return false;
+        }
+
+        if (previousValue !== undefined && previousValue !== GameConfig[key]) {
+            this.invalidateTowerStabilityResults();
         }
 
         if (key === "debugBotsEnabled" || key === "debugBotCount") {

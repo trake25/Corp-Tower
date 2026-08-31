@@ -21,10 +21,13 @@ Engine builds durable snapshots separately from broadcasts. Rebuild decay
 survives resumes until the tower reaches a new height target.
 
 Four-way contact separates stability and pose components; per-cell mass flows
-down independent paths against physical contact capacity. Difficulty tightens
-geometry and overload limits, but target height never raises capacity; zero
-keeps diagnostics while suppressing collapse risk. Overload removes failed
-supports and groups without a ground path, preserving disconnected towers.
+down independent paths against physical contact capacity. A deterministic lateral pass
+redirects a bounded share only through independently grounded side contacts, conserves
+mass and moment, and debits one residual-capacity ledger across shared supports. Scoring
+credits accepted bracing once while collapse dependency remains downward. Difficulty
+tightens geometry and overload limits, but target height never raises capacity; zero
+keeps diagnostics while suppressing collapse risk. Overload removes failed supports and
+groups without a ground path, preserving disconnected towers.
 Collapse alone stays active. Supply consumes bot-held Replenish, waits on a
 human-held one, and fails without rescue; Timer expiry and unmet Impact also fail.
 
@@ -64,9 +67,12 @@ enforced here. Redis remains active-session storage, not profile storage.
 `Debug_Config.js` is the write boundary for runtime tuning. It rejects unknown
 keys, clamps values, enforces enum allowlists and dependent bounds, then Lobby
 Manager reconciles affected rooms and broadcasts the authoritative snapshot.
-`towerStabilityDifficulty` is the only writable stability dial; derived physics
-constants have no setters. Grid bounds remain limited by the client viewport and
-the derived site is forced even so odd debug inputs cannot move it off-center.
+Stability difficulty and lateral brace share are independent writable dials: difficulty
+controls overload tolerance, while brace share caps sideways load. Changing either
+invalidates cached analysis so the next authoritative evaluation uses the new tuning
+without fabricating a physics event; derived physics constants have no setters. Grid
+bounds remain limited by the client viewport and the derived site is forced even so odd
+debug inputs cannot move it off-center.
 Visual-hook durations travel through `game_state`, while their enablement and
 other exposed controls use the debug snapshot. Restart is an action, not a
 tunable. Recovery scoring is a server-applied percentage; the client control

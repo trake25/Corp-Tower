@@ -2,6 +2,12 @@ extends GutTest
 
 const HarnessScript = preload("res://Tests/Gut/Helpers/GameUiHarness.gd")
 
+class NetworkStub:
+	var updates: Array = []
+
+	func update_config(key: String, value) -> void:
+		updates.append([key, value])
+
 const CONFIG_FIXTURE := {
 	"placementCooldown": 1500,
 	"debugBotsEnabled": true,
@@ -18,6 +24,8 @@ const CONFIG_FIXTURE := {
 	"targetHeightMultiplier": 5,
 	"towerStabilityFeedbackMode": "live_preview",
 	"towerStabilityMoodThreshold": 12,
+	"towerStabilityDifficulty": 25,
+	"towerLateralLoadShare": 0.4,
 	"showLatencyIndicator": true,
 	"powerLastChanceEnabled": true,
 	"towerStructuralPoseMaxAngleDeg": 7,
@@ -51,6 +59,11 @@ func test_apply_config_syncs_sliders_toggles_and_options() -> void:
 	assert_true((harness.find("LatencyIndicatorToggle") as CheckButton).button_pressed, "The latency toggle should sync from the config payload.")
 	assert_eq((harness.find("RecoveryHeightScoreSlider") as HSlider).value, 70.0)
 	assert_eq((harness.find("RecoveryHeightScoreSlider") as HSlider).step, 10.0)
+	var lateral_share := harness.find("TowerLateralLoadShareSlider") as HSlider
+	assert_eq(lateral_share.value, 40.0)
+	assert_eq(lateral_share.min_value, 0.0)
+	assert_eq(lateral_share.max_value, 100.0)
+	assert_eq(lateral_share.step, 5.0)
 	var feedback := harness.find("TowerFeedbackModeButton") as OptionButton
 	assert_eq(feedback.item_count, 2)
 	assert_eq(feedback.get_item_text(0), "Warnings Only")
@@ -88,6 +101,18 @@ func test_brick_mood_threshold_row_syncs_from_the_config() -> void:
 		12.0,
 		"The brick mood threshold slider should sync from the config payload."
 	)
+
+func test_lateral_load_share_row_converts_percent_to_the_server_fraction() -> void:
+	var network_stub := NetworkStub.new()
+	harness.main.debug_panel.network = network_stub
+	var slider := harness.find("TowerLateralLoadShareSlider") as HSlider
+
+	slider.value = 65.0
+
+	assert_eq(network_stub.updates.size(), 1)
+	assert_eq(network_stub.updates[0][0], "towerLateralLoadShare")
+	assert_almost_eq(float(network_stub.updates[0][1]), 0.65, 0.001)
+	assert_eq((harness.find("TowerLateralLoadShareLabel") as Button).text, "Lateral Load Share: 65%")
 
 func test_mood_threshold_reaches_the_tower_renderer() -> void:
 	var tower_stack: Node = harness.find("TowerStack")

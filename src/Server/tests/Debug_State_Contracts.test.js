@@ -117,9 +117,10 @@ test("Recovery score percentage is exposed and clamped from zero to one hundred"
     assert.equal(lobbyManager.getDebugConfig().recoveryHeightScorePercent, 100);
 });
 
-test("stability difficulty is the only exposed stability tunable", async () => {
+test("stability difficulty and lateral share are the exposed stability tunables", async () => {
     const lobbyManager = new LobbyManager();
-    const original = GameConfig.towerStabilityDifficulty;
+    const originalDifficulty = GameConfig.towerStabilityDifficulty;
+    const originalLateralShare = GameConfig.towerLateralLoadShare;
 
     try {
         await lobbyManager.updateDebugConfig("towerStabilityDifficulty", 250);
@@ -131,11 +132,56 @@ test("stability difficulty is the only exposed stability tunable", async () => {
         await lobbyManager.updateDebugConfig("towerStabilityDifficulty", 65);
         assert.equal(lobbyManager.getDebugConfig().towerStabilityDifficulty, 65);
 
+        await lobbyManager.updateDebugConfig("towerLateralLoadShare", -1);
+        assert.equal(GameConfig.towerLateralLoadShare, 0);
+        await lobbyManager.updateDebugConfig("towerLateralLoadShare", 2);
+        assert.equal(GameConfig.towerLateralLoadShare, 1);
+        await lobbyManager.updateDebugConfig("towerLateralLoadShare", 0.4);
+        assert.equal(lobbyManager.getDebugConfig().towerLateralLoadShare, 0.4);
+
         assert.equal(await lobbyManager.updateDebugConfig("towerOverhangWeight", 1), false);
         assert.equal(GameConfig.towerOverhangWeight, undefined);
     } finally {
-        GameConfig.towerStabilityDifficulty = original;
+        GameConfig.towerStabilityDifficulty = originalDifficulty;
+        GameConfig.towerLateralLoadShare = originalLateralShare;
     }
+});
+
+test("stability tuning invalidates cached analysis without mutating the standing tower", async () => {
+    const lobbyManager = new LobbyManager();
+    const sent = [];
+    const state = {
+        state: "playing",
+        towerStability: 37,
+        towerStabilityResult: { stability: 37 },
+        towerBlocks: [{ block: { id: "I" }, supportStability: 37 }]
+    };
+    lobbyManager.rooms = [{
+        players: [{
+            id: "P1",
+            ws: { readyState: 1, send: value => sent.push(JSON.parse(value)) }
+        }],
+        engine: { room: state, stopBots() {} }
+    }];
+
+    await lobbyManager.updateDebugConfig("towerLateralLoadShare", 0.65);
+
+    assert.equal(state.towerStabilityResult, null);
+    assert.equal(state.towerStability, 37);
+    assert.equal(state.towerBlocks[0].supportStability, 37);
+    assert.equal(sent.at(-1).type, "debug_config");
+    assert.equal(sent.at(-1).config.towerLateralLoadShare, 0.65);
+
+    const currentCache = { stability: 37 };
+    state.towerStabilityResult = currentCache;
+    await lobbyManager.updateDebugConfig("towerLateralLoadShare", 0.65);
+    assert.equal(state.towerStabilityResult, currentCache);
+
+    await lobbyManager.updateDebugConfig("resetDebugConfig", true);
+    assert.equal(GameConfig.towerStabilityDifficulty, 25);
+    assert.equal(GameConfig.towerLateralLoadShare, 0.4);
+    assert.equal(state.towerStabilityResult, null);
+    assert.equal(state.towerBlocks[0].supportStability, 37);
 });
 
 test("Last Chance power toggle round-trips through debug config and resets", async () => {

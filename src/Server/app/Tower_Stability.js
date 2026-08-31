@@ -1,6 +1,7 @@
 "use strict";
 const { describeGroups, comparePlacement } = require("./Tower_Structure_Assessment");
 const { assessLoadCapacity } = require("./Tower_Load_Capacity");
+const LateralBracing = require("./Tower_Lateral_Bracing");
 function cellsFor(entry) {
     const block = entry.block || {};
     const cells = Array.isArray(block.cells) ? block.cells : [];
@@ -239,6 +240,8 @@ function buildGroups(nodes) {
             contacts: [],
             dependents: new Set(),
             supportLinks: [],
+            attributionSupportLinks: [],
+            lateralLinks: [],
             mass: 0,
             moment: 0,
             minY: Infinity,
@@ -398,7 +401,7 @@ function interfaceFor(group, config, height, disabled) {
         heightProgress
     };
 }
-function analyseGroups(groups, config, height, disabled) {
+function analyseOrdinaryGroups(groups, config, height, disabled) {
     const compare = (left, right) => right.maxY - left.maxY || left.key.localeCompare(right.key);
     const queue = groups.filter(group => group.pendingDependents === 0).sort(compare);
 
@@ -427,6 +430,160 @@ function analyseGroups(groups, config, height, disabled) {
             group.interface = interfaceFor(group, config, height, disabled);
             group.supportLinks = group.interface.supportLinks;
         }
+    }
+}
+function topDownGroups(groups) {
+    const compare = (left, right) => right.maxY - left.maxY || left.key.localeCompare(right.key);
+    const remaining = new Map(groups.map(group => [group, group.dependents.size]));
+    const queue = groups.filter(group => remaining.get(group) === 0).sort(compare);
+    const ordered = [];
+
+    while (queue.length > 0) {
+        const group = queue.shift();
+        ordered.push(group);
+        const supporters = Array.from(new Set((group.supportLinks || []).map(link => (
+            link.supporter
+        )).filter(Boolean))).sort(compare);
+        for (const supporter of supporters) {
+            remaining.set(supporter, remaining.get(supporter) - 1);
+            if (remaining.get(supporter) === 0) queue.push(supporter);
+        }
+        queue.sort(compare);
+    }
+
+    return ordered.length === groups.length ? ordered : groups.slice().sort(compare);
+}
+function addValue(map, keyValue, amount) {
+    map.set(keyValue, number(map.get(keyValue), 0) + amount);
+}
+function addFlow(flows, group, supporter, amount) {
+    if (amount <= 0) return;
+    const links = flows.get(group) || new Map();
+    addValue(links, supporter, amount);
+    flows.set(group, links);
+}
+function analyseGroups(groups, config, height, disabled) {
+    analyseOrdinaryGroups(groups, config, height, disabled);
+    const transfers = LateralBracing.allocate(groups, config.towerLateralLoadShare);
+
+    if (transfers.length === 0) {
+        for (const group of groups) {
+            group.attributionSupportLinks = group.supportLinks;
+            group.lateralLinks = [];
+            group.incomingLoadMass = group.loadMass;
+            group.incomingLoadMoment = group.loadMoment;
+        }
+        return;
+    }
+
+    const baselineMass = new Map(groups.map(group => [group, group.loadMass]));
+    const baselineMoment = new Map(groups.map(group => [group, group.loadMoment]));
+    const baselineLinks = new Map(groups.map(group => [group, group.supportLinks.slice()]));
+    const stateMass = new Map(groups.map(group => [group, group.mass]));
+    const stateMoment = new Map(groups.map(group => [group, group.moment]));
+    const retainedMass = new Map();
+    const retainedMoment = new Map();
+    const lateralMass = new Map(groups.map(group => [group, 0]));
+    const lateralMoment = new Map(groups.map(group => [group, 0]));
+    const flows = new Map();
+    const actualTransfers = new Map();
+    const bySource = new Map();
+
+    for (const transfer of transfers) {
+        const sourceTransfers = bySource.get(transfer.source) || [];
+        sourceTransfers.push(transfer);
+        bySource.set(transfer.source, sourceTransfers);
+    }
+
+    const seeds = [];
+    for (const group of topDownGroups(groups)) {
+        const incomingMass = Math.max(0, number(stateMass.get(group)));
+        const incomingMoment = number(stateMoment.get(group));
+        const scale = Math.min(1, incomingMass / Math.max(0.000000001, number(baselineMass.get(group))));
+        let transferredMass = 0;
+        let transferredMoment = 0;
+
+        for (const transfer of bySource.get(group) || []) {
+            const acceptedMass = Math.min(
+                incomingMass - transferredMass,
+                transfer.acceptedMass * scale
+            );
+            if (acceptedMass <= 0) continue;
+            const acceptedMoment = incomingMass > 0
+                ? incomingMoment * acceptedMass / incomingMass
+                : 0;
+            transferredMass += acceptedMass;
+            transferredMoment += acceptedMoment;
+            actualTransfers.set(transfer, { acceptedMass, acceptedMoment });
+            seeds.push({ transfer, mass: acceptedMass, moment: acceptedMoment });
+        }
+
+        const keptMass = Math.max(0, incomingMass - transferredMass);
+        const keptMoment = incomingMoment - transferredMoment;
+        retainedMass.set(group, keptMass);
+        retainedMoment.set(group, keptMoment);
+
+        for (const link of baselineLinks.get(group) || []) {
+            const amount = keptMass * link.weight;
+            addFlow(flows, group, link.supporter, amount);
+            if (!link.supporter) continue;
+            addValue(stateMass, link.supporter, amount);
+            addValue(stateMoment, link.supporter, keptMoment * link.weight);
+        }
+    }
+
+    const routeSeed = (group, mass, moment, routeLinks) => {
+        addValue(lateralMass, group, mass);
+        addValue(lateralMoment, group, moment);
+        for (const link of routeLinks.get(group) || []) {
+            const amount = mass * link.weight;
+            addFlow(flows, group, link.supporter, amount);
+            if (link.supporter) {
+                routeSeed(link.supporter, amount, moment * link.weight, routeLinks);
+            }
+        }
+    };
+
+    for (const seed of seeds) {
+        routeSeed(seed.transfer.brace, seed.mass, seed.moment, seed.transfer.routeLinks);
+    }
+
+    for (const group of groups) {
+        const incomingMass = number(stateMass.get(group)) + number(lateralMass.get(group));
+        const incomingMoment = number(stateMoment.get(group)) + number(lateralMoment.get(group));
+        group.incomingLoadMass = incomingMass;
+        group.incomingLoadMoment = incomingMoment;
+        group.loadMass = number(retainedMass.get(group)) + number(lateralMass.get(group));
+        group.loadMoment = number(retainedMoment.get(group)) + number(lateralMoment.get(group));
+        group.interface = interfaceFor(group, config, height, disabled);
+        group.supportLinks = group.interface.supportLinks;
+        const flowLinks = flows.get(group) || new Map();
+        const denominator = Math.max(0.000000001, incomingMass);
+        group.attributionSupportLinks = Array.from(flowLinks.entries()).map(([supporter, amount]) => {
+            const physical = group.supportLinks.find(link => link.supporter === supporter) ||
+                (baselineLinks.get(group) || []).find(link => link.supporter === supporter) || {};
+            return {
+                supporter,
+                width: number(physical.width),
+                center: number(physical.center),
+                weight: amount / denominator
+            };
+        }).sort((left, right) => {
+            const leftKey = left.supporter ? left.supporter.key : "ground";
+            const rightKey = right.supporter ? right.supporter.key : "ground";
+            return leftKey.localeCompare(rightKey);
+        });
+        group.lateralLinks = (bySource.get(group) || []).map(transfer => {
+            const accepted = actualTransfers.get(transfer);
+            if (!accepted) return null;
+            return {
+                supporter: transfer.brace,
+                weight: accepted.acceptedMass / denominator,
+                acceptedMass: accepted.acceptedMass,
+                acceptedMoment: accepted.acceptedMoment,
+                contactFaces: transfer.faceCount
+            };
+        }).filter(Boolean);
     }
 }
 function collapseSlice(groups) {

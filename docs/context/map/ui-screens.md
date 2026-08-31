@@ -128,16 +128,16 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:3 | find_match_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | back_requested · signal | |
 
-### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 442 ln
+### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 461 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:1 | @file · file | ask ScreenManager to open the Tutorial |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:26 | tutorial_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:27 | tutorial_exited · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:222 | toggle_debug_overlay | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:225 | set_debug_context | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:282 | start_tutorial | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:27 | tutorial_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:28 | tutorial_exited · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:238 | toggle_debug_overlay | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:241 | set_debug_context | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:300 | start_tutorial | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd — 49 ln
 

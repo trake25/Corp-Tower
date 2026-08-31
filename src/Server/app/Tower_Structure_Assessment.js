@@ -14,11 +14,18 @@ function describeGroups(groups) {
         const memberBlockIds = group.members.map(member => {
             return String(member.entry?.block?.id ?? member.entry?.blockId ?? "");
         }).filter(Boolean).sort();
-        const supportLinks = group.supportLinks.map(link => ({
+        const supportLinks = (group.attributionSupportLinks || group.supportLinks).map(link => ({
             supporterKey: link.supporter ? link.supporter.key : "ground",
             weight: Number(link.weight) || 0,
             width: Number(link.width) || 0,
             center: Number(link.center) || 0
+        }));
+        const lateralLinks = (group.lateralLinks || []).map(link => ({
+            supporterKey: link.supporter.key,
+            weight: Number(link.weight) || 0,
+            acceptedMass: Math.max(0, Number(link.acceptedMass) || 0),
+            acceptedMoment: Number(link.acceptedMoment) || 0,
+            contactFaces: Math.max(0, Number(link.contactFaces) || 0)
         }));
         const boundaryKey = String(group.interface.pivotY);
 
@@ -30,13 +37,16 @@ function describeGroups(groups) {
             memberBlockIds,
             carriedLoadShare: clamp01(group.interface.carriedLoadShare),
             supportedLoad: Math.max(0, Number(group.interface.supportedLoad) || 0),
+            supportedMoment: Number(group.loadMoment) || 0,
+            incomingLoad: Math.max(0, Number(group.incomingLoadMass ?? group.loadMass) || 0),
             supportCapacity: Math.max(0, Number(group.interface.supportCapacity) || 0),
             loadRatio: Math.max(0, Number(group.interface.loadRatio) || 0),
             balanceRisk: clamp01(group.interface.balanceRisk),
             integrityRisk: clamp01(group.interface.integrityRisk),
             risk: interfaceRisk(group.interface),
             pivotY: Number(group.interface.pivotY) || 0,
-            supportLinks
+            supportLinks,
+            lateralLinks
         };
     });
 }
@@ -96,19 +106,20 @@ function matchInterface(beforeGroup, afterGroups) {
     })[0] || null;
 }
 
-function supportShareToPlaced(group, byKey, placedKeys, visiting = new Set()) {
+function supportShareToPlaced(group, byKey, placedKeys, visiting = new Set(), lateralUsed = false) {
     if (placedKeys.has(group.key)) {
         return 1;
     }
 
-    if (visiting.has(group.key)) {
+    const visitKey = `${group.key}:${lateralUsed ? 1 : 0}`;
+    if (visiting.has(visitKey)) {
         return 0;
     }
 
     const nextVisiting = new Set(visiting);
-    nextVisiting.add(group.key);
+    nextVisiting.add(visitKey);
 
-    return group.supportLinks.reduce((share, link) => {
+    const downwardShare = group.supportLinks.reduce((share, link) => {
         const supporter = byKey.get(link.supporterKey);
 
         if (!supporter) {
@@ -116,7 +127,16 @@ function supportShareToPlaced(group, byKey, placedKeys, visiting = new Set()) {
         }
 
         return share + clamp01(link.weight) * supportShareToPlaced(
-            supporter, byKey, placedKeys, nextVisiting
+            supporter, byKey, placedKeys, nextVisiting, lateralUsed
+        );
+    }, 0);
+    if (lateralUsed) return downwardShare;
+
+    return downwardShare + (group.lateralLinks || []).reduce((share, link) => {
+        const supporter = byKey.get(link.supporterKey);
+        if (!supporter) return share;
+        return share + clamp01(link.weight) * supportShareToPlaced(
+            supporter, byKey, placedKeys, nextVisiting, true
         );
     }, 0);
 }

@@ -899,6 +899,7 @@ bounded source read. Local implementation detail stays in source.
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/lib/agent-observability/state.mjs:1 | @file · file | recursively orders record keys for deterministic serialization |
+| scripts/lib/agent-observability/state.mjs:15 | ordered · fn | |
 | scripts/lib/agent-observability/state.mjs:22 | stableJson · fn | |
 | scripts/lib/agent-observability/state.mjs:26 | digest · fn | |
 | scripts/lib/agent-observability/state.mjs:30 | resolveStateDir · fn | |
@@ -1168,4 +1169,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-119 files · 445 stable anchors.
+119 files · 446 stable anchors.

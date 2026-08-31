@@ -18,6 +18,7 @@ const QuickChatControllerScript = preload("res://Cor/Scripts/GameUi/QuickChatCon
 const PowerControllerScript = preload("res://Cor/Scripts/GameUi/PowerController.gd")
 const InventoryControllerScript = preload("res://Cor/Scripts/GameUi/InventoryController.gd")
 const TopBarControllerScript = preload("res://Cor/Scripts/GameUi/TopBarController.gd")
+const TowerNavigationControllerScript = preload("res://Cor/Scripts/GameUi/TowerNavigationController.gd")
 const VisualHooksScript = preload("res://Cor/Scripts/GameUi/VisualHooks.gd")
 const VisualHooksControllerScript = preload("res://Cor/Scripts/GameUi/VisualHooksController.gd")
 const TutorialControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialController.gd")
@@ -44,6 +45,7 @@ var chat
 var power
 var inventory
 var top_bar
+var tower_navigation
 var visual_hooks
 var visual_fx
 var tutorial
@@ -81,6 +83,8 @@ func _ready() -> void:
 	add_child(inventory)
 	top_bar = TopBarControllerScript.new()
 	add_child(top_bar)
+	tower_navigation = TowerNavigationControllerScript.new()
+	add_child(tower_navigation)
 	visual_hooks = VisualHooksScript.new()
 	visual_fx = VisualHooksControllerScript.new()
 	add_child(visual_fx)
@@ -122,6 +126,7 @@ func _ready() -> void:
 		"players_ctx": players_ctx
 	})
 	tutorial_menu.setup(tutorial, _on_tutorial_menu_exit)
+	tower_navigation.setup(tower_stack, match_state, inventory, should_block_tower_navigation)
 
 	if tower_stack.has_signal("scroll_offset_changed"):
 		tower_stack.connect("scroll_offset_changed", Callable(background_parallax, "set_scroll_pixels"))
@@ -149,6 +154,15 @@ func should_block_popovers() -> bool:
 		or tutorial_menu.is_menu_visible()
 	)
 
+func should_block_tower_navigation() -> bool:
+	return (
+		NetworkManager.is_recovering()
+		or debug_panel.is_open()
+		or summary.is_overlay_visible()
+		or tutorial.blocks_popovers()
+		or tutorial_menu.is_menu_visible()
+	)
+
 func prepare_ui() -> bool:
 	bind_ui_nodes()
 
@@ -166,6 +180,7 @@ func bind_ui_nodes() -> void:
 	demo_mode_label = binder.require_node("DemoModeLabel") as Label
 
 	top_bar.bind_nodes(binder)
+	tower_navigation.bind_nodes(binder)
 	inventory.bind_nodes(binder)
 	debug_panel.bind_nodes(binder)
 	latency_indicator.bind_nodes(binder)
@@ -187,6 +202,7 @@ func reset_ui() -> void:
 	roster.update_impact_status_ui({})
 	top_bar.set_top_indicator_progress(0, 0)
 	tower_stack.clear_tower()
+	tower_navigation.reset()
 	inventory.update_inventory_ui([], InventoryControllerScript.MAX_INVENTORY_SLOTS)
 	inventory.update_draw_pile_ui(0, null)
 	score_popups.clear_score_popups()
@@ -242,6 +258,7 @@ func update_room(data) -> void:
 	quest.reset_freeze_quest_popover()
 	top_bar.set_top_indicator_progress(0, int(data.get("targetHeight", 0)))
 	tower_stack.clear_tower()
+	tower_navigation.reset()
 	inventory.update_inventory_ui(
 		data.get("blocks", []),
 		int(data.get("activeInventorySlots", InventoryControllerScript.MAX_INVENTORY_SLOTS))
@@ -267,6 +284,7 @@ func update_room_closed(_data) -> void:
 	roster.update_impact_status_ui({})
 	top_bar.set_top_indicator_progress(0, 0)
 	tower_stack.clear_tower()
+	tower_navigation.reset()
 	inventory.update_inventory_ui([], InventoryControllerScript.MAX_INVENTORY_SLOTS)
 	inventory.update_draw_pile_ui(0, null)
 	debug_panel.set_open(false)
@@ -329,6 +347,7 @@ func update_game_state(data) -> void:
 	tuning.level_summary_delay_ms = int(data.get("levelSummaryDelayMs", tuning.level_summary_delay_ms))
 
 	if incoming_level != match_state.current_level:
+		tower_navigation.reset()
 		match_state.current_level = incoming_level
 		score_popups.seen_score_event_ids.clear()
 		summary.last_level_summary_key = ""

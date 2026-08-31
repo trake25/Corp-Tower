@@ -346,6 +346,7 @@ function resolveStabilityConfig(engine, level) {
         towerBaseHalfWidthFloor: GameConfig.towerBaseHalfWidthFloor,
         towerStructuralPoseRigidRisk: GameConfig.towerStructuralPoseRigidRisk,
         towerStructuralPoseIntegritySwayShare: GameConfig.towerStructuralPoseIntegritySwayShare,
+        towerLateralLoadShare: GameConfig.towerLateralLoadShare,
         towerSiteWidth: engine.getSiteWidthForHeight(engine.room?.targetHeight),
         towerTargetHeight: engine.room?.targetHeight,
         towerStabilityPressureApplied: pressure,

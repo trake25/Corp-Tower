@@ -85,9 +85,13 @@ The grid and placeable range are server-owned and updated on every broadcast.
 Snap Grid keeps them as static state, and the renderer derives center from grid
 width. Tests must reset the static range between cases.
 
-Bricks stay fixed-size while the tower view pans upward. Scrolling begins only
-when needed, eases with progress, and freezes after target height so overbuild
-remains visually attached.
+Bricks stay fixed-size while drawing, placement projection, collapse, and parallax consume one
+floating scroll state. Automatic scrolling preserves rounded tower framing; bounded Top and
+Trouble travel reverses smoothly while gameplay geometry stays attached as the background eases.
+
+Trouble holds a deterministic, standing critical support below the posed visible area during
+travel. Placement, armed actions, overlays, and presentation sequences disable navigation;
+round and lobby transitions restore auto-scroll. View controls never change grid intent or physics.
 
 Snapping pairs every dragged-brick outline vertex with platform and placed-brick
 snap points. It rejects overlap or a footprint outside the authoritative site,

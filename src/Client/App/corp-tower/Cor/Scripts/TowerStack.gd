@@ -6,6 +6,7 @@ const SnapGridScript = preload("res://Cor/Scripts/GameUi/SnapGrid.gd")
 const CollapseSimScript = preload("res://Cor/Scripts/GameUi/CollapseSim.gd")
 const StructuralPoseScript = preload("res://Cor/Scripts/GameUi/StructuralPose.gd")
 const PlacementProjectionScript = preload("res://Cor/Scripts/GameUi/PlacementProjection.gd")
+const TowerScrollStateScript = preload("res://Cor/Scripts/GameUi/TowerScrollState.gd")
 
 const COLLAPSE_NONE := 0
 const COLLAPSE_LEAN := 1
@@ -81,6 +82,7 @@ var displayed_tilt_deg: float = 0.0
 var tower_collapsed: bool = false
 var structural_pose = StructuralPoseScript.new()
 var placement_projection = PlacementProjectionScript.new()
+var scroll_state = TowerScrollStateScript.new()
 var _last_scroll_pixels: float = 0.0
 var snap_preview_active: bool = false
 var drag_cells: Array = []
@@ -117,6 +119,8 @@ var _shake_offset: Vector2 = Vector2.ZERO
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
+		_sync_scroll_state()
+		_update_scroll_offset()
 		queue_redraw()
 
 func set_tower(blocks: Array, new_current_height: int, new_target_height: int, new_stability: int = 100, diagnostics: Dictionary = {}, pose_entries: Array = []) -> void:
@@ -140,6 +144,8 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	var critical_direction: String = str(critical_support.get("direction", ""))
 
 	if starts_collapse:
+		scroll_state.hold_current()
+		scroll_state.frozen = true
 		tower_collapsed = true
 		_last_collapse_key = collapse_key
 		_collapsing_block_ids = collapse_ids
@@ -152,10 +158,13 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 		_collapse_elapsed = 0.0
 		_collapse_sim = null
 	elif _collapse_phase == COLLAPSE_NONE:
+		scroll_state.frozen = false
 		tower_collapsed = false
 		tower_tilt_deg = 0.0 if structural_pose.has_targets() else reported_tilt
 
 	_maybe_start_drop_animation(previous_global_height)
+	if _collapse_phase == COLLAPSE_NONE:
+		_sync_scroll_state(previous_block_count == 0)
 	_update_scroll_offset()
 	queue_redraw()
 
@@ -205,6 +214,7 @@ func _collapse_direction_for(block_ids: Dictionary) -> String:
 	return "center"
 
 func refresh_visuals() -> void:
+	_sync_scroll_state()
 	_update_scroll_offset()
 	queue_redraw()
 
@@ -238,6 +248,7 @@ func play_impact_beat(verdicts: Dictionary) -> bool:
 	if tower_blocks.is_empty() or _collapse_phase != COLLAPSE_NONE:
 		return false
 
+	scroll_state.return_to_auto()
 	_verdict_by_player = verdicts.duplicate()
 	_wave_span_units = maxf(1.0, float(SnapGridScript.top_height(tower_blocks)))
 	_wave_progress = 0.0
@@ -287,6 +298,7 @@ func _set_camera_zoom(value: float) -> void:
 
 	_camera_zoom = resolved
 	camera_zoom_changed.emit(_camera_zoom)
+	_sync_scroll_state()
 	_update_scroll_offset()
 
 func _beat_ease(t: float) -> float:
@@ -392,7 +404,7 @@ func placement_visual_bounds() -> Rect2:
 	var unit: float = _unit_size()
 	var base_x: float = size.x * 0.5
 	var baseline: float = size.y - bottom_padding
-	var scroll_offset_units: int = _scroll_offset_units(unit)
+	var scroll_offset_units: float = _scroll_offset_units(unit)
 	var bounds := Rect2()
 	var has_bounds := false
 	var active_bounds := Rect2()
@@ -403,33 +415,9 @@ func placement_visual_bounds() -> Rect2:
 			continue
 
 		var entry: Dictionary = entry_value
-		var block: Dictionary = _normalize_block_entry(entry)
-		var cells: Array = block.get("cells", [])
-		var origin_x: int = int(entry.get("originX", 0))
-		var origin_y: int = int(entry.get("originY", entry.get("baseHeight", 0)))
-		var box: Rect2 = _footprint_box(
-			origin_x, origin_y, cells, unit, base_x, baseline, scroll_offset_units
+		var brick_bounds: Rect2 = _entry_rendered_bounds(
+			entry, unit, base_x, baseline, scroll_offset_units
 		)
-		var center: Vector2 = box.get_center()
-		var rotation: float = 0.0
-		var pose_bounds: Dictionary = BlockDataScript.cell_bounds(cells)
-		var pose: Dictionary = structural_pose.pose_for_grid(
-			_entry_block_id(entry),
-			Vector2(
-				float(origin_x) + (float(pose_bounds.min_x) + float(pose_bounds.max_x) + 1.0) * 0.5,
-				float(origin_y) + (float(pose_bounds.min_y) + float(pose_bounds.max_y) + 1.0) * 0.5
-			)
-		)
-
-		if !pose.is_empty():
-			center += Vector2(
-				float(pose.get("offsetXUnits", 0.0)) * unit,
-				-float(pose.get("offsetYUnits", 0.0)) * unit
-			)
-			rotation = float(pose.get("rotationDeg", 0.0))
-
-		var extents := _rotated_half_extents(box.size * 0.5, rotation)
-		var brick_bounds := Rect2(center - extents, extents * 2.0)
 		bounds = brick_bounds if !has_bounds else bounds.merge(brick_bounds)
 		has_bounds = true
 
@@ -453,6 +441,116 @@ func placement_visual_bounds() -> Rect2:
 		return active_bounds
 	return bounds if has_bounds else Rect2(Vector2.ZERO, size)
 
+func _entry_rendered_bounds(
+	entry: Dictionary,
+	unit: float,
+	base_x: float,
+	baseline: float,
+	scroll_offset_units: float
+) -> Rect2:
+	var block: Dictionary = _normalize_block_entry(entry)
+	var cells: Array = block.get("cells", [])
+	var origin_x: int = int(entry.get("originX", 0))
+	var origin_y: int = int(entry.get("originY", entry.get("baseHeight", 0)))
+	var box: Rect2 = _footprint_box(
+		origin_x, origin_y, cells, unit, base_x, baseline, scroll_offset_units
+	)
+	var center: Vector2 = box.get_center()
+	var rotation: float = 0.0
+	var pose_bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+	var pose: Dictionary = structural_pose.pose_for_grid(
+		_entry_block_id(entry),
+		Vector2(
+			float(origin_x) + (float(pose_bounds.min_x) + float(pose_bounds.max_x) + 1.0) * 0.5,
+			float(origin_y) + (float(pose_bounds.min_y) + float(pose_bounds.max_y) + 1.0) * 0.5
+		)
+	)
+
+	if !pose.is_empty():
+		center += Vector2(
+			float(pose.get("offsetXUnits", 0.0)) * unit,
+			-float(pose.get("offsetYUnits", 0.0)) * unit
+		)
+		rotation = float(pose.get("rotationDeg", 0.0))
+
+	var extents := _rotated_half_extents(box.size * 0.5, rotation)
+	return Rect2(center - extents, extents * 2.0)
+
+func trouble_target() -> Dictionary:
+	var unit: float = _unit_size()
+	var base_x: float = size.x * 0.5
+	var baseline: float = size.y - bottom_padding
+	var viewport_bottom: float = size.y - bottom_padding
+	var selected: Dictionary = {}
+
+	for entry_value in tower_blocks:
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_value
+		if str(entry.get("towerState", "standing")) == "fallen":
+			continue
+		var stability: int = int(entry.get("supportStability", 100))
+		if stability > support_critical_threshold:
+			continue
+		var bounds: Rect2 = _entry_rendered_bounds(
+			entry, unit, base_x, baseline, _scroll_offset_units(unit)
+		)
+		if bounds.position.y <= viewport_bottom:
+			continue
+		var candidate := {
+			"block_id": _entry_block_id(entry),
+			"origin_y": int(entry.get("originY", entry.get("baseHeight", 0))),
+			"support_stability": stability,
+			"bounds": bounds,
+		}
+		if selected.is_empty() or _trouble_precedes(candidate, selected):
+			selected = candidate
+
+	return selected
+
+func _trouble_precedes(left: Dictionary, right: Dictionary) -> bool:
+	if int(left.support_stability) != int(right.support_stability):
+		return int(left.support_stability) < int(right.support_stability)
+	if int(left.origin_y) != int(right.origin_y):
+		return int(left.origin_y) < int(right.origin_y)
+	return str(left.block_id) < str(right.block_id)
+
+func navigate_to_trouble(block_id: String) -> bool:
+	if _collapse_phase != COLLAPSE_NONE or _beat_phase != BEAT_NONE:
+		return false
+	_sync_scroll_state()
+	for entry_value in tower_blocks:
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_value
+		if _entry_block_id(entry) != block_id or str(entry.get("towerState", "standing")) == "fallen":
+			continue
+		return scroll_state.navigate_to_row(
+			float(entry.get("originY", entry.get("baseHeight", 0))),
+			2.0
+		)
+	return false
+
+func return_to_auto_scroll() -> bool:
+	if _collapse_phase != COLLAPSE_NONE or _beat_phase != BEAT_NONE:
+		return false
+	return scroll_state.return_to_auto()
+
+func is_scroll_displaced() -> bool:
+	return scroll_state.is_displaced()
+
+func is_scroll_navigating() -> bool:
+	return scroll_state.is_navigating()
+
+func reset_navigation() -> void:
+	scroll_state.frozen = false
+	scroll_state.snap_to_normal()
+	_update_scroll_offset()
+	queue_redraw()
+
+func is_navigation_blocked_by_presentation() -> bool:
+	return _collapse_phase != COLLAPSE_NONE or _beat_phase != BEAT_NONE
+
 func grid_to_local(lattice: Vector2) -> Vector2:
 	var unit: float = _unit_size()
 
@@ -472,7 +570,7 @@ func global_to_grid(global_pos: Vector2) -> Vector2:
 	return local_to_grid(get_global_transform().affine_inverse() * global_pos)
 
 func _lattice_to_local(
-	lattice: Vector2, unit: float, base_x: float, baseline: float, scroll_offset_units: int
+	lattice: Vector2, unit: float, base_x: float, baseline: float, scroll_offset_units: float
 ) -> Vector2:
 	return Vector2(
 		base_x + (lattice.x - SnapGridScript.grid_center_col() - 0.5) * unit,
@@ -549,6 +647,10 @@ func _drop_ease(t: float) -> float:
 func _process(delta: float) -> void:
 	var needs_redraw: bool = false
 
+	if _collapse_phase == COLLAPSE_NONE and scroll_state.step(delta):
+		_update_scroll_offset()
+		needs_redraw = true
+
 	if structural_pose.step(delta, structural_pose_ease_speed):
 		needs_redraw = true
 
@@ -608,6 +710,7 @@ func clear_tower() -> void:
 	tower_collapsed = false
 	_last_collapse_key = ""
 	structural_pose.clear()
+	scroll_state.reset()
 	_reset_collapse()
 	cancel_impact_beat()
 	_update_scroll_offset()
@@ -619,6 +722,7 @@ func _reset_collapse() -> void:
 	_collapse_elapsed = 0.0
 	_collapse_sim = null
 	_collapsing_block_ids = {}
+	scroll_state.frozen = false
 
 func _collapse_debris_lifetime_seconds() -> float:
 	if visual_hooks == null:
@@ -629,12 +733,14 @@ func _expire_collapse_debris() -> void:
 	_reset_collapse()
 	tower_collapsed = false
 	tower_tilt_deg = 0.0
+	_sync_scroll_state()
+	scroll_state.return_to_auto()
 
 func _begin_collapse() -> void:
 	var unit: float = _unit_size()
 	var base_x: float = size.x * 0.5
 	var baseline: float = size.y - bottom_padding
-	var scroll_px: float = float(_scroll_offset_units(unit)) * unit
+	var scroll_px: float = _scroll_offset_units(unit) * unit
 	var pivot: Vector2 = Vector2(base_x, baseline)
 	var lean_rad: float = deg_to_rad(displayed_tilt_deg)
 	var top_units: float = maxf(1.0, float(SnapGridScript.top_height(tower_blocks)))
@@ -783,7 +889,7 @@ func _draw_debris(unit: float) -> void:
 	if _collapse_sim == null:
 		return
 
-	var scroll_px: float = float(_scroll_offset_units(unit)) * unit
+	var scroll_px: float = _scroll_offset_units(unit) * unit
 	var uvs: PackedVector2Array = BlockDataScript.brick_quad_uvs()
 	var emoji_size: Vector2 = Vector2.ONE * unit * emoji_unit_scale
 
@@ -825,7 +931,7 @@ func _draw_debris(unit: float) -> void:
 
 func _update_scroll_offset() -> void:
 	var unit: float = _unit_size()
-	var scroll_pixels: float = float(_scroll_offset_units(unit)) * unit
+	var scroll_pixels: float = _scroll_offset_units(unit) * unit
 
 	if is_equal_approx(scroll_pixels, _last_scroll_pixels):
 		return
@@ -843,7 +949,7 @@ func _draw() -> void:
 		_draw_snap_layer(unit, base_x, baseline, Vector2.ZERO)
 		return
 
-	var scroll_offset_units: int = _scroll_offset_units(unit)
+	var scroll_offset_units: float = _scroll_offset_units(unit)
 	var tower_units: int = max(target_height, current_height, 1)
 
 	var has_structural_pose: bool = structural_pose.has_targets()
@@ -962,7 +1068,7 @@ func _draw_block_emoji(
 	unit: float,
 	base_x: float,
 	baseline: float,
-	scroll_offset_units: int,
+	scroll_offset_units: float,
 	drop_offset: float,
 	pivot: Vector2
 ) -> void:
@@ -1009,7 +1115,7 @@ func _draw_posed_block_emoji(
 	unit: float,
 	base_x: float,
 	baseline: float,
-	scroll_offset_units: int,
+	scroll_offset_units: float,
 	drop_offset: float,
 	block_center: Vector2
 ) -> void:
@@ -1098,7 +1204,7 @@ func _wave_pop_factor(brick_top_units: float) -> float:
 
 	return sin((1.0 - distance / WAVE_POP_BAND_UNITS) * PI)
 
-func _footprint_box(origin_x: int, origin_y: int, cells: Array, unit: float, base_x: float, baseline: float, scroll_offset_units: int, drop_offset: float = 0.0) -> Rect2:
+func _footprint_box(origin_x: int, origin_y: int, cells: Array, unit: float, base_x: float, baseline: float, scroll_offset_units: float, drop_offset: float = 0.0) -> Rect2:
 	var bounds: Dictionary = BlockDataScript.cell_bounds(cells)
 	var width_units: int = bounds.max_x - bounds.min_x + 1
 	var height_units: int = bounds.max_y - bounds.min_y + 1
@@ -1114,7 +1220,7 @@ func _footprint_box(origin_x: int, origin_y: int, cells: Array, unit: float, bas
 
 	return Rect2(top_left, Vector2(float(width_units) * unit, float(height_units) * unit))
 
-func _height_to_pixel_y(height_units: float, unit: float, baseline: float, scroll_offset_units: int) -> float:
+func _height_to_pixel_y(height_units: float, unit: float, baseline: float, scroll_offset_units: float) -> float:
 	return _lattice_to_local(Vector2(0.0, height_units), unit, 0.0, baseline, scroll_offset_units).y
 
 func _rotated_half_extents(half_size: Vector2, rotation: float) -> Vector2:
@@ -1128,7 +1234,7 @@ func _draw_snap_layer(unit: float, base_x: float, baseline: float, pivot: Vector
 	if !snap_preview_active:
 		return
 
-	var scroll_offset_units: int = _scroll_offset_units(unit)
+	var scroll_offset_units: float = _scroll_offset_units(unit)
 
 	_draw_placeable_band(unit, base_x, baseline, scroll_offset_units, pivot, _band_top_units())
 
@@ -1152,7 +1258,7 @@ func _draw_placeable_band(
 	unit: float,
 	base_x: float,
 	baseline: float,
-	scroll_offset_units: int,
+	scroll_offset_units: float,
 	pivot: Vector2,
 	top_units: float
 ) -> void:
@@ -1184,7 +1290,7 @@ func _draw_drag_ghost(
 	unit: float,
 	base_x: float,
 	baseline: float,
-	scroll_offset_units: int,
+	scroll_offset_units: float,
 	pivot: Vector2
 ) -> void:
 	if drag_cells.is_empty():
@@ -1259,7 +1365,7 @@ func _draw_drag_ghost(
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_snap_points(
-	unit: float, base_x: float, baseline: float, scroll_offset_units: int, pivot: Vector2
+	unit: float, base_x: float, baseline: float, scroll_offset_units: float, pivot: Vector2
 ) -> void:
 	var snapped: bool = bool(active_snap.get("snapped", false))
 	var target_point: Vector2i = active_snap.get("target_point", Vector2i.ZERO)
@@ -1310,7 +1416,7 @@ func _draw_fallback_stack() -> void:
 	var width: float = clamp(size.x * 0.24, unit * 1.5, unit * 3.5)
 	var x: float = (size.x - width) * 0.5
 	var baseline: float = size.y - bottom_padding
-	var scroll_offset_units: int = _scroll_offset_units(unit)
+	var scroll_offset_units: float = _scroll_offset_units(unit)
 
 	for y in range(current_height):
 		var rect: Rect2 = Rect2(
@@ -1327,29 +1433,22 @@ func _draw_fallback_stack() -> void:
 func _unit_size() -> float:
 	return brick_unit_size * _camera_zoom
 
-func _scroll_offset_units(unit: float) -> int:
-	var visible_units: int = _visible_unit_capacity(unit)
-	var start_units: int = max(1, int(floor(float(visible_units) * scroll_start_ratio)))
-	var flush_units: int = max(start_units, visible_units - top_indicator_clearance_units)
+func _sync_scroll_state(snap_to_normal: bool = false) -> void:
+	var unit: float = _unit_size()
+	scroll_state.configure(
+		current_height,
+		target_height,
+		SnapGridScript.top_height(tower_blocks),
+		_visible_unit_capacity(unit),
+		scroll_start_ratio,
+		scroll_ease_power,
+		top_indicator_clearance_units
+	)
+	if snap_to_normal and scroll_state.mode == TowerScrollStateScript.Mode.AUTO:
+		scroll_state.snap_to_normal()
 
-	if target_height > 0 and target_height <= flush_units:
-		return 0
-
-	var focus_height: int = max(current_height, 1)
-
-	if target_height > 0:
-		focus_height = min(focus_height, target_height)
-
-	if focus_height <= start_units:
-		return 0
-
-	var linear_t: float = 1.0
-	if target_height > start_units:
-		linear_t = clampf(float(focus_height - start_units) / float(target_height - start_units), 0.0, 1.0)
-
-	var ramp_t: float = pow(linear_t, scroll_ease_power)
-	var top_row: float = lerpf(float(start_units), float(flush_units), ramp_t)
-	return int(round(float(focus_height) - top_row))
+func _scroll_offset_units(_unit: float) -> float:
+	return scroll_state.displayed_offset_units
 
 func _visible_unit_capacity(unit: float) -> int:
 	var available_height: float = max(1.0, size.y - top_padding - bottom_padding)

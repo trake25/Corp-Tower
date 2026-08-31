@@ -147,24 +147,30 @@ test("the same tower is less stable at a high level than at level 1", () => {
     // itself, not just "this tower is already maximally bad at any level."
     const rowBlock = { cells: [[0, 0], [1, 0], [2, 0], [3, 0]] };
     const { engine } = createPlayingEngine(1, 60);
+    const originalDifficulty = GameConfig.towerStabilityDifficulty;
 
     for (let y = 0; y < 10; y++) {
         entries.push({ block: rowBlock, originX: 2, originY: y });
     }
 
-    const earlyConfig = engine.resolveStabilityConfig(1);
-    const lateConfig = engine.resolveStabilityConfig(40);
-    for (const config of [earlyConfig, lateConfig]) {
-        config.towerSupportSafeLoadPerContact = 1000;
-        config.towerSupportCollapseLoadPerContact = 2000;
-    }
-    const early = TowerStability.evaluate(entries, earlyConfig);
-    const late = TowerStability.evaluate(entries, lateConfig);
+    try {
+        GameConfig.towerStabilityDifficulty = 65;
+        const earlyConfig = engine.resolveStabilityConfig(1);
+        const lateConfig = engine.resolveStabilityConfig(40);
+        for (const config of [earlyConfig, lateConfig]) {
+            config.towerSupportSafeLoadPerContact = 1000;
+            config.towerSupportCollapseLoadPerContact = 2000;
+        }
+        const early = TowerStability.evaluate(entries, earlyConfig);
+        const late = TowerStability.evaluate(entries, lateConfig);
 
-    assert.ok(
-        late.stability < early.stability,
-        `expected level 40 to be harsher than level 1, got ${late.stability} vs ${early.stability}`
-    );
+        assert.ok(
+            late.stability < early.stability,
+            `expected level 40 to be harsher than level 1, got ${late.stability} vs ${early.stability}`
+        );
+    } finally {
+        GameConfig.towerStabilityDifficulty = originalDifficulty;
+    }
 });
 
 test("stability difficulty 0 leaves the same tower unpenalised", () => {
@@ -1104,4 +1110,65 @@ test("a placed brick carries the balance delta it caused", () => {
     assert.deepEqual(snapshot.state.towerStabilityComponents, engine.room.towerStabilityComponents);
     assert.equal(snapshot.state.towerBlocks[0].supportStability, engine.room.towerBlocks[0].supportStability);
     assert.equal(Object.hasOwn(snapshot.state, "analysis"), false);
+});
+
+test("reinforcement attribution follows one lateral edge and then only downward", () => {
+    const group = (key, blockIds, risk, supportLinks = [], lateralLinks = []) => ({
+        key,
+        signature: `0:${key}`,
+        boundaryKey: "0",
+        memberKeys: [key],
+        memberBlockIds: blockIds,
+        carriedLoadShare: 1,
+        supportedLoad: 1,
+        supportedMoment: 1,
+        incomingLoad: 1,
+        supportCapacity: 10,
+        loadRatio: 0.1,
+        balanceRisk: risk,
+        integrityRisk: risk,
+        risk,
+        pivotY: 0,
+        supportLinks,
+        lateralLinks
+    });
+    const before = {
+        analysis: { groups: [group("A", ["A"], 0.8)] },
+        components: [],
+        diagnostics: { criticalRisk: 0.8 }
+    };
+    const afterWithDownwardRoute = {
+        analysis: { groups: [
+            group("A", ["A"], 0.4, [], [{ supporterKey: "B", weight: 1 }]),
+            group("B", ["B"], 0.1, [{ supporterKey: "C", weight: 1 }]),
+            group("C", ["PLACED"], 0)
+        ] },
+        components: [],
+        diagnostics: { criticalRisk: 0.4 }
+    };
+    const afterWithSecondLateralAndCycle = {
+        analysis: { groups: [
+            group("A", ["A"], 0.4, [], [{ supporterKey: "B", weight: 1 }]),
+            group(
+                "B",
+                ["B"],
+                0.1,
+                [{ supporterKey: "A", weight: 1 }],
+                [{ supporterKey: "C", weight: 1 }]
+            ),
+            group("C", ["PLACED"], 0)
+        ] },
+        components: [],
+        diagnostics: { criticalRisk: 0.4 }
+    };
+    const placed = { block: { id: "PLACED" } };
+
+    assert.equal(
+        TowerStability.comparePlacement(before, afterWithDownwardRoute, placed).directSupportShare,
+        1
+    );
+    assert.equal(
+        TowerStability.comparePlacement(before, afterWithSecondLateralAndCycle, placed).directSupportShare,
+        0
+    );
 });

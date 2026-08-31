@@ -40,25 +40,25 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Bot_Manager.js:173 | tryActivateReplenish | |
 | src/Server/app/Bot_Manager.js:467 | chooseBotAction | |
 
-### src/Server/app/Debug_Config.js — 183 ln
+### src/Server/app/Debug_Config.js — 185 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Debug_Config.js:1 | @file · file | resolves a root, scoring or visual-hooks config owner |
-| src/Server/app/Debug_Config.js:111 | target · fn | |
-| src/Server/app/Debug_Config.js:115 | snapshot · fn | |
-| src/Server/app/Debug_Config.js:121 | DEFAULTS · const | |
-| src/Server/app/Debug_Config.js:123 | applyDefaults · fn | |
-| src/Server/app/Debug_Config.js:134 | applyValue · fn | |
+| src/Server/app/Debug_Config.js:113 | target · fn | |
+| src/Server/app/Debug_Config.js:117 | snapshot · fn | |
+| src/Server/app/Debug_Config.js:123 | DEFAULTS · const | |
+| src/Server/app/Debug_Config.js:125 | applyDefaults · fn | |
+| src/Server/app/Debug_Config.js:136 | applyValue · fn | |
 
-### src/Server/app/Game_Config.js — 181 ln
+### src/Server/app/Game_Config.js — 182 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Game_Config.js:1 | @file · file | authoritative gameplay, tuning, bot, room-timing, live_preview, and latency defaults |
 | src/Server/app/Game_Config.js:1 | GameConfig · const | |
-| src/Server/app/Game_Config.js:86 | towerStabilityMoodThreshold · stable | |
-| src/Server/app/Game_Config.js:156 | normalCombinedCapActionShare · stable | |
+| src/Server/app/Game_Config.js:87 | towerStabilityMoodThreshold · stable | |
+| src/Server/app/Game_Config.js:157 | normalCombinedCapActionShare · stable | |
 
 ### src/Server/app/Game_Engine.js — 1022 ln
 
@@ -93,7 +93,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Game_Engine.js:895 | failLevel | |
 | src/Server/app/Game_Engine.js:902 | nextLevel | |
 
-### src/Server/app/Lobby_Manager.js — 1378 ln
+### src/Server/app/Lobby_Manager.js — 1402 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -105,13 +105,13 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Lobby_Manager.js:235 | removePlayer | |
 | src/Server/app/Lobby_Manager.js:356 | closeRoom | |
 | src/Server/app/Lobby_Manager.js:460 | broadcastDebugConfig | |
-| src/Server/app/Lobby_Manager.js:506 | updateDebugConfig | |
-| src/Server/app/Lobby_Manager.js:742 | createRoom | |
-| src/Server/app/Lobby_Manager.js:858 | toggleLobbyReady | |
-| src/Server/app/Lobby_Manager.js:926 | leaveLobby | |
-| src/Server/app/Lobby_Manager.js:1060 | hydrateRoom | |
-| src/Server/app/Lobby_Manager.js:1260 | dispatchRoomAction | |
-| src/Server/app/Lobby_Manager.js:1287 | resyncState | |
+| src/Server/app/Lobby_Manager.js:522 | updateDebugConfig | |
+| src/Server/app/Lobby_Manager.js:766 | createRoom | |
+| src/Server/app/Lobby_Manager.js:882 | toggleLobbyReady | |
+| src/Server/app/Lobby_Manager.js:950 | leaveLobby | |
+| src/Server/app/Lobby_Manager.js:1084 | hydrateRoom | |
+| src/Server/app/Lobby_Manager.js:1284 | dispatchRoomAction | |
+| src/Server/app/Lobby_Manager.js:1311 | resyncState | |
 
 ### src/Server/app/Profile_Store.js — 169 ln
 
@@ -171,6 +171,17 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Server.js:1 | @file · file | parse guard; malformed frames never throw |
 | src/Server/app/Server.js:12 | port · const | |
 
+### src/Server/app/Tower_Lateral_Bracing.js — 291 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Server/app/Tower_Lateral_Bracing.js:1 | @file · file | Tower Lateral Bracing server behavior |
+| src/Server/app/Tower_Lateral_Bracing.js:3 | EPSILON · const | |
+| src/Server/app/Tower_Lateral_Bracing.js:5 | number · fn | |
+| src/Server/app/Tower_Lateral_Bracing.js:41 | addValue · fn | |
+| src/Server/app/Tower_Lateral_Bracing.js:100 | hasGroundPath · fn | |
+| src/Server/app/Tower_Lateral_Bracing.js:261 | allocate · fn | |
+
 ### src/Server/app/Tower_Load_Capacity.js — 61 ln
 
 | File:Ln | Anchor | Purpose |
@@ -180,31 +191,32 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Tower_Load_Capacity.js:8 | clamp01 · fn | |
 | src/Server/app/Tower_Load_Capacity.js:31 | assessLoadCapacity · fn | |
 
-### src/Server/app/Tower_Stability.js — 810 ln
+### src/Server/app/Tower_Stability.js — 967 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Tower_Stability.js:1 | @file · file | deterministic tower stability, support components, load propagation, and collapse evaluation |
-| src/Server/app/Tower_Stability.js:4 | cellsFor · fn | |
-| src/Server/app/Tower_Stability.js:12 | key · fn | |
-| src/Server/app/Tower_Stability.js:13 | clamp01 · fn | |
-| src/Server/app/Tower_Stability.js:14 | number · fn | |
-| src/Server/app/Tower_Stability.js:18 | topHeight · fn | |
-| src/Server/app/Tower_Stability.js:23 | settleBlock · fn | |
-| src/Server/app/Tower_Stability.js:41 | isPlacementLegal · fn | |
-| src/Server/app/Tower_Stability.js:55 | supportedCellsGained · fn | |
-| src/Server/app/Tower_Stability.js:81 | blockId · fn | |
-| src/Server/app/Tower_Stability.js:739 | evaluate · fn | |
-| src/Server/app/Tower_Stability.js:798 | balanceDelta · fn | |
+| src/Server/app/Tower_Stability.js:5 | cellsFor · fn | |
+| src/Server/app/Tower_Stability.js:13 | key · fn | |
+| src/Server/app/Tower_Stability.js:14 | clamp01 · fn | |
+| src/Server/app/Tower_Stability.js:15 | number · fn | |
+| src/Server/app/Tower_Stability.js:19 | topHeight · fn | |
+| src/Server/app/Tower_Stability.js:24 | settleBlock · fn | |
+| src/Server/app/Tower_Stability.js:42 | isPlacementLegal · fn | |
+| src/Server/app/Tower_Stability.js:56 | supportedCellsGained · fn | |
+| src/Server/app/Tower_Stability.js:82 | blockId · fn | |
+| src/Server/app/Tower_Stability.js:456 | addValue · fn | |
+| src/Server/app/Tower_Stability.js:896 | evaluate · fn | |
+| src/Server/app/Tower_Stability.js:955 | balanceDelta · fn | |
 
-### src/Server/app/Tower_Structure_Assessment.js — 235 ln
+### src/Server/app/Tower_Structure_Assessment.js — 255 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Tower_Structure_Assessment.js:1 | @file · file | normalize a fractional structural value |
 | src/Server/app/Tower_Structure_Assessment.js:3 | clamp01 · fn | |
 | src/Server/app/Tower_Structure_Assessment.js:11 | describeGroups · fn | |
-| src/Server/app/Tower_Structure_Assessment.js:138 | comparePlacement · fn | |
+| src/Server/app/Tower_Structure_Assessment.js:158 | comparePlacement · fn | |
 
 ### src/Server/app/engine/Block_Geometry.js — 109 ln
 
@@ -298,7 +310,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Last_Chance.js:1 | @file · file | Produces the standing one-percent result while a rescue is pending |
 | src/Server/app/engine/Last_Chance.js:29 | resolve · fn | |
 
-### src/Server/app/engine/Placement.js — 469 ln
+### src/Server/app/engine/Placement.js — 470 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -314,11 +326,11 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Placement.js:172 | placeBlock · fn | |
 | src/Server/app/engine/Placement.js:295 | getStabilityPressure · fn | |
 | src/Server/app/engine/Placement.js:335 | resolveStabilityConfig · fn | |
-| src/Server/app/engine/Placement.js:367 | recalculateTowerStability · fn | |
-| src/Server/app/engine/Placement.js:396 | checkWinCondition · fn | |
-| src/Server/app/engine/Placement.js:404 | checkFailCondition · fn | |
-| src/Server/app/engine/Placement.js:444 | anyPlayerCanRescueSupply · fn | |
-| src/Server/app/engine/Placement.js:440 | not_enough_height_remaining · stable | |
+| src/Server/app/engine/Placement.js:368 | recalculateTowerStability · fn | |
+| src/Server/app/engine/Placement.js:397 | checkWinCondition · fn | |
+| src/Server/app/engine/Placement.js:405 | checkFailCondition · fn | |
+| src/Server/app/engine/Placement.js:445 | anyPlayerCanRescueSupply · fn | |
+| src/Server/app/engine/Placement.js:441 | not_enough_height_remaining · stable | |
 
 ### src/Server/app/engine/Scoring.js — 518 ln
 
@@ -402,4 +414,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-25 files · 243 stable anchors.
+26 files · 249 stable anchors.

@@ -11,7 +11,7 @@ func resolve(
 	unit: float,
 	base_x: float,
 	baseline: float,
-	scroll_offset_units: int,
+	scroll_offset_units: float,
 	structural_pose
 ) -> Dictionary:
 	var canonical: Dictionary = SnapGridScript.resolve(
@@ -107,7 +107,7 @@ func _lattice_to_local(
 	unit: float,
 	base_x: float,
 	baseline: float,
-	scroll_offset_units: int
+	scroll_offset_units: float
 ) -> Vector2:
 	return Vector2(
 		base_x + (lattice.x - SnapGridScript.grid_center_col() - 0.5) * unit,

@@ -14,7 +14,11 @@ const DEBUG_CONTEXT_PLAY := "play"
 const DEBUG_TOOLTIPS := {
 	"TowerStabilityDifficultyLabel": {
 		"title": "Stability Difficulty",
-		"body": "The single dial for how punishing the tower is. Everything else — overhang weight, collapse threshold, slenderness band, support tolerance, and the maturity ramp — is derived from it.\n\nThreat rises with both this dial and level. Low values keep ordinary towers forgiving, while high values make careless narrow structures dangerous.\n\n0 disables stability. The upper end is intentionally severe.",
+		"body": "The core dial for how punishing the tower is. Overhang weight, collapse threshold, slenderness band, support tolerance, and the maturity ramp are derived from it; Lateral Load Share remains a separate reinforcement cap.\n\nThreat rises with both this dial and level. Low values keep ordinary towers forgiving, while high values make careless narrow structures dangerous.\n\n0 disables stability. The upper end is intentionally severe.",
+	},
+	"TowerLateralLoadShareLabel": {
+		"title": "Lateral Load Share",
+		"body": "The maximum share of a stressed support's carried load that independently grounded side braces may accept. Real contact, alternate-path capacity, and shared bottlenecks can reduce the actual transfer.\n\nThis is separate from Stability Difficulty. Changes apply to the next authoritative tower evaluation.",
 	},
 	"TowerMaxTiltLabel": {
 		"title": "Structural Pose Cap",

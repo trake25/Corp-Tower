@@ -5,6 +5,11 @@ behavior. Server implementation â†’ [backend.md](./backend.md). Wire contract â†
 [networking.md](./networking.md). `Game_Config.js` owns current tuning values;
 this document owns what the knobs mean.
 
+Direct contacts carry load downward; side contacts redirect only a bounded share
+through independently grounded braces, so narrow columns need reinforcement as
+their supported mass grows. Stability feedback remains server-authored, and
+tower navigation inspects critical supports without changing placement or physics.
+
 ## Core loop
 
 Corp Tower is a three-player real-time selfish-cooperation puzzle. Players race

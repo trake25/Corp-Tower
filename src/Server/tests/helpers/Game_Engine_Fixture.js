@@ -14,6 +14,8 @@ const originalGameConfig = {
     ,towerStabilityCriticalThreshold: GameConfig.towerStabilityCriticalThreshold
     ,towerStabilityMoodThreshold: GameConfig.towerStabilityMoodThreshold
     ,towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode
+    ,towerStabilityDifficulty: GameConfig.towerStabilityDifficulty
+    ,towerLateralLoadShare: GameConfig.towerLateralLoadShare
     ,towerGridWidth: GameConfig.towerGridWidth
     ,towerSiteWidthMin: GameConfig.towerSiteWidthMin
     ,towerSiteWidthMax: GameConfig.towerSiteWidthMax
@@ -82,6 +84,10 @@ function resetFixtures() {
         originalGameConfig.towerStabilityMoodThreshold;
     GameConfig.towerStabilityFeedbackMode =
         originalGameConfig.towerStabilityFeedbackMode;
+    GameConfig.towerStabilityDifficulty =
+        originalGameConfig.towerStabilityDifficulty;
+    GameConfig.towerLateralLoadShare =
+        originalGameConfig.towerLateralLoadShare;
     GameConfig.towerGridWidth = originalGameConfig.towerGridWidth;
     GameConfig.towerSiteWidthMin = originalGameConfig.towerSiteWidthMin;
     GameConfig.towerSiteWidthMax = originalGameConfig.towerSiteWidthMax;

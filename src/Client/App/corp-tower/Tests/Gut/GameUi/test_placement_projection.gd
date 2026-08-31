@@ -67,3 +67,46 @@ func test_unposed_projection_returns_the_existing_snap_payload() -> void:
 	)
 
 	assert_eq(projected, direct)
+
+func test_fractional_scroll_changes_only_the_rendered_contact_position() -> void:
+	var pose := StructuralPose.new()
+	pose.replace_targets([{
+		"blockId": "support",
+		"offsetXUnits": 0.0,
+		"offsetYUnits": 0.0,
+		"rotationDeg": 8.0,
+		"failureWeight": 0.5
+	}], true)
+	var blocks := [{
+		"block": {"id": "support", "cells": CELL},
+		"originX": 3,
+		"originY": 3
+	}]
+	var projection := PlacementProjection.new()
+	var point := Vector2(3.0, 4.0)
+	var transformed: Dictionary = pose.transform_grid_point("support", Vector2(3.5, 3.5), point)
+	var unit := 34.0
+	var fractional_scroll := 2.25
+	var target_local := Vector2(
+		136.0 + ((transformed.point as Vector2).x - 4.0) * unit,
+		600.0 - ((transformed.point as Vector2).y - fractional_scroll) * unit
+	)
+	var vertex_offset := Vector2(-0.5, 0.5) * unit
+	var ghost_local := target_local - vertex_offset.rotated(deg_to_rad(8.0))
+	var snap: Dictionary = projection.resolve(
+		blocks,
+		CELL,
+		Vector2(3.5, 4.5),
+		ghost_local,
+		2.2,
+		unit,
+		136.0,
+		600.0,
+		fractional_scroll,
+		pose
+	)
+
+	assert_true(bool(snap.exact))
+	assert_eq(int(snap.column), 3)
+	assert_eq(int(snap.aim_origin_y), 4)
+	assert_almost_eq(float((snap.visual_target_local as Vector2).y), target_local.y, 0.001)
