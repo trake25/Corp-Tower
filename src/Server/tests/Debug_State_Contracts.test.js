@@ -163,6 +163,9 @@ test("stability tuning invalidates cached analysis without mutating the standing
         }],
         engine: { room: state, stopBots() {} }
     }];
+    
+    const originalDifficulty = GameConfig.towerStabilityDifficulty;
+const originalLateralShare = GameConfig.towerLateralLoadShare;
 
     await lobbyManager.updateDebugConfig("towerLateralLoadShare", 0.65);
 
@@ -178,11 +181,10 @@ test("stability tuning invalidates cached analysis without mutating the standing
     assert.equal(state.towerStabilityResult, currentCache);
 
     await lobbyManager.updateDebugConfig("resetDebugConfig", true);
-    assert.equal(GameConfig.towerStabilityDifficulty, 25);
-    assert.equal(GameConfig.towerLateralLoadShare, 0.4);
-    assert.equal(state.towerStabilityResult, null);
-    assert.equal(state.towerBlocks[0].supportStability, 37);
-});
+assert.equal(GameConfig.towerStabilityDifficulty, originalDifficulty);
+assert.equal(GameConfig.towerLateralLoadShare, originalLateralShare);
+assert.equal(state.towerStabilityResult, null);
+assert.equal(state.towerBlocks[0].supportStability, 37);
 
 test("Last Chance power toggle round-trips through debug config and resets", async () => {
     const lobbyManager = new LobbyManager();

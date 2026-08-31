@@ -1,0 +1,89 @@
+:root {
+  color: #1d1d1f;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 13px;
+}
+
+body {
+  margin: 0;
+  background: #fff;
+}
+
+main {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 16px;
+}
+
+h2,
+label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.intro,
+.selection,
+.status {
+  color: #5c5c66;
+  line-height: 1.45;
+}
+
+section {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #e5e5e8;
+  border-radius: 6px;
+}
+
+select,
+button {
+  min-height: 34px;
+  border-radius: 6px;
+  font: inherit;
+}
+
+select {
+  padding: 0 8px;
+  border: 1px solid #c8c8cf;
+  background: #fff;
+}
+
+button {
+  border: 0;
+  background: #0d99ff;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.error {
+  color: #c4382b;
+}
+
+.success {
+  color: #14804a;
+}
+
+.failures {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: #c4382b;
+}

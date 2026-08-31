@@ -1,0 +1,12 @@
+{
+  "name": "Corp Tower Game UI Exporter",
+  "id": "__FIGMA_PLUGIN_ID__",
+  "api": "1.0.0",
+  "editorType": ["figma"],
+  "main": "main.js",
+  "ui": "ui.html",
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}

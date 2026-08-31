@@ -1,0 +1,19 @@
+{
+  "name": "corp-tower-figma-ui-exporter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs bundle",
+    "package": "node tools/build.mjs package",
+    "test": "npm run typecheck && npm run build && node --test ../tests/figma-ui-exporter.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "verify:manifest": "node tools/build.mjs verify-manifest"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "latest",
+    "esbuild": "latest",
+    "fflate": "latest",
+    "typescript": "latest"
+  }
+}

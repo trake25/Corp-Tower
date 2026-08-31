@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Corp Tower Game UI Exporter</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main>
+      <h1>Game UI Exporter</h1>
+      <p class="intro">Exports one selected Figma FRAME as a private Phase 1 package.</p>
+      <section aria-labelledby="selection-heading">
+        <h2 id="selection-heading">Selected frame</h2>
+        <p id="selection" class="selection">Checking selection…</p>
+      </section>
+      <label for="scale">PNG scale</label>
+      <select id="scale" name="scale">
+        <option value="1">1x</option>
+        <option value="2">2x</option>
+        <option value="3">3x</option>
+        <option value="4" selected>4x</option>
+      </select>
+      <button id="export" type="button">Export UI Package</button>
+      <p id="status" class="status" role="status"></p>
+      <ul id="failures" class="failures" aria-live="polite"></ul>
+    </main>
+    <script src="./ui.js"></script>
+  </body>
+</html>

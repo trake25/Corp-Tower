@@ -31,6 +31,10 @@ report/benchmarks/raw/
 # Private art asset pipeline — R2 credentials for local dev.
 # The assets themselves are ignored in src/Client/App/corp-tower/.gitignore
 .env.art
+design-imports/
+scripts/figma-ui-exporter/dist/
+scripts/figma-ui-exporter/figma-plugin.local.json
+scripts/figma-ui-exporter/node_modules/
 
 # Physical backup machine credentials — see scripts/backup/.env.backup.example.
 # The filled-in copy belongs outside the repo checkout; ignored here only as

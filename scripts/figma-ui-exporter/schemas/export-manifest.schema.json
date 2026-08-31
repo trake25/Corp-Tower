@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://corp-tower.local/schemas/figma-export-manifest-v1.json",
+  "title": "Corp Tower Figma UI export package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "plugin_version",
+    "raw_format",
+    "screen",
+    "png_scale",
+    "files",
+    "assets"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "plugin_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "raw_format": {
+      "const": "JSON_REST_V1"
+    },
+    "screen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node_id", "name", "directory", "width", "height"],
+      "properties": {
+        "node_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "directory": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$" },
+        "width": { "type": "number", "minimum": 0 },
+        "height": { "type": "number", "minimum": 0 }
+      }
+    },
+    "png_scale": {
+      "enum": [1, 2, 3, 4]
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_json", "reference_png", "assets_directory"],
+      "properties": {
+        "raw_json": { "const": "figma.raw.json" },
+        "reference_png": { "const": "reference.png" },
+        "assets_directory": { "const": "assets" }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["node_id", "name", "filename", "scale", "width", "height", "candidate_reason"],
+        "properties": {
+          "node_id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string" },
+          "filename": { "type": "string", "pattern": "^assets/[^/]+\\.png$" },
+          "scale": { "enum": [1, 2, 3, 4] },
+          "width": { "type": "number", "minimum": 0 },
+          "height": { "type": "number", "minimum": 0 },
+          "candidate_reason": {
+            "enum": ["explicit_asset_tag", "image_fill", "vector", "boolean_operation"]
+          }
+        }
+      }
+    }
+  }
+}

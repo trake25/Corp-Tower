@@ -783,6 +783,19 @@ bounded source read. Local implementation detail stays in source.
 | scripts/docs-scope.mjs:147 | order · const | |
 | scripts/docs-scope.mjs:168 | maps · const | |
 
+### scripts/figma-ui-exporter/tools/build.mjs — 106 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/figma-ui-exporter/tools/build.mjs:1 | @file · file | build repository workflow |
+| scripts/figma-ui-exporter/tools/build.mjs:7 | project · const | |
+| scripts/figma-ui-exporter/tools/build.mjs:8 | dist · const | |
+| scripts/figma-ui-exporter/tools/build.mjs:9 | command · const | |
+| scripts/figma-ui-exporter/tools/build.mjs:10 | args · const | |
+| scripts/figma-ui-exporter/tools/build.mjs:12 | option · fn | |
+| scripts/figma-ui-exporter/tools/build.mjs:17 | json · fn | |
+| scripts/figma-ui-exporter/tools/build.mjs:39 | bundle · fn | |
+
 ### scripts/git-sync-commit-push.mjs — 188 ln
 
 | File:Ln | Anchor | Purpose |
@@ -1101,6 +1114,13 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/context-query.test.mjs:1 | @file · file | permanent regression coverage for context query |
 | scripts/tests/context-query.test.mjs:9 | ROOT · const | |
 
+### scripts/tests/figma-ui-exporter.test.mjs — 123 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/tests/figma-ui-exporter.test.mjs:1 | @file · file | permanent regression coverage for figma ui exporter |
+| scripts/tests/figma-ui-exporter.test.mjs:14 | root · const | |
+
 ### scripts/tests/git-sync-commit-push.test.mjs — 50 ln
 
 | File:Ln | Anchor | Purpose |
@@ -1169,4 +1189,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-119 files · 446 stable anchors.
+121 files · 454 stable anchors.
