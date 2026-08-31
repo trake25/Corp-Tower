@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join, relative, resolve, sep } from 'node:path';
 import { AREA_ALIASES, mapOwnerForPath, routeSourcePath } from './context-routing.mjs';
-import { selectQa } from '../qa-gate.mjs';
+import { AUTOMATION_PROTOCOL_TESTS, selectQa } from '../qa-gate.mjs';
 
 export const DEFAULT_MAX_RESULTS = 5;
 export const MAX_RESULTS = 8;
@@ -514,9 +514,8 @@ export function scopeContext(paths, options = {}) {
   const maps = [...new Set(changed.map(mapOwnerForPath).filter(Boolean).map(map => `docs/context/map/${map}`))].sort();
   const qa = selectQa(changed);
   const tools = [{ name: 'QA', command: command(['node', 'scripts/qa-gate.mjs', '--changed', ...changed]) }];
-  const automationProtocol = changed.some(path => /^(scripts\/(?:context|task-close|benchmark-rag|git-sync-commit-push|agent-observability|qa-gate|validate-docs)\.mjs|scripts\/lib\/(?:context-(?:query|routing)|agent-observability\/[^/]+|docs-capacity|maintenance-handoff)\.mjs|scripts\/tests\/(?:context-query|task-close|git-sync-commit-push|agent-observability|qa-gate|validate-docs)\.test\.mjs|report\/benchmarks\/)/.test(path));
-  if (automationProtocol) {
-    tools.push({ name: 'automation protocol', command: command(['node', '--test', 'scripts/tests/context-query.test.mjs', 'scripts/tests/task-close.test.mjs', 'scripts/tests/git-sync-commit-push.test.mjs', 'scripts/tests/qa-gate.test.mjs', 'scripts/tests/validate-docs.test.mjs', 'scripts/tests/agent-observability.test.mjs']) });
+  if (qa.tooling_tests.length) {
+    tools.push({ name: 'automation protocol', command: command(['node', '--test', ...AUTOMATION_PROTOCOL_TESTS]) });
     tools.push({ name: 'retrieval benchmark', command: command(['node', 'scripts/benchmark-rag.mjs', '--check']) });
   }
   if (maps.length) tools.push({ name: 'file map', command: command(['node', 'scripts/build-file-map.mjs']) });
@@ -542,10 +541,13 @@ export function scopeContext(paths, options = {}) {
 }
 
 export function scopeTextLines(result) {
+  const qaSummary = result.qa.runtime_applies ? 'runtime QA applies'
+    : result.qa.tooling_tests.length ? 'tooling QA applies'
+      : 'no runtime QA applies';
   const output = [`paths: ${result.task_paths.join(', ')}`,
     `docs: ${result.docs.length ? result.docs.join(', ') : 'none'}`,
     `maps: ${result.maps.length ? result.maps.join(', ') : 'none'}`,
-    `qa: ${result.qa.applies ? 'runtime QA applies' : 'no runtime QA applies'}`,
+    `qa: ${qaSummary}`,
     ...result.tools.map(tool => `tool: ${tool.name} — ${tool.command.display}`)];
   if (result.unmapped.length) output.push(`unmapped: ${result.unmapped.join(', ')}`);
   return output;

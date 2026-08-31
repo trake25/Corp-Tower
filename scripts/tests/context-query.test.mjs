@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { contextBundle, documentSection, mapSymbols, routeContext, scopeContext, searchContext } from '../lib/context-query.mjs';
 import { documentationNeedlesForPath, isNormalContextExcludedPath } from '../lib/context-routing.mjs';
+import { AUTOMATION_PROTOCOL_TESTS } from '../qa-gate.mjs';
 
 const ROOT = resolve('.');
 
@@ -182,9 +183,13 @@ test('scope derives routing, map, and QA selection from explicit paths', () => {
 
 test('automation scope selects the protocol suite and retrieval benchmark', () => {
   const result = scopeContext(['scripts/context.mjs', 'scripts/task-close.mjs']);
+  const protocol = result.tools.find(tool => tool.name === 'automation protocol');
 
-  assert.ok(result.tools.some(tool => tool.name === 'automation protocol' && tool.command.argv.includes('scripts/tests/task-close.test.mjs')));
-  assert.ok(result.tools.some(tool => tool.name === 'automation protocol' && tool.command.argv.includes('scripts/tests/agent-observability.test.mjs')));
+  assert.deepEqual(result.qa.tooling_tests, [
+    'scripts/tests/context-query.test.mjs',
+    'scripts/tests/task-close.test.mjs',
+  ]);
+  assert.deepEqual(protocol.command.argv, ['node', '--test', ...AUTOMATION_PROTOCOL_TESTS]);
   assert.ok(result.tools.some(tool => tool.name === 'retrieval benchmark' && tool.command.argv.at(-1) === '--check'));
 });
 

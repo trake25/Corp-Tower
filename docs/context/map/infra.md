@@ -948,7 +948,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/usage.mjs:110 | aggregateUsage · fn | |
 | scripts/lib/agent-observability/usage.mjs:149 | assessRuntimeCapabilities · fn | |
 
-### scripts/lib/context-query.mjs — 604 ln
+### scripts/lib/context-query.mjs — 606 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -974,8 +974,8 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-query.mjs:423 | searchContext · fn | |
 | scripts/lib/context-query.mjs:497 | searchTextLines · fn | |
 | scripts/lib/context-query.mjs:509 | scopeContext · fn | |
-| scripts/lib/context-query.mjs:544 | scopeTextLines · fn | |
-| scripts/lib/context-query.mjs:566 | contextBundle · fn | |
+| scripts/lib/context-query.mjs:543 | scopeTextLines · fn | |
+| scripts/lib/context-query.mjs:568 | contextBundle · fn | |
 
 ### scripts/lib/context-routing.mjs — 233 ln
 
@@ -1026,7 +1026,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/maintenance-handoff.mjs:89 | createMaintenanceItem · fn | |
 | scripts/lib/maintenance-handoff.mjs:196 | resolveMaintenanceHandoff · fn | |
 
-### scripts/qa-gate.mjs — 201 ln
+### scripts/qa-gate.mjs — 271 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1034,9 +1034,11 @@ bounded source read. Local implementation detail stays in source.
 | scripts/qa-gate.mjs:9 | ROOT · const | |
 | scripts/qa-gate.mjs:10 | CLIENT · const | |
 | scripts/qa-gate.mjs:11 | SERVER · const | |
-| scripts/qa-gate.mjs:48 | selectQa · fn | |
-| scripts/qa-gate.mjs:91 | classifyQaFailure · fn | |
-| scripts/qa-gate.mjs:101 | fail · fn | |
+| scripts/qa-gate.mjs:48 | AUTOMATION_PROTOCOL_TESTS · const | |
+| scripts/qa-gate.mjs:75 | selectToolingQa · fn | |
+| scripts/qa-gate.mjs:96 | selectQa · fn | |
+| scripts/qa-gate.mjs:153 | classifyQaFailure · fn | |
+| scripts/qa-gate.mjs:163 | fail · fn | |
 
 ### scripts/strip-comments.mjs — 296 ln
 
@@ -1111,12 +1113,12 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/codex-rollout-observability.test.mjs:1 | @file · file | permanent regression coverage for codex rollout observability |
 | scripts/tests/codex-rollout-observability.test.mjs:17 | usage · fn | |
 
-### scripts/tests/context-query.test.mjs — 224 ln
+### scripts/tests/context-query.test.mjs — 229 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/context-query.test.mjs:1 | @file · file | permanent regression coverage for context query |
-| scripts/tests/context-query.test.mjs:9 | ROOT · const | |
+| scripts/tests/context-query.test.mjs:10 | ROOT · const | |
 
 ### scripts/tests/figma-ui-exporter.test.mjs — 123 ln
 
@@ -1131,7 +1133,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/git-sync-commit-push.test.mjs:1 | @file · file | permanent regression coverage for git sync commit push |
 
-### scripts/tests/qa-gate.test.mjs — 28 ln
+### scripts/tests/qa-gate.test.mjs — 108 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1193,4 +1195,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-121 files · 458 stable anchors.
+121 files · 460 stable anchors.

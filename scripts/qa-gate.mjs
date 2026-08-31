@@ -36,6 +36,33 @@ const clientRules = [
   [/Roster|PlayerContext/, ['GameUi/test_roster_view.gd', 'GameUi/test_player_context.gd']],
 ];
 
+const automationTests = Object.freeze({
+  context: 'scripts/tests/context-query.test.mjs',
+  taskClose: 'scripts/tests/task-close.test.mjs',
+  gitSync: 'scripts/tests/git-sync-commit-push.test.mjs',
+  qaGate: 'scripts/tests/qa-gate.test.mjs',
+  validateDocs: 'scripts/tests/validate-docs.test.mjs',
+  observability: 'scripts/tests/agent-observability.test.mjs',
+});
+
+export const AUTOMATION_PROTOCOL_TESTS = Object.freeze(Object.values(automationTests));
+
+const automationTestSet = new Set(AUTOMATION_PROTOCOL_TESTS);
+const automationRules = [
+  [/^scripts\/(?:context|benchmark-rag)\.mjs$/, [automationTests.context]],
+  [/^scripts\/task-close\.mjs$/, [automationTests.taskClose]],
+  [/^scripts\/git-sync-commit-push\.mjs$/, [automationTests.gitSync]],
+  [/^scripts\/agent-observability\.mjs$/, [automationTests.observability]],
+  [/^scripts\/qa-gate\.mjs$/, [automationTests.qaGate, automationTests.context, automationTests.taskClose]],
+  [/^scripts\/validate-docs\.mjs$/, [automationTests.validateDocs]],
+  [/^scripts\/lib\/context-query\.mjs$/, [automationTests.context, automationTests.taskClose]],
+  [/^scripts\/lib\/context-routing\.mjs$/, [automationTests.context]],
+  [/^scripts\/lib\/agent-observability\/[^/]+$/, [automationTests.observability]],
+  [/^scripts\/lib\/docs-capacity\.mjs$/, [automationTests.validateDocs]],
+  [/^scripts\/lib\/maintenance-handoff\.mjs$/, [automationTests.taskClose, automationTests.qaGate, automationTests.validateDocs, automationTests.observability]],
+  [/^report\/benchmarks\//, [automationTests.context]],
+];
+
 function addMatches(path, rules, destination) {
   for (const [pattern, tests] of rules) {
     if (!pattern.test(path)) continue;
@@ -43,6 +70,27 @@ function addMatches(path, rules, destination) {
     return true;
   }
   return false;
+}
+
+export function selectToolingQa(changedPaths) {
+  const changed = changedPaths.filter(Boolean).map(path => path.replace(/^\.\//, ''));
+  const tests = new Set();
+  let applies = false;
+
+  for (const path of changed) {
+    if (automationTestSet.has(path)) {
+      tests.add(path);
+      applies = true;
+      continue;
+    }
+    for (const [pattern, matchedTests] of automationRules) {
+      if (!pattern.test(path)) continue;
+      matchedTests.forEach(test => tests.add(test));
+      applies = true;
+    }
+  }
+
+  return { applies, tests: [...tests].sort() };
 }
 
 export function selectQa(changedPaths) {
@@ -53,6 +101,7 @@ export function selectQa(changedPaths) {
   let fullServer = false;
   let fullClient = false;
   let clientRuntime = false;
+  const tooling = selectToolingQa(changed);
 
   for (const path of changed) {
     if (path.startsWith(`${SERVER}/tests/`) && path.endsWith('.test.js')) {
@@ -70,6 +119,7 @@ export function selectQa(changedPaths) {
     }
   }
 
+  const runtimeApplies = Boolean(serverSources.size || serverTests.size || clientRuntime || clientTests.size);
   return {
     changed,
     server_sources: [...serverSources].sort(),
@@ -78,14 +128,26 @@ export function selectQa(changedPaths) {
     client_runtime: clientRuntime,
     client_tests: [...clientTests].sort(),
     full_client: fullClient,
-    applies: Boolean(serverSources.size || serverTests.size || clientRuntime || clientTests.size),
+    tooling_tests: tooling.tests,
+    runtime_applies: runtimeApplies,
+    applies: runtimeApplies || tooling.applies,
   };
 }
 
 function failureDetail(output) {
+  const lines = output.split(/\r?\n/);
+  const nodeFailure = lines.find(line => /^\s*not ok\b/i.test(line))
+    || lines.find(line => /\bAssertionError\b/.test(line))
+    || lines.find(line => /^\s*error:\s*\S/i.test(line));
+  if (nodeFailure) return boundedDetail(nodeFailure);
   const totals = output.match(/Totals\n[-\s\S]*?(?=\n\n|$)/)?.[0].replaceAll('\n', '; ').replace(/\s+/g, ' ').trim();
   const error = output.split(/\r?\n/).find(line => /Parse Error:|Compile Error:|\[Failed\]:/.test(line))?.trim();
-  return [totals, error].filter(Boolean).join(' · ');
+  return boundedDetail([totals, error].filter(Boolean).join(' · '));
+}
+
+function boundedDetail(value, limit = 360) {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  return normalized.length > limit ? `${normalized.slice(0, limit - 1)}…` : normalized;
 }
 
 export function classifyQaFailure({ message = '', output = '', error = null, requestedClassification = null, evidence = '' } = {}) {
@@ -118,7 +180,7 @@ function fail(message, output = '', error = null, options = {}) {
 function run(label, command, args, cwd, env = process.env, options = {}) {
   const result = spawnSync(command, args, { cwd, env, encoding: 'utf8' });
   if (result.error) fail(`${label}: ${result.error.message}`, '', result.error, options);
-  if (result.status !== 0) fail(label, `${result.stdout || ''}${result.stderr || ''}`, null, options);
+  if (result.status !== 0) fail(label, [result.stdout, result.stderr].filter(Boolean).join('\n'), null, options);
   return label;
 }
 
@@ -159,7 +221,9 @@ function main() {
   const plan = selectQa(changed);
   if (argv.includes('--plan')) {
     if (argv.includes('--json')) console.log(JSON.stringify(plan, null, 2));
-    else console.log(`PLAN — ${plan.applies ? 'runtime QA applies' : 'no runtime QA applies'}`);
+    else if (plan.runtime_applies) console.log('PLAN — runtime QA applies');
+    else if (plan.tooling_tests.length) console.log('PLAN — tooling QA applies');
+    else console.log('PLAN — no runtime QA applies');
     return;
   }
 
@@ -187,7 +251,13 @@ function main() {
     }
   }
 
-  if (!completed.length) console.log('PASS — no runtime QA applies to the supplied paths');
+  if (plan.tooling_tests.length) {
+    for (const toolingTest of plan.tooling_tests)
+      run(`tooling test ${toolingTest}`, process.execPath, ['--test', toolingTest], ROOT, process.env, options);
+    completed.push(`tooling targeted tests (${plan.tooling_tests.length})`);
+  }
+
+  if (!completed.length) console.log('PASS — no runtime or tooling QA applies to the supplied paths');
   else console.log(`PASS — ${completed.join('; ')}`);
 }
 

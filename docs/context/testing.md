@@ -14,6 +14,12 @@ widens to the affected domain suite. Client runtime checks always include
 `CiSmokeTest.gd`. Headless checks establish correctness but cannot establish
 visual fidelity.
 
+Automation-protocol paths select focused Node test files through the same gate.
+Successful child output stays captured; a failure reports the file and first
+diagnostic while retaining the complete stream in a temporary log. Final
+`task-close` scope uses the same selector but schedules the complete automation
+protocol and retrieval benchmark.
+
 Server changes receive `node --check` plus mapped Node tests. Client changes use
 the repository-root host-matching Godot binary, smoke, and mapped GUT files.
 Infra, docs and site-only work runs no game suite unless it creates runtime risk.
