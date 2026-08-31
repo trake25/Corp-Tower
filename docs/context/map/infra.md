@@ -871,7 +871,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/runtime.mjs:38 | resolveRuntimeIdentity · fn | |
 | scripts/lib/agent-observability/runtime.mjs:73 | codexSessionIds · fn | |
 
-### scripts/lib/agent-observability/schema.mjs — 256 ln
+### scripts/lib/agent-observability/schema.mjs — 273 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -880,19 +880,19 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/schema.mjs:5 | STAGES · const | |
 | scripts/lib/agent-observability/schema.mjs:17 | EFFORTS · const | |
 | scripts/lib/agent-observability/schema.mjs:22 | ID · const | |
-| scripts/lib/agent-observability/schema.mjs:47 | assertObject · fn | |
-| scripts/lib/agent-observability/schema.mjs:52 | assertAllowedKeys · fn | |
-| scripts/lib/agent-observability/schema.mjs:64 | cleanId · fn | |
-| scripts/lib/agent-observability/schema.mjs:69 | cleanName · fn | |
-| scripts/lib/agent-observability/schema.mjs:75 | cleanSlug · fn | |
-| scripts/lib/agent-observability/schema.mjs:81 | cleanText · fn | |
-| scripts/lib/agent-observability/schema.mjs:92 | nonNegativeInteger · fn | |
-| scripts/lib/agent-observability/schema.mjs:98 | cleanBoolean · fn | |
-| scripts/lib/agent-observability/schema.mjs:104 | cleanTimestamp · fn | |
-| scripts/lib/agent-observability/schema.mjs:132 | sanitizeMeta · fn | |
-| scripts/lib/agent-observability/schema.mjs:163 | sanitizeTelemetry · fn | |
-| scripts/lib/agent-observability/schema.mjs:216 | sanitizeClose · fn | |
-| scripts/lib/agent-observability/schema.mjs:229 | sanitizeEvidence · fn | |
+| scripts/lib/agent-observability/schema.mjs:56 | assertObject · fn | |
+| scripts/lib/agent-observability/schema.mjs:61 | assertAllowedKeys · fn | |
+| scripts/lib/agent-observability/schema.mjs:73 | cleanId · fn | |
+| scripts/lib/agent-observability/schema.mjs:78 | cleanName · fn | |
+| scripts/lib/agent-observability/schema.mjs:84 | cleanSlug · fn | |
+| scripts/lib/agent-observability/schema.mjs:90 | cleanText · fn | |
+| scripts/lib/agent-observability/schema.mjs:101 | nonNegativeInteger · fn | |
+| scripts/lib/agent-observability/schema.mjs:107 | cleanBoolean · fn | |
+| scripts/lib/agent-observability/schema.mjs:113 | cleanTimestamp · fn | |
+| scripts/lib/agent-observability/schema.mjs:141 | sanitizeMeta · fn | |
+| scripts/lib/agent-observability/schema.mjs:172 | sanitizeTelemetry · fn | |
+| scripts/lib/agent-observability/schema.mjs:233 | sanitizeClose · fn | |
+| scripts/lib/agent-observability/schema.mjs:246 | sanitizeEvidence · fn | |
 
 ### scripts/lib/agent-observability/state.mjs — 198 ln
 
@@ -919,7 +919,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/state.mjs:183 | listTaskBundles · fn | |
 | scripts/lib/agent-observability/state.mjs:195 | reportDirectory · fn | |
 
-### scripts/lib/agent-observability/task-telemetry.mjs — 67 ln
+### scripts/lib/agent-observability/task-telemetry.mjs — 76 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -998,20 +998,20 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/docs-capacity.mjs:60 | mapCapacitySummary · fn | |
 | scripts/lib/docs-capacity.mjs:75 | validatorFailureClassification · fn | |
 
-### scripts/lib/maintenance-handoff.mjs — 206 ln
+### scripts/lib/maintenance-handoff.mjs — 208 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/lib/maintenance-handoff.mjs:1 | @file · file | maintenance handoff repository workflow |
-| scripts/lib/maintenance-handoff.mjs:22 | collapse · const | |
-| scripts/lib/maintenance-handoff.mjs:23 | compact · const | |
-| scripts/lib/maintenance-handoff.mjs:39 | isMaintenancePath · fn | |
-| scripts/lib/maintenance-handoff.mjs:43 | failureClassificationLine · fn | |
-| scripts/lib/maintenance-handoff.mjs:48 | failureClassificationFromOutput · fn | |
-| scripts/lib/maintenance-handoff.mjs:57 | isMaintenanceClassification · fn | |
-| scripts/lib/maintenance-handoff.mjs:61 | terminalStatusForSteps · fn | |
-| scripts/lib/maintenance-handoff.mjs:87 | createMaintenanceItem · fn | |
-| scripts/lib/maintenance-handoff.mjs:196 | resolveMaintenanceHandoff · fn | |
+| scripts/lib/maintenance-handoff.mjs:24 | collapse · const | |
+| scripts/lib/maintenance-handoff.mjs:25 | compact · const | |
+| scripts/lib/maintenance-handoff.mjs:41 | isMaintenancePath · fn | |
+| scripts/lib/maintenance-handoff.mjs:45 | failureClassificationLine · fn | |
+| scripts/lib/maintenance-handoff.mjs:50 | failureClassificationFromOutput · fn | |
+| scripts/lib/maintenance-handoff.mjs:59 | isMaintenanceClassification · fn | |
+| scripts/lib/maintenance-handoff.mjs:63 | terminalStatusForSteps · fn | |
+| scripts/lib/maintenance-handoff.mjs:89 | createMaintenanceItem · fn | |
+| scripts/lib/maintenance-handoff.mjs:198 | resolveMaintenanceHandoff · fn | |
 
 ### scripts/qa-gate.mjs — 201 ln
 
@@ -1043,36 +1043,36 @@ bounded source read. Local implementation detail stays in source.
 | scripts/sync-agent-skills.mjs:15 | compare · fn | |
 | scripts/sync-agent-skills.mjs:22 | skillMirrorDrift · fn | |
 
-### scripts/task-close.mjs — 810 ln
+### scripts/task-close.mjs — 872 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/task-close.mjs:1 | @file · file | reports a command error with its caller-selected exit status |
-| scripts/task-close.mjs:25 | ROOT · const | |
-| scripts/task-close.mjs:27 | SCHEMA_VERSION · const | |
-| scripts/task-close.mjs:30 | fail · fn | |
-| scripts/task-close.mjs:50 | parseArgs · fn | |
-| scripts/task-close.mjs:65 | checkOptions · fn | |
-| scripts/task-close.mjs:69 | one · fn | |
-| scripts/task-close.mjs:76 | many · fn | |
-| scripts/task-close.mjs:93 | testPath · fn | |
-| scripts/task-close.mjs:101 | domainFor · fn | |
-| scripts/task-close.mjs:111 | deriveTaskComplexity · fn | |
-| scripts/task-close.mjs:132 | command · fn | |
-| scripts/task-close.mjs:139 | fingerprint · fn | |
-| scripts/task-close.mjs:160 | publishPathsFor · fn | |
-| scripts/task-close.mjs:186 | createManifest · fn | |
-| scripts/task-close.mjs:213 | startObservability · fn | |
-| scripts/task-close.mjs:243 | closeObservabilityUnsafe · fn | |
-| scripts/task-close.mjs:318 | amendManifest · fn | |
-| scripts/task-close.mjs:344 | reviewManifest · fn | |
-| scripts/task-close.mjs:378 | applyDocumentationDecision · fn | |
-| scripts/task-close.mjs:413 | applyCoverageDecision · fn | |
-| scripts/task-close.mjs:430 | recordFallback · fn | |
-| scripts/task-close.mjs:442 | intakeForManifest · fn | |
-| scripts/task-close.mjs:503 | manifestPath · fn | |
+| scripts/task-close.mjs:27 | ROOT · const | |
+| scripts/task-close.mjs:29 | SCHEMA_VERSION · const | |
+| scripts/task-close.mjs:32 | fail · fn | |
+| scripts/task-close.mjs:52 | parseArgs · fn | |
+| scripts/task-close.mjs:67 | checkOptions · fn | |
+| scripts/task-close.mjs:71 | one · fn | |
+| scripts/task-close.mjs:78 | many · fn | |
+| scripts/task-close.mjs:95 | testPath · fn | |
+| scripts/task-close.mjs:107 | domainFor · fn | |
+| scripts/task-close.mjs:117 | deriveTaskComplexity · fn | |
+| scripts/task-close.mjs:138 | command · fn | |
+| scripts/task-close.mjs:145 | fingerprint · fn | |
+| scripts/task-close.mjs:166 | publishPathsFor · fn | |
+| scripts/task-close.mjs:201 | createManifest · fn | |
+| scripts/task-close.mjs:232 | startObservability · fn | |
+| scripts/task-close.mjs:262 | closeObservabilityUnsafe · fn | |
+| scripts/task-close.mjs:337 | amendManifest · fn | |
+| scripts/task-close.mjs:370 | reviewManifest · fn | |
+| scripts/task-close.mjs:405 | applyDocumentationDecision · fn | |
+| scripts/task-close.mjs:439 | applyCoverageDecision · fn | |
+| scripts/task-close.mjs:459 | recordFallback · fn | |
+| scripts/task-close.mjs:471 | intakeForManifest · fn | |
+| scripts/task-close.mjs:533 | manifestPath · fn | |
 
-### scripts/tests/agent-observability.test.mjs — 748 ln
+### scripts/tests/agent-observability.test.mjs — 762 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1113,7 +1113,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/qa-gate.test.mjs:1 | @file · file | permanent regression coverage for qa gate |
 
-### scripts/tests/task-close.test.mjs — 271 ln
+### scripts/tests/task-close.test.mjs — 284 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|

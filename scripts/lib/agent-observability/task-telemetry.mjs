@@ -16,8 +16,8 @@ function retrievalTelemetry(evidence, fallbacks) {
 }
 
 const telemetryCode = value => String(value || 'not_applicable').replaceAll('-', '_');
-const documentationOutcome = decision => ['updated', 'not-needed'].includes(decision)
-  ? telemetryCode(decision)
+const documentationOutcome = status => ['planner-follow-up', 'not-applicable', 'updated', 'not-needed'].includes(status)
+  ? telemetryCode(status)
   : 'not_applicable';
 
 function stepOutcome(steps, names) {
@@ -34,6 +34,9 @@ export function buildTaskTelemetry(manifest, receipt, evidence, { domainFor, rec
   const failures = toolEvents.filter(item => item.outcome === 'failed').length;
   const steps = receipt.steps || [];
   const maintenanceBlockers = (receipt.maintenance?.items || []).filter(item => item.state === 'blocking').length;
+  const coverageStatus = ['reused', 'added', 'updated', 'none'].includes(manifest.coverage?.status)
+    ? manifest.coverage.status
+    : 'none';
   const domains = Object.fromEntries(manifest.domains.map(domain => [
     domain.replaceAll('-', '_'),
     manifest.changed_paths.filter(path => domainFor(path) === domain).length,
@@ -51,13 +54,19 @@ export function buildTaskTelemetry(manifest, receipt, evidence, { domainFor, rec
       retests: 0,
     },
     documentation: { files: manifest.documented_paths.length, updates: manifest.documented_paths.length },
+    qa: {
+      executed: telemetryCode(receipt.qa?.executed || stepOutcome(steps, ['QA'])),
+      permanent_coverage: telemetryCode(receipt.qa?.permanent_coverage || coverageStatus),
+      temporary_verification: telemetryCode(receipt.qa?.temporary_verification || manifest.qa?.temporary_verification || 'not-used'),
+      qa_tooling: telemetryCode(receipt.qa?.qa_tooling || manifest.qa?.status || 'unchanged'),
+    },
     task_close: { status: telemetryCode(receipt.status), receipt_hash: receiptHash },
     outcomes: {
       implementation: receipt.status === 'failed'
         ? 'failed'
         : manifest.changed_paths.length ? 'complete' : 'not_applicable',
       task_qa: stepOutcome(steps, ['QA']),
-      documentation: documentationOutcome(manifest.documentation?.decision),
+      documentation: documentationOutcome(manifest.documentation?.status || manifest.documentation?.decision),
       maps_retrieval: stepOutcome(steps, ['automation protocol', 'retrieval benchmark', 'file map', 'game KB', 'site KB']),
       close_out: telemetryCode(receipt.status),
       maintenance_blockers: maintenanceBlockers,

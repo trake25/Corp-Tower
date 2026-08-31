@@ -11,17 +11,21 @@ checking, an existing focused suite, full domain tests, smoke, a rendered
 comparison, or a purpose-built one-time probe. Passing verification does not make
 that probe a permanent test.
 
-Permanent coverage is reserved for authoritative rules, cross-system contracts,
-stateful invariants, credible regressions, meaningful UI structure, and
-release-critical smoke paths. Exact copy, pixels, artwork dimensions, local
-defaults, retired-node absence, and private implementation normally remain in
-source and task evidence. UI structure covers required bindings, membership,
+Permanent coverage is reserved for durable authoritative rules, boundaries,
+invariants, deterministic guarantees, protocol/authority/security or recovery
+contracts, credible regressions, meaningful UI structure, and release-critical
+smoke paths. Tunable values, exact copy, pixels, artwork dimensions, local
+defaults, temporary calibration, retired-node absence, and private
+implementation normally remain in source and task evidence. UI structure covers required bindings, membership,
 containment, visibility, relative layout, responsive behavior, and draw order;
 assert relationships rather than authored coordinates.
 
-Task close-out records this separately from QA as
-`--coverage <updated|not-needed> --coverage-reason ...`. A source change can run
-the full suite and correctly choose `not-needed`.
+Task close-out records `permanent_coverage` as `reused`, `added`, `updated`, or
+`none`, plus whether temporary verification was used. Added or updated coverage
+names the durable contract it protects; successfully reused coverage is visible.
+A configurable value is not a permanent invariant solely because its current
+source assignment has a particular number: test its range, clamping,
+round-trip, authority, effect, or behavior when that is contractual.
 
 ## Local selection
 
@@ -41,7 +45,9 @@ it. CI retains the full server and client domain gates.
 The complete command forms and failure-output rules live in the `qa-engineer`
 skill. A stale assertion is a test bug until source evidence proves otherwise;
 prefer invariants over hardcoded tuning values and never weaken a test merely to
-make a gate green.
+make a gate green. Generic runners, harnesses, fixtures, validators, selection,
+and CI plumbing are QA infrastructure: change them only in an explicitly
+planned QA/tooling task, otherwise surface the scope expansion in `repair/`.
 
 QA emits a stable classification with its compact diagnostic. Host, spawn,
 permissions, sandbox, and missing-executable failures are `tooling-environment`;

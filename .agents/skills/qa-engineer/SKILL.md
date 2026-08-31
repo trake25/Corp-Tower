@@ -19,10 +19,9 @@ Verify the files owned by this task, not every pre-existing dirty file.
 
 `task-close close` is the normal final invocation: it batches the selected QA,
 map and KB checks, retains verbose child output locally, and prints a compact
-result. A passing close is sufficient evidence; do not reread its receipt or
-rerun individual validators on success. On a task-owned failure, read only the
-named failing log, rerun the focused failing check while fixing it, then invoke
-close once.
+result. It records permanent coverage as reused, added, updated, or none, plus
+temporary verification and QA-tooling scope. A passing close is sufficient
+evidence; do not reread its receipt or rerun individual validators on success.
 
 For a changed-source task, run `node scripts/qa-gate.mjs --changed <task-owned-path>...`
 with every task-owned changed path stated explicitly. It selects this matrix,
@@ -80,13 +79,14 @@ approved unrelated maintenance classification. Never weaken a test to obtain it.
 
 ## Policy
 
-- **Task verification and permanent coverage are different decisions.** Run the
-  checks needed to prove this change, then add or retain a test only when its
-  future failure would identify a broken rule, boundary, invariant, credible
-  regression, meaningful UI structure, or release-critical smoke path. Exact
-  copy, pixels, artwork dimensions, local defaults, retired-node absence and
-  private implementation are verified in the task and normally do not stay in
-  the suite.
+- **Task verification and permanent coverage are different decisions.** Reuse
+  existing coverage by default. Add or update a test only for a durable rule,
+  boundary, invariant, deterministic guarantee, protocol/authority/security or
+  recovery contract, credible regression, meaningful UI structure, or
+  release-critical smoke path. Tunables, local defaults, exact copy, pixels,
+  temporary calibration, and private implementation are task evidence. Test a
+  tunable's behavior or bounds when contractual, never its current assigned
+  value alone.
 - UI structure means required bindings, membership, containment, visibility,
   relative alignment, responsive behavior and draw order. Assert relationships,
   not authored coordinates or dimensions. Exact text qualifies only when code
@@ -98,6 +98,12 @@ approved unrelated maintenance classification. Never weaken a test to obtain it.
 - **Prefer an invariant to a hardcoded expected value.** A test that asserts
   conservation (what went in still adds up) survives a retune; one that asserts
   `=== 15` breaks on every tuning pass and teaches nothing when it does.
+- **QA infrastructure is scoped separately.** Generic runners, orchestration,
+  reusable harnesses or fixtures, validators, test selection, CI plumbing, and
+  broad helpers need an explicit implementation-plan authorization or a
+  QA/tooling task. Declare planned paths with `task-close prepare
+  --qa-tooling-path`; otherwise leave a `repair/` advisory rather than silently
+  expanding a product task.
 - **`reset_placeable_range()` in `before_each`** or a GUT suite inherits the
   previous test's grid.
 - **Never make a test pass by weakening it.** If the gate is wrong, say so.

@@ -1,14 +1,15 @@
 ---
 name: docs-steward
-description: Owns the two knowledge bases — docs/context/** for the game and site/docs/** for the portfolio. Use at the end of any task that changed source, whenever a validator reports a doc over budget, a banned phrase, a stale map or a broken citation, and whenever retrieval missed and the KB needs repairing.
+description: Explicit documentation and retrieval-maintenance role for docs/context/** and site/docs/**. Use for planner-approved semantic docs, validator defects, stale maps, broken citations, and retrieval repairs.
 ---
 
 # Docs steward
 
-Every other role ends here. The knowledge base is maintained on the way out, not
-in a cleanup pass later. [`update-docs`](../update-docs/SKILL.md) is the only
-home for the doc-worthy gate, prose retention and landmine policy; this skill
-owns budget decisions and repair when retrieval fails.
+This is an explicit maintenance role, not the final phase of every source
+change. Normal Codex implementation records semantic documentation as
+`planner-follow-up`; the user-initiated planning/review session decides whether
+prose needs revision. [`update-docs`](../update-docs/SKILL.md) owns the
+doc-worthy gate, prose retention and landmine policy.
 
 ## Budgets
 
@@ -28,10 +29,10 @@ the KB harder to use.
 
 ## Repairing a retrieval miss
 
-A miss is a defect in the KB, not a reason to route around it. Fix it in the same
-task: bare or wrong map row → author the `Does` · wrong or missing router row →
-fix the KB's `index.md` · **doc contradicts source → source wins**, fix the doc
-and log the task row `!`.
+A miss is a defect in the KB. During unrelated product work, use the smallest
+role-root fallback and record the defect in `repair/`; do not expand the task to
+change routing or maps. In this explicit role, source wins over conflicting docs
+and the repair updates the appropriate router, map, or prose.
 
 **Flag instead of fixing** when the repair needs a call only the user can make:
 source and docs disagree and neither is obviously right · the fix changes
@@ -48,11 +49,9 @@ apply.
 
 ## Close-out
 
-`task-close review` is the post-edit handoff: it recomputes the exact
-documentation scope and QA plan from explicit final paths. After the agent owns
-and edits any selected candidate docs, `task-close close` records the doc-worthy
-decision, regenerates content-changed maps, validates the relevant game/site KB
-and writes exact command evidence.
+`task-close review` records explicit paths and QA selection. `task-close close`
+regenerates content-changed maps, validates the relevant game/site KB, and
+writes exact command evidence; pending planner documentation is non-blocking.
 
 Regenerated maps preserve each authored file purpose and explicit stable anchor
 by `file#symbol`. Repair semantic, task-caused validator failures before

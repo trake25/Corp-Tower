@@ -11,7 +11,9 @@ import { executeBestEffort } from './agent-observability.mjs';
 import { buildTaskTelemetry } from './lib/agent-observability/task-telemetry.mjs';
 import { codexSessionIds } from './lib/agent-observability/runtime.mjs';
 import {
+  createMaintenanceItem,
   failureClassificationFromOutput,
+  isMaintenanceClassification,
   isMaintenancePath,
   resolveMaintenanceHandoff,
 } from './lib/maintenance-handoff.mjs';
@@ -94,6 +96,10 @@ function testPath(path) {
   return /^(src\/Server\/tests\/|src\/Client\/.*\/Tests\/|scripts\/tests\/|site\/.*(?:test|spec)\.)/.test(path);
 }
 
+function qaToolingPath(path) {
+  return /^(?:scripts\/(?:qa-gate|task-close)\.mjs|scripts\/lib\/.*(?:qa|test|fixture|harness)|\.github\/(?:workflows|actions)\/.*(?:qa|test|ci)|src\/Server\/tests\/(?:helpers|fixtures)\/)/i.test(path);
+}
+
 function agentConfigPath(path) {
   return /^(AGENTS\.md|CLAUDE\.md|\.agents\/skills\/|\.claude\/skills\/)/.test(path);
 }
@@ -168,9 +174,7 @@ function documentationFor(scope, sourceChanged = false) {
     source_changed: sourceChanged,
     candidate_docs: scope.docs,
     maps_to_regenerate: scope.maps,
-    scope: null,
-    decision: sourceChanged ? 'pending' : 'not-needed',
-    reason: sourceChanged ? null : 'No source path is in the reviewed change set.',
+    status: sourceChanged ? 'planner-follow-up' : 'not-applicable',
     documented_paths: [],
   };
 }
@@ -178,17 +182,31 @@ function documentationFor(scope, sourceChanged = false) {
 function coverageFor(sourceChanged = false) {
   return {
     source_changed: sourceChanged,
-    decision: sourceChanged ? 'pending' : 'not-needed',
-    reason: sourceChanged ? null : 'No source path is in the reviewed change set.',
+    status: sourceChanged ? 'pending' : 'none',
+    protected_contract: null,
   };
 }
 
-export function createManifest({ task, ownedPaths = null, changedPaths = null, runId = null }) {
+function qaToolingFor(plannedPaths = [], changedPaths = []) {
+  const changed = changedPaths.filter(qaToolingPath);
+  const unplanned = changed.filter(path => !plannedPaths.includes(path));
+  return {
+    planned_paths: [...new Set(plannedPaths)].sort(),
+    changed_paths: changed,
+    unplanned_paths: unplanned,
+    status: !changed.length ? 'unchanged' : unplanned.length ? 'unplanned-change' : 'planned-change',
+  };
+}
+
+export function createManifest({ task, ownedPaths = null, changedPaths = null, plannedQaToolingPaths = [], runId = null }) {
   if (!task || task.length > 120) throw new Error('task must be present and at most 120 characters');
   const owned = [...new Set(ownedPaths || changedPaths || [])].sort();
   if (!owned.length) throw new Error('one or more owned paths are required');
   const intake = scopeContext(owned, { artifact: true });
   const hasSource = owned.some(sourcePath);
+  const plannedQaTooling = [...new Set(plannedQaToolingPaths)].sort();
+  const unownedQaTooling = plannedQaTooling.filter(path => !owned.includes(path));
+  if (unownedQaTooling.length) throw new Error(`planned QA-tooling paths must be owned: ${unownedQaTooling.join(', ')}`);
   return {
     schema_version: SCHEMA_VERSION,
     phase: 'prepared',
@@ -204,6 +222,7 @@ export function createManifest({ task, ownedPaths = null, changedPaths = null, r
     retrieval: { fallbacks: [] },
     documentation: documentationFor(intake, hasSource),
     coverage: coverageFor(hasSource),
+    qa: { ...qaToolingFor(plannedQaTooling), temporary_verification: 'not-used' },
     review: null,
     verification: null,
     observability: { status: 'not_started', task_id: null, session_bindings: 0 },
@@ -315,11 +334,14 @@ function upgradeManifest(manifest) {
   return createManifest({ task: manifest.task, ownedPaths: manifest.changed_paths, runId: manifest.run_id });
 }
 
-export function amendManifest(manifest, paths) {
+export function amendManifest(manifest, paths, plannedQaToolingPaths = []) {
   if (manifest.schema_version !== SCHEMA_VERSION) throw new Error('amend requires a schema-v2 manifest');
   if (manifest.phase === 'closed') throw new Error('a closed manifest cannot be amended; start a new task');
   const additions = [...new Set(paths)].filter(path => !manifest.owned_paths.includes(path)).sort();
-  if (!additions.length) return manifest;
+  const planned = [...new Set([...(manifest.qa?.planned_paths || []), ...plannedQaToolingPaths])].sort();
+  const unownedQaTooling = planned.filter(path => ![...manifest.owned_paths, ...additions].includes(path));
+  if (unownedQaTooling.length) throw new Error(`planned QA-tooling paths must be owned: ${unownedQaTooling.join(', ')}`);
+  if (!additions.length && planned.length === (manifest.qa?.planned_paths || []).length) return manifest;
   const sourceAdded = additions.some(sourcePath);
   const owned = [...new Set([...manifest.owned_paths, ...additions])].sort();
   const intake = scopeContext(owned, { artifact: true });
@@ -336,6 +358,10 @@ export function amendManifest(manifest, paths) {
     publish_paths: [],
     documentation: resetReview ? documentationFor(intake, owned.some(sourcePath)) : manifest.documentation,
     coverage: resetReview ? coverageFor(owned.some(sourcePath)) : manifest.coverage,
+    qa: {
+      ...(resetReview ? { ...qaToolingFor(planned), temporary_verification: 'not-used' } : manifest.qa),
+      ...qaToolingFor(planned, resetReview ? [] : manifest.changed_paths),
+    },
     review: resetReview ? null : manifest.review,
     verification: null,
   };
@@ -358,8 +384,9 @@ export function reviewManifest(manifest, { changedPaths, scope = null, mapBaseli
     derived_paths: [],
     documented_paths: [],
     publish_paths: changed,
-    documentation: { ...documentationFor(intake, sourceChanged), scope },
+    documentation: documentationFor(intake, sourceChanged),
     coverage: coverageFor(sourceChanged),
+    qa: { ...qaToolingFor(manifest.qa?.planned_paths || [], changed), temporary_verification: 'not-used' },
     review: { input_fingerprint: fingerprint(reviewInput), reviewed_at: new Date().toISOString(), intake, map_hashes: mapHashesAtReview },
     verification: null,
   };
@@ -400,8 +427,7 @@ export function applyDocumentationDecision(manifest, input) {
     ...manifest,
     documentation: {
       ...manifest.documentation,
-      decision: values.decision,
-      reason: values.reason,
+      status: values.decision,
       documented_paths: values.documentedPaths,
     },
     documented_paths: values.documentedPaths,
@@ -410,18 +436,21 @@ export function applyDocumentationDecision(manifest, input) {
   };
 }
 
-export function applyCoverageDecision(manifest, { decision, reason }) {
-  if (!['updated', 'not-needed'].includes(decision)) throw new Error('coverage must be updated or not-needed');
-  if (!reason?.trim()) throw new Error('a permanent-coverage decision needs a plain-English reason');
+export function applyCoverageDecision(manifest, { status, protectedContract = null }) {
+  if (!['reused', 'added', 'updated', 'none'].includes(status)) throw new Error('permanent coverage must be reused, added, updated, or none');
   if (!['reviewed', 'failed'].includes(manifest.phase)) throw new Error('close requires a reviewed manifest');
-  if (decision === 'updated' && !manifest.changed_paths.some(testPath))
-    throw new Error('updated permanent coverage requires an explicit changed test path');
+  if (['added', 'updated'].includes(status) && !manifest.changed_paths.some(testPath))
+    throw new Error(`${status} permanent coverage requires an explicit changed test path`);
+  if (['added', 'updated'].includes(status) && !protectedContract?.trim())
+    throw new Error(`${status} permanent coverage requires a protected contract`);
+  if (protectedContract && protectedContract.trim().length > 240)
+    throw new Error('protected contract must be at most 240 characters');
   return {
     ...manifest,
     coverage: {
       ...(manifest.coverage || coverageFor(true)),
-      decision,
-      reason: reason.trim(),
+      status,
+      protected_contract: protectedContract?.trim() || null,
     },
     verification: null,
   };
@@ -487,14 +516,15 @@ function reviewForManifest(manifest, manifestFile) {
     changed_paths: manifest.changed_paths,
     docs: manifest.documentation.candidate_docs,
     maps: manifest.documentation.maps_to_regenerate,
+    documentation_status: manifest.documentation.status,
     qa: {
       applies: intake.qa.applies,
       server_tests: intake.qa.server_tests,
       client_tests: intake.qa.client_tests,
     },
-    documentation_scope: manifest.documentation.scope?.output || null,
+    qa_tooling: manifest.qa,
     observability: manifest.observability,
-    next: command(['node', 'scripts/task-close.mjs', 'close', '--manifest', manifestFile, '--decision', '<updated|not-needed>', '--reason', '<reason>', '--coverage', '<updated|not-needed>', '--coverage-reason', '<reason>']).display,
+    next: command(['node', 'scripts/task-close.mjs', 'close', '--manifest', manifestFile, '--coverage', '<reused|added|updated|none>', '--coverage-contract', '<contract when added or updated>']).display,
   };
   if (Buffer.byteLength(JSON.stringify(result, null, 2)) + 1 > INTAKE_MAX_BYTES) throw new Error('task review exceeds 8192 bytes; read the manifest artifact for full documentation scope');
   return result;
@@ -565,18 +595,38 @@ function runStep(name, args) {
 }
 
 function requireDocumentationDecision(manifest) {
-  if (!manifest.documentation.source_changed) return;
-  if (!manifest.documentation.scope) fail('manifest has no post-edit documentation scope; run task-close review', 1);
-  if (manifest.documentation.decision === 'pending') fail('documentation decision is pending; pass it to task-close close', 1);
-  if (!manifest.documentation.reason) fail('documentation decision has no reason', 1);
-  if (manifest.documentation.decision === 'updated' && !manifest.documentation.documented_paths.length)
-    fail('updated documentation decision has no documented paths', 1);
+  if (manifest.documentation.source_changed && manifest.documentation.status !== 'planner-follow-up')
+    fail('source-changing tasks must record documentation as planner-follow-up', 1);
 }
 
 function requireCoverageDecision(manifest) {
   if (!manifest.coverage?.source_changed) return;
-  if (manifest.coverage.decision === 'pending') fail('permanent-coverage decision is pending; pass it to task-close close', 1);
-  if (!manifest.coverage.reason) fail('permanent-coverage decision has no reason', 1);
+  if (manifest.coverage.status === 'pending') fail('permanent-coverage status is pending; pass it to task-close close', 1);
+  if (['added', 'updated'].includes(manifest.coverage.status) && !manifest.coverage.protected_contract)
+    fail('added or updated permanent coverage needs a protected contract', 1);
+}
+
+function qaToolingMaintenanceItems(manifest) {
+  if (manifest.qa?.status !== 'unplanned-change') return [];
+  return [createMaintenanceItem({
+    state: 'advisory',
+    classification: 'qa-infrastructure',
+    stage: 'unplanned QA-infrastructure scope expansion',
+    affected: manifest.qa.unplanned_paths.join(', '),
+    diagnostic: 'QA infrastructure changed without a matching --qa-tooling-path at task intake.',
+    verificationImpact: 'Advisory only; verification remains valid.',
+    completed: 'The implementation stayed verified, but the QA infrastructure expansion needs planner review.',
+    recommendedFollowUp: 'Have the planning session approve the infrastructure scope or move the change into a QA/tooling task.',
+  })];
+}
+
+function executionStatus(steps, name) {
+  const selected = steps.filter(step => step.name === name);
+  if (!selected.length) return 'not-applicable';
+  if (selected.every(step => step.status === 0)) return 'passed';
+  return selected.every(step => step.status !== 0 && isMaintenanceClassification(step.classification))
+    ? 'maintenance-blocked'
+    : 'failed';
 }
 
 function requireFallbackFixtures(manifest) {
@@ -615,6 +665,7 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
     runId: manifest.run_id || fingerprint({ task: manifest.task, manifest: displayPath(manifestFile) }).slice(0, 8),
     steps,
     changedPaths: manifest.changed_paths,
+    advisoryItems: qaToolingMaintenanceItems(manifest),
   });
   const failed = steps.find(step => step.status !== 0);
   const receipt = {
@@ -627,6 +678,12 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
     maintenance: {
       handoff: maintenance.handoff,
       items: maintenance.items,
+    },
+    qa: {
+      executed: executionStatus(steps, 'QA'),
+      permanent_coverage: manifest.coverage?.status || 'none',
+      temporary_verification: manifest.qa?.temporary_verification || 'not-used',
+      qa_tooling: manifest.qa?.status || 'unchanged',
     },
     steps,
   };
@@ -692,20 +749,31 @@ async function main() {
   const action = args.shift();
   const values = parseArgs(args);
   if (action === 'prepare') {
-    checkOptions(values, ['task', 'output', 'manifest', 'path', 'changed']);
+    checkOptions(values, ['task', 'output', 'manifest', 'path', 'changed', 'qa-tooling-path']);
     const manifestFile = safePath(one(values, 'output') || one(values, 'manifest') || DEFAULT_MANIFEST, '--output');
     if (existsSync(manifestFile)) fail(`manifest already exists: ${displayPath(manifestFile)}; start a new run with --output`, 1);
     const paths = normalizePaths([...many(values, 'path'), ...many(values, 'changed')]);
-    const manifest = createManifest({ task: one(values, 'task', true), ownedPaths: paths });
+    const manifest = createManifest({
+      task: one(values, 'task', true),
+      ownedPaths: paths,
+      plannedQaToolingPaths: normalizeOptionalPaths(many(values, 'qa-tooling-path'), '--qa-tooling-path'),
+    });
     manifest.observability = startObservability(manifest);
     writeManifest(manifestFile, manifest);
     console.log(JSON.stringify(intakeForManifest(manifest, displayPath(manifestFile)), null, 2));
     return;
   }
   if (action === 'amend') {
-    checkOptions(values, ['manifest', 'path']);
+    checkOptions(values, ['manifest', 'path', 'qa-tooling-path']);
     const manifestFile = manifestPath(values);
-    const manifest = amendManifest(upgradeManifest(readManifest(manifestFile)), normalizePaths(many(values, 'path')));
+    const paths = many(values, 'path');
+    const toolingPaths = many(values, 'qa-tooling-path');
+    if (!paths.length && !toolingPaths.length) fail('supply one or more --path or --qa-tooling-path values');
+    const manifest = amendManifest(
+      upgradeManifest(readManifest(manifestFile)),
+      paths.length ? normalizeOptionalPaths(paths, '--path') : [],
+      normalizeOptionalPaths(toolingPaths, '--qa-tooling-path'),
+    );
     writeManifest(manifestFile, manifest);
     console.log(JSON.stringify(intakeForManifest(manifest, displayPath(manifestFile)), null, 2));
     return;
@@ -715,10 +783,7 @@ async function main() {
     const manifestFile = manifestPath(values);
     let manifest = upgradeManifest(readManifest(manifestFile));
     const changed = normalizePaths(many(values, 'changed'));
-    const sourceChanged = changed.some(sourcePath);
-    const scope = sourceChanged ? runStep('documentation scope', ['scripts/docs-scope.mjs', ...changed]) : null;
-    if (scope && scope.status !== 0) fail(`FAIL — ${scope.name}: ${scope.summary}`, 1);
-    manifest = reviewManifest(manifest, { changedPaths: changed, scope, mapBaseline: mapHashes() });
+    manifest = reviewManifest(manifest, { changedPaths: changed, mapBaseline: mapHashes() });
     writeManifest(manifestFile, manifest);
     console.log(JSON.stringify(reviewForManifest(manifest, displayPath(manifestFile)), null, 2));
     return;
@@ -739,10 +804,9 @@ async function main() {
     return;
   }
   if (action === 'close') {
-    checkOptions(values, ['manifest', 'decision', 'reason', 'doc-path', 'coverage', 'coverage-reason', 'qa-classification', 'qa-evidence']);
+    checkOptions(values, ['manifest', 'coverage', 'coverage-contract', 'temporary-verification', 'qa-classification', 'qa-evidence']);
     const manifestFile = manifestPath(values);
     let manifest = upgradeManifest(readManifest(manifestFile));
-    const documentedPaths = normalizeOptionalPaths(many(values, 'doc-path'), '--doc-path');
     const qaClassification = one(values, 'qa-classification');
     const qaEvidence = one(values, 'qa-evidence');
     if (qaClassification && qaClassification !== 'test-expectation') fail('only test-expectation may be supplied as a QA maintenance classification');
@@ -750,13 +814,15 @@ async function main() {
       fail('test-expectation classification requires 1-240 characters of bounded evidence');
     if (!qaClassification && qaEvidence) fail('QA evidence requires a QA classification');
     const qaOverride = qaClassification ? { classification: qaClassification, evidence: qaEvidence.trim() } : null;
+    const coverage = one(values, 'coverage', manifest.coverage?.source_changed) || 'none';
+    const coverageContract = one(values, 'coverage-contract');
+    const temporaryVerification = one(values, 'temporary-verification') || 'not-used';
+    if (!['used', 'not-used'].includes(temporaryVerification)) fail('temporary verification must be used or not-used');
     const closeInput = {
       review: manifest.review?.input_fingerprint || null,
-      decision: one(values, 'decision', true),
-      reason: one(values, 'reason', true).trim(),
-      documented_paths: documentedPaths,
-      coverage: one(values, 'coverage', true),
-      coverage_reason: one(values, 'coverage-reason', true).trim(),
+      coverage,
+      coverage_contract: coverageContract.trim() || null,
+      temporary_verification: temporaryVerification,
       qa_classification: qaOverride?.classification || null,
       qa_evidence: qaOverride?.evidence || null,
     };
@@ -768,15 +834,11 @@ async function main() {
       }
       fail('close inputs changed after verification; rerun task-close review', 1);
     }
-    manifest = applyDocumentationDecision(manifest, {
-      decision: closeInput.decision,
-      reason: closeInput.reason,
-      documentedPaths,
-    });
     manifest = applyCoverageDecision(manifest, {
-      decision: closeInput.coverage,
-      reason: closeInput.coverage_reason,
+      status: closeInput.coverage,
+      protectedContract: closeInput.coverage_contract,
     });
+    manifest = { ...manifest, qa: { ...manifest.qa, temporary_verification: closeInput.temporary_verification } };
     writeManifest(manifestFile, manifest);
     verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride);
     return;

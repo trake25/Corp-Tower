@@ -44,7 +44,8 @@ test('prepare creates a compact schema-v2 ownership manifest and intake', () => 
   assert.equal(manifest.phase, 'prepared');
   assert.deepEqual(manifest.owned_paths, [SOURCE]);
   assert.deepEqual(manifest.changed_paths, []);
-  assert.equal(manifest.coverage.decision, 'pending');
+  assert.equal(manifest.documentation.status, 'planner-follow-up');
+  assert.equal(manifest.coverage.status, 'pending');
   assert.deepEqual(manifest.intake.docs, [DOC]);
   assert.deepEqual(manifest.intake.maps, ['docs/context/map/backend.md']);
   assert.deepEqual(manifest.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
@@ -96,20 +97,20 @@ test('review accepts only owned final paths and refreshes docs and QA from them'
   const manifest = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE, 'scripts/context.mjs'] });
 
   assert.throws(() => reviewManifest(manifest, { changedPaths: ['src/Server/app/Game_Engine.js'] }), /not owned/);
-  const reviewed = reviewManifest(manifest, { changedPaths: [SOURCE], scope: { status: 0, output: 'backend.md:10-20' }, mapBaseline: { 'docs/context/map/backend.md': 'before' } });
+  const reviewed = reviewManifest(manifest, { changedPaths: [SOURCE], mapBaseline: { 'docs/context/map/backend.md': 'before' } });
   assert.equal(reviewed.phase, 'reviewed');
   assert.deepEqual(reviewed.changed_paths, [SOURCE]);
   assert.deepEqual(reviewed.documentation.candidate_docs, [DOC]);
   assert.deepEqual(reviewed.review.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
-  assert.equal(reviewed.documentation.scope.output, 'backend.md:10-20');
+  assert.equal(reviewed.documentation.status, 'planner-follow-up');
   assert.deepEqual(reviewed.review.map_hashes, { 'docs/context/map/backend.md': 'before' });
-  const repeated = reviewManifest(reviewed, { changedPaths: [SOURCE], scope: reviewed.documentation.scope, mapBaseline: { 'docs/context/map/backend.md': 'after' } });
+  const repeated = reviewManifest(reviewed, { changedPaths: [SOURCE], mapBaseline: { 'docs/context/map/backend.md': 'after' } });
   assert.deepEqual(repeated.review.map_hashes, { 'docs/context/map/backend.md': 'before' });
 });
 
 test('amend preserves reviewed source scope for a candidate doc and invalidates it for new source', () => {
   const prepared = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE] });
-  const reviewed = reviewManifest(prepared, { changedPaths: [SOURCE], scope: { status: 0, output: 'backend.md:10-20' } });
+  const reviewed = reviewManifest(prepared, { changedPaths: [SOURCE] });
   const withDoc = amendManifest(reviewed, [DOC]);
 
   assert.equal(withDoc.phase, 'reviewed');
@@ -122,34 +123,46 @@ test('amend preserves reviewed source scope for a candidate doc and invalidates 
   assert.deepEqual(withSource.changed_paths, []);
 });
 
-test('documentation decisions require rationale, scope, and pre-edit ownership', () => {
+test('documentation is a non-blocking planner follow-up for source changes', () => {
   const prepared = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE] });
-  const reviewed = reviewManifest(prepared, { changedPaths: [SOURCE], scope: { status: 0, output: 'backend.md:10-20' } });
+  const reviewed = reviewManifest(prepared, { changedPaths: [SOURCE] });
 
   assert.throws(() => applyDocumentationDecision(reviewed, { decision: 'updated', reason: 'Scoring behavior changed.' }), /doc-path/);
-  assert.throws(() => applyDocumentationDecision(reviewed, { decision: 'not-needed', reason: '', documentedPaths: [] }), /plain-English reason/);
-  assert.throws(() => applyDocumentationDecision(reviewed, { decision: 'updated', reason: 'Scoring behavior changed.', documentedPaths: [DOC] }), /owned/);
-
-  const owned = amendManifest(reviewed, [DOC]);
-  const updated = applyDocumentationDecision(owned, { decision: 'updated', reason: 'Scoring behavior changed.', documentedPaths: [DOC] });
-  assert.equal(updated.documentation.decision, 'updated');
-  assert.deepEqual(updated.documented_paths, [DOC]);
-  assert.deepEqual(updated.publish_paths, [DOC, SOURCE]);
+  assert.equal(reviewed.documentation.status, 'planner-follow-up');
+  assert.deepEqual(reviewed.documented_paths, []);
 });
 
 test('permanent coverage is a required decision independent of QA selection', () => {
   const testPath = 'src/Server/tests/Stability_Scoring.test.js';
   const prepared = createManifest({ task: 'Retune scoring safely', ownedPaths: [SOURCE, testPath] });
-  const withoutTest = reviewManifest(prepared, { changedPaths: [SOURCE], scope: { status: 0, output: 'backend.md:10-20' } });
+  const withoutTest = reviewManifest(prepared, { changedPaths: [SOURCE] });
 
-  assert.equal(withoutTest.coverage.decision, 'pending');
-  assert.throws(() => applyCoverageDecision(withoutTest, { decision: 'updated', reason: 'Protect scoring.' }), /changed test path/);
-  const noPermanentTest = applyCoverageDecision(withoutTest, { decision: 'not-needed', reason: 'Existing invariant coverage exercises the retune.' });
-  assert.equal(noPermanentTest.coverage.decision, 'not-needed');
+  assert.equal(withoutTest.coverage.status, 'pending');
+  assert.throws(() => applyCoverageDecision(withoutTest, { status: 'updated', protectedContract: 'Protect scoring.' }), /changed test path/);
+  const reused = applyCoverageDecision(withoutTest, { status: 'reused' });
+  assert.equal(reused.coverage.status, 'reused');
 
-  const withTest = reviewManifest(prepared, { changedPaths: [SOURCE, testPath], scope: { status: 0, output: 'backend.md:10-20' } });
-  const updated = applyCoverageDecision(withTest, { decision: 'updated', reason: 'Adds a durable scoring invariant.' });
-  assert.equal(updated.coverage.decision, 'updated');
+  const withTest = reviewManifest(prepared, { changedPaths: [SOURCE, testPath] });
+  const updated = applyCoverageDecision(withTest, { status: 'updated', protectedContract: 'Protects the durable scoring invariant.' });
+  assert.equal(updated.coverage.status, 'updated');
+  assert.equal(updated.coverage.protected_contract, 'Protects the durable scoring invariant.');
+});
+
+test('planned QA tooling is recorded and unplanned tooling remains a visible scope expansion', () => {
+  const prepared = createManifest({
+    task: 'Update QA orchestration',
+    ownedPaths: ['scripts/qa-gate.mjs'],
+    plannedQaToolingPaths: ['scripts/qa-gate.mjs'],
+  });
+  const planned = reviewManifest(prepared, { changedPaths: ['scripts/qa-gate.mjs'] });
+  assert.equal(planned.qa.status, 'planned-change');
+
+  const unplanned = reviewManifest(createManifest({
+    task: 'Unexpected QA helper',
+    ownedPaths: ['scripts/qa-gate.mjs'],
+  }), { changedPaths: ['scripts/qa-gate.mjs'] });
+  assert.equal(unplanned.qa.status, 'unplanned-change');
+  assert.deepEqual(unplanned.qa.unplanned_paths, ['scripts/qa-gate.mjs']);
 });
 
 test('fallback recording is restricted and deduplicated', () => {
@@ -237,12 +250,12 @@ test('publication scope always excludes maintenance handoffs', () => {
   );
 });
 
-test('a documentation-only review does not request a source documentation decision', () => {
+test('a documentation-only review is not applicable to planner follow-up or permanent coverage', () => {
   const manifest = createManifest({ task: 'Validate documentation only', ownedPaths: ['docs/context/testing.md'] });
   const reviewed = reviewManifest(manifest, { changedPaths: ['docs/context/testing.md'] });
   assert.equal(reviewed.documentation.source_changed, false);
-  assert.equal(reviewed.documentation.decision, 'not-needed');
-  assert.equal(reviewed.coverage.decision, 'not-needed');
+  assert.equal(reviewed.documentation.status, 'not-applicable');
+  assert.equal(reviewed.coverage.status, 'none');
 });
 
 test('CLI review accepts repository-contract changes without a documentation-scope process', () => {

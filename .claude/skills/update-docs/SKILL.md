@@ -4,12 +4,13 @@ description: Diff-driven update of docs/context to match code changes. Run only 
 ---
 
 Update `docs/context/` after the current goal is fully reached — never
-speculatively mid-task. Run it in the session that made the change: it already
-holds the diff, intent and current constraints a cold agent cannot recover.
+speculatively mid-task. Semantic documentation is performed by the
+planning/review session that knows the approved intended behavior and compares
+it with the actual implementation.
 
-`task-close` owns manifest scope, generated maps, validators and the final report.
-This workflow owns the agentic part only: applying the doc-worthy gate and writing
-current, compact prose before the manifest records its documentation decision.
+`task-close` owns explicit paths, generated maps, validators and the final
+report. This workflow owns the doc-worthy gate and current, compact prose for an
+explicit documentation-maintenance session.
 
 ## The one rule
 
@@ -57,10 +58,9 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
 
 ## Procedure — the gate comes before any file is opened
 
-1. **Scope to the task manifest, not the tree.** Use the exact post-edit ranges
-   from `task-close review`, which runs `docs-scope` against explicit final
-   paths. `--from-git` is not a close-out fallback because it can include
-   concurrent work.
+1. **Scope to the approved plan and final paths, not the tree.** Compare the
+   intended behavior with the explicit implementation output. `--from-git` is
+   not a fallback because it can include concurrent work.
 
 2. **Doc-worthy gate.** A change earns an edit only if it alters feature
    behaviour, a rule, authority or ownership, a cross-boundary contract, a term,
@@ -70,19 +70,17 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
    those medium-level contracts. Say so, validate, stop; do not manufacture an
    entry to show work.
 
-3. **Read the diff only where you don't already hold it.** Use the per-path
-   strategy `docs-scope.mjs` prints: `full` (the file encodes numbers a hunk can
-   hide — `Game_Config.js`), `wide` (`git diff -U10`), `hunk` (`git diff -U2`).
+3. **Read the implementation evidence only where you do not already hold it.**
+   Use a bounded source/diff read around the approved behavior; widen only when
+   a configuration shape or cross-file contract requires it.
 
-4. **Edit as replacement.** Read **only the line ranges `docs-scope.mjs` printed** —
-   the only prose this diff can have falsified — with a bounded line-range command. Never read
-   a doc in full to change a few lines. A doc with no printed ranges is getting a
-   new entry: pick the insertion point from the printed outline.
+4. **Edit as replacement.** Read only the affected document section with a
+   bounded line-range command. A new entry uses the relevant outline insertion
+   point; never read a doc in full to change a few lines.
 
-5. **Verify through the manifest.** Own each selected candidate doc through
-   `task-close amend` before editing it, then `task-close close` records the
-   decision, regenerates content-changed maps and carries authored `Does` by
-   symbol.
+5. **Verify through the manifest.** Own each selected doc before editing it,
+   then `task-close close` regenerates content-changed maps and validates the
+   relevant KB.
 
 6. **Repair semantic task defects; hand off unrelated maintenance.** The same
    verification receipt validates the game KB and, when in scope, the site KB.
@@ -103,6 +101,5 @@ Whole-KB compaction is not part of this. Capacity pressure alone creates a
 maintenance handoff; load `compact-docs` only for an explicit entropy,
 duplication, stale-prose, or sustained-capacity maintenance task.
 
-`site/` is out of scope: `docs-scope.mjs` drops those paths and prints them as
-dropped. The portfolio has its own KB at `site/docs/`, updated in place as part
-of the `web-designer` / `editorial` close-out.
+`site/` has its own KB at `site/docs/`, updated in place by its planning/review
+session when portfolio behavior changes.

@@ -36,6 +36,15 @@ const TELEMETRY_OUTCOMES = new Set([
   'maintenance_blocked',
   'not_applicable',
   'not_needed',
+  'not_used',
+  'planner_follow_up',
+  'reused',
+  'added',
+  'none',
+  'unchanged',
+  'planned_change',
+  'unplanned_change',
+  'used',
   'passed',
   'updated',
 ]);
@@ -163,7 +172,7 @@ export function sanitizeMeta(input, { taskId, now = new Date().toISOString() } =
 export function sanitizeTelemetry(input = {}) {
   assertAllowedKeys(input, [
     'tools', 'retrieval', 'skills', 'worker_count', 'files', 'iterations',
-    'checks', 'documentation', 'task_close', 'outcomes',
+    'checks', 'documentation', 'qa', 'task_close', 'outcomes',
   ], 'telemetry');
   const retrieval = input.retrieval ?? {};
   assertAllowedKeys(retrieval, ['attempts', 'expansions', 'fallbacks', 'first_try'], 'telemetry.retrieval');
@@ -175,6 +184,8 @@ export function sanitizeTelemetry(input = {}) {
   for (const [name, count] of Object.entries(domains)) domainCounts[cleanSlug(name, 'telemetry.files.domains key')] = nonNegativeInteger(count, `telemetry.files.domains.${name}`);
   const taskClose = input.task_close ?? {};
   assertAllowedKeys(taskClose, ['status', 'receipt_hash'], 'telemetry.task_close');
+  const qa = input.qa ?? {};
+  assertAllowedKeys(qa, ['executed', 'permanent_coverage', 'temporary_verification', 'qa_tooling'], 'telemetry.qa');
   const outcomes = input.outcomes ?? {};
   assertAllowedKeys(outcomes, [
     'implementation', 'task_qa', 'documentation', 'maps_retrieval',
@@ -198,6 +209,12 @@ export function sanitizeTelemetry(input = {}) {
     iterations: cleanCountGroup(input.iterations, 'telemetry.iterations', ['implementation', 'rework']),
     checks: cleanCountGroup(input.checks, 'telemetry.checks', ['run', 'failures', 'retests']),
     documentation: cleanCountGroup(input.documentation, 'telemetry.documentation', ['files', 'updates']),
+    qa: {
+      executed: cleanTelemetryOutcome(qa.executed, 'telemetry.qa.executed'),
+      permanent_coverage: cleanTelemetryOutcome(qa.permanent_coverage, 'telemetry.qa.permanent_coverage'),
+      temporary_verification: cleanTelemetryOutcome(qa.temporary_verification, 'telemetry.qa.temporary_verification'),
+      qa_tooling: cleanTelemetryOutcome(qa.qa_tooling, 'telemetry.qa.qa_tooling'),
+    },
     task_close: {
       status: cleanTelemetryOutcome(taskClose.status, 'telemetry.task_close.status'),
       receipt_hash: taskClose.receipt_hash ? cleanName(taskClose.receipt_hash, 'telemetry.task_close.receipt_hash') : null,

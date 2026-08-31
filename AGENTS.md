@@ -11,7 +11,9 @@ This file is the vendor-neutral repository contract. Load one role skill from
    `compact-docs`; `workflow-inefficiency-flagging` is conditional and may load
    only after its current-run eligibility gate. Load only the role needed for
    the current phase; bring in QA or documentation workflow skills when the
-   task reaches that phase.
+   task reaches that phase. Normal Codex product work does not load
+   `docs-steward` or `update-docs` merely because source changed; semantic docs
+   belong to the user-initiated planning/review session.
 2. For an implementation, begin the task-close run with its explicit
    task-owned paths after bounded context retrieval and before the first file
    edit. Its intake is the canonical role route, KB/map, QA, validator and tool
@@ -25,16 +27,17 @@ This file is the vendor-neutral repository contract. Load one role skill from
    whole.
 4. Read the smallest matching KB section and map row, then use the row's path and
    line for a bounded source read. If the map has no usable row, search only the
-   smallest root owned by the active role and repair a confirmed missing or stale
-   KB router/map entry in the same task under `docs-steward`.
+   smallest root owned by the active role and record a confirmed missing or stale
+   KB router/map entry in `repair/` for planning/review follow-up.
 5. `scripts/context.mjs` remains a dormant retrieval experiment and portable
    bundle producer; it is not the normal agent router. Keep its implementation,
    fixtures, benchmarks and dedicated validation intact. Its protocol and limits
    are documented in `docs/context/automation.md`.
 
 A confirmed retrieval miss, invalid source target or budget breach is a
-retrieval-system defect. Repair it in the same task under `docs-steward`, unless
-the correct behavior needs a user decision. A suggestion loop in the dormant
+retrieval-system defect. Continue through the smallest-role-root fallback and
+record it in `repair/`; do not repair retrieval infrastructure during an
+unrelated product task. A suggestion loop in the dormant
 retrieval experiment is a tool defect, not a reason to route normal work through
 another tool retry.
 
@@ -99,10 +102,13 @@ automatic reflex.
   decide scoring, stability, legality, or another game outcome.
 - Every implementation is verified in proportion to its risk, but verification
   does not automatically become permanent test coverage. Add or retain a test
-  only for a rule, boundary, invariant, credible regression, meaningful UI
-  structure, or release-critical smoke path. Exact copy, pixels, local defaults,
-  private implementation and other source-obvious details are task evidence, not
-  permanent suite obligations.
+  only for a durable rule, boundary, invariant, deterministic, protocol,
+  authority, security, recovery, credible-regression, meaningful-UI, or
+  release-critical-smoke contract. Tunable values, local defaults, exact copy,
+  pixels, temporary calibration, private implementation and other source-obvious
+  details are task evidence, not permanent suite obligations. Test a tunable's
+  range, clamping, round-trip, authority, effect, or behavior when contractual;
+  do not pin its current assigned value.
 - Context docs explain how a feature works at the system and subsystem level
   before source is opened. They keep authority, flow, boundaries, rationale and
   live landmines; they do not repeat labels, scene inventories, private symbols,
@@ -111,10 +117,11 @@ automatic reflex.
   `scripts/`, `.github/`, and `site/` retain useful comments; never remove a
   `SAFETY EXCEPTION` comment.
 - Finish repository changes through that manifest: `review` the explicit final
-  paths after source edits, own and update any selected KB docs, then `close`
-  with documentation and permanent-coverage decisions. It owns QA selection,
-  map generation and relevant KB checks; it never reads a shared dirty worktree
-  for scope.
+  paths after source edits, then `close` with permanent-coverage and temporary
+  verification decisions. It records source-changing documentation as
+  `planner-follow-up`, regenerates maps, runs relevant KB checks, and never
+  reads a shared dirty worktree for scope. Pending semantic docs never make a
+  green implementation maintenance-blocked.
 - A changed first-party code file at roughly 900 lines is an advisory
   decomposition review candidate; at roughly 1200 lines it is a strong
   candidate. Neither signal invalidates the current task, requires a refactor,
@@ -150,6 +157,6 @@ parallel work; higher-level agent policies and user instructions control it.
 
 ## Completion
 
-Use the closed `task-close` receipt as the QA/docs-steward handoff. A
+Use the closed `task-close` receipt as the QA/planner handoff. A
 `maintenance-blocked` receipt completes only when every failed check is an
 unrelated classified maintenance blocker; task-caused defects stay open.

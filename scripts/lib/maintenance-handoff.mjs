@@ -7,6 +7,7 @@ export const FAILURE_CLASSIFICATIONS = new Set([
   'tooling-environment',
   'validator-maintenance',
   'retrieval-map-maintenance',
+  'qa-infrastructure',
 ]);
 
 export const MAINTENANCE_CLASSIFICATIONS = new Set([
@@ -14,6 +15,7 @@ export const MAINTENANCE_CLASSIFICATIONS = new Set([
   'tooling-environment',
   'validator-maintenance',
   'retrieval-map-maintenance',
+  'qa-infrastructure',
   'architecture-decomposition',
 ]);
 
@@ -193,9 +195,9 @@ export function writeMaintenanceHandoff(root, { task, runId, items }) {
   return relative(resolve(root), absolute).replaceAll('\\', '/');
 }
 
-export function resolveMaintenanceHandoff({ root, task, runId, steps, changedPaths }) {
+export function resolveMaintenanceHandoff({ root, task, runId, steps, changedPaths, advisoryItems = [] }) {
   const blocking = maintenanceItemsForSteps(steps);
-  const advisory = architectureMaintenanceItems(changedPaths, root);
+  const advisory = [...architectureMaintenanceItems(changedPaths, root), ...advisoryItems];
   const items = [...blocking, ...advisory];
   return {
     status: terminalStatusForSteps(steps),

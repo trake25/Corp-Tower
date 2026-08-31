@@ -17,10 +17,10 @@ document or load a generated map whole.
 
 When a map cannot identify the source, search only the smallest root owned by
 the active role. A missing or stale router row, map purpose, source target or KB
-contract is repaired in the same task under `docs-steward`. After explicit
-task-owned paths are known, task-close still supplies the deterministic role,
-documentation, QA and validator intake; that post-path scope is independent of
-exploratory retrieval.
+contract is recorded in `repair/` for planner follow-up; unrelated product work
+does not repair retrieval infrastructure. After explicit task-owned paths are
+known, task-close still supplies deterministic role, QA, map and validator
+intake; that post-path scope is independent of exploratory retrieval.
 
 ## Retained context experiment
 
@@ -73,22 +73,26 @@ a dirty working tree. Schema 2 separates authorized ownership from the final
 change set while keeping detailed output in local artifacts.
 
 1. `prepare --task ... --path ...` owns explicit paths before their first edit
-   and returns the role, docs, maps, tests and validators.
+   and returns role, maps, tests and validators. Optional repeated
+   `--qa-tooling-path` records planned QA-infrastructure changes.
 2. `amend --path ...` owns later files before editing them; new source invalidates
-   an existing review, while an already reviewed candidate doc does not.
-3. `review --changed ...` accepts only owned final paths, recomputes QA and runs
-   `docs-scope` against the completed edits. Git working-tree discovery never
-   supplies scope.
-4. After the separate documentation and durable-coverage decisions, `close`
-   runs QA/map/KB/agent-config checks, rejects out-of-scope generated maps and
-   writes a resumable receipt. `publish_paths` unites explicit, documented and
-   content-changed generated paths, never a `repair/` handoff.
+   an existing review. `amend --qa-tooling-path ...` records later planned
+   QA-tooling scope.
+3. `review --changed ...` accepts only owned final paths and recomputes QA.
+   Source changes record `documentation.status = "planner-follow-up"`; no KB
+   prose decision, `--doc-path`, or documentation-scope process is required.
+4. `close --coverage <reused|added|updated|none>` records durable coverage and
+   optional temporary verification, then runs QA/map/KB/agent-config checks,
+   rejects out-of-scope generated maps, and writes a resumable receipt.
+   `publish_paths` unites explicit and content-changed generated paths, never a
+   `repair/` handoff. Pending semantic docs are non-blocking.
 
 Verification is `passed`, `maintenance-blocked`, or `failed`. A maintenance
 blocker closes only when every failed step has an approved unrelated
 classification; unknown, mixed, and implementation failures remain open. The
 close-out writes one run-scoped handoff only for unresolved blockers or advisory
-decomposition candidates and never deletes another handoff.
+decomposition and unplanned-QA-infrastructure scope candidates; it never deletes
+another handoff.
 
 `fallback --query ... --classification <retrieval-defect|tool-error> --root ...
 --fixture ...` records permitted source fallback. Closeout requires the named
