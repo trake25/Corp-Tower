@@ -12,11 +12,6 @@ description: Infrastructure and CI work — infra/ Terraform, .github/workflows 
   the next run.
 - **Extend the shared composite actions**, do not re-implement a step per
   workflow. `.github/actions/*` exists so a fix lands once.
-- **Task close-out is scoped and receipt-linked.** Enter through
-  `task-close prepare --path` after bounded context retrieval and before file
-  edits. After implementation and the `update-docs` gate, `review` finalizes
-  explicit changed paths; `close` records documentation and coverage decisions
-  and runs verification.
 - **Terraform validates through Actions, not local runs.** The plan/validate
   workflows hold the credentials and the backend config; a local run is a
   different environment answering a different question.

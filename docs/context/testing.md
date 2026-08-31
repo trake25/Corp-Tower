@@ -3,27 +3,15 @@
 Scope: permanent server, client and automation coverage; local selection; balance
 tools; CI gates. Product behavior belongs in [backend.md](./backend.md),
 [gameplay.md](./gameplay.md), and the UI documents.
-
-## Verification and durable coverage
-
-Every implementation receives proportionate verification. That may be syntax
-checking, an existing focused suite, full domain tests, smoke, a rendered
-comparison, or a purpose-built one-time probe. Passing verification does not make
-that probe a permanent test.
-
-Task close-out records `permanent_coverage` as `reused`, `added`, `updated`, or
-`none`, plus whether temporary verification was used. Added or updated coverage
-names the durable contract it protects. The `qa-engineer` skill owns that gate:
-tests protect durable behavior and meaningful relationships, not exact tunable
-assignments, copy, pixels, local defaults, calibration, or private implementation.
+Agent-facing verification, failure classification, permanent-coverage decisions,
+and QA-infrastructure scope belong to the `qa-engineer` skill.
 
 ## Local selection
 
 `node scripts/qa-gate.mjs --changed <task-owned-path>...` selects checks from the
 explicit task scope. A changed test runs itself; shared or unmapped runtime code
 widens to the affected domain suite. Client runtime checks always include
-`CiSmokeTest.gd`; complex scenes, screens and assets also need related GUT and a
-rendered comparison. Headless checks establish correctness but cannot establish
+`CiSmokeTest.gd`. Headless checks establish correctness but cannot establish
 visual fidelity.
 
 Server changes receive `node --check` plus mapped Node tests. Client changes use
@@ -31,19 +19,6 @@ the repository-root host-matching Godot binary, smoke, and mapped GUT files.
 Infra, docs and site-only work runs no game suite unless it creates runtime risk.
 `qa-gate --plan --json` exposes the same deterministic selection without running
 it. CI retains the full server and client domain gates.
-
-The complete command forms and failure-output rules live in the `qa-engineer`
-skill. A stale assertion is a test bug until source evidence proves otherwise;
-prefer invariants over hardcoded tuning values and never weaken a test merely to
-make a gate green. Generic runners, harnesses, fixtures, validators, selection,
-and CI plumbing are QA infrastructure: change them only in an explicitly
-planned QA/tooling task, otherwise surface the scope expansion in `repair/`.
-
-QA emits a stable classification with its compact diagnostic. Host, spawn,
-permissions, sandbox, and missing-executable failures are `tooling-environment`;
-syntax, parse, compile, and ordinary assertions are task-owned
-`implementation`. `test-expectation` needs bounded proof that the assertion is
-stale or pre-existing; a planned behavior change still requires its test update.
 
 ## Server coverage
 

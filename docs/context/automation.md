@@ -7,20 +7,10 @@ completion.
 
 ## Direct agent retrieval
 
-Normal repository work starts at `docs/context/index.md` or
-`site/docs/index.md`. The selected row names one owning document and, where
-needed, one generated map. Search those named files directly with `rg`, starting
-from one stable product anchor and adding a path or second term only when the
-result is noisy. Read the smallest matching document section and map row, then a
-bounded source range around the returned path and line. Do not sweep every KB
-document or load a generated map whole.
-
-When a map cannot identify the source, search only the smallest root owned by
-the active role. A missing or stale router row, map purpose, source target or KB
-contract is recorded in `repair/` for planner follow-up; unrelated product work
-does not repair retrieval infrastructure. After explicit task-owned paths are
-known, task-close still supplies deterministic role, QA, map and validator
-intake; that post-path scope is independent of exploratory retrieval.
+`AGENTS.md` owns the normal index-to-doc/map routing and bounded-fallback policy.
+After task-owned paths are known, the scope engine deterministically derives
+role, documentation, map, QA, validator, and tool intake without reading the
+dirty working tree. That post-path scope is independent of exploratory retrieval.
 
 ## Retained context experiment
 
@@ -33,14 +23,11 @@ generated maps; they never expose raw source, environment files, secrets or the
 working-tree diff. `scope` derives post-path tools, while `bundle` creates the
 bounded handoff for a runner without local access.
 
-Gitignored working folders have routes but are excluded from KB search.
-`plan/` stores task plans; existing plans are read-only without explicit user
-approval, and only verified closed plans move to `plan/done/`. `reference/` holds
-human-managed screen and bug references. Bundles, manifests, receipts and
-retrieval benchmarks belong under ignored `.agent-state/automation/`; private
-telemetry belongs under ignored `.agent-state/telemetry/`. All `report/**` paths
-are excluded from retrieval and indexing unless their owning tool or the user
-asks.
+Gitignored working folders have explicit routes but remain excluded from KB
+search. Bundles, manifests, receipts and retrieval benchmarks belong under
+ignored `.agent-state/automation/`; private telemetry belongs under ignored
+`.agent-state/telemetry/`. All `report/**` paths are excluded from retrieval and
+indexing unless their owning tool or the user asks.
 
 Search uses every query token as a required match. A weak narrative match returns
 `needs-anchor`; overflow returns `needs-filter`; a strict match returns map
@@ -98,6 +85,9 @@ close-out writes one run-scoped handoff only for unresolved blockers or deferred
 retrieval, decomposition, and unplanned-QA-infrastructure advisories; it never
 deletes another handoff. Each item contains only its classification/stage, affected
 component, compact diagnostic and impact, completed work, and follow-up.
+Changed first-party product files near 900 lines produce a decomposition review
+advisory and near 1200 lines a strong advisory. Generated/content files, tests,
+docs/maps, and load-on-demand `scripts/` automation are excluded.
 
 `fallback --query ... --classification <retrieval-defect|tool-error> --root ...`
 records permitted ordinary source fallback and produces one compact advisory

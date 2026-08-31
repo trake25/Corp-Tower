@@ -65,24 +65,10 @@ save a requested retained artifact into working material.
 
 The gitignored `repair/` folder holds close-out handoffs for unrelated
 tooling, environment, capacity, retrieval-map, or advisory decomposition work.
-Task-close writes a handoff only when an unresolved item exists, may rewrite
-only its own run file, and never deletes one. Repair files are not normal
-context, citations, maps, or publication paths; humans own the follow-up.
-
-Generated observability state belongs under ignored
-`.agent-state/telemetry/`. `report/**` is non-context output: normal retrieval,
-indexing, file discovery and broad-search fallback must exclude it. Only
-observability tooling or an explicit human request may read reports. The host
-collects telemetry locally; agents never create a provider call solely to
-record it or read historical reports during ordinary work.
-
-`task-close prepare` starts and binds that private telemetry when Codex session
-metadata is available; trusted repo hooks record bounded current-run evidence
-and settle it after the closing response. If `task-close close` returns an
-eligible workflow candidate, the same active agent may load
-`workflow-inefficiency-flagging` and formalize it before the final response—do
-not spawn an agent or add a provider turn. Missing host usage or identity must
-remain partial and produce a named data-quality flag, never a fabricated total.
+Repair files are not context, citations, maps, or publication paths; humans own
+the follow-up. Machine state under `.agent-state/` and output under `report/`
+are also non-context. Close-out, handoff, observability, hook, and authorized
+Git-tool behavior belong in `docs/context/automation.md`.
 
 ### Skill reuse
 
@@ -100,10 +86,8 @@ automatic reflex.
 
 - The server is authoritative. The client renders `game_state`; it does not
   decide scoring, stability, legality, or another game outcome.
-- Every implementation receives proportionate verification. Permanent coverage
-  follows the durable-contract gate in `qa-engineer`; verification alone does
-  not create a suite obligation, and a tunable's current assigned value is not
-  an invariant.
+- Verify every implementation proportionately; `qa-engineer` owns selection,
+  failure classification, and permanent-coverage procedure.
 - Context docs explain how a feature works at the system and subsystem level
   before source is opened. They keep authority, flow, boundaries, rationale and
   live landmines; they do not repeat labels, scene inventories, private symbols,
@@ -111,35 +95,11 @@ automatic reflex.
 - Product source under the server app and Godot client has no comments.
   `scripts/`, `.github/`, and `site/` retain useful comments; never remove a
   `SAFETY EXCEPTION` comment.
-- After implementation stabilizes, run the `update-docs` gate and own any
-  selected candidate doc before editing it. Finish through the manifest:
-  `review` every explicit final path, then `close` with `updated` or
-  `not-needed` documentation, permanent-coverage, and temporary-verification
-  decisions. It publishes affected docs, regenerates maps, runs relevant KB
-  checks, and never reads a shared dirty worktree for scope.
-- A changed first-party code file at roughly 900 lines is an advisory
-  decomposition review candidate; at roughly 1200 lines it is a strong
-  candidate. Neither signal invalidates the current task, requires a refactor,
-  or expands scope without approval. Generated/content files, tests, docs/maps,
-  and load-on-demand automation under `scripts/` are excluded. Judge that
-  automation by cohesion, bounded output, interface tests and maintainability;
-  length alone is a false positive.
+- Finish repository changes through the explicit-path task-close manifest;
+  `update-docs`, `qa-engineer`, and `docs/context/automation.md` own the
+  close-out procedure.
 - Do not deploy, commit, push, pull, compare remotes, create branches, or perform
   destructive operations unless the user authorizes that action.
-- `scripts/git-sync-commit-push.mjs` is a load-on-demand Git automation tool. An
-  agent may invoke it only after the user explicitly authorizes the operation and
-  the command includes `--approve`; it fetches and fast-forward pulls before
-  staging, commits, and pushes. It requires the current branch to be `main` by
-  default; a different branch requires an explicitly supplied `--branch` and
-  `--switch`, plus the user's approval to switch and push that branch. It reads
-  `.agent-state/automation/close-out.json` by default and
-  stages only a passing schema-2 manifest's `publish_paths` (schema 1 uses
-  `changed_paths`); it derives at most three commit keywords from the manifest
-  task title. Its commit format is those keywords followed by
-  `v0.01`; related commits increment by `0.01`.
-  For an explicitly approved branch backup publication, use `--push-only` with
-  `--branch` and `--remote-branch`; this publishes only the existing local ref
-  and never stages, commits, or switches the dirty worktree.
 - `plan/`, `task/`, `reference/`, and `repair/` are isolated working
   material. They cannot satisfy documentation citations or become knowledge-base
   dependencies.
