@@ -46,8 +46,8 @@ const GameConfig = {
     towerScrollStartRatio: 0.7,
     towerScrollEasePower: 3.0,
     towerTopIndicatorClearanceRows: 1,
-    towerStabilityDifficulty: 25,
-    towerLateralLoadShare: 0.40,
+    towerStabilityDifficulty: 40,
+    towerLateralLoadShare: 0.45,
     towerStabilityPressure: {
         floor: 0.55,
         fullPressureLevel: 8,

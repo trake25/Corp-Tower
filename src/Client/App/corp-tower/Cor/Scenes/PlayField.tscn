@@ -113,7 +113,7 @@ theme_override_colors/font_pressed_color = Color(0.1, 0.1, 0.12, 1)
 theme_override_colors/font_focus_color = Color(0.1, 0.1, 0.12, 1)
 theme_override_colors/font_disabled_color = Color(0.45, 0.46, 0.49, 1)
 tooltip_text = "Show the weakest support below the current tower view"
-text = "😟 ↓"
+text = "Drop"
 
 [node name="BackToTopButton" type="Button" parent="." unique_id=1310224011]
 unique_name_in_owner = true
@@ -137,7 +137,7 @@ theme_override_colors/font_pressed_color = Color(0.1, 0.1, 0.12, 1)
 theme_override_colors/font_focus_color = Color(0.1, 0.1, 0.12, 1)
 theme_override_colors/font_disabled_color = Color(0.45, 0.46, 0.49, 1)
 tooltip_text = "Return to the active build edge"
-text = "Top ↑"
+text = "Top"
 
 [node name="HamburgerCircle" type="Panel" parent="." unique_id=1310223001]
 layout_mode = 0
