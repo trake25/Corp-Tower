@@ -3,27 +3,31 @@ extends GutTest
 const NetworkManagerScript = preload("res://Sys/NetMan/NetworkManager.gd")
 
 func test_presentation_states_do_not_start_stale_stream_recovery() -> void:
+	var last_game_state_msec := 1000
+	var now_msec := last_game_state_msec + NetworkManagerScript.GAME_STATE_STALE_TIMEOUT_MS
 	for state in ["finished", "failed", "game_over"]:
 		var network = NetworkManagerScript.new()
 		network.match_active = true
 		network.is_conn_estab = true
 		network.latest_match_state = state
-		network.last_game_state_msec = Time.get_ticks_msec() - NetworkManagerScript.GAME_STATE_STALE_TIMEOUT_MS
+		network.last_game_state_msec = last_game_state_msec
 
-		network.check_stale_game_state(Time.get_ticks_msec())
+		network.check_stale_game_state(now_msec)
 
 		assert_eq(network.recovery_state, "healthy", state + " must tolerate intentional presentation silence.")
 		network.free()
 
 func test_streaming_states_start_stale_stream_recovery() -> void:
+	var last_game_state_msec := 1000
+	var now_msec := last_game_state_msec + NetworkManagerScript.GAME_STATE_STALE_TIMEOUT_MS
 	for state in ["starting", "playing"]:
 		var network = NetworkManagerScript.new()
 		network.match_active = true
 		network.is_conn_estab = true
 		network.latest_match_state = state
-		network.last_game_state_msec = Time.get_ticks_msec() - NetworkManagerScript.GAME_STATE_STALE_TIMEOUT_MS
+		network.last_game_state_msec = last_game_state_msec
 
-		network.check_stale_game_state(Time.get_ticks_msec())
+		network.check_stale_game_state(now_msec)
 
 		assert_ne(network.recovery_state, "healthy", "A missing " + state + " stream must enter recovery.")
 		network.free()
