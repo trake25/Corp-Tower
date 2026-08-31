@@ -169,12 +169,10 @@ function renderItem(item) {
   return [
     `### ${item.classification} — ${item.stage}`,
     '',
-    `- State: ${item.state}`,
     `- Affected path or tool: ${item.affected}`,
-    `- Diagnostic: ${item.diagnostic}`,
-    `- Verification impact: ${item.verification_impact}`,
+    `- Diagnostic / impact: ${item.diagnostic} ${item.verification_impact}`,
     `- Completed: ${item.completed}`,
-    `- Recommended follow-up: ${item.recommended_follow_up}`,
+    `- Follow-up: ${item.recommended_follow_up}`,
   ].join('\n');
 }
 

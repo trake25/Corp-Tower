@@ -4,13 +4,13 @@ description: Diff-driven update of docs/context to match code changes. Run only 
 ---
 
 Update `docs/context/` after the current goal is fully reached — never
-speculatively mid-task. Semantic documentation is performed by the
-planning/review session that knows the approved intended behavior and compares
-it with the actual implementation.
+speculatively mid-task. Run it in the same active task: that session already
+holds the approved intent, implementation evidence, and live constraints a cold
+follow-up cannot reliably reconstruct.
 
 `task-close` owns explicit paths, generated maps, validators and the final
-report. This workflow owns the doc-worthy gate and current, compact prose for an
-explicit documentation-maintenance session.
+report. This workflow owns the agentic step: apply the doc-worthy gate, update
+only affected semantic prose, and supply the close-out decision.
 
 ## The one rule
 
@@ -58,9 +58,9 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
 
 ## Procedure — the gate comes before any file is opened
 
-1. **Scope to the approved plan and final paths, not the tree.** Compare the
-   intended behavior with the explicit implementation output. `--from-git` is
-   not a fallback because it can include concurrent work.
+1. **Scope to the task manifest, approved intent, and task-owned implementation
+   paths—not the tree.** `--from-git` is not a fallback because it can include
+   concurrent work.
 
 2. **Doc-worthy gate.** A change earns an edit only if it alters feature
    behaviour, a rule, authority or ownership, a cross-boundary contract, a term,
@@ -78,9 +78,11 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
    bounded line-range command. A new entry uses the relevant outline insertion
    point; never read a doc in full to change a few lines.
 
-5. **Verify through the manifest.** Own each selected doc before editing it,
-   then `task-close close` regenerates content-changed maps and validates the
-   relevant KB.
+5. **Verify through the manifest.** Own each selected candidate doc with
+   `task-close amend` before editing it, include it in `review`, then close with
+   `--decision updated --doc-path ...` or `--decision not-needed`, always with a
+   compact `--reason`. Close-out regenerates content-changed maps and validates
+   the relevant KB.
 
 6. **Repair semantic task defects; hand off unrelated maintenance.** The same
    verification receipt validates the game KB and, when in scope, the site KB.
@@ -101,5 +103,5 @@ Whole-KB compaction is not part of this. Capacity pressure alone creates a
 maintenance handoff; load `compact-docs` only for an explicit entropy,
 duplication, stale-prose, or sustained-capacity maintenance task.
 
-`site/` has its own KB at `site/docs/`, updated in place by its planning/review
-session when portfolio behavior changes.
+`site/` has its own KB at `site/docs/`; the same gate updates it in place when a
+portfolio task changes a medium-level contract.

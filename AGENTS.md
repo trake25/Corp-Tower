@@ -11,9 +11,9 @@ This file is the vendor-neutral repository contract. Load one role skill from
    `compact-docs`; `workflow-inefficiency-flagging` is conditional and may load
    only after its current-run eligibility gate. Load only the role needed for
    the current phase; bring in QA or documentation workflow skills when the
-   task reaches that phase. Normal Codex product work does not load
-   `docs-steward` or `update-docs` merely because source changed; semantic docs
-   belong to the user-initiated planning/review session.
+   task reaches that phase. `update-docs` is the normal post-implementation
+   doc-worthy gate; `docs-steward` is reserved for explicit documentation,
+   validator, capacity, map, citation, or retrieval maintenance.
 2. For an implementation, begin the task-close run with its explicit
    task-owned paths after bounded context retrieval and before the first file
    edit. Its intake is the canonical role route, KB/map, QA, validator and tool
@@ -100,15 +100,10 @@ automatic reflex.
 
 - The server is authoritative. The client renders `game_state`; it does not
   decide scoring, stability, legality, or another game outcome.
-- Every implementation is verified in proportion to its risk, but verification
-  does not automatically become permanent test coverage. Add or retain a test
-  only for a durable rule, boundary, invariant, deterministic, protocol,
-  authority, security, recovery, credible-regression, meaningful-UI, or
-  release-critical-smoke contract. Tunable values, local defaults, exact copy,
-  pixels, temporary calibration, private implementation and other source-obvious
-  details are task evidence, not permanent suite obligations. Test a tunable's
-  range, clamping, round-trip, authority, effect, or behavior when contractual;
-  do not pin its current assigned value.
+- Every implementation receives proportionate verification. Permanent coverage
+  follows the durable-contract gate in `qa-engineer`; verification alone does
+  not create a suite obligation, and a tunable's current assigned value is not
+  an invariant.
 - Context docs explain how a feature works at the system and subsystem level
   before source is opened. They keep authority, flow, boundaries, rationale and
   live landmines; they do not repeat labels, scene inventories, private symbols,
@@ -116,12 +111,12 @@ automatic reflex.
 - Product source under the server app and Godot client has no comments.
   `scripts/`, `.github/`, and `site/` retain useful comments; never remove a
   `SAFETY EXCEPTION` comment.
-- Finish repository changes through that manifest: `review` the explicit final
-  paths after source edits, then `close` with permanent-coverage and temporary
-  verification decisions. It records source-changing documentation as
-  `planner-follow-up`, regenerates maps, runs relevant KB checks, and never
-  reads a shared dirty worktree for scope. Pending semantic docs never make a
-  green implementation maintenance-blocked.
+- After implementation stabilizes, run the `update-docs` gate and own any
+  selected candidate doc before editing it. Finish through the manifest:
+  `review` every explicit final path, then `close` with `updated` or
+  `not-needed` documentation, permanent-coverage, and temporary-verification
+  decisions. It publishes affected docs, regenerates maps, runs relevant KB
+  checks, and never reads a shared dirty worktree for scope.
 - A changed first-party code file at roughly 900 lines is an advisory
   decomposition review candidate; at roughly 1200 lines it is a strong
   candidate. Neither signal invalidates the current task, requires a refactor,

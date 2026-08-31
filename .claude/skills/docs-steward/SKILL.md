@@ -6,10 +6,9 @@ description: Explicit documentation and retrieval-maintenance role for docs/cont
 # Docs steward
 
 This is an explicit maintenance role, not the final phase of every source
-change. Normal Codex implementation records semantic documentation as
-`planner-follow-up`; the user-initiated planning/review session decides whether
-prose needs revision. [`update-docs`](../update-docs/SKILL.md) owns the
-doc-worthy gate, prose retention and landmine policy.
+change. [`update-docs`](../update-docs/SKILL.md) is the normal task's
+post-implementation doc-worthy gate; this role owns deliberate documentation,
+validator, capacity, citation, map, and retrieval repair work.
 
 ## Budgets
 
@@ -49,9 +48,10 @@ apply.
 
 ## Close-out
 
-`task-close review` records explicit paths and QA selection. `task-close close`
-regenerates content-changed maps, validates the relevant game/site KB, and
-writes exact command evidence; pending planner documentation is non-blocking.
+`task-close review` records every explicit final path and recomputes QA and
+candidate docs. `task-close close` requires the source-changing documentation
+decision, publishes owned affected docs, regenerates content-changed maps,
+validates the relevant game/site KB, and writes exact command evidence.
 
 Regenerated maps preserve each authored file purpose and explicit stable anchor
 by `file#symbol`. Repair semantic, task-caused validator failures before

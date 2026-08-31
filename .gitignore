@@ -32,6 +32,7 @@ report/benchmarks/raw/
 # The assets themselves are ignored in src/Client/App/corp-tower/.gitignore
 .env.art
 design-imports/
+scripts/figma-ui-exporter/
 scripts/figma-ui-exporter/dist/
 scripts/figma-ui-exporter/figma-plugin.local.json
 scripts/figma-ui-exporter/node_modules/

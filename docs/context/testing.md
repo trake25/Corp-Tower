@@ -11,21 +11,11 @@ checking, an existing focused suite, full domain tests, smoke, a rendered
 comparison, or a purpose-built one-time probe. Passing verification does not make
 that probe a permanent test.
 
-Permanent coverage is reserved for durable authoritative rules, boundaries,
-invariants, deterministic guarantees, protocol/authority/security or recovery
-contracts, credible regressions, meaningful UI structure, and release-critical
-smoke paths. Tunable values, exact copy, pixels, artwork dimensions, local
-defaults, temporary calibration, retired-node absence, and private
-implementation normally remain in source and task evidence. UI structure covers required bindings, membership,
-containment, visibility, relative layout, responsive behavior, and draw order;
-assert relationships rather than authored coordinates.
-
 Task close-out records `permanent_coverage` as `reused`, `added`, `updated`, or
 `none`, plus whether temporary verification was used. Added or updated coverage
-names the durable contract it protects; successfully reused coverage is visible.
-A configurable value is not a permanent invariant solely because its current
-source assignment has a particular number: test its range, clamping,
-round-trip, authority, effect, or behavior when that is contractual.
+names the durable contract it protects. The `qa-engineer` skill owns that gate:
+tests protect durable behavior and meaningful relationships, not exact tunable
+assignments, copy, pixels, local defaults, calibration, or private implementation.
 
 ## Local selection
 

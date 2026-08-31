@@ -19,11 +19,15 @@ import {
   closeObservabilityUnsafe,
   createManifest,
   deriveTaskComplexity,
+  fallbackRequiresRetrievalProof,
   intakeForManifest,
   publishPathsFor,
   recordFallback,
+  retrievalFallbackMaintenanceItems,
+  reviewForManifest,
   reviewManifest,
   startObservability,
+  validateDocumentationDecision,
 } from '../task-close.mjs';
 
 const SOURCE = 'src/Server/app/engine/Scoring.js';
@@ -44,7 +48,7 @@ test('prepare creates a compact schema-v2 ownership manifest and intake', () => 
   assert.equal(manifest.phase, 'prepared');
   assert.deepEqual(manifest.owned_paths, [SOURCE]);
   assert.deepEqual(manifest.changed_paths, []);
-  assert.equal(manifest.documentation.status, 'planner-follow-up');
+  assert.equal(manifest.documentation.status, 'pending');
   assert.equal(manifest.coverage.status, 'pending');
   assert.deepEqual(manifest.intake.docs, [DOC]);
   assert.deepEqual(manifest.intake.maps, ['docs/context/map/backend.md']);
@@ -102,7 +106,7 @@ test('review accepts only owned final paths and refreshes docs and QA from them'
   assert.deepEqual(reviewed.changed_paths, [SOURCE]);
   assert.deepEqual(reviewed.documentation.candidate_docs, [DOC]);
   assert.deepEqual(reviewed.review.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
-  assert.equal(reviewed.documentation.status, 'planner-follow-up');
+  assert.equal(reviewed.documentation.status, 'pending');
   assert.deepEqual(reviewed.review.map_hashes, { 'docs/context/map/backend.md': 'before' });
   const repeated = reviewManifest(reviewed, { changedPaths: [SOURCE], mapBaseline: { 'docs/context/map/backend.md': 'after' } });
   assert.deepEqual(repeated.review.map_hashes, { 'docs/context/map/backend.md': 'before' });
@@ -123,13 +127,51 @@ test('amend preserves reviewed source scope for a candidate doc and invalidates 
   assert.deepEqual(withSource.changed_paths, []);
 });
 
-test('documentation is a non-blocking planner follow-up for source changes', () => {
-  const prepared = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE] });
-  const reviewed = reviewManifest(prepared, { changedPaths: [SOURCE] });
+test('source-changing closeout requires an updated or not-needed documentation decision', () => {
+  const prepared = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE, DOC] });
+  const reviewed = reviewManifest(prepared, { changedPaths: [SOURCE, DOC] });
 
-  assert.throws(() => applyDocumentationDecision(reviewed, { decision: 'updated', reason: 'Scoring behavior changed.' }), /doc-path/);
-  assert.equal(reviewed.documentation.status, 'planner-follow-up');
-  assert.deepEqual(reviewed.documented_paths, []);
+  assert.throws(() => validateDocumentationDecision(reviewed), /pending/);
+  assert.throws(() => applyDocumentationDecision(reviewed, {
+    decision: 'not-needed',
+    reason: 'x'.repeat(241),
+  }), /at most 240/);
+  const updated = applyDocumentationDecision(reviewed, {
+    decision: 'updated',
+    reason: 'The authoritative scoring flow changed.',
+    documentedPaths: [DOC],
+  });
+  assert.doesNotThrow(() => validateDocumentationDecision(updated));
+  assert.equal(updated.documentation.status, 'updated');
+  assert.equal(updated.documentation.reason, 'The authoritative scoring flow changed.');
+  assert.deepEqual(updated.documented_paths, [DOC]);
+  assert.ok(updated.publish_paths.includes(DOC));
+
+  const notNeeded = applyDocumentationDecision(reviewManifest(prepared, { changedPaths: [SOURCE] }), {
+    decision: 'not-needed',
+    reason: 'The refactor does not change a system-level contract.',
+  });
+  assert.doesNotThrow(() => validateDocumentationDecision(notNeeded));
+  assert.equal(notNeeded.documentation.status, 'not-needed');
+  assert.deepEqual(notNeeded.documented_paths, []);
+});
+
+test('updated documentation must be owned, affected, and present in the reviewed change set', () => {
+  const unrelatedDoc = 'docs/context/gameplay.md';
+  const prepared = createManifest({ task: 'Verify scoring docs', ownedPaths: [SOURCE, DOC, unrelatedDoc] });
+  const withoutDocChange = reviewManifest(prepared, { changedPaths: [SOURCE] });
+  assert.throws(() => applyDocumentationDecision(withoutDocChange, {
+    decision: 'updated',
+    reason: 'Scoring changed.',
+    documentedPaths: [DOC],
+  }), /reviewed change set/);
+
+  const withUnrelatedDoc = reviewManifest(prepared, { changedPaths: [SOURCE, unrelatedDoc] });
+  assert.throws(() => applyDocumentationDecision(withUnrelatedDoc, {
+    decision: 'updated',
+    reason: 'Scoring changed.',
+    documentedPaths: [unrelatedDoc],
+  }), /documentation scope/);
 });
 
 test('permanent coverage is a required decision independent of QA selection', () => {
@@ -165,12 +207,53 @@ test('planned QA tooling is recorded and unplanned tooling remains a visible sco
   assert.deepEqual(unplanned.qa.unplanned_paths, ['scripts/qa-gate.mjs']);
 });
 
-test('fallback recording is restricted and deduplicated', () => {
+test('ordinary fallback defers retrieval repair without forcing fixture proof', () => {
   const manifest = createManifest({ task: 'Repair retrieval', ownedPaths: ['scripts/context.mjs'] });
   assert.throws(() => recordFallback(manifest, { query: 'splash', classification: 'usage-error', searchedRoot: 'src', fixture: 'anchor-retry' }), /classification/);
-  const recorded = recordFallback(manifest, { query: 'splash', classification: 'retrieval-defect', searchedRoot: 'src/Client', fixture: 'anchor-retry' });
-  const duplicate = recordFallback(recorded, { query: 'splash', classification: 'retrieval-defect', searchedRoot: 'src/Client', fixture: 'anchor-retry' });
+  const recorded = recordFallback(manifest, { query: 'splash', classification: 'retrieval-defect', searchedRoot: 'src/Client' });
+  const duplicate = recordFallback(recorded, { query: 'splash', classification: 'retrieval-defect', searchedRoot: 'src/Client' });
   assert.equal(duplicate.retrieval.fallbacks.length, 1);
+  assert.equal(duplicate.retrieval.fallbacks[0].disposition, 'deferred-repair');
+  assert.equal(fallbackRequiresRetrievalProof(duplicate), false);
+  assert.equal(retrievalFallbackMaintenanceItems(duplicate)[0].state, 'advisory');
+});
+
+test('fixture-backed retrieval maintenance retains benchmark proof', () => {
+  const manifest = createManifest({ task: 'Repair retrieval', ownedPaths: ['scripts/context.mjs'] });
+  const recorded = recordFallback(manifest, {
+    query: 'splash',
+    classification: 'retrieval-defect',
+    searchedRoot: 'src/Client',
+    fixture: 'anchor-retry',
+  });
+  assert.equal(recorded.retrieval.fallbacks[0].disposition, 'task-owned-repair');
+  assert.equal(fallbackRequiresRetrievalProof(recorded), true);
+  assert.deepEqual(retrievalFallbackMaintenanceItems(recorded), []);
+});
+
+test('deferred retrieval repair writes one advisory handoff without blocking a pass', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-retrieval-advisory-'));
+  try {
+    const manifest = recordFallback(
+      createManifest({ task: 'Product change with fallback', ownedPaths: [SOURCE] }),
+      { query: 'scoring owner', classification: 'retrieval-defect', searchedRoot: 'src/Server/app' },
+    );
+    const result = resolveMaintenanceHandoff({
+      root,
+      task: manifest.task,
+      runId: manifest.run_id,
+      steps: [{ name: 'QA', status: 0, command: ['node', 'scripts/qa-gate.mjs'], summary: 'exit 0' }],
+      changedPaths: [SOURCE],
+      advisoryItems: retrievalFallbackMaintenanceItems(manifest),
+    });
+
+    assert.equal(result.status, 'passed');
+    assert.equal(result.items.length, 1);
+    assert.equal(result.items[0].classification, 'retrieval-map-maintenance');
+    assert.match(readFileSync(join(root, result.handoff), 'utf8'), /scoring owner/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('publication scope includes explicit, documented, and content-derived paths', () => {
@@ -211,8 +294,10 @@ test('maintenance handoffs are run-scoped, compact, and never auto-delete anothe
 
     assert.equal(result.status, 'maintenance-blocked');
     assert.equal(result.handoff, 'repair/repair-close-out-tooling-12345678.md');
-    assert.match(readFileSync(join(root, result.handoff), 'utf8'), /tooling-environment/);
-    assert.match(readFileSync(join(root, result.handoff), 'utf8'), /missing root Godot binary/);
+    const handoff = readFileSync(join(root, result.handoff), 'utf8');
+    assert.match(handoff, /tooling-environment/);
+    assert.match(handoff, /missing root Godot binary/);
+    assert.doesNotMatch(handoff, /- State:|- Verification impact:/);
     assert.equal(readFileSync(other, 'utf8'), 'keep this handoff\n');
     assert.throws(() => createMaintenanceItem({ state: 'blocking', classification: 'implementation' }), /not allowed/);
   } finally {
@@ -250,7 +335,7 @@ test('publication scope always excludes maintenance handoffs', () => {
   );
 });
 
-test('a documentation-only review is not applicable to planner follow-up or permanent coverage', () => {
+test('a documentation-only review needs no source documentation or permanent-coverage decision', () => {
   const manifest = createManifest({ task: 'Validate documentation only', ownedPaths: ['docs/context/testing.md'] });
   const reviewed = reviewManifest(manifest, { changedPaths: ['docs/context/testing.md'] });
   assert.equal(reviewed.documentation.source_changed, false);
@@ -277,6 +362,30 @@ test('CLI review accepts repository-contract changes without a documentation-sco
     const reviewed = run(['review', '--manifest', manifest, '--changed', 'AGENTS.md']);
     assert.equal(reviewed.status, 0, reviewed.stderr);
     assert.equal(JSON.parse(readFileSync(join(root, manifest), 'utf8')).phase, 'reviewed');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('CLI review directs source-changing closeout through the documentation gate', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-close-source-'));
+  const manifest = '.agent-state/source-contract.json';
+  const run = args => spawnSync(process.execPath, ['scripts/task-close.mjs', ...args], {
+    cwd: process.cwd(),
+    env: { ...process.env, TASK_CLOSE_ROOT: root, CODEX_SESSION_ID: '', CODEX_THREAD_ID: '' },
+    encoding: 'utf8',
+  });
+
+  try {
+    const prepared = run(['prepare', '--task', 'Source contract', '--output', manifest, '--path', SOURCE]);
+    assert.equal(prepared.status, 0, prepared.stderr);
+    const reviewed = run(['review', '--manifest', manifest, '--changed', SOURCE]);
+    assert.equal(reviewed.status, 0, reviewed.stderr);
+    const output = reviewForManifest(JSON.parse(readFileSync(join(root, manifest), 'utf8')), manifest);
+    assert.equal(output.documentation_status, 'pending');
+    assert.match(output.next, /--decision/);
+    assert.match(output.next, /updated\|not-needed/);
+    assert.match(output.next, /--doc-path/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

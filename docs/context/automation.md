@@ -46,8 +46,10 @@ Search uses every query token as a required match. A weak narrative match return
 `needs-anchor`; overflow returns `needs-filter`; a strict match returns map
 provenance and a bounded source range. An empty anchored search is
 `retrieval-defect`. Only that state or `tool-error` permits bounded source
-fallback, which must be recorded with a passing repair fixture. A suggestion
-loop, invalid target or budget breach is also a defect.
+fallback. An ordinary product task records that fallback for a deferred
+`repair/` advisory; an explicit retrieval-maintenance task supplies the repair
+fixture and benchmark proof. A suggestion loop, invalid target or budget breach
+is also a defect.
 
 Generated maps keep one authored purpose per file and only stable navigation
 anchors. An exceptional cross-boundary term that extraction cannot recognize may
@@ -78,25 +80,30 @@ change set while keeping detailed output in local artifacts.
 2. `amend --path ...` owns later files before editing them; new source invalidates
    an existing review. `amend --qa-tooling-path ...` records later planned
    QA-tooling scope.
-3. `review --changed ...` accepts only owned final paths and recomputes QA.
-   Source changes record `documentation.status = "planner-follow-up"`; no KB
-   prose decision, `--doc-path`, or documentation-scope process is required.
-4. `close --coverage <reused|added|updated|none>` records durable coverage and
-   optional temporary verification, then runs QA/map/KB/agent-config checks,
-   rejects out-of-scope generated maps, and writes a resumable receipt.
-   `publish_paths` unites explicit and content-changed generated paths, never a
-   `repair/` handoff. Pending semantic docs are non-blocking.
+3. After implementation stabilizes, `update-docs` applies the doc-worthy gate.
+   Selected candidate docs are owned with `amend` before editing.
+4. `review --changed ...` accepts only owned final paths, recomputes QA and
+   candidate docs, and leaves source-changing documentation `pending`.
+5. `close --decision <updated|not-needed> --reason ...` records the documentation
+   gate; `updated` also repeats each affected `--doc-path`. The same call records
+   `--coverage <reused|added|updated|none>` and optional temporary verification,
+   runs QA/map/KB/agent-config checks, rejects out-of-scope generated maps, and
+   writes a resumable receipt. `publish_paths` unites explicit affected docs and
+   content-changed generated paths, never a `repair/` handoff.
 
 Verification is `passed`, `maintenance-blocked`, or `failed`. A maintenance
 blocker closes only when every failed step has an approved unrelated
 classification; unknown, mixed, and implementation failures remain open. The
-close-out writes one run-scoped handoff only for unresolved blockers or advisory
-decomposition and unplanned-QA-infrastructure scope candidates; it never deletes
-another handoff.
+close-out writes one run-scoped handoff only for unresolved blockers or deferred
+retrieval, decomposition, and unplanned-QA-infrastructure advisories; it never
+deletes another handoff. Each item contains only its classification/stage, affected
+component, compact diagnostic and impact, completed work, and follow-up.
 
-`fallback --query ... --classification <retrieval-defect|tool-error> --root ...
---fixture ...` records permitted source fallback. Closeout requires the named
-fixture and a passing retrieval benchmark. Schema 2 uses
+`fallback --query ... --classification <retrieval-defect|tool-error> --root ...`
+records permitted ordinary source fallback and produces one compact advisory
+handoff without blocking a pass. Adding `--fixture ...` marks task-owned
+retrieval maintenance; close-out then requires that fixture and a passing
+retrieval benchmark. Schema 2 uses
 `prepare → review → close`.
 
 Child output is captured in a private ignored log before entering the receipt,

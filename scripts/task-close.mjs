@@ -174,7 +174,8 @@ function documentationFor(scope, sourceChanged = false) {
     source_changed: sourceChanged,
     candidate_docs: scope.docs,
     maps_to_regenerate: scope.maps,
-    status: sourceChanged ? 'planner-follow-up' : 'not-applicable',
+    status: sourceChanged ? 'pending' : 'not-applicable',
+    reason: sourceChanged ? null : 'No source path is in the reviewed change set.',
     documented_paths: [],
   };
 }
@@ -367,7 +368,7 @@ export function amendManifest(manifest, paths, plannedQaToolingPaths = []) {
   };
 }
 
-export function reviewManifest(manifest, { changedPaths, scope = null, mapBaseline = null }) {
+export function reviewManifest(manifest, { changedPaths, mapBaseline = null }) {
   if (manifest.schema_version !== SCHEMA_VERSION) throw new Error('review requires a schema-v2 manifest');
   const changed = [...new Set(changedPaths)].sort();
   if (!changed.length) throw new Error('review needs one or more explicit changed paths');
@@ -375,7 +376,15 @@ export function reviewManifest(manifest, { changedPaths, scope = null, mapBaseli
   if (outside.length) throw new Error(`changed paths are not owned: ${outside.join(', ')}`);
   const intake = scopeContext(changed, { artifact: true });
   const sourceChanged = changed.some(sourcePath);
-  const reviewInput = { changed_paths: changed, docs: intake.docs, maps: intake.maps, qa: intake.qa };
+  const documentationScope = sourceChanged
+    ? scopeContext(changed.filter(sourcePath), { artifact: true })
+    : intake;
+  const reviewInput = {
+    changed_paths: changed,
+    docs: documentationScope.docs,
+    maps: documentationScope.maps,
+    qa: intake.qa,
+  };
   const mapHashesAtReview = { ...(mapBaseline || mapHashes()), ...(manifest.review?.map_hashes || {}) };
   return {
     ...manifest,
@@ -384,7 +393,7 @@ export function reviewManifest(manifest, { changedPaths, scope = null, mapBaseli
     derived_paths: [],
     documented_paths: [],
     publish_paths: changed,
-    documentation: documentationFor(intake, sourceChanged),
+    documentation: documentationFor(documentationScope, sourceChanged),
     coverage: coverageFor(sourceChanged),
     qa: { ...qaToolingFor(manifest.qa?.planned_paths || [], changed), temporary_verification: 'not-used' },
     review: { input_fingerprint: fingerprint(reviewInput), reviewed_at: new Date().toISOString(), intake, map_hashes: mapHashesAtReview },
@@ -395,6 +404,7 @@ export function reviewManifest(manifest, { changedPaths, scope = null, mapBaseli
 function decisionValues({ decision, reason, documentedPaths = [] }) {
   if (!['updated', 'not-needed'].includes(decision)) throw new Error('decision must be updated or not-needed');
   if (!reason?.trim()) throw new Error('a documentation decision needs a plain-English reason');
+  if (reason.trim().length > 240) throw new Error('documentation reason must be at most 240 characters');
   if (decision === 'updated' && !documentedPaths.length) throw new Error('updated requires one or more --doc-path values');
   if (decision === 'not-needed' && documentedPaths.length) throw new Error('not-needed does not accept --doc-path values');
   if (documentedPaths.some(path => !/^((docs\/context|site\/docs)\/).+\.md$/.test(path)))
@@ -422,12 +432,15 @@ export function applyDocumentationDecision(manifest, input) {
   if (values.decision === 'updated') {
     const unrelated = values.documentedPaths.filter(path => !manifest.documentation.candidate_docs.includes(path));
     if (unrelated.length) throw new Error(`documented paths are outside the reviewed documentation scope: ${unrelated.join(', ')}`);
+    const unchanged = values.documentedPaths.filter(path => !manifest.changed_paths.includes(path));
+    if (unchanged.length) throw new Error(`documented paths must be present in the reviewed change set: ${unchanged.join(', ')}`);
   }
   return {
     ...manifest,
     documentation: {
       ...manifest.documentation,
       status: values.decision,
+      reason: values.reason,
       documented_paths: values.documentedPaths,
     },
     documented_paths: values.documentedPaths,
@@ -459,13 +472,24 @@ export function applyCoverageDecision(manifest, { status, protectedContract = nu
 export function recordFallback(manifest, { query, classification, searchedRoot, fixture }) {
   if (manifest.schema_version !== SCHEMA_VERSION) throw new Error('fallback recording requires a schema-v2 manifest');
   if (!['retrieval-defect', 'tool-error'].includes(classification)) throw new Error('classification must be retrieval-defect or tool-error');
-  if (!query?.trim() || !searchedRoot || !fixture?.trim()) throw new Error('fallback needs query, searched root, and repair fixture');
-  const entry = { query: query.trim(), classification, searched_root: searchedRoot, repair_fixture: fixture.trim() };
+  if (!query?.trim() || !searchedRoot) throw new Error('fallback needs a query and searched root');
+  const repairFixture = fixture?.trim() || null;
+  const entry = {
+    query: query.trim(),
+    classification,
+    searched_root: searchedRoot,
+    disposition: repairFixture ? 'task-owned-repair' : 'deferred-repair',
+    repair_fixture: repairFixture,
+  };
   return {
     ...manifest,
     retrieval: { fallbacks: [...manifest.retrieval.fallbacks.filter(item => fingerprint(item) !== fingerprint(entry)), entry] },
     verification: null,
   };
+}
+
+export function fallbackRequiresRetrievalProof(manifest) {
+  return manifest.retrieval.fallbacks.some(item => Boolean(item.repair_fixture));
 }
 
 export function intakeForManifest(manifest, manifestFile) {
@@ -507,8 +531,15 @@ export function intakeForManifest(manifest, manifestFile) {
   return result;
 }
 
-function reviewForManifest(manifest, manifestFile) {
+export function reviewForManifest(manifest, manifestFile) {
   const intake = manifest.review.intake;
+  const closeArgs = ['node', 'scripts/task-close.mjs', 'close', '--manifest', manifestFile];
+  if (manifest.documentation.source_changed) closeArgs.push(
+    '--decision', '<updated|not-needed>',
+    '--reason', '<doc-worthy gate reason>',
+    '--doc-path', '<path when updated>',
+  );
+  closeArgs.push('--coverage', '<reused|added|updated|none>', '--coverage-contract', '<contract when added or updated>');
   const result = {
     schema_version: SCHEMA_VERSION,
     manifest: manifestFile,
@@ -524,7 +555,7 @@ function reviewForManifest(manifest, manifestFile) {
     },
     qa_tooling: manifest.qa,
     observability: manifest.observability,
-    next: command(['node', 'scripts/task-close.mjs', 'close', '--manifest', manifestFile, '--coverage', '<reused|added|updated|none>', '--coverage-contract', '<contract when added or updated>']).display,
+    next: command(closeArgs).display,
   };
   if (Buffer.byteLength(JSON.stringify(result, null, 2)) + 1 > INTAKE_MAX_BYTES) throw new Error('task review exceeds 8192 bytes; read the manifest artifact for full documentation scope');
   return result;
@@ -594,9 +625,20 @@ function runStep(name, args) {
   };
 }
 
+export function validateDocumentationDecision(manifest) {
+  if (!manifest.documentation.source_changed) return;
+  if (!['updated', 'not-needed'].includes(manifest.documentation.status))
+    throw new Error('documentation status is pending; pass updated or not-needed to task-close close');
+  if (!manifest.documentation.reason)
+    throw new Error('documentation decision needs a plain-English reason');
+}
+
 function requireDocumentationDecision(manifest) {
-  if (manifest.documentation.source_changed && manifest.documentation.status !== 'planner-follow-up')
-    fail('source-changing tasks must record documentation as planner-follow-up', 1);
+  try {
+    validateDocumentationDecision(manifest);
+  } catch (error) {
+    fail(error.message, 1);
+  }
 }
 
 function requireCoverageDecision(manifest) {
@@ -620,6 +662,23 @@ function qaToolingMaintenanceItems(manifest) {
   })];
 }
 
+export function retrievalFallbackMaintenanceItems(manifest) {
+  const deferred = manifest.retrieval.fallbacks.filter(item => !item.repair_fixture);
+  if (!deferred.length) return [];
+  const affected = [...new Set(deferred.map(item => item.searched_root))].sort().join(', ');
+  const diagnostics = deferred.map(item => `${item.classification}: ${item.query}`).join('; ');
+  return [createMaintenanceItem({
+    state: 'advisory',
+    classification: 'retrieval-map-maintenance',
+    stage: 'ordinary product-task retrieval fallback',
+    affected,
+    diagnostic: diagnostics,
+    verificationImpact: 'Advisory only; the bounded role-owned source fallback allowed implementation to continue.',
+    completed: 'The approved task completed without changing retrieval infrastructure.',
+    recommendedFollowUp: 'Repair the router, map, or retrieval tool in a dedicated maintenance task with focused fixture and benchmark proof.',
+  })];
+}
+
 function executionStatus(steps, name) {
   const selected = steps.filter(step => step.name === name);
   if (!selected.length) return 'not-applicable';
@@ -630,7 +689,8 @@ function executionStatus(steps, name) {
 }
 
 function requireFallbackFixtures(manifest) {
-  if (!manifest.retrieval.fallbacks.length) return;
+  const fixtureBacked = manifest.retrieval.fallbacks.filter(item => item.repair_fixture);
+  if (!fixtureBacked.length) return;
   const fixtureFile = resolve(ROOT, 'scripts/fixtures/context-retrieval.json');
   let fixtures;
   try {
@@ -639,7 +699,7 @@ function requireFallbackFixtures(manifest) {
     fail('retrieval fallbacks exist but benchmark fixtures cannot be read', 1);
   }
   const ids = new Set(Object.values(fixtures).flatMap(group => Array.isArray(group) ? group.map(item => item.id) : []));
-  const missing = manifest.retrieval.fallbacks.filter(item => !ids.has(item.repair_fixture));
+  const missing = fixtureBacked.filter(item => !ids.has(item.repair_fixture));
   if (missing.length) fail(`retrieval fallback repair fixtures are missing: ${missing.map(item => item.repair_fixture).join(', ')}`, 1);
 }
 
@@ -665,7 +725,7 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
     runId: manifest.run_id || fingerprint({ task: manifest.task, manifest: displayPath(manifestFile) }).slice(0, 8),
     steps,
     changedPaths: manifest.changed_paths,
-    advisoryItems: qaToolingMaintenanceItems(manifest),
+    advisoryItems: [...retrievalFallbackMaintenanceItems(manifest), ...qaToolingMaintenanceItems(manifest)],
   });
   const failed = steps.find(step => step.status !== 0);
   const receipt = {
@@ -711,7 +771,7 @@ function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = nu
   const steps = [];
   for (const tool of manifest.review.intake.tools.filter(tool => ['automation protocol', 'retrieval benchmark'].includes(tool.name)))
     steps.push(runStep(tool.name, tool.command.argv.slice(1)));
-  if (manifest.retrieval.fallbacks.length && !steps.some(step => step.name === 'retrieval benchmark'))
+  if (fallbackRequiresRetrievalProof(manifest) && !steps.some(step => step.name === 'retrieval benchmark'))
     steps.push(runStep('retrieval benchmark', ['scripts/benchmark-rag.mjs', '--check']));
   const qaArgs = ['scripts/qa-gate.mjs', '--changed', ...manifest.changed_paths];
   if (qaOverride) qaArgs.push('--classification', qaOverride.classification, '--evidence', qaOverride.evidence);
@@ -797,16 +857,21 @@ async function main() {
       query: one(values, 'query', true),
       classification: one(values, 'classification', true),
       searchedRoot,
-      fixture: one(values, 'fixture', true),
+      fixture: one(values, 'fixture'),
     });
     writeManifest(manifestFile, manifest);
     console.log(`PASS — recorded ${manifest.retrieval.fallbacks.at(-1).classification} fallback`);
     return;
   }
   if (action === 'close') {
-    checkOptions(values, ['manifest', 'coverage', 'coverage-contract', 'temporary-verification', 'qa-classification', 'qa-evidence']);
+    checkOptions(values, ['manifest', 'decision', 'reason', 'doc-path', 'coverage', 'coverage-contract', 'temporary-verification', 'qa-classification', 'qa-evidence']);
     const manifestFile = manifestPath(values);
     let manifest = upgradeManifest(readManifest(manifestFile));
+    const documentedPaths = normalizeOptionalPaths(many(values, 'doc-path'), '--doc-path');
+    const documentationDecision = one(values, 'decision', manifest.documentation.source_changed);
+    const documentationReason = one(values, 'reason', manifest.documentation.source_changed).trim();
+    if (!manifest.documentation.source_changed && (documentationDecision || documentationReason || documentedPaths.length))
+      fail('documentation options apply only when the reviewed change set contains source', 1);
     const qaClassification = one(values, 'qa-classification');
     const qaEvidence = one(values, 'qa-evidence');
     if (qaClassification && qaClassification !== 'test-expectation') fail('only test-expectation may be supplied as a QA maintenance classification');
@@ -820,6 +885,9 @@ async function main() {
     if (!['used', 'not-used'].includes(temporaryVerification)) fail('temporary verification must be used or not-used');
     const closeInput = {
       review: manifest.review?.input_fingerprint || null,
+      documentation: documentationDecision || 'not-applicable',
+      documentation_reason: documentationReason || null,
+      documented_paths: documentedPaths,
       coverage,
       coverage_contract: coverageContract.trim() || null,
       temporary_verification: temporaryVerification,
@@ -834,6 +902,11 @@ async function main() {
       }
       fail('close inputs changed after verification; rerun task-close review', 1);
     }
+    if (manifest.documentation.source_changed) manifest = applyDocumentationDecision(manifest, {
+      decision: closeInput.documentation,
+      reason: closeInput.documentation_reason,
+      documentedPaths: closeInput.documented_paths,
+    });
     manifest = applyCoverageDecision(manifest, {
       status: closeInput.coverage,
       protectedContract: closeInput.coverage_contract,

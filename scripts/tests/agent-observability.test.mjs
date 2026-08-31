@@ -515,7 +515,7 @@ test('maintenance-blocked telemetry keeps implementation complete with partial v
     changed_paths: ['scripts/task-close.mjs'],
     documented_paths: ['docs/context/automation.md'],
     retrieval: { fallbacks: [] },
-    documentation: { status: 'planner-follow-up' },
+    documentation: { status: 'updated' },
     coverage: { status: 'reused' },
     qa: { status: 'unplanned-change', temporary_verification: 'used' },
   };
@@ -551,6 +551,7 @@ test('maintenance-blocked telemetry keeps implementation complete with partial v
   assert.equal(close.verification, 'maintenance-blocked');
   assert.equal(close.telemetry.outcomes.implementation, 'complete');
   assert.equal(close.telemetry.outcomes.task_qa, 'maintenance_blocked');
+  assert.equal(close.telemetry.outcomes.documentation, 'updated');
   assert.deepEqual(close.telemetry.qa, {
     executed: 'maintenance_blocked',
     permanent_coverage: 'reused',
