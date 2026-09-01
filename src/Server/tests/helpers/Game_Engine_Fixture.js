@@ -5,6 +5,17 @@ function clone(value) {
     return JSON.parse(JSON.stringify(value));
 }
 
+function configLeafPaths(value, prefix = "") {
+    if (Array.isArray(value) || value === null || typeof value !== "object") {
+        return [prefix];
+    }
+
+    return Object.entries(value).flatMap(([key, child]) => {
+        const path = prefix ? `${prefix}.${key}` : key;
+        return configLeafPaths(child, path);
+    });
+}
+
 const originalGameConfig = clone(GameConfig);
 
 const QA_TUNING_BASELINE = Object.freeze({
@@ -20,6 +31,10 @@ const QA_TUNING_BASELINE = Object.freeze({
     targetHeightStepGrowth: 5,
     targetHeightStepGrowthEvery: 3,
     startDelayMs: 0,
+    lobbyReadyTimeoutMs: 60000,
+    privateLobbyStartCountdownMs: 5000,
+    privateLobbyReconnectPhaseMs: 10000,
+    privateLobbyGracePhaseMs: 10000,
     levelTimeLimitMs: 120000,
     levelTimePlannedEfficiency: 0.55,
     levelTimeSlack: 3,
@@ -160,11 +175,34 @@ const QA_TUNING_BASELINE = Object.freeze({
     debugBotGapCandidates: 6
 });
 
-function replaceGameConfig(values) {
-    for (const key of Object.keys(GameConfig)) {
-        if (!Object.hasOwn(values, key)) delete GameConfig[key];
+function assertCompleteGameConfig(values) {
+    const expectedPaths = configLeafPaths(originalGameConfig);
+    const providedPaths = configLeafPaths(values);
+    const provided = new Set(providedPaths);
+    const expected = new Set(expectedPaths);
+    const missingPaths = expectedPaths.filter(path => !provided.has(path));
+    const extraPaths = providedPaths.filter(path => !expected.has(path));
+
+    if (missingPaths.length || extraPaths.length) {
+        throw new Error([
+            missingPaths.length ? `missing: ${missingPaths.join(", ")}` : "",
+            extraPaths.length ? `unknown: ${extraPaths.join(", ")}` : ""
+        ].filter(Boolean).join("; "));
     }
+}
+
+function applyCompleteGameConfig(values) {
+    assertCompleteGameConfig(values);
     for (const [key, value] of Object.entries(values)) {
+        GameConfig[key] = clone(value);
+    }
+}
+
+function restoreOriginalGameConfig() {
+    for (const key of Object.keys(GameConfig)) {
+        if (!Object.hasOwn(originalGameConfig, key)) delete GameConfig[key];
+    }
+    for (const [key, value] of Object.entries(originalGameConfig)) {
         GameConfig[key] = clone(value);
     }
 }
@@ -217,7 +255,7 @@ function resetFixtures() {
         engine.clearTimers();
     });
     activeEngines.clear();
-    replaceGameConfig(originalGameConfig);
+    restoreOriginalGameConfig();
 }
 
 function createPlayers() {
@@ -239,7 +277,7 @@ function createBlock(height, id = "B1") {
 
 function createPlayingEngine(level = 1, targetHeight = 5, options = {}) {
     const messages = [];
-    replaceGameConfig(QA_TUNING_BASELINE);
+    applyCompleteGameConfig(QA_TUNING_BASELINE);
     applyTunables(options.tunables);
     const engine = new GameEngine({
         onRoomMessage: (_roomId, message) => {

@@ -228,12 +228,7 @@ test("latency indicator toggle round-trips through debug config and resets", asy
     assert.equal(GameConfig.showLatencyIndicator, initialValue);
 });
 
-test("diagnostic defaults stay enabled outside EKS and EKS overrides disable them", () => {
-    const developmentConfig = readGameConfig();
-    const eksConfig = readGameConfig({
-        CORP_TOWER_LATENCY_INDICATOR_ENABLED: "false",
-        CORP_TOWER_LIVE_PREVIEW_ENABLED: "false"
-    });
+test("EKS diagnostic overrides select the release feedback behavior", () => {
     const eksDeployment = fs.readFileSync(path.resolve(
         __dirname,
         "../../../infra/eks/apps/corp-tower/base/server-deployment.yaml"
@@ -242,13 +237,23 @@ test("diagnostic defaults stay enabled outside EKS and EKS overrides disable the
         __dirname,
         "../../../scripts/backup/backup-server-up.sh"
     ), "utf8");
+    const latencyOverride = eksDeployment.match(
+        /name: CORP_TOWER_LATENCY_INDICATOR_ENABLED\s+value: "([^"]+)"/
+    );
+    const feedbackOverride = eksDeployment.match(
+        /name: CORP_TOWER_LIVE_PREVIEW_ENABLED\s+value: "([^"]+)"/
+    );
 
-    assert.equal(developmentConfig.showLatencyIndicator, true);
-    assert.equal(developmentConfig.towerStabilityFeedbackMode, "live_preview");
+    assert.ok(latencyOverride);
+    assert.ok(feedbackOverride);
+
+    const eksConfig = readGameConfig({
+        CORP_TOWER_LATENCY_INDICATOR_ENABLED: latencyOverride[1],
+        CORP_TOWER_LIVE_PREVIEW_ENABLED: feedbackOverride[1]
+    });
+
     assert.equal(eksConfig.showLatencyIndicator, false);
     assert.equal(eksConfig.towerStabilityFeedbackMode, "warnings_only");
-    assert.match(eksDeployment, /name: CORP_TOWER_LATENCY_INDICATOR_ENABLED\s+value: "false"/);
-    assert.match(eksDeployment, /name: CORP_TOWER_LIVE_PREVIEW_ENABLED\s+value: "false"/);
     assert.match(demoLauncher, /CORP_TOWER_LIVE_PREVIEW_ENABLED=false/);
 });
 

@@ -4,44 +4,118 @@ const TUNABLE_CLASSES = Object.freeze({
     TRUE_CONTRACT: "true-contract"
 });
 
-const RUNTIME_EXPOSED_SERVER_KEYS = Object.freeze([
-    "debugBotsEnabled", "showLatencyIndicator", "debugBotCount", "debugBotStrategy",
-    "debugStartLevel", "debugBotDelayMin", "debugBotDelayMax", "placementCooldown",
-    "quickChatCooldownMs", "towerStabilityFeedbackMode", "levelTimeLimitMs", "startDelayMs",
-    "placementScorePopupDurationMs", "finishScorePopupDurationMs", "levelSummaryDelayMs",
-    "impactScoreRequirement", "impactMinContributionShare", "impactInterval",
-    "targetHeightMultiplier", "levelSupplyMinSurplus", "levelSupplyMaxSurplus",
-    "minPrecisionBlocksPerLevel", "maxTeamCarryOverBlocks", "refreshMinUsefulBlockHeight",
-    "towerStabilityDifficulty", "towerLateralLoadShare", "towerStructuralPoseMaxAngleDeg",
-    "supplyEffectiveWidthRatio", "towerStabilityWarningThreshold",
-    "towerStabilityCriticalThreshold", "towerStabilityMoodThreshold", "powerUnlockLevel",
-    "powerMaxSlots", "powerActivationCooldownMs", "powerReplenishPileShare",
-    "powerLastChanceEnabled", "placementScorePerHeight", "recoveryHeightScorePercent",
-    "dangerousHeightFloor", "strongReinforcementActionShare", "normalCombinedCapActionShare",
-    "criticalSaveBonusActionShare", "criticalCombinedCapActionShare", "visualHookImpactBeat",
-    "visualHookScreenShake", "visualHookZoomOutMs", "visualHookWaveMs", "visualHookHoldMs",
-    "visualHookShakeMs"
-]);
+const RUNTIME_EXPOSED_SERVER_FIELDS = Object.freeze({
+    debugBotsEnabled: "debugBotsEnabled",
+    showLatencyIndicator: "showLatencyIndicator",
+    debugBotCount: "debugBotCount",
+    debugBotStrategy: "debugBotStrategy",
+    debugStartLevel: "debugStartLevel",
+    debugBotDelayMin: "debugBotDelayMin",
+    debugBotDelayMax: "debugBotDelayMax",
+    placementCooldown: "placementCooldown",
+    quickChatCooldownMs: "quickChatCooldownMs",
+    towerStabilityFeedbackMode: "towerStabilityFeedbackMode",
+    levelTimeLimitMs: "levelTimeLimitMs",
+    startDelayMs: "startDelayMs",
+    placementScorePopupDurationMs: "placementScorePopupDurationMs",
+    finishScorePopupDurationMs: "finishScorePopupDurationMs",
+    levelSummaryDelayMs: "levelSummaryDelayMs",
+    impactScoreRequirement: "impactScoreRequirement",
+    impactMinContributionShare: "impactMinContributionShare",
+    impactInterval: "impactInterval",
+    targetHeightMultiplier: "targetHeightMultiplier",
+    levelSupplyMinSurplus: "levelSupplyMinSurplus",
+    levelSupplyMaxSurplus: "levelSupplyMaxSurplus",
+    minPrecisionBlocksPerLevel: "minPrecisionBlocksPerLevel",
+    maxTeamCarryOverBlocks: "maxTeamCarryOverBlocks",
+    refreshMinUsefulBlockHeight: "refreshMinUsefulBlockHeight",
+    towerStabilityDifficulty: "towerStabilityDifficulty",
+    towerLateralLoadShare: "towerLateralLoadShare",
+    towerStructuralPoseMaxAngleDeg: "towerStructuralPoseMaxAngleDeg",
+    supplyEffectiveWidthRatio: "supplyEffectiveWidthRatio",
+    towerStabilityWarningThreshold: "towerStabilityWarningThreshold",
+    towerStabilityCriticalThreshold: "towerStabilityCriticalThreshold",
+    towerStabilityMoodThreshold: "towerStabilityMoodThreshold",
+    powerUnlockLevel: "powerUnlockLevel",
+    powerMaxSlots: "powerMaxSlots",
+    powerActivationCooldownMs: "powerActivationCooldownMs",
+    powerReplenishPileShare: "powerReplenishPileShare",
+    powerLastChanceEnabled: "powerLastChanceEnabled",
+    placementScorePerHeight: "scoring.placementScorePerHeight",
+    recoveryHeightScorePercent: "scoring.recoveryHeightScorePercent",
+    dangerousHeightFloor: "scoring.dangerousHeightFloor",
+    strongReinforcementActionShare: "scoring.strongReinforcementActionShare",
+    normalCombinedCapActionShare: "scoring.normalCombinedCapActionShare",
+    criticalSaveBonusActionShare: "scoring.criticalSaveBonusActionShare",
+    criticalCombinedCapActionShare: "scoring.criticalCombinedCapActionShare",
+    visualHookImpactBeat: "visualHooks.impactBeat",
+    visualHookScreenShake: "visualHooks.screenShake",
+    visualHookZoomOutMs: "visualHooks.impactBeatZoomOutMs",
+    visualHookWaveMs: "visualHooks.impactBeatWaveMs",
+    visualHookHoldMs: "visualHooks.impactBeatHoldMs",
+    visualHookShakeMs: "visualHooks.screenShakeMs"
+});
+
+const RUNTIME_EXPOSED_SERVER_KEYS = Object.freeze(
+    Object.keys(RUNTIME_EXPOSED_SERVER_FIELDS)
+);
+
+const RUNTIME_EXPOSED_SERVER_PATHS = Object.freeze(
+    Object.values(RUNTIME_EXPOSED_SERVER_FIELDS)
+);
 
 const SERVER_DESIGNER_ONLY_PATHS = Object.freeze([
-    "towerGridWidth", "placeableColumnMin", "placeableColumnMax",
-    "towerSiteSlendernessTarget", "towerSiteWidthMin", "towerSiteWidthMax",
-    "towerMaxTiltAngleDeg", "towerStructuralPoseMaxDipUnits", "towerStructuralPoseRigidRisk",
-    "towerStructuralPoseIntegritySwayShare", "towerVisibleRowCapacity", "towerScrollStartRatio",
-    "towerScrollEasePower", "towerTopIndicatorClearanceRows", "towerStabilityPressure",
-    "towerSupportDifficultyPressure", "towerStabilityAnchors", "towerBaseHalfWidthFloor",
-    "powerLifetime", "powerGuaranteedBaseline", "powerImpactMvpReward", "powerCatalog",
-    "brickShapes", "brickWeights", "inventoryScaling", "maxActiveBlocks",
-    "maxGeneratedDrawPileBlocks", "levelSupplyMaxSurplusShare", "levelSupplyCoverageStart",
-    "levelSupplyCoverageEnd", "levelSupplyCoverageFullLevel", "openingHandGenerationAttempts",
-    "refreshGenerationAttempts", "accessibility", "visualHooks.impactBeatMinZoom",
-    "visualHooks.collapseDebrisLifetimeMs", "visualHooks.screenShakeMagnitudeUnits",
-    "scoring.strongStructuralImprovement", "scoring.fullDangerRiskIncrease",
-    "scoring.criticalSaveMinRiskReduction", "scoring.criticalSaveMinLoadShare",
-    "scoring.criticalSaveMaxPerLevel", "scoring.finisherBonusPerLevel",
-    "scoring.precisionBonusPerLevel", "scoring.teamExactBonusPerLevel",
+    "accessibility.parallelPlacement", "brickShapes", "brickWeights.I", "brickWeights.L",
+    "brickWeights.O", "brickWeights.T", "brickWeights.Z", "debugBotGapCandidates",
+    "debugBotStabilityTolerance", "failRestartDelayMs", "impactRecoverableFailures",
+    "inventoryScaling.1", "levelSupplyCoverageEnd", "levelSupplyCoverageFullLevel",
+    "levelSupplyCoverageStart", "levelSupplyMaxSurplusShare", "levelTimePlannedEfficiency",
+    "levelTimeSlack", "levelTimeSlackFullLevel", "levelTimeSlackMin", "lobbyReadyTimeoutMs",
+    "maxActiveBlocks", "maxGeneratedDrawPileBlocks", "maxLevel", "nextLevelDelayMs",
+    "openingHandGenerationAttempts", "placeableColumnMax", "placeableColumnMin",
+    "playersPerRoom", "powerCatalog.copy_score.active", "powerCatalog.copy_score.category",
+    "powerCatalog.copy_score.title", "powerCatalog.refresh.active",
+    "powerCatalog.refresh.category", "powerCatalog.refresh.title",
+    "powerCatalog.replenish.active", "powerCatalog.replenish.category",
+    "powerCatalog.replenish.title", "powerCatalog.score_cap.active",
+    "powerCatalog.score_cap.category", "powerCatalog.score_cap.title",
+    "powerGuaranteedBaseline", "powerImpactMvpReward", "powerLifetime",
+    "privateLobbyGracePhaseMs", "privateLobbyReconnectPhaseMs",
+    "privateLobbyStartCountdownMs", "quickChatTemplates", "refreshGenerationAttempts",
     "scoring.assistBonusPerLevel", "scoring.assistContributionThreshold",
-    "debugBotStabilityTolerance", "debugBotGapCandidates"
+    "scoring.criticalSaveMaxPerLevel", "scoring.criticalSaveMinLoadShare",
+    "scoring.criticalSaveMinRiskReduction", "scoring.finisherBonusPerLevel",
+    "scoring.fullDangerRiskIncrease", "scoring.precisionBonusPerLevel",
+    "scoring.strongStructuralImprovement", "scoring.teamExactBonusPerLevel",
+    "targetHeightBase", "targetHeightStepBase", "targetHeightStepGrowth",
+    "targetHeightStepGrowthEvery", "towerBaseHalfWidthFloor", "towerGridWidth",
+    "towerMaxTiltAngleDeg", "towerScrollEasePower", "towerScrollStartRatio",
+    "towerSiteSlendernessTarget", "towerSiteWidthMax", "towerSiteWidthMin",
+    "towerStabilityAnchors.forgiving.towerBalanceCollapseOffsetShare",
+    "towerStabilityAnchors.forgiving.towerBalanceSafeOffsetShare",
+    "towerStabilityAnchors.forgiving.towerHeightPressureGain",
+    "towerStabilityAnchors.forgiving.towerRedundancyBonus",
+    "towerStabilityAnchors.forgiving.towerStabilityMinHeight",
+    "towerStabilityAnchors.forgiving.towerStructuralLoadExponent",
+    "towerStabilityAnchors.forgiving.towerStructuralSeverity",
+    "towerStabilityAnchors.forgiving.towerSupportCollapseLoadPerContact",
+    "towerStabilityAnchors.forgiving.towerSupportSafeLoadPerContact",
+    "towerStabilityAnchors.harsh.towerBalanceCollapseOffsetShare",
+    "towerStabilityAnchors.harsh.towerBalanceSafeOffsetShare",
+    "towerStabilityAnchors.harsh.towerHeightPressureGain",
+    "towerStabilityAnchors.harsh.towerRedundancyBonus",
+    "towerStabilityAnchors.harsh.towerStabilityMinHeight",
+    "towerStabilityAnchors.harsh.towerStructuralLoadExponent",
+    "towerStabilityAnchors.harsh.towerStructuralSeverity",
+    "towerStabilityAnchors.harsh.towerSupportCollapseLoadPerContact",
+    "towerStabilityAnchors.harsh.towerSupportSafeLoadPerContact",
+    "towerStabilityPressure.difficultyCurvePower", "towerStabilityPressure.floor",
+    "towerStabilityPressure.fullPressureLevel", "towerStructuralPoseIntegritySwayShare",
+    "towerStructuralPoseMaxDipUnits", "towerStructuralPoseRigidRisk",
+    "towerSupportDifficultyPressure.midpoint", "towerSupportDifficultyPressure.steepness",
+    "towerTopIndicatorClearanceRows", "towerVisibleRowCapacity",
+    "visualHooks.collapseDebrisLifetimeMs", "visualHooks.impactBeatMinZoom",
+    "visualHooks.screenShakeMagnitudeUnits"
 ]);
 
 const CLIENT_DESIGNER_ONLY_PATHS = Object.freeze([
@@ -60,7 +134,7 @@ const TRUE_CONTRACTS = Object.freeze([
 ]);
 
 const CLASSIFICATION_ENTRIES = Object.freeze([
-    ...RUNTIME_EXPOSED_SERVER_KEYS.map(path => ({
+    ...RUNTIME_EXPOSED_SERVER_PATHS.map(path => ({
         scope: "server",
         path,
         classification: TUNABLE_CLASSES.RUNTIME_EXPOSED
@@ -82,39 +156,13 @@ const CLASSIFICATION_ENTRIES = Object.freeze([
     }))
 ]);
 
-const SERVER_QA_BASELINE_PATHS = Object.freeze([
-    "maxLevel", "debugStartLevel", "playersPerRoom", "placementCooldown", "quickChatCooldownMs",
-    "quickChatTemplates", "targetHeightMultiplier", "targetHeightBase", "targetHeightStepBase",
-    "targetHeightStepGrowth", "targetHeightStepGrowthEvery", "startDelayMs", "levelTimeLimitMs",
-    "levelTimePlannedEfficiency", "levelTimeSlack", "levelTimeSlackMin", "levelTimeSlackFullLevel",
-    "nextLevelDelayMs", "failRestartDelayMs", "placementScorePopupDurationMs",
-    "finishScorePopupDurationMs", "levelSummaryDelayMs", "impactInterval", "impactScoreRequirement",
-    "impactMinContributionShare", "impactRecoverableFailures", "towerGridWidth", "placeableColumnMin",
-    "placeableColumnMax", "towerSiteSlendernessTarget", "towerSiteWidthMin", "towerSiteWidthMax",
-    "towerMaxTiltAngleDeg", "towerStructuralPoseMaxAngleDeg", "towerStructuralPoseMaxDipUnits",
-    "towerStructuralPoseRigidRisk", "towerStructuralPoseIntegritySwayShare", "towerVisibleRowCapacity",
-    "towerScrollStartRatio", "towerScrollEasePower", "towerTopIndicatorClearanceRows",
-    "towerStabilityDifficulty", "towerLateralLoadShare", "towerStabilityPressure",
-    "towerSupportDifficultyPressure", "towerStabilityAnchors", "towerBaseHalfWidthFloor",
-    "towerStabilityWarningThreshold", "towerStabilityCriticalThreshold", "towerStabilityMoodThreshold",
-    "towerStabilityFeedbackMode", "powerUnlockLevel", "powerMaxSlots", "powerActivationCooldownMs",
-    "powerLastChanceEnabled", "powerLifetime", "powerGuaranteedBaseline", "powerImpactMvpReward",
-    "powerReplenishPileShare", "powerCatalog", "brickShapes", "brickWeights", "inventoryScaling",
-    "maxActiveBlocks", "maxTeamCarryOverBlocks", "maxGeneratedDrawPileBlocks", "supplyEffectiveWidthRatio",
-    "levelSupplyMinSurplus", "levelSupplyMaxSurplus", "levelSupplyMaxSurplusShare",
-    "levelSupplyCoverageStart", "levelSupplyCoverageEnd", "levelSupplyCoverageFullLevel",
-    "minPrecisionBlocksPerLevel", "openingHandGenerationAttempts", "refreshGenerationAttempts",
-    "refreshMinUsefulBlockHeight", "accessibility", "visualHooks", "scoring", "debugBotsEnabled",
-    "showLatencyIndicator", "debugBotCount", "debugBotDelayMin", "debugBotDelayMax", "debugBotStrategy",
-    "debugBotStabilityTolerance", "debugBotGapCandidates"
-]);
-
 module.exports = {
     CLASSIFICATION_ENTRIES,
     CLIENT_DESIGNER_ONLY_PATHS,
+    RUNTIME_EXPOSED_SERVER_FIELDS,
     RUNTIME_EXPOSED_SERVER_KEYS,
+    RUNTIME_EXPOSED_SERVER_PATHS,
     SERVER_DESIGNER_ONLY_PATHS,
-    SERVER_QA_BASELINE_PATHS,
     TRUE_CONTRACTS,
     TUNABLE_CLASSES
 };

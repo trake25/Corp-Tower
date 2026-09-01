@@ -1,22 +1,12 @@
 const assert = require("node:assert/strict");
 const { afterEach, test } = require("node:test");
 
-const GameConfig = require("../app/Game_Config");
 const LobbyManager = require("../app/Lobby_Manager");
 const { RedisState, stripRuntimeRoom } = require("../app/Redis_State");
 
 const activeLobbies = [];
-const originalPrivateConfig = {
-    privateLobbyStartCountdownMs: GameConfig.privateLobbyStartCountdownMs,
-    privateLobbyReconnectPhaseMs: GameConfig.privateLobbyReconnectPhaseMs,
-    privateLobbyGracePhaseMs: GameConfig.privateLobbyGracePhaseMs
-};
 
 afterEach(() => {
-    GameConfig.privateLobbyStartCountdownMs = originalPrivateConfig.privateLobbyStartCountdownMs;
-    GameConfig.privateLobbyReconnectPhaseMs = originalPrivateConfig.privateLobbyReconnectPhaseMs;
-    GameConfig.privateLobbyGracePhaseMs = originalPrivateConfig.privateLobbyGracePhaseMs;
-
     activeLobbies.forEach(lobby => {
         lobby.rooms.forEach(room => room.engine.clearTimers());
 

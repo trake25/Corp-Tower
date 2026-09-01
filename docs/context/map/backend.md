@@ -226,7 +226,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Tower_Structure_Assessment.js:11 | describeGroups · fn | |
 | src/Server/app/Tower_Structure_Assessment.js:158 | comparePlacement · fn | |
 
-### src/Server/app/Tunable_Classification.js — 121 ln
+### src/Server/app/Tunable_Classification.js — 169 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
