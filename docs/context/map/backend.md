@@ -94,7 +94,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Game_Engine.js:895 | failLevel | |
 | src/Server/app/Game_Engine.js:902 | nextLevel | |
 
-### src/Server/app/Lobby_Manager.js — 2532 ln
+### src/Server/app/Lobby_Manager.js — 2536 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -102,20 +102,20 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Lobby_Manager.js:15 | LobbyManager · class | |
 | src/Server/app/Lobby_Manager.js:164 | isCurrentPlayerConnection | |
 | src/Server/app/Lobby_Manager.js:178 | createPlayer | |
-| src/Server/app/Lobby_Manager.js:250 | addPlayer | |
-| src/Server/app/Lobby_Manager.js:409 | removePlayer | |
-| src/Server/app/Lobby_Manager.js:870 | closeRoom | |
-| src/Server/app/Lobby_Manager.js:1007 | broadcastDebugConfig | |
-| src/Server/app/Lobby_Manager.js:1069 | updateDebugConfig | |
-| src/Server/app/Lobby_Manager.js:1328 | privateJoinReason | |
-| src/Server/app/Lobby_Manager.js:1489 | createRoom | |
-| src/Server/app/Lobby_Manager.js:1703 | toggleLobbyReady | |
-| src/Server/app/Lobby_Manager.js:1824 | leaveLobby | |
-| src/Server/app/Lobby_Manager.js:1913 | kickPrivatePlayer | |
-| src/Server/app/Lobby_Manager.js:2062 | createEngine | |
-| src/Server/app/Lobby_Manager.js:2133 | hydrateRoom | |
-| src/Server/app/Lobby_Manager.js:2372 | dispatchRoomAction | |
-| src/Server/app/Lobby_Manager.js:2399 | resyncState | |
+| src/Server/app/Lobby_Manager.js:254 | addPlayer | |
+| src/Server/app/Lobby_Manager.js:413 | removePlayer | |
+| src/Server/app/Lobby_Manager.js:874 | closeRoom | |
+| src/Server/app/Lobby_Manager.js:1011 | broadcastDebugConfig | |
+| src/Server/app/Lobby_Manager.js:1073 | updateDebugConfig | |
+| src/Server/app/Lobby_Manager.js:1332 | privateJoinReason | |
+| src/Server/app/Lobby_Manager.js:1493 | createRoom | |
+| src/Server/app/Lobby_Manager.js:1707 | toggleLobbyReady | |
+| src/Server/app/Lobby_Manager.js:1828 | leaveLobby | |
+| src/Server/app/Lobby_Manager.js:1917 | kickPrivatePlayer | |
+| src/Server/app/Lobby_Manager.js:2066 | createEngine | |
+| src/Server/app/Lobby_Manager.js:2137 | hydrateRoom | |
+| src/Server/app/Lobby_Manager.js:2376 | dispatchRoomAction | |
+| src/Server/app/Lobby_Manager.js:2403 | resyncState | |
 
 ### src/Server/app/Profile_Store.js — 169 ln
 

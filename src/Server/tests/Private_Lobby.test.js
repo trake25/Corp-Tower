@@ -336,6 +336,93 @@ test("private creation is isolated, claims a safe invite, and preserves the temp
     assert.equal(created.roster[0].isHost, true);
 });
 
+test("a reused roomless session preserves a fresh private-create entry", async () => {
+    const lobby = createLobby();
+    const initial = await lobby.createPlayer(createFakeWs(), {
+        profileId: "roomless-create-profile"
+    });
+    const reusedWs = createFakeWs();
+    const reused = await lobby.createPlayer(reusedWs, {
+        playerId: initial.id,
+        reconnectToken: initial.sessionId,
+        profileId: "roomless-create-profile",
+        entryMode: "private_create",
+        privateDisplayName: "Reused Host",
+        privatePassword: "2468"
+    });
+
+    assert.equal(reused.room.roomMode, "private");
+    assert.equal(reused.privateDisplayName, "Reused Host");
+    assert.equal(reused.room.players[0].privateDisplayName, "Reused Host");
+    assert.equal(
+        messagesOfType(reusedWs, "room_created").at(-1).roster[0].displayName,
+        "Reused Host"
+    );
+    assert.equal(reused.room.privatePassword, "2468");
+    assert.equal(lobby.stateStore.memoryOpenRooms.has(reused.room.id), false);
+    assert.equal(lobby.rooms.some(room => room.roomMode === "public"), false);
+});
+
+test("a reused roomless session preserves a fresh private-join entry", async () => {
+    const lobby = createLobby();
+    const { room } = await createPrivateHost(lobby, {
+        password: "1357",
+        displayName: "Invite Host"
+    });
+    const initial = await lobby.createPlayer(createFakeWs(), {
+        profileId: "roomless-join-profile"
+    });
+    const reused = await lobby.createPlayer(createFakeWs(), {
+        playerId: initial.id,
+        reconnectToken: initial.sessionId,
+        profileId: "roomless-join-profile",
+        entryMode: "private_join",
+        privateDisplayName: "Reused Guest",
+        privateServerId: room.privateServerId,
+        privatePassword: "1357"
+    });
+
+    assert.equal(reused.room, room);
+    assert.equal(reused.privateDisplayName, "Reused Guest");
+    assert.equal(room.players.some(player => player.id === reused.id), true);
+    assert.equal(lobby.stateStore.memoryOpenRooms.size, 0);
+    assert.equal(lobby.rooms.some(candidate => candidate.roomMode === "public"), false);
+});
+
+test("a reused session with a room resumes it before applying a fresh private entry", async () => {
+    const lobby = createLobby();
+    const { room: requestedRoom } = await createPrivateHost(lobby, {
+        password: "1111",
+        displayName: "Requested Host",
+        profileId: "requested-room-host"
+    });
+    const {
+        player: existingPlayer,
+        room: existingRoom
+    } = await createPrivateHost(lobby, {
+        password: "2222",
+        displayName: "Original Name",
+        profileId: "existing-room-host"
+    });
+    const resumedWs = createFakeWs();
+    const resumed = await lobby.createPlayer(resumedWs, {
+        playerId: existingPlayer.id,
+        reconnectToken: existingPlayer.sessionId,
+        profileId: "existing-room-host",
+        entryMode: "private_join",
+        privateDisplayName: "Fresh Name",
+        privateServerId: requestedRoom.privateServerId,
+        privatePassword: "1111"
+    });
+
+    assert.equal(resumed.room, existingRoom);
+    assert.equal(resumed.privateDisplayName, "Original Name");
+    assert.equal(requestedRoom.players.length, 1);
+    assert.equal(existingRoom.players.length, 1);
+    assert.equal(messagesOfType(resumedWs, "room_resumed").length, 1);
+    assert.equal(messagesOfType(resumedWs, "room_created").length, 0);
+});
+
 test("private join validates the password and returns the four stable rejection reasons", async () => {
     const lobby = createLobby();
     const { room } = await createPrivateHost(lobby, { password: "1234" });

@@ -186,13 +186,17 @@ class LobbyManager {
             existingSession.playerId === reconnectRequest.playerId
         ) {
             const previousPlayer = this.connectedPlayers.get(existingSession.playerId);
+            const canUseFreshEntry = !existingSession.roomId && !existingSession.resumeDestination;
             const player = {
                 id: existingSession.playerId,
                 sessionId: existingSession.sessionId,
                 connectionId: this.stateStore.createReconnectToken(),
                 profileId: identityFields.profileId,
                 displayName: identityFields.displayName,
-                privateDisplayName: null,
+                privateDisplayName: canUseFreshEntry
+                    ? privateEntry.privateDisplayName || null
+                    : null,
+                privateEntry: canUseFreshEntry ? privateEntry : undefined,
                 ws: ws,
                 score: 0,
                 lastPlacementTime: 0
