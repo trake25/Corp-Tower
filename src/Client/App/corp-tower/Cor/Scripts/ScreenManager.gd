@@ -33,9 +33,9 @@ var debug_button_dragging := false
 var debug_button_pointer_id := DRAG_POINTER_NONE
 var debug_button_drag_distance := 0.0
 var debug_context := DEBUG_CONTEXT_NONE
+var startup_handoff_complete := false
 
 func _ready() -> void:
-	_show_runtime_android_system_bars()
 	NetworkManager.room_joined.connect(_on_room_joined)
 	NetworkManager.match_started.connect(_on_match_started)
 	NetworkManager.room_closed.connect(_on_room_closed)
@@ -380,6 +380,14 @@ func _set_overlay(screen: Node) -> void:
 	current_overlay = screen
 	screen_container.add_child(screen)
 	startup_splash.visible = false
+	_complete_startup_handoff()
+
+func _complete_startup_handoff() -> void:
+	if startup_handoff_complete:
+		return
+
+	startup_handoff_complete = true
+	_show_runtime_android_system_bars()
 
 func _clear_overlay() -> void:
 	find_match_active = false

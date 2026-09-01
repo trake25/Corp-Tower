@@ -54,7 +54,8 @@ Find Match has no retained gameplay view. Public Lobby retains the gameplay root
 only for its debug layer while resetting and suppressing gameplay presentation;
 entering Play or a tutorial restores the gameplay layers.
 
-Startup Splash preserves continuity while session restoration is unresolved.
+Startup Splash preserves continuity while session restoration is unresolved. On
+Android it retains startup window geometry until the first real screen handoff.
 Authentication shows only configured providers. Android uses native providers
 when available and falls back to browser OAuth; Web keeps the PKCE verifier in
 same-tab session storage through the callback.

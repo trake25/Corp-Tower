@@ -230,7 +230,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:12 | DISABLED_MODULATE · const | |
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:32 | apply_lobby_data | |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 474 ln
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 482 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
