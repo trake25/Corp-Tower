@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Validates the docs/context knowledge base. Zero dependencies (Node stdlib only).
 //   node scripts/validate-docs.mjs [repoRoot] [--quiet]
-// --quiet suppresses the per-doc table and status-marker list on a passing run (the
-//   update-docs receipt only needs pass/fail); a failing run always prints in full.
+// --quiet emits only the aggregate summary, compact warning counts, and the first
+// actionable hard blocker on failure. Re-run without it for the full report.
 //
 // Budgets are TOKENS, not lines. A 173-line ui.md passed the old line budget while
 // costing ~31k tokens, because 43 of those lines were 400+ character table cells.
@@ -10,13 +10,9 @@
 // deliberately conservative. MAX_LINE_CHARS closes the mega-line loophole
 // structurally, so the budget cannot be met again by making lines longer.
 //
-// HARD errors (exit 1): broken relative doc links, dead #anchors, over-length
-//   lines, unresolvable file citations, false counted claims, map coverage gaps,
-//   plus over-budget and banned-phrase violations in docs that GREW in the working
-//   tree. Growth is blocked; compaction never is, so a doc already over budget can
-//   always be edited back down to size.
-// Soft warnings (exit 0): the same budget/banned violations in docs that shrank or
-//   weren't touched, orphan docs, stack drift, unverifiable claims.
+// HARD errors (exit 1): semantic defects, over-length lines, hard prose section or
+//   aggregate overage, and generated-map density overflow. Whole-file prose and
+//   historical map capacities are advisory because retrieval is section-routed.
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -24,9 +20,15 @@ import { MAP_AREAS as AREAS, firstPartyFiles, isExempt } from './lib/context-rou
 import {
   DEFAULT_PROSE_BUDGET,
   PROSE_BUDGETS,
-  PROSE_TOTAL_BUDGET,
+  PROSE_SECTION_HARD_LIMIT,
+  PROSE_SECTION_WARNING,
+  mapCapacityStatus,
   mapCapacityFor,
   mapCapacitySummary,
+  proseCapacitySummary,
+  proseFileCapacityStatus,
+  proseSectionStatus,
+  quietValidationLines,
   validatorFailureClassification,
 } from './lib/docs-capacity.mjs';
 import { failureClassificationLine } from './lib/maintenance-handoff.mjs';
@@ -47,12 +49,8 @@ const isIsolated = absolute => {
 
 const tok = s => Math.round(Buffer.byteLength(s, 'utf8') / 4);
 
-// Per-doc token budgets are capacity ceilings, while section limits below bound
-// the normal retrieval unit. Exceeding either is a split-or-compact signal.
 const MAX_LINE_CHARS = 300;
 const NET_GROWTH_WARN = 30;
-const SECTION_WARN = 1000;
-const SECTION_LIMIT = 1600;
 
 // Constructions that turn a description of the system into a story about it.
 // No exemption. A failed alternative is not preserved as a narrative: if the
@@ -315,10 +313,9 @@ if (existsSync(pkgPath)) {
     errors.push(`drift: server entry '${mainBase}' (package.json main) not mentioned in docs`);
 }
 
-// --- growth split -------------------------------------------------------------
-// A doc that grew is held to its budget and the banned-phrase list as a hard
-// error; one that shrank or is untouched only warns -- otherwise a doc already
-// over budget could never be edited back down to size.
+// --- changed-line tracking ----------------------------------------------------
+// Newly introduced banned constructions are hard; existing occurrences warn so
+// cleanup can proceed without making an unrelated task own the backlog.
 const growth = {};
 const addedLines = {};
 let gitOk = false;
@@ -345,8 +342,6 @@ try {
   gitOk = true;
 } catch { /* not a git repo, or no HEAD yet -- warnings only */ }
 
-const grew = f => (growth[f] || 0) > 0;
-const flag = (f, msg) => (gitOk && grew(f) ? errors : warnings).push(msg);
 const isNew = (f, line) => gitOk && addedLines[f]?.has(line.trim());
 
 // --- budgets, line length, banned constructions, status markers ---------------
@@ -359,12 +354,17 @@ for (const { f, txt } of all) {
   const mapBudget = isMap ? (mapCapacity.by_file[f.slice(4)] || mapCapacityFor(f.slice(4), 0)) : null;
   const budget = isMap ? mapBudget.capacity : (PROSE_BUDGETS[f] ?? DEFAULT_PROSE_BUDGET);
   counts.push([f, t, budget, lines.length, isMap]);
-  if (isMap && t > mapBudget.density_ceiling)
-    maintenanceErrors.push(`map density ceiling: ${f} ~${t} tok > ${mapBudget.density_ceiling} with ${mapBudget.baseline?.file_count ?? 0}+ mapped files — inspect generator density`);
-  else if (t > budget)
-    maintenanceErrors.push(`capacity: ${f} ~${t} tok > ${budget} — schedule capacity maintenance`);
-  else if (!isMap && t >= Math.round(budget * 0.95))
+  if (isMap) {
+    const status = mapCapacityStatus(t, mapBudget);
+    if (status === 'hard-overage')
+      maintenanceErrors.push(`map density ceiling: ${f} ~${t} tok > ${mapBudget.density_ceiling} with ${mapBudget.baseline?.file_count ?? 0}+ mapped files — inspect generator density`);
+    else if (status === 'soft-overage')
+      warnings.push(`map soft capacity: ${f} ~${t} tok > ${budget} but <= density ceiling ${mapBudget.density_ceiling}`);
+  } else if (proseFileCapacityStatus(t, budget) === 'soft-overage') {
+    warnings.push(`prose soft capacity: ${f} ~${t} tok > ${budget} — section limits remain authoritative`);
+  } else if (t >= Math.round(budget * 0.95)) {
     warnings.push(`budget pressure 95%: ${f} ~${t} / ${budget} tok`);
+  }
   if ((growth[f] || 0) > NET_GROWTH_WARN)
     warnings.push(`net growth: ${f} +${growth[f]} lines this run (> ${NET_GROWTH_WARN}) — transcribing, not documenting?`);
   let fenced = false;
@@ -396,19 +396,26 @@ for (const { f, txt } of all.filter(item => !item.f.startsWith('map/'))) {
   heads.forEach((head, index) => {
     const end = heads[index + 1]?.start ?? lines.length;
     const size = tok(lines.slice(head.start, end).join('\n'));
-    if (size > SECTION_LIMIT) errors.push(`section over limit: ${f} "${head.heading}" ~${size} tok > ${SECTION_LIMIT}`);
-    else if (size > SECTION_WARN) warnings.push(`large section: ${f} "${head.heading}" ~${size} tok > ${SECTION_WARN}`);
+    const status = proseSectionStatus(size);
+    if (status === 'hard-overage')
+      errors.push(`compaction-required: ${f} section "${head.heading}" ~${size} tok > hard limit ${PROSE_SECTION_HARD_LIMIT} — compact this section and retry`);
+    else if (status === 'warning')
+      warnings.push(`large section: ${f} "${head.heading}" ~${size} tok > ${PROSE_SECTION_WARNING}`);
   });
 }
 counts.sort((a, b) => b[1] - a[1]);
 const proseTotal = counts.filter(c => !c[4]).reduce((s, c) => s + c[1], 0);
 const mapTotal = counts.filter(c => c[4]).reduce((s, c) => s + c[1], 0);
-if (proseTotal > PROSE_TOTAL_BUDGET)
-  maintenanceErrors.push(`prose capacity: KB total ~${proseTotal} tok > ${PROSE_TOTAL_BUDGET} — schedule capacity maintenance`);
-if (mapTotal > mapCapacity.density_ceiling)
+const proseCapacity = proseCapacitySummary(proseTotal);
+if (proseCapacity.status === 'hard-overage')
+  errors.push(`compaction-required: KB prose total ~${proseTotal} tok > hard ceiling ${proseCapacity.hard_ceiling} — compact bounded candidates before whole-KB widening`);
+else if (proseCapacity.status === 'soft-overage')
+  warnings.push(`prose soft capacity: KB total ~${proseTotal} tok > ${proseCapacity.capacity} but <= hard ceiling ${proseCapacity.hard_ceiling}`);
+const mapTotalStatus = mapCapacityStatus(mapTotal, mapCapacity);
+if (mapTotalStatus === 'hard-overage')
   maintenanceErrors.push(`map density ceiling: KB total ~${mapTotal} tok > ${mapCapacity.density_ceiling} — inspect generator density`);
-else if (mapTotal > mapCapacity.capacity)
-  maintenanceErrors.push(`map capacity: KB total ~${mapTotal} tok > ${mapCapacity.capacity} — schedule capacity maintenance`);
+else if (mapTotalStatus === 'soft-overage')
+  warnings.push(`map soft capacity: KB total ~${mapTotal} tok > ${mapCapacity.capacity} but <= density ceiling ${mapCapacity.density_ceiling}`);
 
 // --- map freshness ------------------------------------------------------------
 let mapFresh = 'skipped';
@@ -425,29 +432,32 @@ try {
 // --- report -------------------------------------------------------------------
 const classification = validatorFailureClassification({ semanticErrors: errors, maintenanceErrors });
 const allErrors = [...errors, ...maintenanceErrors];
-const terse = QUIET && !allErrors.length;
 console.log('=== docs/context validation ===');
-console.log(`docs: ${files.length} + ${mapFiles.length} map   prose: ~${proseTotal} / ${PROSE_TOTAL_BUDGET} tok   maps: ~${mapTotal} / ${mapCapacity.capacity} tok   links: ${linkCount}   map: ${mapFresh}`);
-if (!terse) {
+console.log(`docs: ${files.length} + ${mapFiles.length} map   prose: ~${proseTotal} / ${proseCapacity.capacity} soft / ${proseCapacity.hard_ceiling} hard tok   maps: ~${mapTotal} / ${mapCapacity.capacity} soft / ${mapCapacity.density_ceiling} hard tok   links: ${linkCount}   map: ${mapFresh}`);
+if (!QUIET) {
   console.log('tokens per doc (budget, net line change):');
   for (const [f, t, b, ln, isMap] of counts) {
     const d = growth[f] || 0;
     console.log(`  ${String(t).padStart(6)} / ${String(b).padEnd(6)} ${t > b ? '!' : ' '} ${String(ln).padStart(4)}ln ${d ? (d > 0 ? `+${d}` : d).toString().padStart(5) : '     '}  ${f}${isMap ? '  (grep target)' : ''}`);
   }
 }
-if (statusMarkers.length && !terse) {
+if (statusMarkers.length && !QUIET) {
   console.log(`\nUNRESOLVED STATUS MARKERS (${statusMarkers.length}) — keep, resolve, or delete each:`);
   statusMarkers.forEach(s => console.log('  · ' + s));
 }
-if (terse) {
-  if (warnings.length || statusMarkers.length)
-    console.log(`warnings: ${warnings.length}   status markers: ${statusMarkers.length}   (re-run without --quiet for detail)`);
+if (QUIET) {
+  quietValidationLines({
+    warningCount: warnings.length,
+    statusMarkerCount: statusMarkers.length,
+    blockers: allErrors,
+    classification,
+  }).forEach(line => console.log(line));
 } else if (warnings.length) { console.log(`\nWARNINGS (${warnings.length}):`); warnings.forEach(w => console.log('  ! ' + w)); }
-if (errors.length) { console.log(`\nERRORS (${errors.length}):`); errors.forEach(e => console.log('  x ' + e)); }
-if (maintenanceErrors.length) {
+if (!QUIET && errors.length) { console.log(`\nERRORS (${errors.length}):`); errors.forEach(e => console.log('  x ' + e)); }
+if (!QUIET && maintenanceErrors.length) {
   console.log(`\nMAINTENANCE BLOCKERS (${maintenanceErrors.length}):`);
   maintenanceErrors.forEach(error => console.log('  m ' + error));
 }
-if (classification) console.log(failureClassificationLine(classification));
+if (classification && !QUIET) console.log(failureClassificationLine(classification));
 console.log(allErrors.length ? '\nFAIL' : '\nPASS');
-process.exit(allErrors.length ? 1 : 0);
+process.exitCode = allErrors.length ? 1 : 0;

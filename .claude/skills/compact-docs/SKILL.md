@@ -1,13 +1,14 @@
 ---
 name: compact-docs
-description: Whole-KB compaction pass over docs/context — collapse superseded entries, dedupe, bring docs under token budget.
+description: Bounded or whole-KB compaction of docs/context while preserving live behavior and constraints.
 ---
 
-Compact the `docs/context/` knowledge base. This is the periodic counterpart to
-`update-docs`: that skill is diff-scoped and cheap, so entropy still collects in
-docs it never opens. This one is whole-KB and expensive — run it as an explicit
-maintenance task for actual entropy, duplication, stale/history prose,
-banned-phrase backlog, or sustained capacity pressure, not routinely.
+Compact `docs/context/` in one of two modes. Normal close-out uses bounded mode
+only when the validator emits a hard `compaction-required` section or KB-wide
+condition. Whole-KB mode is exceptional: use it for an explicit entropy,
+duplication, or stale-prose maintenance task, or after bounded attempts cannot
+resolve a validator-proven hard aggregate ceiling. Advisory 95% pressure and
+whole-file soft overage never trigger either mode.
 
 **This pass changes no facts.** It removes history, duplication and mirrored
 values. If compaction would change what the docs claim the system does, stop and
@@ -15,9 +16,10 @@ ask — that is an `update-docs` job, or a bug in the docs.
 
 Procedure:
 
-1. `node scripts/validate-docs.mjs`. Its capacity handoff, long-line list,
-   banned-phrase list and status-marker list are the worklist. Work the largest
-   entropy or sustained-capacity candidate first.
+1. Run `node scripts/validate-docs.mjs`. For bounded mode, take the exact doc and
+   section from its `compaction-required` diagnostic, amend that path into the
+   active task-close manifest before editing, and keep the task open. For an
+   explicit whole-KB pass, use the verbose report as the worklist.
 2. Apply the retention test from `update-docs` to **every** paragraph: keep only
    medium-level **State** and **live constraints** that are not obvious from one
    routed source file. Delete local implementation narration, abandoned
@@ -37,7 +39,12 @@ Procedure:
    drive design conversation on their own.
 7. Resolve each status marker: still true (keep), now done (delete), stale (delete
    and note it in the receipt).
-8. Re-run `node scripts/validate-docs.mjs` until it passes. Receipt: one line per
-   doc, `ui.md 31,000 → 4,900 tok`.
+8. Re-run the validator and task-close review after each bounded edit. Widen from
+   the failing section to its containing doc only when section-local compaction
+   cannot safely resolve the hard condition. Widen to the whole KB only for a
+   proven hard aggregate ceiling after bounded candidates fail.
+9. If safe compaction cannot preserve every live fact, constraint, and landmine,
+   stop for a user decision. Never raise a hard limit merely to pass. Receipt:
+   one line per doc, `ui.md 1,700 → 1,420 tok`.
 
 Do not commit unless explicitly instructed.

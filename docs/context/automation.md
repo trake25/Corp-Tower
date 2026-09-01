@@ -60,23 +60,28 @@ scope authority and always names paths explicitly; it never discovers scope from
 a dirty working tree. Schema 2 separates authorized ownership from the final
 change set while keeping detailed output in local artifacts.
 
-1. `prepare --task ... --path ...` owns paths before editing and returns role,
-   maps, tests and validators. Repeated `--qa-tooling-path` records planned QA
-   infrastructure. `--plan` binds one active Markdown plan to a collision-free
-   `plan/done/` destination; neither plan path enters publication scope.
-2. `amend --path ...` owns later files before editing them; new source invalidates
-   an existing review. `amend --qa-tooling-path ...` records later planned
-   QA-tooling scope. `amend --plan` late-binds but cannot replace another plan.
-3. After implementation stabilizes, `update-docs` applies the doc-worthy gate.
-   Selected candidate docs are owned with `amend` before editing.
-4. `review --changed ...` accepts only owned final paths, recomputes QA and
-   candidate docs, and leaves source-changing documentation `pending`.
-5. `close --decision <updated|not-needed> --reason ...` records the documentation
-   gate; `updated` also repeats each affected `--doc-path`. The same call records
-   `--coverage <reused|added|updated|none>` and optional temporary verification,
-   runs QA/map/KB/agent-config checks, rejects out-of-scope maps, then archives a
-   bound plan. `publish_paths` includes affected docs and changed generated paths,
-   never plan paths or a `repair/` handoff.
+`prepare` owns paths before editing, records planned QA-tooling paths, and may
+bind one active plan to its collision-free `plan/done/` destination. `amend`
+owns later paths before edits. `review` accepts only owned final changes and
+recomputes QA and candidate docs. `close` records the documentation and permanent
+coverage decisions, verifies the reviewed set, and archives a bound plan only
+after executable proof succeeds.
+
+Close-out runs selected protocol checks and QA, regenerates affected file maps,
+then repairs the agent-skill mirror when canonical `.agents/skills/**` changed by
+running `scripts/sync-agent-skills.mjs`. Changed `.claude/skills/**` files are
+derived publication paths. The game-KB validator runs in quiet mode before
+agent-config validation; its verbose child output stays private. Generated maps
+outside the reviewed scope still fail.
+
+Whole-file prose budgets, aggregate soft prose capacity, historical/file-count
+map capacity, and 95% pressure are warnings. Hard section or exceptional
+KB-wide prose overflow emits a stable `compaction-required` target and remains a
+task-owned failure until the agent compacts the smallest safe scope and retries.
+Only generated-map density overflow is capacity-related
+`validator-maintenance`; deterministic growth below that ceiling does not block.
+Broken links, anchors, citations, coverage, generated targets, long lines, and
+other semantic defects remain hard.
 
 Verification is `passed`, `maintenance-blocked`, or `failed`. A maintenance
 blocker closes only when every failed step has an approved unrelated
@@ -86,12 +91,11 @@ unbound task closes with archival not applicable; a bound task closes after its
 plan moves. Archive failure preserves proof as verified/closure-blocked, and an
 unchanged retry runs only the idempotent move. Receipts separate verification,
 closure and sanitized plan paths. Only closed lifecycle state exposes publication
-scope; executable failure leaves the plan active and retains private evidence.
-The close-out writes one run-scoped handoff only for unresolved blockers or
-deferred retrieval, decomposition, and unplanned-QA-infrastructure advisories;
-it never deletes another handoff. Each item contains only its
-classification/stage, affected component, compact diagnostic and impact,
-completed work, and follow-up.
+scope; executable failure, including `compaction-required`, leaves the plan
+active and retains private evidence. The compact failed-step summary carries the
+first actionable blocker and its classification. A run-scoped handoff is written
+only for unresolved maintenance or deferred retrieval, decomposition, and
+unplanned-QA-infrastructure advisories; it never deletes another handoff.
 Changed first-party product files near 900 lines produce a decomposition review
 advisory and near 1200 lines a strong advisory. Generated/content files, tests,
 docs/maps, and load-on-demand `scripts/` automation are excluded.
@@ -100,8 +104,7 @@ docs/maps, and load-on-demand `scripts/` automation are excluded.
 records permitted ordinary source fallback and produces one compact advisory
 handoff without blocking a pass. Adding `--fixture ...` marks task-owned
 retrieval maintenance; close-out then requires that fixture and a passing
-retrieval benchmark. Schema 2 uses
-`prepare → review → close`.
+retrieval benchmark. Schema 2 uses `prepare → review → close`.
 
 Child output enters only the private receipt. The public receipt allowlists task
 identity, scopes, compact steps, QA decisions and maintenance; it omits raw

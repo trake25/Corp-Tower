@@ -12,19 +12,19 @@ validator, capacity, citation, map, and retrieval repair work.
 
 ## Budgets
 
-The validators enforce tokens (`bytes/4`), not lines, plus a 300-character line
-cap. **A doc growing is not evidence its budget is wrong.** The first thing to
-re-examine is whether the content acts on anything — retiring narrative has
-repeatedly freed more room than raising a budget would have. Raise a budget only
-when a doc is all current behaviour and live constraint and still does not fit,
-and say why in the same change.
+The validators enforce tokens (`bytes/4`) plus a hard 300-character line cap.
+Whole-file prose budgets are advisory because retrieval reads routed sections;
+95% pressure and ordinary overage warn without blocking or triggering
+compaction. Rebaseline them only from an approved healthy snapshot using the
+greater of twenty percent or 200 estimated tokens of headroom, rounded up to 50,
+and never lower an existing ceiling.
 
-The current capacity baseline allows the greater of twenty percent or 200
-estimated tokens of headroom, rounded up to 50, and never lowers an existing
-ceiling. A capacity breach is a `validator-maintenance` handoff, not an automatic
-compaction or scope expansion. Compact only as an explicit maintenance task when
-entropy, duplication, stale/history prose, or sustained capacity pressure makes
-the KB harder to use.
+Section size is the primary prose retrieval guard. A hard section overflow or
+the exceptional KB-wide hard prose ceiling is task-owned `compaction-required`
+work: keep closure open, load `compact-docs`, and repair the smallest safe scope.
+Never raise a hard limit merely to pass. Generated-map historical/file-count
+capacity is also soft; only its density ceiling, per map or in aggregate, is a
+`validator-maintenance` blocker requiring generator investigation.
 
 ## Repairing a retrieval miss
 
@@ -36,7 +36,8 @@ and the repair updates the appropriate router, map, or prose.
 **Flag instead of fixing** when the repair needs a call only the user can make:
 source and docs disagree and neither is obviously right · the fix changes
 `build-file-map.mjs` output or the carry-forward key · the fix would drop
-authored `Does` rows. State the defect and its cost, then stop.
+authored `Does` rows · safe compaction cannot preserve every live fact or
+constraint. State the defect and its cost, then stop.
 
 ## Procedures
 

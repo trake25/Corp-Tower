@@ -19,6 +19,7 @@ import {
   archivePlan,
   applyCoverageDecision,
   applyDocumentationDecision,
+  canonicalSkillsChanged,
   closeObservabilityUnsafe,
   compactOutput,
   createManifest,
@@ -55,7 +56,17 @@ test('successful compact summaries ignore diagnostics and prefer an explicit PAS
   assert.equal(compactOutput(misleadingSuccess, { status: 0 }), 'exit 0');
   assert.equal(compactOutput(`${misleadingSuccess}\nPASS — tooling targeted tests (4)`, { status: 0 }), 'exit 0; PASS — tooling targeted tests (4)');
   assert.equal(compactOutput('FAIL — child assertion failed', { status: 1 }), 'exit 1; FAIL — child assertion failed');
+  assert.equal(
+    compactOutput('ACTIONABLE_BLOCKER: compaction-required: automation.md section "Close-out" ~1700 tok > hard limit 1600\nFAILURE_CLASSIFICATION: implementation\nFAIL', { status: 1 }),
+    'exit 1; ACTIONABLE_BLOCKER: compaction-required: automation.md section "Close-out" ~1700 tok > hard limit 1600; FAILURE_CLASSIFICATION: implementation',
+  );
   assert.equal(compactOutput('Error: child interrupted', { signal: 'SIGTERM' }), 'signal SIGTERM; Error: child interrupted');
+});
+
+test('canonical skill paths are the only automatic mirror trigger', () => {
+  assert.equal(canonicalSkillsChanged(['.agents/skills/update-docs/SKILL.md']), true);
+  assert.equal(canonicalSkillsChanged(['.claude/skills/update-docs/SKILL.md']), false);
+  assert.equal(canonicalSkillsChanged(['docs/context/automation.md']), false);
 });
 
 test('shared task identity preserves Git keywords and selects the next receipt/history version', () => {
@@ -608,6 +619,115 @@ test('CLI review directs source-changing closeout through the documentation gate
     assert.match(output.next, /--decision/);
     assert.match(output.next, /updated\|not-needed/);
     assert.match(output.next, /--doc-path/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('closeout synchronizes canonical skills and publishes mirror changes as derived output', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-close-skills-'));
+  const manifestPath = '.agent-state/skills.json';
+  const canonicalPath = '.agents/skills/example/SKILL.md';
+  const mirrorPath = '.claude/skills/example/SKILL.md';
+  mkdirSync(join(root, '.agents/skills/example'), { recursive: true });
+  mkdirSync(join(root, '.claude/skills/example'), { recursive: true });
+  mkdirSync(join(root, '.agent-state'), { recursive: true });
+  mkdirSync(join(root, 'scripts'), { recursive: true });
+  writeFileSync(join(root, canonicalPath), 'canonical skill\n');
+  writeFileSync(join(root, mirrorPath), 'stale mirror\n');
+  writeFileSync(join(root, 'scripts/qa-gate.mjs'), "console.log('PASS — fixture QA');\n");
+  writeFileSync(join(root, 'scripts/sync-agent-skills.mjs'), `
+    import { cpSync, rmSync } from 'node:fs';
+    rmSync('.claude/skills', { recursive: true, force: true });
+    cpSync('.agents/skills', '.claude/skills', { recursive: true });
+    console.log('PASS — skill mirror synchronized');
+  `);
+  writeFileSync(join(root, 'scripts/validate-agent-config.mjs'), `
+    import { readFileSync } from 'node:fs';
+    if (readFileSync('${canonicalPath}', 'utf8') !== readFileSync('${mirrorPath}', 'utf8')) process.exit(1);
+    console.log('PASS — agent config');
+  `);
+  const git = args => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+  assert.equal(git(['init', '-q']).status, 0);
+  assert.equal(git(['config', 'user.name', 'QA Fixture']).status, 0);
+  assert.equal(git(['config', 'user.email', 'qa-fixture@example.invalid']).status, 0);
+  assert.equal(git(['add', '.']).status, 0);
+  assert.equal(git(['commit', '-qm', 'Fixture baseline']).status, 0);
+  const prepared = createManifest({ task: 'Synchronize canonical skill', ownedPaths: [canonicalPath], root });
+  const reviewed = reviewManifest(prepared, { changedPaths: [canonicalPath], mapBaseline: {} });
+  writeFileSync(join(root, manifestPath), `${JSON.stringify(reviewed, null, 2)}\n`);
+  const result = spawnSync(process.execPath, [TASK_CLOSE, 'close', '--manifest', manifestPath, '--coverage', 'none'], {
+    cwd: process.cwd(),
+    env: Object.fromEntries(Object.entries({ ...process.env, TASK_CLOSE_ROOT: root, CODEX_SESSION_ID: '', CODEX_THREAD_ID: '' }).filter(([key]) => key !== 'NODE_TEST_CONTEXT')),
+    encoding: 'utf8',
+  });
+
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    const manifest = JSON.parse(readFileSync(join(root, manifestPath), 'utf8'));
+    const receipt = JSON.parse(readFileSync(join(root, '.agent-state/skills.receipt.json'), 'utf8'));
+    assert.equal(readFileSync(join(root, mirrorPath), 'utf8'), 'canonical skill\n');
+    assert.deepEqual(manifest.derived_paths, [mirrorPath]);
+    assert.ok(manifest.publish_paths.includes(mirrorPath));
+    assert.ok(receipt.steps.findIndex(step => step.name === 'agent skill mirror') < receipt.steps.findIndex(step => step.name === 'agent config'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('compaction-required game-KB failure stays open and exposes its target in compact evidence', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-close-compaction-'));
+  const manifestPath = '.agent-state/compaction.json';
+  const sourcePath = 'src/Server/app/example.js';
+  mkdirSync(join(root, 'src/Server/app'), { recursive: true });
+  mkdirSync(join(root, 'scripts'), { recursive: true });
+  mkdirSync(join(root, '.agent-state'), { recursive: true });
+  mkdirSync(join(root, 'plan'), { recursive: true });
+  writeFileSync(join(root, sourcePath), 'export const example = true;\n');
+  writeFileSync(join(root, 'plan/task.md'), '# Active compaction task\n');
+  writeFileSync(join(root, 'scripts/qa-gate.mjs'), "console.log('PASS — fixture QA');\n");
+  writeFileSync(join(root, 'scripts/build-file-map.mjs'), "console.log('PASS — fixture map');\n");
+  writeFileSync(join(root, 'scripts/validate-docs.mjs'), `
+    if (!process.argv.includes('--quiet')) process.exit(2);
+    console.log('ACTIONABLE_BLOCKER: compaction-required: automation.md section "Automated close-out" ~1700 tok > hard limit 1600 — compact this section and retry');
+    console.log('FAILURE_CLASSIFICATION: implementation');
+    console.log('FAIL');
+    process.exitCode = 1;
+  `);
+  const prepared = createManifest({
+    task: 'Keep hard compaction open',
+    ownedPaths: [sourcePath],
+    planPath: 'plan/task.md',
+    root,
+  });
+  const reviewed = reviewManifest(prepared, { changedPaths: [sourcePath], mapBaseline: {} });
+  writeFileSync(join(root, manifestPath), `${JSON.stringify(reviewed, null, 2)}\n`);
+  const result = spawnSync(process.execPath, [
+    TASK_CLOSE,
+    'close',
+    '--manifest', manifestPath,
+    '--decision', 'not-needed',
+    '--reason', 'The fixture changes no durable documentation contract.',
+    '--coverage', 'reused',
+  ], {
+    cwd: process.cwd(),
+    env: Object.fromEntries(Object.entries({ ...process.env, TASK_CLOSE_ROOT: root, CODEX_SESSION_ID: '', CODEX_THREAD_ID: '' }).filter(([key]) => key !== 'NODE_TEST_CONTEXT')),
+    encoding: 'utf8',
+  });
+
+  try {
+    assert.equal(result.status, 1);
+    const manifest = JSON.parse(readFileSync(join(root, manifestPath), 'utf8'));
+    const receipt = JSON.parse(readFileSync(join(root, '.agent-state/compaction.receipt.json'), 'utf8'));
+    const gameKb = receipt.steps.find(step => step.name === 'game KB');
+    assert.equal(manifest.phase, 'failed');
+    assert.deepEqual(manifest.lifecycle, { status: 'open' });
+    assert.equal(manifest.plan.status, 'pending');
+    assert.equal(existsSync(join(root, 'plan/task.md')), true);
+    assert.equal(existsSync(join(root, 'plan/done/task.md')), false);
+    assert.ok(gameKb.command.includes('--quiet'));
+    assert.match(gameKb.summary, /ACTIONABLE_BLOCKER: compaction-required: automation\.md section/);
+    assert.match(gameKb.summary, /FAILURE_CLASSIFICATION: implementation/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

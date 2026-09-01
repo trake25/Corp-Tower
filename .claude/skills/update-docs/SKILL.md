@@ -84,24 +84,33 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
    compact `--reason`. Close-out regenerates content-changed maps and validates
    the relevant KB.
 
-6. **Repair semantic task defects; hand off unrelated maintenance.** The same
-   verification receipt validates the game KB and, when in scope, the site KB.
-   A classified tooling/environment or capacity blocker writes a maintenance
-   handoff and may close as `maintenance-blocked`; bad links, anchors, citations,
-   map targets, generated structure, section limits, and task-caused failures
-   remain open work. Rerun an individual validator only to read its full failure
-   detail.
+6. **Repair deterministic and semantic task defects.** The same receipt validates
+   the game KB and, when in scope, the site KB. Close-out regenerates file maps;
+   when canonical `.agents/skills/**` changes it synchronizes the derived
+   `.claude/skills/**` mirror before agent-config validation. Bad links, anchors,
+   citations, map targets, generated structure, hard line limits, and task-caused
+   failures remain open work. Ambiguous source-vs-doc meaning stops for the user.
 
-7. **Receipt.** One line: `docs: gameplay.md, backend.md (+4/−31) · validate PASS`.
+7. **Compact only on a hard prose trigger.** A `compaction-required` section or
+   exceptional KB-wide hard ceiling never becomes `maintenance-blocked`. Load
+   `compact-docs`, own the named doc before editing, compact the failing section
+   first, preserve every live state/constraint/landmine, re-review, and retry
+   close-out without asking. Widen to the containing doc only when section-local
+   work cannot safely pass; whole-KB widening is allowed only for a proven hard
+   aggregate condition after bounded attempts fail. If meaning cannot be
+   preserved, stop for a user decision instead of raising the hard limit.
+
+8. **Receipt.** One line: `docs: gameplay.md, backend.md (+4/−31) · validate PASS`.
    Commit only if explicitly instructed.
 
 **Net-line expectation:** 2–15 net lines across all docs for a typical goal. More
 than 30 net lines into one doc means the session is being transcribed rather than
 the system documented — compress before finishing.
 
-Whole-KB compaction is not part of this. Capacity pressure alone creates a
-maintenance handoff; load `compact-docs` only for an explicit entropy,
-duplication, stale-prose, or sustained-capacity maintenance task.
+Advisory 95% pressure and whole-file prose/map soft overage never trigger
+compaction or a maintenance handoff. Whole-KB compaction remains an explicit
+entropy/duplication task except for the validator-proven hard aggregate fallback
+above.
 
 `site/` has its own KB at `site/docs/`; the same gate updates it in place when a
 portfolio task changes a medium-level contract.

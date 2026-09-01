@@ -999,7 +999,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-routing.mjs:212 | firstPartyFiles · fn | |
 | scripts/lib/context-routing.mjs:233 | isExempt · const | |
 
-### scripts/lib/docs-capacity.mjs — 80 ln
+### scripts/lib/docs-capacity.mjs — 128 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1007,10 +1007,18 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/docs-capacity.mjs:1 | PROSE_BUDGETS · const | |
 | scripts/lib/docs-capacity.mjs:17 | PROSE_TOTAL_BUDGET · const | |
 | scripts/lib/docs-capacity.mjs:18 | DEFAULT_PROSE_BUDGET · const | |
-| scripts/lib/docs-capacity.mjs:36 | proseRebaseline · fn | |
-| scripts/lib/docs-capacity.mjs:43 | mapCapacityFor · fn | |
-| scripts/lib/docs-capacity.mjs:60 | mapCapacitySummary · fn | |
-| scripts/lib/docs-capacity.mjs:75 | validatorFailureClassification · fn | |
+| scripts/lib/docs-capacity.mjs:20 | PROSE_TOTAL_HARD_CEILING · const | |
+| scripts/lib/docs-capacity.mjs:21 | PROSE_SECTION_WARNING · const | |
+| scripts/lib/docs-capacity.mjs:22 | PROSE_SECTION_HARD_LIMIT · const | |
+| scripts/lib/docs-capacity.mjs:40 | proseRebaseline · fn | |
+| scripts/lib/docs-capacity.mjs:56 | proseCapacitySummary · fn | |
+| scripts/lib/docs-capacity.mjs:64 | proseFileCapacityStatus · fn | |
+| scripts/lib/docs-capacity.mjs:70 | proseSectionStatus · fn | |
+| scripts/lib/docs-capacity.mjs:77 | quietValidationLines · fn | |
+| scripts/lib/docs-capacity.mjs:87 | mapCapacityFor · fn | |
+| scripts/lib/docs-capacity.mjs:104 | mapCapacityStatus · fn | |
+| scripts/lib/docs-capacity.mjs:108 | mapCapacitySummary · fn | |
+| scripts/lib/docs-capacity.mjs:123 | validatorFailureClassification · fn | |
 
 ### scripts/lib/maintenance-handoff.mjs — 206 ln
 
@@ -1093,7 +1101,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/sync-agent-skills.mjs:15 | compare · fn | |
 | scripts/sync-agent-skills.mjs:22 | skillMirrorDrift · fn | |
 
-### scripts/task-close.mjs — 1120 ln
+### scripts/task-close.mjs — 1153 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1106,28 +1114,30 @@ bounded source read. Local implementation detail stays in source.
 | scripts/task-close.mjs:116 | checkOptions · fn | |
 | scripts/task-close.mjs:120 | one · fn | |
 | scripts/task-close.mjs:127 | many · fn | |
+| scripts/task-close.mjs:140 | sourcePath · fn | |
 | scripts/task-close.mjs:144 | testPath · fn | |
 | scripts/task-close.mjs:156 | domainFor · fn | |
 | scripts/task-close.mjs:166 | deriveTaskComplexity · fn | |
 | scripts/task-close.mjs:187 | command · fn | |
 | scripts/task-close.mjs:194 | fingerprint · fn | |
-| scripts/task-close.mjs:215 | publishPathsFor · fn | |
-| scripts/task-close.mjs:252 | createManifest · fn | |
-| scripts/task-close.mjs:286 | startObservability · fn | |
-| scripts/task-close.mjs:316 | closeObservabilityUnsafe · fn | |
-| scripts/task-close.mjs:395 | amendManifest · fn | |
-| scripts/task-close.mjs:433 | reviewManifest · fn | |
-| scripts/task-close.mjs:477 | applyDocumentationDecision · fn | |
-| scripts/task-close.mjs:514 | applyCoverageDecision · fn | |
-| scripts/task-close.mjs:534 | recordFallback · fn | |
-| scripts/task-close.mjs:553 | fallbackRequiresRetrievalProof · fn | |
-| scripts/task-close.mjs:557 | intakeForManifest · fn | |
-| scripts/task-close.mjs:598 | reviewForManifest · fn | |
-| scripts/task-close.mjs:630 | manifestPath · fn | |
-| scripts/task-close.mjs:662 | compactOutput · fn | |
-| scripts/task-close.mjs:694 | validateDocumentationDecision · fn | |
-| scripts/task-close.mjs:731 | retrievalFallbackMaintenanceItems · fn | |
-| scripts/task-close.mjs:769 | archivePlan · fn | |
+| scripts/task-close.mjs:226 | canonicalSkillsChanged · fn | |
+| scripts/task-close.mjs:234 | publishPathsFor · fn | |
+| scripts/task-close.mjs:271 | createManifest · fn | |
+| scripts/task-close.mjs:305 | startObservability · fn | |
+| scripts/task-close.mjs:335 | closeObservabilityUnsafe · fn | |
+| scripts/task-close.mjs:414 | amendManifest · fn | |
+| scripts/task-close.mjs:452 | reviewManifest · fn | |
+| scripts/task-close.mjs:496 | applyDocumentationDecision · fn | |
+| scripts/task-close.mjs:533 | applyCoverageDecision · fn | |
+| scripts/task-close.mjs:553 | recordFallback · fn | |
+| scripts/task-close.mjs:572 | fallbackRequiresRetrievalProof · fn | |
+| scripts/task-close.mjs:576 | intakeForManifest · fn | |
+| scripts/task-close.mjs:617 | reviewForManifest · fn | |
+| scripts/task-close.mjs:649 | manifestPath · fn | |
+| scripts/task-close.mjs:686 | compactOutput · fn | |
+| scripts/task-close.mjs:718 | validateDocumentationDecision · fn | |
+| scripts/task-close.mjs:755 | retrievalFallbackMaintenanceItems · fn | |
+| scripts/task-close.mjs:793 | archivePlan · fn | |
 
 ### scripts/tests/agent-observability.test.mjs — 763 ln
 
@@ -1177,12 +1187,12 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/qa-gate.test.mjs:1 | @file · file | permanent regression coverage for qa gate |
 
-### scripts/tests/task-close.test.mjs — 831 ln
+### scripts/tests/task-close.test.mjs — 951 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/task-close.test.mjs:1 | @file · file | permanent regression coverage for task close |
-| scripts/tests/task-close.test.mjs:38 | SOURCE · const | |
+| scripts/tests/task-close.test.mjs:39 | SOURCE · const | |
 
 ### scripts/tests/tutorial-defaults-parity.test.mjs — 102 ln
 
@@ -1190,7 +1200,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/tutorial-defaults-parity.test.mjs:1 | @file · file | permanent regression coverage for tutorial defaults parity |
 
-### scripts/tests/validate-docs.test.mjs — 45 ln
+### scripts/tests/validate-docs.test.mjs — 104 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1207,29 +1217,29 @@ bounded source read. Local implementation detail stays in source.
 | scripts/validate-agent-config.mjs:44 | agents · const | |
 | scripts/validate-agent-config.mjs:46 | claude · const | |
 
-### scripts/validate-docs.mjs — 454 ln
+### scripts/validate-docs.mjs — 464 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/validate-docs.mjs:1 | @file · file | GitHub heading to anchor slug, used for both anchor generation and link checking |
-| scripts/validate-docs.mjs:34 | argv · const | |
-| scripts/validate-docs.mjs:35 | QUIET · const | |
-| scripts/validate-docs.mjs:36 | ROOT · const | |
-| scripts/validate-docs.mjs:37 | CTX · const | |
-| scripts/validate-docs.mjs:39 | errors · const | |
-| scripts/validate-docs.mjs:40 | maintenanceErrors · const | |
-| scripts/validate-docs.mjs:41 | warnings · const | |
-| scripts/validate-docs.mjs:48 | tok · const | |
-| scripts/validate-docs.mjs:69 | slug · fn | |
-| scripts/validate-docs.mjs:75 | files · const | |
-| scripts/validate-docs.mjs:77 | read · const | |
-| scripts/validate-docs.mjs:79 | all · const | |
-| scripts/validate-docs.mjs:83 | anchors · const | |
-| scripts/validate-docs.mjs:143 | source · const | |
-| scripts/validate-docs.mjs:325 | git · const | |
-| scripts/validate-docs.mjs:349 | flag · const | |
-| scripts/validate-docs.mjs:354 | counts · const | |
-| scripts/validate-docs.mjs:426 | classification · const | |
+| scripts/validate-docs.mjs:36 | argv · const | |
+| scripts/validate-docs.mjs:37 | QUIET · const | |
+| scripts/validate-docs.mjs:38 | ROOT · const | |
+| scripts/validate-docs.mjs:39 | CTX · const | |
+| scripts/validate-docs.mjs:41 | errors · const | |
+| scripts/validate-docs.mjs:42 | maintenanceErrors · const | |
+| scripts/validate-docs.mjs:43 | warnings · const | |
+| scripts/validate-docs.mjs:50 | tok · const | |
+| scripts/validate-docs.mjs:67 | slug · fn | |
+| scripts/validate-docs.mjs:73 | files · const | |
+| scripts/validate-docs.mjs:75 | read · const | |
+| scripts/validate-docs.mjs:77 | all · const | |
+| scripts/validate-docs.mjs:81 | anchors · const | |
+| scripts/validate-docs.mjs:141 | source · const | |
+| scripts/validate-docs.mjs:319 | growth · const | |
+| scripts/validate-docs.mjs:322 | git · const | |
+| scripts/validate-docs.mjs:349 | counts · const | |
+| scripts/validate-docs.mjs:433 | classification · const | |
 
 ### scripts/write-endpoint-config.sh — 97 ln
 
@@ -1239,4 +1249,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-125 files · 480 stable anchors.
+125 files · 490 stable anchors.
