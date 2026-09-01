@@ -61,6 +61,16 @@ test('automation sources select focused tests from the canonical protocol', () =
   assert.ok(tooling.tests.every(path => AUTOMATION_PROTOCOL_TESTS.includes(path)));
 });
 
+test('public receipt helpers select their focused automation contracts', () => {
+  assert.deepEqual(selectToolingQa(['scripts/lib/task-identity.mjs']).tests, [
+    'scripts/tests/git-sync-commit-push.test.mjs',
+    'scripts/tests/task-close.test.mjs',
+  ]);
+  assert.deepEqual(selectToolingQa(['scripts/lib/qa-receipt.mjs']).tests, [
+    'scripts/tests/task-close.test.mjs',
+  ]);
+});
+
 test('focused tooling success suppresses child TAP', () => {
   const { result, root } = toolingFixture(`
     import test from 'node:test';
@@ -68,7 +78,7 @@ test('focused tooling success suppresses child TAP', () => {
   `);
 
   try {
-    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.status, 0, JSON.stringify({ signal: result.signal, error: result.error?.message, stdout: result.stdout, stderr: result.stderr }));
     assert.equal(result.stdout.trim(), 'PASS — tooling targeted tests (1)');
     assert.doesNotMatch(result.stdout, /TAP version|Subtest|verbose child success sentinel/);
     assert.equal(result.stderr, '');

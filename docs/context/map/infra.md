@@ -796,18 +796,19 @@ bounded source read. Local implementation detail stays in source.
 | scripts/figma-ui-exporter/tools/build.mjs:17 | json · fn | |
 | scripts/figma-ui-exporter/tools/build.mjs:39 | bundle · fn | |
 
-### scripts/git-sync-commit-push.mjs — 188 ln
+### scripts/git-sync-commit-push.mjs — 206 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/git-sync-commit-push.mjs:1 | @file · file | fails closed with a concise actionable error |
-| scripts/git-sync-commit-push.mjs:7 | ROOT · const | |
-| scripts/git-sync-commit-push.mjs:9 | fail · fn | |
-| scripts/git-sync-commit-push.mjs:14 | usage · fn | |
-| scripts/git-sync-commit-push.mjs:19 | parseArgs · fn | |
-| scripts/git-sync-commit-push.mjs:58 | git · fn | |
-| scripts/git-sync-commit-push.mjs:80 | manifestScope · fn | |
-| scripts/git-sync-commit-push.mjs:94 | requireManifest · fn | |
+| scripts/git-sync-commit-push.mjs:9 | ROOT · const | |
+| scripts/git-sync-commit-push.mjs:11 | fail · fn | |
+| scripts/git-sync-commit-push.mjs:16 | usage · fn | |
+| scripts/git-sync-commit-push.mjs:21 | parseArgs · fn | |
+| scripts/git-sync-commit-push.mjs:60 | git · fn | |
+| scripts/git-sync-commit-push.mjs:82 | manifestScope · fn | |
+| scripts/git-sync-commit-push.mjs:109 | validatePublicReceiptEvidence · fn | |
+| scripts/git-sync-commit-push.mjs:120 | requireManifest · fn | |
 
 ### scripts/install-git-hooks.mjs — 16 ln
 
@@ -1026,7 +1027,28 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/maintenance-handoff.mjs:89 | createMaintenanceItem · fn | |
 | scripts/lib/maintenance-handoff.mjs:196 | resolveMaintenanceHandoff · fn | |
 
-### scripts/qa-gate.mjs — 271 ln
+### scripts/lib/qa-receipt.mjs — 139 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/lib/qa-receipt.mjs:1 | @file · file | qa receipt repository workflow |
+| scripts/lib/qa-receipt.mjs:6 | sanitized · fn | |
+| scripts/lib/qa-receipt.mjs:53 | publicQaReceiptPath · fn | |
+| scripts/lib/qa-receipt.mjs:58 | renderPublicQaReceipt · fn | |
+| scripts/lib/qa-receipt.mjs:132 | writePublicQaReceipt · fn | |
+
+### scripts/lib/task-identity.mjs — 112 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/lib/task-identity.mjs:1 | @file · file | task identity repository workflow |
+| scripts/lib/task-identity.mjs:11 | escaped · fn | |
+| scripts/lib/task-identity.mjs:35 | taskIdentityBase · fn | |
+| scripts/lib/task-identity.mjs:43 | validateTaskIdentity · fn | |
+| scripts/lib/task-identity.mjs:95 | createTaskIdentity · fn | |
+| scripts/lib/task-identity.mjs:107 | taskIdentityForManifest · fn | |
+
+### scripts/qa-gate.mjs — 273 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1035,10 +1057,10 @@ bounded source read. Local implementation detail stays in source.
 | scripts/qa-gate.mjs:10 | CLIENT · const | |
 | scripts/qa-gate.mjs:11 | SERVER · const | |
 | scripts/qa-gate.mjs:48 | AUTOMATION_PROTOCOL_TESTS · const | |
-| scripts/qa-gate.mjs:75 | selectToolingQa · fn | |
-| scripts/qa-gate.mjs:96 | selectQa · fn | |
-| scripts/qa-gate.mjs:153 | classifyQaFailure · fn | |
-| scripts/qa-gate.mjs:163 | fail · fn | |
+| scripts/qa-gate.mjs:77 | selectToolingQa · fn | |
+| scripts/qa-gate.mjs:98 | selectQa · fn | |
+| scripts/qa-gate.mjs:155 | classifyQaFailure · fn | |
+| scripts/qa-gate.mjs:165 | fail · fn | |
 
 ### scripts/strip-comments.mjs — 296 ln
 
@@ -1058,38 +1080,38 @@ bounded source read. Local implementation detail stays in source.
 | scripts/sync-agent-skills.mjs:15 | compare · fn | |
 | scripts/sync-agent-skills.mjs:22 | skillMirrorDrift · fn | |
 
-### scripts/task-close.mjs — 945 ln
+### scripts/task-close.mjs — 970 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/task-close.mjs:1 | @file · file | reports a command error with its caller-selected exit status |
-| scripts/task-close.mjs:27 | ROOT · const | |
-| scripts/task-close.mjs:29 | SCHEMA_VERSION · const | |
-| scripts/task-close.mjs:32 | fail · fn | |
-| scripts/task-close.mjs:52 | parseArgs · fn | |
-| scripts/task-close.mjs:67 | checkOptions · fn | |
-| scripts/task-close.mjs:71 | one · fn | |
-| scripts/task-close.mjs:78 | many · fn | |
-| scripts/task-close.mjs:95 | testPath · fn | |
-| scripts/task-close.mjs:107 | domainFor · fn | |
-| scripts/task-close.mjs:117 | deriveTaskComplexity · fn | |
-| scripts/task-close.mjs:138 | command · fn | |
-| scripts/task-close.mjs:145 | fingerprint · fn | |
-| scripts/task-close.mjs:166 | publishPathsFor · fn | |
-| scripts/task-close.mjs:202 | createManifest · fn | |
-| scripts/task-close.mjs:233 | startObservability · fn | |
-| scripts/task-close.mjs:263 | closeObservabilityUnsafe · fn | |
-| scripts/task-close.mjs:338 | amendManifest · fn | |
-| scripts/task-close.mjs:371 | reviewManifest · fn | |
-| scripts/task-close.mjs:415 | applyDocumentationDecision · fn | |
-| scripts/task-close.mjs:452 | applyCoverageDecision · fn | |
-| scripts/task-close.mjs:472 | recordFallback · fn | |
-| scripts/task-close.mjs:491 | fallbackRequiresRetrievalProof · fn | |
-| scripts/task-close.mjs:495 | intakeForManifest · fn | |
-| scripts/task-close.mjs:534 | reviewForManifest · fn | |
-| scripts/task-close.mjs:564 | manifestPath · fn | |
-| scripts/task-close.mjs:628 | validateDocumentationDecision · fn | |
-| scripts/task-close.mjs:665 | retrievalFallbackMaintenanceItems · fn | |
+| scripts/task-close.mjs:29 | ROOT · const | |
+| scripts/task-close.mjs:31 | SCHEMA_VERSION · const | |
+| scripts/task-close.mjs:34 | fail · fn | |
+| scripts/task-close.mjs:54 | parseArgs · fn | |
+| scripts/task-close.mjs:69 | checkOptions · fn | |
+| scripts/task-close.mjs:73 | one · fn | |
+| scripts/task-close.mjs:80 | many · fn | |
+| scripts/task-close.mjs:97 | testPath · fn | |
+| scripts/task-close.mjs:109 | domainFor · fn | |
+| scripts/task-close.mjs:119 | deriveTaskComplexity · fn | |
+| scripts/task-close.mjs:140 | command · fn | |
+| scripts/task-close.mjs:147 | fingerprint · fn | |
+| scripts/task-close.mjs:168 | publishPathsFor · fn | |
+| scripts/task-close.mjs:204 | createManifest · fn | |
+| scripts/task-close.mjs:236 | startObservability · fn | |
+| scripts/task-close.mjs:266 | closeObservabilityUnsafe · fn | |
+| scripts/task-close.mjs:341 | amendManifest · fn | |
+| scripts/task-close.mjs:374 | reviewManifest · fn | |
+| scripts/task-close.mjs:418 | applyDocumentationDecision · fn | |
+| scripts/task-close.mjs:455 | applyCoverageDecision · fn | |
+| scripts/task-close.mjs:475 | recordFallback · fn | |
+| scripts/task-close.mjs:494 | fallbackRequiresRetrievalProof · fn | |
+| scripts/task-close.mjs:498 | intakeForManifest · fn | |
+| scripts/task-close.mjs:537 | reviewForManifest · fn | |
+| scripts/task-close.mjs:567 | manifestPath · fn | |
+| scripts/task-close.mjs:631 | validateDocumentationDecision · fn | |
+| scripts/task-close.mjs:668 | retrievalFallbackMaintenanceItems · fn | |
 
 ### scripts/tests/agent-observability.test.mjs — 763 ln
 
@@ -1127,24 +1149,24 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/figma-ui-exporter.test.mjs:1 | @file · file | permanent regression coverage for figma ui exporter |
 | scripts/tests/figma-ui-exporter.test.mjs:14 | root · const | |
 
-### scripts/tests/git-sync-commit-push.test.mjs — 50 ln
+### scripts/tests/git-sync-commit-push.test.mjs — 112 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/git-sync-commit-push.test.mjs:1 | @file · file | permanent regression coverage for git sync commit push |
 
-### scripts/tests/qa-gate.test.mjs — 108 ln
+### scripts/tests/qa-gate.test.mjs — 118 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/qa-gate.test.mjs:1 | @file · file | permanent regression coverage for qa gate |
 
-### scripts/tests/task-close.test.mjs — 393 ln
+### scripts/tests/task-close.test.mjs — 623 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/task-close.test.mjs:1 | @file · file | permanent regression coverage for task close |
-| scripts/tests/task-close.test.mjs:33 | SOURCE · const | |
+| scripts/tests/task-close.test.mjs:35 | SOURCE · const | |
 
 ### scripts/tests/validate-docs.test.mjs — 45 ln
 
@@ -1195,4 +1217,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-121 files · 460 stable anchors.
+123 files · 470 stable anchors.

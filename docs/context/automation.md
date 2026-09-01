@@ -23,11 +23,10 @@ generated maps; they never expose raw source, environment files, secrets or the
 working-tree diff. `scope` derives post-path tools, while `bundle` creates the
 bounded handoff for a runner without local access.
 
-Gitignored working folders have explicit routes but remain excluded from KB
-search. Bundles, manifests, receipts and retrieval benchmarks belong under
-ignored `.agent-state/automation/`; private telemetry belongs under ignored
-`.agent-state/telemetry/`. All `report/**` paths are excluded from retrieval and
-indexing unless their owning tool or the user asks.
+Gitignored working folders have explicit routes but stay outside KB search.
+Private automation artifacts live in `.agent-state/automation/`, telemetry in
+`.agent-state/telemetry/`. Sanitized QA receipts are tracked under
+`report/qa-receipts/`, which stays outside retrieval unless requested.
 
 Search uses every query token as a required match. A weak narrative match returns
 `needs-anchor`; overflow returns `needs-filter`; a strict match returns map
@@ -80,11 +79,15 @@ change set while keeping detailed output in local artifacts.
 
 Verification is `passed`, `maintenance-blocked`, or `failed`. A maintenance
 blocker closes only when every failed step has an approved unrelated
-classification; unknown, mixed, and implementation failures remain open. The
-close-out writes one run-scoped handoff only for unresolved blockers or deferred
-retrieval, decomposition, and unplanned-QA-infrastructure advisories; it never
-deletes another handoff. Each item contains only its classification/stage, affected
-component, compact diagnostic and impact, completed work, and follow-up.
+classification; unknown, mixed, and implementation failures remain open. Both
+terminal states mean implementation is complete while verification stays
+distinct. They add a deterministic `report/qa-receipts/` Markdown receipt to
+`publish_paths`; failed attempts retain only private evidence.
+The close-out writes one run-scoped handoff only for unresolved blockers or
+deferred retrieval, decomposition, and unplanned-QA-infrastructure advisories;
+it never deletes another handoff. Each item contains only its
+classification/stage, affected component, compact diagnostic and impact,
+completed work, and follow-up.
 Changed first-party product files near 900 lines produce a decomposition review
 advisory and near 1200 lines a strong advisory. Generated/content files, tests,
 docs/maps, and load-on-demand `scripts/` automation are excluded.
@@ -96,11 +99,11 @@ retrieval maintenance; close-out then requires that fixture and a passing
 retrieval benchmark. Schema 2 uses
 `prepare → review → close`.
 
-Child output is captured in a private ignored log before entering the receipt,
-preserving diagnostics on hosts that swallow nested pipes. A passing close prints
-one line; a maintenance-blocked close names its handoff; a task failure names the
-step, exit/signal, first diagnostic and receipt. Identical close inputs reuse a
-closed receipt.
+Child output enters only the private receipt. The public receipt allowlists task
+identity, scopes, compact steps, QA decisions and maintenance; it omits raw
+output, telemetry, sessions and private artifacts. A pass prints one line, a
+maintenance block names its handoff, and a failure names the step, diagnostic
+and private receipt. Identical close inputs reuse the identity and receipts.
 
 `scripts/agent-observability.mjs` owns private task events, evidence, candidates,
 flags, settlement, analysis and approved export under
@@ -148,12 +151,13 @@ cohort-suppressed output.
 
 `node scripts/git-sync-commit-push.mjs` is an opt-in local tool for the complete
 Git sync, stage, commit and push sequence. It is load-on-demand: an agent must
-have explicit user authorization, pass `--approve`, and name its passing
-close-out receipt with `--manifest`. It derives commit keywords from the
-manifest task title and requires a passing closed schema-2 manifest before
-staging its `publish_paths`.
-Schema-1 manifests retain the explicit `changed_paths` fallback. It fetches the configured `origin`
-branch and runs `git pull --ff-only` before staging any local changes, then
+have explicit user authorization, pass `--approve`, and name a closed manifest.
+Passed schema-2 manifests are publishable; `maintenance-blocked` also requires
+its persisted identity and existing public receipt in `publish_paths`. Failed or
+open manifests remain ineligible.
+Schema-1 manifests retain the explicit `changed_paths` fallback. The tool
+fetches the configured `origin` branch and runs `git pull --ff-only` before
+staging any local changes, then
 pushes the current branch after the commit succeeds. By default the current
 branch must be `main`; selecting another branch requires both `--branch` and
 `--switch`, and the worktree must be clean before switching.
@@ -161,8 +165,8 @@ An explicitly authorized backup publication may use `--push-only` with a local
 `--branch` and new `--remote-branch`; that mode fetches `origin/main` and pushes
 only the existing local ref, without staging, committing, or switching.
 
-Commit subjects contain no more than three keywords and a version suffix, for
-example `Fix Lobby Sync v0.01`. The tool finds the highest matching local
-history version and increments it by `0.01`; unrelated keyword groups start at
-`v0.01`. It refuses detached HEADs, pre-staged changes, invalid paths, and empty
-staging results.
+Task-close persists a three-keyword/version identity shared by the receipt and
+Git subject. It advances one hundredth above matching receipts and history; new
+groups start at `v0.01`. Git sync reuses it and falls back for legacy passing
+manifests. It refuses detached HEADs, pre-staged changes, invalid paths, and
+empty staging results.

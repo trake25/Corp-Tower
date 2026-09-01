@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { publicQaReceiptPath } from './lib/qa-receipt.mjs';
+import { taskIdentityForManifest } from './lib/task-identity.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -12,7 +14,7 @@ function fail(message) {
 }
 
 function usage() {
-	console.error('usage: node scripts/git-sync-commit-push.mjs --approve --manifest <passing-closeout.json> [--branch <branch> --switch] [--push-only --remote-branch <branch>]');
+	console.error('usage: node scripts/git-sync-commit-push.mjs --approve --manifest <terminal-closeout.json> [--branch <branch> --switch] [--push-only --remote-branch <branch>]');
   process.exit(2);
 }
 
@@ -80,19 +82,43 @@ function branchName(input, label) {
 export function manifestScope(manifest) {
   if (!manifest.task) throw new Error('manifest must contain a task');
   if (manifest.schema_version === 2) {
-    if (manifest.phase !== 'closed' || manifest.verification?.status !== 'passed')
-      throw new Error('schema-v2 manifest must have passing closeout verification');
+    const verification = manifest.verification?.status;
+    if (manifest.phase !== 'closed' || !['passed', 'maintenance-blocked'].includes(verification))
+      throw new Error('schema-v2 manifest must have terminal closeout verification');
     if (!Array.isArray(manifest.publish_paths) || !manifest.publish_paths.length)
       throw new Error('schema-v2 manifest must contain publish_paths');
-    return { task: manifest.task, paths: [...new Set(manifest.publish_paths)] };
+    const publicReceipt = manifest.verification?.public_receipt || null;
+    if (verification === 'maintenance-blocked' && !manifest.task_identity)
+      throw new Error('maintenance-blocked publication requires a persisted task identity');
+    if (manifest.task_identity) {
+      if (!publicReceipt || !manifest.publish_paths.includes(publicReceipt))
+        throw new Error('task identity publication requires its public QA receipt in publish_paths');
+    }
+    return {
+      task: manifest.task,
+      paths: [...new Set(manifest.publish_paths)],
+      task_identity: manifest.task_identity || null,
+      public_receipt: publicReceipt,
+    };
   }
   if (!Array.isArray(manifest.changed_paths) || !manifest.changed_paths.length)
     throw new Error('schema-v1 manifest must contain changed_paths');
-  return { task: manifest.task, paths: [...new Set(manifest.changed_paths)] };
+  return { task: manifest.task, paths: [...new Set(manifest.changed_paths)], task_identity: null, public_receipt: null };
+}
+
+export function validatePublicReceiptEvidence(manifest, root = ROOT) {
+  const scope = manifestScope(manifest);
+  if (!scope.task_identity) return null;
+  const identity = taskIdentityForManifest(manifest, { root });
+  const expected = publicQaReceiptPath(identity);
+  if (scope.public_receipt !== expected) throw new Error(`public QA receipt does not match task identity: ${scope.public_receipt}`);
+  if (!existsSync(resolve(root, expected)) || !statSync(resolve(root, expected)).isFile())
+    throw new Error(`public QA receipt does not exist as a file: ${expected}`);
+  return identity;
 }
 
 export function requireManifest(manifestInput) {
-	if (!manifestInput) throw new Error('explicit manifest required: pass --manifest <passing-closeout.json>');
+	if (!manifestInput) throw new Error('explicit manifest required: pass --manifest <terminal-closeout.json>');
 	return manifestInput;
 }
 
@@ -111,27 +137,15 @@ function taskScope(manifestInput) {
   } catch (error) {
     fail(`${error.message}: ${manifestPath}`);
   }
-  return { task: scope.task, paths: scope.paths.map(repoPath) };
-}
-
-function keywordsFor(task) {
-  const ignored = new Set(['a', 'an', 'and', 'as', 'add', 'build', 'by', 'change', 'create', 'enable', 'fix', 'for', 'from', 'implement', 'improve', 'in', 'into', 'make', 'of', 'on', 'or', 'refactor', 'remove', 'the', 'to', 'update', 'use', 'with']);
-  const words = task.match(/[A-Za-z0-9]+(?:[-_.][A-Za-z0-9]+)*/g) || [];
-  const selected = words.filter(word => !ignored.has(word.toLowerCase())).slice(0, 3);
-  if (!selected.length) fail('task title does not provide commit keywords');
-  return selected.map(word => `${word[0].toUpperCase()}${word.slice(1)}`).join(' ');
-}
-
-function versionFor(keywords) {
-  const escaped = keywords.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(`^${escaped} v(\\d+\\.\\d{2})$`);
-  const subjects = git(['log', '--all', '--format=%s'], { quiet: true }).split(/\r?\n/).filter(Boolean);
-  let highest = 0;
-  for (const subject of subjects) {
-    const match = pattern.exec(subject);
-    if (match) highest = Math.max(highest, Number(match[1]));
+  let identity = null;
+  if (scope.task_identity) {
+    try {
+      identity = validatePublicReceiptEvidence(manifest, ROOT);
+    } catch (error) {
+      fail(error.message);
+    }
   }
-  return (highest + 0.01).toFixed(2);
+  return { task: scope.task, paths: scope.paths.map(repoPath), manifest, identity };
 }
 
 function main() {
@@ -143,7 +157,6 @@ function main() {
 	} catch (error) {
 		fail(error.message);
 	}
-  const keywords = keywordsFor(scope.task);
   const paths = scope.paths;
   const currentBranch = git(['branch', '--show-current'], { quiet: true });
   if (!currentBranch) fail('detached HEAD is not supported');
@@ -177,8 +190,13 @@ function main() {
 
   const staged = git(['diff', '--cached', '--name-only'], { quiet: true });
   if (!staged) fail('no changes were staged');
-  const version = versionFor(keywords);
-  const message = `${keywords} v${version}`;
+  let identity = scope.identity;
+  try {
+    identity ||= taskIdentityForManifest(scope.manifest, { root: ROOT });
+  } catch (error) {
+    fail(error.message);
+  }
+  const message = identity.label;
   git(['commit', '-m', message]);
   git(['push', '-u', 'origin', branch]);
   console.log(`PASS — pushed ${message} from ${branch}`);

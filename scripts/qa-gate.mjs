@@ -57,6 +57,8 @@ const automationRules = [
   [/^scripts\/validate-docs\.mjs$/, [automationTests.validateDocs]],
   [/^scripts\/lib\/context-query\.mjs$/, [automationTests.context, automationTests.taskClose]],
   [/^scripts\/lib\/context-routing\.mjs$/, [automationTests.context]],
+  [/^scripts\/lib\/task-identity\.mjs$/, [automationTests.taskClose, automationTests.gitSync]],
+  [/^scripts\/lib\/qa-receipt\.mjs$/, [automationTests.taskClose]],
   [/^scripts\/lib\/agent-observability\/[^/]+$/, [automationTests.observability]],
   [/^scripts\/lib\/docs-capacity\.mjs$/, [automationTests.validateDocs]],
   [/^scripts\/lib\/maintenance-handoff\.mjs$/, [automationTests.taskClose, automationTests.qaGate, automationTests.validateDocs, automationTests.observability]],

@@ -10,6 +10,8 @@ import { selectQa } from './qa-gate.mjs';
 import { executeBestEffort } from './agent-observability.mjs';
 import { buildTaskTelemetry } from './lib/agent-observability/task-telemetry.mjs';
 import { codexSessionIds } from './lib/agent-observability/runtime.mjs';
+import { publicQaReceiptPath, writePublicQaReceipt } from './lib/qa-receipt.mjs';
+import { taskIdentityForManifest } from './lib/task-identity.mjs';
 import {
   createMaintenanceItem,
   failureClassificationFromOutput,
@@ -218,6 +220,7 @@ export function createManifest({ task, ownedPaths = null, changedPaths = null, p
     derived_paths: [],
     documented_paths: [],
     publish_paths: [],
+    task_identity: null,
     domains: [...new Set(owned.map(domainFor))].sort(),
     intake,
     retrieval: { fallbacks: [] },
@@ -728,6 +731,13 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
     advisoryItems: [...retrievalFallbackMaintenanceItems(manifest), ...qaToolingMaintenanceItems(manifest)],
   });
   const failed = steps.find(step => step.status !== 0);
+  let publicReceipt = null;
+  if (manifest.schema_version === SCHEMA_VERSION && maintenance.status !== 'failed') {
+    manifest.task_identity = taskIdentityForManifest(manifest, { root: ROOT });
+    writeManifest(manifestFile, manifest);
+    publicReceipt = publicQaReceiptPath(manifest.task_identity);
+    publishPaths = publishPathsFor([...publishPaths, publicReceipt], [], []);
+  }
   const receipt = {
     schema_version: manifest.schema_version,
     task: manifest.task,
@@ -742,11 +752,24 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
     qa: {
       executed: executionStatus(steps, 'QA'),
       permanent_coverage: manifest.coverage?.status || 'none',
+      protected_contract: manifest.coverage?.protected_contract || null,
       temporary_verification: manifest.qa?.temporary_verification || 'not-used',
       qa_tooling: manifest.qa?.status || 'unchanged',
     },
+    public_receipt: publicReceipt,
     steps,
   };
+  if (publicReceipt) writePublicQaReceipt(ROOT, {
+    identity: manifest.task_identity,
+    task: manifest.task,
+    verificationStatus: maintenance.status,
+    changedPaths: manifest.changed_paths,
+    publishPaths,
+    steps,
+    coverage: manifest.coverage,
+    qa: manifest.qa,
+    maintenanceItems: maintenance.items,
+  });
   writeFileSync(receiptPath(manifestFile), `${JSON.stringify(receipt, null, 2)}\n`);
   manifest.publish_paths = publishPaths;
   manifest.verification = {
@@ -754,6 +777,7 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
     receipt: displayPath(receiptPath(manifestFile)),
     close_input_fingerprint: closeInputFingerprint,
     maintenance_handoff: maintenance.handoff,
+    public_receipt: publicReceipt,
   };
   manifest.observability = closeObservability(manifest, receipt);
   if (manifest.schema_version === SCHEMA_VERSION) manifest.phase = maintenance.status === 'failed' ? 'failed' : 'closed';
@@ -761,7 +785,8 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
   if (maintenance.status === 'failed') fail(`FAIL — ${failed.name}: ${failed.summary}; receipt: ${displayPath(receiptPath(manifestFile))}`, 1);
   const label = maintenance.status === 'passed' ? 'PASS' : 'MAINTENANCE-BLOCKED';
   const handoff = maintenance.handoff ? `; maintenance handoff: ${maintenance.handoff}` : '';
-  console.log(`${label} — receipt: ${displayPath(receiptPath(manifestFile))}; ${steps.map(step => `${step.name} ${step.summary}`).join('; ')}${handoff}; observability ${JSON.stringify(manifest.observability)}`);
+  const publicEvidence = publicReceipt ? `; public receipt: ${publicReceipt}` : '';
+  console.log(`${label} — receipt: ${displayPath(receiptPath(manifestFile))}${publicEvidence}; ${steps.map(step => `${step.name} ${step.summary}`).join('; ')}${handoff}; observability ${JSON.stringify(manifest.observability)}`);
 }
 
 function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = null) {

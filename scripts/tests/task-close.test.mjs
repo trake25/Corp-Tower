@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { selectQa } from '../qa-gate.mjs';
@@ -12,6 +12,8 @@ import {
   resolveMaintenanceHandoff,
   terminalStatusForSteps,
 } from '../lib/maintenance-handoff.mjs';
+import { publicQaReceiptPath, renderPublicQaReceipt, writePublicQaReceipt } from '../lib/qa-receipt.mjs';
+import { createTaskIdentity, taskIdentityBase, taskIdentityForManifest } from '../lib/task-identity.mjs';
 import {
   amendManifest,
   applyCoverageDecision,
@@ -32,6 +34,138 @@ import {
 
 const SOURCE = 'src/Server/app/engine/Scoring.js';
 const DOC = 'docs/context/backend.md';
+const TASK_CLOSE = resolve('scripts/task-close.mjs');
+const RECEIPT_IDENTITY = Object.freeze({
+  keywords: ['Public', 'QA', 'Receipts'],
+  keyword_label: 'Public QA Receipts',
+  slug: 'public-qa-receipts',
+  version: '0.01',
+  label: 'Public QA Receipts v0.01',
+});
+
+test('shared task identity preserves Git keywords and selects the next receipt/history version', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-identity-'));
+  try {
+    mkdirSync(join(root, 'report/qa-receipts'), { recursive: true });
+    writeFileSync(join(root, 'report/qa-receipts/qa-receipt-reconnect-idle-bug-v0.99.md'), 'existing\n');
+    assert.deepEqual(taskIdentityBase('Implement the Reconnect Idle Bug fix'), {
+      keywords: ['Reconnect', 'Idle', 'Bug'],
+      keyword_label: 'Reconnect Idle Bug',
+      slug: 'reconnect-idle-bug',
+    });
+    const identity = createTaskIdentity('Implement the Reconnect Idle Bug fix', {
+      root,
+      subjects: ['Reconnect Idle Bug v1.01', 'Unrelated Work v9.99'],
+    });
+    assert.deepEqual(identity, {
+      keywords: ['Reconnect', 'Idle', 'Bug'],
+      keyword_label: 'Reconnect Idle Bug',
+      slug: 'reconnect-idle-bug',
+      version: '1.02',
+      label: 'Reconnect Idle Bug v1.02',
+    });
+    assert.deepEqual(taskIdentityForManifest({
+      task: 'Implement the Reconnect Idle Bug fix',
+      task_identity: identity,
+    }, { root, subjects: ['Reconnect Idle Bug v8.00'] }), identity);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('public receipt rendering is deterministic and projects only sanitized terminal evidence', () => {
+  const data = {
+    identity: RECEIPT_IDENTITY,
+    task: 'Public QA receipts and shared task identity',
+    verificationStatus: 'passed',
+    changedPaths: ['scripts/task-close.mjs'],
+    publishPaths: ['scripts/task-close.mjs', publicQaReceiptPath(RECEIPT_IDENTITY)],
+    steps: [{
+      name: 'QA',
+      status: 0,
+      summary: 'exit 0',
+      output: 'RAW_CHILD_OUTPUT_SENTINEL',
+      telemetry: { session: 'PRIVATE_SESSION_SENTINEL' },
+    }],
+    coverage: { status: 'updated', protected_contract: 'Public receipts cannot expose raw output.' },
+    qa: { temporary_verification: 'not-used', status: 'planned-change' },
+    maintenanceItems: [],
+    prompt: 'PRIVATE_PROMPT_SENTINEL',
+  };
+  const receipt = renderPublicQaReceipt(data);
+
+  assert.equal(receipt, renderPublicQaReceipt(data));
+  assert.match(receipt, /Implementation: COMPLETED/);
+  assert.match(receipt, /Verification: PASSED/);
+  assert.match(receipt, /QA — PASS/);
+  assert.match(receipt, /Permanent coverage: updated/);
+  assert.match(receipt, /Protected contract: Public receipts cannot expose raw output/);
+  assert.match(receipt, /QA tooling: planned-change/);
+  assert.match(receipt, /report\/qa-receipts\/qa-receipt-public-qa-receipts-v0\.01\.md/);
+  assert.doesNotMatch(receipt, /RAW_CHILD_OUTPUT_SENTINEL|PRIVATE_SESSION_SENTINEL|PRIVATE_PROMPT_SENTINEL/);
+});
+
+test('maintenance-blocked public receipts expose compact classification and follow-up without private fields', () => {
+  const maintenance = createMaintenanceItem({
+    state: 'blocking',
+    classification: 'tooling-environment',
+    stage: 'QA',
+    affected: 'node scripts/qa-gate.mjs',
+    diagnostic: 'exit 1; missing test executable',
+    verificationImpact: 'QA could not provide required proof.',
+    completed: 'Implementation completed.',
+    recommendedFollowUp: 'Restore the executable and rerun QA.',
+  });
+  const receipt = renderPublicQaReceipt({
+    identity: RECEIPT_IDENTITY,
+    task: 'Public QA receipts and shared task identity',
+    verificationStatus: 'maintenance-blocked',
+    changedPaths: ['scripts/task-close.mjs'],
+    publishPaths: [publicQaReceiptPath(RECEIPT_IDENTITY), 'scripts/task-close.mjs'],
+    steps: [{
+      name: 'QA',
+      status: 1,
+      classification: 'tooling-environment',
+      summary: 'exit 1; log at .agent-state/automation/private.log API_TOKEN=secret-value',
+      output: 'RAW_BLOCKED_OUTPUT_SENTINEL',
+    }],
+    coverage: { status: 'reused' },
+    qa: { temporary_verification: 'used', status: 'planned-change' },
+    maintenanceItems: [maintenance],
+  });
+
+  assert.match(receipt, /Verification: MAINTENANCE-BLOCKED/);
+  assert.match(receipt, /QA — BLOCKED/);
+  assert.match(receipt, /Failure classification: tooling-environment/);
+  assert.match(receipt, /Diagnostic \/ impact: exit 1; missing test executable QA could not provide required proof/);
+  assert.match(receipt, /Follow-up: Restore the executable and rerun QA/);
+  assert.match(receipt, /\[private path\]/);
+  assert.match(receipt, /API_TOKEN=\[redacted\]/);
+  assert.doesNotMatch(receipt, /private\.log|secret-value|RAW_BLOCKED_OUTPUT_SENTINEL/);
+  assert.throws(() => renderPublicQaReceipt({
+    identity: RECEIPT_IDENTITY,
+    task: 'Public QA receipts and shared task identity',
+    verificationStatus: 'passed',
+    steps: [{ status: 1, classification: 'implementation', summary: 'exit 1' }],
+  }), /does not match its executable proof/);
+});
+
+test('public receipt writer uses the identity path and stable content', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-public-receipt-'));
+  try {
+    const data = {
+      identity: RECEIPT_IDENTITY,
+      task: 'Public QA receipts and shared task identity',
+      verificationStatus: 'passed',
+      steps: [{ name: 'QA', status: 0, summary: 'exit 0' }],
+    };
+    const path = writePublicQaReceipt(root, data);
+    assert.equal(path, publicQaReceiptPath(RECEIPT_IDENTITY));
+    assert.equal(readFileSync(join(root, path), 'utf8'), renderPublicQaReceipt(data));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test('QA planner preserves targeted server and client selection', () => {
   const plan = selectQa([SOURCE, 'src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd']);
@@ -388,5 +522,101 @@ test('CLI review directs source-changing closeout through the documentation gate
     assert.match(output.next, /--doc-path/);
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+function terminalCloseFixture(qaSource, task = 'Public QA receipt fixture') {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-close-terminal-'));
+  const manifestPath = '.agent-state/close.json';
+  mkdirSync(join(root, 'scripts'), { recursive: true });
+  mkdirSync(join(root, '.agent-state'), { recursive: true });
+  writeFileSync(join(root, 'README.md'), 'fixture scope\n');
+  writeFileSync(join(root, 'scripts/qa-gate.mjs'), qaSource);
+  const git = args => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+  assert.equal(git(['init', '-q']).status, 0);
+  assert.equal(git(['config', 'user.name', 'QA Fixture']).status, 0);
+  assert.equal(git(['config', 'user.email', 'qa-fixture@example.invalid']).status, 0);
+  assert.equal(git(['add', 'README.md', 'scripts/qa-gate.mjs']).status, 0);
+  assert.equal(git(['commit', '-qm', 'Fixture baseline']).status, 0);
+  const prepared = createManifest({ task, ownedPaths: ['README.md'], runId: 'public-receipt-fixture' });
+  const reviewed = reviewManifest(prepared, { changedPaths: ['README.md'], mapBaseline: {} });
+  writeFileSync(join(root, manifestPath), `${JSON.stringify(reviewed, null, 2)}\n`);
+  const run = () => spawnSync(process.execPath, [TASK_CLOSE, 'close', '--manifest', manifestPath, '--coverage', 'none'], {
+    cwd: process.cwd(),
+    env: Object.fromEntries(Object.entries({
+      ...process.env,
+      TASK_CLOSE_ROOT: root,
+      CODEX_SESSION_ID: '',
+      CODEX_THREAD_ID: '',
+    }).filter(([key]) => key !== 'NODE_TEST_CONTEXT')),
+    encoding: 'utf8',
+  });
+  return { root, manifestPath, run };
+}
+
+test('terminal passed close writes one public receipt, publishes it, and reuses its identity', () => {
+  const fixture = terminalCloseFixture("console.log('PASS — fixture QA');\n");
+  try {
+    const first = fixture.run();
+    assert.equal(first.status, 0, first.stderr);
+    const manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
+    assert.equal(manifest.phase, 'closed');
+    assert.equal(manifest.verification.status, 'passed');
+    assert.equal(manifest.task_identity.label, 'Public QA Receipt v0.01');
+    assert.equal(manifest.verification.public_receipt, 'report/qa-receipts/qa-receipt-public-qa-receipt-v0.01.md');
+    assert.ok(manifest.publish_paths.includes(manifest.verification.public_receipt));
+    assert.match(readFileSync(join(fixture.root, manifest.verification.public_receipt), 'utf8'), /Verification: PASSED/);
+
+    const repeated = fixture.run();
+    assert.equal(repeated.status, 0, repeated.stderr);
+    assert.match(repeated.stdout, /reused receipt/);
+    assert.deepEqual(readdirSync(join(fixture.root, 'report/qa-receipts')), ['qa-receipt-public-qa-receipt-v0.01.md']);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('terminal maintenance-blocked close publishes completed implementation evidence', () => {
+  const fixture = terminalCloseFixture(`
+    console.error('FAILURE_CLASSIFICATION: tooling-environment');
+    console.error('FAIL — fixture executable unavailable');
+    process.exit(1);
+  `);
+  try {
+    const result = fixture.run();
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /MAINTENANCE-BLOCKED/);
+    const manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
+    assert.equal(manifest.phase, 'closed');
+    assert.equal(manifest.verification.status, 'maintenance-blocked');
+    assert.ok(manifest.publish_paths.includes(manifest.verification.public_receipt));
+    const receipt = readFileSync(join(fixture.root, manifest.verification.public_receipt), 'utf8');
+    assert.match(receipt, /Implementation: COMPLETED/);
+    assert.match(receipt, /Verification: MAINTENANCE-BLOCKED/);
+    assert.match(receipt, /Failure classification: tooling-environment/);
+    assert.match(receipt, /fixture executable unavailable/);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('implementation-failed close remains open and writes no public receipt', () => {
+  const fixture = terminalCloseFixture(`
+    console.error('FAILURE_CLASSIFICATION: implementation');
+    console.error('FAIL — fixture assertion failed');
+    process.exit(1);
+  `);
+  try {
+    const result = fixture.run();
+    assert.equal(result.status, 1);
+    const manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
+    assert.equal(manifest.phase, 'failed');
+    assert.equal(manifest.verification.status, 'failed');
+    assert.equal(manifest.verification.public_receipt, null);
+    assert.equal(manifest.task_identity, null);
+    assert.equal(existsSync(join(fixture.root, 'report/qa-receipts')), false);
+    assert.equal(existsSync(join(fixture.root, '.agent-state/close.receipt.json')), true);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
   }
 });
