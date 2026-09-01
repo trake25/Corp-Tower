@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { dirname, relative, resolve, sep } from 'node:path';
+import { basename, dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mapOwnerForPath, routeSourcePath } from './lib/context-routing.mjs';
 import { scopeContext } from './lib/context-query.mjs';
@@ -49,6 +49,53 @@ function safePath(input, label) {
 
 function displayPath(path) {
   return relative(ROOT, path).replaceAll('\\', '/');
+}
+
+function displayPathFrom(root, path) {
+  return relative(root, path).replaceAll('\\', '/');
+}
+
+function unboundPlan() {
+  return {
+    status: 'not-applicable',
+    source_path: null,
+    archive_path: null,
+    diagnostic: null,
+  };
+}
+
+export function planBindingFor(input, root = ROOT) {
+  if (!input) return unboundPlan();
+  const repositoryRoot = resolve(root);
+  const planRoot = resolve(repositoryRoot, 'plan');
+  const source = resolve(repositoryRoot, input);
+  if (source === repositoryRoot || !source.startsWith(repositoryRoot + sep))
+    throw new Error('--plan must stay inside the repository');
+  if (!source.startsWith(planRoot + sep)) throw new Error('--plan must be an active Markdown file under plan/');
+  const activeRelative = relative(planRoot, source);
+  if (activeRelative.split(sep)[0] === 'done') throw new Error('--plan cannot already be under plan/done/');
+  if (!source.endsWith('.md')) throw new Error('--plan must name a Markdown file');
+  if (!existsSync(source) || !lstatSync(source).isFile()) throw new Error('--plan must name an existing active plan');
+  const realPlanRoot = realpathSync(planRoot);
+  const realSource = realpathSync(source);
+  if (realSource === realPlanRoot || !realSource.startsWith(realPlanRoot + sep))
+    throw new Error('--plan resolves outside plan/');
+  const archive = resolve(planRoot, 'done', basename(source));
+  if (existsSync(archive)) throw new Error(`plan archive destination already exists: ${displayPathFrom(repositoryRoot, archive)}`);
+  return {
+    status: 'pending',
+    source_path: displayPathFrom(repositoryRoot, source),
+    archive_path: displayPathFrom(repositoryRoot, archive),
+    diagnostic: null,
+  };
+}
+
+function bindPlan(manifest, binding) {
+  const current = manifest.plan || unboundPlan();
+  if (!binding || binding.status === 'not-applicable') return current;
+  if (current.status !== 'not-applicable' && current.source_path !== binding.source_path)
+    throw new Error(`manifest is already bound to plan ${current.source_path}`);
+  return current.status === 'not-applicable' ? binding : current;
 }
 
 function parseArgs(args) {
@@ -168,6 +215,7 @@ function pathChanges(before, after) {
 export function publishPathsFor(changedPaths, documentedPaths, derivedPaths) {
   return [...new Set([...changedPaths, ...documentedPaths, ...derivedPaths])]
     .filter(path => !isMaintenancePath(path))
+    .filter(path => !/^plan(?:\/|$)/.test(path))
     .sort();
 }
 
@@ -201,7 +249,7 @@ function qaToolingFor(plannedPaths = [], changedPaths = []) {
   };
 }
 
-export function createManifest({ task, ownedPaths = null, changedPaths = null, plannedQaToolingPaths = [], runId = null }) {
+export function createManifest({ task, ownedPaths = null, changedPaths = null, plannedQaToolingPaths = [], runId = null, planPath = null, root = ROOT }) {
   if (!task || task.length > 120) throw new Error('task must be present and at most 120 characters');
   const owned = [...new Set(ownedPaths || changedPaths || [])].sort();
   if (!owned.length) throw new Error('one or more owned paths are required');
@@ -213,6 +261,8 @@ export function createManifest({ task, ownedPaths = null, changedPaths = null, p
   return {
     schema_version: SCHEMA_VERSION,
     phase: 'prepared',
+    lifecycle: { status: 'open' },
+    plan: planBindingFor(planPath, root),
     task,
     run_id: runId || randomUUID(),
     owned_paths: owned,
@@ -333,19 +383,26 @@ function closeObservability(manifest, receipt, env = process.env) {
 }
 
 function upgradeManifest(manifest) {
-  if (manifest.schema_version === SCHEMA_VERSION) return manifest;
+  if (manifest.schema_version === SCHEMA_VERSION) return {
+    ...manifest,
+    lifecycle: manifest.lifecycle || { status: manifest.phase === 'closed' ? 'closed' : 'open' },
+    plan: manifest.plan || unboundPlan(),
+  };
   if (manifest.schema_version !== 1) throw new Error(`unsupported manifest schema: ${manifest.schema_version}`);
   return createManifest({ task: manifest.task, ownedPaths: manifest.changed_paths, runId: manifest.run_id });
 }
 
-export function amendManifest(manifest, paths, plannedQaToolingPaths = []) {
+export function amendManifest(manifest, paths, plannedQaToolingPaths = [], planBinding = null) {
   if (manifest.schema_version !== SCHEMA_VERSION) throw new Error('amend requires a schema-v2 manifest');
-  if (manifest.phase === 'closed') throw new Error('a closed manifest cannot be amended; start a new task');
+  if (['closed', 'verified', 'closure-blocked'].includes(manifest.phase))
+    throw new Error('a verified or closed manifest cannot be amended; start a new task');
   const additions = [...new Set(paths)].filter(path => !manifest.owned_paths.includes(path)).sort();
   const planned = [...new Set([...(manifest.qa?.planned_paths || []), ...plannedQaToolingPaths])].sort();
   const unownedQaTooling = planned.filter(path => ![...manifest.owned_paths, ...additions].includes(path));
   if (unownedQaTooling.length) throw new Error(`planned QA-tooling paths must be owned: ${unownedQaTooling.join(', ')}`);
-  if (!additions.length && planned.length === (manifest.qa?.planned_paths || []).length) return manifest;
+  const plan = bindPlan(manifest, planBinding);
+  const planChanged = plan !== manifest.plan;
+  if (!additions.length && planned.length === (manifest.qa?.planned_paths || []).length && !planChanged) return manifest;
   const sourceAdded = additions.some(sourcePath);
   const owned = [...new Set([...manifest.owned_paths, ...additions])].sort();
   const intake = scopeContext(owned, { artifact: true });
@@ -353,6 +410,8 @@ export function amendManifest(manifest, paths, plannedQaToolingPaths = []) {
   return {
     ...manifest,
     phase: resetReview ? 'prepared' : manifest.phase,
+    lifecycle: { status: 'open' },
+    plan,
     owned_paths: owned,
     domains: [...new Set(owned.map(domainFor))].sort(),
     intake,
@@ -517,6 +576,8 @@ export function intakeForManifest(manifest, manifestFile) {
     schema_version: SCHEMA_VERSION,
     manifest: manifestFile,
     phase: manifest.phase,
+    lifecycle: manifest.lifecycle,
+    plan: manifest.plan,
     owned_paths: manifest.owned_paths,
     roles: [...new Set(manifest.intake.routes.map(route => route.skill).filter(Boolean))].sort(),
     docs: manifest.intake.docs,
@@ -547,6 +608,8 @@ export function reviewForManifest(manifest, manifestFile) {
     schema_version: SCHEMA_VERSION,
     manifest: manifestFile,
     phase: manifest.phase,
+    lifecycle: manifest.lifecycle,
+    plan: manifest.plan,
     changed_paths: manifest.changed_paths,
     docs: manifest.documentation.candidate_docs,
     maps: manifest.documentation.maps_to_regenerate,
@@ -691,6 +754,83 @@ function executionStatus(steps, name) {
     : 'failed';
 }
 
+function recordedPlanPaths(plan, root = ROOT) {
+  const repositoryRoot = resolve(root);
+  const source = resolve(repositoryRoot, plan.source_path || '');
+  const archive = resolve(repositoryRoot, plan.archive_path || '');
+  const planRoot = resolve(repositoryRoot, 'plan');
+  const expectedArchive = resolve(planRoot, 'done', basename(source));
+  if (!plan.source_path || !source.startsWith(planRoot + sep) || source.startsWith(resolve(planRoot, 'done') + sep))
+    throw new Error('recorded plan source is unsafe');
+  if (archive !== expectedArchive) throw new Error('recorded plan archive destination is unsafe');
+  return { source, archive };
+}
+
+export function archivePlan(plan, root = ROOT) {
+  if (!plan || plan.status === 'not-applicable') return unboundPlan();
+  try {
+    const { source, archive } = recordedPlanPaths(plan, root);
+    const sourceExists = existsSync(source);
+    const archiveExists = existsSync(archive);
+    if (sourceExists && archiveExists) throw new Error('active plan and archive destination both exist; refusing to overwrite');
+    if (!sourceExists && archiveExists) return { ...plan, status: 'archived', diagnostic: null };
+    if (!sourceExists) throw new Error('active plan is absent and no completed archive exists');
+    mkdirSync(dirname(archive), { recursive: true });
+    renameSync(source, archive);
+    return { ...plan, status: 'archived', diagnostic: null };
+  } catch (error) {
+    return { ...plan, status: 'failed', diagnostic: error.message };
+  }
+}
+
+function persistVerifiedClosure(manifest, manifestFile, receipt, verifiedPublishPaths) {
+  const plan = archivePlan(manifest.plan);
+  const closed = ['archived', 'not-applicable'].includes(plan.status);
+  const lifecycle = { status: closed ? 'closed' : 'blocked' };
+  const publishPaths = closed
+    ? publishPathsFor([...verifiedPublishPaths, receipt.public_receipt], [], [])
+    : [];
+  receipt.plan = plan;
+  receipt.lifecycle = lifecycle;
+  receipt.verified_publish_paths = verifiedPublishPaths;
+  receipt.publish_paths = publishPaths;
+  manifest.plan = plan;
+  manifest.lifecycle = lifecycle;
+  manifest.publish_paths = publishPaths;
+  manifest.phase = closed ? 'closed' : 'closure-blocked';
+  if (receipt.public_receipt) writePublicQaReceipt(ROOT, {
+    identity: manifest.task_identity,
+    task: manifest.task,
+    verificationStatus: receipt.status,
+    lifecycle,
+    plan,
+    changedPaths: manifest.changed_paths,
+    publishPaths,
+    steps: receipt.steps,
+    coverage: manifest.coverage,
+    qa: manifest.qa,
+    maintenanceItems: receipt.maintenance.items,
+  });
+  if (closed) manifest.observability = closeObservability(manifest, receipt);
+  writeFileSync(receiptPath(manifestFile), `${JSON.stringify(receipt, null, 2)}\n`);
+  writeManifest(manifestFile, manifest);
+  return closed;
+}
+
+function retryVerifiedClosure(manifest, manifestFile, closeInputFingerprint) {
+  const privateReceiptPath = receiptPath(manifestFile);
+  if (!existsSync(privateReceiptPath)) fail('verified closure receipt is missing; executable QA must be rerun', 1);
+  const receipt = JSON.parse(readFileSync(privateReceiptPath, 'utf8'));
+  if (!['passed', 'maintenance-blocked'].includes(receipt.status))
+    fail('verified closure receipt does not contain reusable executable proof', 1);
+  if (receipt.input_fingerprint !== closeInputFingerprint)
+    fail('close inputs changed after verification; rerun task-close review', 1);
+  const verifiedPublishPaths = receipt.verified_publish_paths || publishPathsFor(manifest.changed_paths, manifest.documented_paths, manifest.derived_paths || []);
+  const closed = persistVerifiedClosure(manifest, manifestFile, receipt, verifiedPublishPaths);
+  if (!closed) fail(`CLOSURE-BLOCKED — plan archive failed: ${manifest.plan?.diagnostic || receipt.plan?.diagnostic}; receipt: ${displayPath(privateReceiptPath)}`, 1);
+  console.log(`PASS — reused executable verification; receipt: ${displayPath(privateReceiptPath)}; public receipt: ${receipt.public_receipt}`);
+}
+
 function requireFallbackFixtures(manifest) {
   const fixtureBacked = manifest.retrieval.fallbacks.filter(item => item.repair_fixture);
   if (!fixtureBacked.length) return;
@@ -732,11 +872,10 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
   });
   const failed = steps.find(step => step.status !== 0);
   let publicReceipt = null;
+  const verifiedPublishPaths = publishPathsFor(publishPaths, [], []);
   if (manifest.schema_version === SCHEMA_VERSION && maintenance.status !== 'failed') {
     manifest.task_identity = taskIdentityForManifest(manifest, { root: ROOT });
-    writeManifest(manifestFile, manifest);
     publicReceipt = publicQaReceiptPath(manifest.task_identity);
-    publishPaths = publishPathsFor([...publishPaths, publicReceipt], [], []);
   }
   const receipt = {
     schema_version: manifest.schema_version,
@@ -744,7 +883,10 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
     manifest: displayPath(manifestFile),
     status: maintenance.status,
     input_fingerprint: closeInputFingerprint,
-    publish_paths: publishPaths,
+    lifecycle: maintenance.status === 'failed' ? { status: 'open' } : { status: 'verified' },
+    plan: manifest.plan || unboundPlan(),
+    verified_publish_paths: verifiedPublishPaths,
+    publish_paths: [],
     maintenance: {
       handoff: maintenance.handoff,
       items: maintenance.items,
@@ -759,19 +901,8 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
     public_receipt: publicReceipt,
     steps,
   };
-  if (publicReceipt) writePublicQaReceipt(ROOT, {
-    identity: manifest.task_identity,
-    task: manifest.task,
-    verificationStatus: maintenance.status,
-    changedPaths: manifest.changed_paths,
-    publishPaths,
-    steps,
-    coverage: manifest.coverage,
-    qa: manifest.qa,
-    maintenanceItems: maintenance.items,
-  });
   writeFileSync(receiptPath(manifestFile), `${JSON.stringify(receipt, null, 2)}\n`);
-  manifest.publish_paths = publishPaths;
+  manifest.publish_paths = [];
   manifest.verification = {
     status: receipt.status,
     receipt: displayPath(receiptPath(manifestFile)),
@@ -779,10 +910,18 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
     maintenance_handoff: maintenance.handoff,
     public_receipt: publicReceipt,
   };
-  manifest.observability = closeObservability(manifest, receipt);
-  if (manifest.schema_version === SCHEMA_VERSION) manifest.phase = maintenance.status === 'failed' ? 'failed' : 'closed';
+  if (maintenance.status === 'failed') {
+    manifest.lifecycle = { status: 'open' };
+    manifest.observability = closeObservability(manifest, receipt);
+    if (manifest.schema_version === SCHEMA_VERSION) manifest.phase = 'failed';
+  } else {
+    manifest.lifecycle = { status: 'verified' };
+    if (manifest.schema_version === SCHEMA_VERSION) manifest.phase = 'verified';
+  }
   writeManifest(manifestFile, manifest);
   if (maintenance.status === 'failed') fail(`FAIL — ${failed.name}: ${failed.summary}; receipt: ${displayPath(receiptPath(manifestFile))}`, 1);
+  if (!persistVerifiedClosure(manifest, manifestFile, receipt, verifiedPublishPaths))
+    fail(`CLOSURE-BLOCKED — plan archive failed: ${receipt.plan.diagnostic}; receipt: ${displayPath(receiptPath(manifestFile))}`, 1);
   const label = maintenance.status === 'passed' ? 'PASS' : 'MAINTENANCE-BLOCKED';
   const handoff = maintenance.handoff ? `; maintenance handoff: ${maintenance.handoff}` : '';
   const publicEvidence = publicReceipt ? `; public receipt: ${publicReceipt}` : '';
@@ -834,7 +973,7 @@ async function main() {
   const action = args.shift();
   const values = parseArgs(args);
   if (action === 'prepare') {
-    checkOptions(values, ['task', 'output', 'manifest', 'path', 'changed', 'qa-tooling-path']);
+    checkOptions(values, ['task', 'output', 'manifest', 'path', 'changed', 'qa-tooling-path', 'plan']);
     const manifestFile = safePath(one(values, 'output') || one(values, 'manifest') || DEFAULT_MANIFEST, '--output');
     if (existsSync(manifestFile)) fail(`manifest already exists: ${displayPath(manifestFile)}; start a new run with --output`, 1);
     const paths = normalizePaths([...many(values, 'path'), ...many(values, 'changed')]);
@@ -842,6 +981,8 @@ async function main() {
       task: one(values, 'task', true),
       ownedPaths: paths,
       plannedQaToolingPaths: normalizeOptionalPaths(many(values, 'qa-tooling-path'), '--qa-tooling-path'),
+      planPath: one(values, 'plan'),
+      root: ROOT,
     });
     manifest.observability = startObservability(manifest);
     writeManifest(manifestFile, manifest);
@@ -849,15 +990,17 @@ async function main() {
     return;
   }
   if (action === 'amend') {
-    checkOptions(values, ['manifest', 'path', 'qa-tooling-path']);
+    checkOptions(values, ['manifest', 'path', 'qa-tooling-path', 'plan']);
     const manifestFile = manifestPath(values);
     const paths = many(values, 'path');
     const toolingPaths = many(values, 'qa-tooling-path');
-    if (!paths.length && !toolingPaths.length) fail('supply one or more --path or --qa-tooling-path values');
+    const planPath = one(values, 'plan');
+    if (!paths.length && !toolingPaths.length && !planPath) fail('supply one or more --path, --qa-tooling-path, or --plan values');
     const manifest = amendManifest(
       upgradeManifest(readManifest(manifestFile)),
       paths.length ? normalizeOptionalPaths(paths, '--path') : [],
       normalizeOptionalPaths(toolingPaths, '--qa-tooling-path'),
+      planPath ? planBindingFor(planPath) : null,
     );
     writeManifest(manifestFile, manifest);
     console.log(JSON.stringify(intakeForManifest(manifest, displayPath(manifestFile)), null, 2));
@@ -918,6 +1061,7 @@ async function main() {
       temporary_verification: temporaryVerification,
       qa_classification: qaOverride?.classification || null,
       qa_evidence: qaOverride?.evidence || null,
+      plan_source: manifest.plan?.source_path || null,
     };
     const closeInputFingerprint = fingerprint(closeInput);
     if (manifest.phase === 'closed') {
@@ -926,6 +1070,12 @@ async function main() {
         return;
       }
       fail('close inputs changed after verification; rerun task-close review', 1);
+    }
+    if (['verified', 'closure-blocked'].includes(manifest.phase)) {
+      if (manifest.verification?.close_input_fingerprint !== closeInputFingerprint)
+        fail('close inputs changed after verification; rerun task-close review', 1);
+      retryVerifiedClosure(manifest, manifestFile, closeInputFingerprint);
+      return;
     }
     if (manifest.documentation.source_changed) manifest = applyDocumentationDecision(manifest, {
       decision: closeInput.documentation,

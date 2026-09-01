@@ -9,15 +9,15 @@ const DEFAULTS := {
 	"level": 1,
 	"target_height": 30,
 	"grid_width": 8,
-	"site_width": 4,
-	"placeable_min": 2,
-	"placeable_max": 5,
+	"site_width": 8,
+	"placeable_min": 0,
+	"placeable_max": 7,
 	"hand_slots_level_1": 3,
 	"hand_slots_level_3": 3,
 	"placement_cooldown_ms": 1500,
-	"level_time_limit_ms": 60000,
+	"level_time_limit_ms": 120000,
 	"impact_min_contribution_share": 0.30,
-	"impact_requirement_score": 90,
+	"impact_requirement_score": 330,
 	"impact_interval": 2,
 	"power_unlock_level": 1,
 }
@@ -318,10 +318,10 @@ static func _catalog() -> Array:
 					"requiredContribution": DEFAULTS.impact_requirement_score,
 					"minContributionShare": DEFAULTS.impact_min_contribution_share,
 					"impactLevel": 1,
-					"nextImpactLevel": 2,
+					"nextImpactLevel": 3,
 					"players": [
 						{"id": LOCAL_PLAYER_ID, "met": false, "bandContribution": 30, "requiredContribution": DEFAULTS.impact_requirement_score},
-						{"id": "teammate-1", "met": true, "bandContribution": 90, "requiredContribution": DEFAULTS.impact_requirement_score},
+						{"id": "teammate-1", "met": true, "bandContribution": 330, "requiredContribution": DEFAULTS.impact_requirement_score},
 						{"id": "teammate-2", "met": false, "bandContribution": 18, "requiredContribution": DEFAULTS.impact_requirement_score}
 					]
 				}
@@ -338,7 +338,7 @@ static func _catalog() -> Array:
 				{
 					"id": &"your_share",
 					"title": "Your share, by Level 2",
-					"body": "At Level 1's clean pace, the first check is 90 eligible points each: 30% of the 300-point useful-height baseline. Fall short and the whole team retries the band; repeated failures exhaust the shared recovery budget.",
+					"body": "The first check is 330 eligible points each: 30% of the first two levels' combined 1,100-point useful-height baseline. Fall short and the whole team retries the band; repeated failures exhaust the shared recovery budget.",
 					"target": &"PlayerRailBox",
 					"card": "auto",
 					"gate": TutorialGatesScript.INFO
@@ -414,7 +414,7 @@ static func _catalog() -> Array:
 			"steps": [
 				{
 					"id": &"round_timer",
-					"title": "60 seconds a level",
+					"title": "120 seconds minimum",
 					"body": "Each level runs on a shared clock. Run out of time mid-build and the level fails -- coordinate fast.",
 					"target": &"RoundTimeBadge",
 					"card": "below",

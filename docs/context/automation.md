@@ -60,12 +60,13 @@ scope authority and always names paths explicitly; it never discovers scope from
 a dirty working tree. Schema 2 separates authorized ownership from the final
 change set while keeping detailed output in local artifacts.
 
-1. `prepare --task ... --path ...` owns explicit paths before their first edit
-   and returns role, maps, tests and validators. Optional repeated
-   `--qa-tooling-path` records planned QA-infrastructure changes.
+1. `prepare --task ... --path ...` owns paths before editing and returns role,
+   maps, tests and validators. Repeated `--qa-tooling-path` records planned QA
+   infrastructure. `--plan` binds one active Markdown plan to a collision-free
+   `plan/done/` destination; neither plan path enters publication scope.
 2. `amend --path ...` owns later files before editing them; new source invalidates
    an existing review. `amend --qa-tooling-path ...` records later planned
-   QA-tooling scope.
+   QA-tooling scope. `amend --plan` late-binds but cannot replace another plan.
 3. After implementation stabilizes, `update-docs` applies the doc-worthy gate.
    Selected candidate docs are owned with `amend` before editing.
 4. `review --changed ...` accepts only owned final paths, recomputes QA and
@@ -73,16 +74,19 @@ change set while keeping detailed output in local artifacts.
 5. `close --decision <updated|not-needed> --reason ...` records the documentation
    gate; `updated` also repeats each affected `--doc-path`. The same call records
    `--coverage <reused|added|updated|none>` and optional temporary verification,
-   runs QA/map/KB/agent-config checks, rejects out-of-scope generated maps, and
-   writes a resumable receipt. `publish_paths` unites explicit affected docs and
-   content-changed generated paths, never a `repair/` handoff.
+   runs QA/map/KB/agent-config checks, rejects out-of-scope maps, then archives a
+   bound plan. `publish_paths` includes affected docs and changed generated paths,
+   never plan paths or a `repair/` handoff.
 
 Verification is `passed`, `maintenance-blocked`, or `failed`. A maintenance
 blocker closes only when every failed step has an approved unrelated
 classification; unknown, mixed, and implementation failures remain open. Both
-terminal states mean implementation is complete while verification stays
-distinct. They add a deterministic `report/qa-receipts/` Markdown receipt to
-`publish_paths`; failed attempts retain only private evidence.
+successful states complete implementation while closure stays distinct. An
+unbound task closes with archival not applicable; a bound task closes after its
+plan moves. Archive failure preserves proof as verified/closure-blocked, and an
+unchanged retry runs only the idempotent move. Receipts separate verification,
+closure and sanitized plan paths. Only closed lifecycle state exposes publication
+scope; executable failure leaves the plan active and retains private evidence.
 The close-out writes one run-scoped handoff only for unresolved blockers or
 deferred retrieval, decomposition, and unplanned-QA-infrastructure advisories;
 it never deletes another handoff. Each item contains only its

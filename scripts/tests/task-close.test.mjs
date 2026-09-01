@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -16,6 +16,7 @@ import { publicQaReceiptPath, renderPublicQaReceipt, writePublicQaReceipt } from
 import { createTaskIdentity, taskIdentityBase, taskIdentityForManifest } from '../lib/task-identity.mjs';
 import {
   amendManifest,
+  archivePlan,
   applyCoverageDecision,
   applyDocumentationDecision,
   closeObservabilityUnsafe,
@@ -24,6 +25,7 @@ import {
   deriveTaskComplexity,
   fallbackRequiresRetrievalProof,
   intakeForManifest,
+  planBindingFor,
   publishPathsFor,
   recordFallback,
   retrievalFallbackMaintenanceItems,
@@ -195,6 +197,8 @@ test('prepare creates a compact schema-v2 ownership manifest and intake', () => 
   assert.equal(manifest.phase, 'prepared');
   assert.deepEqual(manifest.owned_paths, [SOURCE]);
   assert.deepEqual(manifest.changed_paths, []);
+  assert.deepEqual(manifest.lifecycle, { status: 'open' });
+  assert.equal(manifest.plan.status, 'not-applicable');
   assert.equal(manifest.documentation.status, 'pending');
   assert.equal(manifest.coverage.status, 'pending');
   assert.deepEqual(manifest.intake.docs, [DOC]);
@@ -204,6 +208,73 @@ test('prepare creates a compact schema-v2 ownership manifest and intake', () => 
   const intake = intakeForManifest(manifest, '.agent-state/automation/task.json');
   assert.deepEqual(intake.owned_paths, [SOURCE]);
   assert.ok(Buffer.byteLength(JSON.stringify(intake, null, 2)) + 1 <= 8 * 1024);
+});
+
+test('optional plan binding accepts only an active Markdown plan with a free deterministic archive', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-plan-binding-'));
+  try {
+    mkdirSync(join(root, 'plan/done'), { recursive: true });
+    mkdirSync(join(root, 'plan/nested'), { recursive: true });
+    writeFileSync(join(root, 'plan/nested/task.md'), '# Task\n');
+    writeFileSync(join(root, 'plan/not-markdown.txt'), 'Task\n');
+    writeFileSync(join(root, 'plan/done/closed.md'), '# Closed\n');
+
+    assert.deepEqual(planBindingFor('plan/nested/task.md', root), {
+      status: 'pending',
+      source_path: 'plan/nested/task.md',
+      archive_path: 'plan/done/task.md',
+      diagnostic: null,
+    });
+    assert.throws(() => planBindingFor('../outside.md', root), /inside the repository/);
+    assert.throws(() => planBindingFor('plan/not-markdown.txt', root), /Markdown/);
+    assert.throws(() => planBindingFor('plan/done/closed.md', root), /cannot already/);
+    writeFileSync(join(root, 'plan/done/task.md'), '# Collision\n');
+    assert.throws(() => planBindingFor('plan/nested/task.md', root), /destination already exists/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('late plan binding cannot replace a different task plan', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-plan-amend-'));
+  try {
+    mkdirSync(join(root, 'plan'), { recursive: true });
+    writeFileSync(join(root, 'plan/first.md'), '# First\n');
+    writeFileSync(join(root, 'plan/second.md'), '# Second\n');
+    const manifest = createManifest({ task: 'Bind later', ownedPaths: [SOURCE] });
+    const first = amendManifest(manifest, [], [], planBindingFor('plan/first.md', root));
+
+    assert.equal(first.plan.source_path, 'plan/first.md');
+    assert.throws(
+      () => amendManifest(first, [], [], planBindingFor('plan/second.md', root)),
+      /already bound/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('plan archival is idempotent and never overwrites a destination collision', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-plan-archive-'));
+  try {
+    mkdirSync(join(root, 'plan'), { recursive: true });
+    writeFileSync(join(root, 'plan/task.md'), '# Active\n');
+    const binding = planBindingFor('plan/task.md', root);
+    const archived = archivePlan(binding, root);
+
+    assert.equal(archived.status, 'archived');
+    assert.equal(existsSync(join(root, 'plan/task.md')), false);
+    assert.equal(readFileSync(join(root, 'plan/done/task.md'), 'utf8'), '# Active\n');
+    assert.equal(archivePlan(binding, root).status, 'archived');
+
+    writeFileSync(join(root, 'plan/task.md'), '# Replacement\n');
+    const collision = archivePlan(binding, root);
+    assert.equal(collision.status, 'failed');
+    assert.match(collision.diagnostic, /refusing to overwrite/);
+    assert.equal(readFileSync(join(root, 'plan/done/task.md'), 'utf8'), '# Active\n');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('task binding derives a bounded complexity instead of unknown', () => {
@@ -477,7 +548,11 @@ test('advisory decomposition handoffs preserve a passing verification result', (
 
 test('publication scope always excludes maintenance handoffs', () => {
   assert.deepEqual(
-    publishPathsFor([SOURCE, 'repair/repair-12345678.md'], [DOC], ['repair/map-note.md']),
+    publishPathsFor(
+      [SOURCE, 'repair/repair-12345678.md', 'plan/task.md'],
+      [DOC, 'plan/done/task.md'],
+      ['repair/map-note.md'],
+    ),
     [DOC, SOURCE],
   );
 });
@@ -538,22 +613,33 @@ test('CLI review directs source-changing closeout through the documentation gate
   }
 });
 
-function terminalCloseFixture(qaSource, task = 'Public QA receipt fixture') {
+function terminalCloseFixture(qaSource, task = 'Public QA receipt fixture', { plan = false, blockArchive = false } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'corp-task-close-terminal-'));
   const manifestPath = '.agent-state/close.json';
   mkdirSync(join(root, 'scripts'), { recursive: true });
   mkdirSync(join(root, '.agent-state'), { recursive: true });
   writeFileSync(join(root, 'README.md'), 'fixture scope\n');
   writeFileSync(join(root, 'scripts/qa-gate.mjs'), qaSource);
+  if (plan) {
+    mkdirSync(join(root, 'plan'), { recursive: true });
+    writeFileSync(join(root, 'plan/task.md'), '# Active task plan\n');
+  }
   const git = args => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
   assert.equal(git(['init', '-q']).status, 0);
   assert.equal(git(['config', 'user.name', 'QA Fixture']).status, 0);
   assert.equal(git(['config', 'user.email', 'qa-fixture@example.invalid']).status, 0);
   assert.equal(git(['add', 'README.md', 'scripts/qa-gate.mjs']).status, 0);
   assert.equal(git(['commit', '-qm', 'Fixture baseline']).status, 0);
-  const prepared = createManifest({ task, ownedPaths: ['README.md'], runId: 'public-receipt-fixture' });
+  const prepared = createManifest({
+    task,
+    ownedPaths: ['README.md'],
+    runId: 'public-receipt-fixture',
+    planPath: plan ? 'plan/task.md' : null,
+    root,
+  });
   const reviewed = reviewManifest(prepared, { changedPaths: ['README.md'], mapBaseline: {} });
   writeFileSync(join(root, manifestPath), `${JSON.stringify(reviewed, null, 2)}\n`);
+  if (blockArchive) writeFileSync(join(root, 'plan/done'), 'archive parent blocker\n');
   const run = () => spawnSync(process.execPath, [TASK_CLOSE, 'close', '--manifest', manifestPath, '--coverage', 'none'], {
     cwd: process.cwd(),
     env: Object.fromEntries(Object.entries({
@@ -564,7 +650,13 @@ function terminalCloseFixture(qaSource, task = 'Public QA receipt fixture') {
     }).filter(([key]) => key !== 'NODE_TEST_CONTEXT')),
     encoding: 'utf8',
   });
-  return { root, manifestPath, run };
+  return {
+    root,
+    manifestPath,
+    run,
+    activePlan: join(root, 'plan/task.md'),
+    archivedPlan: join(root, 'plan/done/task.md'),
+  };
 }
 
 test('terminal passed close writes one public receipt, publishes it, and reuses its identity', () => {
@@ -582,8 +674,32 @@ test('terminal passed close writes one public receipt, publishes it, and reuses 
 
     const repeated = fixture.run();
     assert.equal(repeated.status, 0, repeated.stderr);
-    assert.match(repeated.stdout, /reused receipt/);
+    assert.equal(JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8')).phase, 'closed');
     assert.deepEqual(readdirSync(join(fixture.root, 'report/qa-receipts')), ['qa-receipt-public-qa-receipt-v0.01.md']);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('passed close archives a bound plan and records the closed lifecycle', () => {
+  const fixture = terminalCloseFixture("console.log('PASS — fixture QA');\n", 'Bound plan receipt fixture', { plan: true });
+  try {
+    const result = fixture.run();
+    assert.equal(result.status, 0, result.stderr);
+    const manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
+    const privateReceipt = JSON.parse(readFileSync(join(fixture.root, '.agent-state/close.receipt.json'), 'utf8'));
+    const publicReceipt = readFileSync(join(fixture.root, manifest.verification.public_receipt), 'utf8');
+
+    assert.equal(existsSync(fixture.activePlan), false);
+    assert.equal(readFileSync(fixture.archivedPlan, 'utf8'), '# Active task plan\n');
+    assert.deepEqual(manifest.lifecycle, { status: 'closed' });
+    assert.equal(manifest.plan.status, 'archived');
+    assert.equal(privateReceipt.plan.status, 'archived');
+    assert.match(publicReceipt, /Task closure: CLOSED/);
+    assert.match(publicReceipt, /Plan archive: ARCHIVED/);
+    assert.match(publicReceipt, /Active plan: plan\/task\.md/);
+    assert.match(publicReceipt, /Archived plan: plan\/done\/task\.md/);
+    assert.equal(manifest.publish_paths.some(path => path.startsWith('plan/')), false);
   } finally {
     rmSync(fixture.root, { recursive: true, force: true });
   }
@@ -594,11 +710,10 @@ test('terminal maintenance-blocked close publishes completed implementation evid
     console.error('FAILURE_CLASSIFICATION: tooling-environment');
     console.error('FAIL — fixture executable unavailable');
     process.exit(1);
-  `);
+  `, 'Maintenance plan receipt fixture', { plan: true });
   try {
     const result = fixture.run();
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /MAINTENANCE-BLOCKED/);
     const manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
     assert.equal(manifest.phase, 'closed');
     assert.equal(manifest.verification.status, 'maintenance-blocked');
@@ -608,6 +723,9 @@ test('terminal maintenance-blocked close publishes completed implementation evid
     assert.match(receipt, /Verification: MAINTENANCE-BLOCKED/);
     assert.match(receipt, /Failure classification: tooling-environment/);
     assert.match(receipt, /fixture executable unavailable/);
+    assert.equal(manifest.plan.status, 'archived');
+    assert.equal(existsSync(fixture.activePlan), false);
+    assert.equal(existsSync(fixture.archivedPlan), true);
   } finally {
     rmSync(fixture.root, { recursive: true, force: true });
   }
@@ -618,7 +736,7 @@ test('implementation-failed close remains open and writes no public receipt', ()
     console.error('FAILURE_CLASSIFICATION: implementation');
     console.error('FAIL — fixture assertion failed');
     process.exit(1);
-  `);
+  `, 'Failed plan receipt fixture', { plan: true });
   try {
     const result = fixture.run();
     assert.equal(result.status, 1);
@@ -629,6 +747,83 @@ test('implementation-failed close remains open and writes no public receipt', ()
     assert.equal(manifest.task_identity, null);
     assert.equal(existsSync(join(fixture.root, 'report/qa-receipts')), false);
     assert.equal(existsSync(join(fixture.root, '.agent-state/close.receipt.json')), true);
+    assert.equal(manifest.plan.status, 'pending');
+    assert.equal(existsSync(fixture.activePlan), true);
+    assert.equal(existsSync(fixture.archivedPlan), false);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('destination collision blocks closure without overwriting either plan', () => {
+  const fixture = terminalCloseFixture("console.log('PASS — fixture QA');\n", 'Collision plan fixture', { plan: true });
+  try {
+    mkdirSync(join(fixture.root, 'plan/done'), { recursive: true });
+    writeFileSync(fixture.archivedPlan, '# Existing archive\n');
+    const result = fixture.run();
+    const manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
+
+    assert.equal(result.status, 1);
+    assert.equal(manifest.phase, 'closure-blocked');
+    assert.equal(manifest.verification.status, 'passed');
+    assert.equal(manifest.lifecycle.status, 'blocked');
+    assert.equal(readFileSync(fixture.activePlan, 'utf8'), '# Active task plan\n');
+    assert.equal(readFileSync(fixture.archivedPlan, 'utf8'), '# Existing archive\n');
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('archive failure preserves verification and retries closure without rerunning QA', () => {
+  const fixture = terminalCloseFixture(`
+    import { appendFileSync } from 'node:fs';
+    appendFileSync('qa-runs.txt', 'run\\n');
+    console.log('PASS — fixture QA');
+  `, 'Retry plan fixture', { plan: true, blockArchive: true });
+  try {
+    const first = fixture.run();
+    let manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
+    const blockedReceipt = readFileSync(join(fixture.root, manifest.verification.public_receipt), 'utf8');
+
+    assert.equal(first.status, 1);
+    assert.equal(manifest.phase, 'closure-blocked');
+    assert.equal(manifest.verification.status, 'passed');
+    assert.equal(manifest.publish_paths.length, 0);
+    assert.match(blockedReceipt, /Task closure: BLOCKED/);
+    assert.match(blockedReceipt, /Plan archive: FAILED/);
+    assert.equal(readFileSync(join(fixture.root, 'qa-runs.txt'), 'utf8'), 'run\n');
+
+    rmSync(join(fixture.root, 'plan/done'));
+    const retried = fixture.run();
+    manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
+
+    assert.equal(retried.status, 0, retried.stderr);
+    assert.equal(manifest.phase, 'closed');
+    assert.equal(manifest.plan.status, 'archived');
+    assert.equal(readFileSync(join(fixture.root, 'qa-runs.txt'), 'utf8'), 'run\n');
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('retry recognizes an already-moved archive after partial closure', () => {
+  const fixture = terminalCloseFixture(`
+    import { appendFileSync } from 'node:fs';
+    appendFileSync('qa-runs.txt', 'run\\n');
+    console.log('PASS — fixture QA');
+  `, 'Partial archive fixture', { plan: true, blockArchive: true });
+  try {
+    assert.equal(fixture.run().status, 1);
+    rmSync(join(fixture.root, 'plan/done'));
+    mkdirSync(join(fixture.root, 'plan/done'), { recursive: true });
+    renameSync(fixture.activePlan, fixture.archivedPlan);
+
+    const retried = fixture.run();
+    const manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
+    assert.equal(retried.status, 0, retried.stderr);
+    assert.equal(manifest.phase, 'closed');
+    assert.equal(manifest.plan.status, 'archived');
+    assert.equal(readFileSync(join(fixture.root, 'qa-runs.txt'), 'utf8'), 'run\n');
   } finally {
     rmSync(fixture.root, { recursive: true, force: true });
   }

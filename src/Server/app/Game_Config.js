@@ -17,7 +17,7 @@ const GameConfig = {
     targetHeightStepGrowthEvery: 3,
     startDelayMs: 4000,
     lobbyReadyTimeoutMs: 60000,
-    levelTimeLimitMs: 90000,
+    levelTimeLimitMs: 120000,
     levelTimePlannedEfficiency: 0.55,
     levelTimeSlack: 3.0,
     levelTimeSlackMin: 1.5,
@@ -169,11 +169,11 @@ const GameConfig = {
     debugBotsEnabled: process.env.CORP_TOWER_BOTS_ENABLED === "true",
     showLatencyIndicator: process.env.CORP_TOWER_LATENCY_INDICATOR_ENABLED !== "false",
     debugBotCount: 2,
-    debugBotDelayMin: 3000,
-    debugBotDelayMax: 6000,
+    debugBotDelayMin: 6000,
+    debugBotDelayMax: 7000,
     debugBotStrategy: process.env.CORP_TOWER_BOT_STRATEGY === "cooperative"
-        ? "cooperative"
-        : "mvp_greedy",
+        ? "mvp_greedy"
+        : "cooperative",
     debugBotStabilityTolerance: 5,
     debugBotGapCandidates: 6,
 };

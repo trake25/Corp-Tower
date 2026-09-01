@@ -54,6 +54,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Verify tutorial defaults match server authority
+        run: node --test scripts/tests/tutorial-defaults-parity.test.mjs
+
       - name: Fetch private art assets
         uses: ./.github/actions/fetch-private-assets
         with:

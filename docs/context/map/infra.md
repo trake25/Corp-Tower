@@ -64,7 +64,7 @@ bounded source read. Local implementation detail stays in source.
 | .github/actions/verify-eks-destroy/action.yml:4 | inputs · key | |
 | .github/actions/verify-eks-destroy/action.yml:10 | runs · key | |
 
-### .github/workflows/Android-Deploy-wstodplay.yml — 508 ln
+### .github/workflows/Android-Deploy-wstodplay.yml — 511 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -207,7 +207,7 @@ bounded source read. Local implementation detail stays in source.
 | .github/workflows/EKS-Deploy-All.yml:21 | deploy-game · job | |
 | .github/workflows/EKS-Deploy-All.yml:29 | deploy-web · job | |
 
-### .github/workflows/EKS-Deploy-Game-Server.yml — 537 ln
+### .github/workflows/EKS-Deploy-Game-Server.yml — 541 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -215,9 +215,9 @@ bounded source read. Local implementation detail stays in source.
 | .github/workflows/EKS-Deploy-Game-Server.yml:3 | on · key | |
 | .github/workflows/EKS-Deploy-Game-Server.yml:23 | jobs · key | |
 | .github/workflows/EKS-Deploy-Game-Server.yml:24 | test-server · job | |
-| .github/workflows/EKS-Deploy-Game-Server.yml:49 | verify-infra · job | |
-| .github/workflows/EKS-Deploy-Game-Server.yml:71 | build-and-push · job | |
-| .github/workflows/EKS-Deploy-Game-Server.yml:117 | deploy-eks · job | |
+| .github/workflows/EKS-Deploy-Game-Server.yml:53 | verify-infra · job | |
+| .github/workflows/EKS-Deploy-Game-Server.yml:75 | build-and-push · job | |
+| .github/workflows/EKS-Deploy-Game-Server.yml:121 | deploy-eks · job | |
 
 ### .github/workflows/EKS-Deploy-Web-Server.yml — 355 ln
 
@@ -710,6 +710,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/benchmark-rag.mjs:135 | correct · const | |
 | scripts/benchmark-rag.mjs:136 | first · const | |
 | scripts/benchmark-rag.mjs:146 | result · const | |
+| scripts/benchmark-rag.mjs:174 | markdown · const | |
 | scripts/benchmark-rag.mjs:182 | passed · const | |
 
 ### scripts/build-android-plugin.sh — 23 ln
@@ -1027,7 +1028,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/maintenance-handoff.mjs:89 | createMaintenanceItem · fn | |
 | scripts/lib/maintenance-handoff.mjs:196 | resolveMaintenanceHandoff · fn | |
 
-### scripts/lib/qa-receipt.mjs — 139 ln
+### scripts/lib/qa-receipt.mjs — 151 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1035,7 +1036,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/qa-receipt.mjs:6 | sanitized · fn | |
 | scripts/lib/qa-receipt.mjs:53 | publicQaReceiptPath · fn | |
 | scripts/lib/qa-receipt.mjs:58 | renderPublicQaReceipt · fn | |
-| scripts/lib/qa-receipt.mjs:132 | writePublicQaReceipt · fn | |
+| scripts/lib/qa-receipt.mjs:144 | writePublicQaReceipt · fn | |
 
 ### scripts/lib/task-identity.mjs — 112 ln
 
@@ -1048,7 +1049,18 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/task-identity.mjs:95 | createTaskIdentity · fn | |
 | scripts/lib/task-identity.mjs:107 | taskIdentityForManifest · fn | |
 
-### scripts/qa-gate.mjs — 273 ln
+### scripts/lib/tutorial-defaults-parity.mjs — 116 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/lib/tutorial-defaults-parity.mjs:1 | @file · file | tutorial defaults parity repository workflow |
+| scripts/lib/tutorial-defaults-parity.mjs:6 | require · const | |
+| scripts/lib/tutorial-defaults-parity.mjs:51 | authoritativeTutorialDefaults · fn | |
+| scripts/lib/tutorial-defaults-parity.mjs:89 | compareTutorialDefaults · fn | |
+| scripts/lib/tutorial-defaults-parity.mjs:97 | formatTutorialDefaultMismatches · fn | |
+| scripts/lib/tutorial-defaults-parity.mjs:103 | tutorialDefaultsParity · fn | |
+
+### scripts/qa-gate.mjs — 277 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1056,11 +1068,11 @@ bounded source read. Local implementation detail stays in source.
 | scripts/qa-gate.mjs:9 | ROOT · const | |
 | scripts/qa-gate.mjs:10 | CLIENT · const | |
 | scripts/qa-gate.mjs:11 | SERVER · const | |
-| scripts/qa-gate.mjs:48 | AUTOMATION_PROTOCOL_TESTS · const | |
-| scripts/qa-gate.mjs:77 | selectToolingQa · fn | |
-| scripts/qa-gate.mjs:98 | selectQa · fn | |
-| scripts/qa-gate.mjs:155 | classifyQaFailure · fn | |
-| scripts/qa-gate.mjs:165 | fail · fn | |
+| scripts/qa-gate.mjs:49 | AUTOMATION_PROTOCOL_TESTS · const | |
+| scripts/qa-gate.mjs:81 | selectToolingQa · fn | |
+| scripts/qa-gate.mjs:102 | selectQa · fn | |
+| scripts/qa-gate.mjs:159 | classifyQaFailure · fn | |
+| scripts/qa-gate.mjs:169 | fail · fn | |
 
 ### scripts/strip-comments.mjs — 296 ln
 
@@ -1080,7 +1092,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/sync-agent-skills.mjs:15 | compare · fn | |
 | scripts/sync-agent-skills.mjs:22 | skillMirrorDrift · fn | |
 
-### scripts/task-close.mjs — 970 ln
+### scripts/task-close.mjs — 1120 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1088,31 +1100,33 @@ bounded source read. Local implementation detail stays in source.
 | scripts/task-close.mjs:29 | ROOT · const | |
 | scripts/task-close.mjs:31 | SCHEMA_VERSION · const | |
 | scripts/task-close.mjs:34 | fail · fn | |
-| scripts/task-close.mjs:54 | parseArgs · fn | |
-| scripts/task-close.mjs:69 | checkOptions · fn | |
-| scripts/task-close.mjs:73 | one · fn | |
-| scripts/task-close.mjs:80 | many · fn | |
-| scripts/task-close.mjs:97 | testPath · fn | |
-| scripts/task-close.mjs:109 | domainFor · fn | |
-| scripts/task-close.mjs:119 | deriveTaskComplexity · fn | |
-| scripts/task-close.mjs:140 | command · fn | |
-| scripts/task-close.mjs:147 | fingerprint · fn | |
-| scripts/task-close.mjs:168 | publishPathsFor · fn | |
-| scripts/task-close.mjs:204 | createManifest · fn | |
-| scripts/task-close.mjs:236 | startObservability · fn | |
-| scripts/task-close.mjs:266 | closeObservabilityUnsafe · fn | |
-| scripts/task-close.mjs:341 | amendManifest · fn | |
-| scripts/task-close.mjs:374 | reviewManifest · fn | |
-| scripts/task-close.mjs:418 | applyDocumentationDecision · fn | |
-| scripts/task-close.mjs:455 | applyCoverageDecision · fn | |
-| scripts/task-close.mjs:475 | recordFallback · fn | |
-| scripts/task-close.mjs:494 | fallbackRequiresRetrievalProof · fn | |
-| scripts/task-close.mjs:498 | intakeForManifest · fn | |
-| scripts/task-close.mjs:537 | reviewForManifest · fn | |
-| scripts/task-close.mjs:567 | manifestPath · fn | |
-| scripts/task-close.mjs:599 | compactOutput · fn | |
-| scripts/task-close.mjs:631 | validateDocumentationDecision · fn | |
-| scripts/task-close.mjs:668 | retrievalFallbackMaintenanceItems · fn | |
+| scripts/task-close.mjs:67 | planBindingFor · fn | |
+| scripts/task-close.mjs:101 | parseArgs · fn | |
+| scripts/task-close.mjs:116 | checkOptions · fn | |
+| scripts/task-close.mjs:120 | one · fn | |
+| scripts/task-close.mjs:127 | many · fn | |
+| scripts/task-close.mjs:144 | testPath · fn | |
+| scripts/task-close.mjs:156 | domainFor · fn | |
+| scripts/task-close.mjs:166 | deriveTaskComplexity · fn | |
+| scripts/task-close.mjs:187 | command · fn | |
+| scripts/task-close.mjs:194 | fingerprint · fn | |
+| scripts/task-close.mjs:215 | publishPathsFor · fn | |
+| scripts/task-close.mjs:252 | createManifest · fn | |
+| scripts/task-close.mjs:286 | startObservability · fn | |
+| scripts/task-close.mjs:316 | closeObservabilityUnsafe · fn | |
+| scripts/task-close.mjs:395 | amendManifest · fn | |
+| scripts/task-close.mjs:433 | reviewManifest · fn | |
+| scripts/task-close.mjs:477 | applyDocumentationDecision · fn | |
+| scripts/task-close.mjs:514 | applyCoverageDecision · fn | |
+| scripts/task-close.mjs:534 | recordFallback · fn | |
+| scripts/task-close.mjs:553 | fallbackRequiresRetrievalProof · fn | |
+| scripts/task-close.mjs:557 | intakeForManifest · fn | |
+| scripts/task-close.mjs:598 | reviewForManifest · fn | |
+| scripts/task-close.mjs:630 | manifestPath · fn | |
+| scripts/task-close.mjs:662 | compactOutput · fn | |
+| scripts/task-close.mjs:694 | validateDocumentationDecision · fn | |
+| scripts/task-close.mjs:731 | retrievalFallbackMaintenanceItems · fn | |
+| scripts/task-close.mjs:769 | archivePlan · fn | |
 
 ### scripts/tests/agent-observability.test.mjs — 763 ln
 
@@ -1156,18 +1170,24 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/git-sync-commit-push.test.mjs:1 | @file · file | permanent regression coverage for git sync commit push |
 
-### scripts/tests/qa-gate.test.mjs — 118 ln
+### scripts/tests/qa-gate.test.mjs — 138 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/qa-gate.test.mjs:1 | @file · file | permanent regression coverage for qa gate |
 
-### scripts/tests/task-close.test.mjs — 636 ln
+### scripts/tests/task-close.test.mjs — 831 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/task-close.test.mjs:1 | @file · file | permanent regression coverage for task close |
-| scripts/tests/task-close.test.mjs:36 | SOURCE · const | |
+| scripts/tests/task-close.test.mjs:38 | SOURCE · const | |
+
+### scripts/tests/tutorial-defaults-parity.test.mjs — 90 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/tests/tutorial-defaults-parity.test.mjs:1 | @file · file | permanent regression coverage for tutorial defaults parity |
 
 ### scripts/tests/validate-docs.test.mjs — 45 ln
 
@@ -1218,4 +1238,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-123 files · 471 stable anchors.
+125 files · 479 stable anchors.

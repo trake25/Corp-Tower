@@ -81,6 +81,12 @@ ownership/close-out, explicit Git publication scope, map generation, and private
 observability arithmetic and safety gates. `benchmark-rag.mjs --check` is the
 end-to-end retrieval correctness and provider-byte gate.
 
+Tutorial defaults have one cross-domain Node parity test. Local QA selects it
+when the authoritative server configuration, tutorial copy, or parity helper
+changes; both the EKS server and Android release workflows invoke that same test
+before build/deploy work proceeds. Derived tutorial mirrors come from server
+behavior rather than duplicated formulas.
+
 Android deployment runs client smoke and required GUT before export. Server EKS
 deployment runs the complete Node suite before image build and push.
 

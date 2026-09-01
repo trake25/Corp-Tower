@@ -24,11 +24,13 @@ Screen's How to Play button and a debug row reachable from a live match. The
 latter disconnects first, and Screen Manager guards `_on_room_closed()` while
 `tutorial_active` so a race with a server-sent close cannot kill the run.
 
-- `TutorialLessons.DEFAULTS` is the hand-maintained level-1 copy: target 30,
-  grid 8, site columns 2–5, three active slots, 60 seconds, and the first
-  Impact requirement of 90 at the 30% personal share. Resyncing is not a
-  `DEFAULTS`-only edit: the lesson copy, exact-finish seed (28 + an `O` brick),
-  and Impact-status seed all quote the same contract.
+- `TutorialLessons.DEFAULTS` is the hand-maintained opening-game copy. One
+  cross-domain Node parity test maps only live server mirrors, calling server
+  behavior for derived target, site, inventory, and first-Impact requirements;
+  it runs through local selection and both primary release gates. Authored
+  demonstration values stay outside that mapping. Resyncing is not a
+  `DEFAULTS`-only edit: lesson text, exact-finish setup, and Impact-status seed
+  can quote the same contract and must move with it.
 - `TutorialScene` stays scripted; it must not evaluate legality, stability, or
   scoring. Its structural demonstration passes authored `towerStructuralPose`
   records to `TowerStack`, and its Impact seed uses canonical

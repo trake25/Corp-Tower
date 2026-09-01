@@ -46,9 +46,9 @@ another tool retry.
 The gitignored `plan/` folder is the place to look for existing task plans and
 the place to save a new plan. Agents may read an existing plan for context, but
 must not modify it unless the user instructs the edit or the agent asks and the
-user approves it. Start a separate plan file when no edit approval exists. Once
-the implementation is completely verified and closed, move its plan Markdown
-file to `plan/done/`; never archive an unfinished plan.
+user approves it. Start a separate plan file when no edit approval exists. Bind
+an active implementation plan to `task-close`; successful lifecycle closure
+archives it under `plan/done/`. Never archive an unfinished plan.
 
 The gitignored `reference/` folder contains human-managed screen guides and bug
 screenshots. Agents may read these references when the route calls for them;

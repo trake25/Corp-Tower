@@ -41,6 +41,7 @@ const automationTests = Object.freeze({
   taskClose: 'scripts/tests/task-close.test.mjs',
   gitSync: 'scripts/tests/git-sync-commit-push.test.mjs',
   qaGate: 'scripts/tests/qa-gate.test.mjs',
+  tutorialParity: 'scripts/tests/tutorial-defaults-parity.test.mjs',
   validateDocs: 'scripts/tests/validate-docs.test.mjs',
   observability: 'scripts/tests/agent-observability.test.mjs',
 });
@@ -54,6 +55,9 @@ const automationRules = [
   [/^scripts\/git-sync-commit-push\.mjs$/, [automationTests.gitSync]],
   [/^scripts\/agent-observability\.mjs$/, [automationTests.observability]],
   [/^scripts\/qa-gate\.mjs$/, [automationTests.qaGate, automationTests.context, automationTests.taskClose]],
+  [/^scripts\/lib\/tutorial-defaults-parity\.mjs$/, [automationTests.tutorialParity]],
+  [/^src\/Server\/app\/Game_Config\.js$/, [automationTests.tutorialParity]],
+  [/^src\/Client\/App\/corp-tower\/Cor\/Scripts\/GameUi\/Tutorial\/TutorialLessons\.gd$/, [automationTests.tutorialParity]],
   [/^scripts\/validate-docs\.mjs$/, [automationTests.validateDocs]],
   [/^scripts\/lib\/context-query\.mjs$/, [automationTests.context, automationTests.taskClose]],
   [/^scripts\/lib\/context-routing\.mjs$/, [automationTests.context]],

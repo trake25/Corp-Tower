@@ -86,6 +86,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Game_Engine.js:636 | stopBots | |
 | src/Server/app/Game_Engine.js:670 | getTargetHeightForLevel | |
 | src/Server/app/Game_Engine.js:681 | getLevelTimeLimitMs | |
+| src/Server/app/Game_Engine.js:717 | getConfiguredStartLevel | |
 | src/Server/app/Game_Engine.js:721 | clampLevel | |
 | src/Server/app/Game_Engine.js:728 | restartAtConfiguredStartLevel | |
 | src/Server/app/Game_Engine.js:735 | restartAtLevel | |
@@ -109,6 +110,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Lobby_Manager.js:766 | createRoom | |
 | src/Server/app/Lobby_Manager.js:882 | toggleLobbyReady | |
 | src/Server/app/Lobby_Manager.js:950 | leaveLobby | |
+| src/Server/app/Lobby_Manager.js:1053 | createEngine | |
 | src/Server/app/Lobby_Manager.js:1084 | hydrateRoom | |
 | src/Server/app/Lobby_Manager.js:1284 | dispatchRoomAction | |
 | src/Server/app/Lobby_Manager.js:1311 | resyncState | |
@@ -414,4 +416,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-26 files · 249 stable anchors.
+26 files · 251 stable anchors.

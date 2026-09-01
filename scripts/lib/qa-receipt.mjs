@@ -59,6 +59,8 @@ export function renderPublicQaReceipt({
   identity,
   task,
   verificationStatus,
+  lifecycle = { status: 'closed' },
+  plan = { status: 'not-applicable', source_path: null, archive_path: null },
   changedPaths = [],
   publishPaths = [],
   steps = [],
@@ -72,6 +74,10 @@ export function renderPublicQaReceipt({
   if (terminalStatusForSteps(steps) !== verificationStatus)
     throw new Error('public QA receipt status does not match its executable proof');
   const verificationLabel = verificationStatus === 'passed' ? 'PASSED' : 'MAINTENANCE-BLOCKED';
+  if (!['closed', 'blocked'].includes(lifecycle.status))
+    throw new Error('public QA receipts require a closed or blocked task lifecycle');
+  const closureLabel = lifecycle.status === 'closed' ? 'CLOSED' : 'BLOCKED';
+  const planLabel = String(plan.status || 'not-applicable').replaceAll('-', ' ').toUpperCase();
   const lines = [
     `# QA receipt — ${sanitized(validIdentity.label)}`,
     '',
@@ -82,6 +88,12 @@ export function renderPublicQaReceipt({
     '',
     '- Implementation: COMPLETED',
     `- Verification: ${verificationLabel}`,
+    `- Task closure: ${closureLabel}`,
+    `- Plan archive: ${planLabel}`,
+    ...(plan.source_path ? [
+      `- Active plan: ${sanitized(plan.source_path)}`,
+      `- Archived plan: ${sanitized(plan.archive_path)}`,
+    ] : []),
     '',
     '## Scope',
     '',

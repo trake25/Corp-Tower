@@ -71,6 +71,26 @@ test('public receipt helpers select their focused automation contracts', () => {
   ]);
 });
 
+test('both sides of the tutorial defaults contract select the parity test', () => {
+  const parity = 'scripts/tests/tutorial-defaults-parity.test.mjs';
+
+  assert.ok(selectToolingQa(['src/Server/app/Game_Config.js']).tests.includes(parity));
+  assert.ok(selectToolingQa([
+    'src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd',
+  ]).tests.includes(parity));
+  assert.deepEqual(selectToolingQa(['scripts/lib/tutorial-defaults-parity.mjs']).tests, [parity]);
+});
+
+test('unrelated product paths do not select tutorial defaults parity', () => {
+  const parity = 'scripts/tests/tutorial-defaults-parity.test.mjs';
+  const tooling = selectToolingQa([
+    'src/Server/app/engine/Scoring.js',
+    'src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd',
+  ]);
+
+  assert.equal(tooling.tests.includes(parity), false);
+});
+
 test('focused tooling success suppresses child TAP', () => {
   const { result, root } = toolingFixture(`
     import test from 'node:test';

@@ -20,13 +20,24 @@ func test_lesson_ids_are_unique() -> void:
 
 	assert_eq(ids.size(), 12, "The catalog is specified as a 12-lesson set.")
 
-func test_defaults_match_the_shipped_level_one_contract() -> void:
-	assert_eq(TutorialLessonsScript.DEFAULTS.target_height, 30, "The tutorial must teach the live level-one target.")
-	assert_eq(TutorialLessonsScript.DEFAULTS.placeable_min, 2, "The tutorial must use the live site minimum.")
-	assert_eq(TutorialLessonsScript.DEFAULTS.placeable_max, 5, "The tutorial must use the live site maximum.")
-	assert_eq(TutorialLessonsScript.DEFAULTS.hand_slots_level_1, 3, "The tutorial must use the live opening hand size.")
-	assert_eq(TutorialLessonsScript.DEFAULTS.level_time_limit_ms, 60000, "The tutorial must use the live time floor.")
-	assert_eq(TutorialLessonsScript.DEFAULTS.impact_requirement_score, 90, "The tutorial must teach the live first Impact requirement.")
+func test_defaults_expose_the_tutorial_seed_contract() -> void:
+	for key in [
+		"level",
+		"target_height",
+		"grid_width",
+		"site_width",
+		"placeable_min",
+		"placeable_max",
+		"hand_slots_level_1",
+		"hand_slots_level_3",
+		"placement_cooldown_ms",
+		"level_time_limit_ms",
+		"impact_min_contribution_share",
+		"impact_requirement_score",
+		"impact_interval",
+		"power_unlock_level"
+	]:
+		assert_true(TutorialLessonsScript.DEFAULTS.has(key), "Tutorial seed defaults must include '%s'." % key)
 
 func test_impact_lesson_uses_canonical_contribution_fields() -> void:
 	var lesson: Dictionary = TutorialLessonsScript.lesson_by_id(&"impact")
