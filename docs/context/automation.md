@@ -56,61 +56,47 @@ the bundle path.
 ## Automated close-out
 
 `scripts/task-close.mjs` owns deterministic task closure. Its manifest is the
-scope authority and always names paths explicitly; it never discovers scope from
-a dirty working tree. Schema 2 separates authorized ownership from the final
-change set while keeping detailed output in local artifacts.
+explicit scope authority; it never discovers scope from a dirty tree. Schema 2
+separates authorized ownership from final changes and keeps detail in artifacts.
 
-`prepare` owns paths before editing, records planned QA-tooling paths, and may
-bind one active plan to its collision-free `plan/done/` destination. `amend`
-owns later paths before edits. `review` accepts only owned final changes and
-recomputes QA and candidate docs. `close` records the documentation and permanent
-coverage decisions, verifies the reviewed set, and archives a bound plan only
-after executable proof succeeds.
+`prepare` owns paths, planned QA tooling and an optional active plan before edits;
+`amend` adds later ownership. `review` accepts only owned final changes and
+recomputes QA/docs. `close` records documentation and coverage decisions,
+verifies the reviewed set, then archives a bound plan.
 
-Close-out runs selected protocol checks and QA, regenerates affected file maps,
-then repairs the agent-skill mirror when canonical `.agents/skills/**` changed by
-running `scripts/sync-agent-skills.mjs`. Changed `.claude/skills/**` files are
-derived publication paths. The game-KB validator runs in quiet mode before
-agent-config validation; its verbose child output stays private. Generated maps
-outside the reviewed scope still fail.
+Close-out runs selected protocol checks and QA, regenerates affected maps, runs
+the game-KB validator quietly, then validates agent config. Child detail stays
+private and out-of-scope generated maps fail. Task-close neither synchronizes
+agent skills nor derives `.claude/skills/**` publication paths.
 
-Whole-file prose budgets, aggregate soft prose capacity, historical/file-count
-map capacity, and 95% pressure are warnings. Hard section or exceptional
-KB-wide prose overflow emits a stable `compaction-required` target and remains a
-task-owned failure until the agent compacts the smallest safe scope and retries.
-Only generated-map density overflow is capacity-related
-`validator-maintenance`; deterministic growth below that ceiling does not block.
-Broken links, anchors, citations, coverage, generated targets, long lines, and
-other semantic defects remain hard.
+`.agents/skills/**` is canonical. For staged canonical changes, the sole mirror
+owner `.githooks/pre-commit` rejects conflicting unstaged mirror edits, runs the
+sync script, stages `.claude/skills/**`, and verifies equality. It runs for direct
+commits and `scripts/git-sync-commit-push.mjs`.
 
-Verification is `passed`, `maintenance-blocked`, or `failed`. A maintenance
-blocker closes only when every failed step has an approved unrelated
-classification; unknown, mixed, and implementation failures remain open. Both
-successful states complete implementation while closure stays distinct. An
-unbound task closes with archival not applicable; a bound task closes after its
-plan moves. Archive failure preserves proof as verified/closure-blocked, and an
-unchanged retry runs only the idempotent move. Receipts separate verification,
-closure and sanitized plan paths. Only closed lifecycle state exposes publication
-scope; executable failure, including `compaction-required`, leaves the plan
-active and retains private evidence. The compact failed-step summary carries the
-first actionable blocker and its classification. A run-scoped handoff is written
-only for unresolved maintenance or deferred retrieval, decomposition, and
-unplanned-QA-infrastructure advisories; it never deletes another handoff.
+Whole-file and aggregate soft prose capacity, historical/file-count map capacity,
+and 95% pressure warn. Hard section or KB-wide prose overflow stays task-owned
+`compaction-required` work until the smallest safe compaction passes. Only map
+density overflow is capacity-related `validator-maintenance`; semantic defects
+such as broken links, citations, coverage, targets and long lines remain hard.
+
+Verification is `passed`, `maintenance-blocked`, or `failed`; maintenance closes
+only when every failure has an approved unrelated classification. Other failures,
+including `compaction-required`, keep the plan active and publication scope
+closed. A bound plan moves only after verification. Archive failure preserves
+proof for an idempotent move retry. Receipts separate verification, closure and
+sanitized plan paths, and failed-step summaries carry the first blocker and its
+classification. Run-scoped handoffs cover unresolved maintenance or deferred
+retrieval, decomposition and unplanned-QA advisories without deleting others.
 Changed first-party product files near 900 lines produce a decomposition review
 advisory and near 1200 lines a strong advisory. Generated/content files, tests,
 docs/maps, and load-on-demand `scripts/` automation are excluded.
 
-`fallback --query ... --classification <retrieval-defect|tool-error> --root ...`
-records permitted ordinary source fallback and produces one compact advisory
-handoff without blocking a pass. Adding `--fixture ...` marks task-owned
-retrieval maintenance; close-out then requires that fixture and a passing
-retrieval benchmark. Schema 2 uses `prepare → review → close`.
-
-Child output enters only the private receipt. The public receipt allowlists task
-identity, scopes, compact steps, QA decisions and maintenance; it omits raw
-output, telemetry, sessions and private artifacts. A pass prints one line, a
-maintenance block names its handoff, and a failure names the step, diagnostic
-and private receipt. Identical close inputs reuse the identity and receipts.
+`fallback` records permitted source fallback as a nonblocking advisory; a named
+fixture makes it task-owned retrieval maintenance and requires its benchmark.
+Schema 2 uses `prepare → review → close`. Public receipts allowlist identity,
+scope, compact steps, QA and maintenance; raw child output remains private.
+Identical close inputs reuse identity and receipts.
 
 `scripts/agent-observability.mjs` owns private task events, evidence, candidates,
 flags, settlement, analysis and approved export under

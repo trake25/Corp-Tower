@@ -85,11 +85,13 @@ calibration passes · in this pass*. `validate-docs.mjs` flags these.
    the relevant KB.
 
 6. **Repair deterministic and semantic task defects.** The same receipt validates
-   the game KB and, when in scope, the site KB. Close-out regenerates file maps;
-   when canonical `.agents/skills/**` changes it synchronizes the derived
-   `.claude/skills/**` mirror before agent-config validation. Bad links, anchors,
-   citations, map targets, generated structure, hard line limits, and task-caused
-   failures remain open work. Ambiguous source-vs-doc meaning stops for the user.
+   the game KB and, when in scope, the site KB. Close-out regenerates file maps
+   but does not synchronize agent skills or publish mirror paths as derived
+   output. `.agents/skills/**` is canonical; `.githooks/pre-commit` alone runs the
+   skill sync, stages `.claude/skills/**`, and verifies it during commit. Bad
+   links, anchors, citations, map targets, generated structure, hard line limits,
+   and task-caused failures remain open work. Ambiguous source-vs-doc meaning
+   stops for the user.
 
 7. **Compact only on a hard prose trigger.** A `compaction-required` section or
    exceptional KB-wide hard ceiling never becomes `maintenance-blocked`. Load

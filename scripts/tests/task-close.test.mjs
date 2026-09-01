@@ -19,7 +19,6 @@ import {
   archivePlan,
   applyCoverageDecision,
   applyDocumentationDecision,
-  canonicalSkillsChanged,
   closeObservabilityUnsafe,
   compactOutput,
   createManifest,
@@ -61,12 +60,6 @@ test('successful compact summaries ignore diagnostics and prefer an explicit PAS
     'exit 1; ACTIONABLE_BLOCKER: compaction-required: automation.md section "Close-out" ~1700 tok > hard limit 1600; FAILURE_CLASSIFICATION: implementation',
   );
   assert.equal(compactOutput('Error: child interrupted', { signal: 'SIGTERM' }), 'signal SIGTERM; Error: child interrupted');
-});
-
-test('canonical skill paths are the only automatic mirror trigger', () => {
-  assert.equal(canonicalSkillsChanged(['.agents/skills/update-docs/SKILL.md']), true);
-  assert.equal(canonicalSkillsChanged(['.claude/skills/update-docs/SKILL.md']), false);
-  assert.equal(canonicalSkillsChanged(['docs/context/automation.md']), false);
 });
 
 test('shared task identity preserves Git keywords and selects the next receipt/history version', () => {
@@ -624,7 +617,7 @@ test('CLI review directs source-changing closeout through the documentation gate
   }
 });
 
-test('closeout synchronizes canonical skills and publishes mirror changes as derived output', () => {
+test('closeout leaves canonical skill mirroring to the commit hook', () => {
   const root = mkdtempSync(join(tmpdir(), 'corp-task-close-skills-'));
   const manifestPath = '.agent-state/skills.json';
   const canonicalPath = '.agents/skills/example/SKILL.md';
@@ -636,17 +629,8 @@ test('closeout synchronizes canonical skills and publishes mirror changes as der
   writeFileSync(join(root, canonicalPath), 'canonical skill\n');
   writeFileSync(join(root, mirrorPath), 'stale mirror\n');
   writeFileSync(join(root, 'scripts/qa-gate.mjs'), "console.log('PASS — fixture QA');\n");
-  writeFileSync(join(root, 'scripts/sync-agent-skills.mjs'), `
-    import { cpSync, rmSync } from 'node:fs';
-    rmSync('.claude/skills', { recursive: true, force: true });
-    cpSync('.agents/skills', '.claude/skills', { recursive: true });
-    console.log('PASS — skill mirror synchronized');
-  `);
-  writeFileSync(join(root, 'scripts/validate-agent-config.mjs'), `
-    import { readFileSync } from 'node:fs';
-    if (readFileSync('${canonicalPath}', 'utf8') !== readFileSync('${mirrorPath}', 'utf8')) process.exit(1);
-    console.log('PASS — agent config');
-  `);
+  writeFileSync(join(root, 'scripts/sync-agent-skills.mjs'), "import { writeFileSync } from 'node:fs'; writeFileSync('task-close-ran-skill-sync', 'unexpected\\n');\n");
+  writeFileSync(join(root, 'scripts/validate-agent-config.mjs'), "console.log('PASS — fixture agent config');\n");
   const git = args => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
   assert.equal(git(['init', '-q']).status, 0);
   assert.equal(git(['config', 'user.name', 'QA Fixture']).status, 0);
@@ -666,10 +650,11 @@ test('closeout synchronizes canonical skills and publishes mirror changes as der
     assert.equal(result.status, 0, result.stderr);
     const manifest = JSON.parse(readFileSync(join(root, manifestPath), 'utf8'));
     const receipt = JSON.parse(readFileSync(join(root, '.agent-state/skills.receipt.json'), 'utf8'));
-    assert.equal(readFileSync(join(root, mirrorPath), 'utf8'), 'canonical skill\n');
-    assert.deepEqual(manifest.derived_paths, [mirrorPath]);
-    assert.ok(manifest.publish_paths.includes(mirrorPath));
-    assert.ok(receipt.steps.findIndex(step => step.name === 'agent skill mirror') < receipt.steps.findIndex(step => step.name === 'agent config'));
+    assert.equal(readFileSync(join(root, mirrorPath), 'utf8'), 'stale mirror\n');
+    assert.deepEqual(manifest.derived_paths, []);
+    assert.equal(manifest.publish_paths.includes(mirrorPath), false);
+    assert.equal(receipt.steps.some(step => step.name === 'agent skill mirror'), false);
+    assert.equal(existsSync(join(root, 'task-close-ran-skill-sync')), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

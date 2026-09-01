@@ -208,25 +208,6 @@ function mapHashes() {
   }));
 }
 
-function skillMirrorHashes() {
-  const root = resolve(ROOT, '.claude/skills');
-  if (!existsSync(root)) return {};
-  const hashes = {};
-  const visit = directory => {
-    for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      const path = resolve(directory, entry.name);
-      if (entry.isDirectory()) visit(path);
-      else if (entry.isFile()) hashes[displayPath(path)] = fileHash(path);
-    }
-  };
-  visit(root);
-  return hashes;
-}
-
-export function canonicalSkillsChanged(paths) {
-  return paths.some(path => path.startsWith('.agents/skills/'));
-}
-
 function pathChanges(before, after) {
   return [...new Set([...Object.keys(before), ...Object.keys(after)])].filter(path => before[path] !== after[path]).sort();
 }
@@ -881,7 +862,6 @@ function verifyV1(manifest, manifestFile) {
     steps.push(runStep('game KB', ['scripts/validate-docs.mjs', '--quiet']));
   if (manifest.changed_paths.some(path => path.startsWith('site/')) || manifest.documentation.documented_paths.some(path => path.startsWith('site/docs/')))
     steps.push(runStep('site KB', ['-e', "process.chdir('site'); require('node:child_process').execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'docs:check'], { stdio: 'inherit' })"]));
-  if (canonicalSkillsChanged(manifest.changed_paths)) steps.push(runStep('agent skill mirror', ['scripts/sync-agent-skills.mjs']));
   if (manifest.changed_paths.some(agentConfigPath)) steps.push(runStep('agent config', ['scripts/validate-agent-config.mjs']));
   finishVerification(manifest, manifestFile, steps, manifest.changed_paths);
 }
@@ -983,12 +963,6 @@ function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = nu
         summary: `exit 1; generated out-of-scope maps: ${unexpected.join(', ')}`,
       });
     }
-  }
-  if (canonicalSkillsChanged(manifest.changed_paths)) {
-    const before = skillMirrorHashes();
-    const mirrorStep = runStep('agent skill mirror', ['scripts/sync-agent-skills.mjs']);
-    steps.push(mirrorStep);
-    if (mirrorStep.status === 0) derived.push(...pathChanges(before, skillMirrorHashes()));
   }
   derived = [...new Set(derived)].sort();
   manifest.derived_paths = derived;
