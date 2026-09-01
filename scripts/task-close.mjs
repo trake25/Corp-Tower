@@ -596,9 +596,9 @@ function diagnosticLine(output) {
   return lines.find(line => /(?:^|\s)(?:at\s+)?[^\s()]+:\d+(?::\d+)?(?:\s|$)/.test(line)) || lines.at(-1) || '';
 }
 
-function compactOutput(output, { status = null, signal = null } = {}) {
+export function compactOutput(output, { status = null, signal = null } = {}) {
   const prefix = signal ? `signal ${signal}` : `exit ${status ?? 'unknown'}`;
-  const line = diagnosticLine(output);
+  const line = status === 0 && !signal ? output.split(/\r?\n/).map(value => value.trim()).find(value => /^PASS — \S/.test(value)) || '' : diagnosticLine(output);
   return line ? `${prefix}; ${line}` : status === 0 ? prefix : `${prefix}; process exited without output`;
 }
 

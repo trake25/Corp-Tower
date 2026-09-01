@@ -19,6 +19,7 @@ import {
   applyCoverageDecision,
   applyDocumentationDecision,
   closeObservabilityUnsafe,
+  compactOutput,
   createManifest,
   deriveTaskComplexity,
   fallbackRequiresRetrievalProof,
@@ -41,6 +42,18 @@ const RECEIPT_IDENTITY = Object.freeze({
   slug: 'public-qa-receipts',
   version: '0.01',
   label: 'Public QA Receipts v0.01',
+});
+
+test('successful compact summaries ignore diagnostics and prefer an explicit PASS line', () => {
+  const misleadingSuccess = [
+    '# Subtest: focused tooling failure is bounded and retains complete child output',
+    'ok 1 - focused tooling failure is bounded and retains complete child output',
+  ].join('\n');
+
+  assert.equal(compactOutput(misleadingSuccess, { status: 0 }), 'exit 0');
+  assert.equal(compactOutput(`${misleadingSuccess}\nPASS — tooling targeted tests (4)`, { status: 0 }), 'exit 0; PASS — tooling targeted tests (4)');
+  assert.equal(compactOutput('FAIL — child assertion failed', { status: 1 }), 'exit 1; FAIL — child assertion failed');
+  assert.equal(compactOutput('Error: child interrupted', { signal: 'SIGTERM' }), 'signal SIGTERM; Error: child interrupted');
 });
 
 test('shared task identity preserves Git keywords and selects the next receipt/history version', () => {

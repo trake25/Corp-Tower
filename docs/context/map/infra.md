@@ -1110,6 +1110,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/task-close.mjs:498 | intakeForManifest · fn | |
 | scripts/task-close.mjs:537 | reviewForManifest · fn | |
 | scripts/task-close.mjs:567 | manifestPath · fn | |
+| scripts/task-close.mjs:599 | compactOutput · fn | |
 | scripts/task-close.mjs:631 | validateDocumentationDecision · fn | |
 | scripts/task-close.mjs:668 | retrievalFallbackMaintenanceItems · fn | |
 
@@ -1161,12 +1162,12 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/qa-gate.test.mjs:1 | @file · file | permanent regression coverage for qa gate |
 
-### scripts/tests/task-close.test.mjs — 623 ln
+### scripts/tests/task-close.test.mjs — 636 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/task-close.test.mjs:1 | @file · file | permanent regression coverage for task close |
-| scripts/tests/task-close.test.mjs:35 | SOURCE · const | |
+| scripts/tests/task-close.test.mjs:36 | SOURCE · const | |
 
 ### scripts/tests/validate-docs.test.mjs — 45 ln
 
@@ -1217,4 +1218,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-123 files · 470 stable anchors.
+123 files · 471 stable anchors.
