@@ -96,6 +96,7 @@ export const ROUTE_RULES = [
   { pattern: /^scripts\/fixtures\/context-retrieval\.json$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk', doc_anchors: ['report/benchmarks/', 'context-retrieval.json'] },
   { pattern: /^scripts\/(context|task-close|docs-scope)\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/(?:agent-observability\.mjs|lib\/agent-observability\/)/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/(?:lib\/tutorial-defaults-parity\.mjs|tests\/tutorial-defaults-parity\.test\.mjs)$/, skill: 'qa-engineer', docs: ['testing.md', 'ui-tutorial.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/lib\/context-routing\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/lib\/context-query\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/(validate-docs|build-file-map|sync-agent-skills|validate-agent-config)\.mjs$/, skill: 'docs-steward', docs: [], map: 'infra.md', read: 'hunk' },

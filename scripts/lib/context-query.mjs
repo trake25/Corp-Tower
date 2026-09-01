@@ -543,6 +543,7 @@ export function scopeContext(paths, options = {}) {
 export function scopeTextLines(result) {
   const qaSummary = result.qa.runtime_applies ? 'runtime QA applies'
     : result.qa.tooling_tests.length ? 'tooling QA applies'
+      : result.qa.contract_tests.length ? 'contract QA applies'
       : 'no runtime QA applies';
   const output = [`paths: ${result.task_paths.join(', ')}`,
     `docs: ${result.docs.length ? result.docs.join(', ') : 'none'}`,

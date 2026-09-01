@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const REPOSITORY_ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)));
+const TUTORIAL_LEVEL = 1;
 
 export const TUTORIAL_DEFAULT_KEYS = Object.freeze([
   'level',
@@ -50,12 +51,11 @@ export function parseTutorialDefaults(source) {
 
 export function authoritativeTutorialDefaults({ GameConfig, createEngine }) {
   const engine = createEngine();
-  const openingLevel = engine.getConfiguredStartLevel();
-  const targetHeight = engine.getTargetHeightForLevel(openingLevel);
+  const targetHeight = engine.getTargetHeightForLevel(TUTORIAL_LEVEL);
   const playerCount = Math.max(1, Number(GameConfig.playersPerRoom) || 1);
   engine.room = {
-    level: openingLevel,
-    impactLevel: openingLevel,
+    level: TUTORIAL_LEVEL,
+    impactLevel: TUTORIAL_LEVEL,
     targetHeight,
     players: Array.from({ length: playerCount }, (_, index) => ({ id: `tutorial-parity-${index}` })),
   };
@@ -65,11 +65,11 @@ export function authoritativeTutorialDefaults({ GameConfig, createEngine }) {
   const levelOneSlots = engine.getBlocksPerPlayer();
   engine.room.level = 3;
   const levelThreeSlots = engine.getBlocksPerPlayer();
-  engine.room.level = openingLevel;
+  engine.room.level = TUTORIAL_LEVEL;
   const firstImpactLevel = engine.getNextImpactLevel();
 
   return {
-    level: openingLevel,
+    level: TUTORIAL_LEVEL,
     target_height: targetHeight,
     grid_width: Math.max(1, Number(GameConfig.towerGridWidth) || 1),
     site_width: siteWidth,

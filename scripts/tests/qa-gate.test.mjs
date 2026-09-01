@@ -4,7 +4,14 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
-import { AUTOMATION_PROTOCOL_TESTS, classifyQaFailure, selectToolingQa } from '../qa-gate.mjs';
+import {
+  AUTOMATION_PROTOCOL_TESTS,
+  TUTORIAL_PARITY_TEST,
+  classifyQaFailure,
+  selectContractQa,
+  selectQa,
+  selectToolingQa,
+} from '../qa-gate.mjs';
 
 const QA_GATE = resolve('scripts/qa-gate.mjs');
 
@@ -72,23 +79,27 @@ test('public receipt helpers select their focused automation contracts', () => {
 });
 
 test('both sides of the tutorial defaults contract select the parity test', () => {
-  const parity = 'scripts/tests/tutorial-defaults-parity.test.mjs';
-
-  assert.ok(selectToolingQa(['src/Server/app/Game_Config.js']).tests.includes(parity));
-  assert.ok(selectToolingQa([
+  const paths = [
+    'src/Server/app/Game_Config.js',
     'src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd',
-  ]).tests.includes(parity));
-  assert.deepEqual(selectToolingQa(['scripts/lib/tutorial-defaults-parity.mjs']).tests, [parity]);
+    'scripts/lib/tutorial-defaults-parity.mjs',
+    TUTORIAL_PARITY_TEST,
+  ];
+
+  for (const path of paths) {
+    assert.deepEqual(selectContractQa([path]).tests, [TUTORIAL_PARITY_TEST]);
+    assert.deepEqual(selectToolingQa([path]).tests, []);
+    assert.deepEqual(selectQa([path]).contract_tests, [TUTORIAL_PARITY_TEST]);
+  }
 });
 
 test('unrelated product paths do not select tutorial defaults parity', () => {
-  const parity = 'scripts/tests/tutorial-defaults-parity.test.mjs';
-  const tooling = selectToolingQa([
+  const contracts = selectContractQa([
     'src/Server/app/engine/Scoring.js',
     'src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd',
   ]);
 
-  assert.equal(tooling.tests.includes(parity), false);
+  assert.deepEqual(contracts.tests, []);
 });
 
 test('focused tooling success suppresses child TAP', () => {

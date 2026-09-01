@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { contextBundle, documentSection, mapSymbols, routeContext, scopeContext, searchContext } from '../lib/context-query.mjs';
 import { documentationNeedlesForPath, isNormalContextExcludedPath } from '../lib/context-routing.mjs';
-import { AUTOMATION_PROTOCOL_TESTS } from '../qa-gate.mjs';
+import { AUTOMATION_PROTOCOL_TESTS, TUTORIAL_PARITY_TEST } from '../qa-gate.mjs';
 
 const ROOT = resolve('.');
 
@@ -191,6 +191,28 @@ test('automation scope selects the protocol suite and retrieval benchmark', () =
   ]);
   assert.deepEqual(protocol.command.argv, ['node', '--test', ...AUTOMATION_PROTOCOL_TESTS]);
   assert.ok(result.tools.some(tool => tool.name === 'retrieval benchmark' && tool.command.argv.at(-1) === '--check'));
+});
+
+test('tutorial parity selection does not create automation protocol scope', () => {
+  const paths = [
+    'src/Server/app/Game_Config.js',
+    'src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd',
+    'scripts/lib/tutorial-defaults-parity.mjs',
+    TUTORIAL_PARITY_TEST,
+  ];
+
+  for (const path of paths) {
+    const result = scopeContext([path]);
+    assert.deepEqual(result.qa.contract_tests, [TUTORIAL_PARITY_TEST]);
+    assert.deepEqual(result.qa.tooling_tests, []);
+    assert.equal(result.tools.some(tool => tool.name === 'automation protocol'), false);
+    assert.equal(result.tools.some(tool => tool.name === 'retrieval benchmark'), false);
+    assert.ok(result.tools.find(tool => tool.name === 'QA').command.argv.includes(path));
+    if (path.startsWith('scripts/')) {
+      assert.ok(result.docs.includes('docs/context/testing.md'));
+      assert.ok(result.docs.includes('docs/context/ui-tutorial.md'));
+    }
+  }
 });
 
 test('section and bundle enforce bounded source material', () => {

@@ -12,9 +12,19 @@ import {
 const require = createRequire(import.meta.url);
 const GameConfig = require(resolve('src/Server/app/Game_Config.js'));
 
-test('tutorial defaults match current authoritative opening-game behavior', () => {
+test('tutorial defaults match current authoritative Level 1 behavior', () => {
   const result = tutorialDefaultsParity();
   assert.equal(result.mismatches.length, 0, formatTutorialDefaultMismatches(result.mismatches));
+});
+
+test('debugStartLevel does not alter canonical tutorial defaults', () => {
+  const baseline = tutorialDefaultsParity();
+  const changed = tutorialDefaultsParity({
+    GameConfig: { ...GameConfig, debugStartLevel: Number(GameConfig.debugStartLevel) + 7 },
+  });
+
+  assert.deepEqual(changed.authoritative, baseline.authoritative);
+  assert.deepEqual(changed.mismatches, []);
 });
 
 test('a server-side tuning fixture fails without changing a frozen expected number', () => {
@@ -43,7 +53,7 @@ test('derived fields are obtained through authoritative engine behavior', () => 
   const room = {};
   const engine = {
     room,
-    getConfiguredStartLevel: () => 4,
+    getConfiguredStartLevel: () => { throw new Error('debug start level is not tutorial authority'); },
     getTargetHeightForLevel: level => (calls.push(['target', level]), 44),
     getPlaceableColumnRange: () => (calls.push(['range', engine.room.targetHeight]), { min: 1, max: 6 }),
     getSiteWidthForHeight: height => (calls.push(['site', height]), 6),
@@ -54,6 +64,7 @@ test('derived fields are obtained through authoritative engine behavior', () => 
   };
   const authority = authoritativeTutorialDefaults({
     GameConfig: {
+      debugStartLevel: 9,
       playersPerRoom: 3,
       towerGridWidth: 8,
       placementCooldown: 5,
@@ -64,18 +75,19 @@ test('derived fields are obtained through authoritative engine behavior', () => 
     createEngine: () => engine,
   });
 
+  assert.equal(authority.level, 1);
   assert.equal(authority.target_height, 44);
   assert.equal(authority.site_width, 6);
   assert.deepEqual([authority.placeable_min, authority.placeable_max], [1, 6]);
   assert.deepEqual([authority.hand_slots_level_1, authority.hand_slots_level_3], [2, 5]);
   assert.equal(authority.impact_requirement_score, 777);
   assert.deepEqual(calls, [
-    ['target', 4],
+    ['target', 1],
     ['range', 44],
     ['site', 44],
     ['slots', 1],
     ['slots', 3],
-    ['next-impact', 4],
+    ['next-impact', 1],
     ['impact-requirement', 7],
   ]);
 });

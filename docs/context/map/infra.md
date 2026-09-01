@@ -950,7 +950,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/usage.mjs:110 | aggregateUsage · fn | |
 | scripts/lib/agent-observability/usage.mjs:149 | assessRuntimeCapabilities · fn | |
 
-### scripts/lib/context-query.mjs — 606 ln
+### scripts/lib/context-query.mjs — 607 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -977,9 +977,9 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-query.mjs:497 | searchTextLines · fn | |
 | scripts/lib/context-query.mjs:509 | scopeContext · fn | |
 | scripts/lib/context-query.mjs:543 | scopeTextLines · fn | |
-| scripts/lib/context-query.mjs:568 | contextBundle · fn | |
+| scripts/lib/context-query.mjs:569 | contextBundle · fn | |
 
-### scripts/lib/context-routing.mjs — 233 ln
+### scripts/lib/context-routing.mjs — 234 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -987,18 +987,18 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-routing.mjs:4 | CLIENT · const | |
 | scripts/lib/context-routing.mjs:33 | MAP_AREAS · const | |
 | scripts/lib/context-routing.mjs:65 | ROUTE_RULES · const | |
-| scripts/lib/context-routing.mjs:113 | AREA_ALIASES · const | |
-| scripts/lib/context-routing.mjs:129 | isNormalContextExcludedPath · fn | |
-| scripts/lib/context-routing.mjs:172 | routeSourcePath · fn | |
-| scripts/lib/context-routing.mjs:180 | documentationNeedlesForPath · fn | |
-| scripts/lib/context-routing.mjs:191 | mapOwnerForPath · fn | |
-| scripts/lib/context-routing.mjs:195 | IGNORE_DIR · const | |
-| scripts/lib/context-routing.mjs:196 | IGNORE_PATH · const | |
-| scripts/lib/context-routing.mjs:197 | COVERAGE_EXEMPT · const | |
-| scripts/lib/context-routing.mjs:198 | norm · const | |
-| scripts/lib/context-routing.mjs:200 | walk · fn | |
-| scripts/lib/context-routing.mjs:211 | firstPartyFiles · fn | |
-| scripts/lib/context-routing.mjs:232 | isExempt · const | |
+| scripts/lib/context-routing.mjs:114 | AREA_ALIASES · const | |
+| scripts/lib/context-routing.mjs:130 | isNormalContextExcludedPath · fn | |
+| scripts/lib/context-routing.mjs:173 | routeSourcePath · fn | |
+| scripts/lib/context-routing.mjs:181 | documentationNeedlesForPath · fn | |
+| scripts/lib/context-routing.mjs:192 | mapOwnerForPath · fn | |
+| scripts/lib/context-routing.mjs:196 | IGNORE_DIR · const | |
+| scripts/lib/context-routing.mjs:197 | IGNORE_PATH · const | |
+| scripts/lib/context-routing.mjs:198 | COVERAGE_EXEMPT · const | |
+| scripts/lib/context-routing.mjs:199 | norm · const | |
+| scripts/lib/context-routing.mjs:201 | walk · fn | |
+| scripts/lib/context-routing.mjs:212 | firstPartyFiles · fn | |
+| scripts/lib/context-routing.mjs:233 | isExempt · const | |
 
 ### scripts/lib/docs-capacity.mjs — 80 ln
 
@@ -1055,12 +1055,12 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/lib/tutorial-defaults-parity.mjs:1 | @file · file | tutorial defaults parity repository workflow |
 | scripts/lib/tutorial-defaults-parity.mjs:6 | require · const | |
-| scripts/lib/tutorial-defaults-parity.mjs:51 | authoritativeTutorialDefaults · fn | |
+| scripts/lib/tutorial-defaults-parity.mjs:52 | authoritativeTutorialDefaults · fn | |
 | scripts/lib/tutorial-defaults-parity.mjs:89 | compareTutorialDefaults · fn | |
 | scripts/lib/tutorial-defaults-parity.mjs:97 | formatTutorialDefaultMismatches · fn | |
 | scripts/lib/tutorial-defaults-parity.mjs:103 | tutorialDefaultsParity · fn | |
 
-### scripts/qa-gate.mjs — 277 ln
+### scripts/qa-gate.mjs — 296 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1068,11 +1068,13 @@ bounded source read. Local implementation detail stays in source.
 | scripts/qa-gate.mjs:9 | ROOT · const | |
 | scripts/qa-gate.mjs:10 | CLIENT · const | |
 | scripts/qa-gate.mjs:11 | SERVER · const | |
-| scripts/qa-gate.mjs:49 | AUTOMATION_PROTOCOL_TESTS · const | |
-| scripts/qa-gate.mjs:81 | selectToolingQa · fn | |
-| scripts/qa-gate.mjs:102 | selectQa · fn | |
-| scripts/qa-gate.mjs:159 | classifyQaFailure · fn | |
-| scripts/qa-gate.mjs:169 | fail · fn | |
+| scripts/qa-gate.mjs:48 | AUTOMATION_PROTOCOL_TESTS · const | |
+| scripts/qa-gate.mjs:68 | TUTORIAL_PARITY_TEST · const | |
+| scripts/qa-gate.mjs:85 | selectToolingQa · fn | |
+| scripts/qa-gate.mjs:106 | selectContractQa · fn | |
+| scripts/qa-gate.mjs:113 | selectQa · fn | |
+| scripts/qa-gate.mjs:172 | classifyQaFailure · fn | |
+| scripts/qa-gate.mjs:182 | fail · fn | |
 
 ### scripts/strip-comments.mjs — 296 ln
 
@@ -1150,7 +1152,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/codex-rollout-observability.test.mjs:1 | @file · file | permanent regression coverage for codex rollout observability |
 | scripts/tests/codex-rollout-observability.test.mjs:17 | usage · fn | |
 
-### scripts/tests/context-query.test.mjs — 229 ln
+### scripts/tests/context-query.test.mjs — 251 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1170,7 +1172,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/git-sync-commit-push.test.mjs:1 | @file · file | permanent regression coverage for git sync commit push |
 
-### scripts/tests/qa-gate.test.mjs — 138 ln
+### scripts/tests/qa-gate.test.mjs — 149 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1183,7 +1185,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/task-close.test.mjs:1 | @file · file | permanent regression coverage for task close |
 | scripts/tests/task-close.test.mjs:38 | SOURCE · const | |
 
-### scripts/tests/tutorial-defaults-parity.test.mjs — 90 ln
+### scripts/tests/tutorial-defaults-parity.test.mjs — 102 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1238,4 +1240,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-125 files · 479 stable anchors.
+125 files · 481 stable anchors.

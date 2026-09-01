@@ -41,7 +41,6 @@ const automationTests = Object.freeze({
   taskClose: 'scripts/tests/task-close.test.mjs',
   gitSync: 'scripts/tests/git-sync-commit-push.test.mjs',
   qaGate: 'scripts/tests/qa-gate.test.mjs',
-  tutorialParity: 'scripts/tests/tutorial-defaults-parity.test.mjs',
   validateDocs: 'scripts/tests/validate-docs.test.mjs',
   observability: 'scripts/tests/agent-observability.test.mjs',
 });
@@ -55,9 +54,6 @@ const automationRules = [
   [/^scripts\/git-sync-commit-push\.mjs$/, [automationTests.gitSync]],
   [/^scripts\/agent-observability\.mjs$/, [automationTests.observability]],
   [/^scripts\/qa-gate\.mjs$/, [automationTests.qaGate, automationTests.context, automationTests.taskClose]],
-  [/^scripts\/lib\/tutorial-defaults-parity\.mjs$/, [automationTests.tutorialParity]],
-  [/^src\/Server\/app\/Game_Config\.js$/, [automationTests.tutorialParity]],
-  [/^src\/Client\/App\/corp-tower\/Cor\/Scripts\/GameUi\/Tutorial\/TutorialLessons\.gd$/, [automationTests.tutorialParity]],
   [/^scripts\/validate-docs\.mjs$/, [automationTests.validateDocs]],
   [/^scripts\/lib\/context-query\.mjs$/, [automationTests.context, automationTests.taskClose]],
   [/^scripts\/lib\/context-routing\.mjs$/, [automationTests.context]],
@@ -67,6 +63,14 @@ const automationRules = [
   [/^scripts\/lib\/docs-capacity\.mjs$/, [automationTests.validateDocs]],
   [/^scripts\/lib\/maintenance-handoff\.mjs$/, [automationTests.taskClose, automationTests.qaGate, automationTests.validateDocs, automationTests.observability]],
   [/^report\/benchmarks\//, [automationTests.context]],
+];
+
+export const TUTORIAL_PARITY_TEST = 'scripts/tests/tutorial-defaults-parity.test.mjs';
+const contractRules = [
+  [/^src\/Server\/app\/Game_Config\.js$/, [TUTORIAL_PARITY_TEST]],
+  [/^src\/Client\/App\/corp-tower\/Cor\/Scripts\/GameUi\/Tutorial\/TutorialLessons\.gd$/, [TUTORIAL_PARITY_TEST]],
+  [/^scripts\/lib\/tutorial-defaults-parity\.mjs$/, [TUTORIAL_PARITY_TEST]],
+  [/^scripts\/tests\/tutorial-defaults-parity\.test\.mjs$/, [TUTORIAL_PARITY_TEST]],
 ];
 
 function addMatches(path, rules, destination) {
@@ -99,6 +103,13 @@ export function selectToolingQa(changedPaths) {
   return { applies, tests: [...tests].sort() };
 }
 
+export function selectContractQa(changedPaths) {
+  const changed = changedPaths.filter(Boolean).map(path => path.replace(/^\.\//, ''));
+  const tests = new Set();
+  for (const path of changed) addMatches(path, contractRules, tests);
+  return { applies: Boolean(tests.size), tests: [...tests].sort() };
+}
+
 export function selectQa(changedPaths) {
   const changed = changedPaths.filter(Boolean).map(path => path.replace(/^\.\//, ''));
   const serverTests = new Set();
@@ -108,6 +119,7 @@ export function selectQa(changedPaths) {
   let fullClient = false;
   let clientRuntime = false;
   const tooling = selectToolingQa(changed);
+  const contracts = selectContractQa(changed);
 
   for (const path of changed) {
     if (path.startsWith(`${SERVER}/tests/`) && path.endsWith('.test.js')) {
@@ -135,8 +147,9 @@ export function selectQa(changedPaths) {
     client_tests: [...clientTests].sort(),
     full_client: fullClient,
     tooling_tests: tooling.tests,
+    contract_tests: contracts.tests,
     runtime_applies: runtimeApplies,
-    applies: runtimeApplies || tooling.applies,
+    applies: runtimeApplies || tooling.applies || contracts.applies,
   };
 }
 
@@ -229,11 +242,17 @@ function main() {
     if (argv.includes('--json')) console.log(JSON.stringify(plan, null, 2));
     else if (plan.runtime_applies) console.log('PLAN — runtime QA applies');
     else if (plan.tooling_tests.length) console.log('PLAN — tooling QA applies');
+    else if (plan.contract_tests.length) console.log('PLAN — contract QA applies');
     else console.log('PLAN — no runtime QA applies');
     return;
   }
 
   const completed = [];
+  if (plan.contract_tests.length) {
+    for (const contractTest of plan.contract_tests)
+      run(`contract test ${contractTest}`, process.execPath, ['--test', contractTest], ROOT, process.env, options);
+    completed.push(`contract targeted tests (${plan.contract_tests.length})`);
+  }
   if (plan.server_sources.length) {
     for (const source of plan.server_sources) run(`server syntax ${source}`, process.execPath, ['--check', source], SERVER, process.env, options);
     completed.push(`server syntax (${plan.server_sources.length})`);
@@ -263,7 +282,7 @@ function main() {
     completed.push(`tooling targeted tests (${plan.tooling_tests.length})`);
   }
 
-  if (!completed.length) console.log('PASS — no runtime or tooling QA applies to the supplied paths');
+  if (!completed.length) console.log('PASS — no runtime, tooling, or contract QA applies to the supplied paths');
   else console.log(`PASS — ${completed.join('; ')}`);
 }
 

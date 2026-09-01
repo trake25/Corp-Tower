@@ -24,7 +24,9 @@ Screen's How to Play button and a debug row reachable from a live match. The
 latter disconnects first, and Screen Manager guards `_on_room_closed()` while
 `tutorial_active` so a race with a server-sent close cannot kill the run.
 
-- `TutorialLessons.DEFAULTS` is the hand-maintained opening-game copy. One
+- `TutorialLessons.DEFAULTS` is the hand-maintained canonical Level-1 copy;
+  `debugStartLevel` changes where debug play begins but never retargets the
+  tutorial contract. One
   cross-domain Node parity test maps only live server mirrors, calling server
   behavior for derived target, site, inventory, and first-Impact requirements;
   it runs through local selection and both primary release gates. Authored
