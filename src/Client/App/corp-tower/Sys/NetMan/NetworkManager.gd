@@ -20,6 +20,14 @@ var last_game_state_msec := -1
 var latest_match_state := ""
 var last_latency_rtt_ms := -1
 var match_active := false
+var room_mode := "public"
+var private_lobby_active := false
+var private_lobby_is_host := false
+var private_lobby_reconnect_deadline_msec := -1
+var pending_entry_mode := "public"
+var pending_private_display_name := ""
+var pending_private_server_id := ""
+var pending_private_password := ""
 
 var player_id := ""
 var reconnect_token := ""
@@ -43,6 +51,7 @@ const GAME_STATE_STALE_TIMEOUT_MS := 8000
 const RECOVERY_TIMEOUT_MIN_MS := 2500
 const RECOVERY_TIMEOUT_MAX_MS := 8000
 const RECOVERY_TOTAL_TIMEOUT_MS := 10000
+const PRIVATE_LOBBY_RECONNECT_WINDOW_MS := 20000
 const LATENCY_PROBE_INTERVAL_SECONDS := 1.0
 const LATENCY_PROBE_TIMEOUT_MS := 5000
 const SERVER_URL := EndpointConfig.PRIMARY
@@ -60,8 +69,12 @@ signal latency_rtt_updated(rtt_ms: int)
 signal recovery_started
 signal recovery_recovered
 signal recovery_unavailable(data)
+signal private_join_failed(data)
 
-func connect_server(is_auto_reconnect := false):
+func connect_server(is_auto_reconnect := false, preserve_entry := false):
+	if not is_auto_reconnect and not preserve_entry:
+		_clear_pending_private_entry()
+
 	if is_auto_reconnect:
 		status_changed.emit("Reconnecting...")
 	else:
@@ -101,6 +114,7 @@ func disconnect_server():
 	is_connecting = false
 	auto_reconnect_enabled = false
 	auto_reconnect_delay_remaining = -1.0
+	_clear_private_lobby_tracking()
 	reset_match_tracking()
 	reset_latency_probe()
 	if ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
@@ -111,6 +125,62 @@ func toggle_connection():
 		disconnect_server()
 	else:
 		connect_server()
+
+func create_private_server(display_name: String, password: String) -> void:
+	_set_private_entry("private_create", display_name, "", password)
+	_connect_with_private_entry()
+
+func join_private_server(display_name: String, server_id: String, password: String) -> void:
+	_set_private_entry("private_join", display_name, server_id, password)
+	_connect_with_private_entry()
+
+func _connect_with_private_entry() -> void:
+	if is_conn_estab or is_connecting:
+		disconnect_server()
+
+	connect_server(false, true)
+
+func _set_private_entry(mode: String, display_name: String, server_id: String, password: String) -> void:
+	pending_entry_mode = mode
+	pending_private_display_name = display_name.strip_edges()
+	pending_private_server_id = server_id.strip_edges().to_upper()
+	pending_private_password = password
+
+func _clear_pending_private_entry() -> void:
+	pending_entry_mode = "public"
+	pending_private_display_name = ""
+	pending_private_server_id = ""
+	pending_private_password = ""
+
+func _clear_private_lobby_tracking() -> void:
+	private_lobby_active = false
+	private_lobby_is_host = false
+	private_lobby_reconnect_deadline_msec = -1
+
+func _update_private_lobby_tracking(data) -> void:
+	room_mode = str(data.get("roomMode", room_mode))
+	private_lobby_active = room_mode == "private" and not bool(data.get("matchStarted", false))
+
+	if not private_lobby_active:
+		private_lobby_is_host = false
+		private_lobby_reconnect_deadline_msec = -1
+		return
+
+	var private_lobby: Dictionary = data.get("privateLobby", {})
+	private_lobby_is_host = str(private_lobby.get("hostPlayerId", "")) == player_id
+	private_lobby_reconnect_deadline_msec = -1
+
+func is_private_lobby_active() -> bool:
+	return private_lobby_active
+
+func kick_private_player(target_player_id: String) -> void:
+	if not is_conn_estab or is_recovering():
+		return
+
+	ws.send_text(JSON.stringify({
+		"type": "kick_private_player",
+		"targetPlayerId": target_player_id
+	}))
 
 func place_block(block_index, column := -1, origin_y := -1):
 	if not is_conn_estab or is_recovering():
@@ -183,8 +253,14 @@ func send_reconnect_request():
 		"reconnectToken": reconnect_token,
 		"profileId": profile_id,
 		"accessToken": AuthManager.connection_access_token(),
-		"authProvider": AuthManager.connection_auth_provider()
+		"authProvider": AuthManager.connection_auth_provider(),
+		"entryMode": pending_entry_mode
 	}
+
+	if pending_entry_mode != "public":
+		data["privateDisplayName"] = pending_private_display_name
+		data["privateServerId"] = pending_private_server_id
+		data["privatePassword"] = pending_private_password
 
 	ws.send_text(JSON.stringify(data))
 
@@ -220,6 +296,23 @@ func schedule_auto_reconnect():
 		"Reconnecting " + str(auto_reconnect_attempts) + "/" + str(AUTO_RECONNECT_MAX_ATTEMPTS)
 	)
 
+func schedule_private_lobby_reconnect() -> void:
+	if manual_disconnect_requested or not private_lobby_active:
+		return
+
+	var now_msec := Time.get_ticks_msec()
+
+	if private_lobby_reconnect_deadline_msec < 0:
+		private_lobby_reconnect_deadline_msec = now_msec + PRIVATE_LOBBY_RECONNECT_WINDOW_MS
+
+	if now_msec >= private_lobby_reconnect_deadline_msec:
+		status_changed.emit("Waiting for private lobby state")
+	else:
+		status_changed.emit("Reconnecting private lobby")
+
+	auto_reconnect_attempts += 1
+	auto_reconnect_delay_remaining = AUTO_RECONNECT_DELAY_SECONDS
+
 func is_recovering() -> bool:
 	return recovery_state != "healthy"
 
@@ -229,6 +322,16 @@ func reset_match_tracking() -> void:
 	last_game_state_msec = -1
 	latest_match_state = ""
 	reset_recovery_state()
+
+func _clear_room_identity() -> void:
+	player_id = ""
+	reconnect_token = ""
+
+	if FileAccess.file_exists(PLAYER_ID_FILE):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(PLAYER_ID_FILE))
+
+	if FileAccess.file_exists(RECONNECT_TOKEN_FILE):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(RECONNECT_TOKEN_FILE))
 
 func reset_recovery_state() -> void:
 	recovery_state = "healthy"
@@ -440,16 +543,22 @@ func _process(delta: float) -> void:
 				save_reconnect_identity(data)
 				auto_reconnect_attempts = 0
 				match_active = bool(data.get("matchStarted", false))
+				_update_private_lobby_tracking(data)
+				_clear_pending_private_entry()
 				room_joined.emit(data)
 			"room_resumed":
 				save_reconnect_identity(data)
 				auto_reconnect_attempts = 0
 				match_active = bool(data.get("matchStarted", false))
+				_update_private_lobby_tracking(data)
+				_clear_pending_private_entry()
 				room_joined.emit(data)
 			"match_started":
 				match_active = true
+				_clear_private_lobby_tracking()
 				match_started.emit(data)
 			"lobby_update":
+				_update_private_lobby_tracking(data)
 				lobby_updated.emit(data)
 			"game_state":
 				if accept_game_state(data):
@@ -461,16 +570,34 @@ func _process(delta: float) -> void:
 			"latency_pong":
 				accept_latency_pong(data)
 			"resume_unavailable":
-				match_active = false
-				mark_recovery_unavailable(
-					str(data.get("reason", "room_unavailable")),
-					true
-				)
+				if str(data.get("destination", "")) != "":
+					match_active = false
+					_clear_private_lobby_tracking()
+					_clear_room_identity()
+					room_closed.emit({
+						"type": "room_closed",
+						"reason": str(data.get("reason", "room_unavailable")),
+						"destination": str(data.get("destination", ""))
+					})
+				else:
+					match_active = false
+					mark_recovery_unavailable(
+						str(data.get("reason", "room_unavailable")),
+						true
+					)
 			"room_closed":
+				var destination_by_player: Dictionary = data.get("destinationByPlayerId", {})
+				if destination_by_player.has(player_id):
+					data["destination"] = str(destination_by_player[player_id])
 				reset_match_tracking()
+				_clear_private_lobby_tracking()
+				_clear_room_identity()
 				auto_reconnect_enabled = false
 				auto_reconnect_delay_remaining = -1.0
 				room_closed.emit(data)
+			"private_join_rejected":
+				_clear_pending_private_entry()
+				private_join_failed.emit(data)
 
 	var now_msec := Time.get_ticks_msec()
 	check_recovery_deadlines(now_msec)
@@ -509,9 +636,11 @@ func _process(delta: float) -> void:
 			elif connect_after_close:
 				connect_after_close = false
 				ws = WebSocketPeer.new()
-				connect_server()
+				connect_server(false, pending_entry_mode != "public")
 			elif was_connecting:
-				if match_active and recovery_state == "healthy" and not manual_disconnect_requested:
+				if private_lobby_active and not manual_disconnect_requested:
+					schedule_private_lobby_reconnect()
+				elif match_active and recovery_state == "healthy" and not manual_disconnect_requested:
 					begin_recovery(true)
 				elif (auto_reconnect_enabled or recovery_state == "reconnecting") and not manual_disconnect_requested:
 					schedule_auto_reconnect()

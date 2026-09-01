@@ -39,10 +39,16 @@ seats, may include debug bots, and start only when full and ready. Started rooms
 can resume during the reconnect TTL; an empty real-player room is destroyed
 rather than continued by bots.
 
+Private rooms contain three human seats and never enter open matchmaking or bot
+fill. Their invite, fixed host, readiness, connection phases, and deadlines
+persist. The host alone may kick; full connected readiness arms a separate start
+deadline, while transport loss unreaddies and reserves that seat through expiry.
+
 Only the Redis lease owner mutates a room, runs timers, recomputes stability, or
 persists state. Other pods may hydrate a frozen presentation replica and relay
 broadcasts, but gameplay actions are republished to the owner. Treating a remote
-snapshot as writable creates divergent towers.
+snapshot as writable creates divergent towers; an expired idle lease still
+routes to a healthy snapshot owner.
 
 Open-room seating runs under the matchmaking lock. Claiming pops the room id;
 when the claiming pod cannot own that room it must put the id back before trying

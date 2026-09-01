@@ -158,6 +158,16 @@ async function handleMessage(player, message) {
         return;
     }
 
+    if (data.type === "kick_private_player") {
+        if (!player.room) {
+            console.log("Player has no room");
+            return;
+        }
+
+        await lobbyManager.kickPrivatePlayer(player, data.targetPlayerId);
+        return;
+    }
+
     if (data.type === "place_block") {
         if (!player.room) {
             console.log("Player has no room");

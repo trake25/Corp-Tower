@@ -34,6 +34,10 @@ function stripRuntimePlayer(player) {
         connectionId: player.connectionId || null,
         profileId: player.profileId || null,
         displayName: player.displayName || null,
+        privateDisplayName: player.privateDisplayName || null,
+        privateLobbyConnectionPhase: player.privateLobbyConnectionPhase || "connected",
+        privateLobbyGraceAt: player.privateLobbyGraceAt || 0,
+        privateLobbyExpiresAt: player.privateLobbyExpiresAt || 0,
         isBot: Boolean(player.isBot),
         score: player.score || 0,
         levelScore: player.levelScore || 0,
@@ -61,6 +65,11 @@ function stripRuntimeRoom(room) {
         ownerPodId: room.ownerPodId || POD_ID,
         players: (room.players || []).map(stripRuntimePlayer),
         matchStarted: Boolean(room.matchStarted),
+        roomMode: room.roomMode || "public",
+        privateServerId: room.privateServerId || null,
+        privatePassword: room.privatePassword || "",
+        hostPlayerId: room.hostPlayerId || null,
+        privateStartDeadlineAt: room.privateStartDeadlineAt || 0,
         readyPlayerIds: Array.from(room.readyPlayerIds || []),
         lobbyDeadlineAt: room.lobbyDeadlineAt || 0,
         state: {
@@ -123,6 +132,7 @@ class RedisState {
         this.memorySessions = new Map();
         this.memoryRooms = new Map();
         this.memoryOpenRooms = new Set();
+        this.memoryPrivateInvites = new Map();
     }
 
     async connect() {
@@ -226,6 +236,18 @@ class RedisState {
         return POD_ID;
     }
 
+    async isPodActive(podId) {
+        if (!podId) {
+            return false;
+        }
+
+        if (!this.enabled) {
+            return String(podId) === String(POD_ID);
+        }
+
+        return Boolean(await this.client.exists(`pod:${podId}`));
+    }
+
     getReconnectTtlSeconds() {
         return RECONNECT_TTL_SECONDS;
     }
@@ -245,6 +267,73 @@ class RedisState {
         }
 
         return await this.client.incr("counter:room");
+    }
+
+    async claimPrivateInvite(inviteId, roomId) {
+        if (!inviteId || roomId === null || roomId === undefined) {
+            return false;
+        }
+
+        if (!this.enabled) {
+            if (this.memoryPrivateInvites.has(inviteId)) {
+                return false;
+            }
+
+            this.memoryPrivateInvites.set(inviteId, roomId);
+            return true;
+        }
+
+        const claimed = await this.client.set(
+            `privateInvite:${inviteId}`,
+            String(roomId),
+            { NX: true }
+        );
+
+        return Boolean(claimed);
+    }
+
+    async getPrivateInviteRoomId(inviteId) {
+        if (!inviteId) {
+            return null;
+        }
+
+        if (!this.enabled) {
+            return this.memoryPrivateInvites.get(inviteId) || null;
+        }
+
+        const roomId = await this.client.get(`privateInvite:${inviteId}`);
+        return roomId === null ? null : roomId;
+    }
+
+    async deletePrivateInvite(inviteId, expectedRoomId = null) {
+        if (!inviteId) {
+            return;
+        }
+
+        if (!this.enabled) {
+            if (
+                expectedRoomId === null ||
+                String(this.memoryPrivateInvites.get(inviteId)) === String(expectedRoomId)
+            ) {
+                this.memoryPrivateInvites.delete(inviteId);
+            }
+            return;
+        }
+
+        const key = `privateInvite:${inviteId}`;
+
+        if (expectedRoomId === null) {
+            await this.client.del(key);
+            return;
+        }
+
+        await this.client.eval(
+            "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+            {
+                keys: [key],
+                arguments: [String(expectedRoomId)]
+            }
+        );
     }
 
     async recordDemoOutcome(outcome) {
@@ -369,7 +458,7 @@ class RedisState {
         return true;
     }
 
-    async clearSessionRoom(sessionId) {
+    async clearSessionRoom(sessionId, resumeDestination = null, resumeReason = null) {
         const session = await this.getSession(sessionId);
 
         if (!session) {
@@ -379,7 +468,9 @@ class RedisState {
         await this.saveSession({
             ...session,
             connected: false,
-            roomId: null
+            roomId: null,
+            resumeDestination,
+            resumeReason
         });
     }
 
@@ -592,14 +683,25 @@ class RedisState {
         await this.subscriber.unsubscribe(`room:${roomId}:actions`);
     }
 
-    async publishPlayerAssignment(playerId, roomId) {
+    async publishPlayerAssignment(
+        playerId,
+        roomId,
+        connectionId = null,
+        privateJoinReason = null
+    ) {
         if (!this.enabled) {
             return;
         }
 
         await this.publisher.publish(
             "player:assignments",
-            JSON.stringify({ playerId, roomId, sourcePodId: POD_ID })
+            JSON.stringify({
+                playerId,
+                roomId,
+                connectionId,
+                privateJoinReason,
+                sourcePodId: POD_ID
+            })
         );
     }
 

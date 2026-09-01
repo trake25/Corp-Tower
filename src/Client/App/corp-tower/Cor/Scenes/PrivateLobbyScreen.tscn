@@ -1,0 +1,498 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/PrivateLobbyScreen.gd" id="1_private_lobby"]
+[ext_resource type="Texture2D" path="res://Cor/Art/4-Private-lobby/lobby-bg-@4x.png" id="2_background"]
+[ext_resource type="Texture2D" path="res://Cor/Art/4-Private-lobby/btn-circular-back.png" id="3_back"]
+[ext_resource type="Texture2D" path="res://Cor/Art/4-Private-lobby/ic-copy.png" id="4_copy"]
+[ext_resource type="Texture2D" path="res://Cor/Art/4-Private-lobby/ic-colored-crown.png" id="5_crown"]
+[ext_resource type="Texture2D" path="res://Cor/Art/4-Private-lobby/ic-colored-checkmark-grey.png" id="6_check_grey"]
+[ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="7_press_tint"]
+[ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Bold.ttf" id="8_poppins_bold"]
+[ext_resource type="Shader" path="res://Cor/Shaders/VerticalGradientFill.gdshader" id="9_gradient"]
+[ext_resource type="PackedScene" path="res://Cor/Scenes/ConfirmModal.tscn" id="10_confirm_modal"]
+[ext_resource type="Texture2D" path="res://Cor/Art/4-Private-lobby/ic-colored-xmark.png" id="11_xmark"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_Header"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_GlassCard"]
+bg_color = Color(0.878, 0.945, 0.988, 0.82)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.78)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0.06, 0.25, 0.34, 0.14)
+shadow_size = 10
+shadow_offset = Vector2(0, 5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Avatar"]
+bg_color = Color(1, 1, 1, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15, 0.47, 0.62, 0.32)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ReadyGreen"]
+shader = ExtResource("9_gradient")
+shader_parameter/color_top = Color(0.792, 1, 0.557, 1)
+shader_parameter/color_bottom = Color(0.404, 0.871, 0.106, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ReadyGreen"]
+bg_color = Color(0.404, 0.871, 0.106, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[node name="PrivateLobbyScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_private_lobby")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_background")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Root" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Header" type="PanelContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_Header")
+
+[node name="HeaderRow" type="HBoxContainer" parent="SafeArea/Root/Header"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BackButton" type="TextureButton" parent="SafeArea/Root/Header/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+script = ExtResource("7_press_tint")
+texture_normal = ExtResource("3_back")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="SafeArea/Root/Header/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_fonts/font = ExtResource("8_poppins_bold")
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Lobby"
+
+[node name="HeaderSpacer" type="Control" parent="SafeArea/Root/Header/HeaderRow"]
+custom_minimum_size = Vector2(46, 0)
+layout_mode = 2
+
+[node name="ServerInfoCard" type="PanelContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_GlassCard")
+
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/ServerInfoCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 18
+
+[node name="Rows" type="VBoxContainer" parent="SafeArea/Root/ServerInfoCard/CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_fonts/font = ExtResource("8_poppins_bold")
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+text = "Server info"
+
+[node name="Divider" type="ColorRect" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(0.078, 0.078, 0.094, 0.22)
+
+[node name="ServerIdRow" type="HBoxContainer" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Values" type="VBoxContainer" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow/Values"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.4, 0.46, 1)
+theme_override_font_sizes/font_size = 16
+text = "Server ID"
+
+[node name="ServerIdValue" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow/Values"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_fonts/font = ExtResource("8_poppins_bold")
+theme_override_font_sizes/font_size = 22
+text = "--------"
+
+[node name="CopyServerIdButton" type="TextureButton" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("7_press_tint")
+texture_normal = ExtResource("4_copy")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="PasswordLabel" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.4, 0.46, 1)
+theme_override_font_sizes/font_size = 16
+text = "Password"
+
+[node name="PasswordValue" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_fonts/font = ExtResource("8_poppins_bold")
+theme_override_font_sizes/font_size = 22
+text = "No password"
+
+[node name="WaitingRoomCard" type="PanelContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_GlassCard")
+
+[node name="CardMargin" type="MarginContainer" parent="SafeArea/Root/WaitingRoomCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="Rows" type="VBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_fonts/font = ExtResource("8_poppins_bold")
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+text = "Waiting room"
+
+[node name="Divider" type="ColorRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(0.078, 0.078, 0.094, 0.22)
+
+[node name="Seat0" type="HBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+theme_override_constants/separation = 9
+
+[node name="Seat0Avatar" type="PanelContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_Avatar")
+
+[node name="Seat0AvatarTexture" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0/Seat0Avatar"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Seat0AvatarInitial" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0/Seat0Avatar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.52, 0.67, 1)
+theme_override_fonts/font = ExtResource("8_poppins_bold")
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "P"
+
+[node name="Seat0Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+text = "Waiting for player..."
+
+[node name="Seat0Crown" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("5_crown")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Seat0Kick" type="TextureButton" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("7_press_tint")
+texture_normal = ExtResource("11_xmark")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Seat0Check" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("6_check_grey")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Seat1" type="HBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+theme_override_constants/separation = 9
+
+[node name="Seat1Avatar" type="PanelContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_Avatar")
+
+[node name="Seat1AvatarTexture" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1/Seat1Avatar"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Seat1AvatarInitial" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1/Seat1Avatar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.52, 0.67, 1)
+theme_override_fonts/font = ExtResource("8_poppins_bold")
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "P"
+
+[node name="Seat1Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+text = "Waiting for player..."
+
+[node name="Seat1Crown" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("5_crown")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Seat1Kick" type="TextureButton" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("7_press_tint")
+texture_normal = ExtResource("11_xmark")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Seat1Check" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("6_check_grey")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Seat2" type="HBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+theme_override_constants/separation = 9
+
+[node name="Seat2Avatar" type="PanelContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_Avatar")
+
+[node name="Seat2AvatarTexture" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Avatar"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Seat2AvatarInitial" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Avatar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.52, 0.67, 1)
+theme_override_fonts/font = ExtResource("8_poppins_bold")
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "P"
+
+[node name="Seat2Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+text = "Waiting for player..."
+
+[node name="Seat2Crown" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("5_crown")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Seat2Kick" type="TextureButton" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("7_press_tint")
+texture_normal = ExtResource("11_xmark")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Seat2Check" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("6_check_grey")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Spacer" type="Control" parent="SafeArea/Root"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ReadyButtonMargin" type="MarginContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 12
+
+[node name="ReadyButton" type="Button" parent="SafeArea/Root/ReadyButtonMargin"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_type_variation = &"WhiteCardButton"
+text = ""
+
+[node name="ReadyGradientFill" type="Panel" parent="SafeArea/Root/ReadyButtonMargin/ReadyButton"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ReadyGreen")
+material = SubResource("ShaderMaterial_ReadyGreen")
+
+[node name="ReadyLabel" type="Label" parent="SafeArea/Root/ReadyButtonMargin/ReadyButton"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 19
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Ready"
+
+[node name="LeaveLobbyModal" parent="." instance=ExtResource("10_confirm_modal")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+
+[node name="KickPlayerModal" parent="." instance=ExtResource("10_confirm_modal")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1

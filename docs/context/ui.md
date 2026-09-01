@@ -33,16 +33,20 @@ or Public Lobby, then Play. A restored session can skip Sign-in. Demo mode skips
 Sign-in and the public lobby, joins directly, and readies its real seat because
 bots are already ready.
 
-Home also opens the Private Server staging screen, whose Back action returns
-directly Home. Create remains client-local there: it neither navigates nor
-contacts the server until private-room creation exists.
+Home opens Private Server creation and Join Server. Create sends the temporary
+name and optional numeric password; Join keeps Find Match as the public path and
+uses its other fields only for private entry. Private Lobby renders server info,
+fixed seats, host-only kick, readiness, countdown, and grace-greyed identity;
+leave and kick reuse the shared confirmation modal.
 
 Network signals drive room entry, match start, teardown, navigation, and recovery.
 During active-match recovery, a centred blocking modal keeps the current screen
 visible while the client applies authoritative recovery state; gameplay and debug
 input stay unavailable until it completes. A terminal resume result routes to
-matchmaking through an explicit continuation. Ordinary close returns to
-matchmaking; terminal failure or an explicit Home destination returns Home.
+matchmaking through an explicit continuation. Private-lobby recovery instead
+keeps its screen and reserved seat without that modal; server destination
+metadata alone routes Home, Join Server, or Private Server after lifecycle exit.
+Other close and failure routes retain their existing matchmaking or Home paths.
 Lobby timeout and unexpected matchmaking disconnect use an auto-dismiss modal.
 Terminal game over keeps Summary active until the server closes the room.
 

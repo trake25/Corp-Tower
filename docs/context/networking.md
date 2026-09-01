@@ -9,12 +9,15 @@ whose meaning cannot be recovered from only one endpoint. Gameplay →
 Build injects one endpoint; Godot uses `WebSocketPeer` and the server uses `ws`.
 Network Manager renders server messages only. On open it sends stored reconnect
 and identity credentials. A valid pair resumes its seat; otherwise the server
-creates a session and joins or creates a room. Verified identity overrides the
-claimed profile; required auth closes an unverified socket.
+creates a session and uses the requested public, private-create, or private-join
+entry mode. Persisted-room resume takes precedence over fresh entry fields, and
+the public default ignores private fields. Verified identity overrides the claimed
+profile; required auth closes an unverified socket.
 
 If the persisted room cannot be restored, the server clears its session room
-reference before reporting `resume_unavailable`, so the next matchmaking attempt
-can use the same session without retrying the vanished room.
+reference before reporting `resume_unavailable`. Private-lobby expiry also
+persists the server-selected shell destination across retries; the client clears
+that room identity only after receiving the authoritative route.
 
 Focus return blocks play and requests fresh state. Missing authoritative updates
 start recovery only while the match is expected to stream in `starting` or
@@ -39,12 +42,14 @@ Lobby updates carry roster, ready membership, and an integer countdown derived
 from the server deadline. Lobby state and its deadline persist so the lease owner
 can re-arm the timer after hydration.
 
-Cross-pod matchmaking never lets two workers mutate one in-memory room. A pod
-that cannot own a claimed open room returns it and creates or joins another local
-room. This guarantees a seat, not that simultaneous players on different pods
-share the same room.
+Cross-pod public seating returns a room it cannot own rather than mutating a
+replica. Private invite lookup instead targets its live owner and never falls
+through to public seating; its payload carries invite, host, start, and reserved
+seat phases. Only a full connected roster may ready; transport loss unreaddies
+and reserves its seat without active-match UI. Owner lobby/start broadcasts
+reach remote replicas.
 
-Terminal `room_closed` carries a reason and optional destination. The owner
+Terminal `room_closed` carries a reason and optional global or per-player destination. The owner
 publishes it before deletion; other pods forward it once and discard their
 replicas. Lobby timeout closes only not-ready seats while ready players and bots
 can remain in the persisted room.
@@ -61,8 +66,8 @@ Server messages fall into five contracts:
 - `debug_config`: the validated live tuning snapshot.
 - `room_closed`: teardown reason and navigation destination.
 
-Client actions are reconnect, ready/leave-lobby, place block, activate Power,
-quick chat, debug update, and `resync_state`. Resync carries only correlation and
+Client actions are reconnect, ready/leave-lobby, private host kick, place block,
+activate Power, quick chat, debug update, and `resync_state`. Resync carries only correlation and
 the last revision. Every stateful action is validated for room, identity,
 connection, state, cooldown, and domain rules; Power is room-wide and chat sends
 a template slot, never free text.

@@ -40,6 +40,17 @@ func open_leave_lobby() -> void:
 	auto_dismiss_remaining = -1.0
 	_open()
 
+func open_kick_player() -> void:
+	recovery_locked = false
+	title_label.text = "Kick player"
+	body_label.text = "Do you want to kick this player from lobby?"
+	button_row.visible = true
+	close_button.visible = true
+	continue_button.visible = true
+	continue_button.text = "Continue"
+	auto_dismiss_remaining = -1.0
+	_open()
+
 func open_time_expired() -> void:
 	recovery_locked = false
 	title_label.text = "Time expired"

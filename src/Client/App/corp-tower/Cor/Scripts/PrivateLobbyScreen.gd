@@ -1,0 +1,196 @@
+extends Control
+
+signal leave_lobby_requested
+
+const CHECK_READY := preload("res://Cor/Art/4-Private-lobby/ic-colored-checkmark-green.png")
+const CHECK_WAITING := preload("res://Cor/Art/4-Private-lobby/ic-colored-checkmark-grey.png")
+const PlayerRailEntry := preload("res://Cor/Scripts/PlayerRailEntry.gd")
+const WAITING_NAME := "Waiting for player..."
+const SEAT_COUNT := 3
+const DISPLAY_NAME_LIMIT := 10
+const DISABLED_MODULATE := Color("#cccccc")
+const GRACE_MODULATE := Color(0.47, 0.5, 0.55, 0.72)
+const NORMAL_MODULATE := Color.WHITE
+
+var roster_ids: Array = []
+var host_player_id := ""
+var pending_kick_player_id := ""
+var is_locally_ready := false
+var start_countdown_active := false
+var start_deadline_msec := 0
+var shown_seconds := -1
+
+func _ready() -> void:
+	%BackButton.pressed.connect(_on_back_pressed)
+	%CopyServerIdButton.pressed.connect(_on_copy_server_id_pressed)
+	%ReadyButton.pressed.connect(_on_ready_pressed)
+	%LeaveLobbyModal.confirmed.connect(_on_leave_confirmed)
+	%KickPlayerModal.confirmed.connect(_on_kick_confirmed)
+	NetworkManager.lobby_updated.connect(_on_lobby_updated)
+
+	for seat in SEAT_COUNT:
+		var kick_button: BaseButton = get_node("%%Seat%dKick" % seat)
+		kick_button.pressed.connect(_on_kick_pressed.bind(seat))
+
+	_set_room_full(false)
+	_apply_ready_style()
+
+func _exit_tree() -> void:
+	if NetworkManager.lobby_updated.is_connected(_on_lobby_updated):
+		NetworkManager.lobby_updated.disconnect(_on_lobby_updated)
+
+func apply_lobby_data(data) -> void:
+	_apply_private_lobby_data(data)
+	_apply_roster(data.get("roster", []))
+	_apply_lobby_state(data.get("lobby", {}))
+
+func _on_lobby_updated(data) -> void:
+	if str(data.get("roomMode", "")) != "private":
+		return
+
+	_apply_private_lobby_data(data)
+	_apply_roster(data.get("roster", []))
+	_apply_lobby_state(data)
+
+func _apply_private_lobby_data(data) -> void:
+	var private_lobby: Dictionary = data.get("privateLobby", {})
+	host_player_id = str(private_lobby.get("hostPlayerId", host_player_id))
+	%ServerIdValue.text = str(private_lobby.get("serverId", ""))
+	var password := str(private_lobby.get("password", ""))
+	%PasswordValue.text = password if password != "" else "No password"
+
+func _apply_roster(roster: Array) -> void:
+	roster_ids.clear()
+
+	for seat in SEAT_COUNT:
+		var name_label: Label = get_node("%%Seat%dName" % seat)
+		var avatar: Control = get_node("%%Seat%dAvatar" % seat)
+		var avatar_texture: TextureRect = get_node("%%Seat%dAvatarTexture" % seat)
+		var avatar_initial: Label = get_node("%%Seat%dAvatarInitial" % seat)
+		var crown: TextureRect = get_node("%%Seat%dCrown" % seat)
+		var kick_button: BaseButton = get_node("%%Seat%dKick" % seat)
+
+		if seat < roster.size():
+			var entry: Dictionary = roster[seat]
+			var player_id := str(entry.get("id", ""))
+			var is_grace := str(entry.get("connectionPhase", "connected")) == "grace"
+			roster_ids.append(player_id)
+			name_label.text = _truncate_name(str(entry.get("displayName", WAITING_NAME)))
+			name_label.modulate = GRACE_MODULATE if is_grace else NORMAL_MODULATE
+			avatar.modulate = GRACE_MODULATE if is_grace else NORMAL_MODULATE
+			avatar_texture.texture = PlayerRailEntry.load_avatar_texture(str(entry.get("avatarId", "")))
+			avatar_texture.visible = true
+			avatar_initial.visible = false
+			crown.visible = player_id == host_player_id
+			kick_button.visible = (
+				str(NetworkManager.player_id) == host_player_id
+				and player_id != ""
+				and player_id != host_player_id
+			)
+		else:
+			roster_ids.append("")
+			name_label.text = WAITING_NAME
+			name_label.modulate = NORMAL_MODULATE
+			avatar.modulate = NORMAL_MODULATE
+			avatar_texture.texture = null
+			avatar_texture.visible = false
+			avatar_initial.visible = true
+			crown.visible = false
+			kick_button.visible = false
+
+	_set_room_full(roster.size() >= SEAT_COUNT)
+
+func _truncate_name(value: String) -> String:
+	if value.length() <= DISPLAY_NAME_LIMIT:
+		return value
+
+	return value.left(DISPLAY_NAME_LIMIT - 2) + ".."
+
+func _set_room_full(is_room_full: bool) -> void:
+	%ReadyButton.disabled = not is_room_full
+	%ReadyButton.modulate = NORMAL_MODULATE if is_room_full else DISABLED_MODULATE
+
+func _apply_lobby_state(lobby_data) -> void:
+	if lobby_data == null:
+		return
+
+	var ready_ids: Array = lobby_data.get("readyPlayerIds", [])
+
+	for seat in SEAT_COUNT:
+		var seat_id := str(roster_ids[seat]) if seat < roster_ids.size() else ""
+		var check: TextureRect = get_node("%%Seat%dCheck" % seat)
+		check.texture = CHECK_READY if seat_id != "" and ready_ids.has(seat_id) else CHECK_WAITING
+
+	is_locally_ready = ready_ids.has(str(NetworkManager.player_id))
+	start_countdown_active = bool(lobby_data.get("startCountdownActive", false))
+	start_deadline_msec = (
+		Time.get_ticks_msec()
+		+ int(lobby_data.get("startSecondsRemaining", 0)) * 1000
+	)
+	shown_seconds = maxi(
+		0,
+		ceili(float(start_deadline_msec - Time.get_ticks_msec()) / 1000.0)
+	) if start_countdown_active else -1
+	_apply_ready_style()
+
+func _process(_delta: float) -> void:
+	if not start_countdown_active:
+		return
+
+	var remaining := maxi(
+		0,
+		ceili(float(start_deadline_msec - Time.get_ticks_msec()) / 1000.0)
+	)
+
+	if remaining == shown_seconds:
+		return
+
+	shown_seconds = remaining
+	_refresh_ready_label()
+
+func _apply_ready_style() -> void:
+	%ReadyGradientFill.visible = is_locally_ready
+	_refresh_ready_label()
+
+func _refresh_ready_label() -> void:
+	if not is_locally_ready:
+		%ReadyLabel.text = "Ready"
+	elif start_countdown_active:
+		%ReadyLabel.text = "Cancel (%ds)" % maxi(0, shown_seconds)
+	else:
+		%ReadyLabel.text = "Cancel"
+
+func _on_ready_pressed() -> void:
+	if %ReadyButton.disabled:
+		return
+
+	is_locally_ready = not is_locally_ready
+	_apply_ready_style()
+	NetworkManager.send_ready()
+
+func _on_back_pressed() -> void:
+	%LeaveLobbyModal.open_leave_lobby()
+
+func _on_leave_confirmed() -> void:
+	leave_lobby_requested.emit()
+
+func _on_copy_server_id_pressed() -> void:
+	DisplayServer.clipboard_set(%ServerIdValue.text)
+
+func _on_kick_pressed(seat: int) -> void:
+	if seat >= roster_ids.size():
+		return
+
+	pending_kick_player_id = str(roster_ids[seat])
+
+	if pending_kick_player_id == "" or pending_kick_player_id == host_player_id:
+		return
+
+	%KickPlayerModal.open_kick_player()
+
+func _on_kick_confirmed() -> void:
+	if pending_kick_player_id == "":
+		return
+
+	NetworkManager.kick_private_player(pending_kick_player_id)
+	pending_kick_player_id = ""

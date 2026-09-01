@@ -7,6 +7,7 @@ const PrivateServerScreenScene := preload("res://Cor/Scenes/PrivateServerScreen.
 const JoinScreenScene := preload("res://Cor/Scenes/JoinScreen.tscn")
 const FindMatchScreenScene := preload("res://Cor/Scenes/FindMatchScreen.tscn")
 const PublicLobbyScreenScene := preload("res://Cor/Scenes/PublicLobbyScreen.tscn")
+const PrivateLobbyScreenScene := preload("res://Cor/Scenes/PrivateLobbyScreen.tscn")
 const PlayScreenScene := preload("res://Cor/Scenes/GameUI.tscn")
 const DEBUG_CONTEXT_NONE := ""
 const DEBUG_CONTEXT_SIGN_IN := "sign_in"
@@ -38,6 +39,7 @@ func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
 	NetworkManager.match_started.connect(_on_match_started)
 	NetworkManager.room_closed.connect(_on_room_closed)
+	NetworkManager.private_join_failed.connect(_on_private_join_failed)
 	NetworkManager.status_changed.connect(_on_status_changed)
 	NetworkManager.recovery_started.connect(_on_recovery_started)
 	NetworkManager.recovery_recovered.connect(_on_recovery_recovered)
@@ -79,6 +81,8 @@ func _on_room_joined(data) -> void:
 	elif EndpointConfig.DEMO_MODE_ENABLED:
 		_enter_play_instance()
 		NetworkManager.send_ready()
+	elif str(data.get("roomMode", "public")) == "private":
+		show_private_lobby_screen(data)
 	else:
 		show_public_lobby_screen(data)
 
@@ -131,6 +135,9 @@ func _on_room_closed(data) -> void:
 	if EndpointConfig.DEMO_MODE_ENABLED or destination == "home" or reason == "failure_limit_reached":
 		_teardown_play_instance()
 		show_home_screen()
+	elif destination == "private_server":
+		_teardown_play_instance()
+		show_private_server_screen()
 	else:
 		show_join_screen()
 
@@ -236,24 +243,47 @@ func _on_home_tutorial_requested() -> void:
 	start_tutorial(&"")
 
 func show_private_server_screen() -> void:
+	_teardown_play_instance()
 	var screen := PrivateServerScreenScene.instantiate()
 	screen.back_requested.connect(_on_private_server_back_requested)
+	screen.create_requested.connect(_on_private_server_create_requested)
 	_set_overlay(screen)
 	_set_debug_context(DEBUG_CONTEXT_NONE)
 
 func _on_private_server_back_requested() -> void:
 	show_home_screen()
 
+func _on_private_server_create_requested(display_name: String, password: String) -> void:
+	NetworkManager.create_private_server(display_name, password)
+
 func show_join_screen() -> void:
 	_teardown_play_instance()
 	var screen := JoinScreenScene.instantiate()
 	screen.find_match_requested.connect(_on_find_match_requested)
 	screen.back_requested.connect(_on_join_screen_back_requested)
+	screen.private_join_requested.connect(_on_private_join_requested)
 	_set_overlay(screen)
 	_set_debug_context(DEBUG_CONTEXT_NONE)
 
 func _on_join_screen_back_requested() -> void:
 	show_home_screen()
+
+func _on_private_join_requested(display_name: String, server_id: String, password: String) -> void:
+	NetworkManager.join_private_server(display_name, server_id, password)
+
+func _on_private_join_failed(data) -> void:
+	var reason := str(data.get("reason", "not_found"))
+	var message: String = {
+		"full": "Full room",
+		"playing": "Room playing",
+		"not_found": "Room not found",
+		"wrong_password": "Wrong password"
+	}.get(reason, "Room not found")
+
+	if current_overlay != null and is_instance_valid(current_overlay) and current_overlay.has_method("show_private_error"):
+		current_overlay.call("show_private_error", message)
+
+	NetworkManager.disconnect_server()
 
 func start_tutorial(lesson_id: StringName = &"") -> void:
 	tutorial_active = true
@@ -300,6 +330,17 @@ func show_public_lobby_screen(data) -> void:
 	_set_overlay(screen)
 	_set_debug_context(DEBUG_CONTEXT_LOBBY)
 	screen.apply_lobby_data(data)
+
+func show_private_lobby_screen(data) -> void:
+	_teardown_play_instance()
+	var screen := PrivateLobbyScreenScene.instantiate()
+	screen.leave_lobby_requested.connect(_on_private_leave_lobby_requested)
+	_set_overlay(screen)
+	_set_debug_context(DEBUG_CONTEXT_NONE)
+	screen.apply_lobby_data(data)
+
+func _on_private_leave_lobby_requested() -> void:
+	NetworkManager.leave_lobby()
 
 func _on_leave_lobby_requested() -> void:
 	NetworkManager.leave_lobby()
