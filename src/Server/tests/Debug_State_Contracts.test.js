@@ -147,6 +147,21 @@ test("stability difficulty and lateral share are the exposed stability tunables"
     }
 });
 
+test("Tower site tuning is designer-only and rejected by Debug Config", async () => {
+    const lobbyManager = new LobbyManager();
+
+    for (const key of [
+        "towerSiteSlendernessTarget",
+        "towerSiteWidthMin",
+        "towerSiteWidthMax"
+    ]) {
+        const before = GameConfig[key];
+        assert.equal(await lobbyManager.updateDebugConfig(key, 1), false);
+        assert.equal(GameConfig[key], before);
+        assert.equal(Object.hasOwn(lobbyManager.getDebugConfig(), key), false);
+    }
+});
+
 test("stability tuning invalidates cached analysis without mutating the standing tower", async () => {
     const lobbyManager = new LobbyManager();
     const sent = [];
@@ -189,26 +204,28 @@ test("stability tuning invalidates cached analysis without mutating the standing
 
 test("Last Chance power toggle round-trips through debug config and resets", async () => {
     const lobbyManager = new LobbyManager();
+    const initialValue = GameConfig.powerLastChanceEnabled;
 
-    assert.equal(lobbyManager.getDebugConfig().powerLastChanceEnabled, false);
-    await lobbyManager.updateDebugConfig("powerLastChanceEnabled", true);
-    assert.equal(GameConfig.powerLastChanceEnabled, true);
-    assert.equal(lobbyManager.getDebugConfig().powerLastChanceEnabled, true);
+    assert.equal(lobbyManager.getDebugConfig().powerLastChanceEnabled, initialValue);
+    await lobbyManager.updateDebugConfig("powerLastChanceEnabled", !initialValue);
+    assert.equal(GameConfig.powerLastChanceEnabled, !initialValue);
+    assert.equal(lobbyManager.getDebugConfig().powerLastChanceEnabled, !initialValue);
 
     await lobbyManager.updateDebugConfig("resetDebugConfig", true);
-    assert.equal(GameConfig.powerLastChanceEnabled, false);
+    assert.equal(GameConfig.powerLastChanceEnabled, initialValue);
 });
 
 test("latency indicator toggle round-trips through debug config and resets", async () => {
     const lobbyManager = new LobbyManager();
+    const initialValue = GameConfig.showLatencyIndicator;
 
-    assert.equal(lobbyManager.getDebugConfig().showLatencyIndicator, true);
-    await lobbyManager.updateDebugConfig("showLatencyIndicator", true);
-    assert.equal(GameConfig.showLatencyIndicator, true);
-    assert.equal(lobbyManager.getDebugConfig().showLatencyIndicator, true);
+    assert.equal(lobbyManager.getDebugConfig().showLatencyIndicator, initialValue);
+    await lobbyManager.updateDebugConfig("showLatencyIndicator", !initialValue);
+    assert.equal(GameConfig.showLatencyIndicator, !initialValue);
+    assert.equal(lobbyManager.getDebugConfig().showLatencyIndicator, !initialValue);
 
     await lobbyManager.updateDebugConfig("resetDebugConfig", true);
-    assert.equal(GameConfig.showLatencyIndicator, true);
+    assert.equal(GameConfig.showLatencyIndicator, initialValue);
 });
 
 test("diagnostic defaults stay enabled outside EKS and EKS overrides disable them", () => {

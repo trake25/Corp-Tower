@@ -1,18 +1,18 @@
 const assert = require("node:assert/strict");
 const { afterEach, test } = require("node:test");
 
-const GameEngine = require("../app/Game_Engine");
-const GameConfig = require("../app/Game_Config");
 const TowerStability = require("../app/Tower_Stability");
+const {
+    createPlayingEngine,
+    resetFixtures
+} = require("./helpers/Game_Engine_Fixture");
 
-const ORIGINAL_DIFFICULTY = GameConfig.towerStabilityDifficulty;
+const SUPPORT_THRESHOLDS = { warning: 75, critical: 45 };
 const I_HORIZONTAL = [[0, 0], [1, 0], [2, 0], [3, 0]];
 const I_VERTICAL = [[0, 0], [0, 1], [0, 2], [0, 3]];
 const O = [[0, 0], [1, 0], [0, 1], [1, 1]];
 
-afterEach(() => {
-    GameConfig.towerStabilityDifficulty = ORIGINAL_DIFFICULTY;
-});
+afterEach(resetFixtures);
 
 function entry(id, shapeId, cells, originX, originY) {
     return { block: { id, shapeId, cells }, originX, originY };
@@ -93,19 +93,13 @@ function thinStack(oCount, mirrored = false, reinforced = false) {
 }
 
 function productionConfig(level, difficulty) {
-    const originalLog = console.log;
-    console.log = () => {};
-    const engine = new GameEngine();
-
-    try {
-        engine.createRoom([{ id: "P1" }, { id: "P2" }, { id: "P3" }]);
-    } finally {
-        console.log = originalLog;
-    }
-
-    engine.room.level = level;
-    engine.room.targetHeight = engine.getTargetHeightForLevel(level);
-    GameConfig.towerStabilityDifficulty = difficulty;
+    const { engine } = createPlayingEngine(level, 30, {
+        tunables: {
+            towerStabilityDifficulty: difficulty,
+            towerStabilityWarningThreshold: SUPPORT_THRESHOLDS.warning,
+            towerStabilityCriticalThreshold: SUPPORT_THRESHOLDS.critical
+        }
+    });
     return engine.resolveStabilityConfig(level);
 }
 
@@ -146,11 +140,11 @@ test("a thin support face worsens with dependent load and recovers through reinf
     const three = TowerStability.evaluate(thinStack(3), config);
     const reinforced = TowerStability.evaluate(thinStack(3, false, true), config);
 
-    assert.ok(supportFor(empty, "I") > GameConfig.towerStabilityWarningThreshold);
-    assert.ok(supportFor(one, "I") > GameConfig.towerStabilityWarningThreshold);
-    assert.ok(supportFor(two, "I") <= GameConfig.towerStabilityWarningThreshold);
-    assert.ok(supportFor(two, "I") > GameConfig.towerStabilityCriticalThreshold);
-    assert.ok(supportFor(three, "I") <= GameConfig.towerStabilityCriticalThreshold);
+    assert.ok(supportFor(empty, "I") > SUPPORT_THRESHOLDS.warning);
+    assert.ok(supportFor(one, "I") > SUPPORT_THRESHOLDS.warning);
+    assert.ok(supportFor(two, "I") <= SUPPORT_THRESHOLDS.warning);
+    assert.ok(supportFor(two, "I") > SUPPORT_THRESHOLDS.critical);
+    assert.ok(supportFor(three, "I") <= SUPPORT_THRESHOLDS.critical);
     assert.equal(supportFor(three, "O2"), 100);
     assert.ok(supportFor(reinforced, "I") > supportFor(three, "I"));
 });

@@ -11,9 +11,6 @@ const DEBUG_CATEGORY_NAMES := DebugPanelCatalogScript.DEBUG_CATEGORY_NAMES
 const DEBUG_CONTEXT_LOBBY := DebugPanelCatalogScript.DEBUG_CONTEXT_LOBBY
 const DEBUG_CONTEXT_PLAY := DebugPanelCatalogScript.DEBUG_CONTEXT_PLAY
 const DEBUG_TOOLTIPS := DebugPanelCatalogScript.DEBUG_TOOLTIPS
-const PARALLAX_TARGET_TOWER := DebugPanelCatalogScript.PARALLAX_TARGET_TOWER
-const PARALLAX_TARGET_SKY := DebugPanelCatalogScript.PARALLAX_TARGET_SKY
-const PARALLAX_TARGET_GROUND := DebugPanelCatalogScript.PARALLAX_TARGET_GROUND
 const SCORE_TABLE_AVERAGE_BRICK_HEIGHT := 2.35
 
 var tuning
@@ -28,9 +25,6 @@ var restart_level_button: Button
 var close_debug_button: Button
 var category_dropdown: OptionButton
 var category_panels: Dictionary = {}
-var parallax_targets: Dictionary = {}
-var parallax_buttons: Dictionary = {}
-var parallax_sliders: Dictionary = {}
 var bots_toggle: CheckButton
 var bot_strategy_button: OptionButton
 var bot_count_label: Label
@@ -82,12 +76,6 @@ var tower_lateral_load_share_label: Control
 var tower_lateral_load_share_slider: HSlider
 var tower_max_tilt_label: Control
 var tower_max_tilt_slider: HSlider
-var tower_site_slenderness_label: Control
-var tower_site_slenderness_slider: HSlider
-var tower_site_width_min_label: Control
-var tower_site_width_min_slider: HSlider
-var tower_site_width_max_label: Control
-var tower_site_width_max_slider: HSlider
 var supply_effective_width_label: Control
 var supply_effective_width_slider: HSlider
 var placement_stability_floor_label: Control
@@ -147,19 +135,9 @@ func bind_nodes(binder) -> void:
 		"Impact": binder.optional_node("Impact") as Control,
 		"Tower": binder.optional_node("Tower") as Control,
 		"Power": binder.optional_node("Power") as Control,
-		"Parallax": binder.optional_node("Parallax") as Control,
-		"Placement": binder.optional_node("Placement") as Control,
 		"Hooks": binder.optional_node("Hooks") as Control,
 		"Sign In": null,
 	}
-	parallax_targets = {
-		DebugPanelCatalogScript.PARALLAX_TARGET_TOWER: binder.optional_node("TowerStack"),
-		DebugPanelCatalogScript.PARALLAX_TARGET_SKY: binder.optional_node("BgArt"),
-		DebugPanelCatalogScript.PARALLAX_TARGET_GROUND: binder.optional_node("PlatformArt"),
-	}
-	for row in DebugPanelCatalogScript.tunable_rows():
-		parallax_buttons[row.key] = binder.optional_node(row.key + "Button") as Button
-		parallax_sliders[row.key] = binder.optional_node(row.key + "Slider") as HSlider
 	reset_debug_button = binder.optional_node("ResetDebugButton") as Button
 	restart_level_button = binder.optional_node("RestartLevelButton") as Button
 	close_debug_button = binder.optional_node("CloseDebugButton") as Button
@@ -228,12 +206,6 @@ func bind_nodes(binder) -> void:
 	tower_lateral_load_share_slider = binder.optional_node("TowerLateralLoadShareSlider") as HSlider
 	tower_max_tilt_label = bind_tooltip_row(binder, "TowerMaxTiltLabel")
 	tower_max_tilt_slider = binder.optional_node("TowerMaxTiltSlider") as HSlider
-	tower_site_slenderness_label = bind_tooltip_row(binder, "TowerSiteSlendernessLabel")
-	tower_site_slenderness_slider = binder.optional_node("TowerSiteSlendernessSlider") as HSlider
-	tower_site_width_min_label = bind_tooltip_row(binder, "TowerSiteWidthMinLabel")
-	tower_site_width_min_slider = binder.optional_node("TowerSiteWidthMinSlider") as HSlider
-	tower_site_width_max_label = bind_tooltip_row(binder, "TowerSiteWidthMaxLabel")
-	tower_site_width_max_slider = binder.optional_node("TowerSiteWidthMaxSlider") as HSlider
 	supply_effective_width_label = bind_tooltip_row(binder, "SupplyEffectiveWidthLabel")
 	supply_effective_width_slider = binder.optional_node("SupplyEffectiveWidthSlider") as HSlider
 	placement_stability_floor_label = bind_tooltip_row(binder, "PlacementStabilityFloorLabel")
@@ -343,9 +315,6 @@ func setup(
 	configure_slider(tower_stability_difficulty_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityDifficulty", value))
 	configure_slider(tower_lateral_load_share_slider, 0, 100, 5, func(value): send_debug_float("towerLateralLoadShare", value / 100.0))
 	configure_slider(tower_max_tilt_slider, 2, 20, 1, func(value): send_debug_int("towerStructuralPoseMaxAngleDeg", value))
-	configure_slider(tower_site_slenderness_slider, 1.0, 12.0, 0.25, func(value): send_debug_float("towerSiteSlendernessTarget", value))
-	configure_slider(tower_site_width_min_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMin", value))
-	configure_slider(tower_site_width_max_slider, 2, 8, 2, func(value): send_debug_int("towerSiteWidthMax", value))
 	configure_slider(supply_effective_width_slider, 10, 200, 5, func(value): send_debug_float("supplyEffectiveWidthRatio", value / 100.0))
 	configure_slider(placement_stability_floor_slider, 10, 100, 5, func(value): send_debug_float("dangerousHeightFloor", value / 100.0))
 	configure_slider(reinforce_integrity_slider, 10, 100, 5, func(value): send_debug_float("strongReinforcementActionShare", value / 100.0))
@@ -372,7 +341,6 @@ func setup(
 
 	setup_category_dropdown()
 	set_screen_context(debug_context)
-	setup_parallax_controls()
 	update_debug_labels()
 
 func setup_category_dropdown() -> void:
@@ -425,59 +393,6 @@ func on_category_selected(index: int) -> void:
 		var panel: Control = category_panels[category_name]
 		if panel != null:
 			panel.visible = (category_name == selected_name)
-
-func setup_parallax_controls() -> void:
-	for row in DebugPanelCatalogScript.tunable_rows():
-		var target_node = parallax_targets.get(row.target)
-		var slider: HSlider = parallax_sliders.get(row.key)
-		var button: Button = parallax_buttons.get(row.key)
-
-		if target_node == null or slider == null:
-			continue
-
-		var raw_value: float = float(target_node.get(row.property))
-		var display_value: float = raw_value * 100.0 if row.get("percent", false) else raw_value
-
-		slider.min_value = row.min
-		slider.max_value = row.max
-		slider.step = row.step
-		slider.set_value_no_signal(display_value)
-		slider.value_changed.connect(func(value): on_parallax_slider_changed(row, value))
-		update_parallax_button_text(row, display_value)
-
-		if button != null:
-			button.pressed.connect(func(): open_debug_tooltip(row.label, row.tooltip))
-
-func on_parallax_slider_changed(row: Dictionary, value: float) -> void:
-	var target_node = parallax_targets.get(row.target)
-	if target_node == null:
-		return
-
-	var applied_value: float = value / 100.0 if row.get("percent", false) else value
-	if row.get("is_int", false):
-		applied_value = round(applied_value)
-
-	target_node.set(row.property, applied_value)
-	if target_node.has_method("refresh_visuals"):
-		target_node.call("refresh_visuals")
-
-	update_parallax_button_text(row, value)
-
-func update_parallax_button_text(row: Dictionary, display_value: float) -> void:
-	var button: Button = parallax_buttons.get(row.key)
-	if button == null:
-		return
-
-	var decimals: int = int(row.get("decimals", 0))
-	var formatted: String
-	if decimals > 0:
-		formatted = ("%." + str(decimals) + "f") % display_value
-	else:
-		formatted = str(int(round(display_value)))
-
-	var suffix: String = "%" if row.get("percent", false) else str(row.get("suffix", ""))
-
-	button.text = "%s: %s%s  ⓘ" % [row.label, formatted, suffix]
 
 func open_debug_tooltip(title: String, body: String) -> void:
 	if debug_tooltip != null and debug_tooltip.has_method("open"):
@@ -769,18 +684,6 @@ func apply_config(config) -> void:
 	)
 	set_slider_no_signal(tower_max_tilt_slider, float(config.get("towerStructuralPoseMaxAngleDeg", 10)))
 	set_slider_no_signal(
-		tower_site_slenderness_slider,
-		float(config.get("towerSiteSlendernessTarget", 6.75))
-	)
-	set_slider_no_signal(
-		tower_site_width_min_slider,
-		float(config.get("towerSiteWidthMin", 8))
-	)
-	set_slider_no_signal(
-		tower_site_width_max_slider,
-		float(config.get("towerSiteWidthMax", 8))
-	)
-	set_slider_no_signal(
 		supply_effective_width_slider,
 		float(config.get("supplyEffectiveWidthRatio", 0.5)) * 100.0
 	)
@@ -932,18 +835,6 @@ func update_debug_labels() -> void:
 	set_debug_label_text(
 		critical_save_cap_label,
 		"Critical Save Cap: " + str(int(get_slider_value(critical_save_cap_slider, 225))) + "% action"
-	)
-	set_debug_label_text(
-		tower_site_slenderness_label,
-		"Site Slenderness Target: " + ("%.2f" % get_slider_value(tower_site_slenderness_slider, 6.75))
-	)
-	set_debug_label_text(
-		tower_site_width_min_label,
-		"Site Width Min: " + str(int(get_slider_value(tower_site_width_min_slider, 4)))
-	)
-	set_debug_label_text(
-		tower_site_width_max_label,
-		"Site Width Max: " + str(int(get_slider_value(tower_site_width_max_slider, 8)))
 	)
 	set_debug_label_text(
 		impact_score_label,

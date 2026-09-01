@@ -28,11 +28,12 @@ aim on the tower, then confirm the same resolved position. A changed aim updates
 the preview rather than placing accidentally. Every broadcast revalidates the
 armed position because a teammate may fill it first.
 
-Debug controls are server-backed tuning, synchronized presentation state, or
-client-local view state; Screen Manager limits categories by screen. Live
-Stability selects the tallest server component, with lower component id as the
-height tie-break and aggregate fallback for legacy payloads. Recovery sends a
-fixed-step percentage and renders the authoritative score event.
+Debug Menu controls are server-backed runtime tuning or synchronized presentation
+state; client input/presentation calibration and derived tower-site settings stay
+authored in their owning source or scene. Screen Manager limits categories by
+screen. Live Stability selects the tallest server component, with lower component
+id as the height tie-break and aggregate fallback for legacy payloads. Recovery
+sends a fixed-step percentage and renders the authoritative score event.
 
 The synchronized latency-display setting controls visibility, but each client
 measures its own WebSocket RTT. Probes run only while shown and discard pending

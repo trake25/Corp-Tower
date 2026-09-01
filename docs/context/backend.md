@@ -73,6 +73,9 @@ enforced here. Redis remains active-session storage, not profile storage.
 `Debug_Config.js` is the write boundary for runtime tuning. It rejects unknown
 keys, clamps values, enforces enum allowlists and dependent bounds, then Lobby
 Manager reconciles affected rooms and broadcasts the authoritative snapshot.
+The tunable registry distinguishes that live-writable surface from designer-only
+source calibration and true contracts; derived tower-site width remains
+designer-authored `Game_Config.js` tuning.
 Stability difficulty and lateral brace share are independent writable dials: difficulty
 controls overload tolerance, while brace share caps sideways load. Changing either
 invalidates cached analysis so the next authoritative evaluation uses the new tuning

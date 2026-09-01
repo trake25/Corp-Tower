@@ -4,13 +4,13 @@ const { afterEach, test } = require("node:test");
 const LateralBracing = require("../app/Tower_Lateral_Bracing");
 const TowerStability = require("../app/Tower_Stability");
 const {
-    GameConfig,
     fixedStabilityConfig,
     resetFixtures
 } = require("./helpers/Game_Engine_Fixture");
 
 const I_VERTICAL = [[0, 0], [0, 1], [0, 2], [0, 3]];
 const O = [[0, 0], [1, 0], [0, 1], [1, 1]];
+const CRITICAL_SUPPORT_THRESHOLD = 45;
 
 afterEach(resetFixtures);
 
@@ -85,7 +85,7 @@ test("a grounded side brace shares the critical thin-I load and conserves mass a
         value + current.originX + cell[0] + 0.5
     ), 0), 0);
 
-    assert.ok(supportFor(before, "I") <= GameConfig.towerStabilityCriticalThreshold);
+    assert.ok(supportFor(before, "I") <= CRITICAL_SUPPORT_THRESHOLD);
     assert.ok(supportFor(before, "I") > 0);
     assert.equal(before.diagnostics.collapsed, false);
     assert.ok(supportFor(after, "I") > supportFor(before, "I"));

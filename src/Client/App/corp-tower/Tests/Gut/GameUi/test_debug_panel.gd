@@ -85,6 +85,18 @@ func test_play_debug_context_disables_only_sign_in() -> void:
 	assert_false(dropdown.is_item_disabled(1), "Gameplay controls must be selectable during play.")
 	assert_true(dropdown.is_item_disabled(dropdown.item_count - 1), "Sign In is not a gameplay category.")
 
+func test_retired_debug_categories_and_tower_site_rows_are_absent() -> void:
+	var dropdown := harness.find("DebugCategoryDropdown") as OptionButton
+	var categories: Array[String] = []
+	for index in dropdown.item_count:
+		categories.append(dropdown.get_item_text(index))
+
+	assert_false(categories.has("Placement"))
+	assert_false(categories.has("Parallax"))
+	assert_null(harness.find("TowerSiteSlendernessLabel"))
+	assert_null(harness.find("TowerSiteWidthMinLabel"))
+	assert_null(harness.find("TowerSiteWidthMaxLabel"))
+
 func test_apply_config_updates_popup_and_summary_durations() -> void:
 	harness.main.update_debug_config(CONFIG_FIXTURE)
 	assert_eq(harness.main.score_popups.get_score_event_popup_duration_seconds({"type": "placement"}), 4.0, "Placement popups should use the configured placement duration.")

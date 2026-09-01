@@ -40,16 +40,16 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Bot_Manager.js:173 | tryActivateReplenish | |
 | src/Server/app/Bot_Manager.js:467 | chooseBotAction | |
 
-### src/Server/app/Debug_Config.js — 185 ln
+### src/Server/app/Debug_Config.js — 179 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Debug_Config.js:1 | @file · file | resolves a root, scoring or visual-hooks config owner |
-| src/Server/app/Debug_Config.js:113 | target · fn | |
-| src/Server/app/Debug_Config.js:117 | snapshot · fn | |
-| src/Server/app/Debug_Config.js:123 | DEFAULTS · const | |
-| src/Server/app/Debug_Config.js:125 | applyDefaults · fn | |
-| src/Server/app/Debug_Config.js:136 | applyValue · fn | |
+| src/Server/app/Debug_Config.js:107 | target · fn | |
+| src/Server/app/Debug_Config.js:111 | snapshot · fn | |
+| src/Server/app/Debug_Config.js:117 | DEFAULTS · const | |
+| src/Server/app/Debug_Config.js:119 | applyDefaults · fn | |
+| src/Server/app/Debug_Config.js:130 | applyValue · fn | |
 
 ### src/Server/app/Game_Config.js — 185 ln
 
@@ -225,6 +225,12 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Tower_Structure_Assessment.js:3 | clamp01 · fn | |
 | src/Server/app/Tower_Structure_Assessment.js:11 | describeGroups · fn | |
 | src/Server/app/Tower_Structure_Assessment.js:158 | comparePlacement · fn | |
+
+### src/Server/app/Tunable_Classification.js — 121 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Server/app/Tunable_Classification.js:1 | @file · file | Tunable Classification server behavior |
 
 ### src/Server/app/engine/Block_Geometry.js — 109 ln
 
@@ -422,4 +428,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-26 files · 257 stable anchors.
+27 files · 257 stable anchors.

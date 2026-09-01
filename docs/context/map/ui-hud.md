@@ -464,7 +464,6 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:72 | scroll_offset_changed · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:73 | camera_zoom_changed · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:126 | set_tower | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:216 | refresh_visuals | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:221 | set_mood_threshold | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:230 | set_support_stability_thresholds | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:241 | set_visual_hooks | |
@@ -493,4 +492,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-41 files · 238 stable anchors.
+41 files · 237 stable anchors.

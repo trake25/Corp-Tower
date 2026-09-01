@@ -5,8 +5,7 @@ const BOT_STRATEGY_MVP_GREEDY := "mvp_greedy"
 const TOWER_FEEDBACK_MODES := ["warnings_only", "live_preview"]
 const TOWER_FEEDBACK_MODE_TITLES := ["Warnings Only", "Live Preview"]
 const DEBUG_CATEGORY_NAMES := [
-	"Bots", "Round", "UI", "Supply", "Scoring", "Impact", "Tower", "Power", "Parallax", "Placement",
-	"Hooks", "Sign In"
+	"Bots", "Round", "UI", "Supply", "Scoring", "Impact", "Tower", "Power", "Hooks", "Sign In"
 ]
 const DEBUG_CONTEXT_LOBBY := "lobby"
 const DEBUG_CONTEXT_PLAY := "play"
@@ -23,18 +22,6 @@ const DEBUG_TOOLTIPS := {
 	"TowerMaxTiltLabel": {
 		"title": "Structural Pose Cap",
 		"body": "Visual only. Caps the final standing rotation of a rigid tower section after inherited bends are composed. It does not affect stability, collapse, or legal placement.\n\nHigher = more visible sway. Lower = more room for support placement.",
-	},
-	"TowerSiteSlendernessLabel": {
-		"title": "Site Slenderness Target",
-		"body": "Sets how wide the buildable site is for a given target height.\n\nsite width = even round-up(target height / this), clamped to Site Width Min..Max.\n\nLower = wider site, easier. The site is also what slenderness is measured against — building on the full site width is always penalty-free, so widening the site widens the safe zone too.",
-	},
-	"TowerSiteWidthMinLabel": {
-		"title": "Site Width Min",
-		"body": "Narrowest the buildable site may get, in columns. Floors the formula above.",
-	},
-	"TowerSiteWidthMaxLabel": {
-		"title": "Site Width Max",
-		"body": "Widest the buildable site may get, in columns.\n\nHard ceiling is 8: the tower viewport is 272px at a 34px brick, so columns outside that are drawn off-screen and the player never sees those bricks.",
 	},
 	"TowerWarningThresholdLabel": {
 		"title": "Warning Threshold",
@@ -143,106 +130,3 @@ const DEBUG_TOOLTIPS := {
 		"body": "How long the failure shake decays for, in ms. Only the tower and its debris shake — the HUD and buttons never move.\n\nFires on a failed Impact or any negative verdict, and also on a collapse (which skips the Impact Beat itself).",
 	},
 }
-
-const PARALLAX_TARGET_TOWER := "tower"
-const PARALLAX_TARGET_SKY := "sky"
-const PARALLAX_TARGET_GROUND := "ground"
-
-const PARALLAX_ROWS := [
-	{
-		"key": "ScrollStartRatio", "target": PARALLAX_TARGET_TOWER, "property": "scroll_start_ratio",
-		"label": "Scroll Start Ratio", "min": 0.0, "max": 100.0, "step": 5.0, "percent": true,
-		"tooltip": "How full the screen has to feel before the camera starts panning at all. Lower = camera starts helping earlier (shorter towers). Higher = camera waits longer before it starts helping.",
-	},
-	{
-		"key": "ScrollEasePower", "target": PARALLAX_TARGET_TOWER, "property": "scroll_ease_power",
-		"label": "Scroll Ease Power", "min": 1.0, "max": 6.0, "step": 0.5, "decimals": 1,
-		"tooltip": "The \"holding back\" curve. Higher = camera stays almost still for most of the climb and only rushes to the bar in the last few bricks. Lower toward 1 = a steady, even approach the whole way.",
-	},
-	{
-		"key": "TopIndicatorClearance", "target": PARALLAX_TARGET_TOWER, "property": "top_indicator_clearance_units",
-		"label": "Top Indicator Clearance", "min": 0.0, "max": 4.0, "step": 1.0, "is_int": true, "suffix": " bricks",
-		"tooltip": "How much daylight is left between the top brick and the bar at a perfect finish. Bigger = more visible gap at 100%. 0 = try to touch it exactly.",
-	},
-	{
-		"key": "BrickUnitSize", "target": PARALLAX_TARGET_TOWER, "property": "brick_unit_size",
-		"label": "Brick Unit Size", "min": 20.0, "max": 48.0, "step": 1.0, "is_int": true, "suffix": "px",
-		"tooltip": "Physical size of a brick on screen. Bigger bricks = fewer visible at once, chunkier/bolder tower; also changes how many bricks fit before scrolling is needed at all.",
-	},
-	{
-		"key": "DropDuration", "target": PARALLAX_TARGET_TOWER, "property": "drop_duration",
-		"label": "Drop Duration", "min": 0.05, "max": 1.0, "step": 0.05, "decimals": 2, "suffix": " sec",
-		"tooltip": "How long a freshly placed brick takes to animate down into its slot. Longer = floatier, more weighty landing. Shorter = snappier, more immediate.",
-	},
-	{
-		"key": "TiltEaseSpeed", "target": PARALLAX_TARGET_TOWER, "property": "tilt_ease_speed",
-		"label": "Tilt Ease Speed", "min": 1.0, "max": 15.0, "step": 0.5, "decimals": 1,
-		"tooltip": "How quickly the tower's lean animation catches up to the server's actual tilt reading. Higher = tower reacts to instability sharply/immediately. Lower = a slower, more organic sway.",
-	},
-	{
-		"key": "CollapseTiltDeg", "target": PARALLAX_TARGET_TOWER, "property": "collapse_tilt_deg",
-		"label": "Collapse Tilt", "min": 10.0, "max": 90.0, "step": 5.0, "is_int": true, "suffix": "°",
-		"tooltip": "How far over the tower visually keels when it actually collapses — a pure \"sell the failure\" flourish, doesn't affect live play.",
-	},
-	{
-		"key": "TopPadding", "target": PARALLAX_TARGET_TOWER, "property": "top_padding",
-		"label": "Top Padding", "min": 0.0, "max": 40.0, "step": 2.0, "is_int": true, "suffix": "px",
-		"tooltip": "Small reserved margin at the very top of the tower's drawing area — mostly invisible headroom, rarely worth touching.",
-	},
-	{
-		"key": "BottomPadding", "target": PARALLAX_TARGET_TOWER, "property": "bottom_padding",
-		"label": "Bottom Padding", "min": 0.0, "max": 40.0, "step": 2.0, "is_int": true, "suffix": "px",
-		"tooltip": "Small reserved margin at the bottom of the tower's drawing area, above the ground line.",
-	},
-	{
-		"key": "SkyParallaxRatio", "target": PARALLAX_TARGET_SKY, "property": "parallax_ratio",
-		"label": "Sky Parallax Ratio", "min": 0.0, "max": 100.0, "step": 5.0, "percent": true,
-		"tooltip": "How fast the sky moves relative to the tower's own scroll. Lower = feels farther away/slower (distant sky). Higher = feels closer/faster.",
-	},
-	{
-		"key": "SkyEaseSpeed", "target": PARALLAX_TARGET_SKY, "property": "ease_speed",
-		"label": "Sky Ease Speed", "min": 1.0, "max": 10.0, "step": 0.5, "decimals": 1,
-		"tooltip": "How snappily the sky catches up whenever the scroll target changes. Higher = tight, immediate follow. Lower = a laggy, dreamy trail.",
-	},
-	{
-		"key": "GroundParallaxRatio", "target": PARALLAX_TARGET_GROUND, "property": "parallax_ratio",
-		"label": "Ground Parallax Ratio", "min": 0.0, "max": 200.0, "step": 5.0, "percent": true,
-		"tooltip": "How fast the ground platform moves relative to the tower's own scroll. Higher = feels closer/faster (keeps the ground glued to the tower's base instead of lagging behind as it recedes).",
-	},
-	{
-		"key": "GroundEaseSpeed", "target": PARALLAX_TARGET_GROUND, "property": "ease_speed",
-		"label": "Ground Ease Speed", "min": 1.0, "max": 10.0, "step": 0.5, "decimals": 1,
-		"tooltip": "How snappily the ground platform catches up whenever the scroll target changes. Higher = tight, immediate follow. Lower = laggy trail.",
-	},
-]
-
-const PLACEMENT_ROWS := [
-	{
-		"key": "SnapRadius", "target": PARALLAX_TARGET_TOWER, "property": "snap_radius_units",
-		"label": "Snap Radius", "min": 0.5, "max": 6.0, "step": 0.1, "decimals": 1, "suffix": " bricks",
-		"tooltip": "How close a dragged brick's corner has to get to a snap point before it locks on. Higher = very forgiving, the brick jumps to points from far away. Lower = you have to aim, and drags far from the tower fall back to plain column aiming.",
-	},
-	{
-		"key": "DragGripOffset", "target": PARALLAX_TARGET_TOWER, "property": "drag_grip_offset_units",
-		"label": "Drag Grip Lift", "min": 0.0, "max": 4.0, "step": 0.1, "decimals": 1, "suffix": " bricks",
-		"tooltip": "How far above the finger the dragged brick floats, so the thumb doesn't cover it. Higher = brick sits well clear of the hand but feels detached. 0 = brick sits right under the finger and gets hidden by it on a phone.",
-	},
-	{
-		"key": "GhostAlpha", "target": PARALLAX_TARGET_TOWER, "property": "ghost_alpha",
-		"label": "Landing Ghost Opacity", "min": 0.0, "max": 100.0, "step": 5.0, "percent": true,
-		"tooltip": "How solid the preview of the brick's landing spot looks. Higher = reads as an almost-placed brick. Lower = a faint hint that's easier to see the tower through.",
-	},
-	{
-		"key": "SnapDotRadius", "target": PARALLAX_TARGET_TOWER, "property": "snap_dot_radius",
-		"label": "Snap Dot Size", "min": 1.0, "max": 8.0, "step": 0.5, "decimals": 1, "suffix": "px",
-		"tooltip": "Size of the small rings marking every available snap point while dragging. Bigger = easier to see on a phone but busier over the tower.",
-	},
-	{
-		"key": "SnapTargetRadius", "target": PARALLAX_TARGET_TOWER, "property": "snap_target_radius",
-		"label": "Snap Target Size", "min": 4.0, "max": 18.0, "step": 0.5, "decimals": 1, "suffix": "px",
-		"tooltip": "Size of the highlight ring around the point the brick is currently locked onto. Bigger = the chosen target stands out further from its neighbours.",
-	},
-]
-
-static func tunable_rows() -> Array:
-	return PARALLAX_ROWS + PLACEMENT_ROWS

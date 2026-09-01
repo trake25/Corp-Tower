@@ -31,8 +31,11 @@ it. CI retains the full server and client domain gates.
 Server tests protect placement and block geometry, stability/scoring invariants,
 authoritative gameplay events, Impact rollback, authentication/account/profile
 boundaries, and multi-pod room lifecycle. The shared engine fixture owns pinned
-configuration and cleanup. Tests under `tests/` and tools do not ship in the
-server image.
+QA tuning and cleanup, with explicit scenario overrides instead of production
+calibration inheritance. Classification metadata separates runtime-exposed and
+designer-only tuning from true contracts; Debug Config behavior and canonical
+tutorial parity may read their live authority directly. Tests under `tests/` and
+tools do not ship in the server image.
 
 Reconnect coverage keeps the current socket attached after a superseded socket
 closes and proves targeted recovery snapshots do not consume transient events.

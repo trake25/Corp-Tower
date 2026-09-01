@@ -9,32 +9,27 @@ const {
     createFlatBlock,
     createPlayingEngine,
     eventTypes,
+    fixedGridTunables,
     fixedStabilityConfig,
     latestMessage,
     messageWithScoreEvents,
-    resetFixtures,
-    useFixedGrid
+    resetFixtures
 } = require("./helpers/Game_Engine_Fixture");
 
 afterEach(resetFixtures);
 
 test("placement emits one placement score event", () => {
-    useFixedGrid();
-    const { engine, messages } = createPlayingEngine(1, 5);
-    const originalDifficulty = GameConfig.towerStabilityDifficulty;
+    const { engine, messages } = createPlayingEngine(1, 5, {
+        tunables: {
+            ...fixedGridTunables(),
+            towerStabilityDifficulty: 0
+        }
+    });
 
     engine.room.players[0].blocks = [createBlock(2)];
     engine.room.players[1].blocks = [createBlock(3, "B2")];
 
-    try {
-        // A lone narrow block trips the tilt/support-deficit warning under the
-        // live tuned stability curve; zero difficulty isolates this test to
-        // just the scoring event it's actually asserting on.
-        GameConfig.towerStabilityDifficulty = 0;
-        engine.placeBlock("P1", 0);
-    } finally {
-        GameConfig.towerStabilityDifficulty = originalDifficulty;
-    }
+    engine.placeBlock("P1", 0);
 
     const message = messageWithScoreEvents(messages);
     assert.deepEqual(eventTypes(message), ["placement"]);
@@ -60,8 +55,7 @@ test("a Z block placed at a lane origin settles with an unsupported overhang", (
 });
 
 test("resolveColumnOriginX clamps the requested column to the block's valid placeable range", () => {
-    useFixedGrid();
-    const { engine } = createPlayingEngine(1, 8);
+    const { engine } = createPlayingEngine(1, 8, { tunables: fixedGridTunables() });
     const tBlock = { shapeId: "T", cells: [[1, 0], [0, 1], [1, 1], [2, 1]] };
     const verticalIBlock = { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]] };
 
@@ -78,8 +72,7 @@ test("resolveColumnOriginX clamps the requested column to the block's valid plac
 });
 
 test("getPlaceableOriginRange narrows as block width grows, keeping the full footprint within columns 4-9", () => {
-    useFixedGrid();
-    const { engine } = createPlayingEngine(1, 8);
+    const { engine } = createPlayingEngine(1, 8, { tunables: fixedGridTunables() });
     const oBlock = { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
     const horizontalIBlock = { shapeId: "I", cells: [[0, 0], [1, 0], [2, 0], [3, 0]] };
 
@@ -90,8 +83,8 @@ test("getPlaceableOriginRange narrows as block width grows, keeping the full foo
 });
 
 test("site width scales with target height, staying centered on the 14-column grid", () => {
-    useFixedGrid({ widthMin: 6, widthMax: 12 });
-    const { engine } = createPlayingEngine(1, 8);
+    const fixedGrid = fixedGridTunables({ widthMin: 6, widthMax: 12 });
+    const { engine } = createPlayingEngine(1, 8, { tunables: fixedGrid });
 
     // A short target keeps the minimum 6-wide site; taller targets widen it so a
     // tall tower gets a proportionally broader base to stand on.
@@ -99,7 +92,7 @@ test("site width scales with target height, staying centered on the 14-column gr
     assert.deepEqual(engine.getPlaceableColumnRange(), { min: 4, max: 9 });
 
     assert.ok(engine.getSiteWidthForHeight(30) > engine.getSiteWidthForHeight(8));
-    assert.equal(engine.getSiteWidthForHeight(1000), GameConfig.towerSiteWidthMax);
+    assert.equal(engine.getSiteWidthForHeight(1000), fixedGrid.towerSiteWidthMax);
 
     // every derived site stays centered, so the tower still renders mid-screen
     [4, 8, 20, 30, 60].forEach(targetHeight => {
@@ -108,15 +101,16 @@ test("site width scales with target height, staying centered on the 14-column gr
 
         assert.equal(
             range.min + range.max,
-            GameConfig.towerGridWidth - 1,
+            fixedGrid.towerGridWidth - 1,
             `site for target ${targetHeight} is off-center`
         );
     });
 });
 
 test("placeable origin range follows the level's site, not a fixed 4-9 span", () => {
-    useFixedGrid({ widthMin: 6, widthMax: 12 });
-    const { engine } = createPlayingEngine(1, 8);
+    const { engine } = createPlayingEngine(1, 8, {
+        tunables: fixedGridTunables({ widthMin: 6, widthMax: 12 })
+    });
     const oBlock = { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] };
 
     const narrow = engine.getPlaceableOriginRange(oBlock);
@@ -131,8 +125,7 @@ test("placeable origin range follows the level's site, not a fixed 4-9 span", ()
 });
 
 test("an aimed placement lands in the gap instead of falling to the top", () => {
-    useFixedGrid();
-    const { engine } = createPlayingEngine(1, 12);
+    const { engine } = createPlayingEngine(1, 12, { tunables: fixedGridTunables() });
 
     buildTowerWithVoid(engine);
     engine.placeBlock("P1", 0, 5, 0);
@@ -145,8 +138,7 @@ test("an aimed placement lands in the gap instead of falling to the top", () => 
 });
 
 test("an origin that is no longer legal falls back to the gravity settle", () => {
-    useFixedGrid();
-    const { engine } = createPlayingEngine(1, 12);
+    const { engine } = createPlayingEngine(1, 12, { tunables: fixedGridTunables() });
 
     buildTowerWithVoid(engine);
     // Column 4 row 0 is occupied -- the race where a teammate filled the target
@@ -160,8 +152,7 @@ test("an origin that is no longer legal falls back to the gravity settle", () =>
 });
 
 test("a placement with no aimed row still settles from above", () => {
-    useFixedGrid();
-    const { engine } = createPlayingEngine(1, 12);
+    const { engine } = createPlayingEngine(1, 12, { tunables: fixedGridTunables() });
 
     buildTowerWithVoid(engine);
     // What a bot sends: a column and nothing else.
@@ -173,34 +164,30 @@ test("a placement with no aimed row still settles from above", () => {
 });
 
 test("a direct gap fill emits one structural placement transaction", () => {
-    useFixedGrid();
-    const originalDifficulty = GameConfig.towerStabilityDifficulty;
+    const { engine, messages } = createPlayingEngine(1, 12, {
+        tunables: {
+            ...fixedGridTunables(),
+            towerStabilityDifficulty: 60
+        }
+    });
 
-    try {
-        GameConfig.towerStabilityDifficulty = 60;
-        const { engine, messages } = createPlayingEngine(1, 12);
+    buildTowerWithVoid(engine);
+    engine.placeBlock("P1", 0, 5, 0);
 
-        buildTowerWithVoid(engine);
-        engine.placeBlock("P1", 0, 5, 0);
+    const event = latestMessage(messages).scoreEvents.find(
+        scoreEvent => scoreEvent.type === "placement"
+    );
 
-        const event = latestMessage(messages).scoreEvents.find(
-            scoreEvent => scoreEvent.type === "placement"
-        );
-
-        assert.ok(event, "filling a void is a scored placement");
-        assert.ok(event.meta.structuralPoints > 0, "the direct support repair earns structural value");
-        assert.equal(
-            latestMessage(messages).scoreEvents.some(scoreEvent => scoreEvent.type === "reinforce"),
-            false
-        );
-    } finally {
-        GameConfig.towerStabilityDifficulty = originalDifficulty;
-    }
+    assert.ok(event, "filling a void is a scored placement");
+    assert.ok(event.meta.structuralPoints > 0, "the direct support repair earns structural value");
+    assert.equal(
+        latestMessage(messages).scoreEvents.some(scoreEvent => scoreEvent.type === "reinforce"),
+        false
+    );
 });
 
 test("stacking on top of the tower supports nothing and pays no repair", () => {
-    useFixedGrid();
-    const { engine } = createPlayingEngine(1, 12);
+    const { engine } = createPlayingEngine(1, 12, { tunables: fixedGridTunables() });
 
     buildTowerWithVoid(engine);
 
@@ -229,8 +216,7 @@ test("placement legality only judges the release row, not its support", () => {
 });
 
 test("a brick released with nothing under it falls", () => {
-    useFixedGrid();
-    const { engine } = createPlayingEngine(1, 12);
+    const { engine } = createPlayingEngine(1, 12, { tunables: fixedGridTunables() });
 
     buildTowerWithVoid(engine);
     // Column 7 is empty ground; aiming four rows up in mid-air is legal, and the

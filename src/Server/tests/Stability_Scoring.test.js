@@ -8,11 +8,10 @@ const {
     createBlock,
     createPlayingEngine,
     eventTypes,
+    fixedGridTunables,
     fixedStabilityConfig,
     latestMessage,
-    originalGameConfig,
-    resetFixtures,
-    useFixedGrid
+    resetFixtures
 } = require("./helpers/Game_Engine_Fixture");
 
 afterEach(resetFixtures);
@@ -36,9 +35,12 @@ function loadedBottleneckEntries() {
     ];
 }
 
+const INDEPENDENT_COLLAPSE_TUNABLES = {
+    ...fixedGridTunables({ gridWidth: 14, widthMin: 14, widthMax: 14 }),
+    powerLastChanceEnabled: false
+};
+
 function configureIndependentCollapse(engine, remainingBlocks) {
-    useFixedGrid({ gridWidth: 14, widthMin: 14, widthMax: 14 });
-    GameConfig.powerLastChanceEnabled = false;
     const row = width => Array.from({ length: width }, (_, x) => [x, 0]);
     const config = fixedStabilityConfig({
         towerSiteWidth: 14,
@@ -762,56 +764,35 @@ test("strong and small reinforcement stay in their action-unit bands", () => {
 });
 
 test("round-clock slack lerps down from levelTimeSlack to levelTimeSlackMin across levelTimeSlackFullLevel", () => {
-    const { engine } = createPlayingEngine(1, 10);
-    const original = {
-        levelTimeLimitMs: GameConfig.levelTimeLimitMs,
-        levelTimeSlack: GameConfig.levelTimeSlack,
-        levelTimeSlackMin: GameConfig.levelTimeSlackMin,
-        levelTimeSlackFullLevel: GameConfig.levelTimeSlackFullLevel
-    };
+    const { engine } = createPlayingEngine(1, 10, {
+        tunables: {
+            levelTimeLimitMs: 60000,
+            levelTimeSlack: 3,
+            levelTimeSlackMin: 1.5,
+            levelTimeSlackFullLevel: 25,
+            placementCooldown: 1000
+        }
+    });
 
-    try {
-        GameConfig.levelTimeLimitMs = 60000;
-        GameConfig.levelTimeSlack = 3.0;
-        GameConfig.levelTimeSlackMin = 1.5;
-        GameConfig.levelTimeSlackFullLevel = 25;
-        // createPlayingEngine zeroes placementCooldown so placements in other
-        // tests don't have to wait out a real cooldown -- restored by the
-        // shared afterEach, but this test needs a realistic value or the
-        // derived clock collapses to near-zero regardless of level.
-        GameConfig.placementCooldown = 1000;
+    const fixedHeight = 1000;
+    const atLevel1 = engine.getLevelTimeLimitMs(fixedHeight, 1);
+    const atLevel13 = engine.getLevelTimeLimitMs(fixedHeight, 13);
+    const atLevel25 = engine.getLevelTimeLimitMs(fixedHeight, 25);
+    const atLevel40 = engine.getLevelTimeLimitMs(fixedHeight, 40);
 
-        // Large enough that the floor never binds at any tested level, so what's
-        // left to vary is purely the slack ramp.
-        const fixedHeight = 1000;
-        const atLevel1 = engine.getLevelTimeLimitMs(fixedHeight, 1);
-        const atLevel13 = engine.getLevelTimeLimitMs(fixedHeight, 13);
-        const atLevel25 = engine.getLevelTimeLimitMs(fixedHeight, 25);
-        const atLevel40 = engine.getLevelTimeLimitMs(fixedHeight, 40);
-
-        assert.ok(
-            atLevel1 > atLevel13,
-            `expected level 1 (${atLevel1}) to allow more time than level 13 (${atLevel13})`
-        );
-        assert.ok(
-            atLevel13 > atLevel25,
-            `expected level 13 (${atLevel13}) to allow more time than level 25 (${atLevel25})`
-        );
-        assert.equal(atLevel25, atLevel40, "slack stays flat once levelTimeSlackFullLevel is reached");
-    } finally {
-        GameConfig.levelTimeLimitMs = original.levelTimeLimitMs;
-        GameConfig.levelTimeSlack = original.levelTimeSlack;
-        GameConfig.levelTimeSlackMin = original.levelTimeSlackMin;
-        GameConfig.levelTimeSlackFullLevel = original.levelTimeSlackFullLevel;
-    }
+    assert.ok(
+        atLevel1 > atLevel13,
+        `expected level 1 (${atLevel1}) to allow more time than level 13 (${atLevel13})`
+    );
+    assert.ok(
+        atLevel13 > atLevel25,
+        `expected level 13 (${atLevel13}) to allow more time than level 25 (${atLevel25})`
+    );
+    assert.equal(atLevel25, atLevel40, "slack stays flat once levelTimeSlackFullLevel is reached");
 });
 
 test("the round-clock floor binds at low levels and releases once the derived clock outgrows it", () => {
-    const { engine } = createPlayingEngine(1, 10);
-
-    // createPlayingEngine zeroes placementCooldown for other tests' convenience;
-    // restored by the shared afterEach.
-    GameConfig.placementCooldown = originalGameConfig.placementCooldown || 1000;
+    const { engine } = createPlayingEngine(1, 10, { tunables: { placementCooldown: 1000 } });
 
     assert.equal(
         engine.getLevelTimeLimitMs(engine.getTargetHeightForLevel(1), 1),
@@ -999,7 +980,9 @@ test("balance delta clamps and tolerates missing diagnostics", () => {
 });
 
 test("placement collapses only its component and play continues with enough supply", () => {
-    const { engine, messages } = createPlayingEngine(1, 20);
+    const { engine, messages } = createPlayingEngine(1, 20, {
+        tunables: INDEPENDENT_COLLAPSE_TUNABLES
+    });
     const rebuild = {
         id: "REBUILD",
         shapeId: "I6H",
@@ -1042,7 +1025,9 @@ test("placement collapses only its component and play continues with enough supp
 });
 
 test("collapse itself does not fail but insufficient remaining supply does", () => {
-    const { engine } = createPlayingEngine(1, 20);
+    const { engine } = createPlayingEngine(1, 20, {
+        tunables: INDEPENDENT_COLLAPSE_TUNABLES
+    });
     configureIndependentCollapse(engine, [createBlock(1, "TOO_SMALL")]);
 
     engine.placeBlock("P1", 0, 0);
@@ -1052,8 +1037,9 @@ test("collapse itself does not fail but insufficient remaining supply does", () 
 });
 
 test("a placed brick carries the balance delta it caused", () => {
-    useFixedGrid();
-    const { engine, messages } = createPlayingEngine(1, 8);
+    const { engine, messages } = createPlayingEngine(1, 8, {
+        tunables: fixedGridTunables()
+    });
 
     engine.room.players[0].blocks = [createBlock(2)];
     engine.room.players[1].blocks = [createBlock(2, "B2")];

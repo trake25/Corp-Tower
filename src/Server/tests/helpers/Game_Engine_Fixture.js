@@ -1,43 +1,197 @@
 const GameConfig = require("../../app/Game_Config");
 const GameEngine = require("../../app/Game_Engine");
 
-const originalGameConfig = {
-    placementCooldown: GameConfig.placementCooldown,
-    placementScorePopupDurationMs: GameConfig.placementScorePopupDurationMs,
-    finishScorePopupDurationMs: GameConfig.finishScorePopupDurationMs,
-    levelSummaryDelayMs: GameConfig.levelSummaryDelayMs
-    ,quickChatCooldownMs: GameConfig.quickChatCooldownMs
-    ,powerLifetime: GameConfig.powerLifetime
-    ,powerReplenishPileShare: GameConfig.powerReplenishPileShare
-    ,powerLastChanceEnabled: GameConfig.powerLastChanceEnabled
-    ,towerStabilityWarningThreshold: GameConfig.towerStabilityWarningThreshold
-    ,towerStabilityCriticalThreshold: GameConfig.towerStabilityCriticalThreshold
-    ,towerStabilityMoodThreshold: GameConfig.towerStabilityMoodThreshold
-    ,towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode
-    ,towerStabilityDifficulty: GameConfig.towerStabilityDifficulty
-    ,towerLateralLoadShare: GameConfig.towerLateralLoadShare
-    ,towerGridWidth: GameConfig.towerGridWidth
-    ,towerSiteWidthMin: GameConfig.towerSiteWidthMin
-    ,towerSiteWidthMax: GameConfig.towerSiteWidthMax
-    ,towerSiteSlendernessTarget: GameConfig.towerSiteSlendernessTarget
-    ,impactInterval: GameConfig.impactInterval
-    ,impactScoreRequirement: GameConfig.impactScoreRequirement
-    ,impactMinContributionShare: GameConfig.impactMinContributionShare
-    ,impactRecoverableFailures: GameConfig.impactRecoverableFailures
-};
+function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+}
 
-// Placement geometry is designer-tunable, so these tests pin the grid they
-// assert against instead of inheriting whatever Game_Config currently ships.
-function useFixedGrid({ gridWidth = 14, widthMin = 6, widthMax = 6 } = {}) {
-    GameConfig.towerGridWidth = gridWidth;
-    GameConfig.towerSiteWidthMin = widthMin;
-    GameConfig.towerSiteWidthMax = widthMax;
-    GameConfig.towerSiteSlendernessTarget = 2.75;
+const originalGameConfig = clone(GameConfig);
+
+const QA_TUNING_BASELINE = Object.freeze({
+    maxLevel: 99,
+    debugStartLevel: 1,
+    playersPerRoom: 3,
+    placementCooldown: 0,
+    quickChatCooldownMs: 3000,
+    quickChatTemplates: ["Place Block!", "Sorry!", "Hello!"],
+    targetHeightMultiplier: 3,
+    targetHeightBase: 30,
+    targetHeightStepBase: 10,
+    targetHeightStepGrowth: 5,
+    targetHeightStepGrowthEvery: 3,
+    startDelayMs: 0,
+    levelTimeLimitMs: 120000,
+    levelTimePlannedEfficiency: 0.55,
+    levelTimeSlack: 3,
+    levelTimeSlackMin: 1.5,
+    levelTimeSlackFullLevel: 25,
+    nextLevelDelayMs: 1000,
+    failRestartDelayMs: 1000,
+    placementScorePopupDurationMs: 2500,
+    finishScorePopupDurationMs: 3500,
+    levelSummaryDelayMs: 1000,
+    impactInterval: 2,
+    impactScoreRequirement: 0,
+    impactMinContributionShare: 0.3,
+    impactRecoverableFailures: 3,
+    towerGridWidth: 8,
+    placeableColumnMin: 2,
+    placeableColumnMax: 5,
+    towerSiteSlendernessTarget: 6.75,
+    towerSiteWidthMin: 8,
+    towerSiteWidthMax: 8,
+    towerMaxTiltAngleDeg: 15,
+    towerStructuralPoseMaxAngleDeg: 12,
+    towerStructuralPoseMaxDipUnits: 0.18,
+    towerStructuralPoseRigidRisk: 0.08,
+    towerStructuralPoseIntegritySwayShare: 0.45,
+    towerVisibleRowCapacity: 17,
+    towerScrollStartRatio: 0.7,
+    towerScrollEasePower: 3,
+    towerTopIndicatorClearanceRows: 1,
+    towerStabilityDifficulty: 30,
+    towerLateralLoadShare: 0.45,
+    towerStabilityPressure: { floor: 0.55, fullPressureLevel: 8, difficultyCurvePower: 2 },
+    towerSupportDifficultyPressure: { midpoint: 0.38, steepness: 8 },
+    towerStabilityAnchors: {
+        forgiving: {
+            towerBalanceSafeOffsetShare: 0.9,
+            towerBalanceCollapseOffsetShare: 1.65,
+            towerStructuralLoadExponent: 0.92,
+            towerRedundancyBonus: 0.45,
+            towerStructuralSeverity: 0.55,
+            towerStabilityMinHeight: 10,
+            towerHeightPressureGain: 0,
+            towerSupportSafeLoadPerContact: 9.6,
+            towerSupportCollapseLoadPerContact: 48
+        },
+        harsh: {
+            towerBalanceSafeOffsetShare: 0.4,
+            towerBalanceCollapseOffsetShare: 1,
+            towerStructuralLoadExponent: 0.68,
+            towerRedundancyBonus: 0.65,
+            towerStructuralSeverity: 1.35,
+            towerStabilityMinHeight: 8,
+            towerHeightPressureGain: 1.3,
+            towerSupportSafeLoadPerContact: 3.2,
+            towerSupportCollapseLoadPerContact: 16
+        }
+    },
+    towerBaseHalfWidthFloor: 1,
+    towerStabilityWarningThreshold: 75,
+    towerStabilityCriticalThreshold: 45,
+    towerStabilityMoodThreshold: 2,
+    towerStabilityFeedbackMode: "live_preview",
+    powerUnlockLevel: 1,
+    powerMaxSlots: 3,
+    powerActivationCooldownMs: 3000,
+    powerLastChanceEnabled: false,
+    powerLifetime: "impact",
+    powerGuaranteedBaseline: false,
+    powerImpactMvpReward: false,
+    powerReplenishPileShare: 0.25,
+    powerCatalog: {
+        score_cap: { category: "Offensive", title: "Score Cap", active: false },
+        copy_score: { category: "Defensive", title: "Copy Score", active: false },
+        refresh: { category: "Utility", title: "Refresh", active: false },
+        replenish: { category: "Utility", title: "Replenish", active: true }
+    },
+    brickShapes: [
+        { shapeId: "I", cells: [[0, 0], [0, 1], [0, 2], [0, 3]] },
+        { shapeId: "O", cells: [[0, 0], [1, 0], [0, 1], [1, 1]] },
+        { shapeId: "L", cells: [[0, 0], [1, 0], [0, 1], [0, 2]] },
+        { shapeId: "T", cells: [[1, 0], [0, 1], [1, 1], [2, 1]] },
+        { shapeId: "Z", cells: [[1, 0], [2, 0], [0, 1], [1, 1]] }
+    ],
+    brickWeights: { I: 1, O: 3, L: 2, T: 2, Z: 2 },
+    inventoryScaling: { 1: 3 },
+    maxActiveBlocks: 3,
+    maxTeamCarryOverBlocks: 3,
+    maxGeneratedDrawPileBlocks: 4096,
+    supplyEffectiveWidthRatio: 0.4,
+    levelSupplyMinSurplus: 0,
+    levelSupplyMaxSurplus: 4,
+    levelSupplyMaxSurplusShare: 0.08,
+    levelSupplyCoverageStart: 1.05,
+    levelSupplyCoverageEnd: 0.75,
+    levelSupplyCoverageFullLevel: 15,
+    minPrecisionBlocksPerLevel: 3,
+    openingHandGenerationAttempts: 1000,
+    refreshGenerationAttempts: 100,
+    refreshMinUsefulBlockHeight: 2,
+    accessibility: { parallelPlacement: false },
+    visualHooks: {
+        impactBeat: true,
+        screenShake: true,
+        impactBeatMinZoom: 0.3,
+        impactBeatZoomOutMs: 900,
+        impactBeatWaveMs: 1100,
+        impactBeatHoldMs: 0,
+        collapseDebrisLifetimeMs: 3000,
+        screenShakeMs: 460,
+        screenShakeMagnitudeUnits: 0.22
+    },
+    scoring: {
+        placementScorePerHeight: 10,
+        recoveryHeightScorePercent: 50,
+        strongReinforcementActionShare: 1,
+        strongStructuralImprovement: 0.3,
+        fullDangerRiskIncrease: 0.25,
+        dangerousHeightFloor: 0.35,
+        normalCombinedCapActionShare: 1.6,
+        criticalSaveBonusActionShare: 1,
+        criticalCombinedCapActionShare: 2.5,
+        criticalSaveMinRiskReduction: 0.3,
+        criticalSaveMinLoadShare: 0.3,
+        criticalSaveMaxPerLevel: 2,
+        finisherBonusPerLevel: 0,
+        precisionBonusPerLevel: 20,
+        teamExactBonusPerLevel: 15,
+        assistBonusPerLevel: 0,
+        assistContributionThreshold: 0.25
+    },
+    debugBotsEnabled: false,
+    showLatencyIndicator: true,
+    debugBotCount: 2,
+    debugBotDelayMin: 6000,
+    debugBotDelayMax: 7000,
+    debugBotStrategy: "cooperative",
+    debugBotStabilityTolerance: 5,
+    debugBotGapCandidates: 6
+});
+
+function replaceGameConfig(values) {
+    for (const key of Object.keys(GameConfig)) {
+        if (!Object.hasOwn(values, key)) delete GameConfig[key];
+    }
+    for (const [key, value] of Object.entries(values)) {
+        GameConfig[key] = clone(value);
+    }
+}
+
+function applyTunables(tunables = {}) {
+    for (const [key, value] of Object.entries(tunables)) {
+        if (!Object.hasOwn(GameConfig, key)) throw new Error(`Unknown QA tunable: ${key}`);
+        if (value && typeof value === "object" && !Array.isArray(value)) {
+            GameConfig[key] = { ...GameConfig[key], ...clone(value) };
+        } else {
+            GameConfig[key] = clone(value);
+        }
+    }
+}
+
+function fixedGridTunables({ gridWidth = 14, widthMin = 6, widthMax = 6 } = {}) {
+    return {
+        towerGridWidth: gridWidth,
+        towerSiteWidthMin: widthMin,
+        towerSiteWidthMax: widthMax,
+        towerSiteSlendernessTarget: 2.75
+    };
 }
 
 // The live stability constants are derived per level from towerStabilityDifficulty,
 // so tests that assert concrete stability numbers pin their own resolved set the
-// same way useFixedGrid pins the grid.
+// same way fixedGridTunables pins the grid.
 function fixedStabilityConfig(overrides = {}) {
     return {
         towerSiteWidth: 6,
@@ -56,7 +210,6 @@ function fixedStabilityConfig(overrides = {}) {
         ...overrides
     };
 }
-const originalScoringConfig = { ...GameConfig.scoring };
 const activeEngines = new Set();
 
 function resetFixtures() {
@@ -64,43 +217,7 @@ function resetFixtures() {
         engine.clearTimers();
     });
     activeEngines.clear();
-    GameConfig.placementCooldown = originalGameConfig.placementCooldown;
-    GameConfig.placementScorePopupDurationMs =
-        originalGameConfig.placementScorePopupDurationMs;
-    GameConfig.finishScorePopupDurationMs =
-        originalGameConfig.finishScorePopupDurationMs;
-    GameConfig.levelSummaryDelayMs = originalGameConfig.levelSummaryDelayMs;
-    GameConfig.quickChatCooldownMs = originalGameConfig.quickChatCooldownMs;
-    GameConfig.powerLifetime = originalGameConfig.powerLifetime;
-    GameConfig.powerReplenishPileShare =
-        originalGameConfig.powerReplenishPileShare;
-    GameConfig.powerLastChanceEnabled =
-        originalGameConfig.powerLastChanceEnabled;
-    GameConfig.towerStabilityWarningThreshold =
-        originalGameConfig.towerStabilityWarningThreshold;
-    GameConfig.towerStabilityCriticalThreshold =
-        originalGameConfig.towerStabilityCriticalThreshold;
-    GameConfig.towerStabilityMoodThreshold =
-        originalGameConfig.towerStabilityMoodThreshold;
-    GameConfig.towerStabilityFeedbackMode =
-        originalGameConfig.towerStabilityFeedbackMode;
-    GameConfig.towerStabilityDifficulty =
-        originalGameConfig.towerStabilityDifficulty;
-    GameConfig.towerLateralLoadShare =
-        originalGameConfig.towerLateralLoadShare;
-    GameConfig.towerGridWidth = originalGameConfig.towerGridWidth;
-    GameConfig.towerSiteWidthMin = originalGameConfig.towerSiteWidthMin;
-    GameConfig.towerSiteWidthMax = originalGameConfig.towerSiteWidthMax;
-    GameConfig.towerSiteSlendernessTarget =
-        originalGameConfig.towerSiteSlendernessTarget;
-    GameConfig.impactInterval = originalGameConfig.impactInterval;
-    GameConfig.impactScoreRequirement =
-        originalGameConfig.impactScoreRequirement;
-    GameConfig.impactMinContributionShare =
-        originalGameConfig.impactMinContributionShare;
-    GameConfig.impactRecoverableFailures =
-        originalGameConfig.impactRecoverableFailures;
-    GameConfig.scoring = { ...originalScoringConfig };
+    replaceGameConfig(originalGameConfig);
 }
 
 function createPlayers() {
@@ -122,17 +239,14 @@ function createBlock(height, id = "B1") {
 
 function createPlayingEngine(level = 1, targetHeight = 5, options = {}) {
     const messages = [];
+    replaceGameConfig(QA_TUNING_BASELINE);
+    applyTunables(options.tunables);
     const engine = new GameEngine({
         onRoomMessage: (_roomId, message) => {
             messages.push(JSON.parse(JSON.stringify(message)));
         },
         onRoomCloseRequested: options.onRoomCloseRequested || null
     });
-
-    GameConfig.placementCooldown = 0;
-    GameConfig.placementScorePopupDurationMs = 2500;
-    GameConfig.finishScorePopupDurationMs = 3500;
-    GameConfig.levelSummaryDelayMs = 1000;
 
     engine.createRoom(createPlayers());
     activeEngines.add(engine);
@@ -207,10 +321,12 @@ module.exports = {
     createFlatBlock,
     createPlayingEngine,
     eventTypes,
+    fixedGridTunables,
     fixedStabilityConfig,
     latestMessage,
     messageWithScoreEvents,
     originalGameConfig,
+    QA_TUNING_BASELINE,
     resetFixtures,
-    useFixedGrid
+    applyTunables
 };
