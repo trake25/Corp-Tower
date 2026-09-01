@@ -5,7 +5,7 @@ const LateralBracing = require("../app/Tower_Lateral_Bracing");
 const TowerStability = require("../app/Tower_Stability");
 const {
     GameConfig,
-    createPlayingEngine,
+    fixedStabilityConfig,
     resetFixtures
 } = require("./helpers/Game_Engine_Fixture");
 
@@ -25,11 +25,6 @@ function thinFixture(brace = null) {
     }
     if (brace) entries.push(brace);
     return entries;
-}
-
-function productionConfig() {
-    const { engine } = createPlayingEngine(1, 30);
-    return engine.resolveStabilityConfig(1);
 }
 
 function groupFor(result, blockId) {
@@ -70,7 +65,7 @@ function connect(group, supporter) {
 
 test("a grounded side brace shares the critical thin-I load and conserves mass and moment", () => {
     const lateralShare = 0.4;
-    const config = { ...productionConfig(), towerLateralLoadShare: lateralShare };
+    const config = fixedStabilityConfig({ towerLateralLoadShare: lateralShare });
     const before = TowerStability.evaluate(
         thinFixture(),
         { ...config, towerLateralLoadShare: 0 }
@@ -110,7 +105,7 @@ test("a grounded side brace shares the critical thin-I load and conserves mass a
 });
 
 test("a hanging side attachment receives no lateral load or reinforcement attribution", () => {
-    const config = productionConfig();
+    const config = fixedStabilityConfig({ towerLateralLoadShare: 0.4 });
     const before = TowerStability.evaluate(thinFixture(), config);
     const hanging = entry("H", O, 4, 1);
     const after = TowerStability.evaluate(thinFixture(hanging), config);
@@ -120,7 +115,7 @@ test("a hanging side attachment receives no lateral load or reinforcement attrib
 });
 
 test("zero share preserves ordinary downward load and rejects lateral scoring", () => {
-    const config = { ...productionConfig(), towerLateralLoadShare: 0 };
+    const config = fixedStabilityConfig({ towerLateralLoadShare: 0 });
     const brace = entry("B", O, 4, 0);
     const before = TowerStability.evaluate(thinFixture(), config);
     const after = TowerStability.evaluate(thinFixture(brace), config);
@@ -147,7 +142,7 @@ test("a brace whose only route reaches ground through the source is not independ
 });
 
 test("lateral evaluation is independent of entry ordering", () => {
-    const config = productionConfig();
+    const config = fixedStabilityConfig({ towerLateralLoadShare: 0.4 });
     const entries = thinFixture(entry("B", O, 4, 0));
     const forward = TowerStability.evaluate(entries, config);
     const reverse = TowerStability.evaluate(entries.slice().reverse(), config);
