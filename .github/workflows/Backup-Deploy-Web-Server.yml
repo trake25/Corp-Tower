@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     env:
-      GODOT_VERSION: "4.6.2"
+      GODOT_VERSION: "4.7.2"
       GODOT_STATUS: "stable"
       GODOT_PROJECT_PATH: "src/Client/App/corp-tower"
 

@@ -7,7 +7,7 @@ description: >-
 
 inputs:
   godot-version:
-    description: Godot version, e.g. "4.6.2".
+    description: Godot version, e.g. "4.7.2".
     required: true
   godot-status:
     description: Godot release status, e.g. "stable".

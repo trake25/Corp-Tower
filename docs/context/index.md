@@ -11,7 +11,7 @@ authoritative; the client renders `game_state` and never computes an outcome.
 
 | Layer | Stack |
 |---|---|
-| Client | Godot `4.6.2.stable`, GDScript, `WebSocketPeer` |
+| Client | Godot `4.7.2.stable`, GDScript, `WebSocketPeer` |
 | Server | Node.js, `ws`, `redis` — entry `src/Server/app/Server.js` |
 | Shared state | Redis — multi-worker matchmaking, rooms, reconnect |
 | Infra | Terraform · EKS (production-grade, deploy-on-demand) · Docker · Cloudflare |

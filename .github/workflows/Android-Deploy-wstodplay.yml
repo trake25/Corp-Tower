@@ -42,7 +42,7 @@ jobs:
     name: Build Signed Android AAB
     runs-on: ubuntu-24.04
     env:
-      GODOT_VERSION: "4.6.2"
+      GODOT_VERSION: "4.7.2"
       GODOT_STATUS: "stable"
       GODOT_PROJECT_PATH: "src/Client/App/corp-tower"
       PACKAGE_NAME: "com.galaxxigames.tod"
@@ -226,7 +226,7 @@ jobs:
         with:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
-          packages: "platform-tools build-tools;35.0.1 platforms;android-35 cmake;3.10.2.4988404 ndk;28.1.13356709"
+          packages: "platform-tools build-tools;36.1.0 platforms;android-36 cmake;3.10.2.4988404 ndk;29.0.14206865"
 
       - name: Download Godot and export templates
         run: |
@@ -277,7 +277,7 @@ jobs:
             printf '%s\n' 'export/android/debug_keystore = ""'
             printf '%s\n' 'export/android/debug_keystore_user = ""'
             printf '%s\n' 'export/android/debug_keystore_pass = ""'
-          } > "$HOME/.config/godot/editor_settings-4.6.tres"
+          } > "$HOME/.config/godot/editor_settings-4.7.tres"
 
       - name: Create CI export preset
         run: |
@@ -378,6 +378,15 @@ jobs:
           jarsigner -verify "$AAB_PATH" >/tmp/corp-tower-aab-signature.txt
           grep -q "jar verified." /tmp/corp-tower-aab-signature.txt
 
+          BUNDLETOOL_VERSION="1.18.2"
+          BUNDLETOOL_JAR="$RUNNER_TEMP/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          curl -fL --retry 3 -o "$BUNDLETOOL_JAR" "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          TARGET_SDK="$(java -jar "$BUNDLETOOL_JAR" dump manifest --bundle="$AAB_PATH" --xpath='/manifest/uses-sdk/@android:targetSdkVersion')"
+          if [ "$TARGET_SDK" != "36" ]; then
+            echo "::error::Signed AAB target SDK must be 36, got '${TARGET_SDK:-missing}'."
+            exit 1
+          fi
+
           AAB_SIZE_BYTES="$(wc -c < "$AAB_PATH" | tr -d ' ')"
           {
             echo "## Android AAB deployment artifact"
@@ -386,6 +395,7 @@ jobs:
             echo "- Size: \`${AAB_SIZE_BYTES} bytes\`"
             echo "- Version code: \`$ANDROID_VERSION_CODE\`"
             echo "- Version name: \`${ANDROID_VERSION_CODE}-${ANDROID_WEBSOCKET_TARGET}\`"
+            echo "- Target SDK: \`$TARGET_SDK\` (validated from base manifest)"
             echo "- WebSocket target: \`$CORP_TOWER_WS_PRIMARY\`"
             echo "- Zip integrity: passed"
             echo "- Signature verification: passed"

@@ -19,7 +19,7 @@ permissions:
 env:
   AWS_REGION: ap-southeast-1
   CLUSTER_NAME: corp-tower-eks-lab
-  GODOT_VERSION: "4.6.2"
+  GODOT_VERSION: "4.7.2"
   GODOT_STATUS: "stable"
   GODOT_PROJECT_PATH: "src/Client/App/corp-tower"
 

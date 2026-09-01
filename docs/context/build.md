@@ -35,15 +35,16 @@ authored overrides. Use the repository smoke/import procedures instead.
 ## Android build
 
 The Android workflow is a manual Google Play build. It fetches private art,
-writes build-time endpoint/auth flags, installs the pinned Godot/Android toolchain,
-builds native sign-in plugins, restores signing material, imports the project,
-runs smoke and required GUT, exports a signed AAB, validates it, and optionally
-publishes to the internal track.
+writes build-time endpoint/auth flags, installs the Godot `4.7.2.stable` and
+Android API-36 toolchain, builds native sign-in plugins, restores signing material,
+imports the project, runs smoke and required GUT, exports a signed AAB, validates
+it, and optionally publishes to the internal track.
 
 Version code is resolved from every Play track and increments the highest known
 value. An override must be a positive value above that maximum. The AAB gate
 checks archive integrity, bundle/manifest presence, required architecture,
-disabled-architecture absence, and signature validity.
+disabled-architecture absence, signature validity, and target SDK 36 extracted
+from the base manifest.
 
 The boot splash requires full-screen startup geometry to avoid a covered-image
 crop; runtime then restores visible system bars. Changing startup window mode

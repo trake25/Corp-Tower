@@ -7,11 +7,11 @@ plugins {
 
 val pluginName = "GoogleSignInPlugin"
 val pluginPackageName = "com.galaxxigames.tod.googlesignin"
-val godotVersion = "4.6.2.stable"
+val godotVersion = "4.7.2.stable"
 
 android {
 	namespace = pluginPackageName
-	compileSdk = 35
+	compileSdk = 36
 
 	buildFeatures {
 		buildConfig = true
