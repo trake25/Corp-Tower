@@ -28,6 +28,7 @@ var pending_entry_mode := "public"
 var pending_private_display_name := ""
 var pending_private_server_id := ""
 var pending_private_password := ""
+var private_entry_in_flight := false
 
 var player_id := ""
 var reconnect_token := ""
@@ -70,6 +71,7 @@ signal recovery_started
 signal recovery_recovered
 signal recovery_unavailable(data)
 signal private_join_failed(data)
+signal private_entry_failed(data)
 
 func connect_server(is_auto_reconnect := false, preserve_entry := false):
 	if not is_auto_reconnect and not preserve_entry:
@@ -103,10 +105,14 @@ func connect_server(is_auto_reconnect := false, preserve_entry := false):
 			auto_reconnect_attempts = 0
 	else:
 		is_connecting = false
-		if is_auto_reconnect:
+		if _has_private_entry_in_flight():
+			_fail_private_entry("connection_failed")
+			status_changed.emit("Disconnected")
+			client_status.emit("[Connect]")
+		elif is_auto_reconnect:
 			schedule_auto_reconnect()
 
-func disconnect_server():
+func disconnect_server(clear_private_entry := true):
 	status_changed.emit("Disconnecting...")
 	manual_disconnect_requested = true
 	connect_after_close = false
@@ -117,6 +123,8 @@ func disconnect_server():
 	_clear_private_lobby_tracking()
 	reset_match_tracking()
 	reset_latency_probe()
+	if clear_private_entry:
+		_clear_pending_private_entry()
 	if ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
 		ws.close()
 
@@ -126,17 +134,30 @@ func toggle_connection():
 	else:
 		connect_server()
 
-func create_private_server(display_name: String, password: String) -> void:
-	_set_private_entry("private_create", display_name, "", password)
-	_connect_with_private_entry()
+func create_private_server(display_name: String, password: String) -> bool:
+	return _begin_private_entry("private_create", display_name, "", password)
 
-func join_private_server(display_name: String, server_id: String, password: String) -> void:
-	_set_private_entry("private_join", display_name, server_id, password)
+func join_private_server(display_name: String, server_id: String, password: String) -> bool:
+	return _begin_private_entry("private_join", display_name, server_id, password)
+
+func _begin_private_entry(mode: String, display_name: String, server_id: String, password: String) -> bool:
+	if private_entry_in_flight:
+		return false
+
+	_set_private_entry(mode, display_name, server_id, password)
+	private_entry_in_flight = true
 	_connect_with_private_entry()
+	return true
 
 func _connect_with_private_entry() -> void:
 	if is_conn_estab or is_connecting:
-		disconnect_server()
+		disconnect_server(false)
+		if ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
+			if ws.get_ready_state() != WebSocketPeer.STATE_CLOSING:
+				ws.close()
+			manual_disconnect_requested = false
+			connect_after_close = true
+			return
 
 	connect_server(false, true)
 
@@ -147,10 +168,24 @@ func _set_private_entry(mode: String, display_name: String, server_id: String, p
 	pending_private_password = password
 
 func _clear_pending_private_entry() -> void:
+	private_entry_in_flight = false
 	pending_entry_mode = "public"
 	pending_private_display_name = ""
 	pending_private_server_id = ""
 	pending_private_password = ""
+
+func _has_private_entry_in_flight() -> bool:
+	return private_entry_in_flight and pending_entry_mode.begins_with("private_")
+
+func _fail_private_entry(reason: String) -> void:
+	if not _has_private_entry_in_flight():
+		return
+
+	private_entry_failed.emit({
+		"reason": reason,
+		"entryMode": pending_entry_mode
+	})
+	_clear_pending_private_entry()
 
 func _clear_private_lobby_tracking() -> void:
 	private_lobby_active = false
@@ -596,8 +631,8 @@ func _process(delta: float) -> void:
 				auto_reconnect_delay_remaining = -1.0
 				room_closed.emit(data)
 			"private_join_rejected":
-				_clear_pending_private_entry()
 				private_join_failed.emit(data)
+				_clear_pending_private_entry()
 
 	var now_msec := Time.get_ticks_msec()
 	check_recovery_deadlines(now_msec)
@@ -638,7 +673,11 @@ func _process(delta: float) -> void:
 				ws = WebSocketPeer.new()
 				connect_server(false, pending_entry_mode != "public")
 			elif was_connecting:
-				if private_lobby_active and not manual_disconnect_requested:
+				if _has_private_entry_in_flight() and not manual_disconnect_requested:
+					_fail_private_entry("transport_closed")
+					status_changed.emit("Disconnected")
+					client_status.emit("[Connect]")
+				elif private_lobby_active and not manual_disconnect_requested:
 					schedule_private_lobby_reconnect()
 				elif match_active and recovery_state == "healthy" and not manual_disconnect_requested:
 					begin_recovery(true)

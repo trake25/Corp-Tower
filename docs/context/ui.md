@@ -35,9 +35,11 @@ bots are already ready.
 
 Home opens Private Server creation and Join Server. Create sends the temporary
 name and optional numeric password; Join keeps Find Match as the public path and
-uses its other fields only for private entry. Private Lobby renders server info,
-fixed seats, host-only kick, readiness, countdown, and grace-greyed identity;
-leave and kick reuse the shared confirmation modal.
+uses its other fields only for private entry. One private request keeps its source
+form beneath a blocking wait until authoritative room entry, rejection, or
+transport failure, so retry preserves the submitted form. Private Lobby renders
+server info, fixed seats, host-only kick, readiness, countdown, and grace-greyed
+identity; leave and kick reuse the shared confirmation modal.
 
 Network signals drive room entry, match start, teardown, navigation, and recovery.
 During active-match recovery, a centred blocking modal keeps the current screen

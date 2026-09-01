@@ -4,7 +4,6 @@ signal leave_lobby_requested
 
 const CHECK_READY := preload("res://Cor/Art/4-Private-lobby/ic-colored-checkmark-green.png")
 const CHECK_WAITING := preload("res://Cor/Art/4-Private-lobby/ic-colored-checkmark-grey.png")
-const PlayerRailEntry := preload("res://Cor/Scripts/PlayerRailEntry.gd")
 const WAITING_NAME := "Waiting for player..."
 const SEAT_COUNT := 3
 const DISPLAY_NAME_LIMIT := 10
@@ -26,6 +25,7 @@ func _ready() -> void:
 	%ReadyButton.pressed.connect(_on_ready_pressed)
 	%LeaveLobbyModal.confirmed.connect(_on_leave_confirmed)
 	%KickPlayerModal.confirmed.connect(_on_kick_confirmed)
+	%CopyToastTimer.timeout.connect(_on_copy_toast_timeout)
 	NetworkManager.lobby_updated.connect(_on_lobby_updated)
 
 	for seat in SEAT_COUNT:
@@ -56,17 +56,13 @@ func _apply_private_lobby_data(data) -> void:
 	var private_lobby: Dictionary = data.get("privateLobby", {})
 	host_player_id = str(private_lobby.get("hostPlayerId", host_player_id))
 	%ServerIdValue.text = str(private_lobby.get("serverId", ""))
-	var password := str(private_lobby.get("password", ""))
-	%PasswordValue.text = password if password != "" else "No password"
+	%PasswordValue.text = str(private_lobby.get("password", ""))
 
 func _apply_roster(roster: Array) -> void:
 	roster_ids.clear()
 
 	for seat in SEAT_COUNT:
 		var name_label: Label = get_node("%%Seat%dName" % seat)
-		var avatar: Control = get_node("%%Seat%dAvatar" % seat)
-		var avatar_texture: TextureRect = get_node("%%Seat%dAvatarTexture" % seat)
-		var avatar_initial: Label = get_node("%%Seat%dAvatarInitial" % seat)
 		var crown: TextureRect = get_node("%%Seat%dCrown" % seat)
 		var kick_button: BaseButton = get_node("%%Seat%dKick" % seat)
 
@@ -77,10 +73,6 @@ func _apply_roster(roster: Array) -> void:
 			roster_ids.append(player_id)
 			name_label.text = _truncate_name(str(entry.get("displayName", WAITING_NAME)))
 			name_label.modulate = GRACE_MODULATE if is_grace else NORMAL_MODULATE
-			avatar.modulate = GRACE_MODULATE if is_grace else NORMAL_MODULATE
-			avatar_texture.texture = PlayerRailEntry.load_avatar_texture(str(entry.get("avatarId", "")))
-			avatar_texture.visible = true
-			avatar_initial.visible = false
 			crown.visible = player_id == host_player_id
 			kick_button.visible = (
 				str(NetworkManager.player_id) == host_player_id
@@ -91,10 +83,6 @@ func _apply_roster(roster: Array) -> void:
 			roster_ids.append("")
 			name_label.text = WAITING_NAME
 			name_label.modulate = NORMAL_MODULATE
-			avatar.modulate = NORMAL_MODULATE
-			avatar_texture.texture = null
-			avatar_texture.visible = false
-			avatar_initial.visible = true
 			crown.visible = false
 			kick_button.visible = false
 
@@ -176,6 +164,11 @@ func _on_leave_confirmed() -> void:
 
 func _on_copy_server_id_pressed() -> void:
 	DisplayServer.clipboard_set(%ServerIdValue.text)
+	%CopyToast.visible = true
+	%CopyToastTimer.start()
+
+func _on_copy_toast_timeout() -> void:
+	%CopyToast.visible = false
 
 func _on_kick_pressed(seat: int) -> void:
 	if seat >= roster_ids.size():

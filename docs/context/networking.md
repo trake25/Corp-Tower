@@ -10,9 +10,11 @@ Build injects one endpoint; Godot uses `WebSocketPeer` and the server uses `ws`.
 Network Manager renders server messages only. On open it sends stored reconnect
 and identity credentials. A valid pair resumes its seat; otherwise the server
 creates a session and uses the requested public, private-create, or private-join
-entry mode. Persisted-room resume takes precedence over fresh entry fields, and
-the public default ignores private fields. Verified identity overrides the claimed
-profile; required auth closes an unverified socket.
+entry mode. A private entry is locally single-flight and retains its fields until
+server room entry, rejection, definitive connect failure, or transport closure.
+Persisted-room resume takes precedence over fresh entry fields, and the public
+default ignores private fields. Verified identity overrides the claimed profile;
+required auth closes an unverified socket.
 
 If the persisted room cannot be restored, the server clears its session room
 reference before reporting `resume_unavailable`. Private-lobby expiry also

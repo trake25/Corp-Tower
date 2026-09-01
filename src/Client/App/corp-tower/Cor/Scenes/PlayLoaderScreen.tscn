@@ -50,7 +50,7 @@ mouse_filter = 2
 theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
 theme_override_fonts/font = ExtResource("3_poppins")
 theme_override_font_sizes/font_size = 24
-text = "Game loading"
+text = "Connecting to private server"
 horizontal_alignment = 1
 
 [node name="LoadingProgressBar" type="ProgressBar" parent="."]
@@ -90,8 +90,3 @@ theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 11
 text = "© 2026 Galaxxi Games. All Rights Reserved."
 horizontal_alignment = 1
-
-[node name="AdvanceTimer" type="Timer" parent="."]
-wait_time = 2.0
-one_shot = true
-autostart = true

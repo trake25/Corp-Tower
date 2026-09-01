@@ -41,7 +41,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:155 | %TutorialButton · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:200 | %CircleRow · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn — 277 ln
+### src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn — 292 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -50,11 +50,11 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:85 | %BackButton · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:111 | %PlayerNameEdit · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:121 | %ServerIdEdit · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:135 | %PasswordEdit · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:147 | %PasswordVisibilityButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:166 | %JoinButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:186 | %PrivateJoinError · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:258 | %FindMatchButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:136 | %PasswordEdit · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:152 | %PasswordVisibilityButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:181 | %JoinButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:201 | %PrivateJoinError · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:273 | %FindMatchButton · unique node | |
 
 ### src/Client/App/corp-tower/Cor/Scenes/Main.tscn — 51 ln
 
@@ -64,7 +64,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/Main.tscn:8 | Main · scene root | |
 | src/Client/App/corp-tower/Cor/Scenes/Main.tscn:18 | %StartupSplash · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn — 98 ln
+### src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn — 93 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -72,23 +72,25 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn:21 | PlayLoaderScreen · scene root | |
 | src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn:56 | %LoadingProgressBar · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn — 499 ln
+### src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn — 453 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:1 | @file · file | PrivateLobbyScreen scene composition and controller bindings |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:56 | PrivateLobbyScreen · scene root | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:101 | %BackButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:166 | %ServerIdValue · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:174 | %CopyServerIdButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:190 | %PasswordValue · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:455 | %ReadyButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:462 | %ReadyGradientFill · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:475 | %ReadyLabel · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:490 | %LeaveLobbyModal · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:495 | %KickPlayerModal · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:51 | PrivateLobbyScreen · scene root | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:96 | %BackButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:161 | %ServerIdValue · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:169 | %CopyServerIdButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:179 | %CopyToast · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:205 | %CopyToastTimer · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:216 | %PasswordValue · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:409 | %ReadyButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:416 | %ReadyGradientFill · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:429 | %ReadyLabel · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:444 | %LeaveLobbyModal · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:449 | %KickPlayerModal · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn — 211 ln
+### src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn — 212 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -97,9 +99,9 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:74 | %BackButton · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:101 | %PlayerNameEdit · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:116 | %PasswordEdit · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:132 | %PasswordVisibilityButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:152 | %PlayerCountButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:191 | %CreateButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:133 | %PasswordVisibilityButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:153 | %PlayerCountButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:192 | %CreateButton · unique node | |
 
 ### src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn — 261 ln
 
@@ -185,12 +187,11 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd:1 | @file · file | safe viewport inset for framed placement |
 | src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd:5 | ease_speed · export | |
 
-### src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd — 21 ln
+### src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd — 13 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd:1 | @file · file | splash done, advance to play |
-| src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd:3 | loader_finished · signal | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd — 59 ln
 
@@ -200,15 +201,15 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:25 | set_entry | |
 | src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:48 | load_avatar_texture · static func | |
 
-### src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd — 197 ln
+### src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd — 190 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:1 | @file · file | PrivateLobbyScreen client behavior |
 | src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:3 | leave_lobby_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:8 | WAITING_NAME · const | |
-| src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:9 | SEAT_COUNT · const | |
-| src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:11 | DISABLED_MODULATE · const | |
+| src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:7 | WAITING_NAME · const | |
+| src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:8 | SEAT_COUNT · const | |
+| src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:10 | DISABLED_MODULATE · const | |
 | src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:42 | apply_lobby_data | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd — 54 ln
@@ -230,14 +231,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:12 | DISABLED_MODULATE · const | |
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:32 | apply_lobby_data | |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 482 ln
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 490 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:1 | @file · file | **debug button visibility set once here from `DEBUG_UI_ENABLED`** |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:14 | DEBUG_CONTEXT_LOBBY · const | |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:15 | DEBUG_CONTEXT_PLAY · const | |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:288 | start_tutorial | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:282 | start_tutorial | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/SignInDebugOverlay.gd — 120 ln
 
@@ -310,38 +311,39 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:11 | AUTH_FACEBOOK_APP_ID · const | |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:12 | AUTH_FACEBOOK_CLIENT_TOKEN · const | |
 
-### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 708 ln
+### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 747 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:1 | @file · file | WebSocket lifecycle, reconnect, message dispatch, and client signals |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:60 | status_changed · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:61 | room_joined · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:62 | match_started · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:63 | lobby_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:64 | room_closed · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:65 | game_state_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:66 | client_status · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:67 | debug_config_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:68 | latency_rtt_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:69 | recovery_started · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:70 | recovery_recovered · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:71 | recovery_unavailable · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:72 | private_join_failed · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:74 | connect_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:109 | disconnect_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:129 | create_private_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:133 | join_private_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:176 | kick_private_player | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:185 | place_block | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:200 | send_ready | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:206 | leave_lobby | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:316 | is_recovering | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:447 | send_quick_chat | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:456 | activate_power | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:651 | update_config | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:663 | set_latency_probe_enabled | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:61 | status_changed · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:62 | room_joined · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:63 | match_started · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:64 | lobby_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:65 | room_closed · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:66 | game_state_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:67 | client_status · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:68 | debug_config_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:69 | latency_rtt_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:70 | recovery_started · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:71 | recovery_recovered · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:72 | recovery_unavailable · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:73 | private_join_failed · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:74 | private_entry_failed · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:76 | connect_server | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:115 | disconnect_server | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:137 | create_private_server | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:140 | join_private_server | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:211 | kick_private_player | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:220 | place_block | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:235 | send_ready | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:241 | leave_lobby | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:351 | is_recovering | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:482 | send_quick_chat | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:491 | activate_power | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:690 | update_config | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:702 | set_latency_probe_enabled | |
 
 ---
 
-28 files · 167 stable anchors.
+28 files · 169 stable anchors.

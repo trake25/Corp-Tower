@@ -121,13 +121,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_type_variation = &"JoinLineEdit"
+theme_type_variation = &"JoinPasswordLineEdit"
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_colors/font_placeholder_color = Color(0.35, 0.4, 0.46, 0.85)
 theme_override_font_sizes/font_size = 16
 max_length = 12
 placeholder_text = "Password"
 secret = true
+secret_character = "*"
 
 [node name="PasswordVisibilityButton" type="TextureButton" parent="SafeArea/Root/FieldsColumn/PasswordField"]
 unique_name_in_owner = true

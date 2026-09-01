@@ -10,10 +10,33 @@ class FakeSocket:
 	extends RefCounted
 
 	var sent_messages: Array = []
+	var packets: Array = []
+	var ready_state := WebSocketPeer.STATE_OPEN
+	var close_count := 0
 
 	func send_text(raw: String) -> Error:
 		sent_messages.append(JSON.parse_string(raw))
 		return OK
+
+	func poll() -> void:
+		pass
+
+	func get_ready_state() -> int:
+		return ready_state
+
+	func get_available_packet_count() -> int:
+		return packets.size()
+
+	func get_packet() -> PackedByteArray:
+		return packets.pop_front()
+
+	func close() -> Error:
+		close_count += 1
+		ready_state = WebSocketPeer.STATE_CLOSING
+		return OK
+
+	func queue_packet(data: Dictionary) -> void:
+		packets.append(JSON.stringify(data).to_utf8_buffer())
 
 func after_each() -> void:
 	NetworkManager.disconnect_server()
@@ -21,7 +44,7 @@ func after_each() -> void:
 	NetworkManager._clear_private_lobby_tracking()
 	NetworkManager.player_id = ""
 
-func private_lobby_payload(roster: Array, ready_ids: Array = [], countdown := false) -> Dictionary:
+func private_lobby_payload(roster: Array, ready_ids: Array = [], countdown := false, password := "7007") -> Dictionary:
 	return {
 		"roomMode": "private",
 		"matchStarted": false,
@@ -33,7 +56,7 @@ func private_lobby_payload(roster: Array, ready_ids: Array = [], countdown := fa
 		},
 		"privateLobby": {
 			"serverId": "2345ABCD",
-			"password": "7007",
+			"password": password,
 			"hostPlayerId": "host"
 		}
 	}
@@ -51,11 +74,13 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 	screen.apply_lobby_data(first_payload)
 
 	var ready_button = screen.get_node("SafeArea/Root/ReadyButtonMargin/ReadyButton") as Button
-	var host_crown = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0/Seat0Crown") as TextureRect
+	var host_seat = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0") as HBoxContainer
+	var host_crown = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0/Seat0Identity/Seat0Crown") as TextureRect
 	var host_kick = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0/Seat0Kick") as BaseButton
+	var host_check = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0/Seat0Check") as TextureRect
 	var guest_kick = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1/Seat1Kick") as BaseButton
 	var empty_kick = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Kick") as BaseButton
-	var empty_name = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Name") as Label
+	var empty_name = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Identity/Seat2Name") as Label
 
 	assert_true(ready_button.disabled, "Ready must wait for all three reserved seats.")
 	assert_true(host_crown.visible, "The authoritative host id must render the crown.")
@@ -63,6 +88,14 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 	assert_true(guest_kick.visible, "The host can kick an occupied non-host seat.")
 	assert_false(empty_kick.visible, "Empty seats never expose a kick control.")
 	assert_eq(empty_name.text, "Waiting for player...")
+	assert_eq(host_crown.get_parent().name, "Seat0Identity", "The crown belongs beside the host name.")
+	assert_eq(host_seat.get_child(host_seat.get_child_count() - 1), host_check, "Ready stays at the far edge of each row.")
+	assert_eq(screen.find_children("*Avatar*").size(), 0, "Private waiting-room rows do not render profile avatars.")
+
+	screen.apply_lobby_data(private_lobby_payload([
+		{"id": "host", "displayName": "Host", "connectionPhase": "connected"}
+	], [], false, ""))
+	assert_eq((screen.get_node("SafeArea/Root/ServerInfoCard/CardMargin/Rows/PasswordValue") as Label).text, "")
 
 	var full_payload := private_lobby_payload([
 		{"id": "host", "displayName": "Host", "avatarId": "avatar_0", "connectionPhase": "connected"},
@@ -71,19 +104,20 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 	], ["host"], true)
 	screen.apply_lobby_data(full_payload)
 
-	var grace_name = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Name") as Label
-	var grace_avatar = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Avatar") as Control
+	var grace_name = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Identity/Seat2Name") as Label
 	var ready_label = screen.get_node("SafeArea/Root/ReadyButtonMargin/ReadyButton/ReadyLabel") as Label
 
 	assert_false(ready_button.disabled, "A three-seat private room enables Ready.")
 	assert_eq(grace_name.text, "Graceful..", "Private names use the shared ten-character display convention.")
 	assert_lt(grace_name.modulate.a, 1.0, "Only the server grace phase greys a disconnected name.")
-	assert_lt(grace_avatar.modulate.a, 1.0, "Only the server grace phase greys the profile image.")
-	assert_not_null(
-		(screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Avatar/Seat2AvatarTexture") as TextureRect).texture,
-		"Occupied seats render their roster avatar."
-	)
 	assert_eq(ready_label.text, "Cancel (5s)", "The server start deadline drives the local countdown label.")
+
+	var toast = screen.get_node("SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow/CopyServerIdButton/CopyToast") as Control
+	assert_eq((screen.get_node("SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow/Values/ServerIdValue") as Label).text, "2345ABCD")
+	screen._on_copy_server_id_pressed()
+	assert_true(toast.visible)
+	screen._on_copy_toast_timeout()
+	assert_false(toast.visible)
 
 func test_private_lobby_reuses_confirmation_modals_for_leave_and_kick() -> void:
 	NetworkManager.player_id = "host"
@@ -129,6 +163,10 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	assert_true(server_id_edit.editable)
 	assert_true(password_edit.editable)
 	assert_eq(password_edit.max_length, 12)
+	assert_true(password_edit.secret)
+	assert_eq(password_edit.secret_character, "*")
+	assert_eq(password_edit.get_parent().name, "PasswordRow")
+	assert_eq((join_screen.get_node("SafeArea/Root/FieldsColumn/PasswordRow/PasswordVisibilityButton") as TextureButton).get_parent(), password_edit.get_parent())
 	assert_eq(join_events, [["Guest", "2345ABCD", "123456789012"]])
 	assert_false(join_error.visible, "Private errors stay hidden until a server rejection.")
 	join_screen.show_private_error("Wrong password")
@@ -147,6 +185,12 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	private_server._on_create_pressed()
 
 	assert_eq(create_events, [["Host", "9876"]])
+	var private_password = private_server.get_node("SafeArea/Root/FieldsColumn/PasswordField/PasswordEdit") as LineEdit
+	assert_true(private_password.secret)
+	assert_eq(private_password.secret_character, "*")
+	private_server._toggle_password_visibility()
+	assert_false(private_password.secret)
+	assert_eq(private_password.text, "9876")
 
 func test_network_manager_keeps_private_entry_and_waits_for_server_lifecycle_destination() -> void:
 	var network = NetworkManagerScript.new()
@@ -195,8 +239,75 @@ func test_network_manager_keeps_private_entry_and_waits_for_server_lifecycle_des
 	assert_gte(network.auto_reconnect_delay_remaining, 0.0)
 	assert_eq(room_closed_events.size(), 0, "Only the server can decide a private-lobby shell destination.")
 	assert_true(network.has_signal("private_join_failed"))
+	assert_true(network.has_signal("private_entry_failed"))
 	assert_true(network.has_method("kick_private_player"))
 	network.free()
+
+func test_private_entry_is_single_flight_until_authoritative_room_success() -> void:
+	var network = NetworkManagerScript.new()
+	var socket = FakeSocket.new()
+	network.ws = socket
+	network.is_conn_estab = true
+	var room_joined_events: Array = []
+	network.room_joined.connect(func(data): room_joined_events.append(data))
+
+	assert_true(network.create_private_server("Host", "1234"))
+	assert_false(network.join_private_server("Guest", "2345ABCD", "5678"))
+	assert_eq(socket.close_count, 1, "A repeated private entry cannot restart the active socket lifecycle.")
+	assert_true(network.private_entry_in_flight)
+	assert_eq(network.pending_entry_mode, "private_create")
+	assert_eq(network.pending_private_display_name, "Host")
+
+	socket.ready_state = WebSocketPeer.STATE_OPEN
+	network.is_conn_estab = true
+	socket.queue_packet({
+		"type": "room_created",
+		"roomMode": "private",
+		"matchStarted": false,
+		"privateLobby": {"hostPlayerId": ""}
+	})
+	network._process(0.0)
+
+	assert_eq(room_joined_events.size(), 1)
+	assert_false(network.private_entry_in_flight)
+	assert_eq(network.pending_entry_mode, "public")
+	assert_true(network.join_private_server("Guest", "2345ABCD", "5678"))
+	assert_eq(socket.close_count, 2, "A terminal room result releases the next private entry attempt.")
+	network.free()
+
+func test_private_entry_rejection_and_transport_close_release_the_lock() -> void:
+	var rejection_network = NetworkManagerScript.new()
+	var rejection_socket = FakeSocket.new()
+	rejection_network.ws = rejection_socket
+	rejection_network.is_conn_estab = true
+	rejection_network._set_private_entry("private_join", "Guest", "2345ABCD", "1234")
+	rejection_network.private_entry_in_flight = true
+	var rejection_states: Array = []
+	rejection_network.private_join_failed.connect(func(_data): rejection_states.append(rejection_network.private_entry_in_flight))
+	rejection_socket.queue_packet({"type": "private_join_rejected", "reason": "wrong_password"})
+	rejection_network._process(0.0)
+
+	assert_true(rejection_states[0], "The rejection data reaches the screen before the private lock clears.")
+	assert_false(rejection_network.private_entry_in_flight)
+	assert_eq(rejection_network.pending_entry_mode, "public")
+	rejection_network.free()
+
+	var failure_network = NetworkManagerScript.new()
+	var failure_socket = FakeSocket.new()
+	failure_socket.ready_state = WebSocketPeer.STATE_CLOSED
+	failure_network.ws = failure_socket
+	failure_network.is_connecting = true
+	failure_network._set_private_entry("private_create", "Host", "", "")
+	failure_network.private_entry_in_flight = true
+	var failure_events: Array = []
+	failure_network.private_entry_failed.connect(func(data): failure_events.append(data))
+	failure_network._process(0.0)
+	failure_network._process(0.0)
+
+	assert_eq(failure_events.size(), 1, "A pre-room transport close reports one local private-entry failure.")
+	assert_eq(failure_events[0].get("entryMode"), "private_create")
+	assert_false(failure_network.private_entry_in_flight)
+	failure_network.free()
 
 func test_screen_manager_routes_private_room_and_authoritative_destinations() -> void:
 	var screen_manager = MainScene.instantiate()
@@ -242,3 +353,44 @@ func test_screen_manager_routes_private_room_and_authoritative_destinations() ->
 	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/JoinScreen.tscn"))
 	screen_manager._on_room_closed({"destination": "home"})
 	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
+
+func test_private_entry_loader_preserves_the_source_screen_until_a_terminal_result() -> void:
+	var screen_manager = MainScene.instantiate()
+	add_child_autofree(screen_manager)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_false(screen_manager.current_overlay.scene_file_path.ends_with("/PlayLoaderScreen.tscn"))
+
+	screen_manager.show_join_screen()
+	var join_screen = screen_manager.current_overlay
+	var join_name = join_screen.get_node("SafeArea/Root/FieldsColumn/PlayerNameEdit") as LineEdit
+	join_name.text = "Guest"
+	screen_manager._show_private_entry_loader()
+	var loader = screen_manager.private_entry_loader
+	assert_eq(screen_manager.current_overlay, join_screen)
+	assert_false(loader.has_node("AdvanceTimer"), "Private entry loading has no fixed completion timer.")
+	assert_false(loader.has_signal("loader_finished"))
+	screen_manager._on_private_join_failed({"reason": "wrong_password"})
+
+	assert_eq(screen_manager.current_overlay, join_screen)
+	assert_eq(join_name.text, "Guest")
+	assert_eq(screen_manager.private_entry_loader, null)
+	assert_true((join_screen.get_node("SafeArea/Root/PrivateJoinError") as Label).visible)
+
+	screen_manager.show_private_server_screen()
+	var create_screen = screen_manager.current_overlay
+	var create_name = create_screen.get_node("SafeArea/Root/FieldsColumn/PlayerNameEdit") as LineEdit
+	create_name.text = "Host"
+	screen_manager._show_private_entry_loader()
+	screen_manager._on_private_entry_failed({"reason": "transport_closed", "entryMode": "private_create"})
+
+	assert_eq(screen_manager.current_overlay, create_screen)
+	assert_eq(create_name.text, "Host")
+	assert_eq(screen_manager.private_entry_loader, null)
+
+	screen_manager._show_private_entry_loader()
+	screen_manager._on_room_joined(private_lobby_payload([
+		{"id": "host", "displayName": "Host", "connectionPhase": "connected"}
+	]))
+	assert_eq(screen_manager.private_entry_loader, null)
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/PrivateLobbyScreen.tscn"))

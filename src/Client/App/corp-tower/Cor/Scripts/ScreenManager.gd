@@ -25,6 +25,7 @@ const DRAG_POINTER_NONE := -2
 @onready var auto_dismiss_modal: Control = $AutoDismissModal
 
 var current_overlay: Node = null
+var private_entry_loader: Node = null
 var play_instance: Node = null
 var tutorial_active := false
 var find_match_active := false
@@ -40,6 +41,7 @@ func _ready() -> void:
 	NetworkManager.match_started.connect(_on_match_started)
 	NetworkManager.room_closed.connect(_on_room_closed)
 	NetworkManager.private_join_failed.connect(_on_private_join_failed)
+	NetworkManager.private_entry_failed.connect(_on_private_entry_failed)
 	NetworkManager.status_changed.connect(_on_status_changed)
 	NetworkManager.recovery_started.connect(_on_recovery_started)
 	NetworkManager.recovery_recovered.connect(_on_recovery_recovered)
@@ -151,21 +153,6 @@ func _on_auto_dismiss_modal_dismissed() -> void:
 	else:
 		show_home_screen()
 
-func show_play_loader_screen() -> void:
-	var screen := PlayLoaderScreenScene.instantiate()
-	screen.loader_finished.connect(_on_play_loader_finished)
-	_set_overlay(screen)
-
-func _on_play_loader_finished() -> void:
-	if EndpointConfig.DEMO_MODE_ENABLED:
-		show_home_screen()
-		return
-
-	if await AuthManager.restore_session():
-		show_home_screen()
-	else:
-		show_sign_in_screen()
-
 func show_sign_in_screen() -> void:
 	var screen := SignInScreenScene.instantiate()
 	screen.guest_login_requested.connect(_on_guest_login_requested)
@@ -254,7 +241,8 @@ func _on_private_server_back_requested() -> void:
 	show_home_screen()
 
 func _on_private_server_create_requested(display_name: String, password: String) -> void:
-	NetworkManager.create_private_server(display_name, password)
+	if NetworkManager.create_private_server(display_name, password):
+		_show_private_entry_loader()
 
 func show_join_screen() -> void:
 	_teardown_play_instance()
@@ -269,9 +257,11 @@ func _on_join_screen_back_requested() -> void:
 	show_home_screen()
 
 func _on_private_join_requested(display_name: String, server_id: String, password: String) -> void:
-	NetworkManager.join_private_server(display_name, server_id, password)
+	if NetworkManager.join_private_server(display_name, server_id, password):
+		_show_private_entry_loader()
 
 func _on_private_join_failed(data) -> void:
+	_clear_private_entry_loader()
 	var reason := str(data.get("reason", "not_found"))
 	var message: String = {
 		"full": "Full room",
@@ -283,6 +273,10 @@ func _on_private_join_failed(data) -> void:
 	if current_overlay != null and is_instance_valid(current_overlay) and current_overlay.has_method("show_private_error"):
 		current_overlay.call("show_private_error", message)
 
+	NetworkManager.disconnect_server()
+
+func _on_private_entry_failed(_data) -> void:
+	_clear_private_entry_loader()
 	NetworkManager.disconnect_server()
 
 func start_tutorial(lesson_id: StringName = &"") -> void:
@@ -391,11 +385,25 @@ func _complete_startup_handoff() -> void:
 
 func _clear_overlay() -> void:
 	find_match_active = false
+	_clear_private_entry_loader()
 
 	if current_overlay != null and is_instance_valid(current_overlay):
 		current_overlay.queue_free()
 
 	current_overlay = null
+
+func _show_private_entry_loader() -> void:
+	if private_entry_loader != null and is_instance_valid(private_entry_loader):
+		return
+
+	private_entry_loader = PlayLoaderScreenScene.instantiate()
+	screen_container.add_child(private_entry_loader)
+
+func _clear_private_entry_loader() -> void:
+	if private_entry_loader != null and is_instance_valid(private_entry_loader):
+		private_entry_loader.queue_free()
+
+	private_entry_loader = null
 
 func update_debug_button_availability() -> void:
 	var has_play_instance: bool = (

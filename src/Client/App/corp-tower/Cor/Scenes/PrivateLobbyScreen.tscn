@@ -29,17 +29,12 @@ shadow_color = Color(0.06, 0.25, 0.34, 0.14)
 shadow_size = 10
 shadow_offset = Vector2(0, 5)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Avatar"]
-bg_color = Color(1, 1, 1, 0.78)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.15, 0.47, 0.62, 0.32)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_CopyToast"]
+bg_color = Color(0.02, 0.02, 0.02, 0.94)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ReadyGreen"]
 shader = ExtResource("9_gradient")
@@ -181,6 +176,37 @@ texture_normal = ExtResource("4_copy")
 ignore_texture_size = true
 stretch_mode = 5
 
+[node name="CopyToast" type="PanelContainer" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow/CopyServerIdButton"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -38.0
+offset_top = 3.0
+offset_right = 38.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_CopyToast")
+
+[node name="Label" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow/CopyServerIdButton/CopyToast"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "ID copied"
+
+[node name="CopyToastTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 3.0
+one_shot = true
+
 [node name="PasswordLabel" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 0.4, 0.46, 1)
@@ -193,7 +219,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_fonts/font = ExtResource("8_poppins_bold")
 theme_override_font_sizes/font_size = 22
-text = "No password"
+text = ""
 
 [node name="WaitingRoomCard" type="PanelContainer" parent="SafeArea/Root"]
 layout_mode = 2
@@ -228,45 +254,21 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 40)
 theme_override_constants/separation = 9
 
-[node name="Seat0Avatar" type="PanelContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_Avatar")
-
-[node name="Seat0AvatarTexture" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0/Seat0Avatar"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Seat0AvatarInitial" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0/Seat0Avatar"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.52, 0.67, 1)
-theme_override_fonts/font = ExtResource("8_poppins_bold")
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
-vertical_alignment = 1
-text = "P"
-
-[node name="Seat0Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0"]
-unique_name_in_owner = true
+[node name="Seat0Identity" type="HBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 6
+
+[node name="Seat0Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0/Seat0Identity"]
+unique_name_in_owner = true
+layout_mode = 2
 size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_font_sizes/font_size = 18
 text = "Waiting for player..."
 
-[node name="Seat0Crown" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0"]
+[node name="Seat0Crown" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat0/Seat0Identity"]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(28, 28)
@@ -301,45 +303,21 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 40)
 theme_override_constants/separation = 9
 
-[node name="Seat1Avatar" type="PanelContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_Avatar")
-
-[node name="Seat1AvatarTexture" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1/Seat1Avatar"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Seat1AvatarInitial" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1/Seat1Avatar"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.52, 0.67, 1)
-theme_override_fonts/font = ExtResource("8_poppins_bold")
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
-vertical_alignment = 1
-text = "P"
-
-[node name="Seat1Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1"]
-unique_name_in_owner = true
+[node name="Seat1Identity" type="HBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 6
+
+[node name="Seat1Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1/Seat1Identity"]
+unique_name_in_owner = true
+layout_mode = 2
 size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_font_sizes/font_size = 18
 text = "Waiting for player..."
 
-[node name="Seat1Crown" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1"]
+[node name="Seat1Crown" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1/Seat1Identity"]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(28, 28)
@@ -374,45 +352,21 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 40)
 theme_override_constants/separation = 9
 
-[node name="Seat2Avatar" type="PanelContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_Avatar")
-
-[node name="Seat2AvatarTexture" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Avatar"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Seat2AvatarInitial" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Avatar"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.52, 0.67, 1)
-theme_override_fonts/font = ExtResource("8_poppins_bold")
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
-vertical_alignment = 1
-text = "P"
-
-[node name="Seat2Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2"]
-unique_name_in_owner = true
+[node name="Seat2Identity" type="HBoxContainer" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 6
+
+[node name="Seat2Name" type="Label" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Identity"]
+unique_name_in_owner = true
+layout_mode = 2
 size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_font_sizes/font_size = 18
 text = "Waiting for player..."
 
-[node name="Seat2Crown" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2"]
+[node name="Seat2Crown" type="TextureRect" parent="SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Identity"]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(28, 28)

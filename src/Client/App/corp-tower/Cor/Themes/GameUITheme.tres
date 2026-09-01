@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=27 format=3 uid="uid://u7rmxm0gc7i3"]
+[gd_resource type="Theme" load_steps=30 format=3 uid="uid://u7rmxm0gc7i3"]
 
 [ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Regular.ttf" id="1_poppins"]
 [ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Bold.ttf" id="2_poppins_bold"]
@@ -126,6 +126,44 @@ corner_radius_bottom_left = 12
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_JoinLineEditFocus"]
 content_margin_left = 20.0
 content_margin_right = 20.0
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 1, 1, 0.7)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.23, 0.48, 0.84, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_JoinPasswordLineEditNormal"]
+content_margin_left = 20.0
+content_margin_right = 60.0
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 1, 1, 0.55)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_JoinPasswordLineEditReadOnly"]
+content_margin_left = 20.0
+content_margin_right = 60.0
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 1, 1, 0.4)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_JoinPasswordLineEditFocus"]
+content_margin_left = 20.0
+content_margin_right = 60.0
 content_margin_top = 10.0
 content_margin_bottom = 10.0
 bg_color = Color(1, 1, 1, 0.7)
@@ -273,9 +311,15 @@ HudPanel/styles/panel = SubResource("StyleBoxFlat_Panel")
 InfoLabel/base_type = &"Label"
 InfoLabel/font_sizes/font_size = 14
 JoinLineEdit/base_type = &"LineEdit"
+JoinLineEdit/colors/caret_color = Color(0.078, 0.078, 0.094, 1)
 JoinLineEdit/styles/normal = SubResource("StyleBoxFlat_JoinLineEditNormal")
 JoinLineEdit/styles/read_only = SubResource("StyleBoxFlat_JoinLineEditReadOnly")
 JoinLineEdit/styles/focus = SubResource("StyleBoxFlat_JoinLineEditFocus")
+JoinPasswordLineEdit/base_type = &"LineEdit"
+JoinPasswordLineEdit/colors/caret_color = Color(0.078, 0.078, 0.094, 1)
+JoinPasswordLineEdit/styles/normal = SubResource("StyleBoxFlat_JoinPasswordLineEditNormal")
+JoinPasswordLineEdit/styles/read_only = SubResource("StyleBoxFlat_JoinPasswordLineEditReadOnly")
+JoinPasswordLineEdit/styles/focus = SubResource("StyleBoxFlat_JoinPasswordLineEditFocus")
 MenuCardButton/base_type = &"Button"
 MenuCardButton/styles/normal = SubResource("StyleBoxFlat_MenuCardNormal")
 MenuCardButton/styles/hover = SubResource("StyleBoxFlat_MenuCardHover")

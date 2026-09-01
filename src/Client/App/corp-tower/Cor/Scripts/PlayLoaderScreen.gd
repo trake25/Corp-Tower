@@ -1,20 +1,12 @@
 extends Control
 
-signal loader_finished
-
-@onready var advance_timer: Timer = $AdvanceTimer
 @onready var loading_progress_bar: ProgressBar = %LoadingProgressBar
 
+var loading_elapsed := 0.0
+
 func _ready() -> void:
-	advance_timer.timeout.connect(_on_advance_timer_timeout)
 	loading_progress_bar.value = 0.0
 
-func _process(_delta: float) -> void:
-	if advance_timer.is_stopped():
-		return
-
-	loading_progress_bar.value = 1.0 - (advance_timer.time_left / advance_timer.wait_time)
-
-func _on_advance_timer_timeout() -> void:
-	loading_progress_bar.value = 1.0
-	loader_finished.emit()
+func _process(delta: float) -> void:
+	loading_elapsed += delta
+	loading_progress_bar.value = 0.2 + 0.7 * (0.5 + 0.5 * sin(loading_elapsed * 3.0))
