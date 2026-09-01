@@ -3,6 +3,7 @@ extends Control
 const PlayLoaderScreenScene := preload("res://Cor/Scenes/PlayLoaderScreen.tscn")
 const SignInScreenScene := preload("res://Cor/Scenes/SignInScreen.tscn")
 const HomeScreenScene := preload("res://Cor/Scenes/HomeScreen.tscn")
+const PrivateServerScreenScene := preload("res://Cor/Scenes/PrivateServerScreen.tscn")
 const JoinScreenScene := preload("res://Cor/Scenes/JoinScreen.tscn")
 const FindMatchScreenScene := preload("res://Cor/Scenes/FindMatchScreen.tscn")
 const PublicLobbyScreenScene := preload("res://Cor/Scenes/PublicLobbyScreen.tscn")
@@ -216,10 +217,14 @@ func _show_sign_in_error(screen: Node, reason: String) -> void:
 
 func show_home_screen() -> void:
 	var screen := HomeScreenScene.instantiate()
+	screen.private_server_requested.connect(_on_home_private_server_requested)
 	screen.join_server_requested.connect(_on_home_join_server_requested)
 	screen.tutorial_requested.connect(_on_home_tutorial_requested)
 	_set_overlay(screen)
 	_set_debug_context(DEBUG_CONTEXT_NONE)
+
+func _on_home_private_server_requested() -> void:
+	show_private_server_screen()
 
 func _on_home_join_server_requested() -> void:
 	if EndpointConfig.DEMO_MODE_ENABLED:
@@ -229,6 +234,15 @@ func _on_home_join_server_requested() -> void:
 
 func _on_home_tutorial_requested() -> void:
 	start_tutorial(&"")
+
+func show_private_server_screen() -> void:
+	var screen := PrivateServerScreenScene.instantiate()
+	screen.back_requested.connect(_on_private_server_back_requested)
+	_set_overlay(screen)
+	_set_debug_context(DEBUG_CONTEXT_NONE)
+
+func _on_private_server_back_requested() -> void:
+	show_home_screen()
 
 func show_join_screen() -> void:
 	_teardown_play_instance()

@@ -33,6 +33,10 @@ or Public Lobby, then Play. A restored session can skip Sign-in. Demo mode skips
 Sign-in and the public lobby, joins directly, and readies its real seat because
 bots are already ready.
 
+Home also opens the Private Server staging screen, whose Back action returns
+directly Home. Create remains client-local there: it neither navigates nor
+contacts the server until private-room creation exists.
+
 Network signals drive room entry, match start, teardown, navigation, and recovery.
 During active-match recovery, a centred blocking modal keeps the current screen
 visible while the client applies authoritative recovery state; gameplay and debug

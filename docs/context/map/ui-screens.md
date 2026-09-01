@@ -66,6 +66,18 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn:21 | PlayLoaderScreen · scene root | |
 | src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn:56 | %LoadingProgressBar · unique node | |
 
+### src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn — 209 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:1 | @file · file | PrivateServerScreen scene composition and controller bindings |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:21 | PrivateServerScreen · scene root | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:74 | %BackButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:115 | %PasswordEdit · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:130 | %PasswordVisibilityButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:150 | %PlayerCountButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:189 | %CreateButton · unique node | |
+
 ### src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn — 261 ln
 
 | File:Ln | Anchor | Purpose |
@@ -112,13 +124,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:1 | @file · file | player backed out of matchmaking |
 | src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:3 | cancel_requested · signal | |
 
-### src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd — 14 ln
+### src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd — 16 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:1 | @file · file | open Join Screen, or connect directly in demo |
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:3 | join_server_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:4 | tutorial_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:4 | private_server_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:5 | tutorial_requested · signal | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd — 9 ln
 
@@ -161,6 +174,13 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:25 | set_entry | |
 | src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:48 | load_avatar_texture · static func | |
 
+### src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd — 31 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd:1 | @file · file | PrivateServerScreen client behavior |
+| src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd:3 | back_requested · signal | |
+
 ### src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd — 119 ln
 
 | File:Ln | Anchor | Purpose |
@@ -169,14 +189,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:3 | leave_lobby_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:32 | apply_lobby_data | |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 419 ln
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 433 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:1 | @file · file | **debug button visibility set once here from `DEBUG_UI_ENABLED`** |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:12 | DEBUG_CONTEXT_LOBBY · const | |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:13 | DEBUG_CONTEXT_PLAY · const | |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:244 | start_tutorial | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:13 | DEBUG_CONTEXT_LOBBY · const | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:14 | DEBUG_CONTEXT_PLAY · const | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:258 | start_tutorial | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/SignInDebugOverlay.gd — 120 ln
 
@@ -279,4 +299,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-24 files · 126 stable anchors.
+26 files · 134 stable anchors.
