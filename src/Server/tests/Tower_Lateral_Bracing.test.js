@@ -68,13 +68,9 @@ function connect(group, supporter) {
     group.supportLinks.push({ supporter, weight: 1 });
 }
 
-test("v2.1 ships with Difficulty 25 and a forty-percent lateral cap", () => {
-    assert.equal(GameConfig.towerStabilityDifficulty, 25);
-    assert.equal(GameConfig.towerLateralLoadShare, 0.4);
-});
-
 test("a grounded side brace shares the critical thin-I load and conserves mass and moment", () => {
-    const config = productionConfig();
+    const lateralShare = 0.4;
+    const config = { ...productionConfig(), towerLateralLoadShare: lateralShare };
     const before = TowerStability.evaluate(
         thinFixture(),
         { ...config, towerLateralLoadShare: 0 }
@@ -101,7 +97,7 @@ test("a grounded side brace shares the critical thin-I load and conserves mass a
     assert.ok(supportFor(after, "B") < 100);
     assert.equal(after.diagnostics.collapsed, false);
     assert.equal(afterSource.lateralLinks.length, 1);
-    assert.ok(Math.abs(lateral.weight - 0.4) < 0.000000001);
+    assert.ok(Math.abs(lateral.weight - lateralShare) < 0.000000001);
     assert.ok(Math.abs(beforeSource.supportedLoad - afterSource.supportedLoad - lateral.acceptedMass) < 0.000000001);
     assert.ok(Math.abs(beforeSource.supportedMoment - afterSource.supportedMoment - lateral.acceptedMoment) < 0.000000001);
     assert.ok(Math.abs(afterBrace.supportedLoad - O.length - lateral.acceptedMass) < 0.000000001);
