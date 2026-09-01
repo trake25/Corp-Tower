@@ -41,6 +41,26 @@ func prepare_playing_tower() -> Control:
 	harness.main.tower_navigation.refresh()
 	return tower
 
+func pan_touch(tower: Control, relative_y: float, pointer_id: int = 1) -> void:
+	var position: Vector2 = tower.get_global_rect().get_center()
+	var press := InputEventScreenTouch.new()
+	press.index = pointer_id
+	press.position = position
+	press.pressed = true
+	harness.main.tower_navigation.handle_input(press)
+
+	var drag := InputEventScreenDrag.new()
+	drag.index = pointer_id
+	drag.position = position + Vector2(0.0, relative_y)
+	drag.relative = Vector2(0.0, relative_y)
+	harness.main.tower_navigation.handle_input(drag)
+
+	var release := InputEventScreenTouch.new()
+	release.index = pointer_id
+	release.position = drag.position
+	release.pressed = false
+	harness.main.tower_navigation.handle_input(release)
+
 func test_playing_offscreen_critical_support_exposes_deliberate_navigation() -> void:
 	var tower: Control = prepare_playing_tower()
 	var trouble := harness.find("TroubleDownButton") as Button
@@ -63,6 +83,68 @@ func test_auto_follow_catching_up_does_not_expose_top_navigation() -> void:
 	harness.main.tower_navigation.refresh()
 
 	assert_false(back.visible)
+
+func test_touch_pan_moves_only_below_auto_framing_and_holds_until_top() -> void:
+	var tower: Control = prepare_playing_tower()
+	var normal_target: float = tower.scroll_state.normal_target_units
+	pan_touch(tower, -tower.brick_unit_size * 1.5)
+
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, normal_target - 1.5, 0.001)
+	assert_true(tower.is_scroll_manually_displaced())
+	var held_offset: float = tower.scroll_state.displayed_offset_units
+	tower._process(1.0)
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, held_offset, 0.001)
+
+	var grown_blocks: Array = stability_fixture()
+	grown_blocks.append({
+		"block": {"id": "growth", "shapeId": "O", "cells": [[0, 0], [1, 0], [0, 1], [1, 1]]},
+		"originX": 3,
+		"originY": 16,
+		"towerState": "standing",
+		"supportStability": 90
+	})
+	tower.set_tower(grown_blocks, 18, 30)
+	assert_gt(tower.scroll_state.normal_target_units, normal_target)
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, held_offset, 0.001)
+
+	pan_touch(tower, tower.brick_unit_size * 100.0)
+	assert_almost_eq(
+		tower.scroll_state.displayed_offset_units,
+		tower.scroll_state.normal_target_units,
+		0.001
+	)
+	pan_touch(tower, tower.brick_unit_size)
+	assert_lte(
+		tower.scroll_state.displayed_offset_units,
+		tower.scroll_state.normal_target_units
+	)
+
+	(harness.find("BackToTopButton") as Button).pressed.emit()
+	tower._process(0.01)
+	assert_false(tower.is_scroll_manually_displaced())
+
+func test_manual_pan_respects_placement_overlay_and_presentation_blockers() -> void:
+	var tower: Control = prepare_playing_tower()
+	var original_offset: float = tower.scroll_state.displayed_offset_units
+
+	harness.main.inventory.is_block_dragging = true
+	pan_touch(tower, -tower.brick_unit_size)
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, original_offset, 0.001)
+
+	harness.main.inventory.is_block_dragging = false
+	harness.main.inventory.is_armed = true
+	pan_touch(tower, -tower.brick_unit_size)
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, original_offset, 0.001)
+
+	harness.main.inventory.is_armed = false
+	harness.main.debug_panel.set_open(true)
+	pan_touch(tower, -tower.brick_unit_size)
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, original_offset, 0.001)
+
+	harness.main.debug_panel.set_open(false)
+	tower._collapse_phase = tower.COLLAPSE_LEAN
+	pan_touch(tower, -tower.brick_unit_size)
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, original_offset, 0.001)
 
 func test_drag_and_armed_placement_disable_both_navigation_actions() -> void:
 	var tower: Control = prepare_playing_tower()

@@ -126,6 +126,64 @@ func test_support_threshold_updates_reclassify_standing_faces() -> void:
 	tower.set_support_stability_thresholds(60, 30)
 	assert_eq(tower._emoji_mood_for_entry(standing), "positive")
 
+func test_danger_outline_uses_authoritative_worried_band_only_for_standing_bricks() -> void:
+	var tower = TowerStackScript.new()
+	add_child_autofree(tower)
+	var support: Dictionary = entry("support")
+	support[BlockData.SUPPORT_STABILITY_KEY] = tower.support_critical_threshold
+	assert_true(tower._has_danger_outline(support))
+
+	support[BlockData.SUPPORT_STABILITY_KEY] = tower.support_critical_threshold + 1
+	assert_false(tower._has_danger_outline(support))
+
+	support[BlockData.SUPPORT_STABILITY_KEY] = 0
+	support.towerState = "fallen"
+	assert_false(tower._has_danger_outline(support))
+
+func test_danger_outline_geometry_tracks_the_rendered_structural_pose() -> void:
+	var tower = TowerStackScript.new()
+	tower.size = Vector2(272, 620)
+	add_child_autofree(tower)
+	var support := {
+		"block": {
+			"id": "posed-support",
+			"shapeId": "O",
+			"cells": [[0, 0], [1, 0], [0, 1], [1, 1]]
+		},
+		"originX": 3,
+		"originY": 2,
+		"towerState": "standing",
+		"supportStability": 20
+	}
+	tower.set_tower([support], 4, 10, 20, {}, [{
+		"blockId": "posed-support",
+		"offsetXUnits": 0.5,
+		"offsetYUnits": 0.75,
+		"rotationDeg": 12.0,
+		"failureWeight": 1.0
+	}])
+
+	var posed: PackedVector2Array = tower._danger_outline_geometry(support)
+	tower.structural_pose.clear()
+	var unposed: PackedVector2Array = tower._danger_outline_geometry(support)
+	var posed_center := Vector2.ZERO
+	var unposed_center := Vector2.ZERO
+	for point in posed:
+		posed_center += point
+	for point in unposed:
+		unposed_center += point
+	posed_center /= float(posed.size())
+	unposed_center /= float(unposed.size())
+
+	assert_gt(posed.size(), 4)
+	assert_almost_eq(posed_center.x - unposed_center.x, tower.brick_unit_size * 0.5, 0.001)
+	assert_almost_eq(posed_center.y - unposed_center.y, -tower.brick_unit_size * 0.75, 0.001)
+	assert_almost_eq(
+		rad_to_deg((posed[1] - posed[0]).angle()) - rad_to_deg((unposed[1] - unposed[0]).angle()),
+		12.0,
+		0.001
+	)
+
 func test_thin_base_fixture_selects_the_offscreen_critical_support() -> void:
 	var tower: Control = mounted_stability_fixture()
 	var target: Dictionary = tower.trouble_target()
@@ -175,6 +233,19 @@ func test_fractional_navigation_drives_rendering_grid_conversion_and_parallax() 
 	assert_true(tower.navigate_to_trouble("base-i"))
 	tower._process(0.05)
 
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, 4.55, 0.001)
+	assert_eq(emitted_pixels.size(), 1)
+	assert_almost_eq(float(emitted_pixels[0]), 4.55 * tower.brick_unit_size, 0.001)
+	var lattice := Vector2(3.5, 2.25)
+	assert_almost_eq(tower.local_to_grid(tower.grid_to_local(lattice)).x, lattice.x, 0.001)
+	assert_almost_eq(tower.local_to_grid(tower.grid_to_local(lattice)).y, lattice.y, 0.001)
+
+func test_fractional_manual_pan_drives_the_shared_scroll_offset() -> void:
+	var tower: Control = mounted_stability_fixture()
+	var emitted_pixels: Array = []
+	tower.scroll_offset_changed.connect(func(pixels: float): emitted_pixels.append(pixels))
+
+	assert_true(tower.pan_scroll_pixels(-tower.brick_unit_size * 0.45))
 	assert_almost_eq(tower.scroll_state.displayed_offset_units, 4.55, 0.001)
 	assert_eq(emitted_pixels.size(), 1)
 	assert_almost_eq(float(emitted_pixels[0]), 4.55 * tower.brick_unit_size, 0.001)

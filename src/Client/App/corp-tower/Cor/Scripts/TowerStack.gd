@@ -34,6 +34,8 @@ const BAND_FILL_COLOR := Color(1.0, 1.0, 1.0, 0.11)
 const BAND_EDGE_COLOR := Color(1.0, 1.0, 1.0, 0.4)
 const BAND_HEADROOM_UNITS := 2.0
 const GHOST_OUTLINE_COLOR := Color(1.0, 1.0, 1.0, 0.7)
+const DANGER_GLOW_COLOR := Color(0.984, 0.549, 0.129, 0.34)
+const DANGER_BORDER_COLOR := Color(0.902, 0.204, 0.145, 1.0)
 const ARMED_GHOST_ALPHA_BOOST := 0.3
 const ARMED_PULSE_SPEED := 5.0
 
@@ -535,6 +537,19 @@ func return_to_auto_scroll() -> bool:
 	if _collapse_phase != COLLAPSE_NONE or _beat_phase != BEAT_NONE:
 		return false
 	return scroll_state.return_to_auto()
+
+func pan_scroll_pixels(delta_pixels: float) -> bool:
+	return pan_scroll_units(delta_pixels / maxf(1.0, _unit_size()))
+
+func pan_scroll_units(delta_units: float) -> bool:
+	if _collapse_phase != COLLAPSE_NONE or _beat_phase != BEAT_NONE:
+		return false
+	_sync_scroll_state()
+	if !scroll_state.pan_by(delta_units):
+		return false
+	_update_scroll_offset()
+	queue_redraw()
+	return true
 
 func is_scroll_displaced() -> bool:
 	return scroll_state.is_displaced()
@@ -1048,6 +1063,12 @@ func _draw() -> void:
 				entry, cells, origin_x, base_height, unit, base_x, baseline, scroll_offset_units, drop_offset, draw_origin
 			)
 
+		if _has_danger_outline(entry):
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			_draw_danger_outline(entry, drop_offset)
+			if !has_structural_pose and !component_collapse_active:
+				draw_set_transform(pivot, deg_to_rad(displayed_tilt_deg), Vector2.ONE)
+
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	if _collapse_phase == COLLAPSE_FALL or _collapse_phase == COLLAPSE_SETTLED:
@@ -1180,6 +1201,106 @@ func _emoji_mood_for_entry(entry: Dictionary) -> String:
 		)
 
 	return ""
+
+func _has_danger_outline(entry: Dictionary) -> bool:
+	return (
+		str(entry.get("towerState", "standing")) == "standing" and
+		entry.has(BlockDataScript.SUPPORT_STABILITY_KEY) and
+		int(entry.get(BlockDataScript.SUPPORT_STABILITY_KEY, 100)) <= support_critical_threshold
+	)
+
+func _danger_outline_geometry(entry: Dictionary, drop_offset: float = 0.0) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	if !_has_danger_outline(entry):
+		return points
+
+	var block: Dictionary = _normalize_block_entry(entry)
+	var cells: Array = block.get("cells", [])
+	if cells.is_empty():
+		return points
+
+	var unit: float = _unit_size()
+	var base_x: float = size.x * 0.5 + _shake_offset.x
+	var baseline: float = size.y - bottom_padding + _shake_offset.y
+	var scroll_offset_units: float = _scroll_offset_units(unit)
+	var origin_x: int = int(entry.get("originX", 0))
+	var origin_y: int = int(entry.get("originY", entry.get("baseHeight", 0)))
+	var box: Rect2 = _footprint_box(
+		origin_x,
+		origin_y,
+		cells,
+		unit,
+		base_x,
+		baseline,
+		scroll_offset_units,
+		drop_offset
+	)
+	var center: Vector2 = box.get_center()
+	var occupied: Dictionary = {}
+	for cell in cells:
+		occupied[Vector2i(SnapGridScript.cell_x(cell), SnapGridScript.cell_y(cell))] = true
+
+	var unposed_points := PackedVector2Array()
+	for cell in cells:
+		var x: int = SnapGridScript.cell_x(cell)
+		var y: int = SnapGridScript.cell_y(cell)
+		var sides: Array = [
+			[Vector2i(-1, 0), Vector2(float(x), float(y)), Vector2(float(x), float(y + 1))],
+			[Vector2i(1, 0), Vector2(float(x + 1), float(y + 1)), Vector2(float(x + 1), float(y))],
+			[Vector2i(0, -1), Vector2(float(x + 1), float(y)), Vector2(float(x), float(y))],
+			[Vector2i(0, 1), Vector2(float(x), float(y + 1)), Vector2(float(x + 1), float(y + 1))]
+		]
+		for side in sides:
+			if occupied.has(Vector2i(x, y) + side[0]):
+				continue
+			for corner in [side[1], side[2]]:
+				unposed_points.append(_lattice_to_local(
+					Vector2(
+						float(origin_x) + corner.x,
+						float(origin_y) + corner.y + drop_offset
+					),
+					unit,
+					base_x,
+					baseline,
+					scroll_offset_units
+				))
+
+	var cell_bounds: Dictionary = BlockDataScript.cell_bounds(cells)
+	var pose: Dictionary = structural_pose.pose_for_grid(
+		_entry_block_id(entry),
+		Vector2(
+			float(origin_x) + (float(cell_bounds.min_x) + float(cell_bounds.max_x) + 1.0) * 0.5,
+			float(origin_y) + (float(cell_bounds.min_y) + float(cell_bounds.max_y) + 1.0) * 0.5
+		)
+	)
+	var has_structural_pose: bool = structural_pose.has_targets()
+
+	if has_structural_pose and !pose.is_empty():
+		var posed_center: Vector2 = center + Vector2(
+			float(pose.get("offsetXUnits", 0.0)) * unit,
+			-float(pose.get("offsetYUnits", 0.0)) * unit
+		)
+		var pose_angle: float = deg_to_rad(float(pose.get("rotationDeg", 0.0)))
+		for point in unposed_points:
+			points.append(posed_center + (point - center).rotated(pose_angle))
+	elif has_structural_pose or _collapse_phase != COLLAPSE_NONE:
+		points = unposed_points
+	else:
+		var pivot := Vector2(base_x, baseline)
+		var tower_angle: float = deg_to_rad(displayed_tilt_deg)
+		for point in unposed_points:
+			points.append(pivot + (point - pivot).rotated(tower_angle))
+
+	return points
+
+func _draw_danger_outline(entry: Dictionary, drop_offset: float) -> void:
+	var points: PackedVector2Array = _danger_outline_geometry(entry, drop_offset)
+	if points.size() < 2:
+		return
+	var unit: float = _unit_size()
+	for index in range(0, points.size(), 2):
+		draw_line(points[index], points[index + 1], DANGER_GLOW_COLOR, maxf(5.0, unit * 0.2), true)
+		draw_line(points[index], points[index + 1], DANGER_BORDER_COLOR, maxf(2.0, unit * 0.07), true)
 
 func _verdict_mood_for(entry: Dictionary, brick_top_units: float) -> String:
 	if _wave_progress < 0.0 or _verdict_by_player.is_empty():

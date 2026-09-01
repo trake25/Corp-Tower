@@ -77,22 +77,28 @@ language but belong to the transient score layer.
 ## Tower Stack and snapping
 
 A new brick keeps its Balance reaction through the drop; afterward standing faces
-follow authoritative support stability. Server thresholds classify them, fallen
-faces freeze, and the collapse trigger is critical. Warning-only hides the meter
-but keeps faces and pose live; live preview adds the tallest-component meter.
-Section origins attach each independent component's lean to its stressed support.
+follow authoritative support stability. Server thresholds classify them, and
+every critical standing support adds a danger outline that follows its rendered
+shape and structural pose. Recovered and fallen supports lose that emphasis,
+fallen faces freeze, and the collapse trigger remains critical. Warning-only
+hides the meter but keeps faces and pose live; live preview adds the
+tallest-component meter. Section origins attach each independent component's lean
+to its stressed support.
 
 The grid and placeable range are server-owned and updated on every broadcast.
 Snap Grid keeps them as static state, and the renderer derives center from grid
 width. Tests must reset the static range between cases.
 
-Bricks stay fixed-size while drawing, placement projection, collapse, and parallax consume one
-floating scroll state. Automatic scrolling preserves rounded tower framing without exposing return
-navigation; bounded Top and Trouble travel reverses smoothly while gameplay geometry stays attached.
+Bricks stay fixed-size while drawing, placement projection, collapse, and parallax
+consume one floating scroll state. Automatic scrolling preserves rounded current-height
+framing. During play, direct touch or mouse navigation can inspect only below that
+frame, holds its lower position as the tower grows, and cannot pan above the moving
+automatic target. Drop travels smoothly to a deterministic offscreen critical support;
+Top returns smoothly and resumes auto-follow.
 
-Trouble holds a deterministic, standing critical support below the posed visible area during
-travel. Placement, armed actions, overlays, and presentation sequences disable navigation;
-round and lobby transitions restore auto-scroll. View controls never change grid intent or physics.
+Placement and armed actions, overlays, recovery, and presentation sequences disable
+navigation; round and lobby transitions restore auto-scroll. View controls never
+change grid intent or physics.
 
 Snapping pairs every dragged-brick outline vertex with platform and placed-brick
 snap points. It rejects overlap or a footprint outside the authoritative site,

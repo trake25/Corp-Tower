@@ -335,29 +335,31 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:194 | set_stability_thresholds | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:201 | set_stability_meter_visible | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd — 101 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd — 188 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:1 | @file · file | TowerNavigationController client behavior |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:12 | bind_nodes | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:35 | refresh | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:17 | bind_nodes | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:43 | handle_input | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:80 | refresh | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd — 143 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd — 169 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:1 | @file · file | TowerScrollState client behavior |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:10 | EPSILON · const | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:51 | configure | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:75 | snap_to_normal | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:82 | navigate_to_row | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:94 | return_to_auto | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:101 | hold_current | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:113 | step | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:135 | is_displaced | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:138 | is_manually_displaced | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:141 | is_navigating | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:84 | snap_to_normal | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:91 | navigate_to_row | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:103 | return_to_auto | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:110 | hold_current | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:114 | pan_by | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:139 | step | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:161 | is_displaced | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:164 | is_manually_displaced | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd:167 | is_navigating | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd — 22 ln
 
@@ -438,7 +440,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd:1 | @file · file | tint bare icon TextureButtons cyan on press, no StyleBox to swap |
 
-### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1483 ln
+### src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd — 1604 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -447,49 +449,51 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:25 | VERDICT_NEGATIVE · const | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:28 | FALLBACK_COLOR · const | |
 | src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:31 | SNAP_DOT_COLOR · const | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:40 | brick_unit_size · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:41 | top_padding · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:42 | bottom_padding · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:43 | scroll_start_ratio · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:44 | scroll_ease_power · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:45 | top_indicator_clearance_units · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:46 | collapse_tilt_deg · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:62 | tilt_ease_speed · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:64 | drop_duration · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:65 | snap_radius_units · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:66 | snap_dot_radius · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:67 | snap_target_radius · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:68 | ghost_alpha · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:69 | drag_grip_offset_units · export | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:72 | scroll_offset_changed · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:73 | camera_zoom_changed · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:126 | set_tower | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:221 | set_mood_threshold | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:230 | set_support_stability_thresholds | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:241 | set_visual_hooks | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:244 | play_impact_beat | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:263 | cancel_impact_beat | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:274 | shake | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:351 | drag_grip_offset | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:354 | begin_snap_drag | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:362 | resolve_snap | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:378 | is_placement_still_legal | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:381 | set_snap_state | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:390 | clear_snap_preview | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:395 | end_snap_drag | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:400 | is_placement_frame_active | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:403 | placement_visual_bounds | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:479 | trouble_target | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:518 | navigate_to_trouble | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:534 | return_to_auto_scroll | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:542 | is_scroll_manually_displaced | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:545 | is_scroll_navigating | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:548 | reset_navigation | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:554 | is_navigation_blocked_by_presentation | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:703 | set_player_color_map | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:707 | clear_tower | |
-| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:82 | tower_collapsed · stable | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:42 | brick_unit_size · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:43 | top_padding · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:44 | bottom_padding · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:45 | scroll_start_ratio · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:46 | scroll_ease_power · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:47 | top_indicator_clearance_units · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:48 | collapse_tilt_deg · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:64 | tilt_ease_speed · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:66 | drop_duration · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:67 | snap_radius_units · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:68 | snap_dot_radius · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:69 | snap_target_radius · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:70 | ghost_alpha · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:71 | drag_grip_offset_units · export | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:74 | scroll_offset_changed · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:75 | camera_zoom_changed · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:128 | set_tower | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:223 | set_mood_threshold | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:232 | set_support_stability_thresholds | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:243 | set_visual_hooks | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:246 | play_impact_beat | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:265 | cancel_impact_beat | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:276 | shake | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:353 | drag_grip_offset | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:356 | begin_snap_drag | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:364 | resolve_snap | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:380 | is_placement_still_legal | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:383 | set_snap_state | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:392 | clear_snap_preview | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:397 | end_snap_drag | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:402 | is_placement_frame_active | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:405 | placement_visual_bounds | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:481 | trouble_target | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:520 | navigate_to_trouble | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:536 | return_to_auto_scroll | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:541 | pan_scroll_pixels | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:544 | pan_scroll_units | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:557 | is_scroll_manually_displaced | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:560 | is_scroll_navigating | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:563 | reset_navigation | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:569 | is_navigation_blocked_by_presentation | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:718 | set_player_color_map | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:722 | clear_tower | |
+| src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd:84 | tower_collapsed · stable | |
 
 ---
 
-41 files · 237 stable anchors.
+41 files · 241 stable anchors.

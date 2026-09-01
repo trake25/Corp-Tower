@@ -317,12 +317,12 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Impacts.js:451 | failImpactScoreRequirement · fn | |
 | src/Server/app/engine/Impacts.js:459 | rollbackToImpact · fn | |
 
-### src/Server/app/engine/Last_Chance.js — 72 ln
+### src/Server/app/engine/Last_Chance.js — 125 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/engine/Last_Chance.js:1 | @file · file | Produces the standing one-percent result while a rescue is pending |
-| src/Server/app/engine/Last_Chance.js:29 | resolve · fn | |
+| src/Server/app/engine/Last_Chance.js:82 | resolve · fn | |
 
 ### src/Server/app/engine/Placement.js — 470 ln
 

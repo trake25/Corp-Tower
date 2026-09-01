@@ -3,18 +3,69 @@ const { afterEach, test } = require("node:test");
 const { stripRuntimeRoom } = require("../app/Redis_State");
 const GameEngine = require("../app/Game_Engine");
 const BotManager = require("../app/Bot_Manager");
+const TowerStability = require("../app/Tower_Stability");
 
 const {
     GameConfig,
     createBlock,
     createPlayingEngine,
     eventTypes,
+    fixedGridTunables,
+    fixedStabilityConfig,
     latestMessage,
     messageWithScoreEvents,
     resetFixtures
 } = require("./helpers/Game_Engine_Fixture");
 
 afterEach(resetFixtures);
+
+function flatCells(width) {
+    return Array.from({ length: width }, (_, x) => [x, 0]);
+}
+
+function towerEntry(id, cells, originX, originY) {
+    return {
+        block: { id, shapeId: id, height: 1, cells },
+        originX,
+        originY
+    };
+}
+
+function createLastChancePlacementEngine(reinforcementCells) {
+    const { engine, messages } = createPlayingEngine(1, 20, {
+        tunables: {
+            ...fixedGridTunables({ gridWidth: 14, widthMin: 14, widthMax: 14 }),
+            powerLastChanceEnabled: true
+        }
+    });
+    const row = flatCells(6);
+    engine.resolveStabilityConfig = () => fixedStabilityConfig({
+        towerSiteWidth: 14,
+        towerStabilityMinHeight: 1,
+        towerStructuralSeverity: 1.3
+    });
+    engine.room.towerBlocks = [
+        towerEntry("B0", row, 0, 0),
+        towerEntry("B1", row, 0, 1),
+        towerEntry("N", flatCells(1), 2, 2),
+        towerEntry("U3", row, 0, 3),
+        towerEntry("U4", row, 0, 4),
+        towerEntry("U5", row, 0, 5),
+        towerEntry("S0", row, 8, 0),
+        towerEntry("S1", row, 8, 1)
+    ];
+    engine.room.currentHeight = TowerStability.topHeight(engine.room.towerBlocks);
+    engine.recalculateTowerStability(false);
+    engine.room.players[0].blocks = [
+        { id: "FAIL", shapeId: "I6H", height: 1, cells: row }
+    ];
+    engine.room.players[1].blocks = [
+        { id: "BRACE", shapeId: "BRACE", height: 1, cells: reinforcementCells }
+    ];
+    engine.room.players[2].blocks = [createBlock(30, "SUPPLY")];
+
+    return { engine, messages };
+}
 
 test("Last Chance saves one collapse, requires a reinforcement, and persists its pending state", () => {
     const { engine } = createPlayingEngine(1, 8);
@@ -87,6 +138,78 @@ test("Last Chance collapses on an unsuccessful follow-up placement and resets pe
     const disabled = engine.resolveLastChance(collapse, true);
     assert.equal(disabled.stability, 0);
     assert.equal(engine.room.lastChanceRescuePending, false);
+});
+
+test("Last Chance placeBlock rescue remains playable and a successful reinforcement clears pending", () => {
+    const { engine, messages } = createLastChancePlacementEngine([[1, 0], [4, 0]]);
+    let persisted = 0;
+    engine.onRoomChanged = async () => {
+        persisted += 1;
+    };
+
+    engine.placeBlock("P1", 0, 0);
+
+    assert.equal(engine.room.state, "playing");
+    assert.equal(engine.room.lastChanceRescuePending, true);
+    assert.equal(engine.room.lastChanceRescueUsed, true);
+    assert.equal(engine.room.towerStability, 1);
+    assert.equal(engine.room.towerBlocks.some(entry => entry.towerState === "fallen"), false);
+    assert.ok(engine.room.towerStabilityComponents.every(component => !component.diagnostics.collapsed));
+    assert.equal(latestMessage(messages).towerStability, 1);
+    assert.equal(persisted, 1);
+
+    engine.placeBlock("P2", 0, 0, 2);
+
+    assert.equal(engine.room.state, "playing");
+    assert.equal(engine.room.lastChanceRescuePending, false);
+    assert.equal(engine.room.lastChanceRescueUsed, true);
+    assert.ok(engine.room.towerStability > 1);
+    assert.equal(engine.room.towerBlocks.some(entry => entry.towerState === "fallen"), false);
+    assert.ok(latestMessage(messages).towerStability > 1);
+    assert.equal(messages.length, 2);
+    assert.equal(persisted, 2);
+
+    const row = flatCells(6);
+    engine.room.players[2].blocks = [
+        { id: "FAIL_AGAIN_A", shapeId: "I6H", height: 1, cells: row },
+        { id: "FAIL_AGAIN_B", shapeId: "I6H", height: 1, cells: row },
+        createBlock(30, "SUPPLY")
+    ];
+    engine.placeBlock("P3", 0, 0);
+    engine.placeBlock("P3", 0, 0);
+
+    assert.equal(engine.room.lastChanceRescuePending, false);
+    assert.equal(engine.room.lastChanceRescueUsed, true);
+    assert.ok(engine.room.towerBlocks.some(entry => entry.towerState === "fallen"));
+    assert.ok(eventTypes(latestMessage(messages)).includes("tower_component_collapsed"));
+    assert.equal(messages.length, 4);
+    assert.equal(persisted, 4);
+});
+
+test("Last Chance failed placeBlock reinforcement collapses authoritative components", () => {
+    const { engine, messages } = createLastChancePlacementEngine([[1, 0], [3, 0]]);
+    let persisted = 0;
+    engine.onRoomChanged = async () => {
+        persisted += 1;
+    };
+
+    engine.placeBlock("P1", 0, 0);
+    engine.placeBlock("P2", 0, 0, 2);
+
+    const fallen = engine.room.towerBlocks.filter(entry => entry.towerState === "fallen");
+    const broadcast = latestMessage(messages);
+    assert.equal(engine.room.state, "playing");
+    assert.equal(engine.room.lastChanceRescuePending, false);
+    assert.equal(engine.room.lastChanceRescueUsed, true);
+    assert.ok(fallen.length > 0);
+    assert.ok(eventTypes(broadcast).includes("tower_component_collapsed"));
+    assert.equal(broadcast.towerStabilityDiagnostics.collapsed, false);
+    assert.equal(messages.length, 2);
+    assert.equal(persisted, 2);
+
+    engine.startLevel();
+    assert.equal(engine.room.lastChanceRescuePending, false);
+    assert.equal(engine.room.lastChanceRescueUsed, false);
 });
 
 test("quick chat broadcasts a transient event and enforces the player cooldown", () => {

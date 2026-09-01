@@ -71,6 +71,15 @@ func configure(
 	)
 	displayed_offset_units = clampf(displayed_offset_units, 0.0, maximum_offset_units)
 	navigation_target_units = clampf(navigation_target_units, 0.0, maximum_offset_units)
+	if mode == Mode.MANUAL_HOLD:
+		displayed_offset_units = minf(displayed_offset_units, normal_target_units)
+		navigation_target_units = displayed_offset_units
+	elif mode == Mode.NAVIGATING_TO_TROUBLE:
+		displayed_offset_units = minf(displayed_offset_units, normal_target_units)
+		navigation_target_units = minf(navigation_target_units, normal_target_units)
+	elif mode == Mode.RETURNING_TO_AUTO:
+		displayed_offset_units = minf(displayed_offset_units, normal_target_units)
+		navigation_target_units = normal_target_units
 
 func snap_to_normal() -> bool:
 	var changed: bool = !is_equal_approx(displayed_offset_units, normal_target_units)
@@ -101,6 +110,23 @@ func return_to_auto() -> bool:
 func hold_current() -> void:
 	navigation_target_units = displayed_offset_units
 	mode = Mode.MANUAL_HOLD
+
+func pan_by(delta_units: float) -> bool:
+	if frozen:
+		return false
+
+	var next: float = clampf(
+		displayed_offset_units + delta_units,
+		0.0,
+		maxf(0.0, normal_target_units)
+	)
+	if is_equal_approx(next, displayed_offset_units):
+		return false
+
+	displayed_offset_units = next
+	navigation_target_units = next
+	mode = Mode.MANUAL_HOLD
+	return true
 
 func reset() -> void:
 	mode = Mode.AUTO
