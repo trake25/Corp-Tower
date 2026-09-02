@@ -1,0 +1,290 @@
+{
+  "schema_version": 2,
+  "phase": "closed",
+  "lifecycle": {
+    "status": "closed"
+  },
+  "plan": {
+    "status": "archived",
+    "source_path": "plan/android-splash-edge-fill-v0.01.md",
+    "archive_path": "plan/done/android-splash-edge-fill-v0.01.md",
+    "diagnostic": null
+  },
+  "task": "Android Splash Edge Fill v0.01",
+  "run_id": "9d7904df-31e4-407b-939b-f687c2b685f3",
+  "owned_paths": [
+    "docs/context/ui.md",
+    "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd"
+  ],
+  "changed_paths": [
+    "docs/context/ui.md",
+    "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd"
+  ],
+  "derived_paths": [
+    "docs/context/map/ui-screens.md"
+  ],
+  "documented_paths": [
+    "docs/context/ui.md"
+  ],
+  "publish_paths": [
+    "docs/context/map/ui-screens.md",
+    "docs/context/ui.md",
+    "report/qa-receipts/qa-receipt-android-splash-edge-v0.01.md",
+    "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd"
+  ],
+  "task_identity": {
+    "keywords": [
+      "Android",
+      "Splash",
+      "Edge"
+    ],
+    "keyword_label": "Android Splash Edge",
+    "slug": "android-splash-edge",
+    "version": "0.01",
+    "label": "Android Splash Edge v0.01"
+  },
+  "domains": [
+    "client",
+    "game-kb"
+  ],
+  "intake": {
+    "schema_version": 2,
+    "task_paths": [
+      "docs/context/ui.md",
+      "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd"
+    ],
+    "routes": [
+      {
+        "path": "docs/context/ui.md",
+        "skill": null,
+        "docs": [],
+        "map": null,
+        "read": null
+      },
+      {
+        "path": "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+        "skill": "client-engineer",
+        "docs": [
+          "docs/context/ui.md"
+        ],
+        "map": "docs/context/map/ui-screens.md",
+        "read": "hunk"
+      }
+    ],
+    "docs": [
+      "docs/context/ui.md"
+    ],
+    "maps": [
+      "docs/context/map/ui-screens.md"
+    ],
+    "qa": {
+      "changed": [
+        "docs/context/ui.md",
+        "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd"
+      ],
+      "server_sources": [],
+      "server_tests": [],
+      "full_server": false,
+      "client_runtime": true,
+      "client_tests": [],
+      "full_client": true,
+      "tooling_tests": [],
+      "contract_tests": [],
+      "runtime_applies": true,
+      "applies": true
+    },
+    "tools": [
+      {
+        "name": "QA",
+        "command": {
+          "argv": [
+            "node",
+            "scripts/qa-gate.mjs",
+            "--changed",
+            "docs/context/ui.md",
+            "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd"
+          ],
+          "display": "node scripts/qa-gate.mjs --changed docs/context/ui.md src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd"
+        }
+      },
+      {
+        "name": "file map",
+        "command": {
+          "argv": [
+            "node",
+            "scripts/build-file-map.mjs"
+          ],
+          "display": "node scripts/build-file-map.mjs"
+        }
+      },
+      {
+        "name": "game KB",
+        "command": {
+          "argv": [
+            "node",
+            "scripts/validate-docs.mjs"
+          ],
+          "display": "node scripts/validate-docs.mjs"
+        }
+      }
+    ],
+    "unmapped": [
+      "docs/context/ui.md"
+    ],
+    "limits": {
+      "max_bytes": 24576,
+      "returned_bytes": 1932
+    }
+  },
+  "retrieval": {
+    "fallbacks": []
+  },
+  "documentation": {
+    "source_changed": true,
+    "candidate_docs": [
+      "docs/context/ui.md"
+    ],
+    "maps_to_regenerate": [
+      "docs/context/map/ui-screens.md"
+    ],
+    "status": "updated",
+    "reason": "Android runtime startup splash filling is a cross-platform presentation contract through the first real-screen handoff.",
+    "documented_paths": [
+      "docs/context/ui.md"
+    ]
+  },
+  "coverage": {
+    "source_changed": true,
+    "status": "reused",
+    "protected_contract": null
+  },
+  "qa": {
+    "planned_paths": [],
+    "changed_paths": [],
+    "unplanned_paths": [],
+    "status": "unchanged",
+    "temporary_verification": "not-used"
+  },
+  "review": {
+    "input_fingerprint": "46e28e701f9a1c172051ba470cffde5868147532b0a3b92ece0d22abe39a1896",
+    "reviewed_at": "2026-09-02T07:24:26.160Z",
+    "intake": {
+      "schema_version": 2,
+      "task_paths": [
+        "docs/context/ui.md",
+        "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd"
+      ],
+      "routes": [
+        {
+          "path": "docs/context/ui.md",
+          "skill": null,
+          "docs": [],
+          "map": null,
+          "read": null
+        },
+        {
+          "path": "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+          "skill": "client-engineer",
+          "docs": [
+            "docs/context/ui.md"
+          ],
+          "map": "docs/context/map/ui-screens.md",
+          "read": "hunk"
+        }
+      ],
+      "docs": [
+        "docs/context/ui.md"
+      ],
+      "maps": [
+        "docs/context/map/ui-screens.md"
+      ],
+      "qa": {
+        "changed": [
+          "docs/context/ui.md",
+          "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd"
+        ],
+        "server_sources": [],
+        "server_tests": [],
+        "full_server": false,
+        "client_runtime": true,
+        "client_tests": [],
+        "full_client": true,
+        "tooling_tests": [],
+        "contract_tests": [],
+        "runtime_applies": true,
+        "applies": true
+      },
+      "tools": [
+        {
+          "name": "QA",
+          "command": {
+            "argv": [
+              "node",
+              "scripts/qa-gate.mjs",
+              "--changed",
+              "docs/context/ui.md",
+              "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd"
+            ],
+            "display": "node scripts/qa-gate.mjs --changed docs/context/ui.md src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd"
+          }
+        },
+        {
+          "name": "file map",
+          "command": {
+            "argv": [
+              "node",
+              "scripts/build-file-map.mjs"
+            ],
+            "display": "node scripts/build-file-map.mjs"
+          }
+        },
+        {
+          "name": "game KB",
+          "command": {
+            "argv": [
+              "node",
+              "scripts/validate-docs.mjs"
+            ],
+            "display": "node scripts/validate-docs.mjs"
+          }
+        }
+      ],
+      "unmapped": [
+        "docs/context/ui.md"
+      ],
+      "limits": {
+        "max_bytes": 24576,
+        "returned_bytes": 1932
+      }
+    },
+    "map_hashes": {
+      "docs/context/map/backend.md": "144bc2c33084947b50b362d849e47743f43c8fddde8db194915bc82b8b7d4907",
+      "docs/context/map/infra.md": "d7103e7f58ec265534a9eb10e62ac9fa26e386cdf18991c10a1ba042cb2ee250",
+      "docs/context/map/ui-debug.md": "49f9a0e5ea1fca7a993f6ef7928183c9344ec1970b2ec0cfb9d2d42128fc0bcc",
+      "docs/context/map/ui-hud.md": "b2e0013c255aeaf76880e814c4a7b40d2b2959369915ab0e6ed6b3449a058092",
+      "docs/context/map/ui-screens.md": "4cc17155ae6570e1a41e8df5431b27e0297bc54af3e4b2dafb19cf8e0837618f",
+      "docs/context/map/ui-tutorial.md": "47c09f7254b09eab287cd25f2d7b9a7fb5561eac742c8dee22e84f8b23de954a"
+    }
+  },
+  "verification": {
+    "status": "passed",
+    "receipt": ".agent-state/android-splash-edge-fill-v0.01.receipt.json",
+    "close_input_fingerprint": "aa000586dbb72619d7126701b82c8bac7b82ff7133ab4e512b573e4009169c6c",
+    "maintenance_handoff": null,
+    "public_receipt": "report/qa-receipts/qa-receipt-android-splash-edge-v0.01.md"
+  },
+  "observability": {
+    "status": "pending_stop",
+    "task_id": "9d7904df-31e4-407b-939b-f687c2b685f3",
+    "session_bindings": 1,
+    "candidates": [],
+    "formal_flag_gate": {
+      "eligible": false,
+      "model_family": "terra",
+      "effort": "high",
+      "same_required_turn": true
+    },
+    "candidate_status": "duplicate",
+    "reasons": []
+  }
+}

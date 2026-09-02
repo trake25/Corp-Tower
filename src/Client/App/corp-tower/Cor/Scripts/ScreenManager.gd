@@ -51,7 +51,14 @@ func _ready() -> void:
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
 	debug_button.visible = EndpointConfig.DEBUG_UI_ENABLED
 	reset_debug_button_position()
+	_configure_runtime_android_splash()
 	_show_initial_screen()
+
+func _configure_runtime_android_splash() -> void:
+	if OS.get_name() != "Android":
+		return
+
+	startup_splash.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 
 func _show_runtime_android_system_bars() -> void:
 	if OS.get_name() != "Android":
