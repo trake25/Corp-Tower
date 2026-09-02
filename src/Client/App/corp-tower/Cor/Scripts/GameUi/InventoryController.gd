@@ -404,7 +404,7 @@ func set_parallel_placement(enabled: bool) -> void:
 		return
 
 	tower_drop_zone.mouse_filter = (
-		Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
+		Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_PASS
 	)
 
 	var handler := Callable(self, "_on_tower_drop_zone_gui_input")

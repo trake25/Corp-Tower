@@ -166,15 +166,23 @@ func test_touch_pan_moves_only_below_auto_framing_and_holds_until_top() -> void:
 	tower._process(0.01)
 	assert_false(tower.is_scroll_manually_displaced())
 
-func test_gui_dispatch_routes_touch_and_mouse_pan_around_parallel_placement() -> void:
+func test_tower_drop_zone_gui_dispatch_routes_touch_and_mouse_pan_without_unhandled_input() -> void:
 	var tower: Control = prepare_playing_tower()
-	harness.main.inventory.set_parallel_placement(true)
+	var tower_drop_zone := harness.find("TowerDropZone") as Control
+	var received_events: Array = []
+	tower_drop_zone.gui_input.connect(func(event: InputEvent): received_events.append(event))
+	harness.main.tower_navigation.set_process_unhandled_input(false)
 	var normal_target: float = tower.scroll_state.normal_target_units
 
+	assert_eq(tower_drop_zone.mouse_filter, Control.MOUSE_FILTER_PASS)
 	dispatch_touch_pan(tower, -tower.brick_unit_size)
+	assert_gt(received_events.filter(func(event): return event is InputEventScreenTouch).size(), 0)
+	assert_gt(received_events.filter(func(event): return event is InputEventScreenDrag).size(), 0)
 	assert_almost_eq(tower.scroll_state.displayed_offset_units, normal_target - 1.0, 0.001)
 
 	dispatch_mouse_pan(tower, -tower.brick_unit_size)
+	assert_gt(received_events.filter(func(event): return event is InputEventMouseButton).size(), 0)
+	assert_gt(received_events.filter(func(event): return event is InputEventMouseMotion).size(), 0)
 	assert_almost_eq(tower.scroll_state.displayed_offset_units, normal_target - 2.0, 0.001)
 
 func test_manual_pan_respects_placement_overlay_and_presentation_blockers() -> void:

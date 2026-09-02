@@ -89,7 +89,7 @@ offset_top = 111.0
 offset_right = 196.0
 offset_bottom = 815.0
 grow_horizontal = 2
-mouse_filter = 2
+mouse_filter = 1
 
 [node name="TroubleDownButton" type="Button" parent="." unique_id=1310224010]
 unique_name_in_owner = true
