@@ -74,7 +74,7 @@ const ARMED_PULSE_SPEED := 5.0
 
 signal scroll_offset_changed(pixels: float)
 signal camera_zoom_changed(zoom: float)
-signal placement_world_visibility_changed(visible: bool)
+signal collapse_recovery_started
 
 var tower_blocks: Array = []
 var current_height: int = 0
@@ -107,7 +107,9 @@ var _collapse_elapsed: float = 0.0
 var _collapse_sim = null
 var _collapsing_block_ids: Dictionary = {}
 var _last_collapse_key: String = ""
-var _placement_world_hidden_for_return: bool = false
+var _collapse_pose_snapshot: Dictionary = {}
+var _collapse_recovery_active: bool = false
+var _collapse_recovery_has_started: bool = false
 var visual_hooks = null
 var _camera_zoom: float = 1.0
 var _beat_phase: int = BEAT_NONE
@@ -133,23 +135,26 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	var previous_block_count: int = tower_blocks.size()
 	var direct_pose_replace: bool = blocks.size() != previous_block_count and blocks.size() != previous_block_count + 1
 	var newly_fallen: Dictionary = _newly_fallen_block_ids(tower_blocks, blocks)
+	var collapse_ids: Dictionary = newly_fallen
+	if collapse_ids.is_empty() and bool(diagnostics.get("collapsed", false)):
+		collapse_ids = _block_ids(blocks)
+	var collapse_key: String = _collapse_key(collapse_ids)
+	var starts_collapse: bool = collapse_key != "" and collapse_key != _last_collapse_key
+	if starts_collapse:
+		_capture_collapse_pose(tower_blocks, collapse_ids)
 	tower_blocks = blocks
 	current_height = max(0, new_current_height)
 	target_height = max(0, new_target_height)
 	tower_stability = clampi(new_stability, 0, 100)
 	structural_pose.replace_targets(pose_entries, direct_pose_replace)
 
-	var collapse_ids: Dictionary = newly_fallen
-	if collapse_ids.is_empty() and bool(diagnostics.get("collapsed", false)):
-		collapse_ids = _all_block_ids()
-	var collapse_key: String = _collapse_key(collapse_ids)
-	var starts_collapse: bool = collapse_key != "" and collapse_key != _last_collapse_key
 	var reported_tilt: float = float(diagnostics.get("tiltAngleDeg", 0.0))
 	var critical_support: Dictionary = diagnostics.get("criticalSupport", {})
 	var critical_direction: String = str(critical_support.get("direction", ""))
 
 	if starts_collapse:
-		_set_placement_world_hidden_for_return(false)
+		_set_collapse_recovery_active(false)
+		_collapse_recovery_has_started = false
 		scroll_state.hold_current()
 		scroll_state.frozen = true
 		tower_collapsed = true
@@ -163,7 +168,7 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 		_collapse_lean_elapsed = 0.0
 		_collapse_elapsed = 0.0
 		_collapse_sim = null
-	elif _collapse_phase == COLLAPSE_NONE:
+	elif _collapse_phase == COLLAPSE_NONE and !_collapse_recovery_active:
 		scroll_state.frozen = false
 		tower_collapsed = false
 		tower_tilt_deg = 0.0 if structural_pose.has_targets() else reported_tilt
@@ -175,11 +180,38 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	queue_redraw()
 
 func _all_block_ids() -> Dictionary:
+	return _block_ids(tower_blocks)
+
+func _block_ids(blocks: Array) -> Dictionary:
 	var block_ids: Dictionary = {}
-	for entry_value in tower_blocks:
+	for entry_value in blocks:
 		if typeof(entry_value) == TYPE_DICTIONARY:
 			block_ids[_entry_block_id(entry_value)] = true
 	return block_ids
+
+func _capture_collapse_pose(blocks: Array, collapse_ids: Dictionary) -> void:
+	_collapse_pose_snapshot = {}
+	for entry_value in blocks:
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_value
+		var block_id: String = _entry_block_id(entry)
+		if !collapse_ids.has(block_id):
+			continue
+		var block: Dictionary = _normalize_block_entry(entry)
+		var bounds: Dictionary = BlockDataScript.cell_bounds(block.get("cells", []))
+		var grid_center: Vector2 = Vector2(
+			float(entry.get("originX", 0)) + (float(bounds.min_x) + float(bounds.max_x) + 1.0) * 0.5,
+			float(entry.get("originY", entry.get("baseHeight", 0))) + (float(bounds.min_y) + float(bounds.max_y) + 1.0) * 0.5
+		)
+		var pose: Dictionary = structural_pose.pose_for_grid(block_id, grid_center)
+		if !pose.is_empty():
+			_collapse_pose_snapshot[block_id] = pose.duplicate(true)
+
+func _displayed_pose_for_grid(block_id: String, grid_center: Vector2) -> Dictionary:
+	if _collapse_pose_snapshot.has(block_id):
+		return _collapse_pose_snapshot[block_id]
+	return structural_pose.pose_for_grid(block_id, grid_center)
 
 func _collapse_key(block_ids: Dictionary) -> String:
 	var ids: Array = block_ids.keys()
@@ -565,7 +597,7 @@ func is_scroll_navigating() -> bool:
 	return scroll_state.is_navigating()
 
 func reset_navigation() -> void:
-	_set_placement_world_hidden_for_return(false)
+	_set_collapse_recovery_active(false)
 	scroll_state.frozen = false
 	scroll_state.snap_to_normal()
 	_update_scroll_offset()
@@ -573,13 +605,14 @@ func reset_navigation() -> void:
 
 func is_navigation_blocked_by_presentation() -> bool:
 	return (
-		_collapse_phase != COLLAPSE_NONE
+		_collapse_phase == COLLAPSE_LEAN
+		or _collapse_phase == COLLAPSE_FALL
 		or _beat_phase != BEAT_NONE
-		or _placement_world_hidden_for_return
+		or _collapse_recovery_active
 	)
 
-func is_placement_world_hidden() -> bool:
-	return _placement_world_hidden_for_return
+func is_collapse_recovery_active() -> bool:
+	return _collapse_recovery_active
 
 func grid_to_local(lattice: Vector2) -> Vector2:
 	var unit: float = _unit_size()
@@ -677,17 +710,18 @@ func _drop_ease(t: float) -> float:
 func _process(delta: float) -> void:
 	var needs_redraw: bool = false
 
-	if _collapse_phase == COLLAPSE_NONE:
-		var scroll_changed: bool = (
-			scroll_state.step_at_speed(delta, collapse_return_pan_speed_units)
-			if _placement_world_hidden_for_return
-			else scroll_state.step(delta)
-		)
+	if _collapse_recovery_active:
+		var scroll_changed: bool = scroll_state.step_at_speed(delta, collapse_return_pan_speed_units)
 		if scroll_changed:
 			_update_scroll_offset()
 			needs_redraw = true
-	if _placement_world_hidden_for_return and !scroll_state.is_displaced():
-		_set_placement_world_hidden_for_return(false)
+		if !scroll_state.is_displaced():
+			_set_collapse_recovery_active(false)
+	elif _collapse_phase == COLLAPSE_NONE:
+		var scroll_changed: bool = scroll_state.step(delta)
+		if scroll_changed:
+			_update_scroll_offset()
+			needs_redraw = true
 
 	if structural_pose.step(delta, structural_pose_ease_speed):
 		needs_redraw = true
@@ -707,12 +741,6 @@ func _process(delta: float) -> void:
 		_armed_pulse_t = fmod(_armed_pulse_t + delta * ARMED_PULSE_SPEED, TAU)
 		needs_redraw = true
 
-	if _collapse_phase != COLLAPSE_NONE:
-		_collapse_elapsed += delta
-		if _collapse_elapsed >= _collapse_debris_lifetime_seconds():
-			_expire_collapse_debris()
-			needs_redraw = true
-
 	if _collapse_phase == COLLAPSE_LEAN:
 		_collapse_lean_elapsed += delta
 		if _collapse_lean_elapsed >= collapse_lean_seconds:
@@ -722,7 +750,14 @@ func _process(delta: float) -> void:
 		_collapse_sim.step(delta)
 		if _collapse_sim.is_settled():
 			_collapse_phase = COLLAPSE_SETTLED
-		needs_redraw = true
+			_start_collapse_recovery()
+			needs_redraw = true
+
+	if _collapse_phase != COLLAPSE_NONE:
+		_collapse_elapsed += delta
+		if _collapse_elapsed >= _collapse_debris_lifetime_seconds():
+			_expire_collapse_debris()
+			needs_redraw = true
 
 	if _beat_phase != BEAT_NONE and _beat_phase != BEAT_HOLD:
 		_step_impact_beat(delta)
@@ -740,7 +775,6 @@ func set_player_color_map(new_player_color_map: Dictionary) -> void:
 	queue_redraw()
 
 func clear_tower() -> void:
-	_set_placement_world_hidden_for_return(false)
 	tower_blocks = []
 	current_height = 0
 	target_height = 0
@@ -755,13 +789,25 @@ func clear_tower() -> void:
 	_update_scroll_offset()
 	queue_redraw()
 
+func reset_collapse_presentation() -> void:
+	_reset_collapse()
+	tower_collapsed = false
+	tower_tilt_deg = 0.0
+	queue_redraw()
+
 func _reset_collapse() -> void:
+	_clear_collapse_debris()
+	_set_collapse_recovery_active(false)
+	scroll_state.frozen = false
+
+func _clear_collapse_debris() -> void:
 	_collapse_phase = COLLAPSE_NONE
 	_collapse_lean_elapsed = 0.0
 	_collapse_elapsed = 0.0
 	_collapse_sim = null
 	_collapsing_block_ids = {}
-	scroll_state.frozen = false
+	_collapse_pose_snapshot = {}
+	_collapse_recovery_has_started = false
 
 func _collapse_debris_lifetime_seconds() -> float:
 	if visual_hooks == null:
@@ -769,24 +815,27 @@ func _collapse_debris_lifetime_seconds() -> float:
 	return maxf(0.0, float(visual_hooks.collapse_debris_lifetime_ms) / 1000.0)
 
 func _expire_collapse_debris() -> void:
-	var collapse_offset_units: float = scroll_state.displayed_offset_units
-	_reset_collapse()
+	if !_collapse_recovery_active:
+		_start_collapse_recovery()
+	_clear_collapse_debris()
 	tower_collapsed = false
 	tower_tilt_deg = 0.0
+
+func _start_collapse_recovery() -> void:
+	if _collapse_recovery_has_started:
+		return
+	_collapse_recovery_has_started = true
+	var collapse_offset_units: float = scroll_state.displayed_offset_units
+	scroll_state.frozen = false
 	_sync_scroll_state()
-	if collapse_offset_units > scroll_state.normal_target_units + TowerScrollStateScript.EPSILON:
-		scroll_state.return_to_auto_from(collapse_offset_units)
-		_set_placement_world_hidden_for_return(true)
-	else:
-		_set_placement_world_hidden_for_return(false)
-		scroll_state.return_to_auto()
+	_set_collapse_recovery_active(true)
+	collapse_recovery_started.emit()
+	if !scroll_state.return_to_auto_from(collapse_offset_units):
+		_set_collapse_recovery_active(false)
 	_update_scroll_offset()
 
-func _set_placement_world_hidden_for_return(hidden: bool) -> void:
-	if hidden == _placement_world_hidden_for_return:
-		return
-	_placement_world_hidden_for_return = hidden
-	placement_world_visibility_changed.emit(!hidden)
+func _set_collapse_recovery_active(active: bool) -> void:
+	_collapse_recovery_active = active
 
 func _begin_collapse() -> void:
 	var unit: float = _unit_size()
@@ -813,6 +862,7 @@ func _begin_collapse() -> void:
 
 	if seeds.is_empty():
 		_collapse_phase = COLLAPSE_SETTLED
+		_start_collapse_recovery()
 		return
 
 	var span_half_width: float = size.x * clampf(collapse_span_ratio, 0.1, 1.0) * 0.5
@@ -867,7 +917,8 @@ func _build_collapse_seed(
 		float(origin_x) + (float(bounds.min_x) + float(bounds.max_x) + 1.0) * 0.5,
 		float(origin_y) + (float(bounds.min_y) + float(bounds.max_y) + 1.0) * 0.5
 	)
-	var pose: Dictionary = structural_pose.pose_for_grid(_entry_block_id(entry), grid_center)
+	var block_id: String = _entry_block_id(entry)
+	var pose: Dictionary = _displayed_pose_for_grid(block_id, grid_center)
 	var has_pose: bool = !pose.is_empty()
 	var leaned: Vector2 = pivot + (center + Vector2(0.0, scroll_px) - pivot).rotated(lean_rad)
 	var pose_angle: float = deg_to_rad(float(pose.get("rotationDeg", 0.0)))
@@ -1004,7 +1055,7 @@ func _draw() -> void:
 	var scroll_offset_units: float = _scroll_offset_units(unit)
 	var tower_units: int = max(target_height, current_height, 1)
 
-	var has_structural_pose: bool = structural_pose.has_targets()
+	var has_structural_pose: bool = structural_pose.has_targets() or !_collapse_pose_snapshot.is_empty()
 	var pivot: Vector2 = Vector2(base_x, baseline)
 	var component_collapse_active: bool = _collapse_phase != COLLAPSE_NONE
 	var draw_origin: Vector2 = Vector2.ZERO if has_structural_pose or component_collapse_active else pivot
@@ -1040,8 +1091,9 @@ func _draw() -> void:
 		var center: Vector2 = box_rect.position + box_rect.size * 0.5 - draw_origin
 		var texture: Texture2D = BlockDataScript.brick_texture(shape_id)
 		var pose_bounds: Dictionary = BlockDataScript.cell_bounds(cells)
-		var pose: Dictionary = structural_pose.pose_for_grid(
-			_entry_block_id(entry),
+		var block_id: String = _entry_block_id(entry)
+		var pose: Dictionary = _displayed_pose_for_grid(
+			block_id,
 			Vector2(
 				float(origin_x) + (float(pose_bounds.min_x) + float(pose_bounds.max_x) + 1.0) * 0.5,
 				float(base_height) + (float(pose_bounds.min_y) + float(pose_bounds.max_y) + 1.0) * 0.5
@@ -1300,14 +1352,15 @@ func _danger_outline_geometry(entry: Dictionary, drop_offset: float = 0.0) -> Pa
 				))
 
 	var cell_bounds: Dictionary = BlockDataScript.cell_bounds(cells)
-	var pose: Dictionary = structural_pose.pose_for_grid(
-		_entry_block_id(entry),
+	var block_id: String = _entry_block_id(entry)
+	var pose: Dictionary = _displayed_pose_for_grid(
+		block_id,
 		Vector2(
 			float(origin_x) + (float(cell_bounds.min_x) + float(cell_bounds.max_x) + 1.0) * 0.5,
 			float(origin_y) + (float(cell_bounds.min_y) + float(cell_bounds.max_y) + 1.0) * 0.5
 		)
 	)
-	var has_structural_pose: bool = structural_pose.has_targets()
+	var has_structural_pose: bool = structural_pose.has_targets() or !_collapse_pose_snapshot.is_empty()
 
 	if has_structural_pose and !pose.is_empty():
 		var posed_center: Vector2 = center + Vector2(
@@ -1603,11 +1656,11 @@ func _sync_scroll_state(snap_to_normal: bool = false) -> void:
 		scroll_ease_power,
 		top_indicator_clearance_units
 	)
-	if _placement_world_hidden_for_return:
+	if _collapse_recovery_active:
 		if retained_offset_units > scroll_state.normal_target_units + TowerScrollStateScript.EPSILON:
 			scroll_state.return_to_auto_from(retained_offset_units)
 		else:
-			_set_placement_world_hidden_for_return(false)
+			_set_collapse_recovery_active(false)
 	if snap_to_normal and scroll_state.mode == TowerScrollStateScript.Mode.AUTO:
 		scroll_state.snap_to_normal()
 

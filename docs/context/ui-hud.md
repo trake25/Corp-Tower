@@ -99,9 +99,13 @@ frame, holds its lower position as the tower grows, and cannot pan above the mov
 automatic target. Drop travels smoothly to a deterministic offscreen critical support;
 Top returns smoothly and resumes auto-follow.
 
-After an elevated collapse, the grouped placement world stays hidden while the shared
-scroll returns downward, then reveals atomically at normal framing. Navigation and
-placement are blocked only for that return; a zero-distance reset reveals immediately.
+Collapse captures the displayed structural transforms before applying a fallen
+snapshot, so the fall begins from the pose already on screen. The camera stays at the
+collapse view while debris is moving, then starts its downward recovery on settlement
+without waiting for the debris cleanup deadline. The placement world, platform, and
+surviving tower remain continuously rendered and share the same scroll movement, which
+keeps the survivor grounded as normal framing returns. Navigation and placement remain
+blocked during recovery and unlock at normal framing; zero-distance recovery is immediate.
 
 Placement and armed actions, overlays, recovery, and presentation sequences disable
 navigation; round and lobby transitions restore auto-scroll. View controls never
@@ -131,8 +135,7 @@ transition; repeated snapshots cannot restart that clock.
 
 The Impact Beat temporarily changes the render scale and wave state, then holds
 until Summary cancels it. It adds no delay when disabled, empty, or collapsing.
-Collapse begins from displayed transforms but remains deterministic across
-clients.
+Collapse simulation remains deterministic across clients.
 
 ## Live integration constraints
 

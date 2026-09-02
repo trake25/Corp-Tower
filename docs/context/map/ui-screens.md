@@ -240,18 +240,18 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:50 | clear_private_pending | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:58 | show_private_error | |
 
-### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 506 ln
+### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 503 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:1 | @file · file | ask ScreenManager to open the Tutorial |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:29 | tutorial_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:30 | tutorial_exited · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:31 | menu_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:262 | toggle_debug_overlay | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:265 | set_debug_context | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:269 | set_external_overlay_input_blocked | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:343 | start_tutorial | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:28 | tutorial_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:29 | tutorial_exited · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:30 | menu_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:257 | toggle_debug_overlay | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:260 | set_debug_context | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:264 | set_external_overlay_input_blocked | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:338 | start_tutorial | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd — 51 ln
 

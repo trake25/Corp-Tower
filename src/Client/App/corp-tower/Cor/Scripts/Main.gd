@@ -19,7 +19,6 @@ const PowerControllerScript = preload("res://Cor/Scripts/GameUi/PowerController.
 const InventoryControllerScript = preload("res://Cor/Scripts/GameUi/InventoryController.gd")
 const TopBarControllerScript = preload("res://Cor/Scripts/GameUi/TopBarController.gd")
 const TowerNavigationControllerScript = preload("res://Cor/Scripts/GameUi/TowerNavigationController.gd")
-const PlacementWorldRevealControllerScript = preload("res://Cor/Scripts/GameUi/PlacementWorldRevealController.gd")
 const PresentationVisibilityScript = preload("res://Cor/Scripts/GameUi/PresentationVisibility.gd")
 const VisualHooksScript = preload("res://Cor/Scripts/GameUi/VisualHooks.gd")
 const VisualHooksControllerScript = preload("res://Cor/Scripts/GameUi/VisualHooksController.gd")
@@ -49,7 +48,6 @@ var power
 var inventory
 var top_bar
 var tower_navigation
-var placement_world_reveal
 var presentation_visibility
 var visual_hooks
 var visual_fx
@@ -92,8 +90,6 @@ func _ready() -> void:
 	add_child(top_bar)
 	tower_navigation = TowerNavigationControllerScript.new()
 	add_child(tower_navigation)
-	placement_world_reveal = PlacementWorldRevealControllerScript.new()
-	add_child(placement_world_reveal)
 	presentation_visibility = PresentationVisibilityScript.new()
 	add_child(presentation_visibility)
 	visual_hooks = VisualHooksScript.new()
@@ -139,12 +135,13 @@ func _ready() -> void:
 	})
 	tutorial_menu.setup(tutorial, _on_tutorial_menu_exit)
 	tower_navigation.setup(tower_stack, match_state, inventory, should_block_tower_navigation)
-	placement_world_reveal.setup(tower_stack, inventory)
 	presentation_visibility.setup(reset_ui)
 
 	if tower_stack.has_signal("scroll_offset_changed"):
 		tower_stack.connect("scroll_offset_changed", Callable(background_parallax, "set_scroll_pixels"))
 		tower_stack.connect("scroll_offset_changed", Callable(platform_parallax, "set_scroll_pixels"))
+	if tower_stack.has_signal("collapse_recovery_started"):
+		tower_stack.connect("collapse_recovery_started", Callable(inventory, "cancel_block_drag"))
 
 	accessibility.changed.connect(apply_accessibility)
 	apply_accessibility()
@@ -198,7 +195,6 @@ func bind_ui_nodes() -> void:
 
 	top_bar.bind_nodes(binder)
 	tower_navigation.bind_nodes(binder)
-	placement_world_reveal.bind_nodes(binder)
 	presentation_visibility.bind_nodes(binder)
 	inventory.bind_nodes(binder)
 	debug_panel.bind_nodes(binder)
@@ -222,7 +218,6 @@ func reset_ui() -> void:
 	top_bar.set_top_indicator_progress(0, 0)
 	tower_stack.clear_tower()
 	tower_navigation.reset()
-	placement_world_reveal.reset()
 	inventory.update_inventory_ui([], InventoryControllerScript.MAX_INVENTORY_SLOTS)
 	inventory.update_draw_pile_ui(0, null)
 	score_popups.clear_score_popups()
@@ -364,6 +359,8 @@ func update_game_state(data) -> void:
 
 	if bool(data.get("snapshot", false)):
 		inventory.cancel_block_drag()
+		if tower_stack.has_method("reset_collapse_presentation"):
+			tower_stack.call("reset_collapse_presentation")
 		tower_navigation.reset()
 
 	var state: String = str(data.get("state", "playing"))

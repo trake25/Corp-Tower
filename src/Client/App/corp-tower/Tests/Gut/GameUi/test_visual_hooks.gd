@@ -149,20 +149,34 @@ func test_the_beat_is_skipped_while_the_tower_is_collapsing() -> void:
 		"A collapsing tower must not start the Impact beat."
 	)
 
-func test_collapse_seeds_begin_from_the_displayed_structural_pose() -> void:
+func test_fallen_snapshot_keeps_the_previously_displayed_collapse_pose() -> void:
 	var tower: Control = _mounted_tower()
 	var entry: Dictionary = _tower_entry("P1", 0)
 	var block_id: String = str(entry.block.id)
 	tower.set_tower(
-		[entry], 2, 30, 0,
-		{"collapsed": true, "criticalSupport": {"direction": "right"}},
+		[entry], 2, 30, 100, {},
 		[{"blockId": block_id, "offsetXUnits": 1.0, "offsetYUnits": -0.25, "rotationDeg": 14.0, "failureWeight": 1.0}]
 	)
+	var unit: float = tower._unit_size()
+	var base_x: float = tower.size.x * 0.5
+	var baseline: float = tower.size.y - tower.bottom_padding
+	var expected_position: Vector2 = tower._footprint_box(
+		3, 0, entry.block.cells, unit, base_x, baseline, 0
+	).get_center() + Vector2(unit, unit * 0.25)
+	var fallen: Dictionary = entry.duplicate(true)
+	fallen["towerState"] = "fallen"
+	tower.set_tower(
+		[fallen], 0, 30, 0,
+		{"collapsed": true, "criticalSupport": {"direction": "right"}},
+		[]
+	)
+	assert_false(tower.structural_pose.has_targets())
 	tower._begin_collapse()
 	var piece: Dictionary = tower._collapse_sim.pieces[0]
 
 	assert_almost_eq(float(piece.angle), deg_to_rad(14.0), 0.001, "Collapse inherits the displayed block rotation.")
-	assert_gt(float(piece.vel.x), 0.0, "The critical pose seeds a rightward initial impulse.")
+	assert_almost_eq(Vector2(piece.pos).x, expected_position.x, 0.001, "Collapse inherits the displayed horizontal position.")
+	assert_almost_eq(Vector2(piece.pos).y, expected_position.y, 0.001, "Collapse inherits the displayed vertical position.")
 
 func test_collapsed_bricks_disappear_on_the_configured_deadline() -> void:
 	var tower: Control = _mounted_tower()
