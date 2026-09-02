@@ -147,6 +147,9 @@ func reset() -> void:
 	frozen = false
 
 func step(delta: float) -> bool:
+	return step_at_speed(delta, pan_speed_units)
+
+func step_at_speed(delta: float, speed_units: float) -> bool:
 	if frozen:
 		return false
 
@@ -154,7 +157,7 @@ func step(delta: float) -> bool:
 	var next: float = move_toward(
 		displayed_offset_units,
 		target,
-		maxf(0.0, pan_speed_units) * maxf(0.0, delta)
+		maxf(0.0, speed_units) * maxf(0.0, delta)
 	)
 	var changed: bool = !is_equal_approx(next, displayed_offset_units)
 	displayed_offset_units = next

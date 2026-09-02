@@ -61,6 +61,7 @@ const ARMED_PULSE_SPEED := 5.0
 @export var collapse_pile_layers: int = 2
 @export var collapse_pile_layer_units: float = 0.55
 @export var collapse_span_ratio: float = 0.82
+@export var collapse_return_pan_speed_units: float = 24.0
 @export var tilt_ease_speed: float = 6.0
 @export var structural_pose_ease_speed: float = 9.0
 @export var drop_duration: float = 0.28
@@ -676,9 +677,15 @@ func _drop_ease(t: float) -> float:
 func _process(delta: float) -> void:
 	var needs_redraw: bool = false
 
-	if _collapse_phase == COLLAPSE_NONE and scroll_state.step(delta):
-		_update_scroll_offset()
-		needs_redraw = true
+	if _collapse_phase == COLLAPSE_NONE:
+		var scroll_changed: bool = (
+			scroll_state.step_at_speed(delta, collapse_return_pan_speed_units)
+			if _placement_world_hidden_for_return
+			else scroll_state.step(delta)
+		)
+		if scroll_changed:
+			_update_scroll_offset()
+			needs_redraw = true
 	if _placement_world_hidden_for_return and !scroll_state.is_displaced():
 		_set_placement_world_hidden_for_return(false)
 
