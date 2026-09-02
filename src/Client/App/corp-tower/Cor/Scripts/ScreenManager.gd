@@ -3,6 +3,7 @@ extends Control
 const PlayLoaderScreenScene := preload("res://Cor/Scenes/PlayLoaderScreen.tscn")
 const SignInScreenScene := preload("res://Cor/Scenes/SignInScreen.tscn")
 const HomeScreenScene := preload("res://Cor/Scenes/HomeScreen.tscn")
+const RankingsScreenScene := preload("res://Cor/Scenes/RankingsScreen.tscn")
 const SettingsScreenScene := preload("res://Cor/Scenes/SettingsScreen.tscn")
 const AccountScreenScene := preload("res://Cor/Scenes/AccountScreen.tscn")
 const PrivateServerScreenScene := preload("res://Cor/Scenes/PrivateServerScreen.tscn")
@@ -240,6 +241,7 @@ func show_home_screen() -> void:
 	screen.private_server_requested.connect(_on_home_private_server_requested)
 	screen.join_server_requested.connect(_on_home_join_server_requested)
 	screen.tutorial_requested.connect(_on_home_tutorial_requested)
+	screen.rankings_requested.connect(_on_home_rankings_requested)
 	screen.settings_requested.connect(_on_home_settings_requested)
 	_set_overlay(screen)
 	_set_debug_context(DEBUG_CONTEXT_NONE)
@@ -256,8 +258,17 @@ func _on_home_join_server_requested() -> void:
 func _on_home_tutorial_requested() -> void:
 	start_tutorial(&"")
 
+func _on_home_rankings_requested() -> void:
+	show_rankings_screen()
+
 func _on_home_settings_requested() -> void:
 	show_settings_screen()
+
+func show_rankings_screen() -> void:
+	var screen := RankingsScreenScene.instantiate()
+	screen.back_requested.connect(show_home_screen)
+	_set_overlay(screen)
+	_set_debug_context(DEBUG_CONTEXT_NONE)
 
 func show_settings_screen() -> void:
 	var screen := SettingsScreenScene.instantiate()

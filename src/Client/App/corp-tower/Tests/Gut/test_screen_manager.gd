@@ -131,6 +131,30 @@ func test_home_settings_and_account_navigation_returns_through_the_stack() -> vo
 
 	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
 
+func test_home_rankings_navigation_and_pinned_rank_layout_return_home() -> void:
+	screen_manager.show_home_screen()
+	var home = screen_manager.current_overlay
+	home.rankings_requested.emit()
+	await get_tree().process_frame
+
+	var rankings = screen_manager.current_overlay
+	assert_true(rankings.scene_file_path.ends_with("/RankingsScreen.tscn"))
+	assert_gt(rankings.leaderboard_rows.get_child_count(), 8)
+	assert_eq(rankings.leaderboard_rows.get_parent().get_parent(), rankings.leaderboard_scroll)
+	assert_false(rankings.leaderboard_scroll.is_ancestor_of(rankings.your_rank_card))
+	var scroll_bar := rankings.leaderboard_scroll.get_v_scroll_bar()
+	assert_gt(scroll_bar.max_value, scroll_bar.page)
+	var pinned_rank_y: float = rankings.your_rank_card.global_position.y
+	rankings.leaderboard_scroll.scroll_vertical = 100
+	await get_tree().process_frame
+	assert_gt(rankings.leaderboard_scroll.scroll_vertical, 0)
+	assert_eq(rankings.your_rank_card.global_position.y, pinned_rank_y)
+
+	rankings.back_requested.emit()
+	await get_tree().process_frame
+
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
+
 func test_settings_sign_out_requires_confirmation_then_routes_to_sign_in() -> void:
 	AuthManager.current_provider = "facebook"
 	AuthManager.display_name = "Player Name"
