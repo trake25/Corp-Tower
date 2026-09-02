@@ -9,6 +9,7 @@ var inventory
 var overlay_blocked: Callable = Callable()
 var trouble_button: Button
 var back_button: Button
+var tower_drop_zone: Control
 var selected_block_id: String = ""
 var was_playing: bool = false
 var pan_active: bool = false
@@ -17,6 +18,7 @@ var pan_pointer_id: int = PointerEventsScript.POINTER_MOUSE
 func bind_nodes(binder) -> void:
 	trouble_button = binder.require_node("TroubleDownButton") as Button
 	back_button = binder.require_node("BackToTopButton") as Button
+	tower_drop_zone = binder.require_node("TowerDropZone") as Control
 
 func setup(
 	new_tower_stack,
@@ -32,12 +34,27 @@ func setup(
 		trouble_button.pressed.connect(_on_trouble_pressed)
 	if back_button != null and !back_button.pressed.is_connected(_on_back_pressed):
 		back_button.pressed.connect(_on_back_pressed)
+	if tower_drop_zone != null and !tower_drop_zone.gui_input.is_connected(_on_tower_drop_zone_gui_input):
+		tower_drop_zone.gui_input.connect(_on_tower_drop_zone_gui_input)
 	refresh()
 
 func _process(_delta: float) -> void:
 	refresh()
 
 func _unhandled_input(event: InputEvent) -> void:
+	handle_input(event)
+
+func _on_tower_drop_zone_gui_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		var touch := event.duplicate() as InputEventScreenTouch
+		touch.position = tower_drop_zone.get_global_transform() * event.position
+		handle_input(touch)
+		return
+	if event is InputEventScreenDrag:
+		var drag := event.duplicate() as InputEventScreenDrag
+		drag.position = tower_drop_zone.get_global_transform() * event.position
+		handle_input(drag)
+		return
 	handle_input(event)
 
 func handle_input(event: InputEvent) -> void:

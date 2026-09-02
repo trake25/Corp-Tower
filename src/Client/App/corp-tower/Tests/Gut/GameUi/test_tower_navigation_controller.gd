@@ -61,6 +61,49 @@ func pan_touch(tower: Control, relative_y: float, pointer_id: int = 1) -> void:
 	release.pressed = false
 	harness.main.tower_navigation.handle_input(release)
 
+func dispatch_touch_pan(tower: Control, relative_y: float, pointer_id: int = 1) -> void:
+	var position: Vector2 = tower.global_position + Vector2(tower.size.x * 0.5, 50.0)
+	var press := InputEventScreenTouch.new()
+	press.index = pointer_id
+	press.position = position
+	press.pressed = true
+	harness.main.get_viewport().push_input(press, true)
+
+	var drag := InputEventScreenDrag.new()
+	drag.index = pointer_id
+	drag.position = position + Vector2(0.0, relative_y)
+	drag.relative = Vector2(0.0, relative_y)
+	harness.main.get_viewport().push_input(drag, true)
+
+	var release := InputEventScreenTouch.new()
+	release.index = pointer_id
+	release.position = drag.position
+	release.pressed = false
+	harness.main.get_viewport().push_input(release, true)
+
+func dispatch_mouse_pan(tower: Control, relative_y: float) -> void:
+	var position: Vector2 = tower.get_global_rect().get_center()
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.position = position
+	press.global_position = position
+	press.pressed = true
+	harness.main.get_viewport().push_input(press, true)
+
+	var motion := InputEventMouseMotion.new()
+	motion.position = position + Vector2(0.0, relative_y)
+	motion.global_position = motion.position
+	motion.relative = Vector2(0.0, relative_y)
+	motion.button_mask = MOUSE_BUTTON_MASK_LEFT
+	harness.main.get_viewport().push_input(motion, true)
+
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.position = motion.position
+	release.global_position = motion.global_position
+	release.pressed = false
+	harness.main.get_viewport().push_input(release, true)
+
 func test_playing_offscreen_critical_support_exposes_deliberate_navigation() -> void:
 	var tower: Control = prepare_playing_tower()
 	var trouble := harness.find("TroubleDownButton") as Button
@@ -122,6 +165,17 @@ func test_touch_pan_moves_only_below_auto_framing_and_holds_until_top() -> void:
 	(harness.find("BackToTopButton") as Button).pressed.emit()
 	tower._process(0.01)
 	assert_false(tower.is_scroll_manually_displaced())
+
+func test_gui_dispatch_routes_touch_and_mouse_pan_around_parallel_placement() -> void:
+	var tower: Control = prepare_playing_tower()
+	harness.main.inventory.set_parallel_placement(true)
+	var normal_target: float = tower.scroll_state.normal_target_units
+
+	dispatch_touch_pan(tower, -tower.brick_unit_size)
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, normal_target - 1.0, 0.001)
+
+	dispatch_mouse_pan(tower, -tower.brick_unit_size)
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, normal_target - 2.0, 0.001)
 
 func test_manual_pan_respects_placement_overlay_and_presentation_blockers() -> void:
 	var tower: Control = prepare_playing_tower()

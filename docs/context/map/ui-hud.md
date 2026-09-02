@@ -335,14 +335,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:194 | set_stability_thresholds | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd:201 | set_stability_meter_visible | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd — 188 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd — 205 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:1 | @file · file | TowerNavigationController client behavior |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:17 | bind_nodes | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:43 | handle_input | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:80 | refresh | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:18 | bind_nodes | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:60 | handle_input | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd:97 | refresh | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerScrollState.gd — 169 ln
 
