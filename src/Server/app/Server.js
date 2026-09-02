@@ -158,6 +158,16 @@ async function handleMessage(player, message) {
         return;
     }
 
+    if (data.type === "leave_game") {
+        if (!player.room) {
+            console.log("Player has no room");
+            return;
+        }
+
+        await lobbyManager.dispatchRoomAction(player, { type: "leave_game" });
+        return;
+    }
+
     if (data.type === "kick_private_player") {
         if (!player.room) {
             console.log("Player has no room");

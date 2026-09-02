@@ -44,6 +44,11 @@ server info, fixed seats, host-only kick, readiness, countdown, and grace-greyed
 identity; leave and kick reuse the shared confirmation modal.
 
 Network signals drive room entry, match start, teardown, navigation, and recovery.
+Play Menu is a full-screen overlay above the retained live Play instance. It
+blocks gameplay and debug input without pausing the match, and closing it restores
+the same tower, camera, inventory, HUD, and connection state. Its music and sound
+switches are interactive presentation placeholders with no audio or persistence
+ownership.
 During active-match recovery, a centred blocking modal keeps the current screen
 visible while the client applies authoritative recovery state; gameplay and debug
 input stay unavailable until it completes. A terminal resume result routes to

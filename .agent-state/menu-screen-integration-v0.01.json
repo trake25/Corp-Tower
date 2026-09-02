@@ -1,0 +1,713 @@
+{
+  "schema_version": 2,
+  "phase": "closed",
+  "lifecycle": {
+    "status": "closed"
+  },
+  "plan": {
+    "status": "archived",
+    "source_path": "plan/menu-screen-integration-v0.01.md",
+    "archive_path": "plan/done/menu-screen-integration-v0.01.md",
+    "diagnostic": null
+  },
+  "task": "menu-screen-integration",
+  "run_id": "2026aa8a-7ff3-4dc7-ad1a-fc4b3e3d4301",
+  "owned_paths": [
+    "docs/context/backend.md",
+    "docs/context/networking.md",
+    "docs/context/ui.md",
+    "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+    "src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn",
+    "src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd",
+    "src/Client/App/corp-tower/Cor/Scripts/Main.gd",
+    "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd",
+    "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid",
+    "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+    "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+    "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+    "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+    "src/Server/app/Lobby_Manager.js",
+    "src/Server/app/Server.js",
+    "src/Server/tests/Matchmaking_Queue.test.js"
+  ],
+  "changed_paths": [
+    "docs/context/backend.md",
+    "docs/context/networking.md",
+    "docs/context/ui.md",
+    "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+    "src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn",
+    "src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd",
+    "src/Client/App/corp-tower/Cor/Scripts/Main.gd",
+    "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd",
+    "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid",
+    "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+    "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+    "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+    "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+    "src/Server/app/Lobby_Manager.js",
+    "src/Server/app/Server.js",
+    "src/Server/tests/Matchmaking_Queue.test.js"
+  ],
+  "derived_paths": [
+    "docs/context/map/backend.md",
+    "docs/context/map/ui-hud.md",
+    "docs/context/map/ui-screens.md"
+  ],
+  "documented_paths": [
+    "docs/context/backend.md",
+    "docs/context/networking.md",
+    "docs/context/ui.md"
+  ],
+  "publish_paths": [
+    "docs/context/backend.md",
+    "docs/context/map/backend.md",
+    "docs/context/map/ui-hud.md",
+    "docs/context/map/ui-screens.md",
+    "docs/context/networking.md",
+    "docs/context/ui.md",
+    "report/qa-receipts/qa-receipt-menu-screen-integration-v0.01.md",
+    "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+    "src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn",
+    "src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd",
+    "src/Client/App/corp-tower/Cor/Scripts/Main.gd",
+    "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd",
+    "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid",
+    "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+    "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+    "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+    "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+    "src/Server/app/Lobby_Manager.js",
+    "src/Server/app/Server.js",
+    "src/Server/tests/Matchmaking_Queue.test.js"
+  ],
+  "task_identity": {
+    "keywords": [
+      "Menu-screen-integration"
+    ],
+    "keyword_label": "Menu-screen-integration",
+    "slug": "menu-screen-integration",
+    "version": "0.01",
+    "label": "Menu-screen-integration v0.01"
+  },
+  "domains": [
+    "client",
+    "game-kb",
+    "server"
+  ],
+  "intake": {
+    "schema_version": 2,
+    "task_paths": [
+      "docs/context/backend.md",
+      "docs/context/networking.md",
+      "docs/context/ui.md",
+      "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+      "src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn",
+      "src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd",
+      "src/Client/App/corp-tower/Cor/Scripts/Main.gd",
+      "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd",
+      "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid",
+      "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+      "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+      "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+      "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+      "src/Server/app/Lobby_Manager.js",
+      "src/Server/app/Server.js",
+      "src/Server/tests/Matchmaking_Queue.test.js"
+    ],
+    "routes": [
+      {
+        "path": "docs/context/backend.md",
+        "skill": null,
+        "docs": [],
+        "map": null,
+        "read": null
+      },
+      {
+        "path": "docs/context/networking.md",
+        "skill": null,
+        "docs": [],
+        "map": null,
+        "read": null
+      },
+      {
+        "path": "docs/context/ui.md",
+        "skill": null,
+        "docs": [],
+        "map": null,
+        "read": null
+      },
+      {
+        "path": "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+        "skill": "client-engineer",
+        "docs": [
+          "docs/context/ui.md"
+        ],
+        "map": "docs/context/map/ui-screens.md",
+        "read": "hunk"
+      },
+      {
+        "path": "src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn",
+        "skill": "client-engineer",
+        "docs": [
+          "docs/context/ui-hud.md"
+        ],
+        "map": "docs/context/map/ui-hud.md",
+        "read": "hunk"
+      },
+      {
+        "path": "src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd",
+        "skill": "client-engineer",
+        "docs": [
+          "docs/context/ui.md"
+        ],
+        "map": "docs/context/map/ui-screens.md",
+        "read": "hunk"
+      },
+      {
+        "path": "src/Client/App/corp-tower/Cor/Scripts/Main.gd",
+        "skill": "client-engineer",
+        "docs": [
+          "docs/context/ui.md"
+        ],
+        "map": "docs/context/map/ui-screens.md",
+        "read": "hunk"
+      },
+      {
+        "path": "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd",
+        "skill": "client-engineer",
+        "docs": [
+          "docs/context/ui.md"
+        ],
+        "map": "docs/context/map/ui-screens.md",
+        "read": "hunk"
+      },
+      {
+        "path": "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid",
+        "skill": "client-engineer",
+        "docs": [
+          "docs/context/ui.md"
+        ],
+        "map": "docs/context/map/ui-screens.md",
+        "read": "hunk"
+      },
+      {
+        "path": "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+        "skill": "client-engineer",
+        "docs": [
+          "docs/context/ui.md"
+        ],
+        "map": "docs/context/map/ui-screens.md",
+        "read": "hunk"
+      },
+      {
+        "path": "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+        "skill": "fullstack-coordinator",
+        "docs": [
+          "docs/context/networking.md",
+          "docs/context/ui.md"
+        ],
+        "map": "docs/context/map/ui-screens.md",
+        "read": "hunk"
+      },
+      {
+        "path": "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+        "skill": "qa-engineer",
+        "docs": [
+          "docs/context/testing.md"
+        ],
+        "map": null,
+        "read": "hunk"
+      },
+      {
+        "path": "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+        "skill": "qa-engineer",
+        "docs": [
+          "docs/context/testing.md"
+        ],
+        "map": null,
+        "read": "hunk"
+      },
+      {
+        "path": "src/Server/app/Lobby_Manager.js",
+        "skill": "server-engineer",
+        "docs": [
+          "docs/context/backend.md"
+        ],
+        "map": "docs/context/map/backend.md",
+        "read": "hunk"
+      },
+      {
+        "path": "src/Server/app/Server.js",
+        "skill": "fullstack-coordinator",
+        "docs": [
+          "docs/context/networking.md",
+          "docs/context/backend.md"
+        ],
+        "map": "docs/context/map/backend.md",
+        "read": "hunk"
+      },
+      {
+        "path": "src/Server/tests/Matchmaking_Queue.test.js",
+        "skill": "qa-engineer",
+        "docs": [
+          "docs/context/testing.md"
+        ],
+        "map": null,
+        "read": "hunk"
+      }
+    ],
+    "docs": [
+      "docs/context/backend.md",
+      "docs/context/networking.md",
+      "docs/context/testing.md",
+      "docs/context/ui-hud.md",
+      "docs/context/ui.md"
+    ],
+    "maps": [
+      "docs/context/map/backend.md",
+      "docs/context/map/ui-hud.md",
+      "docs/context/map/ui-screens.md"
+    ],
+    "qa": {
+      "changed": [
+        "docs/context/backend.md",
+        "docs/context/networking.md",
+        "docs/context/ui.md",
+        "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+        "src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn",
+        "src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd",
+        "src/Client/App/corp-tower/Cor/Scripts/Main.gd",
+        "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd",
+        "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid",
+        "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+        "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+        "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+        "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+        "src/Server/app/Lobby_Manager.js",
+        "src/Server/app/Server.js",
+        "src/Server/tests/Matchmaking_Queue.test.js"
+      ],
+      "server_sources": [
+        "app/Lobby_Manager.js",
+        "app/Server.js"
+      ],
+      "server_tests": [
+        "Matchmaking_Queue.test.js"
+      ],
+      "full_server": true,
+      "client_runtime": true,
+      "client_tests": [
+        "NetMan/test_recovery_timeout.gd",
+        "test_screen_manager.gd"
+      ],
+      "full_client": true,
+      "tooling_tests": [],
+      "contract_tests": [],
+      "runtime_applies": true,
+      "applies": true
+    },
+    "tools": [
+      {
+        "name": "QA",
+        "command": {
+          "argv": [
+            "node",
+            "scripts/qa-gate.mjs",
+            "--changed",
+            "docs/context/backend.md",
+            "docs/context/networking.md",
+            "docs/context/ui.md",
+            "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+            "src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn",
+            "src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd",
+            "src/Client/App/corp-tower/Cor/Scripts/Main.gd",
+            "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd",
+            "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid",
+            "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+            "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+            "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+            "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+            "src/Server/app/Lobby_Manager.js",
+            "src/Server/app/Server.js",
+            "src/Server/tests/Matchmaking_Queue.test.js"
+          ],
+          "display": "node scripts/qa-gate.mjs --changed docs/context/backend.md docs/context/networking.md docs/context/ui.md src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd src/Client/App/corp-tower/Cor/Scripts/Main.gd src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd src/Server/app/Lobby_Manager.js src/Server/app/Server.js src/Server/tests/Matchmaking_Queue.test.js"
+        }
+      },
+      {
+        "name": "file map",
+        "command": {
+          "argv": [
+            "node",
+            "scripts/build-file-map.mjs"
+          ],
+          "display": "node scripts/build-file-map.mjs"
+        }
+      },
+      {
+        "name": "game KB",
+        "command": {
+          "argv": [
+            "node",
+            "scripts/validate-docs.mjs"
+          ],
+          "display": "node scripts/validate-docs.mjs"
+        }
+      }
+    ],
+    "unmapped": [
+      "docs/context/backend.md",
+      "docs/context/networking.md",
+      "docs/context/ui.md"
+    ],
+    "limits": {
+      "max_bytes": 24576,
+      "returned_bytes": 8457
+    }
+  },
+  "retrieval": {
+    "fallbacks": []
+  },
+  "documentation": {
+    "source_changed": true,
+    "candidate_docs": [
+      "docs/context/backend.md",
+      "docs/context/networking.md",
+      "docs/context/testing.md",
+      "docs/context/ui-hud.md",
+      "docs/context/ui.md"
+    ],
+    "maps_to_regenerate": [
+      "docs/context/map/backend.md",
+      "docs/context/map/ui-hud.md",
+      "docs/context/map/ui-screens.md"
+    ],
+    "status": "updated",
+    "reason": "Retained Play overlay and intentional active-leave wire and authority contracts changed.",
+    "documented_paths": [
+      "docs/context/backend.md",
+      "docs/context/networking.md",
+      "docs/context/ui.md"
+    ]
+  },
+  "coverage": {
+    "source_changed": true,
+    "status": "added",
+    "protected_contract": "Active leave is current-connection owner-routed, non-resumable, targeted, and preserves the started roster; Menu retains Play and blocks gameplay input."
+  },
+  "qa": {
+    "planned_paths": [
+      "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+      "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+      "src/Server/tests/Matchmaking_Queue.test.js"
+    ],
+    "changed_paths": [],
+    "unplanned_paths": [],
+    "status": "unchanged",
+    "temporary_verification": "used"
+  },
+  "review": {
+    "input_fingerprint": "57a462259f8222ce1f24d20319b4fa681b3f3e61dfcdfcc0c4db1ed9cfaae7c6",
+    "reviewed_at": "2026-09-02T08:24:24.095Z",
+    "intake": {
+      "schema_version": 2,
+      "task_paths": [
+        "docs/context/backend.md",
+        "docs/context/networking.md",
+        "docs/context/ui.md",
+        "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+        "src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn",
+        "src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd",
+        "src/Client/App/corp-tower/Cor/Scripts/Main.gd",
+        "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd",
+        "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid",
+        "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+        "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+        "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+        "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+        "src/Server/app/Lobby_Manager.js",
+        "src/Server/app/Server.js",
+        "src/Server/tests/Matchmaking_Queue.test.js"
+      ],
+      "routes": [
+        {
+          "path": "docs/context/backend.md",
+          "skill": null,
+          "docs": [],
+          "map": null,
+          "read": null
+        },
+        {
+          "path": "docs/context/networking.md",
+          "skill": null,
+          "docs": [],
+          "map": null,
+          "read": null
+        },
+        {
+          "path": "docs/context/ui.md",
+          "skill": null,
+          "docs": [],
+          "map": null,
+          "read": null
+        },
+        {
+          "path": "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+          "skill": "client-engineer",
+          "docs": [
+            "docs/context/ui.md"
+          ],
+          "map": "docs/context/map/ui-screens.md",
+          "read": "hunk"
+        },
+        {
+          "path": "src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn",
+          "skill": "client-engineer",
+          "docs": [
+            "docs/context/ui-hud.md"
+          ],
+          "map": "docs/context/map/ui-hud.md",
+          "read": "hunk"
+        },
+        {
+          "path": "src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd",
+          "skill": "client-engineer",
+          "docs": [
+            "docs/context/ui.md"
+          ],
+          "map": "docs/context/map/ui-screens.md",
+          "read": "hunk"
+        },
+        {
+          "path": "src/Client/App/corp-tower/Cor/Scripts/Main.gd",
+          "skill": "client-engineer",
+          "docs": [
+            "docs/context/ui.md"
+          ],
+          "map": "docs/context/map/ui-screens.md",
+          "read": "hunk"
+        },
+        {
+          "path": "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd",
+          "skill": "client-engineer",
+          "docs": [
+            "docs/context/ui.md"
+          ],
+          "map": "docs/context/map/ui-screens.md",
+          "read": "hunk"
+        },
+        {
+          "path": "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid",
+          "skill": "client-engineer",
+          "docs": [
+            "docs/context/ui.md"
+          ],
+          "map": "docs/context/map/ui-screens.md",
+          "read": "hunk"
+        },
+        {
+          "path": "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+          "skill": "client-engineer",
+          "docs": [
+            "docs/context/ui.md"
+          ],
+          "map": "docs/context/map/ui-screens.md",
+          "read": "hunk"
+        },
+        {
+          "path": "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+          "skill": "fullstack-coordinator",
+          "docs": [
+            "docs/context/networking.md",
+            "docs/context/ui.md"
+          ],
+          "map": "docs/context/map/ui-screens.md",
+          "read": "hunk"
+        },
+        {
+          "path": "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+          "skill": "qa-engineer",
+          "docs": [
+            "docs/context/testing.md"
+          ],
+          "map": null,
+          "read": "hunk"
+        },
+        {
+          "path": "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+          "skill": "qa-engineer",
+          "docs": [
+            "docs/context/testing.md"
+          ],
+          "map": null,
+          "read": "hunk"
+        },
+        {
+          "path": "src/Server/app/Lobby_Manager.js",
+          "skill": "server-engineer",
+          "docs": [
+            "docs/context/backend.md"
+          ],
+          "map": "docs/context/map/backend.md",
+          "read": "hunk"
+        },
+        {
+          "path": "src/Server/app/Server.js",
+          "skill": "fullstack-coordinator",
+          "docs": [
+            "docs/context/networking.md",
+            "docs/context/backend.md"
+          ],
+          "map": "docs/context/map/backend.md",
+          "read": "hunk"
+        },
+        {
+          "path": "src/Server/tests/Matchmaking_Queue.test.js",
+          "skill": "qa-engineer",
+          "docs": [
+            "docs/context/testing.md"
+          ],
+          "map": null,
+          "read": "hunk"
+        }
+      ],
+      "docs": [
+        "docs/context/backend.md",
+        "docs/context/networking.md",
+        "docs/context/testing.md",
+        "docs/context/ui-hud.md",
+        "docs/context/ui.md"
+      ],
+      "maps": [
+        "docs/context/map/backend.md",
+        "docs/context/map/ui-hud.md",
+        "docs/context/map/ui-screens.md"
+      ],
+      "qa": {
+        "changed": [
+          "docs/context/backend.md",
+          "docs/context/networking.md",
+          "docs/context/ui.md",
+          "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+          "src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn",
+          "src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd",
+          "src/Client/App/corp-tower/Cor/Scripts/Main.gd",
+          "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd",
+          "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid",
+          "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+          "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+          "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+          "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+          "src/Server/app/Lobby_Manager.js",
+          "src/Server/app/Server.js",
+          "src/Server/tests/Matchmaking_Queue.test.js"
+        ],
+        "server_sources": [
+          "app/Lobby_Manager.js",
+          "app/Server.js"
+        ],
+        "server_tests": [
+          "Matchmaking_Queue.test.js"
+        ],
+        "full_server": true,
+        "client_runtime": true,
+        "client_tests": [
+          "NetMan/test_recovery_timeout.gd",
+          "test_screen_manager.gd"
+        ],
+        "full_client": true,
+        "tooling_tests": [],
+        "contract_tests": [],
+        "runtime_applies": true,
+        "applies": true
+      },
+      "tools": [
+        {
+          "name": "QA",
+          "command": {
+            "argv": [
+              "node",
+              "scripts/qa-gate.mjs",
+              "--changed",
+              "docs/context/backend.md",
+              "docs/context/networking.md",
+              "docs/context/ui.md",
+              "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+              "src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn",
+              "src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd",
+              "src/Client/App/corp-tower/Cor/Scripts/Main.gd",
+              "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd",
+              "src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid",
+              "src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd",
+              "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+              "src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd",
+              "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd",
+              "src/Server/app/Lobby_Manager.js",
+              "src/Server/app/Server.js",
+              "src/Server/tests/Matchmaking_Queue.test.js"
+            ],
+            "display": "node scripts/qa-gate.mjs --changed docs/context/backend.md docs/context/networking.md docs/context/ui.md src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd src/Client/App/corp-tower/Cor/Scripts/Main.gd src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd.uid src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd src/Client/App/corp-tower/Tests/Gut/NetMan/test_recovery_timeout.gd src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd src/Server/app/Lobby_Manager.js src/Server/app/Server.js src/Server/tests/Matchmaking_Queue.test.js"
+          }
+        },
+        {
+          "name": "file map",
+          "command": {
+            "argv": [
+              "node",
+              "scripts/build-file-map.mjs"
+            ],
+            "display": "node scripts/build-file-map.mjs"
+          }
+        },
+        {
+          "name": "game KB",
+          "command": {
+            "argv": [
+              "node",
+              "scripts/validate-docs.mjs"
+            ],
+            "display": "node scripts/validate-docs.mjs"
+          }
+        }
+      ],
+      "unmapped": [
+        "docs/context/backend.md",
+        "docs/context/networking.md",
+        "docs/context/ui.md"
+      ],
+      "limits": {
+        "max_bytes": 24576,
+        "returned_bytes": 8457
+      }
+    },
+    "map_hashes": {
+      "docs/context/map/backend.md": "144bc2c33084947b50b362d849e47743f43c8fddde8db194915bc82b8b7d4907",
+      "docs/context/map/infra.md": "d7103e7f58ec265534a9eb10e62ac9fa26e386cdf18991c10a1ba042cb2ee250",
+      "docs/context/map/ui-debug.md": "49f9a0e5ea1fca7a993f6ef7928183c9344ec1970b2ec0cfb9d2d42128fc0bcc",
+      "docs/context/map/ui-hud.md": "b2e0013c255aeaf76880e814c4a7b40d2b2959369915ab0e6ed6b3449a058092",
+      "docs/context/map/ui-screens.md": "d3be1206ca24b085f51c703699de00416ea052d521c8ee19cf57156e9edcc7c3",
+      "docs/context/map/ui-tutorial.md": "47c09f7254b09eab287cd25f2d7b9a7fb5561eac742c8dee22e84f8b23de954a"
+    }
+  },
+  "verification": {
+    "status": "passed",
+    "receipt": ".agent-state/menu-screen-integration-v0.01.receipt.json",
+    "close_input_fingerprint": "c58f4449150cd1adebbfdaccc76be11f3934bb61ad47db6d11d507f9451b9f57",
+    "maintenance_handoff": "repair/menu-screen-integration-2026aa8a.md",
+    "public_receipt": "report/qa-receipts/qa-receipt-menu-screen-integration-v0.01.md"
+  },
+  "observability": {
+    "status": "pending_stop",
+    "task_id": "2026aa8a-7ff3-4dc7-ad1a-fc4b3e3d4301",
+    "session_bindings": 1,
+    "candidates": [],
+    "formal_flag_gate": {
+      "eligible": false,
+      "model_family": "sol",
+      "effort": "high",
+      "same_required_turn": true
+    },
+    "candidate_status": "duplicate",
+    "reasons": []
+  }
+}

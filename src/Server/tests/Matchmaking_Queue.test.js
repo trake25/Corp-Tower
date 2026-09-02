@@ -46,7 +46,8 @@ function createSharedFakeCluster() {
         roomCounter: 1,
         lockChain: Promise.resolve(),
         assignmentSubscribers: [],
-        roomSubscribers: new Map()
+        roomSubscribers: new Map(),
+        roomActionSubscribers: new Map()
     };
 
     function makeStore(podId) {
@@ -147,16 +148,34 @@ function createSharedFakeCluster() {
                     subscribers.filter(subscriber => subscriber.podId !== podId)
                 );
             },
-            async publishRoomAction() {},
-            async subscribeToRoomActions() {},
-            async unsubscribeFromRoomActions() {},
-            async clearSessionRoom(sessionId) {
+            async publishRoomAction(roomId, message) {
+                await tick();
+                const subscribers = shared.roomActionSubscribers.get(roomId) || [];
+                subscribers.forEach(subscriber => {
+                    subscriber.handler({ ...message, sourcePodId: podId });
+                });
+            },
+            async subscribeToRoomActions(roomId, handler) {
+                const subscribers = shared.roomActionSubscribers.get(roomId) || [];
+                subscribers.push({ podId, handler });
+                shared.roomActionSubscribers.set(roomId, subscribers);
+            },
+            async unsubscribeFromRoomActions(roomId) {
+                const subscribers = shared.roomActionSubscribers.get(roomId) || [];
+                shared.roomActionSubscribers.set(
+                    roomId,
+                    subscribers.filter(subscriber => subscriber.podId !== podId)
+                );
+            },
+            async clearSessionRoom(sessionId, resumeDestination = null, resumeReason = null) {
                 const session = shared.sessions.get(sessionId);
                 if (session) {
                     shared.sessions.set(sessionId, {
                         ...session,
                         connected: false,
-                        roomId: null
+                        roomId: null,
+                        resumeDestination,
+                        resumeReason
                     });
                 }
             },
@@ -202,11 +221,17 @@ async function createLobbyOfThree() {
         await tick();
     }
 
-    return { lobby, players, sockets, room: players[0].room };
+    return { cluster, lobby, players, sockets, room: players[0].room };
 }
 
 function messagesOfType(ws, type) {
     return ws.sentMessages.filter(message => message.type === type);
+}
+
+async function startMatch(lobby, players) {
+    for (const player of players) {
+        await lobby.toggleLobbyReady(player);
+    }
 }
 
 test("a lone player creates a room and waits alone, unfilled", async () => {
@@ -419,6 +444,84 @@ test("leaving an otherwise-empty lobby closes the room", async () => {
     await lobby.leaveLobby(player);
 
     assert.equal(lobby.rooms.length, 0);
+});
+
+test("leave_game is a no-op until the room has started", async () => {
+    const { cluster, lobby, players, sockets, room } = await createLobbyOfThree();
+
+    await lobby.dispatchRoomAction(players[0], { type: "leave_game" });
+
+    assert.equal(messagesOfType(sockets[0], "game_left").length, 0);
+    assert.equal(room.players.length, 3);
+    assert.equal(cluster.shared.sessions.get(players[0].sessionId).roomId, room.id);
+});
+
+test("only the current connection can intentionally leave a started game", async () => {
+    const { cluster, lobby, players, sockets, room } = await createLobbyOfThree();
+    await startMatch(lobby, players);
+
+    await lobby.dispatchRoomAction({
+        ...players[0],
+        connectionId: "superseded-connection"
+    }, { type: "leave_game" });
+
+    assert.equal(messagesOfType(sockets[0], "game_left").length, 0);
+    assert.equal(cluster.shared.sessions.get(players[0].sessionId).roomId, room.id);
+
+    await lobby.dispatchRoomAction(players[0], { type: "leave_game" });
+
+    const acknowledgements = messagesOfType(sockets[0], "game_left");
+    assert.deepEqual(acknowledgements, [{ type: "game_left", destination: "home" }]);
+    assert.equal(room.players.length, 3, "a started-room participant stays in the engine roster");
+    assert.equal(room.players[0].ws, null, "the leaver is retained as disconnected");
+    assert.equal(lobby.connectedPlayers.has(players[0].id), false);
+
+    const session = cluster.shared.sessions.get(players[0].sessionId);
+    assert.equal(session.roomId, null);
+    assert.equal(session.connected, false);
+    assert.equal(session.resumeDestination, "home");
+    assert.equal(session.resumeReason, "player_left_game");
+
+    [sockets[1], sockets[2]].forEach(ws => {
+        assert.equal(messagesOfType(ws, "game_left").length, 0);
+        assert.equal(messagesOfType(ws, "room_closed").length, 0);
+    });
+    assert.equal(lobby.rooms.length, 1);
+});
+
+test("remote-owner leave_game returns only a targeted acknowledgement", async () => {
+    const { cluster, lobby: lobbyA, players, room } = await createLobbyOfThree();
+    await startMatch(lobbyA, players);
+
+    const lobbyB = new LobbyManager(cluster.makeStore("podB"));
+    activeLobbies.push(lobbyB);
+    await lobbyB.start();
+    const remoteRoom = await lobbyB.hydrateRoom(room.id);
+    const remotePlayer = remoteRoom.players.find(player => player.id === players[0].id);
+    const remoteWs = createFakeWs();
+
+    lobbyA.connectedPlayers.delete(players[0].id);
+    room.players[0].ws = null;
+    remotePlayer.ws = remoteWs;
+    remotePlayer.room = remoteRoom;
+    remotePlayer.connectionId = players[0].connectionId;
+    lobbyB.connectedPlayers.set(remotePlayer.id, remotePlayer);
+
+    await lobbyB.dispatchRoomAction(remotePlayer, { type: "leave_game" });
+    for (let i = 0; i < 8; i++) {
+        await tick();
+    }
+
+    assert.deepEqual(
+        messagesOfType(remoteWs, "game_left"),
+        [{ type: "game_left", destination: "home" }]
+    );
+    assert.equal(lobbyB.connectedPlayers.has(remotePlayer.id), false);
+    assert.equal(remoteRoom.players.length, 3);
+    assert.equal(remotePlayer.ws, null);
+    assert.equal(cluster.shared.sessions.get(remotePlayer.sessionId).roomId, null);
+    assert.equal(lobbyA.rooms.length, 1);
+    assert.equal(lobbyB.rooms.length, 1);
 });
 
 test("dropping the socket during ready-up breaks off just that player", async () => {

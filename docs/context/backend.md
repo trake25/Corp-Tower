@@ -39,6 +39,10 @@ seats, may include debug bots, and start only when full and ready. Started rooms
 can resume during the reconnect TTL; an empty real-player room is destroyed
 rather than continued by bots.
 
+An intentional active-match leave is owner-routed and clears only the leaver's
+session-room binding. The started engine roster retains that participant as
+disconnected, without replacement or a terminal close for survivors.
+
 Private rooms contain three human seats and never enter open matchmaking or bot
 fill. Their invite, fixed host, readiness, connection phases, and deadlines
 persist. The host alone may kick; full connected readiness arms a separate start

@@ -12,6 +12,7 @@
 [ext_resource type="Texture2D" path="res://Cor/Art/9-Play/play-quest-active.png" id="18_queststate1"]
 [ext_resource type="Texture2D" path="res://Cor/Art/9-Play/ic-chat.png" id="21_chat"]
 [ext_resource type="Texture2D" path="res://Cor/Art/9-Play/ic-power.png" id="22_power"]
+[ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="23_press_tint"]
 
 [sub_resource type="Gradient" id="Gradient_TopBarFill"]
 colors = PackedColorArray(0.192, 0.725, 0.271, 1, 0.714, 0.992, 0.29, 1)
@@ -155,6 +156,7 @@ offset_left = 27.0
 offset_top = 65.0
 offset_right = 59.0
 offset_bottom = 97.0
+script = ExtResource("23_press_tint")
 texture_normal = ExtResource("10_menu")
 ignore_texture_size = true
 stretch_mode = 5

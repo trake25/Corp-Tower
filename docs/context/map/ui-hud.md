@@ -33,12 +33,12 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:1 | @file · file | LevelSummary scene composition and controller bindings |
 | src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn:3 | LevelSummaryOverlay · scene root | |
 
-### src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn — 689 ln
+### src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn — 691 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:1 | @file · file | PlayField scene composition and controller bindings |
-| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:24 | PlayField · scene root | |
+| src/Client/App/corp-tower/Cor/Scenes/PlayField.tscn:25 | PlayField · scene root | |
 
 ### src/Client/App/corp-tower/Cor/Scenes/PlayerRailEntry.tscn — 88 ln
 

@@ -56,9 +56,15 @@ publishes it before deletion; other pods forward it once and discard their
 replicas. Lobby timeout closes only not-ready seats while ready players and bots
 can remain in the persisted room.
 
+Intentional active leave uses `leave_game`, not the pre-match lobby exit or the
+whole-room close lifecycle. The owner clears only that current connection's
+session-room binding, retains its started-room participant as disconnected, and
+returns targeted `game_left` with the Home destination. The client clears its
+resumable room identity and disconnects only after that acknowledgement.
+
 ## Message families
 
-Server messages fall into five contracts:
+Server messages fall into six contracts:
 
 - Session assignment: room identity, inventory, roster, lobby/start state, and
   terminal `resume_unavailable` when Play cannot be restored.
@@ -66,12 +72,14 @@ Server messages fall into five contracts:
 - `game_state`: the complete authoritative room presentation used for rendering
   and recovery.
 - `debug_config`: the validated live tuning snapshot.
+- `game_left`: targeted acknowledgement of an intentional active leave.
 - `room_closed`: teardown reason and navigation destination.
 
-Client actions are reconnect, ready/leave-lobby, private host kick, place block,
-activate Power, quick chat, debug update, and `resync_state`. Resync carries only correlation and
-the last revision. Every stateful action is validated for room, identity,
-connection, state, cooldown, and domain rules; Power is room-wide and chat sends
+Client actions are reconnect, ready/leave-lobby/leave-game, private host kick,
+place block, activate Power, quick chat, debug update, and `resync_state`. Resync
+carries only correlation and the last revision. Every stateful action is validated
+for room, identity, connection, state, cooldown, and domain rules; Power is
+room-wide and chat sends
 a template slot, never free text.
 
 Latency diagnostics use a client nonce: `latency_ping` receives a same-socket

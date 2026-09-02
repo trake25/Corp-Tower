@@ -63,6 +63,7 @@ signal room_joined(data)
 signal match_started(data)
 signal lobby_updated(data)
 signal room_closed(data)
+signal game_left(data)
 signal game_state_updated(data)
 signal client_status(status)
 signal debug_config_updated(config)
@@ -244,6 +245,12 @@ func leave_lobby():
 
 	ws.send_text(JSON.stringify({"type": "leave_lobby"}))
 
+func leave_game() -> bool:
+	if not is_conn_estab or is_recovering():
+		return false
+
+	return ws.send_text(JSON.stringify({"type": "leave_game"})) == OK
+
 func load_reconnect_identity():
 	if FileAccess.file_exists(PLAYER_ID_FILE):
 		player_id = FileAccess.get_file_as_string(PLAYER_ID_FILE).strip_edges()
@@ -367,6 +374,14 @@ func _clear_room_identity() -> void:
 
 	if FileAccess.file_exists(RECONNECT_TOKEN_FILE):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(RECONNECT_TOKEN_FILE))
+
+func accept_game_left(data) -> void:
+	reset_match_tracking()
+	_clear_private_lobby_tracking()
+	_clear_room_identity()
+	auto_reconnect_enabled = false
+	auto_reconnect_delay_remaining = -1.0
+	game_left.emit(data)
 
 func reset_recovery_state() -> void:
 	recovery_state = "healthy"
@@ -630,6 +645,8 @@ func _process(delta: float) -> void:
 				auto_reconnect_enabled = false
 				auto_reconnect_delay_remaining = -1.0
 				room_closed.emit(data)
+			"game_left":
+				accept_game_left(data)
 			"private_join_rejected":
 				private_join_failed.emit(data)
 				_clear_pending_private_entry()

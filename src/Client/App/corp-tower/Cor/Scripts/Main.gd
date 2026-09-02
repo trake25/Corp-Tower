@@ -28,6 +28,7 @@ const TutorialMenuControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/
 
 signal tutorial_requested(lesson_id: StringName)
 signal tutorial_exited
+signal menu_requested
 
 @onready var ui_root: Control = self
 
@@ -59,6 +60,8 @@ var tower_stack: Control
 var background_parallax: Control
 var platform_parallax: Control
 var demo_mode_label: Label
+var hamburger_button: TextureButton
+var external_overlay_input_blocked := false
 
 func _ready() -> void:
 	tuning = UiTuningScript.new()
@@ -104,6 +107,7 @@ func _ready() -> void:
 	if !prepare_ui():
 		return
 
+	hamburger_button.pressed.connect(_on_hamburger_pressed)
 	demo_mode_label.visible = EndpointConfig.DEMO_MODE_ENABLED
 
 	inventory.setup(players_ctx, match_state, tuning, NetworkManager, popovers, tutorial, accessibility)
@@ -156,7 +160,8 @@ func apply_accessibility() -> void:
 
 func should_block_popovers() -> bool:
 	return (
-		NetworkManager.is_recovering()
+		external_overlay_input_blocked
+		or NetworkManager.is_recovering()
 		or
 		debug_panel.is_open()
 		or summary.is_overlay_visible()
@@ -166,7 +171,8 @@ func should_block_popovers() -> bool:
 
 func should_block_tower_navigation() -> bool:
 	return (
-		NetworkManager.is_recovering()
+		external_overlay_input_blocked
+		or NetworkManager.is_recovering()
 		or debug_panel.is_open()
 		or summary.is_overlay_visible()
 		or tutorial.blocks_popovers()
@@ -188,6 +194,7 @@ func bind_ui_nodes() -> void:
 	background_parallax = binder.require_node("BgArt") as Control
 	platform_parallax = binder.require_node("PlatformArt") as Control
 	demo_mode_label = binder.require_node("DemoModeLabel") as Label
+	hamburger_button = binder.require_node("HamburgerButton") as TextureButton
 
 	top_bar.bind_nodes(binder)
 	tower_navigation.bind_nodes(binder)
@@ -235,11 +242,14 @@ func connect_network_signals() -> void:
 	NetworkManager.debug_config_updated.connect(update_debug_config)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if external_overlay_input_blocked:
+		return
+
 	if event.is_action_pressed("ui_cancel") and debug_panel.is_open():
 		debug_panel.set_open(false)
 
 func _input(event: InputEvent) -> void:
-	if NetworkManager.is_recovering():
+	if external_overlay_input_blocked or NetworkManager.is_recovering():
 		return
 
 	inventory.handle_input(event)
@@ -254,6 +264,22 @@ func toggle_debug_overlay() -> void:
 func set_debug_context(context: String) -> void:
 	debug_panel.set_screen_context(context)
 	presentation_visibility.set_screen_context(context)
+
+func set_external_overlay_input_blocked(blocked: bool) -> void:
+	external_overlay_input_blocked = blocked
+
+	if blocked:
+		inventory.cancel_block_drag()
+		popovers.close_active()
+		debug_panel.set_open(false)
+
+	tower_navigation.refresh()
+
+func _on_hamburger_pressed() -> void:
+	if external_overlay_input_blocked:
+		return
+
+	menu_requested.emit()
 
 func _on_room_joined(data) -> void:
 	if bool(data.get("matchStarted", true)):

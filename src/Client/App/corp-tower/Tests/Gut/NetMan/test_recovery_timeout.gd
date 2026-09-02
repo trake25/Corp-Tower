@@ -69,6 +69,30 @@ func test_manual_disconnect_releases_connection_flags_for_a_new_match() -> void:
 	assert_false(network.is_connecting, "A cancelled connection must not keep matchmaking in its spinner.")
 	assert_eq(network.last_state_revision, -1, "A new match must not inherit the previous room revision.")
 	assert_eq(network.last_game_state_msec, -1, "A new match must not inherit the previous room liveness clock.")
+
+func test_game_left_clears_resumable_identity_before_shell_teardown() -> void:
+	var network = NetworkManagerScript.new()
+	add_child_autofree(network)
+	var game_left_events: Array = []
+	network.game_left.connect(func(data): game_left_events.append(data))
+	network.player_id = "intentional-leaver"
+	network.reconnect_token = "intentional-token"
+	network.match_active = true
+	network.auto_reconnect_enabled = true
+	var player_file = FileAccess.open(NetworkManagerScript.PLAYER_ID_FILE, FileAccess.WRITE)
+	player_file.store_string(network.player_id)
+	var token_file = FileAccess.open(NetworkManagerScript.RECONNECT_TOKEN_FILE, FileAccess.WRITE)
+	token_file.store_string(network.reconnect_token)
+
+	network.accept_game_left({"type": "game_left", "destination": "home"})
+
+	assert_eq(network.player_id, "")
+	assert_eq(network.reconnect_token, "")
+	assert_false(network.match_active)
+	assert_false(network.auto_reconnect_enabled)
+	assert_false(FileAccess.file_exists(NetworkManagerScript.PLAYER_ID_FILE))
+	assert_false(FileAccess.file_exists(NetworkManagerScript.RECONNECT_TOKEN_FILE))
+	assert_eq(game_left_events, [{"type": "game_left", "destination": "home"}])
 	assert_eq(network.latest_match_state, "", "A new match must not inherit the previous room lifecycle state.")
 	assert_eq(network.recovery_start_revision, -1, "A new match must not inherit recovery progress markers.")
 	network.free()

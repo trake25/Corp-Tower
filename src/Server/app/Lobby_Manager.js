@@ -1870,6 +1870,52 @@ class LobbyManager {
         await this.evictLobbyPlayer(room, player, "player_left_lobby");
     }
 
+    async leaveGameForRoom(room, player, connectionId) {
+        if (!room || !room.matchStarted || !player || player.isBot) {
+            return;
+        }
+
+        const targetConnectionId = connectionId || player.connectionId;
+        const connectedPlayer = this.connectedPlayers.get(player.id);
+        const notificationPlayer = (
+            connectedPlayer?.connectionId === targetConnectionId
+                ? connectedPlayer
+                : player
+        );
+        const targetSocket = notificationPlayer?.ws || null;
+        const message = {
+            type: "game_left",
+            destination: "home"
+        };
+
+        await Promise.resolve(
+            this.stateStore.clearSessionRoom
+                ? this.stateStore.clearSessionRoom(
+                    player.sessionId, "home", "player_left_game"
+                )
+                : null
+        );
+
+        if (
+            connectedPlayer &&
+            connectedPlayer.connectionId === targetConnectionId
+        ) {
+            this.connectedPlayers.delete(player.id);
+            connectedPlayer.ws = null;
+        }
+        player.ws = null;
+
+        await this.stateStore.saveRoom(room, true);
+        room.engine.broadcastGameState();
+
+        this.sendPlayer({ ws: targetSocket }, message);
+        await this.stateStore.publishRoom(room.id, {
+            ...message,
+            targetPlayerId: player.id,
+            targetConnectionId
+        });
+    }
+
     async evictPrivateLobbyPlayer(room, player, reason, destination, notifyPlayer) {
         if (!this.isPrivateRoom(room) || !player) {
             return;
@@ -2310,8 +2356,13 @@ class LobbyManager {
                 });
 
                 if (target) {
+                    const connected = this.connectedPlayers.get(target.id);
+                    const clientMessage = { ...message };
+                    delete clientMessage.targetPlayerId;
+                    delete clientMessage.targetConnectionId;
+                    delete clientMessage.sourcePodId;
+
                     if (message.type === "room_closed") {
-                        const connected = this.connectedPlayers.get(target.id);
                         room.engine.removePlayerFromRoom(target.id);
                         room.readyPlayerIds.delete(target.id);
                         this.cancelPrivateLobbyDisconnectTimers(room.id, target.id);
@@ -2320,7 +2371,24 @@ class LobbyManager {
                             this.resetParticipantState(connected);
                         }
                     }
-                    this.sendPlayer(target, message);
+
+                    this.sendPlayer(
+                        connected?.connectionId === message.targetConnectionId
+                            ? connected
+                            : target,
+                        clientMessage
+                    );
+
+                    if (message.type === "game_left") {
+                        target.ws = null;
+                        if (
+                            connected &&
+                            connected.connectionId === message.targetConnectionId
+                        ) {
+                            connected.ws = null;
+                            this.connectedPlayers.delete(target.id);
+                        }
+                    }
                 }
                 return;
             }
@@ -2482,6 +2550,10 @@ class LobbyManager {
 
             case "leave_lobby":
                 await this.leaveLobbyForRoom(room, player);
+                return;
+
+            case "leave_game":
+                await this.leaveGameForRoom(room, player, action.connectionId);
                 return;
 
             case "kick_private_player":

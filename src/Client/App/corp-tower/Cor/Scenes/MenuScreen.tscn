@@ -1,0 +1,194 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/MenuScreen.gd" id="1_menu"]
+[ext_resource type="Texture2D" path="res://Cor/Art/10-Menu/menu-bg-@4x.png" id="2_background"]
+[ext_resource type="Texture2D" path="res://Cor/Art/10-Menu/btn-circular-close.png" id="3_close"]
+[ext_resource type="Texture2D" path="res://Cor/Art/10-Menu/ic-colored-leave.png" id="4_leave"]
+[ext_resource type="Texture2D" path="res://Cor/Art/10-Menu/ic-colored-music.png" id="5_music"]
+[ext_resource type="Texture2D" path="res://Cor/Art/10-Menu/ic-colored-sound.png" id="6_sound"]
+[ext_resource type="Texture2D" path="res://Cor/Art/10-Menu/ic-toggle-off.png" id="7_toggle_off"]
+[ext_resource type="Texture2D" path="res://Cor/Art/10-Menu/ic-toggle-on.png" id="8_toggle_on"]
+[ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="9_press_tint"]
+[ext_resource type="PackedScene" path="res://Cor/Scenes/ConfirmModal.tscn" id="10_confirm"]
+[ext_resource type="Theme" path="res://Cor/Themes/GameUITheme.tres" id="11_theme"]
+
+[node name="MenuScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+theme = ExtResource("11_theme")
+script = ExtResource("1_menu")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_background")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Header" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 15.0
+offset_top = 69.0
+offset_right = -15.0
+offset_bottom = 127.0
+grow_horizontal = 2
+
+[node name="Row" type="HBoxContainer" parent="Header"]
+layout_mode = 2
+
+[node name="CloseButton" type="TextureButton" parent="Header/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 2
+script = ExtResource("9_press_tint")
+texture_normal = ExtResource("3_close")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="Header/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"BoldLabel"
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Menu"
+
+[node name="HeaderSpacer" type="Control" parent="Header/Row"]
+custom_minimum_size = Vector2(58, 0)
+layout_mode = 2
+
+[node name="Settings" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -191.0
+offset_top = 142.0
+offset_right = 191.0
+offset_bottom = 330.0
+grow_horizontal = 2
+theme_override_constants/separation = 22
+
+[node name="LeaveGameButton" type="Button" parent="Settings"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_type_variation = &"PopoverRowButton"
+text = ""
+
+[node name="Row" type="HBoxContainer" parent="Settings/LeaveGameButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="TextureRect" parent="Settings/LeaveGameButton/Row"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("4_leave")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Settings/LeaveGameButton/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "Leave game"
+
+[node name="MusicRow" type="HBoxContainer" parent="Settings"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="TextureRect" parent="Settings/MusicRow"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("5_music")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Settings/MusicRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "Background music"
+
+[node name="MusicToggle" type="TextureButton" parent="Settings/MusicRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 24)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+script = ExtResource("9_press_tint")
+texture_normal = ExtResource("7_toggle_off")
+texture_pressed = ExtResource("8_toggle_on")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="SoundRow" type="HBoxContainer" parent="Settings"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="TextureRect" parent="Settings/SoundRow"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("6_sound")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Settings/SoundRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "Sound effects"
+
+[node name="SoundToggle" type="TextureButton" parent="Settings/SoundRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 24)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+script = ExtResource("9_press_tint")
+texture_normal = ExtResource("7_toggle_off")
+texture_pressed = ExtResource("8_toggle_on")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ConfirmModal" parent="." instance=ExtResource("10_confirm")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1

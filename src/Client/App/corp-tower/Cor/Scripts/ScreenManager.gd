@@ -9,6 +9,7 @@ const FindMatchScreenScene := preload("res://Cor/Scenes/FindMatchScreen.tscn")
 const PublicLobbyScreenScene := preload("res://Cor/Scenes/PublicLobbyScreen.tscn")
 const PrivateLobbyScreenScene := preload("res://Cor/Scenes/PrivateLobbyScreen.tscn")
 const PlayScreenScene := preload("res://Cor/Scenes/GameUI.tscn")
+const MenuScreenScene := preload("res://Cor/Scenes/MenuScreen.tscn")
 const DEBUG_CONTEXT_NONE := ""
 const DEBUG_CONTEXT_SIGN_IN := "sign_in"
 const DEBUG_CONTEXT_LOBBY := "lobby"
@@ -35,11 +36,13 @@ var debug_button_pointer_id := DRAG_POINTER_NONE
 var debug_button_drag_distance := 0.0
 var debug_context := DEBUG_CONTEXT_NONE
 var startup_handoff_complete := false
+var gameplay_input_blocked := false
 
 func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
 	NetworkManager.match_started.connect(_on_match_started)
 	NetworkManager.room_closed.connect(_on_room_closed)
+	NetworkManager.game_left.connect(_on_game_left)
 	NetworkManager.private_join_failed.connect(_on_private_join_failed)
 	NetworkManager.private_entry_failed.connect(_on_private_entry_failed)
 	NetworkManager.status_changed.connect(_on_status_changed)
@@ -108,6 +111,7 @@ func _on_recovery_started() -> void:
 func _on_recovery_recovered() -> void:
 	resume_unavailable_active = false
 	auto_dismiss_modal.dismiss_recovery()
+	_set_menu_leave_pending(false)
 	update_debug_button_availability()
 
 func _on_recovery_unavailable(data) -> void:
@@ -115,6 +119,7 @@ func _on_recovery_unavailable(data) -> void:
 		return
 
 	resume_unavailable_active = bool(data.get("resumeUnavailable", false))
+	_set_menu_leave_pending(false)
 	auto_dismiss_modal.open_recovery_failed()
 	update_debug_button_availability()
 
@@ -149,6 +154,18 @@ func _on_room_closed(data) -> void:
 		show_private_server_screen()
 	else:
 		show_join_screen()
+
+func _on_game_left(data) -> void:
+	if str(data.get("destination", "")) != "home":
+		return
+
+	find_match_active = false
+	resume_unavailable_active = false
+	auto_dismiss_modal.dismiss_recovery()
+	_clear_overlay()
+	NetworkManager.disconnect_server()
+	_teardown_play_instance()
+	show_home_screen()
 
 func _on_auto_dismiss_modal_dismissed() -> void:
 	NetworkManager.disconnect_server()
@@ -311,6 +328,45 @@ func _on_play_instance_tutorial_exited() -> void:
 	tutorial_active = false
 	show_home_screen()
 
+func _on_play_instance_menu_requested() -> void:
+	if (
+		tutorial_active
+		or current_overlay != null
+		or play_instance == null
+		or not is_instance_valid(play_instance)
+	):
+		return
+
+	var screen := MenuScreenScene.instantiate()
+	screen.close_requested.connect(_on_menu_close_requested)
+	screen.leave_game_requested.connect(_on_menu_leave_requested)
+	_set_overlay(screen)
+	_set_gameplay_input_blocked(true)
+	update_debug_button_availability()
+
+func _on_menu_close_requested() -> void:
+	if current_overlay == null or current_overlay.scene_file_path != MenuScreenScene.resource_path:
+		return
+
+	_clear_overlay()
+	_set_debug_context(DEBUG_CONTEXT_PLAY)
+
+func _on_menu_leave_requested() -> void:
+	if current_overlay == null or current_overlay.scene_file_path != MenuScreenScene.resource_path:
+		return
+
+	if not NetworkManager.leave_game():
+		_set_menu_leave_pending(false)
+
+func _set_menu_leave_pending(pending: bool) -> void:
+	if (
+		current_overlay != null
+		and is_instance_valid(current_overlay)
+		and current_overlay.scene_file_path == MenuScreenScene.resource_path
+		and current_overlay.has_method("set_leave_pending")
+	):
+		current_overlay.call("set_leave_pending", pending)
+
 func show_find_match_screen() -> void:
 	_teardown_play_instance()
 
@@ -365,10 +421,14 @@ func _ensure_play_instance() -> void:
 		play_instance.connect("tutorial_requested", _on_play_instance_tutorial_requested)
 	if play_instance.has_signal("tutorial_exited"):
 		play_instance.connect("tutorial_exited", _on_play_instance_tutorial_exited)
+	if play_instance.has_signal("menu_requested"):
+		play_instance.connect("menu_requested", _on_play_instance_menu_requested)
 
 	update_debug_button_availability()
 
 func _teardown_play_instance() -> void:
+	_set_gameplay_input_blocked(false)
+
 	if play_instance != null and is_instance_valid(play_instance):
 		play_instance.queue_free()
 
@@ -403,6 +463,17 @@ func _clear_overlay() -> void:
 		current_overlay.queue_free()
 
 	current_overlay = null
+	_set_gameplay_input_blocked(false)
+
+func _set_gameplay_input_blocked(blocked: bool) -> void:
+	gameplay_input_blocked = blocked
+
+	if (
+		play_instance != null
+		and is_instance_valid(play_instance)
+		and play_instance.has_method("set_external_overlay_input_blocked")
+	):
+		play_instance.call("set_external_overlay_input_blocked", blocked)
 
 func _show_private_entry_loader() -> void:
 	if private_entry_loader != null and is_instance_valid(private_entry_loader):
@@ -434,6 +505,7 @@ func update_debug_button_availability() -> void:
 		and has_play_instance
 		and NetworkManager.is_conn_estab
 		and not NetworkManager.is_recovering()
+		and not gameplay_input_blocked
 	)
 	debug_button.disabled = not sign_in_debug_available and not game_debug_available
 

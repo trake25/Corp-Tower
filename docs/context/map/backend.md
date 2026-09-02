@@ -93,7 +93,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Game_Engine.js:908 | failLevel | |
 | src/Server/app/Game_Engine.js:915 | nextLevel | |
 
-### src/Server/app/Lobby_Manager.js — 2536 ln
+### src/Server/app/Lobby_Manager.js — 2608 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -110,11 +110,11 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Lobby_Manager.js:1493 | createRoom | |
 | src/Server/app/Lobby_Manager.js:1707 | toggleLobbyReady | |
 | src/Server/app/Lobby_Manager.js:1828 | leaveLobby | |
-| src/Server/app/Lobby_Manager.js:1917 | kickPrivatePlayer | |
-| src/Server/app/Lobby_Manager.js:2066 | createEngine | |
-| src/Server/app/Lobby_Manager.js:2137 | hydrateRoom | |
-| src/Server/app/Lobby_Manager.js:2376 | dispatchRoomAction | |
-| src/Server/app/Lobby_Manager.js:2403 | resyncState | |
+| src/Server/app/Lobby_Manager.js:1963 | kickPrivatePlayer | |
+| src/Server/app/Lobby_Manager.js:2112 | createEngine | |
+| src/Server/app/Lobby_Manager.js:2183 | hydrateRoom | |
+| src/Server/app/Lobby_Manager.js:2444 | dispatchRoomAction | |
+| src/Server/app/Lobby_Manager.js:2471 | resyncState | |
 
 ### src/Server/app/Profile_Store.js — 169 ln
 
@@ -171,7 +171,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Redis_State.js:678 | unsubscribeFromRoomActions | |
 | src/Server/app/Redis_State.js:708 | subscribeToPlayerAssignments | |
 
-### src/Server/app/Server.js — 215 ln
+### src/Server/app/Server.js — 225 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
