@@ -412,21 +412,26 @@ function assertScoringScenarios() {
         })
     });
     const criticalInput = {
-        beforeResult: scoringResult(40, 0.8),
-        afterResult: scoringResult(80, 0.2),
+        beforeResult: scoringResult(30, 0.8),
+        afterResult: scoringResult(31, 0.2),
         assessment: scoringAssessment({
             rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
             directSupportShare: 1,
             benefitedLoadShare: 0.5,
             criticalRiskReduction: 0.5,
             criticalSaveCandidate: true,
-            repairClaimKey: "probe-critical"
+            repairClaimKey: "probe-critical",
+            criticalSupportBeforeStability: 30,
+            criticalSupportAfterStability: 31
         })
     };
     const critical = preview(criticalInput);
     const thresholdOnly = preview({
         ...criticalInput,
-        afterResult: scoringResult(74, 0.2)
+        assessment: scoringAssessment({
+            ...criticalInput.assessment,
+            criticalSupportAfterStability: 30
+        })
     });
     const indirect = preview({
         assessment: scoringAssessment({
@@ -440,19 +445,20 @@ function assertScoringScenarios() {
     });
 
     assert.equal(clean.heightPoints, Math.round(actionUnit));
-    assert.ok(strong.structuralPoints >= actionUnit * 0.95);
-    assert.ok(strong.structuralPoints <= actionUnit);
-    assert.ok(small.structuralPoints >= actionUnit * 0.1);
-    assert.ok(small.structuralPoints <= actionUnit * 0.4);
+    assert.ok(strong.structuralPoints >= actionUnit * 1.95);
+    assert.ok(strong.structuralPoints <= actionUnit * 2.05);
+    assert.ok(small.structuralPoints >= actionUnit * 0.45);
+    assert.ok(small.structuralPoints <= actionUnit * 0.55);
     assert.ok(dangerous.points > 0 && dangerous.points < clean.points);
     assert.equal(zero.points, 0);
-    assert.equal(combined.capHit, true);
+    assert.equal(combined.points, combined.heightPoints + combined.structuralPoints);
     assert.equal(critical.criticalSave, true);
+    assert.equal(critical.points, Math.round(actionUnit * 3));
     assert.equal(thresholdOnly.criticalSave, false);
     assert.equal(indirect.structuralPoints, 0);
     assert.equal(repeated.criticalSaveRejection, "claimed");
 
-    console.log("OK: scoring scenarios cover clean, structural, danger, caps, Critical Save, and claims.");
+    console.log("OK: scoring scenarios cover clean, structural, danger, independent components, Critical Save, and claims.");
 }
 
 function assertLoadCapacityScenarios() {

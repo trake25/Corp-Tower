@@ -8,6 +8,16 @@ function interfaceRisk(group) {
     return Math.max(0, Number(group.balanceRisk) || 0, Number(group.integrityRisk) || 0);
 }
 
+function supportStability(group) {
+    const dependentLoad = Math.max(
+        0,
+        (Number(group.loadMass) || 0) - (Number(group.mass) || 0)
+    );
+    const risk = dependentLoad > 0 ? interfaceRisk(group.interface) : 0;
+
+    return Math.max(0, Math.min(100, Math.round(100 * (1 - risk))));
+}
+
 function describeGroups(groups) {
     return groups.map(group => {
         const memberKeys = group.members.map(member => member.key).sort();
@@ -44,6 +54,7 @@ function describeGroups(groups) {
             balanceRisk: clamp01(group.interface.balanceRisk),
             integrityRisk: clamp01(group.interface.integrityRisk),
             risk: interfaceRisk(group.interface),
+            supportStability: supportStability(group),
             pivotY: Number(group.interface.pivotY) || 0,
             supportLinks,
             lateralLinks
@@ -149,7 +160,9 @@ function comparisonInterface(group) {
     return {
         key: group.key,
         signature: group.signature,
+        memberBlockIds: group.memberBlockIds,
         risk: group.risk,
+        supportStability: group.supportStability,
         carriedLoadShare: group.carriedLoadShare,
         boundaryKey: group.boundaryKey
     };
@@ -243,6 +256,8 @@ function comparePlacement(beforeResult, afterResult, placedEntry) {
             ? beforeComponent?.stability ?? 100
             : beforeResult?.stability ?? 100),
         affectedAfterStability: Number(afterComponent?.stability ?? afterResult?.stability ?? 100),
+        criticalSupportBeforeStability: Number(critical?.before.supportStability ?? 100),
+        criticalSupportAfterStability: Number(critical?.after.supportStability ?? 100),
         criticalInterfaceBefore: comparisonInterface(critical?.before),
         criticalInterfaceAfter: comparisonInterface(critical?.after),
         criticalRiskReduction: critical ? critical.riskReduction : 0,

@@ -87,7 +87,8 @@ symmetric load stays centered.
 geometry while independently tightening physical load per contact. Capacity does
 not grow with target height, so a narrow base needs another path as mass grows.
 Height and maturity pressure still protect openings early. Repair can reduce
-risk, earn structural value, and qualify for a capped Critical Save.
+risk, earn structural value, and qualify for a Critical Save when it lifts a
+mature load-bearing support out of the critical band.
 
 ## Time, failure, and progression
 
@@ -110,20 +111,32 @@ budget enters terminal game over and returns players Home after the summary.
 ## Scoring and contribution
 
 Every settled brick produces one authoritative placement transaction. Rows above
-the level's historical maximum earn Height once; rebuilt lost rows earn Recovery
-at the configured share, then half that amount for each further rebuild before a
-new height target. Rebuild Reinforce follows the same decay; direct surviving
-repairs on the active tallest tower otherwise earn Reinforce, while repairs to
-other components do not. Risk at the placed brick's component peak discounts
-both. A mature rescue may add a single-use Critical Save. Any placement that
-drops a brick earns no placement or Impact points. Height, Recovery, Critical
-Save, then Reinforce share the cap.
+the level's historical maximum earn Height once, but only through the target;
+overbuild remains a valid finish and its excess rows are worthless. Rebuilt lost
+rows earn Recovery at the configured share, then half that amount for each
+further rebuild before a new height target. Rebuild Reinforce follows the same
+decay. Direct surviving repairs on the active tallest tower otherwise earn
+Reinforce continuously from measured structural benefit, while orientation and
+repairs to other components earn none. Height or Recovery and Reinforce remain
+independent components rather than sharing a transaction cap.
 
-Only capped useful placement components count toward Impact contribution.
-Completion, MVP, exact-finish, Power, and other display-score bonuses do not.
-Level score banks only on success, while the server's `impactScoreStatus` combines
-banked and live eligible contribution exactly once. Clients, bots, and tools use
-that status rather than reconstructing it from score totals.
+A Critical Save is a zero-Height, zero-Recovery rescue of the same visible support
+that drives the worried brick and red outline. The support must begin at or below
+the authoritative critical threshold and the directly attributed repair must move
+it above that threshold while satisfying maturity, risk, load, claim, Last Chance,
+survival, and per-level protections. Its configured total payout replaces ordinary
+Reinforce for that rescue. Any placement that drops a brick earns no placement or
+Impact points.
+
+Every awarded placement component contributes to Impact at its awarded value.
+An exact finish separately pays only its finisher the configured action-unit reward
+and grants every player a configured share of their current Impact-band requirement,
+capped at remaining need before the checkpoint gate; unused credit never enters the
+next band. Overbuild receives neither exact-finish reward. Other completion, MVP,
+Power, and display-score bonuses do not contribute. Level score and live contribution
+bank only on success, while `impactScoreStatus` combines banked and live eligible
+contribution exactly once. Clients, bots, and tools use that status rather than
+reconstructing it from score totals.
 
 The checkpoint requirement is the greater of a flat floor and each player's
 configured share of the expected normal useful pool across the band. It is a

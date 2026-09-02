@@ -960,6 +960,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-query.mjs:12 | DEFAULT_BUNDLE_BYTES · const | |
 | scripts/lib/context-query.mjs:18 | tokens · const | |
 | scripts/lib/context-query.mjs:21 | command · fn | |
+| scripts/lib/context-query.mjs:27 | measured · fn | |
 | scripts/lib/context-query.mjs:39 | measuredText · fn | |
 | scripts/lib/context-query.mjs:65 | inside · fn | |
 | scripts/lib/context-query.mjs:102 | documentOutline · fn | |
@@ -1248,4 +1249,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-125 files · 489 stable anchors.
+125 files · 490 stable anchors.

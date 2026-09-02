@@ -278,6 +278,38 @@ function hasMetImpactScoreRequirement(engine, blockedLevel) {
     return engine.getImpactScoreFailures(blockedLevel).length === 0;
 }
 
+function awardPerfectBuildImpact(engine, blockedLevel = null) {
+    const status = engine.getImpactScoreStatus(blockedLevel);
+    const requirementShare = Math.max(
+        0,
+        Math.min(1, number(GameConfig.scoring?.perfectBuildImpactRequirementShare))
+    );
+    const configuredCredit = Math.round(status.requiredContribution * requirementShare);
+    const playersById = new Map(
+        (engine.room?.players || []).map(player => [player.id, player])
+    );
+    const credits = {};
+
+    status.players.forEach(playerStatus => {
+        const player = playersById.get(playerStatus.id);
+        const credit = player
+            ? Math.min(configuredCredit, number(playerStatus.remainingContribution))
+            : 0;
+
+        if (player) {
+            player.levelImpactContribution = number(player.levelImpactContribution) + credit;
+        }
+        credits[playerStatus.id] = credit;
+    });
+
+    return {
+        requiredContribution: status.requiredContribution,
+        requirementShare,
+        configuredCredit,
+        credits
+    };
+}
+
 function clearAttemptState(engine) {
     engine.room.drawPile = [];
     engine.room.drawPileStartCount = 0;
@@ -495,6 +527,7 @@ module.exports = {
     getNextImpactLevel,
     getImpactScoreStatus,
     hasMetImpactScoreRequirement,
+    awardPerfectBuildImpact,
     clearAttemptState,
     resolveCheckpointFailure,
     scheduleCheckpointRecovery,

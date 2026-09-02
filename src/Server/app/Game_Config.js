@@ -86,7 +86,7 @@ const GameConfig = {
     },
     towerBaseHalfWidthFloor: 1.0,
     towerStabilityWarningThreshold: 75,
-    towerStabilityCriticalThreshold: 45,
+    towerStabilityCriticalThreshold: 30,
     towerStabilityMoodThreshold: 2,
     towerStabilityFeedbackMode: process.env.CORP_TOWER_LIVE_PREVIEW_ENABLED === "false"
         ? "warnings_only"
@@ -153,19 +153,17 @@ const GameConfig = {
     scoring: {
         placementScorePerHeight: 10,
         recoveryHeightScorePercent: 50,
-        strongReinforcementActionShare: 1.0,
+        strongReinforcementActionShare: 2.0,
         strongStructuralImprovement: 0.30,
         fullDangerRiskIncrease: 0.25,
         dangerousHeightFloor: 0.35,
-        normalCombinedCapActionShare: 1.60,
-        criticalSaveBonusActionShare: 1.0,
-        criticalCombinedCapActionShare: 2.5,
+        criticalSaveActionShare: 3.0,
         criticalSaveMinRiskReduction: 0.30,
         criticalSaveMinLoadShare: 0.30,
         criticalSaveMaxPerLevel: 2,
         finisherBonusPerLevel: 0,
-        precisionBonusPerLevel: 20,
-        teamExactBonusPerLevel: 15,
+        perfectBuildFinisherActionShare: 5.0,
+        perfectBuildImpactRequirementShare: 0.15,
         assistBonusPerLevel: 0,
         assistContributionThreshold: 0.25
     },

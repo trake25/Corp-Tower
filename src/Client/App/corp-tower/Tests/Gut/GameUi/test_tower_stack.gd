@@ -21,7 +21,7 @@ func stability_fixture() -> Array:
 		"originX": 3,
 		"originY": 0,
 		"towerState": "standing",
-		"supportStability": 37
+		"supportStability": 27
 	}]
 	for origin_y in [4, 6, 8, 10, 12, 14]:
 		blocks.append({
@@ -190,7 +190,7 @@ func test_thin_base_fixture_selects_the_offscreen_critical_support() -> void:
 
 	assert_eq(tower.scroll_state.displayed_offset_units, 5.0)
 	assert_eq(str(target.get("block_id", "")), "base-i")
-	assert_eq(int(target.get("support_stability", 100)), 37)
+	assert_eq(int(target.get("support_stability", 100)), 27)
 
 func test_trouble_selection_uses_stability_then_origin_and_stable_id() -> void:
 	var tower: Control = mounted_stability_fixture()

@@ -90,6 +90,7 @@ test("UI durations are exposed and clamped in debug config", async () => {
 test("tower stability thresholds are exposed and clamped in debug config", async () => {
     const lobbyManager = new LobbyManager();
 
+    assert.equal(GameConfig.towerStabilityCriticalThreshold, 30);
     await lobbyManager.updateDebugConfig("towerStabilityWarningThreshold", 150);
     assert.equal(GameConfig.towerStabilityWarningThreshold, 100);
 
@@ -268,31 +269,33 @@ test("debug feedback supports runtime live preview but rejects the retired meter
     assert.equal(GameConfig.towerStabilityFeedbackMode, "live_preview");
 });
 
-test("transaction scoring controls clamp and reject unknown scoring keys", async () => {
+test("scoring incentive controls expose the new action shares and reject retired caps", async () => {
     const lobbyManager = new LobbyManager();
     const original = {
         dangerousHeightFloor: GameConfig.scoring.dangerousHeightFloor,
         strongReinforcementActionShare: GameConfig.scoring.strongReinforcementActionShare,
-        normalCombinedCapActionShare: GameConfig.scoring.normalCombinedCapActionShare,
-        criticalSaveBonusActionShare: GameConfig.scoring.criticalSaveBonusActionShare,
-        criticalCombinedCapActionShare: GameConfig.scoring.criticalCombinedCapActionShare
+        criticalSaveActionShare: GameConfig.scoring.criticalSaveActionShare,
+        perfectBuildFinisherActionShare: GameConfig.scoring.perfectBuildFinisherActionShare,
+        perfectBuildImpactRequirementShare: GameConfig.scoring.perfectBuildImpactRequirementShare
     };
 
     try {
         await lobbyManager.updateDebugConfig("dangerousHeightFloor", 0);
-        await lobbyManager.updateDebugConfig("strongReinforcementActionShare", 2);
-        await lobbyManager.updateDebugConfig("normalCombinedCapActionShare", 10);
-        await lobbyManager.updateDebugConfig("criticalSaveBonusActionShare", 10);
-        await lobbyManager.updateDebugConfig("criticalCombinedCapActionShare", 10);
+        await lobbyManager.updateDebugConfig("strongReinforcementActionShare", 10);
+        await lobbyManager.updateDebugConfig("criticalSaveActionShare", 10);
+        await lobbyManager.updateDebugConfig("perfectBuildFinisherActionShare", 10);
+        await lobbyManager.updateDebugConfig("perfectBuildImpactRequirementShare", 10);
 
         assert.equal(GameConfig.scoring.dangerousHeightFloor, 0.1);
-        assert.equal(GameConfig.scoring.strongReinforcementActionShare, 1);
-        assert.equal(GameConfig.scoring.normalCombinedCapActionShare, 3);
-        assert.equal(GameConfig.scoring.criticalSaveBonusActionShare, 2);
-        assert.equal(GameConfig.scoring.criticalCombinedCapActionShare, 3);
+        assert.equal(GameConfig.scoring.strongReinforcementActionShare, 2);
+        assert.equal(GameConfig.scoring.criticalSaveActionShare, 5);
+        assert.equal(GameConfig.scoring.perfectBuildFinisherActionShare, 8);
+        assert.equal(GameConfig.scoring.perfectBuildImpactRequirementShare, 0.5);
 
         assert.equal(await lobbyManager.updateDebugConfig("reinforceScorePerIntegrity", 1), false);
         assert.equal(GameConfig.scoring.reinforceScorePerIntegrity, undefined);
+        assert.equal(await lobbyManager.updateDebugConfig("normalCombinedCapActionShare", 2), false);
+        assert.equal(await lobbyManager.updateDebugConfig("criticalCombinedCapActionShare", 3), false);
     } finally {
         Object.assign(GameConfig.scoring, original);
     }

@@ -123,11 +123,14 @@ function simulateSmartPlay(engine, strategy) {
             heightPoints: 0,
             structuralPoints: 0,
             criticalSavePoints: 0,
+            perfectBuildPoints: 0,
+            perfectBuildImpactPoints: 0,
+            perfectBuildActionPayouts: [],
+            perfectBuilds: 0,
             classifications: {},
             actionPayouts: [],
             criticalSaves: 0,
             criticalSaveRejections: {},
-            combinedCapHits: 0,
             dangerousHeightCount: 0,
             dangerousHeightPoints: 0
         }
@@ -191,7 +194,6 @@ function simulateSmartPlay(engine, strategy) {
         score.criticalSaves += transaction.criticalSave ? 1 : 0;
         score.criticalSaveRejections[rejection] =
             Number(score.criticalSaveRejections[rejection] || 0) + 1;
-        score.combinedCapHits += transaction.capHit ? 1 : 0;
         score.dangerousHeightCount += classification === "dangerous_height" ? 1 : 0;
         score.dangerousHeightPoints += classification === "dangerous_height"
             ? transaction.points
@@ -284,7 +286,22 @@ function simulateSmartPlay(engine, strategy) {
 
     const exact = engine.room.currentHeight === engine.room.targetHeight;
 
-    engine.awardCompletionBonuses(finisher, exact);
+    const perfectBuildImpact = exact
+        ? engine.awardPerfectBuildImpact(engine.getNextImpactLevel())
+        : null;
+    const completionAwards = engine.awardCompletionBonuses(finisher, exact);
+    if (exact) {
+        telemetry.score.perfectBuildPoints += completionAwards.perfectBuild;
+        telemetry.score.perfectBuildImpactPoints += Object.values(
+            perfectBuildImpact.credits
+        ).reduce((total, credit) => total + Number(credit || 0), 0);
+        telemetry.score.perfectBuildActionPayouts.push(
+            engine.getActionUnit() > 0
+                ? completionAwards.perfectBuild / engine.getActionUnit()
+                : 0
+        );
+        telemetry.score.perfectBuilds += 1;
+    }
     engine.addLevelScoreToLeaderboard();
 
     return outcome({
@@ -363,6 +380,8 @@ function runLevel(level, runs, strategy = "cooperative") {
         averageScoreHeightPoints: 0,
         averageScoreStructuralPoints: 0,
         averageScoreCriticalSavePoints: 0,
+        averageScorePerfectBuildPoints: 0,
+        averagePerfectBuildImpactPoints: 0,
         averageTeamScorePoolRatio: 0,
         averageImpactContributionSpread: 0,
         samples: 0,
@@ -377,8 +396,9 @@ function runLevel(level, runs, strategy = "cooperative") {
         scoreClassifications: {},
         criticalSaveRejections: {},
         actionPayouts: [],
+        perfectBuildActionPayouts: [],
         criticalSaves: 0,
-        combinedCapHits: 0,
+        perfectBuilds: 0,
         dangerousHeightCount: 0,
         dangerousHeightPoints: 0
     };
@@ -419,6 +439,8 @@ function runLevel(level, runs, strategy = "cooperative") {
         stats.averageScoreHeightPoints += result.scoreHeightPoints;
         stats.averageScoreStructuralPoints += result.scoreStructuralPoints;
         stats.averageScoreCriticalSavePoints += result.scoreCriticalSavePoints;
+        stats.averageScorePerfectBuildPoints += result.telemetry.score.perfectBuildPoints;
+        stats.averagePerfectBuildImpactPoints += result.telemetry.score.perfectBuildImpactPoints;
         stats.averageTeamScorePoolRatio += result.teamScorePoolRatio;
         stats.averageImpactContributionSpread += result.impactContributionSpread;
 
@@ -445,8 +467,9 @@ function runLevel(level, runs, strategy = "cooperative") {
             stats.criticalSaveRejections[key] = Number(stats.criticalSaveRejections[key] || 0) + value;
         });
         stats.actionPayouts.push(...t.score.actionPayouts);
+        stats.perfectBuildActionPayouts.push(...t.score.perfectBuildActionPayouts);
         stats.criticalSaves += t.score.criticalSaves;
-        stats.combinedCapHits += t.score.combinedCapHits;
+        stats.perfectBuilds += t.score.perfectBuilds;
         stats.dangerousHeightCount += t.score.dangerousHeightCount;
         stats.dangerousHeightPoints += t.score.dangerousHeightPoints;
         if (t.samples > 0) {
@@ -496,16 +519,17 @@ function runLevel(level, runs, strategy = "cooperative") {
         averageScoreHeightPoints: stats.averageScoreHeightPoints / runs,
         averageScoreStructuralPoints: stats.averageScoreStructuralPoints / runs,
         averageScoreCriticalSavePoints: stats.averageScoreCriticalSavePoints / runs,
+        averageScorePerfectBuildPoints: stats.averageScorePerfectBuildPoints / runs,
+        averagePerfectBuildImpactPoints: stats.averagePerfectBuildImpactPoints / runs,
         averageTeamScorePoolRatio: stats.averageTeamScorePoolRatio / runs,
         averageImpactContributionSpread: stats.averageImpactContributionSpread / runs,
         actionPayoutP50: percentile(stats.actionPayouts, 0.5),
         actionPayoutP90: percentile(stats.actionPayouts, 0.9),
+        perfectBuildActionPayoutP50: percentile(stats.perfectBuildActionPayouts, 0.5),
         classifications: stats.scoreClassifications,
         criticalSaveRejections: stats.criticalSaveRejections,
         criticalSaveCount: stats.criticalSaves,
-        combinedCapHitRate: stats.actionPayouts.length > 0
-            ? stats.combinedCapHits / stats.actionPayouts.length
-            : 0,
+        perfectBuildCount: stats.perfectBuilds,
         dangerousHeightRate: stats.actionPayouts.length > 0
             ? stats.dangerousHeightCount / stats.actionPayouts.length
             : 0,
@@ -549,11 +573,14 @@ function printResults(results) {
             "heightPoints",
             "structuralPoints",
             "criticalSavePoints",
+            "perfectBuildPoints",
+            "perfectBuildImpact",
             "teamScorePool",
             "actionP50",
             "actionP90",
+            "perfectBuildActionP50",
             "criticalSaves",
-            "combinedCapHits",
+            "perfectBuilds",
             "dangerousHeightRate",
             "dangerousHeightPoints",
             "classificationCounts",
@@ -594,11 +621,14 @@ function printResults(results) {
                 result.averageScoreHeightPoints.toFixed(1),
                 result.averageScoreStructuralPoints.toFixed(1),
                 result.averageScoreCriticalSavePoints.toFixed(1),
+                result.averageScorePerfectBuildPoints.toFixed(1),
+                result.averagePerfectBuildImpactPoints.toFixed(1),
                 result.averageTeamScorePoolRatio.toFixed(3),
                 result.actionPayoutP50.toFixed(3),
                 result.actionPayoutP90.toFixed(3),
+                result.perfectBuildActionPayoutP50.toFixed(3),
                 result.criticalSaveCount,
-                percent(result.combinedCapHitRate),
+                result.perfectBuildCount,
                 percent(result.dangerousHeightRate),
                 result.dangerousHeightAveragePoints.toFixed(1),
                 JSON.stringify(result.classifications),
@@ -632,10 +662,13 @@ function printStabilityResults(results) {
             "heightPoints",
             "structuralPoints",
             "criticalSavePoints",
+            "perfectBuildPoints",
+            "perfectBuildImpact",
             "actionP50",
             "actionP90",
+            "perfectBuildActionP50",
             "criticalSaves",
-            "combinedCapHits",
+            "perfectBuilds",
             "dangerousHeightRate",
             "classificationCounts",
             "criticalSaveRejects",
@@ -666,10 +699,13 @@ function printStabilityResults(results) {
                 result.averageScoreHeightPoints.toFixed(1),
                 result.averageScoreStructuralPoints.toFixed(1),
                 result.averageScoreCriticalSavePoints.toFixed(1),
+                result.averageScorePerfectBuildPoints.toFixed(1),
+                result.averagePerfectBuildImpactPoints.toFixed(1),
                 result.actionPayoutP50.toFixed(3),
                 result.actionPayoutP90.toFixed(3),
+                result.perfectBuildActionPayoutP50.toFixed(3),
                 result.criticalSaveCount,
-                percent(result.combinedCapHitRate),
+                result.perfectBuildCount,
                 percent(result.dangerousHeightRate),
                 JSON.stringify(result.classifications),
                 JSON.stringify(result.criticalSaveRejections),

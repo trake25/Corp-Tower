@@ -824,19 +824,27 @@ class GameEngine {
         const overbuildHeight =
             Math.max(0, this.room.currentHeight - this.room.targetHeight);
         const previousTotalScores = this.getPlayerScoreMap();
+        const nextLevel = this.room.level + 1;
+        const perfectBuildImpact = exactFinish
+            ? this.awardPerfectBuildImpact(this.getNextImpactLevel())
+            : null;
 
         if (exactFinish) {
             this.queueScoreEvent("exact_finish", {
-                label: "Perfect Fit",
+                label: "Perfect Build",
                 displayOnly: true,
                 meta: {
                     currentHeight: this.room.currentHeight,
-                    targetHeight: this.room.targetHeight
+                    targetHeight: this.room.targetHeight,
+                    finisherId: finisher.id,
+                    finisherPoints: this.getPerfectBuildFinisherPoints(),
+                    impactRequirementShare: perfectBuildImpact.requirementShare,
+                    impactCredits: perfectBuildImpact.credits
                 }
             });
         } else {
             this.queueScoreEvent("overbuild_finish", {
-                points: overbuildHeight,
+                points: 0,
                 label: "Target Reached",
                 displayOnly: true,
                 meta: {
@@ -847,10 +855,8 @@ class GameEngine {
             });
         }
 
-        this.awardCompletionBonuses(finisher, exactFinish);
+        const completionBonuses = this.awardCompletionBonuses(finisher, exactFinish);
         this.addLevelScoreToLeaderboard();
-
-        const nextLevel = this.room.level + 1;
 
         if (
             nextLevel <= GameConfig.maxLevel &&
@@ -877,6 +883,13 @@ class GameEngine {
             result: "completed",
             exactFinish: exactFinish,
             overbuildHeight: overbuildHeight,
+            perfectBuild: exactFinish ? {
+                finisherId: finisher.id,
+                finisherPoints: completionBonuses.perfectBuild,
+                impactRequirement: perfectBuildImpact.requiredContribution,
+                impactRequirementShare: perfectBuildImpact.requirementShare,
+                impactCredits: perfectBuildImpact.credits
+            } : null,
             finisher: finisher,
             finishingBlock: finishingBlock,
             carriedBlockCount: carriedBlockCount,
@@ -977,6 +990,7 @@ class GameEngine {
     recordScoreBreakdown(player, key, points) { return Scoring.recordScoreBreakdown(this, player, key, points); }
     getActionUnit(level) { return Scoring.getActionUnit(this, level); }
     getExpectedNormalUsefulScoreForLevel(level) { return Scoring.getExpectedNormalUsefulScoreForLevel(this, level); }
+    getPerfectBuildFinisherPoints() { return Scoring.getPerfectBuildFinisherPoints(this); }
     previewPlacementScore(input) { return Scoring.previewPlacementScore(this, input); }
     addPlacementScore(player, input) { return Scoring.addPlacementScore(this, player, input); }
     awardCompletionBonuses(finisher, exactFinish) { return Scoring.awardCompletionBonuses(this, finisher, exactFinish); }
@@ -1011,6 +1025,7 @@ class GameEngine {
     getNextImpactLevel() { return Impacts.getNextImpactLevel(this); }
     getImpactScoreStatus(blockedLevel = null) { return Impacts.getImpactScoreStatus(this, blockedLevel); }
     hasMetImpactScoreRequirement(blockedLevel) { return Impacts.hasMetImpactScoreRequirement(this, blockedLevel); }
+    awardPerfectBuildImpact(blockedLevel = null) { return Impacts.awardPerfectBuildImpact(this, blockedLevel); }
     resolveCheckpointFailure(options) { return Impacts.resolveCheckpointFailure(this, options); }
     scheduleCheckpointRecovery(delayMs = null) { return Impacts.scheduleCheckpointRecovery(this, delayMs); }
     scheduleTerminalRoomClose(delayMs = null) { return Impacts.scheduleTerminalRoomClose(this, delayMs); }

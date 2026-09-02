@@ -18,7 +18,7 @@ func stability_fixture() -> Array:
 		"originX": 3,
 		"originY": 0,
 		"towerState": "standing",
-		"supportStability": 37
+		"supportStability": 27
 	}]
 	for origin_y in [4, 6, 8, 10, 12, 14]:
 		blocks.append({

@@ -321,14 +321,22 @@ test("a gap fill repairs its matched support interface without accumulated damag
         stabilityEntry("L", cell, 2, 0),
         stabilityEntry("C", crown, 1, 1)
     ], config);
+    const placedEntry = stabilityEntry("R", cell, 3, 0);
     const repaired = TowerStability.evaluate([
         stabilityEntry("L", cell, 2, 0),
-        stabilityEntry("R", cell, 3, 0),
+        placedEntry,
         stabilityEntry("C", crown, 1, 1)
     ], config);
+    const assessment = TowerStability.comparePlacement(before, repaired, placedEntry);
+    const beforeIds = new Set(assessment.criticalInterfaceBefore.memberBlockIds);
+    const afterIds = new Set(assessment.criticalInterfaceAfter.memberBlockIds);
+    const visibleBefore = before.supportStability.find(entry => beforeIds.has(entry.blockId));
+    const visibleAfter = repaired.supportStability.find(entry => afterIds.has(entry.blockId));
 
     assert.ok(repaired.diagnostics.integrity > before.diagnostics.integrity);
     assert.ok(repaired.diagnostics.criticalRisk < before.diagnostics.criticalRisk);
+    assert.equal(assessment.criticalSupportBeforeStability, visibleBefore.supportStability);
+    assert.equal(assessment.criticalSupportAfterStability, visibleAfter.supportStability);
 });
 
 test("disconnected stacks are evaluated independently and unsupported stacks collapse", () => {
@@ -604,16 +612,16 @@ test("historical rows and rebuild reinforcement decay until a new target", () =>
     assert.equal(first.newHeight, 0);
     assert.equal(first.recoveredHeight, 2);
     assert.equal(first.recoveryPoints, 20);
-    assert.equal(first.structuralPoints, actionUnit);
+    assert.equal(first.structuralPoints, Math.round(actionUnit * 2));
     assert.equal(engine.room.rebuildScoreCount, 1);
 
     const second = engine.addPlacementScore(player, input);
     const third = engine.addPlacementScore(player, input);
 
     assert.equal(second.recoveryPoints, 10);
-    assert.equal(second.structuralPoints, Math.round(actionUnit * 0.5));
+    assert.equal(second.structuralPoints, actionUnit);
     assert.equal(third.recoveryPoints, 5);
-    assert.equal(third.structuralPoints, Math.round(actionUnit * 0.25));
+    assert.equal(third.structuralPoints, Math.round(actionUnit * 0.5));
     assert.equal(engine.room.rebuildScoreCount, 3);
 
     const newHeight = engine.previewPlacementScore({
@@ -626,10 +634,7 @@ test("historical rows and rebuild reinforcement decay until a new target", () =>
     });
     assert.equal(newHeight.heightPoints, 40);
     assert.equal(newHeight.recoveryPoints, 0);
-    assert.equal(
-        newHeight.structuralPoints,
-        Math.min(actionUnit, newHeight.cap - newHeight.heightPoints)
-    );
+    assert.equal(newHeight.structuralPoints, Math.round(actionUnit * 2));
 });
 
 test("zero-percent Recovery consumes rows and a collapse transaction scores nothing", () => {
@@ -740,7 +745,7 @@ test("active-tower reinforcement always pays while inactive and indirect repairs
     assert.equal(indirect.classification, "low_value");
 });
 
-test("strong and small reinforcement stay in their action-unit bands", () => {
+test("strong Reinforcement reaches two action units and scales continuously", () => {
     const { engine } = createPlayingEngine(2, 40);
     const actionUnit = engine.getActionUnit();
     const strong = previewScore(engine, {
@@ -756,10 +761,8 @@ test("strong and small reinforcement stay in their action-unit bands", () => {
         })
     });
 
-    assert.ok(strong.structuralPoints >= actionUnit * 0.95);
-    assert.ok(strong.structuralPoints <= actionUnit);
-    assert.ok(small.structuralPoints >= actionUnit * 0.1);
-    assert.ok(small.structuralPoints <= actionUnit * 0.4);
+    assert.equal(strong.structuralPoints, Math.round(actionUnit * 2));
+    assert.equal(small.structuralPoints, Math.round(actionUnit * 0.5));
     assert.equal(strong.classification, "reinforcement");
 });
 
@@ -826,9 +829,10 @@ test("supply coverage runs a surplus at level 1 and flattens by levelSupplyCover
     assert.equal(fullCount, pastFullCount, "coverage stays flat past levelSupplyCoverageFullLevel");
 });
 
-test("combined and Critical Save caps conserve the component breakdown", () => {
+test("Height and Reinforcement add independently while Critical Save supersedes Reinforcement", () => {
     const { engine } = createPlayingEngine(2, 40);
     const averageHeight = engine.getAverageBrickHeight();
+    const actionUnit = engine.getActionUnit();
     const combined = previewScore(engine, {
         effectiveHeight: averageHeight,
         assessment: scoreAssessment({
@@ -836,46 +840,56 @@ test("combined and Critical Save caps conserve the component breakdown", () => {
             directSupportShare: 1
         })
     });
-    const critical = previewScore(engine, {
-        effectiveHeight: averageHeight,
-        beforeResult: scoreResult(40, 0.8, 20),
-        afterResult: scoreResult(80, 0.2, 20),
+    const criticalInput = {
+        beforeResult: scoreResult(30, 0.8, 20),
+        afterResult: scoreResult(31, 0.2, 20),
         assessment: scoreAssessment({
             rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
             directSupportShare: 1,
             benefitedLoadShare: 0.5,
             criticalRiskReduction: 0.5,
             criticalSaveCandidate: true,
-            repairClaimKey: "critical-interface"
+            repairClaimKey: "critical-interface",
+            criticalSupportBeforeStability: 30,
+            criticalSupportAfterStability: 31
         }),
         stabilityConfig: fixedStabilityConfig({ towerStabilityMinHeight: 1 })
+    };
+    const critical = previewScore(engine, criticalInput);
+    const heightCritical = previewScore(engine, {
+        ...criticalInput,
+        effectiveHeight: averageHeight
     });
 
-    assert.equal(
-        combined.points,
-        combined.heightPoints + combined.structuralPoints + combined.criticalSavePoints
-    );
-    assert.equal(combined.capHit, true);
+    assert.equal(combined.heightPoints, Math.round(actionUnit));
+    assert.equal(combined.structuralPoints, Math.round(actionUnit * 2));
+    assert.equal(combined.points, combined.heightPoints + combined.structuralPoints);
+    assert.equal(Object.hasOwn(combined, "cap"), false);
+    assert.equal(Object.hasOwn(combined, "capHit"), false);
     assert.equal(critical.criticalSave, true);
-    assert.equal(
-        critical.points,
-        critical.heightPoints + critical.structuralPoints + critical.criticalSavePoints
-    );
-    assert.equal(critical.points, critical.cap);
+    assert.equal(critical.structuralPoints, 0);
+    assert.equal(critical.criticalSavePoints, Math.round(actionUnit * 3));
+    assert.equal(critical.points, critical.criticalSavePoints);
+    assert.equal(critical.impactEligiblePoints, critical.points);
+    assert.equal(heightCritical.criticalSave, false);
+    assert.equal(heightCritical.criticalSaveRejection, "new_height");
+    assert.equal(heightCritical.points, heightCritical.heightPoints + heightCritical.structuralPoints);
 });
 
-test("Critical Save qualification enforces claim and per-level limits", () => {
+test("Critical Save uses the visible support boundary and enforces exclusive anti-farm gates", () => {
     const { engine } = createPlayingEngine(1, 20);
     const base = {
-        beforeResult: scoreResult(40, 0.8, 20),
-        afterResult: scoreResult(80, 0.2, 20),
+        beforeResult: scoreResult(30, 0.8, 20),
+        afterResult: scoreResult(31, 0.2, 20),
         assessment: scoreAssessment({
             rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
             directSupportShare: 1,
             benefitedLoadShare: 0.5,
             criticalRiskReduction: 0.5,
             criticalSaveCandidate: true,
-            repairClaimKey: "critical-interface"
+            repairClaimKey: "critical-interface",
+            criticalSupportBeforeStability: 30,
+            criticalSupportAfterStability: 31
         }),
         stabilityConfig: fixedStabilityConfig({ towerStabilityMinHeight: 1 })
     };
@@ -892,11 +906,60 @@ test("Critical Save qualification enforces claim and per-level limits", () => {
             criticalRiskReduction: 0.1
         })
     });
+    const notCritical = previewScore(engine, {
+        ...base,
+        assessment: scoreAssessment({
+            ...base.assessment,
+            criticalSupportBeforeStability: 31,
+            criticalSupportAfterStability: 40
+        })
+    });
+    const stillCritical = previewScore(engine, {
+        ...base,
+        assessment: scoreAssessment({
+            ...base.assessment,
+            criticalSupportAfterStability: 30
+        })
+    });
+    const recovery = previewScore(engine, {
+        ...base,
+        previousHeight: 5,
+        settledHeight: 6,
+        historicalMaxStandingHeight: 6
+    });
 
     assert.equal(qualified.criticalSave, true);
     assert.equal(claimed.criticalSaveRejection, "claimed");
     assert.equal(capped.criticalSaveRejection, "level_cap");
     assert.equal(shallow.criticalSaveRejection, "risk_reduction");
+    assert.equal(notCritical.criticalSaveRejection, "not_critical");
+    assert.equal(stillCritical.criticalSaveRejection, "still_critical");
+    assert.equal(recovery.criticalSaveRejection, "recovery");
+});
+
+test("overbuild scores useful rows only through the target", () => {
+    const { engine } = createPlayingEngine(1, 5);
+    const crossing = previewScore(engine, {
+        previousHeight: 4,
+        settledHeight: 7,
+        historicalMaxStandingHeight: 4,
+        assessment: scoreAssessment({
+            rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
+            directSupportShare: 1
+        })
+    });
+    const excessOnly = previewScore(engine, {
+        previousHeight: 5,
+        settledHeight: 7,
+        historicalMaxStandingHeight: 5
+    });
+
+    assert.equal(crossing.newHeight, 1);
+    assert.equal(crossing.heightPoints, GameConfig.scoring.placementScorePerHeight);
+    assert.equal(crossing.structuralPoints, Math.round(engine.getActionUnit() * 2));
+    assert.equal(crossing.impactEligiblePoints, crossing.heightPoints + crossing.structuralPoints);
+    assert.equal(excessOnly.heightPoints, 0);
+    assert.equal(excessOnly.impactEligiblePoints, 0);
 });
 
 test("the first brick has no phantom structural value and preview equals award", () => {

@@ -23,6 +23,8 @@ const CONFIG_FIXTURE := {
 	"levelSummaryDelayMs": 6000,
 	"targetHeightMultiplier": 5,
 	"towerStabilityFeedbackMode": "live_preview",
+	"towerStabilityWarningThreshold": 75,
+	"towerStabilityCriticalThreshold": 30,
 	"towerStabilityMoodThreshold": 12,
 	"towerStabilityDifficulty": 25,
 	"towerLateralLoadShare": 0.4,
@@ -38,10 +40,10 @@ const CONFIG_FIXTURE := {
 	"placementScorePerHeight": 12,
 	"recoveryHeightScorePercent": 70,
 	"dangerousHeightFloor": 0.4,
-	"strongReinforcementActionShare": 0.9,
-	"normalCombinedCapActionShare": 1.7,
-	"criticalSaveBonusActionShare": 1.1,
-	"criticalCombinedCapActionShare": 2.25
+	"strongReinforcementActionShare": 1.9,
+	"criticalSaveActionShare": 3.1,
+	"perfectBuildFinisherActionShare": 5.25,
+	"perfectBuildImpactRequirementShare": 0.2
 }
 
 var harness
@@ -49,6 +51,12 @@ var harness
 func before_each() -> void:
 	harness = HarnessScript.new()
 	await harness.mount(self, Vector2(412, 917))
+
+func test_default_critical_threshold_is_thirty() -> void:
+	var tower_stack: Node = harness.find("TowerStack")
+
+	assert_eq(int(tower_stack.get("support_critical_threshold")), 30)
+	assert_eq(int(harness.main.top_bar.get("stability_critical_threshold")), 30)
 
 func test_apply_config_syncs_sliders_toggles_and_options() -> void:
 	harness.main.update_debug_config(CONFIG_FIXTURE)
@@ -59,6 +67,10 @@ func test_apply_config_syncs_sliders_toggles_and_options() -> void:
 	assert_true((harness.find("LatencyIndicatorToggle") as CheckButton).button_pressed, "The latency toggle should sync from the config payload.")
 	assert_eq((harness.find("RecoveryHeightScoreSlider") as HSlider).value, 70.0)
 	assert_eq((harness.find("RecoveryHeightScoreSlider") as HSlider).step, 10.0)
+	assert_eq((harness.find("ReinforcementActionSlider") as HSlider).value, 190.0)
+	assert_eq((harness.find("CriticalSaveActionSlider") as HSlider).value, 310.0)
+	assert_eq((harness.find("PerfectBuildFinisherSlider") as HSlider).value, 525.0)
+	assert_eq((harness.find("PerfectBuildImpactSlider") as HSlider).value, 20.0)
 	var lateral_share := harness.find("TowerLateralLoadShareSlider") as HSlider
 	assert_eq(lateral_share.value, 40.0)
 	assert_eq(lateral_share.min_value, 0.0)
@@ -96,6 +108,8 @@ func test_retired_debug_categories_and_tower_site_rows_are_absent() -> void:
 	assert_null(harness.find("TowerSiteSlendernessLabel"))
 	assert_null(harness.find("TowerSiteWidthMinLabel"))
 	assert_null(harness.find("TowerSiteWidthMaxLabel"))
+	assert_null(harness.find("ReinforceLeanLabel"))
+	assert_null(harness.find("CriticalSaveCapLabel"))
 
 func test_apply_config_updates_popup_and_summary_durations() -> void:
 	harness.main.update_debug_config(CONFIG_FIXTURE)
@@ -134,6 +148,16 @@ func test_mood_threshold_reaches_the_tower_renderer() -> void:
 		int(tower_stack.get("mood_threshold")),
 		12,
 		"A debug_config broadcast should push the mood threshold onto TowerStack."
+	)
+
+func test_critical_support_threshold_reaches_the_tower_renderer() -> void:
+	var tower_stack: Node = harness.find("TowerStack")
+
+	harness.main.update_debug_config(CONFIG_FIXTURE)
+	assert_eq(
+		int(tower_stack.get("support_critical_threshold")),
+		30,
+		"The worried emoji and red support outline must share the server's critical threshold."
 	)
 
 

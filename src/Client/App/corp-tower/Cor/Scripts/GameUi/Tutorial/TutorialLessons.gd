@@ -277,7 +277,7 @@ static func _catalog() -> Array:
 				{
 					"id": &"structural_value",
 					"title": "Structural Value and Critical Save",
-					"body": "A direct repair pays Structural Value from the risk and load it improves. Repairing a mature critical support can also earn a capped Critical Save -- all three useful rewards count for Impact.",
+					"body": "A direct repair earns Reinforcement from the risk and load it improves, up to twice a normal action. A zero-height repair that moves a visible critical support above danger earns a three-action Critical Save instead. Both fill Impact at full value.",
 					"target": &"PlayerRailBox",
 					"card": "auto",
 					"gate": TutorialGatesScript.INFO,
@@ -292,16 +292,16 @@ static func _catalog() -> Array:
 		{
 			"id": &"perfect_build",
 			"title": "Perfect Build",
-			"blurb": "An exact finish pays every player; overbuilding wastes the excess.",
+			"blurb": "An exact finish rewards its finisher and boosts every player's Impact.",
 			"seed": _base_seed({
 				"tower_blocks": _filler_tower(28, 3),
-				"hand": [_scored_brick("tut-perfect-1", "O", 20, "team_exact_bonus")]
+				"hand": [_scored_brick("tut-perfect-1", "O", 120, "precision_bonus")]
 			}),
 			"steps": [
 				{
 					"id": &"finish_exact",
 					"title": "Land it exactly",
-					"body": "This brick finishes the tower at exactly 30. An exact finish pays the finisher a Precision bonus and pays EVERY player a Team Exact bonus -- overbuilding past the target forfeits both.",
+					"body": "This brick finishes the tower at exactly 30. The finisher earns about five normal actions, and EVERY player gains 15% of their current Impact requirement, capped at what they still need. Overbuilding forfeits both, and excess Height earns nothing.",
 					"target": &"PlayField",
 					"card": "above",
 					"gate": TutorialGatesScript.PLACE_BLOCK_AT,

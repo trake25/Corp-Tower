@@ -51,16 +51,15 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Debug_Config.js:119 | applyDefaults · fn | |
 | src/Server/app/Debug_Config.js:130 | applyValue · fn | |
 
-### src/Server/app/Game_Config.js — 185 ln
+### src/Server/app/Game_Config.js — 183 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Game_Config.js:1 | @file · file | authoritative gameplay, tuning, bot, room-timing, live_preview, and latency defaults |
 | src/Server/app/Game_Config.js:1 | GameConfig · const | |
 | src/Server/app/Game_Config.js:90 | towerStabilityMoodThreshold · stable | |
-| src/Server/app/Game_Config.js:160 | normalCombinedCapActionShare · stable | |
 
-### src/Server/app/Game_Engine.js — 1022 ln
+### src/Server/app/Game_Engine.js — 1037 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -91,8 +90,8 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Game_Engine.js:728 | restartAtConfiguredStartLevel | |
 | src/Server/app/Game_Engine.js:735 | restartAtLevel | |
 | src/Server/app/Game_Engine.js:815 | completeLevel | |
-| src/Server/app/Game_Engine.js:895 | failLevel | |
-| src/Server/app/Game_Engine.js:902 | nextLevel | |
+| src/Server/app/Game_Engine.js:908 | failLevel | |
+| src/Server/app/Game_Engine.js:915 | nextLevel | |
 
 ### src/Server/app/Lobby_Manager.js — 2536 ln
 
@@ -217,16 +216,17 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Tower_Stability.js:896 | evaluate · fn | |
 | src/Server/app/Tower_Stability.js:955 | balanceDelta · fn | |
 
-### src/Server/app/Tower_Structure_Assessment.js — 255 ln
+### src/Server/app/Tower_Structure_Assessment.js — 270 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Tower_Structure_Assessment.js:1 | @file · file | normalize a fractional structural value |
 | src/Server/app/Tower_Structure_Assessment.js:3 | clamp01 · fn | |
-| src/Server/app/Tower_Structure_Assessment.js:11 | describeGroups · fn | |
-| src/Server/app/Tower_Structure_Assessment.js:158 | comparePlacement · fn | |
+| src/Server/app/Tower_Structure_Assessment.js:11 | supportStability · fn | |
+| src/Server/app/Tower_Structure_Assessment.js:21 | describeGroups · fn | |
+| src/Server/app/Tower_Structure_Assessment.js:171 | comparePlacement · fn | |
 
-### src/Server/app/Tunable_Classification.js — 169 ln
+### src/Server/app/Tunable_Classification.js — 168 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -280,7 +280,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Block_Supply.js:461 | scoreRefreshBlockSet · fn | |
 | src/Server/app/engine/Block_Supply.js:476 | prepareTeamCarryOverBlocks · fn | |
 
-### src/Server/app/engine/Impacts.js — 505 ln
+### src/Server/app/engine/Impacts.js — 538 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -311,11 +311,12 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Impacts.js:265 | getImpactScoreFailures · fn | |
 | src/Server/app/engine/Impacts.js:269 | getNextImpactLevel · fn | |
 | src/Server/app/engine/Impacts.js:277 | hasMetImpactScoreRequirement · fn | |
-| src/Server/app/engine/Impacts.js:344 | scheduleCheckpointRecovery · fn | |
-| src/Server/app/engine/Impacts.js:356 | scheduleTerminalRoomClose · fn | |
-| src/Server/app/engine/Impacts.js:368 | resolveCheckpointFailure · fn | |
-| src/Server/app/engine/Impacts.js:451 | failImpactScoreRequirement · fn | |
-| src/Server/app/engine/Impacts.js:459 | rollbackToImpact · fn | |
+| src/Server/app/engine/Impacts.js:281 | awardPerfectBuildImpact · fn | |
+| src/Server/app/engine/Impacts.js:376 | scheduleCheckpointRecovery · fn | |
+| src/Server/app/engine/Impacts.js:388 | scheduleTerminalRoomClose · fn | |
+| src/Server/app/engine/Impacts.js:400 | resolveCheckpointFailure · fn | |
+| src/Server/app/engine/Impacts.js:483 | failImpactScoreRequirement · fn | |
+| src/Server/app/engine/Impacts.js:491 | rollbackToImpact · fn | |
 
 ### src/Server/app/engine/Last_Chance.js — 125 ln
 
@@ -346,7 +347,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Placement.js:445 | anyPlayerCanRescueSupply · fn | |
 | src/Server/app/engine/Placement.js:441 | not_enough_height_remaining · stable | |
 
-### src/Server/app/engine/Scoring.js — 518 ln
+### src/Server/app/engine/Scoring.js — 529 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -357,20 +358,21 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Scoring.js:46 | getPlayerScoreMap · fn | |
 | src/Server/app/engine/Scoring.js:56 | getTeamLevelScore · fn | |
 | src/Server/app/engine/Scoring.js:62 | getPlayerBonusBreakdown · fn | |
-| src/Server/app/engine/Scoring.js:77 | buildLevelSummary · fn | |
+| src/Server/app/engine/Scoring.js:76 | buildLevelSummary · fn | |
 | src/Server/app/engine/Scoring.js:124 | recordScoreBreakdown · fn | |
 | src/Server/app/engine/Scoring.js:130 | clamp01 · fn | |
 | src/Server/app/engine/Scoring.js:134 | positive · fn | |
 | src/Server/app/engine/Scoring.js:138 | getActionUnit · fn | |
 | src/Server/app/engine/Scoring.js:144 | getExpectedNormalUsefulScoreForLevel · fn | |
-| src/Server/app/engine/Scoring.js:282 | previewPlacementScore · fn | |
-| src/Server/app/engine/Scoring.js:347 | addPlacementScore · fn | |
-| src/Server/app/engine/Scoring.js:396 | awardCompletionBonuses · fn | |
-| src/Server/app/engine/Scoring.js:435 | addBonusScore · fn | |
-| src/Server/app/engine/Scoring.js:454 | getBonusScoreEventType · fn | |
-| src/Server/app/engine/Scoring.js:465 | getBonusScoreEventLabel · fn | |
-| src/Server/app/engine/Scoring.js:476 | addLevelScoreToLeaderboard · fn | |
-| src/Server/app/engine/Scoring.js:486 | getLevelMVP · fn | |
+| src/Server/app/engine/Scoring.js:286 | previewPlacementScore · fn | |
+| src/Server/app/engine/Scoring.js:354 | addPlacementScore · fn | |
+| src/Server/app/engine/Scoring.js:403 | getPerfectBuildFinisherPoints · fn | |
+| src/Server/app/engine/Scoring.js:410 | awardCompletionBonuses · fn | |
+| src/Server/app/engine/Scoring.js:447 | addBonusScore · fn | |
+| src/Server/app/engine/Scoring.js:466 | getBonusScoreEventType · fn | |
+| src/Server/app/engine/Scoring.js:476 | getBonusScoreEventLabel · fn | |
+| src/Server/app/engine/Scoring.js:486 | addLevelScoreToLeaderboard · fn | |
+| src/Server/app/engine/Scoring.js:496 | getLevelMVP · fn | |
 
 ### src/Server/migrations/0001_profiles.sql — 46 ln
 
@@ -392,7 +394,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/tools/Balance_Run.js:9 | SERVER · const | |
 | src/Server/tools/Balance_Run.js:14 | positiveInteger · fn | |
 
-### src/Server/tools/Balance_Simulator.js — 740 ln
+### src/Server/tools/Balance_Simulator.js — 776 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -404,7 +406,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/tools/Balance_Simulator.js:38 | withMutedConsole · fn | |
 | src/Server/tools/Balance_Simulator.js:50 | percentile · fn | |
 | src/Server/tools/Balance_Simulator.js:105 | simulateSmartPlay · fn | |
-| src/Server/tools/Balance_Simulator.js:518 | percent · fn | |
+| src/Server/tools/Balance_Simulator.js:542 | percent · fn | |
 
 ### src/Server/tools/Impact_Balance_Probe.js — 282 ln
 
@@ -416,7 +418,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/tools/Impact_Balance_Probe.js:13 | number · fn | |
 | src/Server/tools/Impact_Balance_Probe.js:24 | failureReason · fn | |
 
-### src/Server/tools/Stability_Probe.js — 500 ln
+### src/Server/tools/Stability_Probe.js — 506 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -428,4 +430,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-27 files · 257 stable anchors.
+27 files · 259 stable anchors.

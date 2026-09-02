@@ -80,14 +80,14 @@ var supply_effective_width_label: Control
 var supply_effective_width_slider: HSlider
 var placement_stability_floor_label: Control
 var placement_stability_floor_slider: HSlider
-var reinforce_integrity_label: Control
-var reinforce_integrity_slider: HSlider
-var reinforce_lean_label: Control
-var reinforce_lean_slider: HSlider
-var critical_save_bonus_label: Control
-var critical_save_bonus_slider: HSlider
-var critical_save_cap_label: Control
-var critical_save_cap_slider: HSlider
+var reinforcement_action_label: Control
+var reinforcement_action_slider: HSlider
+var critical_save_action_label: Control
+var critical_save_action_slider: HSlider
+var perfect_build_finisher_label: Control
+var perfect_build_finisher_slider: HSlider
+var perfect_build_impact_label: Control
+var perfect_build_impact_slider: HSlider
 var tower_warning_threshold_label: Control
 var tower_warning_threshold_slider: HSlider
 var tower_critical_threshold_label: Control
@@ -210,14 +210,14 @@ func bind_nodes(binder) -> void:
 	supply_effective_width_slider = binder.optional_node("SupplyEffectiveWidthSlider") as HSlider
 	placement_stability_floor_label = bind_tooltip_row(binder, "PlacementStabilityFloorLabel")
 	placement_stability_floor_slider = binder.optional_node("PlacementStabilityFloorSlider") as HSlider
-	reinforce_integrity_label = bind_tooltip_row(binder, "ReinforceIntegrityLabel")
-	reinforce_integrity_slider = binder.optional_node("ReinforceIntegritySlider") as HSlider
-	reinforce_lean_label = bind_tooltip_row(binder, "ReinforceLeanLabel")
-	reinforce_lean_slider = binder.optional_node("ReinforceLeanSlider") as HSlider
-	critical_save_bonus_label = bind_tooltip_row(binder, "CriticalSaveBonusLabel")
-	critical_save_bonus_slider = binder.optional_node("CriticalSaveBonusSlider") as HSlider
-	critical_save_cap_label = bind_tooltip_row(binder, "CriticalSaveCapLabel")
-	critical_save_cap_slider = binder.optional_node("CriticalSaveCapSlider") as HSlider
+	reinforcement_action_label = bind_tooltip_row(binder, "ReinforcementActionLabel")
+	reinforcement_action_slider = binder.optional_node("ReinforcementActionSlider") as HSlider
+	critical_save_action_label = bind_tooltip_row(binder, "CriticalSaveActionLabel")
+	critical_save_action_slider = binder.optional_node("CriticalSaveActionSlider") as HSlider
+	perfect_build_finisher_label = bind_tooltip_row(binder, "PerfectBuildFinisherLabel")
+	perfect_build_finisher_slider = binder.optional_node("PerfectBuildFinisherSlider") as HSlider
+	perfect_build_impact_label = bind_tooltip_row(binder, "PerfectBuildImpactLabel")
+	perfect_build_impact_slider = binder.optional_node("PerfectBuildImpactSlider") as HSlider
 	tower_warning_threshold_label = bind_tooltip_row(binder, "TowerWarningThresholdLabel")
 	tower_warning_threshold_slider = binder.optional_node("TowerWarningThresholdSlider") as HSlider
 	tower_critical_threshold_label = bind_tooltip_row(binder, "TowerCriticalThresholdLabel")
@@ -317,10 +317,10 @@ func setup(
 	configure_slider(tower_max_tilt_slider, 2, 20, 1, func(value): send_debug_int("towerStructuralPoseMaxAngleDeg", value))
 	configure_slider(supply_effective_width_slider, 10, 200, 5, func(value): send_debug_float("supplyEffectiveWidthRatio", value / 100.0))
 	configure_slider(placement_stability_floor_slider, 10, 100, 5, func(value): send_debug_float("dangerousHeightFloor", value / 100.0))
-	configure_slider(reinforce_integrity_slider, 10, 100, 5, func(value): send_debug_float("strongReinforcementActionShare", value / 100.0))
-	configure_slider(reinforce_lean_slider, 100, 300, 10, func(value): send_debug_float("normalCombinedCapActionShare", value / 100.0))
-	configure_slider(critical_save_bonus_slider, 10, 200, 5, func(value): send_debug_float("criticalSaveBonusActionShare", value / 100.0))
-	configure_slider(critical_save_cap_slider, 100, 300, 5, func(value): send_debug_float("criticalCombinedCapActionShare", value / 100.0))
+	configure_slider(reinforcement_action_slider, 10, 200, 5, func(value): send_debug_float("strongReinforcementActionShare", value / 100.0))
+	configure_slider(critical_save_action_slider, 10, 500, 10, func(value): send_debug_float("criticalSaveActionShare", value / 100.0))
+	configure_slider(perfect_build_finisher_slider, 100, 800, 25, func(value): send_debug_float("perfectBuildFinisherActionShare", value / 100.0))
+	configure_slider(perfect_build_impact_slider, 0, 50, 5, func(value): send_debug_float("perfectBuildImpactRequirementShare", value / 100.0))
 	configure_slider(tower_warning_threshold_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityWarningThreshold", value))
 	configure_slider(tower_critical_threshold_slider, 0, 100, 5, func(value): send_debug_int("towerStabilityCriticalThreshold", value))
 	configure_slider(tower_mood_threshold_slider, 1, 50, 1, func(value): send_debug_int("towerStabilityMoodThreshold", value))
@@ -433,10 +433,10 @@ func placement_score_table_body() -> String:
 	var height_rate: int = maxi(1, roundi(get_slider_value(placement_score_slider, 10)))
 	var recovery_share: int = clampi(roundi(get_slider_value(recovery_height_score_slider, 50)), 0, 100)
 	var dangerous_floor: float = clampf(get_slider_value(placement_stability_floor_slider, 35) / 100.0, 0.1, 1.0)
-	var repair_share: float = clampf(get_slider_value(reinforce_integrity_slider, 85) / 100.0, 0.1, 1.0)
-	var normal_cap_share: float = clampf(get_slider_value(reinforce_lean_slider, 160) / 100.0, 1.0, 3.0)
-	var critical_bonus_share: float = clampf(get_slider_value(critical_save_bonus_slider, 100) / 100.0, 0.1, 2.0)
-	var critical_cap_share: float = clampf(get_slider_value(critical_save_cap_slider, 225) / 100.0, 1.0, 3.0)
+	var repair_share: float = clampf(get_slider_value(reinforcement_action_slider, 200) / 100.0, 0.1, 2.0)
+	var critical_share: float = clampf(get_slider_value(critical_save_action_slider, 300) / 100.0, 0.1, 5.0)
+	var perfect_share: float = clampf(get_slider_value(perfect_build_finisher_slider, 500) / 100.0, 1.0, 8.0)
+	var perfect_impact_share: int = clampi(roundi(get_slider_value(perfect_build_impact_slider, 15)), 0, 50)
 	var lines: PackedStringArray = [
 		"CLEAN: +1 / +2 / +3 / +4 HEIGHT"
 	]
@@ -450,22 +450,22 @@ func placement_score_table_body() -> String:
 			roundi(float(height_rate * level * 4))
 		])
 
-	lines.append("REPAIR MAX / SAVE")
+	lines.append("REPAIR / SAVE / PERFECT")
 	lines.append("RECOVERY: %d%% of clean row value, halved after each rebuild." % recovery_share)
 
 	for level in [1, 5, 10, 25]:
 		var action_unit: float = float(level) * float(height_rate) * SCORE_TABLE_AVERAGE_BRICK_HEIGHT
-		lines.append("L%d:+%d/+%d" % [
+		lines.append("L%d:+%d/+%d/+%d" % [
 			level,
 			roundi(action_unit * repair_share),
-			roundi(action_unit * critical_bonus_share)
+			roundi(action_unit * critical_share),
+			roundi(action_unit * perfect_share)
 		])
 
 	lines.append("Full new-risk: %d%% clean score." % roundi(dangerous_floor * 100.0))
-	lines.append("Normal cap: %d%% action." % roundi(normal_cap_share * 100.0))
-	lines.append("Critical cap: %d%% action." % roundi(critical_cap_share * 100.0))
-	lines.append("Save: eligible Critical Save.")
-	lines.append("Repair max: standard brick.")
+	lines.append("Perfect Impact: %d%% of each player's current requirement." % perfect_impact_share)
+	lines.append("Save: zero-height critical rescue total.")
+	lines.append("Repair and useful Height add independently.")
 
 	return "\n".join(lines)
 
@@ -692,20 +692,20 @@ func apply_config(config) -> void:
 		float(config.get("dangerousHeightFloor", 0.35)) * 100.0
 	)
 	set_slider_no_signal(
-		reinforce_integrity_slider,
-		float(config.get("strongReinforcementActionShare", 0.85)) * 100.0
+		reinforcement_action_slider,
+		float(config.get("strongReinforcementActionShare", 2.0)) * 100.0
 	)
 	set_slider_no_signal(
-		reinforce_lean_slider,
-		float(config.get("normalCombinedCapActionShare", 1.60)) * 100.0
+		critical_save_action_slider,
+		float(config.get("criticalSaveActionShare", 3.0)) * 100.0
 	)
 	set_slider_no_signal(
-		critical_save_bonus_slider,
-		float(config.get("criticalSaveBonusActionShare", 1.0)) * 100.0
+		perfect_build_finisher_slider,
+		float(config.get("perfectBuildFinisherActionShare", 5.0)) * 100.0
 	)
 	set_slider_no_signal(
-		critical_save_cap_slider,
-		float(config.get("criticalCombinedCapActionShare", 2.25)) * 100.0
+		perfect_build_impact_slider,
+		float(config.get("perfectBuildImpactRequirementShare", 0.15)) * 100.0
 	)
 	set_slider_no_signal(
 		tower_warning_threshold_slider,
@@ -821,20 +821,20 @@ func update_debug_labels() -> void:
 		"Dangerous Height Floor: " + str(int(get_slider_value(placement_stability_floor_slider, 35))) + "%"
 	)
 	set_debug_label_text(
-		reinforce_integrity_label,
-		"Strong Direct Repair: " + str(int(get_slider_value(reinforce_integrity_slider, 85))) + "% action"
+		reinforcement_action_label,
+		"Strong Reinforcement: " + str(int(get_slider_value(reinforcement_action_slider, 200))) + "% action"
 	)
 	set_debug_label_text(
-		reinforce_lean_label,
-		"Normal Transaction Cap: " + str(int(get_slider_value(reinforce_lean_slider, 160))) + "% action"
+		critical_save_action_label,
+		"Critical Save Total: " + str(int(get_slider_value(critical_save_action_slider, 300))) + "% action"
 	)
 	set_debug_label_text(
-		critical_save_bonus_label,
-		"Critical Save Bonus: " + str(int(get_slider_value(critical_save_bonus_slider, 100))) + "% action"
+		perfect_build_finisher_label,
+		"Perfect Build Finisher: " + str(int(get_slider_value(perfect_build_finisher_slider, 500))) + "% action"
 	)
 	set_debug_label_text(
-		critical_save_cap_label,
-		"Critical Save Cap: " + str(int(get_slider_value(critical_save_cap_slider, 225))) + "% action"
+		perfect_build_impact_label,
+		"Perfect Build Impact: " + str(int(get_slider_value(perfect_build_impact_slider, 15))) + "% requirement"
 	)
 	set_debug_label_text(
 		impact_score_label,

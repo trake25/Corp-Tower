@@ -27,7 +27,7 @@ var freeze_blink_tween: Tween
 var freeze_blink_base_color: Color = Color.BLACK
 var stability_feedback_mode := "warnings_only"
 var stability_warning_threshold := 75
-var stability_critical_threshold := 45
+var stability_critical_threshold := 30
 
 func bind_nodes(binder) -> void:
 	level_label = binder.require_node("LevelLabel") as Label

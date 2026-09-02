@@ -229,7 +229,7 @@ test("a brick released with nothing under it falls", () => {
     assert.equal(placed.originY, 0, "nothing holds it up, so it lands on the platform");
 });
 
-test("a normal structural transaction stays below the combined cap", () => {
+test("a normal structural transaction preserves Height and Reinforcement independently", () => {
     const { engine } = createPlayingEngine(3, 40);
     const transaction = engine.previewPlacementScore({
         effectiveHeight: engine.getAverageBrickHeight(),
@@ -246,6 +246,8 @@ test("a normal structural transaction stays below the combined cap", () => {
         }
     });
 
-    assert.equal(transaction.capHit, true);
-    assert.equal(transaction.points, transaction.cap);
+    assert.equal(transaction.points, transaction.heightPoints + transaction.structuralPoints);
+    assert.equal(transaction.structuralPoints, Math.round(engine.getActionUnit() * 2));
+    assert.equal(Object.hasOwn(transaction, "cap"), false);
+    assert.equal(Object.hasOwn(transaction, "capHit"), false);
 });

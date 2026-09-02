@@ -48,6 +48,17 @@ func test_impact_lesson_uses_canonical_contribution_fields() -> void:
 	for player_status in status.get("players", []):
 		assert_true(player_status.has("bandContribution"), "The tutorial must use canonical personal contribution values.")
 
+func test_scoring_lessons_describe_independent_incentives() -> void:
+	var scoring: Dictionary = TutorialLessonsScript.lesson_by_id(&"scoring")
+	var perfect: Dictionary = TutorialLessonsScript.lesson_by_id(&"perfect_build")
+	var copy := str(scoring) + " " + str(perfect)
+
+	assert_true(copy.contains("twice a normal action"))
+	assert_true(copy.contains("three-action Critical Save"))
+	assert_true(copy.contains("15% of their current Impact requirement"))
+	assert_false(copy.contains("Team Exact"))
+	assert_false(copy.contains("capped Critical Save"))
+
 func test_every_lesson_has_at_least_one_step() -> void:
 	for lesson in TutorialLessonsScript.all_lessons():
 		var steps: Array = lesson.get("steps", [])

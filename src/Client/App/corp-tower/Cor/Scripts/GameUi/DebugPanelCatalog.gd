@@ -87,21 +87,21 @@ const DEBUG_TOOLTIPS := {
 		"title": "Recovery Height Score",
 		"body": "The share of risk-adjusted Height score paid when the team rebuilds a previously reached row. Each rebuilding placement halves Recovery and rebuild Reinforce again until the tower reaches a new target. New historical height still earns full Height score.",
 	},
-	"ReinforceIntegrityLabel": {
-		"title": "Strong Direct Repair",
-		"body": "The share of one average useful-height action awarded for a strong, direct structural repair.\n\nThe server pays one matched support improvement, so Integrity, lean, and repaired cells cannot stack for the same fix.",
+	"ReinforcementActionLabel": {
+		"title": "Strong Reinforcement",
+		"body": "The maximum share of one average useful-height action awarded for authoritative structural improvement.\n\nThe reward scales continuously from measured risk reduction, supported load, and direct attribution. Orientation alone never pays.",
 	},
-	"ReinforceLeanLabel": {
-		"title": "Normal Transaction Cap",
-		"body": "The largest normal placement total in average-action units, unless its useful height already exceeds that limit.\n\nThis constrains height plus structural value once, after both components are computed.",
+	"CriticalSaveActionLabel": {
+		"title": "Critical Save Total",
+		"body": "The total average-action payout for a zero-height repair that moves the directly repaired visible support from critical to above the critical threshold.\n\nThis replaces ordinary Reinforcement for the rescue instead of stacking on top.",
 	},
-	"CriticalSaveBonusLabel": {
-		"title": "Critical Save Bonus",
-		"body": "The extra average-action share awarded when a direct repair moves a mature tower from critical to safe.\n\nIt is limited by the Critical Save cap and can only be claimed once per repaired interface.",
+	"PerfectBuildFinisherLabel": {
+		"title": "Perfect Build Finisher",
+		"body": "The average-action reward paid only to the player whose single placement finishes exactly at the target.\n\nOrdinary Height and Reinforcement from that placement remain separate.",
 	},
-	"CriticalSaveCapLabel": {
-		"title": "Critical Save Cap",
-		"body": "The highest total for a placement that includes a Critical Save, in average-action units. Useful-height points are always retained before this cap trims other components.",
+	"PerfectBuildImpactLabel": {
+		"title": "Perfect Build Impact",
+		"body": "The share of each player's current Impact-band requirement awarded by an exact finish.\n\nEach credit stops at that player's remaining need and never carries into the next band.",
 	},
 
 	"PowerReplenishShareLabel": {

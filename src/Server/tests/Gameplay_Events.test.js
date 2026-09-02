@@ -228,7 +228,7 @@ test("quick chat broadcasts a transient event and enforces the player cooldown",
     assert.equal(engine.queueQuickChat(player, 99), false);
 });
 
-test("exact winning placement emits exact finish and all eligible bonus events", () => {
+test("exact winning placement rewards only the finisher's score and boosts every player's Impact", () => {
     const { engine, messages } = createPlayingEngine(1, 3);
 
     engine.room.players[0].blocks = [createBlock(3)];
@@ -242,7 +242,7 @@ test("exact winning placement emits exact finish and all eligible bonus events",
     assert.equal(types.filter(type => type === "exact_finish").length, 1);
     assert.equal(types.filter(type => type === "finisher_bonus").length, 0);
     assert.equal(types.filter(type => type === "precision_bonus").length, 1);
-    assert.equal(types.filter(type => type === "team_exact_bonus").length, 3);
+    assert.equal(types.includes("team_exact_bonus"), false);
     assert.equal(types.includes("assist_bonus"), false);
     assert.equal(types.filter(type => type === "mvp").length, 1);
     assert.equal(types.includes("team_total"), false);
@@ -250,7 +250,17 @@ test("exact winning placement emits exact finish and all eligible bonus events",
     assert.equal(message.lastLevelSummary.exactFinish, true);
     assert.equal(message.lastLevelSummary.overbuildHeight, 0);
     assert.equal(message.lastLevelSummary.finisherId, "P1");
-
+    assert.equal(
+        message.lastLevelSummary.perfectBuild.finisherPoints,
+        engine.getPerfectBuildFinisherPoints()
+    );
+    assert.deepEqual(
+        message.lastLevelSummary.perfectBuild.impactCredits,
+        { P1: 50, P2: 50, P3: 50 }
+    );
+    assert.equal(engine.room.players[0].scoreBreakdown.perfectBuild, engine.getPerfectBuildFinisherPoints());
+    assert.equal(engine.room.players[1].levelScore, 0);
+    assert.equal(engine.room.players[2].levelScore, 0);
 });
 
 test("overbuild winning placement emits overbuild finish without exact bonuses", () => {
@@ -270,7 +280,14 @@ test("overbuild winning placement emits overbuild finish without exact bonuses",
     assert.equal(message.lastLevelSummary.result, "completed");
     assert.equal(message.lastLevelSummary.exactFinish, false);
     assert.equal(message.lastLevelSummary.overbuildHeight, 1);
-
+    assert.equal(message.lastLevelSummary.perfectBuild, null);
+    assert.equal(message.scoreEvents.find(event => event.type === "overbuild_finish").points, 0);
+    const placement = message.scoreEvents.find(event => event.type === "placement");
+    assert.equal(placement.meta.newHeight, 2);
+    assert.equal(engine.room.players[0].impactContribution, placement.points);
+    assert.ok(placement.meta.heightPoints <= 20);
+    assert.equal(engine.room.players[1].impactContribution, 0);
+    assert.equal(engine.room.players[2].impactContribution, 0);
 });
 
 test("a placement emits one authoritative score transaction and contribution", () => {
@@ -305,8 +322,8 @@ test("a qualified Critical Save claims its interface and banks eligible contribu
     const player = engine.room.players[0];
     const input = {
         effectiveHeight: 0,
-        beforeResult: { stability: 40, diagnostics: { collapsed: false, criticalRisk: 0.8 }, analysis: { height: 20, groups: [] } },
-        afterResult: { stability: 80, diagnostics: { collapsed: false, criticalRisk: 0.2 }, analysis: { height: 20, groups: [] } },
+        beforeResult: { stability: 30, diagnostics: { collapsed: false, criticalRisk: 0.8 }, analysis: { height: 20, groups: [] } },
+        afterResult: { stability: 31, diagnostics: { collapsed: false, criticalRisk: 0.2 }, analysis: { height: 20, groups: [] } },
         assessment: {
             riskIncrease: 0,
             rawStructuralUtility: GameConfig.scoring.strongStructuralImprovement,
@@ -314,7 +331,9 @@ test("a qualified Critical Save claims its interface and banks eligible contribu
             benefitedLoadShare: 0.5,
             criticalRiskReduction: 0.5,
             criticalSaveCandidate: true,
-            repairClaimKey: "support:C"
+            repairClaimKey: "support:C",
+            criticalSupportBeforeStability: 30,
+            criticalSupportAfterStability: 31
         },
         stabilityConfig: { towerStabilityMinHeight: 1 }
     };
@@ -327,6 +346,8 @@ test("a qualified Critical Save claims its interface and banks eligible contribu
     });
 
     assert.equal(transaction.criticalSave, true);
+    assert.equal(transaction.structuralPoints, 0);
+    assert.equal(transaction.points, Math.round(engine.getActionUnit() * 3));
     assert.ok(event);
     assert.equal(engine.room.criticalSaveClaimKeys["support:C"], true);
     assert.equal(player.levelImpactContribution, transaction.points);
@@ -660,13 +681,13 @@ test("Impact measures scored contribution with live points counted once", () => 
     assert.equal(firstStatus.remainingContribution, Math.max(0, expected - 37));
 });
 
-test("Impact contribution excludes completion bonuses and cannot be carried by teammates", () => {
+test("Impact contribution excludes personal completion score and cannot be carried by teammates", () => {
     const { engine } = createPlayingEngine(1, 10);
     const [first, second, third] = engine.room.players;
 
     GameConfig.impactScoreRequirement = 50;
     GameConfig.impactMinContributionShare = 0;
-    engine.addBonusScore(first, 90, "precision");
+    engine.addBonusScore(first, 90, "perfectBuild");
     first.levelImpactContribution = 50;
     second.levelImpactContribution = 0;
     third.levelImpactContribution = 500;
@@ -679,6 +700,40 @@ test("Impact contribution excludes completion bonuses and cannot be carried by t
     assert.equal(status.players.find(player => player.id === second.id).met, false);
     assert.equal(status.players.find(player => player.id === third.id).met, true);
     assert.equal(engine.hasMetImpactScoreRequirement(2), false);
+});
+
+test("Perfect Build Impact is capped at remaining need and clears the finishing checkpoint gate", () => {
+    const { engine } = createPlayingEngine(2, 1);
+    const [first, second, third] = engine.room.players;
+
+    GameConfig.impactInterval = 2;
+    GameConfig.impactMinContributionShare = 0;
+    GameConfig.impactScoreRequirement = 100;
+    engine.room.impactLevel = 1;
+    engine.room.impactContributions = { P1: 0, P2: 0, P3: 0 };
+    first.impactContribution = 95;
+    second.impactContribution = 85;
+    third.impactContribution = 85;
+    first.blocks = [createBlock(1)];
+
+    engine.placeBlock("P1", 0);
+
+    assert.equal(engine.room.state, "finished");
+    assert.deepEqual(engine.room.lastLevelSummary.perfectBuild.impactCredits, {
+        P1: 0,
+        P2: 15,
+        P3: 15
+    });
+    assert.equal(first.impactContribution, 115);
+    assert.equal(second.impactContribution, 100);
+    assert.equal(third.impactContribution, 100);
+    assert.equal(engine.hasMetImpactScoreRequirement(3), true);
+
+    engine.nextLevel();
+
+    const nextBand = engine.getImpactScoreStatus(5);
+    assert.equal(nextBand.players.find(player => player.id === second.id).bandContribution, 0);
+    assert.equal(nextBand.players.find(player => player.id === third.id).bandContribution, 0);
 });
 
 test("an Impact shortfall replaces the completion summary at the checkpoint", () => {
