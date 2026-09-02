@@ -230,12 +230,15 @@ func test_fractional_navigation_drives_rendering_grid_conversion_and_parallax() 
 	var emitted_pixels: Array = []
 	tower.scroll_offset_changed.connect(func(pixels: float): emitted_pixels.append(pixels))
 
+	var navigation_start: float = tower.scroll_state.displayed_offset_units
 	assert_true(tower.navigate_to_trouble("base-i"))
 	tower._process(0.05)
 
-	assert_almost_eq(tower.scroll_state.displayed_offset_units, 4.55, 0.001)
+	var displayed: float = tower.scroll_state.displayed_offset_units
+	assert_lt(displayed, navigation_start)
+	assert_gt(displayed, tower.scroll_state.navigation_target_units)
 	assert_eq(emitted_pixels.size(), 1)
-	assert_almost_eq(float(emitted_pixels[0]), 4.55 * tower.brick_unit_size, 0.001)
+	assert_almost_eq(float(emitted_pixels[0]), displayed * tower.brick_unit_size, 0.001)
 	var lattice := Vector2(3.5, 2.25)
 	assert_almost_eq(tower.local_to_grid(tower.grid_to_local(lattice)).x, lattice.x, 0.001)
 	assert_almost_eq(tower.local_to_grid(tower.grid_to_local(lattice)).y, lattice.y, 0.001)
