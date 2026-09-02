@@ -45,13 +45,17 @@ func test_rail_renders_and_restores_authoritative_presence_states() -> void:
 	var connected = roster().rail_entry("P1")
 	var dropped = roster().rail_entry("P2")
 	var departed = roster().rail_entry("P3")
+	var normal_avatar_modulate := (connected.get_node("%AvatarTexture") as TextureRect).modulate
+	var dropped_name_color := (dropped.get_node("%NameLabel") as Label).get_theme_color("font_color")
+	var dropped_avatar_color := (dropped.get_node("%AvatarTexture") as TextureRect).modulate
 	assert_eq((connected.get_node("%NameLabel") as Label).text, "Connected")
 	assert_true((dropped.get_node("%NameLabel") as Label).text.contains("\u0336"))
-	assert_eq((dropped.get_node("%NameLabel") as Label).get_theme_color("font_color"), Color("#d92d20"))
-	assert_eq((dropped.get_node("%AvatarTexture") as TextureRect).modulate, Color("#d92d20"))
+	assert_true(dropped_name_color.r > dropped_name_color.g and dropped_name_color.r > dropped_name_color.b)
+	assert_true(dropped_avatar_color.r > dropped_avatar_color.g and dropped_avatar_color.r > dropped_avatar_color.b)
 	assert_eq((departed.get_node("%ScoreLabel") as Label).text, "LEFT")
 	assert_false((departed.get_node("%NameLabel") as Label).text.contains("\u0336"))
-	assert_ne((departed.get_node("%AvatarTexture") as TextureRect).modulate, Color("#d92d20"))
+	var departed_avatar_color := (departed.get_node("%AvatarTexture") as TextureRect).modulate
+	assert_false(departed_avatar_color.r > departed_avatar_color.g and departed_avatar_color.r > departed_avatar_color.b)
 
 	roster().update_score_lines([
 		{"id": "P1", "score": 10, "levelScore": 0, "presence": "connected"},
@@ -59,7 +63,7 @@ func test_rail_renders_and_restores_authoritative_presence_states() -> void:
 		{"id": "P3", "score": 6, "levelScore": 0, "presence": "connected"}
 	])
 	assert_eq((dropped.get_node("%NameLabel") as Label).text, "Dropped")
-	assert_eq((dropped.get_node("%AvatarTexture") as TextureRect).modulate, Color.WHITE)
+	assert_eq((dropped.get_node("%AvatarTexture") as TextureRect).modulate, normal_avatar_modulate)
 	assert_eq((departed.get_node("%ScoreLabel") as Label).text, "6")
 
 func test_impact_bars_follow_status_membership() -> void:

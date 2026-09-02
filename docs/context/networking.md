@@ -27,8 +27,9 @@ start recovery only while the match is expected to stream in `starting` or
 `playing`; `finished`, `failed`, and `game_over` may stay quiet for presentation.
 A stale transport reconnects to the same configured endpoint. One total recovery
 deadline spans resync and reconnect, then ignores late state and returns the
-player Home. Manual disconnect and app close do not recover. RTT is only a
-quality indicator.
+player Home. Manual disconnect stops runtime recovery, and app close ends that
+runtime loop. On a later authenticated launch, saved room credentials still
+trigger resume-only recovery. RTT is only a quality indicator.
 
 Only a session's current opaque connection id may act or disconnect, so an old
 socket cannot invalidate a resumed connection.
@@ -37,9 +38,11 @@ socket cannot invalidate a resumed connection.
 
 Seats fill incrementally and `room_created` or `room_resumed` arrives as soon as a
 seat is assigned. A full room starts a ready window; every seat must be ready
-before `match_started`. Bots are pre-readied. Leaving or disconnecting during
-ready-up removes that seat immediately, resets survivor readiness, and cancels
-the timer until the room fills again. Only a room with no real players closes.
+before `match_started`. Bots are pre-readied. In a public lobby, leaving or
+disconnecting during ready-up removes that seat immediately, resets survivor
+readiness, and cancels the timer until the room fills again. In a private lobby,
+intentional leave removes the seat, while transport loss unreaddies and reserves
+it through recovery and grace. Only a room with no real players closes.
 
 Lobby updates carry roster, ready membership, presentation presence, and an
 integer countdown derived from the server deadline. Private-lobby recovery and

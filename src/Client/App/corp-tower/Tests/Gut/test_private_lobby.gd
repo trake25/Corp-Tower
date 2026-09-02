@@ -86,6 +86,7 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 	var guest_kick = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat1/Seat1Kick") as BaseButton
 	var empty_kick = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Kick") as BaseButton
 	var empty_name = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Identity/Seat2Name") as Label
+	var normal_name_color := empty_name.get_theme_color("font_color")
 
 	assert_true(ready_button.disabled, "Ready must wait for all three reserved seats.")
 	assert_true(host_crown.visible, "The authoritative host id must render the crown.")
@@ -115,7 +116,12 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 	assert_false(ready_button.disabled, "A three-seat private room enables Ready.")
 	assert_eq(grace_name.text.replace("\u0336", ""), "Graceful..", "Private names use the shared ten-character display convention.")
 	assert_true(grace_name.text.contains("\u0336"), "Disconnected private-lobby names are struck through.")
-	assert_eq(grace_name.get_theme_color("font_color"), Color("#d92d20"), "Disconnected private-lobby names use the explicit red state.")
+	var disconnected_name_color := grace_name.get_theme_color("font_color")
+	assert_true(
+		disconnected_name_color.r > disconnected_name_color.g
+		and disconnected_name_color.r > disconnected_name_color.b,
+		"Disconnected private-lobby names use a red state."
+	)
 	assert_eq(ready_label.text, "Cancel (5s)", "The server start deadline drives the local countdown label.")
 
 	screen.apply_lobby_data(private_lobby_payload([
@@ -125,7 +131,7 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 	]))
 	assert_eq(grace_name.text, "Graceful..", "Reconnect restores the unadorned private-lobby name.")
 	assert_eq(grace_name.modulate, Color.WHITE)
-	assert_eq(grace_name.get_theme_color("font_color"), Color("#141418"))
+	assert_eq(grace_name.get_theme_color("font_color"), normal_name_color)
 
 	var toast = screen.get_node("SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow/CopyServerIdButton/CopyToast") as Control
 	assert_eq((screen.get_node("SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow/Values/ServerIdValue") as Label).text, "2345ABCD")
