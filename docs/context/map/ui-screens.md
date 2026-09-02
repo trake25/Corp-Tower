@@ -228,7 +228,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:6 | rankings_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:7 | settings_requested · signal | |
 
-### src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd — 113 ln
+### src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd — 168 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -236,9 +236,9 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:3 | find_match_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | back_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:5 | private_join_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:30 | show_private_pending | |
-| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:37 | clear_private_pending | |
-| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:45 | show_private_error | |
+| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:43 | show_private_pending | |
+| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:50 | clear_private_pending | |
+| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:58 | show_private_error | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 502 ln
 

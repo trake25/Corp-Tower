@@ -189,6 +189,22 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	join_screen.show_private_error("Wrong password")
 	assert_true(join_error.visible)
 	assert_eq(join_error.text, "Wrong password")
+	var paste_events: Array = []
+	join_screen.private_join_requested.connect(func(_display_name, _server_id, _password): paste_events.append(true))
+	server_id_edit.text = "2345ABCD"
+	server_id_edit.grab_focus()
+	server_id_edit.edit()
+	join_screen._on_server_id_menu_id_pressed(LineEdit.MENU_PASTE)
+	await get_tree().process_frame
+	assert_eq(server_id_edit.text, "2345ABCD")
+	assert_false(server_id_edit.has_focus(), "Paste completion exits Server ID edit mode.")
+	assert_false(server_id_edit.is_editing())
+	assert_eq(paste_events.size(), 0, "Pasting Server ID never submits Join.")
+	join_screen.show_private_pending()
+	join_screen._on_server_id_menu_id_pressed(LineEdit.MENU_PASTE)
+	await get_tree().process_frame
+	assert_eq(server_id_edit.text, "2345ABCD", "Pending Join prevents Server ID paste interaction.")
+	join_screen.clear_private_pending()
 
 	var private_server = PrivateServerScene.instantiate()
 	add_child_autofree(private_server)
