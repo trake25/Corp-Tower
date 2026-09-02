@@ -257,11 +257,11 @@ func _on_join_screen_back_requested() -> void:
 	show_home_screen()
 
 func _on_private_join_requested(display_name: String, server_id: String, password: String) -> void:
-	if NetworkManager.join_private_server(display_name, server_id, password):
-		_show_private_entry_loader()
+	if NetworkManager.join_private_server(display_name, server_id, password) and NetworkManager.private_entry_in_flight:
+		if current_overlay != null and is_instance_valid(current_overlay) and current_overlay.has_method("show_private_pending"):
+			current_overlay.call("show_private_pending")
 
 func _on_private_join_failed(data) -> void:
-	_clear_private_entry_loader()
 	var reason := str(data.get("reason", "not_found"))
 	var message: String = {
 		"full": "Full room",
@@ -275,8 +275,13 @@ func _on_private_join_failed(data) -> void:
 
 	NetworkManager.disconnect_server()
 
-func _on_private_entry_failed(_data) -> void:
-	_clear_private_entry_loader()
+func _on_private_entry_failed(data) -> void:
+	if str(data.get("entryMode", "")) == "private_join":
+		if current_overlay != null and is_instance_valid(current_overlay) and current_overlay.has_method("clear_private_pending"):
+			current_overlay.call("clear_private_pending")
+	else:
+		_clear_private_entry_loader()
+
 	NetworkManager.disconnect_server()
 
 func start_tutorial(lesson_id: StringName = &"") -> void:

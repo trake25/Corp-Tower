@@ -41,7 +41,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:155 | %TutorialButton · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:200 | %CircleRow · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn — 292 ln
+### src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn — 295 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -49,12 +49,12 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:34 | JoinScreen · scene root | |
 | src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:85 | %BackButton · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:111 | %PlayerNameEdit · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:121 | %ServerIdEdit · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:136 | %PasswordEdit · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:152 | %PasswordVisibilityButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:181 | %JoinButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:201 | %PrivateJoinError · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:273 | %FindMatchButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:122 | %ServerIdEdit · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:138 | %PasswordEdit · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:155 | %PasswordVisibilityButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:184 | %JoinButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:204 | %PrivateJoinError · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:276 | %FindMatchButton · unique node | |
 
 ### src/Client/App/corp-tower/Cor/Scenes/Main.tscn — 51 ln
 
@@ -72,23 +72,23 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn:21 | PlayLoaderScreen · scene root | |
 | src/Client/App/corp-tower/Cor/Scenes/PlayLoaderScreen.tscn:56 | %LoadingProgressBar · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn — 453 ln
+### src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn — 461 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:1 | @file · file | PrivateLobbyScreen scene composition and controller bindings |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:51 | PrivateLobbyScreen · scene root | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:96 | %BackButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:161 | %ServerIdValue · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:169 | %CopyServerIdButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:179 | %CopyToast · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:205 | %CopyToastTimer · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:216 | %PasswordValue · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:409 | %ReadyButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:416 | %ReadyGradientFill · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:429 | %ReadyLabel · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:444 | %LeaveLobbyModal · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:449 | %KickPlayerModal · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:59 | PrivateLobbyScreen · scene root | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:104 | %BackButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:169 | %ServerIdValue · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:177 | %CopyServerIdButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:187 | %CopyToast · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:213 | %CopyToastTimer · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:224 | %PasswordValue · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:417 | %ReadyButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:424 | %ReadyGradientFill · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:437 | %ReadyLabel · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:452 | %LeaveLobbyModal · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:457 | %KickPlayerModal · unique node | |
 
 ### src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn — 212 ln
 
@@ -159,7 +159,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:4 | private_server_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:5 | tutorial_requested · signal | |
 
-### src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd — 61 ln
+### src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd — 112 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -167,7 +167,9 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:3 | find_match_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | back_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:5 | private_join_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:23 | show_private_error | |
+| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:30 | show_private_pending | |
+| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:37 | clear_private_pending | |
+| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:44 | show_private_error | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 468 ln
 
@@ -212,7 +214,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:10 | DISABLED_MODULATE · const | |
 | src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:42 | apply_lobby_data | |
 
-### src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd — 54 ln
+### src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd — 60 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -231,14 +233,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:12 | DISABLED_MODULATE · const | |
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:32 | apply_lobby_data | |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 490 ln
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 495 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:1 | @file · file | **debug button visibility set once here from `DEBUG_UI_ENABLED`** |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:14 | DEBUG_CONTEXT_LOBBY · const | |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:15 | DEBUG_CONTEXT_PLAY · const | |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:282 | start_tutorial | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:287 | start_tutorial | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/SignInDebugOverlay.gd — 120 ln
 
@@ -346,4 +348,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-28 files · 169 stable anchors.
+28 files · 171 stable anchors.

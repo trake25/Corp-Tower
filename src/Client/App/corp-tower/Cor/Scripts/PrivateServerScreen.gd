@@ -16,11 +16,17 @@ func _ready() -> void:
 	%BackButton.pressed.connect(func(): back_requested.emit())
 	password_visibility_button.pressed.connect(_toggle_password_visibility)
 	password_edit.text_changed.connect(_on_password_text_changed)
+	%PlayerNameEdit.text_submitted.connect(_on_text_submitted.bind(%PlayerNameEdit))
+	password_edit.text_submitted.connect(_on_text_submitted.bind(password_edit))
 	%CreateButton.pressed.connect(_on_create_pressed)
 	player_count_button.clear()
 	player_count_button.add_item(str(PLAYER_COUNT), PLAYER_COUNT)
 	player_count_button.select(0)
 	_update_password_visibility_icon()
+
+func _on_text_submitted(_value: String, field: LineEdit) -> void:
+	field.release_focus()
+	DisplayServer.virtual_keyboard_hide()
 
 func _toggle_password_visibility() -> void:
 	password_edit.secret = not password_edit.secret

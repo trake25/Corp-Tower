@@ -30,11 +30,19 @@ shadow_size = 10
 shadow_offset = Vector2(0, 5)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_CopyToast"]
-bg_color = Color(0.02, 0.02, 0.02, 0.94)
+bg_color = Color(1, 1, 1, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.078, 0.078, 0.094, 0.14)
 corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
+shadow_color = Color(0.078, 0.078, 0.094, 0.18)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ReadyGreen"]
 shader = ExtResource("9_gradient")
@@ -196,7 +204,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_CopyToast")
 
 [node name="Label" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow/CopyServerIdButton/CopyToast"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_font_sizes/font_size = 11
 horizontal_alignment = 1
 vertical_alignment = 1

@@ -13,6 +13,10 @@ class FakeSocket:
 	var packets: Array = []
 	var ready_state := WebSocketPeer.STATE_OPEN
 	var close_count := 0
+	var connect_result := OK
+
+	func connect_to_url(_url: String) -> Error:
+		return connect_result
 
 	func send_text(raw: String) -> Error:
 		sent_messages.append(JSON.parse_string(raw))
@@ -150,13 +154,26 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	var password_edit = join_screen.get_node("SafeArea/Root/FieldsColumn/PasswordRow/PasswordEdit") as LineEdit
 	var join_error = join_screen.get_node("SafeArea/Root/PrivateJoinError") as Label
 	var join_events: Array = []
+	var find_match_events: Array = []
+	var join_back_events: Array = []
 	join_screen.private_join_requested.connect(func(display_name, server_id, password):
 		join_events.append([display_name, server_id, password])
 	)
+	join_screen.find_match_requested.connect(func(): find_match_events.append(true))
+	join_screen.back_requested.connect(func(): join_back_events.append(true))
 	name_edit.text = "  Guest  "
 	server_id_edit.text = "2345abcd"
 	assert_eq(join_screen._normalized_password("12a34567890123"), "123456789012")
 	password_edit.text = "1234567890123"
+	for field in [name_edit, server_id_edit, password_edit]:
+		field.grab_focus()
+		await get_tree().process_frame
+		assert_true(field.has_focus())
+		field.text_submitted.emit(field.text)
+		assert_false(field.has_focus(), "Done releases the active Join Server field.")
+	assert_eq(join_events.size(), 0, "Done never submits a private Join request.")
+	assert_eq(find_match_events.size(), 0, "Done never starts public matchmaking.")
+	assert_eq(join_back_events.size(), 0, "Done never navigates away from Join Server.")
 	join_screen._on_join_pressed()
 
 	assert_true(name_edit.editable)
@@ -177,15 +194,26 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	add_child_autofree(private_server)
 	await get_tree().process_frame
 	var create_events: Array = []
+	var create_back_events: Array = []
 	private_server.create_requested.connect(func(display_name, password):
 		create_events.append([display_name, password])
 	)
-	(private_server.get_node("SafeArea/Root/FieldsColumn/PlayerNameEdit") as LineEdit).text = "  Host  "
-	(private_server.get_node("SafeArea/Root/FieldsColumn/PasswordField/PasswordEdit") as LineEdit).text = "98x76"
+	private_server.back_requested.connect(func(): create_back_events.append(true))
+	var private_name = private_server.get_node("SafeArea/Root/FieldsColumn/PlayerNameEdit") as LineEdit
+	var private_password = private_server.get_node("SafeArea/Root/FieldsColumn/PasswordField/PasswordEdit") as LineEdit
+	private_name.text = "  Host  "
+	private_password.text = "98x76"
+	for field in [private_name, private_password]:
+		field.grab_focus()
+		await get_tree().process_frame
+		assert_true(field.has_focus())
+		field.text_submitted.emit(field.text)
+		assert_false(field.has_focus(), "Done releases the active Private Server field.")
+	assert_eq(create_events.size(), 0, "Done never submits a private Create request.")
+	assert_eq(create_back_events.size(), 0, "Done never navigates away from Private Server.")
 	private_server._on_create_pressed()
 
 	assert_eq(create_events, [["Host", "9876"]])
-	var private_password = private_server.get_node("SafeArea/Root/FieldsColumn/PasswordField/PasswordEdit") as LineEdit
 	assert_true(private_password.secret)
 	assert_eq(private_password.secret_character, "*")
 	private_server._toggle_password_visibility()
@@ -354,43 +382,156 @@ func test_screen_manager_routes_private_room_and_authoritative_destinations() ->
 	screen_manager._on_room_closed({"destination": "home"})
 	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
 
-func test_private_entry_loader_preserves_the_source_screen_until_a_terminal_result() -> void:
+func test_accepted_private_join_stays_on_form_until_rejection() -> void:
 	var screen_manager = MainScene.instantiate()
 	add_child_autofree(screen_manager)
 	await get_tree().process_frame
 	await get_tree().process_frame
-	assert_false(screen_manager.current_overlay.scene_file_path.ends_with("/PlayLoaderScreen.tscn"))
 
 	screen_manager.show_join_screen()
 	var join_screen = screen_manager.current_overlay
 	var join_name = join_screen.get_node("SafeArea/Root/FieldsColumn/PlayerNameEdit") as LineEdit
+	var join_server_id = join_screen.get_node("SafeArea/Root/FieldsColumn/ServerIdEdit") as LineEdit
+	var join_password = join_screen.get_node("SafeArea/Root/FieldsColumn/PasswordRow/PasswordEdit") as LineEdit
+	var password_eye = join_screen.get_node("SafeArea/Root/FieldsColumn/PasswordRow/PasswordVisibilityButton") as TextureButton
+	var join_button = join_screen.get_node("SafeArea/Root/JoinButtonMargin/JoinButton") as Button
+	var back_button = join_screen.get_node("SafeArea/Root/Header/HeaderMargin/HeaderRow/BackButton") as TextureButton
+	var find_match_button = join_screen.get_node("SafeArea/Root/PublicPanel/PublicMargin/PublicRows/FindMatchMargin/FindMatchButton") as Button
+	var status_label = join_screen.get_node("SafeArea/Root/PrivateJoinError") as Label
+	var join_events: Array = []
+	var back_events: Array = []
+	var find_match_events: Array = []
+	join_screen.private_join_requested.connect(func(_name, _server_id, _password): join_events.append(true))
+	join_screen.back_requested.connect(func(): back_events.append(true))
+	join_screen.find_match_requested.connect(func(): find_match_events.append(true))
 	join_name.text = "Guest"
-	screen_manager._show_private_entry_loader()
-	var loader = screen_manager.private_entry_loader
-	assert_eq(screen_manager.current_overlay, join_screen)
-	assert_false(loader.has_node("AdvanceTimer"), "Private entry loading has no fixed completion timer.")
-	assert_false(loader.has_signal("loader_finished"))
-	screen_manager._on_private_join_failed({"reason": "wrong_password"})
+	join_server_id.text = "2345ABCD"
+	join_password.text = "1234"
+	var original_socket = NetworkManager.ws
+	NetworkManager.ws = FakeSocket.new()
+	NetworkManager.is_conn_estab = true
+	NetworkManager.is_connecting = false
+	join_screen._on_join_pressed()
 
 	assert_eq(screen_manager.current_overlay, join_screen)
-	assert_eq(join_name.text, "Guest")
+	assert_eq(screen_manager.private_entry_loader, null, "Accepted Join never opens Play Loader.")
+	assert_true(join_screen.private_join_pending)
+	assert_true(status_label.visible)
+	assert_eq(status_label.text, "Connecting...")
+	assert_true(join_button.disabled)
+	assert_true(back_button.disabled)
+	assert_true(find_match_button.disabled)
+	assert_false(join_name.editable)
+	assert_false(join_server_id.editable)
+	assert_false(join_password.editable)
+	assert_true(password_eye.disabled)
+	assert_eq(join_events.size(), 1)
+
+	var password_was_secret: bool = join_password.secret
+	join_screen._on_join_pressed()
+	join_screen._on_back_pressed()
+	join_screen._on_find_match_pressed()
+	join_screen._toggle_password_visibility()
+	assert_eq(join_events.size(), 1, "Pending blocks repeated private Join requests.")
+	assert_eq(back_events.size(), 0, "Pending blocks Back navigation.")
+	assert_eq(find_match_events.size(), 0, "Pending blocks public matchmaking.")
+	assert_eq(join_password.secret, password_was_secret, "Pending blocks password visibility changes.")
+
+	var join_errors := {
+		"full": "Full room",
+		"playing": "Room playing",
+		"not_found": "Room not found",
+		"wrong_password": "Wrong password"
+	}
+	for reason in join_errors:
+		join_screen.show_private_pending()
+		screen_manager._on_private_join_failed({"reason": reason})
+		assert_eq(screen_manager.current_overlay, join_screen)
+		assert_eq(status_label.text, join_errors[reason])
+		assert_true(status_label.visible)
+		assert_false(join_screen.private_join_pending)
+		assert_false(join_button.disabled)
+		assert_false(back_button.disabled)
+		assert_false(find_match_button.disabled)
+		assert_true(join_name.editable)
+		assert_true(join_server_id.editable)
+		assert_true(join_password.editable)
+		assert_false(password_eye.disabled)
+		assert_eq(join_name.text, "Guest")
+		assert_eq(join_server_id.text, "2345ABCD")
+		assert_eq(join_password.text, "1234")
+
+	NetworkManager.disconnect_server()
+	NetworkManager.ws = original_socket
+
+func test_private_entry_terminal_routes_keep_join_direct_and_create_loading() -> void:
+	var screen_manager = MainScene.instantiate()
+	add_child_autofree(screen_manager)
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	screen_manager.show_join_screen()
+	var failed_join_screen = screen_manager.current_overlay
+	var failed_join_name = failed_join_screen.get_node("SafeArea/Root/FieldsColumn/PlayerNameEdit") as LineEdit
+	var failed_join_server_id = failed_join_screen.get_node("SafeArea/Root/FieldsColumn/ServerIdEdit") as LineEdit
+	var failed_join_password = failed_join_screen.get_node("SafeArea/Root/FieldsColumn/PasswordRow/PasswordEdit") as LineEdit
+	var failed_join_status = failed_join_screen.get_node("SafeArea/Root/PrivateJoinError") as Label
+	failed_join_name.text = "Guest"
+	failed_join_server_id.text = "2345ABCD"
+	failed_join_password.text = "1234"
+	var original_network_socket = NetworkManager.ws
+	var immediate_failure_socket = FakeSocket.new()
+	immediate_failure_socket.connect_result = ERR_CANT_CONNECT
+	NetworkManager.ws = immediate_failure_socket
+	NetworkManager.is_conn_estab = false
+	NetworkManager.is_connecting = false
+	failed_join_screen._on_join_pressed()
+
+	assert_false(failed_join_screen.private_join_pending, "A synchronous transport failure cannot reapply Connecting after restoration.")
+	assert_false(failed_join_status.visible)
+	assert_true(failed_join_name.editable)
+	assert_true(failed_join_server_id.editable)
+	assert_true(failed_join_password.editable)
+	assert_eq(failed_join_name.text, "Guest")
+	assert_eq(failed_join_server_id.text, "2345ABCD")
+	assert_eq(failed_join_password.text, "1234")
+	NetworkManager.ws = original_network_socket
+
+	failed_join_screen.show_private_pending()
+	screen_manager._on_private_entry_failed({"reason": "transport_closed", "entryMode": "private_join"})
+
+	assert_eq(screen_manager.current_overlay, failed_join_screen)
 	assert_eq(screen_manager.private_entry_loader, null)
-	assert_true((join_screen.get_node("SafeArea/Root/PrivateJoinError") as Label).visible)
+	assert_false(failed_join_status.visible, "Transport failure clears Connecting status.")
+	assert_true(failed_join_name.editable)
+	assert_true(failed_join_server_id.editable)
+	assert_true(failed_join_password.editable)
+	assert_eq(failed_join_name.text, "Guest")
+	assert_eq(failed_join_server_id.text, "2345ABCD")
+	assert_eq(failed_join_password.text, "1234")
+
+	failed_join_screen.show_private_pending()
+	screen_manager._on_room_joined(private_lobby_payload([
+		{"id": "guest", "displayName": "Guest", "connectionPhase": "connected"}
+	]))
+	assert_eq(screen_manager.private_entry_loader, null, "Successful Join goes directly to Private Lobby.")
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/PrivateLobbyScreen.tscn"))
 
 	screen_manager.show_private_server_screen()
 	var create_screen = screen_manager.current_overlay
 	var create_name = create_screen.get_node("SafeArea/Root/FieldsColumn/PlayerNameEdit") as LineEdit
 	create_name.text = "Host"
-	screen_manager._show_private_entry_loader()
+	var original_socket = NetworkManager.ws
+	NetworkManager.ws = FakeSocket.new()
+	NetworkManager.is_conn_estab = true
+	NetworkManager.is_connecting = false
+	create_screen._on_create_pressed()
+	assert_eq(screen_manager.current_overlay, create_screen)
+	assert_ne(screen_manager.private_entry_loader, null, "Accepted Create keeps the Play Loader flow.")
 	screen_manager._on_private_entry_failed({"reason": "transport_closed", "entryMode": "private_create"})
 
 	assert_eq(screen_manager.current_overlay, create_screen)
 	assert_eq(create_name.text, "Host")
 	assert_eq(screen_manager.private_entry_loader, null)
-
-	screen_manager._show_private_entry_loader()
-	screen_manager._on_room_joined(private_lobby_payload([
-		{"id": "host", "displayName": "Host", "connectionPhase": "connected"}
-	]))
-	assert_eq(screen_manager.private_entry_loader, null)
-	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/PrivateLobbyScreen.tscn"))
+	NetworkManager.disconnect_server()
+	NetworkManager.ws = original_socket

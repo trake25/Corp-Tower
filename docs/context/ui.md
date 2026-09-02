@@ -35,9 +35,11 @@ bots are already ready.
 
 Home opens Private Server creation and Join Server. Create sends the temporary
 name and optional numeric password; Join keeps Find Match as the public path and
-uses its other fields only for private entry. One private request keeps its source
-form beneath a blocking wait until authoritative room entry, rejection, or
-transport failure, so retry preserves the submitted form. Private Lobby renders
+uses its other fields only for private entry. Create keeps its source form beneath
+a blocking wait. Join instead disables its source form around an accepted request,
+shows connection status there, restores the same values after rejection or
+transport failure, and enters Private Lobby directly on authoritative success.
+Private Lobby renders
 server info, fixed seats, host-only kick, readiness, countdown, and grace-greyed
 identity; leave and kick reuse the shared confirmation modal.
 
