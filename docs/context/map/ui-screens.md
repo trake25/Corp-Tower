@@ -44,7 +44,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:81 | %QueueProgressBar · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:102 | %CancelButton · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn — 269 ln
+### src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn — 270 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -55,7 +55,8 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:146 | %JoinServerLabel · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:155 | %TutorialButton · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:200 | %CircleRow · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:232 | %SettingsButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:211 | %RankingsButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:233 | %SettingsButton · unique node | |
 
 ### src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn — 295 ln
 
@@ -72,7 +73,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:204 | %PrivateJoinError · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:276 | %FindMatchButton · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scenes/Main.tscn — 51 ln
+### src/Client/App/corp-tower/Cor/Scenes/Main.tscn — 53 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -86,7 +87,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn:1 | @file · file | MenuScreen scene composition and controller bindings |
 | src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn:15 | MenuScreen · scene root | |
-| src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn:51 | %CloseButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn:52 | %CloseButton · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn:86 | %LeaveGameButton · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn:144 | %MusicToggle · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn:179 | %SoundToggle · unique node | |
@@ -142,6 +143,17 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:229 | %ReadyGradientFill · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:242 | %ReadyLabel · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:257 | %LeaveLobbyModal · unique node | |
+
+### src/Client/App/corp-tower/Cor/Scenes/RankingsScreen.tscn — 260 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/RankingsScreen.tscn:1 | @file · file | RankingsScreen scene composition and controller bindings |
+| src/Client/App/corp-tower/Cor/Scenes/RankingsScreen.tscn:57 | RankingsScreen · scene root | |
+| src/Client/App/corp-tower/Cor/Scenes/RankingsScreen.tscn:98 | %BackButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/RankingsScreen.tscn:150 | %LeaderboardScroll · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/RankingsScreen.tscn:170 | %LeaderboardRows · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/RankingsScreen.tscn:176 | %YourRankCard · unique node | |
 
 ### src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn — 341 ln
 
@@ -205,7 +217,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:1 | @file · file | player backed out of matchmaking |
 | src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:3 | cancel_requested · signal | |
 
-### src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd — 18 ln
+### src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd — 20 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -213,7 +225,8 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:3 | join_server_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:4 | private_server_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:5 | tutorial_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:6 | settings_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:6 | rankings_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:7 | settings_requested · signal | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd — 113 ln
 
@@ -300,14 +313,21 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:12 | DISABLED_MODULATE · const | |
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:32 | apply_lobby_data | |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 598 ln
+### src/Client/App/corp-tower/Cor/Scripts/RankingsScreen.gd — 133 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/RankingsScreen.gd:1 | @file · file | RankingsScreen client behavior |
+| src/Client/App/corp-tower/Cor/Scripts/RankingsScreen.gd:3 | back_requested · signal | |
+
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 609 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:1 | @file · file | **debug button visibility set once here from `DEBUG_UI_ENABLED`** |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:17 | DEBUG_CONTEXT_LOBBY · const | |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:18 | DEBUG_CONTEXT_PLAY · const | |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:335 | start_tutorial | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:18 | DEBUG_CONTEXT_LOBBY · const | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:19 | DEBUG_CONTEXT_PLAY · const | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:346 | start_tutorial | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/SettingsScreen.gd — 56 ln
 
@@ -439,4 +459,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-35 files · 220 stable anchors.
+37 files · 228 stable anchors.

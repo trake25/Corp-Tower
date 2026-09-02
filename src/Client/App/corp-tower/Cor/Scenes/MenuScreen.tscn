@@ -13,6 +13,7 @@
 [ext_resource type="Theme" path="res://Cor/Themes/GameUITheme.tres" id="11_theme"]
 
 [node name="MenuScreen" type="Control"]
+z_index = 100
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -39,10 +40,10 @@ stretch_mode = 6
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 15.0
-offset_top = 69.0
-offset_right = -15.0
-offset_bottom = 127.0
+offset_left = 5.0
+offset_top = 10.0
+offset_right = -5.0
+offset_bottom = 68.0
 grow_horizontal = 2
 
 [node name="Row" type="HBoxContainer" parent="Header"]
@@ -74,14 +75,13 @@ layout_mode = 2
 [node name="Settings" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 10
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -191.0
-offset_top = 142.0
-offset_right = 191.0
-offset_bottom = 330.0
+anchor_right = 1.0
+offset_left = 7.0
+offset_top = 79.0
+offset_right = -10.0
+offset_bottom = 255.0
 grow_horizontal = 2
-theme_override_constants/separation = 22
+theme_override_constants/separation = 16
 
 [node name="LeaveGameButton" type="Button" parent="Settings"]
 unique_name_in_owner = true

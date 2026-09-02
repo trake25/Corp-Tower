@@ -1,0 +1,90 @@
+{
+  "schema_version": 2,
+  "task": "menu-overlay-layering-alignment-fix",
+  "manifest": ".agent-state/menu-overlay-layering-alignment-fix-v0.01.json",
+  "status": "passed",
+  "input_fingerprint": "9ab16436d7768515d84c9654a4957e49c3c1f51a695196cf13fdb3016b80f02f",
+  "lifecycle": {
+    "status": "closed"
+  },
+  "plan": {
+    "status": "archived",
+    "source_path": "plan/menu-overlay-layering-alignment-fix-v0.01.md",
+    "archive_path": "plan/done/menu-overlay-layering-alignment-fix-v0.01.md",
+    "diagnostic": null
+  },
+  "verified_publish_paths": [
+    "docs/context/map/ui-screens.md",
+    "docs/context/ui.md",
+    "src/Client/App/corp-tower/Cor/Scenes/Main.tscn",
+    "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+    "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd"
+  ],
+  "publish_paths": [
+    "docs/context/map/ui-screens.md",
+    "docs/context/ui.md",
+    "report/qa-receipts/qa-receipt-menu-overlay-layering-alignment-fix-v0.01.md",
+    "src/Client/App/corp-tower/Cor/Scenes/Main.tscn",
+    "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+    "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd"
+  ],
+  "maintenance": {
+    "handoff": null,
+    "items": []
+  },
+  "qa": {
+    "executed": "passed",
+    "permanent_coverage": "added",
+    "protected_contract": "Menu remains above ordinary Play surfaces and below shell recovery and Debug presentation while retained through recovery and superseded by terminal navigation.",
+    "temporary_verification": "used",
+    "qa_tooling": "unchanged"
+  },
+  "public_receipt": "report/qa-receipts/qa-receipt-menu-overlay-layering-alignment-fix-v0.01.md",
+  "steps": [
+    {
+      "name": "QA",
+      "command": [
+        "/usr/bin/node",
+        "scripts/qa-gate.mjs",
+        "--changed",
+        "docs/context/ui.md",
+        "src/Client/App/corp-tower/Cor/Scenes/Main.tscn",
+        "src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn",
+        "src/Client/App/corp-tower/Tests/Gut/test_screen_manager.gd"
+      ],
+      "status": 0,
+      "exit_code": 0,
+      "signal": null,
+      "summary": "exit 0; PASS — client smoke; client full GUT",
+      "classification": null,
+      "output": "PASS — client smoke; client full GUT"
+    },
+    {
+      "name": "file map",
+      "command": [
+        "/usr/bin/node",
+        "scripts/build-file-map.mjs"
+      ],
+      "status": 0,
+      "exit_code": 0,
+      "signal": null,
+      "summary": "exit 0",
+      "classification": null,
+      "output": "=== file map ===\n  backend.md    27 files   259 anchors  5776 tok\n  ui-tutorial.md   7 files    37 anchors  1576 tok\n  ui-debug.md    5 files    34 anchors  1264 tok\n  ui-hud.md     42 files   245 anchors  8498 tok\n  ui-screens.md  37 files   228 anchors  7571 tok\n  infra.md     125 files   490 anchors  15081 tok\n\nwritten"
+    },
+    {
+      "name": "game KB",
+      "command": [
+        "/usr/bin/node",
+        "scripts/validate-docs.mjs",
+        "--quiet"
+      ],
+      "status": 0,
+      "exit_code": 0,
+      "signal": null,
+      "summary": "exit 0",
+      "classification": null,
+      "output": "=== docs/context validation ===\ndocs: 13 + 6 map   prose: ~22357 / 26150 soft / 32700 hard tok   maps: ~40213 / 40800 soft / 51000 hard tok   links: 54   map: fresh\nwarnings: 6   status markers: 0   hard blockers: 0\n\nPASS"
+    }
+  ]
+}

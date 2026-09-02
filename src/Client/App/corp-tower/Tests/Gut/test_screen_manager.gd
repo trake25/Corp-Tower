@@ -2,6 +2,7 @@ extends GutTest
 
 const MainScene = preload("res://Cor/Scenes/Main.tscn")
 const MenuScreenScene = preload("res://Cor/Scenes/MenuScreen.tscn")
+const ImpactBarScene = preload("res://Cor/Scenes/ImpactBar.tscn")
 const UiPreferencesScript = preload("res://Cor/Scripts/UiPreferences.gd")
 
 var screen_manager
@@ -89,7 +90,114 @@ func test_hamburger_opens_menu_over_the_same_play_instance_and_close_restores_in
 	assert_false(screen_manager.gameplay_input_blocked)
 	assert_false(retained_play.external_overlay_input_blocked)
 
-func test_menu_switches_are_local_ui_placeholders() -> void:
+func test_menu_draws_above_play_surfaces_and_below_shell_presentation() -> void:
+	screen_manager._enter_play_instance()
+	await get_tree().process_frame
+	var play = screen_manager.play_instance
+	var impact_bar = ImpactBarScene.instantiate()
+	play.find_child("ImpactTrack", true, false).add_child(impact_bar)
+	await get_tree().process_frame
+	screen_manager._on_play_instance_menu_requested()
+	var menu = screen_manager.current_overlay
+	var impact_avatar = impact_bar.get_node("ImpactAvatarMarker")
+	var chat_popover = play.find_child("ChatPopover", true, false)
+	var level_summary = play.find_child("LevelSummaryOverlay", true, false)
+	var debug_layer = play.find_child("DebugLayer", true, false)
+
+	assert_gt(menu.get_effective_z_index(), impact_avatar.get_effective_z_index())
+	assert_gt(menu.get_effective_z_index(), chat_popover.get_effective_z_index())
+	assert_gt(menu.get_effective_z_index(), level_summary.get_effective_z_index())
+	assert_gt(screen_manager.debug_button.get_effective_z_index(), menu.get_effective_z_index())
+	assert_gt(screen_manager.auto_dismiss_modal.get_effective_z_index(), menu.get_effective_z_index())
+	assert_gt(debug_layer.layer, 0)
+	assert_true(screen_manager.debug_button.disabled)
+
+func test_menu_columns_stay_aligned_when_the_root_expands_wider() -> void:
+	var host := Control.new()
+	host.size = Vector2(412, 917)
+	add_child_autofree(host)
+	var menu = MenuScreenScene.instantiate()
+	host.add_child(menu)
+	await get_tree().process_frame
+	var leave_icon = menu.get_node("Settings/LeaveGameButton/Row/Icon")
+	var music_icon = menu.get_node("Settings/MusicRow/Icon")
+	var sound_icon = menu.get_node("Settings/SoundRow/Icon")
+	var leave_label = menu.get_node("Settings/LeaveGameButton/Row/Label")
+	var music_label = menu.get_node("Settings/MusicRow/Label")
+	var sound_label = menu.get_node("Settings/SoundRow/Label")
+	var title = menu.get_node("Header/Row/TitleLabel")
+	var narrow_icon_x: float = leave_icon.global_position.x
+	var narrow_toggle_x: float = menu.music_toggle.global_position.x
+
+	assert_almost_eq(leave_icon.global_position.x, music_icon.global_position.x, 0.5)
+	assert_almost_eq(music_icon.global_position.x, sound_icon.global_position.x, 0.5)
+	assert_almost_eq(leave_label.global_position.x, music_label.global_position.x, 0.5)
+	assert_almost_eq(music_label.global_position.x, sound_label.global_position.x, 0.5)
+	assert_almost_eq(menu.music_toggle.global_position.x, menu.sound_toggle.global_position.x, 0.5)
+	assert_almost_eq(title.get_global_rect().get_center().x, host.get_global_rect().get_center().x, 0.5)
+
+	host.size = Vector2(800, 917)
+	await get_tree().process_frame
+
+	assert_almost_eq(leave_icon.global_position.x, narrow_icon_x, 0.5)
+	assert_gt(menu.music_toggle.global_position.x, narrow_toggle_x)
+	assert_almost_eq(menu.music_toggle.global_position.x, menu.sound_toggle.global_position.x, 0.5)
+	assert_almost_eq(title.get_global_rect().get_center().x, host.get_global_rect().get_center().x, 0.5)
+
+func test_recovery_retains_menu_beneath_the_shell_modal() -> void:
+	screen_manager._enter_play_instance()
+	await get_tree().process_frame
+	screen_manager._on_play_instance_menu_requested()
+	var retained_menu = screen_manager.current_overlay
+
+	screen_manager._on_recovery_started()
+
+	assert_eq(screen_manager.current_overlay, retained_menu)
+	assert_true(retained_menu.visible)
+	assert_true(screen_manager.auto_dismiss_modal.visible)
+	assert_gt(
+		screen_manager.auto_dismiss_modal.get_effective_z_index(),
+		retained_menu.get_effective_z_index()
+	)
+
+	screen_manager._on_recovery_recovered()
+
+	assert_eq(screen_manager.current_overlay, retained_menu)
+	assert_true(retained_menu.visible)
+	assert_false(screen_manager.auto_dismiss_modal.visible)
+
+func test_menu_close_reveals_the_current_summary_without_resetting_play() -> void:
+	screen_manager._enter_play_instance()
+	await get_tree().process_frame
+	var retained_play = screen_manager.play_instance
+	var level_summary = retained_play.find_child("LevelSummaryOverlay", true, false)
+	level_summary.visible = true
+	screen_manager._on_play_instance_menu_requested()
+
+	assert_true(level_summary.visible)
+	screen_manager._on_menu_close_requested()
+	await get_tree().process_frame
+
+	assert_eq(screen_manager.play_instance, retained_play)
+	assert_true(level_summary.visible)
+
+func test_terminal_room_close_supersedes_menu_and_tears_down_play() -> void:
+	screen_manager._enter_play_instance()
+	await get_tree().process_frame
+	screen_manager._on_play_instance_menu_requested()
+	var menu = screen_manager.current_overlay
+
+	screen_manager._on_room_closed({
+		"reason": "failure_limit_reached",
+		"destination": "home"
+	})
+	await get_tree().process_frame
+
+	assert_false(is_instance_valid(menu))
+	assert_null(screen_manager.play_instance)
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
+
+func test_menu_switches_restore_persisted_ui_preferences() -> void:
 	var menu = MenuScreenScene.instantiate()
 	add_child_autofree(menu)
 	await get_tree().process_frame

@@ -37,6 +37,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="DebugButton" type="Button" parent="." unique_id=404599538]
+z_index = 200
 custom_minimum_size = Vector2(92, 42)
 layout_mode = 0
 offset_right = 92.0
@@ -47,4 +48,5 @@ text = "Debug"
 
 [node name="AutoDismissModal" parent="." instance=ExtResource("3_confirmmodal")]
 visible = false
+z_index = 300
 layout_mode = 1
