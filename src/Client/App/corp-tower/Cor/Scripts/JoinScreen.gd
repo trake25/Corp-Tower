@@ -35,10 +35,11 @@ func show_private_pending() -> void:
 	%PrivateJoinError.visible = true
 
 func clear_private_pending() -> void:
+	var was_pending := private_join_pending
 	private_join_pending = false
 	_set_private_join_interaction_enabled(true)
 
-	if %PrivateJoinError.text == "Connecting...":
+	if was_pending:
 		%PrivateJoinError.visible = false
 
 func show_private_error(message: String) -> void:

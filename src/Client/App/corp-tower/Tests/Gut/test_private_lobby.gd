@@ -460,6 +460,8 @@ func test_accepted_private_join_stays_on_form_until_rejection() -> void:
 		assert_eq(join_name.text, "Guest")
 		assert_eq(join_server_id.text, "2345ABCD")
 		assert_eq(join_password.text, "1234")
+	join_screen.clear_private_pending()
+	assert_true(status_label.visible, "Clearing inactive pending state preserves the current rejection presentation.")
 
 	NetworkManager.disconnect_server()
 	NetworkManager.ws = original_socket
