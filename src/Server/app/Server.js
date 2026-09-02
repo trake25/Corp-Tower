@@ -84,8 +84,11 @@ async function main() {
             console.log(`${player.id} connected${identity ? " (verified)" : ""}`);
 
             if (
-                !reconnectRequest.reconnectToken ||
-                (!player.room && !player.resumeUnavailable)
+                reconnectRequest.resumeOnly !== true &&
+                (
+                    !reconnectRequest.reconnectToken ||
+                    (!player.room && !player.resumeUnavailable)
+                )
             ) {
                 await lobbyManager.addPlayer(player);
             }

@@ -91,6 +91,9 @@ class GameEngine {
             players: this.room.players.map(player => ({
                 id: player.id,
                 isBot: Boolean(player.isBot),
+                presence: ["connected", "disconnected", "left"].includes(player.presence)
+                    ? player.presence
+                    : "connected",
                 score: player.score,
                 levelScore: player.levelScore,
                 levelImpactContribution: player.levelImpactContribution,
@@ -119,7 +122,7 @@ class GameEngine {
         });
     }
 
-    broadcastGameState() {
+    broadcastGameState(options = {}) {
         if (!this.room) {
             return;
         }
@@ -128,10 +131,11 @@ class GameEngine {
             0, Number(this.room.stateRevision) || 0
         ) + 1;
 
+        const includeTransientEvents = options.includeTransientEvents !== false;
         const gameState = this.buildGameState({
-            scoreEvents: this.consumeScoreEvents(),
-            quickChatEvents: this.consumeQuickChatEvents(),
-            powerEvents: this.consumePowerEvents()
+            scoreEvents: includeTransientEvents ? this.consumeScoreEvents() : [],
+            quickChatEvents: includeTransientEvents ? this.consumeQuickChatEvents() : [],
+            powerEvents: includeTransientEvents ? this.consumePowerEvents() : []
         });
 
         if (this.onRoomMessage) {
@@ -200,6 +204,7 @@ class GameEngine {
     }
 
     initializePlayerForRoom(player) {
+        player.presence = "connected";
         player.score = player.score || 0;
         player.levelScore = 0;
         player.levelImpactContribution = 0;

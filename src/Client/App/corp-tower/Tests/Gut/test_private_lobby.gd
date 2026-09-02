@@ -44,6 +44,7 @@ class FakeSocket:
 
 func after_each() -> void:
 	NetworkManager.disconnect_server()
+	NetworkManager.abandon_room_identity()
 	NetworkManager._clear_pending_private_entry()
 	NetworkManager._clear_private_lobby_tracking()
 	NetworkManager.player_id = ""
@@ -104,7 +105,7 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 	var full_payload := private_lobby_payload([
 		{"id": "host", "displayName": "Host", "avatarId": "avatar_0", "connectionPhase": "connected"},
 		{"id": "guest", "displayName": "Guest", "avatarId": "avatar_1", "connectionPhase": "connected"},
-		{"id": "grace", "displayName": "GracefulGuest", "avatarId": "avatar_2", "connectionPhase": "grace"}
+		{"id": "grace", "displayName": "GracefulGuest", "avatarId": "avatar_2", "connectionPhase": "grace", "presence": "disconnected"}
 	], ["host"], true)
 	screen.apply_lobby_data(full_payload)
 
@@ -112,9 +113,19 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 	var ready_label = screen.get_node("SafeArea/Root/ReadyButtonMargin/ReadyButton/ReadyLabel") as Label
 
 	assert_false(ready_button.disabled, "A three-seat private room enables Ready.")
-	assert_eq(grace_name.text, "Graceful..", "Private names use the shared ten-character display convention.")
-	assert_lt(grace_name.modulate.a, 1.0, "Only the server grace phase greys a disconnected name.")
+	assert_eq(grace_name.text.replace("\u0336", ""), "Graceful..", "Private names use the shared ten-character display convention.")
+	assert_true(grace_name.text.contains("\u0336"), "Disconnected private-lobby names are struck through.")
+	assert_eq(grace_name.get_theme_color("font_color"), Color("#d92d20"), "Disconnected private-lobby names use the explicit red state.")
 	assert_eq(ready_label.text, "Cancel (5s)", "The server start deadline drives the local countdown label.")
+
+	screen.apply_lobby_data(private_lobby_payload([
+		{"id": "host", "displayName": "Host", "presence": "connected"},
+		{"id": "guest", "displayName": "Guest", "presence": "connected"},
+		{"id": "grace", "displayName": "GracefulGuest", "presence": "connected"}
+	]))
+	assert_eq(grace_name.text, "Graceful..", "Reconnect restores the unadorned private-lobby name.")
+	assert_eq(grace_name.modulate, Color.WHITE)
+	assert_eq(grace_name.get_theme_color("font_color"), Color("#141418"))
 
 	var toast = screen.get_node("SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow/CopyServerIdButton/CopyToast") as Control
 	assert_eq((screen.get_node("SafeArea/Root/ServerInfoCard/CardMargin/Rows/ServerIdRow/Values/ServerIdValue") as Label).text, "2345ABCD")
@@ -262,9 +273,14 @@ func test_network_manager_keeps_private_entry_and_waits_for_server_lifecycle_des
 	network.send_reconnect_request()
 	var public_entry: Dictionary = socket.sent_messages[2]
 	assert_eq(public_entry.get("entryMode"), "public")
+	assert_false(bool(public_entry.get("resumeOnly", true)))
 	assert_false(public_entry.has("privateDisplayName"))
 	assert_false(public_entry.has("privateServerId"))
 	assert_false(public_entry.has("privatePassword"))
+
+	network.resume_only_request = true
+	network.send_reconnect_request()
+	assert_true(bool(socket.sent_messages[3].get("resumeOnly", false)))
 
 	network._set_private_entry("private_join", "Guest", "2345abcd", "1234")
 	network.player_id = "host"

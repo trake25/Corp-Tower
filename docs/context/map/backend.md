@@ -59,41 +59,41 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Game_Config.js:1 | GameConfig · const | |
 | src/Server/app/Game_Config.js:90 | towerStabilityMoodThreshold · stable | |
 
-### src/Server/app/Game_Engine.js — 1037 ln
+### src/Server/app/Game_Engine.js — 1042 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Server/app/Game_Engine.js:1 | @file · file | room facade; owns level lifecycle, timers, placement validation, Power |
 | src/Server/app/Game_Engine.js:9 | GameEngine · class | |
-| src/Server/app/Game_Engine.js:115 | buildGameStateSnapshot | |
-| src/Server/app/Game_Engine.js:122 | broadcastGameState | |
-| src/Server/app/Game_Engine.js:150 | createRoom | |
-| src/Server/app/Game_Engine.js:202 | initializePlayerForRoom | |
-| src/Server/app/Game_Engine.js:217 | removePlayerFromRoom | |
-| src/Server/app/Game_Engine.js:231 | hydrateRoom | |
-| src/Server/app/Game_Engine.js:344 | persistRoom | |
-| src/Server/app/Game_Engine.js:354 | recordLevelOutcome | |
-| src/Server/app/Game_Engine.js:368 | queueQuickChat | |
-| src/Server/app/Game_Engine.js:415 | clonePowerInventory | |
-| src/Server/app/Game_Engine.js:436 | tryCompleteSideQuest | |
-| src/Server/app/Game_Engine.js:446 | activatePower | |
-| src/Server/app/Game_Engine.js:480 | getPostLevelTransitionDelayMs | |
-| src/Server/app/Game_Engine.js:508 | startLevel | |
-| src/Server/app/Game_Engine.js:586 | clearTimers | |
-| src/Server/app/Game_Engine.js:598 | closeRoom | |
-| src/Server/app/Game_Engine.js:621 | requestRoomClose | |
-| src/Server/app/Game_Engine.js:636 | stopBots | |
-| src/Server/app/Game_Engine.js:670 | getTargetHeightForLevel | |
-| src/Server/app/Game_Engine.js:681 | getLevelTimeLimitMs | |
-| src/Server/app/Game_Engine.js:717 | getConfiguredStartLevel | |
-| src/Server/app/Game_Engine.js:721 | clampLevel | |
-| src/Server/app/Game_Engine.js:728 | restartAtConfiguredStartLevel | |
-| src/Server/app/Game_Engine.js:735 | restartAtLevel | |
-| src/Server/app/Game_Engine.js:815 | completeLevel | |
-| src/Server/app/Game_Engine.js:908 | failLevel | |
-| src/Server/app/Game_Engine.js:915 | nextLevel | |
+| src/Server/app/Game_Engine.js:118 | buildGameStateSnapshot | |
+| src/Server/app/Game_Engine.js:125 | broadcastGameState | |
+| src/Server/app/Game_Engine.js:154 | createRoom | |
+| src/Server/app/Game_Engine.js:206 | initializePlayerForRoom | |
+| src/Server/app/Game_Engine.js:222 | removePlayerFromRoom | |
+| src/Server/app/Game_Engine.js:236 | hydrateRoom | |
+| src/Server/app/Game_Engine.js:349 | persistRoom | |
+| src/Server/app/Game_Engine.js:359 | recordLevelOutcome | |
+| src/Server/app/Game_Engine.js:373 | queueQuickChat | |
+| src/Server/app/Game_Engine.js:420 | clonePowerInventory | |
+| src/Server/app/Game_Engine.js:441 | tryCompleteSideQuest | |
+| src/Server/app/Game_Engine.js:451 | activatePower | |
+| src/Server/app/Game_Engine.js:485 | getPostLevelTransitionDelayMs | |
+| src/Server/app/Game_Engine.js:513 | startLevel | |
+| src/Server/app/Game_Engine.js:591 | clearTimers | |
+| src/Server/app/Game_Engine.js:603 | closeRoom | |
+| src/Server/app/Game_Engine.js:626 | requestRoomClose | |
+| src/Server/app/Game_Engine.js:641 | stopBots | |
+| src/Server/app/Game_Engine.js:675 | getTargetHeightForLevel | |
+| src/Server/app/Game_Engine.js:686 | getLevelTimeLimitMs | |
+| src/Server/app/Game_Engine.js:722 | getConfiguredStartLevel | |
+| src/Server/app/Game_Engine.js:726 | clampLevel | |
+| src/Server/app/Game_Engine.js:733 | restartAtConfiguredStartLevel | |
+| src/Server/app/Game_Engine.js:740 | restartAtLevel | |
+| src/Server/app/Game_Engine.js:820 | completeLevel | |
+| src/Server/app/Game_Engine.js:913 | failLevel | |
+| src/Server/app/Game_Engine.js:920 | nextLevel | |
 
-### src/Server/app/Lobby_Manager.js — 2608 ln
+### src/Server/app/Lobby_Manager.js — 2768 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -101,20 +101,20 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Lobby_Manager.js:15 | LobbyManager · class | |
 | src/Server/app/Lobby_Manager.js:164 | isCurrentPlayerConnection | |
 | src/Server/app/Lobby_Manager.js:178 | createPlayer | |
-| src/Server/app/Lobby_Manager.js:254 | addPlayer | |
-| src/Server/app/Lobby_Manager.js:413 | removePlayer | |
-| src/Server/app/Lobby_Manager.js:874 | closeRoom | |
-| src/Server/app/Lobby_Manager.js:1011 | broadcastDebugConfig | |
-| src/Server/app/Lobby_Manager.js:1073 | updateDebugConfig | |
-| src/Server/app/Lobby_Manager.js:1332 | privateJoinReason | |
-| src/Server/app/Lobby_Manager.js:1493 | createRoom | |
-| src/Server/app/Lobby_Manager.js:1707 | toggleLobbyReady | |
-| src/Server/app/Lobby_Manager.js:1828 | leaveLobby | |
-| src/Server/app/Lobby_Manager.js:1963 | kickPrivatePlayer | |
-| src/Server/app/Lobby_Manager.js:2112 | createEngine | |
-| src/Server/app/Lobby_Manager.js:2183 | hydrateRoom | |
-| src/Server/app/Lobby_Manager.js:2444 | dispatchRoomAction | |
-| src/Server/app/Lobby_Manager.js:2471 | resyncState | |
+| src/Server/app/Lobby_Manager.js:259 | addPlayer | |
+| src/Server/app/Lobby_Manager.js:470 | removePlayer | |
+| src/Server/app/Lobby_Manager.js:991 | closeRoom | |
+| src/Server/app/Lobby_Manager.js:1128 | broadcastDebugConfig | |
+| src/Server/app/Lobby_Manager.js:1190 | updateDebugConfig | |
+| src/Server/app/Lobby_Manager.js:1449 | privateJoinReason | |
+| src/Server/app/Lobby_Manager.js:1610 | createRoom | |
+| src/Server/app/Lobby_Manager.js:1824 | toggleLobbyReady | |
+| src/Server/app/Lobby_Manager.js:1945 | leaveLobby | |
+| src/Server/app/Lobby_Manager.js:2089 | kickPrivatePlayer | |
+| src/Server/app/Lobby_Manager.js:2249 | createEngine | |
+| src/Server/app/Lobby_Manager.js:2320 | hydrateRoom | |
+| src/Server/app/Lobby_Manager.js:2588 | dispatchRoomAction | |
+| src/Server/app/Lobby_Manager.js:2615 | resyncState | |
 
 ### src/Server/app/Profile_Store.js — 169 ln
 
@@ -127,7 +127,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Profile_Store.js:47 | getProfile | |
 | src/Server/app/Profile_Store.js:117 | request | |
 
-### src/Server/app/Redis_State.js — 724 ln
+### src/Server/app/Redis_State.js — 731 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -137,41 +137,41 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/Redis_State.js:17 | REDIS_CONNECT_RETRY_DELAY_MS · const | |
 | src/Server/app/Redis_State.js:26 | sleep · fn | |
 | src/Server/app/Redis_State.js:30 | stripRuntimePlayer · fn | |
-| src/Server/app/Redis_State.js:117 | RedisState · class | |
-| src/Server/app/Redis_State.js:235 | getPodId | |
-| src/Server/app/Redis_State.js:239 | isPodActive | |
-| src/Server/app/Redis_State.js:251 | getReconnectTtlSeconds | |
-| src/Server/app/Redis_State.js:255 | nextPlayerId | |
-| src/Server/app/Redis_State.js:264 | nextRoomId | |
-| src/Server/app/Redis_State.js:272 | claimPrivateInvite | |
-| src/Server/app/Redis_State.js:295 | getPrivateInviteRoomId | |
-| src/Server/app/Redis_State.js:308 | deletePrivateInvite | |
-| src/Server/app/Redis_State.js:339 | recordDemoOutcome | |
-| src/Server/app/Redis_State.js:352 | getDemoStats | |
-| src/Server/app/Redis_State.js:374 | createReconnectToken | |
-| src/Server/app/Redis_State.js:378 | saveSession | |
-| src/Server/app/Redis_State.js:407 | getSession | |
-| src/Server/app/Redis_State.js:420 | isCurrentSessionConnection | |
-| src/Server/app/Redis_State.js:434 | markSessionDisconnected | |
-| src/Server/app/Redis_State.js:461 | clearSessionRoom | |
-| src/Server/app/Redis_State.js:477 | markRoomOpen | |
-| src/Server/app/Redis_State.js:486 | removeOpenRoom | |
-| src/Server/app/Redis_State.js:495 | claimOpenRoomId | |
-| src/Server/app/Redis_State.js:511 | withMatchmakingLock | |
-| src/Server/app/Redis_State.js:537 | saveRoom | |
-| src/Server/app/Redis_State.js:574 | claimRoomLease | |
-| src/Server/app/Redis_State.js:587 | getRoomLeaseOwner | |
-| src/Server/app/Redis_State.js:595 | getRoom | |
-| src/Server/app/Redis_State.js:608 | deleteRoom | |
-| src/Server/app/Redis_State.js:622 | publishRoom | |
-| src/Server/app/Redis_State.js:636 | subscribeToRoom | |
-| src/Server/app/Redis_State.js:646 | unsubscribeFromRoom | |
-| src/Server/app/Redis_State.js:654 | publishRoomAction | |
-| src/Server/app/Redis_State.js:668 | subscribeToRoomActions | |
-| src/Server/app/Redis_State.js:678 | unsubscribeFromRoomActions | |
-| src/Server/app/Redis_State.js:708 | subscribeToPlayerAssignments | |
+| src/Server/app/Redis_State.js:122 | RedisState · class | |
+| src/Server/app/Redis_State.js:240 | getPodId | |
+| src/Server/app/Redis_State.js:244 | isPodActive | |
+| src/Server/app/Redis_State.js:256 | getReconnectTtlSeconds | |
+| src/Server/app/Redis_State.js:260 | nextPlayerId | |
+| src/Server/app/Redis_State.js:269 | nextRoomId | |
+| src/Server/app/Redis_State.js:277 | claimPrivateInvite | |
+| src/Server/app/Redis_State.js:300 | getPrivateInviteRoomId | |
+| src/Server/app/Redis_State.js:313 | deletePrivateInvite | |
+| src/Server/app/Redis_State.js:344 | recordDemoOutcome | |
+| src/Server/app/Redis_State.js:357 | getDemoStats | |
+| src/Server/app/Redis_State.js:379 | createReconnectToken | |
+| src/Server/app/Redis_State.js:383 | saveSession | |
+| src/Server/app/Redis_State.js:412 | getSession | |
+| src/Server/app/Redis_State.js:425 | isCurrentSessionConnection | |
+| src/Server/app/Redis_State.js:439 | markSessionDisconnected | |
+| src/Server/app/Redis_State.js:466 | clearSessionRoom | |
+| src/Server/app/Redis_State.js:482 | markRoomOpen | |
+| src/Server/app/Redis_State.js:491 | removeOpenRoom | |
+| src/Server/app/Redis_State.js:500 | claimOpenRoomId | |
+| src/Server/app/Redis_State.js:516 | withMatchmakingLock | |
+| src/Server/app/Redis_State.js:542 | saveRoom | |
+| src/Server/app/Redis_State.js:581 | claimRoomLease | |
+| src/Server/app/Redis_State.js:594 | getRoomLeaseOwner | |
+| src/Server/app/Redis_State.js:602 | getRoom | |
+| src/Server/app/Redis_State.js:615 | deleteRoom | |
+| src/Server/app/Redis_State.js:629 | publishRoom | |
+| src/Server/app/Redis_State.js:643 | subscribeToRoom | |
+| src/Server/app/Redis_State.js:653 | unsubscribeFromRoom | |
+| src/Server/app/Redis_State.js:661 | publishRoomAction | |
+| src/Server/app/Redis_State.js:675 | subscribeToRoomActions | |
+| src/Server/app/Redis_State.js:685 | unsubscribeFromRoomActions | |
+| src/Server/app/Redis_State.js:715 | subscribeToPlayerAssignments | |
 
-### src/Server/app/Server.js — 225 ln
+### src/Server/app/Server.js — 228 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|

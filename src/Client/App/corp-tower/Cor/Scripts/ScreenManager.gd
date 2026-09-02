@@ -39,6 +39,7 @@ var debug_button_pointer_id := DRAG_POINTER_NONE
 var debug_button_drag_distance := 0.0
 var debug_context := DEBUG_CONTEXT_NONE
 var startup_handoff_complete := false
+var startup_resume_pending := false
 var gameplay_input_blocked := false
 
 func _ready() -> void:
@@ -52,6 +53,7 @@ func _ready() -> void:
 	NetworkManager.recovery_started.connect(_on_recovery_started)
 	NetworkManager.recovery_recovered.connect(_on_recovery_recovered)
 	NetworkManager.recovery_unavailable.connect(_on_recovery_unavailable)
+	NetworkManager.resume_only_failed.connect(_on_resume_only_failed)
 	auto_dismiss_modal.dismissed.connect(_on_auto_dismiss_modal_dismissed)
 	auto_dismiss_modal.confirmed.connect(_on_auto_dismiss_modal_dismissed)
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
@@ -78,10 +80,18 @@ func _show_initial_screen() -> void:
 		return
 
 	if await AuthManager.restore_session():
-		show_home_screen()
+		_begin_authenticated_startup()
 		return
 
 	show_sign_in_screen()
+
+func _begin_authenticated_startup() -> void:
+	if NetworkManager.has_saved_room_identity():
+		startup_resume_pending = true
+		NetworkManager.connect_server(false, false, true)
+		return
+
+	show_home_screen()
 
 func _on_status_changed(text: String) -> void:
 	update_debug_button_availability()
@@ -91,6 +101,8 @@ func _on_status_changed(text: String) -> void:
 		auto_dismiss_modal.open_disconnected()
 
 func _on_room_joined(data) -> void:
+	startup_resume_pending = false
+
 	if bool(data.get("matchStarted", true)):
 		_enter_play_instance()
 	elif EndpointConfig.DEMO_MODE_ENABLED:
@@ -138,6 +150,7 @@ func _on_room_closed(data) -> void:
 		return
 
 	find_match_active = false
+	startup_resume_pending = false
 	resume_unavailable_active = false
 	auto_dismiss_modal.dismiss_recovery()
 	var reason := str(data.get("reason", ""))
@@ -163,11 +176,20 @@ func _on_game_left(data) -> void:
 		return
 
 	find_match_active = false
+	startup_resume_pending = false
 	resume_unavailable_active = false
 	auto_dismiss_modal.dismiss_recovery()
 	_clear_overlay()
 	NetworkManager.disconnect_server()
 	_teardown_play_instance()
+	show_home_screen()
+
+func _on_resume_only_failed(_data) -> void:
+	if not startup_resume_pending:
+		return
+
+	startup_resume_pending = false
+	NetworkManager.disconnect_server()
 	show_home_screen()
 
 func _on_auto_dismiss_modal_dismissed() -> void:
@@ -285,6 +307,8 @@ func show_account_screen() -> void:
 	_set_debug_context(DEBUG_CONTEXT_NONE)
 
 func _on_settings_sign_out_requested() -> void:
+	NetworkManager.disconnect_server()
+	NetworkManager.abandon_room_identity()
 	AuthManager.sign_out()
 	show_sign_in_screen()
 
@@ -412,6 +436,7 @@ func show_find_match_screen() -> void:
 	find_match_active = true
 
 func _on_find_match_requested() -> void:
+	NetworkManager.abandon_room_identity()
 	NetworkManager.connect_server()
 	show_find_match_screen()
 
@@ -441,6 +466,7 @@ func _on_private_leave_lobby_requested() -> void:
 
 func _on_leave_lobby_requested() -> void:
 	NetworkManager.leave_lobby()
+	NetworkManager.abandon_room_identity()
 	NetworkManager.disconnect_server()
 	_teardown_play_instance()
 	show_home_screen()

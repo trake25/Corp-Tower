@@ -240,7 +240,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:50 | clear_private_pending | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:58 | show_private_error | |
 
-### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 502 ln
+### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 506 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -248,10 +248,10 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:29 | tutorial_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:30 | tutorial_exited · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:31 | menu_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:261 | toggle_debug_overlay | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:264 | set_debug_context | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:268 | set_external_overlay_input_blocked | |
-| src/Client/App/corp-tower/Cor/Scripts/Main.gd:340 | start_tutorial | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:262 | toggle_debug_overlay | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:265 | set_debug_context | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:269 | set_external_overlay_input_blocked | |
+| src/Client/App/corp-tower/Cor/Scripts/Main.gd:343 | start_tutorial | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd — 51 ln
 
@@ -275,15 +275,16 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/PlayLoaderScreen.gd:1 | @file · file | splash done, advance to play |
 
-### src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd — 59 ln
+### src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd — 93 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:1 | @file · file | name, score, seat colour, avatar for one rail row |
-| src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:25 | set_entry | |
-| src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:48 | load_avatar_texture · static func | |
+| src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:7 | STRIKE_MARK · const | |
+| src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:28 | set_entry | |
+| src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd:82 | load_avatar_texture · static func | |
 
-### src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd — 190 ln
+### src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd — 211 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -292,7 +293,8 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:7 | WAITING_NAME · const | |
 | src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:8 | SEAT_COUNT · const | |
 | src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:10 | DISABLED_MODULATE · const | |
-| src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:42 | apply_lobby_data | |
+| src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:14 | STRIKE_MARK · const | |
+| src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:44 | apply_lobby_data | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd — 60 ln
 
@@ -320,14 +322,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/RankingsScreen.gd:1 | @file · file | RankingsScreen client behavior |
 | src/Client/App/corp-tower/Cor/Scripts/RankingsScreen.gd:3 | back_requested · signal | |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 609 ln
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 635 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:1 | @file · file | **debug button visibility set once here from `DEBUG_UI_ENABLED`** |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:18 | DEBUG_CONTEXT_LOBBY · const | |
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:19 | DEBUG_CONTEXT_PLAY · const | |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:346 | start_tutorial | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:370 | start_tutorial | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/SettingsScreen.gd — 56 ln
 
@@ -422,41 +424,44 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:11 | AUTH_FACEBOOK_APP_ID · const | |
 | src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd:12 | AUTH_FACEBOOK_CLIENT_TOKEN · const | |
 
-### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 764 ln
+### src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd — 799 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:1 | @file · file | WebSocket lifecycle, reconnect, message dispatch, and client signals |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:61 | status_changed · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:62 | room_joined · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:63 | match_started · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:64 | lobby_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:65 | room_closed · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:66 | game_left · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:67 | game_state_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:68 | client_status · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:69 | debug_config_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:70 | latency_rtt_updated · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:71 | recovery_started · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:72 | recovery_recovered · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:73 | recovery_unavailable · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:74 | private_join_failed · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:75 | private_entry_failed · signal | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:77 | connect_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:116 | disconnect_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:138 | create_private_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:141 | join_private_server | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:212 | kick_private_player | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:221 | place_block | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:236 | send_ready | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:242 | leave_lobby | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:248 | leave_game | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:358 | is_recovering | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:497 | send_quick_chat | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:506 | activate_power | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:707 | update_config | |
-| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:719 | set_latency_probe_enabled | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:62 | status_changed · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:63 | room_joined · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:64 | match_started · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:65 | lobby_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:66 | room_closed · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:67 | game_left · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:68 | game_state_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:69 | client_status · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:70 | debug_config_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:71 | latency_rtt_updated · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:72 | recovery_started · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:73 | recovery_recovered · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:74 | recovery_unavailable · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:75 | private_join_failed · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:76 | private_entry_failed · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:77 | resume_only_failed · signal | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:79 | connect_server | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:128 | disconnect_server | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:151 | create_private_server | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:154 | join_private_server | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:226 | kick_private_player | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:235 | place_block | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:250 | send_ready | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:256 | leave_lobby | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:262 | leave_game | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:283 | has_saved_room_identity | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:382 | is_recovering | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:402 | abandon_room_identity | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:526 | send_quick_chat | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:535 | activate_power | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:742 | update_config | |
+| src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd:754 | set_latency_probe_enabled | |
 
 ---
 
-37 files · 228 stable anchors.
+37 files · 233 stable anchors.

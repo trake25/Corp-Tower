@@ -9,6 +9,7 @@ const SCORE_POPUP_MAX_FADE_SECONDS := 2.0
 const SCORE_POPUP_MIN_HOLD_SECONDS := 0.05
 const FINISH_SCORE_POPUP_MIN_HOLD_RATIO := 0.08
 const POWER_TOAST_CENTER_Y_RATIO := 0.793
+const PLAYER_LEFT_NOTICE_SECONDS := 3.0
 const POPUP_EVENT_TYPES := {
 	"placement": true,
 	"reinforce": true,
@@ -22,6 +23,8 @@ var match_state
 var tuning
 var score_popup_layer: Control
 var seen_score_event_ids: Dictionary = {}
+var known_player_presence: Dictionary = {}
+var presence_snapshot_initialized := false
 
 func bind_nodes(binder) -> void:
 	score_popup_layer = binder.require_node("ScorePopupLayer") as Control
@@ -66,6 +69,44 @@ func process_score_events(raw_events: Variant, players: Array) -> float:
 
 	return max_popup_duration_seconds
 
+func process_player_presence(players: Array, is_snapshot: bool) -> void:
+	var next_presence: Dictionary = {}
+
+	for player_value in players:
+		if typeof(player_value) != TYPE_DICTIONARY:
+			continue
+
+		var player: Dictionary = player_value
+		var player_id := str(player.get("id", ""))
+		var presence := str(player.get("presence", "connected"))
+
+		if player_id == "":
+			continue
+
+		if (
+			presence_snapshot_initialized
+			and not is_snapshot
+			and known_player_presence.has(player_id)
+			and str(known_player_presence[player_id]) != "left"
+			and presence == "left"
+		):
+			show_player_left_notice(players_ctx.rail_name(player_id))
+
+		next_presence[player_id] = presence
+
+	known_player_presence = next_presence
+	presence_snapshot_initialized = true
+
+func reset_presence_tracking() -> void:
+	known_player_presence.clear()
+	presence_snapshot_initialized = false
+
+func show_player_left_notice(display_name: String) -> void:
+	show_score_event_popup({
+		"type": "player_left",
+		"label": display_name + " left the game"
+	}, [], PLAYER_LEFT_NOTICE_SECONDS)
+
 func show_score_event_popup(
 	event: Dictionary,
 	players: Array,
@@ -82,11 +123,13 @@ func show_score_event_popup(
 
 	var text_color: Color = get_score_event_color(event)
 	var is_emphasis: bool = is_emphasis_score_event(event_type)
-	var is_glass_toast: bool = event_type == "power_activated" or event_type == "quick_chat"
+	var is_glass_toast: bool = event_type in ["power_activated", "quick_chat", "player_left"]
 	var popup_size: Vector2 = get_score_popup_size(event_type)
 	var popup: PanelContainer = PanelContainer.new()
 
-	popup.name = "PowerToast" if event_type == "power_activated" else "ScorePopup"
+	popup.name = "PlayerLeftToast" if event_type == "player_left" else (
+		"PowerToast" if event_type == "power_activated" else "ScorePopup"
+	)
 	popup.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	popup.z_index = 20
 	popup.custom_minimum_size = popup_size
@@ -220,7 +263,7 @@ func get_score_event_color(event: Dictionary) -> Color:
 	var event_type: String = str(event.get("type", ""))
 	var player_id: String = str(event.get("playerId", ""))
 
-	if event_type == "power_activated" or event_type == "quick_chat":
+	if event_type in ["power_activated", "quick_chat", "player_left"]:
 		return Color(0.08, 0.08, 0.09, 1.0)
 	if event_type == "critical_save":
 		return Color(1.0, 0.78, 0.22, 1.0)
@@ -245,6 +288,9 @@ func get_score_popup_size(event_type: String) -> Vector2:
 	if event_type == "quick_chat":
 		return Vector2(218, 56)
 
+	if event_type == "player_left":
+		return Vector2(300, 56)
+
 	if event_type == "critical_save":
 		return Vector2(220, 48)
 
@@ -264,7 +310,7 @@ func make_score_popup_style(
 	is_emphasis: bool,
 	event_type: String = ""
 ) -> StyleBoxFlat:
-	if event_type == "power_activated" or event_type == "quick_chat":
+	if event_type in ["power_activated", "quick_chat", "player_left"]:
 		return UiStylesScript.glass_panel(18)
 
 	var style: StyleBoxFlat = StyleBoxFlat.new()
@@ -290,6 +336,9 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 
 	if event_type == "power_activated":
 		return Vector2(layer_size.x * 0.5, layer_size.y * POWER_TOAST_CENTER_Y_RATIO)
+
+	if event_type == "player_left":
+		return Vector2(layer_size.x * 0.5, layer_size.y * 0.52)
 
 	var player_id: String = str(event.get("playerId", ""))
 	var lane_count: int = max(1, players_ctx.order.size())

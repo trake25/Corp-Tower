@@ -28,6 +28,10 @@ function sleep(ms) {
 }
 
 function stripRuntimePlayer(player) {
+    const presence = ["connected", "disconnected", "left"].includes(player.presence)
+        ? player.presence
+        : "connected";
+
     return {
         id: player.id,
         sessionId: player.sessionId || null,
@@ -38,6 +42,7 @@ function stripRuntimePlayer(player) {
         privateLobbyConnectionPhase: player.privateLobbyConnectionPhase || "connected",
         privateLobbyGraceAt: player.privateLobbyGraceAt || 0,
         privateLobbyExpiresAt: player.privateLobbyExpiresAt || 0,
+        presence,
         isBot: Boolean(player.isBot),
         score: player.score || 0,
         levelScore: player.levelScore || 0,
@@ -552,7 +557,9 @@ class RedisState {
 
         await Promise.all(
             payload.players
-                .filter(player => !player.isBot && player.sessionId)
+                .filter(player => {
+                    return !player.isBot && player.sessionId && player.presence !== "left";
+                })
                 .map(async player => {
                     const existing = await this.getSession(player.sessionId);
 

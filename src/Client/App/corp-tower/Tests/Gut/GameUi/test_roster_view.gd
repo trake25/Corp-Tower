@@ -30,6 +30,38 @@ func test_rail_records_seat_indexes() -> void:
 	assert_eq(int(harness.main.players_ctx.seat_index["P1"]), 0, "The first payload player should sit in seat 0.")
 	assert_eq(int(harness.main.players_ctx.seat_index["P3"]), 2, "The third payload player should sit in seat 2.")
 
+func test_rail_renders_and_restores_authoritative_presence_states() -> void:
+	harness.main.players_ctx.roster = [
+		{"id": "P1", "displayName": "Connected", "avatarId": "avatar_0"},
+		{"id": "P2", "displayName": "Dropped", "avatarId": "avatar_1"},
+		{"id": "P3", "displayName": "Departed", "avatarId": "avatar_2"}
+	]
+	roster().update_score_lines([
+		{"id": "P1", "score": 10, "levelScore": 0, "presence": "connected"},
+		{"id": "P2", "score": 8, "levelScore": 0, "presence": "disconnected"},
+		{"id": "P3", "score": 6, "levelScore": 0, "presence": "left"}
+	])
+
+	var connected = roster().rail_entry("P1")
+	var dropped = roster().rail_entry("P2")
+	var departed = roster().rail_entry("P3")
+	assert_eq((connected.get_node("%NameLabel") as Label).text, "Connected")
+	assert_true((dropped.get_node("%NameLabel") as Label).text.contains("\u0336"))
+	assert_eq((dropped.get_node("%NameLabel") as Label).get_theme_color("font_color"), Color("#d92d20"))
+	assert_eq((dropped.get_node("%AvatarTexture") as TextureRect).modulate, Color("#d92d20"))
+	assert_eq((departed.get_node("%ScoreLabel") as Label).text, "LEFT")
+	assert_false((departed.get_node("%NameLabel") as Label).text.contains("\u0336"))
+	assert_ne((departed.get_node("%AvatarTexture") as TextureRect).modulate, Color("#d92d20"))
+
+	roster().update_score_lines([
+		{"id": "P1", "score": 10, "levelScore": 0, "presence": "connected"},
+		{"id": "P2", "score": 8, "levelScore": 0, "presence": "connected"},
+		{"id": "P3", "score": 6, "levelScore": 0, "presence": "connected"}
+	])
+	assert_eq((dropped.get_node("%NameLabel") as Label).text, "Dropped")
+	assert_eq((dropped.get_node("%AvatarTexture") as TextureRect).modulate, Color.WHITE)
+	assert_eq((departed.get_node("%ScoreLabel") as Label).text, "6")
+
 func test_impact_bars_follow_status_membership() -> void:
 	roster().update_impact_status_ui({
 		"requiredBandScore": 40,

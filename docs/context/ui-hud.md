@@ -47,7 +47,10 @@ roots; runtime surfaces may expand. Popovers, score events, and summaries draw
 above Impact progress.
 
 The shared inventory bar exposes the communal pile and next draw. Player rails
-follow authoritative roster membership. Impact bars show each player's progress
+follow authoritative roster membership and presence: disconnected players use a
+red avatar and struck red name, while retained leavers use a distinct persistent
+LEFT state. A live transition to left shows one transient notice; initial and
+recovery snapshots only synchronize it. Impact bars show each player's progress
 only when the server supplies status. Quest presentation has active and completed
 room-wide states.
 

@@ -505,11 +505,22 @@ test("a private disconnect reserves its seat, enters grace, and reconnect restor
     await lobby.toggleLobbyReady(host);
     await lobby.toggleLobbyReady(firstGuest.player);
     await lobby.toggleLobbyReady(secondGuest.player);
+    const disconnectedUpdateCount = messagesOfType(firstGuest.ws, "lobby_update").length;
     await lobby.removePlayer(firstGuest.player);
 
     const reservedPlayer = room.players.find(player => player.id === firstGuest.player.id);
     assert.equal(room.players.length, 3);
     assert.equal(reservedPlayer.privateLobbyConnectionPhase, "recovering");
+    assert.equal(
+        messagesOfType(firstGuest.ws, "lobby_update").length,
+        disconnectedUpdateCount,
+        "the disconnected socket does not receive its own presence update"
+    );
+    assert.equal(
+        messagesOfType(host.ws, "lobby_update").at(-1).roster
+            .find(player => player.id === firstGuest.player.id).presence,
+        "disconnected"
+    );
     assert.equal(room.readyPlayerIds.has(firstGuest.player.id), false);
     assert.equal(room.privateStartDeadlineAt, 0);
 
@@ -522,7 +533,8 @@ test("a private disconnect reserves its seat, enters grace, and reconnect restor
     const resumed = await lobby.createPlayer(reconnectWs, {
         playerId: firstGuest.player.id,
         reconnectToken: firstGuest.player.sessionId,
-        profileId: "reconnect-one"
+        profileId: "reconnect-one",
+        resumeOnly: true
     });
 
     assert.equal(resumed.room, room);
@@ -530,7 +542,12 @@ test("a private disconnect reserves its seat, enters grace, and reconnect restor
     assert.equal(room.readyPlayerIds.has(reservedPlayer.id), false);
     assert.equal(lobby.privateLobbyGraceTimers.has(`${room.id}:${reservedPlayer.id}`), false);
     assert.equal(lobby.privateLobbyExpiryTimers.has(`${room.id}:${reservedPlayer.id}`), false);
-    assert.equal(messagesOfType(reconnectWs, "room_resumed").at(-1).roomMode, "private");
+    const resumedMessage = messagesOfType(reconnectWs, "room_resumed").at(-1);
+    assert.equal(resumedMessage.roomMode, "private");
+    assert.equal(
+        resumedMessage.roster.find(player => player.id === firstGuest.player.id).presence,
+        "connected"
+    );
 });
 
 test("private guest and host expiry persist their authoritative shell destinations", async () => {

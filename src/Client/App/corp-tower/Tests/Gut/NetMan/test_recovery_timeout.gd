@@ -2,6 +2,23 @@ extends GutTest
 
 const NetworkManagerScript = preload("res://Sys/NetMan/NetworkManager.gd")
 
+class FakeSocket:
+	extends RefCounted
+
+	var sent_messages: Array = []
+	var ready_state := WebSocketPeer.STATE_OPEN
+
+	func send_text(raw: String) -> Error:
+		sent_messages.append(JSON.parse_string(raw))
+		return OK
+
+	func get_ready_state() -> int:
+		return ready_state
+
+	func close() -> Error:
+		ready_state = WebSocketPeer.STATE_CLOSING
+		return OK
+
 func test_presentation_states_do_not_start_stale_stream_recovery() -> void:
 	var last_game_state_msec := 1000
 	var now_msec := last_game_state_msec + NetworkManagerScript.GAME_STATE_STALE_TIMEOUT_MS
@@ -69,6 +86,35 @@ func test_manual_disconnect_releases_connection_flags_for_a_new_match() -> void:
 	assert_false(network.is_connecting, "A cancelled connection must not keep matchmaking in its spinner.")
 	assert_eq(network.last_state_revision, -1, "A new match must not inherit the previous room revision.")
 	assert_eq(network.last_game_state_msec, -1, "A new match must not inherit the previous room liveness clock.")
+
+func test_private_lobby_foreground_does_not_enter_play_resync() -> void:
+	var network = NetworkManagerScript.new()
+	var socket = FakeSocket.new()
+	network.ws = socket
+	network.is_conn_estab = true
+	network.private_lobby_active = true
+	network.match_active = false
+
+	network._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
+	network._notification(NOTIFICATION_APPLICATION_FOCUS_IN)
+
+	assert_eq(network.recovery_state, "healthy")
+	assert_true(socket.sent_messages.is_empty(), "Private-lobby foregrounding never sends Play resync_state.")
+	network.free()
+
+func test_resume_only_transport_exhaustion_is_bounded_and_reported() -> void:
+	var network = NetworkManagerScript.new()
+	var failures: Array = []
+	network.resume_only_failed.connect(func(data): failures.append(data))
+	network.resume_only_request = true
+	network.auto_reconnect_attempts = NetworkManagerScript.AUTO_RECONNECT_MAX_ATTEMPTS
+
+	network.schedule_auto_reconnect()
+
+	assert_false(network.resume_only_request)
+	assert_eq(failures, [{"reason": "reconnect_failed"}])
+	assert_lt(network.auto_reconnect_delay_remaining, 0.0)
+	network.free()
 
 func test_game_left_clears_resumable_identity_before_shell_teardown() -> void:
 	var network = NetworkManagerScript.new()

@@ -178,6 +178,7 @@ class LobbyManager {
     async createPlayer(ws, reconnectRequest = {}, identity = null) {
         const identityFields = this.resolveIdentityFields(reconnectRequest, identity);
         const privateEntry = this.privateEntryFor(reconnectRequest);
+        const resumeOnly = reconnectRequest.resumeOnly === true;
         const existingSession =
             await this.stateStore.getSession(reconnectRequest.reconnectToken);
 
@@ -220,7 +221,7 @@ class LobbyManager {
                 return player;
             }
 
-            await this.resumePlayer(player, existingSession.roomId);
+            await this.resumePlayer(player, existingSession.roomId, { resumeOnly });
             return player;
         }
 
@@ -247,6 +248,10 @@ class LobbyManager {
             connectionId: player.connectionId,
             connected: true
         });
+
+        if (resumeOnly) {
+            await this.reportResumeUnavailable(player, "room_unavailable", "home");
+        }
 
         return player;
     }
@@ -282,9 +287,15 @@ class LobbyManager {
         });
     }
 
-    async resumePlayer(player, roomId) {
+    async resumePlayer(player, roomId, options = {}) {
+        const resumeOnly = options.resumeOnly === true;
+
         if (!roomId) {
-            await this.addPlayer(player);
+            if (resumeOnly) {
+                await this.reportResumeUnavailable(player, "room_unavailable", "home");
+            } else {
+                await this.addPlayer(player);
+            }
             return;
         }
 
@@ -304,7 +315,11 @@ class LobbyManager {
         }
 
         if (!room) {
-            await this.reportResumeUnavailable(player, "reconnect_ttl_expired");
+            await this.reportResumeUnavailable(
+                player,
+                "reconnect_ttl_expired",
+                resumeOnly ? "home" : null
+            );
             return;
         }
 
@@ -312,7 +327,34 @@ class LobbyManager {
             room.players.find(candidate => candidate.id === player.id);
 
         if (!roomPlayer) {
-            await this.reportResumeUnavailable(player, "room_unavailable");
+            await this.reportResumeUnavailable(
+                player,
+                "room_unavailable",
+                resumeOnly ? "home" : null
+            );
+            return;
+        }
+
+        if (room.matchStarted && roomPlayer.presence === "left") {
+            await this.reportResumeUnavailable(player, "player_left_game", "home");
+            return;
+        }
+
+        if (resumeOnly && !room.matchStarted && !this.isPrivateRoom(room)) {
+            if (this.isRoomOwner(room)) {
+                await this.evictLobbyPlayer(room, roomPlayer, "player_left_lobby");
+            } else {
+                roomPlayer.ws = null;
+                await this.stateStore.publishRoomAction(room.id, {
+                    playerId: player.id,
+                    action: {
+                        type: "leave_lobby",
+                        connectionId: player.connectionId
+                    }
+                });
+            }
+
+            await this.reportResumeUnavailable(player, "room_unavailable", "home");
             return;
         }
 
@@ -336,8 +378,23 @@ class LobbyManager {
                     }
                 });
             }
-        } else {
+        } else if (room.matchStarted) {
             this.cancelRoomReconnectExpiry(room.id);
+
+            if (this.isRoomOwner(room)) {
+                await this.setStartedRoomPresence(
+                    room, roomPlayer, "connected", player.connectionId
+                );
+            } else {
+                await this.stateStore.publishRoomAction(room.id, {
+                    playerId: player.id,
+                    action: {
+                        type: "game_reconnect",
+                        connectionId: player.connectionId
+                    }
+                });
+                roomPlayer.presence = "connected";
+            }
         }
 
         await this.stateStore.saveSession({
@@ -445,12 +502,20 @@ class LobbyManager {
                 roomPlayer.ws = null;
             }
 
-            await this.stateStore.saveRoom(
-                player.room,
-                player.room.ownerPodId === this.stateStore.getPodId()
-            );
-
-            this.scheduleRoomReconnectExpiry(player.room);
+            if (this.isRoomOwner(player.room)) {
+                await this.setStartedRoomPresence(
+                    player.room, roomPlayer, "disconnected", player.connectionId
+                );
+            } else if (roomPlayer) {
+                roomPlayer.presence = "disconnected";
+                await this.stateStore.publishRoomAction(player.room.id, {
+                    playerId: player.id,
+                    action: {
+                        type: "game_disconnect",
+                        connectionId: player.connectionId
+                    }
+                });
+            }
         }
 
         this.resetBotCounterIfIdle();
@@ -498,10 +563,13 @@ class LobbyManager {
             return;
         }
 
-        const hasConnectedRealPlayer =
-            room.players.some(roomPlayer => {
-                return this.isConnectedRealPlayer(roomPlayer);
-            });
+        const hasConnectedRealPlayer = room.players.some(roomPlayer => {
+            if (room.matchStarted) {
+                return !roomPlayer.isBot && roomPlayer.presence === "connected";
+            }
+
+            return this.isConnectedRealPlayer(roomPlayer);
+        });
 
         if (hasConnectedRealPlayer) {
             return;
@@ -844,6 +912,55 @@ class LobbyManager {
         this.cancelPrivateStartCountdown(room);
         await this.stateStore.saveRoom(room, true);
         await this.broadcastLobbyUpdate(room);
+    }
+
+    async setStartedRoomPresence(room, player, presence, connectionId = null) {
+        if (
+            !room?.matchStarted ||
+            !player ||
+            player.isBot ||
+            !["connected", "disconnected"].includes(presence) ||
+            player.presence === "left"
+        ) {
+            return false;
+        }
+
+        if (
+            presence === "disconnected" &&
+            connectionId &&
+            player.connectionId &&
+            player.connectionId !== connectionId
+        ) {
+            return false;
+        }
+
+        const changed = player.presence !== presence;
+
+        if (presence === "connected" && connectionId) {
+            player.connectionId = connectionId;
+        }
+
+        player.presence = presence;
+
+        if (presence === "disconnected") {
+            player.ws = null;
+        }
+
+        if (changed) {
+            room.engine.broadcastGameState({ includeTransientEvents: false });
+        }
+
+        await this.stateStore.saveRoom(room, true);
+
+        if (
+            !room.players.some(candidate => {
+                return !candidate.isBot && candidate.presence === "connected";
+            })
+        ) {
+            this.scheduleRoomReconnectExpiry(room);
+        }
+
+        return true;
     }
 
     resetParticipantState(player) {
@@ -1888,6 +2005,19 @@ class LobbyManager {
             destination: "home"
         };
 
+        if (
+            connectedPlayer &&
+            connectedPlayer.connectionId === targetConnectionId
+        ) {
+            this.connectedPlayers.delete(player.id);
+            connectedPlayer.ws = null;
+            connectedPlayer.presence = "left";
+        }
+        player.ws = null;
+        player.presence = "left";
+
+        room.engine.broadcastGameState({ includeTransientEvents: false });
+        await this.stateStore.saveRoom(room, true);
         await Promise.resolve(
             this.stateStore.clearSessionRoom
                 ? this.stateStore.clearSessionRoom(
@@ -1897,16 +2027,12 @@ class LobbyManager {
         );
 
         if (
-            connectedPlayer &&
-            connectedPlayer.connectionId === targetConnectionId
+            !room.players.some(candidate => {
+                return !candidate.isBot && candidate.presence === "connected";
+            })
         ) {
-            this.connectedPlayers.delete(player.id);
-            connectedPlayer.ws = null;
+            this.scheduleRoomReconnectExpiry(room);
         }
-        player.ws = null;
-
-        await this.stateStore.saveRoom(room, true);
-        room.engine.broadcastGameState();
 
         this.sendPlayer({ ws: targetSocket }, message);
         await this.stateStore.publishRoom(room.id, {
@@ -2102,6 +2228,17 @@ class LobbyManager {
                     : profile.displayName,
                 avatarId: profile.avatarId,
                 isHost: this.isPrivateRoom(room) && player.id === room.hostPlayerId,
+                presence: this.isPrivateRoom(room) && !room.matchStarted
+                    ? (
+                        player.privateLobbyConnectionPhase === "connected"
+                            ? "connected"
+                            : "disconnected"
+                    )
+                    : (
+                        ["connected", "disconnected", "left"].includes(player.presence)
+                            ? player.presence
+                            : "connected"
+                    ),
                 connectionPhase: this.isPrivateRoom(room)
                     ? player.privateLobbyConnectionPhase || "connected"
                     : "connected"
@@ -2191,6 +2328,13 @@ class LobbyManager {
             const connected = this.connectedPlayers.get(player.id);
             return {
                 ...stripRuntimePlayer(player),
+                presence: ["connected", "disconnected", "left"].includes(player.presence)
+                    ? player.presence
+                    : (
+                        snapshot.matchStarted && !player.isBot && !connected?.ws
+                            ? "disconnected"
+                            : "connected"
+                    ),
                 ws: connected?.ws || null,
                 room: null
             };
@@ -2543,6 +2687,10 @@ class LobbyManager {
             return;
         }
 
+        if (player.presence === "left") {
+            return;
+        }
+
         switch (action.type) {
             case "toggle_lobby_ready":
                 await this.toggleLobbyReadyForRoom(room, playerId);
@@ -2572,6 +2720,18 @@ class LobbyManager {
                     player.connectionId = action.connectionId || player.connectionId;
                     await this.restorePrivateLobbyPlayer(room, player);
                 }
+                return;
+
+            case "game_disconnect":
+                await this.setStartedRoomPresence(
+                    room, player, "disconnected", action.connectionId
+                );
+                return;
+
+            case "game_reconnect":
+                await this.setStartedRoomPresence(
+                    room, player, "connected", action.connectionId
+                );
                 return;
 
             case "resync_state":

@@ -138,6 +138,28 @@ func test_team_total_events_never_spawn_popups() -> void:
 	harness.main.score_popups.process_score_events([{"id": "t1", "type": "team_total", "points": 20}], PLAYERS_FIXTURE)
 	assert_eq(layer.get_child_count(), before_count, "team_total events are aggregate rows, not popups.")
 
+func test_player_left_notice_only_appears_on_a_live_presence_transition() -> void:
+	var layer: Control = harness.find("ScorePopupLayer") as Control
+	var score_popups = harness.main.score_popups
+	harness.main.players_ctx.roster = [{"id": "P1", "displayName": "Alex"}]
+	score_popups.reset_presence_tracking()
+	score_popups.process_player_presence([{"id": "P1", "presence": "left"}], false)
+	assert_eq(layer.get_child_count(), 0, "Mounting an already-left roster does not replay a notice.")
+
+	score_popups.reset_presence_tracking()
+	score_popups.process_player_presence([{"id": "P1", "presence": "connected"}], false)
+	score_popups.process_player_presence([{"id": "P1", "presence": "left"}], true)
+	assert_eq(layer.get_child_count(), 0, "A recovery snapshot synchronizes left state without replaying a notice.")
+
+	score_popups.reset_presence_tracking()
+	score_popups.process_player_presence([{"id": "P1", "presence": "connected"}], false)
+	score_popups.process_player_presence([{"id": "P1", "presence": "left"}], false)
+	assert_eq(layer.get_child_count(), 1)
+	var notice := layer.get_node("PlayerLeftToast") as PanelContainer
+	assert_eq((notice.get_node("ToastMargin/ToastLabel") as Label).text, "Alex left the game")
+	score_popups.process_player_presence([{"id": "P1", "presence": "left"}], false)
+	assert_eq(layer.get_child_count(), 1, "Repeated left state does not duplicate the notice.")
+
 func test_inventory_renders_active_empty_and_locked_slots() -> void:
 	harness.main.inventory.update_inventory_ui([SHAPE_BLOCK_FIXTURE], 2)
 	assert_false((harness.find("PlaceBlockButton1") as Button).disabled, "A filled slot should stay enabled.")

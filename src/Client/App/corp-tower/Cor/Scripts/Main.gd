@@ -226,6 +226,7 @@ func reset_ui() -> void:
 	inventory.update_inventory_ui([], InventoryControllerScript.MAX_INVENTORY_SLOTS)
 	inventory.update_draw_pile_ui(0, null)
 	score_popups.clear_score_popups()
+	score_popups.reset_presence_tracking()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
 	quest.reset_freeze_quest_popover()
@@ -290,6 +291,7 @@ func update_room(data) -> void:
 	top_bar.update_top_bar_display(int(data.get("level", 0)), int(data.get("level", 0)), "starting", 0)
 	match_state.current_level = int(data.get("level", 0))
 	score_popups.seen_score_event_ids.clear()
+	score_popups.reset_presence_tracking()
 	summary.last_level_summary_key = ""
 	score_popups.clear_score_popups()
 	visual_fx.reset()
@@ -329,6 +331,7 @@ func update_room_closed(_data) -> void:
 	inventory.update_draw_pile_ui(0, null)
 	debug_panel.set_open(false)
 	score_popups.clear_score_popups()
+	score_popups.reset_presence_tracking()
 	visual_fx.reset()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
@@ -401,6 +404,7 @@ func update_game_state(data) -> void:
 			summary.hide_level_summary()
 
 	players_ctx.update_from_players(players)
+	score_popups.process_player_presence(players, bool(data.get("snapshot", false)))
 	quest.update_quest_chip(data.get("sideQuest", {}))
 	quest.update_freeze_quest_popover(state, data.get("sideQuest", {}))
 	if tower_stack.has_method("set_player_color_map"):

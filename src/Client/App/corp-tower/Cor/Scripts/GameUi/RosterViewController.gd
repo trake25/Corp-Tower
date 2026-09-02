@@ -63,7 +63,8 @@ func update_score_lines(players: Array) -> void:
 			players_ctx.rail_name(player_id),
 			displayed_total,
 			i,
-			players_ctx.avatar_id(player_id)
+			players_ctx.avatar_id(player_id),
+			str(player.get("presence", "connected"))
 		)
 
 	for player_id in player_rail_entries.keys():

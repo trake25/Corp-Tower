@@ -2,6 +2,9 @@ extends Control
 
 const PlayerColors = preload("res://Cor/Scripts/PlayerColors.gd")
 const FALLBACK_AVATAR_ID := "avatar_0"
+const DISCONNECTED_COLOR := Color("#d92d20")
+const LEFT_COLOR := Color("#667085")
+const STRIKE_MARK := "\u0336"
 const AVATAR_TEXTURE_PATHS := {
 	"avatar_0": "res://Cor/Art/9-Play/avatar-lion.png",
 	"avatar_1": "res://Cor/Art/9-Play/avatar-duck.png",
@@ -22,9 +25,14 @@ const AVATAR_TEXTURE_PATHS := {
 @onready var name_label: Label = %NameLabel
 @onready var score_label: Label = %ScoreLabel
 
-func set_entry(display_name: String, score: int, seat_index: int, avatar_id: String) -> void:
-	name_label.text = display_name
-	score_label.text = format_score(score)
+func set_entry(
+	display_name: String,
+	score: int,
+	seat_index: int,
+	avatar_id: String,
+	presence: String = "connected"
+) -> void:
+	_apply_presence(display_name, score, presence)
 
 	var seat_color := PlayerColors.color_for_player_index(seat_index)
 	var ring_style := avatar_ring.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
@@ -32,6 +40,32 @@ func set_entry(display_name: String, score: int, seat_index: int, avatar_id: Str
 	avatar_ring.add_theme_stylebox_override("panel", ring_style)
 
 	avatar_texture.texture = load_avatar_texture(avatar_id)
+
+func _apply_presence(display_name: String, score: int, presence: String) -> void:
+	match presence:
+		"disconnected":
+			name_label.text = _strikethrough(display_name)
+			name_label.add_theme_color_override("font_color", DISCONNECTED_COLOR)
+			avatar_texture.modulate = DISCONNECTED_COLOR
+			score_label.text = format_score(score)
+		"left":
+			name_label.text = display_name
+			name_label.add_theme_color_override("font_color", LEFT_COLOR)
+			avatar_texture.modulate = LEFT_COLOR
+			score_label.text = "LEFT"
+		_:
+			name_label.text = display_name
+			name_label.remove_theme_color_override("font_color")
+			avatar_texture.modulate = Color.WHITE
+			score_label.text = format_score(score)
+
+func _strikethrough(value: String) -> String:
+	var result := ""
+
+	for character in value:
+		result += character + STRIKE_MARK
+
+	return result
 
 func format_score(score: int) -> String:
 	var digits := str(absi(score))

@@ -7,13 +7,14 @@ whose meaning cannot be recovered from only one endpoint. Gameplay →
 ## Connection and identity
 
 Build injects one endpoint; Godot uses `WebSocketPeer` and the server uses `ws`.
-Network Manager renders server messages only. On open it sends stored reconnect
-and identity credentials. A valid pair resumes its seat; otherwise the server
-creates a session and uses the requested public, private-create, or private-join
-entry mode. A private entry is locally single-flight and retains its fields until
-server room entry, rejection, definitive connect failure, or transport closure.
-Persisted-room resume takes precedence over fresh entry fields, and the public
-default ignores private fields. Verified identity overrides the claimed profile;
+Network Manager renders server messages only. On open it sends reconnect and
+identity credentials. Authenticated startup and controlled room recovery set
+`resumeOnly`; the server either restores the persisted room or returns
+`resume_unavailable` with its shell destination, never fresh matchmaking.
+Explicit public, private-create, and private-join entry clear retained room
+identity and do not set that intent. A private entry is locally single-flight
+and retains its fields until server room entry, rejection, definitive connect
+failure, or transport closure. Verified identity overrides the claimed profile;
 required auth closes an unverified socket.
 
 If the persisted room cannot be restored, the server clears its session room
@@ -40,9 +41,11 @@ before `match_started`. Bots are pre-readied. Leaving or disconnecting during
 ready-up removes that seat immediately, resets survivor readiness, and cancels
 the timer until the room fills again. Only a room with no real players closes.
 
-Lobby updates carry roster, ready membership, and an integer countdown derived
-from the server deadline. Lobby state and its deadline persist so the lease owner
-can re-arm the timer after hydration.
+Lobby updates carry roster, ready membership, presentation presence, and an
+integer countdown derived from the server deadline. Private-lobby recovery and
+grace both present as disconnected while their internal phases continue to own
+timing. Lobby state and its deadline persist so the lease owner can re-arm the
+timer after hydration.
 
 Cross-pod public seating returns a room it cannot own rather than mutating a
 replica. Private invite lookup instead targets its live owner and never falls
@@ -56,11 +59,13 @@ publishes it before deletion; other pods forward it once and discard their
 replicas. Lobby timeout closes only not-ready seats while ready players and bots
 can remain in the persisted room.
 
-Intentional active leave uses `leave_game`, not the pre-match lobby exit or the
-whole-room close lifecycle. The owner clears only that current connection's
-session-room binding, retains its started-room participant as disconnected, and
-returns targeted `game_left` with the Home destination. The client clears its
-resumable room identity and disconnects only after that acknowledgement.
+Started-room `game_state.players` carry connected, disconnected, or left
+presence, which persists across hydration and changes only through authoritative
+room actions. Intentional active leave uses `leave_game`, clears only that
+current connection's session-room binding, retains score/history with left
+presence, and returns targeted `game_left` with the Home destination. Persisting
+the retained roster never refreshes a left participant's room binding. The client
+clears its resumable room identity and disconnects only after acknowledgement.
 
 ## Message families
 

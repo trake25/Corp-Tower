@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 const { afterEach, test } = require("node:test");
 
 const LobbyManager = require("../app/Lobby_Manager");
-const { stripRuntimeRoom } = require("../app/Redis_State");
+const { RedisState, stripRuntimeRoom } = require("../app/Redis_State");
 
 const activeLobbies = [];
 
@@ -446,6 +446,65 @@ test("leaving an otherwise-empty lobby closes the room", async () => {
     assert.equal(lobby.rooms.length, 0);
 });
 
+test("resume-only with no resumable room reports Home without entering matchmaking", async () => {
+    const stateStore = new RedisState();
+    const lobby = new LobbyManager(stateStore);
+    activeLobbies.push(lobby);
+    const initial = await lobby.createPlayer(createFakeWs(), {});
+    const resumeWs = createFakeWs();
+    const resumed = await lobby.createPlayer(resumeWs, {
+        playerId: initial.id,
+        reconnectToken: initial.sessionId,
+        resumeOnly: true
+    });
+
+    assert.equal(resumed.room, undefined);
+    assert.equal(lobby.rooms.length, 0);
+    assert.deepEqual(messagesOfType(resumeWs, "resume_unavailable"), [{
+        type: "resume_unavailable",
+        reason: "room_unavailable",
+        destination: "home"
+    }]);
+
+    const staleWs = createFakeWs();
+    const stale = await lobby.createPlayer(staleWs, {
+        playerId: "missing-player",
+        reconnectToken: "missing-token",
+        resumeOnly: true
+    });
+
+    assert.equal(stale.room, undefined);
+    assert.equal(lobby.rooms.length, 0);
+    assert.equal(messagesOfType(staleWs, "resume_unavailable").at(-1).destination, "home");
+});
+
+test("resume-only cannot reclaim a public pre-match seat before its old socket closes", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+    activeLobbies.push(lobby);
+    await lobby.start();
+    const originalWs = createFakeWs();
+    const original = await lobby.createPlayer(originalWs, {});
+    await lobby.addPlayer(original);
+    const publicRoom = original.room;
+    const resumeWs = createFakeWs();
+    const attemptedResume = await lobby.createPlayer(resumeWs, {
+        playerId: original.id,
+        reconnectToken: original.sessionId,
+        resumeOnly: true
+    });
+
+    assert.equal(attemptedResume.room, undefined);
+    assert.equal(publicRoom.players.some(player => player.id === original.id), false);
+    assert.equal(messagesOfType(resumeWs, "room_resumed").length, 0);
+    assert.equal(messagesOfType(resumeWs, "room_created").length, 0);
+    assert.equal(messagesOfType(resumeWs, "resume_unavailable").at(-1).destination, "home");
+    assert.equal(lobby.rooms.length, 0);
+
+    await lobby.removePlayer(original);
+    assert.equal(lobby.rooms.length, 0, "the superseded close cannot resurrect the evicted seat");
+});
+
 test("leave_game is a no-op until the room has started", async () => {
     const { cluster, lobby, players, sockets, room } = await createLobbyOfThree();
 
@@ -473,7 +532,8 @@ test("only the current connection can intentionally leave a started game", async
     const acknowledgements = messagesOfType(sockets[0], "game_left");
     assert.deepEqual(acknowledgements, [{ type: "game_left", destination: "home" }]);
     assert.equal(room.players.length, 3, "a started-room participant stays in the engine roster");
-    assert.equal(room.players[0].ws, null, "the leaver is retained as disconnected");
+    assert.equal(room.players[0].ws, null, "the leaver no longer has a runtime socket");
+    assert.equal(room.players[0].presence, "left");
     assert.equal(lobby.connectedPlayers.has(players[0].id), false);
 
     const session = cluster.shared.sessions.get(players[0].sessionId);
@@ -485,8 +545,138 @@ test("only the current connection can intentionally leave a started game", async
     [sockets[1], sockets[2]].forEach(ws => {
         assert.equal(messagesOfType(ws, "game_left").length, 0);
         assert.equal(messagesOfType(ws, "room_closed").length, 0);
+        assert.equal(
+            messagesOfType(ws, "game_state").at(-1).players[0].presence,
+            "left"
+        );
     });
     assert.equal(lobby.rooms.length, 1);
+});
+
+test("started-room disconnect and resume broadcast and persist authoritative presence", async () => {
+    const { cluster, lobby, players, sockets, room } = await createLobbyOfThree();
+    await startMatch(lobby, players);
+    sockets.forEach(socket => {
+        socket.sentMessages = [];
+    });
+    room.engine.room.pendingScoreEvents = [{ id: "unconsumed-presence-score" }];
+
+    sockets[0].readyState = 3;
+    await lobby.removePlayer(players[0]);
+
+    assert.equal(room.players[0].presence, "disconnected");
+    assert.equal(cluster.shared.rooms.get(room.id).players[0].presence, "disconnected");
+    [sockets[1], sockets[2]].forEach(socket => {
+        assert.equal(
+            messagesOfType(socket, "game_state").at(-1).players[0].presence,
+            "disconnected"
+        );
+    });
+    assert.deepEqual(
+        room.engine.room.pendingScoreEvents,
+        [{ id: "unconsumed-presence-score" }],
+        "presence-only broadcasts must not consume gameplay events"
+    );
+
+    const resumeWs = createFakeWs();
+    const resumed = await lobby.createPlayer(resumeWs, {
+        playerId: players[0].id,
+        reconnectToken: players[0].sessionId,
+        resumeOnly: true
+    });
+
+    assert.equal(resumed.room, room);
+    assert.equal(room.players[0].presence, "connected");
+    assert.equal(cluster.shared.rooms.get(room.id).players[0].presence, "connected");
+    assert.equal(
+        messagesOfType(resumeWs, "game_state").at(-1).players[0].presence,
+        "connected"
+    );
+});
+
+test("cross-pod started-room resume and disconnect mutate presence on the owner", async () => {
+    const { cluster, lobby: ownerLobby, players, sockets, room } = await createLobbyOfThree();
+    await startMatch(ownerLobby, players);
+    sockets[0].readyState = 3;
+    await ownerLobby.removePlayer(players[0]);
+    assert.equal(room.players[0].presence, "disconnected");
+
+    const remoteLobby = new LobbyManager(cluster.makeStore("podB"));
+    activeLobbies.push(remoteLobby);
+    await remoteLobby.start();
+    const remoteWs = createFakeWs();
+    const resumed = await remoteLobby.createPlayer(remoteWs, {
+        playerId: players[0].id,
+        reconnectToken: players[0].sessionId,
+        resumeOnly: true
+    });
+
+    for (let index = 0; index < 8; index++) {
+        await tick();
+    }
+
+    assert.equal(remoteLobby.isRoomOwner(resumed.room), false);
+    assert.equal(room.players[0].presence, "connected");
+    assert.equal(cluster.shared.rooms.get(room.id).players[0].presence, "connected");
+    assert.equal(
+        messagesOfType(remoteWs, "game_state").at(-1).players[0].presence,
+        "connected"
+    );
+
+    remoteWs.readyState = 3;
+    await remoteLobby.removePlayer(resumed);
+    for (let index = 0; index < 8; index++) {
+        await tick();
+    }
+
+    assert.equal(room.players[0].presence, "disconnected");
+    assert.equal(cluster.shared.rooms.get(room.id).players[0].presence, "disconnected");
+    assert.equal(
+        messagesOfType(sockets[1], "game_state").at(-1).players[0].presence,
+        "disconnected"
+    );
+});
+
+test("left presence survives room persistence and cannot regain resume eligibility", async () => {
+    const stateStore = new RedisState();
+    const lobby = new LobbyManager(stateStore);
+    activeLobbies.push(lobby);
+    const sockets = [createFakeWs(), createFakeWs(), createFakeWs()];
+    const players = [];
+
+    for (const socket of sockets) {
+        const player = await lobby.createPlayer(socket, {});
+        players.push(player);
+        await lobby.addPlayer(player);
+    }
+
+    await startMatch(lobby, players);
+    await lobby.dispatchRoomAction(players[0], { type: "leave_game" });
+
+    const room = players[1].room;
+    const storedRoom = await stateStore.getRoom(room.id);
+    const storedPlayer = storedRoom.players.find(player => player.id === players[0].id);
+    const storedSession = await stateStore.getSession(players[0].sessionId);
+    assert.equal(storedPlayer.presence, "left");
+    assert.equal(storedSession.roomId, null);
+    assert.equal(storedSession.resumeDestination, "home");
+
+    const hydratedLobby = new LobbyManager(stateStore);
+    activeLobbies.push(hydratedLobby);
+    const hydratedRoom = await hydratedLobby.hydrateRoom(room.id);
+    assert.equal(
+        hydratedRoom.players.find(player => player.id === players[0].id).presence,
+        "left"
+    );
+
+    const resumeWs = createFakeWs();
+    const attemptedResume = await lobby.createPlayer(resumeWs, {
+        playerId: players[0].id,
+        reconnectToken: players[0].sessionId,
+        resumeOnly: true
+    });
+    assert.equal(attemptedResume.room, undefined);
+    assert.equal(messagesOfType(resumeWs, "resume_unavailable").at(-1).destination, "home");
 });
 
 test("remote-owner leave_game returns only a targeted acknowledgement", async () => {

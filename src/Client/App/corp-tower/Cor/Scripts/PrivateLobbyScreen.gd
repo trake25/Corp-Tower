@@ -8,8 +8,10 @@ const WAITING_NAME := "Waiting for player..."
 const SEAT_COUNT := 3
 const DISPLAY_NAME_LIMIT := 10
 const DISABLED_MODULATE := Color("#cccccc")
-const GRACE_MODULATE := Color(0.47, 0.5, 0.55, 0.72)
+const DISCONNECTED_NAME_MODULATE := Color("#d92d20")
+const NORMAL_NAME_COLOR := Color("#141418")
 const NORMAL_MODULATE := Color.WHITE
+const STRIKE_MARK := "\u0336"
 
 var roster_ids: Array = []
 var host_player_id := ""
@@ -69,10 +71,20 @@ func _apply_roster(roster: Array) -> void:
 		if seat < roster.size():
 			var entry: Dictionary = roster[seat]
 			var player_id := str(entry.get("id", ""))
-			var is_grace := str(entry.get("connectionPhase", "connected")) == "grace"
+			var connection_phase := str(entry.get("connectionPhase", "connected"))
+			var presence := str(entry.get(
+				"presence",
+				"connected" if connection_phase == "connected" else "disconnected"
+			))
+			var is_disconnected := presence == "disconnected"
+			var display_name := _truncate_name(str(entry.get("displayName", WAITING_NAME)))
 			roster_ids.append(player_id)
-			name_label.text = _truncate_name(str(entry.get("displayName", WAITING_NAME)))
-			name_label.modulate = GRACE_MODULATE if is_grace else NORMAL_MODULATE
+			name_label.text = _strikethrough(display_name) if is_disconnected else display_name
+			name_label.modulate = NORMAL_MODULATE
+			if is_disconnected:
+				name_label.add_theme_color_override("font_color", DISCONNECTED_NAME_MODULATE)
+			else:
+				name_label.add_theme_color_override("font_color", NORMAL_NAME_COLOR)
 			crown.visible = player_id == host_player_id
 			kick_button.visible = (
 				str(NetworkManager.player_id) == host_player_id
@@ -83,6 +95,7 @@ func _apply_roster(roster: Array) -> void:
 			roster_ids.append("")
 			name_label.text = WAITING_NAME
 			name_label.modulate = NORMAL_MODULATE
+			name_label.add_theme_color_override("font_color", NORMAL_NAME_COLOR)
 			crown.visible = false
 			kick_button.visible = false
 
@@ -93,6 +106,14 @@ func _truncate_name(value: String) -> String:
 		return value
 
 	return value.left(DISPLAY_NAME_LIMIT - 2) + ".."
+
+func _strikethrough(value: String) -> String:
+	var result := ""
+
+	for character in value:
+		result += character + STRIKE_MARK
+
+	return result
 
 func _set_room_full(is_room_full: bool) -> void:
 	%ReadyButton.disabled = not is_room_full

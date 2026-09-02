@@ -8,6 +8,8 @@ const UiPreferencesScript = preload("res://Cor/Scripts/UiPreferences.gd")
 var screen_manager
 
 func before_each() -> void:
+	NetworkManager.disconnect_server()
+	NetworkManager.abandon_room_identity()
 	if FileAccess.file_exists(UiPreferencesScript.PREFERENCES_FILE):
 		DirAccess.remove_absolute(UiPreferencesScript.PREFERENCES_FILE)
 	screen_manager = MainScene.instantiate()
@@ -16,9 +18,58 @@ func before_each() -> void:
 	await get_tree().process_frame
 
 func after_each() -> void:
+	NetworkManager.disconnect_server()
+	NetworkManager.abandon_room_identity()
 	if FileAccess.file_exists(UiPreferencesScript.PREFERENCES_FILE):
 		DirAccess.remove_absolute(UiPreferencesScript.PREFERENCES_FILE)
 	await get_tree().process_frame
+
+func test_authenticated_startup_holds_splash_until_resume_routes_private_lobby_or_play() -> void:
+	NetworkManager.player_id = "saved-player"
+	NetworkManager.reconnect_token = "saved-token"
+	var player_file = FileAccess.open(NetworkManager.PLAYER_ID_FILE, FileAccess.WRITE)
+	player_file.store_string(NetworkManager.player_id)
+	var token_file = FileAccess.open(NetworkManager.RECONNECT_TOKEN_FILE, FileAccess.WRITE)
+	token_file.store_string(NetworkManager.reconnect_token)
+	screen_manager._clear_overlay()
+	screen_manager.startup_splash.visible = true
+	NetworkManager.is_connecting = true
+
+	screen_manager._begin_authenticated_startup()
+
+	assert_true(screen_manager.startup_resume_pending)
+	assert_null(screen_manager.current_overlay)
+	assert_true(screen_manager.startup_splash.visible)
+	assert_true(NetworkManager.resume_only_request)
+	NetworkManager.is_connecting = false
+
+	screen_manager._on_room_joined({
+		"matchStarted": false,
+		"roomMode": "private",
+		"roster": [],
+		"lobby": {},
+		"privateLobby": {"serverId": "2345ABCD", "hostPlayerId": "saved-player"}
+	})
+	await get_tree().process_frame
+	assert_false(screen_manager.startup_resume_pending)
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/PrivateLobbyScreen.tscn"))
+
+	screen_manager._on_room_joined({"matchStarted": true, "roomMode": "private"})
+	await get_tree().process_frame
+	assert_null(screen_manager.current_overlay)
+	assert_not_null(screen_manager.play_instance)
+
+func test_bounded_startup_transport_failure_releases_home_without_discarding_identity() -> void:
+	NetworkManager.player_id = "saved-player"
+	NetworkManager.reconnect_token = "saved-token"
+	screen_manager.startup_resume_pending = true
+
+	screen_manager._on_resume_only_failed({"reason": "reconnect_failed"})
+
+	assert_false(screen_manager.startup_resume_pending)
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
+	assert_eq(NetworkManager.player_id, "saved-player")
+	assert_eq(NetworkManager.reconnect_token, "saved-token")
 
 func test_terminal_room_close_routes_home() -> void:
 	screen_manager.find_match_active = true
@@ -270,6 +321,12 @@ func test_settings_sign_out_requires_confirmation_then_routes_to_sign_in() -> vo
 	AuthManager.access_token_value = "access"
 	AuthManager.refresh_token_value = "refresh"
 	AuthManager.expires_at_unix = int(Time.get_unix_time_from_system()) + 3600
+	NetworkManager.player_id = "signed-in-player"
+	NetworkManager.reconnect_token = "signed-in-token"
+	var player_file = FileAccess.open(NetworkManager.PLAYER_ID_FILE, FileAccess.WRITE)
+	player_file.store_string(NetworkManager.player_id)
+	var token_file = FileAccess.open(NetworkManager.RECONNECT_TOKEN_FILE, FileAccess.WRITE)
+	token_file.store_string(NetworkManager.reconnect_token)
 	screen_manager.show_settings_screen()
 	var settings = screen_manager.current_overlay
 
@@ -284,6 +341,8 @@ func test_settings_sign_out_requires_confirmation_then_routes_to_sign_in() -> vo
 	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/SignInScreen.tscn"))
 	assert_eq(AuthManager.current_provider, "")
 	assert_eq(AuthManager.display_name, "")
+	assert_eq(NetworkManager.player_id, "")
+	assert_eq(NetworkManager.reconnect_token, "")
 
 func test_leave_game_confirms_once_and_waits_for_authoritative_acknowledgement() -> void:
 	screen_manager._enter_play_instance()

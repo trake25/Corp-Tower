@@ -29,6 +29,7 @@ var pending_private_display_name := ""
 var pending_private_server_id := ""
 var pending_private_password := ""
 var private_entry_in_flight := false
+var resume_only_request := false
 
 var player_id := ""
 var reconnect_token := ""
@@ -73,10 +74,18 @@ signal recovery_recovered
 signal recovery_unavailable(data)
 signal private_join_failed(data)
 signal private_entry_failed(data)
+signal resume_only_failed(data)
 
-func connect_server(is_auto_reconnect := false, preserve_entry := false):
+func connect_server(is_auto_reconnect := false, preserve_entry := false, resume_only := false):
 	if not is_auto_reconnect and not preserve_entry:
 		_clear_pending_private_entry()
+
+	if resume_only:
+		resume_only_request = true
+	elif not is_auto_reconnect:
+		resume_only_request = false
+	elif match_active or private_lobby_active or recovery_state == "reconnecting":
+		resume_only_request = true
 
 	if is_auto_reconnect:
 		status_changed.emit("Reconnecting...")
@@ -110,8 +119,11 @@ func connect_server(is_auto_reconnect := false, preserve_entry := false):
 			_fail_private_entry("connection_failed")
 			status_changed.emit("Disconnected")
 			client_status.emit("[Connect]")
-		elif is_auto_reconnect:
+		elif is_auto_reconnect or resume_only_request:
 			schedule_auto_reconnect()
+		else:
+			status_changed.emit("Disconnected")
+			client_status.emit("[Connect]")
 
 func disconnect_server(clear_private_entry := true):
 	status_changed.emit("Disconnecting...")
@@ -121,6 +133,7 @@ func disconnect_server(clear_private_entry := true):
 	is_connecting = false
 	auto_reconnect_enabled = false
 	auto_reconnect_delay_remaining = -1.0
+	resume_only_request = false
 	_clear_private_lobby_tracking()
 	reset_match_tracking()
 	reset_latency_probe()
@@ -145,6 +158,7 @@ func _begin_private_entry(mode: String, display_name: String, server_id: String,
 	if private_entry_in_flight:
 		return false
 
+	abandon_room_identity()
 	_set_private_entry(mode, display_name, server_id, password)
 	private_entry_in_flight = true
 	_connect_with_private_entry()
@@ -266,6 +280,10 @@ func load_reconnect_identity():
 		var profile_file = FileAccess.open(PROFILE_ID_FILE, FileAccess.WRITE)
 		profile_file.store_string(profile_id)
 
+func has_saved_room_identity() -> bool:
+	load_reconnect_identity()
+	return player_id != "" and reconnect_token != ""
+
 func generate_uuid_v4() -> String:
 	var bytes := Crypto.new().generate_random_bytes(16)
 	bytes[6] = (bytes[6] & 0x0F) | 0x40
@@ -296,7 +314,8 @@ func send_reconnect_request():
 		"profileId": profile_id,
 		"accessToken": AuthManager.connection_access_token(),
 		"authProvider": AuthManager.connection_auth_provider(),
-		"entryMode": pending_entry_mode
+		"entryMode": pending_entry_mode,
+		"resumeOnly": resume_only_request
 	}
 
 	if pending_entry_mode != "public":
@@ -318,7 +337,7 @@ func update_auto_reconnect_state(data):
 	auto_reconnect_enabled = players.size() >= 3 and not has_bot
 
 func schedule_auto_reconnect():
-	if not auto_reconnect_enabled and recovery_state != "reconnecting":
+	if not auto_reconnect_enabled and recovery_state != "reconnecting" and not resume_only_request:
 		return
 
 	if manual_disconnect_requested:
@@ -327,6 +346,11 @@ func schedule_auto_reconnect():
 	if auto_reconnect_attempts >= AUTO_RECONNECT_MAX_ATTEMPTS:
 		if recovery_state == "reconnecting":
 			mark_recovery_unavailable("reconnect_failed")
+		elif resume_only_request:
+			resume_only_request = false
+			status_changed.emit("Disconnected")
+			client_status.emit("[Connect]")
+			resume_only_failed.emit({"reason": "reconnect_failed"})
 		else:
 			status_changed.emit("Disconnected")
 			client_status.emit("[Connect]")
@@ -375,10 +399,15 @@ func _clear_room_identity() -> void:
 	if FileAccess.file_exists(RECONNECT_TOKEN_FILE):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(RECONNECT_TOKEN_FILE))
 
+func abandon_room_identity() -> void:
+	resume_only_request = false
+	_clear_room_identity()
+
 func accept_game_left(data) -> void:
 	reset_match_tracking()
 	_clear_private_lobby_tracking()
 	_clear_room_identity()
+	resume_only_request = false
 	auto_reconnect_enabled = false
 	auto_reconnect_delay_remaining = -1.0
 	game_left.emit(data)
@@ -590,6 +619,7 @@ func _process(delta: float) -> void:
 
 		match data.type:
 			"room_created":
+				resume_only_request = false
 				save_reconnect_identity(data)
 				auto_reconnect_attempts = 0
 				match_active = bool(data.get("matchStarted", false))
@@ -597,6 +627,7 @@ func _process(delta: float) -> void:
 				_clear_pending_private_entry()
 				room_joined.emit(data)
 			"room_resumed":
+				resume_only_request = false
 				save_reconnect_identity(data)
 				auto_reconnect_attempts = 0
 				match_active = bool(data.get("matchStarted", false))
@@ -620,6 +651,7 @@ func _process(delta: float) -> void:
 			"latency_pong":
 				accept_latency_pong(data)
 			"resume_unavailable":
+				resume_only_request = false
 				if str(data.get("destination", "")) != "":
 					match_active = false
 					_clear_private_lobby_tracking()
@@ -636,6 +668,7 @@ func _process(delta: float) -> void:
 						true
 					)
 			"room_closed":
+				resume_only_request = false
 				var destination_by_player: Dictionary = data.get("destinationByPlayerId", {})
 				if destination_by_player.has(player_id):
 					data["destination"] = str(destination_by_player[player_id])
@@ -698,6 +731,8 @@ func _process(delta: float) -> void:
 					schedule_private_lobby_reconnect()
 				elif match_active and recovery_state == "healthy" and not manual_disconnect_requested:
 					begin_recovery(true)
+				elif resume_only_request and not manual_disconnect_requested:
+					schedule_auto_reconnect()
 				elif (auto_reconnect_enabled or recovery_state == "reconnecting") and not manual_disconnect_requested:
 					schedule_auto_reconnect()
 				else:

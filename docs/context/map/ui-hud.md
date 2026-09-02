@@ -267,26 +267,28 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:95 | process_quick_chat_events | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/QuickChatController.gd:110 | show_quick_chat_bubble | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd — 180 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd — 181 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:1 | @file · file | declare the nodes this module needs |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:18 | bind_nodes | |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:32 | update_score_lines | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:74 | update_impact_status_ui | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:145 | flash_impact_bars | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:75 | update_impact_status_ui | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/RosterViewController.gd:146 | flash_impact_bars | |
 
-### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 328 ln
+### src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd — 377 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:1 | @file · file | declare the nodes this module needs |
 | src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:5 | SCORE_POPUP_INTRO_SECONDS · const | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:26 | bind_nodes | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:36 | process_score_events | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:69 | show_score_event_popup | |
-| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:190 | clear_score_popups | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:29 | bind_nodes | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:39 | process_score_events | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:72 | process_player_presence | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:100 | reset_presence_tracking | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:110 | show_score_event_popup | |
+| src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd:233 | clear_score_popups | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd — 410 ln
 
@@ -507,4 +509,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-42 files · 246 stable anchors.
+42 files · 248 stable anchors.

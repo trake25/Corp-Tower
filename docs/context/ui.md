@@ -42,9 +42,9 @@ transport failure, and enters Private Lobby directly on authoritative success.
 Home also opens Settings, whose Account branch presents guest or linked state from
 the restored auth session metadata. Settings sign-out reuses the shared confirmation
 modal, clears that session only after confirmation, and returns to Sign-in.
-Private Lobby renders
-server info, fixed seats, host-only kick, readiness, countdown, and grace-greyed
-identity; leave and kick reuse the shared confirmation modal.
+Private Lobby renders server info, fixed seats, host-only kick, readiness,
+countdown, and disconnected names in red with a strikethrough; leave and kick
+reuse the shared confirmation modal.
 
 Network signals drive room entry, match start, teardown, navigation, and recovery.
 Play Menu is a full-screen live overlay above the retained Play instance. The
@@ -57,10 +57,11 @@ share persisted client presentation preferences with Settings but still have no
 audio side effects.
 During active-match recovery, a centred blocking modal keeps the current screen
 visible while the client applies authoritative recovery state; gameplay and debug
-input stay unavailable until it completes. A terminal resume result routes to
-matchmaking through an explicit continuation. Private-lobby recovery instead
-keeps its screen and reserved seat without that modal; server destination
-metadata alone routes Home, Join Server, or Private Server after lifecycle exit.
+input stay unavailable until it completes. Recovery timeout uses its explicit
+continuation, while authoritative resume failure follows the server destination.
+Private-lobby recovery instead keeps its screen and reserved seat without that
+modal; server destination metadata alone routes Home, Join Server, or Private
+Server after lifecycle exit.
 Other close and failure routes retain their existing matchmaking or Home paths.
 Lobby timeout and unexpected matchmaking disconnect use an auto-dismiss modal.
 Terminal game over keeps Summary active until the server closes the room.
@@ -69,7 +70,9 @@ Find Match has no retained gameplay view. Public Lobby retains the gameplay root
 only for its debug layer while resetting and suppressing gameplay presentation;
 entering Play or a tutorial restores the gameplay layers.
 
-Startup Splash preserves continuity while session restoration is unresolved. On
+Startup Splash preserves continuity while authentication and saved-room resume
+are unresolved. A restored account with room identity waits there for
+authoritative private-lobby, Play, or shell routing before Home can appear. On
 Android it fills the startup viewport edge-to-edge and retains startup window
 geometry until the first real screen handoff.
 Authentication shows only configured providers. Android uses native providers
