@@ -243,6 +243,13 @@ func can_place_block(index: int) -> bool:
 	return is_placement_input_allowed()
 
 func is_placement_input_allowed() -> bool:
+	if (
+		tower_stack_fallback != null
+		and tower_stack_fallback.has_method("is_placement_world_hidden")
+		and bool(tower_stack_fallback.call("is_placement_world_hidden"))
+	):
+		return false
+
 	if !match_state.tutorial_mode:
 		if !network.is_conn_estab:
 			return false

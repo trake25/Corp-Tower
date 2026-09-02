@@ -107,6 +107,16 @@ func return_to_auto() -> bool:
 	mode = Mode.RETURNING_TO_AUTO
 	return true
 
+func return_to_auto_from(offset_units: float) -> bool:
+	displayed_offset_units = maxf(0.0, offset_units)
+	navigation_target_units = normal_target_units
+	if absf(displayed_offset_units - normal_target_units) <= EPSILON:
+		displayed_offset_units = normal_target_units
+		mode = Mode.AUTO
+		return false
+	mode = Mode.RETURNING_TO_AUTO
+	return true
+
 func hold_current() -> void:
 	navigation_target_units = displayed_offset_units
 	mode = Mode.MANUAL_HOLD

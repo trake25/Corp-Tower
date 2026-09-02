@@ -73,6 +73,7 @@ const ARMED_PULSE_SPEED := 5.0
 
 signal scroll_offset_changed(pixels: float)
 signal camera_zoom_changed(zoom: float)
+signal placement_world_visibility_changed(visible: bool)
 
 var tower_blocks: Array = []
 var current_height: int = 0
@@ -105,6 +106,7 @@ var _collapse_elapsed: float = 0.0
 var _collapse_sim = null
 var _collapsing_block_ids: Dictionary = {}
 var _last_collapse_key: String = ""
+var _placement_world_hidden_for_return: bool = false
 var visual_hooks = null
 var _camera_zoom: float = 1.0
 var _beat_phase: int = BEAT_NONE
@@ -146,6 +148,7 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	var critical_direction: String = str(critical_support.get("direction", ""))
 
 	if starts_collapse:
+		_set_placement_world_hidden_for_return(false)
 		scroll_state.hold_current()
 		scroll_state.frozen = true
 		tower_collapsed = true
@@ -518,7 +521,7 @@ func _trouble_precedes(left: Dictionary, right: Dictionary) -> bool:
 	return str(left.block_id) < str(right.block_id)
 
 func navigate_to_trouble(block_id: String) -> bool:
-	if _collapse_phase != COLLAPSE_NONE or _beat_phase != BEAT_NONE:
+	if is_navigation_blocked_by_presentation():
 		return false
 	_sync_scroll_state()
 	for entry_value in tower_blocks:
@@ -534,7 +537,7 @@ func navigate_to_trouble(block_id: String) -> bool:
 	return false
 
 func return_to_auto_scroll() -> bool:
-	if _collapse_phase != COLLAPSE_NONE or _beat_phase != BEAT_NONE:
+	if is_navigation_blocked_by_presentation():
 		return false
 	return scroll_state.return_to_auto()
 
@@ -542,7 +545,7 @@ func pan_scroll_pixels(delta_pixels: float) -> bool:
 	return pan_scroll_units(delta_pixels / maxf(1.0, _unit_size()))
 
 func pan_scroll_units(delta_units: float) -> bool:
-	if _collapse_phase != COLLAPSE_NONE or _beat_phase != BEAT_NONE:
+	if is_navigation_blocked_by_presentation():
 		return false
 	_sync_scroll_state()
 	if !scroll_state.pan_by(delta_units):
@@ -561,13 +564,21 @@ func is_scroll_navigating() -> bool:
 	return scroll_state.is_navigating()
 
 func reset_navigation() -> void:
+	_set_placement_world_hidden_for_return(false)
 	scroll_state.frozen = false
 	scroll_state.snap_to_normal()
 	_update_scroll_offset()
 	queue_redraw()
 
 func is_navigation_blocked_by_presentation() -> bool:
-	return _collapse_phase != COLLAPSE_NONE or _beat_phase != BEAT_NONE
+	return (
+		_collapse_phase != COLLAPSE_NONE
+		or _beat_phase != BEAT_NONE
+		or _placement_world_hidden_for_return
+	)
+
+func is_placement_world_hidden() -> bool:
+	return _placement_world_hidden_for_return
 
 func grid_to_local(lattice: Vector2) -> Vector2:
 	var unit: float = _unit_size()
@@ -668,6 +679,8 @@ func _process(delta: float) -> void:
 	if _collapse_phase == COLLAPSE_NONE and scroll_state.step(delta):
 		_update_scroll_offset()
 		needs_redraw = true
+	if _placement_world_hidden_for_return and !scroll_state.is_displaced():
+		_set_placement_world_hidden_for_return(false)
 
 	if structural_pose.step(delta, structural_pose_ease_speed):
 		needs_redraw = true
@@ -720,6 +733,7 @@ func set_player_color_map(new_player_color_map: Dictionary) -> void:
 	queue_redraw()
 
 func clear_tower() -> void:
+	_set_placement_world_hidden_for_return(false)
 	tower_blocks = []
 	current_height = 0
 	target_height = 0
@@ -748,11 +762,24 @@ func _collapse_debris_lifetime_seconds() -> float:
 	return maxf(0.0, float(visual_hooks.collapse_debris_lifetime_ms) / 1000.0)
 
 func _expire_collapse_debris() -> void:
+	var collapse_offset_units: float = scroll_state.displayed_offset_units
 	_reset_collapse()
 	tower_collapsed = false
 	tower_tilt_deg = 0.0
 	_sync_scroll_state()
-	scroll_state.return_to_auto()
+	if collapse_offset_units > scroll_state.normal_target_units + TowerScrollStateScript.EPSILON:
+		scroll_state.return_to_auto_from(collapse_offset_units)
+		_set_placement_world_hidden_for_return(true)
+	else:
+		_set_placement_world_hidden_for_return(false)
+		scroll_state.return_to_auto()
+	_update_scroll_offset()
+
+func _set_placement_world_hidden_for_return(hidden: bool) -> void:
+	if hidden == _placement_world_hidden_for_return:
+		return
+	_placement_world_hidden_for_return = hidden
+	placement_world_visibility_changed.emit(!hidden)
 
 func _begin_collapse() -> void:
 	var unit: float = _unit_size()
@@ -1558,6 +1585,7 @@ func _unit_size() -> float:
 	return brick_unit_size * _camera_zoom
 
 func _sync_scroll_state(snap_to_normal: bool = false) -> void:
+	var retained_offset_units: float = scroll_state.displayed_offset_units
 	var unit: float = _unit_size()
 	scroll_state.configure(
 		current_height,
@@ -1568,6 +1596,11 @@ func _sync_scroll_state(snap_to_normal: bool = false) -> void:
 		scroll_ease_power,
 		top_indicator_clearance_units
 	)
+	if _placement_world_hidden_for_return:
+		if retained_offset_units > scroll_state.normal_target_units + TowerScrollStateScript.EPSILON:
+			scroll_state.return_to_auto_from(retained_offset_units)
+		else:
+			_set_placement_world_hidden_for_return(false)
 	if snap_to_normal and scroll_state.mode == TowerScrollStateScript.Mode.AUTO:
 		scroll_state.snap_to_normal()
 

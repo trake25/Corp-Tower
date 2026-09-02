@@ -96,6 +96,10 @@ frame, holds its lower position as the tower grows, and cannot pan above the mov
 automatic target. Drop travels smoothly to a deterministic offscreen critical support;
 Top returns smoothly and resumes auto-follow.
 
+After an elevated collapse, the grouped placement world stays hidden while the shared
+scroll returns downward, then reveals atomically at normal framing. Navigation and
+placement are blocked only for that return; a zero-distance reset reveals immediately.
+
 Placement and armed actions, overlays, recovery, and presentation sequences disable
 navigation; round and lobby transitions restore auto-scroll. View controls never
 change grid intent or physics.

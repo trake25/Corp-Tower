@@ -28,6 +28,22 @@ func test_navigation_and_mid_pan_reversal_are_fractional_and_continuous() -> voi
 	assert_eq(state.displayed_offset_units, state.normal_target_units)
 	assert_eq(state.mode, TowerScrollState.Mode.AUTO)
 
+func test_return_from_preserved_collapse_offset_can_start_above_the_new_extent() -> void:
+	var state = configured_state()
+	state.snap_to_normal()
+	var collapse_offset: float = state.displayed_offset_units
+	state.configure(2, 30, 2, 17, 0.7, 3.0, 1)
+
+	assert_eq(state.displayed_offset_units, 0.0)
+	assert_true(state.return_to_auto_from(collapse_offset))
+	assert_eq(state.displayed_offset_units, collapse_offset)
+	assert_eq(state.navigation_target_units, 0.0)
+	assert_eq(state.mode, TowerScrollState.Mode.RETURNING_TO_AUTO)
+
+	state.step(1.0)
+	assert_eq(state.displayed_offset_units, 0.0)
+	assert_eq(state.mode, TowerScrollState.Mode.AUTO)
+
 func test_incoming_tower_growth_retargets_auto_without_snapping_manual_navigation() -> void:
 	var state = configured_state()
 	state.snap_to_normal()
