@@ -14,7 +14,7 @@ var displayed_offset_units: float = 0.0
 var normal_target_units: float = 0.0
 var navigation_target_units: float = 0.0
 var maximum_offset_units: float = 0.0
-var pan_speed_units: float = 9.0
+var pan_speed_units: float = 12.0
 var frozen: bool = false
 
 static func calculate_normal_target(
