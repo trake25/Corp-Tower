@@ -34,6 +34,8 @@ var facebook_access_token_value := ""
 var facebook_expires_at_unix := 0
 var user_id := ""
 var is_anonymous := false
+var current_provider := ""
+var display_name := ""
 var refresh_in_flight := false
 var oauth_in_flight := false
 var last_oauth_reason := ""
@@ -527,6 +529,8 @@ func sign_out() -> void:
 	facebook_expires_at_unix = 0
 	user_id = ""
 	is_anonymous = false
+	current_provider = ""
+	display_name = ""
 
 	_clear_verifier()
 
@@ -548,6 +552,9 @@ func _apply_facebook_session(access_token: String, native_expires_at_unix: int) 
 
 	facebook_access_token_value = access_token
 	facebook_expires_at_unix = native_expires_at_unix
+	is_anonymous = false
+	current_provider = "facebook"
+	display_name = ""
 	return true
 
 func _store_facebook_session(access_token: String, native_expires_at_unix: int) -> bool:
@@ -608,8 +615,31 @@ func _apply_session(data: Dictionary) -> bool:
 	if typeof(user) == TYPE_DICTIONARY:
 		user_id = str(user.get("id", user_id))
 		is_anonymous = bool(user.get("is_anonymous", is_anonymous))
+		_apply_presentation_metadata(user)
 
 	return true
+
+func _apply_presentation_metadata(user: Dictionary) -> void:
+	if is_anonymous:
+		current_provider = ""
+		display_name = ""
+		return
+
+	var app_metadata = user.get("app_metadata", {})
+	var user_metadata = user.get("user_metadata", {})
+
+	if typeof(app_metadata) == TYPE_DICTIONARY:
+		current_provider = str(app_metadata.get("provider", current_provider)).strip_edges().to_lower()
+
+	if typeof(user_metadata) != TYPE_DICTIONARY:
+		return
+
+	for key in ["display_name", "full_name", "name", "user_name", "preferred_username"]:
+		var value := str(user_metadata.get(key, "")).strip_edges()
+
+		if value != "":
+			display_name = value
+			return
 
 func _store_session(data: Dictionary) -> bool:
 	if not _apply_session(data):
@@ -644,7 +674,9 @@ func _save_session() -> void:
 		"facebook_access_token": facebook_access_token_value,
 		"facebook_expires_at": facebook_expires_at_unix,
 		"user_id": user_id,
-		"is_anonymous": is_anonymous
+		"is_anonymous": is_anonymous,
+		"current_provider": current_provider,
+		"display_name": display_name
 	}))
 
 func _load_session() -> void:
@@ -663,3 +695,5 @@ func _load_session() -> void:
 	facebook_expires_at_unix = int(parsed.get("facebook_expires_at", 0))
 	user_id = str(parsed.get("user_id", ""))
 	is_anonymous = bool(parsed.get("is_anonymous", false))
+	current_provider = str(parsed.get("current_provider", ""))
+	display_name = str(parsed.get("display_name", ""))

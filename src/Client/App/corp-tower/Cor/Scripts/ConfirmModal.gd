@@ -51,6 +51,17 @@ func open_leave_game() -> void:
 	auto_dismiss_remaining = -1.0
 	_open()
 
+func open_sign_out() -> void:
+	recovery_locked = false
+	title_label.text = "Sign out"
+	body_label.text = "Do you want to sign out?"
+	button_row.visible = true
+	close_button.visible = true
+	continue_button.visible = true
+	continue_button.text = "Sign out"
+	auto_dismiss_remaining = -1.0
+	_open()
+
 func open_kick_player() -> void:
 	recovery_locked = false
 	title_label.text = "Kick player"

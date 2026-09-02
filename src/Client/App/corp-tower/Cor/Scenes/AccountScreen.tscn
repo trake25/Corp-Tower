@@ -1,0 +1,223 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/AccountScreen.gd" id="1_account"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/sign-in-bg-@4x.png" id="2_bg"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/btn-circular-back.png" id="3_back"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/avatar-placeholder.png" id="4_avatar"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/fb-logo.png" id="5_facebook"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/google-logo.png" id="6_google"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/tiktok-logo.png" id="7_tiktok"]
+[ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="8_press_tint"]
+[ext_resource type="Theme" path="res://Cor/Themes/GameUITheme.tres" id="9_theme"]
+
+[node name="AccountScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("9_theme")
+script = ExtResource("1_account")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 12
+
+[node name="Root" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+
+[node name="BackButton" type="TextureButton" parent="SafeArea/Root/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("8_press_tint")
+texture_normal = ExtResource("3_back")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="SafeArea/Root/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"BoldLabel"
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Account"
+
+[node name="HeaderSpacer" type="Control" parent="SafeArea/Root/Header"]
+custom_minimum_size = Vector2(46, 0)
+layout_mode = 2
+
+[node name="GuestContent" type="VBoxContainer" parent="SafeArea/Root"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="Avatar" type="TextureRect" parent="SafeArea/Root/GuestContent"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("4_avatar")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LinkTitle" type="Label" parent="SafeArea/Root/GuestContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "Link account"
+
+[node name="IntroSpacer" type="Control" parent="SafeArea/Root/GuestContent"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+
+[node name="IntroLabel" type="Label" parent="SafeArea/Root/GuestContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+autowrap_mode = 2
+text = "Link your social account to save your\nprogress and keep your stats."
+
+[node name="SecuritySpacer" type="Control" parent="SafeArea/Root/GuestContent"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+
+[node name="SecurityLabel" type="Label" parent="SafeArea/Root/GuestContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+autowrap_mode = 2
+text = "We only use your account to save your\ngame, and your information is kept safe."
+
+[node name="SocialRow" type="HBoxContainer" parent="SafeArea/Root/GuestContent"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 40
+
+[node name="FacebookButton" type="TextureButton" parent="SafeArea/Root/GuestContent/SocialRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+script = ExtResource("8_press_tint")
+texture_normal = ExtResource("5_facebook")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="GoogleButton" type="TextureButton" parent="SafeArea/Root/GuestContent/SocialRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+script = ExtResource("8_press_tint")
+texture_normal = ExtResource("6_google")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TiktokButton" type="TextureButton" parent="SafeArea/Root/GuestContent/SocialRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+script = ExtResource("8_press_tint")
+texture_normal = ExtResource("7_tiktok")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="GuestFlexibleSpacer" type="Control" parent="SafeArea/Root/GuestContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="AgreementLabel" type="Label" parent="SafeArea/Root/GuestContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+autowrap_mode = 2
+text = "By linking your account, you agree to our\nPrivacy Policy and Terms of Service."
+
+[node name="GuestBottomSpacer" type="Control" parent="SafeArea/Root/GuestContent"]
+custom_minimum_size = Vector2(0, 268)
+layout_mode = 2
+
+[node name="LinkedContent" type="VBoxContainer" parent="SafeArea/Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="Avatar" type="TextureRect" parent="SafeArea/Root/LinkedContent"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("4_avatar")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ProfileNameLabel" type="Label" parent="SafeArea/Root/LinkedContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "Player"
+
+[node name="ProviderSpacer" type="Control" parent="SafeArea/Root/LinkedContent"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="ProviderLabel" type="Label" parent="SafeArea/Root/LinkedContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+autowrap_mode = 2
+text = "Your account is linked."
+
+[node name="LinkedSecuritySpacer" type="Control" parent="SafeArea/Root/LinkedContent"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="SecurityLabel" type="Label" parent="SafeArea/Root/LinkedContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+autowrap_mode = 2
+text = "We only use your account to save your\ngame, and your information is kept safe."
+
+[node name="LinkedFlexibleSpacer" type="Control" parent="SafeArea/Root/LinkedContent"]
+layout_mode = 2
+size_flags_vertical = 3

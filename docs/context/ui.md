@@ -39,6 +39,9 @@ uses its other fields only for private entry. Create keeps its source form benea
 a blocking wait. Join instead disables its source form around an accepted request,
 shows connection status there, restores the same values after rejection or
 transport failure, and enters Private Lobby directly on authoritative success.
+Home also opens Settings, whose Account branch presents guest or linked state from
+the restored auth session metadata. Settings sign-out reuses the shared confirmation
+modal, clears that session only after confirmation, and returns to Sign-in.
 Private Lobby renders
 server info, fixed seats, host-only kick, readiness, countdown, and grace-greyed
 identity; leave and kick reuse the shared confirmation modal.
@@ -47,8 +50,8 @@ Network signals drive room entry, match start, teardown, navigation, and recover
 Play Menu is a full-screen overlay above the retained live Play instance. It
 blocks gameplay and debug input without pausing the match, and closing it restores
 the same tower, camera, inventory, HUD, and connection state. Its music and sound
-switches are interactive presentation placeholders with no audio or persistence
-ownership.
+switches share persisted client presentation preferences with Settings but still
+have no audio side effects.
 During active-match recovery, a centred blocking modal keeps the current screen
 visible while the client applies authoritative recovery state; gameplay and debug
 input stay unavailable until it completes. A terminal resume result routes to

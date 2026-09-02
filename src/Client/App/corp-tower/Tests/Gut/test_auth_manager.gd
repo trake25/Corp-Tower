@@ -8,6 +8,7 @@ func before_each() -> void:
 	auth = AuthManagerScript.new()
 
 func after_each() -> void:
+	auth.sign_out()
 	auth.free()
 
 func test_resolve_expiry_prefers_absolute_expires_at() -> void:
@@ -55,6 +56,59 @@ func test_apply_session_stores_tokens_and_identity() -> void:
 	assert_eq(auth.refresh_token_value, "refresh-value")
 	assert_eq(auth.user_id, "user-uuid")
 	assert_true(auth.is_anonymous, "An anonymous guest session should be flagged as such.")
+
+func test_apply_session_retains_linked_provider_and_profile_name() -> void:
+	var applied: bool = auth._apply_session({
+		"access_token": "access-value",
+		"refresh_token": "refresh-value",
+		"expires_in": 3600,
+		"user": {
+			"id": "linked-user",
+			"is_anonymous": false,
+			"app_metadata": {"provider": "google"},
+			"user_metadata": {"full_name": "Ada Player"}
+		}
+	})
+
+	assert_true(applied)
+	assert_eq(auth.current_provider, "google")
+	assert_eq(auth.display_name, "Ada Player")
+
+func test_anonymous_session_clears_linked_presentation_metadata() -> void:
+	auth.current_provider = "facebook"
+	auth.display_name = "Previous Player"
+
+	auth._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+
+	assert_eq(auth.current_provider, "")
+	assert_eq(auth.display_name, "")
+
+func test_sign_out_clears_presentation_metadata() -> void:
+	auth.current_provider = "google"
+	auth.display_name = "Ada Player"
+	auth.sign_out()
+
+	assert_eq(auth.current_provider, "")
+	assert_eq(auth.display_name, "")
+
+func test_presentation_metadata_restores_with_the_saved_session() -> void:
+	auth.access_token_value = "access-value"
+	auth.refresh_token_value = "refresh-value"
+	auth.expires_at_unix = int(Time.get_unix_time_from_system()) + 3600
+	auth.current_provider = "google"
+	auth.display_name = "Ada Player"
+	auth._save_session()
+	var restored = AuthManagerScript.new()
+	restored._load_session()
+
+	assert_eq(restored.current_provider, "google")
+	assert_eq(restored.display_name, "Ada Player")
+	restored.free()
 
 func test_seconds_until_expiry_is_zero_without_a_session() -> void:
 	assert_eq(

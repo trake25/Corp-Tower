@@ -2,13 +2,21 @@ extends GutTest
 
 const MainScene = preload("res://Cor/Scenes/Main.tscn")
 const MenuScreenScene = preload("res://Cor/Scenes/MenuScreen.tscn")
+const UiPreferencesScript = preload("res://Cor/Scripts/UiPreferences.gd")
 
 var screen_manager
 
 func before_each() -> void:
+	if FileAccess.file_exists(UiPreferencesScript.PREFERENCES_FILE):
+		DirAccess.remove_absolute(UiPreferencesScript.PREFERENCES_FILE)
 	screen_manager = MainScene.instantiate()
 	add_child_autofree(screen_manager)
 	await get_tree().process_frame
+	await get_tree().process_frame
+
+func after_each() -> void:
+	if FileAccess.file_exists(UiPreferencesScript.PREFERENCES_FILE):
+		DirAccess.remove_absolute(UiPreferencesScript.PREFERENCES_FILE)
 	await get_tree().process_frame
 
 func test_terminal_room_close_routes_home() -> void:
@@ -95,6 +103,55 @@ func test_menu_switches_are_local_ui_placeholders() -> void:
 	assert_true(menu.music_toggle.button_pressed)
 	assert_true(menu.sound_toggle.button_pressed)
 	assert_false(menu.leave_pending)
+
+	var restored = MenuScreenScene.instantiate()
+	add_child_autofree(restored)
+	await get_tree().process_frame
+
+	assert_true(restored.music_toggle.button_pressed)
+	assert_true(restored.sound_toggle.button_pressed)
+
+func test_home_settings_and_account_navigation_returns_through_the_stack() -> void:
+	screen_manager.show_home_screen()
+	var home = screen_manager.current_overlay
+	home.settings_requested.emit()
+	await get_tree().process_frame
+
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/SettingsScreen.tscn"))
+	screen_manager.current_overlay.account_requested.emit()
+	await get_tree().process_frame
+
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/AccountScreen.tscn"))
+	screen_manager.current_overlay.back_requested.emit()
+	await get_tree().process_frame
+
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/SettingsScreen.tscn"))
+	screen_manager.current_overlay.back_requested.emit()
+	await get_tree().process_frame
+
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
+
+func test_settings_sign_out_requires_confirmation_then_routes_to_sign_in() -> void:
+	AuthManager.current_provider = "facebook"
+	AuthManager.display_name = "Player Name"
+	AuthManager.is_anonymous = false
+	AuthManager.access_token_value = "access"
+	AuthManager.refresh_token_value = "refresh"
+	AuthManager.expires_at_unix = int(Time.get_unix_time_from_system()) + 3600
+	screen_manager.show_settings_screen()
+	var settings = screen_manager.current_overlay
+
+	settings.sign_out_button.pressed.emit()
+	assert_true(settings.confirm_modal.visible)
+	assert_eq(screen_manager.current_overlay, settings)
+	assert_eq(AuthManager.current_provider, "facebook")
+
+	settings.confirm_modal.continue_button.pressed.emit()
+	await get_tree().process_frame
+
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/SignInScreen.tscn"))
+	assert_eq(AuthManager.current_provider, "")
+	assert_eq(AuthManager.display_name, "")
 
 func test_leave_game_confirms_once_and_waits_for_authoritative_acknowledgement() -> void:
 	screen_manager._enter_play_instance()

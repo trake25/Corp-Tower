@@ -7,6 +7,21 @@ Each `@file` purpose is authored once and carried forward on regeneration.
 a file purpose or stable anchor and `path:line`, so it feeds straight into a
 bounded source read. Local implementation detail stays in source.
 
+### src/Client/App/corp-tower/Cor/Scenes/AccountScreen.tscn — 224 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/AccountScreen.tscn:1 | @file · file | AccountScreen scene composition and controller bindings |
+| src/Client/App/corp-tower/Cor/Scenes/AccountScreen.tscn:13 | AccountScreen · scene root | |
+| src/Client/App/corp-tower/Cor/Scenes/AccountScreen.tscn:55 | %BackButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/AccountScreen.tscn:79 | %GuestContent · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/AccountScreen.tscn:129 | %FacebookButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/AccountScreen.tscn:138 | %GoogleButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/AccountScreen.tscn:147 | %TiktokButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/AccountScreen.tscn:173 | %LinkedContent · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/AccountScreen.tscn:188 | %ProfileNameLabel · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/AccountScreen.tscn:200 | %ProviderLabel · unique node | |
+
 ### src/Client/App/corp-tower/Cor/Scenes/ConfirmModal.tscn — 124 ln
 
 | File:Ln | Anchor | Purpose |
@@ -29,7 +44,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:81 | %QueueProgressBar · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/FindMatchScreen.tscn:102 | %CancelButton · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn — 268 ln
+### src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn — 269 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -40,6 +55,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:146 | %JoinServerLabel · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:155 | %TutorialButton · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:200 | %CircleRow · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn:232 | %SettingsButton · unique node | |
 
 ### src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn — 295 ln
 
@@ -127,6 +143,22 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:242 | %ReadyLabel · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn:257 | %LeaveLobbyModal · unique node | |
 
+### src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn — 341 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn:1 | @file · file | SettingsScreen scene composition and controller bindings |
+| src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn:28 | SettingsScreen · scene root | |
+| src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn:69 | %BackButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn:100 | %AccountButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn:117 | %AccountIcon · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn:127 | %AccountStatusLabel · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn:173 | %MusicToggle · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn:208 | %SoundToggle · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn:290 | %SignOutButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn:329 | %VersionLabel · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn:337 | %ConfirmModal · unique node | |
+
 ### src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn — 194 ln
 
 | File:Ln | Anchor | Purpose |
@@ -139,7 +171,16 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn:165 | %GuestLabel · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn:173 | %ErrorLabel · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd — 167 ln
+### src/Client/App/corp-tower/Cor/Scripts/AccountScreen.gd — 43 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/AccountScreen.gd:1 | @file · file | AccountScreen client behavior |
+| src/Client/App/corp-tower/Cor/Scripts/AccountScreen.gd:3 | back_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/AccountScreen.gd:19 | refresh_account_state | |
+| src/Client/App/corp-tower/Cor/Scripts/AccountScreen.gd:26 | apply_account_state | |
+
+### src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd — 178 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -149,12 +190,13 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:6 | OUTSIDE_TAP_GRACE_MS · const | |
 | src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:32 | open_leave_lobby | |
 | src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:43 | open_leave_game | |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:54 | open_kick_player | |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:65 | open_time_expired | |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:72 | open_disconnected | |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:79 | open_recovering | |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:87 | open_recovery_failed | |
-| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:101 | dismiss_recovery | |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:54 | open_sign_out | |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:65 | open_kick_player | |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:76 | open_time_expired | |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:83 | open_disconnected | |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:90 | open_recovering | |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:98 | open_recovery_failed | |
+| src/Client/App/corp-tower/Cor/Scripts/ConfirmModal.gd:112 | dismiss_recovery | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd — 19 ln
 
@@ -163,7 +205,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:1 | @file · file | player backed out of matchmaking |
 | src/Client/App/corp-tower/Cor/Scripts/FindMatchScreen.gd:3 | cancel_requested · signal | |
 
-### src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd — 16 ln
+### src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd — 18 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -171,6 +213,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:3 | join_server_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:4 | private_server_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:5 | tutorial_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/HomeScreen.gd:6 | settings_requested · signal | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd — 113 ln
 
@@ -197,14 +240,14 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:268 | set_external_overlay_input_blocked | |
 | src/Client/App/corp-tower/Cor/Scripts/Main.gd:340 | start_tutorial | |
 
-### src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd — 44 ln
+### src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd — 51 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd:1 | @file · file | MenuScreen client behavior |
-| src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd:3 | close_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd:4 | leave_game_requested · signal | |
-| src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd:19 | set_leave_pending | |
+| src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd:5 | close_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd:6 | leave_game_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/MenuScreen.gd:26 | set_leave_pending | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/PlacementWorldFrame.gd — 49 ln
 
@@ -257,14 +300,25 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:12 | DISABLED_MODULATE · const | |
 | src/Client/App/corp-tower/Cor/Scripts/PublicLobbyScreen.gd:32 | apply_lobby_data | |
 
-### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 574 ln
+### src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd — 598 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:1 | @file · file | **debug button visibility set once here from `DEBUG_UI_ENABLED`** |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:15 | DEBUG_CONTEXT_LOBBY · const | |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:16 | DEBUG_CONTEXT_PLAY · const | |
-| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:311 | start_tutorial | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:17 | DEBUG_CONTEXT_LOBBY · const | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:18 | DEBUG_CONTEXT_PLAY · const | |
+| src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd:335 | start_tutorial | |
+
+### src/Client/App/corp-tower/Cor/Scripts/SettingsScreen.gd — 56 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/SettingsScreen.gd:1 | @file · file | SettingsScreen client behavior |
+| src/Client/App/corp-tower/Cor/Scripts/SettingsScreen.gd:5 | back_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/SettingsScreen.gd:6 | account_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/SettingsScreen.gd:7 | sign_out_requested · signal | |
+| src/Client/App/corp-tower/Cor/Scripts/SettingsScreen.gd:33 | refresh_account_state | |
+| src/Client/App/corp-tower/Cor/Scripts/SettingsScreen.gd:39 | apply_account_state | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/SignInDebugOverlay.gd — 120 ln
 
@@ -285,7 +339,16 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:68 | show_error | |
 | src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd:72 | toggle_debug_overlay | |
 
-### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 666 ln
+### src/Client/App/corp-tower/Cor/Scripts/UiPreferences.gd — 44 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| src/Client/App/corp-tower/Cor/Scripts/UiPreferences.gd:1 | @file · file | UiPreferences client behavior |
+| src/Client/App/corp-tower/Cor/Scripts/UiPreferences.gd:1 | UiPreferences · class_name | |
+| src/Client/App/corp-tower/Cor/Scripts/UiPreferences.gd:14 | set_background_music_enabled | |
+| src/Client/App/corp-tower/Cor/Scripts/UiPreferences.gd:18 | set_sound_effects_enabled | |
+
+### src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd — 700 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -295,19 +358,21 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:21 | REASON_UNREACHABLE · const | |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:22 | REASON_REJECTED · const | |
 | src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:28 | oauth_completed · signal | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:109 | is_native_google_enabled | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:112 | set_native_google_enabled | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:115 | is_native_facebook_enabled | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:118 | set_native_facebook_enabled | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:174 | is_enabled | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:180 | access_token | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:189 | connection_access_token | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:195 | connection_auth_provider | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:204 | restore_session | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:243 | take_oauth_error | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:283 | sign_in_guest | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:297 | is_oauth_enabled | |
-| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:309 | sign_in_with_provider | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:111 | is_native_google_enabled | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:114 | set_native_google_enabled | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:117 | is_native_facebook_enabled | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:120 | set_native_facebook_enabled | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:176 | is_enabled | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:179 | is_signed_in | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:182 | access_token | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:191 | connection_access_token | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:197 | connection_auth_provider | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:206 | restore_session | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:245 | take_oauth_error | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:285 | sign_in_guest | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:299 | is_oauth_enabled | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:311 | sign_in_with_provider | |
+| src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd:524 | sign_out | |
 
 ### src/Client/App/corp-tower/Sys/Auth/Auth_Request_Transport.gd — 59 ln
 
@@ -374,4 +439,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-30 files · 185 stable anchors.
+35 files · 220 stable anchors.

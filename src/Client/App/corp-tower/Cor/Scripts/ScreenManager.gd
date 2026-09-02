@@ -3,6 +3,8 @@ extends Control
 const PlayLoaderScreenScene := preload("res://Cor/Scenes/PlayLoaderScreen.tscn")
 const SignInScreenScene := preload("res://Cor/Scenes/SignInScreen.tscn")
 const HomeScreenScene := preload("res://Cor/Scenes/HomeScreen.tscn")
+const SettingsScreenScene := preload("res://Cor/Scenes/SettingsScreen.tscn")
+const AccountScreenScene := preload("res://Cor/Scenes/AccountScreen.tscn")
 const PrivateServerScreenScene := preload("res://Cor/Scenes/PrivateServerScreen.tscn")
 const JoinScreenScene := preload("res://Cor/Scenes/JoinScreen.tscn")
 const FindMatchScreenScene := preload("res://Cor/Scenes/FindMatchScreen.tscn")
@@ -238,6 +240,7 @@ func show_home_screen() -> void:
 	screen.private_server_requested.connect(_on_home_private_server_requested)
 	screen.join_server_requested.connect(_on_home_join_server_requested)
 	screen.tutorial_requested.connect(_on_home_tutorial_requested)
+	screen.settings_requested.connect(_on_home_settings_requested)
 	_set_overlay(screen)
 	_set_debug_context(DEBUG_CONTEXT_NONE)
 
@@ -252,6 +255,27 @@ func _on_home_join_server_requested() -> void:
 
 func _on_home_tutorial_requested() -> void:
 	start_tutorial(&"")
+
+func _on_home_settings_requested() -> void:
+	show_settings_screen()
+
+func show_settings_screen() -> void:
+	var screen := SettingsScreenScene.instantiate()
+	screen.back_requested.connect(show_home_screen)
+	screen.account_requested.connect(show_account_screen)
+	screen.sign_out_requested.connect(_on_settings_sign_out_requested)
+	_set_overlay(screen)
+	_set_debug_context(DEBUG_CONTEXT_NONE)
+
+func show_account_screen() -> void:
+	var screen := AccountScreenScene.instantiate()
+	screen.back_requested.connect(show_settings_screen)
+	_set_overlay(screen)
+	_set_debug_context(DEBUG_CONTEXT_NONE)
+
+func _on_settings_sign_out_requested() -> void:
+	AuthManager.sign_out()
+	show_sign_in_screen()
 
 func show_private_server_screen() -> void:
 	_teardown_play_instance()

@@ -1,9 +1,12 @@
 extends Control
 
+const UiPreferencesScript = preload("res://Cor/Scripts/UiPreferences.gd")
+
 signal close_requested
 signal leave_game_requested
 
 var leave_pending := false
+var preferences = UiPreferencesScript.new()
 
 @onready var close_button: TextureButton = %CloseButton
 @onready var leave_button: Button = %LeaveGameButton
@@ -14,7 +17,11 @@ var leave_pending := false
 func _ready() -> void:
 	close_button.pressed.connect(_on_close_pressed)
 	leave_button.pressed.connect(_on_leave_pressed)
+	music_toggle.toggled.connect(preferences.set_background_music_enabled)
+	sound_toggle.toggled.connect(preferences.set_sound_effects_enabled)
 	confirm_modal.confirmed.connect(_on_leave_confirmed)
+	music_toggle.set_pressed_no_signal(preferences.background_music_enabled)
+	sound_toggle.set_pressed_no_signal(preferences.sound_effects_enabled)
 
 func set_leave_pending(pending: bool) -> void:
 	leave_pending = pending

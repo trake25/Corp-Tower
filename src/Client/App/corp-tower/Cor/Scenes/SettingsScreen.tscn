@@ -1,0 +1,340 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/SettingsScreen.gd" id="1_settings"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/btn-circular-back.png" id="2_back"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/ic-colored-user.png" id="3_user"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/ic-forward.png" id="4_forward"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/ic-colored-music.png" id="5_music"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/ic-colored-sound.png" id="6_sound"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/ic-colored-policy.png" id="7_policy"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/ic-colored-terms.png" id="8_terms"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/ic-colored-sign-out.png" id="9_sign_out"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/ic-toggle-off.png" id="10_toggle_off"]
+[ext_resource type="Texture2D" path="res://Cor/Art/13-Settings/ic-toggle-on.png" id="11_toggle_on"]
+[ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="12_press_tint"]
+[ext_resource type="PackedScene" path="res://Cor/Scenes/ConfirmModal.tscn" id="13_confirm"]
+[ext_resource type="Theme" path="res://Cor/Themes/GameUITheme.tres" id="14_theme"]
+
+[sub_resource type="Gradient" id="Gradient_SettingsBg"]
+offsets = PackedFloat32Array(0, 0.56, 1)
+colors = PackedColorArray(0.47, 0.82, 0.95, 1, 0.86, 0.96, 0.99, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_SettingsBg"]
+gradient = SubResource("Gradient_SettingsBg")
+width = 4
+height = 512
+fill_to = Vector2(0, 1)
+
+[node name="SettingsScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("14_theme")
+script = ExtResource("1_settings")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_SettingsBg")
+expand_mode = 1
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 18
+
+[node name="Root" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+
+[node name="BackButton" type="TextureButton" parent="SafeArea/Root/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("12_press_tint")
+texture_normal = ExtResource("2_back")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="SafeArea/Root/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"BoldLabel"
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Settings"
+
+[node name="HeaderSpacer" type="Control" parent="SafeArea/Root/Header"]
+custom_minimum_size = Vector2(46, 0)
+layout_mode = 2
+
+[node name="AccountTitle" type="Label" parent="SafeArea/Root"]
+layout_mode = 2
+theme_type_variation = &"BoldLabel"
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 17
+text = "Account"
+
+[node name="AccountButton" type="Button" parent="SafeArea/Root"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+theme_type_variation = &"PopoverRowButton"
+text = ""
+
+[node name="Row" type="HBoxContainer" parent="SafeArea/Root/AccountButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="AccountIcon" type="TextureRect" parent="SafeArea/Root/AccountButton/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("3_user")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="AccountStatusLabel" type="Label" parent="SafeArea/Root/AccountButton/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "Not linked"
+
+[node name="ForwardIcon" type="TextureRect" parent="SafeArea/Root/AccountButton/Row"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("4_forward")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SettingsRows" type="VBoxContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MusicRow" type="HBoxContainer" parent="SafeArea/Root/SettingsRows"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="TextureRect" parent="SafeArea/Root/SettingsRows/MusicRow"]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("5_music")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="SafeArea/Root/SettingsRows/MusicRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "Background music"
+
+[node name="MusicToggle" type="TextureButton" parent="SafeArea/Root/SettingsRows/MusicRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 24)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+script = ExtResource("12_press_tint")
+texture_normal = ExtResource("10_toggle_off")
+texture_pressed = ExtResource("11_toggle_on")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="SoundRow" type="HBoxContainer" parent="SafeArea/Root/SettingsRows"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="TextureRect" parent="SafeArea/Root/SettingsRows/SoundRow"]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("6_sound")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="SafeArea/Root/SettingsRows/SoundRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "Sound effects"
+
+[node name="SoundToggle" type="TextureButton" parent="SafeArea/Root/SettingsRows/SoundRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 24)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+script = ExtResource("12_press_tint")
+texture_normal = ExtResource("10_toggle_off")
+texture_pressed = ExtResource("11_toggle_on")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="PrivacyButton" type="Button" parent="SafeArea/Root/SettingsRows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_type_variation = &"PopoverRowButton"
+text = ""
+
+[node name="Row" type="HBoxContainer" parent="SafeArea/Root/SettingsRows/PrivacyButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="TextureRect" parent="SafeArea/Root/SettingsRows/PrivacyButton/Row"]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("7_policy")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="SafeArea/Root/SettingsRows/PrivacyButton/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "Privacy policy"
+
+[node name="TermsButton" type="Button" parent="SafeArea/Root/SettingsRows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_type_variation = &"PopoverRowButton"
+text = ""
+
+[node name="Row" type="HBoxContainer" parent="SafeArea/Root/SettingsRows/TermsButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="TextureRect" parent="SafeArea/Root/SettingsRows/TermsButton/Row"]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("8_terms")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="SafeArea/Root/SettingsRows/TermsButton/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "Terms of service"
+
+[node name="SignOutButton" type="Button" parent="SafeArea/Root/SettingsRows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_type_variation = &"PopoverRowButton"
+text = ""
+
+[node name="Row" type="HBoxContainer" parent="SafeArea/Root/SettingsRows/SignOutButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="TextureRect" parent="SafeArea/Root/SettingsRows/SignOutButton/Row"]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("9_sign_out")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="SafeArea/Root/SettingsRows/SignOutButton/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "Sign out"
+
+[node name="BottomSpacer" type="Control" parent="SafeArea/Root"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VersionLabel" type="Label" parent="SafeArea/Root"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+text = "Version 0.0.1"
+
+[node name="ConfirmModal" parent="." instance=ExtResource("13_confirm")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1

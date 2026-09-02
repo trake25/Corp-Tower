@@ -230,6 +230,7 @@ alignment = 1
 theme_override_constants/separation = 4
 
 [node name="SettingsButton" type="TextureButton" parent="SafeArea/Root/CircleRow/SettingsColumn"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 size_flags_horizontal = 4
