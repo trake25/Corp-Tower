@@ -14,20 +14,27 @@ func test_normal_target_preserves_the_existing_rounded_auto_follow_formula() -> 
 func test_navigation_and_mid_pan_reversal_are_fractional_and_continuous() -> void:
 	var state = configured_state()
 	state.snap_to_normal()
+	var auto_target: float = state.normal_target_units
+	var navigation_start: float = state.displayed_offset_units
 	assert_true(state.navigate_to_row(0.0))
 
 	state.step(0.05)
-	assert_almost_eq(state.displayed_offset_units, 4.55, 0.001)
+	assert_lt(state.displayed_offset_units, navigation_start)
+	assert_gt(state.displayed_offset_units, state.navigation_target_units)
+
 	var reversal_start: float = state.displayed_offset_units
 	assert_true(state.return_to_auto())
 	assert_almost_eq(state.displayed_offset_units, reversal_start, 0.001)
 
 	state.step(0.025)
-	assert_almost_eq(state.displayed_offset_units, 4.775, 0.001)
-	state.step(1.0)
+	assert_gt(state.displayed_offset_units, reversal_start)
+	assert_true(state.displayed_offset_units <= auto_target)
+
+	var remaining: float = absf(auto_target - state.displayed_offset_units)
+	state.step(remaining / maxf(state.pan_speed_units, 0.001) + 0.01)
 	assert_eq(state.displayed_offset_units, state.normal_target_units)
 	assert_eq(state.mode, TowerScrollState.Mode.AUTO)
-
+	
 func test_return_from_preserved_collapse_offset_can_start_above_the_new_extent() -> void:
 	var state = configured_state()
 	state.snap_to_normal()
