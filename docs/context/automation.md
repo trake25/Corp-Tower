@@ -24,9 +24,9 @@ working-tree diff. `scope` derives post-path tools, while `bundle` creates the
 bounded handoff for a runner without local access.
 
 Gitignored working folders have explicit routes but stay outside KB search.
-Private automation artifacts live in `.agent-state/automation/`, telemetry in
-`.agent-state/telemetry/`. Sanitized QA receipts are tracked under
-`report/qa-receipts/`, which stays outside retrieval unless requested.
+All `.agent-state/**` content is ignored private machine state and cannot be a
+publication path or KB dependency. Sanitized QA receipts are tracked separately
+under `report/qa-receipts/`, which stays outside retrieval unless requested.
 
 Search uses every query token as a required match. A weak narrative match returns
 `needs-anchor`; overflow returns `needs-filter`; a strict match returns map
@@ -56,8 +56,13 @@ the bundle path.
 ## Automated close-out
 
 `scripts/task-close.mjs` owns deterministic task closure. Its manifest is the
-explicit scope authority; it never discovers scope from a dirty tree. Schema 2
-separates authorized ownership from final changes and keeps detail in artifacts.
+explicit scope authority; it never discovers scope from a dirty tree. New
+schema-2 manifests use unique paths under
+`.agent-state/automation/task-close/`; their raw receipts remain beside them as
+private state. Later lifecycle commands require that exact returned manifest
+path, and legacy schema-2 paths remain valid only within `.agent-state/`.
+Schema 2 separates authorized ownership from final changes and keeps detail in
+artifacts.
 
 `prepare` owns paths, planned QA tooling and an optional active plan before edits;
 `amend` adds later ownership. `review` accepts only owned final changes and

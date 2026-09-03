@@ -7,9 +7,13 @@ function sanitized(value, fallback = 'Not recorded.') {
   let text = String(value ?? '').replace(/\s+/g, ' ').trim();
   if (!text) return fallback;
   text = text
-    .replace(/([\\`*[\]<>])/g, '\\$1')
+    .replace(/(?:file:\/\/)?\/(?:home|Users)\/[^/\s`)]+(?:\/[^\s`)]+)*/gi, '[private path]')
+    .replace(/(?:file:\/\/)?\/root(?:\/[^\s`)]+)*/gi, '[private path]')
+    .replace(/(?:file:\/\/\/?)?[A-Z]:[\\/]Users[\\/][^\\/\s`)]+(?:[\\/][^\s`)]+)*/gi, '[private path]')
     .replace(/(?:file:\/\/)?(?:\/tmp|\.agent-state)[/\\][^\s`)]+/gi, '[private path]')
-    .replace(/\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|API_KEY)[A-Z0-9_]*)\s*=\s*(?:"[^"]*"|'[^']*'|\S+)/gi, '$1=[redacted]');
+    .replace(/\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|API_KEY)[A-Z0-9_]*)\s*=\s*(?:"[^"]*"|'[^']*'|\S+)/gi, '$1=[redacted]')
+    .replace(/([\\`*[\]<>])/g, '\\$1')
+    .replace(/\\\[(private path|redacted)\\\]/g, '[$1]');
   return text;
 }
 

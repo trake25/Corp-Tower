@@ -102,7 +102,7 @@ test('public receipt rendering is deterministic and projects only sanitized term
     steps: [{
       name: 'QA',
       status: 0,
-      summary: 'exit 0',
+      summary: 'exit 0; /home/alice/Corp-Tower/run.log /Users/bob/Corp-Tower/run.log C:\\Users\\carol\\Corp-Tower\\run.log /usr/bin/node',
       output: 'RAW_CHILD_OUTPUT_SENTINEL',
       telemetry: { session: 'PRIVATE_SESSION_SENTINEL' },
     }],
@@ -121,7 +121,9 @@ test('public receipt rendering is deterministic and projects only sanitized term
   assert.match(receipt, /Protected contract: Public receipts cannot expose raw output/);
   assert.match(receipt, /QA tooling: planned-change/);
   assert.match(receipt, /report\/qa-receipts\/qa-receipt-public-qa-receipts-v0\.01\.md/);
-  assert.doesNotMatch(receipt, /RAW_CHILD_OUTPUT_SENTINEL|PRIVATE_SESSION_SENTINEL|PRIVATE_PROMPT_SENTINEL/);
+  assert.match(receipt, /\/usr\/bin\/node/);
+  assert.match(receipt, /\[private path\]/);
+  assert.doesNotMatch(receipt, /alice|bob|carol|RAW_CHILD_OUTPUT_SENTINEL|PRIVATE_SESSION_SENTINEL|PRIVATE_PROMPT_SENTINEL/);
 });
 
 test('maintenance-blocked public receipts expose compact classification and follow-up without private fields', () => {
@@ -480,7 +482,11 @@ test('deferred retrieval repair writes one advisory handoff without blocking a p
 
 test('publication scope includes explicit, documented, and content-derived paths', () => {
   assert.deepEqual(
-    publishPathsFor([SOURCE], [DOC], ['docs/context/map/backend.md', SOURCE]),
+    publishPathsFor(
+      [SOURCE, '.agent-state/task.json', '.agent-state/task.receipt.json'],
+      [DOC],
+      ['docs/context/map/backend.md', SOURCE, '.agent-state/automation/generated.json'],
+    ),
     [DOC, 'docs/context/map/backend.md', SOURCE],
   );
 });
@@ -571,16 +577,17 @@ test('a documentation-only review needs no source documentation or permanent-cov
 
 test('CLI review accepts repository-contract changes without a documentation-scope process', () => {
   const root = mkdtempSync(join(tmpdir(), 'corp-task-close-'));
-  const manifest = '.agent-state/contract.json';
   const run = args => spawnSync(process.execPath, ['scripts/task-close.mjs', ...args], {
     cwd: process.cwd(),
-    env: { ...process.env, TASK_CLOSE_ROOT: root, CODEX_SESSION_ID: '', CODEX_THREAD_ID: '' },
+    env: Object.fromEntries(Object.entries({ ...process.env, TASK_CLOSE_ROOT: root, CODEX_SESSION_ID: '', CODEX_THREAD_ID: '' }).filter(([key]) => key !== 'NODE_TEST_CONTEXT')),
     encoding: 'utf8',
   });
 
   try {
-    const prepared = run(['prepare', '--task', 'Contract wording', '--output', manifest, '--path', 'AGENTS.md']);
+    const prepared = run(['prepare', '--task', 'Contract wording', '--path', 'AGENTS.md']);
     assert.equal(prepared.status, 0, prepared.stderr);
+    const manifest = JSON.parse(prepared.stdout).manifest;
+    assert.match(manifest, /^\.agent-state\/automation\/task-close\/[0-9a-f-]+\.json$/);
     const preparedManifest = JSON.parse(readFileSync(join(root, manifest), 'utf8'));
     assert.equal(preparedManifest.observability.task_id, preparedManifest.run_id);
     assert.equal(preparedManifest.observability.status, 'partial');
@@ -593,18 +600,60 @@ test('CLI review accepts repository-contract changes without a documentation-sco
   }
 });
 
-test('CLI review directs source-changing closeout through the documentation gate', () => {
-  const root = mkdtempSync(join(tmpdir(), 'corp-task-close-source-'));
-  const manifest = '.agent-state/source-contract.json';
+test('CLI prepare assigns distinct canonical manifests and rejects new legacy locations', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-close-canonical-'));
   const run = args => spawnSync(process.execPath, ['scripts/task-close.mjs', ...args], {
     cwd: process.cwd(),
-    env: { ...process.env, TASK_CLOSE_ROOT: root, CODEX_SESSION_ID: '', CODEX_THREAD_ID: '' },
+    env: Object.fromEntries(Object.entries({ ...process.env, TASK_CLOSE_ROOT: root, CODEX_SESSION_ID: '', CODEX_THREAD_ID: '' }).filter(([key]) => key !== 'NODE_TEST_CONTEXT')),
     encoding: 'utf8',
   });
 
   try {
-    const prepared = run(['prepare', '--task', 'Source contract', '--output', manifest, '--path', SOURCE]);
+    const first = run(['prepare', '--task', 'First canonical task', '--path', 'AGENTS.md']);
+    const second = run(['prepare', '--task', 'Second canonical task', '--path', 'AGENTS.md']);
+    assert.equal(first.status, 0, first.stderr);
+    assert.equal(second.status, 0, second.stderr);
+    const firstPath = JSON.parse(first.stdout).manifest;
+    const secondPath = JSON.parse(second.stdout).manifest;
+    assert.match(firstPath, /^\.agent-state\/automation\/task-close\//);
+    assert.match(secondPath, /^\.agent-state\/automation\/task-close\//);
+    assert.notEqual(firstPath, secondPath);
+    assert.equal(existsSync(join(root, firstPath)), true);
+    assert.equal(existsSync(join(root, secondPath)), true);
+
+    const legacy = run(['prepare', '--task', 'Rejected legacy task', '--output', '.agent-state/legacy.json', '--path', 'AGENTS.md']);
+    assert.equal(legacy.status, 2);
+    assert.match(legacy.stderr, /new manifests must be under \.agent-state\/automation\/task-close\//);
+
+    const explicitPath = '.agent-state/automation/task-close/explicit.json';
+    const explicit = run(['prepare', '--task', 'Explicit canonical task', '--output', explicitPath, '--path', 'AGENTS.md']);
+    const collision = run(['prepare', '--task', 'Colliding canonical task', '--output', explicitPath, '--path', 'AGENTS.md']);
+    assert.equal(explicit.status, 0, explicit.stderr);
+    assert.equal(collision.status, 1);
+    assert.match(collision.stderr, /manifest already exists/);
+
+    const publicManifest = 'public-manifest.json';
+    writeFileSync(join(root, publicManifest), `${JSON.stringify(createManifest({ task: 'Public state rejected', ownedPaths: ['AGENTS.md'] }), null, 2)}\n`);
+    const publicReview = run(['review', '--manifest', publicManifest, '--changed', 'AGENTS.md']);
+    assert.equal(publicReview.status, 1);
+    assert.match(publicReview.stderr, /schema-v2 manifests must stay under \.agent-state\//);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('CLI review directs source-changing closeout through the documentation gate', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-close-source-'));
+  const run = args => spawnSync(process.execPath, ['scripts/task-close.mjs', ...args], {
+    cwd: process.cwd(),
+    env: Object.fromEntries(Object.entries({ ...process.env, TASK_CLOSE_ROOT: root, CODEX_SESSION_ID: '', CODEX_THREAD_ID: '' }).filter(([key]) => key !== 'NODE_TEST_CONTEXT')),
+    encoding: 'utf8',
+  });
+
+  try {
+    const prepared = run(['prepare', '--task', 'Source contract', '--path', SOURCE]);
     assert.equal(prepared.status, 0, prepared.stderr);
+    const manifest = JSON.parse(prepared.stdout).manifest;
     const reviewed = run(['review', '--manifest', manifest, '--changed', SOURCE]);
     assert.equal(reviewed.status, 0, reviewed.stderr);
     const output = reviewForManifest(JSON.parse(readFileSync(join(root, manifest), 'utf8')), manifest);
@@ -764,7 +813,7 @@ function terminalCloseFixture(qaSource, task = 'Public QA receipt fixture', { pl
   };
 }
 
-test('terminal passed close writes one public receipt, publishes it, and reuses its identity', () => {
+test('a legacy schema-v2 manifest can close while its raw receipt remains private', () => {
   const fixture = terminalCloseFixture("console.log('PASS — fixture QA');\n");
   try {
     const first = fixture.run();
@@ -775,6 +824,9 @@ test('terminal passed close writes one public receipt, publishes it, and reuses 
     assert.equal(manifest.task_identity.label, 'Public QA Receipt v0.01');
     assert.equal(manifest.verification.public_receipt, 'report/qa-receipts/qa-receipt-public-qa-receipt-v0.01.md');
     assert.ok(manifest.publish_paths.includes(manifest.verification.public_receipt));
+    assert.equal(manifest.verification.receipt, '.agent-state/close.receipt.json');
+    assert.equal(manifest.publish_paths.some(path => path.startsWith('.agent-state/')), false);
+    assert.equal(existsSync(join(fixture.root, '.agent-state/close.receipt.json')), true);
     assert.match(readFileSync(join(fixture.root, manifest.verification.public_receipt), 'utf8'), /Verification: PASSED/);
 
     const repeated = fixture.run();

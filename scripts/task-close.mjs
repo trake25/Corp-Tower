@@ -27,7 +27,7 @@ import {
 } from './lib/agent-observability/state.mjs';
 
 const ROOT = resolve(process.env.TASK_CLOSE_ROOT || '.');
-const DEFAULT_MANIFEST = '.agent-state/automation/close-out.json';
+const CANONICAL_MANIFEST_DIRECTORY = '.agent-state/automation/task-close';
 const SCHEMA_VERSION = 2;
 const INTAKE_MAX_BYTES = 8 * 1024;
 
@@ -215,6 +215,7 @@ function pathChanges(before, after) {
 export function publishPathsFor(changedPaths, documentedPaths, derivedPaths) {
   return [...new Set([...changedPaths, ...documentedPaths, ...derivedPaths])]
     .filter(path => !isMaintenancePath(path))
+    .filter(path => !/^\.agent-state(?:\/|$)/.test(path))
     .filter(path => !/^plan(?:\/|$)/.test(path))
     .sort();
 }
@@ -628,12 +629,26 @@ export function reviewForManifest(manifest, manifestFile) {
 }
 
 function manifestPath(values) {
-  return safePath(one(values, 'manifest') || DEFAULT_MANIFEST, '--manifest');
+  return safePath(one(values, 'manifest', true), '--manifest');
 }
 
-function writeManifest(path, manifest) {
+function preparedManifestPath(values, runId) {
+  const output = one(values, 'output');
+  const manifest = one(values, 'manifest');
+  if (output && manifest) fail('prepare accepts only one of --output or --manifest');
+  const selected = output || manifest || `${CANONICAL_MANIFEST_DIRECTORY}/${runId}.json`;
+  const path = safePath(selected, '--output');
+  const canonicalRoot = resolve(ROOT, CANONICAL_MANIFEST_DIRECTORY);
+  if (!path.startsWith(canonicalRoot + sep))
+    fail(`new manifests must be under ${CANONICAL_MANIFEST_DIRECTORY}/`);
+  if (!path.endsWith('.json') || path.endsWith('.receipt.json'))
+    fail('new manifests must use a .json filename other than .receipt.json');
+  return path;
+}
+
+function writeManifest(path, manifest, { exclusive = false } = {}) {
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
+  writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`, { flag: exclusive ? 'wx' : 'w' });
 }
 
 function readManifest(path) {
@@ -645,6 +660,9 @@ function readManifest(path) {
     fail(`manifest is not valid JSON: ${displayPath(path)}`, 1);
   }
   if (![1, SCHEMA_VERSION].includes(manifest.schema_version)) fail(`unsupported manifest schema: ${manifest.schema_version}`, 1);
+  const privateStateRoot = resolve(ROOT, '.agent-state');
+  if (manifest.schema_version === SCHEMA_VERSION && !path.startsWith(privateStateRoot + sep))
+    fail('schema-v2 manifests must stay under .agent-state/', 1);
   return manifest;
 }
 
@@ -981,18 +999,20 @@ async function main() {
   const values = parseArgs(args);
   if (action === 'prepare') {
     checkOptions(values, ['task', 'output', 'manifest', 'path', 'changed', 'qa-tooling-path', 'plan']);
-    const manifestFile = safePath(one(values, 'output') || one(values, 'manifest') || DEFAULT_MANIFEST, '--output');
+    const runId = randomUUID();
+    const manifestFile = preparedManifestPath(values, runId);
     if (existsSync(manifestFile)) fail(`manifest already exists: ${displayPath(manifestFile)}; start a new run with --output`, 1);
     const paths = normalizePaths([...many(values, 'path'), ...many(values, 'changed')]);
     const manifest = createManifest({
       task: one(values, 'task', true),
       ownedPaths: paths,
       plannedQaToolingPaths: normalizeOptionalPaths(many(values, 'qa-tooling-path'), '--qa-tooling-path'),
+      runId,
       planPath: one(values, 'plan'),
       root: ROOT,
     });
     manifest.observability = startObservability(manifest);
-    writeManifest(manifestFile, manifest);
+    writeManifest(manifestFile, manifest, { exclusive: true });
     console.log(JSON.stringify(intakeForManifest(manifest, displayPath(manifestFile)), null, 2));
     return;
   }

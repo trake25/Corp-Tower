@@ -1036,15 +1036,15 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/maintenance-handoff.mjs:89 | createMaintenanceItem · fn | |
 | scripts/lib/maintenance-handoff.mjs:196 | resolveMaintenanceHandoff · fn | |
 
-### scripts/lib/qa-receipt.mjs — 151 ln
+### scripts/lib/qa-receipt.mjs — 155 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/lib/qa-receipt.mjs:1 | @file · file | qa receipt repository workflow |
 | scripts/lib/qa-receipt.mjs:6 | sanitized · fn | |
-| scripts/lib/qa-receipt.mjs:53 | publicQaReceiptPath · fn | |
-| scripts/lib/qa-receipt.mjs:58 | renderPublicQaReceipt · fn | |
-| scripts/lib/qa-receipt.mjs:144 | writePublicQaReceipt · fn | |
+| scripts/lib/qa-receipt.mjs:57 | publicQaReceiptPath · fn | |
+| scripts/lib/qa-receipt.mjs:62 | renderPublicQaReceipt · fn | |
+| scripts/lib/qa-receipt.mjs:148 | writePublicQaReceipt · fn | |
 
 ### scripts/lib/task-identity.mjs — 112 ln
 
@@ -1102,7 +1102,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/sync-agent-skills.mjs:15 | compare · fn | |
 | scripts/sync-agent-skills.mjs:22 | skillMirrorDrift · fn | |
 
-### scripts/task-close.mjs — 1127 ln
+### scripts/task-close.mjs — 1147 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1122,22 +1122,22 @@ bounded source read. Local implementation detail stays in source.
 | scripts/task-close.mjs:187 | command · fn | |
 | scripts/task-close.mjs:194 | fingerprint · fn | |
 | scripts/task-close.mjs:215 | publishPathsFor · fn | |
-| scripts/task-close.mjs:252 | createManifest · fn | |
-| scripts/task-close.mjs:286 | startObservability · fn | |
-| scripts/task-close.mjs:316 | closeObservabilityUnsafe · fn | |
-| scripts/task-close.mjs:395 | amendManifest · fn | |
-| scripts/task-close.mjs:433 | reviewManifest · fn | |
-| scripts/task-close.mjs:477 | applyDocumentationDecision · fn | |
-| scripts/task-close.mjs:514 | applyCoverageDecision · fn | |
-| scripts/task-close.mjs:534 | recordFallback · fn | |
-| scripts/task-close.mjs:553 | fallbackRequiresRetrievalProof · fn | |
-| scripts/task-close.mjs:557 | intakeForManifest · fn | |
-| scripts/task-close.mjs:598 | reviewForManifest · fn | |
-| scripts/task-close.mjs:630 | manifestPath · fn | |
-| scripts/task-close.mjs:667 | compactOutput · fn | |
-| scripts/task-close.mjs:699 | validateDocumentationDecision · fn | |
-| scripts/task-close.mjs:736 | retrievalFallbackMaintenanceItems · fn | |
-| scripts/task-close.mjs:774 | archivePlan · fn | |
+| scripts/task-close.mjs:253 | createManifest · fn | |
+| scripts/task-close.mjs:287 | startObservability · fn | |
+| scripts/task-close.mjs:317 | closeObservabilityUnsafe · fn | |
+| scripts/task-close.mjs:396 | amendManifest · fn | |
+| scripts/task-close.mjs:434 | reviewManifest · fn | |
+| scripts/task-close.mjs:478 | applyDocumentationDecision · fn | |
+| scripts/task-close.mjs:515 | applyCoverageDecision · fn | |
+| scripts/task-close.mjs:535 | recordFallback · fn | |
+| scripts/task-close.mjs:554 | fallbackRequiresRetrievalProof · fn | |
+| scripts/task-close.mjs:558 | intakeForManifest · fn | |
+| scripts/task-close.mjs:599 | reviewForManifest · fn | |
+| scripts/task-close.mjs:631 | manifestPath · fn | |
+| scripts/task-close.mjs:685 | compactOutput · fn | |
+| scripts/task-close.mjs:717 | validateDocumentationDecision · fn | |
+| scripts/task-close.mjs:754 | retrievalFallbackMaintenanceItems · fn | |
+| scripts/task-close.mjs:792 | archivePlan · fn | |
 
 ### scripts/tests/agent-observability.test.mjs — 763 ln
 
@@ -1187,7 +1187,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/qa-gate.test.mjs:1 | @file · file | permanent regression coverage for qa gate |
 
-### scripts/tests/task-close.test.mjs — 936 ln
+### scripts/tests/task-close.test.mjs — 988 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
