@@ -64,14 +64,39 @@ func finish_recovery(tower: Control) -> void:
 	)
 	tower._process(completion_delta)
 
+func prepare_placement() -> void:
+	harness.main.match_state.tutorial_mode = true
+	harness.main.inventory.update_inventory_ui([INVENTORY_BLOCK], 3)
+
+func test_collapse_start_cancels_active_drag_once_and_blocks_lean() -> void:
+	var tower := harness.find("TowerStack") as Control
+	tower.clear_tower()
+	tower.set_tower(stacked_tower(), 16, 30)
+	prepare_placement()
+	harness.main.inventory.is_block_dragging = true
+	var collapse_starts: Array = []
+	tower.collapse_presentation_started.connect(func(): collapse_starts.append(true))
+
+	tower.set_tower(collapsed_tower(), 2, 30)
+	assert_eq(collapse_starts.size(), 1)
+	assert_false(harness.main.inventory.is_block_dragging)
+	assert_true(tower.is_collapse_input_blocked())
+	assert_eq(tower._collapse_phase, TowerStackScript.COLLAPSE_LEAN)
+	assert_false(harness.main.inventory.can_place_block(0))
+
+	harness.main.inventory.is_block_dragging = true
+	tower.set_tower(collapsed_tower(), 2, 30, 0, {"collapsed": true})
+	assert_eq(collapse_starts.size(), 1)
+	assert_true(harness.main.inventory.is_block_dragging)
+	assert_false(harness.main.inventory.can_place_block(0))
+	harness.main.inventory.cancel_block_drag()
+
 func test_hold_then_recover_keeps_camera_fixed_until_settlement_then_lingers() -> void:
 	var tower: Control = begin_elevated_collapse()
 	var placement_world := harness.find("PlacementWorldFrame") as Control
 	var platform := harness.find("PlatformArt") as Control
 	var emitted_pixels: Array = []
-	var recovery_starts: Array = []
 	tower.scroll_offset_changed.connect(func(pixels: float): emitted_pixels.append(pixels))
-	tower.collapse_recovery_started.connect(func(): recovery_starts.append(true))
 	var collapse_offset: float = tower.scroll_state.displayed_offset_units
 
 	begin_fall(tower)
@@ -85,7 +110,6 @@ func test_hold_then_recover_keeps_camera_fixed_until_settlement_then_lingers() -
 
 	settle_fall(tower)
 	assert_true(tower.is_collapse_recovery_active())
-	assert_eq(recovery_starts.size(), 1)
 	assert_false(tower.scroll_state.frozen)
 	assert_true(tower.is_navigation_blocked_by_presentation())
 	assert_false(tower._collapse_debris_linger_active)
@@ -139,6 +163,8 @@ func test_fall_follow_moves_camera_and_debris_concurrently() -> void:
 
 func test_fall_follow_camera_completion_waits_for_settlement() -> void:
 	var tower: Control = begin_elevated_collapse(TowerStackScript.COLLAPSE_VARIANT_FALL_FOLLOW)
+	prepare_placement()
+	assert_false(harness.main.inventory.can_place_block(0))
 	begin_fall(tower)
 
 	tower.scroll_state.snap_to_normal()
@@ -148,14 +174,17 @@ func test_fall_follow_camera_completion_waits_for_settlement() -> void:
 	assert_true(tower.is_navigation_blocked_by_presentation())
 	assert_false(tower._collapse_debris_linger_active)
 	assert_not_null(tower._collapse_sim)
+	assert_false(harness.main.inventory.can_place_block(0))
 
 	settle_fall(tower)
 	assert_true(tower._collapse_debris_linger_active)
 	assert_false(tower.is_navigation_blocked_by_presentation())
 	assert_not_null(tower._collapse_sim)
+	assert_true(harness.main.inventory.can_place_block(0))
 
 func test_fall_follow_settlement_waits_for_camera_completion() -> void:
 	var tower: Control = begin_elevated_collapse(TowerStackScript.COLLAPSE_VARIANT_FALL_FOLLOW)
+	prepare_placement()
 	begin_fall(tower)
 	settle_fall(tower)
 
@@ -163,12 +192,14 @@ func test_fall_follow_settlement_waits_for_camera_completion() -> void:
 	assert_eq(tower._collapse_phase, TowerStackScript.COLLAPSE_SETTLED)
 	assert_true(tower.is_navigation_blocked_by_presentation())
 	assert_false(tower._collapse_debris_linger_active)
+	assert_false(harness.main.inventory.can_place_block(0))
 
 	finish_recovery(tower)
 	assert_false(tower.is_collapse_recovery_active())
 	assert_false(tower.is_navigation_blocked_by_presentation())
 	assert_true(tower._collapse_debris_linger_active)
 	assert_not_null(tower._collapse_sim)
+	assert_true(harness.main.inventory.can_place_block(0))
 
 func test_tall_survivor_recovery_stops_at_normal_elevated_framing() -> void:
 	var tower := harness.find("TowerStack") as Control
@@ -190,16 +221,16 @@ func test_tall_survivor_recovery_stops_at_normal_elevated_framing() -> void:
 	assert_true(tower._collapse_debris_linger_active)
 	assert_false(tower.is_navigation_blocked_by_presentation())
 
-func test_recovery_start_cancels_and_blocks_placement_input() -> void:
+func test_hold_then_recover_blocks_placement_until_linger() -> void:
 	var tower: Control = begin_elevated_collapse()
-	harness.main.match_state.tutorial_mode = true
-	harness.main.inventory.update_inventory_ui([INVENTORY_BLOCK], 3)
-	harness.main.inventory.is_block_dragging = true
-	assert_true(harness.main.inventory.can_place_block(0))
+	prepare_placement()
+	assert_false(harness.main.inventory.can_place_block(0))
 
 	begin_fall(tower)
+	assert_false(tower.is_collapse_recovery_active())
+	assert_false(harness.main.inventory.can_place_block(0))
 	settle_fall(tower)
-	assert_false(harness.main.inventory.is_block_dragging)
+	assert_true(tower.is_collapse_recovery_active())
 	assert_false(harness.main.inventory.can_place_block(0))
 
 	finish_recovery(tower)

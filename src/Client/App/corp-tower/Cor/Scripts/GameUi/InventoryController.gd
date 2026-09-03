@@ -245,8 +245,8 @@ func can_place_block(index: int) -> bool:
 func is_placement_input_allowed() -> bool:
 	if (
 		tower_stack_fallback != null
-		and tower_stack_fallback.has_method("is_collapse_recovery_active")
-		and bool(tower_stack_fallback.call("is_collapse_recovery_active"))
+		and tower_stack_fallback.has_method("is_collapse_input_blocked")
+		and bool(tower_stack_fallback.call("is_collapse_input_blocked"))
 	):
 		return false
 

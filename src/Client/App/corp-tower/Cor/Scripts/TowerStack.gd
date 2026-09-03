@@ -77,7 +77,7 @@ const ARMED_PULSE_SPEED := 5.0
 
 signal scroll_offset_changed(pixels: float)
 signal camera_zoom_changed(zoom: float)
-signal collapse_recovery_started
+signal collapse_presentation_started
 
 var tower_blocks: Array = []
 var current_height: int = 0
@@ -175,6 +175,7 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 		_collapse_phase = COLLAPSE_LEAN
 		_collapse_lean_elapsed = 0.0
 		_collapse_sim = null
+		collapse_presentation_started.emit()
 	elif _collapse_phase == COLLAPSE_NONE and !_collapse_recovery_active:
 		scroll_state.frozen = false
 		tower_collapsed = false
@@ -624,10 +625,12 @@ func reset_navigation() -> void:
 	queue_redraw()
 
 func is_navigation_blocked_by_presentation() -> bool:
+	return is_collapse_input_blocked() or _beat_phase != BEAT_NONE
+
+func is_collapse_input_blocked() -> bool:
 	return (
 		_collapse_phase == COLLAPSE_LEAN
 		or _collapse_phase == COLLAPSE_FALL
-		or _beat_phase != BEAT_NONE
 		or _collapse_recovery_active
 	)
 
@@ -872,7 +875,6 @@ func _start_collapse_recovery() -> void:
 	scroll_state.frozen = false
 	_sync_scroll_state()
 	_set_collapse_recovery_active(true)
-	collapse_recovery_started.emit()
 	if !scroll_state.return_to_auto_from(collapse_offset_units):
 		_set_collapse_recovery_active(false)
 	_update_scroll_offset()

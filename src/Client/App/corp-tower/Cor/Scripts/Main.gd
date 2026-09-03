@@ -140,8 +140,8 @@ func _ready() -> void:
 	if tower_stack.has_signal("scroll_offset_changed"):
 		tower_stack.connect("scroll_offset_changed", Callable(background_parallax, "set_scroll_pixels"))
 		tower_stack.connect("scroll_offset_changed", Callable(platform_parallax, "set_scroll_pixels"))
-	if tower_stack.has_signal("collapse_recovery_started"):
-		tower_stack.connect("collapse_recovery_started", Callable(inventory, "cancel_block_drag"))
+	if tower_stack.has_signal("collapse_presentation_started"):
+		tower_stack.connect("collapse_presentation_started", Callable(inventory, "cancel_block_drag"))
 
 	accessibility.changed.connect(apply_accessibility)
 	apply_accessibility()
