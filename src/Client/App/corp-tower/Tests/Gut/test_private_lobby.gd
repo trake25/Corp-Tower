@@ -101,7 +101,7 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 	screen.apply_lobby_data(private_lobby_payload([
 		{"id": "host", "displayName": "Host", "connectionPhase": "connected"}
 	], [], false, ""))
-	assert_eq((screen.get_node("SafeArea/Root/ServerInfoCard/CardMargin/Rows/PasswordValue") as Label).text, "")
+	assert_eq((screen.get_node("SafeArea/Root/ServerInfoCard/CardMargin/Rows/PasswordRow/Values/PasswordValue") as Label).text, "")
 
 	var full_payload := private_lobby_payload([
 		{"id": "host", "displayName": "Host", "avatarId": "avatar_0", "connectionPhase": "connected"},
@@ -112,6 +112,8 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 
 	var grace_name = screen.get_node("SafeArea/Root/WaitingRoomCard/CardMargin/Rows/Seat2/Seat2Identity/Seat2Name") as Label
 	var ready_label = screen.get_node("SafeArea/Root/ReadyButtonMargin/ReadyButton/ReadyLabel") as Label
+	var lobby_password = screen.get_node("SafeArea/Root/ServerInfoCard/CardMargin/Rows/PasswordRow/Values/PasswordValue") as Label
+	var lobby_eye = screen.get_node("SafeArea/Root/ServerInfoCard/CardMargin/Rows/PasswordRow/PasswordVisibilityButton") as TextureButton
 
 	assert_false(ready_button.disabled, "A three-seat private room enables Ready.")
 	assert_eq(grace_name.text.replace("\u0336", ""), "Graceful..", "Private names use the shared ten-character display convention.")
@@ -123,6 +125,10 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 		"Disconnected private-lobby names use a red state."
 	)
 	assert_eq(ready_label.text, "Cancel (5s)", "The server start deadline drives the local countdown label.")
+	assert_eq(lobby_password.text, "****")
+	assert_true(lobby_eye.visible)
+	lobby_eye.pressed.emit()
+	assert_eq(lobby_password.text, "7007")
 
 	screen.apply_lobby_data(private_lobby_payload([
 		{"id": "host", "displayName": "Host", "presence": "connected"},
@@ -180,8 +186,8 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	join_screen.back_requested.connect(func(): join_back_events.append(true))
 	name_edit.text = "  Guest  "
 	server_id_edit.text = "2345abcd"
-	assert_eq(join_screen._normalized_password("12a34567890123"), "123456789012")
-	password_edit.text = "1234567890123"
+	assert_eq(join_screen._normalized_password("12a34567"), "1234")
+	password_edit.text = "12345"
 	for field in [name_edit, server_id_edit, password_edit]:
 		field.grab_focus()
 		await get_tree().process_frame
@@ -196,12 +202,13 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	assert_true(name_edit.editable)
 	assert_true(server_id_edit.editable)
 	assert_true(password_edit.editable)
-	assert_eq(password_edit.max_length, 12)
-	assert_true(password_edit.secret)
-	assert_eq(password_edit.secret_character, "*")
+	assert_eq(password_edit.max_length, 4)
+	assert_false(password_edit.secret)
+	assert_false(password_edit.context_menu_enabled)
+	assert_false(password_edit.shortcut_keys_enabled)
 	assert_eq(password_edit.get_parent().name, "PasswordRow")
 	assert_eq((join_screen.get_node("SafeArea/Root/FieldsColumn/PasswordRow/PasswordVisibilityButton") as TextureButton).get_parent(), password_edit.get_parent())
-	assert_eq(join_events, [["Guest", "2345ABCD", "123456789012"]])
+	assert_eq(join_events, [["Guest", "2345ABCD", "1234"]])
 	assert_false(join_error.visible, "Private errors stay hidden until a server rejection.")
 	join_screen.show_private_error("Wrong password")
 	assert_true(join_error.visible)
@@ -211,14 +218,14 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	server_id_edit.text = "2345ABCD"
 	server_id_edit.grab_focus()
 	server_id_edit.edit()
-	join_screen._on_server_id_menu_id_pressed(LineEdit.MENU_PASTE)
+	assert_true(join_screen._apply_server_id_paste("  2345-abcd9999  "))
 	await get_tree().process_frame
 	assert_eq(server_id_edit.text, "2345ABCD")
 	assert_false(server_id_edit.has_focus(), "Paste completion exits Server ID edit mode.")
 	assert_false(server_id_edit.is_editing())
 	assert_eq(paste_events.size(), 0, "Pasting Server ID never submits Join.")
 	join_screen.show_private_pending()
-	join_screen._on_server_id_menu_id_pressed(LineEdit.MENU_PASTE)
+	assert_false(join_screen._apply_server_id_paste("9999ABCD"))
 	await get_tree().process_frame
 	assert_eq(server_id_edit.text, "2345ABCD", "Pending Join prevents Server ID paste interaction.")
 	join_screen.clear_private_pending()
@@ -235,7 +242,7 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	var private_name = private_server.get_node("SafeArea/Root/FieldsColumn/PlayerNameEdit") as LineEdit
 	var private_password = private_server.get_node("SafeArea/Root/FieldsColumn/PasswordField/PasswordEdit") as LineEdit
 	private_name.text = "  Host  "
-	private_password.text = "98x76"
+	private_password.text = "98x7"
 	for field in [private_name, private_password]:
 		field.grab_focus()
 		await get_tree().process_frame
@@ -246,12 +253,56 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	assert_eq(create_back_events.size(), 0, "Done never navigates away from Private Server.")
 	private_server._on_create_pressed()
 
-	assert_eq(create_events, [["Host", "9876"]])
-	assert_true(private_password.secret)
-	assert_eq(private_password.secret_character, "*")
-	private_server._toggle_password_visibility()
+	assert_eq(create_events, [["Host", "9870"]])
 	assert_false(private_password.secret)
-	assert_eq(private_password.text, "9876")
+	assert_eq(private_password.text, "9870")
+	assert_eq(private_password.max_length, 4)
+	assert_false(private_password.context_menu_enabled)
+	private_server._toggle_password_visibility()
+	assert_eq(private_password.text, "9870")
+
+func test_private_entry_input_rules_normalize_paste_mask_and_modal_without_navigation() -> void:
+	var join_screen = JoinScreenScene.instantiate()
+	add_child_autofree(join_screen)
+	await get_tree().process_frame
+	var join_events: Array = []
+	join_screen.private_join_requested.connect(func(_name, _id, _password): join_events.append(true))
+	var server_id = join_screen.get_node("SafeArea/Root/FieldsColumn/ServerIdEdit") as LineEdit
+	var password = join_screen.get_node("SafeArea/Root/FieldsColumn/PasswordRow/PasswordEdit") as LineEdit
+	var mask = join_screen.get_node("SafeArea/Root/FieldsColumn/PasswordRow/PasswordMaskLabel") as Label
+	server_id.text = "01i2o3l4abcd"
+	join_screen._on_server_id_text_changed(server_id.text)
+	assert_eq(server_id.text, "23L4ABCD")
+	assert_true(join_screen._apply_server_id_paste("  2z45abcdxx  "))
+	assert_eq(server_id.text, "2Z45ABCD")
+	assert_eq(server_id.caret_column, 8)
+	assert_eq(join_events.size(), 0)
+	password.text = "12"
+	join_screen._on_password_text_changed(password.text)
+	assert_eq(password.text, "12")
+	assert_eq(mask.text, "*2")
+	await get_tree().create_timer(1.1).timeout
+	assert_eq(mask.text, "**")
+	join_screen._toggle_password_visibility()
+	assert_false(mask.visible)
+	join_screen._toggle_password_visibility()
+	assert_eq(mask.text, "**")
+	join_screen._on_info_pressed()
+	assert_true(join_screen.get_node("InputRulesModal").visible)
+	assert_eq(server_id.text, "2Z45ABCD")
+	(join_screen.get_node("InputRulesModal/Center/Panel/Margin/Content/CloseButton") as Button).pressed.emit()
+	assert_false(join_screen.get_node("InputRulesModal").visible)
+
+	var create_screen = PrivateServerScene.instantiate()
+	add_child_autofree(create_screen)
+	await get_tree().process_frame
+	var create_events: Array = []
+	create_screen.create_requested.connect(func(_name, password_value): create_events.append(password_value))
+	var create_password = create_screen.get_node("SafeArea/Root/FieldsColumn/PasswordField/PasswordEdit") as LineEdit
+	create_password.text = "22"
+	create_screen._on_create_pressed()
+	assert_eq(create_events, ["2200"])
+	assert_eq(create_password.text, "2200")
 
 func test_network_manager_keeps_private_entry_and_waits_for_server_lifecycle_destination() -> void:
 	var network = NetworkManagerScript.new()

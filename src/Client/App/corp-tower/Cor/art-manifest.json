@@ -1,9 +1,9 @@
 {
   "_comment": "Pins the private art bundle this commit builds against. Bumped via scripts/art-push.sh, then commit. CI fails closed if sha256 or file_count do not match.",
-  "version": "v10",
-  "object": "art/releases/art-v10.tar.gz",
-  "sha256": "7a5a18c0b2d18a6a1951338458812306f2614a3611aa69329d58e4a3d0d51e07",
-  "file_count": 250,
+  "version": "v11",
+  "object": "art/releases/art-v11.tar.gz",
+  "sha256": "59662e2bdc3e299bcd975fb8c3f6dcaab2f71323c063b2cd3d4ce827e86ee74a",
+  "file_count": 252,
   "sentinels": [
     "9-Play/play-bg-@4x.png",
     "9-Play/play-bg-@4x.png.import",

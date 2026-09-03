@@ -33,12 +33,19 @@ or Public Lobby, then Play. A restored session can skip Sign-in. Demo mode skips
 Sign-in and the public lobby, joins directly, and readies its real seat because
 bots are already ready.
 
-Home opens Private Server creation and Join Server. Create sends the temporary
-name and optional numeric password; Join keeps Find Match as the public path and
-uses its other fields only for private entry. Create keeps its source form beneath
-a blocking wait. Join instead disables its source form around an accepted request,
-shows connection status there, restores the same values after rejection or
-transport failure, and enters Private Lobby directly on authoritative success.
+Home opens Private Server creation and Join Server. Names are optional typing-only
+fields. A private password is empty or four numeric digits; Create pads a nonempty
+one-to-three-digit password with trailing zeroes before sending it, while Join
+leaves invalid nonempty input for authoritative rejection. Join keeps Find Match
+as the public path and uses its other fields only for private entry. Server IDs
+use the generated eight-character alphabet and are the only paste-enabled field:
+its local paste action replaces and normalizes clipboard text without navigating.
+Password fields retain real digits while masking their presentation, and the
+private-lobby password begins masked on each screen instance. Create keeps its
+source form beneath a blocking wait. Join instead disables its source form around
+an accepted request, shows connection status there, restores the same values after
+rejection or transport failure, and enters Private Lobby directly on authoritative
+success.
 Home also opens Settings, whose Account branch presents guest or linked state from
 the restored auth session metadata. Settings sign-out reuses the shared confirmation
 modal, clears that session only after confirmation, and returns to Sign-in.

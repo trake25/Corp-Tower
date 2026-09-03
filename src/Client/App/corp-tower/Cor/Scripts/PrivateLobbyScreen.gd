@@ -4,6 +4,8 @@ signal leave_lobby_requested
 
 const CHECK_READY := preload("res://Cor/Art/4-Private-lobby/ic-colored-checkmark-green.png")
 const CHECK_WAITING := preload("res://Cor/Art/4-Private-lobby/ic-colored-checkmark-grey.png")
+const EYE_OPEN_TEXTURE := preload("res://Cor/Art/3-Private-server/ic-eye-open.png")
+const EYE_CLOSED_TEXTURE := preload("res://Cor/Art/3-Private-server/ic-eye-close.png")
 const WAITING_NAME := "Waiting for player..."
 const SEAT_COUNT := 3
 const DISPLAY_NAME_LIMIT := 10
@@ -20,10 +22,13 @@ var is_locally_ready := false
 var start_countdown_active := false
 var start_deadline_msec := 0
 var shown_seconds := -1
+var private_password := ""
+var private_password_revealed := false
 
 func _ready() -> void:
 	%BackButton.pressed.connect(_on_back_pressed)
 	%CopyServerIdButton.pressed.connect(_on_copy_server_id_pressed)
+	%PasswordVisibilityButton.pressed.connect(_on_toggle_password_visibility)
 	%ReadyButton.pressed.connect(_on_ready_pressed)
 	%LeaveLobbyModal.confirmed.connect(_on_leave_confirmed)
 	%KickPlayerModal.confirmed.connect(_on_kick_confirmed)
@@ -58,7 +63,18 @@ func _apply_private_lobby_data(data) -> void:
 	var private_lobby: Dictionary = data.get("privateLobby", {})
 	host_player_id = str(private_lobby.get("hostPlayerId", host_player_id))
 	%ServerIdValue.text = str(private_lobby.get("serverId", ""))
-	%PasswordValue.text = str(private_lobby.get("password", ""))
+	private_password = str(private_lobby.get("password", ""))
+	_refresh_password_display()
+
+func _on_toggle_password_visibility() -> void:
+	private_password_revealed = not private_password_revealed
+	_refresh_password_display()
+
+func _refresh_password_display() -> void:
+	var has_password := not private_password.is_empty()
+	%PasswordVisibilityButton.visible = has_password
+	%PasswordValue.text = private_password if private_password_revealed else ("****" if has_password else "")
+	%PasswordVisibilityButton.texture_normal = EYE_CLOSED_TEXTURE if private_password_revealed else EYE_OPEN_TEXTURE
 
 func _apply_roster(roster: Array) -> void:
 	roster_ids.clear()

@@ -308,14 +308,14 @@ test("private creation is isolated, claims a safe invite, and preserves the temp
     const lobby = createLobby(stateStore);
     const { player, ws, room } = await createPrivateHost(lobby, {
         displayName: "  Tower Host  ",
-        password: "123456"
+        password: "1234"
     });
 
     assert.equal(room.roomMode, "private");
     assert.equal(room.players.length, 1);
     assert.equal(room.hostPlayerId, player.id);
     assert.match(room.privateServerId, /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$/);
-    assert.equal(room.privatePassword, "123456");
+    assert.equal(room.privatePassword, "1234");
     assert.equal(stateStore.memoryOpenRooms.has(room.id), false);
     assert.equal(stateStore.memoryPrivateInvites.get(room.privateServerId), room.id);
 
@@ -445,6 +445,44 @@ test("private join validates the password and returns the four stable rejection 
     assert.equal(messagesOfType(playing.ws, "private_join_rejected").at(-1).reason, "playing");
 });
 
+test("private passwords accept empty or exactly four digits", async () => {
+    const lobby = createLobby();
+    const empty = await createPrivateHost(lobby, { profileId: "empty-password" });
+    assert.equal(empty.room.privatePassword, "");
+
+    for (const password of ["1", "123", "12345", "12a4"]) {
+        const player = await lobby.createPlayer(createFakeWs(), {
+            entryMode: "private_create",
+            privatePassword: password,
+            profileId: `invalid-create-${password}`
+        });
+        await lobby.addPlayer(player);
+        assert.equal(player.room, null);
+        assert.equal(messagesOfType(player.ws, "private_join_rejected").at(-1).reason, "wrong_password");
+    }
+
+    const protectedRoom = await createPrivateHost(lobby, {
+        password: "1000",
+        profileId: "protected-password"
+    });
+    const accepted = await joinPrivateRoom(lobby, protectedRoom.room.privateServerId, {
+        password: "1000",
+        profileId: "valid-password"
+    });
+    assert.equal(accepted.player.room, protectedRoom.room);
+
+    for (const password of ["1", "123", "12345", "12a4"]) {
+        const rejected = await joinPrivateRoom(lobby, protectedRoom.room.privateServerId, {
+            password,
+            profileId: `invalid-join-${password}`
+        });
+        assert.equal(
+            messagesOfType(rejected.ws, "private_join_rejected").at(-1).reason,
+            "wrong_password"
+        );
+    }
+});
+
 test("an empty private display name falls back to the profile name without changing it", async () => {
     const lobby = createLobby();
     const { room } = await createPrivateHost(lobby, {
@@ -491,14 +529,14 @@ test("private ready uses only the private start deadline and a cancellation disa
 
 test("a private disconnect reserves its seat, enters grace, and reconnect restores the unready player", async () => {
     const lobby = createLobby();
-    const { player: host, room } = await createPrivateHost(lobby, { password: "42" });
+    const { player: host, room } = await createPrivateHost(lobby, { password: "4200" });
     const firstGuest = await joinPrivateRoom(lobby, room.privateServerId, {
-        password: "42",
+        password: "4200",
         displayName: "Reconnect Guest",
         profileId: "reconnect-one"
     });
     const secondGuest = await joinPrivateRoom(lobby, room.privateServerId, {
-        password: "42",
+        password: "4200",
         profileId: "reconnect-two"
     });
 
@@ -650,7 +688,7 @@ test("private metadata and reconnect deadlines survive hydration", async () => {
     const owner = createLobby(stateStore);
     const { player, room } = await createPrivateHost(owner, {
         displayName: "Hydrated Host",
-        password: "84"
+        password: "8400"
     });
 
     const roomPlayer = room.players.find(candidate => candidate.id === player.id);
@@ -667,7 +705,7 @@ test("private metadata and reconnect deadlines survive hydration", async () => {
 
     assert.equal(hydrated.roomMode, "private");
     assert.equal(hydrated.privateServerId, room.privateServerId);
-    assert.equal(hydrated.privatePassword, "84");
+    assert.equal(hydrated.privatePassword, "8400");
     assert.equal(hydrated.hostPlayerId, player.id);
     assert.equal(hydrated.privateStartDeadlineAt, room.privateStartDeadlineAt);
     assert.equal(hydratedPlayer.privateDisplayName, "Hydrated Host");

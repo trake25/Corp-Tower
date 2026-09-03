@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/JoinScreen.gd" id="1_joinscreen"]
 [ext_resource type="Texture2D" path="res://Cor/Art/6-Join-server/btn-circular-back.png" id="2_back"]
@@ -6,6 +6,8 @@
 [ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="4_presstint"]
 [ext_resource type="Shader" path="res://Cor/Shaders/VerticalGradientFill.gdshader" id="5_gradientshader"]
 [ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Bold.ttf" id="6_poppinsbold"]
+[ext_resource type="Texture2D" path="res://Cor/Art/3-Private-server/ic-info.png" id="7_info"]
+[ext_resource type="PackedScene" path="res://Cor/Scenes/InputRulesModal.tscn" id="8_rules"]
 
 [sub_resource type="Gradient" id="Gradient_JoinBg"]
 offsets = PackedFloat32Array(0, 0.55, 1)
@@ -100,8 +102,18 @@ theme_override_font_sizes/font_size = 26
 horizontal_alignment = 1
 text = "Join Server"
 
+[node name="InfoButton" type="TextureButton" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("4_presstint")
+texture_normal = ExtResource("7_info")
+ignore_texture_size = true
+stretch_mode = 5
+
 [node name="HeaderSpacer" type="Control" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
-custom_minimum_size = Vector2(46, 0)
+custom_minimum_size = Vector2(14, 0)
 layout_mode = 2
 
 [node name="FieldsColumn" type="VBoxContainer" parent="SafeArea/Root"]
@@ -118,6 +130,9 @@ theme_override_colors/font_uneditable_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_colors/font_placeholder_color = Color(0.35, 0.4, 0.46, 0.85)
 max_length = 24
 placeholder_text = "Enter your name"
+context_menu_enabled = false
+shortcut_keys_enabled = false
+middle_mouse_paste_enabled = false
 
 [node name="ServerIdEdit" type="LineEdit" parent="SafeArea/Root/FieldsColumn"]
 unique_name_in_owner = true
@@ -127,8 +142,10 @@ theme_type_variation = &"JoinLineEdit"
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_colors/font_uneditable_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_colors/font_placeholder_color = Color(0.35, 0.4, 0.46, 0.85)
-max_length = 8
 placeholder_text = "Server ID"
+context_menu_enabled = false
+shortcut_keys_enabled = false
+middle_mouse_paste_enabled = false
 
 [node name="PasswordRow" type="Control" parent="SafeArea/Root/FieldsColumn"]
 custom_minimum_size = Vector2(0, 52)
@@ -147,10 +164,26 @@ theme_type_variation = &"JoinPasswordLineEdit"
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_colors/font_uneditable_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_colors/font_placeholder_color = Color(0.35, 0.4, 0.46, 0.85)
-max_length = 12
+max_length = 4
 placeholder_text = "Server password"
-secret = true
-secret_character = "*"
+context_menu_enabled = false
+shortcut_keys_enabled = false
+middle_mouse_paste_enabled = false
+
+[node name="PasswordMaskLabel" type="Label" parent="SafeArea/Root/FieldsColumn/PasswordRow"]
+unique_name_in_owner = true
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_right = -60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 16
+vertical_alignment = 1
 
 [node name="PasswordVisibilityButton" type="TextureButton" parent="SafeArea/Root/FieldsColumn/PasswordRow"]
 unique_name_in_owner = true
@@ -292,3 +325,6 @@ theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "Find Match"
+
+[node name="InputRulesModal" parent="." instance=ExtResource("8_rules")]
+unique_name_in_owner = true

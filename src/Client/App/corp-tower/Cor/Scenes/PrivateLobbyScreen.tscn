@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/PrivateLobbyScreen.gd" id="1_private_lobby"]
 [ext_resource type="Texture2D" path="res://Cor/Art/4-Private-lobby/lobby-bg-@4x.png" id="2_background"]
@@ -11,6 +11,7 @@
 [ext_resource type="Shader" path="res://Cor/Shaders/VerticalGradientFill.gdshader" id="9_gradient"]
 [ext_resource type="PackedScene" path="res://Cor/Scenes/ConfirmModal.tscn" id="10_confirm_modal"]
 [ext_resource type="Texture2D" path="res://Cor/Art/4-Private-lobby/ic-colored-xmark.png" id="11_xmark"]
+[ext_resource type="Texture2D" path="res://Cor/Art/3-Private-server/ic-eye-open.png" id="12_eye"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_Header"]
 
@@ -215,19 +216,38 @@ unique_name_in_owner = true
 wait_time = 3.0
 one_shot = true
 
-[node name="PasswordLabel" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows"]
+[node name="PasswordRow" type="HBoxContainer" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Values" type="VBoxContainer" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows/PasswordRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PasswordLabel" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows/PasswordRow/Values"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 0.4, 0.46, 1)
 theme_override_font_sizes/font_size = 16
 text = "Password"
 
-[node name="PasswordValue" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows"]
+[node name="PasswordValue" type="Label" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows/PasswordRow/Values"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_fonts/font = ExtResource("8_poppins_bold")
 theme_override_font_sizes/font_size = 22
 text = ""
+
+[node name="PasswordVisibilityButton" type="TextureButton" parent="SafeArea/Root/ServerInfoCard/CardMargin/Rows/PasswordRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("7_press_tint")
+texture_normal = ExtResource("12_eye")
+ignore_texture_size = true
+stretch_mode = 5
 
 [node name="WaitingRoomCard" type="PanelContainer" parent="SafeArea/Root"]
 layout_mode = 2

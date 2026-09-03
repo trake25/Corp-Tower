@@ -109,7 +109,7 @@ class LobbyManager {
             return "";
         }
 
-        if (typeof value !== "string" || !/^\d{1,12}$/.test(value)) {
+        if (typeof value !== "string" || !/^[0-9]{4}$/.test(value)) {
             return null;
         }
 
