@@ -2,11 +2,12 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PROSE_SECTION_HARD_LIMIT, proseSectionStatus } from './lib/docs-capacity.mjs';
 import {
   CONCEPT_MAP_MARKER,
   CONCEPT_MAX_LINE_CHARS,
+  CONCEPT_PROSE_CAPACITY,
   CONCEPT_SECTION_HARD_BYTES,
+  conceptProseCapacity,
   expectedConceptOutputs,
   loadConceptRegistry,
 } from './lib/concept-kb.mjs';
@@ -29,11 +30,17 @@ export function validateConceptKb({ root = '.', kbRoot = 'KB' } = {}) {
   const warnings = [];
   for (const concept of expected.concepts) {
     const bytes = Buffer.byteLength(concept.section);
-    const tokens = Math.round(bytes / 4);
-    if (bytes > CONCEPT_SECTION_HARD_BYTES || proseSectionStatus(tokens) === 'hard-overage')
+    const capacity = conceptProseCapacity(bytes);
+    if (capacity.status === 'hard-overage')
       errors.push({
         status: 'budget-exceeded',
-        message: `${concept.id} section is ~${tokens} tokens/${bytes} bytes; hard limits are ${PROSE_SECTION_HARD_LIMIT} tokens and ${CONCEPT_SECTION_HARD_BYTES} bytes`,
+        message: `${concept.id} section is ~${capacity.estimated_tokens} tokens/${bytes} bytes; experimental hard ceiling is ${CONCEPT_PROSE_CAPACITY.hard_tokens} tokens/${CONCEPT_SECTION_HARD_BYTES} bytes`,
+        concept_id: concept.id,
+      });
+    else if (capacity.status !== 'ordinary')
+      warnings.push({
+        status: capacity.status,
+        message: `${concept.id} section is ~${capacity.estimated_tokens} tokens/${bytes} bytes; experimental ${capacity.status} capacity signal`,
         concept_id: concept.id,
       });
   }
@@ -88,8 +95,9 @@ function main() {
     const options = parseArgs(process.argv.slice(2));
     const result = validateConceptKb(options);
     console.log(`=== experimental concept KB validation ===`);
-    console.log(`concepts: ${result.concepts}  sources: ${result.sources}  errors: ${result.errors.length}`);
+    console.log(`concepts: ${result.concepts}  sources: ${result.sources}  warnings: ${result.warnings.length}  errors: ${result.errors.length}`);
     if (!options.quiet) result.errors.forEach(error => console.error(`x ${error.status}: ${error.message}`));
+    if (!options.quiet) result.warnings.forEach(warning => console.warn(`! ${warning.status}: ${warning.message}`));
     else if (result.errors.length) console.error(`x ${result.errors[0].status}: ${result.errors[0].message}`);
     console.log(result.errors.length ? 'FAIL' : 'PASS');
     if (result.errors.length) process.exitCode = 1;

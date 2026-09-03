@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { resolve } from 'node:path';
 import test from 'node:test';
-import { applyPinnedAnchors, extract, selectAnchors } from '../build-file-map.mjs';
+import { applyPinnedAnchors, extract, firstPartyFiles, isPrimaryAnchorReferencePath, selectAnchors } from '../build-file-map.mjs';
 
 test('scene maps index the root and unique-name nodes only', () => {
   const scene = [
@@ -105,4 +106,38 @@ test('scene anchors omit unique nodes with no external binding', () => {
     { ln: 1, name: 'LevelSummary', kind: 'scene root' },
     { ln: 2, name: '%RequiredLabel', kind: 'unique node' },
   ]);
+});
+
+test('experimental data cannot promote primary anchors while ordinary first-party source can', () => {
+  const source = [
+    'export class StabilityPreview {',
+    '  previewOnlyAnchor() {',
+    '  }',
+    '}',
+  ].join('\n');
+  const symbols = extract('src/Server/app/StabilityPreview.js', source).syms;
+  const experimentalOnly = [
+    { rel: 'src/Server/app/StabilityPreview.js', text: source },
+    { rel: 'KB/docs/context/gameplay.md', text: 'previewOnlyAnchor' },
+    { rel: 'scripts/fixtures/concept-retrieval.json', text: 'previewOnlyAnchor' },
+    { rel: 'scripts/tests/concept-kb.test.mjs', text: 'previewOnlyAnchor' },
+    { rel: '.agent-state/automation/rag-benchmark/kb-context/latest.json', text: 'previewOnlyAnchor' },
+    { rel: 'report/benchmarks/kb-context/kb-context-calibration-v001.md', text: 'previewOnlyAnchor' },
+  ];
+
+  assert.deepEqual(selectAnchors('src/Server/app/StabilityPreview.js', symbols, experimentalOnly), [
+    { ln: 1, name: 'StabilityPreview', kind: 'class' },
+  ]);
+  assert.deepEqual(selectAnchors('src/Server/app/StabilityPreview.js', symbols, [
+    ...experimentalOnly,
+    { rel: 'scripts/ordinary-primary-tool.mjs', text: 'engine.previewOnlyAnchor();' },
+  ]), [
+    { ln: 1, name: 'StabilityPreview', kind: 'class' },
+    { ln: 2, name: 'previewOnlyAnchor', kind: 'method' },
+  ]);
+  assert.equal(isPrimaryAnchorReferencePath('scripts/lib/kb-calibration.mjs'), false);
+  assert.equal(isPrimaryAnchorReferencePath('scripts/tests/kb-calibration.test.mjs'), false);
+  assert.equal(isPrimaryAnchorReferencePath('KB/docs/context/gameplay.md'), false);
+  assert.equal(isPrimaryAnchorReferencePath('report/benchmarks/kb-context/example.md'), false);
+  assert.ok(firstPartyFiles(resolve('.')).some(file => file.rel === 'scripts/lib/kb-calibration.mjs'));
 });

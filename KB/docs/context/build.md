@@ -29,10 +29,11 @@ alias: Android CI
 alias: AAB build
 source: .github/workflows/Android-Deploy-wstodplay.yml#build-android
 adjacent: testing.release.gates
+adjacent: build.android.aab-validation
 -->
 ## Android pipeline
 
-The Android workflow downloads private art, writes build-time endpoint/auth capabilities, installs the pinned Godot/Android toolchain, builds native sign-in plugins, restores signing material, imports the project, runs smoke/GUT, exports a signed AAB, validates it, and may publish to the Play internal track.
+The Android workflow assembles private art, generated endpoint/auth capabilities, the pinned Godot/Android toolchain, native sign-in plugins, and signing material into one tested release build. Smoke and GUT run before export, then the produced AAB is independently validated before optional Play publication; workflow success before that artifact gate is not release proof.
 
 <!-- kb
 id: build.android.version-code
@@ -49,10 +50,11 @@ id: build.android.aab-validation
 alias: bundle validation
 alias: target SDK
 source: .github/workflows/Android-Deploy-wstodplay.yml#Validate signed Android AAB deployment artifact
+adjacent: build.android.pipeline
 -->
 ## AAB validation
 
-The AAB gate validates archive structure, required bundle/manifest entries, architecture presence/absence, signature, and target SDK from the base manifest before publication.
+The AAB gate inspects the exported artifact for archive integrity, required bundle/manifest entries, architecture presence/absence, signature, and target SDK from the base manifest. It validates what would actually ship rather than trusting project settings or an earlier build step, and publication cannot bypass it.
 
 <!-- kb
 id: build.android.startup-splash

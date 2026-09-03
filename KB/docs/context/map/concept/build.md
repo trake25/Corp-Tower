@@ -5,27 +5,27 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## build.android.aab-validation
 
-Owner: `KB/docs/context/build.md:53-56` → **AAB validation**
+Owner: `KB/docs/context/build.md:55-58` → **AAB validation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `.github/workflows/Android-Deploy-wstodplay.yml` | `Validate signed Android AAB deployment artifact` | 349 | `sed -n 337,369p .github/workflows/Android-Deploy-wstodplay.yml` |
 
-Adjacent concepts: none
+Adjacent concepts: `build.android.pipeline`
 
 ## build.android.pipeline
 
-Owner: `KB/docs/context/build.md:33-36` → **Android pipeline**
+Owner: `KB/docs/context/build.md:34-37` → **Android pipeline**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `.github/workflows/Android-Deploy-wstodplay.yml` | `build-android` | 41 | `sed -n 29,61p .github/workflows/Android-Deploy-wstodplay.yml` |
 
-Adjacent concepts: `testing.release.gates`
+Adjacent concepts: `testing.release.gates`, `build.android.aab-validation`
 
 ## build.android.startup-splash
 
-Owner: `KB/docs/context/build.md:65-68` → **Startup splash**
+Owner: `KB/docs/context/build.md:67-70` → **Startup splash**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: `ui.startup.splash`, `testing.client.rendered`
 
 ## build.android.version-code
 
-Owner: `KB/docs/context/build.md:43-46` → **Play version code**
+Owner: `KB/docs/context/build.md:44-47` → **Play version code**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -56,7 +56,7 @@ Adjacent concepts: none
 
 ## build.auth.native-providers
 
-Owner: `KB/docs/context/build.md:87-90` → **Native provider build inputs**
+Owner: `KB/docs/context/build.md:89-92` → **Native provider build inputs**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -66,7 +66,7 @@ Adjacent concepts: none
 
 ## build.endpoint-auth.injection
 
-Owner: `KB/docs/context/build.md:77-80` → **Endpoint and auth injection**
+Owner: `KB/docs/context/build.md:79-82` → **Endpoint and auth injection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -86,7 +86,7 @@ Adjacent concepts: none
 
 ## build.server.image
 
-Owner: `KB/docs/context/build.md:99-102` → **Server image**
+Owner: `KB/docs/context/build.md:101-104` → **Server image**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

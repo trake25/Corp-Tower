@@ -5,18 +5,19 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## automation.docs.maps
 
-Owner: `KB/docs/context/automation.md:134-137` → **Map regeneration**
+Owner: `KB/docs/context/automation.md:135-144` → **Map regeneration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/build-file-map.mjs` | `build` | 387 | `sed -n 375,407p scripts/build-file-map.mjs` |
+| `scripts/build-file-map.mjs` | `build` | 396 | `sed -n 384,416p scripts/build-file-map.mjs` |
+| `scripts/build-file-map.mjs` | `isPrimaryAnchorReferencePath` | 45 | `sed -n 33,65p scripts/build-file-map.mjs` |
 | `scripts/build-concept-map.mjs` | `buildConceptMaps` | 23 | `sed -n 11,43p scripts/build-concept-map.mjs` |
 
 Adjacent concepts: `automation.docs.validation`
 
 ## automation.docs.retrieval-repair
 
-Owner: `KB/docs/context/automation.md:165-168` → **Retrieval repair**
+Owner: `KB/docs/context/automation.md:178-181` → **Retrieval repair**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -26,7 +27,7 @@ Adjacent concepts: `automation.retrieval.fallback`
 
 ## automation.docs.scope
 
-Owner: `KB/docs/context/automation.md:155-158` → **Docs scoping**
+Owner: `KB/docs/context/automation.md:168-171` → **Docs scoping**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -36,7 +37,7 @@ Adjacent concepts: none
 
 ## automation.docs.skill-mirror
 
-Owner: `KB/docs/context/automation.md:174-177` → **Skill mirroring**
+Owner: `KB/docs/context/automation.md:187-190` → **Skill mirroring**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -46,18 +47,19 @@ Adjacent concepts: none
 
 ## automation.docs.validation
 
-Owner: `KB/docs/context/automation.md:145-148` → **KB validation**
+Owner: `KB/docs/context/automation.md:153-161` → **KB validation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/validate-docs.mjs` | `classification` | 439 | `sed -n 427,459p scripts/validate-docs.mjs` |
-| `scripts/validate-concept-kb.mjs` | `validateConceptKb` | 25 | `sed -n 13,45p scripts/validate-concept-kb.mjs` |
+| `scripts/validate-concept-kb.mjs` | `validateConceptKb` | 26 | `sed -n 14,46p scripts/validate-concept-kb.mjs` |
+| `scripts/lib/concept-kb.mjs` | `conceptProseCapacity` | 43 | `sed -n 31,63p scripts/lib/concept-kb.mjs` |
 
 Adjacent concepts: none
 
 ## automation.git.publish
 
-Owner: `KB/docs/context/automation.md:214-217` → **Authorized Git publication**
+Owner: `KB/docs/context/automation.md:227-230` → **Authorized Git publication**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -67,7 +69,7 @@ Adjacent concepts: none
 
 ## automation.observability.binding
 
-Owner: `KB/docs/context/automation.md:184-187` → **Observability binding**
+Owner: `KB/docs/context/automation.md:197-200` → **Observability binding**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -77,7 +79,7 @@ Adjacent concepts: none
 
 ## automation.observability.flags
 
-Owner: `KB/docs/context/automation.md:204-207` → **Workflow inefficiency flags**
+Owner: `KB/docs/context/automation.md:217-220` → **Workflow inefficiency flags**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -87,7 +89,7 @@ Adjacent concepts: none
 
 ## automation.observability.usage
 
-Owner: `KB/docs/context/automation.md:194-197` → **Observability usage**
+Owner: `KB/docs/context/automation.md:207-210` → **Observability usage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

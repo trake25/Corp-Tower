@@ -79,12 +79,22 @@ source: scripts/tests/context-query.test.mjs#automation scope selects the protoc
 source: scripts/tests/task-close.test.mjs#prepare creates a compact schema-v2 ownership manifest and intake
 source: scripts/tests/concept-kb.test.mjs#the repository concept registry is complete, deterministic, and source-grounded
 source: scripts/benchmark-rag.mjs#runConceptBenchmark
+source: scripts/lib/kb-calibration.mjs#measureKbCalibration
+source: scripts/export-kb-calibration-report.mjs#exportKbCalibrationReport
 adjacent: automation.retrieval.protocol
 adjacent: automation.task-close.lifecycle
 -->
 ## Automation protocol coverage
 
-Automation tests protect retrieval states and budgets, task-close ownership and closure, publication scope, map generation, observability arithmetic, and safety gates. Focused concept tests cover parser/generator/validator integrity, while the opt-in concept benchmark proves exact routes and closed failures without changing the legacy benchmark.
+Automation tests protect retrieval states and budgets, task-close ownership and
+closure, publication scope, map generation, observability arithmetic, and safety
+gates. Focused concept tests cover parser/generator/validator integrity and
+primary-map isolation. The opt-in concept benchmark still gates exact routes and
+closed failures, then locally measures representative concept and journey
+footprints, merges overlapping source windows, and writes only sanitized
+metrics to ignored benchmark state.
+
+Public calibration is a separate human action: the manual exporter reads the latest valid private snapshot, computes heuristic review prompts, and creates the next collision-safe version under non-context `report/`. Neither QA, task-close, nor the benchmark invokes that exporter, and footprint observations are not correctness gates.
 
 <!-- kb
 id: testing.contract.tutorial-parity

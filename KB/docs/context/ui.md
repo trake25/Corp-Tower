@@ -183,7 +183,7 @@ source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#%StartupSplash
 -->
 ## Pointer pass-through
 
-Decorative and overlapping controls must pass pointer input through when they are not intended hit targets; otherwise visually empty regions can swallow taps.
+Decorative and overlapping controls set pointer filtering to pass or ignore when they are not intended hit targets, leaving the interactive sibling or underlying screen reachable. Visual transparency alone does not create input transparency, so an empty-looking overlay must not become accidental navigation authority.
 
 <!-- kb
 id: ui.constraint.rendered-verification

@@ -364,7 +364,6 @@ bounded source read. Local implementation detail stays in source.
 | src/Server/app/engine/Scoring.js:134 | positive · fn | |
 | src/Server/app/engine/Scoring.js:138 | getActionUnit · fn | |
 | src/Server/app/engine/Scoring.js:144 | getExpectedNormalUsefulScoreForLevel · fn | |
-| src/Server/app/engine/Scoring.js:183 | getCriticalSavePreview · fn | |
 | src/Server/app/engine/Scoring.js:286 | previewPlacementScore · fn | |
 | src/Server/app/engine/Scoring.js:354 | addPlacementScore · fn | |
 | src/Server/app/engine/Scoring.js:403 | getPerfectBuildFinisherPoints · fn | |
@@ -431,4 +430,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-27 files · 260 stable anchors.
+27 files · 259 stable anchors.

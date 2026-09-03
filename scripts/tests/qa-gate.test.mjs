@@ -83,7 +83,9 @@ test('experimental concept paths select focused concept QA without runtime suite
   const paths = [
     'KB/docs/context/gameplay.md',
     'scripts/lib/concept-kb.mjs',
+    'scripts/lib/kb-calibration.mjs',
     'scripts/fixtures/concept-retrieval.json',
+    'scripts/export-kb-calibration-report.mjs',
   ];
 
   for (const path of paths) {
@@ -94,6 +96,7 @@ test('experimental concept paths select focused concept QA without runtime suite
   }
   assert.equal(selectQa(['src/Server/app/engine/Scoring.js']).concept_kb, false);
   assert.equal(AUTOMATION_PROTOCOL_TESTS.includes('scripts/tests/concept-kb.test.mjs'), false);
+  assert.equal(AUTOMATION_PROTOCOL_TESTS.includes('scripts/tests/kb-calibration.test.mjs'), false);
 });
 
 test('both sides of the tutorial defaults contract select the parity test', () => {

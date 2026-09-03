@@ -5,14 +5,16 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## testing.automation.protocol
 
-Owner: `KB/docs/context/testing.md:85-88` → **Automation protocol coverage**
+Owner: `KB/docs/context/testing.md:87-98` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 194 | `sed -n 182,214p scripts/tests/context-query.test.mjs` |
+| `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 204 | `sed -n 192,224p scripts/tests/context-query.test.mjs` |
 | `scripts/tests/task-close.test.mjs` | `prepare creates a compact schema-v2 ownership manifest and intake` | 199 | `sed -n 187,219p scripts/tests/task-close.test.mjs` |
-| `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 54 | `sed -n 42,74p scripts/tests/concept-kb.test.mjs` |
-| `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 75 | `sed -n 63,95p scripts/benchmark-rag.mjs` |
+| `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 60 | `sed -n 48,80p scripts/tests/concept-kb.test.mjs` |
+| `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 76 | `sed -n 64,96p scripts/benchmark-rag.mjs` |
+| `scripts/lib/kb-calibration.mjs` | `measureKbCalibration` | 180 | `sed -n 168,200p scripts/lib/kb-calibration.mjs` |
+| `scripts/export-kb-calibration-report.mjs` | `exportKbCalibrationReport` | 158 | `sed -n 146,178p scripts/export-kb-calibration-report.mjs` |
 
 Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifecycle`
 
@@ -53,7 +55,7 @@ Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.render
 
 ## testing.contract.tutorial-parity
 
-Owner: `KB/docs/context/testing.md:95-98` → **Tutorial parity**
+Owner: `KB/docs/context/testing.md:105-108` → **Tutorial parity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -63,7 +65,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:108-111` → **Release gates**
+Owner: `KB/docs/context/testing.md:118-121` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -78,7 +80,7 @@ Owner: `KB/docs/context/testing.md:11-14` → **Local QA selection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/qa-gate.mjs` | `selectQa` | 118 | `sed -n 106,138p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectQa` | 128 | `sed -n 116,148p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 

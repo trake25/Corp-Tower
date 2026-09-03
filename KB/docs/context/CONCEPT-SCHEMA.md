@@ -29,6 +29,20 @@ next concept metadata block or enclosing/sibling heading.
 Source grants cannot enter `.agent-state/`, `KB/`, `plan/`, `reference/`,
 `repair/`, `report/`, or `task/`.
 
+## Prose quality
+
+Each leaf has one semantic responsibility and supplies the compact behavior,
+subsystem mechanism, durable rationale/invariant, and ownership boundary needed
+to reason correctly before source inspection. Those elements read as natural
+prose rather than required visible labels. Concise negatives are preferred when
+they prevent authority, presentation, persistence, or lifecycle confusion.
+
+Function narration, file/scene inventories, routine copied defaults,
+implementation history, and duplicated neighboring contracts do not belong in
+concept prose. One concept fully owns each durable fact; another concept states
+only its necessary boundary and uses `adjacent:` for the semantic route. Maps
+locate implementation and source retains exact local detail.
+
 ## Derived data
 
 The parser derives concept owner path, heading/range, normalized aliases, and a
@@ -58,10 +72,24 @@ Every failure includes a reason, denies broad source fallback, and uses one of:
 
 ## Budgets and validation
 
-A concept prose leaf is limited to 6 KiB. Concept retrieval defaults to 12 KiB
-and has a 24 KiB absolute response limit. Experimental KB Markdown uses a
-400-character line ceiling; this does not alter the primary KB's 300-character
-limit.
+Concept capacity is independent from the primary KB capacity implementation and
+uses the deterministic ceiling of UTF-8 bytes divided by four. More than 1,200
+estimated tokens is advisory, more than 1,800 is strong advisory, and more than
+2,500 is a hard error. Warnings are calibration signals, not maintenance
+defects. Concept retrieval defaults to 16 KiB and has a 32 KiB absolute response
+limit. Experimental Markdown retains its 400-character line ceiling; the
+primary KB keeps its separate 300-character limit.
+
+The explicit concept benchmark retains correctness/fail-closed gates and also
+writes a compact private snapshot beneath ignored benchmark state. It measures
+representative prose, route/map data, every bounded source range, merged unique
+ranges, adjacency, complete footprints, and authored multi-concept journeys.
+Source contents and model/session/private environment data are never telemetry.
+
+`node scripts/export-kb-calibration-report.mjs` manually reads the latest valid
+snapshot and creates the next free sanitized report version. The exporter is not
+called by the benchmark, QA, task-close, or ordinary KB changes, and reports
+remain non-context review aids rather than authority.
 
 Run:
 

@@ -39,6 +39,8 @@ const clientRules = [
 const automationTests = Object.freeze({
   context: 'scripts/tests/context-query.test.mjs',
   conceptKb: 'scripts/tests/concept-kb.test.mjs',
+  kbCalibration: 'scripts/tests/kb-calibration.test.mjs',
+  buildFileMap: 'scripts/tests/build-file-map.test.mjs',
   taskClose: 'scripts/tests/task-close.test.mjs',
   gitSync: 'scripts/tests/git-sync-commit-push.test.mjs',
   qaGate: 'scripts/tests/qa-gate.test.mjs',
@@ -46,15 +48,23 @@ const automationTests = Object.freeze({
   observability: 'scripts/tests/agent-observability.test.mjs',
 });
 
-export const AUTOMATION_PROTOCOL_TESTS = Object.freeze(Object.values(automationTests).filter(test => test !== automationTests.conceptKb));
-export const CONCEPT_KB_TESTS = Object.freeze([automationTests.conceptKb, automationTests.context]);
+export const AUTOMATION_PROTOCOL_TESTS = Object.freeze(Object.values(automationTests)
+  .filter(test => ![automationTests.conceptKb, automationTests.kbCalibration].includes(test)));
+export const CONCEPT_KB_TESTS = Object.freeze([
+  automationTests.buildFileMap,
+  automationTests.conceptKb,
+  automationTests.context,
+  automationTests.kbCalibration,
+]);
 
 const automationTestSet = new Set(AUTOMATION_PROTOCOL_TESTS);
 const automationRules = [
   [/^KB(?:\/|$)/, CONCEPT_KB_TESTS],
-  [/^scripts\/(?:build-concept-map|validate-concept-kb)\.mjs$/, CONCEPT_KB_TESTS],
-  [/^scripts\/(?:lib\/concept-kb\.mjs|fixtures\/concept-retrieval\.json|tests\/concept-kb\.test\.mjs)$/, CONCEPT_KB_TESTS],
-  [/^scripts\/(?:context|benchmark-rag)\.mjs$/, [automationTests.context]],
+  [/^scripts\/(?:build-concept-map|validate-concept-kb|export-kb-calibration-report)\.mjs$/, CONCEPT_KB_TESTS],
+  [/^scripts\/(?:lib\/(?:concept-kb|kb-calibration)\.mjs|fixtures\/concept-retrieval\.json|tests\/(?:concept-kb|kb-calibration)\.test\.mjs)$/, CONCEPT_KB_TESTS],
+  [/^scripts\/benchmark-rag\.mjs$/, CONCEPT_KB_TESTS],
+  [/^scripts\/build-file-map\.mjs$/, [automationTests.buildFileMap]],
+  [/^scripts\/context\.mjs$/, [automationTests.context]],
   [/^scripts\/task-close\.mjs$/, [automationTests.taskClose]],
   [/^scripts\/git-sync-commit-push\.mjs$/, [automationTests.gitSync]],
   [/^scripts\/agent-observability\.mjs$/, [automationTests.observability]],
@@ -126,8 +136,8 @@ export function selectQa(changedPaths) {
   const tooling = selectToolingQa(changed);
   const contracts = selectContractQa(changed);
   const conceptKb = changed.some(path => /^KB(?:\/|$)/.test(path)
-    || /^scripts\/(?:context|benchmark-rag|build-concept-map|validate-concept-kb)\.mjs$/.test(path)
-    || /^scripts\/(?:lib\/(?:context-query|concept-kb)\.mjs|fixtures\/concept-retrieval\.json|tests\/concept-kb\.test\.mjs)$/.test(path));
+    || /^scripts\/(?:context|benchmark-rag|build-concept-map|validate-concept-kb|export-kb-calibration-report)\.mjs$/.test(path)
+    || /^scripts\/(?:lib\/(?:context-query|concept-kb|kb-calibration)\.mjs|fixtures\/concept-retrieval\.json|tests\/(?:concept-kb|kb-calibration)\.test\.mjs)$/.test(path));
 
   for (const path of changed) {
     if (path.startsWith(`${SERVER}/tests/`) && path.endsWith('.test.js')) {

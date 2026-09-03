@@ -82,6 +82,51 @@
       "adjacent": "backend.lobby.private"
     }
   ],
+  "journeys": [
+    {
+      "id": "collapse-presentation-recovery-navigation",
+      "concepts": [
+        "hud.tower.collapse.presentation",
+        "hud.tower.collapse.recovery",
+        "hud.navigation.auto-follow"
+      ]
+    },
+    {
+      "id": "critical-save-stability-weak-support",
+      "concepts": [
+        "gameplay.scoring.critical-save",
+        "hud.tower.weak-support",
+        "gameplay.tower.stability",
+        "backend.stability.analysis"
+      ]
+    },
+    {
+      "id": "reconnect-session-recovery",
+      "concepts": [
+        "network.state.revision",
+        "network.session.recovery",
+        "ui.play.recovery"
+      ]
+    },
+    {
+      "id": "automation-task-close",
+      "concepts": [
+        "automation.retrieval.protocol",
+        "testing.automation.protocol",
+        "automation.task-close.lifecycle",
+        "automation.task-close.scope"
+      ]
+    },
+    {
+      "id": "deployment-build-release",
+      "concepts": [
+        "deploy.eks.workflows",
+        "testing.release.gates",
+        "build.android.pipeline",
+        "build.android.aab-validation"
+      ]
+    }
+  ],
   "failures": [
     {
       "id": "unknown-concept",

@@ -4,9 +4,6 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import {
-  conceptBundle,
-  conceptRead,
-  conceptRoute,
   contextBundle,
   documentSection,
   mapSymbols,
@@ -15,7 +12,7 @@ import {
   searchContext,
 } from '../lib/context-query.mjs';
 import { documentationNeedlesForPath, isNormalContextExcludedPath } from '../lib/context-routing.mjs';
-import { AUTOMATION_PROTOCOL_TESTS, CONCEPT_KB_TESTS, TUTORIAL_PARITY_TEST } from '../qa-gate.mjs';
+import { AUTOMATION_PROTOCOL_TESTS, TUTORIAL_PARITY_TEST } from '../qa-gate.mjs';
 
 const ROOT = resolve('.');
 
@@ -154,6 +151,19 @@ test('observability source routes to the automation contract', () => {
   assert.deepEqual(route.maps, ['docs/context/map/infra.md']);
 });
 
+test('concept calibration tooling routes to its experimental automation and testing contracts', () => {
+  for (const path of [
+    'scripts/lib/kb-calibration.mjs',
+    'scripts/export-kb-calibration-report.mjs',
+    'scripts/tests/kb-calibration.test.mjs',
+  ]) {
+    const route = routeContext(path);
+    assert.equal(route.skill, 'docs-steward');
+    assert.deepEqual(route.docs, ['docs/context/automation.md', 'docs/context/testing.md']);
+    assert.deepEqual(route.maps, ['docs/context/map/infra.md']);
+  }
+});
+
 test('game state source routes to both backend and wire contracts', () => {
   const route = routeContext('src/Server/app/Game_Engine.js');
 
@@ -259,75 +269,6 @@ test('large manifest scope stays artifact-only instead of breaching the public b
   assert.ok(artifact.limits.returned_bytes <= artifact.limits.max_bytes);
 });
 
-test('concept routing resolves an exact ID to its owner, generated map, and bounded source grant', () => {
-  const result = conceptRoute(ROOT, 'hud.tower.collapse.presentation');
-
-  assert.equal(result.schema_version, 1);
-  assert.equal(result.status, 'matched');
-  assert.equal(result.query.resolution, 'id');
-  assert.equal(result.concept.id, 'hud.tower.collapse.presentation');
-  assert.equal(result.concept.owner.path, 'KB/docs/context/ui-hud.md');
-  assert.equal(result.map.path, 'KB/docs/context/map/concept/hud.md');
-  assert.match(result.map.text, /^## hud\.tower\.collapse\.presentation/m);
-  assert.ok(result.sources.some(source => source.path.endsWith('/TowerStack.gd') && source.anchor === '_begin_collapse'));
-  assert.ok(result.sources.every(source => source.read.lines[1] - source.read.lines[0] <= 32));
-  assert.equal(result.fallback.allowed, false);
-  assert.ok(result.limits.returned_bytes <= result.limits.max_bytes);
-});
-
-test('concept read resolves an exact normalized alias and returns only its prose leaf', () => {
-  const result = conceptRead(ROOT, '  CRITICAL   SAVE  ');
-
-  assert.equal(result.status, 'matched');
-  assert.equal(result.query.resolution, 'alias');
-  assert.equal(result.concept.id, 'gameplay.scoring.critical-save');
-  assert.equal(result.prose.heading, 'Critical Save');
-  assert.equal(result.prose.lines[0], result.concept.owner.lines[0]);
-  assert.equal(result.prose.lines[1], result.concept.owner.lines[1]);
-  assert.match(result.prose.text, /^## Critical Save/);
-  assert.equal(result.prose.text.includes('<!-- kb'), false);
-  assert.ok(result.sources.some(source => source.path.endsWith('/Scoring.js') && source.anchor === 'getCriticalSavePreview'));
-});
-
-test('concept adjacency is an explicit next call and is never auto-loaded', () => {
-  const presentation = conceptRead(ROOT, 'hud.tower.collapse.presentation');
-  const recoveryEdge = presentation.adjacent.find(adjacent => adjacent.id === 'hud.tower.collapse.recovery');
-
-  assert.equal(recoveryEdge.loaded, false);
-  assert.deepEqual(recoveryEdge.command.argv, ['node', 'scripts/context.mjs', 'concept-route', 'hud.tower.collapse.recovery']);
-  assert.equal(presentation.prose.text.includes('Collapse recovery after presentation'), false);
-
-  const recovery = conceptRead(ROOT, recoveryEdge.id);
-  assert.equal(recovery.status, 'matched');
-  assert.equal(recovery.concept.id, 'hud.tower.collapse.recovery');
-  assert.ok(recovery.adjacent.some(adjacent => adjacent.id === presentation.concept.id && adjacent.loaded === false));
-});
-
-test('concept bundle remains bounded, provenance-bearing, and excludes adjacent prose', () => {
-  const result = conceptBundle(ROOT, 'collapse framing', { maxBytes: 2048 });
-
-  assert.equal(result.status, 'matched');
-  assert.equal(result.limits.returned_bytes, Buffer.byteLength(result.bundle));
-  assert.ok(result.limits.returned_bytes <= 2048);
-  assert.match(result.bundle, /## Concept prose/);
-  assert.match(result.bundle, /## Source grants/);
-  assert.match(result.bundle, /## Provenance/);
-  assert.match(result.bundle, /hud\.tower\.collapse\.recovery.*not loaded/);
-  assert.equal(result.bundle.includes('Collapse recovery after presentation'), false);
-});
-
-test('concept retrieval fails closed for unknown concepts and insufficient budgets', () => {
-  const unknown = conceptRoute(ROOT, 'concept.that.does.not.exist');
-  const tooSmall = conceptRead(ROOT, 'gameplay.scoring.critical-save', { maxBytes: 1024 });
-
-  assert.equal(unknown.status, 'concept-unmapped');
-  assert.match(unknown.reason, /no canonical concept id/);
-  assert.equal(unknown.fallback.allowed, false);
-  assert.equal(tooSmall.status, 'budget-exceeded');
-  assert.match(tooSmall.reason, /exceeds the 1024 byte limit/);
-  assert.equal(tooSmall.fallback.allowed, false);
-});
-
 test('legacy route and search corpora remain isolated from the experimental KB', () => {
   const route = routeContext('gameplay');
   const search = searchContext(ROOT, 'critical save', { includeExcerpt: true });
@@ -340,17 +281,4 @@ test('legacy route and search corpora remain isolated from the experimental KB',
   assert.deepEqual(kbRoute.maps, []);
   assert.equal(kbRoute.skill, 'docs-steward');
   assert.equal(isNormalContextExcludedPath('KB/docs/context/gameplay.md'), false);
-});
-
-test('concept KB scope selects only the focused concept protocol additions', () => {
-  const result = scopeContext(['KB/docs/context/gameplay.md']);
-
-  assert.equal(result.qa.concept_kb, true);
-  assert.deepEqual(result.qa.tooling_tests, [...CONCEPT_KB_TESTS].sort());
-  assert.deepEqual(result.docs, []);
-  assert.deepEqual(result.maps, []);
-  assert.ok(result.tools.some(tool => tool.name === 'concept map'));
-  assert.ok(result.tools.some(tool => tool.name === 'concept KB'));
-  assert.ok(result.tools.some(tool => tool.name === 'concept benchmark'));
-  assert.equal(result.qa.runtime_applies, false);
 });

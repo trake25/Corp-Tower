@@ -42,6 +42,15 @@ export const COVERAGE_EXEMPT = [
 
 const norm = p => p.split(/[\\/]/).join('/');
 
+export function isPrimaryAnchorReferencePath(path) {
+  const rel = norm(path).replace(/^(?:\.\/)+/, '');
+  if (/^KB(?:\/|$)/.test(rel) || isNormalContextExcludedPath(rel)) return false;
+  if (/^scripts\/fixtures\/concept-retrieval\.json$/.test(rel)) return false;
+  return !/^scripts\/(?:build-concept-map|validate-concept-kb|export-kb-calibration-report)\.mjs$/.test(rel)
+    && !/^scripts\/lib\/(?:concept-kb|kb-calibration)\.mjs$/.test(rel)
+    && !/^scripts\/tests\/(?:concept-kb|kb-calibration)\.test\.mjs$/.test(rel);
+}
+
 function walk(dir, root, out) {
   let entries;
   try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
@@ -234,7 +243,7 @@ function referencedOutside(rel, name, files) {
   if (!name || name.startsWith('_') || GENERIC_ANCHORS.has(name)) return false;
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const pattern = name.startsWith('%') ? new RegExp(escaped) : new RegExp(`(^|[^A-Za-z0-9_])${escaped}([^A-Za-z0-9_]|$)`);
-  return files.some(file => file.rel !== rel && pattern.test(file.text));
+  return files.some(file => file.rel !== rel && isPrimaryAnchorReferencePath(file.rel) && pattern.test(file.text));
 }
 
 function intrinsicAnchor(rel, symbol) {

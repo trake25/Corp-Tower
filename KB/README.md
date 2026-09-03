@@ -28,7 +28,13 @@ The opt-in experimental path is:
   bounded handoff under `.agent-state/automation/`. Neither traverses adjacent
   concepts automatically.
 - `node scripts/benchmark-rag.mjs --concept-check` runs the parallel concept
-  fixtures. The command without this option retains the legacy benchmark.
+  fixtures and records deterministic footprint metrics under ignored
+  `.agent-state/automation/rag-benchmark/kb-context/`. The command without this
+  option retains the legacy benchmark.
+- `node scripts/export-kb-calibration-report.mjs` is the only public-report
+  path. It manually exports the latest valid private snapshot to the next free
+  version under non-context `report/benchmarks/kb-context/`; QA and task-close
+  never invoke it.
 
 ## Authored metadata
 
@@ -53,11 +59,36 @@ Concept source grants cannot enter `report/`, `repair/`, `plan/`, `task/`,
 `reference/`, `.agent-state/`, or this `KB/` tree. Adjacency is a directed choice
 for another explicit route call, never permission to load neighboring prose.
 
+## Prose contract
+
+One concept leaf owns one semantic responsibility. Its compact natural prose
+should give an unfamiliar reader the behavior, subsystem mechanism, durable
+rationale or invariant, and the negative ownership boundary needed before
+source inspection. These ideas are not exposed as mandatory labels.
+
+Prose does not narrate functions, inventory scenes/files, copy routine defaults,
+record bug history, or duplicate another concept's full contract. A neighboring
+contract is named only far enough to prevent wrong reasoning, then routed through
+`adjacent:`. Maps own implementation locations and source owns exact detail.
+
 ## Experimental budgets
 
-The concept prose section hard limit is 6 KiB. Concept commands default to a
-12 KiB response and accept at most 24 KiB. The experimental Markdown line
-ceiling is 400 characters, as separately authorized for this new KB; the
-primary `docs/context/**` limits are unchanged.
+Concept capacity is independent from primary-KB prose limits. Above roughly
+1,200 and 1,800 estimated tokens produce advisory and strong-advisory signals;
+only prose above roughly 2,500 estimated tokens fails. Concept commands default
+to a 16 KiB response and accept at most 32 KiB. The experimental Markdown line
+ceiling remains 400 characters; primary `docs/context/**` limits are unchanged.
+
+The concept benchmark measures prose, route/map, bounded source windows,
+overlap-merged unique source windows, adjacency, and complete footprint for
+representative concepts and authored journeys. Snapshots contain identities and
+counts only—not source contents, prompts, responses, reasoning, transcripts,
+environment data, secrets, or working-tree state. Footprints are calibration
+observations rather than QA thresholds or automatic maintenance findings.
+
+Primary locator-map anchor promotion consults a separately defined first-party
+reference corpus. Experimental KB data, concept fixtures/tests, private state,
+and reports cannot promote primary anchors, although concept tooling source remains
+eligible for normal `map/infra.md` coverage.
 
 Cloud ChatGPT/Claude activation and model/task-router redesign remain deferred.

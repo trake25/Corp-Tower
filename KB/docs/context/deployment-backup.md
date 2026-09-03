@@ -59,7 +59,7 @@ source: scripts/backup/backup-common.sh#load_env
 -->
 ## Machine-local state
 
-`actions/checkout` cleans gitignored/untracked checkout content, so per-run deployment state, web content, tunnel configuration, and credentials live in a machine-local state directory outside the checkout.
+`actions/checkout` cleans gitignored/untracked checkout content, so per-run deployment state, web content, tunnel configuration, and credentials live in a permission-controlled machine directory outside the checkout. Backup scripts resolve that one state root before loading environment or generated artifacts; repository working material is never a durable host-state store.
 
 <!-- kb
 id: deploy.backup.demo-mode
@@ -69,7 +69,7 @@ source: scripts/backup/backup-server-up.sh#CORP_TOWER_BOTS_ENABLED
 -->
 ## Demo differences
 
-The public demo is selected by instance identity and differs from development through cooperative bots, disabled debug UI, demo presentation mode, and dedicated manual dispatchers without routine push deployment.
+The public demo is selected by instance identity, which drives cooperative bots, disabled debug UI, demo presentation, and the persistent demo Redis path while development instances retain their lighter behavior. Dedicated manual dispatchers control demo rollout, so an ordinary development push is not authority to redeploy the public demo.
 
 <!-- kb
 id: deploy.backup.auto-deploy

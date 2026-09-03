@@ -128,12 +128,19 @@ id: automation.docs.maps
 alias: build file map
 alias: generated maps
 source: scripts/build-file-map.mjs#build
+source: scripts/build-file-map.mjs#isPrimaryAnchorReferencePath
 source: scripts/build-concept-map.mjs#buildConceptMaps
 adjacent: automation.docs.validation
 -->
 ## Map regeneration
 
-Primary source locator maps preserve authored file purpose and navigation anchors. The separate concept generator derives experimental domain maps and the marked concept router from prose metadata, without replacing primary locator-map coverage.
+Primary source locator maps preserve authored file purpose and navigation
+anchors. Non-intrinsic anchor promotion consults only the explicitly allowed
+primary source/tooling reference corpus: experimental KB material, concept
+fixtures/tests, private state, and reports cannot promote a primary anchor. Concept
+tooling remains eligible to appear normally in the infrastructure map, while
+the separate concept generator derives experimental domain maps and the marked
+concept router without replacing primary coverage.
 
 <!-- kb
 id: automation.docs.validation
@@ -141,10 +148,16 @@ alias: validate docs
 alias: KB validator
 source: scripts/validate-docs.mjs#classification
 source: scripts/validate-concept-kb.mjs#validateConceptKb
+source: scripts/lib/concept-kb.mjs#conceptProseCapacity
 -->
 ## KB validation
 
-The primary game-KB validator protects the authoritative corpus and excludes this tree. The separate experimental validator protects concept identity, aliases, leaf ownership, adjacency, exact source anchors, isolation, budgets, generated-router equality, and concept-map equality.
+The primary game-KB validator protects the authoritative corpus and excludes
+this tree. The separate experimental validator protects concept identity,
+aliases, leaf ownership, adjacency, exact source anchors, isolation, generated
+equality, and a concept-specific capacity model. Advisory bands are calibration
+signals; only prose beyond the independent 2,500-estimated-token ceiling or the
+400-character line ceiling is a capacity error.
 
 <!-- kb
 id: automation.docs.scope

@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { tmpdir } from 'node:os';
 import { AREA_ALIASES, routeSourcePath } from './lib/context-routing.mjs';
+import { measureKbCalibration, writeKbCalibrationSnapshot } from './lib/kb-calibration.mjs';
 import {
   conceptBundle,
   conceptRead,
@@ -126,10 +127,28 @@ function runConceptBenchmark() {
   });
   const passedRoutes = routes.filter(result => result.correct).length;
   const passedFailures = failures.filter(result => result.correct).length;
-  const passed = passedRoutes === routes.length && passedFailures === failures.length;
+  let passed = passedRoutes === routes.length && passedFailures === failures.length;
   for (const result of [...routes, ...failures].filter(result => !result.correct))
     console.error(`x ${result.id}: ${result.status}`);
-  console.log(`${passed ? 'PASS' : 'FAIL'} — concept retrieval ${passedRoutes}/${routes.length}, fail-closed ${passedFailures}/${failures.length}`);
+  let calibration = null;
+  if (passed) {
+    try {
+      const snapshot = measureKbCalibration({
+        root: ROOT,
+        conceptIds: routes.map(result => result.concept),
+        journeys: conceptFixtures.journeys || [],
+      });
+      const paths = writeKbCalibrationSnapshot({ root: ROOT, snapshot });
+      calibration = { concepts: snapshot.concepts.length, journeys: snapshot.journeys.length, latest: paths.latest };
+    } catch (error) {
+      passed = false;
+      console.error(`x calibration: ${error.message}`);
+    }
+  }
+  const calibrationSummary = calibration
+    ? `; calibration ${calibration.concepts} concepts/${calibration.journeys} journeys -> ${calibration.latest}`
+    : '';
+  console.log(`${passed ? 'PASS' : 'FAIL'} — concept retrieval ${passedRoutes}/${routes.length}, fail-closed ${passedFailures}/${failures.length}${calibrationSummary}`);
   process.exit(passed ? 0 : 1);
 }
 

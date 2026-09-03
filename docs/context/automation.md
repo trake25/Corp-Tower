@@ -29,9 +29,19 @@ citations or ordinary documentation scope. Opt-in `concept-route`,
 `concept-read`, and `concept-bundle` commands resolve one exact ID or normalized
 alias, return explicit adjacency without traversing it, and fail closed without
 repository fallback. `build-concept-map.mjs` derives its marked router and maps;
-`validate-concept-kb.mjs` checks its metadata, source grants, isolation, budgets,
-and generated equality. Its focused benchmark requires `--concept-check`, so the
-legacy commands, fixture, benchmark, and cloud-agent routing remain unchanged.
+`validate-concept-kb.mjs` checks its metadata, source grants, isolation, generated
+equality, and independent concept capacity. Its advisory bands are observations;
+only the concept-specific hard ceiling is a gate. The focused benchmark requires
+`--concept-check`, preserves its correctness/fail-closed assertions, and records
+representative concept/journey footprint metrics under ignored
+`.agent-state/automation/rag-benchmark/kb-context/`. The legacy commands,
+fixture, benchmark, and cloud-agent routing remain unchanged.
+
+`export-kb-calibration-report.mjs` is the sole manual path from the latest valid
+private snapshot to a sanitized, collision-safe version under
+`report/benchmarks/kb-context/`. QA, task-close, and the benchmark never invoke
+the exporter. Private snapshots and public reports contain no source text and
+remain non-context review data rather than KB authority.
 
 Gitignored working folders have explicit routes but stay outside KB search.
 All `.agent-state/**` content is ignored private machine state and cannot be a
@@ -51,6 +61,10 @@ Generated maps keep one authored purpose per file and only stable navigation
 anchors. An exceptional cross-boundary term that extraction cannot recognize may
 be marked `· stable`; regeneration relocates it by name and drops it if the source
 term disappears. Maps do not explain local symbols—the bounded source read does.
+Non-intrinsic anchor promotion uses an explicit primary reference corpus:
+experimental KB data, concept fixtures/tests, private state, and reports cannot
+promote a primary locator anchor, while their eligible tooling files may still
+receive ordinary `map/infra.md` file coverage.
 
 Public output is bounded; larger route detail stays in ignored artifacts and
 search excerpts are opt-in. Fixture-proven aliases bridge only demonstrated

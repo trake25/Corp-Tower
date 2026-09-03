@@ -694,24 +694,24 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/backup/backup-web-up.sh:1 | @file · file | backup web up operator script |
 
-### scripts/benchmark-rag.mjs — 305 ln
+### scripts/benchmark-rag.mjs — 324 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/benchmark-rag.mjs:1 | @file · file | returns at most eight matching self-contained map rows |
-| scripts/benchmark-rag.mjs:20 | ROOT · const | |
-| scripts/benchmark-rag.mjs:21 | CHECK · const | |
-| scripts/benchmark-rag.mjs:138 | fixtures · const | |
-| scripts/benchmark-rag.mjs:139 | started · const | |
-| scripts/benchmark-rag.mjs:157 | retrieval · const | |
-| scripts/benchmark-rag.mjs:182 | skills · const | |
-| scripts/benchmark-rag.mjs:195 | protocol · const | |
-| scripts/benchmark-rag.mjs:224 | sessions · const | |
-| scripts/benchmark-rag.mjs:255 | correct · const | |
-| scripts/benchmark-rag.mjs:256 | first · const | |
-| scripts/benchmark-rag.mjs:266 | result · const | |
-| scripts/benchmark-rag.mjs:294 | markdown · const | |
-| scripts/benchmark-rag.mjs:302 | passed · const | |
+| scripts/benchmark-rag.mjs:21 | ROOT · const | |
+| scripts/benchmark-rag.mjs:22 | CHECK · const | |
+| scripts/benchmark-rag.mjs:157 | fixtures · const | |
+| scripts/benchmark-rag.mjs:158 | started · const | |
+| scripts/benchmark-rag.mjs:176 | retrieval · const | |
+| scripts/benchmark-rag.mjs:201 | skills · const | |
+| scripts/benchmark-rag.mjs:214 | protocol · const | |
+| scripts/benchmark-rag.mjs:243 | sessions · const | |
+| scripts/benchmark-rag.mjs:274 | correct · const | |
+| scripts/benchmark-rag.mjs:275 | first · const | |
+| scripts/benchmark-rag.mjs:285 | result · const | |
+| scripts/benchmark-rag.mjs:313 | markdown · const | |
+| scripts/benchmark-rag.mjs:321 | passed · const | |
 
 ### scripts/build-android-plugin.sh — 23 ln
 
@@ -725,7 +725,6 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/build-concept-map.mjs:1 | @file · file | build concept map repository workflow |
 | scripts/build-concept-map.mjs:11 | parseArgs · fn | |
-| scripts/build-concept-map.mjs:23 | buildConceptMaps · fn | |
 
 ### scripts/build-facebook-android-plugin.sh — 20 ln
 
@@ -733,7 +732,7 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/build-facebook-android-plugin.sh:1 | @file · file | build facebook android plugin operator script |
 
-### scripts/build-file-map.mjs — 442 ln
+### scripts/build-file-map.mjs — 451 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -744,14 +743,15 @@ bounded source read. Local implementation detail stays in source.
 | scripts/build-file-map.mjs:29 | IGNORE_PATH · const | |
 | scripts/build-file-map.mjs:38 | COVERAGE_EXEMPT · const | |
 | scripts/build-file-map.mjs:43 | norm · const | |
-| scripts/build-file-map.mjs:45 | walk · fn | |
-| scripts/build-file-map.mjs:61 | firstPartyFiles · fn | |
-| scripts/build-file-map.mjs:86 | isExempt · const | |
-| scripts/build-file-map.mjs:217 | extract · fn | |
-| scripts/build-file-map.mjs:249 | selectAnchors · fn | |
-| scripts/build-file-map.mjs:336 | applyPinnedAnchors · fn | |
-| scripts/build-file-map.mjs:354 | render · fn | |
-| scripts/build-file-map.mjs:387 | build · fn | |
+| scripts/build-file-map.mjs:45 | isPrimaryAnchorReferencePath · fn | |
+| scripts/build-file-map.mjs:54 | walk · fn | |
+| scripts/build-file-map.mjs:70 | firstPartyFiles · fn | |
+| scripts/build-file-map.mjs:95 | isExempt · const | |
+| scripts/build-file-map.mjs:226 | extract · fn | |
+| scripts/build-file-map.mjs:258 | selectAnchors · fn | |
+| scripts/build-file-map.mjs:345 | applyPinnedAnchors · fn | |
+| scripts/build-file-map.mjs:363 | render · fn | |
+| scripts/build-file-map.mjs:396 | build · fn | |
 
 ### scripts/codex-observability-hook.mjs — 234 ln
 
@@ -792,6 +792,14 @@ bounded source read. Local implementation detail stays in source.
 | scripts/docs-scope.mjs:135 | outline · fn | |
 | scripts/docs-scope.mjs:147 | order · const | |
 | scripts/docs-scope.mjs:168 | maps · const | |
+
+### scripts/export-kb-calibration-report.mjs — 180 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/export-kb-calibration-report.mjs:1 | @file · file | sanitizes the latest private KB footprint snapshot into a collision-safe manual report |
+| scripts/export-kb-calibration-report.mjs:13 | normalizedPath · const | |
+| scripts/export-kb-calibration-report.mjs:15 | percentile · fn | |
 
 ### scripts/figma-ui-exporter/tools/build.mjs — 106 ln
 
@@ -959,28 +967,22 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/agent-observability/usage.mjs:110 | aggregateUsage · fn | |
 | scripts/lib/agent-observability/usage.mjs:149 | assessRuntimeCapabilities · fn | |
 
-### scripts/lib/concept-kb.mjs — 469 ln
+### scripts/lib/concept-kb.mjs — 493 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/lib/concept-kb.mjs:1 | @file · file | concept kb repository workflow |
-| scripts/lib/concept-kb.mjs:5 | CONCEPT_INDEX_BEGIN · const | |
-| scripts/lib/concept-kb.mjs:6 | CONCEPT_INDEX_END · const | |
-| scripts/lib/concept-kb.mjs:7 | CONCEPT_MAP_MARKER · const | |
 | scripts/lib/concept-kb.mjs:8 | DEFAULT_CONCEPT_BYTES · const | |
 | scripts/lib/concept-kb.mjs:9 | MAX_CONCEPT_BYTES · const | |
-| scripts/lib/concept-kb.mjs:10 | CONCEPT_SECTION_HARD_BYTES · const | |
-| scripts/lib/concept-kb.mjs:11 | CONCEPT_MAX_LINE_CHARS · const | |
-| scripts/lib/concept-kb.mjs:13 | ID · const | |
-| scripts/lib/concept-kb.mjs:27 | relativePath · const | |
-| scripts/lib/concept-kb.mjs:38 | inside · fn | |
-| scripts/lib/concept-kb.mjs:129 | loadConceptRegistry · fn | |
-| scripts/lib/concept-kb.mjs:289 | resolveConceptSource · fn | |
-| scripts/lib/concept-kb.mjs:341 | resolveRegistrySources · fn | |
-| scripts/lib/concept-kb.mjs:359 | escapeCell · fn | |
-| scripts/lib/concept-kb.mjs:399 | expectedConceptOutputs · fn | |
-| scripts/lib/concept-kb.mjs:426 | conceptForInput · fn | |
-| scripts/lib/concept-kb.mjs:445 | readConceptMapSection · fn | |
+| scripts/lib/concept-kb.mjs:15 | CONCEPT_SECTION_HARD_BYTES · const | |
+| scripts/lib/concept-kb.mjs:18 | ID · const | |
+| scripts/lib/concept-kb.mjs:32 | relativePath · const | |
+| scripts/lib/concept-kb.mjs:62 | inside · fn | |
+| scripts/lib/concept-kb.mjs:153 | loadConceptRegistry · fn | |
+| scripts/lib/concept-kb.mjs:313 | resolveConceptSource · fn | |
+| scripts/lib/concept-kb.mjs:383 | escapeCell · fn | |
+| scripts/lib/concept-kb.mjs:450 | conceptForInput · fn | |
+| scripts/lib/concept-kb.mjs:469 | readConceptMapSection · fn | |
 
 ### scripts/lib/context-query.mjs — 826 ln
 
@@ -990,9 +992,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-query.mjs:17 | DEFAULT_MAX_RESULTS · const | |
 | scripts/lib/context-query.mjs:21 | DEFAULT_SECTION_BYTES · const | |
 | scripts/lib/context-query.mjs:23 | DEFAULT_BUNDLE_BYTES · const | |
-| scripts/lib/context-query.mjs:28 | normalize · const | |
 | scripts/lib/context-query.mjs:29 | tokens · const | |
-| scripts/lib/context-query.mjs:30 | relativePath · const | |
 | scripts/lib/context-query.mjs:32 | command · fn | |
 | scripts/lib/context-query.mjs:38 | measured · fn | |
 | scripts/lib/context-query.mjs:50 | measuredText · fn | |
@@ -1060,6 +1060,17 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/docs-capacity.mjs:108 | mapCapacitySummary · fn | |
 | scripts/lib/docs-capacity.mjs:123 | validatorFailureClassification · fn | |
 
+### scripts/lib/kb-calibration.mjs — 352 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/lib/kb-calibration.mjs:1 | @file · file | measures concept and journey footprints and persists bounded private snapshots |
+| scripts/lib/kb-calibration.mjs:31 | normalizedPath · const | |
+| scripts/lib/kb-calibration.mjs:34 | hash · fn | |
+| scripts/lib/kb-calibration.mjs:180 | measureKbCalibration · fn | |
+| scripts/lib/kb-calibration.mjs:220 | integer · fn | |
+| scripts/lib/kb-calibration.mjs:320 | writeKbCalibrationSnapshot · fn | |
+
 ### scripts/lib/maintenance-handoff.mjs — 206 ln
 
 | File:Ln | Anchor | Purpose |
@@ -1107,7 +1118,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/tutorial-defaults-parity.mjs:97 | formatTutorialDefaultMismatches · fn | |
 | scripts/lib/tutorial-defaults-parity.mjs:103 | tutorialDefaultsParity · fn | |
 
-### scripts/qa-gate.mjs — 310 ln
+### scripts/qa-gate.mjs — 320 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1115,14 +1126,14 @@ bounded source read. Local implementation detail stays in source.
 | scripts/qa-gate.mjs:9 | ROOT · const | |
 | scripts/qa-gate.mjs:10 | CLIENT · const | |
 | scripts/qa-gate.mjs:11 | SERVER · const | |
-| scripts/qa-gate.mjs:49 | AUTOMATION_PROTOCOL_TESTS · const | |
-| scripts/qa-gate.mjs:50 | CONCEPT_KB_TESTS · const | |
-| scripts/qa-gate.mjs:73 | TUTORIAL_PARITY_TEST · const | |
-| scripts/qa-gate.mjs:90 | selectToolingQa · fn | |
-| scripts/qa-gate.mjs:111 | selectContractQa · fn | |
-| scripts/qa-gate.mjs:118 | selectQa · fn | |
-| scripts/qa-gate.mjs:181 | classifyQaFailure · fn | |
-| scripts/qa-gate.mjs:191 | fail · fn | |
+| scripts/qa-gate.mjs:51 | AUTOMATION_PROTOCOL_TESTS · const | |
+| scripts/qa-gate.mjs:53 | CONCEPT_KB_TESTS · const | |
+| scripts/qa-gate.mjs:83 | TUTORIAL_PARITY_TEST · const | |
+| scripts/qa-gate.mjs:100 | selectToolingQa · fn | |
+| scripts/qa-gate.mjs:121 | selectContractQa · fn | |
+| scripts/qa-gate.mjs:128 | selectQa · fn | |
+| scripts/qa-gate.mjs:191 | classifyQaFailure · fn | |
+| scripts/qa-gate.mjs:201 | fail · fn | |
 
 ### scripts/strip-comments.mjs — 296 ln
 
@@ -1188,7 +1199,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/agent-observability.test.mjs:42 | closeInput · fn | |
 | scripts/tests/agent-observability.test.mjs:66 | bundle · fn | |
 
-### scripts/tests/build-file-map.test.mjs — 109 ln
+### scripts/tests/build-file-map.test.mjs — 144 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1201,20 +1212,20 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/codex-rollout-observability.test.mjs:1 | @file · file | permanent regression coverage for codex rollout observability |
 | scripts/tests/codex-rollout-observability.test.mjs:17 | usage · fn | |
 
-### scripts/tests/concept-kb.test.mjs — 255 ln
+### scripts/tests/concept-kb.test.mjs — 379 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/concept-kb.test.mjs:1 | @file · file | permanent regression coverage for concept kb |
-| scripts/tests/concept-kb.test.mjs:17 | ROOT · const | |
-| scripts/tests/concept-kb.test.mjs:29 | clean · fn | |
+| scripts/tests/concept-kb.test.mjs:23 | ROOT · const | |
+| scripts/tests/concept-kb.test.mjs:35 | clean · fn | |
 
-### scripts/tests/context-query.test.mjs — 357 ln
+### scripts/tests/context-query.test.mjs — 285 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/context-query.test.mjs:1 | @file · file | permanent regression coverage for context query |
-| scripts/tests/context-query.test.mjs:20 | ROOT · const | |
+| scripts/tests/context-query.test.mjs:17 | ROOT · const | |
 
 ### scripts/tests/figma-ui-exporter.test.mjs — 123 ln
 
@@ -1229,7 +1240,14 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/git-sync-commit-push.test.mjs:1 | @file · file | permanent regression coverage for git sync commit push |
 
-### scripts/tests/qa-gate.test.mjs — 167 ln
+### scripts/tests/kb-calibration.test.mjs — 150 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/tests/kb-calibration.test.mjs:1 | @file · file | permanent coverage for range merging, private snapshots, and manual report safety |
+| scripts/tests/kb-calibration.test.mjs:68 | clean · fn | |
+
+### scripts/tests/qa-gate.test.mjs — 170 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1265,13 +1283,12 @@ bounded source read. Local implementation detail stays in source.
 | scripts/validate-agent-config.mjs:44 | agents · const | |
 | scripts/validate-agent-config.mjs:46 | claude · const | |
 
-### scripts/validate-concept-kb.mjs — 103 ln
+### scripts/validate-concept-kb.mjs — 111 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/validate-concept-kb.mjs:1 | @file · file | validate concept kb repository workflow |
-| scripts/validate-concept-kb.mjs:14 | parseArgs · fn | |
-| scripts/validate-concept-kb.mjs:25 | validateConceptKb · fn | |
+| scripts/validate-concept-kb.mjs:15 | parseArgs · fn | |
 
 ### scripts/validate-docs.mjs — 470 ln
 
@@ -1305,4 +1322,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-129 files · 522 stable anchors.
+132 files · 521 stable anchors.

@@ -4,15 +4,21 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { buildConceptMaps } from '../build-concept-map.mjs';
-import { conceptRoute } from '../lib/context-query.mjs';
+import { conceptBundle, conceptRead, conceptRoute, scopeContext } from '../lib/context-query.mjs';
 import {
   CONCEPT_INDEX_BEGIN,
   CONCEPT_INDEX_END,
   CONCEPT_MAP_MARKER,
+  CONCEPT_PROSE_CAPACITY,
+  CONCEPT_SECTION_HARD_BYTES,
+  DEFAULT_CONCEPT_BYTES,
+  MAX_CONCEPT_BYTES,
+  conceptProseCapacity,
   loadConceptRegistry,
   resolveRegistrySources,
 } from '../lib/concept-kb.mjs';
 import { validateConceptKb } from '../validate-concept-kb.mjs';
+import { CONCEPT_KB_TESTS } from '../qa-gate.mjs';
 
 const ROOT = resolve('.');
 
@@ -57,7 +63,7 @@ test('the repository concept registry is complete, deterministic, and source-gro
   const aliases = registry.concepts.flatMap(concept => concept.normalized_aliases);
 
   assert.equal(registry.concepts.length, 185);
-  assert.equal(registry.concepts.reduce((sum, concept) => sum + concept.sources.length, 0), 247);
+  assert.equal(registry.concepts.reduce((sum, concept) => sum + concept.sources.length, 0), 251);
   assert.equal(new Set(ids).size, ids.length);
   assert.equal(new Set(aliases).size, aliases.length);
   assert.deepEqual(registry.errors, []);
@@ -78,6 +84,89 @@ test('repository concept maps and router are generated and validate cleanly', ()
   assert.equal(generated.registry.outputs.size, 11);
   assert.equal(validated.status, 'passed');
   assert.deepEqual(validated.errors, []);
+});
+
+test('concept routing resolves an exact ID to its owner, generated map, and bounded source grant', () => {
+  const result = conceptRoute(ROOT, 'hud.tower.collapse.presentation');
+
+  assert.equal(result.schema_version, 1);
+  assert.equal(result.status, 'matched');
+  assert.equal(result.query.resolution, 'id');
+  assert.equal(result.concept.id, 'hud.tower.collapse.presentation');
+  assert.equal(result.concept.owner.path, 'KB/docs/context/ui-hud.md');
+  assert.equal(result.map.path, 'KB/docs/context/map/concept/hud.md');
+  assert.match(result.map.text, /^## hud\.tower\.collapse\.presentation/m);
+  assert.ok(result.sources.some(source => source.path.endsWith('/TowerStack.gd') && source.anchor === '_begin_collapse'));
+  assert.ok(result.sources.every(source => source.read.lines[1] - source.read.lines[0] <= 32));
+  assert.equal(result.fallback.allowed, false);
+  assert.ok(result.limits.returned_bytes <= result.limits.max_bytes);
+});
+
+test('concept read resolves an exact normalized alias and returns only its prose leaf', () => {
+  const result = conceptRead(ROOT, '  CRITICAL   SAVE  ');
+
+  assert.equal(result.status, 'matched');
+  assert.equal(result.query.resolution, 'alias');
+  assert.equal(result.concept.id, 'gameplay.scoring.critical-save');
+  assert.equal(result.prose.heading, 'Critical Save');
+  assert.equal(result.prose.lines[0], result.concept.owner.lines[0]);
+  assert.equal(result.prose.lines[1], result.concept.owner.lines[1]);
+  assert.match(result.prose.text, /^## Critical Save/);
+  assert.equal(result.prose.text.includes('<!-- kb'), false);
+  assert.ok(result.sources.some(source => source.path.endsWith('/Scoring.js') && source.anchor === 'getCriticalSavePreview'));
+});
+
+test('concept adjacency is an explicit next call and is never auto-loaded', () => {
+  const presentation = conceptRead(ROOT, 'hud.tower.collapse.presentation');
+  const recoveryEdge = presentation.adjacent.find(adjacent => adjacent.id === 'hud.tower.collapse.recovery');
+
+  assert.equal(recoveryEdge.loaded, false);
+  assert.deepEqual(recoveryEdge.command.argv, ['node', 'scripts/context.mjs', 'concept-route', 'hud.tower.collapse.recovery']);
+  assert.equal(presentation.prose.text.includes('Collapse recovery after presentation'), false);
+
+  const recovery = conceptRead(ROOT, recoveryEdge.id);
+  assert.equal(recovery.status, 'matched');
+  assert.equal(recovery.concept.id, 'hud.tower.collapse.recovery');
+  assert.ok(recovery.adjacent.some(adjacent => adjacent.id === presentation.concept.id && adjacent.loaded === false));
+});
+
+test('concept bundle remains bounded, provenance-bearing, and excludes adjacent prose', () => {
+  const result = conceptBundle(ROOT, 'collapse framing', { maxBytes: 2048 });
+
+  assert.equal(result.status, 'matched');
+  assert.equal(result.limits.returned_bytes, Buffer.byteLength(result.bundle));
+  assert.ok(result.limits.returned_bytes <= 2048);
+  assert.match(result.bundle, /## Concept prose/);
+  assert.match(result.bundle, /## Source grants/);
+  assert.match(result.bundle, /## Provenance/);
+  assert.match(result.bundle, /hud\.tower\.collapse\.recovery.*not loaded/);
+  assert.equal(result.bundle.includes('Collapse recovery after presentation'), false);
+});
+
+test('concept retrieval fails closed for unknown concepts and insufficient budgets', () => {
+  const unknown = conceptRoute(ROOT, 'concept.that.does.not.exist');
+  const tooSmall = conceptRead(ROOT, 'gameplay.scoring.critical-save', { maxBytes: 1024 });
+
+  assert.equal(unknown.status, 'concept-unmapped');
+  assert.match(unknown.reason, /no canonical concept id/);
+  assert.equal(unknown.fallback.allowed, false);
+  assert.equal(tooSmall.status, 'budget-exceeded');
+  assert.match(tooSmall.reason, /exceeds the 1024 byte limit/);
+  assert.equal(tooSmall.fallback.allowed, false);
+});
+
+test('concept KB scope selects only the focused concept protocol additions', () => {
+  const result = scopeContext(['KB/docs/context/gameplay.md']);
+
+  assert.equal(result.qa.concept_kb, true);
+  assert.deepEqual(result.qa.tooling_tests, [...CONCEPT_KB_TESTS].sort());
+  assert.deepEqual(result.docs, []);
+  assert.deepEqual(result.maps, []);
+  assert.ok(result.tools.some(tool => tool.name === 'concept map'));
+  assert.ok(result.tools.some(tool => tool.name === 'concept KB'));
+  assert.ok(result.tools.some(tool => tool.name === 'concept benchmark'));
+  assert.equal(result.tools.some(tool => tool.command.argv.includes('scripts/export-kb-calibration-report.mjs')), false);
+  assert.equal(result.qa.runtime_applies, false);
 });
 
 test('leaf prose ownership stops before the next concept metadata block', () => {
@@ -216,6 +305,41 @@ test('the validator detects stale generated output and the experimental line cei
     buildConceptMaps({ root });
     assert.ok(validateConceptKb({ root }).errors.some(error => error.status === 'budget-exceeded' && /401 chars > 400/.test(error.message)));
     assert.ok(existsSync(mapPath));
+  } finally {
+    clean(root);
+  }
+});
+
+test('concept prose uses independent advisory bands and a wider hard ceiling', () => {
+  assert.equal(DEFAULT_CONCEPT_BYTES, 16 * 1024);
+  assert.equal(MAX_CONCEPT_BYTES, 32 * 1024);
+  assert.equal(CONCEPT_SECTION_HARD_BYTES, 10_000);
+  assert.deepEqual(CONCEPT_PROSE_CAPACITY, {
+    advisory_tokens: 1200,
+    strong_advisory_tokens: 1800,
+    hard_tokens: 2500,
+  });
+  assert.equal(conceptProseCapacity(4800).status, 'ordinary');
+  assert.equal(conceptProseCapacity(4801).status, 'advisory');
+  assert.equal(conceptProseCapacity(7201).status, 'strong-advisory');
+  assert.equal(conceptProseCapacity(10_001).status, 'hard-overage');
+
+  const nearCeiling = Array.from({ length: 97 }, () => 'x'.repeat(100)).join('\n');
+  const root = temporaryKb(TWO_CONCEPTS.replace('Only the first concept prose belongs here.', nearCeiling));
+  try {
+    assert.equal(buildConceptMaps({ root }).status, 'passed');
+    const validated = validateConceptKb({ root });
+    const read = conceptRead(root, 'test.example.first');
+
+    assert.equal(validated.status, 'passed');
+    assert.ok(validated.warnings.some(warning => warning.status === 'strong-advisory'));
+    assert.equal(read.status, 'matched');
+    assert.equal(read.limits.max_bytes, DEFAULT_CONCEPT_BYTES);
+
+    const overCeiling = Array.from({ length: 101 }, () => 'x'.repeat(100)).join('\n');
+    writeFileSync(join(root, 'KB/docs/context/testing.md'), TWO_CONCEPTS.replace('Only the first concept prose belongs here.', overCeiling));
+    buildConceptMaps({ root });
+    assert.ok(validateConceptKb({ root }).errors.some(error => error.status === 'budget-exceeded' && /experimental hard ceiling/.test(error.message)));
   } finally {
     clean(root);
   }
