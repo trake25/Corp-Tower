@@ -27,8 +27,8 @@ func _ready() -> void:
 	%PlayerNameEdit.text_submitted.connect(_on_text_submitted.bind(%PlayerNameEdit))
 	password_edit.text_submitted.connect(_on_text_submitted.bind(password_edit))
 	%CreateButton.pressed.connect(_on_create_pressed)
-	_disable_native_paste(%PlayerNameEdit)
-	_disable_native_paste(password_edit)
+	_configure_text_input(%PlayerNameEdit)
+	_configure_text_input(password_edit)
 	password_mask_timer = Timer.new()
 	password_mask_timer.one_shot = true
 	password_mask_timer.wait_time = 1.0
@@ -42,6 +42,13 @@ func _ready() -> void:
 func _on_text_submitted(_value: String, field: LineEdit) -> void:
 	field.release_focus()
 	DisplayServer.virtual_keyboard_hide()
+
+func _input(event: InputEvent) -> void:
+	if not _is_paste_shortcut(event):
+		return
+	var focused_control := get_viewport().gui_get_focus_owner()
+	if focused_control == %PlayerNameEdit or focused_control == password_edit:
+		get_viewport().set_input_as_handled()
 
 func _on_info_pressed() -> void:
 	%InputRulesModal.open_rules("Private Server rules", "Name is optional and typing-only. Private rooms have 3 players. Password is optional; when used it is numeric and four digits. Create pads 1–3 typed digits with trailing zeroes. The eye controls password masking.")
@@ -59,10 +66,16 @@ func _on_create_pressed() -> void:
 	_set_password_text(normalized_password)
 	create_requested.emit(%PlayerNameEdit.text.strip_edges(), normalized_password)
 
-func _disable_native_paste(field: LineEdit) -> void:
+func _configure_text_input(field: LineEdit) -> void:
 	field.context_menu_enabled = false
-	field.shortcut_keys_enabled = false
+	field.shortcut_keys_enabled = true
 	field.middle_mouse_paste_enabled = false
+
+func _is_paste_shortcut(event: InputEvent) -> bool:
+	if not (event is InputEventKey):
+		return false
+	var key_event := event as InputEventKey
+	return key_event.pressed and not key_event.echo and key_event.keycode == KEY_V and (key_event.ctrl_pressed or key_event.meta_pressed)
 
 func _on_password_text_changed(value: String) -> void:
 	var normalized := _normalized_password(value)

@@ -39,9 +39,12 @@ one-to-three-digit password with trailing zeroes before sending it, while Join
 leaves invalid nonempty input for authoritative rejection. Join keeps Find Match
 as the public path and uses its other fields only for private entry. Server IDs
 use the generated eight-character alphabet and are the only paste-enabled field:
-its local paste action replaces and normalizes clipboard text without navigating.
-Password fields retain real digits while masking their presentation, and the
-private-lobby password begins masked on each screen instance. Create keeps its
+Web leaves the browser-native keyboard paste route intact, while Android's
+field-local hold reads the clipboard directly; both replace, normalize, and
+finish editing without navigating. Name and password fields block paste locally
+but retain ordinary native text entry. Password fields retain real digits while
+masking their presentation, and the private-lobby password begins masked on each
+screen instance. Create keeps its
 source form beneath a blocking wait. Join instead disables its source form around
 an accepted request, shows connection status there, restores the same values after
 rejection or transport failure, and enters Private Lobby directly on authoritative

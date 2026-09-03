@@ -205,7 +205,10 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	assert_eq(password_edit.max_length, 4)
 	assert_false(password_edit.secret)
 	assert_false(password_edit.context_menu_enabled)
-	assert_false(password_edit.shortcut_keys_enabled)
+	assert_true(password_edit.shortcut_keys_enabled, "Native keyboard input remains enabled while the screen blocks paste field-by-field.")
+	assert_true(server_id_edit.shortcut_keys_enabled, "Server ID keeps the native browser shortcut route available.")
+	assert_false(server_id_edit.context_menu_enabled)
+	assert_false(server_id_edit.middle_mouse_paste_enabled)
 	assert_eq(password_edit.get_parent().name, "PasswordRow")
 	assert_eq((join_screen.get_node("SafeArea/Root/FieldsColumn/PasswordRow/PasswordVisibilityButton") as TextureButton).get_parent(), password_edit.get_parent())
 	assert_eq(join_events, [["Guest", "2345ABCD", "1234"]])
@@ -258,8 +261,27 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	assert_eq(private_password.text, "9870")
 	assert_eq(private_password.max_length, 4)
 	assert_false(private_password.context_menu_enabled)
+	assert_true(private_password.shortcut_keys_enabled, "Private Server keeps normal native keyboard input enabled.")
 	private_server._toggle_password_visibility()
 	assert_eq(private_password.text, "9870")
+
+func test_private_entry_headers_keep_the_info_button_beside_the_centered_title() -> void:
+	var join_screen = JoinScreenScene.instantiate()
+	add_child_autofree(join_screen)
+	var private_server = PrivateServerScene.instantiate()
+	add_child_autofree(private_server)
+	await get_tree().process_frame
+
+	for screen in [join_screen, private_server]:
+		var header_row = screen.get_node("SafeArea/Root/Header/HeaderMargin/HeaderRow") as HBoxContainer
+		var title_cluster = header_row.get_node("TitleCluster") as HBoxContainer
+		var title_label = title_cluster.get_node("TitleLabel") as Label
+		var info_button = title_cluster.get_node("InfoButton") as TextureButton
+		assert_eq(title_label.get_parent(), info_button.get_parent(), "The title and info control share one compact header cluster.")
+		assert_eq(title_cluster.get_parent(), header_row)
+		assert_eq(header_row.get_child(0).name, "BackButton")
+		assert_eq(header_row.get_child(1), title_cluster, "The compact title cluster stays between the Back control and its balancing space.")
+		assert_eq(header_row.get_child(2).name, "HeaderBalance")
 
 func test_private_entry_input_rules_normalize_paste_mask_and_modal_without_navigation() -> void:
 	var join_screen = JoinScreenScene.instantiate()

@@ -82,17 +82,21 @@ texture_normal = ExtResource("2_back")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="TitleLabel" type="Label" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
+[node name="TitleCluster" type="HBoxContainer" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow/TitleCluster"]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 theme_override_fonts/font = ExtResource("5_poppinsbold")
 theme_override_font_sizes/font_size = 26
-horizontal_alignment = 1
 vertical_alignment = 1
 text = "Private Server"
 
-[node name="InfoButton" type="TextureButton" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
+[node name="InfoButton" type="TextureButton" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow/TitleCluster"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
@@ -102,8 +106,8 @@ texture_normal = ExtResource("6_info")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="HeaderSpacer" type="Control" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
-custom_minimum_size = Vector2(18, 0)
+[node name="HeaderBalance" type="Control" parent="SafeArea/Root/Header/HeaderMargin/HeaderRow"]
+custom_minimum_size = Vector2(62, 0)
 layout_mode = 2
 
 [node name="FieldsColumn" type="VBoxContainer" parent="SafeArea/Root"]
@@ -121,7 +125,7 @@ theme_override_font_sizes/font_size = 16
 max_length = 24
 placeholder_text = "Enter your name"
 context_menu_enabled = false
-shortcut_keys_enabled = false
+shortcut_keys_enabled = true
 middle_mouse_paste_enabled = false
 
 [node name="PasswordField" type="Control" parent="SafeArea/Root/FieldsColumn"]
@@ -143,7 +147,7 @@ theme_override_font_sizes/font_size = 16
 max_length = 4
 placeholder_text = "Password"
 context_menu_enabled = false
-shortcut_keys_enabled = false
+shortcut_keys_enabled = true
 middle_mouse_paste_enabled = false
 
 [node name="PasswordMaskLabel" type="Label" parent="SafeArea/Root/FieldsColumn/PasswordField"]

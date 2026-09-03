@@ -26,6 +26,8 @@ var previous_password := ""
 var password_mask_timer: Timer
 var server_id_touch_index := NO_TOUCH_INDEX
 var server_id_long_press_timer: Timer
+var server_id_native_paste_pending := false
+var server_id_before_native_paste := ""
 
 func _ready() -> void:
 	%FindMatchButton.pressed.connect(_on_find_match_pressed)
@@ -39,9 +41,9 @@ func _ready() -> void:
 	server_id_edit.text_submitted.connect(_on_text_submitted.bind(server_id_edit))
 	server_id_edit.gui_input.connect(_on_server_id_gui_input)
 	password_edit.text_submitted.connect(_on_text_submitted.bind(password_edit))
-	_disable_native_paste(%PlayerNameEdit)
-	_disable_native_paste(server_id_edit)
-	_disable_native_paste(password_edit)
+	_configure_text_input(%PlayerNameEdit)
+	_configure_text_input(server_id_edit)
+	_configure_text_input(password_edit)
 	password_mask_timer = Timer.new()
 	password_mask_timer.one_shot = true
 	password_mask_timer.wait_time = 1.0
@@ -107,15 +109,22 @@ func _on_text_submitted(_value: String, field: LineEdit) -> void:
 	field.release_focus()
 	DisplayServer.virtual_keyboard_hide()
 
+func _input(event: InputEvent) -> void:
+	if not _is_paste_shortcut(event):
+		return
+	var focused_control := get_viewport().gui_get_focus_owner()
+	if focused_control == server_id_edit and not private_join_pending and server_id_edit.editable:
+		server_id_before_native_paste = server_id_edit.text
+		server_id_native_paste_pending = true
+		server_id_edit.select_all()
+		call_deferred("_complete_native_server_id_paste")
+	elif focused_control == %PlayerNameEdit or focused_control == password_edit:
+		get_viewport().set_input_as_handled()
+
 func _on_server_id_gui_input(event: InputEvent) -> void:
 	if private_join_pending or not server_id_edit.editable:
 		return
-	if event is InputEventKey:
-		var key_event := event as InputEventKey
-		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_V and (key_event.ctrl_pressed or key_event.meta_pressed):
-			_paste_server_id_from_clipboard()
-			accept_event()
-	elif event is InputEventScreenTouch:
+	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
 		if touch.pressed:
 			server_id_touch_index = touch.index
@@ -133,6 +142,23 @@ func _on_server_id_long_press_timeout() -> void:
 
 func _paste_server_id_from_clipboard() -> void:
 	_apply_server_id_paste(DisplayServer.clipboard_get())
+
+func _complete_native_server_id_paste() -> void:
+	if not server_id_native_paste_pending:
+		return
+	server_id_native_paste_pending = false
+	if private_join_pending:
+		return
+	var normalized := _normalized_server_id(server_id_edit.text)
+	if normalized.is_empty():
+		server_id_edit.text = server_id_before_native_paste
+		server_id_edit.caret_column = server_id_before_native_paste.length()
+	else:
+		server_id_edit.text = normalized
+		server_id_edit.caret_column = normalized.length()
+	server_id_edit.unedit()
+	server_id_edit.release_focus()
+	DisplayServer.virtual_keyboard_hide()
 
 func _apply_server_id_paste(clipboard_text: String) -> bool:
 	if private_join_pending:
@@ -167,10 +193,16 @@ func _set_private_join_interaction_enabled(enabled: bool) -> void:
 	password_visibility_button.disabled = not enabled
 	%InfoButton.disabled = not enabled
 
-func _disable_native_paste(field: LineEdit) -> void:
+func _configure_text_input(field: LineEdit) -> void:
 	field.context_menu_enabled = false
-	field.shortcut_keys_enabled = false
+	field.shortcut_keys_enabled = true
 	field.middle_mouse_paste_enabled = false
+
+func _is_paste_shortcut(event: InputEvent) -> bool:
+	if not (event is InputEventKey):
+		return false
+	var key_event := event as InputEventKey
+	return key_event.pressed and not key_event.echo and key_event.keycode == KEY_V and (key_event.ctrl_pressed or key_event.meta_pressed)
 
 func _on_password_text_changed(value: String) -> void:
 	var normalized := _normalized_password(value)

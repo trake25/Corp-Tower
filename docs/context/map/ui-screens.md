@@ -68,23 +68,23 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/InputRulesModal.tscn:79 | %BodyLabel · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/InputRulesModal.tscn:86 | %CloseButton · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn — 331 ln
+### src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn — 335 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:1 | @file · file | JoinScreen scene composition and controller bindings |
 | src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:36 | JoinScreen · scene root | |
 | src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:87 | %BackButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:105 | %InfoButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:123 | %PlayerNameEdit · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:137 | %ServerIdEdit · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:155 | %PasswordEdit · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:173 | %PasswordMaskLabel · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:188 | %PasswordVisibilityButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:217 | %JoinButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:237 | %PrivateJoinError · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:309 | %FindMatchButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:329 | %InputRulesModal · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:109 | %InfoButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:127 | %PlayerNameEdit · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:141 | %ServerIdEdit · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:159 | %PasswordEdit · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:177 | %PasswordMaskLabel · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:192 | %PasswordVisibilityButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:221 | %JoinButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:241 | %PrivateJoinError · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:313 | %FindMatchButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn:333 | %InputRulesModal · unique node | |
 
 ### src/Client/App/corp-tower/Cor/Scenes/Main.tscn — 53 ln
 
@@ -133,21 +133,21 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:472 | %LeaveLobbyModal · unique node | |
 | src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn:477 | %KickPlayerModal · unique node | |
 
-### src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn — 246 ln
+### src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn — 250 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:1 | @file · file | PrivateServerScreen scene composition and controller bindings |
 | src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:23 | PrivateServerScreen · scene root | |
 | src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:76 | %BackButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:95 | %InfoButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:113 | %PlayerNameEdit · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:131 | %PasswordEdit · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:149 | %PasswordMaskLabel · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:164 | %PasswordVisibilityButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:184 | %PlayerCountButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:223 | %CreateButton · unique node | |
-| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:244 | %InputRulesModal · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:99 | %InfoButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:117 | %PlayerNameEdit · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:135 | %PasswordEdit · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:153 | %PasswordMaskLabel · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:168 | %PasswordVisibilityButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:188 | %PlayerCountButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:227 | %CreateButton · unique node | |
+| src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn:248 | %InputRulesModal · unique node | |
 
 ### src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn — 261 ln
 
@@ -252,7 +252,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/InputRulesModal.gd:1 | @file · file | InputRulesModal client behavior |
 | src/Client/App/corp-tower/Cor/Scripts/InputRulesModal.gd:7 | open_rules | |
 
-### src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd — 226 ln
+### src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd — 258 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -261,9 +261,9 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:4 | back_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:5 | private_join_requested · signal | |
 | src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:7 | PASSWORD_MAX_LENGTH · const | |
-| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:58 | show_private_pending | |
-| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:65 | clear_private_pending | |
-| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:72 | show_private_error | |
+| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:60 | show_private_pending | |
+| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:67 | clear_private_pending | |
+| src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd:74 | show_private_error | |
 
 ### src/Client/App/corp-tower/Cor/Scripts/Main.gd — 503 ln
 
@@ -321,7 +321,7 @@ bounded source read. Local implementation detail stays in source.
 | src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:16 | STRIKE_MARK · const | |
 | src/Client/App/corp-tower/Cor/Scripts/PrivateLobbyScreen.gd:49 | apply_lobby_data | |
 
-### src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd — 111 ln
+### src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd — 124 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
