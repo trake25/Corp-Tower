@@ -30,7 +30,7 @@
 
 ### QA — BLOCKED
 
-- Summary: exit 1; FAIL — client smoke: spawnSync /home/galaxxigames/Projects/Corp-Tower/Corp-Tower/Godot_v4.7.2-stable_linux.x86_64 EPERM
+- Summary: exit 1; FAIL — client smoke: spawnSync [private path] EPERM
 - Failure classification: tooling-environment
 
 ### file map — PASS
@@ -55,7 +55,7 @@
 #### QA — tooling-environment
 
 - Affected component or tool: /usr/bin/node scripts/qa-gate.mjs --changed src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd src/Client/App/corp-tower/Tests/Gut/test_private_lobby.gd
-- Diagnostic / impact: exit 1; FAIL — client smoke: spawnSync /home/galaxxigames/Projects/Corp-Tower/Corp-Tower/Godot_v4.7.2-stable_linux.x86_64 EPERM QA could not provide required proof.
+- Diagnostic / impact: exit 1; FAIL — client smoke: spawnSync [private path] EPERM QA could not provide required proof.
 - Follow-up: Restore the required host capability, then rerun QA.
 
 ---

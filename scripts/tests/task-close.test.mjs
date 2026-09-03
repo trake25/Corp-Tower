@@ -559,9 +559,9 @@ test('advisory decomposition handoffs preserve a passing verification result', (
 test('publication scope always excludes maintenance handoffs', () => {
   assert.deepEqual(
     publishPathsFor(
-      [SOURCE, 'repair/repair-12345678.md', 'plan/task.md'],
-      [DOC, 'plan/done/task.md'],
-      ['repair/map-note.md'],
+      [SOURCE, 'repair/repair-12345678.md', 'plan/task.md', '.agent-state/private.json'],
+      [DOC, 'plan/done/task.md', '.agent-state/task.receipt.json'],
+      ['repair/map-note.md', '.agent-state/automation/generated.json'],
     ),
     [DOC, SOURCE],
   );
