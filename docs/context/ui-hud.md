@@ -100,12 +100,13 @@ automatic target. Drop travels smoothly to a deterministic offscreen critical su
 Top returns smoothly and resumes auto-follow.
 
 Collapse captures the displayed structural transforms before applying a fallen
-snapshot, so the fall begins from the pose already on screen. The camera stays at the
-collapse view while debris is moving, then starts its downward recovery on settlement
-without waiting for the debris cleanup deadline. The placement world, platform, and
-surviving tower remain continuously rendered and share the same scroll movement, which
-keeps the survivor grounded as normal framing returns. Navigation and placement remain
-blocked during recovery and unlock at normal framing; zero-distance recovery is immediate.
+snapshot, so the fall begins from the pose already on screen. Each collapse identity
+deterministically selects either a camera hold through the fall or a recovery that moves
+concurrently with falling debris. Recovery always ends at the surviving tower's normal
+gameplay framing, which may remain elevated, and never chases rubble below that target.
+The placement world, platform, surviving tower, and debris remain continuously rendered
+on the same scroll basis. Navigation and placement unlock only after both settlement and
+recovery completion; zero-distance recovery is immediate.
 
 Placement and armed actions, overlays, recovery, and presentation sequences disable
 navigation; round and lobby transitions restore auto-scroll. View controls never
@@ -130,8 +131,9 @@ sections carry different poses.
 Fallen bricks provide no height, collision, or snap points. Tower Stack animates
 only entries that newly transition to fallen, keeps survivor poses drawable
 during the fall, and does not replay persisted falls after reconnect. The
-server-owned visual-hook lifetime bounds debris visibility from the collapse
-transition; repeated snapshots cannot restart that clock.
+server-owned `collapseDebrisLifetimeMs` visual hook controls a linger that begins only
+after settlement and recovery completion. Lingering rubble is visual-only, does not
+block resumed gameplay, and repeated snapshots cannot restart or reselect its collapse.
 
 The Impact Beat temporarily changes the render scale and wave state, then holds
 until Summary cancels it. It adds no delay when disabled, empty, or collapsing.

@@ -22,7 +22,11 @@ func test_defaults_match_the_shipped_config() -> void:
 	assert_true(hooks.impact_beat_enabled, "The Impact beat ships enabled.")
 	assert_true(hooks.screen_shake_enabled, "Screen shake ships enabled.")
 	assert_eq(hooks.impact_beat_min_zoom, 0.3, "The zoom floor defaults to 0.3.")
-	assert_eq(hooks.collapse_debris_lifetime_ms, 2000, "Collapsed debris ships with a two-second lifetime.")
+	assert_eq(
+		hooks.collapse_debris_lifetime_ms,
+		VisualHooks.DEFAULT_COLLAPSE_DEBRIS_LIFETIME_MS,
+		"Collapsed debris uses the configured post-completion linger default."
+	)
 
 func test_apply_reads_every_key_from_the_payload() -> void:
 	var hooks := VisualHooks.new()
@@ -44,7 +48,7 @@ func test_apply_reads_every_key_from_the_payload() -> void:
 	assert_eq(hooks.impact_beat_min_zoom, 0.45, "The zoom floor should follow the payload.")
 	assert_eq(hooks.screen_shake_ms, 500, "The shake duration should follow the payload.")
 	assert_eq(hooks.screen_shake_magnitude_units, 0.6, "The shake magnitude should follow the payload.")
-	assert_eq(hooks.collapse_debris_lifetime_ms, 750, "The collapse lifetime should follow the payload.")
+	assert_eq(hooks.collapse_debris_lifetime_ms, 750, "The collapse linger should follow the payload.")
 	assert_eq(hooks.impact_beat_total_ms(), 600, "The beat total is the sum of zoom-out, wave and hold.")
 	assert_eq(hooks.impact_beat_total_seconds(), 0.6, "The beat total converts to seconds.")
 
@@ -178,7 +182,16 @@ func test_fallen_snapshot_keeps_the_previously_displayed_collapse_pose() -> void
 	assert_almost_eq(Vector2(piece.pos).x, expected_position.x, 0.001, "Collapse inherits the displayed horizontal position.")
 	assert_almost_eq(Vector2(piece.pos).y, expected_position.y, 0.001, "Collapse inherits the displayed vertical position.")
 
-func test_collapsed_bricks_disappear_on_the_configured_deadline() -> void:
+class NeverSettlesCollapseSim:
+	extends RefCounted
+
+	func step(_delta: float) -> void:
+		pass
+
+	func is_settled() -> bool:
+		return false
+
+func test_debris_duration_does_not_expire_an_unsettled_fall() -> void:
 	var tower: Control = _mounted_tower()
 	var hooks := VisualHooks.new()
 	hooks.apply({"collapseDebrisLifetimeMs": 100})
@@ -188,13 +201,41 @@ func test_collapsed_bricks_disappear_on_the_configured_deadline() -> void:
 	var fallen: Dictionary = entry.duplicate(true)
 	fallen["towerState"] = "fallen"
 	tower.set_tower([fallen], 0, 30, 100, {})
+	tower._collapse_variant = TowerStackScript.COLLAPSE_VARIANT_HOLD_THEN_RECOVER
+	tower._begin_collapse()
+	tower._collapse_sim = NeverSettlesCollapseSim.new()
 
+	tower._process(0.5)
+	assert_eq(tower._collapse_phase, TowerStackScript.COLLAPSE_FALL)
+	assert_not_null(tower._collapse_sim)
+	assert_false(tower._collapse_debris_linger_active)
+
+func test_debris_clears_only_after_the_post_completion_linger() -> void:
+	var tower: Control = _mounted_tower()
+	var hooks := VisualHooks.new()
+	hooks.apply({"collapseDebrisLifetimeMs": 100})
+	tower.set_visual_hooks(hooks)
+	var entry: Dictionary = _tower_entry("P1", 0)
+	tower.set_tower([entry], 2, 30, 100, {})
+	var fallen: Dictionary = entry.duplicate(true)
+	fallen["towerState"] = "fallen"
+	tower.set_tower([fallen], 0, 30, 100, {})
+	tower._collapse_variant = TowerStackScript.COLLAPSE_VARIANT_HOLD_THEN_RECOVER
+	tower._begin_collapse()
+	tower._collapse_sim.settled = true
+	tower._process(0.0)
+
+	assert_true(tower._collapse_debris_linger_active)
+	assert_eq(tower._collapse_phase, TowerStackScript.COLLAPSE_NONE)
+	assert_not_null(tower._collapse_sim)
 	tower._process(0.099)
-	assert_ne(tower._collapse_phase, TowerStackScript.COLLAPSE_NONE)
+	assert_true(tower._collapse_debris_linger_active)
+	assert_not_null(tower._collapse_sim)
 	tower._process(0.002)
 	assert_eq(tower._collapse_phase, TowerStackScript.COLLAPSE_NONE)
 	assert_null(tower._collapse_sim)
 	assert_true(tower._collapsing_block_ids.is_empty())
+	assert_false(tower._collapse_debris_linger_active)
 
 func test_the_beat_arms_the_camera_and_the_wave() -> void:
 	var tower: Control = _mounted_tower()

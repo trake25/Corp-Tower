@@ -13,6 +13,9 @@ const COLLAPSE_LEAN := 1
 const COLLAPSE_FALL := 2
 const COLLAPSE_SETTLED := 3
 
+const COLLAPSE_VARIANT_HOLD_THEN_RECOVER := 0
+const COLLAPSE_VARIANT_FALL_FOLLOW := 1
+
 const BEAT_NONE := 0
 const BEAT_ZOOM_OUT := 1
 const BEAT_WAVE := 2
@@ -103,13 +106,16 @@ var support_warning_threshold: int = 75
 var support_critical_threshold: int = 30
 var _collapse_phase: int = COLLAPSE_NONE
 var _collapse_lean_elapsed: float = 0.0
-var _collapse_elapsed: float = 0.0
 var _collapse_sim = null
 var _collapsing_block_ids: Dictionary = {}
 var _last_collapse_key: String = ""
 var _collapse_pose_snapshot: Dictionary = {}
+var _collapse_variant: int = COLLAPSE_VARIANT_HOLD_THEN_RECOVER
+var _collapse_fall_settled: bool = false
 var _collapse_recovery_active: bool = false
 var _collapse_recovery_has_started: bool = false
+var _collapse_debris_linger_active: bool = false
+var _collapse_debris_linger_elapsed: float = 0.0
 var visual_hooks = null
 var _camera_zoom: float = 1.0
 var _beat_phase: int = BEAT_NONE
@@ -137,10 +143,13 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	var newly_fallen: Dictionary = _newly_fallen_block_ids(tower_blocks, blocks)
 	var collapse_ids: Dictionary = newly_fallen
 	if collapse_ids.is_empty() and bool(diagnostics.get("collapsed", false)):
-		collapse_ids = _block_ids(blocks)
+		collapse_ids = _fallen_block_ids(blocks)
+		if collapse_ids.is_empty():
+			collapse_ids = _block_ids(blocks)
 	var collapse_key: String = _collapse_key(collapse_ids)
 	var starts_collapse: bool = collapse_key != "" and collapse_key != _last_collapse_key
 	if starts_collapse:
+		_reset_collapse()
 		_capture_collapse_pose(tower_blocks, collapse_ids)
 	tower_blocks = blocks
 	current_height = max(0, new_current_height)
@@ -153,20 +162,18 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 	var critical_direction: String = str(critical_support.get("direction", ""))
 
 	if starts_collapse:
-		_set_collapse_recovery_active(false)
-		_collapse_recovery_has_started = false
 		scroll_state.hold_current()
 		scroll_state.frozen = true
 		tower_collapsed = true
 		_last_collapse_key = collapse_key
 		_collapsing_block_ids = collapse_ids
+		_collapse_variant = _collapse_variant_for_key(collapse_key)
 		if !newly_fallen.is_empty():
 			critical_direction = _collapse_direction_for(newly_fallen)
 		var lean_sign: float = 1.0 if critical_direction == "right" or (critical_direction == "" and reported_tilt >= 0.0) else -1.0
 		tower_tilt_deg = lean_sign * collapse_tilt_deg
 		_collapse_phase = COLLAPSE_LEAN
 		_collapse_lean_elapsed = 0.0
-		_collapse_elapsed = 0.0
 		_collapse_sim = null
 	elif _collapse_phase == COLLAPSE_NONE and !_collapse_recovery_active:
 		scroll_state.frozen = false
@@ -187,6 +194,16 @@ func _block_ids(blocks: Array) -> Dictionary:
 	for entry_value in blocks:
 		if typeof(entry_value) == TYPE_DICTIONARY:
 			block_ids[_entry_block_id(entry_value)] = true
+	return block_ids
+
+func _fallen_block_ids(blocks: Array) -> Dictionary:
+	var block_ids: Dictionary = {}
+	for entry_value in blocks:
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_value
+		if str(entry.get("towerState", "standing")) == "fallen":
+			block_ids[_entry_block_id(entry)] = true
 	return block_ids
 
 func _capture_collapse_pose(blocks: Array, collapse_ids: Dictionary) -> void:
@@ -220,6 +237,9 @@ func _collapse_key(block_ids: Dictionary) -> String:
 	for block_id in ids:
 		parts.append(str(block_id))
 	return "|".join(parts)
+
+func _collapse_variant_for_key(collapse_key: String) -> int:
+	return COLLAPSE_VARIANT_FALL_FOLLOW if (collapse_key.hash() & 1) == 1 else COLLAPSE_VARIANT_HOLD_THEN_RECOVER
 
 func _newly_fallen_block_ids(previous: Array, current: Array) -> Dictionary:
 	var fallen: Dictionary = {}
@@ -709,6 +729,7 @@ func _drop_ease(t: float) -> float:
 
 func _process(delta: float) -> void:
 	var needs_redraw: bool = false
+	var linger_was_active: bool = _collapse_debris_linger_active
 
 	if _collapse_recovery_active:
 		var scroll_changed: bool = scroll_state.step_at_speed(delta, collapse_return_pan_speed_units)
@@ -749,13 +770,18 @@ func _process(delta: float) -> void:
 	elif _collapse_phase == COLLAPSE_FALL and _collapse_sim != null:
 		_collapse_sim.step(delta)
 		if _collapse_sim.is_settled():
+			_collapse_fall_settled = true
 			_collapse_phase = COLLAPSE_SETTLED
-			_start_collapse_recovery()
+			if _collapse_variant == COLLAPSE_VARIANT_HOLD_THEN_RECOVER:
+				_start_collapse_recovery()
 			needs_redraw = true
 
-	if _collapse_phase != COLLAPSE_NONE:
-		_collapse_elapsed += delta
-		if _collapse_elapsed >= _collapse_debris_lifetime_seconds():
+	if _maybe_begin_debris_linger():
+		needs_redraw = true
+
+	if linger_was_active and _collapse_debris_linger_active:
+		_collapse_debris_linger_elapsed += maxf(0.0, delta)
+		if _collapse_debris_linger_elapsed >= _collapse_debris_linger_seconds():
 			_expire_collapse_debris()
 			needs_redraw = true
 
@@ -803,23 +829,40 @@ func _reset_collapse() -> void:
 func _clear_collapse_debris() -> void:
 	_collapse_phase = COLLAPSE_NONE
 	_collapse_lean_elapsed = 0.0
-	_collapse_elapsed = 0.0
 	_collapse_sim = null
 	_collapsing_block_ids = {}
 	_collapse_pose_snapshot = {}
+	_collapse_variant = COLLAPSE_VARIANT_HOLD_THEN_RECOVER
+	_collapse_fall_settled = false
 	_collapse_recovery_has_started = false
+	_collapse_debris_linger_active = false
+	_collapse_debris_linger_elapsed = 0.0
 
-func _collapse_debris_lifetime_seconds() -> float:
+func _collapse_debris_linger_seconds() -> float:
 	if visual_hooks == null:
 		return 2.0
 	return maxf(0.0, float(visual_hooks.collapse_debris_lifetime_ms) / 1000.0)
 
 func _expire_collapse_debris() -> void:
-	if !_collapse_recovery_active:
-		_start_collapse_recovery()
 	_clear_collapse_debris()
 	tower_collapsed = false
 	tower_tilt_deg = 0.0
+
+func _maybe_begin_debris_linger() -> bool:
+	if (
+		_collapse_debris_linger_active
+		or !_collapse_fall_settled
+		or !_collapse_recovery_has_started
+		or _collapse_recovery_active
+	):
+		return false
+	_collapse_phase = COLLAPSE_NONE
+	_collapse_debris_linger_active = true
+	_collapse_debris_linger_elapsed = 0.0
+	tower_collapsed = false
+	tower_tilt_deg = 0.0
+	scroll_state.frozen = false
+	return true
 
 func _start_collapse_recovery() -> void:
 	if _collapse_recovery_has_started:
@@ -861,8 +904,10 @@ func _begin_collapse() -> void:
 			seeds.append(seed_data)
 
 	if seeds.is_empty():
+		_collapse_fall_settled = true
 		_collapse_phase = COLLAPSE_SETTLED
 		_start_collapse_recovery()
+		_maybe_begin_debris_linger()
 		return
 
 	var span_half_width: float = size.x * clampf(collapse_span_ratio, 0.1, 1.0) * 0.5
@@ -890,6 +935,8 @@ func _begin_collapse() -> void:
 		"pile_layer_height": collapse_pile_layer_units * unit
 	})
 	_collapse_phase = COLLAPSE_FALL
+	if _collapse_variant == COLLAPSE_VARIANT_FALL_FOLLOW:
+		_start_collapse_recovery()
 
 func _build_collapse_seed(
 	entry: Dictionary,
@@ -1157,7 +1204,11 @@ func _draw() -> void:
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	if _collapse_phase == COLLAPSE_FALL or _collapse_phase == COLLAPSE_SETTLED:
+	if (
+		_collapse_phase == COLLAPSE_FALL
+		or _collapse_phase == COLLAPSE_SETTLED
+		or _collapse_debris_linger_active
+	):
 		_draw_debris(unit)
 
 	if has_structural_pose or component_collapse_active:
