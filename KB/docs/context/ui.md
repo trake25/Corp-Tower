@@ -6,8 +6,8 @@ Scope: Godot client shell, authentication, screen flow, responsive root behavior
 id: ui.shell.core
 alias: Screen Manager
 alias: Main shell
-source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#@file
-source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#@file
+source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#Main
+source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_ready
 -->
 ## Client shell
 
@@ -17,7 +17,7 @@ The project autoloads Network Manager and Auth Manager. Auth Manager owns the pe
 id: ui.shell.responsive
 alias: responsive layout
 alias: portrait root
-source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#Main
 -->
 ## Responsive root
 
@@ -27,7 +27,7 @@ Web preserves portrait framing while mobile expands to the available logical can
 id: ui.auth.presentation
 alias: sign in screen
 alias: oauth UI
-source: src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn#SignInScreen
 adjacent: network.session.identity
 adjacent: build.endpoint-auth.injection
 -->
@@ -39,7 +39,7 @@ Authentication shows only configured providers. Android prefers native providers
 id: ui.startup.restoration
 alias: saved room startup
 alias: resume startup
-source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_begin_authenticated_startup
 adjacent: network.session.resume-only
 adjacent: ui.startup.splash
 -->
@@ -50,7 +50,7 @@ Startup restoration may skip Sign-in when the account session is valid. If saved
 <!-- kb
 id: ui.home.navigation
 alias: home screen
-source: src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn#HomeScreen
 -->
 ## Home
 
@@ -60,7 +60,7 @@ Home is the shell hub for public matchmaking, private creation/join, Settings, a
 id: ui.private.create
 alias: create private server
 alias: private server screen
-source: src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn#PrivateServerScreen
 adjacent: network.room.private
 -->
 ## Private Server creation
@@ -71,7 +71,7 @@ Private Server creation has player/server inputs local to that screen. Password 
 id: ui.private.join
 alias: join server
 alias: server id paste
-source: src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn#JoinScreen
 adjacent: network.room.private
 -->
 ## Join Server
@@ -81,7 +81,7 @@ Join Server supports both public Find Match and private join inputs. Server ID i
 <!-- kb
 id: ui.private-lobby.presentation
 alias: private lobby UI
-source: src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/PrivateLobbyScreen.tscn#PrivateLobbyScreen
 adjacent: network.room.private
 -->
 ## Private Lobby presentation
@@ -91,7 +91,7 @@ Private Lobby renders server identity, fixed seats, host-only kick, readiness, c
 <!-- kb
 id: ui.settings.presentation
 alias: settings screen
-source: src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn#SettingsScreen
 -->
 ## Settings
 
@@ -101,7 +101,7 @@ Settings presents account/session state and shared presentation preferences. Sig
 id: ui.public-lobby.flow
 alias: find match
 alias: public lobby
-source: src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/PublicLobbyScreen.tscn#PublicLobbyScreen
 adjacent: network.room.public
 -->
 ## Public matchmaking and lobby
@@ -112,7 +112,7 @@ Find Match has no retained gameplay view. Public Lobby may retain the gameplay r
 id: ui.play.menu
 alias: burger menu
 alias: play overlay
-source: src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/MenuScreen.tscn#MenuScreen
 adjacent: hud.controller.state-application
 -->
 ## Play Menu
@@ -123,7 +123,7 @@ Play Menu is a full-screen live overlay above the retained Play instance. Ordina
 id: ui.play.recovery
 alias: resync popup
 alias: recovery modal
-source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_on_recovery_started
 adjacent: network.session.recovery
 -->
 ## Active-match recovery
@@ -134,8 +134,8 @@ During active-match recovery, a centered blocking modal keeps the current Play s
 id: ui.navigation.server-routes
 alias: navigation destination
 alias: room routing
-source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#@file
-source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_on_room_joined
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#room_joined
 adjacent: network.room.close
 adjacent: network.session.resume-only
 -->
@@ -147,7 +147,7 @@ Network signals own room entry, match start, teardown, recovery routing, and ter
 id: ui.startup.splash
 alias: extended splash
 alias: startup splash
-source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#%StartupSplash
 adjacent: build.android.startup-splash
 adjacent: ui.startup.restoration
 -->
@@ -159,7 +159,7 @@ Startup Splash preserves continuity while authentication and saved-room recovery
 id: ui.debug.entry
 alias: debug button
 alias: debug panel entry
-source: src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd#toggle
 adjacent: backend.lobby.debug-config
 -->
 ## Debug entry
@@ -169,7 +169,7 @@ The debug entry is build-gated and changes categories by screen: authentication 
 <!-- kb
 id: ui.constraint.scene-order
 alias: scene parent order
-source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#ScreenContainer
 -->
 ## Scene text-format constraint
 
@@ -179,7 +179,7 @@ Godot text scenes require parents to appear before children. Moving a UI row bet
 id: ui.constraint.pointer-input
 alias: mouse filter
 alias: tap blocking
-source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#%StartupSplash
 -->
 ## Pointer pass-through
 
@@ -189,7 +189,7 @@ Decorative and overlapping controls must pass pointer input through when they ar
 id: ui.constraint.rendered-verification
 alias: visual verification
 alias: device check
-source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#@file
+source: src/Client/App/corp-tower/Tests/CiSmokeTest.gd#check_main_scene_ready
 adjacent: testing.client.rendered
 -->
 ## Rendered verification

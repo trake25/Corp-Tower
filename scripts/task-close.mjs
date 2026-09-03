@@ -154,6 +154,7 @@ function agentConfigPath(path) {
 }
 
 function domainFor(path) {
+  if (path.startsWith('KB/')) return 'concept-kb';
   if (path.startsWith('src/Server/')) return 'server';
   if (path.startsWith('src/Client/')) return 'client';
   if (path.startsWith('site/')) return 'site';
@@ -956,7 +957,7 @@ function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = nu
   requireCoverageDecision(manifest);
   requireFallbackFixtures(manifest);
   const steps = [];
-  for (const tool of manifest.review.intake.tools.filter(tool => ['automation protocol', 'retrieval benchmark'].includes(tool.name)))
+  for (const tool of manifest.review.intake.tools.filter(tool => ['concept map', 'concept KB', 'concept benchmark', 'automation protocol', 'retrieval benchmark'].includes(tool.name)))
     steps.push(runStep(tool.name, tool.command.argv.slice(1)));
   if (fallbackRequiresRetrievalProof(manifest) && !steps.some(step => step.name === 'retrieval benchmark'))
     steps.push(runStep('retrieval benchmark', ['scripts/benchmark-rag.mjs', '--check']));

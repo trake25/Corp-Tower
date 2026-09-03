@@ -216,6 +216,22 @@ test('prepare creates a compact schema-v2 ownership manifest and intake', () => 
   assert.ok(Buffer.byteLength(JSON.stringify(intake, null, 2)) + 1 <= 8 * 1024);
 });
 
+test('prepare keeps experimental KB ownership separate and selects concept close-out tools', () => {
+  const path = 'KB/docs/context/gameplay.md';
+  const manifest = createManifest({ task: 'Validate parallel concept KB', ownedPaths: [path] });
+  const tools = manifest.intake.tools.map(tool => tool.name);
+
+  assert.deepEqual(manifest.domains, ['concept-kb']);
+  assert.equal(manifest.documentation.source_changed, false);
+  assert.equal(manifest.intake.qa.concept_kb, true);
+  assert.equal(manifest.intake.qa.runtime_applies, false);
+  assert.deepEqual(manifest.intake.docs, []);
+  assert.deepEqual(manifest.intake.maps, []);
+  assert.ok(tools.includes('concept map'));
+  assert.ok(tools.includes('concept KB'));
+  assert.ok(tools.includes('concept benchmark'));
+});
+
 test('optional plan binding accepts only an active Markdown plan with a free deterministic archive', () => {
   const root = mkdtempSync(join(tmpdir(), 'corp-task-plan-binding-'));
   try {

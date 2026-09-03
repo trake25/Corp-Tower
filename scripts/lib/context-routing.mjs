@@ -63,6 +63,7 @@ export const MAP_AREAS = [
 ];
 
 export const ROUTE_RULES = [
+  { pattern: /^KB(?:\/|$)/, skill: 'docs-steward', docs: [], map: null, read: 'hunk' },
   { pattern: /^src\/Server\/app\/Game_Config\.js$/, skill: 'server-engineer', docs: ['backend.md', 'gameplay.md'], map: 'backend.md', read: 'full' },
   { pattern: /^src\/Server\/app\/Game_Engine\.js$/, skill: 'server-engineer', docs: ['backend.md', 'networking.md'], map: 'backend.md', read: 'hunk' },
   { pattern: /^src\/Server\/app\/(Server|Redis_State)\.js$/, skill: 'fullstack-coordinator', docs: ['networking.md', 'backend.md'], map: 'backend.md', read: 'hunk' },
@@ -94,6 +95,8 @@ export const ROUTE_RULES = [
   { pattern: /^scripts\/write-endpoint-config/, skill: 'fullstack-coordinator', docs: ['networking.md', 'build.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/benchmark-rag\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk', doc_anchors: ['report/benchmarks/', 'context-retrieval.json'] },
   { pattern: /^scripts\/fixtures\/context-retrieval\.json$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk', doc_anchors: ['report/benchmarks/', 'context-retrieval.json'] },
+  { pattern: /^scripts\/(?:build-concept-map|validate-concept-kb)\.mjs$/, skill: 'docs-steward', docs: ['automation.md', 'testing.md'], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/(?:lib\/concept-kb\.mjs|fixtures\/concept-retrieval\.json|tests\/concept-kb\.test\.mjs)$/, skill: 'docs-steward', docs: ['automation.md', 'testing.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/(context|task-close|docs-scope)\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/(?:agent-observability\.mjs|lib\/agent-observability\/)/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/(?:lib\/tutorial-defaults-parity\.mjs|tests\/tutorial-defaults-parity\.test\.mjs)$/, skill: 'qa-engineer', docs: ['testing.md', 'ui-tutorial.md'], map: 'infra.md', read: 'hunk' },
@@ -130,6 +133,11 @@ export const AREA_ALIASES = {
 export function isNormalContextExcludedPath(path) {
   const normalized = path.replaceAll('\\', '/').replace(/^(?:\.\/)+/, '');
   return /^(?:repair|report|plan|reference|task|\.agent-state)(?:\/|$)/.test(normalized);
+}
+
+export function isPrimaryValidationCorpusPath(path) {
+  const normalized = path.replaceAll('\\', '/').replace(/^(?:\.\/)+/, '');
+  return !/^KB(?:\/|$)/.test(normalized);
 }
 
 export const WORKSPACE_RULES = [

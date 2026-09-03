@@ -23,6 +23,16 @@ generated maps; they never expose raw source, environment files, secrets or the
 working-tree diff. `scope` derives post-path tools, while `bundle` creates the
 bounded handoff for a runner without local access.
 
+`docs/context/**` and its locator maps remain the primary/default corpus. `KB/`
+is a separately validated experimental concept corpus and cannot satisfy primary
+citations or ordinary documentation scope. Opt-in `concept-route`,
+`concept-read`, and `concept-bundle` commands resolve one exact ID or normalized
+alias, return explicit adjacency without traversing it, and fail closed without
+repository fallback. `build-concept-map.mjs` derives its marked router and maps;
+`validate-concept-kb.mjs` checks its metadata, source grants, isolation, budgets,
+and generated equality. Its focused benchmark requires `--concept-check`, so the
+legacy commands, fixture, benchmark, and cloud-agent routing remain unchanged.
+
 Gitignored working folders have explicit routes but stay outside KB search.
 All `.agent-state/**` content is ignored private machine state and cannot be a
 publication path or KB dependency. Sanitized QA receipts are tracked separately
@@ -70,9 +80,11 @@ recomputes QA/docs. `close` records documentation and coverage decisions,
 verifies the reviewed set, then archives a bound plan.
 
 Close-out runs selected protocol checks and QA, regenerates affected maps, runs
-the game-KB validator quietly, then validates agent config. Child detail stays
-private and out-of-scope generated maps fail. Task-close neither synchronizes
-agent skills nor derives `.claude/skills/**` publication paths.
+the game-KB validator quietly, then validates agent config. Concept-KB paths add
+their generator, validator, focused tests, and opt-in benchmark without adding
+game runtime QA. Child detail stays private and out-of-scope generated maps fail.
+Task-close neither synchronizes agent skills nor derives `.claude/skills/**`
+publication paths.
 
 `.agents/skills/**` is canonical. For staged canonical changes, the sole mirror
 owner `.githooks/pre-commit` rejects conflicting unstaged mirror edits, runs the

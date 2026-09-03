@@ -3,8 +3,13 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve, sep } from 'node:path';
 import {
   DEFAULT_BUNDLE_BYTES,
+  DEFAULT_CONCEPT_BYTES,
   DEFAULT_MAX_RESULTS,
   DEFAULT_SECTION_BYTES,
+  conceptBundle,
+  conceptRead,
+  conceptRoute,
+  conceptTextLines,
   contextBundle,
   documentOutline,
   documentSection,
@@ -104,8 +109,8 @@ function lines(value) {
   return value.lines ? `:${value.lines[0]}-${value.lines[1]}` : '';
 }
 
-function safeBundlePath(input) {
-  const file = resolve(ROOT, input || '.agent-state/automation/context-bundle.md');
+function safeBundlePath(input, fallback = '.agent-state/automation/context-bundle.md') {
+  const file = resolve(ROOT, input || fallback);
   const automationRoot = resolve(ROOT, '.agent-state/automation');
   if (!file.startsWith(automationRoot + sep) || !file.endsWith('.md')) fail('--output must be a Markdown file under ignored .agent-state/automation/');
   return file;
@@ -182,6 +187,45 @@ function main() {
       }
       return;
     }
+    if (command === 'concept-route' || command === 'concept-read') {
+      checkOptions(options, ['json', 'max-bytes', 'kb-root']);
+      const input = positionals.join(' ').trim();
+      if (!input) fail(`usage: node scripts/context.mjs ${command} <concept-id-or-exact-alias> [--kb-root KB]`);
+      const conceptOptions = {
+        kbRoot: option(options, 'kb-root', 'KB'),
+        maxBytes: Number(option(options, 'max-bytes', String(DEFAULT_CONCEPT_BYTES))),
+      };
+      const result = command === 'concept-route' ? conceptRoute(ROOT, input, conceptOptions) : conceptRead(ROOT, input, conceptOptions);
+      if (!json(options, result)) printLines(conceptTextLines(result));
+      if (result.status !== 'matched') process.exitCode = 1;
+      return;
+    }
+    if (command === 'concept-bundle') {
+      checkOptions(options, ['json', 'max-bytes', 'kb-root', 'output']);
+      const input = positionals.join(' ').trim();
+      if (!input) fail('usage: node scripts/context.mjs concept-bundle <concept-id-or-exact-alias> [--output .agent-state/automation/file.md]');
+      const result = conceptBundle(ROOT, input, {
+        kbRoot: option(options, 'kb-root', 'KB'),
+        maxBytes: Number(option(options, 'max-bytes', String(DEFAULT_CONCEPT_BYTES))),
+      });
+      if (result.status !== 'matched') {
+        if (!json(options, result)) printLines(conceptTextLines(result));
+        process.exitCode = 1;
+        return;
+      }
+      const output = safeBundlePath(option(options, 'output'), '.agent-state/automation/concept-bundle.md');
+      mkdirSync(dirname(output), { recursive: true });
+      writeFileSync(output, result.bundle);
+      const response = {
+        ...result,
+        bundle: output.slice(ROOT.length + 1).replaceAll('\\', '/'),
+      };
+      if (!json(options, response)) printLines([
+        `Created: ${response.bundle} (${result.concept.id}, ${result.limits.returned_bytes} retrieval bytes)`,
+        ...result.adjacent.map(adjacent => `adjacent: ${adjacent.id} (not loaded)`),
+      ]);
+      return;
+    }
     if (command === 'bundle') {
       checkOptions(options, ['json', 'domain', 'kind', 'path-prefix', 'require', 'max-results', 'max-bytes', 'output']);
       const task = positionals.join(' ').trim();
@@ -207,7 +251,7 @@ function main() {
       if (!json(options, envelope({ kind: 'bundle', task }, response))) printLines([`Created: ${response.bundle} (${result.results.length} evidence item(s), ${result.limits.returned_bytes} retrieval bytes)`]);
       return;
     }
-    fail('usage: node scripts/context.mjs <route|outline|section|symbol|search|filter|scope|bundle> ...');
+    fail('usage: node scripts/context.mjs <route|outline|section|symbol|search|filter|scope|bundle|concept-route|concept-read|concept-bundle> ...');
   } catch (error) {
     fail(error.message, 1);
   }

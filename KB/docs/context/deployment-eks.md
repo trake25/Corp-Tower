@@ -6,6 +6,8 @@ Scope: production AWS topology, infrastructure lifecycle, deployment operations,
 id: deploy.eks.topology
 alias: EKS topology
 alias: ALB NodePort
+source: infra/eks/terraform/load_balancer.tf#aws_lb.main
+source: infra/eks/terraform/eks.tf#aws_eks_node_group.server
 -->
 ## Topology
 
@@ -15,6 +17,7 @@ Cloudflare DNS points to an ALB that terminates TLS and routes game/web traffic 
 id: deploy.eks.node-security
 alias: EKS security group
 alias: cross node DNS
+source: infra/eks/terraform/security_group.tf#aws_vpc_security_group_ingress_rule.nodes_from_nodes
 -->
 ## Node security groups
 
@@ -25,8 +28,9 @@ id: deploy.eks.lifecycle
 alias: EKS apply
 alias: EKS destroy
 alias: auto destroy
-source: .github/workflows/EKS-Infra-Apply.yml#@file
-source: .github/workflows/EKS-Infra-Destroy.yml#@file
+source: .github/workflows/EKS-Infra-Apply.yml#apply
+source: .github/workflows/EKS-Infra-Destroy.yml#destroy
+source: .github/workflows/EKS-Infra-Auto-Destroy.yml#auto-destroy
 adjacent: deploy.shared.terraform-roots
 -->
 ## Infrastructure lifecycle
@@ -37,8 +41,8 @@ The EKS application stack is session-scoped and incurs real hourly cost. Apply/d
 id: deploy.eks.applied-tree
 alias: verify-infra
 alias: applied tree hash
-source: .github/workflows/EKS-Infra-Apply.yml#@file
-source: .github/workflows/EKS-Deploy-Server.yml#@file
+source: .github/workflows/EKS-Infra-Apply.yml#Record applied infra tree
+source: .github/workflows/EKS-Deploy-Game-Server.yml#verify-infra
 -->
 ## Applied-tree guard
 
@@ -48,7 +52,7 @@ A committed infrastructure fix is not a deployment precondition until the infras
 id: deploy.eks.destroy-verification
 alias: Tagging API lag
 alias: orphan check
-source: .github/workflows/EKS-Infra-Destroy.yml#@file
+source: .github/workflows/EKS-Infra-Destroy.yml#Check for orphaned billable resources
 -->
 ## Destroy verification
 
@@ -57,6 +61,7 @@ AWS resource-discovery APIs may report recently deleted resources after deletion
 <!-- kb
 id: deploy.eks.workflows
 alias: EKS deploy
+source: .github/workflows/EKS-Deploy-Game-Server.yml#deploy-eks
 adjacent: testing.release.gates
 -->
 ## Deployment workflows
@@ -67,6 +72,7 @@ EKS deploy verifies infrastructure, runs the target's release tests, builds/push
 id: deploy.eks.dns
 alias: CNAME wait
 alias: ALB DNS
+source: .github/workflows/EKS-Deploy-Game-Server.yml#Update Cloudflare CNAME content
 -->
 ## DNS update
 
@@ -75,7 +81,7 @@ After ALB/DNS changes, deploy waits for the public hostname to resolve to the ne
 <!-- kb
 id: deploy.eks.manual-setup
 alias: EKS manual setup
-source: .github/workflows/EKS-Shared-Infra-Apply.yml#@file
+source: .github/workflows/EKS-Shared-Infra-Apply.yml#apply
 -->
 ## Operator setup
 

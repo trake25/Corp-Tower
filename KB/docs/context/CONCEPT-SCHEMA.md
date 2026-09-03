@@ -1,45 +1,49 @@
 # KB concept schema
 
-This file describes the proposed authored contract. It is not itself a source of
-product behavior.
+This file defines the implemented authored contract for the parallel
+experimental concept KB. It is not a source of product behavior.
 
-## Identity
+## Identity and ownership
 
-Concept IDs use lowercase dot-separated semantic hierarchy:
+Concept IDs use a lowercase dot-separated semantic hierarchy:
 
 `<domain>.<subsystem>.<concept>[.<facet>]`
 
-The ID survives heading or file movement. Headings are presentation; IDs are identity.
+An ID is globally unique and survives heading or document movement. A
+`<!-- kb ... -->` block must be followed immediately by exactly one Markdown
+leaf heading. Its retrieval unit begins at that heading and stops before the
+next concept metadata block or enclosing/sibling heading.
 
 ## Metadata fields
 
-- `id` — required, globally unique.
-- `alias` — optional, repeatable vocabulary used to resolve the concept.
-- `source` — optional/repeatable during migration; required before the concept becomes
-  authoritative for source retrieval. Form: `repo/path#stable-anchor`.
-- `adjacent` — optional/repeatable directed concept ID. It grants a legal KB-router
-  widening choice; it never means auto-load.
+- `id` is required and non-repeatable.
+- `alias` is optional and repeatable. Resolution applies NFKC normalization,
+  trimming, lowercase conversion, and internal whitespace collapse. Every
+  normalized alias must resolve to one concept and cannot conflict with an ID.
+- `source` is repeatable and required at least once for every ready concept.
+  Its form is `repo/path#stable-anchor`; repository-relative paths and exact
+  non-line-number anchors are mandatory. `#@file` is rejected in ready state.
+- `adjacent` is optional and repeatable. It names an existing different concept
+  ID. Directed cycles are allowed; adjacency never means auto-load.
 
-## Retrieval unit
+Source grants cannot enter `.agent-state/`, `KB/`, `plan/`, `reference/`,
+`repair/`, `report/`, or `task/`.
 
-Only metadata-bearing leaf sections are normal semantic retrieval units. Parent headings
-organize the human document and may be used for outlines, but they do not grant source.
+## Derived data
 
-## Generated data
+The parser derives concept owner path, heading/range, normalized aliases, and a
+reverse source-path-to-concept index. The generator derives source line numbers,
+bounded read commands, per-domain map sections, and the marked router block in
+`index.md`. None of those outputs is independently authored.
 
-The following are derived and must not be independently authored:
+## Retrieval contract
 
-- concept → document path;
-- concept → heading/line range;
-- concept → map path;
-- concept → source line numbers;
-- concept-router rows in `index.md`;
-- human alias tables;
-- reverse source → concept index used by docs scoping.
+`concept-route` resolves an exact canonical ID first, then an exact normalized
+alias. `concept-read` adds only that concept's prose leaf. `concept-bundle`
+creates a local-runner handoff only under `.agent-state/automation/`. Returned
+adjacency includes explicit next-call commands and loads no adjacent prose.
 
-## Failure contract
-
-The future retrieval layer must distinguish at least:
+Every failure includes a reason, denies broad source fallback, and uses one of:
 
 - `concept-unmapped`
 - `alias-ambiguous`
@@ -50,5 +54,19 @@ The future retrieval layer must distinguish at least:
 - `map-stale`
 - `budget-exceeded`
 - `access-denied`
+- `tool-error`
 
-A failure reports its exact reason. It does not authorize arbitrary repository search.
+## Budgets and validation
+
+A concept prose leaf is limited to 6 KiB. Concept retrieval defaults to 12 KiB
+and has a 24 KiB absolute response limit. Experimental KB Markdown uses a
+400-character line ceiling; this does not alter the primary KB's 300-character
+limit.
+
+Run:
+
+```sh
+node scripts/build-concept-map.mjs --check --quiet
+node scripts/validate-concept-kb.mjs --quiet
+node scripts/benchmark-rag.mjs --concept-check
+```

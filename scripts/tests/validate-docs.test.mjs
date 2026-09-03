@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { isNormalContextExcludedPath, isPrimaryValidationCorpusPath } from '../lib/context-routing.mjs';
 import {
   PROSE_SECTION_HARD_LIMIT,
   PROSE_SECTION_WARNING,
@@ -100,4 +101,12 @@ test('quiet hard-section failure is terse, actionable, and task-owned', () => {
   assert.match(lines[1], /^ACTIONABLE_BLOCKER: compaction-required: overflow\.md section/);
   assert.match(lines[2], /remaining hard blockers: 1/);
   assert.equal(lines[3], 'FAILURE_CLASSIFICATION: implementation');
+});
+
+test('the experimental KB is tracked documentation but cannot satisfy the primary validation corpus', () => {
+  assert.equal(isNormalContextExcludedPath('KB/docs/context/gameplay.md'), false);
+  assert.equal(isPrimaryValidationCorpusPath('KB/docs/context/gameplay.md'), false);
+  assert.equal(isPrimaryValidationCorpusPath('.\\KB\\docs\\context\\gameplay.md'), false);
+  assert.equal(isPrimaryValidationCorpusPath('docs/context/gameplay.md'), true);
+  assert.equal(isPrimaryValidationCorpusPath('src/Server/app/Game_Engine.js'), true);
 });

@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import {
   AUTOMATION_PROTOCOL_TESTS,
+  CONCEPT_KB_TESTS,
   TUTORIAL_PARITY_TEST,
   classifyQaFailure,
   selectContractQa,
@@ -76,6 +77,23 @@ test('public receipt helpers select their focused automation contracts', () => {
   assert.deepEqual(selectToolingQa(['scripts/lib/qa-receipt.mjs']).tests, [
     'scripts/tests/task-close.test.mjs',
   ]);
+});
+
+test('experimental concept paths select focused concept QA without runtime suites', () => {
+  const paths = [
+    'KB/docs/context/gameplay.md',
+    'scripts/lib/concept-kb.mjs',
+    'scripts/fixtures/concept-retrieval.json',
+  ];
+
+  for (const path of paths) {
+    const plan = selectQa([path]);
+    assert.equal(plan.concept_kb, true);
+    assert.equal(plan.runtime_applies, false);
+    assert.deepEqual(plan.tooling_tests, [...CONCEPT_KB_TESTS].sort());
+  }
+  assert.equal(selectQa(['src/Server/app/engine/Scoring.js']).concept_kb, false);
+  assert.equal(AUTOMATION_PROTOCOL_TESTS.includes('scripts/tests/concept-kb.test.mjs'), false);
 });
 
 test('both sides of the tutorial defaults contract select the parity test', () => {

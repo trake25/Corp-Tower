@@ -5,6 +5,8 @@ Scope: shared infrastructure topology and operational contracts. Target-specific
 <!-- kb
 id: deploy.shared.environments
 alias: deployment environments
+source: .github/workflows/Backup-Deploy-All.yml#resolve
+source: .github/workflows/EKS-Deploy-All.yml#deploy-game
 -->
 ## Environment model
 
@@ -14,6 +16,8 @@ AWS EKS is the production-grade on-demand target. The physical machine is the de
 id: deploy.shared.terraform-roots
 alias: Terraform roots
 alias: shared infra
+source: .github/workflows/EKS-Infra-Apply.yml#apply
+source: .github/workflows/EKS-Shared-Infra-Apply.yml#apply
 adjacent: deploy.eks.lifecycle
 -->
 ## Terraform roots
@@ -24,6 +28,8 @@ EKS uses a session-scoped application root plus a persistent shared infrastructu
 id: deploy.shared.auth-env
 alias: Supabase env
 alias: identity secret
+source: .github/workflows/EKS-Deploy-Game-Server.yml#Sync Supabase service role secret
+source: scripts/backup/backup-server-up.sh#AUTH_ARGS
 adjacent: backend.identity.auth
 adjacent: build.endpoint-auth.injection
 -->
@@ -35,6 +41,8 @@ Server verification uses public Supabase project information plus runtime authen
 id: deploy.shared.secret-rollout
 alias: kubernetes secret restart
 alias: GITHUB_ENV
+source: .github/workflows/EKS-Deploy-Game-Server.yml#Sync Supabase service role secret
+source: .github/workflows/EKS-Deploy-Game-Server.yml#Apply Corp Tower Kustomize overlay
 adjacent: deploy.eks.workflows
 -->
 ## Secret rollout

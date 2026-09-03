@@ -4,13 +4,18 @@ Router for the concept-addressable `docs/context/` knowledge base.
 
 ## System
 
-Corp Tower is a three-player real-time selfish-cooperation tower puzzle with a Godot client, authoritative Node.js WebSocket server, and Redis-backed shared room state. The server decides outcomes; the client renders authoritative state.
+Corp Tower is a three-player real-time selfish-cooperation tower puzzle with a
+Godot client, authoritative Node.js WebSocket server, and Redis-backed shared
+room state. The server decides outcomes; the client renders authoritative state.
 
 ## Retrieval contract
 
-Resolve a task to one semantic concept. Read only that concept's leaf section, then its generated concept-map section and bounded source grants. If more product knowledge is required, return to this router and choose only an explicitly declared adjacent concept. Never jump sideways by repository-wide search.
+Resolve a task to one semantic concept. Read only that concept's leaf section,
+then its generated concept-map section and bounded source grants. If more product
+knowledge is required, return to this router and choose only an explicitly
+declared adjacent concept. Never jump sideways by repository-wide search.
 
-> GENERATED ROUTER SNAPSHOT — in the implemented system this block should be generated from concept metadata, not hand-maintained.
+<!-- BEGIN GENERATED CONCEPT ROUTER -->
 
 ### automation
 
@@ -59,15 +64,15 @@ Resolve a task to one semantic concept. Read only that concept's leaf section, t
 | `backend.lobby.close` | [backend.md#terminal-room-close](./backend.md#terminal-room-close) | room closed, room teardown |
 | `backend.lobby.connection` | [backend.md#session-connection-ownership](./backend.md#session-connection-ownership) | connection id ownership, superseded socket |
 | `backend.lobby.cross-pod` | [backend.md#cross-pod-ownership](./backend.md#cross-pod-ownership) | multi pod room, lease owner |
-| `backend.lobby.debug-config` | [backend.md#debug-configuration](./backend.md#debug-configuration) | debug config, runtime tuning |
+| `backend.lobby.debug-config` | [backend.md#debug-configuration](./backend.md#debug-configuration) | runtime debug config, runtime tuning |
 | `backend.lobby.private` | [backend.md#private-rooms](./backend.md#private-rooms) | private lobby, private server room |
-| `backend.lobby.public` | [backend.md#public-matchmaking](./backend.md#public-matchmaking) | public lobby, matchmaking |
+| `backend.lobby.public` | [backend.md#public-matchmaking](./backend.md#public-matchmaking) | public matchmaking room, matchmaking |
 | `backend.redis.hydration` | [backend.md#hydration-continuity](./backend.md#hydration-continuity) | room hydration, persisted room |
 | `backend.redis.leases` | [backend.md#redis-leases](./backend.md#redis-leases) | Redis State, room lease |
 | `backend.scoring.transaction` | [backend.md#scoring-transaction](./backend.md#scoring-transaction) | Scoring.js, placement scoring |
-| `backend.stability.analysis` | [backend.md#support-graph](./backend.md#support-graph) | Tower Stability, support graph |
+| `backend.stability.analysis` | [backend.md#support-graph](./backend.md#support-graph) | stability analyzer, support graph |
 | `backend.stability.collapse` | [backend.md#collapse-authority](./backend.md#collapse-authority) | tower collapse, collapse components |
-| `backend.stability.pose` | [backend.md#structural-pose](./backend.md#structural-pose) | structural pose |
+| `backend.stability.pose` | [backend.md#structural-pose](./backend.md#structural-pose) | server structural pose |
 | `backend.supply.authority` | [backend.md#supply-authority](./backend.md#supply-authority) | Block Supply |
 
 ### build
@@ -76,7 +81,7 @@ Resolve a task to one semantic concept. Read only that concept's leaf section, t
 |---|---|---|
 | `build.android.aab-validation` | [build.md#aab-validation](./build.md#aab-validation) | bundle validation, target SDK |
 | `build.android.pipeline` | [build.md#android-pipeline](./build.md#android-pipeline) | Android CI, AAB build |
-| `build.android.startup-splash` | [build.md#startup-splash](./build.md#startup-splash) | Android splash crop, extended splash |
+| `build.android.startup-splash` | [build.md#startup-splash](./build.md#startup-splash) | Android splash crop, Android extended splash |
 | `build.android.version-code` | [build.md#play-version-code](./build.md#play-version-code) | versionCode, Play track version |
 | `build.art.private-bundle` | [build.md#private-art-bundle](./build.md#private-art-bundle) | private art, R2 art bundle |
 | `build.auth.native-providers` | [build.md#native-provider-build-inputs](./build.md#native-provider-build-inputs) | native Google sign in, native Facebook |
@@ -143,9 +148,9 @@ Resolve a task to one semantic concept. Read only that concept's leaf section, t
 | `gameplay.supply.carry-over` | [gameplay.md#carry-over](./gameplay.md#carry-over) | carry over bricks |
 | `gameplay.supply.reserve` | [gameplay.md#shared-supply](./gameplay.md#shared-supply) | draw pile, reserve sizing, not enough height |
 | `gameplay.tower.placement` | [gameplay.md#release-row-and-gravity](./gameplay.md#release-row-and-gravity) | release row, gap placement, overhang |
-| `gameplay.tower.pose` | [gameplay.md#structural-pose-meaning](./gameplay.md#structural-pose-meaning) | tower pose, structural pose |
+| `gameplay.tower.pose` | [gameplay.md#structural-pose-meaning](./gameplay.md#structural-pose-meaning) | tower pose rules, structural pose |
 | `gameplay.tower.site` | [gameplay.md#placeable-site](./gameplay.md#placeable-site) | tower site, placeable range, grid width |
-| `gameplay.tower.stability` | [gameplay.md#stability-design](./gameplay.md#stability-design) | tower stability, Balance and Integrity, weak support |
+| `gameplay.tower.stability` | [gameplay.md#stability-design](./gameplay.md#stability-design) | tower stability, Balance and Integrity, weak support rules |
 
 ### hud
 
@@ -157,7 +162,7 @@ Resolve a task to one semantic concept. Read only that concept's leaf section, t
 | `hud.navigation.auto-follow` | [ui-hud.md#automatic-follow](./ui-hud.md#automatic-follow) | auto scroll, tower camera follow |
 | `hud.navigation.drop-top` | [ui-hud.md#drop-and-top](./ui-hud.md#drop-and-top) | Drop UI, Top button, weak support navigation |
 | `hud.navigation.manual-inspection` | [ui-hud.md#manual-inspection](./ui-hud.md#manual-inspection) | manual pan, scroll down tower |
-| `hud.overlays.popovers` | [ui-hud.md#shared-popovers](./ui-hud.md#shared-popovers) | glass popover, chat popover, Power popover |
+| `hud.overlays.popovers` | [ui-hud.md#shared-popovers](./ui-hud.md#shared-popovers) | glass popover, chat popover, Power popover, Quest popover |
 | `hud.overlays.score-popups` | [ui-hud.md#score-popups](./ui-hud.md#score-popups) | score event popup |
 | `hud.overlays.summary` | [ui-hud.md#summary-overlay](./ui-hud.md#summary-overlay) | Level Summary, failure summary |
 | `hud.placement.armed` | [ui-hud.md#armed-placement](./ui-hud.md#armed-placement) | armed action, tap confirm |
@@ -192,7 +197,7 @@ Resolve a task to one semantic concept. Read only that concept's leaf section, t
 | `network.session.recovery` | [networking.md#active-stream-recovery](./networking.md#active-stream-recovery) | resync, reconnect recovery, stale stream |
 | `network.session.resume-only` | [networking.md#resume-only-startup](./networking.md#resume-only-startup) | resumeOnly, saved room resume |
 | `network.session.supersession` | [networking.md#socket-supersession](./networking.md#socket-supersession) | old socket, current connection id |
-| `network.state.grid-site` | [networking.md#grid-and-site-state](./networking.md#grid-and-site-state) | grid width, placeable range payload |
+| `network.state.grid-site` | [networking.md#grid-and-site-state](./networking.md#grid-and-site-state) | grid width payload, placeable range payload |
 | `network.state.impact-status` | [networking.md#impact-status-state](./networking.md#impact-status-state) | impactScoreStatus |
 | `network.state.revision` | [networking.md#state-revision-and-resync](./networking.md#state-revision-and-resync) | stateRevision, resync_state |
 | `network.state.snapshot` | [networking.md#snapshot-contract](./networking.md#snapshot-contract) | game_state, authoritative snapshot |
@@ -246,6 +251,8 @@ Resolve a task to one semantic concept. Read only that concept's leaf section, t
 | `ui.shell.responsive` | [ui.md#responsive-root](./ui.md#responsive-root) | responsive layout, portrait root |
 | `ui.startup.restoration` | [ui.md#startup-restoration](./ui.md#startup-restoration) | saved room startup, resume startup |
 | `ui.startup.splash` | [ui.md#startup-splash](./ui.md#startup-splash) | extended splash, startup splash |
+
+<!-- END GENERATED CONCEPT ROUTER -->
 
 ## Isolation
 

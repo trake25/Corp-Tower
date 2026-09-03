@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "routes": [
+    {
+      "id": "hud-collapse-presentation-id",
+      "query": "hud.tower.collapse.presentation",
+      "resolution": "id",
+      "concept": "hud.tower.collapse.presentation",
+      "owner": "KB/docs/context/ui-hud.md",
+      "source": "src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd",
+      "anchor": "_begin_collapse",
+      "adjacent": "hud.tower.collapse.recovery",
+      "bundle_excludes": "Collapse recovery after presentation"
+    },
+    {
+      "id": "hud-collapse-recovery-alias",
+      "query": "collapse camera recovery",
+      "resolution": "alias",
+      "concept": "hud.tower.collapse.recovery",
+      "owner": "KB/docs/context/ui-hud.md",
+      "source": "src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd",
+      "anchor": "_start_collapse_recovery",
+      "adjacent": "hud.tower.collapse.presentation"
+    },
+    {
+      "id": "critical-save-alias",
+      "query": "critical save",
+      "resolution": "alias",
+      "concept": "gameplay.scoring.critical-save",
+      "owner": "KB/docs/context/gameplay.md",
+      "source": "src/Server/app/engine/Scoring.js",
+      "anchor": "getCriticalSavePreview",
+      "adjacent": "gameplay.tower.stability"
+    },
+    {
+      "id": "network-recovery-id",
+      "query": "network.session.recovery",
+      "resolution": "id",
+      "concept": "network.session.recovery",
+      "owner": "KB/docs/context/networking.md",
+      "source": "src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd",
+      "anchor": "begin_recovery",
+      "adjacent": "ui.play.recovery"
+    },
+    {
+      "id": "task-close-alias",
+      "query": "task close",
+      "resolution": "alias",
+      "concept": "automation.task-close.lifecycle",
+      "owner": "KB/docs/context/automation.md",
+      "source": "scripts/task-close.mjs",
+      "anchor": "main",
+      "adjacent": "automation.task-close.scope"
+    },
+    {
+      "id": "android-target-sdk-alias",
+      "query": "target SDK",
+      "resolution": "alias",
+      "concept": "build.android.aab-validation",
+      "owner": "KB/docs/context/build.md",
+      "source": ".github/workflows/Android-Deploy-wstodplay.yml",
+      "anchor": "Validate signed Android AAB deployment artifact"
+    },
+    {
+      "id": "eks-deploy-alias",
+      "query": "EKS deploy",
+      "resolution": "alias",
+      "concept": "deploy.eks.workflows",
+      "owner": "KB/docs/context/deployment-eks.md",
+      "source": ".github/workflows/EKS-Deploy-Game-Server.yml",
+      "anchor": "deploy-eks",
+      "adjacent": "testing.release.gates"
+    },
+    {
+      "id": "private-room-alias",
+      "query": "reserved seat",
+      "resolution": "alias",
+      "concept": "network.room.private",
+      "owner": "KB/docs/context/networking.md",
+      "source": "src/Server/app/Lobby_Manager.js",
+      "anchor": "joinPrivateRoom",
+      "adjacent": "backend.lobby.private"
+    }
+  ],
+  "failures": [
+    {
+      "id": "unknown-concept",
+      "setup": "repository",
+      "query": "concept.that.does.not.exist",
+      "status": "concept-unmapped"
+    },
+    {
+      "id": "ambiguous-alias",
+      "setup": "ambiguous-alias",
+      "query": "shared alias",
+      "status": "alias-ambiguous"
+    },
+    {
+      "id": "missing-anchor",
+      "setup": "missing-anchor",
+      "query": "test.failure.missing-anchor",
+      "status": "source-anchor-missing"
+    },
+    {
+      "id": "prohibited-source",
+      "setup": "prohibited-source",
+      "query": "test.failure.prohibited-source",
+      "status": "access-denied"
+    }
+  ]
+}

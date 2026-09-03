@@ -1,52 +1,63 @@
-# Corp Tower KB overhaul — ChatGPT authored draft
+# Corp Tower experimental concept KB
 
-This package is a **design/authoring artifact**, not a repository implementation.
+`KB/` is a working parallel knowledge base for local concept-retrieval
+experiments. It is tracked documentation, but it is not authoritative and is
+not part of the default agent retrieval corpus.
 
-It restructures the current `docs/context/` knowledge base into concept-addressable
-Markdown so the later agent router can resolve:
+The current production path remains:
 
-`task → concept → exact prose section → exact concept-map section → bounded source`.
+`AGENTS.md → docs/context/index.md → docs/context prose → current locator maps`
 
-## Status
+The opt-in experimental path is:
 
-- Prose has been reorganized into small, independently retrievable contracts.
-- Stable semantic concept IDs, aliases, adjacency and source-owner seeds are included.
-- `index.md` is a proposed generated-router snapshot derived from the concept metadata.
-- `map/concept/*.md` are **generated-output mockups** derived from this draft.
-- Existing locator maps such as `map/backend.md`, `map/ui-hud.md`, and `map/infra.md`
-  are intentionally not copied here; the approved architecture keeps them during migration.
-- `#@file` source seeds are deliberately coarse where this ChatGPT session did not
-  establish a trustworthy stable symbol. Before activation, the repository-side generator
-  should resolve or replace them with exact stable anchors and validate every target.
-- Line numbers are intentionally absent from authored metadata. They belong to generated maps.
+`KB/docs/context/index.md → concept leaf → generated concept map → bounded source`
 
-## Proposed metadata
+## Implemented tooling
 
-A leaf concept is preceded by:
+- `node scripts/build-concept-map.mjs` parses authored concept metadata,
+  resolves exact source anchors, writes ten domain maps, and replaces only the
+  marked generated router block in `KB/docs/context/index.md`.
+- `node scripts/build-concept-map.mjs --check --quiet` proves generated output
+  is current without writing it.
+- `node scripts/validate-concept-kb.mjs` validates identity, aliases, leaf
+  ownership, adjacency, source grants, isolation, budgets, maps, and router
+  equality independently from the primary KB validator.
+- `node scripts/context.mjs concept-route <id-or-alias>` returns exact route,
+  map, source-grant, and adjacency metadata.
+- `concept-read` adds only the owning prose leaf. `concept-bundle` writes a
+  bounded handoff under `.agent-state/automation/`. Neither traverses adjacent
+  concepts automatically.
+- `node scripts/benchmark-rag.mjs --concept-check` runs the parallel concept
+  fixtures. The command without this option retains the legacy benchmark.
+
+## Authored metadata
+
+A retrievable leaf is preceded by one canonical metadata block:
 
 ```md
 <!-- kb
 id: hud.tower.collapse.presentation
 alias: collapse framing
-source: src/.../TowerStack.gd#@file
-adjacent: gameplay.tower.stability
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#_begin_collapse
+adjacent: hud.tower.collapse.recovery
 -->
-### Collapse presentation
+## Collapse presentation
 ```
 
-Rules:
+Concept IDs, aliases, source grants, and adjacency are authored only beside the
+owning prose. Document ranges, map rows, source lines, router tables, and the
+reverse source index are derived. Every ready concept has at least one exact
+source grant; `#@file` migration seeds are rejected.
 
-1. One canonical `id` per durable concept.
-2. Aliases belong to that concept, not to a second alias database.
-3. `source:` is repeatable and must resolve to first-party source plus a stable anchor.
-4. `adjacent:` grants a legal return path through the KB router; it is never auto-loaded.
-5. Broad organizational headings have no metadata.
-6. Prose owns behavior, authority, flow, rationale, and live constraints; maps own location.
-7. No concept may grant `report/`, `repair/`, `plan/`, `task/`, `reference/`, or `.agent-state/`.
+Concept source grants cannot enter `report/`, `repair/`, `plan/`, `task/`,
+`reference/`, `.agent-state/`, or this `KB/` tree. Adjacency is a directed choice
+for another explicit route call, never permission to load neighboring prose.
 
-## Migration intent
+## Experimental budgets
 
-Use this package as the authored content target for the KB prerequisite. Codex should
-validate it against current source, build the metadata parser/generator/validators,
-resolve exact anchors, regenerate concept maps/index output, and preserve the existing
-source-locator maps until the later retrieval/router overhaul.
+The concept prose section hard limit is 6 KiB. Concept commands default to a
+12 KiB response and accept at most 24 KiB. The experimental Markdown line
+ceiling is 400 characters, as separately authorized for this new KB; the
+primary `docs/context/**` limits are unchanged.
+
+Cloud ChatGPT/Claude activation and model/task-router redesign remain deferred.

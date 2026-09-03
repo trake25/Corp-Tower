@@ -6,8 +6,8 @@ Scope: WebSocket authority, session lifecycle, payload families, recovery, and f
 id: network.session.identity
 alias: connection identity
 alias: auth wire
-source: src/Server/app/Server.js#@file
-source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#@file
+source: src/Server/app/Server.js#handleMessage
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#connect_server
 adjacent: backend.identity.auth
 -->
 ## Startup identity
@@ -18,8 +18,8 @@ The client connects to its build-injected endpoint and sends reconnect/identity 
 id: network.session.resume-only
 alias: resumeOnly
 alias: saved room resume
-source: src/Server/app/Lobby_Manager.js#@file
-source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#@file
+source: src/Server/app/Lobby_Manager.js#resumePlayer
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#send_reconnect_request
 adjacent: ui.startup.restoration
 adjacent: backend.lobby.connection
 -->
@@ -32,7 +32,7 @@ id: network.session.recovery
 alias: resync
 alias: reconnect recovery
 alias: stale stream
-source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#@file
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#begin_recovery
 adjacent: ui.play.recovery
 adjacent: backend.lobby.connection
 -->
@@ -44,8 +44,8 @@ While a match is expected to stream in starting or playing state, missing author
 id: network.session.supersession
 alias: old socket
 alias: current connection id
-source: src/Server/app/Lobby_Manager.js#@file
-source: src/Server/app/Redis_State.js#@file
+source: src/Server/app/Lobby_Manager.js#isCurrentPlayerConnection
+source: src/Server/app/Redis_State.js#isCurrentSessionConnection
 adjacent: backend.lobby.connection
 -->
 ## Socket supersession
@@ -56,7 +56,7 @@ Only the session's current opaque connection id may act or disconnect. Closing a
 id: network.room.public
 alias: public lobby wire
 alias: ready up
-source: src/Server/app/Lobby_Manager.js#@file
+source: src/Server/app/Lobby_Manager.js#toggleLobbyReady
 adjacent: backend.lobby.public
 -->
 ## Public lobby
@@ -67,7 +67,7 @@ Public seats fill incrementally and assignment arrives as soon as a seat is owne
 id: network.room.private
 alias: private lobby recovery
 alias: reserved seat
-source: src/Server/app/Lobby_Manager.js#@file
+source: src/Server/app/Lobby_Manager.js#joinPrivateRoom
 adjacent: backend.lobby.private
 adjacent: ui.private-lobby.presentation
 -->
@@ -78,8 +78,8 @@ Private-lobby transport loss unreaddies and reserves the seat through recovery/g
 <!-- kb
 id: network.room.cross-pod
 alias: cross pod routing
-source: src/Server/app/Lobby_Manager.js#@file
-source: src/Server/app/Redis_State.js#@file
+source: src/Server/app/Lobby_Manager.js#dispatchRoomAction
+source: src/Server/app/Redis_State.js#publishRoomAction
 adjacent: backend.lobby.cross-pod
 -->
 ## Cross-pod room routing
@@ -89,7 +89,7 @@ A pod that does not own a room relays or republishes to the lease owner instead 
 <!-- kb
 id: network.room.close
 alias: room_closed
-source: src/Server/app/Lobby_Manager.js#@file
+source: src/Server/app/Lobby_Manager.js#closeRoom
 adjacent: backend.lobby.close
 adjacent: ui.navigation.server-routes
 -->
@@ -101,8 +101,8 @@ adjacent: ui.navigation.server-routes
 id: network.room.active-leave
 alias: game_left
 alias: leave_game
-source: src/Server/app/Lobby_Manager.js#@file
-source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#@file
+source: src/Server/app/Lobby_Manager.js#leaveGameForRoom
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#leave_game
 adjacent: backend.lobby.active-leave
 adjacent: hud.players.presence
 -->
@@ -114,7 +114,7 @@ adjacent: hud.players.presence
 id: network.messages.families
 alias: websocket messages
 alias: message types
-source: src/Server/app/Server.js#@file
+source: src/Server/app/Server.js#handleMessage
 -->
 ## Message families
 
@@ -127,8 +127,8 @@ id: network.messages.latency
 alias: latency_ping
 alias: latency_pong
 alias: RTT
-source: src/Server/app/Server.js#@file
-source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#@file
+source: src/Server/app/Server.js#handleMessage
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#process_latency_probe
 -->
 ## Latency diagnostics
 
@@ -138,8 +138,8 @@ Latency probes are device-local telemetry. A client nonce is echoed on the same 
 id: network.placement.contract
 alias: place_block
 alias: release row wire
-source: src/Server/app/Server.js#@file
-source: src/Server/app/engine/Placement.js#@file
+source: src/Server/app/Server.js#handleMessage
+source: src/Server/app/engine/Placement.js#resolvePlacementOrigin
 adjacent: gameplay.tower.placement
 adjacent: hud.placement.snapping
 -->
@@ -163,7 +163,7 @@ adjacent: hud.controller.state-application
 
 <!-- kb
 id: network.state.grid-site
-alias: grid width
+alias: grid width payload
 alias: placeable range payload
 source: src/Server/app/Game_Engine.js#buildGameStateSnapshot
 adjacent: gameplay.tower.site
@@ -201,7 +201,7 @@ id: network.state.revision
 alias: stateRevision
 alias: resync_state
 source: src/Server/app/Game_Engine.js#buildGameStateSnapshot
-source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#@file
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#accept_game_state
 adjacent: network.session.recovery
 -->
 ## State revision and resync
@@ -212,9 +212,9 @@ adjacent: network.session.recovery
 id: network.adapters.boundaries
 alias: wire adapters
 alias: network boundaries
-source: src/Server/app/Server.js#@file
-source: src/Server/app/Lobby_Manager.js#@file
-source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#@file
+source: src/Server/app/Server.js#handleMessage
+source: src/Server/app/Lobby_Manager.js#dispatchRoomAction
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#accept_game_state
 adjacent: backend.authority.server
 -->
 ## Adapter boundaries
@@ -225,8 +225,8 @@ Server Entry parses sockets and forwards actions. Lobby Manager resolves ownersh
 id: network.compatibility.deploy-together
 alias: wire compatibility
 alias: mixed version
-source: src/Server/app/Game_Engine.js#@file
-source: src/Server/app/Redis_State.js#@file
+source: src/Server/app/Game_Engine.js#buildGameStateSnapshot
+source: src/Server/app/Redis_State.js#stripRuntimeRoom
 -->
 ## Compatibility boundary
 

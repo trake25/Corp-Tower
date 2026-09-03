@@ -38,6 +38,7 @@ const clientRules = [
 
 const automationTests = Object.freeze({
   context: 'scripts/tests/context-query.test.mjs',
+  conceptKb: 'scripts/tests/concept-kb.test.mjs',
   taskClose: 'scripts/tests/task-close.test.mjs',
   gitSync: 'scripts/tests/git-sync-commit-push.test.mjs',
   qaGate: 'scripts/tests/qa-gate.test.mjs',
@@ -45,10 +46,14 @@ const automationTests = Object.freeze({
   observability: 'scripts/tests/agent-observability.test.mjs',
 });
 
-export const AUTOMATION_PROTOCOL_TESTS = Object.freeze(Object.values(automationTests));
+export const AUTOMATION_PROTOCOL_TESTS = Object.freeze(Object.values(automationTests).filter(test => test !== automationTests.conceptKb));
+export const CONCEPT_KB_TESTS = Object.freeze([automationTests.conceptKb, automationTests.context]);
 
 const automationTestSet = new Set(AUTOMATION_PROTOCOL_TESTS);
 const automationRules = [
+  [/^KB(?:\/|$)/, CONCEPT_KB_TESTS],
+  [/^scripts\/(?:build-concept-map|validate-concept-kb)\.mjs$/, CONCEPT_KB_TESTS],
+  [/^scripts\/(?:lib\/concept-kb\.mjs|fixtures\/concept-retrieval\.json|tests\/concept-kb\.test\.mjs)$/, CONCEPT_KB_TESTS],
   [/^scripts\/(?:context|benchmark-rag)\.mjs$/, [automationTests.context]],
   [/^scripts\/task-close\.mjs$/, [automationTests.taskClose]],
   [/^scripts\/git-sync-commit-push\.mjs$/, [automationTests.gitSync]],
@@ -120,6 +125,9 @@ export function selectQa(changedPaths) {
   let clientRuntime = false;
   const tooling = selectToolingQa(changed);
   const contracts = selectContractQa(changed);
+  const conceptKb = changed.some(path => /^KB(?:\/|$)/.test(path)
+    || /^scripts\/(?:context|benchmark-rag|build-concept-map|validate-concept-kb)\.mjs$/.test(path)
+    || /^scripts\/(?:lib\/(?:context-query|concept-kb)\.mjs|fixtures\/concept-retrieval\.json|tests\/concept-kb\.test\.mjs)$/.test(path));
 
   for (const path of changed) {
     if (path.startsWith(`${SERVER}/tests/`) && path.endsWith('.test.js')) {
@@ -148,8 +156,9 @@ export function selectQa(changedPaths) {
     full_client: fullClient,
     tooling_tests: tooling.tests,
     contract_tests: contracts.tests,
+    concept_kb: conceptKb,
     runtime_applies: runtimeApplies,
-    applies: runtimeApplies || tooling.applies || contracts.applies,
+    applies: runtimeApplies || tooling.applies || contracts.applies || conceptKb,
   };
 }
 
@@ -248,6 +257,11 @@ function main() {
   }
 
   const completed = [];
+  if (plan.concept_kb) {
+    completed.push(run('concept map check', process.execPath, ['scripts/build-concept-map.mjs', '--check', '--quiet'], ROOT, process.env, options));
+    completed.push(run('concept KB validation', process.execPath, ['scripts/validate-concept-kb.mjs', '--quiet'], ROOT, process.env, options));
+    completed.push(run('concept retrieval benchmark', process.execPath, ['scripts/benchmark-rag.mjs', '--concept-check'], ROOT, process.env, options));
+  }
   if (plan.contract_tests.length) {
     for (const contractTest of plan.contract_tests)
       run(`contract test ${contractTest}`, process.execPath, ['--test', contractTest], ROOT, process.env, options);

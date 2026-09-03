@@ -1,9 +1,13 @@
 #!/usr/bin/env node
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
+import { tmpdir } from 'node:os';
 import { AREA_ALIASES, routeSourcePath } from './lib/context-routing.mjs';
 import {
+  conceptBundle,
+  conceptRead,
+  conceptRoute,
   measuredText,
   routeContext,
   routeTextLines,
@@ -15,6 +19,122 @@ import {
 
 const ROOT = resolve(process.argv.find((argument, index) => index > 1 && !argument.startsWith('-')) || '.');
 const CHECK = process.argv.includes('--check');
+const CONCEPT_CHECK = process.argv.includes('--concept-check');
+
+function syntheticConceptRoot(setup) {
+  const root = mkdtempSync(join(tmpdir(), 'corp-concept-benchmark-'));
+  mkdirSync(join(root, 'KB/docs/context'), { recursive: true });
+  mkdirSync(join(root, 'src'), { recursive: true });
+  writeFileSync(join(root, 'src/example.mjs'), 'export function firstAnchor() {}\nexport function secondAnchor() {}\n');
+  writeFileSync(join(root, 'KB/docs/context/index.md'), '# Experimental\n\n<!-- BEGIN GENERATED CONCEPT ROUTER -->\n<!-- END GENERATED CONCEPT ROUTER -->\n');
+  let prose = '';
+  if (setup === 'ambiguous-alias') {
+    prose = `<!-- kb
+id: test.alias.first
+alias: shared alias
+source: src/example.mjs#firstAnchor
+-->
+## First
+
+First concept.
+
+<!-- kb
+id: test.alias.second
+alias: shared alias
+source: src/example.mjs#secondAnchor
+-->
+## Second
+
+Second concept.
+`;
+  } else if (setup === 'missing-anchor') {
+    prose = `<!-- kb
+id: test.failure.missing-anchor
+source: src/example.mjs#absentAnchor
+-->
+## Missing anchor
+
+The target anchor is deliberately absent.
+`;
+  } else if (setup === 'prohibited-source') {
+    mkdirSync(join(root, 'plan'), { recursive: true });
+    writeFileSync(join(root, 'plan/secret.md'), '## Secret\n');
+    prose = `<!-- kb
+id: test.failure.prohibited-source
+source: plan/secret.md#Secret
+-->
+## Prohibited source
+
+The source grant is deliberately prohibited.
+`;
+  }
+  writeFileSync(join(root, 'KB/docs/context/testing.md'), prose);
+  return root;
+}
+
+function runConceptBenchmark() {
+  const conceptFixtures = JSON.parse(readFileSync(join(ROOT, 'scripts/fixtures/concept-retrieval.json'), 'utf8'));
+  const routes = conceptFixtures.routes.map(fixture => {
+    const startedAt = performance.now();
+    const route = conceptRoute(ROOT, fixture.query);
+    const read = conceptRead(ROOT, fixture.query);
+    const bundle = conceptBundle(ROOT, fixture.query);
+    const source = route.sources?.find(item => item.path === fixture.source && item.anchor === fixture.anchor);
+    const adjacent = fixture.adjacent ? route.adjacent?.find(item => item.id === fixture.adjacent) : true;
+    const correct = route.status === 'matched'
+      && route.query.resolution === fixture.resolution
+      && route.concept.id === fixture.concept
+      && route.concept.owner.path === fixture.owner
+      && route.map.path.startsWith('KB/docs/context/map/concept/')
+      && route.map.text.startsWith(`## ${fixture.concept}\n`)
+      && Boolean(source)
+      && source.read.command.argv[0] === 'sed'
+      && source.read.lines[1] - source.read.lines[0] <= 32
+      && (!fixture.adjacent || adjacent?.loaded === false)
+      && read.status === 'matched'
+      && read.prose.path === fixture.owner
+      && read.prose.lines[0] === route.concept.owner.lines[0]
+      && read.prose.lines[1] === route.concept.owner.lines[1]
+      && read.prose.text.startsWith(`## ${route.concept.owner.heading}\n`)
+      && !read.prose.text.includes('<!-- kb')
+      && bundle.status === 'matched'
+      && bundle.limits.returned_bytes === Buffer.byteLength(bundle.bundle)
+      && bundle.limits.returned_bytes <= bundle.limits.max_bytes
+      && bundle.bundle.includes('## Provenance')
+      && (!fixture.bundle_excludes || !bundle.bundle.includes(fixture.bundle_excludes));
+    return {
+      id: fixture.id,
+      correct,
+      status: route.status,
+      concept: route.concept?.id || null,
+      bytes: bundle.limits.returned_bytes,
+      wall_time_ms: Number((performance.now() - startedAt).toFixed(3)),
+    };
+  });
+  const failures = conceptFixtures.failures.map(fixture => {
+    const root = fixture.setup === 'repository' ? ROOT : syntheticConceptRoot(fixture.setup);
+    try {
+      const result = conceptRoute(root, fixture.query);
+      return {
+        id: fixture.id,
+        correct: result.status === fixture.status && Boolean(result.reason) && result.fallback.allowed === false,
+        status: result.status,
+      };
+    } finally {
+      if (root !== ROOT) rmSync(root, { recursive: true, force: true });
+    }
+  });
+  const passedRoutes = routes.filter(result => result.correct).length;
+  const passedFailures = failures.filter(result => result.correct).length;
+  const passed = passedRoutes === routes.length && passedFailures === failures.length;
+  for (const result of [...routes, ...failures].filter(result => !result.correct))
+    console.error(`x ${result.id}: ${result.status}`);
+  console.log(`${passed ? 'PASS' : 'FAIL'} — concept retrieval ${passedRoutes}/${routes.length}, fail-closed ${passedFailures}/${failures.length}`);
+  process.exit(passed ? 0 : 1);
+}
+
+if (CONCEPT_CHECK) runConceptBenchmark();
+
 const fixtures = JSON.parse(readFileSync(join(ROOT, 'scripts/fixtures/context-retrieval.json'), 'utf8'));
 const started = new Date().toISOString();
 

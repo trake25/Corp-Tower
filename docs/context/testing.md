@@ -20,6 +20,12 @@ diagnostic while retaining the complete stream in a temporary log. Final
 `task-close` scope uses the same selector but schedules the complete automation
 protocol and retrieval benchmark.
 
+Experimental `KB/**` and concept-tool paths select the concept map check,
+dedicated validator, focused parser/retrieval tests, and
+`benchmark-rag.mjs --concept-check`. This opt-in group adds no server/client
+runtime suite and is not selected for an ordinary product task merely because
+the parallel KB exists.
+
 Server changes receive `node --check` plus mapped Node tests. Client changes use
 the repository-root host-matching Godot binary, smoke, and mapped GUT files.
 Infra, docs and site-only work runs no game suite unless it creates runtime risk.

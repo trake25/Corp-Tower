@@ -16,7 +16,7 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { MAP_AREAS as AREAS, firstPartyFiles, isExempt } from './lib/context-routing.mjs';
+import { MAP_AREAS as AREAS, firstPartyFiles, isExempt, isPrimaryValidationCorpusPath } from './lib/context-routing.mjs';
 import {
   DEFAULT_PROSE_BUDGET,
   PROSE_BUDGETS,
@@ -42,9 +42,14 @@ const errors = [];
 const maintenanceErrors = [];
 const warnings = [];
 const ISOLATED_DIRS = new Set(['repair', 'plan', 'task', 'reference']);
+const PRIMARY_CORPUS_EXCLUDED_DIRS = new Set([...ISOLATED_DIRS, 'KB']);
 const isIsolated = absolute => {
   const rel = absolute.slice(ROOT.length + 1).split(/[\\/]/);
   return rel.length > 1 && ISOLATED_DIRS.has(rel[0]);
+};
+const isExperimentalKb = absolute => {
+  const rel = absolute.slice(ROOT.length + 1).split(/[\\/]/);
+  return rel.length > 1 && rel[0] === 'KB';
 };
 
 const tok = s => Math.round(Buffer.byteLength(s, 'utf8') / 4);
@@ -121,6 +126,7 @@ for (const { f, dir, txt } of all) {
         tgt = key; referenced.add(key);
       } else {
         if (isIsolated(abs)) errors.push(`${f}: knowledge-base link targets isolated working material '${pathPart}'`);
+        else if (isExperimentalKb(abs)) errors.push(`${f}: primary knowledge-base link targets experimental KB material '${pathPart}'`);
         else if (!existsSync(abs)) errors.push(`${f}: link to missing file '${pathPart}'`);
         continue;
       }
@@ -193,7 +199,7 @@ const basenames = new Set();
   try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
   for (const e of entries) {
     if (e.isDirectory()) {
-      if (dir === ROOT && ISOLATED_DIRS.has(e.name)) continue;
+      if (dir === ROOT && (PRIMARY_CORPUS_EXCLUDED_DIRS.has(e.name) || !isPrimaryValidationCorpusPath(`${e.name}/`))) continue;
       if (/^(node_modules|\.git|\.godot|addons|\.terraform)$/.test(e.name)) continue;
       indexTree(join(dir, e.name));
     } else basenames.add(e.name);
@@ -248,7 +254,7 @@ const treeFiles = [];
   for (const e of entries) {
     const abs = join(dir, e.name);
     if (e.isDirectory()) {
-      if (dir === ROOT && ISOLATED_DIRS.has(e.name)) continue;
+      if (dir === ROOT && (PRIMARY_CORPUS_EXCLUDED_DIRS.has(e.name) || !isPrimaryValidationCorpusPath(`${e.name}/`))) continue;
       if (/^(node_modules|\.git|\.godot|addons|\.terraform|site|site-root)$/.test(e.name)) continue;
       collect(abs);
     } else if (/\.(js|mjs|gd|sh|yml|yaml|tf|json)$/.test(e.name) && statSync(abs).size < 400_000) {

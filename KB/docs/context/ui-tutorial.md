@@ -6,7 +6,7 @@ Scope: the client-side lesson/coach-mark layer and only the cross-domain contrac
 id: tutorial.architecture.layer
 alias: tutorial layer
 alias: coach marks
-source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialController.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialController.gd#start_lesson
 -->
 ## Tutorial architecture
 
@@ -16,7 +16,7 @@ The tutorial is a client-side lesson/coach-mark layer rendered over the real Gam
 id: tutorial.entry.flow
 alias: How to Play
 alias: start tutorial
-source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialController.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialController.gd#start_lesson
 adjacent: ui.navigation.server-routes
 -->
 ## Tutorial entry
@@ -27,8 +27,8 @@ Tutorial entry points funnel through Screen Manager. Entering from a live match 
 id: tutorial.defaults.parity
 alias: TutorialLessons.DEFAULTS
 alias: tutorial parity
-source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd#@file
-source: scripts/lib/tutorial-defaults-parity.mjs#@file
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd#DEFAULTS
+source: scripts/lib/tutorial-defaults-parity.mjs#tutorialDefaultsParity
 adjacent: testing.contract.tutorial-parity
 -->
 ## Level-1 defaults parity
@@ -39,7 +39,7 @@ Tutorial Level-1 authored defaults are canonical tutorial copy/state, while a na
 id: tutorial.scene.scripted
 alias: fake server tutorial
 alias: TutorialScene
-source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialScene.gd#apply_script
 adjacent: hud.controller.state-application
 -->
 ## Scripted authority boundary
@@ -49,7 +49,7 @@ Tutorial Scene expands authored lesson seed into the same rendering calls used b
 <!-- kb
 id: tutorial.lesson.placement
 alias: tutorial gap placement
-source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd#lesson_by_id
 adjacent: gameplay.tower.placement
 -->
 ## Placement lesson
@@ -59,8 +59,8 @@ The placement lesson teaches release-row behavior: a legal aimed row chooses whe
 <!-- kb
 id: tutorial.step.info
 alias: is_satisfied info
-source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialGates.gd#@file
-source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialController.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialGates.gd#is_satisfied
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialController.gd#advance
 -->
 ## Info-step dispatch
 
@@ -70,7 +70,7 @@ Info-step satisfaction is intentionally trivial; the controller must prevent inc
 id: tutorial.step.spotlight
 alias: tutorial spotlight
 alias: PlayField spotlight
-source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialController.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialController.gd#bind_nodes
 adjacent: hud.controller.parallel-placement
 -->
 ## Spotlight scope

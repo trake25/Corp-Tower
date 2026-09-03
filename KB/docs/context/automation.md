@@ -6,7 +6,7 @@ Scope: bounded repository retrieval, deterministic task close-out, documentation
 id: automation.retrieval.direct
 alias: agent retrieval
 alias: bounded context
-source: AGENTS.md#@file
+source: AGENTS.md#Retrieval
 adjacent: automation.retrieval.protocol
 -->
 ## Direct retrieval discipline
@@ -17,49 +17,53 @@ Normal agent retrieval starts from an explicit semantic route, reads bounded kno
 id: automation.retrieval.protocol
 alias: context.mjs
 alias: context query
-source: scripts/context.mjs#@file
-source: scripts/lib/context-query.mjs#@file
+source: scripts/context.mjs#main
+source: scripts/lib/context-query.mjs#searchContext
+source: scripts/lib/context-query.mjs#conceptRoute
+source: scripts/lib/context-query.mjs#conceptRead
+source: scripts/lib/context-query.mjs#conceptBundle
 adjacent: testing.automation.protocol
 -->
 ## Retained retrieval protocol
 
-`scripts/context.mjs` is a retained local-tool experiment and portable bundle producer. Its current bounded primitives include routing, exact Markdown section extraction, symbol/map lookup, byte budgets, provenance, and bounded source-read instructions. It is not the final semantic router.
+`scripts/context.mjs` retains the primary routing/search protocol and adds opt-in concept route, read, and bundle commands for this parallel KB. Concept resolution is exact-ID then exact normalized alias, returns bounded source instructions and explicit adjacency, and does not activate the future cloud model/task router.
 
 <!-- kb
 id: automation.retrieval.states
 alias: needs-anchor
 alias: needs-filter
 alias: retrieval-defect
-source: scripts/lib/context-query.mjs#@file
+source: scripts/lib/context-query.mjs#searchContext
 -->
 ## Retrieval result states
 
-The retained experiment distinguishes matched evidence from requests that need a better anchor/filter and from confirmed retrieval/tool defects. Ordinary ambiguity does not authorize source fallback. Future concept routing should preserve explicit failure reasons while replacing global narrative search with concept resolution.
+The retained experiment distinguishes matched evidence from requests that need a better anchor/filter and from confirmed retrieval/tool defects. Experimental concept routing adds closed, reason-bearing identity, section, source, map, budget, access, and tool failures without changing the primary result states.
 
 <!-- kb
 id: automation.retrieval.aliases
 alias: retrieval-aliases.json
-source: docs/context/retrieval-aliases.json#@file
+source: docs/context/retrieval-aliases.json#terms
 -->
 ## Retrieval aliases
 
-Vocabulary bridges exist only to resolve demonstrated naming mismatches. In the proposed KB architecture, aliases move to the one owning concept's metadata and any legacy alias JSON becomes generated compatibility output rather than a second authored authority.
+Vocabulary bridges exist only to resolve demonstrated naming mismatches. This parallel KB authors aliases beside their one owning concept. The legacy alias JSON remains an independent part of the unchanged primary retrieval system during the experiment.
 
 <!-- kb
 id: automation.retrieval.fallback
 alias: source fallback
 alias: broad fallback
-source: scripts/lib/context-query.mjs#@file
+source: scripts/lib/context-query.mjs#searchContext
 adjacent: automation.docs.retrieval-repair
 -->
 ## Retrieval fallback
 
-A confirmed retrieval defect is a tooling/KB failure, not permission for uncontrolled repository search. During migration the current system still has a bounded role-root fallback, but the target architecture fails closed with a reason and routes explicit repair separately.
+A confirmed retrieval defect is a tooling/KB failure, not permission for uncontrolled repository search. The current system retains its bounded role-root fallback contract. The parallel concept interface always fails closed with a reason and never authorizes repository-wide fallback.
 
 <!-- kb
 id: automation.retrieval.bundle
 alias: context bundle
-source: scripts/context.mjs#@file
+source: scripts/context.mjs#safeBundlePath
+source: scripts/lib/context-query.mjs#contextBundle
 -->
 ## Context bundles
 
@@ -69,7 +73,7 @@ A context bundle is a bounded handoff for environments without direct local-tool
 id: automation.task-close.lifecycle
 alias: task close
 alias: task-close
-source: scripts/task-close.mjs#@file
+source: scripts/task-close.mjs#main
 adjacent: automation.task-close.scope
 adjacent: automation.task-close.receipt
 -->
@@ -81,8 +85,8 @@ adjacent: automation.task-close.receipt
 id: automation.task-close.scope
 alias: task manifest
 alias: owned paths
-source: scripts/task-close.mjs#@file
-source: scripts/lib/context-query.mjs#@file
+source: scripts/task-close.mjs#createManifest
+source: scripts/lib/context-query.mjs#scopeContext
 -->
 ## Task-close scope
 
@@ -92,7 +96,7 @@ Prepare owns explicit paths, planned QA tooling, and optional active plan before
 id: automation.task-close.verification
 alias: task close QA
 alias: maintenance-blocked
-source: scripts/task-close.mjs#@file
+source: scripts/task-close.mjs#verifyV2
 adjacent: testing.selection.local
 -->
 ## Task-close verification
@@ -103,7 +107,7 @@ Close-out runs selected protocol/QA checks, regenerates affected maps, validates
 id: automation.task-close.receipt
 alias: qa receipt
 alias: public receipt
-source: scripts/task-close.mjs#@file
+source: scripts/task-close.mjs#finishVerification
 -->
 ## Public receipt
 
@@ -113,7 +117,7 @@ Public QA receipts expose sanitized task identity, owned scope, compact verifica
 id: automation.task-close.plan-archive
 alias: plan done
 alias: archive plan
-source: scripts/task-close.mjs#@file
+source: scripts/task-close.mjs#archivePlan
 -->
 ## Plan archival
 
@@ -123,37 +127,39 @@ A bound active plan moves to completed history only after successful lifecycle c
 id: automation.docs.maps
 alias: build file map
 alias: generated maps
-source: scripts/build-file-map.mjs#@file
+source: scripts/build-file-map.mjs#build
+source: scripts/build-concept-map.mjs#buildConceptMaps
 adjacent: automation.docs.validation
 -->
 ## Map regeneration
 
-Generated source locator maps preserve one authored file purpose and stable navigation anchors while regenerating line numbers from source. The KB overhaul adds concept maps derived from concept metadata without replacing locator-map coverage during migration.
+Primary source locator maps preserve authored file purpose and navigation anchors. The separate concept generator derives experimental domain maps and the marked concept router from prose metadata, without replacing primary locator-map coverage.
 
 <!-- kb
 id: automation.docs.validation
 alias: validate docs
 alias: KB validator
-source: scripts/validate-docs.mjs#@file
+source: scripts/validate-docs.mjs#classification
+source: scripts/validate-concept-kb.mjs#validateConceptKb
 -->
 ## KB validation
 
-The game-KB validator protects links/anchors, isolated-material boundaries, source-map coverage, source citations, prose constraints, and capacity. The concept overhaul must extend it with concept identity, alias, adjacency, source-anchor, generated-router, and concept-map integrity.
+The primary game-KB validator protects the authoritative corpus and excludes this tree. The separate experimental validator protects concept identity, aliases, leaf ownership, adjacency, exact source anchors, isolation, budgets, generated-router equality, and concept-map equality.
 
 <!-- kb
 id: automation.docs.scope
 alias: docs-scope
 alias: documentation scope
-source: scripts/docs-scope.mjs#@file
+source: scripts/docs-scope.mjs#targets
 -->
 ## Docs scoping
 
-Docs updates are scoped from explicit changed paths. The current implementation finds candidate docs then searches for source names in prose; the concept architecture should replace this with a generated reverse source→concept index so only concept sections that can actually be falsified are opened.
+Primary docs updates remain scoped from explicit changed paths and routed source names. The concept registry now derives a reverse source-to-concept index for later router integration; it does not change ordinary product documentation scope in this experiment.
 
 <!-- kb
 id: automation.docs.retrieval-repair
 alias: retrieval maintenance
-source: scripts/lib/context-query.mjs#@file
+source: scripts/lib/context-query.mjs#searchContext
 adjacent: automation.retrieval.fallback
 -->
 ## Retrieval repair
@@ -163,7 +169,7 @@ Retrieval/map defects discovered during unrelated product work are maintenance f
 <!-- kb
 id: automation.docs.skill-mirror
 alias: sync agent skills
-source: scripts/sync-agent-skills.mjs#@file
+source: scripts/sync-agent-skills.mjs#skillMirrorDrift
 -->
 ## Skill mirroring
 
@@ -173,7 +179,7 @@ source: scripts/sync-agent-skills.mjs#@file
 id: automation.observability.binding
 alias: agent observability
 alias: task binding
-source: scripts/agent-observability.mjs#@file
+source: scripts/lib/agent-observability/state.mjs#bindActiveTask
 -->
 ## Observability binding
 
@@ -183,7 +189,7 @@ Agent observability binds task/session identity and records bounded structured o
 id: automation.observability.usage
 alias: provider tokens
 alias: rollout usage
-source: scripts/lib/agent-observability/usage.mjs#@file
+source: scripts/lib/agent-observability/usage.mjs#aggregateUsage
 -->
 ## Observability usage
 
@@ -193,7 +199,7 @@ Usage accounting relies on stable disjoint identifiers and terminal host evidenc
 id: automation.observability.flags
 alias: workflow candidate
 alias: inefficiency flag
-source: scripts/lib/agent-observability/flagging.mjs#@file
+source: scripts/lib/agent-observability/flagging.mjs#flagEligibility
 -->
 ## Workflow inefficiency flags
 
@@ -203,7 +209,7 @@ Workflow inefficiency requires evidence of retries, repeated verification/recove
 id: automation.git.publish
 alias: targeted push
 alias: git sync commit push
-source: scripts/git-sync-commit-push.mjs#@file
+source: scripts/git-sync-commit-push.mjs#requireManifest
 -->
 ## Authorized Git publication
 

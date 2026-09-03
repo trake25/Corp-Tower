@@ -7,6 +7,7 @@ id: deploy.backup.topology
 alias: backup server
 alias: physical machine
 alias: demo host
+source: scripts/backup/backup-common.sh#stop_cloudflared_if_idle
 -->
 ## Host topology
 
@@ -16,7 +17,7 @@ One Linux host runs two development game/web pairs plus an always-on public demo
 id: deploy.backup.demo-redis
 alias: backup redis
 alias: demo counters
-source: scripts/backup/backup-redis-up.sh#@file
+source: scripts/backup/backup-redis-up.sh#VOLUME_NAME
 -->
 ## Demo Redis
 
@@ -26,6 +27,7 @@ The demo's persistent Redis stores both live room/session state and demo counter
 id: deploy.backup.cloudflare-tls
 alias: Universal SSL
 alias: tunnel TLS
+source: scripts/backup/backup-common.sh#upsert_cloudflare_cname
 -->
 ## Cloudflare TLS
 
@@ -34,6 +36,7 @@ Cloudflare proxied tunnel hostnames are constrained by Universal SSL hostname de
 <!-- kb
 id: deploy.backup.cloudflared-service
 alias: cloudflared systemd
+source: scripts/backup/backup-common.sh#start_cloudflared_if_needed
 -->
 ## Tunnel service ownership
 
@@ -42,6 +45,7 @@ The real tunnel runs as the user-level `cloudflared` service. The system-level u
 <!-- kb
 id: deploy.backup.connector-uniqueness
 alias: stale tunnel connector
+source: scripts/backup/backup-common.sh#start_cloudflared_if_needed
 -->
 ## Connector uniqueness
 
@@ -51,6 +55,7 @@ Multiple live connectors for one tunnel id do not necessarily error. A stale con
 id: deploy.backup.machine-state
 alias: backup state dir
 alias: checkout clean
+source: scripts/backup/backup-common.sh#load_env
 -->
 ## Machine-local state
 
@@ -60,6 +65,7 @@ alias: checkout clean
 id: deploy.backup.demo-mode
 alias: demo instance
 alias: instance 3
+source: scripts/backup/backup-server-up.sh#CORP_TOWER_BOTS_ENABLED
 -->
 ## Demo differences
 
@@ -69,7 +75,7 @@ The public demo is selected by instance identity and differs from development th
 id: deploy.backup.auto-deploy
 alias: Backup Deploy All
 alias: live status guard
-source: .github/workflows/Backup-Deploy-All.yml#@file
+source: .github/workflows/Backup-Deploy-All.yml#resolve
 -->
 ## Auto-deploy guard
 
@@ -78,7 +84,7 @@ Push-triggered backup deployment scopes changed services and checks the target's
 <!-- kb
 id: deploy.backup.offline-runner
 alias: self hosted runner offline
-source: .github/workflows/Backup-Deploy-All.yml#@file
+source: .github/workflows/Backup-Deploy-All.yml#check-devwstod1-status
 -->
 ## Offline runner behavior
 
@@ -87,7 +93,7 @@ Self-hosted backup jobs queue while the machine runner is offline rather than fa
 <!-- kb
 id: deploy.backup.workflow-skips
 alias: skipped job cascade
-source: .github/workflows/Backup-Deploy-All.yml#@file
+source: .github/workflows/Backup-Deploy-All.yml#deploy-devwstod1
 -->
 ## Skipped-job dependency
 
@@ -96,6 +102,7 @@ A conditionally skipped upstream GitHub Actions job affects downstream default `
 <!-- kb
 id: deploy.backup.workflow-context
 alias: workflow_call event name
+source: .github/workflows/Backup-Deploy-Game-Server.yml#workflow_call
 -->
 ## Reusable workflow trigger context
 
@@ -105,6 +112,7 @@ alias: workflow_call event name
 id: deploy.backup.cloudflare-record
 alias: proxied CNAME
 alias: wait_for_cname
+source: scripts/backup/backup-common.sh#wait_for_cname
 -->
 ## Cloudflare record verification
 
@@ -114,6 +122,7 @@ For proxied Cloudflare records, DNS lookup does not expose the configured CNAME 
 id: deploy.backup.runbook
 alias: backup runbook
 alias: demo cleanup
+source: .github/workflows/Backup-Diagnose.yml#diagnose
 -->
 ## Operator runbook
 

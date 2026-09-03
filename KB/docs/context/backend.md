@@ -5,7 +5,7 @@ Scope: authoritative server architecture, room lifecycle, rule ownership, persis
 <!-- kb
 id: backend.authority.server
 alias: server authoritative
-source: src/Server/app/Game_Engine.js#@file
+source: src/Server/app/Game_Engine.js#buildGameState
 adjacent: network.adapters.boundaries
 -->
 ## Server authority
@@ -15,7 +15,7 @@ The server decides scoring, legality, stability, failure, progression, and room 
 <!-- kb
 id: backend.authority.engine
 alias: Game Engine ownership
-source: src/Server/app/Game_Engine.js#@file
+source: src/Server/app/Game_Engine.js#GameEngine
 -->
 ## Game Engine boundary
 
@@ -25,8 +25,8 @@ source: src/Server/app/Game_Engine.js#@file
 id: backend.authority.persistence
 alias: Redis ownership
 alias: room persistence authority
-source: src/Server/app/Lobby_Manager.js#@file
-source: src/Server/app/Redis_State.js#@file
+source: src/Server/app/Lobby_Manager.js#hydrateRoom
+source: src/Server/app/Redis_State.js#saveRoom
 adjacent: backend.redis.leases
 -->
 ## Persistence ownership
@@ -37,8 +37,8 @@ Lobby Manager is the server layer allowed to persist and restore room state. Red
 id: backend.lobby.connection
 alias: connection id ownership
 alias: superseded socket
-source: src/Server/app/Lobby_Manager.js#@file
-source: src/Server/app/Redis_State.js#@file
+source: src/Server/app/Lobby_Manager.js#isCurrentPlayerConnection
+source: src/Server/app/Redis_State.js#isCurrentSessionConnection
 adjacent: network.session.supersession
 -->
 ## Session connection ownership
@@ -47,10 +47,10 @@ Actions and disconnect cleanup are accepted only from the session's current opaq
 
 <!-- kb
 id: backend.lobby.public
-alias: public lobby
+alias: public matchmaking room
 alias: matchmaking
-source: src/Server/app/Lobby_Manager.js#@file
-source: src/Server/app/Redis_State.js#@file
+source: src/Server/app/Lobby_Manager.js#joinOrCreateRoom
+source: src/Server/app/Redis_State.js#withMatchmakingLock
 adjacent: network.room.public
 -->
 ## Public matchmaking
@@ -61,7 +61,7 @@ Public rooms have three seats and may include debug bots. They start only when f
 id: backend.lobby.private
 alias: private lobby
 alias: private server room
-source: src/Server/app/Lobby_Manager.js#@file
+source: src/Server/app/Lobby_Manager.js#createPrivateRoom
 adjacent: network.room.private
 -->
 ## Private rooms
@@ -72,8 +72,8 @@ Private rooms reserve three human seats and never enter public matchmaking or bo
 id: backend.lobby.cross-pod
 alias: multi pod room
 alias: lease owner
-source: src/Server/app/Lobby_Manager.js#@file
-source: src/Server/app/Redis_State.js#@file
+source: src/Server/app/Lobby_Manager.js#dispatchRoomAction
+source: src/Server/app/Redis_State.js#claimRoomLease
 adjacent: backend.redis.leases
 adjacent: network.room.cross-pod
 -->
@@ -85,7 +85,7 @@ Only the Redis lease owner mutates a room, recomputes authoritative state, runs 
 id: backend.lobby.close
 alias: room closed
 alias: room teardown
-source: src/Server/app/Lobby_Manager.js#@file
+source: src/Server/app/Lobby_Manager.js#closeRoom
 adjacent: network.room.close
 -->
 ## Terminal room close
@@ -96,7 +96,7 @@ Terminal close is published by the owner before deletion. Remote replicas forwar
 id: backend.lobby.active-leave
 alias: leave game
 alias: active leave
-source: src/Server/app/Lobby_Manager.js#@file
+source: src/Server/app/Lobby_Manager.js#leaveGameForRoom
 adjacent: network.room.active-leave
 -->
 ## Intentional active leave
@@ -108,7 +108,7 @@ id: backend.identity.auth
 alias: authentication
 alias: Supabase auth
 alias: Facebook auth
-source: src/Server/app/Auth_Verifier.js#@file
+source: src/Server/app/Auth_Verifier.js#verifyAccessToken
 adjacent: network.session.identity
 -->
 ## Identity verification
@@ -119,8 +119,8 @@ Auth Verifier validates configured Supabase JWTs and native Facebook access toke
 id: backend.identity.profile
 alias: profile store
 alias: account store
-source: src/Server/app/Account_Store.js#@file
-source: src/Server/app/Profile_Store.js#@file
+source: src/Server/app/Account_Store.js#resolve
+source: src/Server/app/Profile_Store.js#getProfile
 -->
 ## Durable profiles
 
@@ -128,10 +128,10 @@ Account Store converts verified provider identity into durable account identity 
 
 <!-- kb
 id: backend.lobby.debug-config
-alias: debug config
+alias: runtime debug config
 alias: runtime tuning
-source: src/Server/app/Debug_Config.js#@file
-source: src/Server/app/Lobby_Manager.js#@file
+source: src/Server/app/Debug_Config.js#applyValue
+source: src/Server/app/Lobby_Manager.js#updateDebugConfig
 adjacent: gameplay.debug.tuning
 -->
 ## Debug configuration
@@ -143,7 +143,7 @@ Live-writable tuning, designer-authored calibration, and true contracts are diff
 <!-- kb
 id: backend.engine.lifecycle
 alias: game state lifecycle
-source: src/Server/app/Game_Engine.js#@file
+source: src/Server/app/Game_Engine.js#startLevel
 adjacent: network.state.snapshot
 -->
 ## Engine lifecycle
@@ -154,7 +154,7 @@ Game Engine owns waiting, starting, playing, finished, failed, game-over, comple
 id: backend.engine.timers
 alias: server timers
 alias: room deadlines
-source: src/Server/app/Game_Engine.js#@file
+source: src/Server/app/Game_Engine.js#restoreTimersFromState
 adjacent: gameplay.progression.timing
 -->
 ## Engine timers
@@ -165,7 +165,7 @@ The active deadline is stored with room state so presentation time and failure t
 id: backend.engine.placement
 alias: placement validation
 alias: release row server
-source: src/Server/app/engine/Placement.js#@file
+source: src/Server/app/engine/Placement.js#placeBlock
 adjacent: gameplay.tower.placement
 adjacent: network.placement.contract
 -->
@@ -178,7 +178,7 @@ Production evaluators must receive the resolved stability configuration for the 
 <!-- kb
 id: backend.engine.last-chance
 alias: last chance
-source: src/Server/app/engine/Last_Chance.js#@file
+source: src/Server/app/engine/Last_Chance.js#resolve
 adjacent: gameplay.debug.last-chance
 -->
 ## Last Chance authority
@@ -189,7 +189,7 @@ Last Chance is a one-placement debug rescue. Spending it is an explicit placemen
 id: backend.engine.power-events
 alias: Power events
 alias: transient events
-source: src/Server/app/Game_Engine.js#@file
+source: src/Server/app/Game_Engine.js#activatePower
 adjacent: network.state.transient-events
 -->
 ## Power events
@@ -199,7 +199,7 @@ Power activation is room-wide and targetless. Replenish changes shared supply. P
 <!-- kb
 id: backend.supply.authority
 alias: Block Supply
-source: src/Server/app/engine/Block_Supply.js#@file
+source: src/Server/app/engine/Block_Supply.js#buildDrawPile
 adjacent: gameplay.supply.reserve
 -->
 ## Supply authority
@@ -210,7 +210,7 @@ Block Supply owns the available shapes, random dealt orientation, opening hands,
 id: backend.scoring.transaction
 alias: Scoring.js
 alias: placement scoring
-source: src/Server/app/engine/Scoring.js#@file
+source: src/Server/app/engine/Scoring.js#addPlacementScore
 adjacent: gameplay.scoring.transaction
 -->
 ## Scoring transaction
@@ -221,7 +221,7 @@ Scoring owns authoritative placement preview and award. Useful height, rebuild r
 id: backend.impacts.requirement
 alias: Impacts.js
 alias: Impact status
-source: src/Server/app/engine/Impacts.js#@file
+source: src/Server/app/engine/Impacts.js#getImpactScoreStatus
 adjacent: gameplay.impact.requirement
 adjacent: network.state.impact-status
 -->
@@ -232,7 +232,7 @@ Impacts owns checkpoint snapshots, personal contribution requirements, retry acc
 <!-- kb
 id: backend.impacts.rollback
 alias: Impact rollback
-source: src/Server/app/engine/Impacts.js#@file
+source: src/Server/app/engine/Impacts.js#rollbackToImpact
 adjacent: gameplay.progression.rollback
 -->
 ## Impact rollback
@@ -241,9 +241,9 @@ Recoverable failure restores checkpoint score, eligible contribution, and Power 
 
 <!-- kb
 id: backend.stability.analysis
-alias: Tower Stability
+alias: stability analyzer
 alias: support graph
-source: src/Server/app/Tower_Stability.js#@file
+source: src/Server/app/Tower_Stability.js#evaluate
 adjacent: gameplay.tower.stability
 -->
 ## Support graph
@@ -254,8 +254,8 @@ Tower Stability is deterministic support-graph analysis. Carried mass and moment
 id: backend.stability.collapse
 alias: tower collapse
 alias: collapse components
-source: src/Server/app/Tower_Stability.js#@file
-source: src/Server/app/engine/Placement.js#@file
+source: src/Server/app/Tower_Stability.js#collapseSlice
+source: src/Server/app/engine/Placement.js#collapseComponents
 adjacent: hud.tower.collapse.presentation
 adjacent: gameplay.progression.failure
 -->
@@ -265,8 +265,8 @@ Overloaded support removal and ground-path loss determine fallen groups authorit
 
 <!-- kb
 id: backend.stability.pose
-alias: structural pose
-source: src/Server/app/Tower_Stability.js#@file
+alias: server structural pose
+source: src/Server/app/Tower_Stability.js#buildStructuralPose
 adjacent: hud.tower.pose
 -->
 ## Structural pose
@@ -277,7 +277,7 @@ Pose pivots dependent presentation sections at stressed interfaces while leaving
 id: backend.bots.preview
 alias: Bot Manager
 alias: bot candidate preview
-source: src/Server/app/Bot_Manager.js#@file
+source: src/Server/app/Bot_Manager.js#chooseBotAction
 adjacent: gameplay.bots.scoring
 -->
 ## Bot preview
@@ -288,7 +288,7 @@ Bots enumerate legal brick, column, and release-row combinations, preview throug
 id: backend.config.values
 alias: Game Config
 alias: tuning values
-source: src/Server/app/Game_Config.js#@file
+source: src/Server/app/Game_Config.js#GameConfig
 -->
 ## Configuration ownership
 
@@ -298,7 +298,7 @@ source: src/Server/app/Game_Config.js#@file
 id: backend.redis.leases
 alias: Redis State
 alias: room lease
-source: src/Server/app/Redis_State.js#@file
+source: src/Server/app/Redis_State.js#claimRoomLease
 adjacent: backend.lobby.cross-pod
 -->
 ## Redis leases
@@ -309,8 +309,8 @@ Redis State owns open-room claims, matchmaking locking, room leases, snapshots, 
 id: backend.redis.hydration
 alias: room hydration
 alias: persisted room
-source: src/Server/app/Redis_State.js#@file
-source: src/Server/app/Lobby_Manager.js#@file
+source: src/Server/app/Redis_State.js#saveRoom
+source: src/Server/app/Lobby_Manager.js#hydrateRoom
 adjacent: network.state.snapshot
 -->
 ## Hydration continuity

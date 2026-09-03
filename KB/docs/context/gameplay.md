@@ -6,7 +6,7 @@ Scope: player-facing game rules, design meaning, progression, scoring semantics,
 id: gameplay.core.loop
 alias: selfish cooperation
 alias: core gameplay loop
-source: src/Server/app/Game_Engine.js#@file
+source: src/Server/app/Game_Engine.js#startLevel
 adjacent: gameplay.impact.requirement
 adjacent: gameplay.progression.failure
 -->
@@ -20,7 +20,7 @@ A level ends when the target is reached or a failure rule fires. Useful height i
 id: gameplay.session.reconnect
 alias: resume gameplay
 alias: reconnect seat
-source: src/Server/app/Lobby_Manager.js#@file
+source: src/Server/app/Lobby_Manager.js#resumePlayer
 adjacent: network.session.recovery
 -->
 ## Reconnect meaning
@@ -31,7 +31,7 @@ Reconnect preserves the same player seat and authoritative room while server rec
 id: gameplay.supply.bricks
 alias: tetromino supply
 alias: brick shapes
-source: src/Server/app/engine/Block_Supply.js#@file
+source: src/Server/app/engine/Block_Supply.js#createBlock
 -->
 ## Brick dealing
 
@@ -42,8 +42,8 @@ id: gameplay.supply.reserve
 alias: draw pile
 alias: reserve sizing
 alias: not enough height
-source: src/Server/app/engine/Block_Supply.js#@file
-source: src/Server/app/engine/Placement.js#@file
+source: src/Server/app/engine/Block_Supply.js#generateDrawPileBlocks
+source: src/Server/app/engine/Placement.js#anyPlayerCanRescueSupply
 adjacent: gameplay.power.replenish
 adjacent: gameplay.progression.failure
 -->
@@ -56,7 +56,7 @@ Opening hands obey solvability constraints. Failure from insufficient remaining 
 <!-- kb
 id: gameplay.supply.carry-over
 alias: carry over bricks
-source: src/Server/app/engine/Block_Supply.js#@file
+source: src/Server/app/engine/Block_Supply.js#prepareTeamCarryOverBlocks
 -->
 ## Carry-over
 
@@ -66,8 +66,8 @@ Successful levels carry unused bricks forward with precision priority. Failed le
 id: gameplay.power.inventory
 alias: Power items
 alias: power inventory
-source: src/Server/app/Game_Engine.js#@file
-source: src/Server/app/engine/Impacts.js#@file
+source: src/Server/app/Game_Engine.js#clonePowerInventory
+source: src/Server/app/engine/Impacts.js#saveImpactPowers
 adjacent: gameplay.progression.rollback
 -->
 ## Power inventory
@@ -78,8 +78,8 @@ Power and the shared side quest unlock through normal play. Earned inventory per
 id: gameplay.power.replenish
 alias: refresh
 alias: free_refresh
-source: src/Server/app/Game_Engine.js#@file
-source: src/Server/app/engine/Block_Supply.js#@file
+source: src/Server/app/Game_Engine.js#activatePower
+source: src/Server/app/engine/Block_Supply.js#generateReplenishBlocks
 adjacent: gameplay.supply.reserve
 -->
 ## Replenish
@@ -91,8 +91,8 @@ id: gameplay.tower.site
 alias: tower site
 alias: placeable range
 alias: grid width
-source: src/Server/app/Game_Config.js#@file
-source: src/Server/app/engine/Placement.js#@file
+source: src/Server/app/Game_Config.js#GameConfig
+source: src/Server/app/engine/Placement.js#getPlaceableColumnRange
 adjacent: network.state.grid-site
 -->
 ## Placeable site
@@ -104,7 +104,7 @@ id: gameplay.tower.placement
 alias: release row
 alias: gap placement
 alias: overhang
-source: src/Server/app/engine/Placement.js#@file
+source: src/Server/app/engine/Placement.js#resolvePlacementOrigin
 adjacent: network.placement.contract
 adjacent: hud.placement.snapping
 -->
@@ -116,8 +116,8 @@ A snapped row is the release row, not necessarily the brick's resting row. Gravi
 id: gameplay.tower.stability
 alias: tower stability
 alias: Balance and Integrity
-alias: weak support
-source: src/Server/app/Tower_Stability.js#@file
+alias: weak support rules
+source: src/Server/app/Tower_Stability.js#evaluate
 adjacent: backend.stability.analysis
 adjacent: gameplay.scoring.reinforcement
 adjacent: gameplay.scoring.critical-save
@@ -130,9 +130,9 @@ The support graph produces Balance and Integrity; overall tower stability is the
 
 <!-- kb
 id: gameplay.tower.pose
-alias: tower pose
+alias: tower pose rules
 alias: structural pose
-source: src/Server/app/Tower_Stability.js#@file
+source: src/Server/app/Tower_Stability.js#buildStructuralPose
 adjacent: hud.tower.pose
 -->
 ## Structural pose meaning
@@ -143,8 +143,8 @@ The client may render an authoritative presentation-only structural pose, but po
 id: gameplay.progression.timing
 alias: round timer
 alias: level clock
-source: src/Server/app/Game_Config.js#@file
-source: src/Server/app/Game_Engine.js#@file
+source: src/Server/app/Game_Config.js#GameConfig
+source: src/Server/app/Game_Engine.js#getLevelTimeLimitMs
 adjacent: backend.engine.timers
 adjacent: network.session.recovery
 -->
@@ -157,9 +157,9 @@ id: gameplay.progression.failure
 alias: level failure
 alias: timer failure
 alias: supply failure
-source: src/Server/app/Game_Engine.js#@file
-source: src/Server/app/engine/Placement.js#@file
-source: src/Server/app/engine/Impacts.js#@file
+source: src/Server/app/Game_Engine.js#failLevel
+source: src/Server/app/engine/Placement.js#checkFailCondition
+source: src/Server/app/engine/Impacts.js#resolveCheckpointFailure
 adjacent: gameplay.supply.reserve
 adjacent: gameplay.impact.requirement
 -->
@@ -171,7 +171,7 @@ A level fails when the timer expires, a personal Impact contribution checkpoint 
 id: gameplay.progression.rollback
 alias: checkpoint rollback
 alias: retry band
-source: src/Server/app/engine/Impacts.js#@file
+source: src/Server/app/engine/Impacts.js#rollbackToImpact
 adjacent: gameplay.impact.requirement
 adjacent: backend.impacts.rollback
 -->
@@ -183,7 +183,7 @@ Each Impact band begins at a secured checkpoint. Recoverable failure restores ch
 id: gameplay.scoring.transaction
 alias: placement score
 alias: score transaction
-source: src/Server/app/engine/Scoring.js#@file
+source: src/Server/app/engine/Scoring.js#addPlacementScore
 adjacent: backend.scoring.transaction
 -->
 ## Placement transaction
@@ -194,7 +194,7 @@ Every settled brick produces one authoritative placement transaction. Useful sco
 id: gameplay.scoring.height
 alias: height score
 alias: new height
-source: src/Server/app/engine/Scoring.js#@file
+source: src/Server/app/engine/Scoring.js#classifyHeightRows
 -->
 ## Height
 
@@ -204,7 +204,7 @@ Rows above the level's historical maximum earn Height once, but only through the
 id: gameplay.scoring.recovery
 alias: recovery score
 alias: rebuild score
-source: src/Server/app/engine/Scoring.js#@file
+source: src/Server/app/engine/Scoring.js#getRebuildScoreMultipliers
 -->
 ## Recovery
 
@@ -215,7 +215,7 @@ id: gameplay.scoring.reinforcement
 alias: reinforcement scoring
 alias: reinforce
 alias: structural repair score
-source: src/Server/app/engine/Scoring.js#@file
+source: src/Server/app/engine/Scoring.js#getStructuralAssessment
 adjacent: gameplay.tower.stability
 adjacent: gameplay.scoring.critical-save
 -->
@@ -228,7 +228,7 @@ id: gameplay.scoring.critical-save
 alias: critical save
 alias: save scoring
 alias: worried support rescue
-source: src/Server/app/engine/Scoring.js#@file
+source: src/Server/app/engine/Scoring.js#getCriticalSavePreview
 adjacent: gameplay.tower.stability
 adjacent: hud.tower.weak-support
 -->
@@ -242,8 +242,8 @@ The configured Critical Save payout replaces ordinary Reinforce for that rescue 
 id: gameplay.scoring.exact-finish
 alias: exact finish
 alias: exact height reward
-source: src/Server/app/engine/Scoring.js#@file
-source: src/Server/app/engine/Impacts.js#@file
+source: src/Server/app/engine/Scoring.js#getPerfectBuildFinisherPoints
+source: src/Server/app/engine/Impacts.js#awardPerfectBuildImpact
 adjacent: gameplay.impact.checkpoint-credit
 -->
 ## Exact finish
@@ -254,8 +254,8 @@ An exact finish separately rewards only the finisher and grants every player a c
 id: gameplay.impact.eligible
 alias: Impact contribution
 alias: eligible score
-source: src/Server/app/engine/Impacts.js#@file
-source: src/Server/app/engine/Scoring.js#@file
+source: src/Server/app/engine/Impacts.js#getImpactScoreStatus
+source: src/Server/app/engine/Scoring.js#addPlacementScore
 adjacent: network.state.impact-status
 -->
 ## Eligible contribution
@@ -266,8 +266,8 @@ Every awarded placement component contributes to Impact at its awarded value. Co
 id: gameplay.impact.requirement
 alias: Impact requirement
 alias: personal contribution requirement
-source: src/Server/app/engine/Impacts.js#@file
-source: src/Server/app/engine/Scoring.js#@file
+source: src/Server/app/engine/Impacts.js#getImpactScoreRequirement
+source: src/Server/app/engine/Scoring.js#getExpectedNormalUsefulScoreForLevel
 -->
 ## Personal requirement
 
@@ -276,7 +276,7 @@ The checkpoint requirement is personal, never a team total. It is the greater of
 <!-- kb
 id: gameplay.impact.checkpoint-credit
 alias: Impact checkpoint credit
-source: src/Server/app/engine/Impacts.js#@file
+source: src/Server/app/engine/Impacts.js#secureImpactCheckpoint
 adjacent: gameplay.scoring.exact-finish
 -->
 ## Checkpoint credit
@@ -287,8 +287,8 @@ Exact-finish credit can reduce each player's remaining requirement only within t
 id: gameplay.debug.tuning
 alias: debug config
 alias: live tuning
-source: src/Server/app/Debug_Config.js#@file
-source: src/Server/app/Game_Config.js#@file
+source: src/Server/app/Debug_Config.js#applyValue
+source: src/Server/app/Game_Config.js#GameConfig
 adjacent: backend.lobby.debug-config
 -->
 ## Debug tuning
@@ -300,7 +300,7 @@ The most coupled design surfaces are stability difficulty, personal Impact share
 <!-- kb
 id: gameplay.debug.last-chance
 alias: last chance power
-source: src/Server/app/engine/Last_Chance.js#@file
+source: src/Server/app/engine/Last_Chance.js#resolve
 adjacent: backend.engine.last-chance
 -->
 ## Last Chance
@@ -311,7 +311,7 @@ Last Chance is debug-only. It rescues one otherwise collapsing placement into a 
 id: gameplay.bots.scoring
 alias: bot scoring
 alias: bot placement policy
-source: src/Server/app/Bot_Manager.js#@file
+source: src/Server/app/Bot_Manager.js#chooseBotAction
 adjacent: backend.bots.preview
 -->
 ## Bot scoring policy
@@ -322,7 +322,7 @@ Bots are QA/demo actors, not production authority. They evaluate brick and place
 id: gameplay.bots.cooperative
 alias: cooperative bots
 alias: MVP greedy
-source: src/Server/app/Bot_Manager.js#@file
+source: src/Server/app/Bot_Manager.js#startBots
 -->
 ## Cooperative bot behavior
 
@@ -332,7 +332,8 @@ MVP-greedy behavior takes the best non-collapsing personal transaction. Cooperat
 id: gameplay.bots.calibration
 alias: bot collapse rate
 alias: balance calibration
-source: src/Server/app/Bot_Manager.js#@file
+source: src/Server/app/Bot_Manager.js#chooseBotAction
+source: src/Server/tools/Balance_Simulator.js#simulateSmartPlay
 adjacent: testing.balance.tools
 -->
 ## Bot calibration limit

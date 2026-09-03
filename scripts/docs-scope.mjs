@@ -34,7 +34,7 @@ const IGNORE = [
   /\.(uid|import|tres|ttf|fnt|png|svg|jpg|jpeg|ico|otf|wav|ogg|mp3)$/i,
   /(^|\/)\.godot\//, /(^|\/)addons\//, /(^|\/)node_modules\//,
   /(^|\/)package-lock\.json$/, /(^|\/)\.terraform\//, /\.tfstate/, /\.terraform\.lock\.hcl$/,
-  /^plan\//, /^task\//, /^reference\//, /^docs\/context\//,
+  /^plan\//, /^task\//, /^reference\//, /^KB\//, /^docs\/context\//,
   /^src\/Client\/App\/corp-tower\/Cor\/Art\//,
   /^site\//, /^site-root\//, /^TOD/,
 ];

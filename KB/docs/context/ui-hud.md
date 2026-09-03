@@ -6,7 +6,7 @@ Scope: client rendering, gameplay input, HUD state, overlays, Tower Stack presen
 id: hud.controller.state-application
 alias: Game UI controller
 alias: Main.gd
-source: src/Client/App/corp-tower/Cor/Scripts/Main.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/Main.gd#update_game_state
 adjacent: network.state.snapshot
 -->
 ## State application
@@ -17,7 +17,7 @@ The Game UI controller family stores the latest authoritative state and delegate
 id: hud.controller.parallel-placement
 alias: tap placement
 alias: armed placement
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd#_aim_or_place
 adjacent: hud.placement.armed
 -->
 ## Parallel placement
@@ -28,7 +28,7 @@ Parallel placement is an accessibility alternative to dragging: select a card, a
 id: hud.players.presence
 alias: disconnected player UI
 alias: LEFT player
-source: src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/PlayerRailEntry.gd#set_entry
 adjacent: network.room.active-leave
 -->
 ## Player presence
@@ -39,7 +39,7 @@ Player rails follow authoritative roster membership and presence. Disconnected p
 id: hud.players.impact-bars
 alias: Impact progress
 alias: contribution bar
-source: src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/ImpactBar.gd#set_bar
 adjacent: network.state.impact-status
 -->
 ## Impact bars
@@ -60,7 +60,7 @@ Latency visibility can be synchronized, but each client measures its own WebSock
 id: hud.overlays.summary
 alias: Level Summary
 alias: failure summary
-source: src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn#@file
+source: src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn#LevelSummaryOverlay
 -->
 ## Summary overlay
 
@@ -69,7 +69,7 @@ Level Summary is a centered state overlay for completed, failed, and terminal ou
 <!-- kb
 id: hud.overlays.score-popups
 alias: score event popup
-source: src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd#process_score_events
 adjacent: network.state.transient-events
 -->
 ## Score popups
@@ -82,7 +82,7 @@ alias: glass popover
 alias: chat popover
 alias: Power popover
 alias: Quest popover
-source: src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd#open
 -->
 ## Shared popovers
 
@@ -92,7 +92,7 @@ Chat, Power, and Quest use one anchored glass-popover behavior. Each positions f
 id: hud.tower.pose
 alias: tower pose
 alias: lean rendering
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#_displayed_pose_for_grid
 adjacent: gameplay.tower.pose
 adjacent: backend.stability.pose
 -->
@@ -105,7 +105,7 @@ id: hud.tower.weak-support
 alias: worried brick
 alias: red outline
 alias: weak support
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#_has_danger_outline
 adjacent: gameplay.scoring.critical-save
 adjacent: gameplay.tower.stability
 -->
@@ -117,7 +117,7 @@ Standing critical supports receive emphasized danger presentation tied to their 
 id: hud.tower.collapse.presentation
 alias: tower collapse UI
 alias: collapse framing
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#_begin_collapse
 adjacent: backend.stability.collapse
 adjacent: hud.tower.collapse.recovery
 -->
@@ -129,7 +129,7 @@ Collapse captures the currently displayed structural transforms before applying 
 id: hud.tower.fallen
 alias: collapse debris
 alias: fallen blocks
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#_newly_fallen_block_ids
 adjacent: network.state.snapshot
 -->
 ## Fallen bricks
@@ -139,7 +139,7 @@ Fallen bricks provide no height, collision, or snap points. Tower Stack animates
 <!-- kb
 id: hud.tower.impact-beat
 alias: Impact Beat
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#play_impact_beat
 -->
 ## Impact Beat
 
@@ -149,7 +149,7 @@ Impact Beat temporarily changes render scale/wave presentation and holds until S
 id: hud.navigation.auto-follow
 alias: auto scroll
 alias: tower camera follow
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#_sync_scroll_state
 -->
 ## Automatic follow
 
@@ -159,7 +159,7 @@ Bricks keep fixed drawing size while placement, collapse, and parallax share one
 id: hud.navigation.manual-inspection
 alias: manual pan
 alias: scroll down tower
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#pan_scroll_units
 -->
 ## Manual inspection
 
@@ -170,7 +170,7 @@ id: hud.navigation.drop-top
 alias: Drop UI
 alias: Top button
 alias: weak support navigation
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#navigate_to_trouble
 adjacent: hud.tower.weak-support
 -->
 ## Drop and Top
@@ -181,7 +181,7 @@ Drop travels to the deterministic offscreen critical support selected for inspec
 id: hud.tower.collapse.recovery
 alias: collapse camera recovery
 alias: pan after collapse
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#_start_collapse_recovery
 adjacent: hud.tower.collapse.presentation
 adjacent: hud.navigation.auto-follow
 -->
@@ -194,8 +194,8 @@ id: hud.placement.snapping
 alias: Snap Grid
 alias: snap radius
 alias: release row preview
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
-source: src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#resolve_snap
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd#resolve
 adjacent: gameplay.tower.placement
 adjacent: network.placement.contract
 -->
@@ -207,7 +207,7 @@ Snapping pairs dragged-brick outline vertices with platform/placed-brick snap po
 id: hud.placement.armed
 alias: armed action
 alias: tap confirm
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd#revalidate_armed_placement
 adjacent: hud.controller.parallel-placement
 -->
 ## Armed placement
@@ -218,7 +218,7 @@ Armed placement stores canonical intent and revalidates it against each authorit
 id: hud.placement.ghost
 alias: placement ghost
 alias: contact marker
-source: src/Client/App/corp-tower/Cor/Scripts/BlockPreview.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/BlockPreview.gd#set_matched_vertex
 adjacent: network.placement.contract
 -->
 ## Ghost and contact marker
@@ -229,7 +229,7 @@ The ghost shows the aimed release position while the contact marker may show the
 id: hud.placement.coordinates
 alias: rendered coordinates
 alias: canonical grid
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#grid_to_local
 adjacent: gameplay.tower.pose
 -->
 ## Rendered coordinate boundary
@@ -240,7 +240,7 @@ Placement projection may operate in rendered space while returning canonical gri
 id: hud.constraint.rendered-verification
 alias: collapse visual QA
 alias: tower rendered QA
-source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#@file
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#_begin_collapse
 adjacent: testing.client.rendered
 -->
 ## Rendered verification
