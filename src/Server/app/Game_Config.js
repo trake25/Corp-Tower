@@ -146,7 +146,7 @@ const GameConfig = {
         impactBeatZoomOutMs: 900,
         impactBeatWaveMs: 1100,
         impactBeatHoldMs: 0,
-        collapseDebrisLifetimeMs: 3000,
+        collapseDebrisLifetimeMs: 1000,
         screenShakeMs: 460,
         screenShakeMagnitudeUnits: 0.22
     },

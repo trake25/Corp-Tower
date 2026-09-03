@@ -181,7 +181,10 @@ func set_tower(blocks: Array, new_current_height: int, new_target_height: int, n
 		tower_collapsed = false
 		tower_tilt_deg = 0.0 if structural_pose.has_targets() else reported_tilt
 
-	_maybe_start_drop_animation(previous_global_height)
+	if starts_collapse:
+		_clear_drop_animation()
+	else:
+		_maybe_start_drop_animation(previous_global_height)
 	if _collapse_phase == COLLAPSE_NONE:
 		_sync_scroll_state(previous_block_count == 0)
 	_update_scroll_offset()
@@ -678,6 +681,12 @@ func _maybe_start_drop_animation(previous_global_height: int) -> void:
 		_drop_anim_id = ""
 
 	_prev_block_count = new_count
+
+func _clear_drop_animation() -> void:
+	_drop_anim_id = ""
+	_drop_anim_t = 0.0
+	_drop_fall_units = 0.0
+	_prev_block_count = tower_blocks.size()
 
 func _compute_drop_fall_units(entry: Dictionary, previous_global_height: int) -> float:
 	var block: Dictionary = _normalize_block_entry(entry)

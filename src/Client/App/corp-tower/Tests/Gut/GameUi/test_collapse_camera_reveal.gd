@@ -91,6 +91,48 @@ func test_collapse_start_cancels_active_drag_once_and_blocks_lean() -> void:
 	assert_false(harness.main.inventory.can_place_block(0))
 	harness.main.inventory.cancel_block_drag()
 
+func test_collapse_triggering_placement_skips_drop_animation_and_uses_resolved_origin() -> void:
+	var tower := harness.find("TowerStack") as Control
+	var standing: Array = stacked_tower(1)
+	tower.set_tower(standing, 2, 30)
+	tower._process(tower.drop_duration)
+
+	var collapsed: Array = standing.duplicate(true)
+	collapsed[0]["towerState"] = "fallen"
+	var placed := {
+		"block": {
+			"id": "collapse-trigger",
+			"shapeId": "O",
+			"cells": [[0, 0], [1, 0], [0, 1], [1, 1]]
+		},
+		"originX": 4,
+		"originY": 2,
+		"towerState": "fallen"
+	}
+	collapsed.append(placed)
+	tower.set_tower(collapsed, 0, 30, 0, {"collapsed": true})
+
+	assert_eq(tower._collapse_phase, TowerStackScript.COLLAPSE_LEAN)
+	assert_eq(tower._drop_anim_id, "")
+	assert_eq(tower._drop_fall_units, 0.0)
+
+	var unit: float = tower._unit_size()
+	var resolved_origin: Vector2 = tower._footprint_box(
+		4, 2, placed.block.cells, unit, tower.size.x * 0.5, tower.size.y - tower.bottom_padding, 0
+	).get_center()
+	tower._begin_collapse()
+	assert_eq(tower._collapse_phase, TowerStackScript.COLLAPSE_FALL)
+	assert_eq(tower._drop_anim_id, "")
+	var origin_matches: int = 0
+	for piece_value in tower._collapse_sim.pieces:
+		if Vector2(piece_value.pos).distance_to(resolved_origin) < 0.001:
+			origin_matches += 1
+	assert_eq(origin_matches, 1)
+
+	tower._process(tower.drop_duration)
+	assert_eq(tower._drop_anim_id, "")
+	assert_eq(tower._drop_fall_units, 0.0)
+
 func test_hold_then_recover_keeps_camera_fixed_until_settlement_then_lingers() -> void:
 	var tower: Control = begin_elevated_collapse()
 	var placement_world := harness.find("PlacementWorldFrame") as Control
