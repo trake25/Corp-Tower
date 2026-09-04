@@ -157,6 +157,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | Concept | Owning section | Aliases |
 |---|---|---|
 | `hud.constraint.rendered-verification` | [ui-hud.md#rendered-verification](./ui-hud.md#rendered-verification) | collapse visual QA, tower rendered QA |
+| `hud.controller.architecture` | [ui-hud.md#controller-architecture](./ui-hud.md#controller-architecture) | GameUi controller architecture, GameUi modules, HUD controller modules |
 | `hud.controller.parallel-placement` | [ui-hud.md#parallel-placement](./ui-hud.md#parallel-placement) | tap placement, armed placement |
 | `hud.controller.state-application` | [ui-hud.md#state-application](./ui-hud.md#state-application) | Game UI controller, Main.gd |
 | `hud.navigation.auto-follow` | [ui-hud.md#automatic-follow](./ui-hud.md#automatic-follow) | auto scroll, tower camera follow |
@@ -237,6 +238,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `ui.constraint.pointer-input` | [ui.md#pointer-pass-through](./ui.md#pointer-pass-through) | mouse filter, tap blocking |
 | `ui.constraint.rendered-verification` | [ui.md#rendered-verification](./ui.md#rendered-verification) | visual verification, device check |
 | `ui.constraint.scene-order` | [ui.md#scene-text-format-constraint](./ui.md#scene-text-format-constraint) | scene parent order |
+| `ui.control.pressed-state` | [ui.md#pressed-control-treatment](./ui.md#pressed-control-treatment) | pressed state, button pressed treatment, card pressed state |
 | `ui.debug.entry` | [ui.md#debug-entry](./ui.md#debug-entry) | debug button, debug panel entry |
 | `ui.home.navigation` | [ui.md#home](./ui.md#home) | home screen |
 | `ui.navigation.server-routes` | [ui.md#server-driven-navigation](./ui.md#server-driven-navigation) | navigation destination, room routing |
@@ -251,6 +253,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `ui.shell.responsive` | [ui.md#responsive-root](./ui.md#responsive-root) | responsive layout, portrait root |
 | `ui.startup.restoration` | [ui.md#startup-restoration](./ui.md#startup-restoration) | saved room startup, resume startup |
 | `ui.startup.splash` | [ui.md#startup-splash](./ui.md#startup-splash) | extended splash, startup splash |
+| `ui.visual.glass-card` | [ui.md#glass-card-treatment](./ui.md#glass-card-treatment) | glass card, frosted card, translucent card |
 
 <!-- END GENERATED CONCEPT ROUTER -->
 

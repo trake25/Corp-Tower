@@ -62,8 +62,8 @@ test('the repository concept registry is complete, deterministic, and source-gro
   const ids = registry.concepts.map(concept => concept.id);
   const aliases = registry.concepts.flatMap(concept => concept.normalized_aliases);
 
-  assert.equal(registry.concepts.length, 185);
-  assert.equal(registry.concepts.reduce((sum, concept) => sum + concept.sources.length, 0), 251);
+  assert.equal(registry.concepts.length, 188);
+  assert.equal(registry.concepts.reduce((sum, concept) => sum + concept.sources.length, 0), 260);
   assert.equal(new Set(ids).size, ids.length);
   assert.equal(new Set(aliases).size, aliases.length);
   assert.deepEqual(registry.errors, []);

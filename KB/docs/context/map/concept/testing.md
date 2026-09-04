@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## testing.automation.protocol
 
-Owner: `KB/docs/context/testing.md:87-98` → **Automation protocol coverage**
+Owner: `KB/docs/context/testing.md:97-108` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -20,7 +20,7 @@ Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifec
 
 ## testing.balance.tools
 
-Owner: `KB/docs/context/testing.md:70-73` → **Balance tools**
+Owner: `KB/docs/context/testing.md:80-83` → **Balance tools**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -33,18 +33,19 @@ Adjacent concepts: `gameplay.bots.calibration`
 
 ## testing.client.coverage
 
-Owner: `KB/docs/context/testing.md:42-45` → **Godot coverage**
+Owner: `KB/docs/context/testing.md:43-51` → **Godot coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_application_scripts` | 41 | `sed -n 29,61p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` | `test_game_state_renders_rail_and_top_bar` | 48 | `sed -n 36,68p src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` |
+| `scripts/qa-gate.mjs` | `main` | 254 | `sed -n 242,274p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 
 ## testing.client.rendered
 
-Owner: `KB/docs/context/testing.md:55-58` → **Rendered client verification**
+Owner: `KB/docs/context/testing.md:61-68` → **Rendered client verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -55,7 +56,7 @@ Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.render
 
 ## testing.contract.tutorial-parity
 
-Owner: `KB/docs/context/testing.md:105-108` → **Tutorial parity**
+Owner: `KB/docs/context/testing.md:115-118` → **Tutorial parity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -65,7 +66,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:118-121` → **Release gates**
+Owner: `KB/docs/context/testing.md:128-131` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

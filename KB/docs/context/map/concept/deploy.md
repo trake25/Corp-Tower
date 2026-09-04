@@ -219,7 +219,7 @@ Adjacent concepts: `testing.release.gates`
 
 ## deploy.shared.auth-env
 
-Owner: `KB/docs/context/deployment.md:36-39` → **Authentication environment**
+Owner: `KB/docs/context/deployment.md:41-44` → **Authentication environment**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -241,7 +241,7 @@ Adjacent concepts: none
 
 ## deploy.shared.secret-rollout
 
-Owner: `KB/docs/context/deployment.md:48-51` → **Secret rollout**
+Owner: `KB/docs/context/deployment.md:53-56` → **Secret rollout**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -252,11 +252,12 @@ Adjacent concepts: `deploy.eks.workflows`
 
 ## deploy.shared.terraform-roots
 
-Owner: `KB/docs/context/deployment.md:23-26` → **Terraform roots**
+Owner: `KB/docs/context/deployment.md:24-31` → **Terraform roots**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `.github/workflows/EKS-Infra-Apply.yml` | `apply` | 23 | `sed -n 11,43p .github/workflows/EKS-Infra-Apply.yml` |
 | `.github/workflows/EKS-Shared-Infra-Apply.yml` | `apply` | 28 | `sed -n 16,48p .github/workflows/EKS-Shared-Infra-Apply.yml` |
+| `.github/actions/terraform-validate-plan/action.yml` | `Terraform Validate And Plan` | 1 | `sed -n 1,21p .github/actions/terraform-validate-plan/action.yml` |
 
 Adjacent concepts: `deploy.eks.lifecycle`

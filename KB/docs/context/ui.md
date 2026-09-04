@@ -24,6 +24,38 @@ source: src/Client/App/corp-tower/Cor/Scenes/Main.tscn#Main
 Web preserves portrait framing while mobile expands to the available logical canvas. Gameplay art keeps its intended tower or edge anchor; background/overlay surfaces can fill the wider root. Presentation transforms never change placement coordinates.
 
 <!-- kb
+id: ui.control.pressed-state
+alias: pressed state
+alias: button pressed treatment
+alias: card pressed state
+source: src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd#_ready
+source: src/Client/App/corp-tower/Cor/Themes/GameUITheme.tres#MenuCardButton/styles/pressed
+-->
+## Pressed control treatment
+
+Pressed controls give immediate local feedback without changing the action they
+invoke. Texture controls tint while held and restore on release; card and row
+buttons use their pressed theme style while retaining the control's shape and
+role. This is presentation feedback, not a selected, ready, or authoritative
+game-state signal.
+
+<!-- kb
+id: ui.visual.glass-card
+alias: glass card
+alias: frosted card
+alias: translucent card
+source: src/Client/App/corp-tower/Cor/Themes/GameUITheme.tres#[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_GlassPanel"]
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/UiStyles.gd#glass_panel
+-->
+## Glass card treatment
+
+Glass cards are translucent light surfaces with a pale edge, rounded corners,
+and a soft elevated shadow so overlays and transient panels remain distinct from
+the playfield without becoming opaque. Reusable theme and runtime styles carry
+that treatment; a screen-specific card may adapt its size or radius without
+becoming a second visual system.
+
+<!-- kb
 id: ui.auth.presentation
 alias: sign in screen
 alias: oauth UI

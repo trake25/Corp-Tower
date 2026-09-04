@@ -28,13 +28,6 @@ description: Godot client work — any *.gd under src/Client/App/corp-tower/Cor 
 - **Art assets** use the routed `build.md` asset-import section.
 - When a UI reference is supplied, match its visible design decisions closely.
 
-## Conditional visual specs
-
-Read [pressed-state.md](references/pressed-state.md) only when changing a button
-or card's pressed treatment. Read [glass-card-treatment.md](references/glass-card-treatment.md)
-only when the task calls for a glass, frosted or translucent card. Do not load
-either reference for ordinary client work.
-
 ## Rendered verification
 
 For visual comparison, read

@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## ui.auth.presentation
 
-Owner: `KB/docs/context/ui.md:34-37` → **Authentication screen**
+Owner: `KB/docs/context/ui.md:66-69` → **Authentication screen**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -15,7 +15,7 @@ Adjacent concepts: `network.session.identity`, `build.endpoint-auth.injection`
 
 ## ui.constraint.pointer-input
 
-Owner: `KB/docs/context/ui.md:184-187` → **Pointer pass-through**
+Owner: `KB/docs/context/ui.md:216-219` → **Pointer pass-through**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: none
 
 ## ui.constraint.rendered-verification
 
-Owner: `KB/docs/context/ui.md:195-198` → **Rendered verification**
+Owner: `KB/docs/context/ui.md:227-230` → **Rendered verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: `testing.client.rendered`
 
 ## ui.constraint.scene-order
 
-Owner: `KB/docs/context/ui.md:174-177` → **Scene text-format constraint**
+Owner: `KB/docs/context/ui.md:206-209` → **Scene text-format constraint**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -43,9 +43,20 @@ Owner: `KB/docs/context/ui.md:174-177` → **Scene text-format constraint**
 
 Adjacent concepts: none
 
+## ui.control.pressed-state
+
+Owner: `KB/docs/context/ui.md:34-41` → **Pressed control treatment**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd` | `_ready` | 6 | `sed -n 1,9p src/Client/App/corp-tower/Cor/Scripts/PressTintButton.gd` |
+| `src/Client/App/corp-tower/Cor/Themes/GameUITheme.tres` | `MenuCardButton/styles/pressed` | 326 | `sed -n 314,346p src/Client/App/corp-tower/Cor/Themes/GameUITheme.tres` |
+
+Adjacent concepts: none
+
 ## ui.debug.entry
 
-Owner: `KB/docs/context/ui.md:165-168` → **Debug entry**
+Owner: `KB/docs/context/ui.md:197-200` → **Debug entry**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -55,7 +66,7 @@ Adjacent concepts: `backend.lobby.debug-config`
 
 ## ui.home.navigation
 
-Owner: `KB/docs/context/ui.md:55-58` → **Home**
+Owner: `KB/docs/context/ui.md:87-90` → **Home**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -65,7 +76,7 @@ Adjacent concepts: none
 
 ## ui.navigation.server-routes
 
-Owner: `KB/docs/context/ui.md:142-145` → **Server-driven navigation**
+Owner: `KB/docs/context/ui.md:174-177` → **Server-driven navigation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -76,7 +87,7 @@ Adjacent concepts: `network.room.close`, `network.session.resume-only`
 
 ## ui.play.menu
 
-Owner: `KB/docs/context/ui.md:118-121` → **Play Menu**
+Owner: `KB/docs/context/ui.md:150-153` → **Play Menu**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -86,7 +97,7 @@ Adjacent concepts: `hud.controller.state-application`
 
 ## ui.play.recovery
 
-Owner: `KB/docs/context/ui.md:129-132` → **Active-match recovery**
+Owner: `KB/docs/context/ui.md:161-164` → **Active-match recovery**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -96,7 +107,7 @@ Adjacent concepts: `network.session.recovery`
 
 ## ui.private-lobby.presentation
 
-Owner: `KB/docs/context/ui.md:87-90` → **Private Lobby presentation**
+Owner: `KB/docs/context/ui.md:119-122` → **Private Lobby presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -106,7 +117,7 @@ Adjacent concepts: `network.room.private`
 
 ## ui.private.create
 
-Owner: `KB/docs/context/ui.md:66-69` → **Private Server creation**
+Owner: `KB/docs/context/ui.md:98-101` → **Private Server creation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -116,7 +127,7 @@ Adjacent concepts: `network.room.private`
 
 ## ui.private.join
 
-Owner: `KB/docs/context/ui.md:77-80` → **Join Server**
+Owner: `KB/docs/context/ui.md:109-112` → **Join Server**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -126,7 +137,7 @@ Adjacent concepts: `network.room.private`
 
 ## ui.public-lobby.flow
 
-Owner: `KB/docs/context/ui.md:107-110` → **Public matchmaking and lobby**
+Owner: `KB/docs/context/ui.md:139-142` → **Public matchmaking and lobby**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -136,7 +147,7 @@ Adjacent concepts: `network.room.public`
 
 ## ui.settings.presentation
 
-Owner: `KB/docs/context/ui.md:96-99` → **Settings**
+Owner: `KB/docs/context/ui.md:128-131` → **Settings**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -167,7 +178,7 @@ Adjacent concepts: none
 
 ## ui.startup.restoration
 
-Owner: `KB/docs/context/ui.md:46-49` → **Startup restoration**
+Owner: `KB/docs/context/ui.md:78-81` → **Startup restoration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -177,10 +188,21 @@ Adjacent concepts: `network.session.resume-only`, `ui.startup.splash`
 
 ## ui.startup.splash
 
-Owner: `KB/docs/context/ui.md:154-157` → **Startup Splash**
+Owner: `KB/docs/context/ui.md:186-189` → **Startup Splash**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/Main.tscn` | `%StartupSplash` | 18 | `sed -n 6,38p src/Client/App/corp-tower/Cor/Scenes/Main.tscn` |
 
 Adjacent concepts: `build.android.startup-splash`, `ui.startup.restoration`
+
+## ui.visual.glass-card
+
+Owner: `KB/docs/context/ui.md:50-57` → **Glass card treatment**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `src/Client/App/corp-tower/Cor/Themes/GameUITheme.tres` | `[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_GlassPanel"]` | 43 | `sed -n 31,63p src/Client/App/corp-tower/Cor/Themes/GameUITheme.tres` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/UiStyles.gd` | `glass_panel` | 3 | `sed -n 1,19p src/Client/App/corp-tower/Cor/Scripts/GameUi/UiStyles.gd` |
+
+Adjacent concepts: none

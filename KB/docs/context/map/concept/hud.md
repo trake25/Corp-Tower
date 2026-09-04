@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## hud.constraint.rendered-verification
 
-Owner: `KB/docs/context/ui-hud.md:246-249` → **Rendered verification**
+Owner: `KB/docs/context/ui-hud.md:268-271` → **Rendered verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -13,9 +13,21 @@ Owner: `KB/docs/context/ui-hud.md:246-249` → **Rendered verification**
 
 Adjacent concepts: `testing.client.rendered`
 
+## hud.controller.architecture
+
+Owner: `KB/docs/context/ui-hud.md:27-37` → **Controller architecture**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_ready` | 64 | `sed -n 52,84p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `bind_ui_nodes` | 188 | `sed -n 176,208p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd` | `require_node` | 9 | `sed -n 1,22p src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd` |
+
+Adjacent concepts: `hud.controller.state-application`
+
 ## hud.controller.parallel-placement
 
-Owner: `KB/docs/context/ui-hud.md:23-26` → **Parallel placement**
+Owner: `KB/docs/context/ui-hud.md:45-48` → **Parallel placement**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,17 +37,17 @@ Adjacent concepts: `hud.placement.armed`
 
 ## hud.controller.state-application
 
-Owner: `KB/docs/context/ui-hud.md:12-15` → **State application**
+Owner: `KB/docs/context/ui-hud.md:13-16` → **State application**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_game_state` | 356 | `sed -n 344,376p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
 
-Adjacent concepts: `network.state.snapshot`
+Adjacent concepts: `network.state.snapshot`, `hud.controller.architecture`
 
 ## hud.navigation.auto-follow
 
-Owner: `KB/docs/context/ui-hud.md:154-157` → **Automatic follow**
+Owner: `KB/docs/context/ui-hud.md:176-179` → **Automatic follow**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -45,7 +57,7 @@ Adjacent concepts: none
 
 ## hud.navigation.drop-top
 
-Owner: `KB/docs/context/ui-hud.md:176-179` → **Drop and Top**
+Owner: `KB/docs/context/ui-hud.md:198-201` → **Drop and Top**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -55,7 +67,7 @@ Adjacent concepts: `hud.tower.weak-support`
 
 ## hud.navigation.manual-inspection
 
-Owner: `KB/docs/context/ui-hud.md:164-167` → **Manual inspection**
+Owner: `KB/docs/context/ui-hud.md:186-189` → **Manual inspection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -65,7 +77,7 @@ Adjacent concepts: none
 
 ## hud.overlays.popovers
 
-Owner: `KB/docs/context/ui-hud.md:87-90` → **Shared popovers**
+Owner: `KB/docs/context/ui-hud.md:109-112` → **Shared popovers**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -75,7 +87,7 @@ Adjacent concepts: none
 
 ## hud.overlays.score-popups
 
-Owner: `KB/docs/context/ui-hud.md:75-78` → **Score popups**
+Owner: `KB/docs/context/ui-hud.md:97-100` → **Score popups**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -85,7 +97,7 @@ Adjacent concepts: `network.state.transient-events`
 
 ## hud.overlays.summary
 
-Owner: `KB/docs/context/ui-hud.md:65-68` → **Summary overlay**
+Owner: `KB/docs/context/ui-hud.md:87-90` → **Summary overlay**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -95,7 +107,7 @@ Adjacent concepts: none
 
 ## hud.placement.armed
 
-Owner: `KB/docs/context/ui-hud.md:213-216` → **Armed placement**
+Owner: `KB/docs/context/ui-hud.md:235-238` → **Armed placement**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -105,7 +117,7 @@ Adjacent concepts: `hud.controller.parallel-placement`
 
 ## hud.placement.coordinates
 
-Owner: `KB/docs/context/ui-hud.md:235-238` → **Rendered coordinate boundary**
+Owner: `KB/docs/context/ui-hud.md:257-260` → **Rendered coordinate boundary**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -115,7 +127,7 @@ Adjacent concepts: `gameplay.tower.pose`
 
 ## hud.placement.ghost
 
-Owner: `KB/docs/context/ui-hud.md:224-227` → **Ghost and contact marker**
+Owner: `KB/docs/context/ui-hud.md:246-249` → **Ghost and contact marker**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -125,7 +137,7 @@ Adjacent concepts: `network.placement.contract`
 
 ## hud.placement.snapping
 
-Owner: `KB/docs/context/ui-hud.md:202-205` → **Snapping**
+Owner: `KB/docs/context/ui-hud.md:224-227` → **Snapping**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -136,7 +148,7 @@ Adjacent concepts: `gameplay.tower.placement`, `network.placement.contract`
 
 ## hud.players.impact-bars
 
-Owner: `KB/docs/context/ui-hud.md:45-48` → **Impact bars**
+Owner: `KB/docs/context/ui-hud.md:67-70` → **Impact bars**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -146,7 +158,7 @@ Adjacent concepts: `network.state.impact-status`
 
 ## hud.players.latency
 
-Owner: `KB/docs/context/ui-hud.md:55-58` → **Latency presentation**
+Owner: `KB/docs/context/ui-hud.md:77-80` → **Latency presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -156,7 +168,7 @@ Adjacent concepts: `network.messages.latency`
 
 ## hud.players.presence
 
-Owner: `KB/docs/context/ui-hud.md:34-37` → **Player presence**
+Owner: `KB/docs/context/ui-hud.md:56-59` → **Player presence**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -166,7 +178,7 @@ Adjacent concepts: `network.room.active-leave`
 
 ## hud.tower.collapse.presentation
 
-Owner: `KB/docs/context/ui-hud.md:124-127` → **Collapse presentation**
+Owner: `KB/docs/context/ui-hud.md:146-149` → **Collapse presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -176,7 +188,7 @@ Adjacent concepts: `backend.stability.collapse`, `hud.tower.collapse.recovery`
 
 ## hud.tower.collapse.recovery
 
-Owner: `KB/docs/context/ui-hud.md:188-191` → **Collapse recovery**
+Owner: `KB/docs/context/ui-hud.md:210-213` → **Collapse recovery**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -186,7 +198,7 @@ Adjacent concepts: `hud.tower.collapse.presentation`, `hud.navigation.auto-follo
 
 ## hud.tower.fallen
 
-Owner: `KB/docs/context/ui-hud.md:135-138` → **Fallen bricks**
+Owner: `KB/docs/context/ui-hud.md:157-160` → **Fallen bricks**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -196,7 +208,7 @@ Adjacent concepts: `network.state.snapshot`
 
 ## hud.tower.impact-beat
 
-Owner: `KB/docs/context/ui-hud.md:144-147` → **Impact Beat**
+Owner: `KB/docs/context/ui-hud.md:166-169` → **Impact Beat**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -206,7 +218,7 @@ Adjacent concepts: none
 
 ## hud.tower.pose
 
-Owner: `KB/docs/context/ui-hud.md:99-102` → **Structural pose**
+Owner: `KB/docs/context/ui-hud.md:121-124` → **Structural pose**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -216,7 +228,7 @@ Adjacent concepts: `gameplay.tower.pose`, `backend.stability.pose`
 
 ## hud.tower.weak-support
 
-Owner: `KB/docs/context/ui-hud.md:112-115` → **Weak-support feedback**
+Owner: `KB/docs/context/ui-hud.md:134-137` → **Weak-support feedback**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

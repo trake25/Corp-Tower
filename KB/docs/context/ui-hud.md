@@ -8,10 +8,32 @@ alias: Game UI controller
 alias: Main.gd
 source: src/Client/App/corp-tower/Cor/Scripts/Main.gd#update_game_state
 adjacent: network.state.snapshot
+adjacent: hud.controller.architecture
 -->
 ## State application
 
 The Game UI controller family stores the latest authoritative state and delegates roster, top bar, inventory, quest, popup, Power, summary, debug, and visual-hook presentation. Broadcasts update grid/site, roster and Impact state, redraw tower/inventory, consume transient events, then present overlays. The round clock interpolates from the latest server deadline.
+
+<!-- kb
+id: hud.controller.architecture
+alias: GameUi controller architecture
+alias: GameUi modules
+alias: HUD controller modules
+source: src/Client/App/corp-tower/Cor/Scripts/Main.gd#_ready
+source: src/Client/App/corp-tower/Cor/Scripts/Main.gd#bind_ui_nodes
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd#require_node
+adjacent: hud.controller.state-application
+-->
+## Controller architecture
+
+`Main.gd` is the composition and wiring point for the GameUi family, not the
+home for presentation behavior. Shared context and settings stay lightweight
+services, while view-owning controllers are nodes; both receive their scene
+dependencies through `UiNodeBinder` before setup. A controller declares the
+nodes it needs and owns its focused presentation boundary, so restructuring does
+not turn `Main.gd` into a second controller or bypass missing-node reporting.
+Authoritative broadcast application remains owned by the adjacent
+state-application concept.
 
 <!-- kb
 id: hud.controller.parallel-placement

@@ -18,11 +18,16 @@ alias: Terraform roots
 alias: shared infra
 source: .github/workflows/EKS-Infra-Apply.yml#apply
 source: .github/workflows/EKS-Shared-Infra-Apply.yml#apply
+source: .github/actions/terraform-validate-plan/action.yml#Terraform Validate And Plan
 adjacent: deploy.eks.lifecycle
 -->
 ## Terraform roots
 
-EKS uses a session-scoped application root plus a persistent shared infrastructure root. Shared state/bootstrap actions are reused rather than reimplemented per workflow. Applying or destroying production infrastructure is an explicit operation rather than a side effect of deploy.
+EKS uses a session-scoped application root plus a persistent shared
+infrastructure root. Shared GitHub Actions provide the Terraform validation and
+planning environment for both roots, keeping composite behavior consistent
+rather than reimplemented per workflow. Applying or destroying production
+infrastructure is an explicit operation rather than a side effect of deploy.
 
 <!-- kb
 id: deploy.shared.auth-env

@@ -38,10 +38,16 @@ alias: GUT
 alias: client smoke
 source: src/Client/App/corp-tower/Tests/CiSmokeTest.gd#check_application_scripts
 source: src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd#test_game_state_renders_rail_and_top_bar
+source: scripts/qa-gate.mjs#main
 -->
 ## Godot coverage
 
-Client smoke loads runtime scripts, main scene, autoloads, and required gameplay bindings. GUT protects placement mirrors, inventory/block behavior, deterministic collapse/pose logic, authentication, tutorial progression, gameplay rendering, and meaningful UI structure.
+The deterministic QA path selects the repository/host-matching Godot executable.
+Client smoke is the application/script correctness gate: it loads runtime
+scripts, main scene, autoloads, and required gameplay bindings rather than
+treating a single-file check as equivalent. GUT protects placement mirrors,
+inventory/block behavior, deterministic collapse/pose logic, authentication,
+tutorial progression, gameplay rendering, and meaningful UI structure.
 
 <!-- kb
 id: testing.client.rendered
@@ -54,7 +60,11 @@ adjacent: ui.constraint.rendered-verification
 -->
 ## Rendered client verification
 
-Headless tests establish structure and deterministic behavior but cannot prove final visual fidelity, touch pairing, or Tower Stack frame behavior. Drag state, collapse framing, responsive layout, native provider flows, and other device-specific presentation need rendered/manual verification.
+Headless tests establish structure and deterministic behavior but cannot prove
+final visual fidelity, touch pairing, or Tower Stack frame behavior. Rendered
+verification supplements that correctness gate for drag state, collapse framing,
+responsive layout, native provider flows, and other device-specific
+presentation.
 
 <!-- kb
 id: testing.balance.tools
