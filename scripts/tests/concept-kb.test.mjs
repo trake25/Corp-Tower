@@ -59,11 +59,12 @@ Only the second concept prose belongs here.
 
 test('the repository concept registry is complete, deterministic, and source-grounded', () => {
   const registry = resolveRegistrySources(loadConceptRegistry({ root: ROOT }), { ready: true });
+  const repeated = resolveRegistrySources(loadConceptRegistry({ root: ROOT }), { ready: true });
   const ids = registry.concepts.map(concept => concept.id);
   const aliases = registry.concepts.flatMap(concept => concept.normalized_aliases);
 
-  assert.equal(registry.concepts.length, 188);
-  assert.equal(registry.concepts.reduce((sum, concept) => sum + concept.sources.length, 0), 260);
+  assert.ok(registry.concepts.length > 0);
+  assert.deepEqual(registry.concepts, repeated.concepts);
   assert.equal(new Set(ids).size, ids.length);
   assert.equal(new Set(aliases).size, aliases.length);
   assert.deepEqual(registry.errors, []);

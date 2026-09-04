@@ -1212,7 +1212,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/codex-rollout-observability.test.mjs:1 | @file · file | permanent regression coverage for codex rollout observability |
 | scripts/tests/codex-rollout-observability.test.mjs:17 | usage · fn | |
 
-### scripts/tests/concept-kb.test.mjs — 379 ln
+### scripts/tests/concept-kb.test.mjs — 380 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
