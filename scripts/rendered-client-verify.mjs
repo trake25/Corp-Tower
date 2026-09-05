@@ -48,17 +48,27 @@ export function displayContextFor(env) {
   return { display, inherited_xauthority: typeof env.XAUTHORITY === 'string' && env.XAUTHORITY.length > 0 };
 }
 
-export function filterPidWindowRows(output, pid) {
-  if (!Number.isInteger(pid) || pid <= 0) return '';
-  return String(output || '').split(/\r?\n/).filter(line => {
-    const fields = line.trim().split(/\s+/);
-    return fields.length >= 3 && Number(fields[2]) === pid;
-  }).join('\n');
+const WINDOW_PID_FILTER = [
+  'BEGIN {',
+  'command = "wmctrl -l -p -G 2>/dev/null";',
+  'while ((command | getline row) > 0) {',
+  'split(row, fields, /[[:space:]]+/);',
+  'if (fields[3] == pid) print row;',
+  '}',
+  'close(command);',
+  '}',
+].join(' ');
+
+export function windowQueryCommand(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return null;
+  return { command: 'awk', args: ['-v', `pid=${pid}`, WINDOW_PID_FILTER] };
 }
 
-function queryWindows(env, pid, command = 'wmctrl') {
-  const result = spawnSync(command, ['-l', '-p', '-G'], { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  return result.status === 0 ? filterPidWindowRows(result.stdout, pid) : '';
+export function queryWindows(env, pid, run = spawnSync) {
+  const query = windowQueryCommand(pid);
+  if (!query) return '';
+  const result = run(query.command, query.args, { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  return result.status === 0 ? result.stdout : '';
 }
 
 function displayReady(env, command = 'xdpyinfo') {

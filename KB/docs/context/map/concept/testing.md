@@ -51,7 +51,7 @@ Owner: `KB/docs/context/testing.md:63-77` → **Rendered client verification**
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_main_scene_ready` | 126 | `sed -n 114,146p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` | `_begin_collapse` | 894 | `sed -n 882,914p src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` |
-| `scripts/rendered-client-verify.mjs` | `runRenderedVerification` | 91 | `sed -n 79,111p scripts/rendered-client-verify.mjs` |
+| `scripts/rendered-client-verify.mjs` | `runRenderedVerification` | 101 | `sed -n 89,121p scripts/rendered-client-verify.mjs` |
 | `scripts/qa-gate.mjs` | `selectGodotBinary` | 229 | `sed -n 217,249p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.rendered-verification`
