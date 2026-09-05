@@ -7,10 +7,10 @@ import test from 'node:test';
 import { executeBestEffort, executeCommand } from '../agent-observability.mjs';
 import { handleHook } from '../codex-observability-hook.mjs';
 import { buildAnalytics, boundedAnalyticsAggregate, compareWindows, optionalFlaggingOverhead } from '../lib/agent-observability/analytics.mjs';
-import { createFormalFlag, detectCandidates, flagEligibility } from '../lib/agent-observability/flagging.mjs';
+import { candidateHandoffFields, createFormalFlag, detectCandidates, flagEligibility, selectCandidateForHandoff } from '../lib/agent-observability/flagging.mjs';
 import { renderPublicReport, exportPublicReport } from '../lib/agent-observability/public-export.mjs';
 import { buildWeeklyReportParts, displayStageGroups, renderWeeklyReport } from '../lib/agent-observability/report.mjs';
-import { modelFamily, resolveRuntimeIdentity } from '../lib/agent-observability/runtime.mjs';
+import { boundedEventId, modelFamily, resolveRuntimeIdentity } from '../lib/agent-observability/runtime.mjs';
 import { sanitizeClose, sanitizeMeta, sanitizeTelemetry } from '../lib/agent-observability/schema.mjs';
 import { buildTaskTelemetry } from '../lib/agent-observability/task-telemetry.mjs';
 import { bindActiveTask, readHookHealth, readTaskBundle, recordEvent, requestActiveTaskFinalization, resolveStateDir, startTask } from '../lib/agent-observability/state.mjs';
@@ -22,6 +22,14 @@ const FIXTURE = JSON.parse(readFileSync(join(ROOT, 'scripts/fixtures/agent-obser
 function temporaryState() {
   return mkdtempSync(join(tmpdir(), 'corp-observability-'));
 }
+
+test('observability export guidance uses the telemetry v3 private state', () => {
+  const guide = readFileSync(join(ROOT, 'report/observability-export-guide.md'), 'utf8');
+
+  assert.match(guide, /\.agent-state\/telemetry\/v3\//);
+  assert.doesNotMatch(guide, /\.agent-state\/telemetry\/v2\//);
+  assert.equal(resolveStateDir({ root: ROOT, env: {} }), join(ROOT, '.agent-state/telemetry/v3'));
+});
 
 function eventProcess(state, input) {
   return new Promise(resolveProcess => {
@@ -505,6 +513,58 @@ test('candidate detector is deterministic and bounded to three observations', ()
   assert.deepEqual(candidates.map(item => item.issue_code), ['broad_fallback', 'repeated_retrieval', 'tool_retry']);
 });
 
+test('retrieval first try describes only the first distinct information need', () => {
+  const event = (key, outcome, second) => ({
+    kind: 'tool',
+    stage: 'retrieval_context',
+    name: 'concept_concept_read_matched',
+    retrieval_key: boundedEventId('concept', key),
+    outcome,
+    occurred_at: `2026-09-05T00:00:0${second}.000Z`,
+  });
+  const telemetry = (evidence, fallbacks = []) => buildTaskTelemetry({
+    domains: [],
+    changed_paths: [],
+    documented_paths: [],
+    retrieval: { fallbacks },
+  }, { status: 'passed', steps: [] }, evidence, { domainFor: () => 'other', receiptHash: 'receipt' }).retrieval;
+
+  assert.equal(telemetry([event('first', 'passed', 1), event('second', 'passed', 2)]).first_try, true);
+  const laterRecovery = telemetry([
+    event('first', 'passed', 1),
+    event('second', 'failed', 2),
+    event('second', 'passed', 3),
+  ]);
+  assert.equal(laterRecovery.first_try, true);
+  assert.equal(laterRecovery.defects, 1);
+  assert.equal(laterRecovery.same_concept_retries, 1);
+  assert.ok(detectCandidates(sanitizeTelemetry({ retrieval: laterRecovery })).length > 0);
+  assert.equal(telemetry([event('first', 'failed', 1), event('first', 'passed', 2)]).first_try, false);
+  assert.equal(telemetry([event('first', 'passed', 1)], [{ query: 'first' }]).first_try, false);
+  const laterFallback = telemetry([event('first', 'passed', 1), event('second', 'passed', 2)], [{ query: 'second' }]);
+  assert.equal(laterFallback.first_try, true);
+  assert.equal(laterFallback.fallbacks, 1);
+  assert.equal(telemetry([]).first_try, false);
+});
+
+test('candidate handoff priority is stable across order and every tie-breaker', () => {
+  const candidate = (flag_id, severity, stage, issue_code, cause_code) => ({ flag_id, severity, stage, issue_code, cause_code });
+  const low = candidate('C-low', 'low', 'retrieval_context', 'a', 'a');
+  const high = candidate('C-high', 'high', 'other', 'z', 'z');
+  const implementation = candidate('C-implementation', 'critical', 'implementation', 'a', 'a');
+  const retrieval = candidate('C-retrieval', 'critical', 'retrieval_context', 'z', 'z');
+  const issue = candidate('C-issue', 'critical', 'retrieval_context', 'a', 'z');
+  const cause = candidate('C-cause', 'critical', 'retrieval_context', 'a', 'a');
+  const id = candidate('C-a', 'critical', 'retrieval_context', 'a', 'a');
+
+  assert.equal(selectCandidateForHandoff([low, high]).flag_id, 'C-high');
+  assert.equal(selectCandidateForHandoff([implementation, retrieval]).flag_id, 'C-retrieval');
+  assert.equal(selectCandidateForHandoff([retrieval, issue]).flag_id, 'C-issue');
+  assert.equal(selectCandidateForHandoff([issue, cause]).flag_id, 'C-cause');
+  assert.equal(selectCandidateForHandoff([cause, id]).flag_id, 'C-a');
+  assert.equal(selectCandidateForHandoff([low, high, implementation, retrieval, issue, cause, id].reverse()).flag_id, 'C-a');
+});
+
 test('maintenance-blocked telemetry keeps implementation complete with partial verification', () => {
   const manifest = {
     domains: ['tooling'],
@@ -737,13 +797,24 @@ test('public improvements reject sensitive text', () => {
 
 test('optional flagging overhead records actual bounded material without synthetic tokens', () => {
   const value = bundle(1);
+  const candidates = [
+    { flag_id: 'C-low', stage: 'retrieval_context', issue_code: 'route_miss', cause_code: 'missing_route', severity: 'low' },
+    { flag_id: 'C-high', stage: 'implementation', issue_code: 'rework', cause_code: 'missing_context', severity: 'high' },
+    { flag_id: 'C-medium', stage: 'verification', issue_code: 'retest', cause_code: 'unclear_failure', severity: 'medium' },
+  ];
   value.flags = [
-    { flag_id: 'C-candidate', stage: 'retrieval_context', issue_code: 'route_miss', cause_code: 'missing_route', severity: 'high' },
+    ...candidates,
     { flag_id: 'WF-formal', provider_visible_bytes: 1200 },
   ];
   const overhead = optionalFlaggingOverhead([value]);
-  assert.ok(overhead.candidate_handoff_bytes > 0);
+  const selectedBytes = Buffer.byteLength(JSON.stringify(candidateHandoffFields(selectCandidateForHandoff(candidates))));
+  assert.equal(overhead.candidate_handoff_bytes, selectedBytes);
+  value.flags = [...value.flags].reverse();
+  assert.equal(optionalFlaggingOverhead([value]).candidate_handoff_bytes, selectedBytes);
   assert.equal(overhead.formal_material_bytes, 1200);
   assert.equal(overhead.optional_reasoning_count, 1);
   assert.equal(overhead.attributable_token_delta, null);
+  value.flags = value.flags.filter(flag => !flag.flag_id.startsWith('C-'));
+  assert.equal(optionalFlaggingOverhead([value]).candidate_handoff_bytes, 0);
+  assert.equal(optionalFlaggingOverhead([value]).formal_material_bytes, 1200);
 });

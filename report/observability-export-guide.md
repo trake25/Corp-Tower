@@ -17,7 +17,7 @@ report automatically.
   terminal callback.
 - Any improvement included in the public report has been reviewed by a human.
 
-The default private state is `.agent-state/telemetry/v2/`. Pass
+The default private state is `.agent-state/telemetry/v3/`. Pass
 `--state-dir <path>` to every command when the host stores it elsewhere.
 
 ## 1. Confirm finalized telemetry exists
@@ -25,7 +25,7 @@ The default private state is `.agent-state/telemetry/v2/`. Pass
 List task final records without opening unrelated repository reports:
 
 ```bash
-find .agent-state/telemetry/v2/tasks -name final.json -type f -print
+find .agent-state/telemetry/v3/tasks -name final.json -type f -print
 ```
 
 If the directory or final records do not exist, stop. Exporting would create an
@@ -47,7 +47,7 @@ node scripts/agent-observability.mjs render \
 The command writes:
 
 ```text
-.agent-state/telemetry/v2/reports/observability-2026-W35.md
+.agent-state/telemetry/v3/reports/observability-2026-W35.md
 ```
 
 Large weeks may also produce `observability-2026-W35-part-N.md`. Review the

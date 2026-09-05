@@ -323,17 +323,19 @@ alias: workflow candidate
 alias: inefficiency flag
 source: scripts/lib/agent-observability/flagging.mjs#flagEligibility
 source: scripts/lib/agent-observability/runtime.mjs#modelFamily
+source: scripts/lib/agent-observability/flagging.mjs#createFormalFlag
+source: scripts/agent-observability.mjs#executeCommand
 -->
 ## Workflow inefficiency flags
 
-Workflow inefficiency requires deterministic evidence of explicit retrieval
-defect/fallback, same-concept recovery, failed-tool recovery, repeated
-task-caused rework, or unresolved retest cycles; normal movement between
-different concepts is not a candidate. Its concept is loaded only when current-run
-tooling reports an eligible candidate and a provider turn is already required;
-it never creates an extra turn by itself. Astra follows the same approved-family,
+Deterministic tooling creates a workflow candidate and its eligibility gate.
+An eligible same-turn model assessment becomes a formal `WF-*` flag through the
+deterministic flag command; its evidence must belong to the current task and its
+provider-visible material remains bounded. Astra retains the approved-family,
 high-or-higher effort, current-turn, task-evidence, and 1.5 KiB material gate.
-Public QA receipt correctness remains independent of candidate and hook health.
+When there is no eligible candidate, Codex loads no flagging context and records
+no formal flag. Public QA receipt correctness remains independent of candidate
+and hook health.
 
 <!-- kb
 id: automation.git.publish

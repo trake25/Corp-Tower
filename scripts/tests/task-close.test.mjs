@@ -459,6 +459,45 @@ test('closeout exposes only canonical Astra formal-flag eligibility fields', () 
   }
 });
 
+test('closeout exposes the deterministic highest-priority candidate', () => {
+  const state = mkdtempSync(join(tmpdir(), 'corp-task-observability-priority-'));
+  const env = { CORP_TOWER_OBSERVABILITY_DIR: state, CODEX_SESSION_ID: 'priority-session', CODEX_THREAD_ID: '' };
+  try {
+    const manifest = createManifest({ task: 'Candidate priority task', ownedPaths: [SOURCE], runId: 'candidate-priority-task' });
+    manifest.observability = startObservability(manifest, env);
+    for (const [id, outcome] of [['priority-failed', 'failed'], ['priority-recovered', 'passed']]) {
+      executeCommand('evidence', {
+        evidence_event_id: id,
+        task_id: manifest.run_id,
+        stage: 'implementation',
+        kind: 'tool',
+        name: 'implementation_tool',
+        outcome,
+        model_family: 'astra',
+        model: 'gpt-6-astra',
+        effort: 'high',
+        effort_source: 'hook',
+        provider_turn_required: true,
+        tool_key: 'priority-tool',
+      }, { stateDir: state });
+    }
+    executeCommand('candidate', {
+      task_id: manifest.run_id,
+      telemetry: { retrieval: { concept_operations: 1, defects: 1 } },
+      evidence_event_ids: ['priority-failed'],
+    }, { stateDir: state });
+
+    const result = closeObservabilityUnsafe(manifest, { status: 'passed', steps: [], publish_paths: [] }, env);
+
+    assert.equal(result.formal_flag_gate.eligible, true);
+    assert.equal(result.formal_flag_gate.severity, 'high');
+    assert.equal(result.formal_flag_gate.issue_code, 'broad_fallback');
+    assert.equal(readTaskBundle(state, manifest.run_id).flags.filter(flag => flag.flag_id.startsWith('C-')).length, 2);
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
 test('review accepts only owned final paths and refreshes docs and QA from them', () => {
   const manifest = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE, 'scripts/context.mjs'] });
 

@@ -8,7 +8,7 @@ import { loadConceptRegistry } from './lib/concept-kb.mjs';
 import { selectQa } from './qa-gate.mjs';
 import { executeBestEffort } from './agent-observability.mjs';
 import { buildTaskTelemetry } from './lib/agent-observability/task-telemetry.mjs';
-import { flagEligibility } from './lib/agent-observability/flagging.mjs';
+import { candidateHandoffFields, flagEligibility, selectCandidateForHandoff } from './lib/agent-observability/flagging.mjs';
 import { codexSessionIds } from './lib/agent-observability/runtime.mjs';
 import { publicQaReceiptPath, writePublicQaReceipt } from './lib/qa-receipt.mjs';
 import { taskIdentityForManifest } from './lib/task-identity.mjs';
@@ -402,14 +402,11 @@ export function closeObservabilityUnsafe(manifest, receipt, env = process.env) {
     evidence_event_ids: evidenceIds,
   }, { root: ROOT, stateDir });
   const refreshed = readTaskBundle(stateDir, taskId);
-  const candidate = refreshed.flags.filter(item => item.flag_id?.startsWith('C-')).map(item => ({
-    candidate_id: item.flag_id,
-    stage: item.stage,
-    issue_code: item.issue_code,
-    cause_code: item.cause_code,
-    severity: item.severity,
-    evidence_event_ids: item.evidence_event_ids,
-  })).at(-1) || null;
+  const candidateRecord = selectCandidateForHandoff(refreshed.flags);
+  const candidate = candidateRecord ? {
+    ...candidateHandoffFields(candidateRecord),
+    evidence_event_ids: candidateRecord.evidence_event_ids,
+  } : null;
   let bindings = 0;
   for (const sessionId of codexSessionIds(env))
     if (requestActiveTaskFinalization(stateDir, sessionId, taskId)) bindings++;

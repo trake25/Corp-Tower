@@ -1,6 +1,7 @@
 import { isoWeek } from './report.mjs';
 import { STAGES } from './schema.mjs';
 import { stableJson } from './state.mjs';
+import { candidateHandoffFields, selectCandidateForHandoff } from './flagging.mjs';
 
 export function percentile(values, ratio) {
   if (!values.length) return null;
@@ -86,15 +87,11 @@ export function buildAnalytics(bundles, { week = null, minSize = 5 } = {}) {
 }
 
 export function optionalFlaggingOverhead(bundles) {
-  const candidates = bundles.flatMap(bundle => bundle.flags.filter(flag => flag.flag_id?.startsWith('C-')));
   const formal = bundles.flatMap(bundle => bundle.flags.filter(flag => flag.flag_id?.startsWith('WF-')));
-  const candidateHandoffBytes = candidates.reduce((total, flag) => total + Buffer.byteLength(JSON.stringify({
-    candidate_id: flag.flag_id,
-    stage: flag.stage,
-    issue_code: flag.issue_code,
-    cause_code: flag.cause_code,
-    severity: flag.severity,
-  })), 0);
+  const candidateHandoffBytes = bundles.reduce((total, bundle) => {
+    const selected = selectCandidateForHandoff(bundle.flags);
+    return total + (selected ? Buffer.byteLength(JSON.stringify(candidateHandoffFields(selected))) : 0);
+  }, 0);
   return {
     candidate_handoff_bytes: candidateHandoffBytes,
     formal_material_bytes: formal.reduce((total, flag) => total + (flag.provider_visible_bytes || 0), 0),

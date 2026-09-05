@@ -103,6 +103,20 @@ test('concept routing resolves an exact ID to its owner, generated map, and boun
   assert.ok(result.limits.returned_bytes <= result.limits.max_bytes);
 });
 
+test('workflow flag retrieval grants eligibility, assessment, and deterministic recording evidence', () => {
+  const result = conceptRead(ROOT, 'automation.observability.flags');
+  const sources = new Set(result.sources.map(source => `${source.path}#${source.anchor}`));
+
+  assert.equal(result.status, 'matched');
+  for (const source of [
+    'scripts/lib/agent-observability/flagging.mjs#flagEligibility',
+    'scripts/lib/agent-observability/runtime.mjs#modelFamily',
+    'scripts/lib/agent-observability/flagging.mjs#createFormalFlag',
+    'scripts/agent-observability.mjs#executeCommand',
+  ]) assert.ok(sources.has(source), source);
+  assert.ok(result.sources.every(source => source.read.lines[1] - source.read.lines[0] <= 32));
+});
+
 test('concept read resolves an exact normalized alias and returns only its prose leaf', () => {
   const result = conceptRead(ROOT, '  CRITICAL   SAVE  ');
 

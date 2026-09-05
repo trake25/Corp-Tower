@@ -178,7 +178,8 @@ test('hook-derived retrieval telemetry recognizes exact concepts without false m
     assert.equal(telemetry.retrieval.concept_operations, 5);
     assert.equal(telemetry.retrieval.same_concept_retries, 1);
     assert.equal(telemetry.retrieval.defects, 1);
-    assert.equal(telemetry.retrieval.first_try, false);
+    assert.equal(telemetry.retrieval.first_try, true);
+    assert.ok(detectCandidates(telemetry).some(candidate => candidate.issue_code === 'broad_fallback'));
     const normal = buildTaskTelemetry({ domains: [], changed_paths: [], documented_paths: [], retrieval: { fallbacks: [] } }, { status: 'passed', steps: [] }, evidence.slice(0, 2), { domainFor: () => 'other', receiptHash: 'receipt' });
     assert.equal(normal.retrieval.first_try, true);
     assert.deepEqual(detectCandidates(normal), []);

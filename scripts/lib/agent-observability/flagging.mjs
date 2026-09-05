@@ -15,6 +15,7 @@ import {
 const ALLOWED_FAMILIES = new Set(['astra', 'terra', 'sol', 'opus', 'fable']);
 const EFFORT_RANK = { unknown: 0, low: 1, medium: 2, high: 3, xhigh: 4, max: 5, ultra: 6 };
 const SEVERITIES = new Set(['low', 'medium', 'high', 'critical']);
+const SEVERITY_PRIORITY = { critical: 0, high: 1, medium: 2, low: 3 };
 const CONFIDENCES = new Set(['low', 'medium', 'high']);
 
 function fingerprint(stage, issueCode, causeCode) {
@@ -118,6 +119,34 @@ export function createCandidateRecords(taskId, candidates, evidenceEventIds = []
       status: 'observation',
     };
   });
+}
+
+function candidatePriority(left, right) {
+  const severity = (SEVERITY_PRIORITY[left.severity] ?? Number.MAX_SAFE_INTEGER)
+    - (SEVERITY_PRIORITY[right.severity] ?? Number.MAX_SAFE_INTEGER);
+  const stage = (STAGES.indexOf(left.stage) < 0 ? STAGES.length : STAGES.indexOf(left.stage))
+    - (STAGES.indexOf(right.stage) < 0 ? STAGES.length : STAGES.indexOf(right.stage));
+  return severity
+    || stage
+    || String(left.issue_code || '').localeCompare(String(right.issue_code || ''))
+    || String(left.cause_code || '').localeCompare(String(right.cause_code || ''))
+    || String(left.flag_id || '').localeCompare(String(right.flag_id || ''));
+}
+
+export function selectCandidateForHandoff(flags) {
+  return [...flags]
+    .filter(flag => flag.flag_id?.startsWith('C-'))
+    .sort(candidatePriority)[0] || null;
+}
+
+export function candidateHandoffFields(candidate) {
+  return {
+    candidate_id: candidate.flag_id,
+    stage: candidate.stage,
+    issue_code: candidate.issue_code,
+    cause_code: candidate.cause_code,
+    severity: candidate.severity,
+  };
 }
 
 export function createFormalFlag(input, now = new Date().toISOString()) {

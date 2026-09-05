@@ -1,4 +1,5 @@
 import { isMaintenanceClassification } from '../maintenance-handoff.mjs';
+import { boundedEventId } from './runtime.mjs';
 
 function retrievalTelemetry(evidence, fallbacks) {
   const events = evidence.filter(item => item.kind === 'tool'
@@ -13,12 +14,13 @@ function retrievalTelemetry(evidence, fallbacks) {
     .filter((item, index) => attempts.slice(0, index + 1).some(previous => previous.outcome === 'failed')).length, 0);
   const defects = events.filter(item => item.outcome === 'failed').length;
   const first = events[0];
+  const firstFallback = first && fallbacks.some(item => boundedEventId('concept', item.query) === first.retrieval_key);
   return {
     concept_operations: events.length,
     same_concept_retries: sameConceptRetries,
     defects,
-    fallbacks,
-    first_try: Boolean(first && first.outcome === 'passed' && defects === 0 && fallbacks === 0 && sameConceptRetries === 0),
+    fallbacks: fallbacks.length,
+    first_try: Boolean(first && first.outcome === 'passed' && !firstFallback),
   };
 }
 
@@ -84,7 +86,7 @@ export function buildTaskTelemetry(manifest, receipt, evidence, { domainFor, rec
   ]));
   return {
     tools: { calls: toolEvents.length, failures, recoveries: toolRecoveryCount(toolEvents) },
-    retrieval: retrievalTelemetry(evidence, manifest.retrieval.fallbacks.length),
+    retrieval: retrievalTelemetry(evidence, manifest.retrieval.fallbacks),
     worker_count: 0,
     files: { modified: manifest.changed_paths.length, domains },
     implementation: implementationTelemetry(evidence),
