@@ -232,7 +232,7 @@ test('prepare keeps KB Tree ownership scoped and selects concept close-out tools
   assert.equal(manifest.intake.qa.concept_kb, true);
   assert.equal(manifest.intake.qa.runtime_applies, false);
   assert.deepEqual(manifest.intake.docs, [path]);
-  assert.deepEqual(manifest.intake.maps, []);
+  assert.deepEqual(manifest.intake.maps, ['KB/docs/context/map/concept/gameplay.md']);
   assert.ok(tools.includes('concept map'));
   assert.ok(tools.includes('concept KB'));
   assert.ok(tools.includes('concept benchmark'));

@@ -5,6 +5,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { basename, dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConceptRegistry } from './lib/concept-kb.mjs';
+import { buildConceptMaps } from './build-concept-map.mjs';
 import { selectQa } from './qa-gate.mjs';
 import { executeBestEffort } from './agent-observability.mjs';
 import { buildTaskTelemetry } from './lib/agent-observability/task-telemetry.mjs';
@@ -203,6 +204,10 @@ function conceptOwnershipFor(paths, root) {
   const maps = new Set();
   const gaps = [];
   for (const path of paths) {
+    if (authoredKbDocument(path)) {
+      for (const concept of registry.concepts.filter(item => item.owner.path === path))
+        maps.add(`KB/docs/context/map/concept/${concept.domain}.md`);
+    }
     const ids = registry.reverse_sources.get(path) || [];
     if (sourcePath(path) && !testPath(path) && !ids.length) gaps.push(path);
     for (const id of ids) {
@@ -506,13 +511,17 @@ export function reviewManifest(manifest, { changedPaths, mapBaseline = null }) {
   if (!requested.length) throw new Error('review needs one or more explicit changed paths');
   const owned = new Set(manifest.owned_paths);
   const ownedChanged = requested.filter(path => owned.has(path));
-  const affectedMaps = new Set(conceptOwnershipFor(ownedChanged.filter(sourcePath), ROOT).maps);
+  const affectedMaps = new Set(conceptOwnershipFor(ownedChanged.filter(path => sourcePath(path) || authoredKbDocument(path)), ROOT).maps);
   const changed = requested.filter(path => !affectedMaps.has(path));
   const requestedDerived = requested.filter(path => affectedMaps.has(path));
-  const changedGeneratedMaps = changedMapCandidates([...affectedMaps]);
-  const derived = [...new Set([...requestedDerived, ...changedGeneratedMaps])].sort();
   const outside = changed.filter(path => !owned.has(path));
   if (outside.length) throw new Error(`changed paths are not owned: ${outside.join(', ')}`);
+  if (affectedMaps.size) {
+    const generated = buildConceptMaps({ root: ROOT, mapPaths: [...affectedMaps] });
+    if (generated.status === 'failed') throw new Error('cannot regenerate affected generated maps');
+  }
+  const changedGeneratedMaps = changedMapCandidates([...affectedMaps]);
+  const derived = [...new Set([...requestedDerived, ...changedGeneratedMaps])].sort();
   const intake = taskCloseIntake(changed, { artifact: true });
   const sourceChanged = changed.some(sourcePath);
   const sourceScope = sourceChanged
@@ -549,7 +558,8 @@ export function reviewManifest(manifest, { changedPaths, mapBaseline = null }) {
 function changedMapCandidates(candidates) {
   if (!candidates.length) return [];
   const result = spawnSync('git', ['diff', '--name-only', '--', ...candidates], { cwd: ROOT, encoding: 'utf8' });
-  if (result.error || result.status !== 0) return [];
+  if (result.error || result.status !== 0)
+    throw new Error(`cannot determine affected generated-map changes: ${result.error?.message || result.stderr?.trim() || 'git diff failed'}`);
   const allowed = new Set(candidates);
   return result.stdout.split(/\r?\n/).filter(path => allowed.has(path)).sort();
 }

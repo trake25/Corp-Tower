@@ -51,7 +51,7 @@ Owner: `KB/docs/context/automation.md:102-140` → **Provider-visible I/O discip
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `policy/CODEX.md` | `Provider-visible I/O discipline` | 68 | `sed -n 56,88p policy/CODEX.md` |
-| `scripts/task-close.mjs` | `compactOutput` | 780 | `sed -n 768,800p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `compactOutput` | 790 | `sed -n 778,810p scripts/task-close.mjs` |
 | `scripts/qa-gate.mjs` | `fail` | 208 | `sed -n 196,228p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `automation.observability.usage`
@@ -74,7 +74,7 @@ Owner: `KB/docs/context/automation.md:310-319` → **Observability binding**
 |---|---|---:|---|
 | `scripts/lib/agent-observability/state.mjs` | `bindActiveTask` | 148 | `sed -n 136,168p scripts/lib/agent-observability/state.mjs` |
 | `scripts/codex-observability-hook.mjs` | `handleHook` | 224 | `sed -n 212,244p scripts/codex-observability-hook.mjs` |
-| `scripts/task-close.mjs` | `closeObservabilityUnsafe` | 379 | `sed -n 367,399p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `closeObservabilityUnsafe` | 384 | `sed -n 372,404p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -205,7 +205,7 @@ Owner: `KB/docs/context/automation.md:192-195` → **Task-close lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `main` | 1075 | `sed -n 1063,1095p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `main` | 1085 | `sed -n 1073,1105p scripts/task-close.mjs` |
 
 Adjacent concepts: `automation.task-close.scope`, `automation.task-close.receipt`
 
@@ -215,7 +215,7 @@ Owner: `KB/docs/context/automation.md:249-252` → **Plan archival**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `archivePlan` | 887 | `sed -n 875,907p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `archivePlan` | 897 | `sed -n 885,917p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -225,7 +225,7 @@ Owner: `KB/docs/context/automation.md:239-242` → **Public receipt**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `finishVerification` | 981 | `sed -n 969,1001p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `finishVerification` | 991 | `sed -n 979,1011p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -235,8 +235,8 @@ Owner: `KB/docs/context/automation.md:204-213` → **Task-close scope**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `createManifest` | 315 | `sed -n 303,335p scripts/task-close.mjs` |
-| `scripts/task-close.mjs` | `taskCloseIntake` | 222 | `sed -n 210,242p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `createManifest` | 320 | `sed -n 308,340p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `taskCloseIntake` | 227 | `sed -n 215,247p scripts/task-close.mjs` |
 
 Adjacent concepts: `automation.orchestration.ownership`
 
@@ -246,6 +246,6 @@ Owner: `KB/docs/context/automation.md:221-232` → **Task-close verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `verifyV2` | 1045 | `sed -n 1033,1065p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `verifyV2` | 1055 | `sed -n 1043,1075p scripts/task-close.mjs` |
 
 Adjacent concepts: `testing.selection.local`
