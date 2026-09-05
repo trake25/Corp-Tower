@@ -40,6 +40,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `automation.retrieval.states` | [automation.md#retrieval-result-states](./automation.md#retrieval-result-states) | needs-anchor, needs-filter, retrieval-defect |
 | `automation.task-close.lifecycle` | [automation.md#task-close-lifecycle](./automation.md#task-close-lifecycle) | task close, task-close |
 | `automation.task-close.plan-archive` | [automation.md#plan-archival](./automation.md#plan-archival) | plan done, archive plan |
+| `automation.task-close.process-controls` | [automation.md#task-process-controls](./automation.md#task-process-controls) | process controls, bare process, task process |
 | `automation.task-close.receipt` | [automation.md#public-receipt](./automation.md#public-receipt) | qa receipt, public receipt |
 | `automation.task-close.scope` | [automation.md#task-close-scope](./automation.md#task-close-scope) | task manifest, owned paths |
 | `automation.task-close.verification` | [automation.md#task-close-verification](./automation.md#task-close-verification) | task close QA, maintenance-blocked |

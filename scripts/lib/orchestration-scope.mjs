@@ -4,6 +4,7 @@ import {
 } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { dirname, posix, relative, resolve, sep } from 'node:path';
+import { taskProcessControlsForManifest } from './task-process-controls.mjs';
 
 const STATE_DIRECTORY = '.agent-state/automation/orchestration';
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
@@ -60,7 +61,9 @@ function loadParent({ parent, root = process.env.TASK_CLOSE_ROOT || '.' }, claim
   const manifestPath = repositoryPath(repositoryRoot, relative(repositoryRoot, parentPath).replaceAll('\\', '/'), 'parent manifest');
   if (!manifestPath.startsWith('.agent-state/')) throw new Error('parent manifest must stay under .agent-state/');
   const manifest = readJson(parentPath, 'parent manifest');
-  if (!manifest || manifest.schema_version !== 2) throw new Error('parent must be an existing schema-v2 task-close manifest');
+  if (!manifest || ![2, 3].includes(manifest.schema_version))
+    throw new Error('parent must be an existing schema-v2 or schema-v3 task-close manifest');
+  taskProcessControlsForManifest(manifest);
   const runId = identifier(manifest.run_id, 'parent run_id');
   // Claims need an open writer lifecycle; release/cleanup also serve closure retries.
   const phases = { open: ['prepared', 'reviewed', 'failed'], verified: ['verified'], blocked: ['closure-blocked'] };

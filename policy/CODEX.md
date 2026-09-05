@@ -39,6 +39,28 @@ Determine execution mode from the task contract:
 - SINGLE — default when no orchestration mode is declared.
 - ORCHESTRATED — only when the approved plan or delegated worker handoff explicitly identifies orchestrated execution.
 
+## Process-control execution
+
+Use the process controls resolved by the authorized implementation plan or user task.
+
+For a new task with no explicit process controls, use BARE:
+- telemetry: OFF
+- workflow_inefficiency_flagging: OFF
+- qa: OFF
+- qa_coverage: OFF
+- qa_receipt: OFF
+- plan_archival: ON
+
+Persist the complete effective task-close process contract during deterministic task-close prepare. Do not treat process controls as execution-mode branches.
+
+Optional process controls never disable the authorized task contract, explicit task-owned scope, preservation of unrelated concurrent changes, required authorization or safety boundaries, minimal final scope and patch-integrity checking, repair of known task-caused failures, or repository/KB/generated consistency work required by the implementation.
+
+Do not enable an optional process merely because it seems useful. If the task requests an invalid process combination, report the conflict instead of silently changing the contract. `workflow_inefficiency_flagging=ON` requires `telemetry=ON`.
+
+When executable QA is OFF, do not run regression QA solely for closure. When permanent QA coverage is OFF, do not add or update permanent regression coverage merely because source changed. When the public QA receipt is OFF, do not publish one. When plan archival is OFF, successful closure leaves the bound plan active. Plan archival is ON by default.
+
+Post-implementation ChatGPT Reviewer QA is outside Codex task-close and does not block Codex completion unless the authorized workflow explicitly requires it.
+
 For ORCHESTRATED, search this file for `#ORCHESTRATION#` and read only that section in addition to the execution-type policy already routed above. Do not load orchestration policy for SINGLE work.
 
 Use `KB/docs/context/index.md` as the repository-context router.
@@ -105,11 +127,11 @@ Scope comes from the authorized task and resolved evidence, never from the dirty
 
 Preserve unrelated concurrent changes.
 
-Use deterministic repository tooling for generated outputs, QA selection, validation, maps, receipts, ownership enforcement, and close-out when that tooling owns the mechanic. Do not manually reproduce deterministic mechanics.
+Use deterministic repository tooling for generated outputs, ownership enforcement, required consistency work, and close-out. Invoke optional QA, receipts, telemetry, workflow flagging, and other process modules only when the task process contract enables them. Do not manually reproduce deterministic mechanics.
 
-If deterministic close-out returns an eligible workflow-inefficiency candidate, resolve `automation.observability.flags` and assess it in the already-required final provider turn. Otherwise load no flagging context.
+Only when `workflow_inefficiency_flagging` is enabled may deterministic close-out return an eligible workflow-inefficiency candidate. If it does, resolve `automation.observability.flags` and assess it in the already-required final provider turn. Otherwise load no flagging context.
 
-Use existing permanent QA by default. Add or update permanent coverage only when it protects a durable product contract or credible regression within the authorized task. Do not encode tunables, current defaults, copy, pixels, calibration, or private implementation details as permanent contracts.
+Add or update permanent QA coverage only when `qa_coverage` is enabled or the authorized task explicitly makes that coverage artifact part of the requested deliverable. Permanent QA must protect a durable product contract or credible regression, not tunables, current defaults, copy, pixels, calibration, or private implementation details.
 
 Existing `SAFETY EXCEPTION` comments must not be removed, weakened, or rewritten unless the authorized task explicitly retires the underlying safety condition. Keep the exact explanation local to the relevant source.
 

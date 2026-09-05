@@ -10,7 +10,10 @@ source: scripts/qa-gate.mjs#selectQa
 -->
 ## Local QA selection
 
-`qa-gate` selects verification from explicit task-owned paths rather than the dirty tree. A changed test runs itself; shared or unmapped runtime code can widen to the affected domain. Server checks include syntax plus mapped Node tests, client checks include host-matching Godot smoke and mapped GUT, and infra/docs/site-only work does not inherit game suites without runtime risk.
+When executable QA is enabled for the task, `qa-gate` selects verification from explicit task-owned paths rather than the dirty tree. A changed test runs itself; shared or unmapped runtime code can widen to the affected domain.
+Server checks include syntax plus mapped Node tests, client checks include host-matching Godot smoke and mapped GUT, and infra/docs/site-only work does not inherit game suites without runtime risk.
+
+When executable QA is disabled, task-close does not run those selected regression suites solely for closure. Required ownership, patch integrity, and task-triggered KB/generated consistency remain separate from optional executable QA.
 
 <!-- kb
 id: testing.server.coverage
@@ -108,7 +111,7 @@ id: testing.automation.protocol
 alias: automation tests
 alias: retrieval benchmark
 source: scripts/tests/context-query.test.mjs#automation scope selects the protocol suite and retrieval benchmark
-source: scripts/tests/task-close.test.mjs#prepare creates a compact schema-v2 ownership manifest and intake
+source: scripts/tests/task-close.test.mjs#prepare creates an explicit schema-v3 BARE ownership manifest and intake
 source: scripts/tests/orchestration-scope.test.mjs#parallel worker ownership rejects overlapping write claims
 source: scripts/tests/policy-routing.test.mjs#orchestration policy remains routed and bounded
 source: scripts/tests/concept-kb.test.mjs#the repository concept registry is complete, deterministic, and source-grounded

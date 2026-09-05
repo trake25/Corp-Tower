@@ -188,10 +188,30 @@ alias: task-close
 source: scripts/task-close.mjs#main
 adjacent: automation.task-close.scope
 adjacent: automation.task-close.receipt
+adjacent: automation.task-close.process-controls
 -->
 ## Task-close lifecycle
 
-`task-close` is deterministic repository closure around explicit task-owned paths. Schema-2 flow is `prepare → review → close`, with `amend` adding later ownership. Scope is never discovered from the dirty working tree.
+`task-close` is deterministic repository closure around explicit task-owned paths. New manifests carry the explicit task process contract through `prepare → review → close`, with `amend` adding later ownership.
+Scope is never discovered from the dirty working tree. Review and close preserve a bounded compatibility path for valid active pre-process-control manifests so an in-flight task can finish without silently changing its workflow.
+
+<!-- kb
+id: automation.task-close.process-controls
+alias: process controls
+alias: bare process
+alias: task process
+source: scripts/lib/task-process-controls.mjs#resolveTaskProcessControls
+source: scripts/task-close.mjs#createManifest
+adjacent: automation.task-close.lifecycle
+adjacent: automation.task-close.scope
+-->
+## Task process controls
+
+Task-close stores an explicit per-task process contract independently from execution mode. New tasks default to BARE: telemetry, workflow inefficiency flagging, executable QA, permanent QA coverage, and the public QA receipt are off; plan archival is on.
+Planner or an explicitly authorized user task may override those optional controls for one task, and task-close validates and persists the complete effective values.
+
+Optional controls never disable task ownership, concurrent-change preservation, authorization and safety boundaries, minimal patch integrity, repair of known task-caused failures, or KB/generated consistency required by the implementation.
+Workflow inefficiency flagging requires telemetry. Active legacy manifests retain their pre-migration process behavior until closure rather than being reinterpreted as BARE.
 
 <!-- kb
 id: automation.task-close.scope
@@ -215,40 +235,37 @@ closure authority.
 id: automation.task-close.verification
 alias: task close QA
 alias: maintenance-blocked
-source: scripts/task-close.mjs#verifyV2
+source: scripts/task-close.mjs#verifyManifest
 adjacent: testing.selection.local
 -->
 ## Task-close verification
 
-Close-out runs selected QA checks and keeps detailed child output out of public
-scope. Authored KB or retrieval-tooling changes use the full concept-map,
-concept-KB, and retrieval-benchmark path. An ordinary changed source that is
-granted by one or more KB Tree concepts deterministically carries its affected
-concept map as generated output and receives concept-map plus concept-KB
-freshness verification, without inheriting the retrieval benchmark solely
-because locator lines moved.
+Close-out always preserves required ownership, integrity, and task-triggered KB/generated consistency. Executable regression QA runs only when the task process contract enables QA; when disabled, closure records that executable QA was intentionally not run.
 
-Task-caused stale maps, broken source grants, or verification failures remain open; only approved unrelated maintenance blockers can produce a maintenance-blocked closure.
+Authored KB or source changes that require concept-map or concept-KB freshness still receive the smallest required generated consistency checks independently from optional regression QA. Task-caused stale maps, broken source grants, required-consistency failures, or other known task-caused failures remain open. Only approved unrelated maintenance blockers may produce a maintenance-blocked closure.
 
 <!-- kb
 id: automation.task-close.receipt
 alias: qa receipt
 alias: public receipt
 source: scripts/task-close.mjs#finishVerification
+source: scripts/lib/qa-receipt.mjs#renderPublicQaReceipt
 -->
 ## Public receipt
 
-Public QA receipts expose sanitized task identity, owned scope, compact verification outcomes, and maintenance classification without publishing raw private child output. Implementation completion and verification status remain separately representable.
+Public QA receipt generation is controlled independently from executable QA. When enabled, the receipt exposes sanitized task identity, owned scope, compact implementation and verification outcomes, and maintenance classification without publishing raw private child output.
+If executable QA was disabled, the receipt states that it was not run by process control. When receipt generation is disabled, task-close publishes no public QA receipt. Implementation completion and verification status remain separately representable.
 
 <!-- kb
 id: automation.task-close.plan-archive
 alias: plan done
 alias: archive plan
 source: scripts/task-close.mjs#archivePlan
+source: scripts/task-close.mjs#retainPlan
 -->
 ## Plan archival
 
-A bound active plan moves to completed history only after successful lifecycle closure. Archive failure preserves proof for an idempotent retry rather than pretending closure succeeded.
+Plan archival is enabled by default. When enabled, a bound active plan moves to completed history only after successful lifecycle closure, and archive failure preserves proof for an idempotent retry rather than pretending closure succeeded. When explicitly disabled for the task, successful closure leaves the plan active and records that archival was intentionally skipped.
 
 <!-- kb
 id: automation.docs.maps
@@ -309,7 +326,7 @@ source: scripts/task-close.mjs#closeObservabilityUnsafe
 -->
 ## Observability binding
 
-Agent observability binds task/session identity and records only bounded categories,
+When telemetry is enabled by the task process contract, agent observability binds task/session identity and records only bounded categories,
 outcomes, and opaque identifiers, never prompts, responses, patches, commands, or
 transcript contents. Hooks are best-effort: they record health when possible and
 cannot alter task execution, QA, or receipt correctness. Stop performs normal
@@ -350,7 +367,7 @@ source: scripts/agent-observability.mjs#recordFormalFlagCommand
 -->
 ## Workflow inefficiency flags
 
-Deterministic tooling creates a workflow candidate and its eligibility gate.
+When workflow inefficiency flagging is enabled by the task process contract, deterministic tooling creates a workflow candidate and its eligibility gate.
 An eligible same-turn model assessment becomes a formal `WF-*` flag through the
 deterministic flag command; its evidence must belong to the current task and its
 provider-visible material remains bounded. Astra retains the approved-family,

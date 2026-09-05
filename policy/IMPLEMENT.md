@@ -16,7 +16,7 @@ KB prose describes the current system. Do not add task history, scratch notes, f
 
 Do not hand-edit generated KB routers or concept maps. Use the repository's deterministic tooling.
 
-When implementation is complete, continue through the existing task-close review, verification, and close path.
+When implementation is complete, continue through the deterministic task-close review and close path using the task's resolved process controls. Run executable QA verification only when enabled; required ownership, integrity, and repository-consistency closure remains active.
 
 Repair task-caused failures before closing.
 

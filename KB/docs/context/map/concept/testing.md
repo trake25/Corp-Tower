@@ -5,13 +5,13 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## testing.automation.protocol
 
-Owner: `KB/docs/context/testing.md:125-143` → **Automation protocol coverage**
+Owner: `KB/docs/context/testing.md:128-146` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 109 | `sed -n 97,126p scripts/tests/context-query.test.mjs` |
-| `scripts/tests/task-close.test.mjs` | `prepare creates a compact schema-v2 ownership manifest and intake` | 205 | `sed -n 193,225p scripts/tests/task-close.test.mjs` |
-| `scripts/tests/orchestration-scope.test.mjs` | `parallel worker ownership rejects overlapping write claims` | 61 | `sed -n 49,81p scripts/tests/orchestration-scope.test.mjs` |
+| `scripts/tests/task-close.test.mjs` | `prepare creates an explicit schema-v3 BARE ownership manifest and intake` | 257 | `sed -n 245,277p scripts/tests/task-close.test.mjs` |
+| `scripts/tests/orchestration-scope.test.mjs` | `parallel worker ownership rejects overlapping write claims` | 71 | `sed -n 59,91p scripts/tests/orchestration-scope.test.mjs` |
 | `scripts/tests/policy-routing.test.mjs` | `orchestration policy remains routed and bounded` | 48 | `sed -n 36,68p scripts/tests/policy-routing.test.mjs` |
 | `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 60 | `sed -n 48,80p scripts/tests/concept-kb.test.mjs` |
 | `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 63 | `sed -n 51,83p scripts/benchmark-rag.mjs` |
@@ -25,7 +25,7 @@ Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifec
 
 ## testing.balance.tools
 
-Owner: `KB/docs/context/testing.md:102-105` → **Balance tools**
+Owner: `KB/docs/context/testing.md:105-108` → **Balance tools**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -38,7 +38,7 @@ Adjacent concepts: `gameplay.bots.calibration`
 
 ## testing.client.coverage
 
-Owner: `KB/docs/context/testing.md:43-51` → **Godot coverage**
+Owner: `KB/docs/context/testing.md:46-54` → **Godot coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -50,7 +50,7 @@ Adjacent concepts: none
 
 ## testing.client.rendered
 
-Owner: `KB/docs/context/testing.md:63-77` → **Rendered client verification**
+Owner: `KB/docs/context/testing.md:66-80` → **Rendered client verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -63,7 +63,7 @@ Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.render
 
 ## testing.client.snapgrid-isolation
 
-Owner: `KB/docs/context/testing.md:85-90` → **SnapGrid shared-state isolation**
+Owner: `KB/docs/context/testing.md:88-93` → **SnapGrid shared-state isolation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -74,7 +74,7 @@ Adjacent concepts: none
 
 ## testing.contract.tutorial-parity
 
-Owner: `KB/docs/context/testing.md:150-153` → **Tutorial parity**
+Owner: `KB/docs/context/testing.md:153-156` → **Tutorial parity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -84,7 +84,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:163-166` → **Release gates**
+Owner: `KB/docs/context/testing.md:166-169` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -95,7 +95,7 @@ Adjacent concepts: `build.android.pipeline`, `deploy.eks.workflows`
 
 ## testing.selection.local
 
-Owner: `KB/docs/context/testing.md:11-14` → **Local QA selection**
+Owner: `KB/docs/context/testing.md:11-17` → **Local QA selection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -105,7 +105,7 @@ Adjacent concepts: none
 
 ## testing.server.coverage
 
-Owner: `KB/docs/context/testing.md:21-24` → **Server coverage**
+Owner: `KB/docs/context/testing.md:24-27` → **Server coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -115,7 +115,7 @@ Adjacent concepts: none
 
 ## testing.server.reconnect
 
-Owner: `KB/docs/context/testing.md:31-34` → **Reconnect coverage**
+Owner: `KB/docs/context/testing.md:34-37` → **Reconnect coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

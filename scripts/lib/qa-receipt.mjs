@@ -127,6 +127,9 @@ export function renderPublicQaReceipt({
     '',
     '## QA decisions',
     '',
+    ...(qa.executable_status === 'skipped-by-process-control'
+      ? ['- Executable QA: NOT RUN — disabled by task process control']
+      : []),
     `- Permanent coverage: ${sanitized(coverage.status || 'none')}`,
   );
   if (coverage.protected_contract) lines.push(`- Protected contract: ${sanitized(coverage.protected_contract)}`);

@@ -60,6 +60,27 @@ test('orchestration policy remains routed and bounded', () => {
   assert.match(reviewer, /Worker[^\n]*supporting proof/i);
 });
 
+test('Planner and Codex own the resolved process-control contract without widening unrelated routes', () => {
+  const planner = policy('PLANNER.md').split('#PLAN-PHASE-2#').at(-1);
+  const codex = policy('CODEX.md').split('\n#EXECUTION#\n').at(-1).split('\n#ORCHESTRATION#\n')[0];
+  const controls = ['telemetry', 'workflow_inefficiency_flagging', 'qa', 'qa_coverage', 'qa_receipt', 'plan_archival'];
+
+  assert.match(planner, /default process profile is BARE/);
+  assert.match(planner, /Resolve the complete effective values into the Phase 2 plan/);
+  assert.match(planner, /"Everything ON" enables every applicable optional task process/);
+  assert.match(planner, /resolved process controls/);
+  assert.match(codex, /## Process-control execution/);
+  assert.match(codex, /Persist the complete effective task-close process contract/);
+  assert.match(codex, /Invoke optional QA, receipts, telemetry, workflow flagging/);
+  assert.match(policy('IMPLEMENT.md'), /using the task's resolved process controls/);
+  for (const control of controls) {
+    assert.match(planner, new RegExp(`- ${control}: (?:ON|OFF)`));
+    assert.match(codex, new RegExp(`- ${control}: (?:ON|OFF)`));
+  }
+  for (const filename of ['CHATGPT.md', 'REVIEWER.md'])
+    assert.doesNotMatch(policy(filename), /default process profile is BARE|## Process-control execution/);
+});
+
 test('FIX stops at redesign and Safety Exception preservation lives once in CODEX execution policy', () => {
   const codex = policy('CODEX.md');
   const fix = policy('FIX.md');

@@ -45,6 +45,16 @@ test('claims use explicit normalized paths from an open parent without changing 
   assert.deepEqual(readdirSync(dirname(f.stateFile)), ['parent-run.json']);
 });
 
+test('legacy schema-v2 parents retain orchestration ownership compatibility', t => {
+  const f = fixture(t);
+  const legacy = { ...f.manifest, schema_version: 2 };
+  delete legacy.process;
+  f.writeParent(legacy);
+
+  const claimed = claimWorkerScope({ ...f.options, worker: 'legacy-worker', paths: [PATHS[0]] });
+  assert.deepEqual(claimed.workers, [{ worker_id: 'legacy-worker', status: 'active', paths: [PATHS[0]] }]);
+});
+
 test('same-worker repeated claims and extensions are deterministic and idempotent', t => {
   const f = fixture(t);
   const claim = paths => claimWorkerScope({ ...f.options, worker: 'worker-a', paths });
@@ -162,7 +172,7 @@ test('invalid or closed parent manifests fail closed before claims or cleanup', 
   writeFileSync(join(f.root, f.parent), '{broken');
   assert.throws(() => finalizeOrchestrationScope(f.options), /not valid JSON/);
   f.writeParent();
-  assert.throws(() => finalizeOrchestrationScope({ ...f.options, parent: '.agent-state/missing.json' }), /existing schema-v2/);
+  assert.throws(() => finalizeOrchestrationScope({ ...f.options, parent: '.agent-state/missing.json' }), /existing schema-v2 or schema-v3/);
   assert.throws(() => finalizeOrchestrationScope({ ...f.options, parent: '../outside.json' }), /inside the repository/);
   writeFileSync(join(f.root, 'public.json'), JSON.stringify(f.manifest));
   assert.throws(() => finalizeOrchestrationScope({ ...f.options, parent: 'public.json' }), /under .agent-state/);

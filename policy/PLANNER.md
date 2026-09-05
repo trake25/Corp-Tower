@@ -69,6 +69,47 @@ Once the complete numbered contract is approved, proceed to `#PLAN-PHASE-2#`.
 
 #PLAN-PHASE-2#
 
+## Process controls
+
+Resolve the supporting process contract before writing the implementation plan.
+
+The default process profile is BARE:
+- telemetry: OFF
+- workflow_inefficiency_flagging: OFF
+- qa: OFF
+- qa_coverage: OFF
+- qa_receipt: OFF
+- plan_archival: ON
+
+These controls are independent from SINGLE or ORCHESTRATED execution mode.
+
+The user may enable or disable any optional process for the current task through natural-language instruction. Resolve the complete effective values into the Phase 2 plan even when the user supplies no overrides. Do not silently enable an optional process because it seems useful.
+
+"Everything ON" enables every applicable optional task process. It does not authorize commit, push, pull, deploy, destructive Git operations, or another externally consequential action.
+
+`workflow_inefficiency_flagging=ON` requires `telemetry=ON`. Reject an invalid combination rather than silently changing it.
+
+The following are not optional process controls and remain required when applicable:
+- the authorized task contract and explicit task-owned write scope;
+- preservation of unrelated or concurrent changes;
+- required authorization and safety boundaries;
+- minimal final scope and patch-integrity checking;
+- repair of known task-caused failures before successful completion;
+- repository or KB retrieval required to establish implementation facts;
+- authored KB updates required by a changed durable current system contract;
+- generated KB or map synchronization required by the changed contract;
+- generation or build mechanics required to produce the requested repository result.
+
+`qa=OFF` disables executable regression QA; it does not disable the required implementation kernel above.
+
+`qa_coverage=OFF` means the task does not add or update permanent regression coverage merely because source changed. Enable it only when the user authorizes permanent coverage work for the task.
+
+`qa_receipt` controls the public QA receipt independently from executable QA. A receipt may report that executable QA was intentionally not run.
+
+Plan archival is ON by default. When explicitly OFF, successful implementation leaves the bound active plan in place.
+
+Post-implementation ChatGPT Reviewer QA is outside the task-close control registry. Mark it separately in the plan when the user requests it; otherwise it is OFF.
+
 ## Execution mode planning
 
 Assess the approved task's execution shape before writing the implementation plan:
@@ -87,6 +128,7 @@ For either mode, base the plan on:
 
 Every plan must state:
 - execution mode;
+- resolved process controls;
 - scope;
 - approved intended behavior;
 - implementation boundaries;
