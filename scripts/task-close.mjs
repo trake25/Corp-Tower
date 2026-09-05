@@ -195,16 +195,23 @@ function authoredKbDocument(path) {
 function conceptOwnershipFor(paths, root) {
   const registry = loadConceptRegistry({ root });
   const documents = new Set();
+  const maps = new Set();
   const gaps = [];
   for (const path of paths) {
     const ids = registry.reverse_sources.get(path) || [];
     if (sourcePath(path) && !testPath(path) && !ids.length) gaps.push(path);
     for (const id of ids) {
       const concept = registry.by_id.get(id)?.[0];
-      if (concept) documents.add(concept.owner.path);
+      if (!concept) continue;
+      documents.add(concept.owner.path);
+      maps.add(`KB/docs/context/map/concept/${concept.domain}.md`);
     }
   }
-  return { documents: [...documents].sort(), gaps: [...new Set(gaps)].sort() };
+  return {
+    documents: [...documents].sort(),
+    maps: [...maps].sort(),
+    gaps: [...new Set(gaps)].sort(),
+  };
 }
 
 export function taskCloseIntake(paths, options = {}) {
@@ -217,9 +224,11 @@ export function taskCloseIntake(paths, options = {}) {
   ])].sort();
   const qa = selectQa(changed);
   const tools = [{ name: 'QA', command: command(['node', 'scripts/qa-gate.mjs', '--changed', ...changed]) }];
-  if (qa.concept_kb) {
+  if (qa.concept_kb || ownership.maps.length) {
     tools.push({ name: 'concept map', command: command(['node', 'scripts/build-concept-map.mjs', '--check', '--quiet']) });
     tools.push({ name: 'concept KB', command: command(['node', 'scripts/validate-concept-kb.mjs', '--quiet']) });
+  }
+  if (qa.concept_kb) {
     tools.push({ name: 'concept benchmark', command: command(['node', 'scripts/benchmark-rag.mjs', '--concept-check']) });
   }
   const maxBytes = options.artifact ? 24 * 1024 : 8 * 1024;
@@ -227,7 +236,7 @@ export function taskCloseIntake(paths, options = {}) {
     schema_version: 2,
     task_paths: changed,
     docs,
-    maps: [],
+    maps: ownership.maps,
     qa,
     tools,
     unmapped: ownership.gaps,
@@ -491,9 +500,14 @@ export function amendManifest(manifest, paths, plannedQaToolingPaths = [], planB
 
 export function reviewManifest(manifest, { changedPaths, mapBaseline = null }) {
   if (manifest.schema_version !== SCHEMA_VERSION) throw new Error('review requires a schema-v2 manifest');
-  const changed = [...new Set(changedPaths)].sort();
-  if (!changed.length) throw new Error('review needs one or more explicit changed paths');
-  const outside = changed.filter(path => !manifest.owned_paths.includes(path));
+  const requested = [...new Set(changedPaths)].sort();
+  if (!requested.length) throw new Error('review needs one or more explicit changed paths');
+  const owned = new Set(manifest.owned_paths);
+  const ownedChanged = requested.filter(path => owned.has(path));
+  const affectedMaps = new Set(conceptOwnershipFor(ownedChanged.filter(sourcePath), ROOT).maps);
+  const derived = requested.filter(path => affectedMaps.has(path));
+  const changed = requested.filter(path => !affectedMaps.has(path));
+  const outside = changed.filter(path => !owned.has(path));
   if (outside.length) throw new Error(`changed paths are not owned: ${outside.join(', ')}`);
   const intake = taskCloseIntake(changed, { artifact: true });
   const sourceChanged = changed.some(sourcePath);
@@ -510,15 +524,16 @@ export function reviewManifest(manifest, { changedPaths, mapBaseline = null }) {
     maps: documentationScope.maps,
     context_gaps: documentationScope.context_gaps,
     qa: intake.qa,
+    derived_paths: derived,
   };
   const mapHashesAtReview = { ...(mapBaseline || mapHashes()), ...(manifest.review?.map_hashes || {}) };
   return {
     ...manifest,
     phase: 'reviewed',
     changed_paths: changed,
-    derived_paths: [],
+    derived_paths: derived,
     documented_paths: [],
-    publish_paths: changed,
+    publish_paths: publishPathsFor(changed, [], derived),
     documentation: documentationFor(documentationScope, sourceChanged),
     coverage: coverageFor(sourceChanged),
     qa: { ...qaToolingFor(manifest.qa?.planned_paths || [], changed), temporary_verification: 'not-used' },
@@ -558,7 +573,7 @@ export function applyDocumentationDecision(manifest, input) {
       documented_paths: values.documentedPaths,
     },
     documented_paths: values.documentedPaths,
-    publish_paths: publishPathsFor(manifest.changed_paths, values.documentedPaths, []),
+    publish_paths: publishPathsFor(manifest.changed_paths, values.documentedPaths, manifest.derived_paths || []),
     verification: null,
   };
 }
@@ -646,6 +661,7 @@ export function reviewForManifest(manifest, manifestFile) {
     lifecycle: manifest.lifecycle,
     plan: manifest.plan,
     changed_paths: manifest.changed_paths,
+    derived_paths: manifest.derived_paths || [],
     docs: manifest.documentation.candidate_docs,
     maps: manifest.documentation.maps_to_regenerate,
     context_gaps: intake.context_gaps,
@@ -1007,7 +1023,7 @@ function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = nu
   const qaArgs = ['scripts/qa-gate.mjs', '--changed', ...manifest.changed_paths];
   if (qaOverride) qaArgs.push('--classification', qaOverride.classification, '--evidence', qaOverride.evidence);
   steps.push(runStep('QA', qaArgs));
-  const derived = [];
+  const derived = manifest.derived_paths || [];
   manifest.derived_paths = derived;
   const publishPaths = publishPathsFor(manifest.changed_paths, manifest.documented_paths, derived);
   if (publishPaths.some(path => path.startsWith('site/')))

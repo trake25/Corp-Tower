@@ -42,6 +42,7 @@ import {
 const SOURCE = 'src/Server/app/engine/Scoring.js';
 const DOC = 'KB/docs/context/backend.md';
 const SCORE_DOCS = ['KB/docs/context/backend.md', 'KB/docs/context/gameplay.md'];
+const SCORE_MAPS = ['KB/docs/context/map/concept/backend.md', 'KB/docs/context/map/concept/gameplay.md'];
 const TASK_CLOSE = resolve('scripts/task-close.mjs');
 const RECEIPT_IDENTITY = Object.freeze({
   keywords: ['Public', 'QA', 'Receipts'],
@@ -213,9 +214,9 @@ test('prepare creates a compact schema-v2 ownership manifest and intake', () => 
   assert.equal(manifest.documentation.status, 'pending');
   assert.equal(manifest.coverage.status, 'pending');
   assert.deepEqual(manifest.intake.docs, SCORE_DOCS);
-  assert.deepEqual(manifest.intake.maps, []);
+  assert.deepEqual(manifest.intake.maps, SCORE_MAPS);
   assert.deepEqual(manifest.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
-  assert.ok(manifest.intake.tools.some(tool => tool.name === 'QA'));
+  assert.deepEqual(manifest.intake.tools.map(tool => tool.name), ['QA', 'concept map', 'concept KB']);
   const intake = intakeForManifest(manifest, '.agent-state/automation/task.json');
   assert.deepEqual(intake.owned_paths, [SOURCE]);
   assert.ok(Buffer.byteLength(JSON.stringify(intake, null, 2)) + 1 <= 8 * 1024);
@@ -259,13 +260,40 @@ test('task-close derives authored KB documents from exact concept source grants'
   ]);
 
   assert.deepEqual(client.docs, ['KB/docs/context/ui-hud.md']);
+  assert.deepEqual(client.maps, ['KB/docs/context/map/concept/hud.md']);
   assert.deepEqual(server.docs, SCORE_DOCS);
+  assert.deepEqual(server.maps, SCORE_MAPS);
   assert.deepEqual(site.docs, ['KB/docs/context/site.md']);
+  assert.deepEqual(site.maps, ['KB/docs/context/map/concept/site.md']);
   assert.deepEqual(siteWorker.docs, ['KB/docs/context/site.md']);
+  assert.deepEqual(siteWorker.maps, ['KB/docs/context/map/concept/site.md']);
   assert.deepEqual(testOnly.docs, ['KB/docs/context/testing.md']);
+  assert.deepEqual(testOnly.maps, ['KB/docs/context/map/concept/testing.md']);
   assert.deepEqual(testOnly.context_gaps, []);
   assert.deepEqual(combined.docs, [...new Set([...client.docs, ...server.docs, ...site.docs])].sort());
+  assert.deepEqual(combined.maps, [...new Set([...client.maps, ...server.maps, ...site.maps])].sort());
   assert.deepEqual(combined.context_gaps, []);
+});
+
+test('source-owned map freshness uses derived output and omits the retrieval benchmark', () => {
+  const source = 'src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd';
+  const map = 'KB/docs/context/map/concept/hud.md';
+  const prepared = createManifest({ task: 'Refresh a source-owned concept map', ownedPaths: [source] });
+  const reviewed = reviewManifest(prepared, { changedPaths: [source, map], mapBaseline: {} });
+  const decided = applyDocumentationDecision(reviewed, {
+    decision: 'not-needed',
+    reason: 'The source edit does not change the durable contract.',
+  });
+
+  assert.deepEqual(reviewed.changed_paths, [source]);
+  assert.deepEqual(reviewed.derived_paths, [map]);
+  assert.deepEqual(reviewed.documentation.maps_to_regenerate, [map]);
+  assert.deepEqual(reviewed.review.intake.tools.map(tool => tool.name), ['QA', 'concept map', 'concept KB']);
+  assert.deepEqual(decided.publish_paths, [map, source].sort());
+  assert.throws(
+    () => reviewManifest(prepared, { changedPaths: [source, 'KB/docs/context/map/concept/backend.md'], mapBaseline: {} }),
+    /not owned/,
+  );
 });
 
 test('a task-owned valid new concept document remains eligible after explicit task ownership', () => {
@@ -441,6 +469,7 @@ test('review accepts only owned final paths and refreshes docs and QA from them'
   assert.deepEqual(reviewed.documentation.candidate_docs, SCORE_DOCS);
   assert.deepEqual(reviewed.review.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
   assert.equal(reviewed.documentation.status, 'pending');
+  assert.deepEqual(reviewed.documentation.maps_to_regenerate, SCORE_MAPS);
   assert.deepEqual(reviewed.review.map_hashes, { 'KB/docs/context/map/concept/backend.md': 'before' });
   const repeated = reviewManifest(reviewed, { changedPaths: [SOURCE], mapBaseline: { 'KB/docs/context/map/concept/backend.md': 'after' } });
   assert.deepEqual(repeated.review.map_hashes, { 'KB/docs/context/map/concept/backend.md': 'before' });

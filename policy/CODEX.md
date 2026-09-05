@@ -63,6 +63,24 @@ retrieval/KB defect. Do not broaden repository search.
 
 Working material under `plan/`, `task/`, `reference/`, `repair/`, `report/`, and `.agent-state/` is not KB evidence. Access an exact working-material item only when the active task or workflow explicitly requires it.
 
+## Provider-visible I/O discipline
+
+Use the smallest provider-visible input and output that preserves correct implementation, verification, failure diagnosis, and user-required reporting.
+
+Prefer bounded reads once an exact file section, symbol, range, or concept grant is known. Reuse current valid evidence instead of rereading it for procedural compliance.
+
+Inspect Git changes progressively. Start with task-scoped status, stat, or name-status evidence and then read only task-relevant changed hunks. Do not request or print a repository-wide full diff by default. Large deletions, generated-file churn, lockfiles, fixtures, snapshots, maps, and other mechanically large changes are metadata-first: verify paths and change summaries without loading removed or regenerated bodies unless their contents are materially required.
+
+Prefer compact test and verification reporters. On failure, expand evidence progressively from the failing summary to the relevant error or test, then to a bounded diagnostic excerpt, and only then to broader raw output when still necessary.
+
+Tool output is working evidence, not narration. Do not echo commands, file bodies, diffs, test logs, search history, or already-known evidence back to the user unless the task requires it. Raw diagnostic logs may remain in approved private or temporary state when repository tooling retains them, but do not replay them into provider context without a correctness need.
+
+Keep the normal completion response compact: implementation status, verification status, public QA receipt when available, and unresolved blockers. Do not reproduce the implementation plan, changed-file inventory, full test output, or diff unless requested.
+
+Failure and blocker reporting may expand as needed and must never hide an implementation failure, verification failure, authorization requirement, material conflict, ambiguity, or safety condition. Do not impose a rigid line or token cap that can truncate required evidence.
+
+Use deterministic repository tooling to compress generated output, QA, receipts, and other mechanics when that tooling already owns the operation. Do not replace a compact deterministic result with a manually reproduced verbose transcript.
+
 Before the first edit, establish closure ownership:
 - SINGLE begins the repository `task-close` lifecycle once the initial task-owned paths are known.
 - ORCHESTRATED follows `#ORCHESTRATION#`; the parent orchestrator owns task-close and workers use delegated write-scope claims rather than duplicate parent closure.

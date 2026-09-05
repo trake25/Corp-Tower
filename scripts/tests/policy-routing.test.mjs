@@ -109,6 +109,26 @@ test('model policies own deterministic retrieval transports and role policies de
   }
 });
 
+test('Codex execution owns one bounded provider-visible I/O discipline', () => {
+  const codex = policy('CODEX.md');
+  const execution = codex.split('\n#EXECUTION#\n').at(-1).split('\n#ORCHESTRATION#\n')[0];
+
+  assert.equal((codex.match(/^## Provider-visible I\/O discipline$/gm) || []).length, 1);
+  assert.match(execution, /smallest provider-visible input and output/);
+  assert.match(execution, /Prefer bounded reads/);
+  assert.match(execution, /Do not request or print a repository-wide full diff by default/);
+  assert.match(execution, /Large deletions, generated-file churn[\s\S]*metadata-first/);
+  assert.match(execution, /expand evidence progressively/);
+  assert.match(execution, /normal completion response compact/);
+  assert.match(execution, /Do not impose a rigid line or token cap/);
+
+  for (const filename of ['IMPLEMENT.md', 'FIX.md']) {
+    const source = policy(filename);
+    assert.doesNotMatch(source, /Provider-visible I\/O discipline/);
+    assert.doesNotMatch(source, /repository-wide full diff|metadata-first/);
+  }
+});
+
 test('one-tree invariant retires the legacy corpus, tooling, and skill routes', () => {
   const retiredCorpus = join(ROOT, 'docs', 'context');
   const retiredTools = [

@@ -91,6 +91,32 @@ source: scripts/lib/context-query.mjs#conceptBundle
 A context bundle is a bounded handoff for environments without direct local-tool access. It contains selected evidence/provenance under explicit byte limits and never grants filesystem capabilities beyond what was deliberately included.
 
 <!-- kb
+id: automation.execution.io-discipline
+alias: provider-visible I/O
+alias: Codex I/O discipline
+source: policy/CODEX.md#Provider-visible I/O discipline
+source: scripts/task-close.mjs#compactOutput
+source: scripts/qa-gate.mjs#fail
+adjacent: automation.observability.usage
+-->
+## Provider-visible I/O discipline
+
+Codex minimizes provider-visible I/O rather than execution evidence. Once an exact
+evidence boundary is known it prefers bounded reads, task-scoped change
+summaries, relevant hunks, and progressive failure diagnostics instead of whole
+files, full repository diffs, deleted bodies, generated churn, or raw successful
+logs. Existing deterministic QA and close-out wrappers keep detailed diagnostics
+private while exposing compact results.
+
+Completion handoffs report implementation, verification, public receipt, and
+blockers without narrating tool history. Failure evidence expands only as
+correctness requires, so efficiency never becomes a hard cap that can hide a
+conflict, authorization need, failed check, or safety condition. Usage or
+efficiency telemetry remains exact-or-unavailable; this discipline does not
+authorize prompt, response, command, patch, diff, or transcript capture merely
+to measure savings.
+
+<!-- kb
 id: automation.orchestration.execution
 alias: orchestrated execution
 alias: multi-agent implementation
@@ -172,11 +198,15 @@ adjacent: testing.selection.local
 -->
 ## Task-close verification
 
-Close-out runs selected QA checks, regenerates KB Tree output when authored
-concepts change, validates KB Tree as required, and keeps detailed child output
-out of public scope.
-Task-caused failures remain open; only approved unrelated maintenance blockers
-can produce a maintenance-blocked closure.
+Close-out runs selected QA checks and keeps detailed child output out of public
+scope. Authored KB or retrieval-tooling changes use the full concept-map,
+concept-KB, and retrieval-benchmark path. An ordinary changed source that is
+granted by one or more KB Tree concepts deterministically carries its affected
+concept map as generated output and receives concept-map plus concept-KB
+freshness verification, without inheriting the retrieval benchmark solely
+because locator lines moved.
+
+Task-caused stale maps, broken source grants, or verification failures remain open; only approved unrelated maintenance blockers can produce a maintenance-blocked closure.
 
 <!-- kb
 id: automation.task-close.receipt

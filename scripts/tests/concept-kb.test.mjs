@@ -236,6 +236,38 @@ test('temporary concept maps are deterministic and include bounded resolved anch
   }
 });
 
+test('filtered map generation preserves unrelated generated-map changes', () => {
+  const root = temporaryKb(TWO_CONCEPTS);
+  const selectedPath = 'KB/docs/context/map/concept/test.md';
+  const unrelatedPath = join(root, 'KB/docs/context/map/concept/backend.md');
+  try {
+    writeFileSync(join(root, 'src/backend.mjs'), 'export function backendAnchor() {}\n');
+    writeFileSync(join(root, 'KB/docs/context/backend.md'), `<!-- kb
+id: backend.example.contract
+source: src/backend.mjs#backendAnchor
+-->
+## Backend contract
+
+An unrelated generated domain.
+`);
+    assert.equal(buildConceptMaps({ root }).status, 'passed');
+    const unrelated = `${readFileSync(unrelatedPath, 'utf8')}concurrent change\n`;
+    writeFileSync(unrelatedPath, unrelated);
+    writeFileSync(join(root, 'src/example.mjs'), '\nexport function firstAnchor() {}\nexport function secondAnchor() {}\n');
+
+    const filtered = buildConceptMaps({ root, mapPaths: [selectedPath] });
+    const fullCheck = buildConceptMaps({ root, check: true });
+
+    assert.equal(filtered.status, 'passed');
+    assert.deepEqual(filtered.stale, [selectedPath]);
+    assert.equal(readFileSync(unrelatedPath, 'utf8'), unrelated);
+    assert.equal(fullCheck.status, 'stale');
+    assert.deepEqual(fullCheck.stale, ['KB/docs/context/map/concept/backend.md']);
+  } finally {
+    clean(root);
+  }
+});
+
 test('duplicate IDs and ambiguous normalized aliases are rejected', () => {
   const duplicateRoot = temporaryKb(TWO_CONCEPTS.replace('id: test.example.second', 'id: test.example.first'));
   const ambiguousRoot = temporaryKb(TWO_CONCEPTS.replace('alias: second behavior', 'alias: FIRST   BEHAVIOR'));

@@ -10,7 +10,7 @@ Owner: `KB/docs/context/testing.md:125-143` → **Automation protocol coverage**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 107 | `sed -n 95,124p scripts/tests/context-query.test.mjs` |
-| `scripts/tests/task-close.test.mjs` | `prepare creates a compact schema-v2 ownership manifest and intake` | 204 | `sed -n 192,224p scripts/tests/task-close.test.mjs` |
+| `scripts/tests/task-close.test.mjs` | `prepare creates a compact schema-v2 ownership manifest and intake` | 205 | `sed -n 193,225p scripts/tests/task-close.test.mjs` |
 | `scripts/tests/orchestration-scope.test.mjs` | `parallel worker ownership rejects overlapping write claims` | 61 | `sed -n 49,81p scripts/tests/orchestration-scope.test.mjs` |
 | `scripts/tests/policy-routing.test.mjs` | `orchestration policy remains routed and bounded` | 48 | `sed -n 36,68p scripts/tests/policy-routing.test.mjs` |
 | `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 60 | `sed -n 48,80p scripts/tests/concept-kb.test.mjs` |
