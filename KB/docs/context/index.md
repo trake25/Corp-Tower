@@ -29,6 +29,8 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `automation.observability.binding` | [automation.md#observability-binding](./automation.md#observability-binding) | agent observability, task binding |
 | `automation.observability.flags` | [automation.md#workflow-inefficiency-flags](./automation.md#workflow-inefficiency-flags) | workflow candidate, inefficiency flag |
 | `automation.observability.usage` | [automation.md#observability-usage](./automation.md#observability-usage) | provider tokens, rollout usage |
+| `automation.orchestration.execution` | [automation.md#orchestrated-execution](./automation.md#orchestrated-execution) | orchestrated execution, multi-agent implementation |
+| `automation.orchestration.ownership` | [automation.md#orchestration-ownership](./automation.md#orchestration-ownership) | worker scope, parallel ownership |
 | `automation.retrieval.aliases` | [automation.md#retrieval-aliases](./automation.md#retrieval-aliases) | retrieval-aliases.json |
 | `automation.retrieval.bundle` | [automation.md#context-bundles](./automation.md#context-bundles) | context bundle |
 | `automation.retrieval.direct` | [automation.md#direct-retrieval-discipline](./automation.md#direct-retrieval-discipline) | agent retrieval, bounded context |
@@ -218,7 +220,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 
 | Concept | Owning section | Aliases |
 |---|---|---|
-| `testing.automation.protocol` | [testing.md#automation-protocol-coverage](./testing.md#automation-protocol-coverage) | automation tests, concept retrieval benchmark |
+| `testing.automation.protocol` | [testing.md#automation-protocol-coverage](./testing.md#automation-protocol-coverage) | automation tests, retrieval benchmark |
 | `testing.balance.tools` | [testing.md#balance-tools](./testing.md#balance-tools) | balance simulator, stability probe, impact probe |
 | `testing.client.coverage` | [testing.md#godot-coverage](./testing.md#godot-coverage) | GUT, client smoke |
 | `testing.client.rendered` | [testing.md#rendered-client-verification](./testing.md#rendered-client-verification) | rendered QA, manual visual QA |

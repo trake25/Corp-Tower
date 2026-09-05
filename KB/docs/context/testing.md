@@ -106,10 +106,11 @@ Balance Simulator, Stability Probe, and Impact Probe are tuning instruments rath
 <!-- kb
 id: testing.automation.protocol
 alias: automation tests
-alias: concept retrieval benchmark
-source: scripts/tests/context-query.test.mjs#retired context commands fail clearly without fallback
-source: scripts/tests/policy-routing.test.mjs#one-tree invariant retires the legacy corpus, tooling, and skill routes
+alias: retrieval benchmark
+source: scripts/tests/context-query.test.mjs#automation scope selects the protocol suite and retrieval benchmark
 source: scripts/tests/task-close.test.mjs#prepare creates a compact schema-v2 ownership manifest and intake
+source: scripts/tests/orchestration-scope.test.mjs#parallel worker ownership rejects overlapping write claims
+source: scripts/tests/policy-routing.test.mjs#orchestration policy remains routed and bounded
 source: scripts/tests/concept-kb.test.mjs#the repository concept registry is complete, deterministic, and source-grounded
 source: scripts/benchmark-rag.mjs#runConceptBenchmark
 source: scripts/lib/kb-calibration.mjs#measureKbCalibration
@@ -119,21 +120,26 @@ source: scripts/qa-gate.mjs#selectToolingQa
 source: scripts/fixtures/agent-observability/provider-events.json#events
 adjacent: automation.retrieval.protocol
 adjacent: automation.task-close.lifecycle
+adjacent: automation.orchestration.ownership
 -->
 ## Automation protocol coverage
 
-Automation tests protect the one-tree architecture, concept-only CLI surface,
-retrieval states and budgets, task-close ownership and closure, publication
-scope, map generation, bounded observability, and safety gates. The hook smoke
-executes configured lifecycle payloads against local private state, including
-degraded and partial settlement, without a live provider or retained private
-payload. Focused concept tests cover parser, generator, validator, source-anchor,
-and map isolation contracts. The explicitly requested concept benchmark gates
-exact routes and closed failures, then locally measures representative concept
-and journey footprints, merges overlapping source windows, and writes only
-sanitized metrics to ignored benchmark state.
+Automation tests protect retrieval states and budgets, task-close ownership and
+closure, orchestration worker-scope exclusion, publication scope, map generation,
+bounded observability, and safety gates. The hook smoke executes configured
+lifecycle payloads against local private state, including degraded and partial
+settlement, without a live provider or retained private payload. Focused concept
+tests cover parser/generator/validator integrity and KB Tree map isolation. The
+explicitly requested concept benchmark gates exact routes and closed failures,
+then locally measures representative concept and journey footprints, merges
+overlapping source windows, and writes only sanitized metrics to ignored
+benchmark state.
 
-Public calibration is a separate human action: the manual exporter reads the latest valid private snapshot, computes heuristic review prompts, and creates the next collision-safe version under non-context `report/`. Neither QA, task-close, nor the benchmark invokes that exporter, and footprint observations are not correctness gates.
+Public calibration is a separate human action: the manual exporter reads the
+latest valid private snapshot, computes heuristic review prompts, and creates the
+next collision-safe version under non-context `report/`. Neither QA, task-close,
+nor the benchmark invokes that exporter, and footprint observations are not
+correctness gates.
 
 <!-- kb
 id: testing.contract.tutorial-parity

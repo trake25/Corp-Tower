@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSy
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 import { executeCommand } from '../agent-observability.mjs';
 import { selectQa } from '../qa-gate.mjs';
@@ -15,6 +16,7 @@ import {
 } from '../lib/maintenance-handoff.mjs';
 import { publicQaReceiptPath, renderPublicQaReceipt, writePublicQaReceipt } from '../lib/qa-receipt.mjs';
 import { createTaskIdentity, taskIdentityBase, taskIdentityForManifest } from '../lib/task-identity.mjs';
+import { claimWorkerScope, releaseWorkerScope } from '../lib/orchestration-scope.mjs';
 import {
   amendManifest,
   archivePlan,
@@ -875,6 +877,71 @@ test('passed close archives a bound plan and records the closed lifecycle', () =
     assert.match(publicReceipt, /Active plan: plan\/task\.md/);
     assert.match(publicReceipt, /Archived plan: plan\/done\/task\.md/);
     assert.equal(manifest.publish_paths.some(path => path.startsWith('plan/')), false);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('active worker claims block parent closure and released claims preserve normal completion', () => {
+  const fixture = terminalCloseFixture(`
+    import { appendFileSync } from 'node:fs';
+    appendFileSync('qa-runs.txt', 'run\\n');
+    console.log('PASS — fixture QA');
+  `, 'Orchestrated parent fixture', { plan: true });
+  const options = { root: fixture.root, parent: fixture.manifestPath, worker: 'worker-a' };
+  try {
+    claimWorkerScope({ ...options, paths: ['README.md'] });
+    const blocked = fixture.run();
+    assert.notEqual(blocked.status, 0);
+    assert.match(blocked.stderr, /active worker claims.*worker-a: README.md/);
+    assert.equal(existsSync(join(fixture.root, 'qa-runs.txt')), false);
+    assert.equal(existsSync(fixture.activePlan), true);
+    assert.equal(existsSync(fixture.archivedPlan), false);
+    assert.equal(existsSync(join(fixture.root, 'report/qa-receipts')), false);
+    assert.equal(JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8')).lifecycle.status, 'open');
+
+    releaseWorkerScope(options);
+    const closed = fixture.run();
+    assert.equal(closed.status, 0, closed.stderr);
+    const manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
+    assert.equal(manifest.phase, 'closed');
+    assert.equal(manifest.verification.status, 'passed');
+    assert.equal(manifest.plan.status, 'archived');
+    assert.equal(readFileSync(join(fixture.root, 'qa-runs.txt'), 'utf8'), 'run\n');
+    assert.equal(existsSync(join(fixture.root, '.agent-state/automation/orchestration')), false);
+    assert.match(readFileSync(join(fixture.root, manifest.verification.public_receipt), 'utf8'), /Task closure: CLOSED/);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('a claim arriving during parent QA blocks publication and requires fresh verification', () => {
+  const scopeModule = pathToFileURL(resolve('scripts/lib/orchestration-scope.mjs')).href;
+  const fixture = terminalCloseFixture(`
+    import { appendFileSync, existsSync } from 'node:fs';
+    import { claimWorkerScope } from ${JSON.stringify(scopeModule)};
+    const first = !existsSync('qa-runs.txt');
+    appendFileSync('qa-runs.txt', 'run\\n');
+    if (first) claimWorkerScope({ parent: '.agent-state/close.json', worker: 'late-worker', paths: ['README.md'] });
+    console.log('PASS — fixture QA');
+  `, 'Late worker fixture', { plan: true });
+  try {
+    const blocked = fixture.run();
+    assert.notEqual(blocked.status, 0);
+    assert.match(blocked.stderr, /active worker claims.*late-worker: README.md/);
+    const manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
+    assert.equal(manifest.lifecycle.status, 'open');
+    assert.equal(manifest.verification, null);
+    assert.deepEqual(manifest.publish_paths, []);
+    assert.equal(existsSync(fixture.activePlan), true);
+    assert.equal(existsSync(fixture.archivedPlan), false);
+    assert.equal(existsSync(join(fixture.root, 'report/qa-receipts')), false);
+    releaseWorkerScope({ root: fixture.root, parent: fixture.manifestPath, worker: 'late-worker' });
+    const retried = fixture.run();
+    assert.equal(retried.status, 0, retried.stderr);
+    assert.equal(readFileSync(join(fixture.root, 'qa-runs.txt'), 'utf8'), 'run\nrun\n');
+    assert.equal(existsSync(fixture.archivedPlan), true);
+    assert.equal(existsSync(join(fixture.root, '.agent-state/automation/orchestration')), false);
   } finally {
     rmSync(fixture.root, { recursive: true, force: true });
   }

@@ -49,7 +49,7 @@ Summarize intended behavior as technical product behavior, including only the re
 - failure handling;
 - fallback behavior;
 - boundaries;
-- safety and security
+- safety and security.
 
 Avoid product/game implementation context unless the workflow directly depends on it.
 
@@ -69,20 +69,47 @@ Once the complete numbered contract is approved, proceed to `#PLAN-PHASE-2#`.
 
 #PLAN-PHASE-2#
 
-Create one compact implementation plan for a single uninterrupted Codex run.
+## Execution mode planning
 
-Base the plan on:
+Assess the approved task's execution shape before writing the implementation plan:
+
+- SINGLE — one cohesive Codex implementation run is the safer or more efficient execution unit.
+- ORCHESTRATED — the task has multiple coherent implementation responsibilities whose bounded delegation materially reduces context reconstruction, enables useful safe concurrency, or improves integration control enough to justify orchestration overhead.
+
+Do not choose ORCHESTRATED only because the task may approach a model context window. Compaction is allowed. Decompose by semantic responsibility, dependency boundaries, architectural coupling, integration risk, and expected context-reconstruction cost.
+
+Prefer SINGLE when splitting would make multiple agents rediscover the same implementation state or when the work is too tightly coupled to create independently verifiable units.
+
+For either mode, base the plan on:
 - the approved numbered contract;
 - current repository state;
 - only the KB concepts and bounded source evidence required to scope implementation.
 
-The plan must state:
+Every plan must state:
+- execution mode;
 - scope;
 - approved intended behavior;
 - implementation boundaries;
 - verification expectations;
 - directly affected documentation;
-- any explicitly authorized generic QA tooling.
+- any explicitly authorized generic QA tooling;
+- recommended Codex model and effort.
+
+Select only model names supported by current authoritative Codex/product configuration. Do not invent model names. Allowed effort recommendations are Medium, High, xHigh, Max, and Ultra where supported.
+
+For SINGLE, recommend the model and effort for that implementation run.
+
+For ORCHESTRATED:
+- Create one authoritative parent implementation plan.
+- Define coherent semantic worker units, their dependencies, what each unit produces or consumes, shared invariants or interfaces, and parent-level acceptance criteria.
+- Identify material likely write-overlap or sequencing risks when current evidence makes them knowable, but do not inspect unnecessary source merely to predict every changed file.
+- Recommend an orchestrator/integrator model and effort and a model and effort for each worker unit. Different worker units may use different recommendations.
+- The orchestrator recommendation must be at least as capable as the strongest worker recommendation, and its effort must be at least the highest worker effort. If authoritative model capability ordering is unavailable, use the same model as the strongest worker requirement rather than guessing that another model is stronger.
+- The parent plan authorizes the orchestrator to refine executable decomposition against current repository evidence by merging, splitting, ordering, or serializing worker units without changing approved intended behavior or adding unrelated scope.
+- The parent plan must require dependency-aware execution waves rather than maximum parallelism, one active writer for each shared mutable path, bounded worker context, compact worker handoffs, same-worker repair reuse when a failure remains inside that worker's ownership, and parent-level integration verification.
+- Isolated branches or worktrees are exceptional. Include them only when their parallelism benefit justifies merge and cleanup overhead and the required Git operation is explicitly authorized.
+
+For approved WORKFLOW changes where policy or authored KB wording itself carries the intended behavior, write the exact replacement or insertion prose in the plan. Codex integrates that approved prose without paraphrasing it. Generated KB routers and maps remain tooling-owned.
 
 Keep unrelated maintenance out of scope.
 
@@ -94,9 +121,9 @@ Deliver the implementation plan as a downloadable Markdown artifact named:
 
 In the accompanying ChatGPT reply, state:
 - task complexity;
-- recommended Codex model: Terra, Sol, Astra only;
-- recommended effort: Medium, High, xHigh, Max only;
-- a short reason for the model and effort recommendation.
+- execution mode;
+- recommended model and effort for SINGLE, or orchestrator plus worker recommendations for ORCHESTRATED;
+- a short reason for the recommendation.
 
 After delivering the Phase 2 plan, stop. Implementation belongs to Codex.
 

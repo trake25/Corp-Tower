@@ -91,6 +91,49 @@ source: scripts/lib/context-query.mjs#conceptBundle
 A context bundle is a bounded handoff for environments without direct local-tool access. It contains selected evidence/provenance under explicit byte limits and never grants filesystem capabilities beyond what was deliberately included.
 
 <!-- kb
+id: automation.orchestration.execution
+alias: orchestrated execution
+alias: multi-agent implementation
+source: policy/PLANNER.md#Execution mode planning
+source: policy/CODEX.md#Orchestration execution
+source: policy/REVIEWER.md#Integrated QA
+adjacent: automation.orchestration.ownership
+adjacent: automation.task-close.lifecycle
+-->
+## Orchestrated execution
+
+Large tasks use orchestration only when semantic decomposition reduces context
+reconstruction or integration risk enough to justify coordination overhead.
+Planner owns single-run versus orchestrated routing and model/effort
+recommendations; the orchestrator validates executable decomposition against
+current repository evidence, establishes shared contracts, delegates bounded
+worker context, and integrates the parent result. The parent plan remains the
+behavior authority. Scoped repair returns to the same worker when practical;
+cross-worker failures remain orchestrator-owned until responsibility is
+resolved. Worker transcripts are not parent integration context.
+
+<!-- kb
+id: automation.orchestration.ownership
+alias: worker scope
+alias: parallel ownership
+source: policy/CODEX.md#Orchestration execution
+source: scripts/lib/orchestration-scope.mjs#claimWorkerScope
+source: scripts/lib/orchestration-scope.mjs#finalizeOrchestrationScope
+adjacent: automation.orchestration.execution
+adjacent: automation.task-close.scope
+-->
+## Orchestration ownership
+
+Parallel workers may share read evidence but may not hold overlapping write
+ownership. The orchestrator claims explicit worker paths from the parent task
+scope before concurrent writers run; deterministic tooling rejects sibling
+overlap and never derives ownership from the dirty tree. Shared writable paths
+use one owner or serialized execution. A worker cannot expand across another
+active claim; new write dependencies return to the orchestrator. Worker claims
+are subordinate execution locks rather than independent task closure, and
+released private orchestration state is cleaned before the parent task closes.
+
+<!-- kb
 id: automation.task-close.lifecycle
 alias: task close
 alias: task-close
@@ -108,13 +151,17 @@ alias: task manifest
 alias: owned paths
 source: scripts/task-close.mjs#createManifest
 source: scripts/task-close.mjs#taskCloseIntake
+adjacent: automation.orchestration.ownership
 -->
 ## Task-close scope
 
 Prepare owns explicit paths, planned QA tooling, and an optional active plan
-before edits. Review accepts only owned final changes and recomputes deterministic
-QA and documentation candidates. Close records documentation/coverage decisions
-and verifies the reviewed set.
+before edits. Review accepts only owned final changes and recomputes
+deterministic QA and documentation candidates. Close records
+documentation/coverage decisions and verifies the reviewed set. For
+orchestrated execution, one parent manifest owns the integrated path union;
+worker write claims are subordinate execution locks and never become independent
+closure authority.
 
 <!-- kb
 id: automation.task-close.verification

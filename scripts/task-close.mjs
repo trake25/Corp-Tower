@@ -12,6 +12,7 @@ import { flagEligibility } from './lib/agent-observability/flagging.mjs';
 import { codexSessionIds } from './lib/agent-observability/runtime.mjs';
 import { publicQaReceiptPath, writePublicQaReceipt } from './lib/qa-receipt.mjs';
 import { taskIdentityForManifest } from './lib/task-identity.mjs';
+import { finalizeOrchestrationScope } from './lib/orchestration-scope.mjs';
 import {
   createMaintenanceItem,
   failureClassificationFromOutput,
@@ -841,6 +842,20 @@ export function archivePlan(plan, root = ROOT) {
 }
 
 function persistVerifiedClosure(manifest, manifestFile, receipt, verifiedPublishPaths) {
+  try {
+    finalizeOrchestrationScope({ parent: manifestFile, root: ROOT });
+  } catch (error) {
+    // A claim may have arrived during QA. Its later release cannot make that proof reusable.
+    manifest.lifecycle = { status: 'open' };
+    manifest.phase = 'reviewed';
+    manifest.verification = null;
+    manifest.publish_paths = [];
+    receipt.lifecycle = { status: 'open' };
+    receipt.public_receipt = null;
+    writeFileSync(receiptPath(manifestFile), `${JSON.stringify(receipt, null, 2)}\n`);
+    writeManifest(manifestFile, manifest);
+    throw error;
+  }
   const plan = archivePlan(manifest.plan);
   const closed = ['archived', 'not-applicable'].includes(plan.status);
   const lifecycle = { status: closed ? 'closed' : 'blocked' };
@@ -974,6 +989,7 @@ function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = nu
   requireDocumentationDecision(manifest);
   requireCoverageDecision(manifest);
   requireFallbackFixtures(manifest);
+  finalizeOrchestrationScope({ parent: manifestFile, root: ROOT });
   const steps = [];
   const changedMaps = pathChanges(manifest.review.map_hashes || {}, mapHashes());
   if (changedMaps.length) steps.push({

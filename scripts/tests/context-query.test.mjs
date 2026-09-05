@@ -4,6 +4,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import * as query from '../lib/context-query.mjs';
+import { AUTOMATION_PROTOCOL_TESTS, CONCEPT_KB_TESTS, selectQa } from '../qa-gate.mjs';
+import { taskCloseIntake } from '../task-close.mjs';
 
 const ROOT = resolve('.');
 const CLI = resolve('scripts/context.mjs');
@@ -100,6 +102,18 @@ test('retired context commands fail clearly without fallback', () => {
     assert.match(result.stderr, /unsupported context command/, command);
     assert.match(result.stderr, /concept-route, concept-read, concept-bundle/, command);
   }
+});
+
+test('automation scope selects the protocol suite and retrieval benchmark', () => {
+  const paths = ['scripts/lib/orchestration-scope.mjs', 'KB/docs/context/automation.md'];
+  const qa = selectQa(paths);
+  const workerContract = 'scripts/tests/orchestration-scope.test.mjs';
+  assert.ok(AUTOMATION_PROTOCOL_TESTS.includes(workerContract));
+  assert.deepEqual(qa.tooling_tests, [...new Set([...CONCEPT_KB_TESTS, workerContract])].sort());
+  assert.equal(qa.runtime_applies, false);
+  const intake = taskCloseIntake(paths);
+  assert.ok(intake.tools.some(tool => tool.name === 'concept benchmark'
+    && tool.command.argv.includes('--concept-check')));
 });
 
 test('concept CLI source has no legacy command dispatch', () => {

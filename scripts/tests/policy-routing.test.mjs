@@ -45,6 +45,21 @@ test('planner and reviewer retain sparse KB Tree routes', () => {
   }
 });
 
+test('orchestration policy remains routed and bounded', () => {
+  const phaseTwo = policy('PLANNER.md').split('#PLAN-PHASE-2#').at(-1);
+  for (const mode of ['SINGLE', 'ORCHESTRATED']) assert.match(phaseTwo, new RegExp(`\\b${mode}\\b`));
+  assert.match(phaseTwo, /Allowed effort[^\n]*\bUltra\b/i);
+  assert.match(phaseTwo, /plan[^\n]*must[^\n]*:[\s\S]*?recommend[^\n]*model[^\n]*effort/i);
+  const codex = policy('CODEX.md');
+  assert.match(codex, /#ORCHESTRATION#/);
+  for (const role of ['ORCHESTRATOR', 'WORKER']) assert.match(codex, new RegExp(`\\b${role}\\b`));
+  assert.match(codex, /parent (?:task-close|closure)[^.\n]*orchestrator/i);
+  assert.match(codex, /parallel workers[^\n]*(?:may|must) not[^\n]*overlapping[^\n]*write ownership/i);
+  const reviewer = policy('REVIEWER.md');
+  assert.match(reviewer, /parent plan[^\n]*implementation contract/i);
+  assert.match(reviewer, /Worker[^\n]*supporting proof/i);
+});
+
 test('FIX stops at redesign and Safety Exception preservation lives once in CODEX execution policy', () => {
   const codex = policy('CODEX.md');
   const fix = policy('FIX.md');

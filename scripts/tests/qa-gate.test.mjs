@@ -70,6 +70,17 @@ test('automation sources select focused tests from the canonical protocol', () =
   assert.ok(tooling.tests.every(path => AUTOMATION_PROTOCOL_TESTS.includes(path)));
 });
 
+test('orchestration sources and their test select the worker ownership contract', () => {
+  const contract = 'scripts/tests/orchestration-scope.test.mjs';
+  assert.ok(AUTOMATION_PROTOCOL_TESTS.includes(contract));
+  for (const path of ['scripts/orchestration-scope.mjs', 'scripts/lib/orchestration-scope.mjs', contract]) {
+    assert.deepEqual(selectToolingQa([path]), { applies: true, tests: [contract] });
+    const plan = selectQa([path]);
+    assert.deepEqual(plan.tooling_tests, [contract]);
+    assert.equal(plan.runtime_applies, false);
+  }
+});
+
 test('public receipt helpers select their focused automation contracts', () => {
   assert.deepEqual(selectToolingQa(['scripts/lib/task-identity.mjs']).tests, [
     'scripts/tests/git-sync-commit-push.test.mjs',

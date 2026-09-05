@@ -33,6 +33,12 @@ Then search `policy/FIX.md` for `#ENTRY#` and read only that entry section.
 
 Use the authorized user task or approved implementation plan as the task contract.
 
+Determine execution mode from the task contract:
+- SINGLE — default when no orchestration mode is declared.
+- ORCHESTRATED — only when the approved plan or delegated worker handoff explicitly identifies orchestrated execution.
+
+For ORCHESTRATED, search this file for `#ORCHESTRATION#` and read only that section in addition to the execution-type policy already routed above. Do not load orchestration policy for SINGLE work.
+
 Use `KB/docs/context/index.md` as the repository-context router.
 
 For repository context:
@@ -50,18 +56,22 @@ exact alias; tooling does not select it. Prefer `node scripts/context.mjs
 concept-read <concept-id-or-exact-alias>` when local tooling is available, using
 `concept-route` only when route metadata without prose is sufficient.
 
-If that tool is unavailable or defective, perform the same exact manual KB Tree
+If that tool is unavailable or defective, inform user with the reason why it failed and perform the same exact manual KB Tree
 route: router → one concept → owning prose leaf → generated map section →
 granted bounded source. If that route also fails, stop and report the precise
 retrieval/KB defect. Do not broaden repository search.
 
 Working material under `plan/`, `task/`, `reference/`, `repair/`, `report/`, and `.agent-state/` is not KB evidence. Access an exact working-material item only when the active task or workflow explicitly requires it.
 
-Once the initial task-owned paths are known, begin the repository `task-close` lifecycle before the first edit. Scope comes from the authorized task and resolved evidence, never from the dirty working tree. Amend ownership only for a proven direct task dependency.
+Before the first edit, establish closure ownership:
+- SINGLE begins the repository `task-close` lifecycle once the initial task-owned paths are known.
+- ORCHESTRATED follows `#ORCHESTRATION#`; the parent orchestrator owns task-close and workers use delegated write-scope claims rather than duplicate parent closure.
+
+Scope comes from the authorized task and resolved evidence, never from the dirty working tree. Amend ownership only for a proven direct task dependency.
 
 Preserve unrelated concurrent changes.
 
-Use deterministic repository tooling for generated outputs, QA selection, validation, maps, receipts, and close-out. Do not manually reproduce mechanics already owned by tooling.
+Use deterministic repository tooling for generated outputs, QA selection, validation, maps, receipts, ownership enforcement, and close-out when that tooling owns the mechanic. Do not manually reproduce deterministic mechanics.
 
 If deterministic close-out returns an eligible workflow-inefficiency candidate, resolve `automation.observability.flags` and assess it in the already-required final provider turn. Otherwise load no flagging context.
 
@@ -75,4 +85,67 @@ Never weaken a valid check merely to make the task pass.
 
 If current repository evidence materially conflicts with the authorized intended behavior or makes the required behavior ambiguous, stop and report the conflict instead of inventing a resolution.
 
-Do not commit, push, pull, compare remotes, create or switch branches, deploy, apply, destroy, or perform another externally consequential or destructive operation unless the user explicitly authorizes that operation.
+Do not commit, push, pull, compare remotes, create or switch branches, create or remove worktrees, deploy, apply, destroy, or perform another externally consequential or destructive operation unless the user explicitly authorizes that operation.
+
+#ORCHESTRATION#
+
+## Orchestration execution
+
+Identify the delegated role from the approved parent plan or worker handoff:
+
+- ORCHESTRATOR — owns executable decomposition, delegation, integration, and parent closure.
+- WORKER — owns one bounded delegated implementation unit.
+
+If the role is ambiguous, stop and report the missing orchestration contract.
+
+### Orchestrator
+
+Treat the approved parent plan as the intended-behavior authority. Repository-aware executable decomposition may refine worker boundaries, ordering, or count, but may not redesign approved behavior or add unrelated scope.
+
+Before delegation:
+- Verify that the current orchestrator model and effort satisfy the parent recommendation and are not below any planned worker requirement. If the current runtime cannot satisfy that requirement, stop and report the capability mismatch rather than silently weakening it.
+- Verify planned worker model/effort availability. A worker may use a different supported model or effort from the orchestrator. If an exact planned worker configuration is unavailable, use only an equal-or-better supported configuration that preserves the parent requirement; otherwise report the mismatch.
+- Resolve the minimum repository evidence needed to establish actual implementation dependencies, shared interfaces or invariants, and worker write ownership.
+- Prepare one parent task-close manifest covering the integrated task-owned path union before any worker edits. Amend that parent ownership only for a proven direct dependency discovered later.
+- Establish non-overlapping worker write claims with the repository orchestration-scope tooling when available. Parallel workers may share read dependencies but may not hold overlapping write ownership.
+
+Prefer one owner for a shared file or subsystem. If two units genuinely require the same writable path, serialize them. Use isolated branches or worktrees only when the approved plan and user authorization permit the Git operation and the parallelism benefit justifies integration overhead. The orchestrator owns any required merge and must keep temporary isolated state recoverable until integration succeeds or the result is intentionally rejected; clean temporary branches, worktrees, and staging artifacts after resolution.
+
+Delegate only the context each worker needs: its subtask contract, shared interfaces or invariants it consumes, required parent decisions, relevant KB route, bounded source, write ownership, read-only dependencies, and verification expectations. Do not send the full parent transcript or other workers' raw histories unless that history is materially required for correctness.
+
+Use dependency-aware waves. Worker count is capacity, not a target.
+
+Require each worker to return a compact handoff containing:
+- implemented contract effects;
+- changed owned paths;
+- relevant verification result;
+- integration dependencies;
+- unresolved blockers or assumptions.
+
+Do not treat a worker completion message as parent completion. Inspect integration-critical changes and verify shared contracts against the integrated repository state.
+
+If integration or QA finds a failure wholly inside one worker's owned contract, resume or redelegate to that same worker first so its existing implementation context is reused. Use a replacement worker only when the original cannot reasonably resume, ownership materially changes, the failure crosses worker boundaries, a higher capability is required, or the executable decomposition is intentionally restructured.
+
+A cross-worker integration failure remains orchestrator-owned until responsibility is established. Then delegate the bounded repair to the appropriate existing worker when possible.
+
+Before parent close-out:
+- Resolve every active worker claim.
+- Clean orchestration-private state through deterministic tooling when available.
+- Clean every temporary isolation artifact created for the task after its result is integrated or intentionally rejected.
+- Run the parent task-close review/verification/close path on the integrated task result.
+
+### Worker
+
+The delegated worker contract is bounded by the parent plan and orchestrator handoff. It does not become authority to redesign the parent task.
+
+Use only the KB concepts and source needed for the delegated unit. Read shared dependencies as needed, but edit only the worker's explicit write ownership.
+
+Do not open an independent task-close lifecycle when operating as a subordinate worker under a parent orchestration. Parent closure belongs to the orchestrator. Use the delegated orchestration-scope claim as the write boundary.
+
+If implementation requires a new writable path outside the claim, or a path claimed by another active worker, stop that expansion and report the dependency to the orchestrator. Do not claim or edit it autonomously.
+
+Preserve unrelated concurrent changes and other workers' changes.
+
+Run the scoped verification requested by the handoff. Return the compact implementation handoff; do not dump raw reasoning, search history, or verbose tool output into parent context.
+
+When the orchestrator returns a repair that remains inside this worker's existing ownership, continue from the existing worker context when possible rather than rebuilding the task in a new worker.

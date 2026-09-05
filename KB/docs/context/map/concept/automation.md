@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## automation.docs.maps
 
-Owner: `KB/docs/context/automation.md:160-165` → **Map regeneration**
+Owner: `KB/docs/context/automation.md:207-212` → **Map regeneration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -15,7 +15,7 @@ Adjacent concepts: `automation.docs.validation`
 
 ## automation.docs.retrieval-repair
 
-Owner: `KB/docs/context/automation.md:199-202` → **Retrieval repair**
+Owner: `KB/docs/context/automation.md:246-249` → **Retrieval repair**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: `automation.retrieval.fallback`
 
 ## automation.docs.scope
 
-Owner: `KB/docs/context/automation.md:187-192` → **Docs scoping**
+Owner: `KB/docs/context/automation.md:234-239` → **Docs scoping**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: none
 
 ## automation.docs.validation
 
-Owner: `KB/docs/context/automation.md:173-180` → **KB validation**
+Owner: `KB/docs/context/automation.md:220-227` → **KB validation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -46,7 +46,7 @@ Adjacent concepts: none
 
 ## automation.git.publish
 
-Owner: `KB/docs/context/automation.md:267-270` → **Authorized Git publication**
+Owner: `KB/docs/context/automation.md:314-317` → **Authorized Git publication**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -56,19 +56,19 @@ Adjacent concepts: none
 
 ## automation.observability.binding
 
-Owner: `KB/docs/context/automation.md:211-220` → **Observability binding**
+Owner: `KB/docs/context/automation.md:258-267` → **Observability binding**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/lib/agent-observability/state.mjs` | `bindActiveTask` | 148 | `sed -n 136,168p scripts/lib/agent-observability/state.mjs` |
 | `scripts/codex-observability-hook.mjs` | `handleHook` | 224 | `sed -n 212,244p scripts/codex-observability-hook.mjs` |
-| `scripts/task-close.mjs` | `closeObservabilityUnsafe` | 364 | `sed -n 352,384p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `closeObservabilityUnsafe` | 365 | `sed -n 353,385p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
 ## automation.observability.flags
 
-Owner: `KB/docs/context/automation.md:250-260` → **Workflow inefficiency flags**
+Owner: `KB/docs/context/automation.md:297-307` → **Workflow inefficiency flags**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -79,7 +79,7 @@ Adjacent concepts: none
 
 ## automation.observability.usage
 
-Owner: `KB/docs/context/automation.md:233-242` → **Observability usage**
+Owner: `KB/docs/context/automation.md:280-289` → **Observability usage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -92,6 +92,30 @@ Owner: `KB/docs/context/automation.md:233-242` → **Observability usage**
 | `scripts/lib/agent-observability/report.mjs` | `displayStageGroups` | 90 | `sed -n 78,110p scripts/lib/agent-observability/report.mjs` |
 
 Adjacent concepts: none
+
+## automation.orchestration.execution
+
+Owner: `KB/docs/context/automation.md:103-114` → **Orchestrated execution**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `policy/PLANNER.md` | `Execution mode planning` | 72 | `sed -n 60,92p policy/PLANNER.md` |
+| `policy/CODEX.md` | `Orchestration execution` | 92 | `sed -n 80,112p policy/CODEX.md` |
+| `policy/REVIEWER.md` | `Integrated QA` | 44 | `sed -n 32,64p policy/REVIEWER.md` |
+
+Adjacent concepts: `automation.orchestration.ownership`, `automation.task-close.lifecycle`
+
+## automation.orchestration.ownership
+
+Owner: `KB/docs/context/automation.md:125-135` → **Orchestration ownership**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `policy/CODEX.md` | `Orchestration execution` | 92 | `sed -n 80,112p policy/CODEX.md` |
+| `scripts/lib/orchestration-scope.mjs` | `claimWorkerScope` | 164 | `sed -n 152,184p scripts/lib/orchestration-scope.mjs` |
+| `scripts/lib/orchestration-scope.mjs` | `finalizeOrchestrationScope` | 204 | `sed -n 192,215p scripts/lib/orchestration-scope.mjs` |
+
+Adjacent concepts: `automation.orchestration.execution`, `automation.task-close.scope`
 
 ## automation.retrieval.aliases
 
@@ -120,7 +144,7 @@ Owner: `KB/docs/context/automation.md:14-22` → **Direct retrieval discipline**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `AGENTS.md` | `Route` | 12 | `sed -n 1,22p AGENTS.md` |
-| `policy/CODEX.md` | `KB retrieval transport` | 45 | `sed -n 33,65p policy/CODEX.md` |
+| `policy/CODEX.md` | `KB retrieval transport` | 51 | `sed -n 39,71p policy/CODEX.md` |
 | `policy/CHATGPT.md` | `KB retrieval transport` | 16 | `sed -n 4,36p policy/CHATGPT.md` |
 
 Adjacent concepts: `automation.retrieval.protocol`
@@ -132,7 +156,7 @@ Owner: `KB/docs/context/automation.md:75-83` → **Retrieval fallback**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/lib/context-query.mjs` | `conceptRoute` | 102 | `sed -n 90,122p scripts/lib/context-query.mjs` |
-| `policy/CODEX.md` | `KB retrieval transport` | 45 | `sed -n 33,65p policy/CODEX.md` |
+| `policy/CODEX.md` | `KB retrieval transport` | 51 | `sed -n 39,71p policy/CODEX.md` |
 | `policy/CHATGPT.md` | `KB retrieval transport` | 16 | `sed -n 4,36p policy/CHATGPT.md` |
 
 Adjacent concepts: `automation.docs.retrieval-repair`
@@ -163,51 +187,51 @@ Adjacent concepts: none
 
 ## automation.task-close.lifecycle
 
-Owner: `KB/docs/context/automation.md:101-104` → **Task-close lifecycle**
+Owner: `KB/docs/context/automation.md:144-147` → **Task-close lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `main` | 1002 | `sed -n 990,1022p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `main` | 1018 | `sed -n 1006,1038p scripts/task-close.mjs` |
 
 Adjacent concepts: `automation.task-close.scope`, `automation.task-close.receipt`
 
 ## automation.task-close.plan-archive
 
-Owner: `KB/docs/context/automation.md:150-153` → **Plan archival**
+Owner: `KB/docs/context/automation.md:197-200` → **Plan archival**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `archivePlan` | 826 | `sed -n 814,846p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `archivePlan` | 827 | `sed -n 815,847p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
 ## automation.task-close.receipt
 
-Owner: `KB/docs/context/automation.md:140-143` → **Public receipt**
+Owner: `KB/docs/context/automation.md:187-190` → **Public receipt**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `finishVerification` | 906 | `sed -n 894,926p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `finishVerification` | 921 | `sed -n 909,941p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
 ## automation.task-close.scope
 
-Owner: `KB/docs/context/automation.md:112-118` → **Task-close scope**
+Owner: `KB/docs/context/automation.md:156-165` → **Task-close scope**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `createManifest` | 300 | `sed -n 288,320p scripts/task-close.mjs` |
-| `scripts/task-close.mjs` | `taskCloseIntake` | 209 | `sed -n 197,229p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `createManifest` | 301 | `sed -n 289,321p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `taskCloseIntake` | 210 | `sed -n 198,230p scripts/task-close.mjs` |
 
-Adjacent concepts: none
+Adjacent concepts: `automation.orchestration.ownership`
 
 ## automation.task-close.verification
 
-Owner: `KB/docs/context/automation.md:126-133` → **Task-close verification**
+Owner: `KB/docs/context/automation.md:173-180` → **Task-close verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `verifyV2` | 973 | `sed -n 961,993p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `verifyV2` | 988 | `sed -n 976,1008p scripts/task-close.mjs` |
 
 Adjacent concepts: `testing.selection.local`
