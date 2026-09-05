@@ -742,8 +742,6 @@ export function scopeContext(paths, options = {}) {
     tools.push({ name: 'game KB', command: command(['node', 'scripts/validate-docs.mjs']) });
   if (docs.some(path => path.startsWith('site/docs/')) || changed.some(path => path.startsWith('site/')))
     tools.push({ name: 'site KB', command: command(['npm', 'run', 'docs:check', '--prefix', 'site']) });
-  if (changed.some(path => /^(AGENTS\.md|CLAUDE\.md|\.agents\/skills\/|\.claude\/skills\/)/.test(path)))
-    tools.push({ name: 'agent config', command: command(['node', 'scripts/validate-agent-config.mjs']) });
   const maxBytes = options.artifact ? MAX_BYTES : 8 * 1024;
   const result = {
     schema_version: 2,

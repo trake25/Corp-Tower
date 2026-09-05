@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Legacy retrieval benchmark retained outside the ChatGPT/Codex KB Tree route.
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -27,7 +28,7 @@ function syntheticConceptRoot(setup) {
   mkdirSync(join(root, 'KB/docs/context'), { recursive: true });
   mkdirSync(join(root, 'src'), { recursive: true });
   writeFileSync(join(root, 'src/example.mjs'), 'export function firstAnchor() {}\nexport function secondAnchor() {}\n');
-  writeFileSync(join(root, 'KB/docs/context/index.md'), '# Experimental\n\n<!-- BEGIN GENERATED CONCEPT ROUTER -->\n<!-- END GENERATED CONCEPT ROUTER -->\n');
+  writeFileSync(join(root, 'KB/docs/context/index.md'), '# KB Tree fixture\n\n<!-- BEGIN GENERATED CONCEPT ROUTER -->\n<!-- END GENERATED CONCEPT ROUTER -->\n');
   let prose = '';
   if (setup === 'ambiguous-alias') {
     prose = `<!-- kb

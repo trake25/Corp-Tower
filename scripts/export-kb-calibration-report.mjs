@@ -81,7 +81,7 @@ export function renderKbCalibrationReport(snapshot, version) {
   const lines = [
     `# KB context calibration v${tag}`,
     '',
-    'This is a sanitized, manually exported review aid for the parallel experimental concept KB. It is not repository context, a correctness gate, or a cloud-agent activation signal.',
+    'This is a sanitized, manually exported review aid for KB Tree. It is not repository context or a correctness gate.',
     '',
     '## Snapshot',
     '',

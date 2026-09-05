@@ -82,7 +82,7 @@ test('repository concept maps and router are generated and validate cleanly', ()
   assert.equal(generated.status, 'passed');
   assert.deepEqual(generated.stale, []);
   assert.deepEqual(generated.removed, []);
-  assert.equal(generated.registry.outputs.size, 11);
+  assert.equal(generated.registry.outputs.size, 12);
   assert.equal(validated.status, 'passed');
   assert.deepEqual(validated.errors, []);
 });
@@ -294,7 +294,7 @@ Prohibited source.
   }
 });
 
-test('the validator detects stale generated output and the experimental line ceiling', () => {
+test('the validator detects stale generated output and the KB Tree line ceiling', () => {
   const root = temporaryKb(TWO_CONCEPTS);
   try {
     assert.equal(buildConceptMaps({ root }).status, 'passed');
@@ -340,7 +340,7 @@ test('concept prose uses independent advisory bands and a wider hard ceiling', (
     const overCeiling = Array.from({ length: 101 }, () => 'x'.repeat(100)).join('\n');
     writeFileSync(join(root, 'KB/docs/context/testing.md'), TWO_CONCEPTS.replace('Only the first concept prose belongs here.', overCeiling));
     buildConceptMaps({ root });
-    assert.ok(validateConceptKb({ root }).errors.some(error => error.status === 'budget-exceeded' && /experimental hard ceiling/.test(error.message)));
+    assert.ok(validateConceptKb({ root }).errors.some(error => error.status === 'budget-exceeded' && /KB Tree hard ceiling/.test(error.message)));
   } finally {
     clean(root);
   }

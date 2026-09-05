@@ -34,13 +34,13 @@ export function validateConceptKb({ root = '.', kbRoot = 'KB' } = {}) {
     if (capacity.status === 'hard-overage')
       errors.push({
         status: 'budget-exceeded',
-        message: `${concept.id} section is ~${capacity.estimated_tokens} tokens/${bytes} bytes; experimental hard ceiling is ${CONCEPT_PROSE_CAPACITY.hard_tokens} tokens/${CONCEPT_SECTION_HARD_BYTES} bytes`,
+        message: `${concept.id} section is ~${capacity.estimated_tokens} tokens/${bytes} bytes; KB Tree hard ceiling is ${CONCEPT_PROSE_CAPACITY.hard_tokens} tokens/${CONCEPT_SECTION_HARD_BYTES} bytes`,
         concept_id: concept.id,
       });
     else if (capacity.status !== 'ordinary')
       warnings.push({
         status: capacity.status,
-        message: `${concept.id} section is ~${capacity.estimated_tokens} tokens/${bytes} bytes; experimental ${capacity.status} capacity signal`,
+        message: `${concept.id} section is ~${capacity.estimated_tokens} tokens/${bytes} bytes; KB Tree ${capacity.status} capacity signal`,
         concept_id: concept.id,
       });
   }
@@ -94,7 +94,7 @@ function main() {
   try {
     const options = parseArgs(process.argv.slice(2));
     const result = validateConceptKb(options);
-    console.log(`=== experimental concept KB validation ===`);
+    console.log(`=== KB Tree validation ===`);
     console.log(`concepts: ${result.concepts}  sources: ${result.sources}  warnings: ${result.warnings.length}  errors: ${result.errors.length}`);
     if (!options.quiet) result.errors.forEach(error => console.error(`x ${error.status}: ${error.message}`));
     if (!options.quiet) result.warnings.forEach(warning => console.warn(`! ${warning.status}: ${warning.message}`));

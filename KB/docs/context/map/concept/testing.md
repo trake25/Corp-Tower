@@ -5,14 +5,14 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## testing.automation.protocol
 
-Owner: `KB/docs/context/testing.md:97-108` → **Automation protocol coverage**
+Owner: `KB/docs/context/testing.md:117-128` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 204 | `sed -n 192,224p scripts/tests/context-query.test.mjs` |
 | `scripts/tests/task-close.test.mjs` | `prepare creates a compact schema-v2 ownership manifest and intake` | 199 | `sed -n 187,219p scripts/tests/task-close.test.mjs` |
 | `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 60 | `sed -n 48,80p scripts/tests/concept-kb.test.mjs` |
-| `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 76 | `sed -n 64,96p scripts/benchmark-rag.mjs` |
+| `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 77 | `sed -n 65,97p scripts/benchmark-rag.mjs` |
 | `scripts/lib/kb-calibration.mjs` | `measureKbCalibration` | 180 | `sed -n 168,200p scripts/lib/kb-calibration.mjs` |
 | `scripts/export-kb-calibration-report.mjs` | `exportKbCalibrationReport` | 158 | `sed -n 146,178p scripts/export-kb-calibration-report.mjs` |
 
@@ -20,7 +20,7 @@ Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifec
 
 ## testing.balance.tools
 
-Owner: `KB/docs/context/testing.md:80-83` → **Balance tools**
+Owner: `KB/docs/context/testing.md:100-103` → **Balance tools**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -39,24 +39,37 @@ Owner: `KB/docs/context/testing.md:43-51` → **Godot coverage**
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_application_scripts` | 41 | `sed -n 29,61p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` | `test_game_state_renders_rail_and_top_bar` | 48 | `sed -n 36,68p src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` |
-| `scripts/qa-gate.mjs` | `main` | 254 | `sed -n 242,274p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `main` | 266 | `sed -n 254,286p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 
 ## testing.client.rendered
 
-Owner: `KB/docs/context/testing.md:61-68` → **Rendered client verification**
+Owner: `KB/docs/context/testing.md:63-75` → **Rendered client verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_main_scene_ready` | 126 | `sed -n 114,146p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` | `_begin_collapse` | 894 | `sed -n 882,914p src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` |
+| `scripts/rendered-client-verify.mjs` | `runRenderedVerification` | 77 | `sed -n 65,97p scripts/rendered-client-verify.mjs` |
+| `scripts/qa-gate.mjs` | `selectGodotBinary` | 229 | `sed -n 217,249p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.rendered-verification`
 
+## testing.client.snapgrid-isolation
+
+Owner: `KB/docs/context/testing.md:83-88` → **SnapGrid shared-state isolation**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd` | `reset_placeable_range` | 31 | `sed -n 19,51p src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd` |
+| `src/Client/App/corp-tower/Tests/Gut/GameUi/test_snap_grid.gd` | `before_each` | 12 | `sed -n 1,32p src/Client/App/corp-tower/Tests/Gut/GameUi/test_snap_grid.gd` |
+
+Adjacent concepts: none
+
 ## testing.contract.tutorial-parity
 
-Owner: `KB/docs/context/testing.md:115-118` → **Tutorial parity**
+Owner: `KB/docs/context/testing.md:135-138` → **Tutorial parity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -66,7 +79,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:128-131` → **Release gates**
+Owner: `KB/docs/context/testing.md:148-151` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -81,7 +94,7 @@ Owner: `KB/docs/context/testing.md:11-14` → **Local QA selection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/qa-gate.mjs` | `selectQa` | 128 | `sed -n 116,148p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectQa` | 132 | `sed -n 120,152p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 

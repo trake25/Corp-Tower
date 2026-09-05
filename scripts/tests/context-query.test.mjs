@@ -151,7 +151,7 @@ test('observability source routes to the automation contract', () => {
   assert.deepEqual(route.maps, ['docs/context/map/infra.md']);
 });
 
-test('concept calibration tooling routes to its experimental automation and testing contracts', () => {
+test('concept calibration tooling routes to its retained automation and testing contracts', () => {
   for (const path of [
     'scripts/lib/kb-calibration.mjs',
     'scripts/export-kb-calibration-report.mjs',
@@ -269,7 +269,7 @@ test('large manifest scope stays artifact-only instead of breaching the public b
   assert.ok(artifact.limits.returned_bytes <= artifact.limits.max_bytes);
 });
 
-test('legacy route and search corpora remain isolated from the experimental KB', () => {
+test('legacy route and search corpora remain isolated from KB Tree', () => {
   const route = routeContext('gameplay');
   const search = searchContext(ROOT, 'critical save', { includeExcerpt: true });
   const kbRoute = routeContext('KB/docs/context/gameplay.md');

@@ -1,6 +1,6 @@
 # Corp Tower — context entry
 
-Router for the concept-addressable `docs/context/` knowledge base.
+Router for the production concept-addressable KB Tree knowledge base.
 
 ## System
 
@@ -24,7 +24,6 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `automation.docs.maps` | [automation.md#map-regeneration](./automation.md#map-regeneration) | build file map, generated maps |
 | `automation.docs.retrieval-repair` | [automation.md#retrieval-repair](./automation.md#retrieval-repair) | retrieval maintenance |
 | `automation.docs.scope` | [automation.md#docs-scoping](./automation.md#docs-scoping) | docs-scope, documentation scope |
-| `automation.docs.skill-mirror` | [automation.md#skill-mirroring](./automation.md#skill-mirroring) | sync agent skills |
 | `automation.docs.validation` | [automation.md#kb-validation](./automation.md#kb-validation) | validate docs, KB validator |
 | `automation.git.publish` | [automation.md#authorized-git-publication](./automation.md#authorized-git-publication) | targeted push, git sync commit push |
 | `automation.observability.binding` | [automation.md#observability-binding](./automation.md#observability-binding) | agent observability, task binding |
@@ -204,6 +203,17 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `network.state.snapshot` | [networking.md#snapshot-contract](./networking.md#snapshot-contract) | game_state, authoritative snapshot |
 | `network.state.transient-events` | [networking.md#transient-events](./networking.md#transient-events) | score events, transient event replay |
 
+### site
+
+| Concept | Owning section | Aliases |
+|---|---|---|
+| `site.content.schema` | [site.md#content-model](./site.md#content-model) | portfolio content schema, portfolio honesty markers |
+| `site.deployment.contract` | [site.md#build-and-deployment](./site.md#build-and-deployment) | portfolio build deployment, portfolio Workers deploy |
+| `site.diagram.accessibility` | [site.md#diagram-interaction](./site.md#diagram-interaction) | portfolio diagram accessibility, diagram interaction |
+| `site.disclosure.navigation` | [site.md#disclosure-and-navigation](./site.md#disclosure-and-navigation) | portfolio disclosure behavior, portfolio navigation behavior |
+| `site.editorial.evidence` | [site.md#editorial-evidence](./site.md#editorial-evidence) | portfolio editorial register, portfolio claim evidence |
+| `site.visual.language` | [site.md#visual-language](./site.md#visual-language) | portfolio visual language, site token roles |
+
 ### testing
 
 | Concept | Owning section | Aliases |
@@ -212,6 +222,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `testing.balance.tools` | [testing.md#balance-tools](./testing.md#balance-tools) | balance simulator, stability probe, impact probe |
 | `testing.client.coverage` | [testing.md#godot-coverage](./testing.md#godot-coverage) | GUT, client smoke |
 | `testing.client.rendered` | [testing.md#rendered-client-verification](./testing.md#rendered-client-verification) | rendered QA, manual visual QA |
+| `testing.client.snapgrid-isolation` | [testing.md#snapgrid-shared-state-isolation](./testing.md#snapgrid-shared-state-isolation) | SnapGrid shared state, placeable range test isolation |
 | `testing.contract.tutorial-parity` | [testing.md#tutorial-parity](./testing.md#tutorial-parity) | tutorial parity test |
 | `testing.release.gates` | [testing.md#release-gates](./testing.md#release-gates) | CI gates, release QA |
 | `testing.selection.local` | [testing.md#local-qa-selection](./testing.md#local-qa-selection) | qa-gate, targeted QA |
@@ -263,4 +274,5 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 
 ## Source-locator maps
 
-Existing generated locator maps remain during migration for file/symbol navigation. New `map/concept/*.md` output is generated from concept metadata and is the semantic concept→source bridge.
+Generated `map/concept/*.md` output is the semantic KB Tree concept→source
+bridge. It is derived from concept metadata and is never hand-edited.

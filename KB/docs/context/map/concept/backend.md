@@ -36,7 +36,7 @@ Adjacent concepts: `network.adapters.boundaries`
 
 ## backend.bots.preview
 
-Owner: `KB/docs/context/backend.md:283-286` → **Bot preview**
+Owner: `KB/docs/context/backend.md:287-290` → **Bot preview**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -46,7 +46,7 @@ Adjacent concepts: `gameplay.bots.scoring`
 
 ## backend.config.values
 
-Owner: `KB/docs/context/backend.md:293-296` → **Configuration ownership**
+Owner: `KB/docs/context/backend.md:297-300` → **Configuration ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -221,7 +221,7 @@ Adjacent concepts: `network.room.public`
 
 ## backend.redis.hydration
 
-Owner: `KB/docs/context/backend.md:316-319` → **Hydration continuity**
+Owner: `KB/docs/context/backend.md:320-323` → **Hydration continuity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -232,7 +232,7 @@ Adjacent concepts: `network.state.snapshot`
 
 ## backend.redis.leases
 
-Owner: `KB/docs/context/backend.md:304-307` → **Redis leases**
+Owner: `KB/docs/context/backend.md:308-311` → **Redis leases**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -252,7 +252,7 @@ Adjacent concepts: `gameplay.scoring.transaction`
 
 ## backend.stability.analysis
 
-Owner: `KB/docs/context/backend.md:249-252` → **Support graph**
+Owner: `KB/docs/context/backend.md:249-256` → **Support graph**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -262,7 +262,7 @@ Adjacent concepts: `gameplay.tower.stability`
 
 ## backend.stability.collapse
 
-Owner: `KB/docs/context/backend.md:262-265` → **Collapse authority**
+Owner: `KB/docs/context/backend.md:266-269` → **Collapse authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -273,7 +273,7 @@ Adjacent concepts: `hud.tower.collapse.presentation`, `gameplay.progression.fail
 
 ## backend.stability.pose
 
-Owner: `KB/docs/context/backend.md:272-275` → **Structural pose**
+Owner: `KB/docs/context/backend.md:276-279` → **Structural pose**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

@@ -1,8 +1,8 @@
 # Portfolio site — context entry
 
-Router for `site/docs/`, the knowledge base for `site/`. Load **only** what the
-router names. The repo-wide retrieval contract is in the root `CLAUDE.md`; this
-KB is separate from `docs/context/`, which covers the game system.
+Legacy source documentation for `site/`. ChatGPT/Codex repository context starts
+at `KB/docs/context/index.md`; resolve the exact `site.*` concept there before
+opening one of these source documents.
 
 ## System
 
@@ -52,10 +52,10 @@ work has to be one click from the hero, not five.
 
 | Task | Load | Then |
 |---|---|---|
-| Layout, styling, a component, a diagram, disclosure behaviour | [design.md](./design.md) | the map below |
-| Words on the page, a card, a job, a game, schema fields | [content.md](./content.md) | the map below |
-| Build, deploy, domain, OG image, maintenance mode | [deploy.md](./deploy.md) | — |
-| "Which file does X?" | — | the map below |
+| Layout, styling, a component, a diagram, disclosure behaviour | `site.visual.*`, `site.disclosure.*`, or `site.diagram.*` | granted source |
+| Words on the page, a card, a job, a game, schema fields | `site.editorial.*` or `site.content.*` | granted source |
+| Build, deploy, domain, OG image, maintenance mode | `site.deployment.contract` | granted source |
+| "Which file does X?" | relevant `site.*` concept | generated concept map |
 
 ## File map
 
@@ -93,19 +93,11 @@ Grep this section for a filename or a symbol; do not load a source file whole.
 | `wrangler.jsonc` | Worker name `corp-tower-portfolio`, assets directory, 404 handling, `env.staging` block for `corp-tower-portfolio-staging` |
 | `package.json` | Scripts — `dev`, `build` (`astro check` first), `og`, `prebuild`, `preview`, `deploy`, `docs:check` |
 
-## The design ↔ editorial boundary
+## KB Tree boundary
 
-Two skills own `site/` and the split is by **what a change is**, not by file:
-
-- **`editorial`** owns the words — content collection bodies and their copy
-  frontmatter, the strings in `src/data/`, and text nodes and copy constants in
-  `.astro` files.
-- **`web-designer`** owns everything else in those files — markup, attributes,
-  classes, styles, scripts, diagrams, schema.
-
-A change that needs both is two passes, not one. A copy edit that also changes an
-element or a class is a `web-designer` task; a layout change that also rewrites a
-sentence is an `editorial` follow-up.
+KB Tree owns current semantic contracts. These documents remain bounded source
+material for exact field, layout, and deployment detail; they do not route a
+ChatGPT/Codex task or replace a `site.*` concept.
 
 ## Working rules
 

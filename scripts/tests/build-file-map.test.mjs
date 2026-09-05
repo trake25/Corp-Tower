@@ -108,7 +108,7 @@ test('scene anchors omit unique nodes with no external binding', () => {
   ]);
 });
 
-test('experimental data cannot promote primary anchors while ordinary first-party source can', () => {
+test('KB Tree data cannot promote legacy primary anchors while ordinary first-party source can', () => {
   const source = [
     'export class StabilityPreview {',
     '  previewOnlyAnchor() {',

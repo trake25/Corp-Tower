@@ -46,6 +46,8 @@ const automationTests = Object.freeze({
   qaGate: 'scripts/tests/qa-gate.test.mjs',
   validateDocs: 'scripts/tests/validate-docs.test.mjs',
   observability: 'scripts/tests/agent-observability.test.mjs',
+  policyRouting: 'scripts/tests/policy-routing.test.mjs',
+  renderedClient: 'scripts/tests/rendered-client-verify.test.mjs',
 });
 
 export const AUTOMATION_PROTOCOL_TESTS = Object.freeze(Object.values(automationTests)
@@ -69,6 +71,7 @@ const automationRules = [
   [/^scripts\/git-sync-commit-push\.mjs$/, [automationTests.gitSync]],
   [/^scripts\/agent-observability\.mjs$/, [automationTests.observability]],
   [/^scripts\/qa-gate\.mjs$/, [automationTests.qaGate, automationTests.context, automationTests.taskClose]],
+  [/^scripts\/rendered-client-verify\.mjs$/, [automationTests.renderedClient, automationTests.qaGate]],
   [/^scripts\/validate-docs\.mjs$/, [automationTests.validateDocs]],
   [/^scripts\/lib\/context-query\.mjs$/, [automationTests.context, automationTests.taskClose]],
   [/^scripts\/lib\/context-routing\.mjs$/, [automationTests.context]],
@@ -78,6 +81,7 @@ const automationRules = [
   [/^scripts\/lib\/docs-capacity\.mjs$/, [automationTests.validateDocs]],
   [/^scripts\/lib\/maintenance-handoff\.mjs$/, [automationTests.taskClose, automationTests.qaGate, automationTests.validateDocs, automationTests.observability]],
   [/^report\/benchmarks\//, [automationTests.context]],
+  [/^(?:AGENTS\.md|policy\/[^/]+\.md)$/, [automationTests.policyRouting]],
 ];
 
 export const TUTORIAL_PARITY_TEST = 'scripts/tests/tutorial-defaults-parity.test.mjs';
@@ -222,11 +226,19 @@ function run(label, command, args, cwd, env = process.env, options = {}) {
   return label;
 }
 
+export function selectGodotBinary({ root = ROOT, platform = process.platform } = {}) {
+  const suffix = platform === 'win32' ? '_win64.exe' : '_linux.x86_64';
+  const candidates = readdirSync(root).filter(name => name.startsWith('Godot_v') && name.endsWith(suffix)).sort();
+  if (!candidates.length) throw new Error(`missing root Godot binary matching Godot_v*${suffix}`);
+  return join(root, candidates.at(-1));
+}
+
 function godotBinary(options) {
-  const suffix = process.platform === 'win32' ? '_win64.exe' : '_linux.x86_64';
-  const candidates = readdirSync(ROOT).filter(name => name.startsWith('Godot_v') && name.endsWith(suffix)).sort();
-  if (!candidates.length) fail(`missing root Godot binary matching Godot_v*${suffix}`, '', null, options);
-  return join(ROOT, candidates.at(-1));
+  try {
+    return selectGodotBinary();
+  } catch (error) {
+    fail(error.message, '', error, options);
+  }
 }
 
 function changedArguments(argv) {

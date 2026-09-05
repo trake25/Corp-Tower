@@ -4,8 +4,6 @@ import { spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { basename, dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mapOwnerForPath, routeSourcePath } from './lib/context-routing.mjs';
-import { scopeContext } from './lib/context-query.mjs';
 import { selectQa } from './qa-gate.mjs';
 import { executeBestEffort } from './agent-observability.mjs';
 import { buildTaskTelemetry } from './lib/agent-observability/task-telemetry.mjs';
@@ -149,10 +147,6 @@ function qaToolingPath(path) {
   return /^(?:scripts\/(?:qa-gate|task-close)\.mjs|scripts\/lib\/.*(?:qa|test|fixture|harness)|\.github\/(?:workflows|actions)\/.*(?:qa|test|ci)|src\/Server\/tests\/(?:helpers|fixtures)\/)/i.test(path);
 }
 
-function agentConfigPath(path) {
-  return /^(AGENTS\.md|CLAUDE\.md|\.agents\/skills\/|\.claude\/skills\/)/.test(path);
-}
-
 function domainFor(path) {
   if (path.startsWith('KB/')) return 'concept-kb';
   if (path.startsWith('src/Server/')) return 'server';
@@ -190,6 +184,43 @@ function command(argv) {
     argv,
     display: argv.map(part => /^[a-z0-9_./,:-]+$/i.test(part) ? part : JSON.stringify(part)).join(' '),
   };
+}
+
+function kbDocumentsFor(path) {
+  if (/^KB\/docs\/context\/(?!map\/)(?!index\.md$).+\.md$/.test(path)) return [path];
+  if (/^src\/Server\//.test(path)) return ['KB/docs/context/backend.md'];
+  if (/^src\/Client\//.test(path)) return ['KB/docs/context/testing.md'];
+  if (/^site\//.test(path)) return ['KB/docs/context/site.md'];
+  if (/^(?:policy\/|AGENTS\.md$|scripts\/|\.githooks\/)/.test(path))
+    return ['KB/docs/context/automation.md'];
+  return [];
+}
+
+function taskCloseIntake(paths, options = {}) {
+  if (!paths.length) throw new Error('task-close needs one or more explicit task-owned paths');
+  const changed = [...new Set(paths.map(path => path.replace(/^\.\//, '')))].sort();
+  const docs = [...new Set(changed.flatMap(kbDocumentsFor))].sort();
+  const qa = selectQa(changed);
+  const tools = [{ name: 'QA', command: command(['node', 'scripts/qa-gate.mjs', '--changed', ...changed]) }];
+  if (qa.concept_kb) {
+    tools.push({ name: 'concept map', command: command(['node', 'scripts/build-concept-map.mjs', '--quiet']) });
+    tools.push({ name: 'concept KB', command: command(['node', 'scripts/validate-concept-kb.mjs', '--quiet']) });
+    tools.push({ name: 'concept benchmark', command: command(['node', 'scripts/benchmark-rag.mjs', '--concept-check']) });
+  }
+  const maxBytes = options.artifact ? 24 * 1024 : 8 * 1024;
+  const result = {
+    schema_version: 2,
+    task_paths: changed,
+    docs,
+    maps: [],
+    qa,
+    tools,
+    unmapped: changed.filter(path => !kbDocumentsFor(path).length),
+    limits: { max_bytes: maxBytes, returned_bytes: 0 },
+  };
+  if (Buffer.byteLength(JSON.stringify(result, null, 2)) + 1 > maxBytes)
+    throw new Error(`task-close intake exceeds ${maxBytes} bytes; split the explicit path set`);
+  return result;
 }
 
 function fingerprint(value) {
@@ -255,7 +286,7 @@ export function createManifest({ task, ownedPaths = null, changedPaths = null, p
   if (!task || task.length > 120) throw new Error('task must be present and at most 120 characters');
   const owned = [...new Set(ownedPaths || changedPaths || [])].sort();
   if (!owned.length) throw new Error('one or more owned paths are required');
-  const intake = scopeContext(owned, { artifact: true });
+  const intake = taskCloseIntake(owned, { artifact: true });
   const hasSource = owned.some(sourcePath);
   const plannedQaTooling = [...new Set(plannedQaToolingPaths)].sort();
   const unownedQaTooling = plannedQaTooling.filter(path => !owned.includes(path));
@@ -407,7 +438,7 @@ export function amendManifest(manifest, paths, plannedQaToolingPaths = [], planB
   if (!additions.length && planned.length === (manifest.qa?.planned_paths || []).length && !planChanged) return manifest;
   const sourceAdded = additions.some(sourcePath);
   const owned = [...new Set([...manifest.owned_paths, ...additions])].sort();
-  const intake = scopeContext(owned, { artifact: true });
+  const intake = taskCloseIntake(owned, { artifact: true });
   const resetReview = sourceAdded && ['reviewed', 'failed'].includes(manifest.phase);
   return {
     ...manifest,
@@ -438,11 +469,15 @@ export function reviewManifest(manifest, { changedPaths, mapBaseline = null }) {
   if (!changed.length) throw new Error('review needs one or more explicit changed paths');
   const outside = changed.filter(path => !manifest.owned_paths.includes(path));
   if (outside.length) throw new Error(`changed paths are not owned: ${outside.join(', ')}`);
-  const intake = scopeContext(changed, { artifact: true });
+  const intake = taskCloseIntake(changed, { artifact: true });
   const sourceChanged = changed.some(sourcePath);
-  const documentationScope = sourceChanged
-    ? scopeContext(changed.filter(sourcePath), { artifact: true })
+  const sourceScope = sourceChanged
+    ? taskCloseIntake(changed.filter(sourcePath), { artifact: true })
     : intake;
+  const documentationScope = {
+    ...sourceScope,
+    docs: [...new Set([...sourceScope.docs, ...intake.docs])].sort(),
+  };
   const reviewInput = {
     changed_paths: changed,
     docs: documentationScope.docs,
@@ -471,8 +506,8 @@ function decisionValues({ decision, reason, documentedPaths = [] }) {
   if (reason.trim().length > 240) throw new Error('documentation reason must be at most 240 characters');
   if (decision === 'updated' && !documentedPaths.length) throw new Error('updated requires one or more --doc-path values');
   if (decision === 'not-needed' && documentedPaths.length) throw new Error('not-needed does not accept --doc-path values');
-  if (documentedPaths.some(path => !/^((docs\/context|site\/docs)\/).+\.md$/.test(path)))
-    throw new Error('every --doc-path must be a Markdown document in docs/context or site/docs');
+  if (documentedPaths.some(path => !/^((KB\/docs\/context|docs\/context|site\/docs)\/).+\.md$/.test(path)))
+    throw new Error('every --doc-path must be a Markdown document in KB/docs/context, docs/context, or site/docs');
   return { decision, reason: reason.trim(), documentedPaths: [...new Set(documentedPaths)].sort() };
 }
 
@@ -581,7 +616,6 @@ export function intakeForManifest(manifest, manifestFile) {
     lifecycle: manifest.lifecycle,
     plan: manifest.plan,
     owned_paths: manifest.owned_paths,
-    roles: [...new Set(manifest.intake.routes.map(route => route.skill).filter(Boolean))].sort(),
     docs: manifest.intake.docs,
     maps: manifest.intake.maps,
     qa: {
@@ -881,7 +915,6 @@ function verifyV1(manifest, manifestFile) {
     steps.push(runStep('game KB', ['scripts/validate-docs.mjs', '--quiet']));
   if (manifest.changed_paths.some(path => path.startsWith('site/')) || manifest.documentation.documented_paths.some(path => path.startsWith('site/docs/')))
     steps.push(runStep('site KB', ['-e', "process.chdir('site'); require('node:child_process').execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'docs:check'], { stdio: 'inherit' })"]));
-  if (manifest.changed_paths.some(agentConfigPath)) steps.push(runStep('agent config', ['scripts/validate-agent-config.mjs']));
   finishVerification(manifest, manifestFile, steps, manifest.changed_paths);
 }
 
@@ -965,7 +998,7 @@ function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = nu
   if (qaOverride) qaArgs.push('--classification', qaOverride.classification, '--evidence', qaOverride.evidence);
   steps.push(runStep('QA', qaArgs));
   let derived = [];
-  if (manifest.documentation.source_changed) {
+  if (manifest.documentation.maps_to_regenerate.length) {
     const before = manifest.review.map_hashes || mapHashes();
     const mapStep = runStep('file map', ['scripts/build-file-map.mjs']);
     steps.push(mapStep);
@@ -986,11 +1019,10 @@ function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = nu
   derived = [...new Set(derived)].sort();
   manifest.derived_paths = derived;
   const publishPaths = publishPathsFor(manifest.changed_paths, manifest.documented_paths, derived);
-  if (manifest.documentation.source_changed || publishPaths.some(path => path.startsWith('docs/context/')))
+  if (publishPaths.some(path => path.startsWith('docs/context/')))
     steps.push(runStep('game KB', ['scripts/validate-docs.mjs', '--quiet']));
   if (publishPaths.some(path => path.startsWith('site/')))
     steps.push(runStep('site KB', ['-e', "process.chdir('site'); require('node:child_process').execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'docs:check'], { stdio: 'inherit' })"]));
-  if (publishPaths.some(agentConfigPath)) steps.push(runStep('agent config', ['scripts/validate-agent-config.mjs']));
   finishVerification(manifest, manifestFile, steps, publishPaths, closeInputFingerprint);
 }
 

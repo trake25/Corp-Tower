@@ -248,7 +248,11 @@ adjacent: gameplay.tower.stability
 -->
 ## Support graph
 
-Tower Stability is deterministic support-graph analysis. Carried mass and moment propagate through contacts. Overall stability is the minimum of Balance and Integrity, allowing both directional lean failures and centered load-path bottlenecks.
+Tower Stability is deterministic support-graph analysis over supplied geometry
+and configuration. Carried mass and moment propagate through contacts. Overall
+stability is the minimum of Balance and Integrity, allowing both directional
+lean failures and centered load-path bottlenecks. It owns no room state,
+persistence, transport, or I/O.
 
 <!-- kb
 id: backend.stability.collapse

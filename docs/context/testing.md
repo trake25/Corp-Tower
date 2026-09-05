@@ -3,8 +3,8 @@
 Scope: permanent server, client and automation coverage; local selection; balance
 tools; CI gates. Product behavior belongs in [backend.md](./backend.md),
 [gameplay.md](./gameplay.md), and the UI documents.
-Agent-facing verification, failure classification, permanent-coverage decisions,
-and QA-infrastructure scope belong to the `qa-engineer` skill.
+Deterministic tooling owns verification selection, failure classification,
+successful proof, and current executable selection.
 
 ## Local selection
 
@@ -20,13 +20,12 @@ diagnostic while retaining the complete stream in a temporary log. Final
 `task-close` scope uses the same selector but schedules the complete automation
 protocol and retrieval benchmark.
 
-Experimental `KB/**` and concept-tool paths select the concept map check,
-dedicated validator, focused parser/retrieval/calibration/map-isolation tests, and
-`benchmark-rag.mjs --concept-check`. This opt-in group adds no server/client
-runtime suite and is not selected for an ordinary product task merely because
-the parallel KB exists. The benchmark's private footprint snapshot is a local
-side effect; footprint values and heuristic outliers are not pass/fail criteria,
-and the public-report exporter is never automatic QA.
+KB Tree and concept-tool paths select the concept map check, dedicated validator,
+focused parser/retrieval/calibration/map-isolation tests, and
+`benchmark-rag.mjs --concept-check`. This group adds no server/client runtime
+suite. The benchmark's private footprint snapshot is a local side effect;
+footprint values and heuristic outliers are not pass/fail criteria, and the
+public-report exporter is never automatic QA.
 
 Server changes receive `node --check` plus mapped Node tests. Client changes use
 the repository-root host-matching Godot binary, smoke, and mapped GUT files.

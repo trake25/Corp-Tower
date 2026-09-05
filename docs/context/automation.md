@@ -1,41 +1,30 @@
 # Agent automation
 
-This document owns the repository's direct agent retrieval, retained retrieval
-experiment and task close-out protocol. Product behavior belongs in its domain
-document; this file only owns how agents find bounded evidence and record
-completion.
+This document records retained automation mechanics and task close-out. The
+ChatGPT/Codex contextualization contract lives in KB Tree; product behavior
+belongs in its domain document.
 
 ## Direct agent retrieval
 
-`AGENTS.md` owns the normal index-to-doc/map routing and bounded-fallback policy.
-After task-owned paths are known, the scope engine deterministically derives
-role, documentation, map, QA, validator, and tool intake without reading the
-dirty working tree. That post-path scope is independent of exploratory retrieval.
+`policy/AGENTS.md` owns the ChatGPT/Codex route. After task-owned paths are
+known, deterministic tooling derives documentation, map, QA, validator, and
+tool intake without reading the dirty working tree. That post-path scope is
+independent of contextualization.
 
-## Retained context experiment
+## KB Tree retrieval
 
-`scripts/context.mjs` is the shared local-tool protocol for Codex, Claude Code,
-and local LLM runners, retained for controlled comparison and portable bundles.
-It is not the normal repository router. Schema 2 returns repository-relative
-provenance, stable result states, exact next commands and provider-visible byte
-counts. Its route/search/filter/section/symbol commands read only the KB and
-generated maps; they never expose raw source, environment files, secrets or the
-working-tree diff. `scope` derives post-path tools, while `bundle` creates the
-bounded handoff for a runner without local access.
+`scripts/context.mjs` is the local KB Tree concept protocol and portable-bundle
+producer. Its concept commands return repository-relative provenance, stable
+failure states, exact next commands, and bounded source grants without exposing
+environment files, secrets, or a working-tree diff.
 
-`docs/context/**` and its locator maps remain the primary/default corpus. `KB/`
-is a separately validated experimental concept corpus and cannot satisfy primary
-citations or ordinary documentation scope. Opt-in `concept-route`,
-`concept-read`, and `concept-bundle` commands resolve one exact ID or normalized
-alias, return explicit adjacency without traversing it, and fail closed without
-repository fallback. `build-concept-map.mjs` derives its marked router and maps;
-`validate-concept-kb.mjs` checks its metadata, source grants, isolation, generated
-equality, and independent concept capacity. Its advisory bands are observations;
-only the concept-specific hard ceiling is a gate. The focused benchmark requires
-`--concept-check`, preserves its correctness/fail-closed assertions, and records
-representative concept/journey footprint metrics under ignored
-`.agent-state/automation/rag-benchmark/kb-context/`. The legacy commands,
-fixture, benchmark, and cloud-agent routing remain unchanged.
+`KB/` is the production ChatGPT/Codex knowledge root. `concept-route`,
+`concept-read`, and `concept-bundle` resolve one exact ID or normalized alias,
+return explicit adjacency without traversing it, and fail closed without
+repository fallback. `build-concept-map.mjs` derives the router and maps;
+`validate-concept-kb.mjs` checks metadata, source grants, isolation, generated
+equality, and capacity. The focused benchmark preserves correctness/fail-closed
+assertions and writes sanitized local footprint metrics.
 
 `export-kb-calibration-report.mjs` is the sole manual path from the latest valid
 private snapshot to a sanitized, collision-safe version under
@@ -61,10 +50,10 @@ Generated maps keep one authored purpose per file and only stable navigation
 anchors. An exceptional cross-boundary term that extraction cannot recognize may
 be marked `· stable`; regeneration relocates it by name and drops it if the source
 term disappears. Maps do not explain local symbols—the bounded source read does.
-Non-intrinsic anchor promotion uses an explicit primary reference corpus:
-experimental KB data, concept fixtures/tests, private state, and reports cannot
-promote a primary locator anchor, while their eligible tooling files may still
-receive ordinary `map/infra.md` file coverage.
+Non-intrinsic anchor promotion uses an explicit reference corpus: KB Tree data,
+concept fixtures/tests, private state, and reports cannot promote a primary
+locator anchor, while eligible tooling files may still receive ordinary
+`map/infra.md` coverage.
 
 Public output is bounded; larger route detail stays in ignored artifacts and
 search excerpts are opt-in. Fixture-proven aliases bridge only demonstrated
@@ -93,17 +82,11 @@ artifacts.
 recomputes QA/docs. `close` records documentation and coverage decisions,
 verifies the reviewed set, then archives a bound plan.
 
-Close-out runs selected protocol checks and QA, regenerates affected maps, runs
-the game-KB validator quietly, then validates agent config. Concept-KB paths add
-their generator, validator, focused tests, and opt-in benchmark without adding
-game runtime QA. Child detail stays private and out-of-scope generated maps fail.
-Task-close neither synchronizes agent skills nor derives `.claude/skills/**`
-publication paths.
-
-`.agents/skills/**` is canonical. For staged canonical changes, the sole mirror
-owner `.githooks/pre-commit` rejects conflicting unstaged mirror edits, runs the
-sync script, stages `.claude/skills/**`, and verifies equality. It runs for direct
-commits and `scripts/git-sync-commit-push.mjs`.
+Close-out runs selected protocol checks and QA, regenerates affected maps, and
+validates KB Tree. Concept-KB paths add their generator, validator, focused
+tests, and benchmark without adding game runtime QA. Child detail stays private
+and out-of-scope generated maps fail. Task-close does not synchronize skills or
+derive `.claude/skills/**` publication paths.
 
 Whole-file and aggregate soft prose capacity, historical/file-count map capacity,
 and 95% pressure warn. Hard section or KB-wide prose overflow stays task-owned

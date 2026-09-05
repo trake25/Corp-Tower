@@ -1,7 +1,7 @@
 # KB concept schema
 
-This file defines the implemented authored contract for the parallel
-experimental concept KB. It is not a source of product behavior.
+This file defines the authored contract for KB Tree. It is not a source of
+product behavior.
 
 ## Identity and ownership
 
@@ -72,13 +72,12 @@ Every failure includes a reason, denies broad source fallback, and uses one of:
 
 ## Budgets and validation
 
-Concept capacity is independent from the primary KB capacity implementation and
-uses the deterministic ceiling of UTF-8 bytes divided by four. More than 1,200
-estimated tokens is advisory, more than 1,800 is strong advisory, and more than
-2,500 is a hard error. Warnings are calibration signals, not maintenance
-defects. Concept retrieval defaults to 16 KiB and has a 32 KiB absolute response
-limit. Experimental Markdown retains its 400-character line ceiling; the
-primary KB keeps its separate 300-character limit.
+Concept capacity uses the deterministic ceiling of UTF-8 bytes divided by four.
+More than 1,200 estimated tokens is advisory, more than 1,800 is strong
+advisory, and more than 2,500 is a hard error. Warnings are calibration signals,
+not maintenance defects. Concept retrieval defaults to 16 KiB and has a 32 KiB
+absolute response limit. KB Tree Markdown retains its 400-character line
+ceiling.
 
 The explicit concept benchmark retains correctness/fail-closed gates and also
 writes a compact private snapshot beneath ignored benchmark state. It measures

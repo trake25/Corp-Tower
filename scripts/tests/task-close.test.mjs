@@ -36,7 +36,7 @@ import {
 } from '../task-close.mjs';
 
 const SOURCE = 'src/Server/app/engine/Scoring.js';
-const DOC = 'docs/context/backend.md';
+const DOC = 'KB/docs/context/backend.md';
 const TASK_CLOSE = resolve('scripts/task-close.mjs');
 const RECEIPT_IDENTITY = Object.freeze({
   keywords: ['Public', 'QA', 'Receipts'],
@@ -208,7 +208,7 @@ test('prepare creates a compact schema-v2 ownership manifest and intake', () => 
   assert.equal(manifest.documentation.status, 'pending');
   assert.equal(manifest.coverage.status, 'pending');
   assert.deepEqual(manifest.intake.docs, [DOC]);
-  assert.deepEqual(manifest.intake.maps, ['docs/context/map/backend.md']);
+  assert.deepEqual(manifest.intake.maps, []);
   assert.deepEqual(manifest.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
   assert.ok(manifest.intake.tools.some(tool => tool.name === 'QA'));
   const intake = intakeForManifest(manifest, '.agent-state/automation/task.json');
@@ -216,7 +216,7 @@ test('prepare creates a compact schema-v2 ownership manifest and intake', () => 
   assert.ok(Buffer.byteLength(JSON.stringify(intake, null, 2)) + 1 <= 8 * 1024);
 });
 
-test('prepare keeps experimental KB ownership separate and selects concept close-out tools', () => {
+test('prepare keeps KB Tree ownership scoped and selects concept close-out tools', () => {
   const path = 'KB/docs/context/gameplay.md';
   const manifest = createManifest({ task: 'Validate parallel concept KB', ownedPaths: [path] });
   const tools = manifest.intake.tools.map(tool => tool.name);
@@ -225,11 +225,20 @@ test('prepare keeps experimental KB ownership separate and selects concept close
   assert.equal(manifest.documentation.source_changed, false);
   assert.equal(manifest.intake.qa.concept_kb, true);
   assert.equal(manifest.intake.qa.runtime_applies, false);
-  assert.deepEqual(manifest.intake.docs, []);
+  assert.deepEqual(manifest.intake.docs, [path]);
   assert.deepEqual(manifest.intake.maps, []);
   assert.ok(tools.includes('concept map'));
   assert.ok(tools.includes('concept KB'));
   assert.ok(tools.includes('concept benchmark'));
+});
+
+test('task-close treats generated KB Tree outputs as tooling evidence, not authored documentation', () => {
+  const manifest = createManifest({
+    task: 'Regenerate a KB Tree map',
+    ownedPaths: ['KB/docs/context/map/concept/backend.md'],
+  });
+
+  assert.deepEqual(manifest.intake.docs, []);
 });
 
 test('optional plan binding accepts only an active Markdown plan with a free deterministic archive', () => {
@@ -396,8 +405,8 @@ test('source-changing closeout requires an updated or not-needed documentation d
   assert.deepEqual(notNeeded.documented_paths, []);
 });
 
-test('updated documentation must be owned, affected, and present in the reviewed change set', () => {
-  const unrelatedDoc = 'docs/context/gameplay.md';
+test('updated documentation must be owned and present in the reviewed change set', () => {
+  const unrelatedDoc = 'KB/docs/context/gameplay.md';
   const prepared = createManifest({ task: 'Verify scoring docs', ownedPaths: [SOURCE, DOC, unrelatedDoc] });
   const withoutDocChange = reviewManifest(prepared, { changedPaths: [SOURCE] });
   assert.throws(() => applyDocumentationDecision(withoutDocChange, {
@@ -407,11 +416,11 @@ test('updated documentation must be owned, affected, and present in the reviewed
   }), /reviewed change set/);
 
   const withUnrelatedDoc = reviewManifest(prepared, { changedPaths: [SOURCE, unrelatedDoc] });
-  assert.throws(() => applyDocumentationDecision(withUnrelatedDoc, {
+  assert.doesNotThrow(() => applyDocumentationDecision(withUnrelatedDoc, {
     decision: 'updated',
     reason: 'Scoring changed.',
     documentedPaths: [unrelatedDoc],
-  }), /documentation scope/);
+  }));
 });
 
 test('permanent coverage is a required decision independent of QA selection', () => {
@@ -682,105 +691,14 @@ test('CLI review directs source-changing closeout through the documentation gate
   }
 });
 
-test('closeout leaves canonical skill mirroring to the commit hook', () => {
-  const root = mkdtempSync(join(tmpdir(), 'corp-task-close-skills-'));
-  const manifestPath = '.agent-state/skills.json';
-  const canonicalPath = '.agents/skills/example/SKILL.md';
-  const mirrorPath = '.claude/skills/example/SKILL.md';
-  mkdirSync(join(root, '.agents/skills/example'), { recursive: true });
-  mkdirSync(join(root, '.claude/skills/example'), { recursive: true });
-  mkdirSync(join(root, '.agent-state'), { recursive: true });
-  mkdirSync(join(root, 'scripts'), { recursive: true });
-  writeFileSync(join(root, canonicalPath), 'canonical skill\n');
-  writeFileSync(join(root, mirrorPath), 'stale mirror\n');
-  writeFileSync(join(root, 'scripts/qa-gate.mjs'), "console.log('PASS — fixture QA');\n");
-  writeFileSync(join(root, 'scripts/sync-agent-skills.mjs'), "import { writeFileSync } from 'node:fs'; writeFileSync('task-close-ran-skill-sync', 'unexpected\\n');\n");
-  writeFileSync(join(root, 'scripts/validate-agent-config.mjs'), "console.log('PASS — fixture agent config');\n");
-  const git = args => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
-  assert.equal(git(['init', '-q']).status, 0);
-  assert.equal(git(['config', 'user.name', 'QA Fixture']).status, 0);
-  assert.equal(git(['config', 'user.email', 'qa-fixture@example.invalid']).status, 0);
-  assert.equal(git(['add', '.']).status, 0);
-  assert.equal(git(['commit', '-qm', 'Fixture baseline']).status, 0);
-  const prepared = createManifest({ task: 'Synchronize canonical skill', ownedPaths: [canonicalPath], root });
-  const reviewed = reviewManifest(prepared, { changedPaths: [canonicalPath], mapBaseline: {} });
-  writeFileSync(join(root, manifestPath), `${JSON.stringify(reviewed, null, 2)}\n`);
-  const result = spawnSync(process.execPath, [TASK_CLOSE, 'close', '--manifest', manifestPath, '--coverage', 'none'], {
-    cwd: process.cwd(),
-    env: Object.fromEntries(Object.entries({ ...process.env, TASK_CLOSE_ROOT: root, CODEX_SESSION_ID: '', CODEX_THREAD_ID: '' }).filter(([key]) => key !== 'NODE_TEST_CONTEXT')),
-    encoding: 'utf8',
-  });
-
-  try {
-    assert.equal(result.status, 0, result.stderr);
-    const manifest = JSON.parse(readFileSync(join(root, manifestPath), 'utf8'));
-    const receipt = JSON.parse(readFileSync(join(root, '.agent-state/skills.receipt.json'), 'utf8'));
-    assert.equal(readFileSync(join(root, mirrorPath), 'utf8'), 'stale mirror\n');
-    assert.deepEqual(manifest.derived_paths, []);
-    assert.equal(manifest.publish_paths.includes(mirrorPath), false);
-    assert.equal(receipt.steps.some(step => step.name === 'agent skill mirror'), false);
-    assert.equal(existsSync(join(root, 'task-close-ran-skill-sync')), false);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
-
-test('compaction-required game-KB failure stays open and exposes its target in compact evidence', () => {
-  const root = mkdtempSync(join(tmpdir(), 'corp-task-close-compaction-'));
-  const manifestPath = '.agent-state/compaction.json';
+test('KB Tree task-close intake does not schedule legacy map or document validation for source-only work', () => {
   const sourcePath = 'src/Server/app/example.js';
-  mkdirSync(join(root, 'src/Server/app'), { recursive: true });
-  mkdirSync(join(root, 'scripts'), { recursive: true });
-  mkdirSync(join(root, '.agent-state'), { recursive: true });
-  mkdirSync(join(root, 'plan'), { recursive: true });
-  writeFileSync(join(root, sourcePath), 'export const example = true;\n');
-  writeFileSync(join(root, 'plan/task.md'), '# Active compaction task\n');
-  writeFileSync(join(root, 'scripts/qa-gate.mjs'), "console.log('PASS — fixture QA');\n");
-  writeFileSync(join(root, 'scripts/build-file-map.mjs'), "console.log('PASS — fixture map');\n");
-  writeFileSync(join(root, 'scripts/validate-docs.mjs'), `
-    if (!process.argv.includes('--quiet')) process.exit(2);
-    console.log('ACTIONABLE_BLOCKER: compaction-required: automation.md section "Automated close-out" ~1700 tok > hard limit 1600 — compact this section and retry');
-    console.log('FAILURE_CLASSIFICATION: implementation');
-    console.log('FAIL');
-    process.exitCode = 1;
-  `);
-  const prepared = createManifest({
-    task: 'Keep hard compaction open',
-    ownedPaths: [sourcePath],
-    planPath: 'plan/task.md',
-    root,
-  });
+  const prepared = createManifest({ task: 'Keep KB Tree closure scoped', ownedPaths: [sourcePath] });
   const reviewed = reviewManifest(prepared, { changedPaths: [sourcePath], mapBaseline: {} });
-  writeFileSync(join(root, manifestPath), `${JSON.stringify(reviewed, null, 2)}\n`);
-  const result = spawnSync(process.execPath, [
-    TASK_CLOSE,
-    'close',
-    '--manifest', manifestPath,
-    '--decision', 'not-needed',
-    '--reason', 'The fixture changes no durable documentation contract.',
-    '--coverage', 'reused',
-  ], {
-    cwd: process.cwd(),
-    env: Object.fromEntries(Object.entries({ ...process.env, TASK_CLOSE_ROOT: root, CODEX_SESSION_ID: '', CODEX_THREAD_ID: '' }).filter(([key]) => key !== 'NODE_TEST_CONTEXT')),
-    encoding: 'utf8',
-  });
 
-  try {
-    assert.equal(result.status, 1);
-    const manifest = JSON.parse(readFileSync(join(root, manifestPath), 'utf8'));
-    const receipt = JSON.parse(readFileSync(join(root, '.agent-state/compaction.receipt.json'), 'utf8'));
-    const gameKb = receipt.steps.find(step => step.name === 'game KB');
-    assert.equal(manifest.phase, 'failed');
-    assert.deepEqual(manifest.lifecycle, { status: 'open' });
-    assert.equal(manifest.plan.status, 'pending');
-    assert.equal(existsSync(join(root, 'plan/task.md')), true);
-    assert.equal(existsSync(join(root, 'plan/done/task.md')), false);
-    assert.ok(gameKb.command.includes('--quiet'));
-    assert.match(gameKb.summary, /ACTIONABLE_BLOCKER: compaction-required: automation\.md section/);
-    assert.match(gameKb.summary, /FAILURE_CLASSIFICATION: implementation/);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
+  assert.deepEqual(reviewed.documentation.candidate_docs, ['KB/docs/context/backend.md']);
+  assert.deepEqual(reviewed.documentation.maps_to_regenerate, []);
+  assert.deepEqual(reviewed.review.intake.tools.map(tool => tool.name), ['QA']);
 });
 
 function terminalCloseFixture(qaSource, task = 'Public QA receipt fixture', { plan = false, blockArchive = false } = {}) {

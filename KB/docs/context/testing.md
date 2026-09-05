@@ -55,6 +55,8 @@ alias: rendered QA
 alias: manual visual QA
 source: src/Client/App/corp-tower/Tests/CiSmokeTest.gd#check_main_scene_ready
 source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#_begin_collapse
+source: scripts/rendered-client-verify.mjs#runRenderedVerification
+source: scripts/qa-gate.mjs#selectGodotBinary
 adjacent: hud.constraint.rendered-verification
 adjacent: ui.constraint.rendered-verification
 -->
@@ -64,7 +66,25 @@ Headless tests establish structure and deterministic behavior but cannot prove
 final visual fidelity, touch pairing, or Tower Stack frame behavior. Rendered
 verification supplements that correctness gate for drag state, collapse framing,
 responsive layout, native provider flows, and other device-specific
-presentation.
+presentation. When selected and authorized, its helper launches only the
+task-owned repository application with the QA-selected Godot executable, accepts
+one exact-PID window with valid bounds, captures only that rectangle under a
+task-specific `/tmp` directory, and terminates only the retained PID. Missing
+display access, ambiguous ownership, or invalid bounds fails closed; visual
+judgment remains with the LLM.
+
+<!-- kb
+id: testing.client.snapgrid-isolation
+alias: SnapGrid shared state
+alias: placeable range test isolation
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/SnapGrid.gd#reset_placeable_range
+source: src/Client/App/corp-tower/Tests/Gut/GameUi/test_snap_grid.gd#before_each
+-->
+## SnapGrid shared-state isolation
+
+SnapGrid's placeable range is shared mutable state. A test that changes it must
+restore or reset it so later tests start from the default range rather than
+inheriting another test's level-specific span.
 
 <!-- kb
 id: testing.balance.tools
@@ -99,7 +119,7 @@ adjacent: automation.task-close.lifecycle
 Automation tests protect retrieval states and budgets, task-close ownership and
 closure, publication scope, map generation, observability arithmetic, and safety
 gates. Focused concept tests cover parser/generator/validator integrity and
-primary-map isolation. The opt-in concept benchmark still gates exact routes and
+KB Tree map isolation. The explicitly requested concept benchmark gates exact routes and
 closed failures, then locally measures representative concept and journey
 footprints, merges overlapping source windows, and writes only sanitized
 metrics to ignored benchmark state.

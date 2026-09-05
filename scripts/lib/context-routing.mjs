@@ -1,3 +1,4 @@
+// Legacy source/map router retained for the deferred non-Codex migration.
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
@@ -102,7 +103,7 @@ export const ROUTE_RULES = [
   { pattern: /^scripts\/(?:lib\/tutorial-defaults-parity\.mjs|tests\/tutorial-defaults-parity\.test\.mjs)$/, skill: 'qa-engineer', docs: ['testing.md', 'ui-tutorial.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/lib\/context-routing\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/lib\/context-query\.mjs$/, skill: 'docs-steward', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
-  { pattern: /^scripts\/(validate-docs|build-file-map|sync-agent-skills|validate-agent-config)\.mjs$/, skill: 'docs-steward', docs: [], map: 'infra.md', read: 'hunk' },
+  { pattern: /^scripts\/(validate-docs|build-file-map)\.mjs$/, skill: 'docs-steward', docs: [], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/install-git-hooks\.mjs$/, skill: 'infra-engineer', docs: [], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/git-sync-commit-push\.mjs$/, skill: 'infra-engineer', docs: ['automation.md'], map: 'infra.md', read: 'hunk' },
   { pattern: /^scripts\/qa-gate\.mjs$/, skill: 'qa-engineer', docs: ['testing.md'], map: 'infra.md', read: 'hunk' },

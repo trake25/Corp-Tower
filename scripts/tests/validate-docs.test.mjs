@@ -103,7 +103,7 @@ test('quiet hard-section failure is terse, actionable, and task-owned', () => {
   assert.equal(lines[3], 'FAILURE_CLASSIFICATION: implementation');
 });
 
-test('the experimental KB is tracked documentation but cannot satisfy the primary validation corpus', () => {
+test('KB Tree is tracked documentation but remains outside the legacy validation corpus', () => {
   assert.equal(isNormalContextExcludedPath('KB/docs/context/gameplay.md'), false);
   assert.equal(isPrimaryValidationCorpusPath('KB/docs/context/gameplay.md'), false);
   assert.equal(isPrimaryValidationCorpusPath('.\\KB\\docs\\context\\gameplay.md'), false);

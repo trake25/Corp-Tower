@@ -1,7 +1,7 @@
 # Corp Tower — context entry
 
-Router for the `docs/context/` knowledge base. Load **only** what the router
-names. The full retrieval contract is in the root `AGENTS.md`.
+Legacy source documentation for game-system detail. ChatGPT/Codex context starts
+at `KB/docs/context/index.md`; this tree is not its production router.
 
 ## System
 
@@ -65,7 +65,7 @@ flowchart LR
 | Tests, balance simulator, CI gates | [testing.md](./testing.md) | — |
 | Agent retrieval, context bundles and automated task close-out | [automation.md](./automation.md) | — |
 | "Which file does X?" | — | the matching map |
-| Editing these docs | `update-docs` · `compact-docs` skills | — |
+| Editing these legacy docs | the exact owner and deterministic tooling | — |
 | `site/` — the portfolio, a separate Worker and its own KB | [`site/docs/index.md`](../../site/docs/index.md) | — |
 | `site-root/` — apex-domain Worker, no game code | its own README | — |
 
@@ -74,9 +74,8 @@ now and what it still cannot do — not how it got here. There is no history doc
 
 ## Working rules
 
-Repo-wide invariants — server authority, no comments in product source, don't
-commit — are in the root `AGENTS.md` and are not repeated here. These are the
-rules for writing *these docs*.
+ChatGPT/Codex policy and durable semantic ownership are in `policy/` and KB
+Tree. These are retained source-document rules only.
 
 - **One owning doc per concept.** Edit that doc, never a second copy.
 - **Docs own knob _semantics_; `Game_Config.js` owns knob _values_.** Mirroring a
@@ -84,8 +83,7 @@ rules for writing *these docs*.
   when it drives design conversation on its own; otherwise give name, meaning and
   shape, and let the reader open `Game_Config.js`.
 - Config keys appear in exact code-identifier form, never paraphrased.
-- Docs change only under the `update-docs` or `compact-docs` skill, and edits **replace**
-  prose rather than append to it.
+- Legacy prose changes replace existing text rather than append task history.
 
 ## Aliases
 

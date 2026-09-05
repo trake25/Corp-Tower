@@ -79,7 +79,7 @@ test('public receipt helpers select their focused automation contracts', () => {
   ]);
 });
 
-test('experimental concept paths select focused concept QA without runtime suites', () => {
+test('KB Tree concept paths select focused concept QA without runtime suites', () => {
   const paths = [
     'KB/docs/context/gameplay.md',
     'scripts/lib/concept-kb.mjs',

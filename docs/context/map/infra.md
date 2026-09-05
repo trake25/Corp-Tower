@@ -694,24 +694,24 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/backup/backup-web-up.sh:1 | @file · file | backup web up operator script |
 
-### scripts/benchmark-rag.mjs — 324 ln
+### scripts/benchmark-rag.mjs — 325 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/benchmark-rag.mjs:1 | @file · file | returns at most eight matching self-contained map rows |
-| scripts/benchmark-rag.mjs:21 | ROOT · const | |
-| scripts/benchmark-rag.mjs:22 | CHECK · const | |
-| scripts/benchmark-rag.mjs:157 | fixtures · const | |
-| scripts/benchmark-rag.mjs:158 | started · const | |
-| scripts/benchmark-rag.mjs:176 | retrieval · const | |
-| scripts/benchmark-rag.mjs:201 | skills · const | |
-| scripts/benchmark-rag.mjs:214 | protocol · const | |
-| scripts/benchmark-rag.mjs:243 | sessions · const | |
-| scripts/benchmark-rag.mjs:274 | correct · const | |
-| scripts/benchmark-rag.mjs:275 | first · const | |
-| scripts/benchmark-rag.mjs:285 | result · const | |
-| scripts/benchmark-rag.mjs:313 | markdown · const | |
-| scripts/benchmark-rag.mjs:321 | passed · const | |
+| scripts/benchmark-rag.mjs:22 | ROOT · const | |
+| scripts/benchmark-rag.mjs:23 | CHECK · const | |
+| scripts/benchmark-rag.mjs:158 | fixtures · const | |
+| scripts/benchmark-rag.mjs:159 | started · const | |
+| scripts/benchmark-rag.mjs:177 | retrieval · const | |
+| scripts/benchmark-rag.mjs:202 | skills · const | |
+| scripts/benchmark-rag.mjs:215 | protocol · const | |
+| scripts/benchmark-rag.mjs:244 | sessions · const | |
+| scripts/benchmark-rag.mjs:275 | correct · const | |
+| scripts/benchmark-rag.mjs:276 | first · const | |
+| scripts/benchmark-rag.mjs:286 | result · const | |
+| scripts/benchmark-rag.mjs:314 | markdown · const | |
+| scripts/benchmark-rag.mjs:322 | passed · const | |
 
 ### scripts/build-android-plugin.sh — 23 ln
 
@@ -984,7 +984,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/concept-kb.mjs:450 | conceptForInput · fn | |
 | scripts/lib/concept-kb.mjs:469 | readConceptMapSection · fn | |
 
-### scripts/lib/context-query.mjs — 826 ln
+### scripts/lib/context-query.mjs — 824 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1014,30 +1014,29 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/context-query.mjs:647 | conceptTextLines · fn | |
 | scripts/lib/context-query.mjs:660 | conceptBundle · fn | |
 | scripts/lib/context-query.mjs:723 | scopeContext · fn | |
-| scripts/lib/context-query.mjs:762 | scopeTextLines · fn | |
-| scripts/lib/context-query.mjs:788 | contextBundle · fn | |
+| scripts/lib/context-query.mjs:760 | scopeTextLines · fn | |
+| scripts/lib/context-query.mjs:786 | contextBundle · fn | |
 
-### scripts/lib/context-routing.mjs — 242 ln
+### scripts/lib/context-routing.mjs — 243 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/lib/context-routing.mjs:1 | @file · file | excludes reports, working material and agent state from normal discovery and indexing |
-| scripts/lib/context-routing.mjs:4 | CLIENT · const | |
-| scripts/lib/context-routing.mjs:33 | MAP_AREAS · const | |
-| scripts/lib/context-routing.mjs:65 | ROUTE_RULES · const | |
-| scripts/lib/context-routing.mjs:117 | AREA_ALIASES · const | |
-| scripts/lib/context-routing.mjs:133 | isNormalContextExcludedPath · fn | |
-| scripts/lib/context-routing.mjs:138 | isPrimaryValidationCorpusPath · fn | |
-| scripts/lib/context-routing.mjs:181 | routeSourcePath · fn | |
-| scripts/lib/context-routing.mjs:189 | documentationNeedlesForPath · fn | |
-| scripts/lib/context-routing.mjs:200 | mapOwnerForPath · fn | |
-| scripts/lib/context-routing.mjs:204 | IGNORE_DIR · const | |
-| scripts/lib/context-routing.mjs:205 | IGNORE_PATH · const | |
-| scripts/lib/context-routing.mjs:206 | COVERAGE_EXEMPT · const | |
-| scripts/lib/context-routing.mjs:207 | norm · const | |
-| scripts/lib/context-routing.mjs:209 | walk · fn | |
-| scripts/lib/context-routing.mjs:220 | firstPartyFiles · fn | |
-| scripts/lib/context-routing.mjs:241 | isExempt · const | |
+| scripts/lib/context-routing.mjs:5 | CLIENT · const | |
+| scripts/lib/context-routing.mjs:34 | MAP_AREAS · const | |
+| scripts/lib/context-routing.mjs:118 | AREA_ALIASES · const | |
+| scripts/lib/context-routing.mjs:134 | isNormalContextExcludedPath · fn | |
+| scripts/lib/context-routing.mjs:139 | isPrimaryValidationCorpusPath · fn | |
+| scripts/lib/context-routing.mjs:182 | routeSourcePath · fn | |
+| scripts/lib/context-routing.mjs:190 | documentationNeedlesForPath · fn | |
+| scripts/lib/context-routing.mjs:201 | mapOwnerForPath · fn | |
+| scripts/lib/context-routing.mjs:205 | IGNORE_DIR · const | |
+| scripts/lib/context-routing.mjs:206 | IGNORE_PATH · const | |
+| scripts/lib/context-routing.mjs:207 | COVERAGE_EXEMPT · const | |
+| scripts/lib/context-routing.mjs:208 | norm · const | |
+| scripts/lib/context-routing.mjs:210 | walk · fn | |
+| scripts/lib/context-routing.mjs:221 | firstPartyFiles · fn | |
+| scripts/lib/context-routing.mjs:242 | isExempt · const | |
 
 ### scripts/lib/docs-capacity.mjs — 128 ln
 
@@ -1118,7 +1117,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/lib/tutorial-defaults-parity.mjs:97 | formatTutorialDefaultMismatches · fn | |
 | scripts/lib/tutorial-defaults-parity.mjs:103 | tutorialDefaultsParity · fn | |
 
-### scripts/qa-gate.mjs — 320 ln
+### scripts/qa-gate.mjs — 332 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1126,14 +1125,31 @@ bounded source read. Local implementation detail stays in source.
 | scripts/qa-gate.mjs:9 | ROOT · const | |
 | scripts/qa-gate.mjs:10 | CLIENT · const | |
 | scripts/qa-gate.mjs:11 | SERVER · const | |
-| scripts/qa-gate.mjs:51 | AUTOMATION_PROTOCOL_TESTS · const | |
-| scripts/qa-gate.mjs:53 | CONCEPT_KB_TESTS · const | |
-| scripts/qa-gate.mjs:83 | TUTORIAL_PARITY_TEST · const | |
-| scripts/qa-gate.mjs:100 | selectToolingQa · fn | |
-| scripts/qa-gate.mjs:121 | selectContractQa · fn | |
-| scripts/qa-gate.mjs:128 | selectQa · fn | |
-| scripts/qa-gate.mjs:191 | classifyQaFailure · fn | |
-| scripts/qa-gate.mjs:201 | fail · fn | |
+| scripts/qa-gate.mjs:53 | AUTOMATION_PROTOCOL_TESTS · const | |
+| scripts/qa-gate.mjs:55 | CONCEPT_KB_TESTS · const | |
+| scripts/qa-gate.mjs:87 | TUTORIAL_PARITY_TEST · const | |
+| scripts/qa-gate.mjs:104 | selectToolingQa · fn | |
+| scripts/qa-gate.mjs:125 | selectContractQa · fn | |
+| scripts/qa-gate.mjs:132 | selectQa · fn | |
+| scripts/qa-gate.mjs:195 | classifyQaFailure · fn | |
+| scripts/qa-gate.mjs:205 | fail · fn | |
+| scripts/qa-gate.mjs:229 | selectGodotBinary · fn | |
+
+### scripts/rendered-client-verify.mjs — 161 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/rendered-client-verify.mjs:1 | @file · file | rendered client verify repository workflow |
+| scripts/rendered-client-verify.mjs:9 | ROOT · const | |
+| scripts/rendered-client-verify.mjs:12 | inside · fn | |
+| scripts/rendered-client-verify.mjs:16 | compact · fn | |
+| scripts/rendered-client-verify.mjs:20 | parsePidWindowRows · fn | |
+| scripts/rendered-client-verify.mjs:32 | exactWindowForPid · fn | |
+| scripts/rendered-client-verify.mjs:40 | windowCaptureArgs · fn | |
+| scripts/rendered-client-verify.mjs:45 | queryWindows · fn | |
+| scripts/rendered-client-verify.mjs:50 | displayReady · fn | |
+| scripts/rendered-client-verify.mjs:77 | runRenderedVerification · fn | |
+| scripts/rendered-client-verify.mjs:123 | parseArgs · fn | |
 
 ### scripts/strip-comments.mjs — 296 ln
 
@@ -1144,51 +1160,43 @@ bounded source read. Local implementation detail stays in source.
 | scripts/strip-comments.mjs:162 | strip · fn | |
 | scripts/strip-comments.mjs:217 | verify · fn | |
 
-### scripts/sync-agent-skills.mjs — 54 ln
-
-| File:Ln | Anchor | Purpose |
-|---|---|---|
-| scripts/sync-agent-skills.mjs:1 | @file · file | files operation implemented by sync-agent-skills |
-| scripts/sync-agent-skills.mjs:7 | files · fn | |
-| scripts/sync-agent-skills.mjs:15 | compare · fn | |
-| scripts/sync-agent-skills.mjs:22 | skillMirrorDrift · fn | |
-
-### scripts/task-close.mjs — 1148 ln
+### scripts/task-close.mjs — 1180 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/task-close.mjs:1 | @file · file | reports a command error with its caller-selected exit status |
-| scripts/task-close.mjs:29 | ROOT · const | |
-| scripts/task-close.mjs:31 | SCHEMA_VERSION · const | |
-| scripts/task-close.mjs:34 | fail · fn | |
-| scripts/task-close.mjs:67 | planBindingFor · fn | |
-| scripts/task-close.mjs:101 | parseArgs · fn | |
-| scripts/task-close.mjs:116 | checkOptions · fn | |
-| scripts/task-close.mjs:120 | one · fn | |
-| scripts/task-close.mjs:127 | many · fn | |
-| scripts/task-close.mjs:140 | sourcePath · fn | |
-| scripts/task-close.mjs:144 | testPath · fn | |
-| scripts/task-close.mjs:156 | domainFor · fn | |
-| scripts/task-close.mjs:167 | deriveTaskComplexity · fn | |
-| scripts/task-close.mjs:188 | command · fn | |
-| scripts/task-close.mjs:195 | fingerprint · fn | |
-| scripts/task-close.mjs:216 | publishPathsFor · fn | |
-| scripts/task-close.mjs:254 | createManifest · fn | |
-| scripts/task-close.mjs:288 | startObservability · fn | |
-| scripts/task-close.mjs:318 | closeObservabilityUnsafe · fn | |
-| scripts/task-close.mjs:397 | amendManifest · fn | |
-| scripts/task-close.mjs:435 | reviewManifest · fn | |
-| scripts/task-close.mjs:479 | applyDocumentationDecision · fn | |
-| scripts/task-close.mjs:516 | applyCoverageDecision · fn | |
-| scripts/task-close.mjs:536 | recordFallback · fn | |
-| scripts/task-close.mjs:555 | fallbackRequiresRetrievalProof · fn | |
-| scripts/task-close.mjs:559 | intakeForManifest · fn | |
-| scripts/task-close.mjs:600 | reviewForManifest · fn | |
-| scripts/task-close.mjs:632 | manifestPath · fn | |
-| scripts/task-close.mjs:686 | compactOutput · fn | |
-| scripts/task-close.mjs:718 | validateDocumentationDecision · fn | |
-| scripts/task-close.mjs:755 | retrievalFallbackMaintenanceItems · fn | |
-| scripts/task-close.mjs:793 | archivePlan · fn | |
+| scripts/task-close.mjs:27 | ROOT · const | |
+| scripts/task-close.mjs:29 | SCHEMA_VERSION · const | |
+| scripts/task-close.mjs:32 | fail · fn | |
+| scripts/task-close.mjs:65 | planBindingFor · fn | |
+| scripts/task-close.mjs:99 | parseArgs · fn | |
+| scripts/task-close.mjs:114 | checkOptions · fn | |
+| scripts/task-close.mjs:118 | one · fn | |
+| scripts/task-close.mjs:125 | many · fn | |
+| scripts/task-close.mjs:138 | sourcePath · fn | |
+| scripts/task-close.mjs:142 | testPath · fn | |
+| scripts/task-close.mjs:150 | domainFor · fn | |
+| scripts/task-close.mjs:161 | deriveTaskComplexity · fn | |
+| scripts/task-close.mjs:182 | command · fn | |
+| scripts/task-close.mjs:199 | taskCloseIntake · fn | |
+| scripts/task-close.mjs:226 | fingerprint · fn | |
+| scripts/task-close.mjs:247 | publishPathsFor · fn | |
+| scripts/task-close.mjs:285 | createManifest · fn | |
+| scripts/task-close.mjs:319 | startObservability · fn | |
+| scripts/task-close.mjs:349 | closeObservabilityUnsafe · fn | |
+| scripts/task-close.mjs:428 | amendManifest · fn | |
+| scripts/task-close.mjs:466 | reviewManifest · fn | |
+| scripts/task-close.mjs:514 | applyDocumentationDecision · fn | |
+| scripts/task-close.mjs:551 | applyCoverageDecision · fn | |
+| scripts/task-close.mjs:571 | recordFallback · fn | |
+| scripts/task-close.mjs:590 | fallbackRequiresRetrievalProof · fn | |
+| scripts/task-close.mjs:594 | intakeForManifest · fn | |
+| scripts/task-close.mjs:634 | reviewForManifest · fn | |
+| scripts/task-close.mjs:666 | manifestPath · fn | |
+| scripts/task-close.mjs:720 | compactOutput · fn | |
+| scripts/task-close.mjs:752 | validateDocumentationDecision · fn | |
+| scripts/task-close.mjs:789 | retrievalFallbackMaintenanceItems · fn | |
+| scripts/task-close.mjs:827 | archivePlan · fn | |
 
 ### scripts/tests/agent-observability.test.mjs — 763 ln
 
@@ -1210,6 +1218,7 @@ bounded source read. Local implementation detail stays in source.
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/codex-rollout-observability.test.mjs:1 | @file · file | permanent regression coverage for codex rollout observability |
+| scripts/tests/codex-rollout-observability.test.mjs:13 | temporaryDirectory · fn | |
 | scripts/tests/codex-rollout-observability.test.mjs:17 | usage · fn | |
 
 ### scripts/tests/concept-kb.test.mjs — 380 ln
@@ -1247,13 +1256,28 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/kb-calibration.test.mjs:1 | @file · file | permanent coverage for range merging, private snapshots, and manual report safety |
 | scripts/tests/kb-calibration.test.mjs:68 | clean · fn | |
 
+### scripts/tests/policy-routing.test.mjs — 56 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/tests/policy-routing.test.mjs:1 | @file · file | permanent regression coverage for policy routing |
+| scripts/tests/policy-routing.test.mjs:6 | ROOT · const | |
+| scripts/tests/policy-routing.test.mjs:7 | policy · const | |
+
 ### scripts/tests/qa-gate.test.mjs — 170 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/qa-gate.test.mjs:1 | @file · file | permanent regression coverage for qa gate |
 
-### scripts/tests/task-close.test.mjs — 1004 ln
+### scripts/tests/rendered-client-verify.test.mjs — 98 ln
+
+| File:Ln | Anchor | Purpose |
+|---|---|---|
+| scripts/tests/rendered-client-verify.test.mjs:1 | @file · file | permanent regression coverage for rendered client verify |
+| scripts/tests/rendered-client-verify.test.mjs:12 | ROOT · const | |
+
+### scripts/tests/task-close.test.mjs — 922 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1272,17 +1296,6 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/validate-docs.test.mjs:1 | @file · file | permanent regression coverage for validate docs |
 
-### scripts/validate-agent-config.mjs — 58 ln
-
-| File:Ln | Anchor | Purpose |
-|---|---|---|
-| scripts/validate-agent-config.mjs:1 | @file · file | validate agent config repository workflow |
-| scripts/validate-agent-config.mjs:7 | ROOT · const | |
-| scripts/validate-agent-config.mjs:9 | errors · const | |
-| scripts/validate-agent-config.mjs:10 | expected · const | |
-| scripts/validate-agent-config.mjs:44 | agents · const | |
-| scripts/validate-agent-config.mjs:46 | claude · const | |
-
 ### scripts/validate-concept-kb.mjs — 111 ln
 
 | File:Ln | Anchor | Purpose |
@@ -1290,7 +1303,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/validate-concept-kb.mjs:1 | @file · file | validate concept kb repository workflow |
 | scripts/validate-concept-kb.mjs:15 | parseArgs · fn | |
 
-### scripts/validate-docs.mjs — 470 ln
+### scripts/validate-docs.mjs — 465 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1302,17 +1315,17 @@ bounded source read. Local implementation detail stays in source.
 | scripts/validate-docs.mjs:41 | errors · const | |
 | scripts/validate-docs.mjs:42 | maintenanceErrors · const | |
 | scripts/validate-docs.mjs:43 | warnings · const | |
-| scripts/validate-docs.mjs:55 | tok · const | |
-| scripts/validate-docs.mjs:72 | slug · fn | |
-| scripts/validate-docs.mjs:78 | files · const | |
-| scripts/validate-docs.mjs:80 | read · const | |
-| scripts/validate-docs.mjs:82 | all · const | |
-| scripts/validate-docs.mjs:86 | anchors · const | |
-| scripts/validate-docs.mjs:147 | source · const | |
-| scripts/validate-docs.mjs:325 | growth · const | |
-| scripts/validate-docs.mjs:328 | git · const | |
-| scripts/validate-docs.mjs:355 | counts · const | |
-| scripts/validate-docs.mjs:439 | classification · const | |
+| scripts/validate-docs.mjs:51 | tok · const | |
+| scripts/validate-docs.mjs:68 | slug · fn | |
+| scripts/validate-docs.mjs:74 | files · const | |
+| scripts/validate-docs.mjs:76 | read · const | |
+| scripts/validate-docs.mjs:78 | all · const | |
+| scripts/validate-docs.mjs:82 | anchors · const | |
+| scripts/validate-docs.mjs:142 | source · const | |
+| scripts/validate-docs.mjs:320 | growth · const | |
+| scripts/validate-docs.mjs:323 | git · const | |
+| scripts/validate-docs.mjs:350 | counts · const | |
+| scripts/validate-docs.mjs:434 | classification · const | |
 
 ### scripts/write-endpoint-config.sh — 97 ln
 
@@ -1322,4 +1335,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-132 files · 521 stable anchors.
+133 files · 528 stable anchors.

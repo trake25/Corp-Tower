@@ -47,10 +47,6 @@ const isIsolated = absolute => {
   const rel = absolute.slice(ROOT.length + 1).split(/[\\/]/);
   return rel.length > 1 && ISOLATED_DIRS.has(rel[0]);
 };
-const isExperimentalKb = absolute => {
-  const rel = absolute.slice(ROOT.length + 1).split(/[\\/]/);
-  return rel.length > 1 && rel[0] === 'KB';
-};
 
 const tok = s => Math.round(Buffer.byteLength(s, 'utf8') / 4);
 
@@ -126,7 +122,6 @@ for (const { f, dir, txt } of all) {
         tgt = key; referenced.add(key);
       } else {
         if (isIsolated(abs)) errors.push(`${f}: knowledge-base link targets isolated working material '${pathPart}'`);
-        else if (isExperimentalKb(abs)) errors.push(`${f}: primary knowledge-base link targets experimental KB material '${pathPart}'`);
         else if (!existsSync(abs)) errors.push(`${f}: link to missing file '${pathPart}'`);
         continue;
       }
