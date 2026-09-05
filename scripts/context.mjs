@@ -53,6 +53,7 @@ function checkOptions(options, allowed) {
 
 function printResult(options, result) {
   if (options.has('json')) console.log(JSON.stringify(result, null, 2));
+  else if (result.status === 'matched') process.stdout.write(`${conceptTextLines(result).join('\n')}\n`);
   else process.stdout.write(measuredText(conceptTextLines(result)).output);
 }
 

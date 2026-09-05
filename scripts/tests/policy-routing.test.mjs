@@ -115,7 +115,12 @@ test('Codex execution owns one bounded provider-visible I/O discipline', () => {
 
   assert.equal((codex.match(/^## Provider-visible I\/O discipline$/gm) || []).length, 1);
   assert.match(execution, /smallest provider-visible input and output/);
-  assert.match(execution, /Prefer bounded reads/);
+  assert.match(execution, /tool result as provider-context input/);
+  assert.match(execution, /one KB Tree concept per information need/);
+  assert.match(execution, /final task-owned change scope once/);
+  assert.match(execution, /git diff --check/);
+  assert.match(execution, /Do not reread changed hunks that remain exact and current/);
+  assert.match(execution, /Read task-relevant changed hunks when the patch is no longer exact\/current/);
   assert.match(execution, /Do not request or print a repository-wide full diff by default/);
   assert.match(execution, /Large deletions, generated-file churn[\s\S]*metadata-first/);
   assert.match(execution, /expand evidence progressively/);
@@ -125,7 +130,7 @@ test('Codex execution owns one bounded provider-visible I/O discipline', () => {
   for (const filename of ['IMPLEMENT.md', 'FIX.md']) {
     const source = policy(filename);
     assert.doesNotMatch(source, /Provider-visible I\/O discipline/);
-    assert.doesNotMatch(source, /repository-wide full diff|metadata-first/);
+    assert.doesNotMatch(source, /repository-wide full diff|metadata-first|provider-context input/);
   }
 });
 

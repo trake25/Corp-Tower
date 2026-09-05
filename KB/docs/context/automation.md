@@ -101,20 +101,30 @@ adjacent: automation.observability.usage
 -->
 ## Provider-visible I/O discipline
 
-Codex minimizes provider-visible I/O rather than execution evidence. Once an exact
-evidence boundary is known it prefers bounded reads, task-scoped change
-summaries, relevant hunks, and progressive failure diagnostics instead of whole
-files, full repository diffs, deleted bodies, generated churn, or raw successful
-logs. Existing deterministic QA and close-out wrappers keep detailed diagnostics
-private while exposing compact results.
+Codex treats tool stdout as provider-context input and minimizes provider-visible
+I/O rather than execution evidence. Deterministic tooling keeps detailed
+manifests, logs, generated state, and diagnostics private while returning the
+smallest result needed for the next model decision; verbose structured output is
+explicit and on demand.
 
-Completion handoffs report implementation, verification, public receipt, and
-blockers without narrating tool history. Failure evidence expands only as
-correctness requires, so efficiency never becomes a hard cap that can hide a
-conflict, authorization need, failed check, or safety condition. Usage or
-efficiency telemetry remains exact-or-unavailable; this discipline does not
-authorize prompt, response, command, patch, diff, or transcript capture merely
-to measure savings.
+KB retrieval resolves one concept per information need. Normal concept output
+preserves owning prose and bounded source grants without mechanically repeating
+read commands or unloaded-adjacency commands. Another concept is resolved only
+after the current result establishes a new information need.
+
+Git review establishes final task-owned change scope once with bounded
+name-status evidence and keeps `git diff --check` as a cheap integrity check.
+Exact current patch evidence is reused instead of reread for procedural
+self-review; changed hunks are inspected when evidence became stale, another
+writer or generator produced the change, concurrency or unexpected scope is
+possible, or integration/correctness requires current content. Repository-wide
+full diffs remain non-default.
+
+QA and close-out keep detailed proof in private state and receipts while exposing
+compact success or progressively bounded failure diagnostics. Efficiency never
+hides a conflict, failed check, authorization need, safety condition, or
+correctness evidence, and telemetry never captures prompt, response, command,
+patch, diff, or transcript content merely to measure savings.
 
 <!-- kb
 id: automation.orchestration.execution

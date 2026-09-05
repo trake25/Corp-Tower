@@ -175,9 +175,8 @@ export function conceptTextLines(result) {
   output.push(`concept: ${result.concept.id}`, `owner: ${result.concept.owner.path}:${result.concept.owner.lines[0]}-${result.concept.owner.lines[1]} · ${result.concept.owner.heading}`);
   if (result.prose) output.push('', result.prose.text.trimEnd(), '');
   if (result.map && !result.prose) output.push(`map: ${result.map.path}:${result.map.lines[0]}-${result.map.lines[1]}`);
-  for (const source of result.sources || []) output.push(`source: ${source.path}:${source.line} · ${source.anchor}`, `read: ${source.read.command.display}`);
-  for (const adjacent of result.adjacent || []) output.push(`adjacent: ${adjacent.id} (not loaded)`, `next: ${adjacent.command.display}`);
-  output.push('fallback: no');
+  for (const source of result.sources || []) output.push(`source: ${source.path}#${source.anchor} [${source.read.lines[0]}-${source.read.lines[1]}]`);
+  for (const adjacent of result.adjacent || []) output.push(`adjacent: ${adjacent.id} (not loaded)`);
   return output;
 }
 

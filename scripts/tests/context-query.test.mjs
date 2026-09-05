@@ -51,7 +51,9 @@ test('concept-read emits one owning prose leaf without loading adjacency', () =>
   assert.match(result.stdout, /concept: hud\.tower\.collapse\.presentation/);
   assert.match(result.stdout, /## Collapse presentation/);
   assert.match(result.stdout, /adjacent: hud\.tower\.collapse\.recovery \(not loaded\)/);
+  assert.match(result.stdout, /^source: .+#.+ \[\d+-\d+\]$/m);
   assert.doesNotMatch(result.stdout, /Collapse recovery after presentation/);
+  assert.doesNotMatch(result.stdout, /^read:|^next:|^fallback: no$|^bytes:/m);
 });
 
 test('concept retrieval failures remain structured and fail closed', () => {

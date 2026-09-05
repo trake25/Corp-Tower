@@ -753,7 +753,7 @@ test('a documentation-only review needs no source documentation or permanent-cov
   assert.equal(reviewed.coverage.status, 'none');
 });
 
-test('CLI review accepts repository-contract changes without a documentation-scope process', () => {
+test('CLI lifecycle defaults are compact while --json preserves private manifest detail', () => {
   const root = mkdtempSync(join(tmpdir(), 'corp-task-close-'));
   const run = args => spawnSync(process.execPath, ['scripts/task-close.mjs', ...args], {
     cwd: process.cwd(),
@@ -764,15 +764,30 @@ test('CLI review accepts repository-contract changes without a documentation-sco
   try {
     const prepared = run(['prepare', '--task', 'Contract wording', '--path', 'AGENTS.md']);
     assert.equal(prepared.status, 0, prepared.stderr);
-    const manifest = JSON.parse(prepared.stdout).manifest;
+    assert.ok(Buffer.byteLength(prepared.stdout) <= 1024);
+    assert.match(prepared.stdout, /^PASS — task prepared; manifest: .+; owned: 1; docs: \d+; QA: .+; next: review\n$/);
+    assert.doesNotMatch(prepared.stdout, /"owned_paths"|"changed_paths"/);
+    const manifest = prepared.stdout.match(/manifest: (.+?);/)?.[1];
     assert.match(manifest, /^\.agent-state\/automation\/task-close\/[0-9a-f-]+\.json$/);
     const preparedManifest = JSON.parse(readFileSync(join(root, manifest), 'utf8'));
     assert.equal(preparedManifest.observability.task_id, preparedManifest.run_id);
     assert.equal(preparedManifest.observability.status, 'partial');
     assert.deepEqual(preparedManifest.observability.reasons, ['codex_session_id_unavailable']);
-    const reviewed = run(['review', '--manifest', manifest, '--changed', 'AGENTS.md']);
+    const amended = run(['amend', '--manifest', manifest, '--path', 'README.md']);
+    assert.equal(amended.status, 0, amended.stderr);
+    assert.ok(Buffer.byteLength(amended.stdout) <= 1024);
+    assert.match(amended.stdout, /^PASS — task amended; manifest: .+; owned: 2; docs: \d+; QA: .+; next: review\n$/);
+    assert.doesNotMatch(amended.stdout, /"owned_paths"|"changed_paths"/);
+    const reviewed = run(['review', '--manifest', manifest, '--changed', 'AGENTS.md', '--changed', 'README.md']);
     assert.equal(reviewed.status, 0, reviewed.stderr);
+    assert.ok(Buffer.byteLength(reviewed.stdout) <= 1024);
+    assert.match(reviewed.stdout, /^PASS — task reviewed; manifest: .+; changed: 2; docs: not-applicable; QA: .+; next: close\n$/);
+    assert.doesNotMatch(reviewed.stdout, /"owned_paths"|"changed_paths"/);
     assert.equal(JSON.parse(readFileSync(join(root, manifest), 'utf8')).phase, 'reviewed');
+
+    const jsonPrepared = run(['prepare', '--task', 'Structured diagnostics', '--path', 'AGENTS.md', '--json']);
+    assert.equal(jsonPrepared.status, 0, jsonPrepared.stderr);
+    assert.ok(JSON.parse(jsonPrepared.stdout).owned_paths.includes('AGENTS.md'));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -787,8 +802,8 @@ test('CLI prepare assigns distinct canonical manifests and rejects new legacy lo
   });
 
   try {
-    const first = run(['prepare', '--task', 'First canonical task', '--path', 'AGENTS.md']);
-    const second = run(['prepare', '--task', 'Second canonical task', '--path', 'AGENTS.md']);
+    const first = run(['prepare', '--task', 'First canonical task', '--path', 'AGENTS.md', '--json']);
+    const second = run(['prepare', '--task', 'Second canonical task', '--path', 'AGENTS.md', '--json']);
     assert.equal(first.status, 0, first.stderr);
     assert.equal(second.status, 0, second.stderr);
     const firstPath = JSON.parse(first.stdout).manifest;
@@ -829,7 +844,7 @@ test('CLI review directs source-changing closeout through the documentation gate
   });
 
   try {
-    const prepared = run(['prepare', '--task', 'Source contract', '--path', SOURCE]);
+    const prepared = run(['prepare', '--task', 'Source contract', '--path', SOURCE, '--json']);
     assert.equal(prepared.status, 0, prepared.stderr);
     const manifest = JSON.parse(prepared.stdout).manifest;
     const reviewed = run(['review', '--manifest', manifest, '--changed', SOURCE]);
@@ -906,6 +921,8 @@ test('a schema-v2 manifest closes while its raw receipt remains private', () => 
   try {
     const first = fixture.run();
     assert.equal(first.status, 0, first.stderr);
+    assert.match(first.stdout, /^PASS — verification passed; receipt: .+; public receipt: .+; flag: none\n$/);
+    assert.doesNotMatch(first.stdout, /observability|"steps"|"formal_flag_gate"/);
     const manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
     assert.equal(manifest.phase, 'closed');
     assert.equal(manifest.verification.status, 'passed');

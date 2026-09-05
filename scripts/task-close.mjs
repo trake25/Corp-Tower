@@ -105,6 +105,11 @@ function parseArgs(args) {
     const arg = args[index];
     if (!arg.startsWith('--')) fail(`unexpected argument: ${arg}`);
     const key = arg.slice(2);
+    if (key === 'json') {
+      if (values.has(key)) fail(`--${key} may be supplied once`);
+      values.set(key, ['true']);
+      continue;
+    }
     const value = args[index + 1];
     if (!value || value.startsWith('--')) fail(`--${key} needs a value`);
     if (!values.has(key)) values.set(key, []);
@@ -676,6 +681,27 @@ export function reviewForManifest(manifest, manifestFile) {
   return result;
 }
 
+function qaSummary(qa) {
+  return qa?.applies ? 'required' : 'not-applicable';
+}
+
+function compactLifecycleOutput(action, manifest, manifestFile) {
+  const output = action === 'review'
+    ? `PASS — task reviewed; manifest: ${manifestFile}; changed: ${manifest.changed_paths.length}; docs: ${manifest.documentation.status}; QA: ${qaSummary(manifest.review.intake.qa)}; next: close`
+    : `PASS — task ${action}; manifest: ${manifestFile}; owned: ${manifest.owned_paths.length}; docs: ${manifest.intake.docs.length}; QA: ${qaSummary(manifest.intake.qa)}; next: review`;
+  if (Buffer.byteLength(output) > 1024) throw new Error(`task ${action} output exceeds 1024 bytes`);
+  return output;
+}
+
+function compactFlagGate(manifest) {
+  const gate = manifest.observability?.formal_flag_gate;
+  if (!gate?.eligible) return 'none';
+  return ['candidate_id', 'stage', 'issue_code', 'cause_code', 'severity']
+    .filter(key => gate[key])
+    .map(key => `${key}: ${gate[key]}`)
+    .join(', ');
+}
+
 function manifestPath(values) {
   return safePath(one(values, 'manifest', true), '--manifest');
 }
@@ -995,7 +1021,7 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
   const label = maintenance.status === 'passed' ? 'PASS' : 'MAINTENANCE-BLOCKED';
   const handoff = maintenance.handoff ? `; maintenance handoff: ${maintenance.handoff}` : '';
   const publicEvidence = publicReceipt ? `; public receipt: ${publicReceipt}` : '';
-  console.log(`${label} — receipt: ${displayPath(receiptPath(manifestFile))}${publicEvidence}; ${steps.map(step => `${step.name} ${step.summary}`).join('; ')}${handoff}; observability ${JSON.stringify(manifest.observability)}`);
+  console.log(`${label} — verification ${receipt.status}; receipt: ${displayPath(receiptPath(manifestFile))}${publicEvidence}${handoff}; flag: ${compactFlagGate(manifest)}`);
 }
 
 function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = null) {
@@ -1033,7 +1059,7 @@ async function main() {
   const action = args.shift();
   const values = parseArgs(args);
   if (action === 'prepare') {
-    checkOptions(values, ['task', 'output', 'manifest', 'path', 'changed', 'qa-tooling-path', 'plan']);
+    checkOptions(values, ['task', 'output', 'manifest', 'path', 'changed', 'qa-tooling-path', 'plan', 'json']);
     const runId = randomUUID();
     const manifestFile = preparedManifestPath(values, runId);
     if (existsSync(manifestFile)) fail(`manifest already exists: ${displayPath(manifestFile)}; start a new run with --output`, 1);
@@ -1048,11 +1074,12 @@ async function main() {
     });
     manifest.observability = startObservability(manifest);
     writeManifest(manifestFile, manifest, { exclusive: true });
-    console.log(JSON.stringify(intakeForManifest(manifest, displayPath(manifestFile)), null, 2));
+    const output = intakeForManifest(manifest, displayPath(manifestFile));
+    console.log(values.has('json') ? JSON.stringify(output, null, 2) : compactLifecycleOutput('prepared', manifest, output.manifest));
     return;
   }
   if (action === 'amend') {
-    checkOptions(values, ['manifest', 'path', 'qa-tooling-path', 'plan']);
+    checkOptions(values, ['manifest', 'path', 'qa-tooling-path', 'plan', 'json']);
     const manifestFile = manifestPath(values);
     const paths = many(values, 'path');
     const toolingPaths = many(values, 'qa-tooling-path');
@@ -1065,17 +1092,19 @@ async function main() {
       planPath ? planBindingFor(planPath) : null,
     );
     writeManifest(manifestFile, manifest);
-    console.log(JSON.stringify(intakeForManifest(manifest, displayPath(manifestFile)), null, 2));
+    const output = intakeForManifest(manifest, displayPath(manifestFile));
+    console.log(values.has('json') ? JSON.stringify(output, null, 2) : compactLifecycleOutput('amended', manifest, output.manifest));
     return;
   }
   if (action === 'review') {
-    checkOptions(values, ['manifest', 'changed']);
+    checkOptions(values, ['manifest', 'changed', 'json']);
     const manifestFile = manifestPath(values);
     let manifest = upgradeManifest(readManifest(manifestFile));
     const changed = normalizePaths(many(values, 'changed'));
     manifest = reviewManifest(manifest, { changedPaths: changed, mapBaseline: mapHashes() });
     writeManifest(manifestFile, manifest);
-    console.log(JSON.stringify(reviewForManifest(manifest, displayPath(manifestFile)), null, 2));
+    const output = reviewForManifest(manifest, displayPath(manifestFile));
+    console.log(values.has('json') ? JSON.stringify(output, null, 2) : compactLifecycleOutput('review', manifest, output.manifest));
     return;
   }
   if (action === 'fallback') {
