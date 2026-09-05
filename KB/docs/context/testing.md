@@ -70,8 +70,10 @@ presentation. When selected and authorized, its helper launches only the
 task-owned repository application with the QA-selected Godot executable, accepts
 one exact-PID window with valid bounds, captures only that rectangle under a
 task-specific `/tmp` directory, and terminates only the retained PID. Missing
-display access, ambiguous ownership, or invalid bounds fails closed; visual
-judgment remains with the LLM.
+display access, ambiguous ownership, or invalid bounds fails closed. It uses
+only inherited display authorization, never changes X-server access, and
+filters window lookup to the task PID before parsing or retaining results;
+visual judgment remains with the LLM.
 
 <!-- kb
 id: testing.client.snapgrid-isolation

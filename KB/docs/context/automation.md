@@ -6,7 +6,7 @@ Scope: bounded repository retrieval, deterministic task close-out, documentation
 id: automation.retrieval.direct
 alias: agent retrieval
 alias: bounded context
-source: policy/AGENTS.md#Route
+source: AGENTS.md#Route
 adjacent: automation.retrieval.protocol
 -->
 ## Direct retrieval discipline

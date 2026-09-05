@@ -42,9 +42,23 @@ export function windowCaptureArgs({ display, window, output }) {
   return ['-y', '-f', 'x11grab', '-video_size', `${window.width}x${window.height}`, '-i', `${display}+${window.x},${window.y}`, '-frames:v', '1', output];
 }
 
-function queryWindows(env, command = 'wmctrl') {
+export function displayContextFor(env) {
+  const display = typeof env?.DISPLAY === 'string' ? env.DISPLAY.trim() : '';
+  if (!display) return null;
+  return { display, inherited_xauthority: typeof env.XAUTHORITY === 'string' && env.XAUTHORITY.length > 0 };
+}
+
+export function filterPidWindowRows(output, pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return '';
+  return String(output || '').split(/\r?\n/).filter(line => {
+    const fields = line.trim().split(/\s+/);
+    return fields.length >= 3 && Number(fields[2]) === pid;
+  }).join('\n');
+}
+
+function queryWindows(env, pid, command = 'wmctrl') {
   const result = spawnSync(command, ['-l', '-p', '-G'], { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  return result.status === 0 ? result.stdout : '';
+  return result.status === 0 ? filterPidWindowRows(result.stdout, pid) : '';
 }
 
 function displayReady(env, command = 'xdpyinfo') {
@@ -56,7 +70,7 @@ function displayReady(env, command = 'xdpyinfo') {
 async function waitForExactWindow({ pid, env, timeoutMs, query = queryWindows, sleep = delay => new Promise(resolveDelay => setTimeout(resolveDelay, delay)) }) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() <= deadline) {
-    const window = exactWindowForPid(query(env), pid);
+    const window = exactWindowForPid(query(env, pid), pid);
     if (window) return window;
     await sleep(100);
   }
@@ -86,6 +100,8 @@ export async function runRenderedVerification({
   const resolvedRoot = resolve(root);
   const resolvedProject = projectPath(resolvedRoot, project);
   if (!resolvedProject) return compact('failed', 'project is not the repository client application');
+  const displayContext = displayContextFor(env);
+  if (!displayContext) return compact('failed', 'usable inherited display context is unavailable; host display authorization is required');
   const available = dependencies.displayReady || displayReady;
   if (!available(env, dependencies.xdpyinfo || 'xdpyinfo')) return compact('failed', 'display is unavailable');
 
@@ -108,7 +124,7 @@ export async function runRenderedVerification({
     });
     if (!window) return compact('failed', 'no unambiguous task-owned window', { temporary_directory: temporaryDirectory });
     const output = join(temporaryDirectory, 'window.png');
-    const capture = (dependencies.capture || spawnSync)(dependencies.ffmpeg || 'ffmpeg', windowCaptureArgs({ display: env.DISPLAY, window, output }), {
+    const capture = (dependencies.capture || spawnSync)(dependencies.ffmpeg || 'ffmpeg', windowCaptureArgs({ display: displayContext.display, window, output }), {
       cwd: resolvedRoot,
       env,
       stdio: 'ignore',

@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import {
+  displayContextFor,
   exactWindowForPid,
+  filterPidWindowRows,
   parsePidWindowRows,
   runRenderedVerification,
   windowCaptureArgs,
@@ -16,10 +18,23 @@ const ROWS = [
 ].join('\n');
 
 test('rendered verification resolves only an exact PID window', () => {
+  assert.equal(filterPidWindowRows(ROWS, 222), '0x002  0  222  14  28  640  480 host task-window');
   assert.deepEqual(parsePidWindowRows(ROWS, 222), [{ id: '0x002', pid: 222, x: 14, y: 28, width: 640, height: 480 }]);
   assert.equal(exactWindowForPid(ROWS, 111).id, '0x001');
   assert.equal(exactWindowForPid(`${ROWS}\n0x003  0  222  1  1  4  4 host duplicate`, 222), null);
   assert.equal(exactWindowForPid('0x002 0 222 14 28 0 480 host invalid', 222), null);
+});
+
+test('rendered verification accepts only inherited display context and fails closed without it', async () => {
+  assert.deepEqual(displayContextFor({ DISPLAY: ':runtime', XAUTHORITY: '/runtime/auth' }), {
+    display: ':runtime',
+    inherited_xauthority: true,
+  });
+  assert.equal(displayContextFor({ XAUTHORITY: '/runtime/auth' }), null);
+
+  const result = await runRenderedVerification({ authorized: true, env: {} });
+  assert.equal(result.status, 'failed');
+  assert.match(result.reason, /host display authorization is required/);
 });
 
 test('rendered verification uses window bounds and never a desktop fallback', () => {

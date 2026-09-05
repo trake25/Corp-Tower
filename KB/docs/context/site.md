@@ -7,7 +7,8 @@ disclosure behavior, accessible diagrams, and build/deployment boundary.
 id: site.editorial.evidence
 alias: portfolio editorial register
 alias: portfolio claim evidence
-source: site/docs/content.md#Register — plain English
+source: site/src/content/config.ts#evidence
+source: site/src/content/cards/qa.md#evidence:
 adjacent: site.content.schema
 -->
 ## Editorial evidence
@@ -35,7 +36,7 @@ or a visible entry that the page does not render.
 id: site.visual.language
 alias: portfolio visual language
 alias: site token roles
-source: site/docs/design.md#Mono Slate
+source: site/src/styles/global.css#color-scheme
 adjacent: site.disclosure.navigation
 -->
 ## Visual language
@@ -49,7 +50,7 @@ level grammar keep a reader oriented through a long evidence-led page.
 id: site.disclosure.navigation
 alias: portfolio disclosure behavior
 alias: portfolio navigation behavior
-source: site/docs/design.md#Behaviour
+source: site/src/pages/index.astro#Siblings are removed while one is open, not merely collapsed.
 adjacent: site.diagram.accessibility
 -->
 ## Disclosure and navigation
@@ -63,7 +64,8 @@ content. Reduced motion remains a first-class presentation path.
 id: site.diagram.accessibility
 alias: portfolio diagram accessibility
 alias: diagram interaction
-source: site/docs/design.md#Diagrams
+source: site/src/components/diagrams/QaLoopDiagram.astro#How work gets checked before it counts as finished
+source: site/src/components/Card.astro#The steps sit behind their own collapsed
 adjacent: site.disclosure.navigation
 -->
 ## Diagram interaction
@@ -77,7 +79,8 @@ description; a diagram-step mismatch is a contract defect, not decorative drift.
 id: site.deployment.contract
 alias: portfolio build deployment
 alias: portfolio Workers deploy
-source: site/docs/deploy.md#Build and hosting
+source: site/wrangler.jsonc#run_worker_first
+source: site/worker/index.js#ROUTE
 source: .github/workflows/Site-Deploy-Workers.yml#build-and-deploy
 -->
 ## Build and deployment

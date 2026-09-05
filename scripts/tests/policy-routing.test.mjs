@@ -6,11 +6,12 @@ import test from 'node:test';
 const ROOT = resolve('.');
 const policy = name => readFileSync(join(ROOT, 'policy', name), 'utf8');
 
-test('the policy router resolves ChatGPT and Codex from the policy directory', () => {
-  const agents = policy('AGENTS.md');
+test('the root universal router resolves ChatGPT and Codex without a duplicate policy router', () => {
+  const agents = readFileSync(join(ROOT, 'AGENTS.md'), 'utf8');
 
   assert.match(agents, /ChatGPT → `policy\/CHATGPT\.md`/);
   assert.match(agents, /Codex → `policy\/CODEX\.md`/);
+  assert.equal(existsSync(join(ROOT, 'policy', 'AGENTS.md')), false);
   assert.match(policy('CODEX.md'), /#IMPLEMENT#/);
   assert.match(policy('CODEX.md'), /#FIX#/);
   assert.match(policy('CODEX.md'), /#EXECUTION#/);
@@ -52,4 +53,13 @@ test('the active Codex close-out path uses KB Tree intake without retired role r
   assert.match(taskClose, /function taskCloseIntake/);
   assert.doesNotMatch(taskClose, /context-query\.mjs|context-routing\.mjs|scopeContext|routeSourcePath/);
   assert.doesNotMatch(policy('CODEX.md'), /client-engineer|server-engineer|fullstack-coordinator|infra-engineer|qa-engineer|update-docs/);
+});
+
+test('active KB Tree policy and site grants use root routing and direct repository evidence', () => {
+  const automation = readFileSync(join(ROOT, 'KB/docs/context/automation.md'), 'utf8');
+  const site = readFileSync(join(ROOT, 'KB/docs/context/site.md'), 'utf8');
+
+  assert.match(automation, /source: AGENTS\.md#Route/);
+  assert.doesNotMatch(automation, /policy\/AGENTS\.md/);
+  assert.doesNotMatch(site, /source: site\/docs\//);
 });

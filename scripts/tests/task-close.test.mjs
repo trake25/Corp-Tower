@@ -32,11 +32,13 @@ import {
   reviewForManifest,
   reviewManifest,
   startObservability,
+  taskCloseIntake,
   validateDocumentationDecision,
 } from '../task-close.mjs';
 
 const SOURCE = 'src/Server/app/engine/Scoring.js';
 const DOC = 'KB/docs/context/backend.md';
+const SCORE_DOCS = ['KB/docs/context/backend.md', 'KB/docs/context/gameplay.md'];
 const TASK_CLOSE = resolve('scripts/task-close.mjs');
 const RECEIPT_IDENTITY = Object.freeze({
   keywords: ['Public', 'QA', 'Receipts'],
@@ -207,7 +209,7 @@ test('prepare creates a compact schema-v2 ownership manifest and intake', () => 
   assert.equal(manifest.plan.status, 'not-applicable');
   assert.equal(manifest.documentation.status, 'pending');
   assert.equal(manifest.coverage.status, 'pending');
-  assert.deepEqual(manifest.intake.docs, [DOC]);
+  assert.deepEqual(manifest.intake.docs, SCORE_DOCS);
   assert.deepEqual(manifest.intake.maps, []);
   assert.deepEqual(manifest.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
   assert.ok(manifest.intake.tools.some(tool => tool.name === 'QA'));
@@ -239,6 +241,51 @@ test('task-close treats generated KB Tree outputs as tooling evidence, not autho
   });
 
   assert.deepEqual(manifest.intake.docs, []);
+});
+
+test('task-close derives authored KB documents from exact concept source grants', () => {
+  const client = taskCloseIntake(['src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd']);
+  const server = taskCloseIntake([SOURCE]);
+  const site = taskCloseIntake(['site/src/styles/global.css']);
+  const siteWorker = taskCloseIntake(['site/worker/index.js']);
+  const testOnly = taskCloseIntake(['scripts/tests/policy-routing.test.mjs']);
+  const combined = taskCloseIntake([
+    'src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd',
+    SOURCE,
+    'site/src/styles/global.css',
+  ]);
+
+  assert.deepEqual(client.docs, ['KB/docs/context/ui-hud.md']);
+  assert.deepEqual(server.docs, SCORE_DOCS);
+  assert.deepEqual(site.docs, ['KB/docs/context/site.md']);
+  assert.deepEqual(siteWorker.docs, ['KB/docs/context/site.md']);
+  assert.deepEqual(testOnly.docs, []);
+  assert.deepEqual(testOnly.context_gaps, []);
+  assert.deepEqual(combined.docs, [...new Set([...client.docs, ...server.docs, ...site.docs])].sort());
+  assert.deepEqual(combined.context_gaps, []);
+});
+
+test('a task-owned valid new concept document remains eligible after explicit task ownership', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-task-close-concept-'));
+  try {
+    mkdirSync(join(root, 'KB/docs/context'), { recursive: true });
+    mkdirSync(join(root, 'src'), { recursive: true });
+    writeFileSync(join(root, 'src/example.mjs'), 'export function ownedAnchor() {}\n');
+    writeFileSync(join(root, 'KB/docs/context/testing.md'), `<!-- kb
+id: testing.owned-contract
+source: src/example.mjs#ownedAnchor
+-->
+## Owned contract
+
+Task-owned concept prose.
+`);
+    const intake = taskCloseIntake(['src/example.mjs', 'KB/docs/context/testing.md'], { root });
+
+    assert.deepEqual(intake.docs, ['KB/docs/context/testing.md']);
+    assert.deepEqual(intake.context_gaps, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('optional plan binding accepts only an active Markdown plan with a free deterministic archive', () => {
@@ -353,7 +400,7 @@ test('review accepts only owned final paths and refreshes docs and QA from them'
   const reviewed = reviewManifest(manifest, { changedPaths: [SOURCE], mapBaseline: { 'docs/context/map/backend.md': 'before' } });
   assert.equal(reviewed.phase, 'reviewed');
   assert.deepEqual(reviewed.changed_paths, [SOURCE]);
-  assert.deepEqual(reviewed.documentation.candidate_docs, [DOC]);
+  assert.deepEqual(reviewed.documentation.candidate_docs, SCORE_DOCS);
   assert.deepEqual(reviewed.review.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
   assert.equal(reviewed.documentation.status, 'pending');
   assert.deepEqual(reviewed.review.map_hashes, { 'docs/context/map/backend.md': 'before' });
@@ -405,8 +452,8 @@ test('source-changing closeout requires an updated or not-needed documentation d
   assert.deepEqual(notNeeded.documented_paths, []);
 });
 
-test('updated documentation must be owned and present in the reviewed change set', () => {
-  const unrelatedDoc = 'KB/docs/context/gameplay.md';
+test('updated documentation must be owned, source-related, and present in the reviewed change set', () => {
+  const unrelatedDoc = 'KB/docs/context/testing.md';
   const prepared = createManifest({ task: 'Verify scoring docs', ownedPaths: [SOURCE, DOC, unrelatedDoc] });
   const withoutDocChange = reviewManifest(prepared, { changedPaths: [SOURCE] });
   assert.throws(() => applyDocumentationDecision(withoutDocChange, {
@@ -415,12 +462,12 @@ test('updated documentation must be owned and present in the reviewed change set
     documentedPaths: [DOC],
   }), /reviewed change set/);
 
-  const withUnrelatedDoc = reviewManifest(prepared, { changedPaths: [SOURCE, unrelatedDoc] });
-  assert.doesNotThrow(() => applyDocumentationDecision(withUnrelatedDoc, {
+  const withRelatedDoc = reviewManifest(prepared, { changedPaths: [SOURCE, DOC] });
+  assert.throws(() => applyDocumentationDecision(withRelatedDoc, {
     decision: 'updated',
     reason: 'Scoring changed.',
     documentedPaths: [unrelatedDoc],
-  }));
+  }), /documentation scope/);
 });
 
 test('permanent coverage is a required decision independent of QA selection', () => {
@@ -691,13 +738,14 @@ test('CLI review directs source-changing closeout through the documentation gate
   }
 });
 
-test('KB Tree task-close intake does not schedule legacy map or document validation for source-only work', () => {
+test('KB Tree task-close surfaces a context gap without scheduling legacy map or document validation', () => {
   const sourcePath = 'src/Server/app/example.js';
   const prepared = createManifest({ task: 'Keep KB Tree closure scoped', ownedPaths: [sourcePath] });
   const reviewed = reviewManifest(prepared, { changedPaths: [sourcePath], mapBaseline: {} });
 
-  assert.deepEqual(reviewed.documentation.candidate_docs, ['KB/docs/context/backend.md']);
+  assert.deepEqual(reviewed.documentation.candidate_docs, []);
   assert.deepEqual(reviewed.documentation.maps_to_regenerate, []);
+  assert.deepEqual(reviewed.review.intake.context_gaps, [sourcePath]);
   assert.deepEqual(reviewed.review.intake.tools.map(tool => tool.name), ['QA']);
 });
 

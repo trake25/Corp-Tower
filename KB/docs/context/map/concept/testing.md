@@ -5,12 +5,12 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## testing.automation.protocol
 
-Owner: `KB/docs/context/testing.md:117-128` → **Automation protocol coverage**
+Owner: `KB/docs/context/testing.md:119-130` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 204 | `sed -n 192,224p scripts/tests/context-query.test.mjs` |
-| `scripts/tests/task-close.test.mjs` | `prepare creates a compact schema-v2 ownership manifest and intake` | 199 | `sed -n 187,219p scripts/tests/task-close.test.mjs` |
+| `scripts/tests/task-close.test.mjs` | `prepare creates a compact schema-v2 ownership manifest and intake` | 201 | `sed -n 189,221p scripts/tests/task-close.test.mjs` |
 | `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 60 | `sed -n 48,80p scripts/tests/concept-kb.test.mjs` |
 | `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 77 | `sed -n 65,97p scripts/benchmark-rag.mjs` |
 | `scripts/lib/kb-calibration.mjs` | `measureKbCalibration` | 180 | `sed -n 168,200p scripts/lib/kb-calibration.mjs` |
@@ -20,7 +20,7 @@ Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifec
 
 ## testing.balance.tools
 
-Owner: `KB/docs/context/testing.md:100-103` → **Balance tools**
+Owner: `KB/docs/context/testing.md:102-105` → **Balance tools**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -45,20 +45,20 @@ Adjacent concepts: none
 
 ## testing.client.rendered
 
-Owner: `KB/docs/context/testing.md:63-75` → **Rendered client verification**
+Owner: `KB/docs/context/testing.md:63-77` → **Rendered client verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_main_scene_ready` | 126 | `sed -n 114,146p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` | `_begin_collapse` | 894 | `sed -n 882,914p src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` |
-| `scripts/rendered-client-verify.mjs` | `runRenderedVerification` | 77 | `sed -n 65,97p scripts/rendered-client-verify.mjs` |
+| `scripts/rendered-client-verify.mjs` | `runRenderedVerification` | 91 | `sed -n 79,111p scripts/rendered-client-verify.mjs` |
 | `scripts/qa-gate.mjs` | `selectGodotBinary` | 229 | `sed -n 217,249p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.rendered-verification`
 
 ## testing.client.snapgrid-isolation
 
-Owner: `KB/docs/context/testing.md:83-88` → **SnapGrid shared-state isolation**
+Owner: `KB/docs/context/testing.md:85-90` → **SnapGrid shared-state isolation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -69,7 +69,7 @@ Adjacent concepts: none
 
 ## testing.contract.tutorial-parity
 
-Owner: `KB/docs/context/testing.md:135-138` → **Tutorial parity**
+Owner: `KB/docs/context/testing.md:137-140` → **Tutorial parity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -79,7 +79,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:148-151` → **Release gates**
+Owner: `KB/docs/context/testing.md:150-153` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

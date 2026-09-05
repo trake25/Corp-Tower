@@ -110,7 +110,7 @@ Owner: `KB/docs/context/automation.md:12-18` → **Direct retrieval discipline**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `policy/AGENTS.md` | `Route` | 12 | `sed -n 1,22p policy/AGENTS.md` |
+| `AGENTS.md` | `Route` | 12 | `sed -n 1,22p AGENTS.md` |
 
 Adjacent concepts: `automation.retrieval.protocol`
 
@@ -153,7 +153,7 @@ Owner: `KB/docs/context/automation.md:89-92` → **Task-close lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `main` | 1029 | `sed -n 1017,1049p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `main` | 1047 | `sed -n 1035,1067p scripts/task-close.mjs` |
 
 Adjacent concepts: `automation.task-close.scope`, `automation.task-close.receipt`
 
@@ -163,7 +163,7 @@ Owner: `KB/docs/context/automation.md:138-141` → **Plan archival**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `archivePlan` | 827 | `sed -n 815,847p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `archivePlan` | 845 | `sed -n 833,865p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -173,7 +173,7 @@ Owner: `KB/docs/context/automation.md:128-131` → **Public receipt**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `finishVerification` | 921 | `sed -n 909,941p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `finishVerification` | 939 | `sed -n 927,959p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -183,8 +183,8 @@ Owner: `KB/docs/context/automation.md:100-106` → **Task-close scope**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `createManifest` | 285 | `sed -n 273,305p scripts/task-close.mjs` |
-| `scripts/task-close.mjs` | `taskCloseIntake` | 199 | `sed -n 187,219p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `createManifest` | 300 | `sed -n 288,320p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `taskCloseIntake` | 209 | `sed -n 197,229p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -194,6 +194,6 @@ Owner: `KB/docs/context/automation.md:114-121` → **Task-close verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `verifyV2` | 988 | `sed -n 976,1008p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `verifyV2` | 1006 | `sed -n 994,1026p scripts/task-close.mjs` |
 
 Adjacent concepts: `testing.selection.local`

@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { basename, dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadConceptRegistry } from './lib/concept-kb.mjs';
 import { selectQa } from './qa-gate.mjs';
 import { executeBestEffort } from './agent-observability.mjs';
 import { buildTaskTelemetry } from './lib/agent-observability/task-telemetry.mjs';
@@ -136,7 +137,7 @@ function normalizeOptionalPaths(paths, label) {
 }
 
 function sourcePath(path) {
-  return /^(src\/|scripts\/|infra\/|docker\/|\.github\/|site\/src\/|site-root\/)/.test(path);
+  return /^(src\/|scripts\/|infra\/|docker\/|\.github\/|site\/(?:src\/|worker\/|wrangler\.jsonc$)|site-root\/)/.test(path);
 }
 
 function testPath(path) {
@@ -186,20 +187,33 @@ function command(argv) {
   };
 }
 
-function kbDocumentsFor(path) {
-  if (/^KB\/docs\/context\/(?!map\/)(?!index\.md$).+\.md$/.test(path)) return [path];
-  if (/^src\/Server\//.test(path)) return ['KB/docs/context/backend.md'];
-  if (/^src\/Client\//.test(path)) return ['KB/docs/context/testing.md'];
-  if (/^site\//.test(path)) return ['KB/docs/context/site.md'];
-  if (/^(?:policy\/|AGENTS\.md$|scripts\/|\.githooks\/)/.test(path))
-    return ['KB/docs/context/automation.md'];
-  return [];
+function authoredKbDocument(path) {
+  return /^KB\/docs\/context\/(?!map\/)(?!index\.md$).+\.md$/.test(path) ? path : null;
 }
 
-function taskCloseIntake(paths, options = {}) {
+function conceptOwnershipFor(paths, root) {
+  const registry = loadConceptRegistry({ root });
+  const documents = new Set();
+  const gaps = [];
+  for (const path of paths) {
+    const ids = registry.reverse_sources.get(path) || [];
+    if (sourcePath(path) && !testPath(path) && !ids.length) gaps.push(path);
+    for (const id of ids) {
+      const concept = registry.by_id.get(id)?.[0];
+      if (concept) documents.add(concept.owner.path);
+    }
+  }
+  return { documents: [...documents].sort(), gaps: [...new Set(gaps)].sort() };
+}
+
+export function taskCloseIntake(paths, options = {}) {
   if (!paths.length) throw new Error('task-close needs one or more explicit task-owned paths');
   const changed = [...new Set(paths.map(path => path.replace(/^\.\//, '')))].sort();
-  const docs = [...new Set(changed.flatMap(kbDocumentsFor))].sort();
+  const ownership = conceptOwnershipFor(changed, options.root || ROOT);
+  const docs = [...new Set([
+    ...changed.map(authoredKbDocument).filter(Boolean),
+    ...ownership.documents,
+  ])].sort();
   const qa = selectQa(changed);
   const tools = [{ name: 'QA', command: command(['node', 'scripts/qa-gate.mjs', '--changed', ...changed]) }];
   if (qa.concept_kb) {
@@ -215,7 +229,8 @@ function taskCloseIntake(paths, options = {}) {
     maps: [],
     qa,
     tools,
-    unmapped: changed.filter(path => !kbDocumentsFor(path).length),
+    unmapped: ownership.gaps,
+    context_gaps: ownership.gaps,
     limits: { max_bytes: maxBytes, returned_bytes: 0 },
   };
   if (Buffer.byteLength(JSON.stringify(result, null, 2)) + 1 > maxBytes)
@@ -286,7 +301,7 @@ export function createManifest({ task, ownedPaths = null, changedPaths = null, p
   if (!task || task.length > 120) throw new Error('task must be present and at most 120 characters');
   const owned = [...new Set(ownedPaths || changedPaths || [])].sort();
   if (!owned.length) throw new Error('one or more owned paths are required');
-  const intake = taskCloseIntake(owned, { artifact: true });
+  const intake = taskCloseIntake(owned, { artifact: true, root });
   const hasSource = owned.some(sourcePath);
   const plannedQaTooling = [...new Set(plannedQaToolingPaths)].sort();
   const unownedQaTooling = plannedQaTooling.filter(path => !owned.includes(path));
@@ -482,6 +497,7 @@ export function reviewManifest(manifest, { changedPaths, mapBaseline = null }) {
     changed_paths: changed,
     docs: documentationScope.docs,
     maps: documentationScope.maps,
+    context_gaps: documentationScope.context_gaps,
     qa: intake.qa,
   };
   const mapHashesAtReview = { ...(mapBaseline || mapHashes()), ...(manifest.review?.map_hashes || {}) };
@@ -618,6 +634,7 @@ export function intakeForManifest(manifest, manifestFile) {
     owned_paths: manifest.owned_paths,
     docs: manifest.intake.docs,
     maps: manifest.intake.maps,
+    context_gaps: manifest.intake.context_gaps,
     qa: {
       applies: manifest.intake.qa.applies,
       server_tests: manifest.intake.qa.server_tests,
@@ -649,6 +666,7 @@ export function reviewForManifest(manifest, manifestFile) {
     changed_paths: manifest.changed_paths,
     docs: manifest.documentation.candidate_docs,
     maps: manifest.documentation.maps_to_regenerate,
+    context_gaps: intake.context_gaps,
     documentation_status: manifest.documentation.status,
     qa: {
       applies: intake.qa.applies,
