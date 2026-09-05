@@ -103,7 +103,7 @@ test('concept routing resolves an exact ID to its owner, generated map, and boun
   assert.ok(result.limits.returned_bytes <= result.limits.max_bytes);
 });
 
-test('workflow flag retrieval grants eligibility, assessment, and deterministic recording evidence', () => {
+test('workflow flag retrieval grants bounded deterministic formal-recording evidence', () => {
   const result = conceptRead(ROOT, 'automation.observability.flags');
   const sources = new Set(result.sources.map(source => `${source.path}#${source.anchor}`));
 
@@ -112,8 +112,18 @@ test('workflow flag retrieval grants eligibility, assessment, and deterministic 
     'scripts/lib/agent-observability/flagging.mjs#flagEligibility',
     'scripts/lib/agent-observability/runtime.mjs#modelFamily',
     'scripts/lib/agent-observability/flagging.mjs#createFormalFlag',
-    'scripts/agent-observability.mjs#executeCommand',
+    'scripts/agent-observability.mjs#recordFormalFlagCommand',
   ]) assert.ok(sources.has(source), source);
+  assert.equal(sources.has('scripts/agent-observability.mjs#executeCommand'), false);
+  const formalRecording = result.sources.find(source => source.anchor === 'recordFormalFlagCommand');
+  assert.ok(formalRecording);
+  const [start, end] = formalRecording.read.lines;
+  const boundedSource = readFileSync(resolve(ROOT, formalRecording.path), 'utf8')
+    .split(/\r?\n/)
+    .slice(start - 1, end)
+    .join('\n');
+  for (const mechanic of ['createFormalFlag', 'assertEvidence', 'finalization', "startsWith('WF-')", 'recordFlag'])
+    assert.ok(boundedSource.includes(mechanic), mechanic);
   assert.ok(result.sources.every(source => source.read.lines[1] - source.read.lines[0] <= 32));
 });
 

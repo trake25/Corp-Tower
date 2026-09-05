@@ -9,6 +9,8 @@ Search this file for the matching execution section, for example `#IMPLEMENT#`, 
 
 If the task does not fit either execution type, stop and immediately tell the user why no execution route matches.
 
+Plan .md files are in /plan folder.
+
 #IMPLEMENT#
 
 Use when authorized to create or modify approved repository behavior or deliverables, including product behavior, UI, gameplay, server or networking changes, tuning, tooling, workflow, documentation, build, CI, infrastructure, or a bounded refactor required by the task.

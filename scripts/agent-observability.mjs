@@ -102,6 +102,18 @@ function assertEvidence(bundle, flag) {
   if (missing.length) throw new Error(`flag evidence is not in the current task: ${missing.join(', ')}`);
 }
 
+export function recordFormalFlagCommand(state, input, now) {
+  const flag = createFormalFlag(input, now);
+  const bundle = readTaskBundle(state, flag.task_id);
+  if (bundle.final?.finalized_at) throw new Error('cannot add flags after finalization');
+  assertEvidence(bundle, flag);
+  const existing = bundle.flags.find(item => item.flag_id === flag.flag_id);
+  if (!existing && bundle.flags.filter(item => item.flag_id?.startsWith('WF-')).length >= 3)
+    throw new Error('formal flag limit reached');
+  const result = recordFlag(state, flag.task_id, flag);
+  return { status: result.status, task_id: flag.task_id, flag_id: flag.flag_id };
+}
+
 export function executeCommand(command, input, {
   root = '.',
   stateDir = null,
@@ -144,17 +156,7 @@ export function executeCommand(command, input, {
     }
     return { status: written ? 'written' : 'duplicate', task_id: taskId, candidates: records.map(record => record.flag_id) };
   }
-  if (command === 'flag') {
-    const flag = createFormalFlag(input, now);
-    const bundle = readTaskBundle(state, flag.task_id);
-    if (bundle.final?.finalized_at) throw new Error('cannot add flags after finalization');
-    assertEvidence(bundle, flag);
-    const existing = bundle.flags.find(item => item.flag_id === flag.flag_id);
-    if (!existing && bundle.flags.filter(item => item.flag_id?.startsWith('WF-')).length >= 3)
-      throw new Error('formal flag limit reached');
-    const result = recordFlag(state, flag.task_id, flag);
-    return { status: result.status, task_id: flag.task_id, flag_id: flag.flag_id };
-  }
+  if (command === 'flag') return recordFormalFlagCommand(state, input, now);
   if (command === 'close') {
     const close = sanitizeClose(input, now);
     const bundle = readTaskBundle(state, close.task_id);

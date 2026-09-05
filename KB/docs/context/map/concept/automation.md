@@ -87,7 +87,7 @@ Owner: `KB/docs/context/automation.md:329-339` → **Workflow inefficiency flags
 | `scripts/lib/agent-observability/flagging.mjs` | `flagEligibility` | 55 | `sed -n 43,75p scripts/lib/agent-observability/flagging.mjs` |
 | `scripts/lib/agent-observability/runtime.mjs` | `modelFamily` | 26 | `sed -n 14,46p scripts/lib/agent-observability/runtime.mjs` |
 | `scripts/lib/agent-observability/flagging.mjs` | `createFormalFlag` | 152 | `sed -n 140,172p scripts/lib/agent-observability/flagging.mjs` |
-| `scripts/agent-observability.mjs` | `executeCommand` | 105 | `sed -n 93,125p scripts/agent-observability.mjs` |
+| `scripts/agent-observability.mjs` | `recordFormalFlagCommand` | 105 | `sed -n 93,125p scripts/agent-observability.mjs` |
 
 Adjacent concepts: none
 
@@ -102,7 +102,7 @@ Owner: `KB/docs/context/automation.md:310-319` → **Observability usage**
 | `scripts/lib/agent-observability/task-telemetry.mjs` | `buildTaskTelemetry` | 75 | `sed -n 63,95p scripts/lib/agent-observability/task-telemetry.mjs` |
 | `scripts/lib/agent-observability/schema.mjs` | `sanitizeTelemetry` | 173 | `sed -n 161,193p scripts/lib/agent-observability/schema.mjs` |
 | `scripts/lib/agent-observability/analytics.mjs` | `optionalFlaggingOverhead` | 89 | `sed -n 77,109p scripts/lib/agent-observability/analytics.mjs` |
-| `scripts/agent-observability.mjs` | `executeCommand` | 105 | `sed -n 93,125p scripts/agent-observability.mjs` |
+| `scripts/agent-observability.mjs` | `executeCommand` | 117 | `sed -n 105,137p scripts/agent-observability.mjs` |
 | `scripts/lib/agent-observability/report.mjs` | `displayStageGroups` | 90 | `sed -n 78,110p scripts/lib/agent-observability/report.mjs` |
 
 Adjacent concepts: none

@@ -324,7 +324,7 @@ alias: inefficiency flag
 source: scripts/lib/agent-observability/flagging.mjs#flagEligibility
 source: scripts/lib/agent-observability/runtime.mjs#modelFamily
 source: scripts/lib/agent-observability/flagging.mjs#createFormalFlag
-source: scripts/agent-observability.mjs#executeCommand
+source: scripts/agent-observability.mjs#recordFormalFlagCommand
 -->
 ## Workflow inefficiency flags
 
