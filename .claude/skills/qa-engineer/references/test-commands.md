@@ -1,7 +1,7 @@
 # Local verification commands
 
 Run commands from the repository root. Replace placeholders with the files
-selected by `docs/context/testing.md`.
+selected by `KB/docs/context/testing.md`.
 
 Server targeted tests:
 

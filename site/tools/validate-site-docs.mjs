@@ -3,7 +3,7 @@
 //   node tools/validate-site-docs.mjs           # full report
 //   node tools/validate-site-docs.mjs --quiet   # errors only
 //
-// The game KB has its own validator (scripts/validate-docs.mjs) with its own
+// The repository KB Tree has its own validator (scripts/validate-concept-kb.mjs) with its own
 // budgets, areas and generated symbol maps. This one is deliberately separate
 // and much smaller: 4 docs and ~25 first-party files do not need a generator,
 // and one shared script serving two KBs would couple the site's cadence to the

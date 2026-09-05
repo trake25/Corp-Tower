@@ -21,10 +21,10 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 
 | Concept | Owning section | Aliases |
 |---|---|---|
-| `automation.docs.maps` | [automation.md#map-regeneration](./automation.md#map-regeneration) | build file map, generated maps |
+| `automation.docs.maps` | [automation.md#map-regeneration](./automation.md#map-regeneration) | concept map generator |
 | `automation.docs.retrieval-repair` | [automation.md#retrieval-repair](./automation.md#retrieval-repair) | retrieval maintenance |
-| `automation.docs.scope` | [automation.md#docs-scoping](./automation.md#docs-scoping) | docs-scope, documentation scope |
-| `automation.docs.validation` | [automation.md#kb-validation](./automation.md#kb-validation) | validate docs, KB validator |
+| `automation.docs.scope` | [automation.md#docs-scoping](./automation.md#docs-scoping) | source concept ownership, documentation ownership |
+| `automation.docs.validation` | [automation.md#kb-validation](./automation.md#kb-validation) | concept KB validator, KB validator |
 | `automation.git.publish` | [automation.md#authorized-git-publication](./automation.md#authorized-git-publication) | targeted push, git sync commit push |
 | `automation.observability.binding` | [automation.md#observability-binding](./automation.md#observability-binding) | agent observability, task binding |
 | `automation.observability.flags` | [automation.md#workflow-inefficiency-flags](./automation.md#workflow-inefficiency-flags) | workflow candidate, inefficiency flag |
@@ -33,7 +33,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `automation.retrieval.bundle` | [automation.md#context-bundles](./automation.md#context-bundles) | context bundle |
 | `automation.retrieval.direct` | [automation.md#direct-retrieval-discipline](./automation.md#direct-retrieval-discipline) | agent retrieval, bounded context |
 | `automation.retrieval.fallback` | [automation.md#retrieval-fallback](./automation.md#retrieval-fallback) | source fallback, broad fallback |
-| `automation.retrieval.protocol` | [automation.md#retained-retrieval-protocol](./automation.md#retained-retrieval-protocol) | context.mjs, context query |
+| `automation.retrieval.protocol` | [automation.md#concept-retrieval-protocol](./automation.md#concept-retrieval-protocol) | context.mjs, context query |
 | `automation.retrieval.states` | [automation.md#retrieval-result-states](./automation.md#retrieval-result-states) | needs-anchor, needs-filter, retrieval-defect |
 | `automation.task-close.lifecycle` | [automation.md#task-close-lifecycle](./automation.md#task-close-lifecycle) | task close, task-close |
 | `automation.task-close.plan-archive` | [automation.md#plan-archival](./automation.md#plan-archival) | plan done, archive plan |
@@ -218,7 +218,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 
 | Concept | Owning section | Aliases |
 |---|---|---|
-| `testing.automation.protocol` | [testing.md#automation-protocol-coverage](./testing.md#automation-protocol-coverage) | automation tests, retrieval benchmark |
+| `testing.automation.protocol` | [testing.md#automation-protocol-coverage](./testing.md#automation-protocol-coverage) | automation tests, concept retrieval benchmark |
 | `testing.balance.tools` | [testing.md#balance-tools](./testing.md#balance-tools) | balance simulator, stability probe, impact probe |
 | `testing.client.coverage` | [testing.md#godot-coverage](./testing.md#godot-coverage) | GUT, client smoke |
 | `testing.client.rendered` | [testing.md#rendered-client-verification](./testing.md#rendered-client-verification) | rendered QA, manual visual QA |

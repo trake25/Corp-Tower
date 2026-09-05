@@ -1,6 +1,6 @@
 import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, join, relative, resolve, sep } from 'node:path';
-import { extract } from '../build-file-map.mjs';
+import { extractSourceAnchors } from './source-anchor-extraction.mjs';
 
 export const CONCEPT_INDEX_BEGIN = '<!-- BEGIN GENERATED CONCEPT ROUTER -->';
 export const CONCEPT_INDEX_END = '<!-- END GENERATED CONCEPT ROUTER -->';
@@ -330,7 +330,7 @@ export function resolveConceptSource(root, source) {
     matches = [1];
     kind = 'file';
   } else {
-    const symbols = extract(source.path, text).syms.filter(symbol => symbol.name === source.anchor);
+    const symbols = extractSourceAnchors(source.path, text).symbols.filter(symbol => symbol.name === source.anchor);
     if (symbols.length) {
       matches = symbols.map(symbol => symbol.ln);
       kind = symbols[0].kind;

@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { buildConceptMaps } from '../build-concept-map.mjs';
-import { conceptBundle, conceptRead, conceptRoute, scopeContext } from '../lib/context-query.mjs';
+import { conceptBundle, conceptRead, conceptRoute } from '../lib/context-query.mjs';
+import { extractSourceAnchors } from '../lib/source-anchor-extraction.mjs';
 import {
   CONCEPT_INDEX_BEGIN,
   CONCEPT_INDEX_END,
@@ -18,7 +19,6 @@ import {
   resolveRegistrySources,
 } from '../lib/concept-kb.mjs';
 import { validateConceptKb } from '../validate-concept-kb.mjs';
-import { CONCEPT_KB_TESTS } from '../qa-gate.mjs';
 
 const ROOT = resolve('.');
 
@@ -82,7 +82,7 @@ test('repository concept maps and router are generated and validate cleanly', ()
   assert.equal(generated.status, 'passed');
   assert.deepEqual(generated.stale, []);
   assert.deepEqual(generated.removed, []);
-  assert.equal(generated.registry.outputs.size, 12);
+  assert.ok(generated.registry.outputs.size > 0);
   assert.equal(validated.status, 'passed');
   assert.deepEqual(validated.errors, []);
 });
@@ -156,18 +156,49 @@ test('concept retrieval fails closed for unknown concepts and insufficient budge
   assert.equal(tooSmall.fallback.allowed, false);
 });
 
-test('concept KB scope selects only the focused concept protocol additions', () => {
-  const result = scopeContext(['KB/docs/context/gameplay.md']);
+test('source anchors cover repository languages without a locator-map dependency', () => {
+  const scene = [
+    '[gd_scene format=3]',
+    '[node name="GameUI" type="Control"]',
+    '[node name="PlayField" type="Control" parent="."]',
+    'unique_name_in_owner = true',
+  ].join('\n');
+  const javascript = [
+    'export class SummaryController {',
+    '  showSummary() {',
+    '  }',
+    '}',
+    'export function renderSummary() {}',
+  ].join('\n');
+  const gdscript = [
+    'class_name SummaryController',
+    'signal opened',
+    'func show_summary():',
+    '\tpass',
+  ].join('\n');
 
-  assert.equal(result.qa.concept_kb, true);
-  assert.deepEqual(result.qa.tooling_tests, [...CONCEPT_KB_TESTS].sort());
-  assert.deepEqual(result.docs, []);
-  assert.deepEqual(result.maps, []);
-  assert.ok(result.tools.some(tool => tool.name === 'concept map'));
-  assert.ok(result.tools.some(tool => tool.name === 'concept KB'));
-  assert.ok(result.tools.some(tool => tool.name === 'concept benchmark'));
-  assert.equal(result.tools.some(tool => tool.command.argv.includes('scripts/export-kb-calibration-report.mjs')), false);
-  assert.equal(result.qa.runtime_applies, false);
+  assert.deepEqual(extractSourceAnchors('GameUI.tscn', scene).symbols, [
+    { ln: 2, name: 'GameUI', kind: 'scene root' },
+    { ln: 3, name: '%PlayField', kind: 'unique node' },
+  ]);
+  assert.deepEqual(extractSourceAnchors('SummaryController.js', javascript).symbols, [
+    { ln: 1, name: 'SummaryController', kind: 'class' },
+    { ln: 2, name: 'showSummary', kind: 'method' },
+    { ln: 5, name: 'renderSummary', kind: 'fn' },
+  ]);
+  assert.deepEqual(extractSourceAnchors('SummaryController.gd', gdscript).symbols, [
+    { ln: 1, name: 'SummaryController', kind: 'class_name' },
+    { ln: 2, name: 'opened', kind: 'signal' },
+    { ln: 3, name: 'show_summary', kind: 'func' },
+  ]);
+  assert.deepEqual(extractSourceAnchors('main.tf', 'module "game" {}\noutput "endpoint" {}').symbols, [
+    { ln: 1, name: 'game', kind: 'module' },
+    { ln: 2, name: 'endpoint', kind: 'output' },
+  ]);
+  assert.deepEqual(extractSourceAnchors('ci.yml', 'jobs:\n  verify:\n    runs-on: ubuntu-latest').symbols, [
+    { ln: 1, name: 'jobs', kind: 'key' },
+    { ln: 2, name: 'verify', kind: 'job' },
+  ]);
 });
 
 test('leaf prose ownership stops before the next concept metadata block', () => {

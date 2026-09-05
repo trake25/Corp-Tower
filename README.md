@@ -27,9 +27,9 @@ an AI coding agent well is a different job from writing the code yourself:
 - **Decide before building.** Requirements, cost ceiling, security guardrails
   and the exact expected results are written down *before* any planning starts.
   A guardrail added afterwards is a rewrite.
-- **Brief, don't dump.** The agent never reads the whole repository. An indexed
-  router (`docs/context/index.md`) names the handful of documents a task
-  actually needs, and only those get loaded.
+- **Brief, don't dump.** The agent never reads the whole repository. The
+  concept router (`KB/docs/context/index.md`) resolves one bounded concept at a
+  time, and only its prose, map row, and source grants get loaded.
 - **Match the model to the task.** Cheap assistant for research and prompt
   trimming; the expensive model only where the work is genuinely hard. Most of
   the cost of AI development is paying full price for easy work.
@@ -60,7 +60,7 @@ deploy itself.
 - **Portfolio write-up:** <https://enportfolio.galaxxigames.com> — the
   engineering behind this, one card per discipline
 - **Playable demo:** <https://toddemo.galaxxigames.com>
-- **How the codebase is documented:** [`docs/context/index.md`](docs/context/index.md)
+- **How the codebase is documented:** [`KB/docs/context/index.md`](KB/docs/context/index.md)
 
 > The game is called **Top or Drop (TOD)**. The repository keeps the working
 > name **Corp-Tower**. Same project.

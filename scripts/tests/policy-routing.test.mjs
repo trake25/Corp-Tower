@@ -1,10 +1,18 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 
 const ROOT = resolve('.');
 const policy = name => readFileSync(join(ROOT, 'policy', name), 'utf8');
+
+function filesBelow(root) {
+  if (!existsSync(root)) return [];
+  return readdirSync(root, { withFileTypes: true }).flatMap(entry => {
+    const path = join(root, entry.name);
+    return entry.isDirectory() ? filesBelow(path) : [path];
+  });
+}
 
 test('the root universal router resolves ChatGPT and Codex without a duplicate policy router', () => {
   const agents = readFileSync(join(ROOT, 'AGENTS.md'), 'utf8');
@@ -84,4 +92,34 @@ test('model policies own deterministic retrieval transports and role policies de
     assert.match(policy(filename), /model-level KB retrieval transport\/fallback contract/);
     assert.doesNotMatch(policy(filename), /context\.mjs|repository\/GitHub connector/);
   }
+});
+
+test('one-tree invariant retires the legacy corpus, tooling, and skill routes', () => {
+  const retiredCorpus = join(ROOT, 'docs', 'context');
+  const retiredTools = [
+    'scripts/lib/context-routing.mjs',
+    'scripts/validate-docs.mjs',
+    'scripts/docs-scope.mjs',
+    'scripts/build-file-map.mjs',
+  ];
+  const activeInstructions = [
+    ...filesBelow(join(ROOT, 'policy')),
+    ...filesBelow(join(ROOT, '.agents', 'skills')),
+    ...filesBelow(join(ROOT, '.claude', 'skills')),
+  ];
+
+  assert.equal(existsSync(retiredCorpus), false);
+  for (const path of retiredTools) assert.equal(existsSync(join(ROOT, path)), false, path);
+  for (const path of activeInstructions) {
+    const source = readFileSync(path, 'utf8');
+    assert.doesNotMatch(source, /(?<!KB\/)docs\/context(?:\/|\b)/, path);
+    assert.doesNotMatch(source, /context-routing\.mjs|validate-docs\.mjs|docs-scope\.mjs|build-file-map\.mjs/, path);
+  }
+
+  const contextCli = readFileSync(join(ROOT, 'scripts/context.mjs'), 'utf8');
+  const taskClose = readFileSync(join(ROOT, 'scripts/task-close.mjs'), 'utf8');
+  const benchmark = readFileSync(join(ROOT, 'scripts/benchmark-rag.mjs'), 'utf8');
+  assert.doesNotMatch(contextCli, /context-routing|routeContext|searchContext|scopeContext/);
+  assert.doesNotMatch(taskClose, /context-routing|validate-docs|build-file-map/);
+  assert.doesNotMatch(benchmark, /--check\b|context-retrieval\.json|context-routing/);
 });

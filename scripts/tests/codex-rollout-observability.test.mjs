@@ -198,7 +198,7 @@ test('hooks retain human workflow phases without retaining command or patch cont
       { tool_use_id: 'read', tool_name: 'Bash', tool_input: { command: 'rg secret-anchor scripts/' } },
       { tool_use_id: 'edit', tool_name: 'apply_patch', tool_input: '*** Update File: scripts/example.mjs\nsecret patch' },
       { tool_use_id: 'inspect', tool_name: 'Bash', tool_input: { command: 'git status --short' } },
-      { tool_use_id: 'docs', tool_name: 'apply_patch', tool_input: '*** Update File: docs/context/automation.md\nsecret docs' },
+      { tool_use_id: 'docs', tool_name: 'apply_patch', tool_input: '*** Update File: KB/docs/context/automation.md\nsecret docs' },
       { tool_use_id: 'test', tool_name: 'Bash', tool_input: { command: 'node --test scripts/tests/example.test.mjs' } },
       { tool_use_id: 'map', tool_name: 'apply_patch', tool_input: '*** Update File: KB/docs/context/map/concept/automation.md\nsecret map' },
       { tool_use_id: 'other', tool_name: 'Bash', tool_input: { command: 'node scripts/unknown-tool.mjs' } },

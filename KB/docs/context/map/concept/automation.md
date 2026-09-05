@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## automation.docs.maps
 
-Owner: `KB/docs/context/automation.md:161-166` → **Map regeneration**
+Owner: `KB/docs/context/automation.md:160-165` → **Map regeneration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -15,17 +15,17 @@ Adjacent concepts: `automation.docs.validation`
 
 ## automation.docs.retrieval-repair
 
-Owner: `KB/docs/context/automation.md:200-203` → **Retrieval repair**
+Owner: `KB/docs/context/automation.md:199-202` → **Retrieval repair**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/lib/context-query.mjs` | `conceptRoute` | 578 | `sed -n 566,598p scripts/lib/context-query.mjs` |
+| `scripts/lib/context-query.mjs` | `conceptRoute` | 102 | `sed -n 90,122p scripts/lib/context-query.mjs` |
 
 Adjacent concepts: `automation.retrieval.fallback`
 
 ## automation.docs.scope
 
-Owner: `KB/docs/context/automation.md:188-193` → **Docs scoping**
+Owner: `KB/docs/context/automation.md:187-192` → **Docs scoping**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: none
 
 ## automation.docs.validation
 
-Owner: `KB/docs/context/automation.md:174-181` → **KB validation**
+Owner: `KB/docs/context/automation.md:173-180` → **KB validation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -46,7 +46,7 @@ Adjacent concepts: none
 
 ## automation.git.publish
 
-Owner: `KB/docs/context/automation.md:268-271` → **Authorized Git publication**
+Owner: `KB/docs/context/automation.md:267-270` → **Authorized Git publication**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -56,19 +56,19 @@ Adjacent concepts: none
 
 ## automation.observability.binding
 
-Owner: `KB/docs/context/automation.md:212-221` → **Observability binding**
+Owner: `KB/docs/context/automation.md:211-220` → **Observability binding**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/lib/agent-observability/state.mjs` | `bindActiveTask` | 148 | `sed -n 136,168p scripts/lib/agent-observability/state.mjs` |
 | `scripts/codex-observability-hook.mjs` | `handleHook` | 224 | `sed -n 212,244p scripts/codex-observability-hook.mjs` |
-| `scripts/task-close.mjs` | `closeObservabilityUnsafe` | 365 | `sed -n 353,385p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `closeObservabilityUnsafe` | 364 | `sed -n 352,384p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
 ## automation.observability.flags
 
-Owner: `KB/docs/context/automation.md:251-261` → **Workflow inefficiency flags**
+Owner: `KB/docs/context/automation.md:250-260` → **Workflow inefficiency flags**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -79,7 +79,7 @@ Adjacent concepts: none
 
 ## automation.observability.usage
 
-Owner: `KB/docs/context/automation.md:234-243` → **Observability usage**
+Owner: `KB/docs/context/automation.md:233-242` → **Observability usage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -109,7 +109,7 @@ Owner: `KB/docs/context/automation.md:89-92` → **Context bundles**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/lib/context-query.mjs` | `contextBundle` | 786 | `sed -n 774,806p scripts/lib/context-query.mjs` |
+| `scripts/lib/context-query.mjs` | `conceptBundle` | 184 | `sed -n 172,204p scripts/lib/context-query.mjs` |
 
 Adjacent concepts: none
 
@@ -131,7 +131,7 @@ Owner: `KB/docs/context/automation.md:75-83` → **Retrieval fallback**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/lib/context-query.mjs` | `conceptRoute` | 578 | `sed -n 566,598p scripts/lib/context-query.mjs` |
+| `scripts/lib/context-query.mjs` | `conceptRoute` | 102 | `sed -n 90,122p scripts/lib/context-query.mjs` |
 | `policy/CODEX.md` | `KB retrieval transport` | 45 | `sed -n 33,65p policy/CODEX.md` |
 | `policy/CHATGPT.md` | `KB retrieval transport` | 16 | `sed -n 4,36p policy/CHATGPT.md` |
 
@@ -139,15 +139,15 @@ Adjacent concepts: `automation.docs.retrieval-repair`
 
 ## automation.retrieval.protocol
 
-Owner: `KB/docs/context/automation.md:34-42` → **Retained retrieval protocol**
+Owner: `KB/docs/context/automation.md:34-42` → **Concept retrieval protocol**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/context.mjs` | `main` | 119 | `sed -n 107,139p scripts/context.mjs` |
-| `scripts/lib/context-query.mjs` | `conceptRoute` | 578 | `sed -n 566,598p scripts/lib/context-query.mjs` |
-| `scripts/lib/context-query.mjs` | `conceptRead` | 618 | `sed -n 606,638p scripts/lib/context-query.mjs` |
-| `scripts/lib/context-query.mjs` | `conceptTextLines` | 647 | `sed -n 635,667p scripts/lib/context-query.mjs` |
-| `scripts/lib/context-query.mjs` | `conceptBundle` | 660 | `sed -n 648,680p scripts/lib/context-query.mjs` |
+| `scripts/context.mjs` | `main` | 67 | `sed -n 55,87p scripts/context.mjs` |
+| `scripts/lib/context-query.mjs` | `conceptRoute` | 102 | `sed -n 90,122p scripts/lib/context-query.mjs` |
+| `scripts/lib/context-query.mjs` | `conceptRead` | 142 | `sed -n 130,162p scripts/lib/context-query.mjs` |
+| `scripts/lib/context-query.mjs` | `conceptTextLines` | 171 | `sed -n 159,191p scripts/lib/context-query.mjs` |
+| `scripts/lib/context-query.mjs` | `conceptBundle` | 184 | `sed -n 172,204p scripts/lib/context-query.mjs` |
 
 Adjacent concepts: `testing.automation.protocol`
 
@@ -157,7 +157,7 @@ Owner: `KB/docs/context/automation.md:50-55` → **Retrieval result states**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/lib/context-query.mjs` | `conceptRoute` | 578 | `sed -n 566,598p scripts/lib/context-query.mjs` |
+| `scripts/lib/context-query.mjs` | `conceptRoute` | 102 | `sed -n 90,122p scripts/lib/context-query.mjs` |
 
 Adjacent concepts: none
 
@@ -167,7 +167,7 @@ Owner: `KB/docs/context/automation.md:101-104` → **Task-close lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `main` | 1059 | `sed -n 1047,1079p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `main` | 1002 | `sed -n 990,1022p scripts/task-close.mjs` |
 
 Adjacent concepts: `automation.task-close.scope`, `automation.task-close.receipt`
 
@@ -177,7 +177,7 @@ Owner: `KB/docs/context/automation.md:150-153` → **Plan archival**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `archivePlan` | 857 | `sed -n 845,877p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `archivePlan` | 826 | `sed -n 814,846p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -187,7 +187,7 @@ Owner: `KB/docs/context/automation.md:140-143` → **Public receipt**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `finishVerification` | 951 | `sed -n 939,971p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `finishVerification` | 906 | `sed -n 894,926p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -197,8 +197,8 @@ Owner: `KB/docs/context/automation.md:112-118` → **Task-close scope**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `createManifest` | 301 | `sed -n 289,321p scripts/task-close.mjs` |
-| `scripts/task-close.mjs` | `taskCloseIntake` | 210 | `sed -n 198,230p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `createManifest` | 300 | `sed -n 288,320p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `taskCloseIntake` | 209 | `sed -n 197,229p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -208,6 +208,6 @@ Owner: `KB/docs/context/automation.md:126-133` → **Task-close verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `verifyV2` | 1018 | `sed -n 1006,1038p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `verifyV2` | 973 | `sed -n 961,993p scripts/task-close.mjs` |
 
 Adjacent concepts: `testing.selection.local`

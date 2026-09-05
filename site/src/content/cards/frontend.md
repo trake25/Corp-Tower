@@ -19,7 +19,7 @@ details:
     body: "The client's whole job is stated as one rule: connect, render whatever the server says the room/level/score/tower state is, and send the player's actions — and never calculate a final gameplay outcome itself. If the phone's own math ever disagreed with the server's, the server wins, silently, on the next update. That constraint is set before a single screen is drawn, not discovered later by fixing a desync."
     evidence:
       label: "The one-line rule the whole client answers to"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/ui.md#godot-client-app-shell"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/KB/docs/context/ui.md#client-shell"
   - id: architecture
     title: "2 · Small pieces, one conductor"
     keywords:

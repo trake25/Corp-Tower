@@ -98,7 +98,7 @@ broken tag ships.
 `DEMO_STATS_API_URL` — `wstoddemo`'s `/api/stats/demo`, a plain workflow env
 (not a secret) — is read by `tools/fetch-demo-stats.mjs` at build time.
 `wstoddemo` is the always-on demo instance the play link targets, not EKS —
-`docs/context/deployment.md`.
+`KB/docs/context/deployment.md`.
 
 ## Social preview image
 

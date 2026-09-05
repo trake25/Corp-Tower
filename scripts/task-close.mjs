@@ -154,7 +154,6 @@ function domainFor(path) {
   if (path.startsWith('src/Server/')) return 'server';
   if (path.startsWith('src/Client/')) return 'client';
   if (path.startsWith('site/')) return 'site';
-  if (path.startsWith('docs/context/')) return 'game-kb';
   if (path.startsWith('scripts/')) return 'tooling';
   if (path.startsWith('.github/') || path.startsWith('infra/') || path.startsWith('docker/')) return 'infra';
   return 'repository';
@@ -218,7 +217,7 @@ export function taskCloseIntake(paths, options = {}) {
   const qa = selectQa(changed);
   const tools = [{ name: 'QA', command: command(['node', 'scripts/qa-gate.mjs', '--changed', ...changed]) }];
   if (qa.concept_kb) {
-    tools.push({ name: 'concept map', command: command(['node', 'scripts/build-concept-map.mjs', '--quiet']) });
+    tools.push({ name: 'concept map', command: command(['node', 'scripts/build-concept-map.mjs', '--check', '--quiet']) });
     tools.push({ name: 'concept KB', command: command(['node', 'scripts/validate-concept-kb.mjs', '--quiet']) });
     tools.push({ name: 'concept benchmark', command: command(['node', 'scripts/benchmark-rag.mjs', '--concept-check']) });
   }
@@ -248,10 +247,10 @@ function fileHash(path) {
 }
 
 function mapHashes() {
-  const root = resolve(ROOT, 'docs/context/map');
+  const root = resolve(ROOT, 'KB/docs/context/map/concept');
   if (!existsSync(root)) return {};
   return Object.fromEntries(readdirSync(root).filter(name => name.endsWith('.md')).sort().map(name => {
-    const path = `docs/context/map/${name}`;
+    const path = `KB/docs/context/map/concept/${name}`;
     return [path, fileHash(resolve(ROOT, path))];
   }));
 }
@@ -448,8 +447,7 @@ function upgradeManifest(manifest) {
     lifecycle: manifest.lifecycle || { status: manifest.phase === 'closed' ? 'closed' : 'open' },
     plan: manifest.plan || unboundPlan(),
   };
-  if (manifest.schema_version !== 1) throw new Error(`unsupported manifest schema: ${manifest.schema_version}`);
-  return createManifest({ task: manifest.task, ownedPaths: manifest.changed_paths, runId: manifest.run_id });
+  throw new Error(`unsupported manifest schema: ${manifest.schema_version}`);
 }
 
 export function amendManifest(manifest, paths, plannedQaToolingPaths = [], planBinding = null) {
@@ -534,25 +532,13 @@ function decisionValues({ decision, reason, documentedPaths = [] }) {
   if (reason.trim().length > 240) throw new Error('documentation reason must be at most 240 characters');
   if (decision === 'updated' && !documentedPaths.length) throw new Error('updated requires one or more --doc-path values');
   if (decision === 'not-needed' && documentedPaths.length) throw new Error('not-needed does not accept --doc-path values');
-  if (documentedPaths.some(path => !/^((KB\/docs\/context|docs\/context|site\/docs)\/).+\.md$/.test(path)))
-    throw new Error('every --doc-path must be a Markdown document in KB/docs/context, docs/context, or site/docs');
+  if (documentedPaths.some(path => !/^((KB\/docs\/context|site\/docs)\/).+\.md$/.test(path)))
+    throw new Error('every --doc-path must be a Markdown document in KB/docs/context or site/docs');
   return { decision, reason: reason.trim(), documentedPaths: [...new Set(documentedPaths)].sort() };
 }
 
 export function applyDocumentationDecision(manifest, input) {
   const values = decisionValues(input);
-  if (manifest.schema_version === 1) {
-    return {
-      ...manifest,
-      documentation: {
-        ...manifest.documentation,
-        decision: values.decision,
-        reason: values.reason,
-        documented_paths: values.documentedPaths,
-      },
-      verification: null,
-    };
-  }
   if (!['reviewed', 'failed'].includes(manifest.phase)) throw new Error('close requires a reviewed manifest');
   const unowned = values.documentedPaths.filter(path => !manifest.owned_paths.includes(path));
   if (unowned.length) throw new Error(`documented paths must be owned before editing: ${unowned.join(', ')}`);
@@ -620,23 +606,6 @@ export function fallbackRequiresRetrievalProof(manifest) {
 }
 
 export function intakeForManifest(manifest, manifestFile) {
-  if (manifest.schema_version === 1) {
-    return {
-      schema_version: 1,
-      manifest: manifestFile,
-      intake: {
-        task_owned_paths: manifest.changed_paths,
-        routes: manifest.routes,
-        qa: manifest.qa,
-        documentation: {
-          decision: manifest.documentation.decision,
-          candidate_docs: manifest.documentation.candidate_docs,
-          maps_to_regenerate: manifest.documentation.maps_to_regenerate,
-          scope: manifest.documentation.scope?.output || null,
-        },
-      },
-    };
-  }
   const result = {
     schema_version: SCHEMA_VERSION,
     manifest: manifestFile,
@@ -724,9 +693,9 @@ function readManifest(path) {
   } catch {
     fail(`manifest is not valid JSON: ${displayPath(path)}`, 1);
   }
-  if (![1, SCHEMA_VERSION].includes(manifest.schema_version)) fail(`unsupported manifest schema: ${manifest.schema_version}`, 1);
+  if (manifest.schema_version !== SCHEMA_VERSION) fail(`unsupported manifest schema: ${manifest.schema_version}`, 1);
   const privateStateRoot = resolve(ROOT, '.agent-state');
-  if (manifest.schema_version === SCHEMA_VERSION && !path.startsWith(privateStateRoot + sep))
+  if (!path.startsWith(privateStateRoot + sep))
     fail('schema-v2 manifests must stay under .agent-state/', 1);
   return manifest;
 }
@@ -922,7 +891,7 @@ function retryVerifiedClosure(manifest, manifestFile, closeInputFingerprint) {
 function requireFallbackFixtures(manifest) {
   const fixtureBacked = manifest.retrieval.fallbacks.filter(item => item.repair_fixture);
   if (!fixtureBacked.length) return;
-  const fixtureFile = resolve(ROOT, 'scripts/fixtures/context-retrieval.json');
+  const fixtureFile = resolve(ROOT, 'scripts/fixtures/concept-retrieval.json');
   let fixtures;
   try {
     fixtures = JSON.parse(readFileSync(fixtureFile, 'utf8'));
@@ -932,20 +901,6 @@ function requireFallbackFixtures(manifest) {
   const ids = new Set(Object.values(fixtures).flatMap(group => Array.isArray(group) ? group.map(item => item.id) : []));
   const missing = fixtureBacked.filter(item => !ids.has(item.repair_fixture));
   if (missing.length) fail(`retrieval fallback repair fixtures are missing: ${missing.map(item => item.repair_fixture).join(', ')}`, 1);
-}
-
-function verifyV1(manifest, manifestFile) {
-  if (manifest.documentation.source_changed) {
-    if (!manifest.documentation.scope) fail('manifest has no documentation scope; rerun task-close prepare', 1);
-    if (manifest.documentation.decision === 'pending') fail('documentation decision is pending; an agent must run task-close decide before verification', 1);
-  }
-  const steps = [runStep('QA', ['scripts/qa-gate.mjs', '--changed', ...manifest.changed_paths])];
-  if (manifest.documentation.source_changed) steps.push(runStep('file map', ['scripts/build-file-map.mjs']));
-  if (manifest.documentation.source_changed || manifest.changed_paths.some(path => path.startsWith('docs/context/')) || manifest.documentation.documented_paths.some(path => path.startsWith('docs/context/')))
-    steps.push(runStep('game KB', ['scripts/validate-docs.mjs', '--quiet']));
-  if (manifest.changed_paths.some(path => path.startsWith('site/')) || manifest.documentation.documented_paths.some(path => path.startsWith('site/docs/')))
-    steps.push(runStep('site KB', ['-e', "process.chdir('site'); require('node:child_process').execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'docs:check'], { stdio: 'inherit' })"]));
-  finishVerification(manifest, manifestFile, steps, manifest.changed_paths);
 }
 
 function finishVerification(manifest, manifestFile, steps, publishPaths, closeInputFingerprint = null) {
@@ -1020,37 +975,25 @@ function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = nu
   requireCoverageDecision(manifest);
   requireFallbackFixtures(manifest);
   const steps = [];
-  for (const tool of manifest.review.intake.tools.filter(tool => ['concept map', 'concept KB', 'concept benchmark', 'automation protocol', 'retrieval benchmark'].includes(tool.name)))
+  const changedMaps = pathChanges(manifest.review.map_hashes || {}, mapHashes());
+  if (changedMaps.length) steps.push({
+    name: 'concept map scope',
+    command: [],
+    status: 1,
+    exit_code: 1,
+    signal: null,
+    summary: `exit 1; concept maps changed after review: ${changedMaps.join(', ')}`,
+  });
+  for (const tool of manifest.review.intake.tools.filter(tool => ['concept map', 'concept KB', 'concept benchmark'].includes(tool.name)))
     steps.push(runStep(tool.name, tool.command.argv.slice(1)));
-  if (fallbackRequiresRetrievalProof(manifest) && !steps.some(step => step.name === 'retrieval benchmark'))
-    steps.push(runStep('retrieval benchmark', ['scripts/benchmark-rag.mjs', '--check']));
+  if (fallbackRequiresRetrievalProof(manifest) && !steps.some(step => step.name === 'concept benchmark'))
+    steps.push(runStep('concept benchmark', ['scripts/benchmark-rag.mjs', '--concept-check']));
   const qaArgs = ['scripts/qa-gate.mjs', '--changed', ...manifest.changed_paths];
   if (qaOverride) qaArgs.push('--classification', qaOverride.classification, '--evidence', qaOverride.evidence);
   steps.push(runStep('QA', qaArgs));
-  let derived = [];
-  if (manifest.documentation.maps_to_regenerate.length) {
-    const before = manifest.review.map_hashes || mapHashes();
-    const mapStep = runStep('file map', ['scripts/build-file-map.mjs']);
-    steps.push(mapStep);
-    if (mapStep.status === 0) {
-      const changedMaps = pathChanges(before, mapHashes());
-      derived.push(...changedMaps);
-      const unexpected = changedMaps.filter(path => !manifest.documentation.maps_to_regenerate.includes(path));
-      if (unexpected.length) steps.push({
-        name: 'map scope',
-        command: [],
-        status: 1,
-        exit_code: 1,
-        signal: null,
-        summary: `exit 1; generated out-of-scope maps: ${unexpected.join(', ')}`,
-      });
-    }
-  }
-  derived = [...new Set(derived)].sort();
+  const derived = [];
   manifest.derived_paths = derived;
   const publishPaths = publishPathsFor(manifest.changed_paths, manifest.documented_paths, derived);
-  if (publishPaths.some(path => path.startsWith('docs/context/')))
-    steps.push(runStep('game KB', ['scripts/validate-docs.mjs', '--quiet']));
   if (publishPaths.some(path => path.startsWith('site/')))
     steps.push(runStep('site KB', ['-e', "process.chdir('site'); require('node:child_process').execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'docs:check'], { stdio: 'inherit' })"]));
   finishVerification(manifest, manifestFile, steps, publishPaths, closeInputFingerprint);
@@ -1181,29 +1124,7 @@ async function main() {
     verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride);
     return;
   }
-  if (action === 'decide') {
-    checkOptions(values, ['manifest', 'decision', 'reason', 'doc-path']);
-    const manifestFile = manifestPath(values);
-    const original = readManifest(manifestFile);
-    if (original.schema_version !== 1) fail('schema-v2 manifests record the decision through task-close close', 1);
-    const manifest = applyDocumentationDecision(original, {
-      decision: one(values, 'decision', true),
-      reason: one(values, 'reason', true),
-      documentedPaths: normalizeOptionalPaths(many(values, 'doc-path'), '--doc-path'),
-    });
-    writeManifest(manifestFile, manifest);
-    console.log(`PASS — documentation decision: ${manifest.documentation.decision}`);
-    return;
-  }
-  if (action === 'verify') {
-    checkOptions(values, ['manifest']);
-    const manifestFile = manifestPath(values);
-    const manifest = readManifest(manifestFile);
-    if (manifest.schema_version !== 1) fail('schema-v2 manifests verify through task-close close', 1);
-    verifyV1(manifest, manifestFile);
-    return;
-  }
-  fail('usage: node scripts/task-close.mjs <prepare|amend|review|fallback|close|decide|verify> ...');
+  fail('usage: node scripts/task-close.mjs <prepare|amend|review|fallback|close> ...');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main().catch(error => fail(error.message));

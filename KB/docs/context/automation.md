@@ -1,6 +1,6 @@
 # Agent Automation
 
-Scope: bounded repository retrieval, deterministic task close-out, documentation/map automation, agent observability, and explicitly authorized Git publication. Product behavior remains in product-domain docs.
+Scope: bounded repository retrieval, deterministic task close-out, KB Tree automation, agent observability, and explicitly authorized Git publication. Product behavior remains in product-domain concepts.
 
 <!-- kb
 id: automation.retrieval.direct
@@ -13,7 +13,7 @@ adjacent: automation.retrieval.protocol
 -->
 ## Direct retrieval discipline
 
-The model selects one exact KB Tree concept or alias for each new information
+KB Tree is the sole semantic repository-context corpus. The model selects one exact concept or alias for each new information
 need; retrieval transport does not make that semantic choice. Codex prefers
 local deterministic concept retrieval, while ChatGPT uses exact connector reads.
 Both receive the same owning prose, generated map, and granted-source envelope.
@@ -31,14 +31,14 @@ source: scripts/lib/context-query.mjs#conceptTextLines
 source: scripts/lib/context-query.mjs#conceptBundle
 adjacent: testing.automation.protocol
 -->
-## Retained retrieval protocol
+## Concept retrieval protocol
 
 `scripts/context.mjs` is Codex's preferred local implementation of the KB Tree
-route, read, and bundle protocol; it accepts an exact ID or normalized alias but
-does not select a concept. Its normal `concept-read` form returns the owning
-prose leaf with bounded source grants and unloaded adjacency, while
-`concept-route` remains route-oriented. Resolution never turns adjacency into an
-implicit next read.
+route, read, and bundle protocol. Its only commands are `concept-route`,
+`concept-read`, and `concept-bundle`; each accepts an exact ID or normalized
+alias but does not select a concept. `concept-read` returns the owning prose leaf
+with bounded source grants and unloaded adjacency. Resolution never turns
+adjacency into an implicit next read.
 
 <!-- kb
 id: automation.retrieval.states
@@ -84,7 +84,7 @@ same exact manual route, then reports the defect.
 <!-- kb
 id: automation.retrieval.bundle
 alias: context bundle
-source: scripts/lib/context-query.mjs#contextBundle
+source: scripts/lib/context-query.mjs#conceptBundle
 -->
 ## Context bundles
 
@@ -153,20 +153,19 @@ A bound active plan moves to completed history only after successful lifecycle c
 
 <!-- kb
 id: automation.docs.maps
-alias: build file map
-alias: generated maps
+alias: concept map generator
 source: scripts/build-concept-map.mjs#buildConceptMaps
 adjacent: automation.docs.validation
 -->
 ## Map regeneration
 
-The concept generator derives KB Tree domain maps and the marked concept router
+The concept generator is the only map architecture. It derives KB Tree domain maps and the marked concept router
 from authored concept metadata and bounded source grants. Generated output is
 locator evidence, never an authored replacement for concept prose.
 
 <!-- kb
 id: automation.docs.validation
-alias: validate docs
+alias: concept KB validator
 alias: KB validator
 source: scripts/validate-concept-kb.mjs#validateConceptKb
 source: scripts/lib/concept-kb.mjs#conceptProseCapacity
@@ -181,13 +180,13 @@ error.
 
 <!-- kb
 id: automation.docs.scope
-alias: docs-scope
-alias: documentation scope
+alias: source concept ownership
+alias: documentation ownership
 source: scripts/lib/concept-kb.mjs#loadConceptRegistry
 -->
 ## Docs scoping
 
-The concept registry derives a reverse source-to-concept index for deterministic
+The concept registry derives the sole reverse source-to-concept index for deterministic
 tooling. Durable-current-contract changes belong to their smallest owning concept;
 task history and working material never become KB Tree prose.
 

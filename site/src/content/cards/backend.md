@@ -20,7 +20,7 @@ details:
     body: "Before this code was trusted, one rule was set and never relaxed: the tower-stability math cannot depend on anything except what's on the tower right now — no history, no memory of earlier turns, no randomness. That's what lets the exact same calculation be re-run thousands of times offline to tune the game, and re-derived instantly on reconnect instead of replayed step by step."
     evidence:
       label: "The rule that makes the same tower always grade the same way"
-      href: "https://github.com/trake25/Corp-Tower/blob/main/docs/context/decisions.md#tower-stability-must-stay-a-pure-function"
+      href: "https://github.com/trake25/Corp-Tower/blob/main/KB/docs/context/backend.md#support-graph"
   - id: architecture
     title: "2 · One entrance, not five"
     keywords:

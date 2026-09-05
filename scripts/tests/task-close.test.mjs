@@ -260,7 +260,7 @@ test('task-close derives authored KB documents from exact concept source grants'
   assert.deepEqual(server.docs, SCORE_DOCS);
   assert.deepEqual(site.docs, ['KB/docs/context/site.md']);
   assert.deepEqual(siteWorker.docs, ['KB/docs/context/site.md']);
-  assert.deepEqual(testOnly.docs, []);
+  assert.deepEqual(testOnly.docs, ['KB/docs/context/testing.md']);
   assert.deepEqual(testOnly.context_gaps, []);
   assert.deepEqual(combined.docs, [...new Set([...client.docs, ...server.docs, ...site.docs])].sort());
   assert.deepEqual(combined.context_gaps, []);
@@ -433,15 +433,15 @@ test('review accepts only owned final paths and refreshes docs and QA from them'
   const manifest = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE, 'scripts/context.mjs'] });
 
   assert.throws(() => reviewManifest(manifest, { changedPaths: ['src/Server/app/Game_Engine.js'] }), /not owned/);
-  const reviewed = reviewManifest(manifest, { changedPaths: [SOURCE], mapBaseline: { 'docs/context/map/backend.md': 'before' } });
+  const reviewed = reviewManifest(manifest, { changedPaths: [SOURCE], mapBaseline: { 'KB/docs/context/map/concept/backend.md': 'before' } });
   assert.equal(reviewed.phase, 'reviewed');
   assert.deepEqual(reviewed.changed_paths, [SOURCE]);
   assert.deepEqual(reviewed.documentation.candidate_docs, SCORE_DOCS);
   assert.deepEqual(reviewed.review.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
   assert.equal(reviewed.documentation.status, 'pending');
-  assert.deepEqual(reviewed.review.map_hashes, { 'docs/context/map/backend.md': 'before' });
-  const repeated = reviewManifest(reviewed, { changedPaths: [SOURCE], mapBaseline: { 'docs/context/map/backend.md': 'after' } });
-  assert.deepEqual(repeated.review.map_hashes, { 'docs/context/map/backend.md': 'before' });
+  assert.deepEqual(reviewed.review.map_hashes, { 'KB/docs/context/map/concept/backend.md': 'before' });
+  const repeated = reviewManifest(reviewed, { changedPaths: [SOURCE], mapBaseline: { 'KB/docs/context/map/concept/backend.md': 'after' } });
+  assert.deepEqual(repeated.review.map_hashes, { 'KB/docs/context/map/concept/backend.md': 'before' });
 });
 
 test('amend preserves reviewed source scope for a candidate doc and invalidates it for new source', () => {
@@ -550,13 +550,13 @@ test('ordinary fallback defers retrieval repair without forcing fixture proof', 
   assert.equal(retrievalFallbackMaintenanceItems(duplicate)[0].state, 'advisory');
 });
 
-test('fixture-backed retrieval maintenance retains benchmark proof', () => {
+test('fixture-backed retrieval maintenance retains concept benchmark proof', () => {
   const manifest = createManifest({ task: 'Repair retrieval', ownedPaths: ['scripts/context.mjs'] });
   const recorded = recordFallback(manifest, {
     query: 'splash',
     classification: 'retrieval-defect',
     searchedRoot: 'src/Client',
-    fixture: 'anchor-retry',
+    fixture: 'critical-save-alias',
   });
   assert.equal(recorded.retrieval.fallbacks[0].disposition, 'task-owned-repair');
   assert.equal(fallbackRequiresRetrievalProof(recorded), true);
@@ -593,9 +593,9 @@ test('publication scope includes explicit, documented, and content-derived paths
     publishPathsFor(
       [SOURCE, '.agent-state/task.json', '.agent-state/task.receipt.json'],
       [DOC],
-      ['docs/context/map/backend.md', SOURCE, '.agent-state/automation/generated.json'],
+      ['KB/docs/context/map/concept/backend.md', SOURCE, '.agent-state/automation/generated.json'],
     ),
-    [DOC, 'docs/context/map/backend.md', SOURCE],
+    [DOC, 'KB/docs/context/map/concept/backend.md', SOURCE],
   );
 });
 
@@ -676,8 +676,8 @@ test('publication scope always excludes maintenance handoffs', () => {
 });
 
 test('a documentation-only review needs no source documentation or permanent-coverage decision', () => {
-  const manifest = createManifest({ task: 'Validate documentation only', ownedPaths: ['docs/context/testing.md'] });
-  const reviewed = reviewManifest(manifest, { changedPaths: ['docs/context/testing.md'] });
+  const manifest = createManifest({ task: 'Validate documentation only', ownedPaths: ['KB/docs/context/testing.md'] });
+  const reviewed = reviewManifest(manifest, { changedPaths: ['KB/docs/context/testing.md'] });
   assert.equal(reviewed.documentation.source_changed, false);
   assert.equal(reviewed.documentation.status, 'not-applicable');
   assert.equal(reviewed.coverage.status, 'none');
@@ -831,7 +831,7 @@ function terminalCloseFixture(qaSource, task = 'Public QA receipt fixture', { pl
   };
 }
 
-test('a legacy schema-v2 manifest can close while its raw receipt remains private', () => {
+test('a schema-v2 manifest closes while its raw receipt remains private', () => {
   const fixture = terminalCloseFixture("console.log('PASS — fixture QA');\n");
   try {
     const first = fixture.run();

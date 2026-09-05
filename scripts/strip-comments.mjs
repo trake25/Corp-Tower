@@ -1,15 +1,13 @@
 #!/usr/bin/env node
-// Removes comments from first-party product source, per the CLAUDE.md rule that
-// explanation belongs in docs/context/ (budgeted, validated) and not in comments.
+// Removes comments from first-party product source, whose semantic explanation
+// belongs in the validated KB Tree rather than source comments.
 // Zero dependencies (Node stdlib only).
 //   node scripts/strip-comments.mjs --dry-run   # report only, touch nothing
 //   node scripts/strip-comments.mjs             # rewrite in place
 //   node scripts/strip-comments.mjs --quiet     # totals only
 //
-// Scope comes from build-file-map.mjs AREAS (backend + every ui-* area) rather
-// than a second hand-maintained list. scripts/ and .github/ are deliberately
-// NOT in scope: the tooling and workflow layer explains itself, product source
-// does not, and all 9 SAFETY EXCEPTION comments live there.
+// The product-source inventory is independent of retrieval maps. Tooling,
+// workflows, tests, and art are deliberately outside the rewrite scope.
 //
 // This is a tokenizer, not a regex. `//` inside a string, a template literal or a
 // regex literal is not a comment, and `#` inside a GDScript string is not a
@@ -21,12 +19,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { AREAS, firstPartyFiles, isExempt } from './build-file-map.mjs';
-
-// Derived, not hand-listed: every `ui-*` area is a further split of the one
-// client area this always meant, and each new split must not need a second
-// edit here to stay in scope.
-const STRIP_AREAS = new Set(['backend', ...AREAS.filter(a => a.name.startsWith('ui')).map(a => a.name)]);
+import { productSourceFiles } from './lib/product-source-inventory.mjs';
 
 // Kept verbatim wherever they appear.
 const SAFETY = /SAFETY EXCEPTION/;
@@ -252,14 +245,13 @@ function main() {
   const QUIET = argv.includes('--quiet');
   const root = resolve(argv.find(a => !a.startsWith('-')) || '.');
 
-  const files = firstPartyFiles(root)
-    .filter(f => STRIP_AREAS.has(f.area) && !isExempt(f.rel));
+  const files = productSourceFiles(root);
 
   const results = [];
   const failures = [];
   let totalDropped = 0, totalTrailing = 0, safetyKept = 0;
 
-  for (const { rel } of files) {
+  for (const rel of files) {
     const original = readFileSync(join(root, rel), 'utf8');
     const result = strip(rel, original);
     const errs = verify(rel, original, result);

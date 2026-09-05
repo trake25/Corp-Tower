@@ -25,12 +25,12 @@ test('schema-v2 Git scope uses only publish paths from a passing closed manifest
     task: 'Retrieval polish',
     phase: 'closed',
     changed_paths: ['scripts/context.mjs'],
-    publish_paths: ['scripts/context.mjs', 'docs/context/automation.md', 'docs/context/map/infra.md', 'scripts/context.mjs'],
+    publish_paths: ['scripts/context.mjs', 'KB/docs/context/automation.md', 'KB/docs/context/map/concept/automation.md', 'scripts/context.mjs'],
     verification: { status: 'passed' },
   });
 
   assert.equal(scope.task, 'Retrieval polish');
-  assert.deepEqual(scope.paths, ['scripts/context.mjs', 'docs/context/automation.md', 'docs/context/map/infra.md']);
+  assert.deepEqual(scope.paths, ['scripts/context.mjs', 'KB/docs/context/automation.md', 'KB/docs/context/map/concept/automation.md']);
   assert.equal(scope.task_identity, null);
   assert.equal(scope.public_receipt, null);
 });

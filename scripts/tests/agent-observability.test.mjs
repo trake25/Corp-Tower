@@ -402,7 +402,7 @@ test('Codex hook does not attribute unrelated shell work to the prior verificati
       ...base,
       turn_id: 'turn-read',
       tool_use_id: 'tool-read',
-      tool_input: { command: 'rg -n "anchor" docs/context/index.md' },
+      tool_input: { command: 'rg -n "anchor" KB/docs/context/index.md' },
     }, { stateDir: state, env: {}, now: '2026-08-29T00:00:03.000Z', configText: 'model_reasoning_effort = "high"' });
     const stages = new Map(readTaskBundle(state, taskId).evidence.map(item => [item.evidence_event_id, item.stage]));
 
@@ -509,7 +509,7 @@ test('maintenance-blocked telemetry keeps implementation complete with partial v
   const manifest = {
     domains: ['tooling'],
     changed_paths: ['scripts/task-close.mjs'],
-    documented_paths: ['docs/context/automation.md'],
+    documented_paths: ['KB/docs/context/automation.md'],
     retrieval: { fallbacks: [] },
     documentation: { status: 'updated' },
     coverage: { status: 'reused' },
