@@ -126,6 +126,9 @@ test('Codex execution owns one bounded provider-visible I/O discipline', () => {
   assert.match(execution, /expand evidence progressively/);
   assert.match(execution, /normal completion response compact/);
   assert.match(execution, /Do not impose a rigid line or token cap/);
+  assert.match(execution, /compact `qa-gate` path over raw `node --test` output/);
+  assert.match(execution, /concept-read.*standalone contextualization decision point/);
+  assert.match(execution, /Do not broadly grep.*\.agent-state/);
 
   for (const filename of ['IMPLEMENT.md', 'FIX.md']) {
     const source = policy(filename);

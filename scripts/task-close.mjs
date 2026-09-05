@@ -507,8 +507,10 @@ export function reviewManifest(manifest, { changedPaths, mapBaseline = null }) {
   const owned = new Set(manifest.owned_paths);
   const ownedChanged = requested.filter(path => owned.has(path));
   const affectedMaps = new Set(conceptOwnershipFor(ownedChanged.filter(sourcePath), ROOT).maps);
-  const derived = requested.filter(path => affectedMaps.has(path));
   const changed = requested.filter(path => !affectedMaps.has(path));
+  const requestedDerived = requested.filter(path => affectedMaps.has(path));
+  const changedGeneratedMaps = changedMapCandidates([...affectedMaps]);
+  const derived = [...new Set([...requestedDerived, ...changedGeneratedMaps])].sort();
   const outside = changed.filter(path => !owned.has(path));
   if (outside.length) throw new Error(`changed paths are not owned: ${outside.join(', ')}`);
   const intake = taskCloseIntake(changed, { artifact: true });
@@ -542,6 +544,14 @@ export function reviewManifest(manifest, { changedPaths, mapBaseline = null }) {
     review: { input_fingerprint: fingerprint(reviewInput), reviewed_at: new Date().toISOString(), intake, map_hashes: mapHashesAtReview },
     verification: null,
   };
+}
+
+function changedMapCandidates(candidates) {
+  if (!candidates.length) return [];
+  const result = spawnSync('git', ['diff', '--name-only', '--', ...candidates], { cwd: ROOT, encoding: 'utf8' });
+  if (result.error || result.status !== 0) return [];
+  const allowed = new Set(candidates);
+  return result.stdout.split(/\r?\n/).filter(path => allowed.has(path)).sort();
 }
 
 function decisionValues({ decision, reason, documentedPaths = [] }) {
@@ -700,6 +710,17 @@ function compactFlagGate(manifest) {
     .filter(key => gate[key])
     .map(key => `${key}: ${gate[key]}`)
     .join(', ');
+}
+
+function terminalOutput(verification, receipt, manifest, privateReceiptPath) {
+  const label = receipt.status === 'passed' ? 'PASS' : 'MAINTENANCE-BLOCKED';
+  const publicEvidence = receipt.public_receipt ? `; public receipt: ${receipt.public_receipt}` : '';
+  const handoff = receipt.maintenance?.handoff ? `; maintenance handoff: ${receipt.maintenance.handoff}` : '';
+  return `${label} — ${verification}; receipt: ${displayPath(privateReceiptPath)}${publicEvidence}${handoff}; flag: ${compactFlagGate(manifest)}`;
+}
+
+function compactStatus(manifest) {
+  return `STATUS — phase: ${manifest.phase}; lifecycle: ${manifest.lifecycle?.status || 'none'}; verification: ${manifest.verification?.status || 'none'}; receipt: ${manifest.verification?.receipt || 'none'}; public receipt: ${manifest.verification?.public_receipt || 'none'}; flag: ${compactFlagGate(manifest)}`;
 }
 
 function manifestPath(values) {
@@ -939,7 +960,7 @@ function retryVerifiedClosure(manifest, manifestFile, closeInputFingerprint) {
   const verifiedPublishPaths = receipt.verified_publish_paths || publishPathsFor(manifest.changed_paths, manifest.documented_paths, manifest.derived_paths || []);
   const closed = persistVerifiedClosure(manifest, manifestFile, receipt, verifiedPublishPaths);
   if (!closed) fail(`CLOSURE-BLOCKED — plan archive failed: ${manifest.plan?.diagnostic || receipt.plan?.diagnostic}; receipt: ${displayPath(privateReceiptPath)}`, 1);
-  console.log(`PASS — reused executable verification; receipt: ${displayPath(privateReceiptPath)}; public receipt: ${receipt.public_receipt}`);
+  console.log(terminalOutput('verification reused', receipt, manifest, privateReceiptPath));
 }
 
 function requireFallbackFixtures(manifest) {
@@ -1018,10 +1039,7 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
   if (maintenance.status === 'failed') fail(`FAIL — ${failed.name}: ${failed.summary}; receipt: ${displayPath(receiptPath(manifestFile))}`, 1);
   if (!persistVerifiedClosure(manifest, manifestFile, receipt, verifiedPublishPaths))
     fail(`CLOSURE-BLOCKED — plan archive failed: ${receipt.plan.diagnostic}; receipt: ${displayPath(receiptPath(manifestFile))}`, 1);
-  const label = maintenance.status === 'passed' ? 'PASS' : 'MAINTENANCE-BLOCKED';
-  const handoff = maintenance.handoff ? `; maintenance handoff: ${maintenance.handoff}` : '';
-  const publicEvidence = publicReceipt ? `; public receipt: ${publicReceipt}` : '';
-  console.log(`${label} — verification ${receipt.status}; receipt: ${displayPath(receiptPath(manifestFile))}${publicEvidence}${handoff}; flag: ${compactFlagGate(manifest)}`);
+  console.log(terminalOutput(`verification ${receipt.status}`, receipt, manifest, receiptPath(manifestFile)));
 }
 
 function verifyV2(manifest, manifestFile, closeInputFingerprint, qaOverride = null) {
@@ -1105,6 +1123,21 @@ async function main() {
     writeManifest(manifestFile, manifest);
     const output = reviewForManifest(manifest, displayPath(manifestFile));
     console.log(values.has('json') ? JSON.stringify(output, null, 2) : compactLifecycleOutput('review', manifest, output.manifest));
+    return;
+  }
+  if (action === 'status') {
+    checkOptions(values, ['manifest', 'json']);
+    const manifest = upgradeManifest(readManifest(manifestPath(values)));
+    const output = {
+      phase: manifest.phase,
+      lifecycle: manifest.lifecycle?.status || 'none',
+      verification: manifest.verification?.status || 'none',
+      receipt: manifest.verification?.receipt || null,
+      public_receipt: manifest.verification?.public_receipt || null,
+      flag: compactFlagGate(manifest),
+    };
+    if (values.has('json')) console.log(JSON.stringify(output));
+    else console.log(compactStatus(manifest));
     return;
   }
   if (action === 'fallback') {

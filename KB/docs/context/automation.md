@@ -107,24 +107,36 @@ manifests, logs, generated state, and diagnostics private while returning the
 smallest result needed for the next model decision; verbose structured output is
 explicit and on demand.
 
-KB retrieval resolves one concept per information need. Normal concept output
-preserves owning prose and bounded source grants without mechanically repeating
-read commands or unloaded-adjacency commands. Another concept is resolved only
-after the current result establishes a new information need.
+KB retrieval resolves one concept per information need. A normal `concept-read`
+is a standalone contextualization decision point: it preserves owning prose and
+bounded source grants without mechanically repeating commands, and it is not
+chained with another semantic read, tests, Git inspection, or private-state
+inspection. Another operation is chosen only after the current result is
+consumed.
 
-Git review establishes final task-owned change scope once with bounded
+Repository tooling tests use compact QA wrappers when available. Final
+verification remains `qa-gate --changed`; targeted iterative tooling tests use
+the compact explicit-test mode so successful TAP output stays private while
+failure evidence expands progressively. Raw test reporters are exceptional when
+no compact repository route can exercise the required behavior.
+
+Git review establishes final task-owned authored change scope once with bounded
 name-status evidence and keeps `git diff --check` as a cheap integrity check.
-Exact current patch evidence is reused instead of reread for procedural
-self-review; changed hunks are inspected when evidence became stale, another
-writer or generator produced the change, concurrency or unexpected scope is
-possible, or integration/correctness requires current content. Repository-wide
-full diffs remain non-default.
+Changed generated concept maps are derived automatically only from the bounded
+map set affected by reviewed task-owned source grants. Exact current patch
+evidence is reused instead of reread for procedural self-review; changed hunks
+are inspected when evidence became stale, another writer or generator produced
+the change, concurrency or unexpected scope is possible, or
+integration/correctness requires current content.
 
-QA and close-out keep detailed proof in private state and receipts while exposing
-compact success or progressively bounded failure diagnostics. Efficiency never
-hides a conflict, failed check, authorization need, safety condition, or
-correctness evidence, and telemetry never captures prompt, response, command,
-patch, diff, or transcript content merely to measure savings.
+Task-close owns lifecycle, verification, receipt, and formal-flag status and
+exposes those fields through compact terminal and status surfaces; broad
+`.agent-state` searches are not normal workflow. QA and close-out keep detailed
+proof in private state and receipts while exposing compact success or
+progressively bounded failure diagnostics. Efficiency never hides a conflict,
+failed check, authorization need, safety condition, or correctness evidence, and
+telemetry never captures prompt, response, command, patch, diff, or transcript
+content merely to measure savings.
 
 <!-- kb
 id: automation.orchestration.execution

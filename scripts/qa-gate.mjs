@@ -61,6 +61,7 @@ export const CONCEPT_KB_TESTS = Object.freeze([
 ]);
 
 const automationTestSet = new Set(AUTOMATION_PROTOCOL_TESTS);
+const explicitToolingTestSet = new Set([...AUTOMATION_PROTOCOL_TESTS, ...CONCEPT_KB_TESTS]);
 const automationRules = [
   [/^KB(?:\/|$)/, CONCEPT_KB_TESTS],
   [/^scripts\/(?:build-concept-map|validate-concept-kb|export-kb-calibration-report)\.mjs$/, CONCEPT_KB_TESTS],
@@ -265,9 +266,30 @@ function failureOptions(argv) {
   return { classification, evidence };
 }
 
+function explicitToolingTests(argv) {
+  const tests = [];
+  for (let index = 0; index < argv.length; index++) {
+    if (argv[index] !== '--tooling-test') continue;
+    const test = argv[++index];
+    if (!test || test.startsWith('--')) fail('--tooling-test needs a path');
+    tests.push(test.replace(/^\.\//, ''));
+  }
+  const invalid = tests.find(test => !explicitToolingTestSet.has(test));
+  if (invalid) fail(`--tooling-test must name an approved tooling test: ${invalid}`);
+  return [...new Set(tests)].sort();
+}
+
 function main() {
   const argv = process.argv.slice(2);
   const options = failureOptions(argv);
+  const explicitTests = explicitToolingTests(argv);
+  if (explicitTests.length) {
+    if (argv.includes('--changed')) fail('--tooling-test cannot be combined with --changed');
+    for (const toolingTest of explicitTests)
+      run(`explicit tooling test ${toolingTest}`, process.execPath, ['--test', toolingTest], ROOT, process.env, options);
+    console.log(`PASS — explicit tooling tests (${explicitTests.length})`);
+    return;
+  }
   const changed = changedArguments(argv);
   if (!changed.length) fail('pass one or more task-owned paths after --changed', '', null, options);
   const plan = selectQa(changed);

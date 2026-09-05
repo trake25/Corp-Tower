@@ -83,6 +83,12 @@ Large deletions, generated-file churn, lockfiles, fixtures, snapshots, maps, and
 
 Prefer compact test and verification reporters. On failure, expand evidence progressively from the failing summary to the relevant error or test, then to a bounded diagnostic excerpt, and only then to broader raw output when still necessary.
 
+For repository tooling tests, prefer the compact `qa-gate` path over raw `node --test` output whenever the required tests are supported there. Use canonical `qa-gate --changed` for final verification and its explicit compact tooling-test mode for targeted iteration. Run raw test reporters only when no repository compact route can exercise the required behavior; when raw execution is necessary, keep successful output private and expose only a compact result, expanding the failing evidence progressively.
+
+A `concept-read` is one standalone contextualization decision point. Do not chain it in the same shell or tool invocation with another concept read, tests, Git inspection, private-state inspection, or unrelated commands. Consume its result before deciding what operation is needed next.
+
+Do not broadly grep, recursively search, or dump `.agent-state` to discover task lifecycle, verification, receipt, or formal-flag state when the owning deterministic tool exposes that state. Use the task-close compact status surface for task-close state. When no owner-tool surface exists and an exact private field is materially required, read only that exact file and field rather than broad surrounding context.
+
 Tool output is working evidence, not narration. Do not echo commands, file bodies, diffs, test logs, search history, changed-file inventories, or already-known evidence back to the user or provider context unless the next correctness decision requires them. Raw diagnostic logs may remain in approved private or temporary state.
 
 Keep the normal completion response compact: implementation status, verification status, public QA receipt when available, and unresolved blockers. Do not reproduce the implementation plan, changed-file inventory, full test output, or diff unless requested.

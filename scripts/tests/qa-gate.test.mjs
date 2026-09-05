@@ -16,14 +16,14 @@ import {
 
 const QA_GATE = resolve('scripts/qa-gate.mjs');
 
-function toolingFixture(source) {
+function toolingFixture(source, option = '--changed') {
   const root = mkdtempSync(join(tmpdir(), 'corp-qa-gate-test-'));
   const testPath = join(root, 'scripts/tests/context-query.test.mjs');
   const env = { ...process.env };
   delete env.NODE_TEST_CONTEXT;
   mkdirSync(dirname(testPath), { recursive: true });
   writeFileSync(testPath, source);
-  const result = spawnSync(process.execPath, [QA_GATE, '--changed', 'scripts/tests/context-query.test.mjs'], {
+  const result = spawnSync(process.execPath, [QA_GATE, option, 'scripts/tests/context-query.test.mjs'], {
     cwd: root,
     encoding: 'utf8',
     env,
@@ -149,6 +149,21 @@ test('focused tooling success suppresses child TAP', () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('explicit tooling tests keep successful TAP private and reject unapproved paths', () => {
+  const { result, root } = toolingFixture("import test from 'node:test'; test('explicit success', () => {});\n", '--tooling-test');
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), 'PASS — explicit tooling tests (1)');
+    assert.ok(Buffer.byteLength(result.stdout) < 1024);
+    assert.doesNotMatch(result.stdout, /TAP version|Subtest/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+  const invalid = spawnSync(process.execPath, [QA_GATE, '--tooling-test', 'README.md'], { cwd: process.cwd(), encoding: 'utf8' });
+  assert.notEqual(invalid.status, 0);
+  assert.match(invalid.stderr, /approved tooling test/);
 });
 
 test('focused tooling failure is bounded and retains complete child output', () => {

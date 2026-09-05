@@ -18,7 +18,7 @@ Owner: `KB/docs/context/testing.md:125-143` → **Automation protocol coverage**
 | `scripts/lib/kb-calibration.mjs` | `measureKbCalibration` | 180 | `sed -n 168,200p scripts/lib/kb-calibration.mjs` |
 | `scripts/export-kb-calibration-report.mjs` | `exportKbCalibrationReport` | 158 | `sed -n 146,178p scripts/export-kb-calibration-report.mjs` |
 | `scripts/tests/codex-observability-hook.test.mjs` | `production hook smoke keeps observability fail-open and private` | 66 | `sed -n 54,86p scripts/tests/codex-observability-hook.test.mjs` |
-| `scripts/qa-gate.mjs` | `selectToolingQa` | 106 | `sed -n 94,126p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectToolingQa` | 107 | `sed -n 95,127p scripts/qa-gate.mjs` |
 | `scripts/fixtures/agent-observability/provider-events.json` | `events` | 25 | `sed -n 13,45p scripts/fixtures/agent-observability/provider-events.json` |
 
 Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifecycle`, `automation.orchestration.ownership`
@@ -44,7 +44,7 @@ Owner: `KB/docs/context/testing.md:43-51` → **Godot coverage**
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_application_scripts` | 41 | `sed -n 29,61p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` | `test_game_state_renders_rail_and_top_bar` | 48 | `sed -n 36,68p src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` |
-| `scripts/qa-gate.mjs` | `main` | 268 | `sed -n 256,288p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `main` | 282 | `sed -n 270,302p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 
@@ -57,7 +57,7 @@ Owner: `KB/docs/context/testing.md:63-77` → **Rendered client verification**
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_main_scene_ready` | 126 | `sed -n 114,146p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` | `_begin_collapse` | 894 | `sed -n 882,914p src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` |
 | `scripts/rendered-client-verify.mjs` | `runRenderedVerification` | 101 | `sed -n 89,121p scripts/rendered-client-verify.mjs` |
-| `scripts/qa-gate.mjs` | `selectGodotBinary` | 231 | `sed -n 219,251p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectGodotBinary` | 232 | `sed -n 220,252p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.rendered-verification`
 
@@ -99,7 +99,7 @@ Owner: `KB/docs/context/testing.md:11-14` → **Local QA selection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/qa-gate.mjs` | `selectQa` | 134 | `sed -n 122,154p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectQa` | 135 | `sed -n 123,155p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 
