@@ -9,7 +9,7 @@ Owner: `KB/docs/context/testing.md:119-130` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 204 | `sed -n 192,224p scripts/tests/context-query.test.mjs` |
+| `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 282 | `sed -n 270,302p scripts/tests/context-query.test.mjs` |
 | `scripts/tests/task-close.test.mjs` | `prepare creates a compact schema-v2 ownership manifest and intake` | 201 | `sed -n 189,221p scripts/tests/task-close.test.mjs` |
 | `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 60 | `sed -n 48,80p scripts/tests/concept-kb.test.mjs` |
 | `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 77 | `sed -n 65,97p scripts/benchmark-rag.mjs` |

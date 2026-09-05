@@ -7,14 +7,18 @@ id: automation.retrieval.direct
 alias: agent retrieval
 alias: bounded context
 source: AGENTS.md#Route
+source: policy/CODEX.md#KB retrieval transport
+source: policy/CHATGPT.md#KB retrieval transport
 adjacent: automation.retrieval.protocol
 -->
 ## Direct retrieval discipline
 
-Normal ChatGPT/Codex retrieval starts from an explicit KB Tree concept route,
-then reads bounded concept prose, its generated map section, and granted source.
-Repository-wide exploratory search is not ordinary context. Concepts grant exact
-policy, KB, map, and source envelopes rather than broad role-root access.
+The model selects one exact KB Tree concept or alias for each new information
+need; retrieval transport does not make that semantic choice. Codex prefers
+local deterministic concept retrieval, while ChatGPT uses exact connector reads.
+Both receive the same owning prose, generated map, and granted-source envelope.
+Already-valid evidence is reused, and repository-wide exploration is not ordinary
+context.
 
 <!-- kb
 id: automation.retrieval.protocol
@@ -23,14 +27,17 @@ alias: context query
 source: scripts/context.mjs#main
 source: scripts/lib/context-query.mjs#conceptRoute
 source: scripts/lib/context-query.mjs#conceptRead
+source: scripts/lib/context-query.mjs#conceptTextLines
 source: scripts/lib/context-query.mjs#conceptBundle
 adjacent: testing.automation.protocol
 -->
 ## Retained retrieval protocol
 
-`scripts/context.mjs` supplies KB Tree's exact concept route, read, and bundle
-commands. Resolution is exact-ID then exact normalized alias, returns bounded
-source instructions and explicit adjacency, and never turns adjacency into an
+`scripts/context.mjs` is Codex's preferred local implementation of the KB Tree
+route, read, and bundle protocol; it accepts an exact ID or normalized alias but
+does not select a concept. Its normal `concept-read` form returns the owning
+prose leaf with bounded source grants and unloaded adjacency, while
+`concept-route` remains route-oriented. Resolution never turns adjacency into an
 implicit next read.
 
 <!-- kb
@@ -61,13 +68,18 @@ id: automation.retrieval.fallback
 alias: source fallback
 alias: broad fallback
 source: scripts/lib/context-query.mjs#conceptRoute
+source: policy/CODEX.md#KB retrieval transport
+source: policy/CHATGPT.md#KB retrieval transport
 adjacent: automation.docs.retrieval-repair
 -->
 ## Retrieval fallback
 
-A confirmed retrieval defect is a KB Tree/tooling failure, not permission for
-uncontrolled repository search. The concept interface fails closed with a reason
-and never authorizes a repository-wide fallback.
+Ordinary retrieval fails closed: a confirmed KB Tree/tooling defect is not
+permission to replace granted evidence with repository search. After exact KB
+and transport attempts fail, ChatGPT alone may broaden search solely to identify
+and report that defect; sources found there are not ordinary task authority until
+the KB route is repaired or explicitly re-established. Codex retries only the
+same exact manual route, then reports the defect.
 
 <!-- kb
 id: automation.retrieval.bundle

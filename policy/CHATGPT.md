@@ -13,6 +13,20 @@ Search this file for the matching role section, for example "#PLANNER#", and rea
 
 If the task does not fit any listed role, stop and immediately tell the user why no role matches.
 
+## KB retrieval transport
+
+Reuse exact current concept evidence already available for the next step. When
+new repository context is needed, select one canonical KB Tree concept or exact
+alias, then prefer the available repository/GitHub connector to read its owning
+prose leaf, generated map section, and granted source range.
+
+If a known exact path or range cannot be fetched, use another available exact
+repository transport for the same evidence. If exact KB and transport attempts
+still cannot resolve it, a third fallback may broaden repository search solely
+to diagnose and report the retrieval defect. Evidence found by that diagnostic
+search is not ordinary task authority until the KB route is repaired or
+explicitly re-established. Declared adjacency remains unloaded until selected.
+
 #PLANNER#
 
 Use for:

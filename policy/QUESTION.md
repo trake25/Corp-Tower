@@ -6,5 +6,6 @@ facts, resolve one exact KB Tree concept or alias from
 and granted source.
 
 Do not infer current implementation detail from policy or neighboring concepts.
-If the required concept or source grant cannot be resolved, stop and state the
-missing route rather than widening the search.
+If exact retrieval cannot resolve the required concept or source grant, follow
+the model-level KB retrieval transport/fallback contract rather than treating
+diagnostic search as ordinary authority.

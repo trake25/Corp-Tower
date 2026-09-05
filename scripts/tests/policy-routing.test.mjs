@@ -63,3 +63,25 @@ test('active KB Tree policy and site grants use root routing and direct reposito
   assert.doesNotMatch(automation, /policy\/AGENTS\.md/);
   assert.doesNotMatch(site, /source: site\/docs\//);
 });
+
+test('model policies own deterministic retrieval transports and role policies defer to them', () => {
+  const codex = policy('CODEX.md');
+  const chatgpt = policy('CHATGPT.md');
+
+  assert.match(codex, /## KB retrieval transport/);
+  assert.match(codex, /Reuse exact current concept evidence/);
+  assert.match(codex, /node scripts\/context\.mjs\s+concept-read/);
+  assert.match(codex, /same exact manual KB Tree\s+route/);
+  assert.match(codex, /Do not broaden repository search/);
+  assert.match(chatgpt, /## KB retrieval transport/);
+  assert.match(chatgpt, /Reuse exact current concept evidence/);
+  assert.match(chatgpt, /repository\/GitHub connector/);
+  assert.match(chatgpt, /another available exact\s+repository transport/);
+  assert.match(chatgpt, /third fallback may broaden repository search solely\s+to diagnose and report the retrieval defect/);
+  assert.match(chatgpt, /not ordinary task authority/);
+
+  for (const filename of ['QUESTION.md', 'PLANNER.md', 'MAINTENANCE.md']) {
+    assert.match(policy(filename), /model-level KB retrieval transport\/fallback contract/);
+    assert.doesNotMatch(policy(filename), /context\.mjs|repository\/GitHub connector/);
+  }
+});

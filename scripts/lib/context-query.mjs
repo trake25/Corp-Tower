@@ -649,8 +649,8 @@ export function conceptTextLines(result) {
   if (result.reason) output.push(`reason: ${result.reason}`);
   if (!result.concept) return [...output, 'fallback: no'];
   output.push(`concept: ${result.concept.id}`, `owner: ${result.concept.owner.path}:${result.concept.owner.lines[0]}-${result.concept.owner.lines[1]} · ${result.concept.owner.heading}`);
-  if (result.prose) output.push(`prose: ${result.prose.path}:${result.prose.lines[0]}-${result.prose.lines[1]} (${result.prose.bytes} bytes)`);
-  if (result.map) output.push(`map: ${result.map.path}:${result.map.lines[0]}-${result.map.lines[1]}`);
+  if (result.prose) output.push('', result.prose.text.trimEnd(), '');
+  if (result.map && !result.prose) output.push(`map: ${result.map.path}:${result.map.lines[0]}-${result.map.lines[1]}`);
   for (const source of result.sources || []) output.push(`source: ${source.path}:${source.line} · ${source.anchor}`, `read: ${source.read.command.display}`);
   for (const adjacent of result.adjacent || []) output.push(`adjacent: ${adjacent.id} (not loaded)`, `next: ${adjacent.command.display}`);
   output.push('fallback: no');

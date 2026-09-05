@@ -7,7 +7,7 @@ For repo-dependent planning:
 - Read only that concept's owning prose leaf, generated concept-map section, and source evidence explicitly granted by that concept.
 - Do not automatically load adjacent concepts or widen into uncontrolled repository search.
 - At any point before the planning task is complete, if more repository context is required, return to `KB/docs/context/index.md` and resolve the next required concept. Repeat this loop only as needed until contextualization is sufficient.
-- If the KB cannot resolve required context and provides no valid route or fallback, stop and tell the user the exact reason.
+- If exact retrieval cannot resolve required context, follow the model-level KB retrieval transport/fallback contract and report any resulting retrieval defect.
 
 Identify the planning type:
 - GAME

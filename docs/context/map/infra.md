@@ -1135,7 +1135,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/qa-gate.mjs:205 | fail · fn | |
 | scripts/qa-gate.mjs:229 | selectGodotBinary · fn | |
 
-### scripts/rendered-client-verify.mjs — 161 ln
+### scripts/rendered-client-verify.mjs — 187 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1146,10 +1146,12 @@ bounded source read. Local implementation detail stays in source.
 | scripts/rendered-client-verify.mjs:20 | parsePidWindowRows · fn | |
 | scripts/rendered-client-verify.mjs:32 | exactWindowForPid · fn | |
 | scripts/rendered-client-verify.mjs:40 | windowCaptureArgs · fn | |
-| scripts/rendered-client-verify.mjs:45 | queryWindows · fn | |
-| scripts/rendered-client-verify.mjs:50 | displayReady · fn | |
-| scripts/rendered-client-verify.mjs:77 | runRenderedVerification · fn | |
-| scripts/rendered-client-verify.mjs:123 | parseArgs · fn | |
+| scripts/rendered-client-verify.mjs:45 | displayContextFor · fn | |
+| scripts/rendered-client-verify.mjs:62 | windowQueryCommand · fn | |
+| scripts/rendered-client-verify.mjs:67 | queryWindows · fn | |
+| scripts/rendered-client-verify.mjs:74 | displayReady · fn | |
+| scripts/rendered-client-verify.mjs:101 | runRenderedVerification · fn | |
+| scripts/rendered-client-verify.mjs:149 | parseArgs · fn | |
 
 ### scripts/strip-comments.mjs — 296 ln
 
@@ -1160,43 +1162,43 @@ bounded source read. Local implementation detail stays in source.
 | scripts/strip-comments.mjs:162 | strip · fn | |
 | scripts/strip-comments.mjs:217 | verify · fn | |
 
-### scripts/task-close.mjs — 1180 ln
+### scripts/task-close.mjs — 1198 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/task-close.mjs:1 | @file · file | reports a command error with its caller-selected exit status |
-| scripts/task-close.mjs:27 | ROOT · const | |
-| scripts/task-close.mjs:29 | SCHEMA_VERSION · const | |
-| scripts/task-close.mjs:32 | fail · fn | |
-| scripts/task-close.mjs:65 | planBindingFor · fn | |
-| scripts/task-close.mjs:99 | parseArgs · fn | |
-| scripts/task-close.mjs:114 | checkOptions · fn | |
-| scripts/task-close.mjs:118 | one · fn | |
-| scripts/task-close.mjs:125 | many · fn | |
-| scripts/task-close.mjs:138 | sourcePath · fn | |
-| scripts/task-close.mjs:142 | testPath · fn | |
-| scripts/task-close.mjs:150 | domainFor · fn | |
-| scripts/task-close.mjs:161 | deriveTaskComplexity · fn | |
-| scripts/task-close.mjs:182 | command · fn | |
-| scripts/task-close.mjs:199 | taskCloseIntake · fn | |
-| scripts/task-close.mjs:226 | fingerprint · fn | |
-| scripts/task-close.mjs:247 | publishPathsFor · fn | |
-| scripts/task-close.mjs:285 | createManifest · fn | |
-| scripts/task-close.mjs:319 | startObservability · fn | |
-| scripts/task-close.mjs:349 | closeObservabilityUnsafe · fn | |
-| scripts/task-close.mjs:428 | amendManifest · fn | |
-| scripts/task-close.mjs:466 | reviewManifest · fn | |
-| scripts/task-close.mjs:514 | applyDocumentationDecision · fn | |
-| scripts/task-close.mjs:551 | applyCoverageDecision · fn | |
-| scripts/task-close.mjs:571 | recordFallback · fn | |
-| scripts/task-close.mjs:590 | fallbackRequiresRetrievalProof · fn | |
-| scripts/task-close.mjs:594 | intakeForManifest · fn | |
-| scripts/task-close.mjs:634 | reviewForManifest · fn | |
-| scripts/task-close.mjs:666 | manifestPath · fn | |
-| scripts/task-close.mjs:720 | compactOutput · fn | |
-| scripts/task-close.mjs:752 | validateDocumentationDecision · fn | |
-| scripts/task-close.mjs:789 | retrievalFallbackMaintenanceItems · fn | |
-| scripts/task-close.mjs:827 | archivePlan · fn | |
+| scripts/task-close.mjs:28 | ROOT · const | |
+| scripts/task-close.mjs:30 | SCHEMA_VERSION · const | |
+| scripts/task-close.mjs:33 | fail · fn | |
+| scripts/task-close.mjs:66 | planBindingFor · fn | |
+| scripts/task-close.mjs:100 | parseArgs · fn | |
+| scripts/task-close.mjs:115 | checkOptions · fn | |
+| scripts/task-close.mjs:119 | one · fn | |
+| scripts/task-close.mjs:126 | many · fn | |
+| scripts/task-close.mjs:139 | sourcePath · fn | |
+| scripts/task-close.mjs:143 | testPath · fn | |
+| scripts/task-close.mjs:151 | domainFor · fn | |
+| scripts/task-close.mjs:162 | deriveTaskComplexity · fn | |
+| scripts/task-close.mjs:183 | command · fn | |
+| scripts/task-close.mjs:209 | taskCloseIntake · fn | |
+| scripts/task-close.mjs:241 | fingerprint · fn | |
+| scripts/task-close.mjs:262 | publishPathsFor · fn | |
+| scripts/task-close.mjs:300 | createManifest · fn | |
+| scripts/task-close.mjs:334 | startObservability · fn | |
+| scripts/task-close.mjs:364 | closeObservabilityUnsafe · fn | |
+| scripts/task-close.mjs:443 | amendManifest · fn | |
+| scripts/task-close.mjs:481 | reviewManifest · fn | |
+| scripts/task-close.mjs:530 | applyDocumentationDecision · fn | |
+| scripts/task-close.mjs:567 | applyCoverageDecision · fn | |
+| scripts/task-close.mjs:587 | recordFallback · fn | |
+| scripts/task-close.mjs:606 | fallbackRequiresRetrievalProof · fn | |
+| scripts/task-close.mjs:610 | intakeForManifest · fn | |
+| scripts/task-close.mjs:651 | reviewForManifest · fn | |
+| scripts/task-close.mjs:684 | manifestPath · fn | |
+| scripts/task-close.mjs:738 | compactOutput · fn | |
+| scripts/task-close.mjs:770 | validateDocumentationDecision · fn | |
+| scripts/task-close.mjs:807 | retrievalFallbackMaintenanceItems · fn | |
+| scripts/task-close.mjs:845 | archivePlan · fn | |
 
 ### scripts/tests/agent-observability.test.mjs — 763 ln
 
@@ -1229,12 +1231,12 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/concept-kb.test.mjs:23 | ROOT · const | |
 | scripts/tests/concept-kb.test.mjs:35 | clean · fn | |
 
-### scripts/tests/context-query.test.mjs — 285 ln
+### scripts/tests/context-query.test.mjs — 363 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/context-query.test.mjs:1 | @file · file | permanent regression coverage for context query |
-| scripts/tests/context-query.test.mjs:17 | ROOT · const | |
+| scripts/tests/context-query.test.mjs:19 | ROOT · const | |
 
 ### scripts/tests/figma-ui-exporter.test.mjs — 123 ln
 
@@ -1256,7 +1258,7 @@ bounded source read. Local implementation detail stays in source.
 | scripts/tests/kb-calibration.test.mjs:1 | @file · file | permanent coverage for range merging, private snapshots, and manual report safety |
 | scripts/tests/kb-calibration.test.mjs:68 | clean · fn | |
 
-### scripts/tests/policy-routing.test.mjs — 56 ln
+### scripts/tests/policy-routing.test.mjs — 88 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
@@ -1270,19 +1272,19 @@ bounded source read. Local implementation detail stays in source.
 |---|---|---|
 | scripts/tests/qa-gate.test.mjs:1 | @file · file | permanent regression coverage for qa gate |
 
-### scripts/tests/rendered-client-verify.test.mjs — 98 ln
+### scripts/tests/rendered-client-verify.test.mjs — 157 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/rendered-client-verify.test.mjs:1 | @file · file | permanent regression coverage for rendered client verify |
-| scripts/tests/rendered-client-verify.test.mjs:12 | ROOT · const | |
+| scripts/tests/rendered-client-verify.test.mjs:15 | ROOT · const | |
 
-### scripts/tests/task-close.test.mjs — 922 ln
+### scripts/tests/task-close.test.mjs — 970 ln
 
 | File:Ln | Anchor | Purpose |
 |---|---|---|
 | scripts/tests/task-close.test.mjs:1 | @file · file | permanent regression coverage for task close |
-| scripts/tests/task-close.test.mjs:38 | SOURCE · const | |
+| scripts/tests/task-close.test.mjs:39 | SOURCE · const | |
 
 ### scripts/tests/tutorial-defaults-parity.test.mjs — 102 ln
 
@@ -1335,4 +1337,4 @@ bounded source read. Local implementation detail stays in source.
 
 ---
 
-133 files · 528 stable anchors.
+133 files · 530 stable anchors.

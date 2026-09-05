@@ -42,6 +42,19 @@ For repository context:
 - Do not automatically load adjacent concepts or widen into uncontrolled repository search.
 - If required context cannot be resolved and no valid route or fallback exists, stop and report the exact reason.
 
+## KB retrieval transport
+
+Reuse exact current concept evidence already available for the next step. When
+new repository context is needed, the model selects one canonical concept ID or
+exact alias; tooling does not select it. Prefer `node scripts/context.mjs
+concept-read <concept-id-or-exact-alias>` when local tooling is available, using
+`concept-route` only when route metadata without prose is sufficient.
+
+If that tool is unavailable or defective, perform the same exact manual KB Tree
+route: router → one concept → owning prose leaf → generated map section →
+granted bounded source. If that route also fails, stop and report the precise
+retrieval/KB defect. Do not broaden repository search.
+
 Working material under `plan/`, `task/`, `reference/`, `repair/`, `report/`, and `.agent-state/` is not KB evidence. Access an exact working-material item only when the active task or workflow explicitly requires it.
 
 Once the initial task-owned paths are known, begin the repository `task-close` lifecycle before the first edit. Scope comes from the authorized task and resolved evidence, never from the dirty working tree. Amend ownership only for a proven direct task dependency.

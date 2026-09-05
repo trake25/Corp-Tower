@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import test from 'node:test';
 import {
+  conceptTextLines,
   contextBundle,
   documentSection,
   mapSymbols,
@@ -15,6 +17,16 @@ import { documentationNeedlesForPath, isNormalContextExcludedPath } from '../lib
 import { AUTOMATION_PROTOCOL_TESTS, TUTORIAL_PARITY_TEST } from '../qa-gate.mjs';
 
 const ROOT = resolve('.');
+const CONTEXT_SCRIPT = join(ROOT, 'scripts/context.mjs');
+
+function runContext(args) {
+  return spawnSync(process.execPath, [CONTEXT_SCRIPT, ...args], { cwd: ROOT, encoding: 'utf8' });
+}
+
+function automationEntries() {
+  const directory = join(ROOT, '.agent-state/automation');
+  return existsSync(directory) ? readdirSync(directory, { recursive: true }).sort() : [];
+}
 
 function assertBoundedSource(source, path) {
   assert.equal(source.source_path, path);
@@ -67,6 +79,72 @@ test('an explicitly confirmed missing anchor is a repairable retrieval defect', 
   assert.deepEqual(result.results, []);
   assert.equal(result.fallback.allowed, true);
   assert.match(result.fallback.reason, /retrieval defect/);
+});
+
+test('concept-read CLI returns prose and bounded grants without persistence or map duplication', () => {
+  const implicitBundle = join(ROOT, '.agent-state/automation/context-bundle.md');
+  const before = existsSync(implicitBundle) ? readFileSync(implicitBundle, 'utf8') : null;
+  const entriesBefore = automationEntries();
+  const normal = runContext(['concept-read', 'collapse framing']);
+  const json = runContext(['concept-read', 'collapse framing', '--json']);
+  const route = runContext(['concept-route', 'collapse framing']);
+  const failed = runContext(['concept-read', 'concept.that.does.not.exist']);
+
+  assert.equal(normal.status, 0, normal.stderr);
+  assert.match(normal.stdout, /status: matched/);
+  assert.match(normal.stdout, /concept: hud\.tower\.collapse\.presentation/);
+  assert.match(normal.stdout, /## Collapse presentation/);
+  assert.match(normal.stdout, /source: src\/Client\/App\/corp-tower\/Cor\/Scripts\/TowerStack\.gd/);
+  assert.match(normal.stdout, /read: sed -n/);
+  assert.match(normal.stdout, /adjacent: hud\.tower\.collapse\.recovery \(not loaded\)/);
+  assert.doesNotMatch(normal.stdout, /## hud\.tower\.collapse\.presentation/);
+  const reportedBytes = Number(/bytes: (\d+)/.exec(normal.stdout)?.[1]);
+  assert.equal(reportedBytes, Buffer.byteLength(normal.stdout));
+
+  assert.equal(json.status, 0, json.stderr);
+  const structured = JSON.parse(json.stdout);
+  assert.match(structured.prose.text, /^## Collapse presentation/m);
+  assert.match(structured.map.text, /^## hud\.tower\.collapse\.presentation/m);
+
+  assert.equal(route.status, 0, route.stderr);
+  assert.doesNotMatch(route.stdout, /## Collapse presentation/);
+  assert.match(route.stdout, /map: KB\/docs\/context\/map\/concept\/hud\.md/);
+
+  assert.equal(failed.status, 1);
+  assert.match(failed.stdout, /status: concept-unmapped/);
+  assert.equal(existsSync(implicitBundle), before !== null);
+  if (before !== null) assert.equal(readFileSync(implicitBundle, 'utf8'), before);
+  assert.deepEqual(automationEntries(), entriesBefore);
+});
+
+test('concept-bundle CLI retains only an explicit ignored Markdown handoff', () => {
+  const directory = mkdtempSync(join(ROOT, '.agent-state/automation/context-query-test-'));
+  const output = relative(ROOT, join(directory, 'bundle.md'));
+  try {
+    const result = runContext(['concept-bundle', 'collapse framing', '--output', output]);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Created: .*collapse\.presentation/);
+    assert.equal(existsSync(join(ROOT, output)), true);
+    assert.match(readFileSync(join(ROOT, output), 'utf8'), /## Concept prose/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('concept text line accounting includes prose without generated-map text', () => {
+  const lines = conceptTextLines({
+    status: 'matched',
+    reason: null,
+    concept: { id: 'test.example', owner: { path: 'KB/docs/context/test.md', lines: [4, 6], heading: 'Example' } },
+    prose: { text: '## Example\n\nOwned prose.' },
+    map: { path: 'KB/docs/context/map/concept/test.md', lines: [1, 8], text: '## test.example\n\nGenerated map text.' },
+    sources: [],
+    adjacent: [],
+  });
+
+  assert.match(lines.join('\n'), /## Example/);
+  assert.doesNotMatch(lines.join('\n'), /Generated map text/);
 });
 
 test('an explicit anchor resolves through the bounded retrieval vocabulary bridge', () => {
