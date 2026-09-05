@@ -96,7 +96,11 @@ export function renderPublicQaReceipt({
     `- Plan archive: ${planLabel}`,
     ...(plan.source_path ? [
       `- Active plan: ${sanitized(plan.source_path)}`,
-      `- Archived plan: ${sanitized(plan.archive_path)}`,
+      `- Archived plan: ${plan.status === 'archived'
+        ? sanitized(plan.archive_path)
+        : plan.status === 'retained'
+          ? 'Not created — disabled by task process control'
+          : sanitized(plan.archive_path)}`,
     ] : []),
     '',
     '## Scope',

@@ -114,7 +114,7 @@ Owner: `KB/docs/context/automation.md:151-162` → **Orchestrated execution**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `policy/PLANNER.md` | `Execution mode planning` | 113 | `sed -n 101,133p policy/PLANNER.md` |
-| `policy/CODEX.md` | `Orchestration execution` | 148 | `sed -n 136,168p policy/CODEX.md` |
+| `policy/CODEX.md` | `Orchestration execution` | 150 | `sed -n 138,170p policy/CODEX.md` |
 | `policy/REVIEWER.md` | `Integrated QA` | 44 | `sed -n 32,64p policy/REVIEWER.md` |
 
 Adjacent concepts: `automation.orchestration.ownership`, `automation.task-close.lifecycle`
@@ -125,7 +125,7 @@ Owner: `KB/docs/context/automation.md:173-183` → **Orchestration ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `policy/CODEX.md` | `Orchestration execution` | 148 | `sed -n 136,168p policy/CODEX.md` |
+| `policy/CODEX.md` | `Orchestration execution` | 150 | `sed -n 138,170p policy/CODEX.md` |
 | `scripts/lib/orchestration-scope.mjs` | `claimWorkerScope` | 167 | `sed -n 155,187p scripts/lib/orchestration-scope.mjs` |
 | `scripts/lib/orchestration-scope.mjs` | `finalizeOrchestrationScope` | 207 | `sed -n 195,218p scripts/lib/orchestration-scope.mjs` |
 
@@ -205,7 +205,7 @@ Owner: `KB/docs/context/automation.md:193-197` → **Task-close lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `main` | 1238 | `sed -n 1226,1258p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `main` | 1239 | `sed -n 1227,1259p scripts/task-close.mjs` |
 
 Adjacent concepts: `automation.task-close.scope`, `automation.task-close.receipt`, `automation.task-close.process-controls`
 

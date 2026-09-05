@@ -105,7 +105,9 @@ Large deletions, generated-file churn, lockfiles, fixtures, snapshots, maps, and
 
 Prefer compact test and verification reporters. On failure, expand evidence progressively from the failing summary to the relevant error or test, then to a bounded diagnostic excerpt, and only then to broader raw output when still necessary.
 
-For repository tooling tests, prefer the compact `qa-gate` path over raw `node --test` output whenever the required tests are supported there. Use canonical `qa-gate --changed` for final verification and its explicit compact tooling-test mode for targeted iteration. Run raw test reporters only when no repository compact route can exercise the required behavior; when raw execution is necessary, keep successful output private and expose only a compact result, expanding the failing evidence progressively.
+When executable QA is enabled by the task process contract, prefer the compact `qa-gate` path over raw `node --test` output whenever the required tests are supported there. Use canonical `qa-gate --changed` for executable QA verification and its explicit compact tooling-test mode for targeted iteration. Run raw test reporters only when no repository compact route can exercise the enabled QA requirement.
+
+When executable QA is disabled, do not run `qa-gate` or raw regression suites solely for final verification. Use only the mandatory task-ownership, patch-integrity, required repository-consistency, and explicitly authorized deliverable mechanics. When raw execution is authorized and necessary, keep successful output private and expose only a compact result, expanding failing evidence progressively.
 
 A `concept-read` is one standalone contextualization decision point. Do not chain it in the same shell or tool invocation with another concept read, tests, Git inspection, private-state inspection, or unrelated commands. Consume its result before deciding what operation is needed next.
 

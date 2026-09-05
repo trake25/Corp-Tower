@@ -614,9 +614,9 @@ test('review accepts only owned final paths and refreshes docs and QA from them'
   assert.deepEqual(reviewed.review.intake.qa.server_tests, ['Gameplay_Events.test.js', 'Placement_Geometry.test.js', 'Stability_Scoring.test.js']);
   assert.equal(reviewed.documentation.status, 'pending');
   assert.deepEqual(reviewed.documentation.maps_to_regenerate, SCORE_MAPS);
-  assert.deepEqual(reviewed.review.map_hashes, { 'KB/docs/context/map/concept/backend.md': 'before' });
+  assert.deepEqual(Object.keys(reviewed.review.map_hashes).sort(), SCORE_MAPS);
   const repeated = reviewManifest(reviewed, { changedPaths: [SOURCE], mapBaseline: { 'KB/docs/context/map/concept/backend.md': 'after' } });
-  assert.deepEqual(repeated.review.map_hashes, { 'KB/docs/context/map/concept/backend.md': 'before' });
+  assert.deepEqual(Object.keys(repeated.review.map_hashes).sort(), SCORE_MAPS);
 });
 
 test('amend preserves reviewed source scope for a candidate doc and invalidates it for new source', () => {

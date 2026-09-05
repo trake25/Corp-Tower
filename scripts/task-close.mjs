@@ -289,11 +289,11 @@ function fileHash(path) {
   return existsSync(path) ? createHash('sha256').update(readFileSync(path)).digest('hex') : null;
 }
 
-function mapHashes() {
+function mapHashes(paths = null) {
   const root = resolve(ROOT, 'KB/docs/context/map/concept');
   if (!existsSync(root)) return {};
-  return Object.fromEntries(readdirSync(root).filter(name => name.endsWith('.md')).sort().map(name => {
-    const path = `KB/docs/context/map/concept/${name}`;
+  const selected = paths || readdirSync(root).filter(name => name.endsWith('.md')).map(name => `KB/docs/context/map/concept/${name}`);
+  return Object.fromEntries([...new Set(selected)].sort().map(path => {
     return [path, fileHash(resolve(ROOT, path))];
   }));
 }
@@ -642,7 +642,7 @@ export function reviewManifest(manifest, { changedPaths, mapBaseline = null }) {
     qa: intake.qa,
     derived_paths: derived,
   };
-  const mapHashesAtReview = { ...(mapBaseline || mapHashes()), ...(manifest.review?.map_hashes || {}) };
+  const mapHashesAtReview = mapHashes([...affectedMaps]);
   return {
     ...manifest,
     phase: 'reviewed',
@@ -1208,7 +1208,8 @@ function verifyManifest(manifest, manifestFile, closeInputFingerprint, qaOverrid
   if (process.qa) requireFallbackFixtures(manifest);
   finalizeOrchestrationScope({ parent: manifestFile, root: ROOT });
   const steps = [];
-  const changedMaps = pathChanges(manifest.review.map_hashes || {}, mapHashes());
+  const protectedMaps = Object.keys(manifest.review.map_hashes || {});
+  const changedMaps = pathChanges(manifest.review.map_hashes || {}, mapHashes(protectedMaps));
   if (changedMaps.length) steps.push({
     name: 'concept map scope',
     command: [],
@@ -1286,7 +1287,7 @@ async function main() {
     const manifestFile = manifestPath(values);
     let manifest = upgradeManifest(readManifest(manifestFile));
     const changed = normalizePaths(many(values, 'changed'));
-    manifest = reviewManifest(manifest, { changedPaths: changed, mapBaseline: mapHashes() });
+    manifest = reviewManifest(manifest, { changedPaths: changed });
     writeManifest(manifestFile, manifest);
     const output = reviewForManifest(manifest, displayPath(manifestFile));
     console.log(values.has('json') ? JSON.stringify(output, null, 2) : compactLifecycleOutput('review', manifest, output.manifest));
