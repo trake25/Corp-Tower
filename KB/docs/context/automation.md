@@ -206,33 +206,58 @@ id: automation.observability.binding
 alias: agent observability
 alias: task binding
 source: scripts/lib/agent-observability/state.mjs#bindActiveTask
+source: scripts/codex-observability-hook.mjs#handleHook
+source: scripts/task-close.mjs#closeObservabilityUnsafe
 -->
 ## Observability binding
 
-Agent observability binds task/session identity and records bounded structured outcomes rather than prompt/tool transcripts. Without a live session binding, a task remains pending rather than being finalized with fabricated terminal evidence.
+Agent observability binds task/session identity and records only bounded categories,
+outcomes, and opaque identifiers, never prompts, responses, patches, commands, or
+transcript contents. Hooks are best-effort: they record health when possible and
+cannot alter task execution, QA, or receipt correctness. Stop performs normal
+settlement; SessionEnd remains a cheap health fallback. Without a live session
+binding, a task remains pending rather than being finalized with fabricated
+terminal evidence.
 
 <!-- kb
 id: automation.observability.usage
 alias: provider tokens
 alias: rollout usage
 source: scripts/lib/agent-observability/usage.mjs#aggregateUsage
+source: scripts/lib/agent-observability/codex-rollout.mjs#codexRolloutUsage
+source: scripts/lib/agent-observability/task-telemetry.mjs#buildTaskTelemetry
+source: scripts/lib/agent-observability/schema.mjs#sanitizeTelemetry
+source: scripts/lib/agent-observability/analytics.mjs#optionalFlaggingOverhead
+source: scripts/agent-observability.mjs#executeCommand
+source: scripts/lib/agent-observability/report.mjs#displayStageGroups
 -->
 ## Observability usage
 
-Usage accounting relies on stable disjoint identifiers and terminal host evidence. Missing rollout usage is represented as partial/unavailable, never as a fabricated zero, and observability subsets are not double-counted into provider totals.
+Usage accounting relies on stable disjoint identifiers and terminal evidence. Stop
+first validates and reads the current supplied rollout, then uses only the
+narrowest related child discovery; bounded inventory is fallback-only. Missing
+exact usage is partial/unavailable, never a fabricated zero. Task telemetry
+derives concept retries, verification and rework only from retained outcomes;
+optional workflow-review cost is measured as bounded handoff/material bytes and
+count, with attributable provider tokens absent unless exactly observable.
 
 <!-- kb
 id: automation.observability.flags
 alias: workflow candidate
 alias: inefficiency flag
 source: scripts/lib/agent-observability/flagging.mjs#flagEligibility
+source: scripts/lib/agent-observability/runtime.mjs#modelFamily
 -->
 ## Workflow inefficiency flags
 
-Workflow inefficiency requires deterministic evidence of retries, repeated
-verification/recovery, rework, or retrieval expansion. Its concept is loaded
-only when current-run tooling reports an eligible candidate and a provider turn
-is already required; it never creates an extra turn by itself.
+Workflow inefficiency requires deterministic evidence of explicit retrieval
+defect/fallback, same-concept recovery, failed-tool recovery, repeated
+task-caused rework, or unresolved retest cycles; normal movement between
+different concepts is not a candidate. Its concept is loaded only when current-run
+tooling reports an eligible candidate and a provider turn is already required;
+it never creates an extra turn by itself. Astra follows the same approved-family,
+high-or-higher effort, current-turn, task-evidence, and 1.5 KiB material gate.
+Public QA receipt correctness remains independent of candidate and hook health.
 
 <!-- kb
 id: automation.git.publish

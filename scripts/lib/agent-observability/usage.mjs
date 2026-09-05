@@ -66,7 +66,7 @@ export function normalizeUsageEvent(input, now = new Date().toISOString()) {
   assertAllowedKeys(input, [
     'usage_event_id', 'task_id', 'root_task_id', 'agent_id', 'parent_agent_id',
     'provider', 'model_family', 'model', 'effort', 'stage', 'purpose', 'usage',
-    'observability_tokens', 'observability_kind', 'settled', 'terminal', 'occurred_at',
+    'settled', 'terminal', 'occurred_at',
   ], 'usage event');
   assertObject(input.usage, 'usage');
   if (!STAGES.includes(input.stage)) throw new Error('stage is invalid');
@@ -76,13 +76,6 @@ export function normalizeUsageEvent(input, now = new Date().toISOString()) {
   if (!EFFORTS.has(effort)) throw new Error('effort is invalid');
   const usage = sanitizeCounters(input.usage);
   const normalized = normalizedTotal(usage);
-  const observabilityTokens = input.observability_tokens === undefined || input.observability_tokens === null
-    ? null
-    : nonNegativeInteger(input.observability_tokens, 'observability_tokens');
-  if (normalized.value !== null && observabilityTokens !== null && observabilityTokens > normalized.value)
-    throw new Error('observability_tokens cannot exceed total_tokens');
-  const observabilityKind = observabilityTokens === null ? 'unavailable' : cleanSlug(input.observability_kind || 'estimated', 'observability_kind');
-  if (!['exact', 'estimated', 'unavailable'].includes(observabilityKind)) throw new Error('observability_kind is invalid');
   return {
     schema_version: SCHEMA_VERSION,
     usage_event_id: cleanId(input.usage_event_id, 'usage_event_id'),
@@ -99,8 +92,6 @@ export function normalizeUsageEvent(input, now = new Date().toISOString()) {
     usage,
     normalized_total_tokens: normalized.value,
     normalization_method: normalized.method,
-    observability_tokens: observabilityTokens,
-    observability_kind: observabilityKind,
     settled: cleanBoolean(input.settled, 'settled', false),
     terminal: cleanBoolean(input.terminal, 'terminal', false),
     occurred_at: cleanTimestamp(input.occurred_at, 'occurred_at', now),
@@ -116,20 +107,12 @@ export function aggregateUsage(events) {
   const stageTotals = Object.fromEntries(STAGES.map(stage => [stage, 0]));
   const reasons = [];
   let known = 0;
-  let observability = 0;
-  let observabilityAvailable = true;
-  let observabilityEstimated = false;
   for (const event of values) {
     if (!event.settled) reasons.push(`unsettled:${event.usage_event_id}`);
     if (event.normalized_total_tokens === null) reasons.push(`usage_unavailable:${event.usage_event_id}`);
     else {
       known += event.normalized_total_tokens;
       stageTotals[event.stage] += event.normalized_total_tokens;
-    }
-    if (event.observability_tokens === null) observabilityAvailable = false;
-    else {
-      observability += event.observability_tokens;
-      if (event.observability_kind !== 'exact') observabilityEstimated = true;
     }
   }
   if (!values.some(event => event.terminal)) reasons.push('terminal_event_missing');
@@ -140,8 +123,6 @@ export function aggregateUsage(events) {
     event_count: values.length,
     final_inclusive_provider_tokens: status === 'exact' ? known : null,
     known_provider_tokens: known,
-    observability_provider_tokens: observabilityAvailable ? observability : null,
-    observability_kind: observabilityAvailable ? (observabilityEstimated ? 'estimated' : 'exact') : 'unavailable',
     stage_totals: stageTotals,
   };
 }

@@ -5,16 +5,19 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## testing.automation.protocol
 
-Owner: `KB/docs/context/testing.md:119-130` → **Automation protocol coverage**
+Owner: `KB/docs/context/testing.md:122-135` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 282 | `sed -n 270,302p scripts/tests/context-query.test.mjs` |
-| `scripts/tests/task-close.test.mjs` | `prepare creates a compact schema-v2 ownership manifest and intake` | 201 | `sed -n 189,221p scripts/tests/task-close.test.mjs` |
+| `scripts/tests/task-close.test.mjs` | `prepare creates a compact schema-v2 ownership manifest and intake` | 202 | `sed -n 190,222p scripts/tests/task-close.test.mjs` |
 | `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 60 | `sed -n 48,80p scripts/tests/concept-kb.test.mjs` |
 | `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 77 | `sed -n 65,97p scripts/benchmark-rag.mjs` |
 | `scripts/lib/kb-calibration.mjs` | `measureKbCalibration` | 180 | `sed -n 168,200p scripts/lib/kb-calibration.mjs` |
 | `scripts/export-kb-calibration-report.mjs` | `exportKbCalibrationReport` | 158 | `sed -n 146,178p scripts/export-kb-calibration-report.mjs` |
+| `scripts/tests/codex-observability-hook.test.mjs` | `production hook smoke keeps observability fail-open and private` | 66 | `sed -n 54,86p scripts/tests/codex-observability-hook.test.mjs` |
+| `scripts/qa-gate.mjs` | `selectToolingQa` | 108 | `sed -n 96,128p scripts/qa-gate.mjs` |
+| `scripts/fixtures/agent-observability/provider-events.json` | `events` | 25 | `sed -n 13,45p scripts/fixtures/agent-observability/provider-events.json` |
 
 Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifecycle`
 
@@ -39,7 +42,7 @@ Owner: `KB/docs/context/testing.md:43-51` → **Godot coverage**
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_application_scripts` | 41 | `sed -n 29,61p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` | `test_game_state_renders_rail_and_top_bar` | 48 | `sed -n 36,68p src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` |
-| `scripts/qa-gate.mjs` | `main` | 266 | `sed -n 254,286p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `main` | 270 | `sed -n 258,290p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 
@@ -52,7 +55,7 @@ Owner: `KB/docs/context/testing.md:63-77` → **Rendered client verification**
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_main_scene_ready` | 126 | `sed -n 114,146p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` | `_begin_collapse` | 894 | `sed -n 882,914p src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` |
 | `scripts/rendered-client-verify.mjs` | `runRenderedVerification` | 101 | `sed -n 89,121p scripts/rendered-client-verify.mjs` |
-| `scripts/qa-gate.mjs` | `selectGodotBinary` | 229 | `sed -n 217,249p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectGodotBinary` | 233 | `sed -n 221,253p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.rendered-verification`
 
@@ -69,7 +72,7 @@ Adjacent concepts: none
 
 ## testing.contract.tutorial-parity
 
-Owner: `KB/docs/context/testing.md:137-140` → **Tutorial parity**
+Owner: `KB/docs/context/testing.md:142-145` → **Tutorial parity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -79,7 +82,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:150-153` → **Release gates**
+Owner: `KB/docs/context/testing.md:155-158` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -94,7 +97,7 @@ Owner: `KB/docs/context/testing.md:11-14` → **Local QA selection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/qa-gate.mjs` | `selectQa` | 132 | `sed -n 120,152p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectQa` | 136 | `sed -n 124,156p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 

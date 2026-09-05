@@ -8,7 +8,7 @@ import {
   statSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, join, resolve, sep } from 'node:path';
+import { basename, dirname, join, resolve, sep } from 'node:path';
 import { boundedEventId } from './runtime.mjs';
 
 const COUNTERS = [
@@ -176,19 +176,39 @@ function segmentedUsage(meta, tokens, {
   });
 }
 
-function rootRollout(paths, sessionsRoot, sessionId, transcriptPath) {
+function suppliedRoot(sessionsRoot, sessionId, transcriptPath) {
   if (typeof transcriptPath === 'string' && transcriptPath.trim()) {
     const candidate = resolve(transcriptPath);
-    if (!inside(sessionsRoot, candidate) || !existsSync(candidate)) throw new Error('Codex transcript path is outside the sessions directory');
-    const meta = sessionMeta(candidate, sessionsRoot);
+    if (!inside(sessionsRoot, candidate) || !existsSync(candidate)) {
+      const error = new Error('Codex transcript path is outside the sessions directory');
+      error.code = 'transcript_path_invalid';
+      throw error;
+    }
+    const real = realpathSync(candidate);
+    if (!inside(sessionsRoot, real)) {
+      const error = new Error('Codex transcript path is outside the sessions directory');
+      error.code = 'transcript_path_invalid';
+      throw error;
+    }
+    const meta = sessionMeta(real, sessionsRoot);
     if (meta?.session_id === sessionId) return meta;
   }
+  return null;
+}
+
+function inventoryRoot(paths, sessionsRoot, sessionId) {
   const suffix = `-${sessionId}.jsonl`;
   for (const path of paths.filter(item => basename(item).endsWith(suffix))) {
     const meta = sessionMeta(path, sessionsRoot);
     if (meta?.session_id === sessionId) return meta;
   }
   return null;
+}
+
+function relatedRollouts(root, sessionsRoot) {
+  const directory = dirname(root.path);
+  const paths = rolloutPaths(directory);
+  return paths.map(path => sessionMeta(path, sessionsRoot)).filter(Boolean);
 }
 
 function sessionTree(metas, root, startedAt, until) {
@@ -216,14 +236,24 @@ export function codexRolloutUsage(sessionId, {
   if (typeof sessionId !== 'string' || !sessionId.trim()) return { status: 'unavailable', reason: 'session_id_unavailable', events: [] };
   try {
     const sessionsRoot = safeSessionsRoot(env);
-    const paths = rolloutPaths(sessionsRoot);
-    const root = rootRollout(paths, sessionsRoot, sessionId, transcriptPath);
+    let root = suppliedRoot(sessionsRoot, sessionId, transcriptPath);
+    let source = root ? 'direct_transcript' : null;
+    if (!root) {
+      root = inventoryRoot(rolloutPaths(sessionsRoot), sessionsRoot, sessionId);
+      source = root ? 'bounded_inventory' : null;
+    }
     if (!root) return { status: 'unavailable', reason: 'codex_rollout_not_found', events: [] };
     const rootTimeline = sessionTimeline(root, until);
     const startedAt = rootTimeline.starts.at(-1) || root.occurred_at;
     if (!rootTimeline.tokens.some(item => item.occurred_at >= startedAt))
       return { status: 'unavailable', reason: 'codex_rollout_usage_unavailable', events: [] };
-    const metas = paths.map(path => sessionMeta(path, sessionsRoot)).filter(Boolean);
+    let metas;
+    try {
+      metas = relatedRollouts(root, sessionsRoot);
+    } catch {
+      metas = rolloutPaths(sessionsRoot).map(path => sessionMeta(path, sessionsRoot)).filter(Boolean);
+      source = 'bounded_inventory_fallback';
+    }
     const tree = sessionTree(metas, root, startedAt, until);
     const events = [];
     for (const meta of tree) {
@@ -238,8 +268,10 @@ export function codexRolloutUsage(sessionId, {
       }));
     }
     if (!events.some(event => event.terminal)) return { status: 'unavailable', reason: 'codex_rollout_terminal_usage_unavailable', events: [] };
-    return { status: 'exact', reason: null, events };
-  } catch {
+    return { status: 'exact', reason: null, source, events };
+  } catch (error) {
+    if (error?.code === 'transcript_path_invalid')
+      return { status: 'unavailable', reason: 'codex_transcript_path_invalid', events: [] };
     return { status: 'unavailable', reason: 'codex_rollout_read_failed', events: [] };
   }
 }

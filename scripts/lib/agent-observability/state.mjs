@@ -28,7 +28,7 @@ function digest(value) {
 }
 
 export function resolveStateDir({ root = '.', stateDir = null, env = process.env } = {}) {
-  return resolve(stateDir || env.CORP_TOWER_OBSERVABILITY_DIR || join(root, '.agent-state/telemetry/v2'));
+  return resolve(stateDir || env.CORP_TOWER_OBSERVABILITY_DIR || join(root, '.agent-state/telemetry/v3'));
 }
 
 export function taskDirectory(stateDir, taskId) {

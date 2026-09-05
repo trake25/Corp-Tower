@@ -46,7 +46,7 @@ Adjacent concepts: none
 
 ## automation.git.publish
 
-Owner: `KB/docs/context/automation.md:243-246` → **Authorized Git publication**
+Owner: `KB/docs/context/automation.md:268-271` → **Authorized Git publication**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -56,31 +56,40 @@ Adjacent concepts: none
 
 ## automation.observability.binding
 
-Owner: `KB/docs/context/automation.md:210-213` → **Observability binding**
+Owner: `KB/docs/context/automation.md:212-221` → **Observability binding**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/lib/agent-observability/state.mjs` | `bindActiveTask` | 148 | `sed -n 136,168p scripts/lib/agent-observability/state.mjs` |
+| `scripts/codex-observability-hook.mjs` | `handleHook` | 224 | `sed -n 212,244p scripts/codex-observability-hook.mjs` |
+| `scripts/task-close.mjs` | `closeObservabilityUnsafe` | 365 | `sed -n 353,385p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
 ## automation.observability.flags
 
-Owner: `KB/docs/context/automation.md:230-236` → **Workflow inefficiency flags**
+Owner: `KB/docs/context/automation.md:251-261` → **Workflow inefficiency flags**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/lib/agent-observability/flagging.mjs` | `flagEligibility` | 54 | `sed -n 42,74p scripts/lib/agent-observability/flagging.mjs` |
+| `scripts/lib/agent-observability/runtime.mjs` | `modelFamily` | 26 | `sed -n 14,46p scripts/lib/agent-observability/runtime.mjs` |
 
 Adjacent concepts: none
 
 ## automation.observability.usage
 
-Owner: `KB/docs/context/automation.md:220-223` → **Observability usage**
+Owner: `KB/docs/context/automation.md:234-243` → **Observability usage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/lib/agent-observability/usage.mjs` | `aggregateUsage` | 110 | `sed -n 98,130p scripts/lib/agent-observability/usage.mjs` |
+| `scripts/lib/agent-observability/usage.mjs` | `aggregateUsage` | 101 | `sed -n 89,121p scripts/lib/agent-observability/usage.mjs` |
+| `scripts/lib/agent-observability/codex-rollout.mjs` | `codexRolloutUsage` | 229 | `sed -n 217,249p scripts/lib/agent-observability/codex-rollout.mjs` |
+| `scripts/lib/agent-observability/task-telemetry.mjs` | `buildTaskTelemetry` | 73 | `sed -n 61,93p scripts/lib/agent-observability/task-telemetry.mjs` |
+| `scripts/lib/agent-observability/schema.mjs` | `sanitizeTelemetry` | 173 | `sed -n 161,193p scripts/lib/agent-observability/schema.mjs` |
+| `scripts/lib/agent-observability/analytics.mjs` | `optionalFlaggingOverhead` | 88 | `sed -n 76,108p scripts/lib/agent-observability/analytics.mjs` |
+| `scripts/agent-observability.mjs` | `executeCommand` | 105 | `sed -n 93,125p scripts/agent-observability.mjs` |
+| `scripts/lib/agent-observability/report.mjs` | `displayStageGroups` | 90 | `sed -n 78,110p scripts/lib/agent-observability/report.mjs` |
 
 Adjacent concepts: none
 
@@ -158,7 +167,7 @@ Owner: `KB/docs/context/automation.md:101-104` → **Task-close lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `main` | 1047 | `sed -n 1035,1067p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `main` | 1059 | `sed -n 1047,1079p scripts/task-close.mjs` |
 
 Adjacent concepts: `automation.task-close.scope`, `automation.task-close.receipt`
 
@@ -168,7 +177,7 @@ Owner: `KB/docs/context/automation.md:150-153` → **Plan archival**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `archivePlan` | 845 | `sed -n 833,865p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `archivePlan` | 857 | `sed -n 845,877p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -178,7 +187,7 @@ Owner: `KB/docs/context/automation.md:140-143` → **Public receipt**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `finishVerification` | 939 | `sed -n 927,959p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `finishVerification` | 951 | `sed -n 939,971p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -188,8 +197,8 @@ Owner: `KB/docs/context/automation.md:112-118` → **Task-close scope**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `createManifest` | 300 | `sed -n 288,320p scripts/task-close.mjs` |
-| `scripts/task-close.mjs` | `taskCloseIntake` | 209 | `sed -n 197,229p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `createManifest` | 301 | `sed -n 289,321p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `taskCloseIntake` | 210 | `sed -n 198,230p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
@@ -199,6 +208,6 @@ Owner: `KB/docs/context/automation.md:126-133` → **Task-close verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `verifyV2` | 1006 | `sed -n 994,1026p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `verifyV2` | 1018 | `sed -n 1006,1038p scripts/task-close.mjs` |
 
 Adjacent concepts: `testing.selection.local`

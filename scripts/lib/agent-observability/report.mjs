@@ -59,6 +59,7 @@ function stageLabel(value) {
     implementation: 'Implementation',
     verification: 'Verification',
     documentation: 'Documentation',
+    generated_output: 'Generated tooling output',
     closeout: 'Wrap-up',
     flagging: 'Workflow review',
     analytics: 'Analysis',
@@ -91,7 +92,7 @@ export function displayStageGroups(stageTotals = {}) {
   return {
     context: sum('intake', 'retrieval_context'),
     build: sum('planning', 'implementation'),
-    verify: sum('verification', 'documentation'),
+    verify: sum('verification', 'documentation', 'generated_output'),
     other: sum('closeout', 'flagging', 'analytics', 'other'),
   };
 }

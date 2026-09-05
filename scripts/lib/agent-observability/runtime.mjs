@@ -25,7 +25,7 @@ function topLevelToml(text) {
 
 export function modelFamily(model) {
   const value = String(model || '').toLowerCase();
-  for (const family of ['terra', 'sol', 'luna', 'opus', 'fable'])
+  for (const family of ['astra', 'terra', 'sol', 'luna', 'opus', 'fable'])
     if (new RegExp(`(?:^|[-_/])${family}(?:$|[-_/])`).test(value)) return family;
   return 'unknown';
 }

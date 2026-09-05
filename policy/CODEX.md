@@ -63,6 +63,8 @@ Preserve unrelated concurrent changes.
 
 Use deterministic repository tooling for generated outputs, QA selection, validation, maps, receipts, and close-out. Do not manually reproduce mechanics already owned by tooling.
 
+If deterministic close-out returns an eligible workflow-inefficiency candidate, resolve `automation.observability.flags` and assess it in the already-required final provider turn. Otherwise load no flagging context.
+
 Use existing permanent QA by default. Add or update permanent coverage only when it protects a durable product contract or credible regression within the authorized task. Do not encode tunables, current defaults, copy, pixels, calibration, or private implementation details as permanent contracts.
 
 Existing `SAFETY EXCEPTION` comments must not be removed, weakened, or rewritten unless the authorized task explicitly retires the underlying safety condition. Keep the exact explanation local to the relevant source.

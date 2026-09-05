@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export const OUTCOMES = new Set(['completed', 'blocked', 'cancelled', 'failed', 'replaced']);
 export const VERIFICATION_STATES = new Set(['passed', 'maintenance-blocked', 'failed', 'not_run', 'not_applicable', 'unknown']);
 export const COMPLEXITIES = new Set(['C1', 'C2', 'C3', 'C4', 'C5', 'unknown']);
@@ -9,6 +9,7 @@ export const STAGES = [
   'implementation',
   'verification',
   'documentation',
+  'generated_output',
   'closeout',
   'flagging',
   'analytics',
@@ -16,7 +17,7 @@ export const STAGES = [
 ];
 export const EFFORTS = new Set(['low', 'medium', 'high', 'xhigh', 'max', 'ultra', 'unknown']);
 export const JUDGMENT_MAX_BYTES = 512;
-export const EVIDENCE_KINDS = new Set(['tool', 'compaction', 'lifecycle', 'verification']);
+export const EVIDENCE_KINDS = new Set(['tool', 'lifecycle', 'verification']);
 export const EVIDENCE_OUTCOMES = new Set(['passed', 'failed', 'observed', 'unknown']);
 
 const ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/;
@@ -171,13 +172,13 @@ export function sanitizeMeta(input, { taskId, now = new Date().toISOString() } =
 
 export function sanitizeTelemetry(input = {}) {
   assertAllowedKeys(input, [
-    'tools', 'retrieval', 'skills', 'worker_count', 'files', 'iterations',
-    'checks', 'documentation', 'qa', 'task_close', 'outcomes',
+    'tools', 'retrieval', 'worker_count', 'files', 'implementation',
+    'verification', 'documentation', 'qa', 'task_close', 'outcomes',
   ], 'telemetry');
   const retrieval = input.retrieval ?? {};
-  assertAllowedKeys(retrieval, ['attempts', 'expansions', 'fallbacks', 'first_try'], 'telemetry.retrieval');
+  assertAllowedKeys(retrieval, ['concept_operations', 'same_concept_retries', 'defects', 'fallbacks', 'first_try'], 'telemetry.retrieval');
   const files = input.files ?? {};
-  assertAllowedKeys(files, ['inspected', 'modified', 'domains'], 'telemetry.files');
+  assertAllowedKeys(files, ['modified', 'domains'], 'telemetry.files');
   const domains = files.domains ?? {};
   assertObject(domains, 'telemetry.files.domains');
   const domainCounts = {};
@@ -192,22 +193,21 @@ export function sanitizeTelemetry(input = {}) {
     'close_out', 'maintenance_blockers',
   ], 'telemetry.outcomes');
   return {
-    tools: cleanCountGroup(input.tools, 'telemetry.tools', ['calls', 'failures', 'retries']),
+    tools: cleanCountGroup(input.tools, 'telemetry.tools', ['calls', 'failures', 'recoveries']),
     retrieval: {
-      attempts: nonNegativeInteger(retrieval.attempts, 'telemetry.retrieval.attempts', 0),
-      expansions: nonNegativeInteger(retrieval.expansions, 'telemetry.retrieval.expansions', 0),
+      concept_operations: nonNegativeInteger(retrieval.concept_operations, 'telemetry.retrieval.concept_operations', 0),
+      same_concept_retries: nonNegativeInteger(retrieval.same_concept_retries, 'telemetry.retrieval.same_concept_retries', 0),
+      defects: nonNegativeInteger(retrieval.defects, 'telemetry.retrieval.defects', 0),
       fallbacks: nonNegativeInteger(retrieval.fallbacks, 'telemetry.retrieval.fallbacks', 0),
       first_try: cleanBoolean(retrieval.first_try, 'telemetry.retrieval.first_try', false),
     },
-    skills: cleanStringList(input.skills, 'telemetry.skills', { maxItems: 16, maxLength: 64 }),
     worker_count: nonNegativeInteger(input.worker_count, 'telemetry.worker_count', 0),
     files: {
-      inspected: nonNegativeInteger(files.inspected, 'telemetry.files.inspected', 0),
       modified: nonNegativeInteger(files.modified, 'telemetry.files.modified', 0),
       domains: Object.fromEntries(Object.entries(domainCounts).sort(([a], [b]) => a.localeCompare(b))),
     },
-    iterations: cleanCountGroup(input.iterations, 'telemetry.iterations', ['implementation', 'rework']),
-    checks: cleanCountGroup(input.checks, 'telemetry.checks', ['run', 'failures', 'retests']),
+    implementation: cleanCountGroup(input.implementation, 'telemetry.implementation', ['rework_cycles']),
+    verification: cleanCountGroup(input.verification, 'telemetry.verification', ['runs', 'failures', 'unresolved_retests']),
     documentation: cleanCountGroup(input.documentation, 'telemetry.documentation', ['files', 'updates']),
     qa: {
       executed: cleanTelemetryOutcome(qa.executed, 'telemetry.qa.executed'),
@@ -247,7 +247,7 @@ export function sanitizeEvidence(input, now = new Date().toISOString()) {
   assertAllowedKeys(input, [
     'evidence_event_id', 'task_id', 'stage', 'kind', 'name', 'outcome',
     'model_family', 'model', 'effort', 'effort_source',
-    'provider_turn_required', 'occurred_at',
+    'provider_turn_required', 'retrieval_key', 'tool_key', 'occurred_at',
   ], 'evidence event');
   if (!STAGES.includes(input.stage)) throw new Error('evidence stage is invalid');
   if (!EVIDENCE_KINDS.has(input.kind)) throw new Error('evidence kind is invalid');
@@ -267,6 +267,8 @@ export function sanitizeEvidence(input, now = new Date().toISOString()) {
     effort,
     effort_source: cleanSlug(input.effort_source || 'unavailable', 'effort_source'),
     provider_turn_required: cleanBoolean(input.provider_turn_required, 'provider_turn_required', false),
+    retrieval_key: input.retrieval_key ? cleanId(input.retrieval_key, 'retrieval_key') : null,
+    tool_key: input.tool_key ? cleanId(input.tool_key, 'tool_key') : null,
     occurred_at: cleanTimestamp(input.occurred_at, 'occurred_at', now),
   };
 }

@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "capabilities": {
     "provider": "fixture",
     "adapter": "generic-settled-v1",
@@ -40,8 +40,6 @@
         "output_tokens": 200,
         "cache_read_tokens": 600
       },
-      "observability_tokens": 0,
-      "observability_kind": "exact",
       "settled": true,
       "terminal": false,
       "occurred_at": "2026-08-26T00:01:00.000Z"
@@ -64,8 +62,6 @@
         "output_tokens": 150,
         "reasoning_tokens": 100
       },
-      "observability_tokens": 0,
-      "observability_kind": "exact",
       "settled": true,
       "terminal": false,
       "occurred_at": "2026-08-26T00:02:00.000Z"
@@ -90,8 +86,6 @@
           "output_tokens"
         ]
       },
-      "observability_tokens": 0,
-      "observability_kind": "exact",
       "settled": true,
       "terminal": false,
       "occurred_at": "2026-08-26T00:03:00.000Z"
@@ -110,8 +104,6 @@
       "usage": {
         "total_tokens": 200
       },
-      "observability_tokens": 0,
-      "observability_kind": "exact",
       "settled": true,
       "terminal": false,
       "occurred_at": "2026-08-26T00:04:00.000Z"
@@ -130,8 +122,6 @@
       "usage": {
         "total_tokens": 80
       },
-      "observability_tokens": 80,
-      "observability_kind": "exact",
       "settled": true,
       "terminal": false,
       "occurred_at": "2026-08-26T00:05:00.000Z"
@@ -150,8 +140,6 @@
       "usage": {
         "total_tokens": 50
       },
-      "observability_tokens": 50,
-      "observability_kind": "exact",
       "settled": true,
       "terminal": false,
       "occurred_at": "2026-08-26T00:05:10.000Z"
@@ -170,8 +158,6 @@
       "usage": {
         "total_tokens": 70
       },
-      "observability_tokens": 70,
-      "observability_kind": "exact",
       "settled": true,
       "terminal": false,
       "occurred_at": "2026-08-26T00:05:20.000Z"
@@ -190,8 +176,6 @@
       "usage": {
         "total_tokens": 300
       },
-      "observability_tokens": 40,
-      "observability_kind": "exact",
       "settled": true,
       "terminal": true,
       "occurred_at": "2026-08-26T00:06:00.000Z"
@@ -199,7 +183,6 @@
   ],
   "expected": {
     "final_inclusive_provider_tokens": 2250,
-    "observability_provider_tokens": 240,
     "stage_totals": {
       "intake": 0,
       "retrieval_context": 1000,
@@ -207,6 +190,7 @@
       "implementation": 400,
       "verification": 150,
       "documentation": 0,
+      "generated_output": 0,
       "closeout": 550,
       "flagging": 80,
       "analytics": 70,

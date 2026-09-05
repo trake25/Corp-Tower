@@ -6,7 +6,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { executeBestEffort, executeCommand } from '../agent-observability.mjs';
 import { handleHook } from '../codex-observability-hook.mjs';
-import { buildAnalytics, boundedAnalyticsAggregate, compareWindows, overheadCircuitBreaker } from '../lib/agent-observability/analytics.mjs';
+import { buildAnalytics, boundedAnalyticsAggregate, compareWindows, optionalFlaggingOverhead } from '../lib/agent-observability/analytics.mjs';
 import { createFormalFlag, detectCandidates, flagEligibility } from '../lib/agent-observability/flagging.mjs';
 import { renderPublicReport, exportPublicReport } from '../lib/agent-observability/public-export.mjs';
 import { buildWeeklyReportParts, displayStageGroups, renderWeeklyReport } from '../lib/agent-observability/report.mjs';
@@ -45,13 +45,12 @@ function closeInput(taskId = FIXTURE.task.task_id) {
     outcome: 'completed',
     verification: 'passed',
     telemetry: {
-      tools: { calls: 6, failures: 0, retries: 1 },
-      retrieval: { attempts: 1, expansions: 0, fallbacks: 0, first_try: true },
-      skills: ['infra-engineer', 'qa-engineer'],
+      tools: { calls: 6, failures: 0, recoveries: 1 },
+      retrieval: { concept_operations: 1, same_concept_retries: 0, defects: 0, fallbacks: 0, first_try: true },
       worker_count: 1,
-      files: { inspected: 8, modified: 4, domains: { tooling: 4 } },
-      iterations: { implementation: 1, rework: 0 },
-      checks: { run: 3, failures: 0, retests: 0 },
+      files: { modified: 4, domains: { tooling: 4 } },
+      implementation: { rework_cycles: 0 },
+      verification: { runs: 3, failures: 0, unresolved_retests: 0 },
       documentation: { files: 1, updates: 1 },
       task_close: { status: 'passed', receipt_hash: 'abc123' },
     },
@@ -67,7 +66,7 @@ function bundle(index, { total = 10_000, taskType = 'bug_fix', complexity = 'C3'
   const taskId = `public-task-${index}`;
   return {
     meta: {
-      schema_version: 2,
+      schema_version: 3,
       task_id: taskId,
       root_task_id: taskId,
       parent_task_id: null,
@@ -90,17 +89,15 @@ function bundle(index, { total = 10_000, taskType = 'bug_fix', complexity = 'C3'
     }],
     flags: [],
     final: {
-      schema_version: 2,
+      schema_version: 3,
       task_id: taskId,
       status: 'exact',
       outcome: 'completed',
       verification,
       finalized_at: '2026-08-26T00:10:00.000Z',
-      telemetry: sanitizeTelemetry({ retrieval: { attempts: 1, first_try: true } }),
+      telemetry: sanitizeTelemetry({ retrieval: { concept_operations: 1, first_try: true } }),
       final_inclusive_provider_tokens: total,
       known_provider_tokens: total,
-      observability_provider_tokens: 100,
-      observability_kind: 'exact',
       stage_totals: {
         intake: 0,
         retrieval_context: 2000,
@@ -108,6 +105,7 @@ function bundle(index, { total = 10_000, taskType = 'bug_fix', complexity = 'C3'
         implementation: 5000,
         verification: 1000,
         documentation: 500,
+        generated_output: 0,
         closeout: 500,
         flagging: 0,
         analytics: 0,
@@ -148,7 +146,6 @@ test('inclusive usage counts unique events and does not add cache or reasoning s
   assert.equal(result.status, 'exact');
   assert.equal(result.event_count, 8);
   assert.equal(result.final_inclusive_provider_tokens, FIXTURE.expected.final_inclusive_provider_tokens);
-  assert.equal(result.observability_provider_tokens, FIXTURE.expected.observability_provider_tokens);
   assert.deepEqual(result.stage_totals, FIXTURE.expected.stage_totals);
   assert.equal(events[2].normalization_method, 'derived_disjoint');
   assert.equal(events[2].normalized_total_tokens, 150);
@@ -240,7 +237,7 @@ test('concurrent immutable event writers cannot silently overwrite each other', 
 
 test('best-effort host mode skips telemetry failures without retrying the user task', () => {
   assert.deepEqual(executeBestEffort('start', { prompt: 'prohibited' }), {
-    schema_version: 2,
+    schema_version: 3,
     status: 'skipped',
     reason: 'telemetry_failure',
     retry: false,
@@ -261,7 +258,6 @@ test('close then post-terminal finalize writes exact record and simple weekly re
 
     assert.equal(final.status, 'exact');
     assert.equal(final.final_inclusive_provider_tokens, 2250);
-    assert.equal(final.observability_provider_tokens, 240);
     assert.equal(final.reports.length, 1);
     const report = readFileSync(final.reports[0], 'utf8');
     assert.match(report, /^<!-- PRIVATE GENERATED/m);
@@ -366,8 +362,8 @@ test('Codex hooks retain bounded metadata and visibly finalize unavailable rollo
 
     assert.equal(settled.status, 'settled');
     assert.equal(bundle.final.status, 'partial');
-    assert.ok(bundle.final.reasons.includes('codex_rollout_usage_unavailable'));
-    assert.ok(bundle.flags.some(flag => flag.flag_id.startsWith('DQ-') && flag.cause_code === 'codex_rollout_usage_unavailable'));
+    assert.ok(bundle.final.reasons.includes('codex_rollout_not_found'));
+    assert.ok(bundle.flags.some(flag => flag.flag_id.startsWith('DQ-') && flag.cause_code === 'codex_rollout_not_found'));
     assert.doesNotMatch(retained, /secret|command|tool_input|tool_response|assistant/);
     assert.equal(bundle.evidence.some(item => item.kind === 'tool' && item.stage === 'implementation'), true);
     assert.equal(readHookHealth(state, 'session-hook').status, 'healthy');
@@ -499,10 +495,10 @@ test('Stop hook preserves exact host usage when a settled terminal event already
 
 test('candidate detector is deterministic and bounded to three observations', () => {
   const candidates = detectCandidates(sanitizeTelemetry({
-    tools: { failures: 1, retries: 2 },
-    retrieval: { attempts: 3, expansions: 2, fallbacks: 1 },
-    iterations: { rework: 3 },
-    checks: { retests: 3 },
+    tools: { failures: 1, recoveries: 1 },
+    retrieval: { concept_operations: 3, same_concept_retries: 2, defects: 1, fallbacks: 1 },
+    implementation: { rework_cycles: 3 },
+    verification: { unresolved_retests: 3 },
   }));
 
   assert.equal(candidates.length, 3);
@@ -568,7 +564,7 @@ test('candidate retries are idempotent across close-out reruns', () => {
     executeCommand('start', FIXTURE.task, { stateDir: state });
     const input = {
       task_id: FIXTURE.task.task_id,
-      telemetry: sanitizeTelemetry({ tools: { failures: 1 } }),
+      telemetry: sanitizeTelemetry({ retrieval: { defects: 1 } }),
       evidence_event_ids: [],
     };
 
@@ -601,6 +597,8 @@ test('formal flags require allowlisted high effort, an existing turn, evidence, 
 
   assert.equal(flagEligibility({ model_family: 'Sol', effort: 'high', provider_turn_required: true, candidate: true }).eligible, true);
   assert.equal(flagEligibility({ model_family: 'Sol', effort: 'medium', provider_turn_required: true, candidate: true }).eligible, false);
+  assert.equal(flagEligibility({ model_family: 'Astra', effort: 'high', provider_turn_required: true, candidate: true }).eligible, true);
+  assert.equal(flagEligibility({ model_family: 'Astra', effort: 'medium', provider_turn_required: true, candidate: true }).eligible, false);
   assert.equal(createFormalFlag(base).flag_id.startsWith('WF-'), true);
   assert.throws(() => createFormalFlag({ ...base, provider_turn_required: false }), /not eligible/);
   assert.throws(() => createFormalFlag({ ...base, provider_visible_bytes: 1537 }), /exceeds/);
@@ -633,10 +631,9 @@ test('formal flag evidence must belong to the current task', () => {
   }
 });
 
-test('display groups reconcile exactly and observability remains a subset', () => {
+test('display groups reconcile every stage total', () => {
   const groups = displayStageGroups(FIXTURE.expected.stage_totals);
   assert.equal(Object.values(groups).reduce((total, value) => total + value, 0), 2250);
-  assert.equal(FIXTURE.expected.observability_provider_tokens < 2250, true);
 });
 
 test('weekly private report stays flat and human readable', () => {
@@ -738,25 +735,15 @@ test('public improvements reject sensitive text', () => {
   );
 });
 
-test('provider overhead circuit breaker disables optional flagging without changing inclusive totals', () => {
-  const singleBreach = bundle(1);
-  singleBreach.final.observability_provider_tokens = 1100;
-  assert.equal(overheadCircuitBreaker([singleBreach]).enabled, false);
-  assert.equal(singleBreach.final.final_inclusive_provider_tokens, 10_000);
-
-  const rolling = Array.from({ length: 20 }, (_, index) => {
-    const value = bundle(index + 1);
-    value.final.observability_provider_tokens = 600;
-    value.final.finalized_at = new Date(Date.UTC(2026, 7, 1, 0, index)).toISOString();
-    return value;
-  });
-  assert.deepEqual(
-    { enabled: overheadCircuitBreaker(rolling).enabled, reason: overheadCircuitBreaker(rolling).reason },
-    { enabled: false, reason: 'rolling_p95_over_500' },
-  );
-  const explicitAnalytics = rolling.map((value, index) => ({
-    ...value,
-    meta: { ...value.meta, task_id: `analytics-${index}`, task_type: 'analytics' },
-  }));
-  assert.equal(overheadCircuitBreaker(explicitAnalytics).enabled, true);
+test('optional flagging overhead records actual bounded material without synthetic tokens', () => {
+  const value = bundle(1);
+  value.flags = [
+    { flag_id: 'C-candidate', stage: 'retrieval_context', issue_code: 'route_miss', cause_code: 'missing_route', severity: 'high' },
+    { flag_id: 'WF-formal', provider_visible_bytes: 1200 },
+  ];
+  const overhead = optionalFlaggingOverhead([value]);
+  assert.ok(overhead.candidate_handoff_bytes > 0);
+  assert.equal(overhead.formal_material_bytes, 1200);
+  assert.equal(overhead.optional_reasoning_count, 1);
+  assert.equal(overhead.attributable_token_delta, null);
 });

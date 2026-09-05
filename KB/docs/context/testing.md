@@ -113,14 +113,19 @@ source: scripts/tests/concept-kb.test.mjs#the repository concept registry is com
 source: scripts/benchmark-rag.mjs#runConceptBenchmark
 source: scripts/lib/kb-calibration.mjs#measureKbCalibration
 source: scripts/export-kb-calibration-report.mjs#exportKbCalibrationReport
+source: scripts/tests/codex-observability-hook.test.mjs#production hook smoke keeps observability fail-open and private
+source: scripts/qa-gate.mjs#selectToolingQa
+source: scripts/fixtures/agent-observability/provider-events.json#events
 adjacent: automation.retrieval.protocol
 adjacent: automation.task-close.lifecycle
 -->
 ## Automation protocol coverage
 
 Automation tests protect retrieval states and budgets, task-close ownership and
-closure, publication scope, map generation, observability arithmetic, and safety
-gates. Focused concept tests cover parser/generator/validator integrity and
+closure, publication scope, map generation, bounded observability, and safety
+gates. The hook smoke executes configured lifecycle payloads against local
+private state, including degraded and partial settlement, without a live provider
+or retained private payload. Focused concept tests cover parser/generator/validator integrity and
 KB Tree map isolation. The explicitly requested concept benchmark gates exact routes and
 closed failures, then locally measures representative concept and journey
 footprints, merges overlapping source windows, and writes only sanitized

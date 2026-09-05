@@ -12,7 +12,7 @@ import {
   nonNegativeInteger,
 } from './schema.mjs';
 
-const ALLOWED_FAMILIES = new Set(['terra', 'sol', 'opus', 'fable']);
+const ALLOWED_FAMILIES = new Set(['astra', 'terra', 'sol', 'opus', 'fable']);
 const EFFORT_RANK = { unknown: 0, low: 1, medium: 2, high: 3, xhigh: 4, max: 5, ultra: 6 };
 const SEVERITIES = new Set(['low', 'medium', 'high', 'critical']);
 const CONFIDENCES = new Set(['low', 'medium', 'high']);
@@ -68,9 +68,9 @@ export function detectCandidates(telemetry) {
   const candidates = [];
   const handledSingleMaintenance = telemetry.outcomes.close_out === 'maintenance_blocked'
     && telemetry.outcomes.maintenance_blockers === 1
-    && telemetry.checks.failures === 1
+    && telemetry.verification.failures === 1
     && telemetry.tools.failures <= 1
-    && telemetry.tools.retries === 0;
+    && telemetry.tools.recoveries === 0;
   const add = (stage, issue, cause, severity, observation, improvement) => {
     if (candidates.length < 3) candidates.push({
       stage,
@@ -81,15 +81,15 @@ export function detectCandidates(telemetry) {
       improvement,
     });
   };
-  if (telemetry.retrieval.fallbacks > 0)
+  if (telemetry.retrieval.defects > 0 || telemetry.retrieval.fallbacks > 0)
     add('retrieval_context', 'broad_fallback', 'route_miss', 'high', 'Current retrieval required a broad fallback.', 'repair the route and add a retrieval fixture');
-  if (telemetry.retrieval.attempts > 1 || telemetry.retrieval.expansions > 0)
-    add('retrieval_context', 'repeated_retrieval', 'insufficient_first_result', 'medium', 'Current retrieval expanded beyond the first result.', 'tighten the authoritative route or candidate ranking');
-  if ((telemetry.tools.failures > 0 || telemetry.tools.retries > 0) && !handledSingleMaintenance)
+  if (telemetry.retrieval.same_concept_retries > 0)
+    add('retrieval_context', 'repeated_retrieval', 'same_concept_recovery', 'medium', 'Current retrieval repeated a failed exact concept request.', 'repair the route or exact transport for that information need');
+  if (telemetry.tools.failures > 0 && telemetry.tools.recoveries > 0 && !handledSingleMaintenance)
     add('other', 'tool_retry', 'tool_failure', 'medium', 'A local tool failed or required retry.', 'repair the tool contract or its compact diagnostic');
-  if (telemetry.iterations.rework > 1)
+  if (telemetry.implementation.rework_cycles > 1)
     add('implementation', 'implementation_rework', 'insufficient_context', 'medium', 'Implementation required repeated rework.', 'improve the pre-edit evidence or acceptance check');
-  if (telemetry.checks.retests > 1)
+  if (telemetry.verification.unresolved_retests > 1)
     add('verification', 'repeated_verification', 'unclear_failure', 'low', 'Verification required repeated retesting.', 'make the first failure diagnostic more actionable');
   return candidates;
 }

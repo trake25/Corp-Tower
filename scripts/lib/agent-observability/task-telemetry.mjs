@@ -1,18 +1,59 @@
 import { isMaintenanceClassification } from '../maintenance-handoff.mjs';
 
 function retrievalTelemetry(evidence, fallbacks) {
-  const events = evidence.filter(item => item.kind === 'tool' && item.stage === 'retrieval_context' && item.name.startsWith('context_'));
-  const queries = events.filter(item => /^context_(search|filter)_/.test(item.name));
-  const filters = queries.filter(item => item.name.startsWith('context_filter_')).length;
-  const needs = queries.filter(item => /_needs_(anchor|filter)$/.test(item.name)).length;
-  const attempts = queries.length || (events.length ? 1 : 0);
-  const firstSearch = queries[0]?.name || '';
+  const events = evidence.filter(item => item.kind === 'tool'
+    && item.stage === 'retrieval_context'
+    && item.name.startsWith('concept_')
+    && item.retrieval_key)
+    .sort((a, b) => a.occurred_at.localeCompare(b.occurred_at));
+  const requests = new Map();
+  for (const event of events) requests.set(event.retrieval_key, [...(requests.get(event.retrieval_key) || []), event]);
+  const sameConceptRetries = [...requests.values()].reduce((count, attempts) => count + attempts
+    .slice(1)
+    .filter((item, index) => attempts.slice(0, index + 1).some(previous => previous.outcome === 'failed')).length, 0);
+  const defects = events.filter(item => item.outcome === 'failed').length;
+  const first = events[0];
   return {
-    attempts,
-    expansions: Math.max(filters, needs),
+    concept_operations: events.length,
+    same_concept_retries: sameConceptRetries,
+    defects,
     fallbacks,
-    first_try: Boolean(attempts && firstSearch === 'context_search_matched' && filters === 0 && fallbacks === 0),
+    first_try: Boolean(first && first.outcome === 'passed' && defects === 0 && fallbacks === 0 && sameConceptRetries === 0),
   };
+}
+
+function toolRecoveryCount(events) {
+  const attempts = new Map();
+  for (const event of events) {
+    if (!event.tool_key) continue;
+    attempts.set(event.tool_key, [...(attempts.get(event.tool_key) || []), event]);
+  }
+  return [...attempts.values()].reduce((count, attempts) => count + attempts
+    .slice(1)
+    .filter((item, index) => item.outcome === 'passed' && attempts.slice(0, index + 1).some(previous => previous.outcome === 'failed')).length, 0);
+}
+
+function implementationTelemetry(evidence) {
+  let repairNeeded = false;
+  let reworkCycles = 0;
+  for (const event of evidence.slice().sort((a, b) => a.occurred_at.localeCompare(b.occurred_at))) {
+    if (event.stage === 'verification' && event.outcome === 'failed') repairNeeded = true;
+    if (repairNeeded && event.stage === 'implementation' && event.outcome === 'passed') {
+      reworkCycles++;
+      repairNeeded = false;
+    }
+  }
+  return { rework_cycles: reworkCycles };
+}
+
+function verificationTelemetry(steps, evidence) {
+  const observed = evidence.filter(item => item.stage === 'verification' && item.kind === 'tool');
+  const runs = steps.length || observed.length;
+  const failures = steps.length
+    ? steps.filter(step => step.status !== 0).length
+    : observed.filter(item => item.outcome === 'failed').length;
+  const unresolvedRetests = Math.max(0, observed.filter(item => item.outcome === 'failed').length - 1);
+  return { runs, failures, unresolved_retests: unresolvedRetests };
 }
 
 const telemetryCode = value => String(value || 'not_applicable').replaceAll('-', '_');
@@ -42,17 +83,12 @@ export function buildTaskTelemetry(manifest, receipt, evidence, { domainFor, rec
     manifest.changed_paths.filter(path => domainFor(path) === domain).length,
   ]));
   return {
-    tools: { calls: toolEvents.length, failures, retries: 0 },
+    tools: { calls: toolEvents.length, failures, recoveries: toolRecoveryCount(toolEvents) },
     retrieval: retrievalTelemetry(evidence, manifest.retrieval.fallbacks.length),
-    skills: [],
-    worker_count: 1,
-    files: { inspected: 0, modified: manifest.changed_paths.length, domains },
-    iterations: { implementation: manifest.changed_paths.length ? 1 : 0, rework: 0 },
-    checks: {
-      run: steps.length,
-      failures: steps.filter(step => step.status !== 0).length,
-      retests: 0,
-    },
+    worker_count: 0,
+    files: { modified: manifest.changed_paths.length, domains },
+    implementation: implementationTelemetry(evidence),
+    verification: verificationTelemetry(steps, evidence),
     documentation: { files: manifest.documented_paths.length, updates: manifest.documented_paths.length },
     qa: {
       executed: telemetryCode(receipt.qa?.executed || stepOutcome(steps, ['QA'])),

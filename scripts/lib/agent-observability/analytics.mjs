@@ -30,9 +30,8 @@ function summarize(items, minSize) {
   const inclusive = Object.values(stageTotals).reduce((total, value) => total + value, 0);
   const stageShares = Object.fromEntries(STAGES.map(stage => [stage, inclusive ? Number((stageTotals[stage] / inclusive).toFixed(4)) : 0]));
   const hotspotStage = [...STAGES].sort((a, b) => stageTotals[b] - stageTotals[a] || a.localeCompare(b))[0];
-  const iterations = items.map(bundle => bundle.final.telemetry.iterations.implementation + bundle.final.telemetry.iterations.rework);
-  const rework = items.map(bundle => bundle.final.telemetry.iterations.rework);
-  const retries = items.filter(bundle => bundle.final.telemetry.tools.retries > 0).length;
+  const rework = items.map(bundle => bundle.final.telemetry.implementation.rework_cycles);
+  const retries = items.filter(bundle => bundle.final.telemetry.tools.recoveries > 0).length;
   const flagTasks = new Map();
   for (const bundle of items)
     for (const flag of bundle.flags.filter(item => item.flag_id?.startsWith('WF-')))
@@ -46,7 +45,6 @@ function summarize(items, minSize) {
     verification_rate: items.length ? verified / items.length : 0,
     retrieval_first_try_rate: items.length ? firstTry / items.length : 0,
     fallback_rate: items.length ? fallback / items.length : 0,
-    median_iterations: percentile(iterations, 0.5),
     median_rework: percentile(rework, 0.5),
     tool_retry_rate: items.length ? retries / items.length : 0,
     recurring_flag_count: [...flagTasks.values()].filter(tasks => tasks.size >= 2).length,
@@ -78,36 +76,30 @@ export function buildAnalytics(bundles, { week = null, minSize = 5 } = {}) {
     return { task_type, complexity, domain, ...summarize(items, minSize) };
   }).sort((a, b) => a.task_type.localeCompare(b.task_type) || a.complexity.localeCompare(b.complexity) || a.domain.localeCompare(b.domain));
   return {
-    schema_version: 2,
+    schema_version: 3,
     week,
     exact_tasks: finalized.length,
     minimum_sample: minSize,
-    observability_budget: overheadCircuitBreaker(bundles),
+    optional_flagging_overhead: optionalFlaggingOverhead(bundles),
     cohorts,
   };
 }
 
-export function overheadCircuitBreaker(bundles, { window = 20 } = {}) {
-  const finalized = bundles
-    .filter(bundle => bundle.final?.finalized_at
-      && bundle.final.observability_provider_tokens !== null
-      && bundle.meta.task_type !== 'analytics')
-    .sort((a, b) => b.final.finalized_at.localeCompare(a.final.finalized_at))
-    .slice(0, window);
-  const values = finalized.map(bundle => bundle.final.observability_provider_tokens);
-  const median = percentile(values, 0.5);
-  const p95 = percentile(values, 0.95);
-  const singleTaskBreach = values.some(value => value > 1000);
-  const percentileBreach = values.length >= window && p95 > 500;
+export function optionalFlaggingOverhead(bundles) {
+  const candidates = bundles.flatMap(bundle => bundle.flags.filter(flag => flag.flag_id?.startsWith('C-')));
+  const formal = bundles.flatMap(bundle => bundle.flags.filter(flag => flag.flag_id?.startsWith('WF-')));
+  const candidateHandoffBytes = candidates.reduce((total, flag) => total + Buffer.byteLength(JSON.stringify({
+    candidate_id: flag.flag_id,
+    stage: flag.stage,
+    issue_code: flag.issue_code,
+    cause_code: flag.cause_code,
+    severity: flag.severity,
+  })), 0);
   return {
-    enabled: !singleTaskBreach && !percentileBreach,
-    sample_size: values.length,
-    window,
-    median_tokens: median,
-    p95_tokens: p95,
-    median_target_met: median === null || median <= 250,
-    p95_target_met: values.length < window || p95 <= 500,
-    reason: singleTaskBreach ? 'single_task_over_1000' : percentileBreach ? 'rolling_p95_over_500' : null,
+    candidate_handoff_bytes: candidateHandoffBytes,
+    formal_material_bytes: formal.reduce((total, flag) => total + (flag.provider_visible_bytes || 0), 0),
+    optional_reasoning_count: formal.length,
+    attributable_token_delta: null,
   };
 }
 

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { executeCommand } from '../agent-observability.mjs';
 import { selectQa } from '../qa-gate.mjs';
 import { renderPrivateReports } from '../lib/agent-observability/report.mjs';
 import { readTaskBundle } from '../lib/agent-observability/state.mjs';
@@ -388,6 +389,41 @@ test('closeout without a Stop binding remains pending and stays out of weekly re
     assert.equal(bundle.final.status, 'pending');
     assert.equal(bundle.final.finalized_at, null);
     assert.deepEqual(renderPrivateReports(state), []);
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
+test('closeout exposes only canonical Astra formal-flag eligibility fields', () => {
+  const state = mkdtempSync(join(tmpdir(), 'corp-task-observability-astra-'));
+  const env = { CORP_TOWER_OBSERVABILITY_DIR: state, CODEX_SESSION_ID: 'astra-close-session', CODEX_THREAD_ID: '' };
+  try {
+    const manifest = createManifest({ task: 'Astra candidate task', ownedPaths: [SOURCE], runId: 'astra-close-task' });
+    manifest.observability = startObservability(manifest, env);
+    executeCommand('evidence', {
+      evidence_event_id: 'astra-close-evidence',
+      task_id: manifest.run_id,
+      stage: 'retrieval_context',
+      kind: 'tool',
+      name: 'concept_concept_route_concept_unmapped',
+      outcome: 'failed',
+      model_family: 'astra',
+      model: 'gpt-6-astra',
+      effort: 'high',
+      effort_source: 'hook',
+      provider_turn_required: true,
+      retrieval_key: 'concept-astra-close',
+    }, { stateDir: state });
+    const result = closeObservabilityUnsafe(manifest, { status: 'passed', steps: [], publish_paths: [] }, env);
+
+    assert.equal(result.status, 'pending_stop');
+    assert.deepEqual(Object.keys(result.formal_flag_gate).sort(), [
+      'candidate_id', 'cause_code', 'eligible', 'issue_code', 'same_required_turn', 'severity', 'stage',
+    ]);
+    assert.equal(result.formal_flag_gate.eligible, true);
+    assert.equal(result.formal_flag_gate.same_required_turn, true);
+    assert.match(result.formal_flag_gate.candidate_id, /^C-/);
+    assert.doesNotMatch(JSON.stringify(result.formal_flag_gate), /evidence|model_family|telemetry/);
   } finally {
     rmSync(state, { recursive: true, force: true });
   }

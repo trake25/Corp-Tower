@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { buildAnalytics, boundedAnalyticsAggregate, overheadCircuitBreaker } from './lib/agent-observability/analytics.mjs';
+import { buildAnalytics, boundedAnalyticsAggregate } from './lib/agent-observability/analytics.mjs';
 import {
   createDataQualityFlag,
   createCandidateRecords,
@@ -89,8 +89,6 @@ function pendingFinal(close, usage) {
     event_count: usage.event_count,
     final_inclusive_provider_tokens: null,
     known_provider_tokens: usage.known_provider_tokens,
-    observability_provider_tokens: usage.observability_provider_tokens,
-    observability_kind: usage.observability_kind,
     stage_totals: usage.stage_totals,
   };
 }
@@ -147,8 +145,6 @@ export function executeCommand(command, input, {
     return { status: written ? 'written' : 'duplicate', task_id: taskId, candidates: records.map(record => record.flag_id) };
   }
   if (command === 'flag') {
-    const circuit = overheadCircuitBreaker(listTaskBundles(state));
-    if (!circuit.enabled) throw new Error(`optional flagging circuit breaker is open: ${circuit.reason}`);
     const flag = createFormalFlag(input, now);
     const bundle = readTaskBundle(state, flag.task_id);
     if (bundle.final?.finalized_at) throw new Error('cannot add flags after finalization');

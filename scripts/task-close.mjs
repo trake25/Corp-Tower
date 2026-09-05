@@ -8,6 +8,7 @@ import { loadConceptRegistry } from './lib/concept-kb.mjs';
 import { selectQa } from './qa-gate.mjs';
 import { executeBestEffort } from './agent-observability.mjs';
 import { buildTaskTelemetry } from './lib/agent-observability/task-telemetry.mjs';
+import { flagEligibility } from './lib/agent-observability/flagging.mjs';
 import { codexSessionIds } from './lib/agent-observability/runtime.mjs';
 import { publicQaReceiptPath, writePublicQaReceipt } from './lib/qa-receipt.mjs';
 import { taskIdentityForManifest } from './lib/task-identity.mjs';
@@ -368,7 +369,12 @@ export function closeObservabilityUnsafe(manifest, receipt, env = process.env) {
   try {
     bundle = readTaskBundle(stateDir, taskId);
   } catch {
-    return { status: 'partial', task_id: taskId, reasons: ['telemetry_task_unavailable'], candidates: [] };
+    return {
+      status: 'partial',
+      task_id: taskId,
+      reasons: ['telemetry_task_unavailable'],
+      formal_flag_gate: { eligible: false, candidate_id: null, stage: null, issue_code: null, cause_code: null, severity: null, same_required_turn: false },
+    };
   }
   const evidenceIds = bundle.evidence.slice(-5).map(item => item.evidence_event_id);
   const telemetry = buildTaskTelemetry(manifest, receipt, bundle.evidence, {
@@ -381,37 +387,43 @@ export function closeObservabilityUnsafe(manifest, receipt, env = process.env) {
     verification: receipt.status,
     telemetry,
   }, { root: ROOT, stateDir });
-  const candidateResult = executeBestEffort('candidate', {
+  executeBestEffort('candidate', {
     task_id: taskId,
     telemetry,
     evidence_event_ids: evidenceIds,
   }, { root: ROOT, stateDir });
   const refreshed = readTaskBundle(stateDir, taskId);
-  const candidates = refreshed.flags.filter(item => item.flag_id?.startsWith('C-')).map(item => ({
+  const candidate = refreshed.flags.filter(item => item.flag_id?.startsWith('C-')).map(item => ({
     candidate_id: item.flag_id,
     stage: item.stage,
     issue_code: item.issue_code,
     cause_code: item.cause_code,
     severity: item.severity,
     evidence_event_ids: item.evidence_event_ids,
-  }));
+  })).at(-1) || null;
   let bindings = 0;
   for (const sessionId of codexSessionIds(env))
     if (requestActiveTaskFinalization(stateDir, sessionId, taskId)) bindings++;
   const runtime = [...refreshed.evidence].sort((a, b) => b.occurred_at.localeCompare(a.occurred_at))[0] || null;
-  const formalEligible = Boolean(candidates.length && evidenceIds.length && runtime?.provider_turn_required && ['terra', 'sol', 'opus', 'fable'].includes(runtime.model_family) && ['high', 'xhigh', 'max', 'ultra'].includes(runtime.effort));
+  const eligibility = flagEligibility({
+    model_family: runtime?.model_family,
+    effort: runtime?.effort,
+    provider_turn_required: Boolean(runtime?.provider_turn_required),
+    candidate: Boolean(candidate?.evidence_event_ids.length),
+  });
   return {
     status: bindings ? 'pending_stop' : 'partial',
     task_id: taskId,
     session_bindings: bindings,
-    candidates,
     formal_flag_gate: {
-      eligible: formalEligible,
-      model_family: runtime?.model_family || 'unknown',
-      effort: runtime?.effort || 'unknown',
-      same_required_turn: true,
+      eligible: eligibility.eligible,
+      candidate_id: candidate?.candidate_id || null,
+      stage: candidate?.stage || null,
+      issue_code: candidate?.issue_code || null,
+      cause_code: candidate?.cause_code || null,
+      severity: candidate?.severity || null,
+      same_required_turn: Boolean(runtime?.provider_turn_required),
     },
-    candidate_status: candidateResult.status,
     reasons: bindings ? [] : ['codex_stop_hook_unavailable'],
   };
 }
@@ -424,8 +436,8 @@ function closeObservability(manifest, receipt, env = process.env) {
       status: 'partial',
       task_id: manifest.observability?.task_id || manifest.run_id,
       session_bindings: 0,
-      candidates: [],
       reasons: ['telemetry_close_failed'],
+      formal_flag_gate: { eligible: false, candidate_id: null, stage: null, issue_code: null, cause_code: null, severity: null, same_required_turn: false },
     };
   }
 }

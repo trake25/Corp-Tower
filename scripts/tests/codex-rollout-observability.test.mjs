@@ -6,6 +6,7 @@ import test from 'node:test';
 import { executeCommand } from '../agent-observability.mjs';
 import { handleHook } from '../codex-observability-hook.mjs';
 import { codexRolloutUsage } from '../lib/agent-observability/codex-rollout.mjs';
+import { detectCandidates } from '../lib/agent-observability/flagging.mjs';
 import { renderWeeklyReport } from '../lib/agent-observability/report.mjs';
 import { bindActiveTask, readTaskBundle, requestActiveTaskFinalization } from '../lib/agent-observability/state.mjs';
 import { buildTaskTelemetry } from '../lib/agent-observability/task-telemetry.mjs';
@@ -122,7 +123,7 @@ test('Stop hook settles exact root and child rollout usage and repairs worker co
   }
 });
 
-test('hook-derived retrieval telemetry stores only canonical outcomes', () => {
+test('hook-derived retrieval telemetry recognizes exact concepts without false multi-concept candidates', () => {
   const state = temporaryDirectory('corp-observability-');
   const taskId = 'retrieval-hook-task';
   try {
@@ -132,16 +133,31 @@ test('hook-derived retrieval telemetry stores only canonical outcomes', () => {
       session_id: 'retrieval-session',
       hook_event_name: 'PostToolUse',
       tool_name: 'Bash',
-      tool_use_id: 'search-tool',
-      tool_input: { command: 'node scripts/context.mjs search tower_collapsed --anchor secret-value' },
-      tool_response: { output: 'status: needs-filter\nsecret output' },
+      tool_use_id: 'route-a',
+      tool_input: { command: 'node scripts/context.mjs concept-route automation.observability.usage' },
+      tool_response: { output: 'status: matched\nsecret output' },
     }, { stateDir: state, env: {} });
     handleHook({
       session_id: 'retrieval-session',
       hook_event_name: 'PostToolUse',
       tool_name: 'Bash',
-      tool_use_id: 'filter-tool',
-      tool_input: { command: 'node scripts/context.mjs filter tower_collapsed --kind symbol' },
+      tool_use_id: 'read-b',
+      tool_input: { command: 'node scripts/context.mjs concept-read automation.observability.flags' },
+      tool_response: { output: 'status: matched' },
+    }, { stateDir: state, env: {} });
+    handleHook({
+      session_id: 'retrieval-session', hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_use_id: 'missing-c',
+      tool_input: { command: 'node scripts/context.mjs concept-route missing.exact.concept' },
+      tool_response: { output: 'status: concept-unmapped' },
+    }, { stateDir: state, env: {} });
+    handleHook({
+      session_id: 'retrieval-session', hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_use_id: 'recover-c',
+      tool_input: { command: 'node scripts/context.mjs concept-read missing.exact.concept' },
+      tool_response: { output: 'status: matched' },
+    }, { stateDir: state, env: {} });
+    handleHook({
+      session_id: 'retrieval-session', hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_use_id: 'bundle-d',
+      tool_input: { command: 'node scripts/context.mjs concept-bundle automation.observability.binding' },
       tool_response: { output: 'status: matched' },
     }, { stateDir: state, env: {} });
     const evidence = readTaskBundle(state, taskId).evidence;
@@ -152,11 +168,21 @@ test('hook-derived retrieval telemetry stores only canonical outcomes', () => {
       retrieval: { fallbacks: [] },
     }, { status: 'passed', steps: [] }, evidence, { domainFor: () => 'other', receiptHash: 'receipt' });
 
-    assert.deepEqual(evidence.map(item => item.name).sort(), ['context_filter_matched', 'context_search_needs_filter']);
-    assert.equal(telemetry.retrieval.attempts, 2);
-    assert.equal(telemetry.retrieval.expansions, 1);
+    assert.deepEqual(evidence.map(item => item.name).sort(), [
+      'concept_concept_bundle_matched',
+      'concept_concept_read_matched',
+      'concept_concept_read_matched',
+      'concept_concept_route_concept_unmapped',
+      'concept_concept_route_matched',
+    ]);
+    assert.equal(telemetry.retrieval.concept_operations, 5);
+    assert.equal(telemetry.retrieval.same_concept_retries, 1);
+    assert.equal(telemetry.retrieval.defects, 1);
     assert.equal(telemetry.retrieval.first_try, false);
-    assert.doesNotMatch(JSON.stringify(evidence), /tower_collapsed|secret-value|secret output/);
+    const normal = buildTaskTelemetry({ domains: [], changed_paths: [], documented_paths: [], retrieval: { fallbacks: [] } }, { status: 'passed', steps: [] }, evidence.slice(0, 2), { domainFor: () => 'other', receiptHash: 'receipt' });
+    assert.equal(normal.retrieval.first_try, true);
+    assert.deepEqual(detectCandidates(normal), []);
+    assert.doesNotMatch(JSON.stringify(evidence), /missing\.exact|secret output|concept-read/);
   } finally {
     rmSync(state, { recursive: true, force: true });
   }
@@ -174,6 +200,8 @@ test('hooks retain human workflow phases without retaining command or patch cont
       { tool_use_id: 'inspect', tool_name: 'Bash', tool_input: { command: 'git status --short' } },
       { tool_use_id: 'docs', tool_name: 'apply_patch', tool_input: '*** Update File: docs/context/automation.md\nsecret docs' },
       { tool_use_id: 'test', tool_name: 'Bash', tool_input: { command: 'node --test scripts/tests/example.test.mjs' } },
+      { tool_use_id: 'map', tool_name: 'apply_patch', tool_input: '*** Update File: KB/docs/context/map/concept/automation.md\nsecret map' },
+      { tool_use_id: 'other', tool_name: 'Bash', tool_input: { command: 'node scripts/unknown-tool.mjs' } },
     ];
     events.forEach((event, index) =>
       handleHook({ session_id: 'phase-session', hook_event_name: 'PostToolUse', tool_response: { success: true }, ...event }, {
@@ -186,9 +214,11 @@ test('hooks retain human workflow phases without retaining command or patch cont
     assert.deepEqual(evidence.map(item => item.stage), [
       'retrieval_context',
       'implementation',
-      'implementation',
+      'retrieval_context',
       'documentation',
       'verification',
+      'generated_output',
+      'other',
     ]);
     assert.doesNotMatch(JSON.stringify(evidence), /secret-anchor|secret patch|secret docs|git status|node --test/);
   } finally {
@@ -208,10 +238,8 @@ function reportBundle(index, flags) {
       verification: 'passed',
       final_inclusive_provider_tokens: 100,
       known_provider_tokens: 100,
-      observability_provider_tokens: null,
-      observability_kind: 'unavailable',
       stage_totals: { other: 100 },
-      telemetry: { retrieval: { attempts: 1, first_try: false, fallbacks: 1 }, iterations: { implementation: 1, rework: 0 } },
+      telemetry: { retrieval: { concept_operations: 1, first_try: false, fallbacks: 1 }, implementation: { rework_cycles: 0 } },
     },
   };
 }

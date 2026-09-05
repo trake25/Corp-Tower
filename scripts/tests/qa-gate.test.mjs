@@ -61,6 +61,7 @@ test('automation sources select focused tests from the canonical protocol', () =
   assert.equal(tooling.applies, true);
   assert.deepEqual(tooling.tests, [
     'scripts/tests/agent-observability.test.mjs',
+    'scripts/tests/codex-observability-hook.test.mjs',
     'scripts/tests/context-query.test.mjs',
     'scripts/tests/qa-gate.test.mjs',
     'scripts/tests/task-close.test.mjs',
