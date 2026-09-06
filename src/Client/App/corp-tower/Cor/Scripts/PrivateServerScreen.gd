@@ -29,6 +29,9 @@ func _ready() -> void:
 	%CreateButton.pressed.connect(_on_create_pressed)
 	_configure_text_input(%PlayerNameEdit)
 	_configure_text_input(password_edit)
+	password_edit.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_NUMBER
+	password_edit.z_index = 1
+	password_visibility_button.z_index = 2
 	password_mask_timer = Timer.new()
 	password_mask_timer.one_shot = true
 	password_mask_timer.wait_time = 1.0
@@ -80,8 +83,10 @@ func _is_paste_shortcut(event: InputEvent) -> bool:
 func _on_password_text_changed(value: String) -> void:
 	var normalized := _normalized_password(value)
 	if value != normalized:
+		var normalized_caret := _normalized_password(value.left(password_edit.caret_column)).length()
 		password_edit.text = normalized
-		password_edit.caret_column = normalized.length()
+		password_edit.caret_column = normalized_caret
+		_refresh_password_presentation()
 		return
 	if not password_revealed and normalized.length() > previous_password.length():
 		transient_visible_index = normalized.length() - 1
@@ -106,8 +111,17 @@ func _set_password_text(value: String) -> void:
 
 func _refresh_password_presentation() -> void:
 	var value := password_edit.text
-	password_edit.secret = false
+	password_edit.secret = not password_revealed
+	password_edit.secret_character = "*"
 	password_edit.add_theme_color_override("font_color", Color.TRANSPARENT if not password_revealed else TEXT_COLOR)
+	if password_revealed:
+		password_edit.remove_theme_color_override("font_selected_color")
+		password_edit.remove_theme_color_override("font_uneditable_color")
+		password_edit.remove_theme_color_override("font_outline_color")
+	else:
+		password_edit.add_theme_color_override("font_selected_color", Color.TRANSPARENT)
+		password_edit.add_theme_color_override("font_uneditable_color", Color.TRANSPARENT)
+		password_edit.add_theme_color_override("font_outline_color", Color.TRANSPARENT)
 	password_mask_label.visible = not password_revealed
 	var masked := ""
 	for index in value.length():
