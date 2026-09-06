@@ -150,7 +150,7 @@ Owner: `KB/docs/context/ui.md:101-104` → **Profile presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scenes/ProfileScreen.tscn` | `ProfileScreen` | 60 | `sed -n 48,80p src/Client/App/corp-tower/Cor/Scenes/ProfileScreen.tscn` |
+| `src/Client/App/corp-tower/Cor/Scenes/ProfileScreen.tscn` | `ProfileScreen` | 67 | `sed -n 55,87p src/Client/App/corp-tower/Cor/Scenes/ProfileScreen.tscn` |
 | `src/Client/App/corp-tower/Cor/Scenes/ChangeNameScreen.tscn` | `ChangeNameScreen` | 47 | `sed -n 35,67p src/Client/App/corp-tower/Cor/Scenes/ChangeNameScreen.tscn` |
 | `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `show_profile_screen` | 358 | `sed -n 346,378p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 

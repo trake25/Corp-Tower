@@ -124,7 +124,7 @@ Owner: `KB/docs/context/backend.md:142-145` → **Durable profiles**
 | `src/Server/app/Account_Store.js` | `resolve` | 59 | `sed -n 47,79p src/Server/app/Account_Store.js` |
 | `src/Server/app/Account_Store.js` | `markNameOnboardingSeen` | 99 | `sed -n 87,119p src/Server/app/Account_Store.js` |
 | `src/Server/app/Profile_Store.js` | `getProfile` | 66 | `sed -n 54,86p src/Server/app/Profile_Store.js` |
-| `src/Server/app/Profile_Store.js` | `changeName` | 172 | `sed -n 160,192p src/Server/app/Profile_Store.js` |
+| `src/Server/app/Profile_Store.js` | `changeName` | 163 | `sed -n 151,183p src/Server/app/Profile_Store.js` |
 
 Adjacent concepts: `network.profile.session`, `ui.profile.presentation`
 

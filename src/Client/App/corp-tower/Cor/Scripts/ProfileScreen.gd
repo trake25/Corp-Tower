@@ -3,7 +3,7 @@ extends Control
 signal back_requested
 signal change_name_requested
 
-const AVATAR_LION := preload("res://Cor/Art/9-Play/avatar-lion.png")
+const PlayerRailEntry := preload("res://Cor/Scripts/PlayerRailEntry.gd")
 
 var account_uid := ""
 var profile_data: Dictionary = {}
@@ -22,7 +22,9 @@ func set_profile(data: Dictionary) -> void:
 	%AvatarTexture.texture = _avatar_texture(str(data.get("avatarId", "avatar_0")))
 
 func set_online(online: bool) -> void:
-	%OnlineDot.color = Color("20c95a") if online else Color("87919b")
+	var dot_style := %OnlineDot.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+	dot_style.bg_color = Color("20c95a") if online else Color("87919b")
+	%OnlineDot.add_theme_stylebox_override("panel", dot_style)
 	%OnlineLabel.text = "Online" if online else "Offline"
 
 func _profile_name(value: String) -> String:
@@ -37,6 +39,5 @@ func _copy_full_uid() -> void:
 	if account_uid != "":
 		DisplayServer.clipboard_set(account_uid)
 
-func _avatar_texture(_avatar_id: String) -> Texture2D:
-	# The current profile service resolves avatar_0 to the game's lion avatar.
-	return AVATAR_LION
+func _avatar_texture(avatar_id: String) -> Texture2D:
+	return PlayerRailEntry.load_avatar_texture(avatar_id)

@@ -78,16 +78,7 @@ class ProfileStore {
 
         if (this.profiles.has(profileId)) {
             const cached = this.profiles.get(profileId);
-
-            if (
-                verifiedName &&
-                !cached.nameChangeUsed &&
-                cached.displayName !== verifiedName
-            ) {
-                cached.displayName = verifiedName;
-            }
-
-            return cached;
+            return { ...cached, avatarId };
         }
 
         const profile = {
@@ -103,7 +94,7 @@ class ProfileStore {
         await this.hydrateFromSupabase(profile, verifiedName);
 
         this.profiles.set(profileId, profile);
-        return profile;
+        return { ...profile, avatarId };
     }
 
     // Never allowed to break a room: a Supabase outage degrades to the generated

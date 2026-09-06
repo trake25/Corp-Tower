@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://Cor/Scripts/ProfileScreen.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/profile-bg-@4x.png" id="2_bg"]
@@ -56,6 +56,13 @@ corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleStatusDot"]
+bg_color = Color(0.125, 0.788, 0.353, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="ProfileScreen" type="Control"]
 layout_mode = 3
@@ -205,12 +212,12 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="OnlineDot" type="ColorRect" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn/OnlineRow"]
+[node name="OnlineDot" type="Panel" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn/OnlineRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(12, 12)
 layout_mode = 2
 size_flags_vertical = 4
-color = Color(0.125, 0.788, 0.353, 1)
+theme_override_styles/panel = SubResource("StyleStatusDot")
 
 [node name="OnlineLabel" type="Label" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn/OnlineRow"]
 unique_name_in_owner = true
@@ -259,26 +266,51 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
-[node name="Icon" type="TextureRect" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/RankButton/Content"]
+[node name="BadgeStack" type="Control" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/RankButton/Content"]
 mouse_filter = 2
-custom_minimum_size = Vector2(52, 52)
+custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 size_flags_horizontal = 4
+
+[node name="BadgeIcon" type="TextureRect" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/RankButton/Content/BadgeStack"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = ExtResource("8_rank")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/RankButton/Content"]
+[node name="RankValue" type="Label" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/RankButton/Content/BadgeStack"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 23
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "50"
+
+[node name="RankCaption" type="Label" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/RankButton/Content"]
 mouse_filter = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
 theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
-text = "50\nRank"
+text = "Rank"
 
 [node name="StatsCard" type="PanelContainer" parent="SafeArea/Layout"]
 layout_mode = 2
-size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleGlass")
 
 [node name="StatsMargin" type="MarginContainer" parent="SafeArea/Layout/StatsCard"]
@@ -288,13 +320,17 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 12
 
-[node name="StatsGrid" type="GridContainer" parent="SafeArea/Layout/StatsCard/StatsMargin"]
+[node name="StatsRows" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FirstSixGrid" type="GridContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows"]
 layout_mode = 2
 columns = 3
 theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 8
 
-[node name="TotalPointsButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+[node name="TotalPointsButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid"]
 custom_minimum_size = Vector2(102, 112)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
@@ -303,7 +339,7 @@ theme_override_styles/normal = SubResource("StyleFlat")
 theme_override_styles/hover = SubResource("StyleFlat")
 theme_override_styles/pressed = SubResource("StylePressed")
 
-[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/TotalPointsButton"]
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/TotalPointsButton"]
 mouse_filter = 2
 layout_mode = 1
 anchors_preset = 15
@@ -312,7 +348,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/TotalPointsButton/Content"]
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/TotalPointsButton/Content"]
 mouse_filter = 2
 custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
@@ -320,14 +356,26 @@ size_flags_horizontal = 4
 texture = ExtResource("9_points")
 expand_mode = 1
 stretch_mode = 5
-[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/TotalPointsButton/Content"]
+[node name="ValueLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/TotalPointsButton/Content"]
 mouse_filter = 2
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "10 000"
+
+[node name="CaptionLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/TotalPointsButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
-text = "10 000\nTotal Points"
+text = "Total Points"
 
-[node name="GamesPlayedButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+[node name="GamesPlayedButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid"]
 custom_minimum_size = Vector2(102, 112)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
@@ -336,7 +384,7 @@ theme_override_styles/normal = SubResource("StyleFlat")
 theme_override_styles/hover = SubResource("StyleFlat")
 theme_override_styles/pressed = SubResource("StylePressed")
 
-[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/GamesPlayedButton"]
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/GamesPlayedButton"]
 mouse_filter = 2
 layout_mode = 1
 anchors_preset = 15
@@ -345,7 +393,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/GamesPlayedButton/Content"]
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/GamesPlayedButton/Content"]
 mouse_filter = 2
 custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
@@ -353,14 +401,26 @@ size_flags_horizontal = 4
 texture = ExtResource("10_games")
 expand_mode = 1
 stretch_mode = 5
-[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/GamesPlayedButton/Content"]
+[node name="ValueLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/GamesPlayedButton/Content"]
 mouse_filter = 2
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "100"
+
+[node name="CaptionLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/GamesPlayedButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
-text = "100\nGames Played"
+text = "Games Played"
 
-[node name="WinRateButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+[node name="WinRateButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid"]
 custom_minimum_size = Vector2(102, 112)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
@@ -369,7 +429,7 @@ theme_override_styles/normal = SubResource("StyleFlat")
 theme_override_styles/hover = SubResource("StyleFlat")
 theme_override_styles/pressed = SubResource("StylePressed")
 
-[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinRateButton"]
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/WinRateButton"]
 mouse_filter = 2
 layout_mode = 1
 anchors_preset = 15
@@ -378,7 +438,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinRateButton/Content"]
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/WinRateButton/Content"]
 mouse_filter = 2
 custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
@@ -386,14 +446,26 @@ size_flags_horizontal = 4
 texture = ExtResource("11_rate")
 expand_mode = 1
 stretch_mode = 5
-[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinRateButton/Content"]
+[node name="ValueLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/WinRateButton/Content"]
 mouse_filter = 2
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "100%"
+
+[node name="CaptionLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/WinRateButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
-text = "100%\nWin Rate"
+text = "Win Rate"
 
-[node name="MaxLevelButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+[node name="MaxLevelButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid"]
 custom_minimum_size = Vector2(102, 112)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
@@ -402,7 +474,7 @@ theme_override_styles/normal = SubResource("StyleFlat")
 theme_override_styles/hover = SubResource("StyleFlat")
 theme_override_styles/pressed = SubResource("StylePressed")
 
-[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/MaxLevelButton"]
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/MaxLevelButton"]
 mouse_filter = 2
 layout_mode = 1
 anchors_preset = 15
@@ -411,7 +483,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/MaxLevelButton/Content"]
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/MaxLevelButton/Content"]
 mouse_filter = 2
 custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
@@ -419,14 +491,26 @@ size_flags_horizontal = 4
 texture = ExtResource("12_level")
 expand_mode = 1
 stretch_mode = 5
-[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/MaxLevelButton/Content"]
+[node name="ValueLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/MaxLevelButton/Content"]
 mouse_filter = 2
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "100"
+
+[node name="CaptionLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/MaxLevelButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
-text = "100\nMax Level"
+text = "Max Level"
 
-[node name="WinStreakButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+[node name="WinStreakButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid"]
 custom_minimum_size = Vector2(102, 112)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
@@ -435,7 +519,7 @@ theme_override_styles/normal = SubResource("StyleFlat")
 theme_override_styles/hover = SubResource("StyleFlat")
 theme_override_styles/pressed = SubResource("StylePressed")
 
-[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinStreakButton"]
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/WinStreakButton"]
 mouse_filter = 2
 layout_mode = 1
 anchors_preset = 15
@@ -444,7 +528,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinStreakButton/Content"]
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/WinStreakButton/Content"]
 mouse_filter = 2
 custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
@@ -452,14 +536,26 @@ size_flags_horizontal = 4
 texture = ExtResource("13_streak")
 expand_mode = 1
 stretch_mode = 5
-[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinStreakButton/Content"]
+[node name="ValueLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/WinStreakButton/Content"]
 mouse_filter = 2
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "5"
+
+[node name="CaptionLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/WinStreakButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
-text = "5\nWin Streak"
+text = "Win Streak"
 
-[node name="PerfectBuildsButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+[node name="PerfectBuildsButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid"]
 custom_minimum_size = Vector2(102, 112)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
@@ -468,7 +564,7 @@ theme_override_styles/normal = SubResource("StyleFlat")
 theme_override_styles/hover = SubResource("StyleFlat")
 theme_override_styles/pressed = SubResource("StylePressed")
 
-[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/PerfectBuildsButton"]
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/PerfectBuildsButton"]
 mouse_filter = 2
 layout_mode = 1
 anchors_preset = 15
@@ -477,7 +573,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/PerfectBuildsButton/Content"]
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/PerfectBuildsButton/Content"]
 mouse_filter = 2
 custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
@@ -485,14 +581,31 @@ size_flags_horizontal = 4
 texture = ExtResource("14_perfect")
 expand_mode = 1
 stretch_mode = 5
-[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/PerfectBuildsButton/Content"]
+[node name="ValueLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/PerfectBuildsButton/Content"]
 mouse_filter = 2
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "50"
+
+[node name="CaptionLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FirstSixGrid/PerfectBuildsButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
-text = "50\nPerfect Builds"
+text = "Perfect Builds"
 
-[node name="OverbuildsButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+[node name="FinalRow" type="HBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 28
+
+[node name="OverbuildsButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FinalRow"]
 custom_minimum_size = Vector2(102, 112)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
@@ -501,7 +614,7 @@ theme_override_styles/normal = SubResource("StyleFlat")
 theme_override_styles/hover = SubResource("StyleFlat")
 theme_override_styles/pressed = SubResource("StylePressed")
 
-[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/OverbuildsButton"]
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FinalRow/OverbuildsButton"]
 mouse_filter = 2
 layout_mode = 1
 anchors_preset = 15
@@ -510,7 +623,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/OverbuildsButton/Content"]
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FinalRow/OverbuildsButton/Content"]
 mouse_filter = 2
 custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
@@ -518,14 +631,26 @@ size_flags_horizontal = 4
 texture = ExtResource("15_overbuild")
 expand_mode = 1
 stretch_mode = 5
-[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/OverbuildsButton/Content"]
+[node name="ValueLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FinalRow/OverbuildsButton/Content"]
 mouse_filter = 2
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "10"
+
+[node name="CaptionLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FinalRow/OverbuildsButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
-text = "10\nOverbuilds"
+text = "Overbuilds"
 
-[node name="FavoriteBrickButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+[node name="FavoriteBrickButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FinalRow"]
 custom_minimum_size = Vector2(102, 112)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
@@ -534,7 +659,7 @@ theme_override_styles/normal = SubResource("StyleFlat")
 theme_override_styles/hover = SubResource("StyleFlat")
 theme_override_styles/pressed = SubResource("StylePressed")
 
-[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/FavoriteBrickButton"]
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FinalRow/FavoriteBrickButton"]
 mouse_filter = 2
 layout_mode = 1
 anchors_preset = 15
@@ -543,7 +668,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/FavoriteBrickButton/Content"]
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FinalRow/FavoriteBrickButton/Content"]
 mouse_filter = 2
 custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
@@ -551,9 +676,21 @@ size_flags_horizontal = 4
 texture = ExtResource("16_favorite")
 expand_mode = 1
 stretch_mode = 5
-[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/FavoriteBrickButton/Content"]
+[node name="ValueLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FinalRow/FavoriteBrickButton/Content"]
 mouse_filter = 2
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "T"
+
+[node name="CaptionLabel" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsRows/FinalRow/FavoriteBrickButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
-text = "T\nFavorite Brick"
+text = "Favorite Brick"

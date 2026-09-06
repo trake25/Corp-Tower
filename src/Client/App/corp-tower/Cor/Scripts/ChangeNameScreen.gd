@@ -6,6 +6,7 @@ signal name_change_requested(candidate: String)
 var current_name := ""
 var online := false
 var submission_pending := false
+var allowance_consumed := false
 var allowed_name := RegEx.create_from_string("^[\\p{L}\\p{N} _-]+$")
 
 @onready var name_input: LineEdit = %NameInput
@@ -22,7 +23,9 @@ func _ready() -> void:
 
 func configure(profile: Dictionary) -> void:
 	current_name = str(profile.get("displayName", "")).strip_edges()
+	allowance_consumed = bool(profile.get("nameChangeUsed", false))
 	name_input.text = current_name
+	name_input.editable = not allowance_consumed
 	name_input.caret_column = name_input.text.length()
 	error_label.text = ""
 	_refresh_save_state()
@@ -31,16 +34,18 @@ func set_online(value: bool) -> void:
 	online = value
 	if not online and submission_pending:
 		submission_pending = false
-		name_input.editable = true
+		name_input.editable = not allowance_consumed
 		error_label.text = "Connection lost. Return and try again."
 	_refresh_save_state()
 
 func set_submission_pending(value: bool) -> void:
 	submission_pending = value
-	name_input.editable = not value
+	name_input.editable = not value and not allowance_consumed
 	_refresh_save_state()
 
 func show_rejection(reason: String) -> void:
+	if reason == "already_used":
+		allowance_consumed = true
 	set_submission_pending(false)
 	error_label.text = {
 		"invalid_name": "Use 3–10 letters, numbers, spaces, _ or -.",
@@ -65,7 +70,12 @@ func is_candidate_valid() -> bool:
 func _refresh_save_state() -> void:
 	if not is_node_ready():
 		return
-	save_button.disabled = submission_pending or not online or not is_candidate_valid()
+	save_button.disabled = (
+		allowance_consumed
+		or submission_pending
+		or not online
+		or not is_candidate_valid()
+	)
 
 func _on_save_pressed() -> void:
 	if save_button.disabled:
